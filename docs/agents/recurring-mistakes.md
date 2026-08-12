@@ -831,6 +831,14 @@ require it to be returned.
 
 ---
 
+### RM-208 — React Aria collection rows must receive the external state that changes their rendering
+A Replies prototype kept `selectedId` outside its `Collection` items. Selecting Theo changed
+Theo's data and expanded it, but Maya's unchanged item was reused with its old expansion, so
+both rows stayed open. When `renderItem` depends on selection, expansion, pending, or another
+external row state, derive that state into every affected item (or use the collection's
+controlled state) so both the previous and next rows invalidate. **Verify by:** select row A,
+then row B; exactly one detail is rendered and it is a descendant of row B.
+
 ## Deploy / ops
 
 ### RM-201 — Deployable frontends need documented + guarded build-time env

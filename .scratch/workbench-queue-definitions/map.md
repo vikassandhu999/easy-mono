@@ -1,0 +1,38 @@
+# Coach workbench v1 delivery
+
+Label: wayfinder:map
+Status: active
+
+## Destination
+
+Ship the v1 coach workbench queue definitions across the backend, OpenAPI contract, CoachApp, migrations, and behavioral tests. The effort ends when implementation tickets are complete and the coordinated workbench flow is verified.
+
+## Notes
+
+* The source specification is [Coach workbench queue definitions](./spec.md).
+* This map carries execution after the decisions are closed. It does not stop at an implementation plan.
+* The product is in prototype phase. Make one coordinated cutover with no backward-compatibility layer and no data backfill.
+* Preserve the spec's `joined_at` decision and leave placement of the separate Recent clients metric out of scope.
+* Use `grilling` and `domain-modeling` for decision tickets, `prototype` for interaction tickets, and `codebase-memory-axi` for structural code discovery.
+* Refer to map tickets by title in human-facing notes.
+
+## Decisions so far
+
+* [Define the queue reason contract](./issues/01-define-queue-reason-contract.md) — Queue-specific items carry a strict ordered reason union, while counts aggregate the same reason-bearing membership facts by work-item identity.
+* [Design required-services capture](./issues/02-design-required-services-capture.md) — An Intake-only `Service type` question writes the one undated `required_services` set; Invite may set it optionally, coaches may edit it later, and Check-in forms cannot contain the question. The service-card prototype covers each capture context.
+* [Design the Programming queue interaction](./issues/03-design-programming-queue-interaction.md) — Use the urgency-grouped priority list with overlapping service filters, one client row, service-specific reason facts, and direct actions into the matching plan-assignment flow.
+* [Design Replies handling](./issues/04-design-replies-handling.md) — Use color-only whole-row selection with a desktop task pane and the same content expanded beneath the selected row on mobile; read remains separate from reply-or-handle completion.
+
+## Not yet specified
+
+* Backend and frontend implementation tickets will be shaped after the reason contract, required-service capture, and queue interactions are decided.
+* The final coordinated verification matrix will be shaped after the API cutover and interaction decisions are closed.
+
+## Out of scope
+
+* Backward-compatible API rollout and production-data backfill.
+* Training-derived Quiet signals.
+* Plan readiness, publishing, and structural-content validation.
+* Business-local date boundaries.
+* Placement of the separate Recent clients metric.
+* Per-coach conversation read cursors.

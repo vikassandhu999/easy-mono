@@ -11,6 +11,8 @@ import type {ClientQueue} from '@/api/clients';
 import {useListClientsQuery} from '@/api/clients';
 import {useWorkbenchCountsQuery} from '@/api/workbench';
 import {queueEntries, queueMeta, TODAY_QUEUES, type WorkbenchQueueId} from '@/clients/lib/workbench-queues';
+import ProgrammingQueuePrototype from '@/clients/prototypes/programming-queue-prototype';
+import RepliesHandlingPrototype from '@/clients/prototypes/replies-handling-prototype';
 
 import AllClientsView from './all-clients-view';
 import CheckInsView from './check-ins-view';
@@ -116,14 +118,23 @@ export default function WorkbenchScreen() {
       </ViewShell>
     );
   } else if (view === 'replies') {
-    content = (
-      <ViewShell
-        meta={counts && activeQueue ? queueMeta(activeQueue, counts[activeQueue.countKey]) : undefined}
-        title="Replies"
-      >
-        <RepliesView />
-      </ViewShell>
-    );
+    content =
+      import.meta.env.DEV && ['A', 'B', 'C'].includes(searchParams.get('variant') ?? '') ? (
+        <RepliesHandlingPrototype />
+      ) : (
+        <ViewShell
+          meta={counts && activeQueue ? queueMeta(activeQueue, counts[activeQueue.countKey]) : undefined}
+          title="Replies"
+        >
+          <RepliesView />
+        </ViewShell>
+      );
+  } else if (
+    view === 'programming' &&
+    import.meta.env.DEV &&
+    ['A', 'B', 'C'].includes(searchParams.get('variant') ?? '')
+  ) {
+    content = <ProgrammingQueuePrototype />;
   } else {
     content = (
       <ViewShell

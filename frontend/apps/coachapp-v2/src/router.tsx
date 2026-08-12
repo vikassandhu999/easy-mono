@@ -24,6 +24,7 @@ import ProgressPhotos from '@/clients/client-screen/progress-photos';
 import WeightHistory from '@/clients/client-screen/weight-history';
 import EditClient from '@/clients/edit-client';
 import InviteClient from '@/clients/invite-client';
+import RequiredServicesPrototype from '@/clients/prototypes/required-services-prototype';
 import SessionDetail from '@/clients/session-detail';
 import WorkbenchScreen from '@/clients/workbench/workbench-screen';
 import Dashboard from '@/dashboard/dashboard';
@@ -77,6 +78,9 @@ export const router = createBrowserRouter([
       {path: ROUTES.DASHBOARD, Component: Dashboard},
       {path: ROUTES.CLIENTS, Component: WorkbenchScreen},
       {path: ROUTES.INVITE_CLIENT, Component: InviteClient},
+      ...(import.meta.env.DEV
+        ? [{path: ROUTES.REQUIRED_SERVICES_PROTOTYPE, Component: RequiredServicesPrototype}]
+        : []),
       {path: ROUTES.CLIENT_DETAIL, Component: ClientScreen},
       {path: ROUTES.CLIENT_SESSION_DETAIL, Component: SessionDetail},
       {path: ROUTES.CLIENT_WEIGHT, Component: WeightHistory},

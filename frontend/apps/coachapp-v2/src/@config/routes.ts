@@ -8,6 +8,7 @@ export const ROUTES = {
   REGISTER_BUSINESS: '/register-business',
   DASHBOARD: '/dashboard',
   CLIENTS: '/clients',
+  REQUIRED_SERVICES_PROTOTYPE: '/clients/prototypes/required-services',
   INVITE_CLIENT: '/clients/invite',
   CLIENT_DETAIL: '/clients/:id',
   CLIENT_SESSION_DETAIL: '/clients/:clientId/sessions/:sessionId',

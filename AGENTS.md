@@ -99,5 +99,5 @@ Browser-state rules:
 <!-- cbm-axi-begin -->
 ## Codebase Memory AXI
 
-For structural codebase questions (definitions, references, callers/callees, architecture, change impact, rename/remove safety), prefer the local `cbm` CLI and skill `codebase-memory-axi`. One intent-level `cbm` command first. Do not use Codebase Memory MCP tools or `codebase-memory-mcp cli` for normal discovery. Exact string/config search: use grep/ripgrep.
+ALWAYS prefer the local `cbm` CLI and skill `codebase-memory-axi` for structural codebase questions (definitions, references, callers/callees, architecture, change impact, rename/remove safety, aligning with existing patterns). Run one intent-level `cbm` command first; wait before Grep/Glob. Prefer short symbol-shaped queries. Empty search → retokenize, do not broaden noisy `rg`. Fall back to Grep/Glob/Read for exact strings, CSS, copy, config, and unindexed files. Do not call Codebase Memory MCP tools or `codebase-memory-mcp cli` for normal discovery.
 <!-- cbm-axi-end -->

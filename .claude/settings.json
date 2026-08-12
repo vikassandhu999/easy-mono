@@ -27,6 +27,19 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "hooks/claude-pretool.sh",
+            "timeout": 3,
+            "statusMessage": "cbm AXI graph hint"
+          }
+        ]
+      }
     ]
   }
 }

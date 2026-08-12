@@ -8,7 +8,6 @@
  * patch and the PUT body are literally the same value.
  */
 import {
-  TRAINING_DAY_SHORT_LABELS as DAY_SHORT_LABELS,
   TRAINING_WEEKDAYS as ORDERED_DAYS,
   type TrainingWeekday,
 } from '@easy/utils';
@@ -35,12 +34,4 @@ export function clearWorkoutFromSchedule(schedule: TrainingSchedule, workoutId: 
     }
   }
   return next;
-}
-
-/** COPY.md § TB. */
-export function scheduleLabel(days: Day[]): string {
-  if (days.length === 0) {
-    return 'Not scheduled yet';
-  }
-  return `Scheduled: ${days.map((day) => DAY_SHORT_LABELS[day]).join(', ')}`;
 }

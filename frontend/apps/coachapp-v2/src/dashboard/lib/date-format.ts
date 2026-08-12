@@ -66,12 +66,3 @@ export function formatDashboardDate(date = new Date()): string {
   const calendarDate = new Intl.DateTimeFormat('en', {day: 'numeric', month: 'short'}).format(date);
   return `${weekday} · ${calendarDate}`;
 }
-
-/** Whole days elapsed since `value`, or null when it can't be parsed. */
-export function daysSince(value: null | string | undefined, now = new Date()): null | number {
-  const date = toDate(value);
-  if (!date) {
-    return null;
-  }
-  return Math.max(Math.round((startOfLocalDay(now).getTime() - startOfLocalDay(date).getTime()) / DAY_MS), 0);
-}

@@ -18,6 +18,7 @@ import {formatAnswer} from '../../checkins/lib/form-answers.ts';
 import {
   coachingAccessState,
   coachingPeriodUpdate,
+  extendedSubscriptionEnd,
   renewalEndDateIsValid,
   subscriptionDatesAreOrdered,
 } from './client.ts';
@@ -75,6 +76,10 @@ const TODAY = new Date(2026, 6, 21);
 assert.equal(subscriptionDatesAreOrdered('2026-03-03', '2026-11-22'), true);
 assert.equal(subscriptionDatesAreOrdered('2026-03-03', '2025-11-22'), false);
 assert.equal(subscriptionDatesAreOrdered('2026-03-03', ''), true);
+
+assert.equal(extendedSubscriptionEnd('2026-08-11', '2026-08-11', {days: 14}), '2026-08-25');
+assert.equal(extendedSubscriptionEnd('2026-08-01', '2026-08-11', {days: 14}), '2026-08-25');
+assert.equal(extendedSubscriptionEnd(null, '2026-08-11', {months: 1}), '2026-09-11');
 
 assert.deepEqual(
   coachingAccessState({status: 'pending', inactive_reason: null, subscription_ends_on: null}, '2026-08-11'),

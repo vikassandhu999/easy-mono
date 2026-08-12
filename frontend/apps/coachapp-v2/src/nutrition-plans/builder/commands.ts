@@ -99,7 +99,8 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
     try {
       const day = await api.createDay(planId);
       patch((plan) => {
-        (plan.days ??= []).push(day);
+        plan.days ??= [];
+        plan.days.push(day);
       });
       refetch();
       return day;
@@ -174,7 +175,8 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
     }
     const body = assignWeekday(getWeekdayAssignments(plan), getDays(plan), weekday, dayId);
     patch((draft) => {
-      (draft.weekday_assignments ??= {})[weekday] = dayId;
+      draft.weekday_assignments ??= {};
+      draft.weekday_assignments[weekday] = dayId;
     });
     enqueue('schedule', async () => {
       try {
@@ -205,9 +207,9 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
     try {
       const {meal, ...option} = await api.addDayMeal(dayId, body);
       patch((draft) => {
-        const meals = (draft.meals ??= []);
-        if (!meals.some((m) => m.id === meal.id)) {
-          meals.push(meal);
+        draft.meals ??= [];
+        if (!draft.meals.some((m) => m.id === meal.id)) {
+          draft.meals.push(meal);
         }
         findDay(draft, dayId)?.day_meals.push(option);
       });

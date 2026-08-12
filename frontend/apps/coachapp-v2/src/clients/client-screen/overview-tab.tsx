@@ -14,7 +14,6 @@ import {useListClientWeightEntriesQuery, useUpdateClientMutation} from '@/api/cl
 import {useListCoachMealLogsQuery} from '@/api/nutrition-plans-list';
 import {useListCoachClientTrainingSessionsQuery} from '@/api/training-plans-list';
 import {type AnswerType, formatAnswer, isSummarisableAnswer, submissionPhotoIds} from '@/checkins/lib/form-answers';
-import {CoachingAccess} from '@/clients/client-screen/coaching-access';
 import {DetailRow} from '@/clients/components/detail-row';
 import {PhotoThumb} from '@/clients/components/photo-thumb';
 import {SectionCard} from '@/clients/components/section-card';
@@ -32,10 +31,9 @@ import {
 } from '@/clients/lib/client-detail-data';
 
 /**
- * CD-OV. The two columns are the design's, and which card sits in which is part
- * of the design rather than an accident of build order: the left column is the
- * WEEK — what happened and what you owe the client — and the 320px rail is the
- * client's standing context (private notes, the way in to settings).
+ * Overview: left column is the week (activity + triage); the 320px rail is
+ * standing context — private notes and the way into Edit client. Coaching access
+ * lives in the page strip (Manage sheet for period + cancel).
  */
 export function OverviewTab({client}: {client: Client}) {
   const week = lastNDays(7);
@@ -126,7 +124,6 @@ export function OverviewTab({client}: {client: Client}) {
       </div>
 
       <div className="flex min-w-0 flex-col gap-4">
-        <CoachingAccess client={client} />
         {/* Keyed on the client so switching clients remounts with their notes —
             the effect below only has to win over a refetch. */}
         <NotesCard
@@ -377,9 +374,9 @@ function WeightCard({to, trend}: {to: string; trend: NonNullable<ReturnType<type
 }
 
 /**
- * Notes are edited where they are read — the design draws a bare textarea in the
- * card, not a field with a Save button. Saving on blur (only when the text
- * actually changed) is what makes that honest: there is no other commit point.
+ * Notes are edited where they are read — Overview keeps an inline field with
+ * blur-save (no Save button). Field chrome matches FormTextAreaField so the
+ * box reads as editable, not as another static card body.
  */
 function NotesCard({client}: {client: Client}) {
   const [value, setValue] = useState(client.notes ?? '');
@@ -411,7 +408,7 @@ function NotesCard({client}: {client: Client}) {
           value={value}
         >
           <TextArea
-            className="min-h-33 w-full resize-none border-0 bg-transparent p-0 [box-shadow:none]"
+            className="min-h-33 w-full resize-none border border-border bg-surface shadow-none"
             placeholder="Add private notes about this client…"
           />
         </TextField>

@@ -24,7 +24,7 @@ import {useGetClientQuery, useResendClientInviteMutation, useRevokeClientInviteM
 import {useGetCoachClientConversationQuery} from '@/api/conversations';
 import {useListCoachClientTrainingPlansQuery} from '@/api/training-plans-list';
 import {CheckinsTab} from '@/clients/client-screen/checkins-tab';
-import {CoachingAccess} from '@/clients/client-screen/coaching-access';
+import {ClientAccessStrip} from '@/clients/client-screen/client-access-strip';
 import {NutritionTab} from '@/clients/client-screen/nutrition-tab';
 import {OverviewTab} from '@/clients/client-screen/overview-tab';
 import {TrainingTab} from '@/clients/client-screen/training-tab';
@@ -225,6 +225,9 @@ export default function ClientScreen() {
             </div>
           )}
 
+          {/* Always-on access strip — Manage opens the period sheet. */}
+          <ClientAccessStrip client={client} />
+
           {hasAccess ? (
             <>
               {/* `toggle-button--tab` is the theme's ghost-pill register: transparent
@@ -398,7 +401,6 @@ function PendingBody({client}: {client: Client}) {
           title="Invite sent"
         />
       </div>
-      <CoachingAccess client={client} />
     </div>
   );
 }

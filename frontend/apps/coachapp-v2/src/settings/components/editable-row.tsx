@@ -1,16 +1,17 @@
 /**
  * One row of the Profile card: `{label} · {value} · Edit`. `Edit` swaps the row
- * for an inline field with Save/Cancel (INTERACTIONS.md § ST); Enter commits via
+ * for a labeled field + FormActions (INTERACTIONS.md § ST); Enter commits via
  * the native form submit, the saved value is trimmed, and an empty value renders
  * as an em dash.
  */
-import {Button, ErrorMessage, Form, Spinner, Typography} from '@heroui/react';
+import {Button, ErrorMessage, Fieldset, Form, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
-import {FormTextField} from '@/@components/form-fields/form-text-field';
 
+import {FormActions} from '@/@components/form-fields/form-actions';
+import {FormTextField} from '@/@components/form-fields/form-text-field';
 import {applyFormErrors} from '@/api/shared';
 
 const schema = z.object({
@@ -58,49 +59,32 @@ export default function EditableRow({
   if (editing) {
     return (
       <Form
-        className="flex flex-col gap-2 border-t border-border px-4 py-3 md:flex-row md:items-center md:gap-2"
+        className="flex flex-col gap-3 border-t border-border px-4 py-3"
         onSubmit={form.handleSubmit(onSubmit)}
+        validationBehavior="aria"
       >
-        <Typography
-          className="w-20 shrink-0 md:w-22"
-          color="muted"
-          type="body-sm"
-        >
-          {label}
-        </Typography>
-        <FormTextField
-          className="min-w-0 flex-1"
-          control={form.control}
-          inputProps={{autoFocus: true}}
-          label={<span className="sr-only">{label}</span>}
-          name="value"
-          type={inputType}
+        <Fieldset>
+          <Fieldset.Group>
+            <FormTextField
+              control={form.control}
+              fullWidth
+              inputProps={{autoFocus: true}}
+              isRequired
+              label={label}
+              name="value"
+              type={inputType}
+            />
+          </Fieldset.Group>
+        </Fieldset>
+
+        {form.formState.errors.root ? <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage> : null}
+
+        <FormActions
+          isSubmitting={form.formState.isSubmitting}
+          onCancel={cancel}
+          submitLabel="Save"
+          submittingLabel="Saving"
         />
-        <div className="flex shrink-0 justify-end gap-2">
-          <Button
-            isPending={form.formState.isSubmitting}
-            size="sm"
-            type="submit"
-          >
-            {form.formState.isSubmitting ? (
-              <Spinner
-                color="current"
-                size="sm"
-              />
-            ) : (
-              'Save'
-            )}
-          </Button>
-          <Button
-            onPress={cancel}
-            size="sm"
-            type="button"
-            variant="ghost"
-          >
-            Cancel
-          </Button>
-        </div>
-        {form.formState.errors.root && <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>}
       </Form>
     );
   }

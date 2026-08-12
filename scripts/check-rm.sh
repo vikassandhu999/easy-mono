@@ -26,7 +26,7 @@ CLIENT=frontend/apps/clientapp-v2/src
 # is unaffected (its paths start with /v1 and never sit in navigate/to/backticks
 # matching these app segments).
 check RM-102 "hardcoded route path (use ROUTES.X / generatePath(ROUTES.X, params))" \
-  '(navigate\(|to=\{?)["'"'"'\`]/|\`/(library|clients|prospects|messages|settings|dashboard)[/$]' "$COACH"
+  '(navigate\(|to=\{?)["'"'"'\`]/|\`/(library|clients|messages|settings|dashboard)[/$]' "$COACH"
 
 check RM-101 "dead HeroUI v2 tokens (use accent/border/surface/muted)" \
   '(text|bg|border|divide)-(primary|divider|content[1-4]|foreground-[0-9]{2,3})[ "'"'"'\]]' "$COACH" "$CLIENT"

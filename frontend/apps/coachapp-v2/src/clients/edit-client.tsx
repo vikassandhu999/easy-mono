@@ -33,7 +33,8 @@ import {useGetTeamQuery, useReassignClientMutation} from '@/api/team';
 
 /**
  * Profile fields share the client update endpoint; coach assignment is a
- * separate lifecycle event and is sent only when it changes.
+ * separate lifecycle event and is sent only when it changes. Coaching period
+ * and pause/reactivate live on Client Detail (access strip + Manage sheet).
  */
 const editClientSchema = z.object({
   assigned_coach_id: z.string(),

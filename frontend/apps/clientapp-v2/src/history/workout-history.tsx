@@ -56,8 +56,7 @@ function SessionRow({session}: {session: TrainingSession}) {
 export default function WorkoutHistory() {
   // The whole point of this screen is the full history, so it pages through
   // the server's 20-row pages with a Load-more at the bottom.
-  const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} =
-    useClientTrainingSessionsInfiniteQuery();
+  const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useClientTrainingSessionsInfiniteQuery();
 
   if (isLoading) {
     return (

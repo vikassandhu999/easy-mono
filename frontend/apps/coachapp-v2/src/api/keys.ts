@@ -72,8 +72,6 @@ export const landingPageKeys = {
   all: ['landing-page'] as const,
 };
 
-export const prospectKeys = domain('prospects');
-
 export const exerciseKeys = domain('training-exercises');
 export const muscleKeys = {
   all: ['training-muscles'] as const,

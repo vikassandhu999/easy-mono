@@ -13,7 +13,6 @@ export function AwaitingSeat({
   if (billing.isLoading) {
     return (
       <Typography
-        className="border-t border-border px-4 py-3"
         color="muted"
         type="body-sm"
       >
@@ -23,7 +22,7 @@ export function AwaitingSeat({
   }
   if (billing.isError || !billing.data) {
     return (
-      <div className="flex items-center gap-3 border-t border-border px-4 py-3">
+      <div className="flex items-center gap-3">
         <Typography
           className="flex-1"
           color="muted"
@@ -59,7 +58,7 @@ export function SeatLimitPrompt({
   summary: BillingSummary;
 }) {
   return (
-    <div className="border-t border-border px-4 py-3">
+    <div>
       {activation.pending ? (
         <Typography
           className="mb-3"

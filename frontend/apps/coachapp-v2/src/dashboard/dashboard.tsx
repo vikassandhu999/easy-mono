@@ -9,7 +9,6 @@ import {ROUTES} from '@/@config/routes';
 import {useListClientsQuery} from '@/api/clients';
 import {useCoachConversationsInfiniteQuery} from '@/api/conversations';
 import {useGetCoachProfileQuery} from '@/api/profile';
-import {useListProspectsQuery} from '@/api/prospects';
 import {DashboardSectionHeading} from '@/dashboard/components/dashboard-section-heading';
 import {QuickActionsRow} from '@/dashboard/components/quick-actions-row';
 import {RecentActivityCell} from '@/dashboard/components/recent-activity-cell';
@@ -126,14 +125,9 @@ export default function Dashboard() {
   const {data: profileData, isLoading: profileLoading} = useGetCoachProfileQuery();
   // Summary counts only — the queue rows moved to the workbench.
   const {data: clientsData, isError: clientsError, isLoading: clientsLoading} = useListClientsQuery({limit: 0});
-  const {
-    data: prospectsData,
-    isError: prospectsError,
-    isLoading: prospectsLoading,
-  } = useListProspectsQuery({limit: 5, status: 'new'});
   const {data: conversationsData, isError: conversationsError} = useCoachConversationsInfiniteQuery();
 
-  if (profileLoading || clientsLoading || prospectsLoading) {
+  if (profileLoading || clientsLoading) {
     return <DashboardSkeleton />;
   }
 
@@ -141,7 +135,6 @@ export default function Dashboard() {
   const name = profile?.first_name?.trim();
   const initials = getInitials(profile?.first_name, profile?.last_name) || '?';
   const clientSummary = clientsData?.summary;
-  const newProspects = prospectsError ? [] : (prospectsData?.data ?? []);
 
   return (
     <Page>
@@ -191,7 +184,7 @@ export default function Dashboard() {
           ) : null}
 
           <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1.62fr)_minmax(0,1fr)]">
-            <TodayCell leadCount={newProspects.length} />
+            <TodayCell />
 
             <div className="flex min-w-0 flex-col gap-5">
               <RecentActivityCell

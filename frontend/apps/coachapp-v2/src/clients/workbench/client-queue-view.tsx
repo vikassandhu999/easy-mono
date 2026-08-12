@@ -67,7 +67,7 @@ function rowFacts(queue: ClientQueue, client: QueueClient): RowFacts {
     return {
       action: 'Renew',
       subtitle: formatSubscriptionEnd(client.subscription_ends_on),
-      to: `${detail}?tab=overview&manage=coaching-access`,
+      to: `${detail}?manage=access`,
       tone: 'danger',
     };
   }

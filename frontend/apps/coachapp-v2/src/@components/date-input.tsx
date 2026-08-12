@@ -29,6 +29,9 @@ interface DateInputProps {
   label?: ReactNode;
   /** Override the default label styling (e.g. compact muted labels). */
   labelClassName?: string;
+  /** Inclusive earliest selectable day (`YYYY-MM-DD`). */
+  min?: null | string;
+  onBlur?: () => void;
   onChange: (iso: null | string) => void;
   value: null | string;
 }
@@ -40,6 +43,8 @@ export default function DateInput({
   isRequired,
   label,
   labelClassName,
+  min,
+  onBlur,
   onChange,
   value,
 }: DateInputProps) {
@@ -49,6 +54,8 @@ export default function DateInput({
       isDisabled={isDisabled}
       isInvalid={Boolean(errorMessage)}
       isRequired={isRequired}
+      minValue={toDateValue(min ?? null) ?? undefined}
+      onBlur={onBlur}
       onChange={(date: DateValue | null) => onChange(date ? date.toString() : null)}
       value={toDateValue(value)}
     >

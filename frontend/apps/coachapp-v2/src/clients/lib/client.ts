@@ -54,3 +54,20 @@ export function coachingPeriodUpdate(start: string, end: string, restoreAccess: 
     subscription_started_on: start || null,
   };
 }
+
+/** Extend from the later of today and the current end — never shorten by "extending". */
+export function extendedSubscriptionEnd(
+  currentEnd: null | string,
+  today: string,
+  amount: {days: number} | {months: number},
+): string {
+  const base = currentEnd && currentEnd >= today ? currentEnd : today;
+  const [y, m, d] = base.split('-').map(Number) as [number, number, number];
+  const date = new Date(Date.UTC(y, m - 1, d));
+  if ('days' in amount) {
+    date.setUTCDate(date.getUTCDate() + amount.days);
+  } else {
+    date.setUTCMonth(date.getUTCMonth() + amount.months);
+  }
+  return date.toISOString().slice(0, 10);
+}

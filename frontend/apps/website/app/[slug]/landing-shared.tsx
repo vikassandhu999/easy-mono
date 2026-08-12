@@ -2,14 +2,7 @@
 
 import {useEffect, useRef, useState} from 'react';
 
-import {
-  type ApplicationResult,
-  COACHAPP_URL,
-  type LandingPage,
-  type Question,
-  submitApplication,
-  whatsappLink,
-} from '@/lib/api';
+import {type ApplicationResult, type LandingPage, type Question, submitApplication, whatsappLink} from '@/lib/api';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -443,7 +436,6 @@ export function Success({result, answers, page}: SuccessProps) {
         programName: result.program_name,
         summary,
         ref: result.id,
-        coachLink: `${COACHAPP_URL}/prospects/${result.id}`,
       })
     : null;
 

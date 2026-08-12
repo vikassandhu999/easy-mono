@@ -44,9 +44,6 @@ export const ROUTES = {
   // Mirrors training plans: `:id` is the builder, `:id/edit` the details form.
   CHECKIN_BUILDER: '/library/check-ins/:id',
   EDIT_CHECKIN: '/library/check-ins/:id/edit',
-  PROSPECTS: '/prospects',
-  PROSPECT_DETAIL: '/prospects/:id',
-  ENROLL_PROSPECT: '/prospects/:id/enroll',
   SETTINGS: '/settings',
   SETTINGS_LANDING_PAGE: '/settings/landing-page',
   // One route per tab (/settings/billing etc). Static landing-page outranks it.

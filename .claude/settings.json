@@ -2,5 +2,31 @@
   "enabledPlugins": {
     "mattpocock-skills@claude-plugins-official": true,
     "superpowers@claude-plugins-official": false
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "hooks/claude-inject.sh SessionStart",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "hooks/claude-inject.sh SubagentStart",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
   }
 }

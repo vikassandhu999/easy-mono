@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": ".cursor/hooks/cbm-axi-session.sh",
+        "timeout": 5
+      }
+    ]
+  }
+}

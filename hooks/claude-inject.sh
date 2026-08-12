@@ -1,0 +1,1 @@
+/Users/vikassandhu/Desktop/cbm-axi/hooks/claude-inject.sh

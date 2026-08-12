@@ -69,6 +69,11 @@ All redesign work follows `design-handoff/UI-CONTRACT.md` — read it before tou
 Per-screen workflow, reference images, exact copy, and behavior specs: `design-handoff/README.md`.
 Never read `design-handoff/design/Dashboard Redesign.dc.html` whole — grep `data-screen-label="XX"` for your screen's slice. It is a spec, not source; never copy its markup or styles.
 
+
+## Code navigation and Search
+
+Use `codebase-memeory-axi` skill for codenavigation.
+
 ### Dev OTPs
 
 In Dev mode otp for any login/signup is always 123456.
@@ -90,3 +95,9 @@ Browser-state rules:
 8. Use `snapshot` only when the current page state is unknown or changed.
 9. Avoid screenshots unless visual inspection is required.
 10. Save large network responses to files instead of printing them into context.
+
+<!-- cbm-axi-begin -->
+## Codebase Memory AXI
+
+For structural codebase questions (definitions, references, callers/callees, architecture, change impact, rename/remove safety), prefer the local `cbm` CLI and skill `codebase-memory-axi`. One intent-level `cbm` command first. Do not use Codebase Memory MCP tools or `codebase-memory-mcp cli` for normal discovery. Exact string/config search: use grep/ripgrep.
+<!-- cbm-axi-end -->

@@ -12,6 +12,7 @@ defmodule Easy.Workbench do
   alias Easy.Workbench.QueueSnooze
   alias Easy.WorkbenchCheckInQueue
   alias Easy.WorkbenchOnboardingQueue
+  alias Easy.WorkbenchProgrammingQueue
   alias Easy.WorkbenchRepliesQueue
 
   @weekday_numbers %{
@@ -66,6 +67,18 @@ defmodule Easy.Workbench do
           {:ok, %{count: non_neg_integer(), items: [map()]}}
   def list_replies_queue(%Ctx{} = ctx, opts \\ []) do
     {:ok, WorkbenchRepliesQueue.list(ctx, opts)}
+  end
+
+  @spec list_programming_queue(Ctx.t(), keyword()) ::
+          {:ok, %{count: non_neg_integer(), items: [map()]}} | {:error, :invalid_service}
+  def list_programming_queue(%Ctx{} = ctx, opts \\ []) do
+    WorkbenchProgrammingQueue.list(ctx, opts)
+  end
+
+  @spec programming_counts(Ctx.t()) ::
+          {:ok, %{all: non_neg_integer(), training: non_neg_integer(), nutrition: non_neg_integer()}}
+  def programming_counts(%Ctx{} = ctx) do
+    {:ok, WorkbenchProgrammingQueue.counts(ctx)}
   end
 
   @spec list_quiet_clients(Ctx.t(), keyword()) ::

@@ -1,7 +1,7 @@
 # Build Programming queue facts
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 09
 Parent: [Coach workbench v1 delivery](../map.md)
 
@@ -32,3 +32,11 @@ Implement the Programming membership query, reason classification, filters, coun
 ## Verification
 
 Run the focused Programming context tests and inspect the generated SQL, then `mix precommit` from `backend/`.
+
+## Answer
+
+* Added one shared, tenant-scoped Programming fact query that expands active visible clients by required service, combines assigned Training and Nutrition history and active coverage intervals, and classifies the earliest uncovered UTC date across today through day seven.
+* Added strict Programming reasons, filter-before-grouping behavior, distinct overlapping counts, stable priority/date/service/client ordering, and paginated one-row-per-client results through `Easy.Workbench`.
+* Kept the canonical Programming counts as a dedicated context projection; [Cut over workbench HTTP and OpenAPI contract](./14-cut-over-workbench-http-and-openapi-contract.md) owns replacing the legacy public count shape.
+* Covered required-service expansion, never/missing/ending classifications, horizon edges, seamless successors, internal gaps, open-ended coverage, deleted/unassigned/history semantics, filters, pagination, ordering, tenant visibility, and fail-closed contexts.
+* Inspected the generated SQL and confirmed one bounded set-based statement with no per-client application queries. Focused compatibility verification passed 52 tests; `mix precommit` passed 1,172 tests with no failures. Credo reported only the three pre-existing refactoring advisories.

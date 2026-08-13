@@ -30,6 +30,7 @@ Ship the v1 coach workbench queue definitions across the backend, OpenAPI contra
 * [Implement client lifecycle and required-service writes](./issues/09-implement-client-lifecycle-and-required-service-writes.md) — Added guarded join timestamps, canonical Invite/edit/Intake service writes, single-Intake serialization, and a visibility-scoped reminder command.
 * [Implement atomic Replies waiting state](./issues/10-implement-atomic-replies-waiting-state.md) — Added transactionally maintained waiting clocks and a visibility-scoped, row-locked Mark handled command that cannot erase newer client work.
 * [Build lifecycle and communication queue facts](./issues/11-build-lifecycle-and-communication-queue-facts.md) — Added shared reason-bearing Onboarding, Check-in, and Replies membership queries with distinct SQL counts, stable ordering, and fail-closed visibility.
+* [Build Programming queue facts](./issues/12-build-programming-queue-facts.md) — Added one shared required-service coverage projection with strict Programming reasons, overlapping distinct counts, filter-before-grouping behavior, and stable client ordering.
 
 ## Not yet specified
 

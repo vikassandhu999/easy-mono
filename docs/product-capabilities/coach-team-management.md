@@ -20,6 +20,7 @@ A business owner can establish and maintain a coaching team, and clients assigne
 * A business owner can resend an invited trainer's invitation, resulting in a replacement invitation link, a refreshed send time, a new 30-day validity period, and another email delivery attempt.
 * A business owner can revoke an invited trainer's invitation, resulting in removal of the invited membership.
 * A business owner can deactivate an active trainer other than the owner, resulting in an inactive membership, blocked future sign-in and session renewal, and transfer of every assigned client to the owner.
+* A business owner can reactivate an inactive trainer, resulting in an active membership and restored ability to sign in. Clients previously transferred away during deactivation stay with the owner until redistributed.
 
 ## Lifecycle
 
@@ -28,12 +29,12 @@ A business owner can establish and maintain a coaching team, and clients assigne
 * Accepting a valid invitation changes the membership from invited to active. Authentication and invitation acceptance owns the email verification and session flow that produces this transition.
 * Revoking an invitation removes the invited membership rather than changing it to inactive.
 * Deactivation changes an active non-owner membership to inactive.
-* There is no supported transition out of inactive.
+* Reactivation changes an inactive membership back to active. Clients do not move automatically.
 
 ## Conditions
 
 * Only the business owner can access the team collection or perform team-management actions. Trainers cannot manage the team.
-* Resend and revoke are available only for invited members. Deactivation is available only for an active trainer who is not the owner.
+* Resend and revoke are available only for invited members. Deactivation is available only for an active trainer who is not the owner. Reactivation is available only for an inactive trainer.
 * A person with a coach membership at any business, including an inactive membership, cannot accept another trainer invitation.
 * Trainer memberships do not consume client billing seats or change the business's seat price.
 * Deactivation always transfers the trainer's clients to the owner. The owner can redistribute those clients later through Client relationships.
@@ -47,7 +48,7 @@ A business owner can establish and maintain a coaching team, and clients assigne
 * An email belonging to an active or inactive member of the same team cannot be invited again.
 * An invited membership's link expires 30 days after the latest send time. Resend restarts that period and invalidates the earlier link.
 * Team management attempts trainer invitation delivery by email. It does not return a link for manual sharing or support SMS or WhatsApp delivery.
-* Deactivation cannot target the owner and cannot be undone through the product. It blocks sign-in and session renewal, but an already signed-in trainer may retain access for up to five minutes. Assigned clients transfer to the owner immediately.
+* Deactivation cannot target the owner. It blocks sign-in and session renewal, but an already signed-in trainer may retain access for up to five minutes. Assigned clients transfer to the owner immediately. Reactivation restores sign-in; clients remain with the owner until reassigned.
 
 ## Related capabilities
 
@@ -57,7 +58,6 @@ A business owner can establish and maintain a coaching team, and clients assigne
 
 ## Unsupported assumptions
 
-* The product does not support reactivating an inactive trainer.
 * The owner cannot edit another member's name, email, or profile through team management.
 * An active or inactive trainer cannot be deleted through team management.
 * The owner cannot choose another trainer as the transfer target during deactivation.

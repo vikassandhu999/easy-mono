@@ -62,7 +62,7 @@ The prototype's logic class encodes real behavior. This is the distilled "what h
 ## ST — Settings
 - Tabs Profile / Team / Billing / Account (desktop rail, mobile single scroll with underline tabs). Switching tabs cancels any inline edit/invite in progress.
 - **Profile**: row `Edit` → inline input + Save/Cancel (Enter commits). Trimmed value saved; empty shows `—`.
-- **Team**: `Invite trainer` → responsive overlay (First/Last/Email*; email required); new member appears as `Invited`. Invited rows: `Resend` / `Revoke` (removes). Active non-owner rows: `Deactivate` → AlertDialog → status `Deactivated`, clients reassigned to owner (copy says so). Owner row has no actions.
+- **Team**: `Invite trainer` → `PickerModal` (First/Last side-by-side, Email*; email required); new member appears as `Invited`. Invited rows: `Resend` / `Revoke` (removes). Active non-owner rows: `Deactivate` → AlertDialog → status `Deactivated`, clients reassigned to owner (copy says so). Deactivated rows: `Reactivate` → AlertDialog → status `Active` (clients stay with owner). Owner row has no actions.
 - **Billing**: `Add seats` → responsive overlay with − / + stepper (min 1) and live monthly cost; confirm bumps limit+paid and prepends an activity event. `Cancel subscription` → AlertDialog → status `Cancels at period end` + activity event; only offered while active/past-due. Activity feed is append-only, icon per event kind.
 - **Account**: static rows + `Log out` (destructive styling).
 

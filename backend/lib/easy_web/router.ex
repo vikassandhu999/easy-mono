@@ -123,6 +123,7 @@ defmodule EasyWeb.Router do
     post "/team/:id/resend-invite", TeamController, :resend_invite
     delete "/team/:id", TeamController, :revoke_invite
     post "/team/:id/deactivate", TeamController, :deactivate
+    post "/team/:id/reactivate", TeamController, :reactivate
 
     get "/form-templates", FormTemplateController, :index
     post "/form-templates", FormTemplateController, :create

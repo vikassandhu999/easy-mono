@@ -247,6 +247,47 @@ defmodule Easy.CoachesTest do
     end
   end
 
+  describe "reactivate_trainer/2" do
+    test "flips an inactive trainer back to active without moving clients" do
+      business = insert(:business)
+      ctx = owner_ctx_with_coach(business)
+      trainer = insert(:coach, business: business, status: :inactive)
+      owner_coach = Repo.get_by!(Coach, business_id: business.id, user_id: business.owner_id)
+      client = insert(:client, business: business, creator: owner_coach, assigned_coach: owner_coach)
+
+      assert {:ok, updated} = Coaches.reactivate_trainer(ctx, trainer.id)
+      assert updated.status == :active
+      assert Repo.get!(Client, client.id).assigned_coach_id == owner_coach.id
+    end
+
+    test "non-owner cannot reactivate" do
+      business = insert(:business)
+      trainer = insert(:coach, business: business)
+      inactive = insert(:coach, business: business, status: :inactive)
+
+      assert {:error, :not_owner} = Coaches.reactivate_trainer(trainer_ctx(trainer), inactive.id)
+    end
+
+    test "returns :not_found for a coach in another business" do
+      business = insert(:business)
+      ctx = owner_ctx_with_coach(business)
+      other_business = insert(:business)
+      other_coach = insert(:coach, business: other_business, status: :inactive)
+
+      assert {:error, :not_found} = Coaches.reactivate_trainer(ctx, other_coach.id)
+    end
+
+    test "returns :not_found for an :active or :invited row" do
+      business = insert(:business)
+      ctx = owner_ctx_with_coach(business)
+      active = insert(:coach, business: business, status: :active)
+      invited = invited_coach(business, %{email: "invitee@test.com"})
+
+      assert {:error, :not_found} = Coaches.reactivate_trainer(ctx, active.id)
+      assert {:error, :not_found} = Coaches.reactivate_trainer(ctx, invited.id)
+    end
+  end
+
   describe "resolve_invitation_token/1" do
     test "a valid token resolves" do
       business = insert(:business)

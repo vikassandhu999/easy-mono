@@ -119,6 +119,17 @@ defmodule Easy.Coaches do
     end
   end
 
+  @spec reactivate_trainer(Ctx.t(), String.t()) ::
+          {:ok, Coach.t()} | {:error, :not_owner | :not_found}
+  def reactivate_trainer(%Ctx{} = ctx, coach_id) do
+    with :ok <- ensure_owner(ctx),
+         {:ok, coach} <- get_reactivatable_coach(ctx.business_id, coach_id) do
+      coach
+      |> Changeset.change(status: :active)
+      |> Repo.update()
+    end
+  end
+
   @spec resolve_invitation_token(String.t()) ::
           {:ok, Coach.t()} | {:error, :used | :expired | :invalid}
   def resolve_invitation_token(token) when is_binary(token) and token != "" do
@@ -244,6 +255,13 @@ defmodule Easy.Coaches do
 
       %Coach{} ->
         {:error, :not_found}
+    end
+  end
+
+  defp get_reactivatable_coach(business_id, coach_id) do
+    case Coach |> Coach.for_business(business_id) |> Repo.get(coach_id) do
+      %Coach{status: :inactive} = coach -> {:ok, coach}
+      _ -> {:error, :not_found}
     end
   end
 

@@ -14,7 +14,7 @@ defmodule EasyWeb.Coaches.TeamController do
 
   plug OpenApiSpex.Plug.CastAndValidate,
        [json_render_error_v2: true]
-       when action in [:invite, :resend_invite, :revoke_invite, :deactivate]
+       when action in [:invite, :resend_invite, :revoke_invite, :deactivate, :reactivate]
 
   tags ["coach team"]
 
@@ -91,6 +91,22 @@ defmodule EasyWeb.Coaches.TeamController do
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
+  operation :reactivate,
+    summary: "Reactivate trainer",
+    description: "Owner-only: reactivates an inactive trainer. Previously reassigned clients stay with the owner until redistributed.",
+    operation_id: "reactivateTrainer",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:id, :path, :string, "Coach id")
+    ],
+    responses: [
+      ok: {"Trainer reactivated", "application/json", TeamMemberResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      forbidden: {"Not the business owner", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
     with {:ok, %{coaches: coaches, owner_id: owner_id}} <- Coaches.list_team(conn.assigns.ctx) do
@@ -128,6 +144,15 @@ defmodule EasyWeb.Coaches.TeamController do
     coach_id = conn.path_params["id"]
 
     with {:ok, coach} <- Coaches.deactivate_trainer(conn.assigns.ctx, coach_id) do
+      render(conn, :show, coach: coach)
+    end
+  end
+
+  @spec reactivate(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def reactivate(conn, _params) do
+    coach_id = conn.path_params["id"]
+
+    with {:ok, coach} <- Coaches.reactivate_trainer(conn.assigns.ctx, coach_id) do
       render(conn, :show, coach: coach)
     end
   end

@@ -1521,6 +1521,26 @@ export interface paths {
     patch: operations['updateMealItem'];
     trace?: never;
   };
+  '/v1/coach/team/{id}/reactivate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Reactivate trainer
+     * @description Owner-only: reactivates an inactive trainer. Previously reassigned clients stay with the owner until redistributed.
+     */
+    post: operations['reactivateTrainer'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/coach/training-exercises/{id}': {
     parameters: {
       query?: never;
@@ -9684,6 +9704,65 @@ export interface operations {
       };
       /** @description Unauthorized */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  reactivateTrainer: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Coach id */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Trainer reactivated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TeamMemberResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not the business owner */
+      403: {
         headers: {
           [name: string]: unknown;
         };

@@ -63,6 +63,17 @@ export function useDeactivateTrainerMutation() {
   });
 }
 
+export function useReactivateTrainerMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      call(client.POST('/v1/coach/team/{id}/reactivate', {params: {path: {id}}})) as Promise<TeamMemberResponse>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: teamKeys.all});
+    },
+  });
+}
+
 export function useReassignClientMutation() {
   const qc = useQueryClient();
   return useMutation({

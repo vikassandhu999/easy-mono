@@ -1,12 +1,12 @@
 /**
  * Team settings — owner-only. Lists trainers (invited/active/deactivated),
- * lets the owner invite a new trainer, resend/revoke a pending invite, and
- * deactivate an active trainer (their clients reassign to the owner).
+ * lets the owner invite a new trainer, resend/revoke a pending invite,
+ * deactivate an active trainer (their clients reassign to the owner), and
+ * reactivate a deactivated trainer (clients stay with the owner until reassigned).
  *
- * `Invite trainer` follows the canonical responsive-overlay rule (UI-CONTRACT
- * §2): one `InviteTrainerForm` behind a `Popover` on desktop and a
- * `KeyboardSheet` on mobile. The deactivate confirm stays a centered
- * `AlertDialog` at both widths.
+ * `Invite trainer` uses `PickerModal` (centered Modal on desktop, KeyboardSheet
+ * on mobile) — a short form needs a stable surface, not an anchored popover.
+ * Deactivate and reactivate stay centered `AlertDialog` confirms at both widths.
  */
 import {getInitials} from '@easy/utils';
 import {
@@ -17,21 +17,20 @@ import {
   ErrorMessage,
   Fieldset,
   Form,
-  Popover,
   Skeleton,
+  Spinner,
   Typography,
   toast,
 } from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {UserPlus} from 'lucide-react';
-import {useRef, useState} from 'react';
+import {useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 
 import {ErrorState} from '@/@components/error-state';
-import {FormActions} from '@/@components/form-fields/form-actions';
+import {FieldRow} from '@/@components/form-fields/field-row';
 import {FormTextField} from '@/@components/form-fields/form-text-field';
-import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {useGetBillingQuery} from '@/api/billing';
 import {applyFormErrors, getApiErrorMessage} from '@/api/shared';
 import {
@@ -39,10 +38,11 @@ import {
   useDeactivateTrainerMutation,
   useGetTeamQuery,
   useInviteTrainerMutation,
+  useReactivateTrainerMutation,
   useResendTrainerInviteMutation,
   useRevokeTrainerInviteMutation,
 } from '@/api/team';
-import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
+import {PickerModal} from '@/builder-kit/picker-modal';
 import {SettingsSectionHeader} from '@/settings/components/settings-section-header';
 
 const INVITE_TITLE = 'Invite a trainer';
@@ -70,22 +70,23 @@ type InviteTrainerFormValues = z.infer<typeof inviteTrainerSchema>;
 
 const INVITE_TRAINER_FORM_FIELDS = ['email', 'first_name', 'last_name'] as const;
 
-function InviteTrainerForm({onDone}: {onDone: () => void}) {
-  const inviteTrainerMutation = useInviteTrainerMutation();
-
+function InviteTrainerForm({
+  isPending,
+  onDone,
+  onSubmit,
+}: {
+  isPending: boolean;
+  onDone: () => void;
+  onSubmit: (values: InviteTrainerFormValues) => Promise<void>;
+}) {
   const form = useForm<InviteTrainerFormValues>({
     defaultValues: {email: '', first_name: '', last_name: ''},
     resolver: zodResolver(inviteTrainerSchema),
   });
 
-  const onSubmit = async (values: InviteTrainerFormValues) => {
+  const handleSubmit = async (values: InviteTrainerFormValues) => {
     try {
-      await inviteTrainerMutation.mutateAsync({
-        email: values.email,
-        first_name: values.first_name || undefined,
-        last_name: values.last_name || undefined,
-      });
-      toast.success('Invite sent');
+      await onSubmit(values);
       onDone();
     } catch (err) {
       applyFormErrors(
@@ -98,9 +99,11 @@ function InviteTrainerForm({onDone}: {onDone: () => void}) {
   };
 
   return (
-    <Form onSubmit={form.handleSubmit(onSubmit)}>
+    <Form
+      className="flex flex-col gap-3"
+      onSubmit={form.handleSubmit(handleSubmit)}
+    >
       <Typography
-        className="mb-3"
         color="muted"
         type="body-sm"
       >
@@ -108,22 +111,24 @@ function InviteTrainerForm({onDone}: {onDone: () => void}) {
       </Typography>
       <Fieldset>
         <Fieldset.Group>
+          <FieldRow className="grid-cols-2">
+            <FormTextField
+              control={form.control}
+              fullWidth
+              label="First name"
+              name="first_name"
+            />
+            <FormTextField
+              control={form.control}
+              fullWidth
+              label="Last name"
+              name="last_name"
+            />
+          </FieldRow>
           <FormTextField
             control={form.control}
             fullWidth
-            label="First name"
-            name="first_name"
-          />
-          <FormTextField
-            control={form.control}
-            fullWidth
-            label="Last name"
-            name="last_name"
-          />
-          <FormTextField
-            control={form.control}
-            fullWidth
-            inputProps={{autoComplete: 'email'}}
+            inputProps={{autoComplete: 'email', placeholder: 'trainer@email.com'}}
             isRequired
             label="Email"
             name="email"
@@ -134,70 +139,80 @@ function InviteTrainerForm({onDone}: {onDone: () => void}) {
 
       {form.formState.errors.root ? <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage> : null}
 
-      <FormActions
-        isSubmitting={inviteTrainerMutation.isPending}
-        onCancel={onDone}
-        submitLabel="Send invite"
-        submittingLabel="Sending invite"
-      />
+      {/* Overlay dock — page FormActions sticky chrome doesn't belong here. */}
+      <div className="mt-1 flex justify-end gap-2">
+        <Button
+          className="rounded-control"
+          isDisabled={isPending}
+          onPress={onDone}
+          variant="outline"
+        >
+          Cancel
+        </Button>
+        <Button
+          className="relative rounded-control"
+          isPending={isPending}
+          type="submit"
+        >
+          <span className={isPending ? 'invisible' : undefined}>Send invite</span>
+          {isPending ? (
+            <span className="absolute inset-0 flex items-center justify-center">
+              <Spinner
+                color="current"
+                size="sm"
+              />
+              <span className="sr-only">Sending invite</span>
+            </span>
+          ) : null}
+        </Button>
+      </div>
     </Form>
   );
 }
 
 function InviteTrainerControl() {
   const [open, setOpen] = useState(false);
-  const isDesktop = useIsDesktop();
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const inviteTrainerMutation = useInviteTrainerMutation();
+  const isPending = inviteTrainerMutation.isPending;
 
-  const trigger = (
-    <Button
-      onPress={() => setOpen(true)}
-      ref={triggerRef}
-      size="sm"
-      variant="primary"
-    >
-      <UserPlus />
-      Invite trainer
-    </Button>
-  );
+  const close = () => {
+    if (!isPending) {
+      setOpen(false);
+    }
+  };
 
-  if (isDesktop) {
-    return (
-      <>
-        {trigger}
-        <Popover
-          isOpen={open}
-          onOpenChange={(next) => !next && setOpen(false)}
-        >
-          <Popover.Content
-            className="w-96"
-            triggerRef={triggerRef}
-          >
-            <Popover.Dialog className="max-h-[inherit] overflow-y-auto p-4 outline-none">
-              <Typography
-                className="mb-1 font-grotesk"
-                type="h5"
-              >
-                {INVITE_TITLE}
-              </Typography>
-              {open ? <InviteTrainerForm onDone={() => setOpen(false)} /> : null}
-            </Popover.Dialog>
-          </Popover.Content>
-        </Popover>
-      </>
-    );
-  }
+  const sendInvite = async (values: InviteTrainerFormValues) => {
+    await inviteTrainerMutation.mutateAsync({
+      email: values.email,
+      first_name: values.first_name || undefined,
+      last_name: values.last_name || undefined,
+    });
+    toast.success('Invite sent');
+  };
 
   return (
     <>
-      {trigger}
-      <KeyboardSheet
-        onClose={() => setOpen(false)}
+      <Button
+        onPress={() => setOpen(true)}
+        size="sm"
+        variant="primary"
+      >
+        <UserPlus />
+        Invite trainer
+      </Button>
+      <PickerModal
+        bodyClassName="px-4 pb-4"
+        isDismissable={!isPending}
+        onClose={close}
         open={open}
         title={INVITE_TITLE}
       >
-        {open ? <InviteTrainerForm onDone={() => setOpen(false)} /> : null}
-      </KeyboardSheet>
+        <InviteTrainerForm
+          isPending={isPending}
+          onDone={() => setOpen(false)}
+          onSubmit={sendInvite}
+        />
+      </PickerModal>
     </>
   );
 }
@@ -266,11 +281,84 @@ function DeactivateTrainerDialog({
   );
 }
 
+function ReactivateTrainerDialog({
+  member,
+  onOpenChange,
+}: {
+  member: null | TeamMember;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const reactivateTrainerMutation = useReactivateTrainerMutation();
+  const isLoading = reactivateTrainerMutation.isPending;
+
+  const handleReactivate = async () => {
+    if (!member) {
+      return;
+    }
+    try {
+      await reactivateTrainerMutation.mutateAsync(member.id);
+      toast.success('Trainer reactivated');
+      onOpenChange(false);
+    } catch (err) {
+      toast.danger(getApiErrorMessage(err, "Couldn't reactivate trainer"));
+    }
+  };
+
+  const name = member ? memberName(member) : 'this trainer';
+
+  return (
+    <AlertDialog.Backdrop
+      isDismissable={!isLoading}
+      isOpen={member !== null}
+      onOpenChange={onOpenChange}
+      variant="transparent"
+    >
+      <AlertDialog.Container>
+        <AlertDialog.Dialog>
+          <AlertDialog.CloseTrigger />
+          <AlertDialog.Header>
+            <AlertDialog.Icon status="success" />
+            <AlertDialog.Heading>Reactivate trainer?</AlertDialog.Heading>
+          </AlertDialog.Header>
+          <AlertDialog.Body>
+            <Typography>
+              Reactivate {name}? They'll be able to sign in again. Clients stay with you until you reassign them.
+            </Typography>
+          </AlertDialog.Body>
+          <AlertDialog.Footer>
+            <Button
+              isDisabled={isLoading}
+              onPress={() => onOpenChange(false)}
+              variant="tertiary"
+            >
+              Cancel
+            </Button>
+            <Button
+              isPending={isLoading}
+              onPress={handleReactivate}
+            >
+              {isLoading ? 'Reactivating' : 'Reactivate'}
+            </Button>
+          </AlertDialog.Footer>
+        </AlertDialog.Dialog>
+      </AlertDialog.Container>
+    </AlertDialog.Backdrop>
+  );
+}
+
 function memberName(member: TeamMember): string {
   return [member.first_name, member.last_name].filter(Boolean).join(' ') || member.email || 'Trainer';
 }
 
-function TeamMemberRow({member, onDeactivate}: {member: TeamMember; onDeactivate: () => void}) {
+function TeamMemberRow({
+  member,
+  onDeactivate,
+  onReactivate,
+}: {
+  member: TeamMember;
+  onDeactivate: () => void;
+  onReactivate: () => void;
+}) {
   const resendInviteMutation = useResendTrainerInviteMutation();
   const revokeInviteMutation = useRevokeTrainerInviteMutation();
   const isResending = resendInviteMutation.isPending;
@@ -377,6 +465,19 @@ function TeamMemberRow({member, onDeactivate}: {member: TeamMember; onDeactivate
           </Button>
         </div>
       ) : null}
+
+      {!member.is_owner && member.status === 'inactive' ? (
+        <div className="flex basis-full justify-end md:basis-auto md:shrink-0">
+          <Button
+            className="rounded-control"
+            onPress={onReactivate}
+            size="sm"
+            variant="outline"
+          >
+            Reactivate
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -385,6 +486,7 @@ export default function TeamSection() {
   const {data: billing} = useGetBillingQuery();
   const {data, isError, isLoading, refetch} = useGetTeamQuery({enabled: !!billing?.data.is_owner});
   const [deactivateTarget, setDeactivateTarget] = useState<null | TeamMember>(null);
+  const [reactivateTarget, setReactivateTarget] = useState<null | TeamMember>(null);
 
   if (!billing?.data.is_owner) {
     return (
@@ -432,6 +534,7 @@ export default function TeamSection() {
               key={member.id}
               member={member}
               onDeactivate={() => setDeactivateTarget(member)}
+              onReactivate={() => setReactivateTarget(member)}
             />
           ))}
         </div>
@@ -442,6 +545,15 @@ export default function TeamSection() {
         onOpenChange={(open) => {
           if (!open) {
             setDeactivateTarget(null);
+          }
+        }}
+      />
+
+      <ReactivateTrainerDialog
+        member={reactivateTarget}
+        onOpenChange={(open) => {
+          if (!open) {
+            setReactivateTarget(null);
           }
         }}
       />

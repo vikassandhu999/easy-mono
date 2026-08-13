@@ -47,6 +47,8 @@ Import from `@heroui/react` — **but check the app-wrapper table first**; if a 
 | Page-level fetch error | `ErrorState` | `@/@components/error-state` |
 | Back affordance | `BackButton` + `useGoBack` | `@/@components/back-button` |
 | Mobile bottom sheet | `KeyboardSheet` | `@/builder-kit/keyboard-sheet` |
+| Picker / short-form overlay (centered desktop) | `PickerModal` | `@/builder-kit/picker-modal` |
+| Anchored select / inline editor | `ResponsiveOverlay` | `@/builder-kit/responsive-overlay` |
 | Search-picker (responsive popover/sheet) | `SearchPickerSheet` | `@/builder-kit/search-picker-sheet` |
 | Client picker | `ClientPicker` | `@/@components/client-picker` |
 | Save/fail feedback | `toast` (lowercase import from `@heroui/react`) via `mutation-toast` helpers | `@/@components/mutation-toast` |
@@ -80,13 +82,14 @@ Import from `@heroui/react` — **but check the app-wrapper table first**; if a 
 ### Overlays
 | Need | Component | Canonical usage |
 |---|---|---|
-| Confirm / destructive / simple dialog | `AlertDialog` (+ `useOverlayState`) | delete day, deactivate trainer, cancel subscription, add seats. The app has **no `Modal`** — keyboard-heavy work goes to a page, not a dialog (AGENTS.md Choosing Containers). |
-| Anchored panel (desktop) | `Popover` | inline "assign workout", slot picker, `.bmenu` rich panels. |
+| Confirm / destructive / simple dialog | `AlertDialog` (+ `useOverlayState`) | delete day, deactivate trainer, cancel subscription. |
+| Anchored panel (desktop) | `Popover` via `ResponsiveOverlay` | select-like controls (meal slot) and inline editors (set editor, amount sheet) only. |
 | Action menu | `Dropdown` / `Menu` (+ items, shortcuts, danger item) | the `.bmenu` ⋯ menus (rename/move/duplicate/remove). |
 | Transient notice | `toast` (lowercase import) + `@/@components/mutation-toast` helpers | save/added/failed feedback. App-shell already renders the toast region — never add a provider. |
 | Hover label | `Tooltip` | icon-button affordances — never hover-only actions (44px targets). |
-| **Mobile bottom sheet** | `KeyboardSheet` (`@/builder-kit/keyboard-sheet`) | every mobile picker/invite/amount/add-seats flow. |
-| **Responsive overlay (every overlay)** | one content component + one control wrapper: `Popover` on desktop, `KeyboardSheet` on mobile (`useIsDesktop`) | mirror `plan-assign-control.tsx` / `food-picker-control.tsx` / `SearchPickerSheet`. Applies to **all** overlays — pickers, invite, amount, add-seats, assign — not just pickers. Only exception: `AlertDialog` confirms stay centered dialogs on both breakpoints. Never desktop-only or centered-modal flows. |
+| **Mobile bottom sheet** | `KeyboardSheet` (`@/builder-kit/keyboard-sheet`) | every mobile picker / invite / amount / add-seats flow. |
+| **Picker / short-form overlay** | `PickerModal` (`@/builder-kit/picker-modal`) | centered `Modal` on desktop, `KeyboardSheet` on mobile — pickers, invite trainer, and other short forms that need a stable surface (decision 2026-08-04). Never anchored to the trigger. |
+| **Responsive overlay (anchored)** | `ResponsiveOverlay` | `Popover` desktop + `KeyboardSheet` mobile for select-like / inline editors only. `AlertDialog` confirms stay centered on both breakpoints. |
 
 ### Feedback & display
 | Need | Component | Canonical usage |

@@ -114,7 +114,7 @@ Rows of sample data (client names, foods, plans) are NOT copy — they show data
 ## ST — Settings
 - H1 `Settings` · tabs `Profile` `Team` `Billing` `Account`
 - Profile: `Your name and how clients reach you` · rows Name / Business / Phone / WhatsApp with `Edit` → `Save`/`Cancel`
-- Team: `{n} active · {m} total` + `· owner manages access` · `Invite trainer` · chips `Owner`, `Active`, `Invited`, `Deactivated` · row actions `Resend`, `Revoke`, `Deactivate`
+- Team: `{n} active · {m} total` + `· owner manages access` · `Invite trainer` · chips `Owner`, `Active`, `Invited`, `Deactivated` · row actions `Resend`, `Revoke`, `Deactivate`, `Reactivate`
 - Invite dialog: `Invite a trainer` · `They'll get an email invite and take a seat once they join.` · `First name`, `Last name`, `Email *` · `Cancel`/`Send invite`
 - Billing: `Seats are used by active clients + pending invites` · `{used} / {limit} seats` · `{free} free + {paid} paid · {price} / seat / month` · `Renews {date}` · warning `{n} client(s) waiting for a seat` · `Add seats` · `Cancel subscription` · `Activity` feed (`Payment succeeded — {amt}`, `Added {n} seats`, `Cancellation scheduled`)
 - Add seats dialog: `Add seats` · `Seats to add` stepper · cost `{amt} / month` · confirm `Add seats`

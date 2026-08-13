@@ -127,4 +127,30 @@ defmodule EasyWeb.Coaches.TeamControllerTest do
       assert json_response(conn, 422)
     end
   end
+
+  describe "POST /v1/coach/team/:id/reactivate" do
+    test "reactivates an inactive trainer", %{owner_conn: conn, business: business} do
+      inactive = insert(:coach, business: business, status: :inactive)
+
+      conn = post(conn, "/v1/coach/team/#{inactive.id}/reactivate")
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["status"] == "active"
+      assert_schema(data, "TeamMember", EasyWeb.ApiSpec.spec())
+
+      updated = Easy.Repo.get!(Easy.Orgs.Coach, inactive.id)
+      assert updated.status == :active
+    end
+
+    test "returns 404 for an active trainer", %{owner_conn: conn, trainer: trainer} do
+      conn = post(conn, "/v1/coach/team/#{trainer.id}/reactivate")
+      assert json_response(conn, 404)
+    end
+
+    test "non-owner gets 403", %{trainer_conn: conn, business: business} do
+      inactive = insert(:coach, business: business, status: :inactive)
+
+      conn = post(conn, "/v1/coach/team/#{inactive.id}/reactivate")
+      assert json_response(conn, 403)
+    end
+  end
 end

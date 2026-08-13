@@ -20979,6 +20979,87 @@
         ]
       }
     },
+    "/v1/coach/team/{id}/reactivate": {
+      "post": {
+        "callbacks": {},
+        "description": "Owner-only: reactivates an inactive trainer. Previously reassigned clients stay with the owner until redistributed.",
+        "operationId": "reactivateTrainer",
+        "parameters": [
+          {
+            "description": "Coach id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamMemberResponse"
+                }
+              }
+            },
+            "description": "Trainer reactivated"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not the business owner"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Reactivate trainer",
+        "tags": [
+          "coach team"
+        ]
+      }
+    },
     "/v1/coach/training-exercises/{id}": {
       "delete": {
         "callbacks": {},

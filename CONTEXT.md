@@ -21,6 +21,9 @@ A machine-readable domain fact explaining why an item belongs to a queue. An ite
 Action required to move a client through invitation acceptance and intake completion.
 _Avoid_: New clients
 
+**Intake**:
+The single lifetime onboarding form assigned to a client. It may be completed or dismissed, but a client is never assigned a second Intake.
+
 **Recent client**:
 A client whose invitation was accepted within the reporting window. This is a reporting concept, not a work queue.
 

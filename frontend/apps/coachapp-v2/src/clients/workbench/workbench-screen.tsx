@@ -11,6 +11,7 @@ import type {ClientQueue} from '@/api/clients';
 import {useListClientsQuery} from '@/api/clients';
 import {useWorkbenchCountsQuery} from '@/api/workbench';
 import {queueEntries, queueMeta, TODAY_QUEUES, type WorkbenchQueueId} from '@/clients/lib/workbench-queues';
+import OnboardingQueuePrototype from '@/clients/prototypes/onboarding-queue-prototype';
 import ProgrammingQueuePrototype from '@/clients/prototypes/programming-queue-prototype';
 import RepliesHandlingPrototype from '@/clients/prototypes/replies-handling-prototype';
 
@@ -70,7 +71,14 @@ export default function WorkbenchScreen() {
   const view: 'caught-up' | undefined | ViewId =
     requested ?? (countsQuery.isError ? 'all' : counts ? (firstNonEmpty ?? 'caught-up') : undefined);
 
-  const todayEntries = queueEntries(counts);
+  const prototypeVariant = searchParams.get('variant');
+  const isOnboardingPrototype =
+    view === 'new' && import.meta.env.DEV && ['A', 'B', 'C'].includes(prototypeVariant ?? '');
+  const todayEntries = queueEntries(counts).map((entry) =>
+    isOnboardingPrototype && entry.id === 'new'
+      ? {...entry, label: 'Onboarding', meta: entry.meta?.replace('in onboarding', 'requiring action')}
+      : entry,
+  );
   const selectView = (id: string) => setSearchParams({view: id});
 
   const activeQueue = TODAY_QUEUES.find((queue) => queue.id === view);
@@ -78,7 +86,8 @@ export default function WorkbenchScreen() {
   // Mobile levels (desktop ignores both): no explicit `?view=` means the
   // menu; a `?view=` means drilled into that queue.
   const menuMode = requested === undefined;
-  const drillLabel = activeQueue?.label ?? (requested === 'all' ? 'All clients' : undefined);
+  const drillLabel =
+    (isOnboardingPrototype ? 'Onboarding' : activeQueue?.label) ?? (requested === 'all' ? 'All clients' : undefined);
 
   let content: ReactNode;
   if (view === undefined) {
@@ -135,6 +144,8 @@ export default function WorkbenchScreen() {
     ['A', 'B', 'C'].includes(searchParams.get('variant') ?? '')
   ) {
     content = <ProgrammingQueuePrototype />;
+  } else if (isOnboardingPrototype) {
+    content = <OnboardingQueuePrototype />;
   } else {
     content = (
       <ViewShell

@@ -77,7 +77,7 @@ The workbench will distinguish recent-client reporting from onboarding work. Che
 ### Recent clients and onboarding
 
 * Replace the Today label "New clients" with "Onboarding."
-* Onboarding contains actionable work: an invitation still pending more than three days after its latest send, or an intake whose due date has passed and whose status is not completed or dismissed.
+* Onboarding contains lifecycle-gated actionable work. A client can have only one assigned Intake form. Before `joined_at` is set, only an invitation still pending more than three days after its latest send may appear. After `joined_at` is set, only that Intake may appear when its due date has passed and its status is not completed or dismissed. Never return invitation and intake work for the same client at the same time.
 * Resending an invitation resets the pending follow-up clock.
 * Completing or dismissing the relevant onboarding work removes the client.
 * Inactive clients are excluded.
@@ -161,7 +161,7 @@ The workbench will distinguish recent-client reporting from onboarding work. Che
 * Follow the established check-in review controller tests for submission-level membership, owner/trainer visibility, oldest-first order, and explicit review.
 * Follow the established chat and workbench controller tests for conversation-level counts and reply-driven draining. Add cases proving that repeated client messages preserve `waiting_since` and Mark handled drains the item.
 * Follow the established workbench queue context tests for Programming and Expiring date fixtures. Derive all dates from the test date rather than hardcoding calendar dates.
-* Onboarding tests must cover a fresh invitation, a pending invitation over three days, resend clock reset, overdue intake, completed intake, dismissed intake, inactive clients, and owner/trainer visibility.
+* Onboarding tests must cover a fresh invitation, a pending invitation over three days, resend clock reset, suppression of intake work before invitation acceptance, overdue intake after acceptance, completed intake, dismissed intake, inactive clients, and owner/trainer visibility.
 * Required-services tests must cover optional Invite selection, one `Service type` question per Intake, Intake submission replacing the canonical set, Intake without the question leaving it unchanged, direct coach edits, and rejection of `Service type` in Check-in forms.
 * Programming tests must cover Training-only, Nutrition-only, both services, unclassified clients, never programmed, lapsed coverage, coverage ending on each window boundary, seamless successors, successor gaps, open-ended plans, inactive clients, overlapping service-specific filters, and distinct All counts.
 * Expiring tests must cover today, day 14, day 15, no end date, renewed dates, active snoozes, expired snoozes, automatic deactivation, and tenant visibility.

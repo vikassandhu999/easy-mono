@@ -46,11 +46,11 @@ Every reason uses `code` as its OpenAPI discriminator. Each variant requires exa
 
 One queue item may carry several independent reasons:
 
-* Onboarding returns at most one reason for the latest invitation and one reason for every overdue intake assignment. Invitation follow-up becomes actionable strictly after `follow_up_due_at`; resending replaces the latest-invitation clock. An intake due today or without a due date is not overdue.
+* Onboarding is lifecycle-gated by the canonical `joined_at` acceptance fact. A client can have only one assigned Intake form, so Onboarding carries at most one reason per client. Before `joined_at`, it may return the latest pending-invitation reason and suppresses intake. After `joined_at`, it may return the assigned Intake's overdue reason and never returns an invitation reason. Invitation follow-up becomes actionable strictly after `follow_up_due_at`; resending replaces the latest-invitation clock. An intake due today or without a due date is not overdue.
 * Programming returns at most one reason per required service. All may contain both Training and Nutrition reasons; a service-filtered list returns only the matching service reasons.
 * The other v1 queues return one reason per item.
 
-The first reason is the primary explanation; there is no duplicate `primary_reason` field. Onboarding orders oldest-due action first, then code and referenced entity id. Programming orders never programmed, missing coverage, then ending soon; ties use earliest uncovered date, Training before Nutrition. Duplicate Programming reasons are prevented by `(code, service)` and other duplicates by `(code, referenced entity id)`.
+The first reason is the primary explanation; there is no duplicate `primary_reason` field. Onboarding has at most one reason per client and orders client rows by oldest-due action. Programming orders never programmed, missing coverage, then ending soon; ties use earliest uncovered date, Training before Nutrition. Duplicate Programming reasons are prevented by `(code, service)` and other duplicates by `(code, referenced entity id)`.
 
 ### Programming classification
 

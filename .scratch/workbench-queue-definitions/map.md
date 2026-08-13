@@ -13,6 +13,7 @@ Ship the v1 coach workbench queue definitions across the backend, OpenAPI contra
 * This map carries execution after the decisions are closed. It does not stop at an implementation plan.
 * The product is in prototype phase. Make one coordinated cutover with no backward-compatibility layer and no data backfill.
 * Preserve the spec's `joined_at` decision and leave placement of the separate Recent clients metric out of scope.
+* [Design the Onboarding queue interaction](./issues/05-design-onboarding-interaction.md) is locked; implementation tickets must consume its B reference without reopening A/C exploration.
 * Use `grilling` and `domain-modeling` for decision tickets, `prototype` for interaction tickets, and `codebase-memory-axi` for structural code discovery.
 * Refer to map tickets by title in human-facing notes.
 
@@ -22,11 +23,13 @@ Ship the v1 coach workbench queue definitions across the backend, OpenAPI contra
 * [Design required-services capture](./issues/02-design-required-services-capture.md) — An Intake-only `Service type` question writes the one undated `required_services` set; Invite may set it optionally, coaches may edit it later, and Check-in forms cannot contain the question. The service-card prototype covers each capture context.
 * [Design the Programming queue interaction](./issues/03-design-programming-queue-interaction.md) — Use the urgency-grouped priority list with overlapping service filters, one client row, service-specific reason facts, and direct actions into the matching plan-assignment flow.
 * [Design Replies handling](./issues/04-design-replies-handling.md) — Use color-only whole-row selection with a desktop task pane and the same content expanded beneath the selected row on mobile; read remains separate from reply-or-handle completion.
+* [Design the Onboarding queue interaction](./issues/05-design-onboarding-interaction.md) — Use the compact standard queue row with one visible reason/action pair and confirmation before outbound contact; each client has one Intake, `joined_at` gates invitation work before acceptance versus intake work after acceptance, and Call appears when a phone exists.
+* [Define the coordinated schema and API cutover](./issues/06-define-coordinated-schema-api-cutover.md) — Cut over to canonical lifecycle, service, and waiting facts; explicit typed queue resources share reason-bearing list/count predicates, while stale Mark handled actions are conflict-safe.
+* [Create the implementation tickets and execution order](./issues/07-create-implementation-tickets.md) — Eleven dependency-wired tickets carry persistence, domain facts, the API cutover, app interactions, behavioral and query-plan proof, cleanup, and the coordinated release gate.
 
 ## Not yet specified
 
-* Backend and frontend implementation tickets will be shaped after the reason contract, required-service capture, and queue interactions are decided.
-* The final coordinated verification matrix will be shaped after the API cutover and interaction decisions are closed.
+* None. Implementation and final verification are fully specified as child tickets.
 
 ## Out of scope
 

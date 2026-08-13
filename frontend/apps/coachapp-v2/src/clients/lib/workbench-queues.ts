@@ -11,6 +11,8 @@ import {
 import type {TodayEntry} from '@/@components/today-card';
 import type {WorkbenchCounts} from '@/api/workbench';
 
+import {workbenchCount} from './workbench-counts';
+
 /**
  * The Today queues — the workbench's vocabulary, owned by the clients feature
  * and consumed by every surface that shows today's work (workbench rail and
@@ -82,7 +84,7 @@ export const TODAY_QUEUES: QueueDef[] = [
     title: 'Quiet',
   },
   {
-    countKey: 'new_clients',
+    countKey: 'onboarding',
     definition: 'First two weeks after joining',
     icon: UserPlus,
     id: 'new',
@@ -101,11 +103,16 @@ export function queueMeta(queue: QueueDef, count: number): string {
 /** Today-card entries for the current counts; count-less (and meta-less) while counts load. */
 export function queueEntries(counts: undefined | WorkbenchCounts): TodayEntry[] {
   return TODAY_QUEUES.map((queue) => ({
-    count: counts?.[queue.countKey],
+    count: counts ? workbenchCount(counts, queue.countKey) : undefined,
     icon: queue.icon,
     id: queue.id,
     label: queue.label,
-    meta: counts ? queueMeta(queue, counts[queue.countKey]) : undefined,
+    meta: counts ? queueMeta(queue, workbenchCount(counts, queue.countKey)) : undefined,
     muted: queue.muted,
   }));
+}
+
+/** Whether any non-muted queue needs attention; Onboarding remains deliberately excluded. */
+export function hasWorkbenchAttention(counts: WorkbenchCounts): boolean {
+  return TODAY_QUEUES.some((queue) => !queue.muted && workbenchCount(counts, queue.countKey) > 0);
 }

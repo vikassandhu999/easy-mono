@@ -10,6 +10,7 @@ import {ROUTES} from '@/@config/routes';
 import type {ClientQueue} from '@/api/clients';
 import {useListClientsQuery} from '@/api/clients';
 import {useWorkbenchCountsQuery} from '@/api/workbench';
+import {workbenchCount} from '@/clients/lib/workbench-counts';
 import {queueEntries, queueMeta, TODAY_QUEUES, type WorkbenchQueueId} from '@/clients/lib/workbench-queues';
 import OnboardingQueuePrototype from '@/clients/prototypes/onboarding-queue-prototype';
 import ProgrammingQueuePrototype from '@/clients/prototypes/programming-queue-prototype';
@@ -65,7 +66,9 @@ export default function WorkbenchScreen() {
   const {data: summaryData} = useListClientsQuery({limit: 0});
 
   const requested = parseView(searchParams.get('view'));
-  const firstNonEmpty = counts ? TODAY_QUEUES.find((queue) => counts[queue.countKey] > 0)?.id : undefined;
+  const firstNonEmpty = counts
+    ? TODAY_QUEUES.find((queue) => workbenchCount(counts, queue.countKey) > 0)?.id
+    : undefined;
   // Landing view (spec §11.1): the first queue with work; the caught-up pane
   // when every queue is drained; the roster only when counts can't load.
   const view: 'caught-up' | undefined | ViewId =
@@ -120,7 +123,7 @@ export default function WorkbenchScreen() {
   } else if (view === 'check-ins') {
     content = (
       <ViewShell
-        meta={counts && activeQueue ? queueMeta(activeQueue, counts[activeQueue.countKey]) : undefined}
+        meta={counts && activeQueue ? queueMeta(activeQueue, workbenchCount(counts, activeQueue.countKey)) : undefined}
         title="Check-ins"
       >
         <CheckInsView />
@@ -132,7 +135,9 @@ export default function WorkbenchScreen() {
         <RepliesHandlingPrototype />
       ) : (
         <ViewShell
-          meta={counts && activeQueue ? queueMeta(activeQueue, counts[activeQueue.countKey]) : undefined}
+          meta={
+            counts && activeQueue ? queueMeta(activeQueue, workbenchCount(counts, activeQueue.countKey)) : undefined
+          }
           title="Replies"
         >
           <RepliesView />
@@ -149,7 +154,7 @@ export default function WorkbenchScreen() {
   } else {
     content = (
       <ViewShell
-        meta={counts && activeQueue ? queueMeta(activeQueue, counts[activeQueue.countKey]) : undefined}
+        meta={counts && activeQueue ? queueMeta(activeQueue, workbenchCount(counts, activeQueue.countKey)) : undefined}
         title={activeQueue?.title ?? ''}
       >
         <ClientQueueView queue={view as ClientQueue} />

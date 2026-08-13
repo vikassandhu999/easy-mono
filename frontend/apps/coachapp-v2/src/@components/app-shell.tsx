@@ -24,6 +24,7 @@ import {useInstallPrompt} from '@/@hooks/use-install-prompt';
 import {conversationKeys, workbenchKeys} from '@/api/keys';
 import {useGetCoachProfileQuery} from '@/api/profile';
 import {useWorkbenchCountsQuery} from '@/api/workbench';
+import {hasWorkbenchAttention} from '@/clients/lib/workbench-queues';
 
 const ICON = 18;
 
@@ -85,7 +86,7 @@ function SidebarLink({item}: {item: NavItem}) {
 function WorkbenchDot() {
   const {data} = useWorkbenchCountsQuery();
   const counts = data?.data;
-  if (!counts || counts.check_ins + counts.replies + counts.programming + counts.expiring + counts.quiet === 0) {
+  if (!counts || !hasWorkbenchAttention(counts)) {
     return null;
   }
   return (

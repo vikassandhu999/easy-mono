@@ -1,7 +1,7 @@
 # Build Expiring and Quiet queue facts
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 08
 Parent: [Coach workbench v1 delivery](../map.md)
 
@@ -33,3 +33,11 @@ Implement the accepted Expiring and Quiet membership facts while preserving snoo
 ## Verification
 
 Run the focused Workbench and sweeper tests, then `mix precommit` from `backend/`.
+
+## Answer
+
+* Added explicit, reason-bearing Expiring and Quiet fact queries behind `Easy.Workbench`, with database counts derived from the same tenant- and visibility-scoped membership queries as their paginated lists.
+* Expiring now uses the inclusive 14-day UTC renewal window, active snoozes, `engagement_ending_soon` reasons, and stable end-date/client ordering. The unsnoozed roster-only `expiring_soon` fact now uses the same 14-day window, while renewal beyond the window drains the queue.
+* Quiet now selects each active visible client's latest already-due Check-in assignment before testing for `:missed`, ignores future assignments, drains after a later completed due Check-in, applies active snoozes, and emits `missed_check_in` reasons in due-date/client order.
+* Removed the Training schedule/inactivity membership arm and routed the legacy Quiet client loader through the canonical Check-in-only query. Existing subscription sweeping still deactivates expired engagements with `subscription_expired`.
+* Focused Workbench, client-roster, persistence, and sweeper verification passed 79 tests. `mix precommit` passed 1,173 tests with no failures; Credo reported only the three pre-existing complexity advisories.

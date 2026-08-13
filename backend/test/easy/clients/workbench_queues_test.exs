@@ -115,7 +115,7 @@ defmodule Easy.Clients.WorkbenchQueuesTest do
   end
 
   describe "expiring queue" do
-    test "holds active clients ending within 7 days, soonest first", ctx do
+    test "holds active clients ending within 14 days, soonest first", ctx do
       later = covered_client(ctx, Date.add(ctx.today, 60))
       sooner = covered_client(ctx, Date.add(ctx.today, 60))
       covered_client(ctx, Date.add(ctx.today, 60))
@@ -195,133 +195,19 @@ defmodule Easy.Clients.WorkbenchQueuesTest do
     end
   end
 
-  describe "quiet queue" do
-    # A daily schedule makes the two most recent scheduled dates exactly
-    # yesterday and the day before, whatever today's weekday is (RM-016).
-    @all_weekdays ~w(monday tuesday wednesday thursday friday saturday sunday)
-
-    defp scheduled_client(ctx, opts \\ []) do
-      client = insert(:client, business: ctx.business, creator: ctx.coach, inserted_at: ctx.settled_at)
-
-      plan =
-        insert(:training_plan,
-          business: ctx.business,
-          creator: ctx.coach,
-          client: client,
-          status: :active,
-          start_date: Keyword.get(opts, :start_date, Date.add(ctx.today, -30)),
-          end_date: Date.add(ctx.today, 30)
-        )
-
-      workout = insert(:workout, plan: plan, business: ctx.business, weekdays: @all_weekdays)
-      {client, workout}
-    end
-
-    defp complete_session(ctx, client, workout, date) do
-      Repo.insert!(%Easy.Training.TrainingSession{
-        date: date,
-        state: :completed,
-        started_at: DateTime.utc_now(:second),
-        client_id: client.id,
-        business_id: ctx.business.id,
-        training_workout_id: workout.id
-      })
-    end
-
-    test "holds clients who missed their last two scheduled sessions", ctx do
-      {never_trained, _workout} = scheduled_client(ctx)
-      {lapsed, lapsed_workout} = scheduled_client(ctx)
-      complete_session(ctx, lapsed, lapsed_workout, Date.add(ctx.today, -3))
-
-      {present, present_workout} = scheduled_client(ctx)
-      complete_session(ctx, present, present_workout, Date.add(ctx.today, -1))
-
-      assert {:ok, %{clients: clients, count: 2}} =
-               Easy.Workbench.list_quiet_clients(owner_ctx(ctx.business))
-
-      assert Enum.map(clients, & &1.id) |> Enum.sort() == Enum.sort([never_trained.id, lapsed.id])
-    end
-
-    test "a plan too young to have missed two sessions stays out", ctx do
-      scheduled_client(ctx, start_date: Date.add(ctx.today, -1))
-
-      assert {:ok, %{clients: [], count: 0}} = Easy.Workbench.list_quiet_clients(owner_ctx(ctx.business))
-    end
-
-    test "clients with no weekday schedule are never quiet", ctx do
-      covered_client(ctx, Date.add(ctx.today, 30))
-
-      assert {:ok, %{clients: [], count: 0}} = Easy.Workbench.list_quiet_clients(owner_ctx(ctx.business))
-    end
-
-    test "a missed latest check-in is the second arm, superseded assignments are not", ctx do
-      missed = covered_client(ctx, Date.add(ctx.today, 30))
-
-      insert(:form_assignment,
-        business: ctx.business,
-        client: missed,
-        purpose: "check_in",
-        status: "missed",
-        due_date: Date.add(ctx.today, -4),
-        form_template: build(:form_template, business: ctx.business)
-      )
-
-      recovered = covered_client(ctx, Date.add(ctx.today, 30))
-
-      insert(:form_assignment,
-        business: ctx.business,
-        client: recovered,
-        purpose: "check_in",
-        status: "missed",
-        due_date: Date.add(ctx.today, -10),
-        form_template: build(:form_template, business: ctx.business)
-      )
-
-      insert(:form_assignment,
-        business: ctx.business,
-        client: recovered,
-        purpose: "check_in",
-        status: "assigned",
-        due_date: Date.add(ctx.today, 3),
-        form_template: build(:form_template, business: ctx.business)
-      )
-
-      assert {:ok, %{clients: [listed], count: 1}} = Easy.Workbench.list_quiet_clients(owner_ctx(ctx.business))
-      assert listed.id == missed.id
-    end
-
-    test "orders longest-quiet first", ctx do
-      recent = covered_client(ctx, Date.add(ctx.today, 30))
-
-      insert(:form_assignment,
-        business: ctx.business,
-        client: recent,
-        purpose: "check_in",
-        status: "missed",
-        due_date: Date.add(ctx.today, -1),
-        form_template: build(:form_template, business: ctx.business)
-      )
-
-      older = covered_client(ctx, Date.add(ctx.today, 30))
-
-      insert(:form_assignment,
-        business: ctx.business,
-        client: older,
-        purpose: "check_in",
-        status: "missed",
-        due_date: Date.add(ctx.today, -10),
-        form_template: build(:form_template, business: ctx.business)
-      )
-
-      assert {:ok, %{clients: [first, second]}} = Easy.Workbench.list_quiet_clients(owner_ctx(ctx.business))
-      assert first.id == older.id
-      assert second.id == recent.id
-    end
-  end
-
   describe "snooze" do
     test "a snoozed quiet client leaves the queue and returns on expiry", ctx do
-      {client, _workout} = scheduled_client(ctx)
+      client = covered_client(ctx, Date.add(ctx.today, 30))
+
+      insert(:form_assignment,
+        business: ctx.business,
+        client: client,
+        purpose: "check_in",
+        status: "missed",
+        due_date: Date.add(ctx.today, -2),
+        form_template: build(:form_template, business: ctx.business)
+      )
+
       owner = owner_ctx(ctx.business)
 
       assert {:ok, %{count: 1}} = Easy.Workbench.list_quiet_clients(owner)

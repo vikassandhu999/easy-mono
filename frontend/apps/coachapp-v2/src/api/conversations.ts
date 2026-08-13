@@ -83,11 +83,32 @@ export function useMarkCoachConversationReadMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => call(client.POST('/v1/coach/conversations/{id}/read', {params: {path: {id}}})),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
       qc.invalidateQueries({queryKey: conversationKeys.lists()});
       // The client screen's unread badge reads the client-scoped record, and
       // this mutation only knows the conversation id — invalidate the prefix.
       qc.invalidateQueries({queryKey: conversationKeys.forClients()});
+      // Replies queue rows render unread_count from the workbench envelope.
+      qc.setQueriesData<{pages: Array<{data: Array<{conversation: {id: string; unread_count: number}}>}>}>(
+        {queryKey: workbenchKeys.queue('replies')},
+        (cached) => {
+          if (!cached?.pages) {
+            return cached;
+          }
+          return {
+            ...cached,
+            pages: cached.pages.map((page) => ({
+              ...page,
+              data: page.data.map((item) =>
+                item.conversation.id === id
+                  ? {...item, conversation: {...item.conversation, unread_count: 0}}
+                  : item,
+              ),
+            })),
+          };
+        },
+      );
+      qc.invalidateQueries({queryKey: workbenchKeys.queue('replies')});
     },
   });
 }

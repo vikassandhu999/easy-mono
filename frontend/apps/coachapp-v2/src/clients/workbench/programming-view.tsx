@@ -1,7 +1,7 @@
 import {getInitials} from '@easy/utils';
 import {Avatar, Button, Description, Label, ToggleButton, ToggleButtonGroup, Typography} from '@heroui/react';
 import {cn} from '@heroui/styles';
-import {Dumbbell} from 'lucide-react';
+import {Dumbbell, Utensils} from 'lucide-react';
 import {GridListItem} from 'react-aria-components';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 
@@ -144,8 +144,23 @@ export default function ProgrammingView() {
                         </Avatar.Fallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
-                        <Label className="block truncate type-body font-semibold text-foreground">{name}</Label>
-                        <Description className="truncate type-eyebrow text-muted">{primary.detail}</Description>
+                        <div className="flex min-w-0 items-center gap-2">
+                          {item.reasons[0]?.service === 'nutrition' ? (
+                            <Utensils
+                              aria-hidden
+                              className="size-4 shrink-0 text-muted"
+                            />
+                          ) : (
+                            <Dumbbell
+                              aria-hidden
+                              className="size-4 shrink-0 text-muted"
+                            />
+                          )}
+                          <Label className="block truncate type-body font-semibold text-foreground">{name}</Label>
+                        </div>
+                        <Description className="truncate type-eyebrow text-muted">
+                          {primary.title} · {primary.detail}
+                        </Description>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2 sm:justify-end">

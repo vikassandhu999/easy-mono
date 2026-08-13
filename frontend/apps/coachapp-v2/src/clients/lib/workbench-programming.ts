@@ -1,3 +1,4 @@
+import {ROUTES} from '../../@config/routes.ts';
 import type {components} from '../../api/schema.ts';
 
 export type ProgrammingServiceFilter = 'all' | 'nutrition' | 'training';
@@ -40,7 +41,7 @@ export function programmingPriorityId(reason: ProgrammingReason): ProgrammingPri
 
 /** Explicit Assign-plan navigation state for the matching Training/Nutrition tab. */
 export function assignPlanHref(clientId: string, service: 'nutrition' | 'training'): string {
-  return `/clients/${clientId}?tab=${service}&assign=plan`;
+  return `${ROUTES.CLIENT_DETAIL.replace(':id', clientId)}?tab=${service}&assign=plan`;
 }
 
 export function groupProgrammingItems<T extends ProgrammingItem>(

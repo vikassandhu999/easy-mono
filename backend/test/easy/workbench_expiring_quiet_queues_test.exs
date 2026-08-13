@@ -14,17 +14,17 @@ defmodule Easy.WorkbenchExpiringQuietQueuesTest do
 
   describe "Expiring queue" do
     test "includes both renewal-window boundaries with reasons and stable order", ctx do
-      today = insert_client(ctx, subscription_ends_on: ctx.today)
-      day_fourteen = insert_client(ctx, subscription_ends_on: Date.add(ctx.today, 14))
+      ending_today_client = insert_client(ctx, subscription_ends_on: ctx.today)
+      ending_day_fourteen_client = insert_client(ctx, subscription_ends_on: Date.add(ctx.today, 14))
       insert_client(ctx, subscription_ends_on: Date.add(ctx.today, 15))
       insert_client(ctx, subscription_ends_on: nil)
 
       assert {:ok, %{count: 2, items: [first, second]}} =
                Workbench.list_expiring_queue(ctx.ctx)
 
-      assert first.client.id == today.id
+      assert first.client.id == ending_today_client.id
       assert first.reasons == [%{code: :engagement_ending_soon, ends_on: ctx.today}]
-      assert second.client.id == day_fourteen.id
+      assert second.client.id == ending_day_fourteen_client.id
 
       assert second.reasons == [
                %{code: :engagement_ending_soon, ends_on: Date.add(ctx.today, 14)}
@@ -120,6 +120,17 @@ defmodule Easy.WorkbenchExpiringQuietQueuesTest do
       missed = insert_check_in(waiting, Date.add(ctx.today, -5), :missed)
       insert_check_in(waiting, Date.add(ctx.today, 5), :assigned)
 
+      waiting_workout = insert_training_schedule(ctx, waiting)
+
+      Repo.insert!(%Easy.Training.TrainingSession{
+        date: Date.add(ctx.today, -1),
+        state: :completed,
+        started_at: DateTime.utc_now(:second),
+        client_id: waiting.id,
+        business_id: ctx.business.id,
+        training_workout_id: waiting_workout.id
+      })
+
       due_today = insert_client(ctx, [])
       due_today_assignment = insert_check_in(due_today, ctx.today, :missed)
 
@@ -128,22 +139,7 @@ defmodule Easy.WorkbenchExpiringQuietQueuesTest do
       insert_check_in(recovered, Date.add(ctx.today, -1), :completed)
 
       training_only = insert_client(ctx, [])
-
-      plan =
-        insert(:training_plan,
-          business: ctx.business,
-          creator: ctx.coach,
-          client: training_only,
-          status: :active,
-          start_date: Date.add(ctx.today, -30),
-          end_date: Date.add(ctx.today, 30)
-        )
-
-      insert(:workout,
-        plan: plan,
-        business: ctx.business,
-        weekdays: ~w(monday tuesday wednesday thursday friday saturday sunday)
-      )
+      insert_training_schedule(ctx, training_only)
 
       future_miss = insert_client(ctx, [])
       insert_check_in(future_miss, Date.add(ctx.today, 1), :missed)
@@ -271,6 +267,24 @@ defmodule Easy.WorkbenchExpiringQuietQueuesTest do
       purpose: :check_in,
       status: status,
       due_date: due_date
+    )
+  end
+
+  defp insert_training_schedule(ctx, client) do
+    plan =
+      insert(:training_plan,
+        business: ctx.business,
+        creator: ctx.coach,
+        client: client,
+        status: :active,
+        start_date: Date.add(ctx.today, -30),
+        end_date: Date.add(ctx.today, 30)
+      )
+
+    insert(:workout,
+      plan: plan,
+      business: ctx.business,
+      weekdays: ~w(monday tuesday wednesday thursday friday saturday sunday)
     )
   end
 end

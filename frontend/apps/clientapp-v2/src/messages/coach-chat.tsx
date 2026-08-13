@@ -1,6 +1,7 @@
-import {Button, Spinner, TextArea, toast} from '@heroui/react';
+import {Avatar, Button, Separator, Spinner, TextArea, toast} from '@heroui/react';
 import {Send} from 'lucide-react';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import ErrorState from '@/@components/error-state';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {
   appendClientMessage,
@@ -36,11 +37,15 @@ function MessageBubble({
   urls: Record<string, string>;
 }) {
   const own = message.sender_type === 'client';
+  const hasAttachments = message.attachments.length > 0;
+
   return (
     <div className={`flex ${own ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-[80%] rounded-2xl px-3 py-2 ${
-          own ? 'rounded-br-sm bg-accent text-accent-foreground' : 'rounded-bl-sm bg-surface-secondary'
+        className={`max-w-xs rounded-2xl px-3 py-2 ${hasAttachments ? 'w-72' : ''} ${
+          own
+            ? 'rounded-br-sm bg-accent text-accent-foreground'
+            : 'rounded-bl-sm border border-border bg-surface text-foreground'
         }`}
       >
         <div className="grid gap-2">
@@ -53,7 +58,7 @@ function MessageBubble({
           {message.embed ? <MessageEmbed embed={message.embed} /> : null}
           {message.body ? <p className="whitespace-pre-wrap break-words text-sm">{message.body}</p> : null}
         </div>
-        <p className={`mt-0.5 text-right text-[10px] ${own ? 'text-accent-foreground/70' : 'text-muted'}`}>
+        <p className={`mt-1 text-right text-xs ${own ? 'text-accent-foreground/70' : 'text-muted'}`}>
           {formatTime(message.inserted_at)}
         </p>
       </div>
@@ -66,9 +71,13 @@ export default function CoachChat() {
   const [attachmentState, setAttachmentState] = useState({attachmentIds: [] as string[], busy: false, failed: false});
   const [composerKey, setComposerKey] = useState(0);
   const [sendLocked, setSendLocked] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const initialScrollDoneRef = useRef(false);
+  const messageListRef = useRef<HTMLDivElement>(null);
+  const scrollViewportRef = useRef<HTMLDivElement>(null);
+  const stickToLatestRef = useRef(true);
 
-  const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useClientMessagesInfiniteQuery();
+  const {data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isLoading, refetch} =
+    useClientMessagesInfiniteQuery();
   const sendMessage = useCreateClientConversationMessageMutation();
   const isSendingMessage = sendMessage.isPending;
   const {mutate: markRead} = useMarkClientConversationReadMutation();
@@ -95,10 +104,41 @@ export default function CoachChat() {
     }
   }, [lastMessageId, markRead]);
 
+  const scrollToLatest = useCallback(() => {
+    const viewport = scrollViewportRef.current;
+    if (!viewport) {
+      return;
+    }
+    viewport.scrollTop = viewport.scrollHeight;
+    stickToLatestRef.current = true;
+  }, []);
+
+  // Directly scroll the viewport: a trailing flex gap and viewport padding sit below
+  // the old zero-height sentinel, so scrollIntoView always stopped short of the end.
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll whenever the message-list tail changes
+  useLayoutEffect(() => {
+    if (!isLoading && (!initialScrollDoneRef.current || stickToLatestRef.current)) {
+      scrollToLatest();
+      initialScrollDoneRef.current = true;
+    }
+  }, [isLoading, lastMessageId, scrollToLatest]);
+
+  // Signed images and native media controls can change height after the messages render.
+  // Stay anchored only while the reader is already at the latest message.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: loading swaps the observed message-list node into the DOM
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({behavior: 'instant', block: 'end'});
-  }, [lastMessageId]);
+    const messageList = messageListRef.current;
+    if (!messageList) {
+      return;
+    }
+    const observer = new ResizeObserver(() => {
+      if (stickToLatestRef.current) {
+        scrollToLatest();
+      }
+    });
+    observer.observe(messageList);
+    return () => observer.disconnect();
+  }, [isLoading, scrollToLatest]);
 
   const handleSend = async () => {
     const trimmed = body.trim();
@@ -116,6 +156,9 @@ export default function CoachChat() {
         ...(trimmed && {body: trimmed}),
         attachment_ids: attachmentState.attachmentIds,
       } as CreateMessageBody);
+      // A locally sent message should become visible even if the reader had
+      // briefly scrolled up while composing it.
+      stickToLatestRef.current = true;
       appendClientMessage(result.data);
       setBody('');
       setAttachmentState({attachmentIds: [], busy: false, failed: false});
@@ -135,26 +178,50 @@ export default function CoachChat() {
   const hasContent = Boolean(body.trim() || attachmentState.attachmentIds.length > 0);
 
   return (
-    // Tab bar (h-16) stays visible below — reserve its height.
-    <div className="flex h-[calc(100dvh-4rem)] flex-col">
-      <header className="flex min-h-14 items-center gap-3 border-b border-border bg-background px-5 pt-[env(safe-area-inset-top)]">
-        <span className="relative grid size-[38px] place-items-center rounded-full bg-accent text-sm font-extrabold text-white">
-          {coachInitial}
-          <i className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-background bg-success" />
-        </span>
-        <span>
-          <h1 className="text-[15px] font-extrabold">Coach {coachName}</h1>
-          <span className="block text-[11px] font-semibold text-success-secondary">Online</span>
-        </span>
+    // The tab bar stays visible below; reserve its height and native safe area.
+    <div className="flex h-[calc(100dvh-4rem-env(safe-area-inset-bottom))] flex-col bg-background">
+      <header className="flex min-h-16 items-center gap-3 border-b border-border bg-surface/95 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-lg">
+        <div className="relative shrink-0">
+          <Avatar
+            className="size-10"
+            color="accent"
+          >
+            <Avatar.Fallback className="font-bold">{coachInitial}</Avatar.Fallback>
+          </Avatar>
+          <span className="absolute bottom-0 right-0 size-3 rounded-full border-2 border-surface bg-success" />
+        </div>
+        <div className="min-w-0">
+          <h1 className="truncate text-base font-bold">Coach {coachName}</h1>
+          <p className="text-muted text-xs">Your private coaching conversation</p>
+        </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-4 py-3">
+      <div
+        aria-label={`Conversation with Coach ${coachName}`}
+        className="flex-1 overscroll-contain overflow-y-auto px-3 pb-4 pt-3"
+        onScroll={({currentTarget}) => {
+          const bottomGap = currentTarget.scrollHeight - currentTarget.clientHeight - currentTarget.scrollTop;
+          stickToLatestRef.current = bottomGap <= 48;
+        }}
+        ref={scrollViewportRef}
+        role="log"
+      >
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Spinner />
           </div>
+        ) : isError ? (
+          <div className="flex min-h-full items-center justify-center">
+            <ErrorState
+              message="Couldn't load your conversation."
+              onRetry={() => refetch()}
+            />
+          </div>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div
+            className="flex min-h-full flex-col justify-end gap-2"
+            ref={messageListRef}
+          >
             {hasNextPage ? (
               <Button
                 className="self-center"
@@ -175,7 +242,11 @@ export default function CoachChat() {
               return (
                 <div key={message.id}>
                   {newDay ? (
-                    <p className="my-2 text-center text-xs text-muted">{formatDay(message.inserted_at)}</p>
+                    <div className="my-4 flex items-center gap-3">
+                      <Separator className="flex-1" />
+                      <p className="shrink-0 font-semibold text-muted text-xs">{formatDay(message.inserted_at)}</p>
+                      <Separator className="flex-1" />
+                    </div>
                   ) : null}
                   <MessageBubble
                     failedIds={failedAttachmentIds}
@@ -186,21 +257,20 @@ export default function CoachChat() {
                 </div>
               );
             })}
-            <div ref={bottomRef} />
           </div>
         )}
       </div>
 
-      <footer className="border-t border-border bg-[rgba(244,244,242,0.96)] p-3 backdrop-blur-[10px]">
+      <footer className="border-t border-border bg-surface/95 px-3 pb-3 pt-2 backdrop-blur-lg">
         <AttachmentComposer
           disabled={isSending}
           key={composerKey}
           onChange={handleAttachmentChange}
         />
-        <div className="mt-2 flex items-end gap-2">
+        <div className="mt-2 flex items-end gap-2 rounded-2xl bg-surface-secondary p-1.5">
           <TextArea
             aria-label="Message"
-            className="min-h-11 flex-1"
+            className="min-h-11 flex-1 bg-transparent"
             disabled={isSending}
             onChange={(e) => setBody(e.target.value)}
             onKeyDown={(e) => {
@@ -215,7 +285,7 @@ export default function CoachChat() {
           />
           <Button
             aria-label="Send"
-            className="min-h-11 min-w-11"
+            className="min-h-11 min-w-11 shrink-0 rounded-full"
             isDisabled={!hasContent || attachmentState.busy || attachmentState.failed || isSending}
             isIconOnly
             isPending={isSending}

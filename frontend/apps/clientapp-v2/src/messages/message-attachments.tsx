@@ -68,14 +68,15 @@ function MessageAttachment({
   if (kind === 'image') {
     return (
       <a
+        aria-label="Open image attachment"
         href={url}
         rel="noreferrer"
         target="_blank"
       >
         {/* biome-ignore lint/a11y/noNoninteractiveElementInteractions: media load errors refresh an expired signed URL */}
         <img
-          alt="Message attachment"
-          className="max-h-80 w-full rounded-xl object-cover"
+          alt="Shared conversation attachment"
+          className="max-h-72 w-full rounded-xl bg-surface-secondary object-cover"
           onError={onError}
           src={url}
         />
@@ -86,7 +87,7 @@ function MessageAttachment({
     return (
       // biome-ignore lint/a11y/useMediaCaption: user-provided chat video has no caption track
       <video
-        className="max-h-80 w-full rounded-xl bg-black"
+        className="max-h-72 w-full rounded-xl bg-black"
         controls
         onError={onError}
         src={url}
@@ -96,7 +97,7 @@ function MessageAttachment({
   return (
     // biome-ignore lint/a11y/useMediaCaption: user-provided voice notes have no caption track
     <audio
-      className="min-h-11 w-full"
+      className="min-h-11 w-full min-w-0"
       controls
       onError={onError}
       src={url}

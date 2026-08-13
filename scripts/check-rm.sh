@@ -206,6 +206,13 @@ check RM-207 "hand-assembled responsive form body (use FormPanel)" \
   "sm:rounded-card[^\"']{0,160}sm:border[^\"']{0,160}sm:bg-surface[^\"']{0,160}sm:p-6" \
   "$COACH" -g '!**/form-panel.tsx'
 
+# RM-209 — a zero-height tail sentinel aligned to `end` leaves any following
+# flex gap / viewport padding below the visible edge. Chat owns a scroll viewport,
+# so it moves that viewport to scrollHeight and follows resize only while pinned.
+check RM-209 "end-aligned chat tail sentinel (scroll the owning viewport to scrollHeight)" \
+  "scrollIntoView\\([^)]*block:[[:space:]]*['\"]end['\"]" \
+  "$COACH/messages" "$CLIENT/messages"
+
 # RM-302 — a local .claude/skills/<name> shadows the plugin skill of the same
 # name and silently goes stale. Skills the mattpocock-skills plugin provides must
 # never be vendored into this repo.

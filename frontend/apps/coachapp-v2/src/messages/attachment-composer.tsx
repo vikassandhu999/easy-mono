@@ -1,4 +1,4 @@
-import {IMAGE_CONTENT_TYPES, mediaKind, VIDEO_CONTENT_TYPES} from '@easy/utils';
+import {mediaKind} from '@easy/utils';
 import {Button, ProgressBar} from '@heroui/react';
 import {Camera, ImagePlus, Mic, RotateCcw, Square, Trash2, X} from 'lucide-react';
 
@@ -33,22 +33,22 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
     <div className="min-w-0">
       <div className="flex flex-wrap gap-2">
         <Button
-          aria-label="Take a photo or video"
+          className="flex-1 px-2 sm:flex-none"
           isDisabled={controlsDisabled}
-          isIconOnly
           onPress={() => document.getElementById(`${inputId}-camera`)?.click()}
-          variant="secondary"
+          size="sm"
+          variant="ghost"
         >
-          <Camera size={18} />
+          <Camera size={17} /> Camera
         </Button>
         <Button
-          aria-label="Choose media"
+          className="flex-1 px-2 sm:flex-none"
           isDisabled={controlsDisabled}
-          isIconOnly
           onPress={() => document.getElementById(`${inputId}-library`)?.click()}
-          variant="secondary"
+          size="sm"
+          variant="ghost"
         >
-          <ImagePlus size={18} />
+          <ImagePlus size={17} /> Library
         </Button>
         {isRecording ? (
           <>
@@ -70,18 +70,18 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
           </>
         ) : (
           <Button
-            aria-label="Record voice note"
+            className="flex-1 px-2 sm:flex-none"
             isDisabled={controlsDisabled}
-            isIconOnly
             isPending={isStarting || isStopping}
             onPress={startRecording}
-            variant="secondary"
+            size="sm"
+            variant="ghost"
           >
-            <Mic size={18} />
+            <Mic size={17} /> Voice
           </Button>
         )}
         <input
-          accept={[...IMAGE_CONTENT_TYPES, ...VIDEO_CONTENT_TYPES].join(',')}
+          accept="image/*"
           capture="environment"
           className="sr-only"
           disabled={controlsDisabled}

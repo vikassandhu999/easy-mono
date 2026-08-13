@@ -273,24 +273,22 @@ export default function AttachmentComposer({disabled, onChange}: AttachmentCompo
     <div className="min-w-0">
       <div className="flex flex-wrap gap-2">
         <Button
-          aria-label="Take a photo or video"
-          className="min-h-11 min-w-11"
+          className="min-h-11 flex-1 px-2"
           isDisabled={controlsDisabled}
-          isIconOnly
           onPress={() => document.getElementById(`${inputId}-camera`)?.click()}
-          variant="secondary"
+          size="sm"
+          variant="ghost"
         >
-          <Camera size={18} />
+          <Camera size={17} /> Camera
         </Button>
         <Button
-          aria-label="Choose media"
-          className="min-h-11 min-w-11"
+          className="min-h-11 flex-1 px-2"
           isDisabled={controlsDisabled}
-          isIconOnly
           onPress={() => document.getElementById(`${inputId}-library`)?.click()}
-          variant="secondary"
+          size="sm"
+          variant="ghost"
         >
-          <ImagePlus size={18} />
+          <ImagePlus size={17} /> Library
         </Button>
         {isRecording ? (
           <>
@@ -314,19 +312,18 @@ export default function AttachmentComposer({disabled, onChange}: AttachmentCompo
           </>
         ) : (
           <Button
-            aria-label="Record voice note"
-            className="min-h-11 min-w-11"
+            className="min-h-11 flex-1 px-2"
             isDisabled={controlsDisabled}
-            isIconOnly
             isPending={isStarting}
             onPress={startRecording}
-            variant="secondary"
+            size="sm"
+            variant="ghost"
           >
-            <Mic size={18} />
+            <Mic size={17} /> Voice
           </Button>
         )}
         <input
-          accept={[...IMAGE_CONTENT_TYPES, ...VIDEO_CONTENT_TYPES].join(',')}
+          accept="image/*"
           capture="environment"
           className="sr-only"
           disabled={controlsDisabled}

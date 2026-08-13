@@ -849,6 +849,16 @@ external row state, derive that state into every affected item (or use the colle
 controlled state) so both the previous and next rows invalidate. **Verify by:** select row A,
 then row B; exactly one detail is rendered and it is a descendant of row B.
 
+### RM-209 — Chat scrolls the viewport, not a zero-height tail sentinel
+A zero-height `scrollIntoView({block: 'end'})` target does not represent the end of a
+conversation when flex `gap` or viewport padding follows it. Both client and coach chat
+stopped 21px short for that reason, and late-loading signed media could move the latest
+message farther away. Scroll the owning viewport to its `scrollHeight`; observe message-list
+size changes while the reader is already pinned, and stop following once they scroll up.
+**Enforced by:** `just check-rm` rejects end-aligned `scrollIntoView` calls in either app's
+messages feature. **Verify by:** reload a media-bearing conversation and require a zero bottom
+gap, then scroll into history and ensure later layout changes do not pull the reader down.
+
 ## Deploy / ops
 
 ### RM-201 — Deployable frontends need documented + guarded build-time env

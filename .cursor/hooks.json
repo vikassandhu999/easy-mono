@@ -6,13 +6,6 @@
         "command": ".cursor/hooks/cbm-axi-session.sh",
         "timeout": 5
       }
-    ],
-    "preToolUse": [
-      {
-        "command": ".cursor/hooks/cbm-axi-pretool.sh",
-        "matcher": "Grep|Glob|Shell",
-        "timeout": 3
-      }
     ]
   }
 }

@@ -38,19 +38,11 @@ export function PlanAddToClient({plan}: Props) {
         Object.assign(draft, result.data);
       });
     }
-    toast.success(
-      `"${plan.name}" assigned to ${clientName}`,
-      // Editing the assigned copy is the natural next step — offer the hop
-      // without forcing it. No action when the assign happened in place.
-      result.data.id === plan.id
-        ? undefined
-        : {
-            actionProps: {
-              children: 'Open their copy',
-              onPress: () => navigate(generatePath(ROUTES.TRAINING_PLAN_DETAIL, {id: result.data.id})),
-            },
-          },
-    );
+    toast.success(`"${plan.name}" assigned to ${clientName}`, {timeout: 1000});
+    // Assign from a template creates a client copy (new id) — go straight to it.
+    if (result.data.id !== plan.id) {
+      navigate(generatePath(ROUTES.TRAINING_PLAN_DETAIL, {id: result.data.id}));
+    }
   };
 
   return (

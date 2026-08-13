@@ -44,19 +44,11 @@ export function PlanAddToClient({plan}: Props) {
         });
       });
     }
-    toast.success(
-      `"${plan.name}" assigned to ${clientName}`,
-      // Offer the hop to the assigned copy; skip it when the assign happened
-      // in place (same id): the coach is already looking at it.
-      result.data.id === plan.id
-        ? undefined
-        : {
-            actionProps: {
-              children: 'Open their copy',
-              onPress: () => navigate(generatePath(ROUTES.NUTRITION_PLAN_DETAIL, {id: result.data.id})),
-            },
-          },
-    );
+    toast.success(`"${plan.name}" assigned to ${clientName}`, {timeout: 1000});
+    // Assign from a template creates a client copy (new id) — go straight to it.
+    if (result.data.id !== plan.id) {
+      navigate(generatePath(ROUTES.NUTRITION_PLAN_DETAIL, {id: result.data.id}));
+    }
   };
 
   return (

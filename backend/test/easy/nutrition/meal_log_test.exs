@@ -23,17 +23,16 @@ defmodule Easy.Nutrition.MealLogTest do
         meal_slot: "afternoon_snack",
         food_id: snack_food.id,
         amount: 1.0,
-        unit: "unit",
-        source: :unplanned
+        unit: "unit"
       }
 
       assert {:error, %Ecto.Changeset{}} =
-               MealLogs.create_client_food_log_entry(client_ctx, invalid_attrs)
+               MealLogs.add_client_extra(client_ctx, invalid_attrs)
 
       assert is_nil(Repo.reload(client).last_active_at)
 
       assert {:ok, entry} =
-               MealLogs.create_client_food_log_entry(
+               MealLogs.add_client_extra(
                  client_ctx,
                  Map.put(invalid_attrs, :weight_g, 120.0)
                )
@@ -147,12 +146,12 @@ defmodule Easy.Nutrition.MealLogTest do
       assert meal_log.planned_snapshot["meal_name"] == "Oats"
     end
 
-    test "create_client_food_log_entry pins on first write; falls back to default option without a meal_id or pin" do
+    test "add_client_extra pins on first write; falls back to default option without a meal_id or pin" do
       %{client_ctx: client_ctx, client: client, eggs: eggs, rice: rice, snack_food: snack_food} =
         build_scenario()
 
       assert {:ok, _entry} =
-               MealLogs.create_client_food_log_entry(client_ctx, %{
+               MealLogs.add_client_extra(client_ctx, %{
                  date: @date,
                  meal_slot: "breakfast",
                  meal_id: eggs.id,
@@ -160,8 +159,7 @@ defmodule Easy.Nutrition.MealLogTest do
                  food_id: snack_food.id,
                  amount: 1.0,
                  unit: "slice",
-                 weight_g: 30.0,
-                 source: :unplanned
+                 weight_g: 30.0
                })
 
       breakfast_log = get_meal_log(client.id, @date, "breakfast")
@@ -170,15 +168,14 @@ defmodule Easy.Nutrition.MealLogTest do
 
       # no meal_id and no existing pin for lunch -> falls back to the slot's default option (Rice, position 0)
       assert {:ok, _entry} =
-               MealLogs.create_client_food_log_entry(client_ctx, %{
+               MealLogs.add_client_extra(client_ctx, %{
                  date: @date,
                  meal_slot: "lunch",
                  food_name: "Extra rice",
                  food_id: snack_food.id,
                  amount: 1.0,
                  unit: "g",
-                 weight_g: 20.0,
-                 source: :unplanned
+                 weight_g: 20.0
                })
 
       lunch_log = get_meal_log(client.id, @date, "lunch")
@@ -193,15 +190,14 @@ defmodule Easy.Nutrition.MealLogTest do
         MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "breakfast", meal_id: oats.id})
 
       {:ok, _extra} =
-        MealLogs.create_client_food_log_entry(client_ctx, %{
+        MealLogs.add_client_extra(client_ctx, %{
           date: @date,
           meal_slot: "breakfast",
           food_name: "Extra banana",
           food_id: snack_food.id,
           amount: 1.0,
           unit: "unit",
-          weight_g: 120.0,
-          source: :unplanned
+          weight_g: 120.0
         })
 
       assert {:ok, switched} =
@@ -214,8 +210,10 @@ defmodule Easy.Nutrition.MealLogTest do
       assert switched.nutrition_meal_id == eggs.id
       assert switched.planned_snapshot["meal_name"] == "Eggs"
 
-      sources = Enum.map(switched.food_log_entries, & &1.source)
-      assert sources == [:unplanned]
+      # Fulfilments are dropped; extras (no planned_item_id) stay.
+      assert length(switched.food_log_entries) == 1
+      assert hd(switched.food_log_entries).planned_item_id == nil
+      assert hd(switched.food_log_entries).food_name == "Extra banana"
 
       # snack_food is 90 kcal/100g; the surviving unplanned entry is 120g -> 108.0 kcal
       assert switched.logged_calories == 108.0
@@ -236,7 +234,7 @@ defmodule Easy.Nutrition.MealLogTest do
 
       assert switched.nutrition_meal_id == oats.id
       assert length(switched.food_log_entries) == 1
-      assert Enum.map(switched.food_log_entries, & &1.source) == [:planned]
+      assert hd(switched.food_log_entries).planned_item_id
     end
 
     test "switch_client_meal_option returns not_found for a meal outside the client's plan" do
@@ -255,7 +253,7 @@ defmodule Easy.Nutrition.MealLogTest do
                })
     end
 
-    test "create_client_food_log_entry with an explicit meal_id returns not_found for another client's meal" do
+    test "add_client_extra with an explicit meal_id returns not_found for another client's meal" do
       %{client_ctx: client_ctx, client: client, business: business, creator: creator} = build_scenario()
 
       coach_ctx = Ctx.new(business.id, creator.user_id, creator.id, false)
@@ -269,15 +267,14 @@ defmodule Easy.Nutrition.MealLogTest do
         insert(:meal, plan: other_assigned_plan, creator: creator, business: business, name: "Other Client's Meal")
 
       assert {:error, :not_found} =
-               MealLogs.create_client_food_log_entry(client_ctx, %{
+               MealLogs.add_client_extra(client_ctx, %{
                  date: @date,
                  meal_slot: "breakfast",
                  meal_id: other_meal.id,
                  food_name: "Toast",
                  amount: 1.0,
                  unit: "slice",
-                 weight_g: 30.0,
-                 source: :unplanned
+                 weight_g: 30.0
                })
 
       refute Repo.get_by(MealLog, client_id: client.id, date: @date, meal_slot: "breakfast")
@@ -373,17 +370,16 @@ defmodule Easy.Nutrition.MealLogTest do
       assert entry.calories == 400.0
     end
 
-    test "create_client_food_log_entry accepts a recipe with amount and no weight_g" do
+    test "add_client_extra accepts a recipe with amount and no weight_g" do
       %{client_ctx: client_ctx, dal_recipe: dal_recipe} = build_scenario()
 
       assert {:ok, entry} =
-               MealLogs.create_client_food_log_entry(client_ctx, %{
+               MealLogs.add_client_extra(client_ctx, %{
                  date: @date,
                  meal_slot: "dinner",
                  recipe_id: dal_recipe.id,
                  amount: 0.5,
-                 unit: "serving",
-                 source: :unplanned
+                 unit: "serving"
                })
 
       assert is_nil(entry.weight_g)
@@ -407,47 +403,44 @@ defmodule Easy.Nutrition.MealLogTest do
       assert updated.calories == 800.0
     end
 
-    test "create_client_food_log_entry rejects a food without weight_g" do
+    test "add_client_extra rejects a food without weight_g" do
       %{client_ctx: client_ctx, snack_food: snack_food} = build_scenario()
 
       assert {:error, %Ecto.Changeset{} = changeset} =
-               MealLogs.create_client_food_log_entry(client_ctx, %{
+               MealLogs.add_client_extra(client_ctx, %{
                  date: @date,
                  meal_slot: "breakfast",
                  food_id: snack_food.id,
                  amount: 1.0,
-                 unit: "unit",
-                 source: :unplanned
+                 unit: "unit"
                })
 
       assert "is required for food items" in errors_on(changeset).weight_g
     end
 
-    test "create_client_food_log_entry rejects a recipe without weight_g or amount" do
+    test "add_client_extra rejects a recipe without weight_g or amount" do
       %{client_ctx: client_ctx, dal_recipe: dal_recipe} = build_scenario()
 
       assert {:error, %Ecto.Changeset{} = changeset} =
-               MealLogs.create_client_food_log_entry(client_ctx, %{
+               MealLogs.add_client_extra(client_ctx, %{
                  date: @date,
                  meal_slot: "dinner",
                  recipe_id: dal_recipe.id,
-                 unit: "serving",
-                 source: :unplanned
+                 unit: "serving"
                })
 
       assert "either weight_g or amount is required for recipe items" in errors_on(changeset).weight_g
     end
 
-    test "create_client_food_log_entry rejects grams for a recipe with no cooked_weight_g" do
+    test "add_client_extra rejects grams for a recipe with no cooked_weight_g" do
       %{client_ctx: client_ctx, dal_recipe: dal_recipe} = build_scenario()
 
       assert {:error, %Ecto.Changeset{} = changeset} =
-               MealLogs.create_client_food_log_entry(client_ctx, %{
+               MealLogs.add_client_extra(client_ctx, %{
                  date: @date,
                  meal_slot: "dinner",
                  recipe_id: dal_recipe.id,
-                 weight_g: 150.0,
-                 source: :unplanned
+                 weight_g: 150.0
                })
 
       assert [message] = errors_on(changeset).weight_g
@@ -482,19 +475,17 @@ defmodule Easy.Nutrition.MealLogTest do
 
       # The client logs one planned item on its own, naming it by id.
       assert {:ok, logged} =
-               MealLogs.create_client_food_log_entry(client_ctx, %{
+               MealLogs.log_client_planned_item(client_ctx, %{
                  date: @date,
                  meal_slot: "breakfast",
                  meal_id: oats.id,
-                 meal_item_id: oat_flakes.id,
-                 food_id: oat_flakes.food_id,
+                 planned_item_id: oat_flakes.id,
                  amount: 100.0,
                  unit: "g",
-                 weight_g: 100.0,
-                 source: :planned
+                 weight_g: 100.0
                })
 
-      assert logged.nutrition_meal_item_id == oat_flakes.id
+      assert logged.planned_item_id == oat_flakes.id
 
       # Tapping "log meal" must still log the other twin, not skip it as already logged.
       assert {:ok, entries} =
@@ -506,7 +497,7 @@ defmodule Easy.Nutrition.MealLogTest do
         FoodLogEntry
         |> FoodLogEntry.for_meal_log(logged.nutrition_meal_log_id)
         |> Repo.all()
-        |> MapSet.new(& &1.nutrition_meal_item_id)
+        |> MapSet.new(& &1.planned_item_id)
 
       # The invariant: both items logged exactly once, neither silently dropped.
       assert pinned == MapSet.new([oat_flakes.id, twin.id])
@@ -518,7 +509,7 @@ defmodule Easy.Nutrition.MealLogTest do
       assert {:ok, [entry]} =
                MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "breakfast", meal_id: oats.id})
 
-      assert entry.nutrition_meal_item_id
+      assert entry.planned_item_id
 
       assert {:ok, []} =
                MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "breakfast", meal_id: oats.id})
@@ -550,7 +541,7 @@ defmodule Easy.Nutrition.MealLogTest do
         FoodLogEntry
         |> FoodLogEntry.for_meal_log(hd(entries).nutrition_meal_log_id)
         |> Repo.all()
-        |> MapSet.new(& &1.nutrition_meal_item_id)
+        |> MapSet.new(& &1.planned_item_id)
 
       # Reconciliation keys on ids, so yesterday's log still means what it meant.
       assert pinned == MapSet.new([first.id, second.id])
@@ -582,12 +573,262 @@ defmodule Easy.Nutrition.MealLogTest do
       assert {:ok, [entry]} =
                MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "breakfast", meal_id: oats.id})
 
-      Repo.delete!(Repo.get!(MealItem, entry.nutrition_meal_item_id))
+      frozen_id = entry.planned_item_id
+      Repo.delete!(Repo.get!(MealItem, frozen_id))
 
       kept = Repo.get!(FoodLogEntry, entry.id)
-      assert kept.nutrition_meal_item_id == nil
+      assert kept.planned_item_id == frozen_id
       assert kept.food_name == "Oat Flakes"
       assert kept.calories == 300.0
+
+      meal_log =
+        MealLog
+        |> MealLog.include_entries()
+        |> Repo.get!(kept.nutrition_meal_log_id)
+
+      assert [%{status: :as_planned, planned: %{id: ^frozen_id}}] = MealLogs.diary_rows(meal_log)
+    end
+  end
+
+  describe "diary rows" do
+    test "logging a planned meal yields every item as_planned with no added or skipped" do
+      %{client_ctx: client_ctx, client: client, business: business, creator: creator, plan: plan} =
+        build_scenario()
+
+      dinner = insert(:meal, plan: plan, creator: creator, business: business, name: "Dinner")
+
+      foods =
+        for {name, position} <- [
+              {"Chicken", 0},
+              {"Rice", 1},
+              {"Broccoli", 2},
+              {"Sauce", 3},
+              {"Yogurt", 4}
+            ] do
+          food = insert(:food, business: business, creator: creator, name: name, calories_per_100g: 100.0)
+
+          insert(:meal_item,
+            meal: dinner,
+            business: business,
+            food: food,
+            amount: 100.0,
+            unit: "g",
+            weight_g: 100.0,
+            position: position
+          )
+
+          food
+        end
+
+      assert {:ok, entries} =
+               MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "dinner", meal_id: dinner.id})
+
+      assert length(entries) == 5
+
+      meal_log =
+        MealLog
+        |> MealLog.for_client(business.id, client.id)
+        |> MealLog.for_date(@date)
+        |> MealLog.for_meal_slot("dinner")
+        |> MealLog.include_entries()
+        |> Repo.one!()
+
+      rows = MealLogs.diary_rows(meal_log)
+      assert length(rows) == 5
+      assert Enum.all?(rows, &(&1.status == :as_planned))
+      refute Enum.any?(rows, &(&1.status in [:added, :skipped]))
+
+      [first | _] = meal_log.planned_snapshot["items"]
+      assert first["id"]
+      assert first["food_id"] == hd(foods).id
+    end
+
+    test "logging one planned item leaves the rest skipped" do
+      %{client_ctx: client_ctx, client: client, business: business, creator: creator, oats: oats} =
+        build_scenario()
+
+      milk = insert(:food, business: business, creator: creator, name: "Milk", calories_per_100g: 60.0)
+      first = Repo.get_by!(MealItem, nutrition_meal_id: oats.id, position: 0)
+
+      insert(:meal_item, meal: oats, business: business, food: milk, weight_g: 200.0, position: 1)
+
+      assert {:ok, _logged} =
+               MealLogs.log_client_planned_item(client_ctx, %{
+                 date: @date,
+                 meal_slot: "breakfast",
+                 meal_id: oats.id,
+                 planned_item_id: first.id,
+                 amount: 100.0,
+                 unit: "g",
+                 weight_g: 100.0
+               })
+
+      meal_log =
+        MealLog
+        |> MealLog.for_client(business.id, client.id)
+        |> MealLog.for_date(@date)
+        |> MealLog.for_meal_slot("breakfast")
+        |> MealLog.include_entries()
+        |> Repo.one!()
+
+      statuses = meal_log |> MealLogs.diary_rows() |> Enum.map(& &1.status) |> Enum.sort()
+      assert statuses == [:as_planned, :skipped]
+    end
+
+    test "replacing a planned item yields swapped; extras yield added" do
+      %{client_ctx: client_ctx, client: client, business: business, oats: oats, snack_food: snack} =
+        build_scenario()
+
+      oat_item = Repo.get_by!(MealItem, nutrition_meal_id: oats.id, position: 0)
+
+      assert {:ok, _swapped} =
+               MealLogs.replace_client_item(client_ctx, %{
+                 date: @date,
+                 meal_slot: "breakfast",
+                 meal_id: oats.id,
+                 planned_item_id: oat_item.id,
+                 food_id: snack.id,
+                 amount: 120.0,
+                 unit: "g",
+                 weight_g: 120.0
+               })
+
+      assert {:ok, _extra} =
+               MealLogs.add_client_extra(client_ctx, %{
+                 date: @date,
+                 meal_slot: "breakfast",
+                 meal_id: oats.id,
+                 food_id: snack.id,
+                 amount: 50.0,
+                 unit: "g",
+                 weight_g: 50.0
+               })
+
+      meal_log =
+        MealLog
+        |> MealLog.for_client(business.id, client.id)
+        |> MealLog.for_date(@date)
+        |> MealLog.for_meal_slot("breakfast")
+        |> MealLog.include_entries()
+        |> Repo.one!()
+
+      statuses = meal_log |> MealLogs.diary_rows() |> Enum.map(& &1.status) |> Enum.sort()
+      assert statuses == [:added, :swapped]
+    end
+
+    test "changing portion on a matching food stays as_planned" do
+      %{client_ctx: client_ctx, client: client, business: business, oats: oats} = build_scenario()
+
+      assert {:ok, [entry]} =
+               MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "breakfast", meal_id: oats.id})
+
+      assert {:ok, _updated} =
+               MealLogs.update_client_food_log_entry(client_ctx, entry.id, %{weight_g: 150.0})
+
+      meal_log =
+        MealLog
+        |> MealLog.for_client(business.id, client.id)
+        |> MealLog.for_date(@date)
+        |> MealLog.for_meal_slot("breakfast")
+        |> MealLog.include_entries()
+        |> Repo.one!()
+
+      assert [%{status: :as_planned}] = MealLogs.diary_rows(meal_log)
+    end
+
+    test "after a fulfilment exists, editing the live meal does not change the freeze" do
+      %{client_ctx: client_ctx, client: client, business: business, creator: creator, oats: oats} =
+        build_scenario()
+
+      assert {:ok, [_entry]} =
+               MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "breakfast", meal_id: oats.id})
+
+      before =
+        MealLog
+        |> MealLog.for_client(business.id, client.id)
+        |> MealLog.for_date(@date)
+        |> MealLog.for_meal_slot("breakfast")
+        |> Repo.one!()
+
+      frozen_items = before.planned_snapshot["items"]
+
+      milk = insert(:food, business: business, creator: creator, name: "Milk", calories_per_100g: 60.0)
+
+      insert(:meal_item, meal: oats, business: business, food: milk, weight_g: 200.0, position: 1)
+
+      # Another write against the same option must not rewrite the freeze.
+      assert {:ok, []} =
+               MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "breakfast", meal_id: oats.id})
+
+      after_log =
+        MealLog
+        |> MealLog.for_client(business.id, client.id)
+        |> MealLog.for_date(@date)
+        |> MealLog.for_meal_slot("breakfast")
+        |> MealLog.include_entries()
+        |> Repo.one!()
+
+      assert after_log.planned_snapshot["items"] == frozen_items
+      assert [%{status: :as_planned}] = MealLogs.diary_rows(after_log)
+    end
+
+    test "before any fulfilment, the freeze refreshes from the live meal" do
+      %{client_ctx: client_ctx, client: client, business: business, creator: creator, oats: oats, snack_food: snack} =
+        build_scenario()
+
+      # Pin the slot with an extra only — no planned fulfilment yet.
+      assert {:ok, _extra} =
+               MealLogs.add_client_extra(client_ctx, %{
+                 date: @date,
+                 meal_slot: "breakfast",
+                 meal_id: oats.id,
+                 food_id: snack.id,
+                 amount: 50.0,
+                 unit: "g",
+                 weight_g: 50.0
+               })
+
+      milk = insert(:food, business: business, creator: creator, name: "Milk", calories_per_100g: 60.0)
+
+      insert(:meal_item, meal: oats, business: business, food: milk, weight_g: 200.0, position: 1)
+
+      assert {:ok, entries} =
+               MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "breakfast", meal_id: oats.id})
+
+      assert length(entries) == 2
+
+      meal_log =
+        MealLog
+        |> MealLog.for_client(business.id, client.id)
+        |> MealLog.for_date(@date)
+        |> MealLog.for_meal_slot("breakfast")
+        |> MealLog.include_entries()
+        |> Repo.one!()
+
+      assert length(meal_log.planned_snapshot["items"]) == 2
+
+      statuses = meal_log |> MealLogs.diary_rows() |> Enum.map(& &1.status) |> Enum.sort()
+      assert statuses == [:added, :as_planned, :as_planned]
+    end
+  end
+
+  describe "nutrition day ranges" do
+    test "schedule query count stays flat as the date range grows" do
+      %{client_ctx: client_ctx} = build_scenario()
+
+      {{:ok, [_day]}, one_day_queries} =
+        count_queries(fn -> MealLogs.list_client_nutrition_days(client_ctx, date: @date) end)
+
+      {{:ok, days}, fourteen_day_queries} =
+        count_queries(fn ->
+          MealLogs.list_client_nutrition_days(client_ctx,
+            from: @date,
+            to: Date.add(@date, 13)
+          )
+        end)
+
+      assert length(days) == 14
+      assert fourteen_day_queries == one_day_queries
     end
   end
 

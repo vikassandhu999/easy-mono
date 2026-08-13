@@ -2,7 +2,6 @@ defmodule Easy.Nutrition.FoodLogEntry do
   use Ecto.Schema
 
   alias Easy.Nutrition.Food
-  alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.MealLog
   alias Easy.Nutrition.Recipe
   alias Easy.Orgs
@@ -15,8 +14,6 @@ defmodule Easy.Nutrition.FoodLogEntry do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @sources [:planned, :replacement, :unplanned]
-
   schema "nutrition_food_log_entries" do
     field :food_name, :string
     field :amount, :float
@@ -28,14 +25,12 @@ defmodule Easy.Nutrition.FoodLogEntry do
     field :fat_g, :float
     field :fiber_g, :float
     field :notes, :string
-    field :source, Ecto.Enum, values: @sources, default: :planned
+    # Frozen planned-item id from the meal-log snapshot. Not a foreign key — builder
+    # deletes must not null this out or the diary row turns into an extra.
+    field :planned_item_id, :binary_id
 
     belongs_to :business, Orgs.Business
     belongs_to :meal_log, MealLog, foreign_key: :nutrition_meal_log_id
-    # Which planned item this entry fulfils. Server-set, never cast: reconciliation
-    # keys on it, so a client must not be able to point an entry at another
-    # business's meal item.
-    belongs_to :meal_item, MealItem, foreign_key: :nutrition_meal_item_id
     belongs_to :food, Food
     belongs_to :recipe, Recipe
 
@@ -48,7 +43,6 @@ defmodule Easy.Nutrition.FoodLogEntry do
     :unit,
     :weight_g,
     :notes,
-    :source,
     :food_id,
     :recipe_id
   ]
@@ -59,7 +53,7 @@ defmodule Easy.Nutrition.FoodLogEntry do
     |> cast(attrs, @cast_fields)
     |> put_change(:business_id, business_id)
     |> put_change(:nutrition_meal_log_id, meal_log_id)
-    |> validate_required([:source, :nutrition_meal_log_id, :business_id])
+    |> validate_required([:nutrition_meal_log_id, :business_id])
     |> validate_number(:weight_g, greater_than: 0)
     |> validate_number(:amount, greater_than: 0)
     |> validate_food_or_recipe()
@@ -68,12 +62,8 @@ defmodule Easy.Nutrition.FoodLogEntry do
       name: :nutrition_food_log_entries_weight_positive,
       message: "must be greater than 0"
     )
-    |> check_constraint(:source,
-      name: :nutrition_food_log_entries_source_check,
-      message: "is invalid"
-    )
-    |> unique_constraint(:nutrition_meal_item_id,
-      name: :nutrition_food_log_entries_meal_log_item_index
+    |> unique_constraint(:planned_item_id,
+      name: :nutrition_food_log_entries_meal_log_planned_item_index
     )
   end
 
@@ -140,11 +130,11 @@ defmodule Easy.Nutrition.FoodLogEntry do
     )
   end
 
-  @spec logged_meal_item_ids(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def logged_meal_item_ids(query \\ __MODULE__) do
+  @spec logged_planned_item_ids(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def logged_planned_item_ids(query \\ __MODULE__) do
     from(e in query,
-      where: not is_nil(e.nutrition_meal_item_id),
-      select: e.nutrition_meal_item_id
+      where: not is_nil(e.planned_item_id),
+      select: e.planned_item_id
     )
   end
 end

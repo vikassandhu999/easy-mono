@@ -37,12 +37,11 @@ defmodule Easy.Nutrition.LibraryDeleteTest do
       food = insert(:food, business: business, creator: coach, name: "Banana", calories_per_100g: 90.0)
 
       assert {:ok, entry} =
-               MealLogs.create_client_food_log_entry(client_ctx, %{
+               MealLogs.add_client_extra(client_ctx, %{
                  date: ~D[2026-07-06],
                  meal_slot: "breakfast",
                  food_id: food.id,
-                 weight_g: 100.0,
-                 source: :unplanned
+                 weight_g: 100.0
                })
 
       assert {:ok, _deleted} = Foods.delete_food(ctx, food.id)

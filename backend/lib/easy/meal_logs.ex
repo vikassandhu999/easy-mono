@@ -3,6 +3,7 @@ defmodule Easy.MealLogs do
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.MacroCalc
+  alias Easy.MealSlot
   alias Easy.Nutrition.DayMeal
   alias Easy.Nutrition.Food
   alias Easy.Nutrition.FoodLogEntry
@@ -48,6 +49,52 @@ defmodule Easy.MealLogs do
     end
   end
 
+  # Diary rows for one meal log: freeze items plus extras, each with a status.
+  # Callers render this; they do not join the live plan to raw entries.
+  @spec diary_rows(MealLog.t()) :: [map()]
+  def diary_rows(%MealLog{} = meal_log) do
+    entries = List.wrap(meal_log.food_log_entries)
+    planned_items = snapshot_items(meal_log.planned_snapshot)
+
+    fulfilments =
+      entries
+      |> Enum.filter(& &1.planned_item_id)
+      |> Map.new(&{&1.planned_item_id, &1})
+
+    planned_rows =
+      Enum.map(planned_items, fn item ->
+        id = snap_get(item, :id)
+
+        case id && Map.get(fulfilments, id) do
+          nil ->
+            %{status: :skipped, planned: normalize_planned(item), entry: nil}
+
+          entry ->
+            %{
+              status: fulfilment_status(item, entry),
+              planned: normalize_planned(item),
+              entry: entry
+            }
+        end
+      end)
+
+    paired_entry_ids =
+      planned_rows
+      |> Enum.map(& &1.entry)
+      |> Enum.reject(&is_nil/1)
+      |> MapSet.new(& &1.id)
+
+    added_rows =
+      entries
+      |> Enum.reject(&MapSet.member?(paired_entry_ids, &1.id))
+      |> Enum.map(fn entry ->
+        %{status: :added, planned: nil, entry: entry}
+      end)
+
+    # Prefer planned order, then extras in log order.
+    planned_rows ++ added_rows
+  end
+
   # ---------------------------------------------------------------------------
   # Client self fns (Case-3: Ctx-first, target from ctx.client_id)
   # ---------------------------------------------------------------------------
@@ -75,11 +122,83 @@ defmodule Easy.MealLogs do
     end
   end
 
-  @spec create_client_food_log_entry(Ctx.t(), map()) ::
+  # One reconciled day: live options + diary rows + targets. Replaces today-map +
+  # meal-log list + frontend join for both apps.
+  @spec get_client_nutrition_day(Ctx.t(), Date.t()) :: {:ok, map()} | {:error, :not_found}
+  def get_client_nutrition_day(%Ctx{} = ctx, %Date{} = date) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+      {:ok, build_nutrition_day(ctx.business_id, client_id, date)}
+    end
+  end
+
+  @spec get_nutrition_day_for_client(Ctx.t(), String.t(), Date.t()) ::
+          {:ok, map()} | {:error, :not_found}
+  def get_nutrition_day_for_client(%Ctx{} = ctx, client_id, %Date{} = date) do
+    with {:ok, _client} <- Clients.authorize_client(ctx, client_id) do
+      {:ok, build_nutrition_day(ctx.business_id, client_id, date)}
+    end
+  end
+
+  @spec list_client_nutrition_days(Ctx.t(), keyword()) ::
+          {:ok, [map()]}
+          | {:error, :not_found | :invalid_date_range | :date_range_too_wide | :incomplete_date_range}
+  def list_client_nutrition_days(%Ctx{} = ctx, opts \\ []) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
+         {:ok, dates} <- resolve_nutrition_day_dates(opts) do
+      {:ok, build_nutrition_days(ctx.business_id, client_id, dates)}
+    end
+  end
+
+  @spec list_nutrition_days_for_client(Ctx.t(), String.t(), keyword()) ::
+          {:ok, [map()]}
+          | {:error, :not_found | :invalid_date_range | :date_range_too_wide | :incomplete_date_range}
+  def list_nutrition_days_for_client(%Ctx{} = ctx, client_id, opts \\ []) do
+    with {:ok, _client} <- Clients.authorize_client(ctx, client_id),
+         {:ok, dates} <- resolve_nutrition_day_dates(opts) do
+      {:ok, build_nutrition_days(ctx.business_id, client_id, dates)}
+    end
+  end
+
+  @spec log_client_planned_item(Ctx.t(), map()) ::
           {:ok, FoodLogEntry.t()} | {:error, any()}
-  def create_client_food_log_entry(%Ctx{} = ctx, attrs) do
+  def log_client_planned_item(%Ctx{} = ctx, attrs) do
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
       log_entry(ctx.business_id, client_id, attrs)
+    end
+  end
+
+  @spec add_client_extra(Ctx.t(), map()) ::
+          {:ok, FoodLogEntry.t()} | {:error, any()}
+  def add_client_extra(%Ctx{} = ctx, attrs) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+      log_entry(ctx.business_id, client_id, Map.delete(attrs, :planned_item_id))
+    end
+  end
+
+  @spec replace_client_item(Ctx.t(), map()) ::
+          {:ok, FoodLogEntry.t()} | {:error, any()}
+  def replace_client_item(%Ctx{} = ctx, attrs) do
+    meal_slot = attrs[:meal_slot]
+    planned_item_id = attrs[:planned_item_id]
+    explicit_meal_id = attrs[:meal_id]
+
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
+         {:ok, date} <- fetch_date(attrs),
+         true <- is_binary(planned_item_id) do
+      Repo.transaction(fn ->
+        replace_item_transaction(
+          ctx.business_id,
+          client_id,
+          date,
+          meal_slot,
+          explicit_meal_id,
+          planned_item_id,
+          attrs
+        )
+      end)
+    else
+      false -> {:error, :not_found}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -158,7 +277,7 @@ defmodule Easy.MealLogs do
 
       FoodLogEntry
       |> FoodLogEntry.for_meal_log(meal_log.id)
-      |> where([e], e.source in [:planned, :replacement])
+      |> where([e], not is_nil(e.planned_item_id))
       |> Repo.delete_all()
 
       case recalculate_logged_calories(meal_log) do
@@ -184,17 +303,41 @@ defmodule Easy.MealLogs do
     case get_existing_meal_log(business_id, client_id, date, meal_slot) do
       %MealLog{nutrition_meal_id: existing_meal_id} = existing
       when not is_nil(meal_id) and existing_meal_id != meal_id ->
-        existing
-        |> change(nutrition_meal_id: meal_id, planned_snapshot: snapshot)
-        |> put_change(:planned_calories, snapshot && (snapshot[:total_calories] || 0.0) * 1.0)
-        |> Repo.update()
+        update_freeze(existing, snapshot, meal_id)
 
       %MealLog{} = existing ->
-        {:ok, existing}
+        maybe_refresh_unfulfilled_freeze(existing, snapshot, meal_id)
 
       nil ->
         insert_meal_log(business_id, client_id, date, meal_slot, snapshot, meal_id)
     end
+  end
+
+  # Same option, no fulfilments yet: coach may still be editing the meal. Refresh
+  # the freeze from the live meal. Once any fulfilment exists, the freeze is a fact.
+  defp maybe_refresh_unfulfilled_freeze(%MealLog{} = existing, snapshot, meal_id) do
+    same_option? =
+      is_nil(meal_id) or is_nil(existing.nutrition_meal_id) or meal_id == existing.nutrition_meal_id
+
+    if same_option? and not is_nil(snapshot) and not has_fulfilments?(existing.id) do
+      update_freeze(existing, snapshot, meal_id || existing.nutrition_meal_id)
+    else
+      {:ok, existing}
+    end
+  end
+
+  defp update_freeze(%MealLog{} = meal_log, snapshot, meal_id) do
+    meal_log
+    |> change(nutrition_meal_id: meal_id, planned_snapshot: snapshot)
+    |> put_change(:planned_calories, snapshot && (snap_get(snapshot, :total_calories) || 0.0) * 1.0)
+    |> Repo.update()
+  end
+
+  defp has_fulfilments?(meal_log_id) do
+    FoodLogEntry
+    |> FoodLogEntry.for_meal_log(meal_log_id)
+    |> where([e], not is_nil(e.planned_item_id))
+    |> Repo.exists?()
   end
 
   defp insert_meal_log(business_id, client_id, date, meal_slot, snapshot, meal_id) do
@@ -265,9 +408,21 @@ defmodule Easy.MealLogs do
     snapshot = build_planned_snapshot(meal)
     validate_snapshot!(meal_id, snapshot)
     meal_log = get_or_create_meal_log!(business_id, client_id, date, meal_slot, snapshot, meal_id)
-    meal_item_id = resolve_meal_item_id(business_id, meal_id, attrs[:meal_item_id])
 
-    with {:ok, entry} <- create_food_log_entry(business_id, meal_log.id, attrs, meal_item_id),
+    {entry_attrs, planned_item_id, preload_item} =
+      case attrs[:planned_item_id] do
+        nil ->
+          {attrs, nil, nil}
+
+        id ->
+          case prepare_planned_log_attrs(meal_log, meal, id, attrs) do
+            {:ok, prepared, item} -> {prepared, id, item}
+            {:error, reason} -> Repo.rollback(reason)
+          end
+      end
+
+    with {:ok, entry} <-
+           create_food_log_entry(business_id, meal_log.id, entry_attrs, planned_item_id, preload_item),
          {:ok, _meal_log} <- recalculate_logged_calories(meal_log),
          :ok <- stamp_client_activity(business_id, client_id, occurred_at) do
       entry
@@ -275,6 +430,102 @@ defmodule Easy.MealLogs do
       {:error, reason} -> Repo.rollback(reason)
     end
   end
+
+  defp replace_item_transaction(
+         business_id,
+         client_id,
+         date,
+         meal_slot,
+         explicit_meal_id,
+         planned_item_id,
+         attrs
+       ) do
+    occurred_at = DateTime.utc_now(:second)
+    meal_id = resolve_slot_meal_id(business_id, client_id, date, meal_slot, explicit_meal_id)
+    meal = meal_id && load_meal_with_items(business_id, client_id, meal_id)
+    snapshot = build_planned_snapshot(meal)
+    validate_snapshot!(meal_id, snapshot)
+    meal_log = get_or_create_meal_log!(business_id, client_id, date, meal_slot, snapshot, meal_id)
+
+    unless freeze_has_planned_item?(meal_log, planned_item_id) do
+      Repo.rollback(:not_found)
+    end
+
+    FoodLogEntry
+    |> FoodLogEntry.for_meal_log(meal_log.id)
+    |> where([e], e.planned_item_id == ^planned_item_id)
+    |> Repo.delete_all()
+
+    with {:ok, entry} <- create_food_log_entry(business_id, meal_log.id, attrs, planned_item_id),
+         {:ok, _meal_log} <- recalculate_logged_calories(meal_log),
+         :ok <- stamp_client_activity(business_id, client_id, occurred_at) do
+      entry
+    else
+      {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
+  # Log-planned: food/recipe come from the freeze (or live meal item). Portion
+  # stays client-supplied. Unknown planned ids fail rather than logging extras.
+  defp prepare_planned_log_attrs(meal_log, meal, planned_item_id, attrs) do
+    with true <- freeze_has_planned_item?(meal_log, planned_item_id),
+         item when not is_nil(item) <-
+           find_freeze_item(meal_log, planned_item_id) || find_live_meal_item(meal, planned_item_id) do
+      {:ok, merge_planned_identity(attrs, item), find_live_meal_item(meal, planned_item_id)}
+    else
+      false -> {:error, :not_found}
+      nil -> {:error, :not_found}
+    end
+  end
+
+  defp merge_planned_identity(attrs, %MealItem{} = item) do
+    cond do
+      not is_nil(item.food_id) ->
+        attrs |> Map.put(:food_id, item.food_id) |> Map.delete(:recipe_id)
+
+      not is_nil(item.recipe_id) ->
+        attrs |> Map.put(:recipe_id, item.recipe_id) |> Map.delete(:food_id)
+
+      true ->
+        attrs
+    end
+  end
+
+  defp merge_planned_identity(attrs, item) when is_map(item) do
+    food_id = snap_get(item, :food_id)
+    recipe_id = snap_get(item, :recipe_id)
+
+    cond do
+      not is_nil(food_id) ->
+        attrs |> Map.put(:food_id, food_id) |> Map.delete(:recipe_id)
+
+      not is_nil(recipe_id) ->
+        attrs |> Map.put(:recipe_id, recipe_id) |> Map.delete(:food_id)
+
+      true ->
+        attrs
+    end
+  end
+
+  defp freeze_has_planned_item?(%MealLog{} = meal_log, planned_item_id) do
+    meal_log.planned_snapshot
+    |> snapshot_items()
+    |> Enum.any?(fn item -> snap_get(item, :id) == planned_item_id end)
+  end
+
+  defp find_freeze_item(%MealLog{} = meal_log, planned_item_id) do
+    meal_log.planned_snapshot
+    |> snapshot_items()
+    |> Enum.find(fn item -> snap_get(item, :id) == planned_item_id end)
+  end
+
+  defp find_live_meal_item(nil, _planned_item_id), do: nil
+
+  defp find_live_meal_item(%Meal{meal_items: items}, planned_item_id) when is_list(items) do
+    Enum.find(items, &(&1.id == planned_item_id))
+  end
+
+  defp find_live_meal_item(_meal, _planned_item_id), do: nil
 
   defp validate_snapshot!(meal_id, snapshot) do
     if not is_nil(meal_id) and is_nil(snapshot), do: Repo.rollback(:not_found)
@@ -576,10 +827,9 @@ defmodule Easy.MealLogs do
       carbs_g: macros.carbs_g,
       fat_g: macros.fat_g,
       fiber_g: macros.fiber_g,
-      source: :planned,
       business_id: business_id,
       nutrition_meal_log_id: meal_log_id,
-      nutrition_meal_item_id: item.id,
+      planned_item_id: item.id,
       food_id: item.food_id,
       recipe_id: item.recipe_id,
       inserted_at: now,
@@ -688,15 +938,25 @@ defmodule Easy.MealLogs do
         {:error, reason} -> Repo.rollback(reason)
       end
 
+    freeze_ids =
+      meal_log.planned_snapshot
+      |> snapshot_items()
+      |> Enum.map(&snap_get(&1, :id))
+      |> Enum.reject(&is_nil/1)
+      |> MapSet.new()
+
     already_logged =
       FoodLogEntry
       |> FoodLogEntry.for_meal_log(meal_log.id)
-      |> FoodLogEntry.logged_meal_item_ids()
+      |> FoodLogEntry.logged_planned_item_ids()
       |> Repo.all()
       |> MapSet.new()
 
+    # Once the freeze is stable, only fulfil items that were frozen — later builder
+    # additions are tomorrow's plan, not this day's diary.
     entries =
       meal.meal_items
+      |> Enum.filter(&MapSet.member?(freeze_ids, &1.id))
       |> Enum.sort_by(& &1.position)
       |> Enum.reduce([], &log_meal_item(&1, &2, already_logged, meal_log.id, business_id))
       |> Enum.reverse()
@@ -720,11 +980,11 @@ defmodule Easy.MealLogs do
 
   # `item` is the planned MealItem with food/recipe already preloaded, when the
   # caller has one — it saves re-fetching rows loaded two frames up the stack.
-  defp create_food_log_entry(business_id, meal_log_id, attrs, meal_item_id, item \\ nil) do
+  defp create_food_log_entry(business_id, meal_log_id, attrs, planned_item_id, item \\ nil) do
     changeset =
       business_id
       |> FoodLogEntry.insert_changeset(meal_log_id, attrs)
-      |> put_meal_item(meal_item_id)
+      |> put_planned_item_id(planned_item_id)
 
     if changeset.valid? do
       changeset
@@ -736,22 +996,10 @@ defmodule Easy.MealLogs do
     end
   end
 
-  defp put_meal_item(changeset, nil), do: changeset
-  defp put_meal_item(changeset, meal_item_id), do: put_change(changeset, :nutrition_meal_item_id, meal_item_id)
+  defp put_planned_item_id(changeset, nil), do: changeset
 
-  # The client names the planned item it is fulfilling by id. Scoped to the meal
-  # already resolved for this slot, so a client cannot point an entry at another
-  # business's item; an unknown id simply logs unreconciled rather than failing.
-  defp resolve_meal_item_id(_business_id, nil, _meal_item_id), do: nil
-  defp resolve_meal_item_id(_business_id, _meal_id, nil), do: nil
-
-  defp resolve_meal_item_id(business_id, meal_id, meal_item_id) do
-    MealItem
-    |> MealItem.for_business(business_id)
-    |> MealItem.for_meal(meal_id)
-    |> select([mi], mi.id)
-    |> Repo.get(meal_item_id)
-  end
+  defp put_planned_item_id(changeset, planned_item_id),
+    do: put_change(changeset, :planned_item_id, planned_item_id)
 
   defp update_food_log_entry(%FoodLogEntry{} = entry, business_id, attrs) do
     entry
@@ -957,8 +1205,7 @@ defmodule Easy.MealLogs do
       "recipe_id" => item.recipe_id,
       "amount" => item.amount,
       "unit" => item.unit,
-      "weight_g" => item.weight_g,
-      "source" => "planned"
+      "weight_g" => item.weight_g
     }
   end
 
@@ -967,6 +1214,9 @@ defmodule Easy.MealLogs do
     {name, _} = item_name(item)
 
     %{
+      id: item.id,
+      food_id: item.food_id,
+      recipe_id: item.recipe_id,
       food_name: name,
       amount: item.amount,
       unit: item.unit,
@@ -977,6 +1227,53 @@ defmodule Easy.MealLogs do
       fat_g: macros.fat_g,
       fiber_g: macros.fiber_g
     }
+  end
+
+  defp snapshot_items(nil), do: []
+
+  defp snapshot_items(snapshot) when is_map(snapshot) do
+    case snap_get(snapshot, :items) do
+      items when is_list(items) -> items
+      _ -> []
+    end
+  end
+
+  defp snapshot_items(_), do: []
+
+  defp normalize_planned(item) when is_map(item) do
+    %{
+      id: snap_get(item, :id),
+      food_id: snap_get(item, :food_id),
+      recipe_id: snap_get(item, :recipe_id),
+      food_name: snap_get(item, :food_name),
+      amount: snap_get(item, :amount),
+      unit: snap_get(item, :unit),
+      weight_g: snap_get(item, :weight_g),
+      calories: snap_get(item, :calories),
+      protein_g: snap_get(item, :protein_g),
+      carbs_g: snap_get(item, :carbs_g),
+      fat_g: snap_get(item, :fat_g),
+      fiber_g: snap_get(item, :fiber_g)
+    }
+  end
+
+  defp fulfilment_status(planned, %FoodLogEntry{} = entry) do
+    if same_food_or_recipe?(planned, entry), do: :as_planned, else: :swapped
+  end
+
+  defp same_food_or_recipe?(planned, entry) do
+    planned_food_id = snap_get(planned, :food_id)
+    planned_recipe_id = snap_get(planned, :recipe_id)
+
+    cond do
+      not is_nil(planned_food_id) -> planned_food_id == entry.food_id
+      not is_nil(planned_recipe_id) -> planned_recipe_id == entry.recipe_id
+      true -> false
+    end
+  end
+
+  defp snap_get(map, key) when is_map(map) and is_atom(key) do
+    Map.get(map, key) || Map.get(map, Atom.to_string(key))
   end
 
   defp item_name(%MealItem{food: %Food{} = f}), do: {f.name, :food}
@@ -1005,6 +1302,215 @@ defmodule Easy.MealLogs do
   # client's entire history with every entry preloaded.
   defp apply_date_filters(query, _date, _from_date, _to_date),
     do: {:ok, MealLog.for_date(query, Date.utc_today())}
+
+  defp resolve_nutrition_day_dates(opts) do
+    date = Keyword.get(opts, :date)
+    from_date = Keyword.get(opts, :from)
+    to_date = Keyword.get(opts, :to)
+
+    cond do
+      not is_nil(date) ->
+        {:ok, [date]}
+
+      not is_nil(from_date) and not is_nil(to_date) ->
+        cond do
+          Date.compare(from_date, to_date) == :gt ->
+            {:error, :invalid_date_range}
+
+          Date.diff(to_date, from_date) > 30 ->
+            {:error, :date_range_too_wide}
+
+          true ->
+            {:ok, Enum.to_list(Date.range(from_date, to_date))}
+        end
+
+      not is_nil(from_date) or not is_nil(to_date) ->
+        {:error, :incomplete_date_range}
+
+      true ->
+        {:ok, [Date.utc_today()]}
+    end
+  end
+
+  defp build_nutrition_days(business_id, client_id, dates) do
+    logs_by_date =
+      MealLog
+      |> MealLog.for_client(business_id, client_id)
+      |> MealLog.for_date_range(hd(dates), List.last(dates))
+      |> MealLog.oldest()
+      |> MealLog.include_entries()
+      |> Repo.all()
+      |> Enum.group_by(& &1.date)
+
+    plans = load_nutrition_day_plans(business_id, client_id, dates)
+
+    Enum.map(dates, fn date ->
+      schedule = nutrition_day_schedule(plans, date)
+      logs = Map.get(logs_by_date, date, [])
+      assemble_nutrition_day(date, schedule, logs)
+    end)
+  end
+
+  defp build_nutrition_day(business_id, client_id, date) do
+    business_id
+    |> build_nutrition_days(client_id, [date])
+    |> hd()
+  end
+
+  defp load_nutrition_day_plans(business_id, client_id, dates) do
+    from_date = hd(dates)
+    to_date = List.last(dates)
+
+    Plan
+    |> Plan.for_client(business_id, client_id)
+    |> Plan.for_status(:active)
+    |> where([plan], is_nil(plan.start_date) or plan.start_date <= ^to_date)
+    |> where([plan], is_nil(plan.end_date) or plan.end_date >= ^from_date)
+    |> Plan.newest()
+    |> preload(days: ^PlanDay.include_day_meals(PlanDay.by_position(), business_id))
+    |> Repo.all()
+  end
+
+  defp nutrition_day_schedule(plans, date) do
+    case Enum.find(plans, &plan_active_on?(&1, date)) do
+      nil ->
+        %{plan: nil, slots: [], chosen: %{}}
+
+      plan ->
+        day_name = Easy.Utils.weekday_name(date)
+        day = Enum.find(plan.days, &(day_name in &1.weekdays))
+        %{plan: plan, slots: schedule_slots_from_day(day), chosen: %{}}
+    end
+  end
+
+  defp plan_active_on?(plan, date) do
+    (is_nil(plan.start_date) or Date.compare(plan.start_date, date) != :gt) and
+      (is_nil(plan.end_date) or Date.compare(plan.end_date, date) != :lt)
+  end
+
+  defp schedule_slots_from_day(nil), do: []
+
+  defp schedule_slots_from_day(day) do
+    day.day_meals
+    |> Enum.group_by(& &1.meal_slot)
+    |> Enum.map(fn {slot, options} ->
+      %{meal_slot: slot, options: Enum.sort_by(options, & &1.position)}
+    end)
+    |> Enum.sort_by(fn %{meal_slot: slot} ->
+      Enum.find_index(MealSlot.values(), &(&1 == slot)) || length(MealSlot.values())
+    end)
+  end
+
+  defp assemble_nutrition_day(date, schedule, logs) do
+    plan = schedule.plan
+    plan_slots = Map.new(schedule.slots, fn %{meal_slot: slot, options: options} -> {slot, options} end)
+    logs_by_slot = Map.new(logs, fn ml -> {ml.meal_slot, ml} end)
+
+    slot_keys =
+      (Map.keys(plan_slots) ++ Map.keys(logs_by_slot))
+      |> Enum.uniq()
+      |> Enum.sort_by(fn slot -> Enum.find_index(MealSlot.values(), &(&1 == slot)) || 99 end)
+
+    %{
+      date: date,
+      plan_id: plan && plan.id,
+      targets: day_targets(plan),
+      slots:
+        Enum.map(slot_keys, fn slot ->
+          options = Map.get(plan_slots, slot, [])
+          meal_log = Map.get(logs_by_slot, slot)
+          chosen_id = Map.get(schedule.chosen, to_string(slot)) || (meal_log && meal_log.nutrition_meal_id)
+          active = active_day_meal(options, chosen_id)
+
+          %{
+            meal_slot: slot,
+            meal_id: chosen_id || (active && active.nutrition_meal_id),
+            planned_calories: slot_planned_calories(meal_log, active),
+            logged_calories: (meal_log && meal_log.logged_calories) || 0.0,
+            options: Enum.map(options, &day_option/1),
+            rows: if(meal_log, do: diary_rows(meal_log), else: [])
+          }
+        end)
+    }
+  end
+
+  defp day_targets(nil),
+    do: %{calories: nil, protein_g: nil, carbs_g: nil, fat_g: nil, fiber_g: nil}
+
+  defp day_targets(%Plan{} = plan) do
+    %{
+      calories: plan.target_calories,
+      protein_g: plan.target_protein_g,
+      carbs_g: plan.target_carbs_g,
+      fat_g: plan.target_fat_g,
+      fiber_g: plan.target_fiber_g
+    }
+  end
+
+  defp active_day_meal([], _chosen_id), do: nil
+  defp active_day_meal(options, nil), do: hd(options)
+
+  defp active_day_meal(options, chosen_id) do
+    Enum.find(options, hd(options), &(&1.nutrition_meal_id == chosen_id))
+  end
+
+  defp slot_planned_calories(%MealLog{planned_calories: cal}, _active) when not is_nil(cal), do: cal
+
+  defp slot_planned_calories(_meal_log, %DayMeal{meal: %Meal{meal_items: items}}) when is_list(items) do
+    MacroCalc.meal_totals(items).calories
+  end
+
+  defp slot_planned_calories(_meal_log, _active), do: 0.0
+
+  defp day_option(%DayMeal{} = day_meal) do
+    meal = day_meal.meal
+
+    items =
+      case meal do
+        %Meal{meal_items: items} when is_list(items) -> items
+        _ -> []
+      end
+
+    %{
+      meal_id: day_meal.nutrition_meal_id,
+      meal_name: if(match?(%Meal{}, meal), do: meal.name, else: nil),
+      position: day_meal.position,
+      items: Enum.map(items, &day_option_item/1)
+    }
+  end
+
+  defp day_option_item(%MealItem{} = item) do
+    {food_name, nutrition} =
+      case {item.food, item.recipe} do
+        {%Food{} = f, _} ->
+          {f.name,
+           %{
+             calories_per_100g: f.calories_per_100g,
+             protein_g_per_100g: f.protein_g_per_100g,
+             carbs_g_per_100g: f.carbs_g_per_100g,
+             fat_g_per_100g: f.fat_g_per_100g,
+             fiber_g_per_100g: f.fiber_g_per_100g
+           }}
+
+        {_, %Recipe{} = r} ->
+          {r.name, MacroCalc.recipe_totals(r)}
+
+        _ ->
+          {nil, nil}
+      end
+
+    %{
+      meal_item_id: item.id,
+      position: item.position,
+      food_id: item.food_id,
+      recipe_id: item.recipe_id,
+      food_name: food_name,
+      amount: item.amount,
+      unit: item.unit,
+      weight_g: item.weight_g,
+      nutrition: nutrition
+    }
+  end
 
   # Entry getter scoped to a specific client.
   defp get_client_food_log_entry_scoped(business_id, client_id, entry_id) do

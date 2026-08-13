@@ -99,6 +99,11 @@ export const mealLogKeys = {
   forClient: (clientId: string, filters?: Filters) => ['nutrition-meal-logs', clientId, filters ?? {}] as const,
 };
 
+export const nutritionDayKeys = {
+  all: ['nutrition-days'] as const,
+  forClient: (clientId: string, filters?: Filters) => ['nutrition-days', clientId, filters ?? {}] as const,
+};
+
 export const trainingPlanKeys = {
   ...domain('training-plans'),
   /** Prefix over every client's assigned-plans list — for mutations that don't know which client. */

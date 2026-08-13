@@ -22,6 +22,90 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TeamResponse",
         "x-validate": null
       },
+      "MealLogPlannedItem": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "calories": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "carbs_g": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "fat_g": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "fiber_g": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "food_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "food_name": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "protein_g": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "recipe_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "unit": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "weight_g": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "title": "MealLogPlannedItem",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.MealLogPlannedItem",
+        "x-validate": null
+      },
       "TrainingExerciseListResponse": {
         "additionalProperties": false,
         "properties": {
@@ -445,6 +529,74 @@
         "title": "TrainingPlanExercise",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingPlanExercise",
+        "x-validate": null
+      },
+      "NutritionDayOptionItem": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "food_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "food_name": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_item_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "nutrition": {
+            "additionalProperties": true,
+            "nullable": true,
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "position": {
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "recipe_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "unit": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "weight_g": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "meal_item_id"
+        ],
+        "title": "NutritionDayOptionItem",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayOptionItem",
         "x-validate": null
       },
       "TrainingExerciseResponse": {
@@ -2269,6 +2421,26 @@
         "x-struct": null,
         "x-validate": null
       },
+      "NutritionDayListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/NutritionDay"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "NutritionDayListResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayListResponse",
+        "x-validate": null
+      },
       "MealLog": {
         "additionalProperties": false,
         "properties": {
@@ -2329,6 +2501,14 @@
             "x-struct": null,
             "x-validate": null
           },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/MealLogDiaryRow"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
           "updated_at": {
             "format": "date-time",
             "type": "string",
@@ -2341,6 +2521,7 @@
           "date",
           "meal_slot",
           "food_log_entries",
+          "rows",
           "inserted_at",
           "updated_at"
         ],
@@ -2804,105 +2985,6 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.FoodListResponse",
         "x-validate": null
       },
-      "FoodLogEntryRequest": {
-        "additionalProperties": false,
-        "example": {
-          "amount": 1,
-          "date": "2026-05-31",
-          "food_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-          "meal_slot": "breakfast",
-          "unit": "serving"
-        },
-        "properties": {
-          "amount": {
-            "nullable": true,
-            "type": "number",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "date": {
-            "format": "date",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "food_id": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "food_name": {
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "meal_id": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "meal_item_id": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "meal_slot": {
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "notes": {
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "plan_id": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "recipe_id": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "source": {
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "unit": {
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "weight_g": {
-            "nullable": true,
-            "type": "number",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "title": "FoodLogEntryRequest",
-        "type": "object",
-        "x-struct": null,
-        "x-validate": null
-      },
       "ChatMessageEmbedRequest": {
         "additionalProperties": false,
         "properties": {
@@ -2981,6 +3063,7 @@
         "x-validate": null
       },
       "NutritionSwitchOptionRequest": {
+        "additionalProperties": false,
         "properties": {
           "date": {
             "format": "date",
@@ -2989,6 +3072,7 @@
             "x-validate": null
           },
           "meal_id": {
+            "format": "uuid",
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -3552,6 +3636,44 @@
         "title": "ClientProfileReviewQueueItem",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileReviewQueueItem",
+        "x-validate": null
+      },
+      "NutritionDayOption": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NutritionDayOptionItem"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_name": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "position": {
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "meal_id",
+          "items"
+        ],
+        "title": "NutritionDayOption",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayOption",
         "x-validate": null
       },
       "PublicApplicationRequest": {
@@ -4153,6 +4275,68 @@
         "x-struct": null,
         "x-validate": null
       },
+      "NutritionDaySlot": {
+        "additionalProperties": false,
+        "properties": {
+          "logged_calories": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_slot": {
+            "enum": [
+              "breakfast",
+              "morning_snack",
+              "lunch",
+              "afternoon_snack",
+              "dinner",
+              "evening_snack"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/NutritionDayOption"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "planned_calories": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/MealLogDiaryRow"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "meal_slot",
+          "options",
+          "rows"
+        ],
+        "title": "NutritionDaySlot",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDaySlot",
+        "x-validate": null
+      },
       "TrainerInvitationPreviewResponse": {
         "additionalProperties": false,
         "properties": {
@@ -4228,6 +4412,44 @@
         "title": "TrainingWorkoutRequest",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "NutritionDay": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "format": "date",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "plan_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/NutritionDaySlot"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "targets": {
+            "$ref": "#/components/schemas/NutritionDayTargets"
+          }
+        },
+        "required": [
+          "date",
+          "targets",
+          "slots"
+        ],
+        "title": "NutritionDay",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDay",
         "x-validate": null
       },
       "BillingCheckoutRequest": {
@@ -4372,6 +4594,89 @@
         "title": "ChatMessageResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ChatMessageResponse",
+        "x-validate": null
+      },
+      "AddExtraRequest": {
+        "additionalProperties": false,
+        "example": {
+          "date": "2026-05-31",
+          "food_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+          "meal_slot": "breakfast",
+          "weight_g": 80
+        },
+        "properties": {
+          "amount": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "date": {
+            "format": "date",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "food_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_slot": {
+            "enum": [
+              "breakfast",
+              "morning_snack",
+              "lunch",
+              "afternoon_snack",
+              "dinner",
+              "evening_snack"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "notes": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "recipe_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "unit": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "weight_g": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "date",
+          "meal_slot"
+        ],
+        "title": "AddExtraRequest",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "TrainingWorkoutExerciseArrayResponse": {
@@ -5521,6 +5826,50 @@
         "title": "PublicApplicationResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.PublicApplicationResponse",
+        "x-validate": null
+      },
+      "LogMealRequest": {
+        "additionalProperties": false,
+        "example": {
+          "date": "2026-05-31",
+          "meal_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+          "meal_slot": "breakfast"
+        },
+        "properties": {
+          "date": {
+            "format": "date",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_slot": {
+            "enum": [
+              "breakfast",
+              "morning_snack",
+              "lunch",
+              "afternoon_snack",
+              "dinner",
+              "evening_snack"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "date",
+          "meal_slot",
+          "meal_id"
+        ],
+        "title": "LogMealRequest",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "ClientProfileCheckInScheduleUpdateRequest": {
@@ -7407,6 +7756,49 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientListResponse",
         "x-validate": null
       },
+      "MealLogDiaryRow": {
+        "additionalProperties": false,
+        "properties": {
+          "entry": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FoodLogEntry"
+              }
+            ],
+            "nullable": true,
+            "x-struct": null,
+            "x-validate": null
+          },
+          "planned": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MealLogPlannedItem"
+              }
+            ],
+            "nullable": true,
+            "x-struct": null,
+            "x-validate": null
+          },
+          "status": {
+            "enum": [
+              "as_planned",
+              "swapped",
+              "skipped",
+              "added"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "MealLogDiaryRow",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.MealLogDiaryRow",
+        "x-validate": null
+      },
       "SeatLimitError": {
         "additionalProperties": true,
         "properties": {
@@ -7553,6 +7945,45 @@
         "title": "ClientInviteRequest",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "NutritionDayTargets": {
+        "additionalProperties": false,
+        "properties": {
+          "calories": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "carbs_g": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "fat_g": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "fiber_g": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "protein_g": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "title": "NutritionDayTargets",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayTargets",
         "x-validate": null
       },
       "TrainingSchedule": {
@@ -8340,15 +8771,15 @@
             "x-struct": null,
             "x-validate": null
           },
-          "nutrition_meal_item_id": {
+          "nutrition_meal_log_id": {
             "format": "uuid",
-            "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null
           },
-          "nutrition_meal_log_id": {
+          "planned_item_id": {
             "format": "uuid",
+            "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -8361,12 +8792,6 @@
           },
           "recipe_id": {
             "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "source": {
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -8404,6 +8829,35 @@
         "title": "FoodLogEntry",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.FoodLogEntry",
+        "x-validate": null
+      },
+      "LogDayRequest": {
+        "additionalProperties": false,
+        "example": {
+          "date": "2026-05-31",
+          "plan_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c"
+        },
+        "properties": {
+          "date": {
+            "format": "date",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "plan_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "date",
+          "plan_id"
+        ],
+        "title": "LogDayRequest",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "AttachmentUploadResponse": {
@@ -9184,6 +9638,161 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WeightEntryListResponse",
         "x-validate": null
       },
+      "LogPlannedItemRequest": {
+        "additionalProperties": false,
+        "example": {
+          "date": "2026-05-31",
+          "meal_slot": "breakfast",
+          "planned_item_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+          "weight_g": 100
+        },
+        "properties": {
+          "amount": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "date": {
+            "format": "date",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_slot": {
+            "enum": [
+              "breakfast",
+              "morning_snack",
+              "lunch",
+              "afternoon_snack",
+              "dinner",
+              "evening_snack"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "planned_item_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "unit": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "weight_g": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "date",
+          "meal_slot",
+          "planned_item_id"
+        ],
+        "title": "LogPlannedItemRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
+      "ReplaceItemRequest": {
+        "additionalProperties": false,
+        "example": {
+          "date": "2026-05-31",
+          "food_id": "a1b2c3d4-74a4-4f9f-b1e9-a9bb07ab4a7c",
+          "meal_slot": "breakfast",
+          "planned_item_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+          "weight_g": 120
+        },
+        "properties": {
+          "amount": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "date": {
+            "format": "date",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "food_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_slot": {
+            "enum": [
+              "breakfast",
+              "morning_snack",
+              "lunch",
+              "afternoon_snack",
+              "dinner",
+              "evening_snack"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "planned_item_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "recipe_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "unit": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "weight_g": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "date",
+          "meal_slot",
+          "planned_item_id"
+        ],
+        "title": "ReplaceItemRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "ClientProfileResponse": {
         "additionalProperties": false,
         "properties": {
@@ -9586,24 +10195,6 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionMealItem",
         "x-validate": null
       },
-      "NutritionMapResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "title": "NutritionMapResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionMapResponse",
-        "x-validate": null
-      },
       "MessageResponse": {
         "additionalProperties": false,
         "properties": {
@@ -9950,6 +10541,42 @@
         "title": "RecipeImpactResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.RecipeImpactResponse",
+        "x-validate": null
+      },
+      "UpdatePortionRequest": {
+        "additionalProperties": false,
+        "example": {
+          "weight_g": 150
+        },
+        "properties": {
+          "amount": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "notes": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "unit": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "weight_g": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "title": "UpdatePortionRequest",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "Prospect": {
@@ -11367,7 +11994,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FoodLogEntryRequest"
+                "$ref": "#/components/schemas/LogMealRequest"
               }
             }
           },
@@ -11653,11 +12280,11 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FoodLogEntryRequest"
+                "$ref": "#/components/schemas/UpdatePortionRequest"
               }
             }
           },
-          "description": "Food log entry request",
+          "description": "Update portion request",
           "required": true
         },
         "responses": {
@@ -11707,7 +12334,7 @@
             "bearerAuth": []
           }
         ],
-        "summary": "Update food log entry",
+        "summary": "Update food log entry portion",
         "tags": [
           "client food log entries"
         ]
@@ -12062,6 +12689,110 @@
         "summary": "List client training sessions",
         "tags": [
           "coach training sessions"
+        ]
+      }
+    },
+    "/v1/coach/clients/{client_id}/nutrition-days": {
+      "get": {
+        "callbacks": {},
+        "description": "Reconciled nutrition-day payload for a client: targets, options, diary rows.",
+        "operationId": "listCoachNutritionDays",
+        "parameters": [
+          {
+            "description": "Client id",
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Exact date (YYYY-MM-DD); overrides from/to",
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Inclusive start date; required with to",
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Inclusive end date; required with from; range max 31 days",
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutritionDayListResponse"
+                }
+              }
+            },
+            "description": "Nutrition days"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid date range"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List client nutrition days",
+        "tags": [
+          "coach nutrition days"
         ]
       }
     },
@@ -13466,6 +14197,75 @@
         ]
       }
     },
+    "/v1/client/nutrition-food-log-entries/log-planned-item": {
+      "post": {
+        "callbacks": {},
+        "operationId": "logPlannedItem",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogPlannedItemRequest"
+              }
+            }
+          },
+          "description": "Log planned item request",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodLogEntryResponse"
+                }
+              }
+            },
+            "description": "Food log entry created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Log a planned meal item",
+        "tags": [
+          "client food log entries"
+        ]
+      }
+    },
     "/v1/coach/conversations": {
       "get": {
         "callbacks": {},
@@ -14007,7 +14807,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FoodLogEntryRequest"
+                "$ref": "#/components/schemas/LogDayRequest"
               }
             }
           },
@@ -15425,6 +16225,89 @@
         "summary": "Replace a nutrition plan's weekday schedule",
         "tags": [
           "coach nutrition plan days"
+        ]
+      }
+    },
+    "/v1/client/nutrition-days": {
+      "get": {
+        "callbacks": {},
+        "description": "Reconciled nutrition-day payload: targets, live options, and diary rows.",
+        "operationId": "listClientNutritionDays",
+        "parameters": [
+          {
+            "description": "Exact date (YYYY-MM-DD); overrides from/to",
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Inclusive start date; required with to",
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Inclusive end date; required with from; range max 31 days",
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutritionDayListResponse"
+                }
+              }
+            },
+            "description": "Nutrition days"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid date range"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List nutrition days",
+        "tags": [
+          "client nutrition days"
         ]
       }
     },
@@ -18366,6 +19249,75 @@
         ]
       }
     },
+    "/v1/client/nutrition-food-log-entries/replace-item": {
+      "post": {
+        "callbacks": {},
+        "operationId": "replaceItem",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplaceItemRequest"
+              }
+            }
+          },
+          "description": "Replace item request",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodLogEntryResponse"
+                }
+              }
+            },
+            "description": "Food log entry created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Replace a planned item with a different food or recipe",
+        "tags": [
+          "client food log entries"
+        ]
+      }
+    },
     "/v1/coach/team": {
       "get": {
         "callbacks": {},
@@ -19306,6 +20258,65 @@
         "summary": "List clients",
         "tags": [
           "coach clients"
+        ]
+      }
+    },
+    "/v1/client/nutrition-food-log-entries/add-extra": {
+      "post": {
+        "callbacks": {},
+        "operationId": "addExtra",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddExtraRequest"
+              }
+            }
+          },
+          "description": "Add extra request",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodLogEntryResponse"
+                }
+              }
+            },
+            "description": "Food log entry created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Add an off-plan food or recipe to a slot",
+        "tags": [
+          "client food log entries"
         ]
       }
     },
@@ -20580,77 +21591,6 @@
         ]
       }
     },
-    "/v1/client/nutrition-plans/today": {
-      "get": {
-        "callbacks": {},
-        "description": "Loads the active nutrition plan day for the authenticated client.",
-        "operationId": "getTodayNutritionPlan",
-        "parameters": [
-          {
-            "description": "Date to load, defaults to today",
-            "in": "query",
-            "name": "date",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NutritionMapResponse"
-                }
-              }
-            },
-            "description": "Nutrition plan day"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Plan not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Get today's nutrition plan",
-        "tags": [
-          "client nutrition plans"
-        ]
-      }
-    },
     "/v1/coach/billing/checkout": {
       "post": {
         "callbacks": {},
@@ -21204,65 +22144,6 @@
         "summary": "Create an upload for a client",
         "tags": [
           "coach attachments"
-        ]
-      }
-    },
-    "/v1/client/nutrition-food-log-entries": {
-      "post": {
-        "callbacks": {},
-        "operationId": "createFoodLogEntry",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FoodLogEntryRequest"
-              }
-            }
-          },
-          "description": "Food log entry request",
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FoodLogEntryResponse"
-                }
-              }
-            },
-            "description": "Food log entry created"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Create food log entry",
-        "tags": [
-          "client food log entries"
         ]
       }
     },

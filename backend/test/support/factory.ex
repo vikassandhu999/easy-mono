@@ -562,7 +562,6 @@ defmodule Easy.Factory do
       protein_g: 16.9,
       carbs_g: 66.3,
       fat_g: 6.9,
-      source: :planned,
       meal_log: meal_log,
       business: meal_log.business,
       food: food
@@ -575,8 +574,7 @@ defmodule Easy.Factory do
       "meal_slot" => "breakfast",
       "amount" => 100.0,
       "unit" => "g",
-      "weight_g" => 100.0,
-      "source" => "planned"
+      "weight_g" => 100.0
     }
   end
 

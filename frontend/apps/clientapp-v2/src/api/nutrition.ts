@@ -1,33 +1,37 @@
 /**
- * Client nutrition. The "today" endpoint returns an opaque map; `asTodayPlan`
- * hand-types it. Targets come from the active plan summary (target_* columns);
- * consumed totals are summed FE-side from logged entries.
+ * Client nutrition. Day view is GET /nutrition-days (targets + options + diary
+ * rows). Writes are typed verbs under /nutrition-food-log-entries/*.
  */
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
-import {foodKeys, mealLogKeys, nutritionPlanKeys, recipeKeys} from '@/api/keys';
+import {foodKeys, nutritionDayKeys, nutritionPlanKeys, recipeKeys} from '@/api/keys';
 import type {components, paths} from '@/api/schema';
 
 export type Food = components['schemas']['Food'];
 export type FoodLogEntry = components['schemas']['FoodLogEntry'];
-type FoodLogEntryRequest = components['schemas']['FoodLogEntryRequest'];
-export type MealLog = components['schemas']['MealLog'];
+export type NutritionDay = components['schemas']['NutritionDay'];
+export type NutritionDayOption = components['schemas']['NutritionDayOption'];
+export type NutritionDayOptionItem = components['schemas']['NutritionDayOptionItem'];
+export type NutritionDaySlot = components['schemas']['NutritionDaySlot'];
 export type NutritionPlan = components['schemas']['NutritionPlan'];
 export type Recipe = components['schemas']['Recipe'];
 export type SwitchOptionRequest = components['schemas']['NutritionSwitchOptionRequest'];
 
+/** @deprecated Prefer NutritionDayOptionItem — kept as alias for amount sheet. */
+export type TodayPlanItem = NutritionDayOptionItem;
+/** @deprecated Prefer NutritionDayOption. */
+export type TodayPlanOption = NutritionDayOption;
+
 type PlanListQuery = paths['/v1/client/nutrition-plans']['get']['parameters']['query'];
-type MealLogListQuery = paths['/v1/client/nutrition-meal-logs']['get']['parameters']['query'];
+type NutritionDayQuery = paths['/v1/client/nutrition-days']['get']['parameters']['query'];
 type FoodListQuery = paths['/v1/client/nutrition-foods']['get']['parameters']['query'];
 type RecipeListQuery = paths['/v1/client/nutrition-recipes']['get']['parameters']['query'];
-type TodayQuery = paths['/v1/client/nutrition-plans/today']['get']['parameters']['query'];
 
 type PlanListResponse = components['schemas']['NutritionPlanListResponse'];
-type MealLogListResponse = components['schemas']['MealLogListResponse'];
+type NutritionDayListResponse = components['schemas']['NutritionDayListResponse'];
 type FoodListResponse = components['schemas']['FoodListResponse'];
 type RecipeListResponse = components['schemas']['RecipeListResponse'];
-type NutritionMapResponse = components['schemas']['NutritionMapResponse'];
 type FoodLogEntryResponse = components['schemas']['FoodLogEntryResponse'];
 type FoodLogEntryListResponse = components['schemas']['FoodLogEntryListResponse'];
 type NutritionMealLogResponse = components['schemas']['NutritionMealLogResponse'];
@@ -41,19 +45,11 @@ export function useListClientNutritionPlansQuery(query: PlanListQuery = {}) {
   });
 }
 
-export function useGetTodayNutritionPlanQuery(query: TodayQuery = {}) {
+export function useListClientNutritionDaysQuery(query: NutritionDayQuery = {}) {
   return useQuery({
-    queryKey: [...nutritionPlanKeys.today(), query],
+    queryKey: nutritionDayKeys.list(query),
     queryFn: () =>
-      call(client.GET('/v1/client/nutrition-plans/today', {params: {query}})) as Promise<NutritionMapResponse>,
-  });
-}
-
-export function useListClientMealLogsQuery(query: MealLogListQuery = {}) {
-  return useQuery({
-    queryKey: mealLogKeys.list(query),
-    queryFn: () =>
-      call(client.GET('/v1/client/nutrition-meal-logs', {params: {query}})) as Promise<MealLogListResponse>,
+      call(client.GET('/v1/client/nutrition-days', {params: {query}})) as Promise<NutritionDayListResponse>,
   });
 }
 
@@ -74,35 +70,58 @@ export function useListClientRecipesQuery(query: RecipeListQuery = {}, options?:
 }
 
 // ── Log writes ───────────────────────────────────────────────
-// Every write changes the day's meal logs → refresh the diary list.
 
-/**
- * Invalidate everything a log write can change: the diary list, and the today
- * plan — logging into an unlogged slot pins `MealLog.nutrition_meal_id`
- * server-side, which flips that slot's `chosen_meal_id` in the today payload
- * (the option header and the option sheet's checkmark read it).
- */
-function useInvalidateMealLogs() {
+function useInvalidateNutritionDays() {
   const qc = useQueryClient();
   return () => {
-    qc.invalidateQueries({queryKey: mealLogKeys.lists()});
-    qc.invalidateQueries({queryKey: nutritionPlanKeys.today()});
+    qc.invalidateQueries({queryKey: nutritionDayKeys.lists()});
   };
 }
 
-export function useCreateFoodLogEntryMutation() {
-  const invalidate = useInvalidateMealLogs();
+type LogPlannedItemRequest = components['schemas']['LogPlannedItemRequest'];
+type AddExtraRequest = components['schemas']['AddExtraRequest'];
+type ReplaceItemRequest = components['schemas']['ReplaceItemRequest'];
+type LogMealRequest = components['schemas']['LogMealRequest'];
+type LogDayRequest = components['schemas']['LogDayRequest'];
+type UpdatePortionRequest = components['schemas']['UpdatePortionRequest'];
+
+export function useLogPlannedItemMutation() {
+  const invalidate = useInvalidateNutritionDays();
   return useMutation({
-    mutationFn: (body: FoodLogEntryRequest) =>
-      call(client.POST('/v1/client/nutrition-food-log-entries', {body})) as Promise<FoodLogEntryResponse>,
+    mutationFn: (body: LogPlannedItemRequest) =>
+      call(
+        client.POST('/v1/client/nutrition-food-log-entries/log-planned-item', {body}),
+      ) as Promise<FoodLogEntryResponse>,
+    onSuccess: invalidate,
+  });
+}
+
+export function useAddExtraMutation() {
+  const invalidate = useInvalidateNutritionDays();
+  return useMutation({
+    mutationFn: (body: AddExtraRequest) =>
+      call(
+        client.POST('/v1/client/nutrition-food-log-entries/add-extra', {body}),
+      ) as Promise<FoodLogEntryResponse>,
+    onSuccess: invalidate,
+  });
+}
+
+export function useReplaceItemMutation() {
+  const invalidate = useInvalidateNutritionDays();
+  return useMutation({
+    mutationFn: (body: ReplaceItemRequest) =>
+      call(
+        client.POST('/v1/client/nutrition-food-log-entries/replace-item', {body}),
+      ) as Promise<FoodLogEntryResponse>,
     onSuccess: invalidate,
   });
 }
 
 export function useUpdateFoodLogEntryMutation() {
-  const invalidate = useInvalidateMealLogs();
+  const invalidate = useInvalidateNutritionDays();
   return useMutation({
-    mutationFn: ({id, ...body}: FoodLogEntryRequest & {id: string}) =>
+    mutationFn: ({id, ...body}: UpdatePortionRequest & {id: string}) =>
       call(
         client.PATCH('/v1/client/nutrition-food-log-entries/{id}', {params: {path: {id}}, body}),
       ) as Promise<FoodLogEntryResponse>,
@@ -111,7 +130,7 @@ export function useUpdateFoodLogEntryMutation() {
 }
 
 export function useDeleteFoodLogEntryMutation() {
-  const invalidate = useInvalidateMealLogs();
+  const invalidate = useInvalidateNutritionDays();
   return useMutation({
     mutationFn: (id: string) =>
       call(client.DELETE('/v1/client/nutrition-food-log-entries/{id}', {params: {path: {id}}})),
@@ -120,25 +139,25 @@ export function useDeleteFoodLogEntryMutation() {
 }
 
 export function useLogMealMutation() {
-  const invalidate = useInvalidateMealLogs();
+  const invalidate = useInvalidateNutritionDays();
   return useMutation({
-    mutationFn: (body: FoodLogEntryRequest) =>
+    mutationFn: (body: LogMealRequest) =>
       call(client.POST('/v1/client/nutrition-food-log-entries/log-meal', {body})) as Promise<FoodLogEntryListResponse>,
     onSuccess: invalidate,
   });
 }
 
 export function useLogDayMutation() {
-  const invalidate = useInvalidateMealLogs();
+  const invalidate = useInvalidateNutritionDays();
   return useMutation({
-    mutationFn: (body: FoodLogEntryRequest) =>
+    mutationFn: (body: LogDayRequest) =>
       call(client.POST('/v1/client/nutrition-food-log-entries/log-day', {body})) as Promise<FoodLogEntryListResponse>,
     onSuccess: invalidate,
   });
 }
 
 export function useSwitchNutritionMealOptionMutation() {
-  const invalidate = useInvalidateMealLogs();
+  const invalidate = useInvalidateNutritionDays();
   return useMutation({
     mutationFn: (body: SwitchOptionRequest) =>
       call(
@@ -148,49 +167,10 @@ export function useSwitchNutritionMealOptionMutation() {
   });
 }
 
-// ── Hand-typed view-model over the opaque `today` payload ─────────────────────
-// GET /nutrition-plans/today returns {data: object}; its real shape is below.
-// `nutrition` is per-100g for food items but whole-recipe totals for recipe items.
-export type TodayPlanItem = {
-  amount: null | number;
-  food_id: null | string;
-  food_name: null | string;
-  meal_item_id: string;
-  nutrition: null | Record<string, null | number>;
-  position: number;
-  recipe_id: null | string;
-  unit: null | string;
-  weight_g: null | number;
-};
-export type TodayPlanOption = {
-  items: TodayPlanItem[];
-  meal_id: string;
-  meal_name: null | string;
-  position: number;
-};
-type TodayPlanSlot = {
-  chosen_meal_id: null | string;
-  meal_slot: string;
-  options: TodayPlanOption[];
-};
-export type TodayPlan = {
-  date: string;
-  day: string;
-  plan_id: string;
-  slots: TodayPlanSlot[];
-};
-
-export function asTodayPlan(resp: undefined | {data?: unknown}): null | TodayPlan {
-  const data = resp?.data;
-  return data && typeof data === 'object' ? (data as TodayPlan) : null;
-}
-
-// Display calories for a planned item. Foods scale per-100g by weight_g; recipes use
-// the whole-recipe total the today payload provides (its only figure for recipes).
-// ponytail: recipe display kcal isn't portion-scaled here — the today payload doesn't
-// expose servings/cooked weight. Logged entries get correct macros from the backend.
-export function plannedItemCalories(item: TodayPlanItem): null | number {
-  const n = item.nutrition;
+// Display calories for a live option item. Foods scale per-100g by weight_g;
+// recipes use the whole-recipe total the option payload provides.
+export function plannedItemCalories(item: NutritionDayOptionItem): null | number {
+  const n = item.nutrition as null | Record<string, null | number> | undefined;
   if (!n) {
     return null;
   }

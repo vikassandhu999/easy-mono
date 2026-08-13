@@ -11,9 +11,10 @@ import {useState} from 'react';
 
 import {
   type FoodLogEntry,
+  type SwitchOptionRequest,
   type TodayPlanItem,
-  useCreateFoodLogEntryMutation,
   useDeleteFoodLogEntryMutation,
+  useLogPlannedItemMutation,
   useUpdateFoodLogEntryMutation,
 } from '@/api/nutrition';
 
@@ -22,7 +23,6 @@ export type SheetTarget = {
   loggedEntry: FoodLogEntry | null;
   mealId: null | string;
   name: string;
-  planId: string | undefined;
   mealItemId: null | string;
   plannedItem: null | TodayPlanItem;
   slot: string;
@@ -40,10 +40,10 @@ export default function AmountSheet({
   onReplace: (target: SheetTarget) => void;
   target: SheetTarget;
 }) {
-  const createEntry = useCreateFoodLogEntryMutation();
+  const logPlanned = useLogPlannedItemMutation();
   const updateEntry = useUpdateFoodLogEntryMutation();
   const deleteEntry = useDeleteFoodLogEntryMutation();
-  const busy = createEntry.isPending || updateEntry.isPending || deleteEntry.isPending;
+  const busy = logPlanned.isPending || updateEntry.isPending || deleteEntry.isPending;
 
   const {loggedEntry, plannedItem} = target;
   // Servings mode: recipe items the plan sizes by servings (no weight) — the sheet
@@ -62,7 +62,11 @@ export default function AmountSheet({
 
   // Use the planned food's per-100g only for an unlogged item; once an entry exists
   // (incl. a replacement, whose food differs from the plan) scale its frozen macros.
-  const per100 = !loggedEntry && plannedItem?.food_id ? plannedItem.nutrition : null;
+  const per100 =
+    !loggedEntry && plannedItem?.food_id
+      ? (plannedItem.nutrition as null | Record<string, null | number> | undefined)
+      : null;
+
   const liveMacros = (w: number): Macros | null => {
     if (per100) {
       return {
@@ -91,16 +95,12 @@ export default function AmountSheet({
       const portion = servings ? {amount: weight, unit: unitLabel} : {unit: 'g', weight_g: weight};
       if (loggedEntry) {
         await updateEntry.mutateAsync({...portion, id: loggedEntry.id});
-      } else if (plannedItem) {
-        await createEntry.mutateAsync({
+      } else if (plannedItem && target.mealItemId) {
+        await logPlanned.mutateAsync({
           date: target.date,
-          food_id: plannedItem.food_id ?? undefined,
           meal_id: target.mealId ?? undefined,
-          meal_slot: target.slot,
-          plan_id: target.planId,
-          meal_item_id: target.mealItemId ?? undefined,
-          recipe_id: plannedItem.recipe_id ?? undefined,
-          source: 'planned',
+          meal_slot: target.slot as SwitchOptionRequest['meal_slot'],
+          planned_item_id: target.mealItemId,
           ...portion,
         });
       }
@@ -206,14 +206,16 @@ export default function AmountSheet({
           ✓ {loggedEntry ? 'Save' : 'Log it'}
         </button>
         <div className="flex gap-2">
-          <button
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-border py-2.5 text-xs font-semibold text-foreground active:bg-surface-secondary disabled:opacity-50"
-            disabled={busy}
-            onClick={() => onReplace(target)}
-            type="button"
-          >
-            🔄 Replace
-          </button>
+          {target.mealItemId ? (
+            <button
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-border py-2.5 text-xs font-semibold text-foreground active:bg-surface-secondary disabled:opacity-50"
+              disabled={busy}
+              onClick={() => onReplace(target)}
+              type="button"
+            >
+              🔄 Replace
+            </button>
+          ) : null}
           {loggedEntry ? (
             <button
               className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-border py-2.5 text-xs font-semibold text-foreground active:bg-surface-secondary disabled:opacity-50"

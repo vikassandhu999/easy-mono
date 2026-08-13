@@ -51,16 +51,13 @@ export const sessionKeys = domain('training-sessions');
 
 export const exerciseKeys = domain('training-exercises');
 
-/** Old tags: NutritionPlan/{LIST,TODAY}. */
-export const nutritionPlanKeys = {
-  ...domain('nutrition-plans'),
-  // Nested under lists() on purpose (RM-143): today IS a list-shaped view of
-  // the day's slots. As a sibling key, only one mutation ever remembered to
-  // invalidate it; under the prefix, every lists() invalidation sweeps it.
-  today: () => [...nutritionPlanKeys.lists(), 'today'] as const,
-};
+/** Old tags: NutritionPlan/{LIST}. */
+export const nutritionPlanKeys = domain('nutrition-plans');
 
-/** Old tag: MealLog/LIST. */
+/** Reconciled nutrition-day read (targets + options + diary rows). */
+export const nutritionDayKeys = domain('nutrition-days');
+
+/** Old tag: MealLog/LIST — kept for any remaining raw meal-log reads. */
 export const mealLogKeys = domain('nutrition-meal-logs');
 
 export const foodKeys = domain('nutrition-foods');

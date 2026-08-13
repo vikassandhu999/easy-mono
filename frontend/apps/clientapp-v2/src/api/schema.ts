@@ -55,7 +55,7 @@ export interface paths {
     delete: operations['deleteFoodLogEntry'];
     options?: never;
     head?: never;
-    /** Update food log entry */
+    /** Update food log entry portion */
     patch: operations['updateFoodLogEntry'];
     trace?: never;
   };
@@ -188,6 +188,23 @@ export interface paths {
     put?: never;
     /** Switch the chosen meal option for a planned slot */
     post: operations['switchNutritionMealOption'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/client/nutrition-food-log-entries/log-planned-item': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Log a planned meal item */
+    post: operations['logPlannedItem'];
     delete?: never;
     options?: never;
     head?: never;
@@ -394,6 +411,26 @@ export interface paths {
      * @description Loads one recipe visible to the authenticated client.
      */
     get: operations['getClientRecipe'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/client/nutrition-days': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List nutrition days
+     * @description Reconciled nutrition-day payload: targets, live options, and diary rows.
+     */
+    get: operations['listClientNutritionDays'];
     put?: never;
     post?: never;
     delete?: never;
@@ -657,6 +694,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/client/nutrition-food-log-entries/replace-item': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Replace a planned item with a different food or recipe */
+    post: operations['replaceItem'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/auth/trainer-invitations/{token}': {
     parameters: {
       query?: never;
@@ -695,6 +749,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/client/nutrition-food-log-entries/add-extra': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Add an off-plan food or recipe to a slot */
+    post: operations['addExtra'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/auth/accept-invite/verify': {
     parameters: {
       query?: never;
@@ -715,26 +786,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/v1/client/nutrition-plans/today': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get today's nutrition plan
-     * @description Loads the active nutrition plan day for the authenticated client.
-     */
-    get: operations['getTodayNutritionPlan'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   '/v1/client/nutrition-meal-logs': {
     parameters: {
       query?: never;
@@ -746,23 +797,6 @@ export interface paths {
     get: operations['listClientMealLogs'];
     put?: never;
     post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/client/nutrition-food-log-entries': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Create food log entry */
-    post: operations['createFoodLogEntry'];
     delete?: never;
     options?: never;
     head?: never;
@@ -894,6 +928,24 @@ export interface components {
     TeamResponse: {
       data: components['schemas']['TeamMember'][];
     };
+    /** MealLogPlannedItem */
+    MealLogPlannedItem: {
+      amount?: number | null;
+      calories?: number | null;
+      carbs_g?: number | null;
+      fat_g?: number | null;
+      fiber_g?: number | null;
+      /** Format: uuid */
+      food_id?: string | null;
+      food_name?: string | null;
+      /** Format: uuid */
+      id?: string | null;
+      protein_g?: number | null;
+      /** Format: uuid */
+      recipe_id?: string | null;
+      unit?: string | null;
+      weight_g?: number | null;
+    };
     /** TrainingExerciseListResponse */
     TrainingExerciseListResponse: {
       count: number;
@@ -996,6 +1048,23 @@ export interface components {
         | 'distance_duration'
         | 'weight_distance'
         | null;
+    };
+    /** NutritionDayOptionItem */
+    NutritionDayOptionItem: {
+      amount?: number | null;
+      /** Format: uuid */
+      food_id?: string | null;
+      food_name?: string | null;
+      /** Format: uuid */
+      meal_item_id: string;
+      nutrition?: {
+        [key: string]: unknown;
+      } | null;
+      position?: number;
+      /** Format: uuid */
+      recipe_id?: string | null;
+      unit?: string | null;
+      weight_g?: number | null;
     };
     /** TrainingExerciseResponse */
     TrainingExerciseResponse: {
@@ -1434,6 +1503,10 @@ export interface components {
           attachment_ids: string[];
           body?: string | null;
         };
+    /** NutritionDayListResponse */
+    NutritionDayListResponse: {
+      data: components['schemas']['NutritionDay'][];
+    };
     /** MealLog */
     MealLog: {
       /** Format: uuid */
@@ -1451,6 +1524,7 @@ export interface components {
       planned_snapshot?: {
         [key: string]: unknown;
       } | null;
+      rows: components['schemas']['MealLogDiaryRow'][];
       /** Format: date-time */
       updated_at: string;
     };
@@ -1576,37 +1650,6 @@ export interface components {
       count: number;
       data: components['schemas']['Food'][];
     };
-    /**
-     * FoodLogEntryRequest
-     * @example {
-     *       "amount": 1,
-     *       "date": "2026-05-31",
-     *       "food_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-     *       "meal_slot": "breakfast",
-     *       "unit": "serving"
-     *     }
-     */
-    FoodLogEntryRequest: {
-      amount?: number | null;
-      /** Format: date */
-      date?: string;
-      /** Format: uuid */
-      food_id?: string | null;
-      food_name?: string | null;
-      /** Format: uuid */
-      meal_id?: string | null;
-      /** Format: uuid */
-      meal_item_id?: string | null;
-      meal_slot?: string | null;
-      notes?: string | null;
-      /** Format: uuid */
-      plan_id?: string | null;
-      /** Format: uuid */
-      recipe_id?: string | null;
-      source?: string | null;
-      unit?: string | null;
-      weight_g?: number | null;
-    };
     /** ChatMessageEmbedRequest */
     ChatMessageEmbedRequest: {
       /** Format: uuid */
@@ -1630,6 +1673,7 @@ export interface components {
     NutritionSwitchOptionRequest: {
       /** Format: date */
       date: string;
+      /** Format: uuid */
       meal_id: string;
       /** @enum {string} */
       meal_slot: 'breakfast' | 'morning_snack' | 'lunch' | 'afternoon_snack' | 'dinner' | 'evening_snack';
@@ -1781,6 +1825,14 @@ export interface components {
       submitted_at: string;
       /** @enum {string} */
       submitted_by_type: 'coach' | 'client' | 'system';
+    };
+    /** NutritionDayOption */
+    NutritionDayOption: {
+      items: components['schemas']['NutritionDayOptionItem'][];
+      /** Format: uuid */
+      meal_id: string;
+      meal_name?: string | null;
+      position?: number;
     };
     /**
      * PublicApplicationRequest
@@ -1974,6 +2026,17 @@ export interface components {
       serving_sizes?: components['schemas']['FoodServingSize'][];
       sugar_g_per_100g?: number | null;
     };
+    /** NutritionDaySlot */
+    NutritionDaySlot: {
+      logged_calories?: number | null;
+      /** Format: uuid */
+      meal_id?: string | null;
+      /** @enum {string} */
+      meal_slot: 'breakfast' | 'morning_snack' | 'lunch' | 'afternoon_snack' | 'dinner' | 'evening_snack';
+      options: components['schemas']['NutritionDayOption'][];
+      planned_calories?: number | null;
+      rows: components['schemas']['MealLogDiaryRow'][];
+    };
     /** TrainerInvitationPreviewResponse */
     TrainerInvitationPreviewResponse: {
       data: {
@@ -1995,6 +2058,15 @@ export interface components {
      */
     TrainingWorkoutRequest: {
       name: string;
+    };
+    /** NutritionDay */
+    NutritionDay: {
+      /** Format: date */
+      date: string;
+      /** Format: uuid */
+      plan_id?: string | null;
+      slots: components['schemas']['NutritionDaySlot'][];
+      targets: components['schemas']['NutritionDayTargets'];
     };
     /** BillingCheckoutRequest */
     BillingCheckoutRequest: {
@@ -2034,6 +2106,31 @@ export interface components {
     /** ChatMessageResponse */
     ChatMessageResponse: {
       data: components['schemas']['ChatMessage'];
+    };
+    /**
+     * AddExtraRequest
+     * @example {
+     *       "date": "2026-05-31",
+     *       "food_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+     *       "meal_slot": "breakfast",
+     *       "weight_g": 80
+     *     }
+     */
+    AddExtraRequest: {
+      amount?: number | null;
+      /** Format: date */
+      date: string;
+      /** Format: uuid */
+      food_id?: string | null;
+      /** Format: uuid */
+      meal_id?: string | null;
+      /** @enum {string} */
+      meal_slot: 'breakfast' | 'morning_snack' | 'lunch' | 'afternoon_snack' | 'dinner' | 'evening_snack';
+      notes?: string | null;
+      /** Format: uuid */
+      recipe_id?: string | null;
+      unit?: string | null;
+      weight_g?: number | null;
     };
     /** TrainingWorkoutExerciseArrayResponse */
     TrainingWorkoutExerciseArrayResponse: {
@@ -2381,6 +2478,22 @@ export interface components {
         program_name?: string | null;
         whatsapp_number?: string | null;
       };
+    };
+    /**
+     * LogMealRequest
+     * @example {
+     *       "date": "2026-05-31",
+     *       "meal_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+     *       "meal_slot": "breakfast"
+     *     }
+     */
+    LogMealRequest: {
+      /** Format: date */
+      date: string;
+      /** Format: uuid */
+      meal_id: string;
+      /** @enum {string} */
+      meal_slot: 'breakfast' | 'morning_snack' | 'lunch' | 'afternoon_snack' | 'dinner' | 'evening_snack';
     };
     /** ClientProfileCheckInScheduleUpdateRequest */
     ClientProfileCheckInScheduleUpdateRequest: {
@@ -2868,6 +2981,13 @@ export interface components {
       data: components['schemas']['Client'][];
       summary: components['schemas']['ClientSummary'];
     };
+    /** MealLogDiaryRow */
+    MealLogDiaryRow: {
+      entry?: components['schemas']['FoodLogEntry'] | null;
+      planned?: components['schemas']['MealLogPlannedItem'] | null;
+      /** @enum {string} */
+      status: 'as_planned' | 'swapped' | 'skipped' | 'added';
+    };
     /** SeatLimitError */
     SeatLimitError: {
       /** @example seat_limit_reached */
@@ -2914,6 +3034,14 @@ export interface components {
       last_name?: string | null;
       notes?: string | null;
       phone?: string | null;
+    };
+    /** NutritionDayTargets */
+    NutritionDayTargets: {
+      calories?: number | null;
+      carbs_g?: number | null;
+      fat_g?: number | null;
+      fiber_g?: number | null;
+      protein_g?: number | null;
     };
     /** TrainingSchedule */
     TrainingSchedule: {
@@ -3139,17 +3267,29 @@ export interface components {
       inserted_at: string;
       notes?: string | null;
       /** Format: uuid */
-      nutrition_meal_item_id?: string | null;
-      /** Format: uuid */
       nutrition_meal_log_id: string;
+      /** Format: uuid */
+      planned_item_id?: string | null;
       protein_g?: number | null;
       /** Format: uuid */
       recipe_id?: string | null;
-      source?: string | null;
       unit: string | null;
       /** Format: date-time */
       updated_at: string;
       weight_g: number | null;
+    };
+    /**
+     * LogDayRequest
+     * @example {
+     *       "date": "2026-05-31",
+     *       "plan_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c"
+     *     }
+     */
+    LogDayRequest: {
+      /** Format: date */
+      date: string;
+      /** Format: uuid */
+      plan_id: string;
     };
     /** AttachmentUploadResponse */
     AttachmentUploadResponse: {
@@ -3401,6 +3541,55 @@ export interface components {
         [key: string]: unknown;
       };
     };
+    /**
+     * LogPlannedItemRequest
+     * @example {
+     *       "date": "2026-05-31",
+     *       "meal_slot": "breakfast",
+     *       "planned_item_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+     *       "weight_g": 100
+     *     }
+     */
+    LogPlannedItemRequest: {
+      amount?: number | null;
+      /** Format: date */
+      date: string;
+      /** Format: uuid */
+      meal_id?: string | null;
+      /** @enum {string} */
+      meal_slot: 'breakfast' | 'morning_snack' | 'lunch' | 'afternoon_snack' | 'dinner' | 'evening_snack';
+      /** Format: uuid */
+      planned_item_id: string;
+      unit?: string | null;
+      weight_g?: number | null;
+    };
+    /**
+     * ReplaceItemRequest
+     * @example {
+     *       "date": "2026-05-31",
+     *       "food_id": "a1b2c3d4-74a4-4f9f-b1e9-a9bb07ab4a7c",
+     *       "meal_slot": "breakfast",
+     *       "planned_item_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+     *       "weight_g": 120
+     *     }
+     */
+    ReplaceItemRequest: {
+      amount?: number | null;
+      /** Format: date */
+      date: string;
+      /** Format: uuid */
+      food_id?: string | null;
+      /** Format: uuid */
+      meal_id?: string | null;
+      /** @enum {string} */
+      meal_slot: 'breakfast' | 'morning_snack' | 'lunch' | 'afternoon_snack' | 'dinner' | 'evening_snack';
+      /** Format: uuid */
+      planned_item_id: string;
+      /** Format: uuid */
+      recipe_id?: string | null;
+      unit?: string | null;
+      weight_g?: number | null;
+    };
     /** ClientProfileResponse */
     ClientProfileResponse: {
       data: components['schemas']['ClientProfile'];
@@ -3499,12 +3688,6 @@ export interface components {
       updated_at: string;
       weight_g: number | null;
     };
-    /** NutritionMapResponse */
-    NutritionMapResponse: {
-      data: {
-        [key: string]: unknown;
-      };
-    };
     /** MessageResponse */
     MessageResponse: {
       message: string;
@@ -3598,6 +3781,18 @@ export interface components {
           name?: string;
         }[];
       };
+    };
+    /**
+     * UpdatePortionRequest
+     * @example {
+     *       "weight_g": 150
+     *     }
+     */
+    UpdatePortionRequest: {
+      amount?: number | null;
+      notes?: string | null;
+      unit?: string | null;
+      weight_g?: number | null;
     };
     /** Prospect */
     Prospect: {
@@ -3841,7 +4036,7 @@ export interface operations {
     /** @description Log meal request */
     requestBody: {
       content: {
-        'application/json': components['schemas']['FoodLogEntryRequest'];
+        'application/json': components['schemas']['LogMealRequest'];
       };
     };
     responses: {
@@ -3978,10 +4173,10 @@ export interface operations {
       };
       cookie?: never;
     };
-    /** @description Food log entry request */
+    /** @description Update portion request */
     requestBody: {
       content: {
-        'application/json': components['schemas']['FoodLogEntryRequest'];
+        'application/json': components['schemas']['UpdatePortionRequest'];
       };
     };
     responses: {
@@ -4343,6 +4538,58 @@ export interface operations {
       };
     };
   };
+  logPlannedItem: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Log planned item request */
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LogPlannedItemRequest'];
+      };
+    };
+    responses: {
+      /** @description Food log entry created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FoodLogEntryResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
   createAuthToken: {
     parameters: {
       query?: never;
@@ -4511,7 +4758,7 @@ export interface operations {
     /** @description Log day request */
     requestBody: {
       content: {
-        'application/json': components['schemas']['FoodLogEntryRequest'];
+        'application/json': components['schemas']['LogDayRequest'];
       };
     };
     responses: {
@@ -4825,6 +5072,51 @@ export interface operations {
       };
       /** @description Not found */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  listClientNutritionDays: {
+    parameters: {
+      query?: {
+        /** @description Exact date (YYYY-MM-DD); overrides from/to */
+        date?: string;
+        /** @description Inclusive start date; required with to */
+        from?: string;
+        /** @description Inclusive end date; required with from; range max 31 days */
+        to?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Nutrition days */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NutritionDayListResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Invalid date range */
+      422: {
         headers: {
           [name: string]: unknown;
         };
@@ -5596,6 +5888,58 @@ export interface operations {
       };
     };
   };
+  replaceItem: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Replace item request */
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReplaceItemRequest'];
+      };
+    };
+    responses: {
+      /** @description Food log entry created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FoodLogEntryResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
   showTrainerInvitation: {
     parameters: {
       query?: never;
@@ -5712,6 +6056,49 @@ export interface operations {
       };
     };
   };
+  addExtra: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Add extra request */
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AddExtraRequest'];
+      };
+    };
+    responses: {
+      /** @description Food log entry created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FoodLogEntryResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
   verifyInvitation: {
     parameters: {
       query?: never;
@@ -5782,56 +6169,6 @@ export interface operations {
       };
     };
   };
-  getTodayNutritionPlan: {
-    parameters: {
-      query?: {
-        /** @description Date to load, defaults to today */
-        date?: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Nutrition plan day */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['NutritionMapResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Plan not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
   listClientMealLogs: {
     parameters: {
       query?: {
@@ -5867,49 +6204,6 @@ export interface operations {
         };
       };
       /** @description Invalid date range */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  createFoodLogEntry: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Food log entry request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['FoodLogEntryRequest'];
-      };
-    };
-    responses: {
-      /** @description Food log entry created */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['FoodLogEntryResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
       422: {
         headers: {
           [name: string]: unknown;

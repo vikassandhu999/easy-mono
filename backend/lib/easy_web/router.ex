@@ -219,6 +219,7 @@ defmodule EasyWeb.Router do
 
     # Meal logs (view client nutrition data — read-only)
     get "/clients/:client_id/nutrition-meal-logs", MealLogController, :index
+    get "/clients/:client_id/nutrition-days", NutritionDayController, :index
 
     # Chat
     get "/conversations", ConversationController, :index
@@ -262,7 +263,6 @@ defmodule EasyWeb.Router do
 
     # Nutrition plans (read-only)
     get "/nutrition-plans", NutritionPlanController, :index
-    get "/nutrition-plans/today", NutritionPlanController, :today
     get "/nutrition-plans/:id", NutritionPlanController, :show
 
     # Foods (read-only)
@@ -273,11 +273,14 @@ defmodule EasyWeb.Router do
     get "/nutrition-recipes", RecipeController, :index
     get "/nutrition-recipes/:id", RecipeController, :show
 
-    # Meal logs
+    # Meal logs + reconciled nutrition days
     get "/nutrition-meal-logs", MealLogController, :index
+    get "/nutrition-days", NutritionDayController, :index
 
     # Food log entries
-    post "/nutrition-food-log-entries", FoodLogEntryController, :create
+    post "/nutrition-food-log-entries/log-planned-item", FoodLogEntryController, :log_planned_item
+    post "/nutrition-food-log-entries/add-extra", FoodLogEntryController, :add_extra
+    post "/nutrition-food-log-entries/replace-item", FoodLogEntryController, :replace_item
     post "/nutrition-food-log-entries/log-meal", FoodLogEntryController, :log_meal
     post "/nutrition-food-log-entries/log-day", FoodLogEntryController, :log_day
     post "/nutrition-food-log-entries/switch-option", FoodLogEntryController, :switch_option

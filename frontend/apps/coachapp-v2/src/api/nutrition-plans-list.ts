@@ -14,7 +14,7 @@
 import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
-import {clientKeys, mealLogKeys, nutritionPlanKeys} from '@/api/keys';
+import {clientKeys, mealLogKeys, nutritionDayKeys, nutritionPlanKeys} from '@/api/keys';
 import type {components, paths} from '@/api/schema';
 
 const PAGE_SIZE = 20;
@@ -22,6 +22,9 @@ const PAGE_SIZE = 20;
 export type NutritionPlan = components['schemas']['NutritionPlan'];
 export type NutritionPlanRequest = components['schemas']['NutritionPlanRequest'];
 export type MealLog = components['schemas']['MealLog'];
+export type MealLogDiaryRow = components['schemas']['MealLogDiaryRow'];
+export type NutritionDay = components['schemas']['NutritionDay'];
+export type NutritionDaySlot = components['schemas']['NutritionDaySlot'];
 
 type NutritionPlanListResponse = components['schemas']['NutritionPlanListResponse'];
 type NutritionPlanAssignRequest = components['schemas']['NutritionPlanAssignRequest'];
@@ -32,6 +35,9 @@ type ListCoachClientNutritionPlansQuery = NonNullable<
 >;
 type ListCoachMealLogsQuery = NonNullable<
   paths['/v1/coach/clients/{client_id}/nutrition-meal-logs']['get']['parameters']['query']
+>;
+type ListCoachNutritionDaysQuery = NonNullable<
+  paths['/v1/coach/clients/{client_id}/nutrition-days']['get']['parameters']['query']
 >;
 
 /** Filter params — offset/limit are handled by the infinite query machinery. */
@@ -129,6 +135,7 @@ export function useUpdateNutritionPlanMutation() {
       qc.invalidateQueries({queryKey: nutritionPlanKeys.detail(id)});
       qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
       qc.invalidateQueries({queryKey: nutritionPlanKeys.forClients()});
+      qc.invalidateQueries({queryKey: nutritionDayKeys.all});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
       qc.invalidateQueries({queryKey: clientKeys.details()});
     },
@@ -143,6 +150,7 @@ export function useDeleteNutritionPlanMutation() {
       qc.removeQueries({queryKey: nutritionPlanKeys.detail(id)});
       qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
       qc.invalidateQueries({queryKey: nutritionPlanKeys.forClients()});
+      qc.invalidateQueries({queryKey: nutritionDayKeys.all});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
       qc.invalidateQueries({queryKey: clientKeys.details()});
     },
@@ -172,6 +180,7 @@ export function useAssignNutritionPlanMutation() {
     onSuccess: (_data, {body}) => {
       qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
       qc.invalidateQueries({queryKey: nutritionPlanKeys.forClient(body.client_id)});
+      qc.invalidateQueries({queryKey: nutritionDayKeys.all});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
       qc.invalidateQueries({queryKey: clientKeys.detail(body.client_id)});
     },
@@ -179,7 +188,7 @@ export function useAssignNutritionPlanMutation() {
 }
 
 // ---------------------------------------------------------------------------
-// Client meal logs (nutrition tab / stat strip).
+// Client meal logs (legacy raw list — prefer nutrition days for day views).
 // ---------------------------------------------------------------------------
 
 export type ListCoachMealLogsParams = Pick<ListCoachMealLogsQuery, 'date' | 'from' | 'to'>;
@@ -194,6 +203,25 @@ export function useListCoachMealLogsQuery(
     queryFn: () =>
       call(
         client.GET('/v1/coach/clients/{client_id}/nutrition-meal-logs', {
+          params: {path: {client_id: clientId}, query: params ?? undefined},
+        }),
+      ),
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export type ListCoachNutritionDaysParams = Pick<ListCoachNutritionDaysQuery, 'date' | 'from' | 'to'>;
+
+export function useListCoachNutritionDaysQuery(
+  clientId: string,
+  params?: ListCoachNutritionDaysParams,
+  options?: {enabled?: boolean},
+) {
+  return useQuery({
+    queryKey: nutritionDayKeys.forClient(clientId, params),
+    queryFn: () =>
+      call(
+        client.GET('/v1/coach/clients/{client_id}/nutrition-days', {
           params: {path: {client_id: clientId}, query: params ?? undefined},
         }),
       ),

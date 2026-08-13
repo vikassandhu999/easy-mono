@@ -25,20 +25,18 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
     %{conn: conn, coach: coach, client: client, business: coach.business, food: food}
   end
 
-  describe "POST /v1/client/nutrition-food-log-entries" do
+  describe "POST /v1/client/nutrition-food-log-entries/add-extra" do
     test "creates entry with computed macros and creates MealLog", ctx do
       attrs = %{
         "date" => "2026-03-25",
         "meal_slot" => "breakfast",
         "food_id" => ctx.food.id,
-        "food_name" => "Oats",
         "amount" => 100.0,
         "unit" => "g",
-        "weight_g" => 100.0,
-        "source" => "planned"
+        "weight_g" => 100.0
       }
 
-      conn = post(ctx.conn, "/v1/client/nutrition-food-log-entries", attrs)
+      conn = post(ctx.conn, "/v1/client/nutrition-food-log-entries/add-extra", attrs)
       assert %{"data" => data} = json_response(conn, 201)
       assert data["food_name"] == "Oats"
       assert data["food_id"] == ctx.food.id
@@ -46,7 +44,6 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
       assert data["protein_g"] == 16.9
       # 10.6 fiber/100g x 100g / 100 = 10.6
       assert data["fiber_g"] == 10.6
-      assert data["source"] == "planned"
       assert data["nutrition_meal_log_id"] != nil
     end
 
@@ -57,11 +54,10 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
         "food_id" => ctx.food.id,
         "amount" => 50.0,
         "unit" => "g",
-        "weight_g" => 50.0,
-        "source" => "unplanned"
+        "weight_g" => 50.0
       }
 
-      conn = post(ctx.conn, "/v1/client/nutrition-food-log-entries", attrs)
+      conn = post(ctx.conn, "/v1/client/nutrition-food-log-entries/add-extra", attrs)
       assert %{"data" => data} = json_response(conn, 201)
       assert data["food_name"] == "Oats"
       # 389 * 50 / 100 = 194.5
@@ -92,14 +88,12 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
         "date" => "2026-03-25",
         "meal_slot" => "lunch",
         "recipe_id" => recipe.id,
-        "food_name" => "Dal Tadka",
         "amount" => 1.0,
         "unit" => "serving",
-        "weight_g" => 250.0,
-        "source" => "planned"
+        "weight_g" => 250.0
       }
 
-      conn = post(ctx.conn, "/v1/client/nutrition-food-log-entries", attrs)
+      conn = post(ctx.conn, "/v1/client/nutrition-food-log-entries/add-extra", attrs)
       assert %{"data" => data} = json_response(conn, 201)
       assert data["food_name"] == "Dal Tadka"
       # 800 / 500 * 250 = 400
@@ -111,14 +105,12 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
         "date" => "2026-03-25",
         "meal_slot" => "brunch",
         "food_id" => ctx.food.id,
-        "food_name" => "Oats",
         "amount" => 100.0,
         "unit" => "g",
-        "weight_g" => 100.0,
-        "source" => "planned"
+        "weight_g" => 100.0
       }
 
-      conn = post(ctx.conn, "/v1/client/nutrition-food-log-entries", attrs)
+      conn = post(ctx.conn, "/v1/client/nutrition-food-log-entries/add-extra", attrs)
       assert json_response(conn, 422)
     end
 
@@ -126,14 +118,12 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
       attrs = %{
         "date" => "2026-03-25",
         "meal_slot" => "breakfast",
-        "food_name" => "Mystery Food",
         "amount" => 100.0,
         "unit" => "g",
-        "weight_g" => 100.0,
-        "source" => "unplanned"
+        "weight_g" => 100.0
       }
 
-      conn = post(ctx.conn, "/v1/client/nutrition-food-log-entries", attrs)
+      conn = post(ctx.conn, "/v1/client/nutrition-food-log-entries/add-extra", attrs)
       assert json_response(conn, 422)
     end
 
@@ -145,14 +135,12 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
         "date" => "2026-03-25",
         "meal_slot" => "breakfast",
         "food_id" => other_food.id,
-        "food_name" => "Other Food",
         "amount" => 100.0,
         "unit" => "g",
-        "weight_g" => 100.0,
-        "source" => "planned"
+        "weight_g" => 100.0
       }
 
-      conn = post(ctx.conn, "/v1/client/nutrition-food-log-entries", attrs)
+      conn = post(ctx.conn, "/v1/client/nutrition-food-log-entries/add-extra", attrs)
       assert json_response(conn, 422)
     end
 
@@ -173,17 +161,15 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
         "meal_slot" => "breakfast",
         "amount" => 100.0,
         "unit" => "g",
-        "weight_g" => 100.0,
-        "source" => "planned"
+        "weight_g" => 100.0
       }
 
       conn1 =
         post(
           ctx.conn,
-          "/v1/client/nutrition-food-log-entries",
+          "/v1/client/nutrition-food-log-entries/add-extra",
           Map.merge(base_attrs, %{
-            "food_id" => ctx.food.id,
-            "food_name" => "Oats"
+            "food_id" => ctx.food.id
           })
         )
 
@@ -192,10 +178,9 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
       conn2 =
         post(
           ctx.conn,
-          "/v1/client/nutrition-food-log-entries",
+          "/v1/client/nutrition-food-log-entries/add-extra",
           Map.merge(base_attrs, %{
-            "food_id" => food2.id,
-            "food_name" => "Milk"
+            "food_id" => food2.id
           })
         )
 
@@ -205,7 +190,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
     end
 
     test "returns 403 without auth" do
-      conn = build_conn() |> post("/v1/client/nutrition-food-log-entries", %{})
+      conn = build_conn() |> post("/v1/client/nutrition-food-log-entries/add-extra", %{})
       assert json_response(conn, 403)
     end
   end

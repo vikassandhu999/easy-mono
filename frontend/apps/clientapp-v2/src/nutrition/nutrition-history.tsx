@@ -1,7 +1,7 @@
 /**
  * Nutrition history (spec 03-history). Weekly adherence overview (on/under/over/no-log
- * rings) + a recent-days list. Tapping a day opens Today at that date. Reads meal-logs
- * over the week range and buckets each day on consumed-vs-target calories. Dark + periwinkle.
+ * rings) + a recent-days list. Tapping a day opens Today at that date. Reads nutrition
+ * days over the week range and buckets each day on consumed-vs-target calories.
  */
 
 import {formatDateISO} from '@easy/utils';
@@ -13,14 +13,14 @@ import ErrorState from '@/@components/error-state';
 
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {type MealLog, useListClientMealLogsQuery, useListClientNutritionPlansQuery} from '@/api/nutrition';
+import {type NutritionDay, useListClientNutritionDaysQuery} from '@/api/nutrition';
 import {
   ADHERENCE_RING,
   ADHERENCE_TEXT,
   type Adherence,
   adherence,
-  dayTotals,
-  planTargets,
+  dayConsumed,
+  dayTargets,
 } from '@/nutrition/nutrition-utils';
 
 const SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -35,7 +35,6 @@ function shiftDate(date: string, days: number): string {
   d.setDate(d.getDate() + days);
   return formatDateISO(d);
 }
-// "Jun 13"
 function shortDate(date: string): string {
   return new Date(`${date}T00:00:00`).toLocaleDateString('en-US', {day: 'numeric', month: 'short'});
 }
@@ -60,20 +59,23 @@ export default function NutritionHistory() {
   const atCurrentWeek = weekStart >= thisWeek;
   const weekLabel = weekStart === thisWeek ? 'This week' : `Week of ${shortDate(weekStart)}`;
 
-  const {data: logsResp, isLoading, isError, refetch} = useListClientMealLogsQuery({from: weekStart, to: weekEnd});
-  const {data: plansResp} = useListClientNutritionPlansQuery({status: 'active'});
-  const target = planTargets(plansResp?.data[0]).calories;
+  const {data: daysResp, isLoading, isError, refetch} = useListClientNutritionDaysQuery({
+    from: weekStart,
+    to: weekEnd,
+  });
 
-  const byDate = new Map<string, MealLog[]>();
-  for (const ml of logsResp?.data ?? []) {
-    byDate.set(ml.date, [...(byDate.get(ml.date) ?? []), ml]);
+  const byDate = new Map<string, NutritionDay>();
+  for (const d of daysResp?.data ?? []) {
+    byDate.set(d.date, d);
   }
 
   const days: DayStat[] = Array.from({length: 7}, (_, i) => {
     const d = new Date(`${weekStart}T00:00:00`);
     d.setDate(d.getDate() + i);
     const date = formatDateISO(d);
-    const totals = dayTotals(byDate.get(date) ?? []);
+    const day = byDate.get(date) ?? null;
+    const totals = dayConsumed(day);
+    const target = dayTargets(day).calories;
     return {
       adh: adherence(totals.calories, target),
       calories: totals.calories,
@@ -135,6 +137,8 @@ export default function NutritionHistory() {
           {/* week adherence strip */}
           <div className="mb-3.5 grid grid-cols-7 gap-1.5">
             {days.map((d) => {
+              const day = byDate.get(d.date) ?? null;
+              const target = dayTargets(day).calories;
               const pct = target ? Math.round((d.calories / target) * 100) : 0;
               return (
                 <button
@@ -161,8 +165,6 @@ export default function NutritionHistory() {
             })}
           </div>
 
-          {/* legend */}
-          {/* Swatches come from the same palette the rings do, so the legend cannot drift from what it labels. */}
           <div className="mb-4 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-muted">
             {(
               [
@@ -185,6 +187,8 @@ export default function NutritionHistory() {
             </p>
           ) : (
             recent.map((d) => {
+              const day = byDate.get(d.date) ?? null;
+              const target = dayTargets(day).calories;
               const over = d.adh === 'over';
               const on = d.adh === 'on';
               return (

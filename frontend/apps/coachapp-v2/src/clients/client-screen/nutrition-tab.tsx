@@ -7,20 +7,13 @@ import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
 import {
   useListCoachClientNutritionPlansQuery,
-  useListCoachMealLogsQuery,
+  useListCoachNutritionDaysQuery,
   useUpdateNutritionPlanMutation,
 } from '@/api/nutrition-plans-list';
 import {PlanPanel} from '@/clients/client-screen/plan-panel';
 import PlanAssignControl from '@/clients/components/plan-assign-control';
 import {SectionCard} from '@/clients/components/section-card';
-import {
-  entryStatus,
-  formatKcal,
-  formatRowDate,
-  lastNDays,
-  plannedMealItems,
-  skippedPlannedItems,
-} from '@/clients/lib/client-detail-data';
+import {formatKcal, formatRowDate, lastNDays} from '@/clients/lib/client-detail-data';
 
 /** CD-NU: the active plan, then 14 days of adherence. */
 export function NutritionTab({client}: {client: Client}) {
@@ -41,7 +34,7 @@ export function NutritionTab({client}: {client: Client}) {
   };
   const days = lastNDays(14);
   const plans = useListCoachClientNutritionPlansQuery(client.id, {status: 'active'});
-  const logs = useListCoachMealLogsQuery(client.id, {
+  const nutritionDays = useListCoachNutritionDaysQuery(client.id, {
     from: days[0]!,
     to: days[days.length - 1]!,
   });
@@ -51,23 +44,27 @@ export function NutritionTab({client}: {client: Client}) {
   // One row per day, newest first — including days with nothing logged, which the
   // design shows as "Not logged" rather than omitting.
   const byDay = new Map<string, {added: number; logged: number; planned: number; skipped: number; swapped: number}>();
-  for (const log of logs.data?.data ?? []) {
-    const day = log.date.slice(0, 10);
-    const acc = byDay.get(day) ?? {added: 0, logged: 0, planned: 0, skipped: 0, swapped: 0};
-    acc.logged += log.logged_calories ?? 0;
-    acc.planned += log.planned_calories ?? 0;
-    // Reconciled positionally against `planned_snapshot.items` — see the lib.
-    const plannedItems = plannedMealItems(log.planned_snapshot);
-    for (const entry of log.food_log_entries) {
-      const status = entryStatus(entry, plannedItems);
-      if (status === 'added') {
-        acc.added += 1;
-      } else if (status === 'swapped') {
-        acc.swapped += 1;
+  for (const day of nutritionDays.data?.data ?? []) {
+    const hasLog = day.slots.some((s) => (s.rows?.length ?? 0) > 0 || (s.logged_calories ?? 0) > 0);
+    if (!hasLog) {
+      continue;
+    }
+    const key = day.date.slice(0, 10);
+    const acc = byDay.get(key) ?? {added: 0, logged: 0, planned: 0, skipped: 0, swapped: 0};
+    for (const slot of day.slots) {
+      acc.logged += slot.logged_calories ?? 0;
+      acc.planned += slot.planned_calories ?? 0;
+      for (const row of slot.rows ?? []) {
+        if (row.status === 'added') {
+          acc.added += 1;
+        } else if (row.status === 'swapped') {
+          acc.swapped += 1;
+        } else if (row.status === 'skipped') {
+          acc.skipped += 1;
+        }
       }
     }
-    acc.skipped += skippedPlannedItems(log.planned_snapshot, log.food_log_entries).length;
-    byDay.set(day, acc);
+    byDay.set(key, acc);
   }
 
   return (

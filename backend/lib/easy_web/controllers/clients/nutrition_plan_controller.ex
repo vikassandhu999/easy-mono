@@ -8,7 +8,6 @@ defmodule EasyWeb.Clients.NutritionPlanController do
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
-    NutritionMapResponse,
     NutritionPlanListResponse,
     NutritionPlanResponse
   }
@@ -35,21 +34,6 @@ defmodule EasyWeb.Clients.NutritionPlanController do
       ok: {"Nutrition plans", "application/json", NutritionPlanListResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Client not found", "application/json", ErrorResponse}
-    ]
-
-  operation :today,
-    summary: "Get today's nutrition plan",
-    description: "Loads the active nutrition plan day for the authenticated client.",
-    operation_id: "getTodayNutritionPlan",
-    security: [%{"bearerAuth" => []}],
-    parameters: [
-      Operation.parameter(:date, :query, :string, "Date to load, defaults to today", required: false)
-    ],
-    responses: [
-      ok: {"Nutrition plan day", "application/json", NutritionMapResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Plan not found", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
   operation :show,
@@ -80,16 +64,6 @@ defmodule EasyWeb.Clients.NutritionPlanController do
   def show(conn, %{"id" => id}) do
     with {:ok, plan} <- Plans.get_client_plan_full(conn.assigns.ctx, id) do
       render(conn, :show, plan: plan)
-    end
-  end
-
-  @spec today(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def today(conn, params) do
-    date = Easy.Utils.safe_date(params["date"]) || Date.utc_today()
-
-    with {:ok, %{plan: plan, slots: slots, chosen: chosen, day: day}} <-
-           Plans.get_client_active_plan_day(conn.assigns.ctx, date) do
-      render(conn, :today, plan: plan, slots: slots, chosen: chosen, date: date, day: day)
     end
   end
 end

@@ -217,59 +217,6 @@ export function completedCheckIns(assignments: {status?: null | string}[] | unde
   return (assignments ?? []).filter((a) => a.status === 'completed').length;
 }
 
-export type PlannedMealItem = {calories?: null | number; food_name?: null | string};
-
-export type LoggedEntry = {
-  food_name?: null | string;
-  planned_item_index?: null | number;
-};
-
-/**
- * What a client actually did with a planned meal, per the design's three chips.
- *
- * The reconciliation is POSITIONAL: `planned_snapshot.items` is an ordered array and
- * a `FoodLogEntry.planned_item_index` points into it. So —
- *
- *   added    the entry has no `planned_item_index` — it was not in the plan
- *   swapped  the entry fills a planned slot with a DIFFERENT food
- *   skipped  a planned item that no entry references at all
- *
- * `planned_snapshot` is typed `{[key: string]: any}`, so every level is checked
- * rather than cast — a shape change must degrade to "no chips", never throw inside
- * a render.
- */
-export function plannedMealItems(snapshot: unknown): PlannedMealItem[] {
-  if (!snapshot || typeof snapshot !== 'object') {
-    return [];
-  }
-  const items = (snapshot as {items?: unknown}).items;
-  return Array.isArray(items) ? (items as PlannedMealItem[]) : [];
-}
-
-/** `null` when the entry simply matches its planned item — the unremarkable case. */
-export function entryStatus(entry: LoggedEntry, planned: PlannedMealItem[]): 'added' | 'swapped' | null {
-  if (entry.planned_item_index == null) {
-    return 'added';
-  }
-  const slot = planned[entry.planned_item_index];
-  // An index pointing outside the snapshot is not a swap — it is an unknown slot,
-  // and claiming "swapped" from missing data would be a guess.
-  if (!slot?.food_name || !entry.food_name) {
-    return null;
-  }
-  return slot.food_name === entry.food_name ? null : 'swapped';
-}
-
-/** Planned items no entry referenced. The design renders these as muted rows. */
-export function skippedPlannedItems(
-  snapshot: unknown,
-  entries: LoggedEntry[],
-): {index: number; item: PlannedMealItem}[] {
-  const planned = plannedMealItems(snapshot);
-  const filled = new Set(entries.map((e) => e.planned_item_index).filter((i): i is number => i != null));
-  return planned.flatMap((item, index) => (filled.has(index) ? [] : [{index, item}]));
-}
-
 /**
  * `points` for the CD-WH trend polyline, oldest value on the left. A flat series
  * is drawn down the vertical middle rather than dividing by a zero range.

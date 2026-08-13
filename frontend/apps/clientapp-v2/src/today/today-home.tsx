@@ -5,7 +5,7 @@ import {useNavigate} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
 import {useListClientFormAssignmentsQuery} from '@/api/checkins';
-import {useListClientMealLogsQuery, useListClientNutritionPlansQuery} from '@/api/nutrition';
+import {useListClientNutritionDaysQuery} from '@/api/nutrition';
 import {useGetClientProfileQuery} from '@/api/profile';
 import {
   useCreateClientTrainingSessionMutation,
@@ -14,7 +14,7 @@ import {
 } from '@/api/training';
 import CheckinNudgeCard from '@/checkins/checkin-nudge-card';
 import IntakeCard from '@/checkins/intake-card';
-import {dayTotals, planTargets} from '@/nutrition/nutrition-utils';
+import {dayConsumed, dayTargets} from '@/nutrition/nutrition-utils';
 import {estimatedMinutes, todayWorkout, totalSets, workoutPreviewPath} from '@/training/training-utils';
 
 export default function TodayHome() {
@@ -22,8 +22,9 @@ export default function TodayHome() {
   const {data: profileData} = useGetClientProfileQuery();
   const {data: plansData, isLoading: plansLoading} = useListClientTrainingPlansQuery({status: 'active'});
   const {data: sessionsData, isLoading: sessionsLoading} = useListClientTrainingSessionsQuery({});
-  const {data: nutritionPlans} = useListClientNutritionPlansQuery({status: 'active'});
-  const {data: mealLogs, isLoading: nutritionLoading} = useListClientMealLogsQuery({date: formatDateISO(new Date())});
+  const {data: nutritionDays, isLoading: nutritionLoading} = useListClientNutritionDaysQuery({
+    date: formatDateISO(new Date()),
+  });
   const {data: assignments} = useListClientFormAssignmentsQuery();
   const createSession = useCreateClientTrainingSessionMutation();
   const starting = createSession.isPending;
@@ -51,8 +52,9 @@ export default function TodayHome() {
     }
   };
 
-  const consumed = dayTotals(mealLogs?.data ?? []);
-  const targets = planTargets(nutritionPlans?.data[0]);
+  const day = nutritionDays?.data[0] ?? null;
+  const consumed = dayConsumed(day);
+  const targets = dayTargets(day);
   const kcalLeft = targets.calories == null ? null : Math.max(0, targets.calories - consumed.calories);
   const weekStart = new Date();
   weekStart.setHours(0, 0, 0, 0);

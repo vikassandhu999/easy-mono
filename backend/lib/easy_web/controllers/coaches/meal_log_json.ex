@@ -1,4 +1,5 @@
 defmodule EasyWeb.Coaches.MealLogJSON do
+  alias Easy.MealLogs
   alias Easy.Nutrition.FoodLogEntry
   alias Easy.Nutrition.MealLog
 
@@ -17,8 +18,17 @@ defmodule EasyWeb.Coaches.MealLogJSON do
       logged_calories: ml.logged_calories,
       client_id: ml.client_id,
       food_log_entries: Enum.map(ml.food_log_entries, &entry_data/1),
+      rows: Enum.map(MealLogs.diary_rows(ml), &row_data/1),
       inserted_at: ml.inserted_at,
       updated_at: ml.updated_at
+    }
+  end
+
+  defp row_data(%{status: status, planned: planned, entry: entry}) do
+    %{
+      status: status,
+      planned: planned,
+      entry: entry && entry_data(entry)
     }
   end
 
@@ -35,8 +45,7 @@ defmodule EasyWeb.Coaches.MealLogJSON do
       fat_g: e.fat_g,
       fiber_g: e.fiber_g,
       notes: e.notes,
-      source: e.source,
-      nutrition_meal_item_id: e.nutrition_meal_item_id,
+      planned_item_id: e.planned_item_id,
       food_id: e.food_id,
       recipe_id: e.recipe_id,
       nutrition_meal_log_id: e.nutrition_meal_log_id,

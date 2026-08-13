@@ -9,15 +9,10 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useListCoachClientNutritionPlansQuery, useListCoachMealLogsQuery} from '@/api/nutrition-plans-list';
+import type {MealLogDiaryRow} from '@/api/nutrition-plans-list';
+import {useListCoachNutritionDaysQuery} from '@/api/nutrition-plans-list';
 import {SectionCard} from '@/clients/components/section-card';
-import {
-  entryStatus,
-  formatKcal,
-  formatRowDate,
-  plannedMealItems,
-  skippedPlannedItems,
-} from '@/clients/lib/client-detail-data';
+import {formatKcal, formatRowDate} from '@/clients/lib/client-detail-data';
 
 /**
  * The design's 64px right column for a row's kcal, so the numbers line up — as a
@@ -26,14 +21,17 @@ import {
  */
 const KCAL_COL = 'min-w-16 shrink-0 whitespace-nowrap text-right';
 
+const STATUS_CHIP: Partial<Record<NonNullable<MealLogDiaryRow['status']>, string>> = {
+  added: 'Added',
+  skipped: 'Skipped',
+  swapped: 'Swapped',
+};
+
 /** CD-ND — one day's meal log: day totals against target, then a card per meal. */
 export default function NutritionDay() {
   const {date = '', id = ''} = useParams<{date: string; id: string}>();
   const goBack = useGoBack(`${ROUTES.CLIENT_DETAIL.replace(':id', id)}?tab=nutrition`);
-  const {data, isError, isLoading, refetch} = useListCoachMealLogsQuery(id, {date});
-  // The design shows a target beside every macro, not just calories, and the
-  // targets live on the plan rather than on the day's logs.
-  const plans = useListCoachClientNutritionPlansQuery(id, {status: 'active'});
+  const {data, isError, isLoading, refetch} = useListCoachNutritionDaysQuery(id, {date});
 
   const header = (subtitle?: string) => (
     <Page.Header size="content">
@@ -81,19 +79,20 @@ export default function NutritionDay() {
     );
   }
 
-  const plan = plans.data?.data?.[0];
-  // Meal-time order, not the order the endpoint happens to return — it came back
-  // Afternoon snack / Breakfast / Dinner / Lunch. `meal_slot` is a free-form
-  // string, so an unrecognised slot sorts last rather than being dropped.
-  const logs = [...data.data].sort((a, b) => mealSlotRank(a.meal_slot) - mealSlotRank(b.meal_slot));
-  const totals = logs.reduce(
-    (acc, log) => {
-      acc.kcal += log.logged_calories ?? 0;
-      acc.target += log.planned_calories ?? 0;
-      for (const entry of log.food_log_entries) {
-        acc.protein += entry.protein_g ?? 0;
-        acc.carbs += entry.carbs_g ?? 0;
-        acc.fat += entry.fat_g ?? 0;
+  const day = data.data[0];
+  const targets = day?.targets;
+  // Meal-time order. Slots without diary rows are omitted for coach history.
+  const slots = [...(day?.slots ?? [])]
+    .filter((s) => (s.rows ?? []).length > 0)
+    .sort((a, b) => mealSlotRank(a.meal_slot) - mealSlotRank(b.meal_slot));
+  const totals = slots.reduce(
+    (acc, slot) => {
+      acc.kcal += slot.logged_calories ?? 0;
+      acc.target += slot.planned_calories ?? 0;
+      for (const row of slot.rows ?? []) {
+        acc.protein += row.entry?.protein_g ?? 0;
+        acc.carbs += row.entry?.carbs_g ?? 0;
+        acc.fat += row.entry?.fat_g ?? 0;
       }
       return acc;
     },
@@ -116,162 +115,61 @@ export default function NutritionDay() {
             <div className="flex flex-col gap-4 px-4 pb-4">
               <Total
                 label="Calories"
-                target={totals.target || null}
+                target={totals.target || targets?.calories || null}
                 unit="kcal"
                 value={totals.kcal}
               />
               <Total
                 label="Protein"
-                target={plan?.target_protein_g ?? null}
+                target={targets?.protein_g ?? null}
                 unit="g"
                 value={totals.protein}
               />
               <Total
                 label="Carbs"
-                target={plan?.target_carbs_g ?? null}
+                target={targets?.carbs_g ?? null}
                 unit="g"
                 value={totals.carbs}
               />
               <Total
                 label="Fat"
-                target={plan?.target_fat_g ?? null}
+                target={targets?.fat_g ?? null}
                 unit="g"
                 value={totals.fat}
               />
             </div>
           </SectionCard>
 
-          {logs.map((log) => {
-            const planned = plannedMealItems(log.planned_snapshot);
-            const skipped = skippedPlannedItems(log.planned_snapshot, log.food_log_entries);
+          {slots.map((slot) => {
+            const rows = slot.rows ?? [];
             return (
               <SectionCard
                 divided
-                key={log.id}
+                key={slot.meal_slot}
                 action={
-                  log.logged_calories ? (
+                  slot.logged_calories ? (
                     <Typography
                       color="muted"
                       type="body-xs"
                     >
-                      {formatKcal(log.logged_calories)} kcal
+                      {formatKcal(slot.logged_calories)} kcal
                     </Typography>
                   ) : null
                 }
-                title={titleCase(log.meal_slot)}
+                title={titleCase(slot.meal_slot)}
                 titleAs="heading"
               >
-                {log.food_log_entries.map((entry) => (
-                  <div
-                    className="flex items-center gap-3 px-4 py-3"
-                    key={entry.id}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <Typography
-                        truncate
-                        type="body-sm"
-                        weight="semibold"
-                      >
-                        {entry.food_name ?? 'Food'}
-                      </Typography>
-                      <Typography
-                        color="muted"
-                        type="body-xs"
-                      >
-                        {[
-                          entry.protein_g != null ? `P ${Math.round(entry.protein_g)} g` : null,
-                          entry.carbs_g != null ? `C ${Math.round(entry.carbs_g)} g` : null,
-                          entry.fat_g != null ? `F ${Math.round(entry.fat_g)} g` : null,
-                        ]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </Typography>
-                    </div>
-                    {/* Reconciled positionally against `planned_snapshot.items`: no
-                      index means Added, a different food in a planned slot means
-                      Swapped, and a match gets no chip at all. */}
-                    {entryStatus(entry, planned) && (
-                      <Chip
-                        className="chip--outline"
-                        size="sm"
-                      >
-                        {entryStatus(entry, planned) === 'added' ? 'Added' : 'Swapped'}
-                      </Chip>
-                    )}
-                    {(entry.weight_g != null || entry.amount != null) && (
-                      <Typography
-                        className="shrink-0"
-                        color="muted"
-                        type="body-xs"
-                      >
-                        {entry.weight_g != null
-                          ? `${Math.round(entry.weight_g)} g`
-                          : `${entry.amount} ${entry.unit ?? 'serving'}`}
-                      </Typography>
-                    )}
-                    {entry.calories != null && (
-                      <Typography
-                        className={KCAL_COL}
-                        type="body-sm"
-                        weight="semibold"
-                      >
-                        {formatKcal(entry.calories)} kcal
-                      </Typography>
-                    )}
-                  </div>
+                {rows.map((row, index) => (
+                  <DiaryRow
+                    key={row.entry?.id ?? row.planned?.id ?? `row-${index}`}
+                    row={row}
+                  />
                 ))}
-                {/* A planned item nobody logged is a row in its own right — the design
-                  shows it muted with a Skipped chip and its PLANNED calories, so the
-                  coach can see what was missed rather than just what was eaten. */}
-                {skipped.map(({index, item}) => (
-                  <div
-                    // The design dims the whole row and strikes the name through —
-                    // it reads as "this was on the plan and did not happen".
-                    className="flex items-center gap-3 px-4 py-3 opacity-55"
-                    key={`skipped-${index}`}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <Typography
-                        className="line-through"
-                        truncate
-                        type="body-sm"
-                        weight="semibold"
-                      >
-                        {item.food_name ?? 'Planned item'}
-                      </Typography>
-                    </div>
-                    <Chip
-                      className="chip--outline shrink-0"
-                      size="sm"
-                    >
-                      Skipped
-                    </Chip>
-                    {item.calories != null && (
-                      <Typography
-                        className={`${KCAL_COL} text-muted`}
-                        type="body-sm"
-                        weight="semibold"
-                      >
-                        {formatKcal(item.calories)} kcal
-                      </Typography>
-                    )}
-                  </div>
-                ))}
-                {log.food_log_entries.length === 0 && skipped.length === 0 && (
-                  <div className="px-4 py-3">
-                    <Typography
-                      color="muted"
-                      type="body-sm"
-                    >
-                      Nothing logged for this meal.
-                    </Typography>
-                  </div>
-                )}
               </SectionCard>
             );
           })}
 
-          {logs.length === 0 && (
+          {slots.length === 0 && (
             <SectionCard>
               <EmptyState
                 body="No meals were logged on this day."
@@ -283,6 +181,74 @@ export default function NutritionDay() {
         </Page.Frame>
       </Page.Content>
     </Page>
+  );
+}
+
+function DiaryRow({row}: {row: MealLogDiaryRow}) {
+  const skipped = row.status === 'skipped';
+  const name = skipped ? (row.planned?.food_name ?? 'Planned item') : (row.entry?.food_name ?? 'Food');
+  const protein = skipped ? null : row.entry?.protein_g;
+  const carbs = skipped ? null : row.entry?.carbs_g;
+  const fat = skipped ? null : row.entry?.fat_g;
+  const weightG = skipped ? null : row.entry?.weight_g;
+  const amount = skipped ? null : row.entry?.amount;
+  const unit = skipped ? null : row.entry?.unit;
+  const calories = skipped ? row.planned?.calories : row.entry?.calories;
+  const chip = row.status ? STATUS_CHIP[row.status] : undefined;
+
+  return (
+    <div className={`flex items-center gap-3 px-4 py-3${skipped ? ' opacity-55' : ''}`}>
+      <div className="min-w-0 flex-1">
+        <Typography
+          className={skipped ? 'line-through' : undefined}
+          truncate
+          type="body-sm"
+          weight="semibold"
+        >
+          {name}
+        </Typography>
+        {!skipped && (protein != null || carbs != null || fat != null) && (
+          <Typography
+            color="muted"
+            type="body-xs"
+          >
+            {[
+              protein != null ? `P ${Math.round(protein)} g` : null,
+              carbs != null ? `C ${Math.round(carbs)} g` : null,
+              fat != null ? `F ${Math.round(fat)} g` : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </Typography>
+        )}
+      </div>
+      {chip && (
+        <Chip
+          className="chip--outline shrink-0"
+          size="sm"
+        >
+          {chip}
+        </Chip>
+      )}
+      {!skipped && (weightG != null || amount != null) && (
+        <Typography
+          className="shrink-0"
+          color="muted"
+          type="body-xs"
+        >
+          {weightG != null ? `${Math.round(weightG)} g` : `${amount} ${unit ?? 'serving'}`}
+        </Typography>
+      )}
+      {calories != null && (
+        <Typography
+          className={`${KCAL_COL}${skipped ? ' text-muted' : ''}`}
+          type="body-sm"
+          weight="semibold"
+        >
+          {formatKcal(calories)} kcal
+        </Typography>
+      )}
+    </div>
   );
 }
 

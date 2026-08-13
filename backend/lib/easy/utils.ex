@@ -30,6 +30,18 @@ defmodule Easy.Utils do
 
   def safe_date(_), do: nil
 
+  @spec parse_optional_date(any()) :: {:ok, Date.t() | nil} | {:error, :invalid_date}
+  def parse_optional_date(nil), do: {:ok, nil}
+
+  def parse_optional_date(string) when is_binary(string) do
+    case Date.from_iso8601(string) do
+      {:ok, date} -> {:ok, date}
+      _ -> {:error, :invalid_date}
+    end
+  end
+
+  def parse_optional_date(_), do: {:error, :invalid_date}
+
   @spec paginate(Ecto.Queryable.t(), non_neg_integer(), pos_integer()) :: Ecto.Query.t()
   def paginate(query, offset, limit) do
     from(q in query, offset: ^offset, limit: ^limit)

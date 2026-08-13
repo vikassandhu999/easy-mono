@@ -13,18 +13,16 @@ import ErrorState from '@/@components/error-state';
 
 import {ROUTES} from '@/@config/routes';
 import {
-  asTodayPlan,
   type FoodLogEntry,
-  plannedItemCalories,
+  type NutritionDayOption,
   type SwitchOptionRequest,
-  type TodayPlanOption,
-  useCreateFoodLogEntryMutation,
+  useAddExtraMutation,
   useDeleteFoodLogEntryMutation,
-  useGetTodayNutritionPlanQuery,
-  useListClientMealLogsQuery,
-  useListClientNutritionPlansQuery,
+  useListClientNutritionDaysQuery,
   useLogDayMutation,
   useLogMealMutation,
+  useLogPlannedItemMutation,
+  useReplaceItemMutation,
   useSwitchNutritionMealOptionMutation,
 } from '@/api/nutrition';
 import AmountSheet, {type SheetTarget} from '@/nutrition/components/amount-sheet';
@@ -34,11 +32,11 @@ import OptionSheet from '@/nutrition/components/option-sheet';
 import {
   ADHERENCE_TEXT,
   adherence,
-  buildSlots,
-  dayTotals,
-  type PlannedRow,
-  planTargets,
+  dayConsumed,
+  dayTargets,
+  type SlotRow,
   type SlotView,
+  slotsFromDay,
 } from '@/nutrition/nutrition-utils';
 
 const VERDICT_LABEL: Record<string, string> = {on: 'on target ✓', over: 'over target', under: 'under target'};
@@ -84,20 +82,20 @@ export default function NutritionToday() {
   const isFuture = date > today;
   const isEditable = date === today;
 
-  const {data: todayResp, isLoading: loadingPlan, refetch: refetchPlan} = useGetTodayNutritionPlanQuery({date});
   const {
-    data: logsResp,
-    isLoading: loadingLogs,
-    isError: logsError,
-    refetch: refetchLogs,
-  } = useListClientMealLogsQuery({date});
-  const {data: plansResp} = useListClientNutritionPlansQuery({status: 'active'});
+    data: dayResp,
+    isLoading: loadingDay,
+    isError: dayError,
+    refetch: refetchDay,
+  } = useListClientNutritionDaysQuery({date});
 
-  const {mutateAsync: createEntry} = useCreateFoodLogEntryMutation();
-  const {mutateAsync: deleteEntry} = useDeleteFoodLogEntryMutation();
   const logMeal = useLogMealMutation();
   const logDay = useLogDayMutation();
   const switchOption = useSwitchNutritionMealOptionMutation();
+  const {mutateAsync: logPlannedItem} = useLogPlannedItemMutation();
+  const {mutateAsync: addExtra} = useAddExtraMutation();
+  const {mutateAsync: replaceItem} = useReplaceItemMutation();
+  const {mutateAsync: deleteEntry} = useDeleteFoodLogEntryMutation();
   const loggingMeal = logMeal.isPending;
   const loggingDay = logDay.isPending;
   const switchingOption = switchOption.isPending;
@@ -107,13 +105,18 @@ export default function NutritionToday() {
   // local, unsaved option picks (slot → meal_id) — cleared once the server confirms a switch
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [optionSheetSlot, setOptionSheetSlot] = useState<null | string>(null);
-  const [confirmSwitch, setConfirmSwitch] = useState<null | {option: TodayPlanOption; slot: SlotView}>(null);
+  const [confirmSwitch, setConfirmSwitch] = useState<null | {option: NutritionDayOption; slot: SlotView}>(null);
 
-  const plan = asTodayPlan(todayResp);
-  const mealLogs = logsResp?.data ?? [];
-  const slots = buildSlots(plan, mealLogs, selections);
-  const consumed = dayTotals(mealLogs);
-  const targets = planTargets(plansResp?.data[0]);
+  const day = dayResp?.data[0] ?? null;
+  const slots = slotsFromDay(day, selections, isPast);
+  const consumed = dayConsumed(day);
+  const targets = dayTargets(day);
+  const loadingPlan = loadingDay;
+  const loadingLogs = loadingDay;
+  const logsError = dayError;
+  const refetchPlan = refetchDay;
+  const refetchLogs = refetchDay;
+  const plan = day;
 
   const setDate = (d: string) => setParams(d === today ? {} : {date: d}, {replace: true});
 
@@ -124,20 +127,19 @@ export default function NutritionToday() {
     setSelections({});
   }, [date]);
 
-  const logPlanned = async (slot: SlotView, row: PlannedRow) => {
+  const logPlanned = async (slot: SlotView, row: SlotRow) => {
+    if (!row.plannedItem || !row.mealItemId) {
+      return;
+    }
     try {
-      await createEntry({
-        amount: row.item.amount,
+      await logPlannedItem({
+        amount: row.plannedItem.amount ?? undefined,
         date,
-        food_id: row.item.food_id ?? undefined,
         meal_id: slot.mealId ?? undefined,
-        meal_slot: slot.slot,
-        plan_id: plan?.plan_id,
-        meal_item_id: row.item.meal_item_id,
-        recipe_id: row.item.recipe_id ?? undefined,
-        source: 'planned',
-        unit: row.item.unit,
-        weight_g: row.item.weight_g,
+        meal_slot: slot.slot as SwitchOptionRequest['meal_slot'],
+        planned_item_id: row.mealItemId,
+        unit: row.plannedItem.unit ?? undefined,
+        weight_g: row.plannedItem.weight_g ?? undefined,
       });
     } catch {
       toast.danger("Couldn't log it. Try again.");
@@ -157,21 +159,20 @@ export default function NutritionToday() {
       return;
     }
     try {
-      await logMeal.mutateAsync({date, meal_id: slot.mealId, meal_slot: slot.slot});
+      await logMeal.mutateAsync({date, meal_id: slot.mealId, meal_slot: slot.slot as SwitchOptionRequest['meal_slot']});
     } catch {
       toast.danger("Couldn't log the meal. Try again.");
     }
   };
 
-  const openSheet = (slot: SlotView, row: PlannedRow) =>
+  const openSheet = (slot: SlotView, row: SlotRow) =>
     setSheet({
       date,
-      loggedEntry: row.logged,
+      loggedEntry: row.entry,
       mealId: slot.mealId,
-      name: row.replaced && row.logged ? (row.logged.food_name ?? 'Food') : (row.item.food_name ?? 'Food'),
-      planId: plan?.plan_id,
-      mealItemId: row.item.meal_item_id,
-      plannedItem: row.item,
+      name: row.name,
+      mealItemId: row.mealItemId,
+      plannedItem: row.plannedItem,
       slot: slot.slot,
       slotLabel: slot.label,
     });
@@ -182,7 +183,6 @@ export default function NutritionToday() {
       loggedEntry: entry,
       mealId: slot.mealId,
       name: entry.food_name ?? 'Food',
-      planId: plan?.plan_id,
       mealItemId: null,
       plannedItem: null,
       slot: slot.slot,
@@ -206,30 +206,24 @@ export default function NutritionToday() {
         : {amount: picked.defaultAmount ?? 1, unit: 'serving'};
 
     try {
-      if (replacing) {
-        // Delete the old entry first so the planned slot never holds two entries
-        // (which dayTotals would double-count); a failed create then just reverts to unlogged.
-        if (replacing.loggedEntry) {
-          await deleteEntry(replacing.loggedEntry.id);
-        }
-        await createEntry({
+      if (replacing?.mealItemId) {
+        await replaceItem({
           date,
           food_id: picked.kind === 'food' ? picked.id : undefined,
           meal_id: replacing.mealId ?? undefined,
-          meal_slot: replacing.slot,
-          plan_id: replacing.planId,
-          meal_item_id: replacing.mealItemId ?? undefined,
+          meal_slot: replacing.slot as SwitchOptionRequest['meal_slot'],
+          planned_item_id: replacing.mealItemId,
           recipe_id: picked.kind === 'recipe' ? picked.id : undefined,
-          source: 'replacement',
           ...portion,
         });
       } else {
-        await createEntry({
+        const selectedSlot = slots.find((slot) => slot.slot === picked.slot);
+        await addExtra({
           date,
           food_id: picked.kind === 'food' ? picked.id : undefined,
-          meal_slot: picked.slot,
+          meal_id: selectedSlot?.mealId ?? undefined,
+          meal_slot: picked.slot as SwitchOptionRequest['meal_slot'],
           recipe_id: picked.kind === 'recipe' ? picked.id : undefined,
-          source: 'unplanned',
           ...portion,
         });
       }
@@ -249,7 +243,7 @@ export default function NutritionToday() {
     }
   };
 
-  const selectOption = (slot: SlotView, option: TodayPlanOption) => {
+  const selectOption = (slot: SlotView, option: NutritionDayOption) => {
     setOptionSheetSlot(null);
     if (option.meal_id === slot.activeMealId) {
       return;
@@ -283,7 +277,7 @@ export default function NutritionToday() {
     }
   };
 
-  const anyUnlogged = slots.some((s) => s.planned.some((p) => !p.logged));
+  const anyUnlogged = slots.some((s) => s.rows.some((r) => r.status === 'checklist' || r.status === 'skipped'));
   // Past-day adherence verdict (the today plan endpoint 404s with no plan, which is the
   // empty state — only the meal-logs query erroring is a real failure to surface).
   const adh = adherence(consumed.calories, targets.calories);
@@ -401,66 +395,47 @@ export default function NutritionToday() {
               )}
             </div>
 
-            {slot.planned.map((row) => {
-              const logged = row.logged;
-              const kcal = logged?.calories ?? plannedItemCalories(row.item);
-              const name = row.replaced && logged ? (logged.food_name ?? 'Food') : (row.item.food_name ?? 'Food');
+            {slot.rows.map((row, index) => {
+              const checked = row.status === 'as_planned' || row.status === 'swapped' || row.status === 'added';
+              const key = row.entry?.id ?? row.mealItemId ?? `row-${index}`;
               return (
                 <div
                   className="flex items-center gap-2.5 border-t border-border py-1.5 text-xs"
-                  key={row.item.meal_item_id}
+                  key={key}
                 >
                   <Checkbox
                     disabled={!isEditable}
-                    on={!!logged}
-                    onPress={() => (logged ? removeEntry(logged) : logPlanned(slot, row))}
+                    on={checked}
+                    onPress={() => (row.entry ? removeEntry(row.entry) : logPlanned(slot, row))}
                   />
                   <button
                     className="flex min-w-0 flex-1 items-center justify-between gap-2 text-left"
                     disabled={!isEditable}
-                    onClick={() => openSheet(slot, row)}
+                    onClick={() =>
+                      row.status === 'added' && row.entry ? openExtraSheet(slot, row.entry) : openSheet(slot, row)
+                    }
                     type="button"
                   >
-                    <span className={`min-w-0 flex-1 truncate ${logged ? 'text-success-secondary' : ''}`}>
-                      {name}
-                      {row.replaced ? (
+                    <span className={`min-w-0 flex-1 truncate ${checked ? 'text-success-secondary' : ''}`}>
+                      {row.name}
+                      {row.status === 'swapped' ? (
                         <span className="ml-1.5 rounded border border-[#34506e] px-1 py-px text-[9px] text-accent">
                           replaced
                         </span>
                       ) : null}
+                      {row.status === 'added' ? (
+                        <span className="ml-1.5 rounded border border-[#7d5a2f] px-1 py-px text-[9px] text-warning">
+                          off-plan
+                        </span>
+                      ) : null}
                     </span>
-                    <span className="shrink-0 text-[11px] text-muted">{kcal != null ? Math.round(kcal) : '—'}</span>
+                    <span className="shrink-0 text-[11px] text-muted">
+                      {row.calories != null ? Math.round(row.calories) : '—'}
+                    </span>
                   </button>
                 </div>
               );
             })}
-
-            {slot.extras.map((entry) => (
-              <div
-                className="flex items-center gap-2.5 border-t border-border py-1.5 text-xs"
-                key={entry.id}
-              >
-                <Checkbox
-                  disabled={!isEditable}
-                  on
-                  onPress={() => removeEntry(entry)}
-                />
-                <button
-                  className="flex min-w-0 flex-1 items-center justify-between gap-2 text-left"
-                  disabled={!isEditable}
-                  onClick={() => openExtraSheet(slot, entry)}
-                  type="button"
-                >
-                  <span className="min-w-0 flex-1 truncate text-success-secondary">
-                    {entry.food_name ?? 'Food'}
-                    <span className="ml-1.5 rounded border border-[#7d5a2f] px-1 py-px text-[9px] text-warning">
-                      off-plan
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-[11px] text-muted">{Math.round(entry.calories ?? 0)}</span>
-                </button>
-              </div>
-            ))}
           </div>
         ))
       )}

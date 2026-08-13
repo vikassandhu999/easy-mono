@@ -12,14 +12,13 @@ defmodule Easy.Nutrition.FoodLogEntryTest do
       %{client_ctx: client_ctx, food: food} = scenario()
 
       {:ok, entry} =
-        MealLogs.create_client_food_log_entry(client_ctx, %{
+        MealLogs.add_client_extra(client_ctx, %{
           date: @date,
           meal_slot: "breakfast",
           food_id: food.id,
           amount: 1.0,
           unit: "g",
-          weight_g: 100.0,
-          source: :unplanned
+          weight_g: 100.0
         })
 
       entry = Repo.preload(entry, :meal_log)
@@ -33,13 +32,12 @@ defmodule Easy.Nutrition.FoodLogEntryTest do
       other_business = insert(:business)
 
       {:ok, entry} =
-        MealLogs.create_client_food_log_entry(client_ctx, %{
+        MealLogs.add_client_extra(client_ctx, %{
           date: @date,
           meal_slot: "breakfast",
           business_id: other_business.id,
           food_id: food.id,
-          weight_g: 100.0,
-          source: :unplanned
+          weight_g: 100.0
         })
 
       assert entry.business_id == client_ctx.business_id
@@ -47,20 +45,11 @@ defmodule Easy.Nutrition.FoodLogEntryTest do
   end
 
   describe "database constraints" do
-    test "rejects an unknown source" do
-      %{meal_log: meal_log, business: business, food: food} = scenario()
-
-      assert {:error, %Postgrex.Error{postgres: %{code: :check_violation, constraint: constraint}}} =
-               insert_entry_sql(meal_log, business, food, "brunch-leftovers", 100.0)
-
-      assert constraint == "nutrition_food_log_entries_source_check"
-    end
-
     test "rejects weight_g of zero" do
       %{meal_log: meal_log, business: business, food: food} = scenario()
 
       assert {:error, %Postgrex.Error{postgres: %{code: :check_violation, constraint: constraint}}} =
-               insert_entry_sql(meal_log, business, food, "planned", 0.0)
+               insert_entry_sql(meal_log, business, food, 0.0)
 
       assert constraint == "nutrition_food_log_entries_weight_positive"
     end
@@ -68,7 +57,7 @@ defmodule Easy.Nutrition.FoodLogEntryTest do
     test "accepts a null weight_g" do
       %{meal_log: meal_log, business: business, food: food} = scenario()
 
-      assert {:ok, _} = insert_entry_sql(meal_log, business, food, "planned", nil)
+      assert {:ok, _} = insert_entry_sql(meal_log, business, food, nil)
     end
 
     test "rejects logging the same planned meal item twice" do
@@ -76,18 +65,18 @@ defmodule Easy.Nutrition.FoodLogEntryTest do
       meal = insert(:meal, business: business, creator: coach)
       meal_item = insert(:meal_item, business: business, meal: meal, food: food)
 
-      attrs = %{food_id: food.id, food_name: food.name, weight_g: 100.0, source: :planned}
+      attrs = %{food_id: food.id, food_name: food.name, weight_g: 100.0}
 
       insert = fn ->
         business.id
         |> FoodLogEntry.insert_changeset(meal_log.id, attrs)
-        |> Ecto.Changeset.put_change(:nutrition_meal_item_id, meal_item.id)
+        |> Ecto.Changeset.put_change(:planned_item_id, meal_item.id)
         |> Repo.insert()
       end
 
       assert {:ok, _entry} = insert.()
       assert {:error, changeset} = insert.()
-      assert "has already been taken" in errors_on(changeset).nutrition_meal_item_id
+      assert "has already been taken" in errors_on(changeset).planned_item_id
     end
 
     test "rejects an unknown meal_slot on the meal log" do
@@ -107,14 +96,14 @@ defmodule Easy.Nutrition.FoodLogEntryTest do
     end
   end
 
-  defp insert_entry_sql(meal_log, business, food, source, weight_g) do
+  defp insert_entry_sql(meal_log, business, food, weight_g) do
     Repo.query(
       """
       INSERT INTO nutrition_food_log_entries
-        (id, food_name, weight_g, source, nutrition_meal_log_id, business_id, food_id, inserted_at, updated_at)
-      VALUES (gen_random_uuid(), 'Oats', $1, $2, $3, $4, $5, now(), now())
+        (id, food_name, weight_g, nutrition_meal_log_id, business_id, food_id, inserted_at, updated_at)
+      VALUES (gen_random_uuid(), 'Oats', $1, $2, $3, $4, now(), now())
       """,
-      [weight_g, source, uuid(meal_log.id), uuid(business.id), uuid(food.id)]
+      [weight_g, uuid(meal_log.id), uuid(business.id), uuid(food.id)]
     )
   end
 

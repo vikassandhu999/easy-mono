@@ -744,10 +744,11 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionSwitchOptionRequest do
     %{
       title: "NutritionSwitchOptionRequest",
       type: :object,
+      additionalProperties: false,
       properties: %{
         date: %Schema{type: :string, format: :date},
-        meal_slot: %Schema{type: :string, enum: ~w(breakfast morning_snack lunch afternoon_snack dinner evening_snack)},
-        meal_id: %Schema{type: :string}
+        meal_slot: %Schema{type: :string, enum: Easy.MealSlot.names()},
+        meal_id: %Schema{type: :string, format: :uuid}
       },
       required: [:date, :meal_slot, :meal_id]
     },
@@ -767,16 +768,136 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionMealLogResponse do
   })
 end
 
-defmodule EasyWeb.OpenApi.Schemas.NutritionMapResponse do
+defmodule EasyWeb.OpenApi.Schemas.NutritionDayTargets do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
-    title: "NutritionMapResponse",
+    title: "NutritionDayTargets",
     type: :object,
     additionalProperties: false,
-    properties: %{data: %Schema{type: :object, additionalProperties: true}},
+    properties: %{
+      calories: %Schema{type: :number, nullable: true},
+      protein_g: %Schema{type: :number, nullable: true},
+      carbs_g: %Schema{type: :number, nullable: true},
+      fat_g: %Schema{type: :number, nullable: true},
+      fiber_g: %Schema{type: :number, nullable: true}
+    }
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionDayOptionItem do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "NutritionDayOptionItem",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      meal_item_id: %Schema{type: :string, format: :uuid},
+      position: %Schema{type: :integer},
+      food_id: %Schema{type: :string, format: :uuid, nullable: true},
+      recipe_id: %Schema{type: :string, format: :uuid, nullable: true},
+      food_name: %Schema{type: :string, nullable: true},
+      amount: %Schema{type: :number, nullable: true},
+      unit: %Schema{type: :string, nullable: true},
+      weight_g: %Schema{type: :number, nullable: true},
+      nutrition: %Schema{type: :object, additionalProperties: true, nullable: true}
+    },
+    required: [:meal_item_id]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionDayOption do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.NutritionDayOptionItem
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "NutritionDayOption",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      meal_id: %Schema{type: :string, format: :uuid},
+      meal_name: %Schema{type: :string, nullable: true},
+      position: %Schema{type: :integer},
+      items: %Schema{type: :array, items: NutritionDayOptionItem}
+    },
+    required: [:meal_id, :items]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionDaySlot do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.{MealLogDiaryRow, NutritionDayOption}
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "NutritionDaySlot",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      meal_slot: %Schema{type: :string, enum: Easy.MealSlot.names()},
+      meal_id: %Schema{type: :string, format: :uuid, nullable: true},
+      planned_calories: %Schema{type: :number, nullable: true},
+      logged_calories: %Schema{type: :number, nullable: true},
+      options: %Schema{type: :array, items: NutritionDayOption},
+      rows: %Schema{type: :array, items: MealLogDiaryRow}
+    },
+    required: [:meal_slot, :options, :rows]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionDay do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.{NutritionDaySlot, NutritionDayTargets}
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "NutritionDay",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      date: %Schema{type: :string, format: :date},
+      plan_id: %Schema{type: :string, format: :uuid, nullable: true},
+      targets: NutritionDayTargets,
+      slots: %Schema{type: :array, items: NutritionDaySlot}
+    },
+    required: [:date, :targets, :slots]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionDayResponse do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.NutritionDay
+
+  OpenApiSpex.schema(%{
+    title: "NutritionDayResponse",
+    type: :object,
+    additionalProperties: false,
+    properties: %{data: NutritionDay},
+    required: [:data]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionDayListResponse do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.NutritionDay
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "NutritionDayListResponse",
+    type: :object,
+    additionalProperties: false,
+    properties: %{data: %Schema{type: :array, items: NutritionDay}},
     required: [:data]
   })
 end

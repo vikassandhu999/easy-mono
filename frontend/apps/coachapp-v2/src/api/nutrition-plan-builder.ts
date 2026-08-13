@@ -29,7 +29,7 @@
 import {useQuery} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
-import {nutritionPlanKeys} from '@/api/keys';
+import {nutritionDayKeys, nutritionPlanKeys} from '@/api/keys';
 import {patchQueryData, queryClient} from '@/api/query-client';
 import type {components} from '@/api/schema';
 
@@ -98,6 +98,7 @@ export function readPlan(planId: string): NutritionPlan | undefined {
  */
 export function refetchPlan(planId: string) {
   queryClient.refetchQueries({queryKey: nutritionPlanKeys.detail(planId)}).catch(() => undefined);
+  queryClient.invalidateQueries({queryKey: nutritionDayKeys.all}).catch(() => undefined);
 }
 
 // ---------------------------------------------------------------------------

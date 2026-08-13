@@ -6,28 +6,66 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
   alias OpenApiSpex.Operation
 
   alias EasyWeb.OpenApi.Schemas.{
+    AddExtraRequest,
     ErrorResponse,
     FoodLogEntryListResponse,
-    FoodLogEntryRequest,
     FoodLogEntryResponse,
+    LogDayRequest,
+    LogMealRequest,
+    LogPlannedItemRequest,
     NutritionMealLogResponse,
-    NutritionSwitchOptionRequest
+    NutritionSwitchOptionRequest,
+    ReplaceItemRequest,
+    UpdatePortionRequest
   }
 
   plug OpenApiSpex.Plug.CastAndValidate,
        [json_render_error_v2: true]
-       when action in [:create, :update, :delete, :log_meal, :log_day, :switch_option]
+       when action in [
+              :log_planned_item,
+              :add_extra,
+              :replace_item,
+              :update,
+              :delete,
+              :log_meal,
+              :log_day,
+              :switch_option
+            ]
 
   tags ["client food log entries"]
 
-  operation :create,
-    summary: "Create food log entry",
-    operation_id: "createFoodLogEntry",
+  operation :log_planned_item,
+    summary: "Log a planned meal item",
+    operation_id: "logPlannedItem",
     security: [%{"bearerAuth" => []}],
-    request_body: {"Food log entry request", "application/json", FoodLogEntryRequest, required: true},
+    request_body: {"Log planned item request", "application/json", LogPlannedItemRequest, required: true},
     responses: [
       created: {"Food log entry created", "application/json", FoodLogEntryResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :add_extra,
+    summary: "Add an off-plan food or recipe to a slot",
+    operation_id: "addExtra",
+    security: [%{"bearerAuth" => []}],
+    request_body: {"Add extra request", "application/json", AddExtraRequest, required: true},
+    responses: [
+      created: {"Food log entry created", "application/json", FoodLogEntryResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :replace_item,
+    summary: "Replace a planned item with a different food or recipe",
+    operation_id: "replaceItem",
+    security: [%{"bearerAuth" => []}],
+    request_body: {"Replace item request", "application/json", ReplaceItemRequest, required: true},
+    responses: [
+      created: {"Food log entry created", "application/json", FoodLogEntryResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
@@ -35,7 +73,7 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
     summary: "Log planned meal",
     operation_id: "logMeal",
     security: [%{"bearerAuth" => []}],
-    request_body: {"Log meal request", "application/json", FoodLogEntryRequest, required: true},
+    request_body: {"Log meal request", "application/json", LogMealRequest, required: true},
     responses: [
       created: {"Food log entries", "application/json", FoodLogEntryListResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
@@ -46,7 +84,7 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
     summary: "Log planned day",
     operation_id: "logDay",
     security: [%{"bearerAuth" => []}],
-    request_body: {"Log day request", "application/json", FoodLogEntryRequest, required: true},
+    request_body: {"Log day request", "application/json", LogDayRequest, required: true},
     responses: [
       created: {"Food log entries", "application/json", FoodLogEntryListResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
@@ -66,11 +104,11 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
     ]
 
   operation :update,
-    summary: "Update food log entry",
+    summary: "Update food log entry portion",
     operation_id: "updateFoodLogEntry",
     security: [%{"bearerAuth" => []}],
     parameters: [Operation.parameter(:id, :path, :string, "Food log entry id")],
-    request_body: {"Food log entry request", "application/json", FoodLogEntryRequest, required: true},
+    request_body: {"Update portion request", "application/json", UpdatePortionRequest, required: true},
     responses: [
       ok: {"Food log entry updated", "application/json", FoodLogEntryResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
@@ -89,9 +127,27 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
       not_found: {"Not found", "application/json", ErrorResponse}
     ]
 
-  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create(conn, _params) do
-    with {:ok, entry} <- MealLogs.create_client_food_log_entry(conn.assigns.ctx, conn.body_params) do
+  @spec log_planned_item(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def log_planned_item(conn, _params) do
+    with {:ok, entry} <- MealLogs.log_client_planned_item(conn.assigns.ctx, conn.body_params) do
+      conn
+      |> put_status(:created)
+      |> render(:show, food_log_entry: entry)
+    end
+  end
+
+  @spec add_extra(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def add_extra(conn, _params) do
+    with {:ok, entry} <- MealLogs.add_client_extra(conn.assigns.ctx, conn.body_params) do
+      conn
+      |> put_status(:created)
+      |> render(:show, food_log_entry: entry)
+    end
+  end
+
+  @spec replace_item(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def replace_item(conn, _params) do
+    with {:ok, entry} <- MealLogs.replace_client_item(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, food_log_entry: entry)

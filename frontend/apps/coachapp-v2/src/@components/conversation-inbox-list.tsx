@@ -31,22 +31,20 @@ function timeAgo(iso: string | null | undefined) {
   return `${Math.round(minutes / (24 * 60))}d`;
 }
 
-function ConversationListItem({active, conversation}: {active: boolean; conversation: Conversation}) {
+function ConversationListItem({conversation}: {conversation: Conversation}) {
   const name = conversation.client_name || 'Client';
   const initial = name[0]?.toUpperCase() ?? '';
   const unread = conversation.unread_count > 0;
-  const emphasized = active || unread;
 
   return (
     <ListBox.Item
       // Shared row gutters, hairlines, and no press-scale.
-      aria-current={active ? 'page' : undefined}
-      className={cn(LIST_ITEM_CLASS, emphasized && 'bg-accent-soft hover:bg-accent-soft')}
+      className={cn(LIST_ITEM_CLASS, unread && 'bg-accent-soft hover:bg-accent-soft')}
       id={conversation.client_id}
       textValue={name}
     >
       <Avatar size="md">
-        <Avatar.Fallback className={emphasized ? 'bg-accent-soft text-accent' : undefined}>{initial}</Avatar.Fallback>
+        <Avatar.Fallback className={unread ? 'bg-accent-soft text-accent' : undefined}>{initial}</Avatar.Fallback>
       </Avatar>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <Label className="max-w-full truncate type-body font-semibold leading-[normal] text-foreground">{name}</Label>
@@ -74,12 +72,10 @@ function ConversationListItem({active, conversation}: {active: boolean; conversa
 }
 
 export function ConversationInboxList({
-  activeClientId,
   className = 'flex-1 gap-0 p-0',
   onNavigate,
   searchable = false,
 }: {
-  activeClientId?: string;
   className?: string;
   /** Called after a row navigates — a modal host closes itself here. */
   onNavigate?: () => void;
@@ -131,7 +127,6 @@ export function ConversationInboxList({
         onRetry={refetch}
         renderItem={(conversation) => (
           <ConversationListItem
-            active={conversation.client_id === activeClientId}
             conversation={conversation}
             key={conversation.id}
           />

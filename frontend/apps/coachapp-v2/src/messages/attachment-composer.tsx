@@ -1,4 +1,4 @@
-import {mediaKind} from '@easy/utils';
+import {IMAGE_CONTENT_TYPES, mediaKind, VIDEO_CONTENT_TYPES} from '@easy/utils';
 import {Button, ProgressBar} from '@heroui/react';
 import {Camera, ImagePlus, Mic, RotateCcw, Square, Trash2, X} from 'lucide-react';
 
@@ -33,22 +33,22 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
     <div className="min-w-0">
       <div className="flex flex-wrap gap-2">
         <Button
-          className="flex-1 px-2 sm:flex-none"
+          aria-label="Take a photo or video"
           isDisabled={controlsDisabled}
+          isIconOnly
           onPress={() => document.getElementById(`${inputId}-camera`)?.click()}
-          size="sm"
-          variant="ghost"
+          variant="secondary"
         >
-          <Camera size={17} /> Camera
+          <Camera size={18} />
         </Button>
         <Button
-          className="flex-1 px-2 sm:flex-none"
+          aria-label="Choose media"
           isDisabled={controlsDisabled}
+          isIconOnly
           onPress={() => document.getElementById(`${inputId}-library`)?.click()}
-          size="sm"
-          variant="ghost"
+          variant="secondary"
         >
-          <ImagePlus size={17} /> Library
+          <ImagePlus size={18} />
         </Button>
         {isRecording ? (
           <>
@@ -70,18 +70,18 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
           </>
         ) : (
           <Button
-            className="flex-1 px-2 sm:flex-none"
+            aria-label="Record voice note"
             isDisabled={controlsDisabled}
+            isIconOnly
             isPending={isStarting || isStopping}
             onPress={startRecording}
-            size="sm"
-            variant="ghost"
+            variant="secondary"
           >
-            <Mic size={17} /> Voice
+            <Mic size={18} />
           </Button>
         )}
         <input
-          accept="image/*"
+          accept={[...IMAGE_CONTENT_TYPES, ...VIDEO_CONTENT_TYPES].join(',')}
           capture="environment"
           className="sr-only"
           disabled={controlsDisabled}

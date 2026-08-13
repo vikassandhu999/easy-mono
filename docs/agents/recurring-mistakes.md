@@ -185,6 +185,15 @@ cleanup. Enforced by `scripts/check-rm.sh` (RM-025) for the known side-effectful
 factories in concurrency tests. **Verify by:** run the race test, then run it and an unrelated
 factory-heavy test again in a fresh BEAM; both runs must pass.
 
+### RM-026 — Async delivery tests must wait for the mailbox message
+`Swoosh.TestAssertions.assert_email_sent/1` uses `assert_received` with a zero-millisecond
+mailbox check. It races any production path that intentionally calls
+`Easy.MailerDelivery.deliver_async/2`: the reminder can be enqueued correctly while the
+full suite fails before the supervised task runs. At async-delivery seams, use a bounded
+`assert_receive {:email, email}, timeout` and then assert the email values directly.
+**Enforced by:** the Intake-reminder regression test in
+`test/easy/forms/required_services_test.exs` and review of new `deliver_async` tests.
+
 ---
 
 ## Frontend
@@ -848,16 +857,6 @@ both rows stayed open. When `renderItem` depends on selection, expansion, pendin
 external row state, derive that state into every affected item (or use the collection's
 controlled state) so both the previous and next rows invalidate. **Verify by:** select row A,
 then row B; exactly one detail is rendered and it is a descendant of row B.
-
-### RM-209 — Chat scrolls the viewport, not a zero-height tail sentinel
-A zero-height `scrollIntoView({block: 'end'})` target does not represent the end of a
-conversation when flex `gap` or viewport padding follows it. Both client and coach chat
-stopped 21px short for that reason, and late-loading signed media could move the latest
-message farther away. Scroll the owning viewport to its `scrollHeight`; observe message-list
-size changes while the reader is already pinned, and stop following once they scroll up.
-**Enforced by:** `just check-rm` rejects end-aligned `scrollIntoView` calls in either app's
-messages feature. **Verify by:** reload a media-bearing conversation and require a zero bottom
-gap, then scroll into history and ensure later layout changes do not pull the reader down.
 
 ## Deploy / ops
 

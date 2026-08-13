@@ -1,7 +1,7 @@
-import {Avatar, Button, Separator, Spinner, Surface, TextArea, toast} from '@heroui/react';
+import {Button, Spinner, TextArea, toast} from '@heroui/react';
 import {useQueryClient} from '@tanstack/react-query';
-import {Send, X} from 'lucide-react';
-import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {Send} from 'lucide-react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
@@ -46,15 +46,11 @@ function MessageBubble({
   refresh: (ids: string[]) => Promise<void>;
   urls: Record<string, string>;
 }) {
-  const hasAttachments = message.attachments.length > 0;
-
   return (
     <div className={`flex ${own ? 'justify-end' : 'justify-start'}`}>
-      <Surface
-        className={`max-w-md rounded-card px-3 py-2 ${hasAttachments ? 'w-72' : ''} ${
-          own
-            ? 'rounded-br-control bg-accent text-accent-foreground'
-            : 'rounded-bl-control border border-border bg-surface text-foreground'
+      <div
+        className={`max-w-[80%] rounded-card px-3 py-2 ${
+          own ? 'rounded-br-sm bg-accent text-accent-foreground' : 'rounded-bl-sm bg-surface-secondary'
         }`}
       >
         <div className="grid gap-2">
@@ -67,10 +63,10 @@ function MessageBubble({
           {message.embed ? <MessageEmbed embed={message.embed} /> : null}
           {message.body ? <p className="whitespace-pre-wrap wrap-break-word type-body">{message.body}</p> : null}
         </div>
-        <p className={`mt-1 text-right type-eyebrow ${own ? 'text-accent-foreground/70' : 'text-muted'}`}>
+        <p className={`mt-0.5 text-right type-eyebrow ${own ? 'text-accent-foreground/70' : 'text-muted'}`}>
           {formatTime(message.inserted_at)}
         </p>
-      </Surface>
+      </div>
     </div>
   );
 }
@@ -99,10 +95,7 @@ export default function ConversationView({
   });
   const [composerKey, setComposerKey] = useState(0);
   const [sendLocked, setSendLocked] = useState(false);
-  const initialScrollDoneRef = useRef(false);
-  const messageListRef = useRef<HTMLDivElement>(null);
-  const scrollViewportRef = useRef<HTMLDivElement>(null);
-  const stickToLatestRef = useRef(true);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   const {data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isLoading, refetch} =
     useConversationMessagesInfiniteQuery(conversationId);
@@ -142,41 +135,10 @@ export default function ConversationView({
     }
   }, [conversationId, lastMessageId, markReadMutation.mutate]);
 
-  const scrollToLatest = useCallback(() => {
-    const viewport = scrollViewportRef.current;
-    if (!viewport) {
-      return;
-    }
-    viewport.scrollTop = viewport.scrollHeight;
-    stickToLatestRef.current = true;
-  }, []);
-
-  // Directly scroll the viewport: a trailing flex gap and viewport padding sit below
-  // the old zero-height sentinel, so scrollIntoView always stopped short of the end.
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll whenever the message-list tail changes
-  useLayoutEffect(() => {
-    if (!isLoading && (!initialScrollDoneRef.current || stickToLatestRef.current)) {
-      scrollToLatest();
-      initialScrollDoneRef.current = true;
-    }
-  }, [isLoading, lastMessageId, scrollToLatest]);
-
-  // Signed media changes size after the message rows render. Follow those changes
-  // only while the coach is already reading the latest part of the conversation.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: loading swaps the observed message-list node into the DOM
   useEffect(() => {
-    const messageList = messageListRef.current;
-    if (!messageList) {
-      return;
-    }
-    const observer = new ResizeObserver(() => {
-      if (stickToLatestRef.current) {
-        scrollToLatest();
-      }
-    });
-    observer.observe(messageList);
-    return () => observer.disconnect();
-  }, [isLoading, scrollToLatest]);
+    bottomRef.current?.scrollIntoView({behavior: 'instant', block: 'end'});
+  }, [lastMessageId]);
 
   const handleSend = async () => {
     const trimmed = body.trim();
@@ -199,7 +161,6 @@ export default function ConversationView({
           ...(embed && {embed}),
         },
       });
-      stickToLatestRef.current = true;
       appendMessage(conversationId, result.data);
       setBody('');
       setAttachmentState({attachmentIds: [], busy: false, failed: false});
@@ -220,30 +181,16 @@ export default function ConversationView({
   const hasContent = Boolean(body.trim() || attachmentState.attachmentIds.length > 0 || embed);
 
   return (
-    <section className="flex h-full min-h-0 min-w-0 flex-col bg-background lg:col-span-2">
-      <header className="flex min-h-16 shrink-0 items-center gap-3 border-b border-border bg-surface/95 py-2 backdrop-blur-lg">
+    <Page.Frame
+      className="flex h-dvh flex-col"
+      size="content"
+    >
+      <header className="flex min-h-14 items-center border-b border-border">
         <BackButton onPress={goBack} />
-        <Avatar size="sm">
-          <Avatar.Fallback className="bg-accent-soft font-semibold text-accent">
-            {title.trim().charAt(0).toUpperCase() || 'C'}
-          </Avatar.Fallback>
-        </Avatar>
-        <Page.TitleGroup>
-          <Page.Title>{title}</Page.Title>
-          <Page.Description>Private client conversation</Page.Description>
-        </Page.TitleGroup>
+        <h1 className="min-w-0 truncate type-body-sm font-semibold">{title}</h1>
       </header>
 
-      <div
-        aria-label={`Conversation with ${title}`}
-        className="flex-1 overscroll-contain overflow-y-auto py-3"
-        onScroll={({currentTarget}) => {
-          const bottomGap = currentTarget.scrollHeight - currentTarget.clientHeight - currentTarget.scrollTop;
-          stickToLatestRef.current = bottomGap <= 48;
-        }}
-        ref={scrollViewportRef}
-        role="log"
-      >
+      <div className="flex-1 overflow-y-auto py-3">
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Spinner size="sm" />
@@ -256,10 +203,7 @@ export default function ConversationView({
             />
           </div>
         ) : (
-          <div
-            className="flex min-h-full flex-col justify-end gap-2"
-            ref={messageListRef}
-          >
+          <div className="flex flex-col gap-2">
             {hasNextPage ? (
               <Button
                 className="self-center"
@@ -280,11 +224,7 @@ export default function ConversationView({
               return (
                 <div key={message.id}>
                   {newDay ? (
-                    <div className="my-4 flex items-center gap-3">
-                      <Separator className="flex-1" />
-                      <p className="shrink-0 type-eyebrow font-semibold text-muted">{formatDay(message.inserted_at)}</p>
-                      <Separator className="flex-1" />
-                    </div>
+                    <p className="my-2 text-center type-eyebrow text-muted">{formatDay(message.inserted_at)}</p>
                   ) : null}
                   <MessageBubble
                     failedIds={failedAttachmentIds}
@@ -296,11 +236,12 @@ export default function ConversationView({
                 </div>
               );
             })}
+            <div ref={bottomRef} />
           </div>
         )}
       </div>
 
-      <footer className="shrink-0 border-t border-border bg-surface/95 py-3 backdrop-blur-lg">
+      <footer className="border-t border-border py-3">
         <AttachmentComposer
           clientId={clientId}
           disabled={isSending || conversationUnavailable}
@@ -319,16 +260,16 @@ export default function ConversationView({
               onPress={() => setEmbed(null)}
               variant="secondary"
             >
-              <X size={16} />
+              ×
             </Button>
           </div>
         ) : null}
-        <Surface className="mt-2 flex items-end gap-2 rounded-panel bg-surface-secondary p-1.5">
+        <div className="mt-2 flex items-end gap-2">
           <TextArea
             aria-label="Message"
-            className="flex-1 bg-transparent"
-            disabled={isSending || conversationUnavailable}
             name="message"
+            className="flex-1"
+            disabled={isSending || conversationUnavailable}
             onChange={(e) => setBody(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -342,18 +283,16 @@ export default function ConversationView({
           />
           <Button
             aria-label="Send"
-            className="shrink-0"
             isDisabled={
               !hasContent || attachmentState.busy || attachmentState.failed || isSending || conversationUnavailable
             }
-            isIconOnly
             isPending={isSending}
             onPress={handleSend}
           >
             <Send size={16} />
           </Button>
-        </Surface>
+        </div>
       </footer>
-    </section>
+    </Page.Frame>
   );
 }

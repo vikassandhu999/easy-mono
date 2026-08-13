@@ -1,10 +1,8 @@
-import {Spinner, Surface, Typography} from '@heroui/react';
+import {Spinner} from '@heroui/react';
 import {useCallback} from 'react';
 import {useParams, useSearchParams} from 'react-router-dom';
 
-import {ConversationInboxList} from '@/@components/conversation-inbox-list';
 import {ErrorState} from '@/@components/error-state';
-import {Page} from '@/@components/page';
 import {useGetCoachClientConversationQuery} from '@/api/conversations';
 import ConversationView from '@/messages/conversation-view';
 
@@ -49,38 +47,12 @@ export default function ConversationPage() {
   }
 
   return (
-    <Page.Frame
-      className="h-dvh"
-      size="content"
-    >
-      <Surface className="grid h-full overflow-hidden bg-background lg:grid-cols-3 lg:rounded-card lg:border lg:border-border">
-        <aside className="hidden min-h-0 flex-col border-r border-border bg-surface lg:flex">
-          <div className="shrink-0 border-b border-border p-4">
-            <Typography type="h5">Messages</Typography>
-            <Typography
-              className="mt-1"
-              color="muted"
-              type="body-sm"
-            >
-              Recent client conversations
-            </Typography>
-          </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
-            <ConversationInboxList
-              activeClientId={id}
-              searchable
-            />
-          </div>
-        </aside>
-        <ConversationView
-          clientId={id!}
-          conversationId={data.data.id}
-          initialEmbed={initialEmbed}
-          key={data.data.id}
-          onEmbedSent={clearEmbedParams}
-          title={data.data.client_name || 'Client'}
-        />
-      </Surface>
-    </Page.Frame>
+    <ConversationView
+      clientId={id!}
+      conversationId={data.data.id}
+      initialEmbed={initialEmbed}
+      onEmbedSent={clearEmbedParams}
+      title={data.data.client_name || 'Client'}
+    />
   );
 }

@@ -3,6 +3,7 @@ defmodule Easy.Chat.Conversation do
 
   alias Easy.Chat.Message
   alias Easy.Clients.Client
+  alias Easy.Ctx
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -50,6 +51,22 @@ defmodule Easy.Chat.Conversation do
 
   @spec waiting(Ecto.Queryable.t()) :: Ecto.Query.t()
   def waiting(query \\ __MODULE__), do: from(c in query, where: not is_nil(c.waiting_since))
+
+  @spec for_visible_clients(Ecto.Queryable.t(), Ctx.t()) :: Ecto.Query.t()
+  def for_visible_clients(query \\ __MODULE__, ctx)
+  def for_visible_clients(query, %Ctx{owner?: true}), do: query
+
+  def for_visible_clients(query, %Ctx{coach_id: coach_id}) when not is_nil(coach_id) do
+    from(conversation in query,
+      join: client in Client,
+      on:
+        client.id == conversation.client_id and
+          client.business_id == conversation.business_id and
+          client.assigned_coach_id == ^coach_id
+    )
+  end
+
+  def for_visible_clients(query, %Ctx{}), do: from(conversation in query, where: false)
 
   @spec for_client_search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
   def for_client_search(query \\ __MODULE__, term)

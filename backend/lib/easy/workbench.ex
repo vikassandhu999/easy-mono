@@ -1,17 +1,18 @@
 defmodule Easy.Workbench do
   import Ecto.Query
 
-  alias Easy.Chat
   alias Easy.Clients
   alias Easy.Clients.Client
   alias Easy.Ctx
-  alias Easy.Forms
   alias Easy.Forms.FormAssignment
   alias Easy.Repo
   alias Easy.Training.TrainingPlan
   alias Easy.Training.TrainingSession
   alias Easy.Training.TrainingWorkout
   alias Easy.Workbench.QueueSnooze
+  alias Easy.WorkbenchCheckInQueue
+  alias Easy.WorkbenchOnboardingQueue
+  alias Easy.WorkbenchRepliesQueue
 
   @weekday_numbers %{
     "monday" => 1,
@@ -28,21 +29,43 @@ defmodule Easy.Workbench do
            %{
              check_ins: non_neg_integer(),
              replies: non_neg_integer(),
+             onboarding: non_neg_integer(),
              programming: non_neg_integer(),
              expiring: non_neg_integer(),
              new_clients: non_neg_integer(),
              quiet: non_neg_integer()
            }}
   def counts(%Ctx{} = ctx) do
-    with {:ok, queues} <- Clients.count_workbench_queues(ctx),
-         {:ok, check_ins} <- Forms.count_unreviewed_check_in_submissions(ctx),
-         {:ok, replies} <- Chat.count_waiting_conversations(ctx) do
+    with {:ok, queues} <- Clients.count_workbench_queues(ctx) do
+      check_ins = WorkbenchCheckInQueue.count(ctx)
+      replies = WorkbenchRepliesQueue.count(ctx)
+      onboarding = WorkbenchOnboardingQueue.count(ctx)
+
       {:ok,
        queues
        |> Map.put(:check_ins, check_ins)
        |> Map.put(:replies, replies)
+       |> Map.put(:onboarding, onboarding)
        |> Map.put(:quiet, length(quiet_client_ids(ctx)))}
     end
+  end
+
+  @spec list_onboarding_queue(Ctx.t(), keyword()) ::
+          {:ok, %{count: non_neg_integer(), items: [map()]}}
+  def list_onboarding_queue(%Ctx{} = ctx, opts \\ []) do
+    {:ok, WorkbenchOnboardingQueue.list(ctx, opts)}
+  end
+
+  @spec list_check_in_queue(Ctx.t(), keyword()) ::
+          {:ok, %{count: non_neg_integer(), items: [map()]}}
+  def list_check_in_queue(%Ctx{} = ctx, opts \\ []) do
+    {:ok, WorkbenchCheckInQueue.list(ctx, opts)}
+  end
+
+  @spec list_replies_queue(Ctx.t(), keyword()) ::
+          {:ok, %{count: non_neg_integer(), items: [map()]}}
+  def list_replies_queue(%Ctx{} = ctx, opts \\ []) do
+    {:ok, WorkbenchRepliesQueue.list(ctx, opts)}
   end
 
   @spec list_quiet_clients(Ctx.t(), keyword()) ::

@@ -4,7 +4,6 @@ defmodule Easy.Chat do
   alias Easy.Chat.Message
   alias Easy.Chat.MessageAttachment
   alias Easy.Clients
-  alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Forms.FormAssignment
   alias Easy.Forms.FormSubmission
@@ -25,7 +24,7 @@ defmodule Easy.Chat do
     base =
       Conversation
       |> Conversation.for_business(ctx.business_id)
-      |> constrain_to_visible_clients(ctx)
+      |> Conversation.for_visible_clients(ctx)
       |> Conversation.for_client_search(Keyword.get(opts, :search))
 
     base = if waiting?, do: Conversation.waiting(base), else: base
@@ -51,7 +50,7 @@ defmodule Easy.Chat do
       Conversation
       |> Conversation.for_business(ctx.business_id)
       |> Conversation.waiting()
-      |> constrain_to_visible_clients(ctx)
+      |> Conversation.for_visible_clients(ctx)
       |> Repo.aggregate(:count)
 
     {:ok, count}
@@ -110,7 +109,7 @@ defmodule Easy.Chat do
       conversation =
         Conversation
         |> Conversation.for_business(ctx.business_id)
-        |> constrain_to_visible_clients(ctx)
+        |> Conversation.for_visible_clients(ctx)
         |> where([conversation], conversation.id == ^conversation_id)
         |> lock("FOR UPDATE")
         |> Repo.one()
@@ -480,23 +479,6 @@ defmodule Easy.Chat do
 
     {:ok, conversation |> Map.put(field, Map.get(updated, field)) |> Map.put(:unread_count, 0)}
   end
-
-  # Coach inbox listings must only surface conversations for clients the caller
-  # can see: owner -> all, trainer -> assigned only. The join predicate mirrors
-  # Client.visible_to/2 — keep them in sync if visibility semantics change.
-  defp constrain_to_visible_clients(query, %Ctx{owner?: true}), do: query
-
-  defp constrain_to_visible_clients(query, %Ctx{coach_id: coach_id}) when not is_nil(coach_id) do
-    join(query, :inner, [c], cl in Client,
-      on:
-        cl.id == c.client_id and cl.business_id == c.business_id and
-          cl.assigned_coach_id == ^coach_id
-    )
-  end
-
-  # Fail closed: coach routes always provide owner? or coach_id. A ctx with
-  # neither is malformed and must see nothing.
-  defp constrain_to_visible_clients(query, %Ctx{}), do: where(query, false)
 
   defp get_coach(%Ctx{} = ctx) do
     Coach

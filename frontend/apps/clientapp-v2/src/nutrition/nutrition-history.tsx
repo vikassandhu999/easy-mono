@@ -59,7 +59,12 @@ export default function NutritionHistory() {
   const atCurrentWeek = weekStart >= thisWeek;
   const weekLabel = weekStart === thisWeek ? 'This week' : `Week of ${shortDate(weekStart)}`;
 
-  const {data: daysResp, isLoading, isError, refetch} = useListClientNutritionDaysQuery({
+  const {
+    data: daysResp,
+    isLoading,
+    isError,
+    refetch,
+  } = useListClientNutritionDaysQuery({
     from: weekStart,
     to: weekEnd,
   });

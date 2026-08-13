@@ -7,10 +7,7 @@
  * write is the whole map — these helpers build the next map so the optimistic
  * patch and the PUT body are literally the same value.
  */
-import {
-  TRAINING_WEEKDAYS as ORDERED_DAYS,
-  type TrainingWeekday,
-} from '@easy/utils';
+import {TRAINING_WEEKDAYS as ORDERED_DAYS, type TrainingWeekday} from '@easy/utils';
 
 import type {TrainingSchedule} from '@/api/training-plan-builder';
 

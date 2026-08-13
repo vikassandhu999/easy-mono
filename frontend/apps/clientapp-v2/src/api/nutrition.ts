@@ -100,9 +100,7 @@ export function useAddExtraMutation() {
   const invalidate = useInvalidateNutritionDays();
   return useMutation({
     mutationFn: (body: AddExtraRequest) =>
-      call(
-        client.POST('/v1/client/nutrition-food-log-entries/add-extra', {body}),
-      ) as Promise<FoodLogEntryResponse>,
+      call(client.POST('/v1/client/nutrition-food-log-entries/add-extra', {body})) as Promise<FoodLogEntryResponse>,
     onSuccess: invalidate,
   });
 }
@@ -111,9 +109,7 @@ export function useReplaceItemMutation() {
   const invalidate = useInvalidateNutritionDays();
   return useMutation({
     mutationFn: (body: ReplaceItemRequest) =>
-      call(
-        client.POST('/v1/client/nutrition-food-log-entries/replace-item', {body}),
-      ) as Promise<FoodLogEntryResponse>,
+      call(client.POST('/v1/client/nutrition-food-log-entries/replace-item', {body})) as Promise<FoodLogEntryResponse>,
     onSuccess: invalidate,
   });
 }

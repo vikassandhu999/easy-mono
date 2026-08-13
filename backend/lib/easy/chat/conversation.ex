@@ -17,6 +17,7 @@ defmodule Easy.Chat.Conversation do
     field :last_message_at, :utc_datetime_usec
     field :last_message_preview, :string
     field :last_message_role, Ecto.Enum, values: [:coach, :client]
+    field :waiting_since, :utc_datetime_usec
     # ponytail: shared read cursor per side — any coach reading marks the whole
     # team's side read; upgrade path is a per-coach read table if it ever matters.
     field :coach_last_read_at, :utc_datetime_usec

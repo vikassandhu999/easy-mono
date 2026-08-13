@@ -5,17 +5,10 @@
  * importable across features, unlike its components/screens.
  */
 
+import type {FormQuestionType} from '@/api/checkins';
+
 /** The question types a form can hold, from the generated `question_snapshot`. */
-export type AnswerType =
-  | 'boolean'
-  | 'date'
-  | 'multi_select'
-  | 'number'
-  | 'photo'
-  | 'rating'
-  | 'select'
-  | 'text'
-  | 'weight';
+export type AnswerType = FormQuestionType;
 
 /**
  * One answer, rendered. Shared by CD-IR, CD-CS, the CD-OV summary and the
@@ -33,6 +26,12 @@ export function formatAnswer(value: unknown, type?: AnswerType): string {
   }
   if (value == null || value === '') {
     return '—';
+  }
+  if (type === 'service_type' && typeof value === 'object' && 'services' in value) {
+    const services = (value as {services?: unknown}).services;
+    if (Array.isArray(services)) {
+      return services.map((service) => (service === 'training' ? 'Training' : 'Nutrition')).join(' · ') || '—';
+    }
   }
   if (Array.isArray(value)) {
     return value.length ? value.map(String).join(' · ') : '—';

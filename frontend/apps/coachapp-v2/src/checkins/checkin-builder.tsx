@@ -44,13 +44,13 @@ import {type ReactNode, useRef, useState} from 'react';
 import {FormActions} from '@/@components/form-fields/form-actions';
 import {FormLayout} from '@/@components/form-fields/form-layout';
 import {Page} from '@/@components/page';
-import {newQuestion, newSection, type QuestionDraft, type SectionDraft} from '@/api/checkins';
+import {type FormPurpose, newQuestion, newSection, type QuestionDraft, type SectionDraft} from '@/api/checkins';
 import AddQuestionControl from '@/checkins/question-palette';
 import {
   QUESTION_TYPE_ICONS,
-  QUESTION_TYPE_ORDER,
   QUESTION_TYPES_WITH_OPTIONS,
   questionTypeLabel,
+  questionTypeOrder,
 } from '@/checkins/question-type-meta';
 
 const CARD_CLASS = 'rounded-card border border-border bg-surface p-4 sm:p-5';
@@ -151,7 +151,9 @@ function QuestionRow({
   onMove,
   onRemove,
   onToggle,
+  purpose,
   question,
+  serviceTypeExists,
 }: {
   count: number;
   index: number;
@@ -161,7 +163,9 @@ function QuestionRow({
   onMove: (dir: -1 | 1) => void;
   onRemove: () => void;
   onToggle: () => void;
+  purpose: FormPurpose;
   question: QuestionDraft;
+  serviceTypeExists: boolean;
 }) {
   const Icon = QUESTION_TYPE_ICONS[question.type];
   const showOptions = QUESTION_TYPES_WITH_OPTIONS.includes(question.type);
@@ -241,6 +245,7 @@ function QuestionRow({
                 </Dropdown.Item>
                 <Dropdown.Item
                   id="duplicate"
+                  isDisabled={question.type === 'service_type'}
                   textValue="Duplicate"
                 >
                   <MenuItemBody
@@ -291,7 +296,17 @@ function QuestionRow({
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             <Select
               className="min-w-0 flex-1"
-              onChange={(key) => key && onChange({type: key as QuestionDraft['type']})}
+              onChange={(key) => {
+                if (!key) {
+                  return;
+                }
+                const type = key as QuestionDraft['type'];
+                onChange({
+                  options: QUESTION_TYPES_WITH_OPTIONS.includes(type) ? question.options : [],
+                  required: type === 'service_type' ? true : question.required,
+                  type,
+                });
+              }}
               value={question.type}
             >
               <Label>Answer type</Label>
@@ -302,7 +317,7 @@ function QuestionRow({
               </Select.Trigger>
               <Select.Popover>
                 <ListBox>
-                  {QUESTION_TYPE_ORDER.map((type) => (
+                  {questionTypeOrder(purpose, question.type === 'service_type' || !serviceTypeExists).map((type) => (
                     <ListBox.Item
                       id={type}
                       key={type}
@@ -318,6 +333,7 @@ function QuestionRow({
 
             <div className="flex min-h-11 shrink-0 items-center">
               <Switch
+                isDisabled={question.type === 'service_type'}
                 isSelected={question.required}
                 onChange={(value) => onChange({required: value})}
               >
@@ -356,7 +372,9 @@ function SectionCard({
   onMove,
   onRemove,
   onToggleExpand,
+  purpose,
   section,
+  serviceTypeExists,
 }: {
   count: number;
   expandedKeys: Set<string>;
@@ -366,7 +384,9 @@ function SectionCard({
   onMove: (dir: -1 | 1) => void;
   onRemove: () => void;
   onToggleExpand: (key: string) => void;
+  purpose: FormPurpose;
   section: SectionDraft;
+  serviceTypeExists: boolean;
 }) {
   const setQuestions = (questions: QuestionDraft[]) => onChange({...section, questions});
 
@@ -377,7 +397,7 @@ function SectionCard({
 
   const duplicateQuestion = (position: number) => {
     const source = section.questions[position];
-    if (!source) {
+    if (!source || source.type === 'service_type') {
       return;
     }
     const copy: QuestionDraft = {...source, id: '', key: newQuestion().key, options: [...source.options]};
@@ -491,14 +511,20 @@ function SectionCard({
               onMove={(dir) => setQuestions(moveInList(section.questions, position, dir))}
               onRemove={() => setQuestions(section.questions.filter((_, i) => i !== position))}
               onToggle={() => onToggleExpand(question.key)}
+              purpose={purpose}
               question={question}
+              serviceTypeExists={serviceTypeExists}
             />
           ))
         )}
       </div>
 
       <div className="mt-3">
-        <AddQuestionControl onAdd={addQuestion} />
+        <AddQuestionControl
+          hasServiceType={serviceTypeExists}
+          onAdd={addQuestion}
+          purpose={purpose}
+        />
       </div>
     </div>
   );
@@ -519,6 +545,7 @@ interface Props {
   name: string;
   onCancel: () => void;
   onSubmit: (sections: SectionDraft[]) => void;
+  purpose: FormPurpose;
   /** Form type label — display only; edited on the details screen. */
   purposeLabel: string;
   submitLabel: string;
@@ -533,6 +560,7 @@ export default function CheckinBuilder({
   name,
   onCancel,
   onSubmit,
+  purpose,
   purposeLabel,
   submitLabel,
   submittingLabel,
@@ -541,6 +569,9 @@ export default function CheckinBuilder({
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(() => new Set());
   const [error, setError] = useState<null | string>(null);
   const errorRef = useRef<HTMLDivElement>(null);
+  const serviceTypeExists = sections.some((section) =>
+    section.questions.some((question) => question.type === 'service_type'),
+  );
 
   const expand = (key: string) => setExpandedKeys((keys) => new Set(keys).add(key));
 
@@ -564,6 +595,12 @@ export default function CheckinBuilder({
     }
     if (questions.some((q) => !q.label.trim())) {
       return 'Every question needs a label.';
+    }
+    if (purpose === 'check_in' && questions.some((q) => q.type === 'service_type')) {
+      return 'Service type is only available on Intake forms.';
+    }
+    if (questions.filter((q) => q.type === 'service_type').length > 1) {
+      return 'Service type can appear only once.';
     }
     if (
       questions.some(
@@ -648,7 +685,9 @@ export default function CheckinBuilder({
                   onMove={(dir) => setSections((s) => moveInList(s, index, dir))}
                   onRemove={() => setSections((s) => s.filter((_, i) => i !== index))}
                   onToggleExpand={toggleExpand}
+                  purpose={purpose}
                   section={section}
+                  serviceTypeExists={serviceTypeExists}
                 />
               ))}
 

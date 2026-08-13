@@ -59,6 +59,15 @@ export function ClientStatusChip({client}: {client: Client}) {
           {inactiveLabel(access.mode)}
         </Chip>
       )}
+      {client.status === 'active' && client.required_services.length === 0 && (
+        <Chip
+          color="warning"
+          size="sm"
+          variant="soft"
+        >
+          Unclassified
+        </Chip>
+      )}
     </>
   );
 }

@@ -9,6 +9,7 @@ import {ROUTES} from '@/@config/routes';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {
   type ClientProfileFormAssignment,
+  type ClientProfileFormSubmissionRequest,
   useGetClientFormAssignmentQuery,
   useSubmitClientFormAssignmentMutation,
 } from '@/api/checkins';
@@ -16,11 +17,14 @@ import {useGetClientProfileQuery} from '@/api/profile';
 import CheckinField, {type AnswerValue, type CheckinQuestion} from '@/checkins/checkin-field';
 import type {PhotoUploadState} from '@/checkins/photo-answer-field';
 
-type Section = {questions?: CheckinQuestion[]; title?: string};
+type Section = ClientProfileFormAssignment['form_template']['sections'][number];
 
 function isEmpty(value: AnswerValue | undefined): boolean {
   if (value == null || value === '') {
     return true;
+  }
+  if (!Array.isArray(value) && typeof value === 'object' && 'services' in value) {
+    return false;
   }
   return Array.isArray(value) && value.length === 0;
 }
@@ -51,7 +55,9 @@ function FillForm({assignment}: {assignment: ClientProfileFormAssignment}) {
   const [photoUploadStates, setPhotoUploadStates] = useState<Record<string, PhotoUploadState>>({});
 
   const sections = (assignment.form_template?.sections ?? []) as Section[];
-  const questions = sections.flatMap((s) => s.questions ?? []);
+  const questions = sections
+    .flatMap((s) => s.questions ?? [])
+    .filter((question) => assignment.purpose === 'intake' || question.type !== 'service_type');
   const weightUnit = (profileData?.data.goal_weight_unit ?? profileData?.data.default_weight_unit ?? 'kg') as
     | 'kg'
     | 'lbs';
@@ -95,16 +101,17 @@ function FillForm({assignment}: {assignment: ClientProfileFormAssignment}) {
     setError(null);
 
     // Only send answered questions.
-    const payload: Record<string, unknown> = {};
+    const payload: ClientProfileFormSubmissionRequest['answers'] = {};
     for (const q of questions) {
-      if (!isEmpty(answers[q.id])) {
-        payload[q.id] = answers[q.id];
+      const answer = answers[q.id];
+      if (!isEmpty(answer) && answer != null) {
+        payload[q.id] = answer;
       }
     }
 
     try {
       await submit.mutateAsync({id: assignment.id, answers: payload});
-      toast.success('Check-in submitted');
+      toast.success(assignment.purpose === 'intake' ? 'Intake submitted' : 'Check-in submitted');
       navigate(ROUTES.CHECKINS);
     } catch {
       toast.danger("Couldn't submit. Please try again.");
@@ -121,16 +128,18 @@ function FillForm({assignment}: {assignment: ClientProfileFormAssignment}) {
             <section key={section.title ?? si}>
               {section.title ? <h2 className="mb-3 text-sm font-medium">{section.title}</h2> : null}
               <div className="flex flex-col gap-4">
-                {(section.questions ?? []).map((question) => (
-                  <CheckinField
-                    key={question.id}
-                    onChange={(value) => setAnswers((prev) => ({...prev, [question.id]: value}))}
-                    question={question}
-                    value={answers[question.id] ?? null}
-                    weightUnit={weightUnit}
-                    onUploadStateChange={(state) => updatePhotoUploadState(question.id, state)}
-                  />
-                ))}
+                {(section.questions ?? [])
+                  .filter((question) => assignment.purpose === 'intake' || question.type !== 'service_type')
+                  .map((question) => (
+                    <CheckinField
+                      key={question.id}
+                      onChange={(value) => setAnswers((prev) => ({...prev, [question.id]: value}))}
+                      question={question}
+                      value={answers[question.id] ?? null}
+                      weightUnit={weightUnit}
+                      onUploadStateChange={(state) => updatePhotoUploadState(question.id, state)}
+                    />
+                  ))}
               </div>
             </section>
           ))}
@@ -143,7 +152,7 @@ function FillForm({assignment}: {assignment: ClientProfileFormAssignment}) {
             onPress={handleSubmit}
             variant="primary"
           >
-            {isLoading ? 'Submitting…' : 'Submit check-in'}
+            {isLoading ? 'Submitting…' : assignment.purpose === 'intake' ? 'Submit intake' : 'Submit check-in'}
           </Button>
         </div>
       </div>
@@ -161,6 +170,16 @@ function CompletedState({assignment}: {assignment: ClientProfileFormAssignment})
   const formatAnswer = (question: CheckinQuestion, answer: unknown) => {
     if (question.type === 'boolean') {
       return answer === true ? 'Yes' : 'No';
+    }
+    if (
+      question.type === 'service_type' &&
+      answer &&
+      !Array.isArray(answer) &&
+      typeof answer === 'object' &&
+      'services' in answer &&
+      Array.isArray(answer.services)
+    ) {
+      return answer.services.map((service) => (service === 'training' ? 'Training' : 'Nutrition')).join(' · ');
     }
     if (Array.isArray(answer)) {
       return answer.join(', ');
@@ -199,6 +218,7 @@ function CompletedState({assignment}: {assignment: ClientProfileFormAssignment})
             </div>
             {sections
               .flatMap((section) => section.questions)
+              .filter((question) => assignment.purpose === 'intake' || question.type !== 'service_type')
               .map((question) => {
                 const answer = submission.answers[question.id];
                 const ids = question.type === 'photo' && Array.isArray(answer) ? answer.map(String) : [];

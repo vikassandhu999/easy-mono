@@ -1,7 +1,7 @@
 import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
-import {billingKeys, clientKeys} from '@/api/keys';
+import {billingKeys, clientKeys, workbenchKeys} from '@/api/keys';
 import type {components, paths} from '@/api/schema';
 import {ApiResponse} from '@/api/shared';
 
@@ -10,69 +10,11 @@ const PAGE_SIZE = 20;
 type GeneratedClient = components['schemas']['Client'];
 
 export type ClientStatus = GeneratedClient['status'];
-
-export type Client = {
-  id: string;
-  email: null | string;
-  /**
-   * User-authoritative when the Client is linked to a User (any status except
-   * `pending`). For pending clients, this is the coach-set invite value.
-   */
-  first_name: null | string;
-  /** See first_name — same User-wins-then-fallback rule applies. */
-  last_name: null | string;
-  phone: null | string;
-  notes: null | string;
-  status: ClientStatus;
-  goal_weight_unit: GeneratedClient['goal_weight_unit'];
-  goal_weight_value: GeneratedClient['goal_weight_value'];
-  /** 'onboarding' until the client's first plan assignment auto-advances it to 'coaching'. */
-  stage: GeneratedClient['stage'];
-  /** Populated only when status is 'inactive'. */
-  inactive_reason: GeneratedClient['inactive_reason'];
-  subscription_started_on: null | string;
-  subscription_ends_on: null | string;
-  intake_incomplete: boolean;
-  needs_plan: boolean;
-  expiring_soon: boolean;
-  /** Active client with no plan in force, or coverage ending within 3 days with no successor. */
-  needs_programming: boolean;
-  /** Last day either discipline has an active plan scheduled through; null when neither does. */
-  covered_until: null | string;
-  /** Present only when the list request passes include_plans=true. */
-  nutrition_plan_name?: GeneratedClient['nutrition_plan_name'];
-  /** Present only when the list request passes include_plans=true. */
-  training_plan_name?: GeneratedClient['training_plan_name'];
-  /**
-   * UTC time of the client's latest successful workout completion, food log,
-   * check-in submission, or weight upsert. Null when they never have. Not
-   * `updated_at`, which moves when a coach edits the row.
-   */
-  last_active_at: GeneratedClient['last_active_at'];
-  /** The trainer this client is currently assigned to. */
-  assigned_coach_id: null | string;
-  /** Present only for pending clients. */
-  invite_url: null | string;
-  /**
-   * Timestamp of when the invitation was created or last resent.
-   * Present only for pending clients.
-   */
-  invitation_sent_at: null | string;
-  /**
-   * invitation_sent_at + 30 days. Present only for pending clients.
-   */
-  invitation_expires_at: null | string;
-  inserted_at: string;
-  updated_at: string;
-};
-
-export type ClientInviteRequest = {
-  email?: string;
-  first_name?: string;
-  last_name?: string;
-  notes?: string;
-  phone?: string;
-};
+export type Client = GeneratedClient;
+export type ClientInviteRequest = components['schemas']['ClientInviteRequest'];
+export type RequiredServices = components['schemas']['RequiredServices'];
+export type RequiredServicesNonEmpty = components['schemas']['RequiredServicesNonEmpty'];
+export type RequiredService = RequiredServices[number];
 
 /**
  * Status values the coach can set via PATCH. `pending` is intentionally absent:
@@ -82,16 +24,8 @@ export type ClientInviteRequest = {
  */
 export type AllowedUpdateStatus = Exclude<ClientStatus, 'pending'>;
 
-export type ClientUpdateRequest = {
-  email?: null | string;
-  first_name?: string;
-  last_name?: string;
-  notes?: null | string;
-  phone?: null | string;
-  stage?: GeneratedClient['stage'];
+export type ClientUpdateRequest = Omit<components['schemas']['ClientUpdateRequest'], 'status'> & {
   status?: AllowedUpdateStatus;
-  subscription_ends_on?: null | string;
-  subscription_started_on?: null | string;
 };
 
 export type ClientSummary = {
@@ -110,10 +44,7 @@ type ListClientsQuery = NonNullable<paths['/v1/coach/clients']['get']['parameter
 
 export type ListClientsParams = Pick<ListClientsQuery, 'include_plans' | 'limit' | 'offset' | 'search' | 'status'>;
 
-export type ListClientsFilters = Pick<ListClientsQuery, 'filter' | 'search' | 'sort' | 'status'>;
-
-/** One workbench client queue (the check-ins queue has its own endpoint). */
-export type ClientQueue = NonNullable<ListClientsQuery['filter']>;
+export type ListClientsFilters = Pick<ListClientsQuery, 'search' | 'sort' | 'status'>;
 
 export function useGetClientQuery(id: string, options?: {enabled?: boolean}) {
   return useQuery({
@@ -144,7 +75,6 @@ export function useClientsInfiniteQuery(filters?: ListClientsFilters, options?: 
               ...(filters?.search && {search: filters.search}),
               ...(filters?.status && {status: filters.status}),
               ...(filters?.sort && {sort: filters.sort}),
-              ...(filters?.filter && {filter: filters.filter}),
               // The CL row's plan chips. Opt-in on the endpoint because the names
               // cost two extra queries per page; this list is the one caller that
               // renders them.
@@ -170,6 +100,7 @@ export function useInviteClientMutation() {
       call(client.POST('/v1/coach/clients/invite', {body})) as Promise<ApiResponse<Client>>,
     onSuccess: () => {
       qc.invalidateQueries({queryKey: clientKeys.lists()});
+      qc.invalidateQueries({queryKey: workbenchKeys.all});
       qc.invalidateQueries({queryKey: billingKeys.all});
     },
   });
@@ -207,6 +138,7 @@ export function useUpdateClientMutation() {
     onSuccess: (_data, {id}) => {
       qc.invalidateQueries({queryKey: clientKeys.detail(id)});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
+      qc.invalidateQueries({queryKey: workbenchKeys.all});
       qc.invalidateQueries({queryKey: billingKeys.all});
     },
   });

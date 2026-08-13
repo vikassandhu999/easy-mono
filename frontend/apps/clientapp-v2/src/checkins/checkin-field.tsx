@@ -15,17 +15,27 @@ import {
   ToggleButtonGroup,
 } from '@heroui/react';
 import {useId} from 'react';
+import type {components} from '@/api/schema';
 import PhotoAnswerField, {type PhotoUploadState} from '@/checkins/photo-answer-field';
 
-export type CheckinQuestion = {
-  id: string;
-  label: string;
-  options?: string[];
-  required?: boolean;
-  type: string;
-};
+type TemplateSection = components['schemas']['ClientProfileFormTemplate']['sections'][number];
+export type CheckinQuestion = TemplateSection['questions'][number];
+type SubmissionAnswer = components['schemas']['ClientProfileFormSubmissionRequest']['answers'][string];
 
-export type AnswerValue = boolean | null | number | string | string[];
+export type AnswerValue = SubmissionAnswer | null;
+
+function serviceAnswer(keys: Set<React.Key>): components['schemas']['ClientProfileServiceTypeAnswer'] {
+  const selected = [...keys].map(String);
+  const training = selected.includes('training');
+  const nutrition = selected.includes('nutrition');
+  if (training && nutrition) {
+    return {services: ['training', 'nutrition']};
+  }
+  if (training) {
+    return {services: ['training']};
+  }
+  return {services: ['nutrition']};
+}
 
 function FieldLabel({children, required}: {children: string; required?: boolean}) {
   return (
@@ -50,7 +60,7 @@ export default function CheckinField({
   onUploadStateChange?: (state: PhotoUploadState) => void;
 }) {
   const labelId = useId();
-  const options = question.options ?? [];
+  const options = 'options' in question ? (question.options ?? []) : [];
 
   switch (question.type) {
     case 'boolean':
@@ -214,6 +224,33 @@ export default function CheckinField({
           </Select.Popover>
         </Select>
       );
+
+    case 'service_type': {
+      const services =
+        value && !Array.isArray(value) && typeof value === 'object' && 'services' in value ? value.services : [];
+      return (
+        <div>
+          <FieldLabel required={question.required}>{question.label}</FieldLabel>
+          <p className="mb-3 text-sm text-muted">Choose Training, Nutrition, or both.</p>
+          <ToggleButtonGroup
+            aria-label={question.label}
+            className="grid grid-cols-2 gap-2"
+            isDetached
+            onSelectionChange={(keys) => {
+              if (keys.size === 0) {
+                return;
+              }
+              onChange(serviceAnswer(keys));
+            }}
+            selectedKeys={services}
+            selectionMode="multiple"
+          >
+            <ToggleButton id="training">Training</ToggleButton>
+            <ToggleButton id="nutrition">Nutrition</ToggleButton>
+          </ToggleButtonGroup>
+        </div>
+      );
+    }
 
     default:
       return (

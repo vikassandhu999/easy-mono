@@ -6,10 +6,13 @@ import {
   Fieldset,
   ListBox,
   Separator,
+  Surface,
+  Typography,
   useOverlayState,
 } from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {useForm} from 'react-hook-form';
+import {TriangleAlert} from 'lucide-react';
+import {Controller, useForm} from 'react-hook-form';
 import {useParams} from 'react-router-dom';
 import {z} from 'zod';
 
@@ -30,6 +33,10 @@ import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
 import {applyFormErrors} from '@/api/shared';
 import type {TeamMember} from '@/api/team';
 import {useGetTeamQuery, useReassignClientMutation} from '@/api/team';
+import RequiredServicesField, {
+  nonEmptyRequiredServices,
+  REQUIRED_SERVICE_VALUES,
+} from '@/clients/components/required-services-field';
 
 /**
  * Profile fields share the client update endpoint; coach assignment is a
@@ -42,6 +49,11 @@ const editClientSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
   last_name: z.string(),
   phone: z.string(),
+  required_services: z.array(z.enum(REQUIRED_SERVICE_VALUES)),
+});
+
+const acceptedClientEditSchema = editClientSchema.extend({
+  required_services: z.array(z.enum(REQUIRED_SERVICE_VALUES)).min(1, 'Choose at least one coaching service'),
 });
 
 type EditClientValues = z.infer<typeof editClientSchema>;
@@ -137,18 +149,20 @@ function EditClientForm({
   const reassignClientMutation = useReassignClientMutation();
   const leaveConfirm = useOverlayState();
   const form = useForm<EditClientValues>({
-    resolver: zodResolver(editClientSchema),
+    resolver: zodResolver(client.status === 'pending' ? editClientSchema : acceptedClientEditSchema),
     defaultValues: {
       assigned_coach_id: client.assigned_coach_id ?? '',
       email: client.email ?? '',
       first_name: client.first_name ?? '',
       last_name: client.last_name ?? '',
       phone: client.phone ?? '',
+      required_services: [...client.required_services],
     },
   });
 
   const onSubmit = form.handleSubmit(async (values) => {
     try {
+      const requiredServices = nonEmptyRequiredServices(values.required_services);
       await updateClientMutation.mutateAsync({
         body: {
           email: values.email || null,
@@ -157,6 +171,7 @@ function EditClientForm({
             last_name: values.last_name,
           }),
           phone: values.phone || null,
+          ...(requiredServices && {required_services: requiredServices}),
         },
         id: client.id,
       });
@@ -232,6 +247,49 @@ function EditClientForm({
                   </FieldRow>
                 </Fieldset.Group>
               </Fieldset>
+
+              <Separator className="my-6" />
+
+              {client.required_services.length === 0 ? (
+                <Surface className="mb-6 rounded-card border border-warning bg-warning-soft p-4">
+                  <div className="flex items-start gap-3">
+                    <TriangleAlert className="mt-0.5 size-5 shrink-0 text-warning" />
+                    <div>
+                      <Typography
+                        className="text-warning"
+                        type="body-sm"
+                        weight="semibold"
+                      >
+                        Coaching services have not been set
+                      </Typography>
+                      <Typography
+                        className="mt-1"
+                        color="muted"
+                        type="body-sm"
+                      >
+                        This client is Unclassified, so Programming cannot identify missing work yet.
+                      </Typography>
+                    </div>
+                  </div>
+                </Surface>
+              ) : null}
+
+              <Controller
+                control={form.control}
+                name="required_services"
+                render={({field, fieldState}) => (
+                  <RequiredServicesField
+                    description={
+                      client.status === 'pending'
+                        ? 'Set services now, or leave this empty so the client can choose during intake.'
+                        : 'Choose every service this client requires. This can be updated at any time.'
+                    }
+                    error={fieldState.error?.message}
+                    onChange={field.onChange}
+                    services={field.value}
+                  />
+                )}
+              />
 
               <Separator className="my-6" />
 

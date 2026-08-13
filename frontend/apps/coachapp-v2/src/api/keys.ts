@@ -34,12 +34,10 @@ export const clientKeys = {
 };
 
 export const workbenchKeys = {
-  // Nested under clientKeys.lists() on purpose: the counts are derived from the
-  // roster, so every mutation that already invalidates clientKeys.lists()
-  // (invite, update, plan assign/unassign, enroll, reassign) refreshes the rail
-  // for free. Only check-in review invalidates it explicitly — that mutation
-  // touches no client list.
-  counts: () => [...clientKeys.lists(), 'workbench-counts'] as const,
+  all: ['workbench'] as const,
+  counts: () => ['workbench', 'counts'] as const,
+  queues: () => ['workbench', 'queues'] as const,
+  queue: (queue: string, filters?: Filters) => ['workbench', 'queues', queue, filters ?? {}] as const,
 };
 
 export const billingKeys = {

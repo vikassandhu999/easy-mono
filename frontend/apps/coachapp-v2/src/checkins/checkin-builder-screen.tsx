@@ -36,13 +36,14 @@ function LoadedBuilder({template}: {template: ClientProfileFormTemplate}) {
   const deleteTemplateMutation = useDeleteFormTemplateMutation();
   const isDeleting = deleteTemplateMutation.isPending;
   const deleteConfirm = useOverlayState();
+  const purpose = template.purpose as FormPurpose;
 
   const onSubmit = async (sections: SectionDraft[]) => {
     try {
       await updateTemplateMutation.mutateAsync({
         id: template.id,
         // The details screen owns name/type; the builder only saves sections.
-        body: {sections: sectionsToRequest(sections)},
+        body: {sections: sectionsToRequest(sections, purpose)},
       });
       toast.success('Form saved');
       navigate(ROUTES.CHECKINS, {replace: true});
@@ -88,12 +89,13 @@ function LoadedBuilder({template}: {template: ClientProfileFormTemplate}) {
             </Button>
           </>
         }
-        initialSections={templateToSections(template.sections)}
+        initialSections={templateToSections(template.sections, purpose)}
         isSubmitting={updateTemplateMutation.isPending}
         name={template.name}
         onCancel={goBack}
         onSubmit={onSubmit}
-        purposeLabel={PURPOSE_LABELS[template.purpose as FormPurpose]}
+        purpose={purpose}
+        purposeLabel={PURPOSE_LABELS[purpose]}
         submitLabel="Save form"
         submittingLabel="Saving form"
       />

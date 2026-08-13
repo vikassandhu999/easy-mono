@@ -1,7 +1,7 @@
 # Implement required-services capture in the apps
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 14
 Parent: [Coach workbench v1 delivery](../map.md)
 
@@ -32,3 +32,11 @@ Implement the locked required-services capture flow in CoachApp and the Intake a
 ## Verification
 
 Build CoachApp and ClientApp. Verify Invite, accepted-client edit, Intake builder, and client Intake completion at 375px; verify the CoachApp forms at desktop width as well.
+
+## Answer
+
+* CoachApp Invite now captures optional Training/Nutrition services, accepted-client editing requires a non-empty selection, and active clients with no selection are shown truthfully as Unclassified. Both mutations use generated request types and invalidate client detail/lists plus all Workbench counts and queue caches.
+* The form builder derives its question vocabulary from generated schemas and exposes one fixed, required `Service type` question only on Intake. It has no option editor, cannot be duplicated, and is filtered out of malformed Check-in drafts and requests.
+* ClientApp derives question and answer shapes from generated schemas, renders the fixed Training/Nutrition selector only for Intake, submits the tagged `{services: [...]}` answer, and renders friendly service labels in completed Intake review. Check-in forms cannot render or submit `service_type`.
+* ClientApp build and all 15 touched-file Biome checks passed; `just check-rm` is clean. CoachApp build reaches only the expected ticket 16 failures from retired generic Client queue fields, old queue filters/IDs, and nested Programming counts—no required-services or form-builder errors remain.
+* Browser verification passed at an emulated 375px for Invite, accepted-client edit, Unclassified, Intake fill, and completed Intake review, and at 1280px for the Intake/Check-in palettes. The temporary local Intake fixture used for fill/review verification was removed and its original dismissed assignment state restored.

@@ -14,14 +14,14 @@ import {Button, Header, Label, ListBox, Typography} from '@heroui/react';
 import {Plus} from 'lucide-react';
 import {useState} from 'react';
 
-import {type FormQuestionType, newQuestion, type QuestionDraft} from '@/api/checkins';
+import {type FormPurpose, type FormQuestionType, newQuestion, type QuestionDraft} from '@/api/checkins';
 import {PickerModal} from '@/builder-kit/picker-modal';
 import {QUESTION_PRESET_CATEGORIES, QUESTION_PRESETS} from '@/checkins/question-presets';
 import {
   QUESTION_TYPE_ICONS,
-  QUESTION_TYPE_ORDER,
   QUESTION_TYPES_WITH_OPTIONS,
   questionTypeLabel,
+  questionTypeOrder,
 } from '@/checkins/question-type-meta';
 
 const PALETTE_TITLE = 'Add question';
@@ -31,13 +31,22 @@ const PALETTE_TITLE = 'Add question';
 function questionOfType(type: FormQuestionType, label = ''): QuestionDraft {
   return {
     ...newQuestion(),
-    label,
+    label: type === 'service_type' ? 'Service type' : label,
     options: QUESTION_TYPES_WITH_OPTIONS.includes(type) ? [''] : [],
+    required: type === 'service_type',
     type,
   };
 }
 
-function QuestionPaletteContent({onPick}: {onPick: (question: QuestionDraft) => void}) {
+function QuestionPaletteContent({
+  hasServiceType,
+  onPick,
+  purpose,
+}: {
+  hasServiceType: boolean;
+  onPick: (question: QuestionDraft) => void;
+  purpose: FormPurpose;
+}) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
@@ -50,7 +59,7 @@ function QuestionPaletteContent({onPick}: {onPick: (question: QuestionDraft) => 
           New question
         </Typography>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {QUESTION_TYPE_ORDER.map((type) => {
+          {questionTypeOrder(purpose, !hasServiceType).map((type) => {
             const Icon = QUESTION_TYPE_ICONS[type];
             return (
               <Button
@@ -116,7 +125,15 @@ function QuestionPaletteContent({onPick}: {onPick: (question: QuestionDraft) => 
   );
 }
 
-export default function AddQuestionControl({onAdd}: {onAdd: (question: QuestionDraft) => void}) {
+export default function AddQuestionControl({
+  hasServiceType,
+  onAdd,
+  purpose,
+}: {
+  hasServiceType: boolean;
+  onAdd: (question: QuestionDraft) => void;
+  purpose: FormPurpose;
+}) {
   const [open, setOpen] = useState(false);
 
   const pick = (question: QuestionDraft) => {
@@ -140,7 +157,11 @@ export default function AddQuestionControl({onAdd}: {onAdd: (question: QuestionD
         open={open}
         title={PALETTE_TITLE}
       >
-        <QuestionPaletteContent onPick={pick} />
+        <QuestionPaletteContent
+          hasServiceType={hasServiceType}
+          onPick={pick}
+          purpose={purpose}
+        />
       </PickerModal>
     </>
   );

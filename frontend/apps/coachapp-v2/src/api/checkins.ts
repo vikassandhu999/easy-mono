@@ -44,16 +44,10 @@ export const PURPOSE_LABELS: Record<FormPurpose, string> = {
 
 export const PURPOSES = Object.keys(PURPOSE_LABELS) as FormPurpose[];
 
-export type FormQuestionType =
-  | 'boolean'
-  | 'date'
-  | 'multi_select'
-  | 'number'
-  | 'photo'
-  | 'rating'
-  | 'select'
-  | 'text'
-  | 'weight';
+type SectionRequest = ClientProfileFormTemplateRequest['sections'][number];
+type QuestionRequest = SectionRequest['questions'][number];
+
+export type FormQuestionType = QuestionRequest['type'];
 
 export const FORM_QUESTION_TYPE_LABELS: Record<FormQuestionType, string> = {
   boolean: 'Yes / No',
@@ -63,6 +57,7 @@ export const FORM_QUESTION_TYPE_LABELS: Record<FormQuestionType, string> = {
   photo: 'Photo',
   rating: 'Rating (1–5)',
   select: 'Select',
+  service_type: 'Service type',
   text: 'Text',
   weight: 'Weight',
 };
@@ -87,9 +82,6 @@ export type SectionDraft = {
   questions: QuestionDraft[];
   title: string;
 };
-
-type SectionRequest = ClientProfileFormTemplateRequest['sections'][number];
-type QuestionRequest = SectionRequest['questions'][number];
 
 function uid(): string {
   return crypto.randomUUID();
@@ -125,28 +117,26 @@ function uniqueId(label: string, taken: Set<string>): string {
   return `${base}_${i}`;
 }
 
-const SELECT_TYPES: FormQuestionType[] = ['select', 'multi_select'];
-
 /** Parse a stored template's sections (loose JSON) into editable drafts. */
-export function templateToSections(sections: {[key: string]: unknown}[]): SectionDraft[] {
+export function templateToSections(sections: {[key: string]: unknown}[], purpose: FormPurpose): SectionDraft[] {
   return (sections ?? []).map((section) => ({
     key: uid(),
     title: typeof section.title === 'string' ? section.title : '',
-    questions: (Array.isArray(section.questions) ? section.questions : []).map((q: Record<string, unknown>) => {
-      return {
+    questions: (Array.isArray(section.questions) ? section.questions : [])
+      .filter((q: Record<string, unknown>) => purpose === 'intake' || q.type !== 'service_type')
+      .map((q: Record<string, unknown>) => ({
         id: typeof q.id === 'string' ? q.id : '',
         key: uid(),
         label: typeof q.label === 'string' ? q.label : '',
         options: Array.isArray(q.options) ? (q.options as string[]) : [],
         required: q.required === true,
         type: (q.type as FormQuestionType) ?? 'text',
-      };
-    }),
+      })),
   }));
 }
 
 /** Build the request `sections` from section drafts, assigning stable ids. */
-export function sectionsToRequest(drafts: SectionDraft[]): SectionRequest[] {
+export function sectionsToRequest(drafts: SectionDraft[], purpose: FormPurpose): SectionRequest[] {
   const taken = new Set<string>();
   // Reserve already-assigned ids so new questions don't collide with them.
   for (const section of drafts) {
@@ -159,15 +149,20 @@ export function sectionsToRequest(drafts: SectionDraft[]): SectionRequest[] {
 
   return drafts.map((section) => ({
     title: section.title,
-    questions: section.questions.map((q) => {
-      const id = q.id || uniqueId(q.label, taken);
-      taken.add(id);
-      const question: QuestionRequest = {id, label: q.label, type: q.type, required: q.required};
-      if (SELECT_TYPES.includes(q.type)) {
-        question.options = q.options;
-      }
-      return question;
-    }),
+    questions: section.questions
+      .filter((q) => purpose === 'intake' || q.type !== 'service_type')
+      .map((q) => {
+        const id = q.id || uniqueId(q.label, taken);
+        taken.add(id);
+        if (q.type === 'service_type') {
+          return {id, label: q.label, type: 'service_type', required: true} satisfies QuestionRequest;
+        }
+        const question = {id, label: q.label, type: q.type, required: q.required};
+        if (q.type === 'select' || q.type === 'multi_select') {
+          return {...question, options: q.options} satisfies QuestionRequest;
+        }
+        return question;
+      }),
   }));
 }
 

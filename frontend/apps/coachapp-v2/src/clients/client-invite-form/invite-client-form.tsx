@@ -1,7 +1,7 @@
-import {Description, ErrorMessage, Fieldset, ListBox} from '@heroui/react';
+import {Description, ErrorMessage, Fieldset, ListBox, Separator} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Send} from 'lucide-react';
-import {useForm} from 'react-hook-form';
+import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FieldRow} from '@/@components/form-fields/field-row';
 import {FormActions} from '@/@components/form-fields/form-actions';
@@ -15,6 +15,10 @@ import type {ClientInviteRequest} from '@/api/clients';
 import {useGetCoachProfileQuery} from '@/api/profile';
 import {toOptionalText} from '@/api/shared';
 import {type TeamMember, useGetTeamQuery} from '@/api/team';
+import RequiredServicesField, {
+  canonicalRequiredServices,
+  REQUIRED_SERVICE_VALUES,
+} from '@/clients/components/required-services-field';
 import {splitName} from '@/clients/lib/invite-client';
 
 export const inviteClientFormSchema = z
@@ -24,6 +28,7 @@ export const inviteClientFormSchema = z
     name: z.string().min(1, 'Enter client name'),
     notes: z.string().optional(),
     phone: z.string().optional(),
+    required_services: z.array(z.enum(REQUIRED_SERVICE_VALUES)),
   })
   .superRefine((data, ctx) => {
     if ((data.email && data.email.length > 0) || (data.phone && data.phone.length > 0)) {
@@ -53,6 +58,7 @@ export function inviteClientToRequest(values: InviteClientFormValues): ClientInv
     last_name: lastName,
     notes: toOptionalText(values.notes),
     phone: toOptionalText(values.phone),
+    required_services: canonicalRequiredServices(values.required_services),
   };
 }
 
@@ -64,6 +70,7 @@ export function useInviteClientForm() {
       name: '',
       notes: '',
       phone: '',
+      required_services: [],
     },
     resolver: zodResolver(inviteClientFormSchema),
   });
@@ -184,6 +191,21 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
             />
           </Fieldset.Group>
         </Fieldset>
+
+        <Separator className="my-6" />
+
+        <Controller
+          control={control}
+          name="required_services"
+          render={({field, fieldState}) => (
+            <RequiredServicesField
+              description="Set services now, or leave this empty so the client can choose during intake."
+              error={fieldState.error?.message}
+              onChange={field.onChange}
+              services={field.value}
+            />
+          )}
+        />
       </FormPanel>
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}

@@ -8,7 +8,7 @@ import {formAssignmentKeys, weightEntryKeys} from '@/api/keys';
 import type {components} from '@/api/schema';
 
 export type ClientProfileFormAssignment = components['schemas']['ClientProfileFormAssignment'];
-type ClientProfileFormSubmissionRequest = components['schemas']['ClientProfileFormSubmissionRequest'];
+export type ClientProfileFormSubmissionRequest = components['schemas']['ClientProfileFormSubmissionRequest'];
 
 type ListResponse = components['schemas']['ClientProfileFormAssignmentListResponse'];
 type AssignmentResponse = components['schemas']['ClientProfileFormAssignmentResponse'];

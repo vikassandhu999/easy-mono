@@ -122,14 +122,14 @@ defmodule Easy.WorkbenchExpiringQuietQueuesTest do
 
       waiting_workout = insert_training_schedule(ctx, waiting)
 
-      Repo.insert!(%Easy.Training.TrainingSession{
+      insert(:workout_session,
         date: Date.add(ctx.today, -1),
         state: :completed,
         started_at: DateTime.utc_now(:second),
-        client_id: waiting.id,
-        business_id: ctx.business.id,
-        training_workout_id: waiting_workout.id
-      })
+        client: waiting,
+        business: ctx.business,
+        workout: waiting_workout
+      )
 
       due_today = insert_client(ctx, [])
       due_today_assignment = insert_check_in(due_today, ctx.today, :missed)

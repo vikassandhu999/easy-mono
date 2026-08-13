@@ -87,8 +87,9 @@ defmodule Easy.Nutrition.MealLog do
     from(ml in query, order_by: [asc: ml.date, asc: ml.meal_slot])
   end
 
-  @spec include_entries(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def include_entries(query \\ __MODULE__) do
-    from(ml in query, preload: [food_log_entries: ^FoodLogEntry.oldest()])
+  @spec include_entries(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def include_entries(query \\ __MODULE__, business_id) do
+    entries = FoodLogEntry |> FoodLogEntry.for_business(business_id) |> FoodLogEntry.oldest()
+    from(ml in query, preload: [food_log_entries: ^entries])
   end
 end

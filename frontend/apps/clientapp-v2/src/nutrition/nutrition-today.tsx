@@ -525,7 +525,7 @@ export default function NutritionToday() {
           <div
             aria-label="Confirm switch"
             aria-modal="true"
-            className="w-full max-w-xs rounded-2xl border border-border bg-surface p-4"
+            className="relative z-10 w-full max-w-xs rounded-2xl border border-border bg-surface p-4"
             role="alertdialog"
           >
             <p className="mb-1 text-sm font-semibold">Switch option?</p>

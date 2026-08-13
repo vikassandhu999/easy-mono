@@ -100,8 +100,9 @@ export const mealLogKeys = {
 };
 
 export const nutritionDayKeys = {
-  all: ['nutrition-days'] as const,
-  forClient: (clientId: string, filters?: Filters) => ['nutrition-days', clientId, filters ?? {}] as const,
+  ...domain('nutrition-days'),
+  forClient: (clientId: string, filters?: Filters) =>
+    [...nutritionDayKeys.lists(), 'client', clientId, filters ?? {}] as const,
 };
 
 export const trainingPlanKeys = {

@@ -175,6 +175,16 @@ attach child aggregates with one tenant-scoped `GROUP BY` query over those paren
 **Enforced by:** `test/easy/chat_test.exs` requires one grouped unread query and covers both
 a null read cursor and an advanced cursor across page boundaries.
 
+### RM-025 — Real-connection tests must not use factories with insert side effects
+Concurrency tests that check out `sandbox: false` commit their fixtures. The nutrition
+meal-log race test called `insert(:plan)`, `insert(:meal)`, and `insert(:meal_item)` with
+overrides, but those factories create default businesses before ExMachina applies the
+overrides; the untracked tenants survived cleanup and poisoned later test runs. Build
+committed race fixtures with explicit changesets, and track every committed owner for
+cleanup. Enforced by `scripts/check-rm.sh` (RM-025) for the known side-effectful nutrition
+factories in concurrency tests. **Verify by:** run the race test, then run it and an unrelated
+factory-heavy test again in a fresh BEAM; both runs must pass.
+
 ---
 
 ## Frontend

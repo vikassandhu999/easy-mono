@@ -84,7 +84,7 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       assert data["slots"] == []
     end
 
-    test "accepts optional date param", ctx do
+    test "past dates do not expose live plan slots", ctx do
       plan =
         insert(:plan,
           creator: ctx.coach,
@@ -115,8 +115,49 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       conn = get(ctx.conn, "/v1/client/nutrition-days", %{"date" => "2026-03-30"})
       assert %{"data" => [data]} = json_response(conn, 200)
       assert data["date"] == "2026-03-30"
-      assert length(data["slots"]) == 1
-      assert hd(data["slots"])["meal_slot"] == "lunch"
+      assert data["plan_id"] == plan.id
+      assert data["slots"] == []
+    end
+
+    test "past logged rows come only from the frozen diary", ctx do
+      date = Date.add(Date.utc_today(), -7)
+      weekday = Easy.Utils.weekday_name(date)
+
+      plan =
+        insert(:plan,
+          creator: ctx.coach,
+          business: ctx.business,
+          client_id: ctx.client.id,
+          status: :active
+        )
+
+      meal = insert(:meal, plan: plan, creator: ctx.coach, business: ctx.business, name: "Original")
+      food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Original food")
+      original = insert(:meal_item, meal: meal, business: ctx.business, food: food, weight_g: 100.0)
+      plan_day = insert(:plan_day, plan: plan, business: ctx.business, weekdays: [weekday])
+      insert(:day_meal, plan_day: plan_day, meal: meal, business: ctx.business, meal_slot: "dinner")
+
+      client_ctx = %Easy.Ctx{
+        business_id: ctx.business.id,
+        user_id: ctx.client.user_id,
+        client_id: ctx.client.id
+      }
+
+      assert {:ok, [_]} =
+               MealLogs.log_client_meal(client_ctx, %{
+                 date: date,
+                 meal_slot: "dinner",
+                 meal_id: meal.id
+               })
+
+      edited_food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Edited live food")
+      insert(:meal_item, meal: meal, business: ctx.business, food: edited_food, weight_g: 100.0, position: 1)
+
+      conn = get(ctx.conn, "/v1/client/nutrition-days", %{"date" => Date.to_iso8601(date)})
+      assert %{"data" => [%{"slots" => [slot]}]} = json_response(conn, 200)
+      assert slot["options"] == []
+      assert [%{"planned" => %{"id" => planned_id}, "status" => "as_planned"}] = slot["rows"]
+      assert planned_id == original.id
     end
 
     test "logged planned meal yields as_planned rows with no added or skipped", ctx do

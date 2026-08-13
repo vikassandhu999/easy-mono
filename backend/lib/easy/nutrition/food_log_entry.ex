@@ -115,6 +115,11 @@ defmodule Easy.Nutrition.FoodLogEntry do
     from(e in query, where: e.nutrition_meal_log_id == ^meal_log_id)
   end
 
+  @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_business(query \\ __MODULE__, business_id) do
+    from(e in query, where: e.business_id == ^business_id)
+  end
+
   @spec oldest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def oldest(query \\ __MODULE__) do
     from(e in query, order_by: [asc: e.inserted_at, asc: e.id])

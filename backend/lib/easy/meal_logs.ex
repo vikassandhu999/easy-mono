@@ -42,7 +42,7 @@ defmodule Easy.MealLogs do
       meal_logs =
         query
         |> MealLog.oldest()
-        |> MealLog.include_entries()
+        |> MealLog.include_entries(ctx.business_id)
         |> Repo.all()
 
       {:ok, meal_logs}
@@ -115,7 +115,7 @@ defmodule Easy.MealLogs do
       meal_logs =
         query
         |> MealLog.oldest()
-        |> MealLog.include_entries()
+        |> MealLog.include_entries(ctx.business_id)
         |> Repo.all()
 
       {:ok, meal_logs}
@@ -127,7 +127,7 @@ defmodule Easy.MealLogs do
   @spec get_client_nutrition_day(Ctx.t(), Date.t()) :: {:ok, map()} | {:error, :not_found}
   def get_client_nutrition_day(%Ctx{} = ctx, %Date{} = date) do
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
-      {:ok, build_nutrition_day(ctx.business_id, client_id, date)}
+      {:ok, build_nutrition_day(ctx.business_id, client_id, date, true)}
     end
   end
 
@@ -135,7 +135,7 @@ defmodule Easy.MealLogs do
           {:ok, map()} | {:error, :not_found}
   def get_nutrition_day_for_client(%Ctx{} = ctx, client_id, %Date{} = date) do
     with {:ok, _client} <- Clients.authorize_client(ctx, client_id) do
-      {:ok, build_nutrition_day(ctx.business_id, client_id, date)}
+      {:ok, build_nutrition_day(ctx.business_id, client_id, date, false)}
     end
   end
 
@@ -145,7 +145,7 @@ defmodule Easy.MealLogs do
   def list_client_nutrition_days(%Ctx{} = ctx, opts \\ []) do
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
          {:ok, dates} <- resolve_nutrition_day_dates(opts) do
-      {:ok, build_nutrition_days(ctx.business_id, client_id, dates)}
+      {:ok, build_nutrition_days(ctx.business_id, client_id, dates, true)}
     end
   end
 
@@ -155,7 +155,7 @@ defmodule Easy.MealLogs do
   def list_nutrition_days_for_client(%Ctx{} = ctx, client_id, opts \\ []) do
     with {:ok, _client} <- Clients.authorize_client(ctx, client_id),
          {:ok, dates} <- resolve_nutrition_day_dates(opts) do
-      {:ok, build_nutrition_days(ctx.business_id, client_id, dates)}
+      {:ok, build_nutrition_days(ctx.business_id, client_id, dates, false)}
     end
   end
 
@@ -183,7 +183,7 @@ defmodule Easy.MealLogs do
     explicit_meal_id = attrs[:meal_id]
 
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
-         {:ok, date} <- fetch_date(attrs),
+         {:ok, date} <- fetch_write_date(attrs),
          true <- is_binary(planned_item_id) do
       Repo.transaction(fn ->
         replace_item_transaction(
@@ -227,7 +227,7 @@ defmodule Easy.MealLogs do
     meal_id = attrs[:meal_id]
 
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
-         {:ok, date} <- fetch_date(attrs) do
+         {:ok, date} <- fetch_write_date(attrs) do
       log_meal(ctx.business_id, client_id, date, meal_slot, meal_id)
     end
   end
@@ -238,7 +238,7 @@ defmodule Easy.MealLogs do
     plan_id = attrs[:plan_id]
 
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
-         {:ok, date} <- fetch_date(attrs) do
+         {:ok, date} <- fetch_write_date(attrs) do
       log_day(ctx.business_id, client_id, date, plan_id)
     end
   end
@@ -250,7 +250,7 @@ defmodule Easy.MealLogs do
     meal_slot = attrs[:meal_slot]
 
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
-         {:ok, date} <- fetch_date(attrs),
+         {:ok, date} <- fetch_write_date(attrs),
          meal when not is_nil(meal) <- load_meal_with_items(ctx.business_id, client_id, meal_id) do
       case get_existing_meal_log(ctx.business_id, client_id, date, meal_slot) do
         %MealLog{nutrition_meal_id: existing_meal_id} = existing when existing_meal_id == meal_id ->
@@ -276,6 +276,7 @@ defmodule Easy.MealLogs do
         end
 
       FoodLogEntry
+      |> FoodLogEntry.for_business(ctx.business_id)
       |> FoodLogEntry.for_meal_log(meal_log.id)
       |> where([e], not is_nil(e.planned_item_id))
       |> Repo.delete_all()
@@ -284,7 +285,7 @@ defmodule Easy.MealLogs do
         {:ok, _} ->
           MealLog
           |> MealLog.for_client(ctx.business_id, client_id)
-          |> MealLog.include_entries()
+          |> MealLog.include_entries(ctx.business_id)
           |> Repo.get(meal_log.id)
 
         {:error, reason} ->
@@ -319,7 +320,7 @@ defmodule Easy.MealLogs do
     same_option? =
       is_nil(meal_id) or is_nil(existing.nutrition_meal_id) or meal_id == existing.nutrition_meal_id
 
-    if same_option? and not is_nil(snapshot) and not has_fulfilments?(existing.id) do
+    if same_option? and not is_nil(snapshot) and not has_fulfilments?(existing) do
       update_freeze(existing, snapshot, meal_id || existing.nutrition_meal_id)
     else
       {:ok, existing}
@@ -333,16 +334,17 @@ defmodule Easy.MealLogs do
     |> Repo.update()
   end
 
-  defp has_fulfilments?(meal_log_id) do
+  defp has_fulfilments?(%MealLog{} = meal_log) do
     FoodLogEntry
-    |> FoodLogEntry.for_meal_log(meal_log_id)
+    |> FoodLogEntry.for_business(meal_log.business_id)
+    |> FoodLogEntry.for_meal_log(meal_log.id)
     |> where([e], not is_nil(e.planned_item_id))
     |> Repo.exists?()
   end
 
   defp insert_meal_log(business_id, client_id, date, meal_slot, snapshot, meal_id) do
     attrs = %{date: date, meal_slot: meal_slot}
-    planned_calories = snapshot && snapshot[:total_calories]
+    planned_calories = snapshot && snap_get(snapshot, :total_calories)
 
     result =
       MealLog.insert_changeset(business_id, client_id, attrs)
@@ -394,7 +396,7 @@ defmodule Easy.MealLogs do
     meal_slot = attrs[:meal_slot]
     explicit_meal_id = attrs[:meal_id]
 
-    with {:ok, date} <- fetch_date(attrs) do
+    with {:ok, date} <- fetch_write_date(attrs) do
       Repo.transaction(fn ->
         log_entry_transaction(business_id, client_id, date, meal_slot, explicit_meal_id, attrs)
       end)
@@ -452,6 +454,7 @@ defmodule Easy.MealLogs do
     end
 
     FoodLogEntry
+    |> FoodLogEntry.for_business(business_id)
     |> FoodLogEntry.for_meal_log(meal_log.id)
     |> where([e], e.planned_item_id == ^planned_item_id)
     |> Repo.delete_all()
@@ -579,11 +582,17 @@ defmodule Easy.MealLogs do
 
   defp log_meal(business_id, client_id, date, meal_slot, meal_id) do
     Repo.transaction(fn ->
+      lock_meal_log_write!(business_id, client_id, date, meal_slot)
       occurred_at = DateTime.utc_now(:second)
       entries = do_log_meal(business_id, client_id, date, meal_slot, meal_id)
       stamp_new_entries(entries, business_id, client_id, occurred_at)
       entries
     end)
+  end
+
+  defp lock_meal_log_write!(business_id, client_id, date, meal_slot) do
+    lock_key = Enum.join([business_id, client_id, Date.to_iso8601(date), meal_slot], ":")
+    Repo.query!("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [lock_key])
   end
 
   defp log_day(business_id, client_id, date, plan_id) do
@@ -731,7 +740,7 @@ defmodule Easy.MealLogs do
           date: date,
           meal_slot: slot.meal_slot,
           planned_snapshot: snapshot,
-          planned_calories: snapshot.total_calories * 1.0,
+          planned_calories: snap_get(snapshot, :total_calories) * 1.0,
           logged_calories: 0.0,
           business_id: business_id,
           client_id: client_id,
@@ -918,13 +927,13 @@ defmodule Easy.MealLogs do
     items = meal.meal_items |> Enum.sort_by(& &1.position) |> Enum.map(&snapshot_item/1)
 
     %{
-      meal_name: meal.name,
-      items: items,
-      total_calories: sum_field(items, :calories),
-      total_protein_g: sum_field(items, :protein_g),
-      total_carbs_g: sum_field(items, :carbs_g),
-      total_fat_g: sum_field(items, :fat_g),
-      total_fiber_g: sum_field(items, :fiber_g)
+      "meal_name" => meal.name,
+      "items" => items,
+      "total_calories" => sum_field(items, "calories"),
+      "total_protein_g" => sum_field(items, "protein_g"),
+      "total_carbs_g" => sum_field(items, "carbs_g"),
+      "total_fat_g" => sum_field(items, "fat_g"),
+      "total_fiber_g" => sum_field(items, "fiber_g")
     }
   end
 
@@ -947,6 +956,7 @@ defmodule Easy.MealLogs do
 
     already_logged =
       FoodLogEntry
+      |> FoodLogEntry.for_business(business_id)
       |> FoodLogEntry.for_meal_log(meal_log.id)
       |> FoodLogEntry.logged_planned_item_ids()
       |> Repo.all()
@@ -1214,18 +1224,18 @@ defmodule Easy.MealLogs do
     {name, _} = item_name(item)
 
     %{
-      id: item.id,
-      food_id: item.food_id,
-      recipe_id: item.recipe_id,
-      food_name: name,
-      amount: item.amount,
-      unit: item.unit,
-      weight_g: item.weight_g || 0.0,
-      calories: macros.calories,
-      protein_g: macros.protein_g,
-      carbs_g: macros.carbs_g,
-      fat_g: macros.fat_g,
-      fiber_g: macros.fiber_g
+      "id" => item.id,
+      "food_id" => item.food_id,
+      "recipe_id" => item.recipe_id,
+      "food_name" => name,
+      "amount" => item.amount,
+      "unit" => item.unit,
+      "weight_g" => item.weight_g,
+      "calories" => macros.calories,
+      "protein_g" => macros.protein_g,
+      "carbs_g" => macros.carbs_g,
+      "fat_g" => macros.fat_g,
+      "fiber_g" => macros.fiber_g
     }
   end
 
@@ -1273,7 +1283,7 @@ defmodule Easy.MealLogs do
   end
 
   defp snap_get(map, key) when is_map(map) and is_atom(key) do
-    Map.get(map, key) || Map.get(map, Atom.to_string(key))
+    Map.get(map, Atom.to_string(key))
   end
 
   defp item_name(%MealItem{food: %Food{} = f}), do: {f.name, :food}
@@ -1332,28 +1342,39 @@ defmodule Easy.MealLogs do
     end
   end
 
-  defp build_nutrition_days(business_id, client_id, dates) do
+  defp build_nutrition_days(business_id, client_id, dates, live_options?) do
     logs_by_date =
       MealLog
       |> MealLog.for_client(business_id, client_id)
       |> MealLog.for_date_range(hd(dates), List.last(dates))
       |> MealLog.oldest()
-      |> MealLog.include_entries()
+      |> MealLog.include_entries(business_id)
       |> Repo.all()
       |> Enum.group_by(& &1.date)
 
     plans = load_nutrition_day_plans(business_id, client_id, dates)
+    today = Date.utc_today()
 
     Enum.map(dates, fn date ->
-      schedule = nutrition_day_schedule(plans, date)
+      schedule =
+        plans
+        |> nutrition_day_schedule(date)
+        |> maybe_hide_live_schedule(date, today, live_options?)
+
       logs = Map.get(logs_by_date, date, [])
       assemble_nutrition_day(date, schedule, logs)
     end)
   end
 
-  defp build_nutrition_day(business_id, client_id, date) do
+  defp maybe_hide_live_schedule(schedule, date, today, live_options?) do
+    if live_options? and Date.compare(date, today) != :lt,
+      do: schedule,
+      else: %{schedule | slots: []}
+  end
+
+  defp build_nutrition_day(business_id, client_id, date, live_options?) do
     business_id
-    |> build_nutrition_days(client_id, [date])
+    |> build_nutrition_days(client_id, [date], live_options?)
     |> hd()
   end
 
@@ -1522,8 +1543,13 @@ defmodule Easy.MealLogs do
 
   # CastAndValidate turns `format: :date` request fields into a Date struct on an
   # atom-keyed map, so there is exactly one shape to read.
-  defp fetch_date(%{date: %Date{} = date}), do: {:ok, date}
-  defp fetch_date(_attrs), do: {:error, :date_required}
+  defp fetch_write_date(%{date: %Date{} = date}) do
+    if Date.compare(date, Date.utc_today()) == :gt,
+      do: {:error, :future_date},
+      else: {:ok, date}
+  end
+
+  defp fetch_write_date(_attrs), do: {:error, :date_required}
 
   defp sum_field(items, field) do
     items

@@ -21,6 +21,15 @@ check() { # check <rm-id> <description> <rg-pattern> <path>...
 COACH=frontend/apps/coachapp-v2/src
 CLIENT=frontend/apps/clientapp-v2/src
 
+# RM-025 — these nutrition factories insert default tenant graphs before
+# ExMachina applies overrides, which leaks committed rows from sandbox:false tests.
+hits=$(rg -n -g '*concurrency_test.exs' 'insert\(:(plan|meal|meal_item|plan_day|day_meal)' backend/test 2>/dev/null)
+if [ -n "$hits" ]; then
+  echo "FAIL RM-025 — side-effectful nutrition factory in a committed concurrency test (see docs/agents/recurring-mistakes.md)"
+  echo "$hits" | head -10
+  fail=1
+fi
+
 # Hardcoded app paths rot into dead links on any route rename. Static paths use
 # ROUTES.X; parameterized ones use generatePath(ROUTES.X, params). The api layer
 # is unaffected (its paths start with /v1 and never sit in navigate/to/backticks

@@ -358,7 +358,7 @@ defmodule Easy.Nutrition.MealLogTest do
 
   describe "servings-sized recipe items" do
     test "log_client_meal logs a recipe item sized by servings only (no weight_g)" do
-      %{client_ctx: client_ctx, dal: dal} = build_scenario()
+      %{client_ctx: client_ctx, client: client, dal: dal} = build_scenario()
 
       assert {:ok, [entry]} =
                MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "dinner", meal_id: dal.id})
@@ -368,6 +368,21 @@ defmodule Easy.Nutrition.MealLogTest do
       assert entry.amount == 1.0
       # recipe totals 800 kcal across 2 servings -> 1 serving = 400 kcal
       assert entry.calories == 400.0
+
+      meal_log = get_meal_log(client.id, @date, "dinner")
+      assert get_in(meal_log.planned_snapshot, ["items", Access.at(0), "weight_g"]) == nil
+    end
+
+    test "write verbs reject future dates" do
+      %{client_ctx: client_ctx, snack_food: snack_food} = build_scenario()
+
+      assert {:error, :future_date} =
+               MealLogs.add_client_extra(client_ctx, %{
+                 date: Date.add(Date.utc_today(), 1),
+                 meal_slot: "breakfast",
+                 food_id: snack_food.id,
+                 weight_g: 100.0
+               })
     end
 
     test "add_client_extra accepts a recipe with amount and no weight_g" do
@@ -568,7 +583,7 @@ defmodule Easy.Nutrition.MealLogTest do
     end
 
     test "deleting a meal item leaves its logged entry readable" do
-      %{client_ctx: client_ctx, oats: oats} = build_scenario()
+      %{client_ctx: client_ctx, business: business, oats: oats} = build_scenario()
 
       assert {:ok, [entry]} =
                MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "breakfast", meal_id: oats.id})
@@ -583,7 +598,7 @@ defmodule Easy.Nutrition.MealLogTest do
 
       meal_log =
         MealLog
-        |> MealLog.include_entries()
+        |> MealLog.include_entries(business.id)
         |> Repo.get!(kept.nutrition_meal_log_id)
 
       assert [%{status: :as_planned, planned: %{id: ^frozen_id}}] = MealLogs.diary_rows(meal_log)
@@ -630,7 +645,7 @@ defmodule Easy.Nutrition.MealLogTest do
         |> MealLog.for_client(business.id, client.id)
         |> MealLog.for_date(@date)
         |> MealLog.for_meal_slot("dinner")
-        |> MealLog.include_entries()
+        |> MealLog.include_entries(business.id)
         |> Repo.one!()
 
       rows = MealLogs.diary_rows(meal_log)
@@ -668,7 +683,7 @@ defmodule Easy.Nutrition.MealLogTest do
         |> MealLog.for_client(business.id, client.id)
         |> MealLog.for_date(@date)
         |> MealLog.for_meal_slot("breakfast")
-        |> MealLog.include_entries()
+        |> MealLog.include_entries(business.id)
         |> Repo.one!()
 
       statuses = meal_log |> MealLogs.diary_rows() |> Enum.map(& &1.status) |> Enum.sort()
@@ -709,7 +724,7 @@ defmodule Easy.Nutrition.MealLogTest do
         |> MealLog.for_client(business.id, client.id)
         |> MealLog.for_date(@date)
         |> MealLog.for_meal_slot("breakfast")
-        |> MealLog.include_entries()
+        |> MealLog.include_entries(business.id)
         |> Repo.one!()
 
       statuses = meal_log |> MealLogs.diary_rows() |> Enum.map(& &1.status) |> Enum.sort()
@@ -730,7 +745,7 @@ defmodule Easy.Nutrition.MealLogTest do
         |> MealLog.for_client(business.id, client.id)
         |> MealLog.for_date(@date)
         |> MealLog.for_meal_slot("breakfast")
-        |> MealLog.include_entries()
+        |> MealLog.include_entries(business.id)
         |> Repo.one!()
 
       assert [%{status: :as_planned}] = MealLogs.diary_rows(meal_log)
@@ -765,7 +780,7 @@ defmodule Easy.Nutrition.MealLogTest do
         |> MealLog.for_client(business.id, client.id)
         |> MealLog.for_date(@date)
         |> MealLog.for_meal_slot("breakfast")
-        |> MealLog.include_entries()
+        |> MealLog.include_entries(business.id)
         |> Repo.one!()
 
       assert after_log.planned_snapshot["items"] == frozen_items
@@ -788,6 +803,20 @@ defmodule Easy.Nutrition.MealLogTest do
                  weight_g: 50.0
                })
 
+      # A corrupt cross-tenant child must neither freeze this tenant's plan nor
+      # leak back through the tenant-scoped preload.
+      foreign_coach = insert_coach()
+      foreign_food = insert(:food, business: foreign_coach.business, creator: foreign_coach)
+      breakfast_log = get_meal_log(client.id, @date, "breakfast")
+
+      insert(:food_log_entry,
+        meal_log: breakfast_log,
+        business: foreign_coach.business,
+        food: foreign_food,
+        planned_item_id: Ecto.UUID.generate(),
+        weight_g: 100.0
+      )
+
       milk = insert(:food, business: business, creator: creator, name: "Milk", calories_per_100g: 60.0)
 
       insert(:meal_item, meal: oats, business: business, food: milk, weight_g: 200.0, position: 1)
@@ -802,7 +831,7 @@ defmodule Easy.Nutrition.MealLogTest do
         |> MealLog.for_client(business.id, client.id)
         |> MealLog.for_date(@date)
         |> MealLog.for_meal_slot("breakfast")
-        |> MealLog.include_entries()
+        |> MealLog.include_entries(business.id)
         |> Repo.one!()
 
       assert length(meal_log.planned_snapshot["items"]) == 2

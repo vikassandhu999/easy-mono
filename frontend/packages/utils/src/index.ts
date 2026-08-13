@@ -231,6 +231,7 @@ export * from './date';
 export * from './format-start-end';
 export * from './media';
 export * from './nutrition';
+export * from './stick-to-bottom';
 export * from './workout';
 
 export const withThrottling =

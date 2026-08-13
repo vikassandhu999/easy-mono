@@ -2,6 +2,20 @@ export const IMAGE_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'im
 export const VIDEO_CONTENT_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'] as const;
 export const AUDIO_CONTENT_TYPES = ['audio/webm', 'audio/mp4', 'audio/mpeg'] as const;
 
+/**
+ * `accept` for a camera-capture file input, paired with `capture="environment"`.
+ *
+ * Browsers only honour `capture` when accept is a GENERIC wildcard. Handing them
+ * the enumerated upload list (`image/jpeg,…,image/heic,video/quicktime`) makes
+ * both Android and iOS fall through to the ordinary document picker — which is
+ * exactly the "Camera button opens the file browser" bug. The upload list still
+ * guards what is actually accepted, after selection, in validateAttachmentFiles.
+ *
+ * ponytail: Android offers a camera/camcorder chooser because both wildcards are
+ * present; narrow to 'image/*' if photo-only capture is ever wanted.
+ */
+export const CAMERA_ACCEPT = 'image/*,video/*';
+
 export type MediaKind = 'audio' | 'file' | 'image' | 'video';
 export type VoiceRecordingMimeType = 'audio/mp4' | 'audio/webm';
 

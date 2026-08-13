@@ -1,6 +1,7 @@
-import {Button, Spinner, TextArea, toast} from '@heroui/react';
-import {Send} from 'lucide-react';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import { stickToBottom } from '@easy/utils';
+import { Button, Spinner, TextArea, toast } from '@heroui/react';
+import { Send } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {
   appendClientMessage,
@@ -10,40 +11,65 @@ import {
   useCreateClientConversationMessageMutation,
   useMarkClientConversationReadMutation,
 } from '@/api/conversation';
-import {useGetClientProfileQuery} from '@/api/profile';
-import {getApiErrorMessage} from '@/api/shared';
+import { useGetClientProfileQuery } from '@/api/profile';
+import { getApiErrorMessage } from '@/api/shared';
 import AttachmentComposer from '@/messages/attachment-composer';
 import MessageAttachments from '@/messages/message-attachments';
 import MessageEmbed from '@/messages/message-embed';
 
 function formatDay(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, {day: 'numeric', month: 'short', year: 'numeric'});
+  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'});
+  return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+}
+
+function DaySeparator({ iso }: { iso: string }) {
+  return (
+    <div className="flex justify-center pb-3 pt-2">
+      <span className="rounded-full bg-surface-secondary px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-muted">
+        {formatDay(iso)}
+      </span>
+    </div>
+  );
 }
 
 function MessageBubble({
   failedIds,
+  isTail,
   message,
   refresh,
   urls,
 }: {
   failedIds: Set<string>;
+  isTail: boolean;
   message: ChatMessage;
   refresh: (ids: string[]) => Promise<void>;
   urls: Record<string, string>;
 }) {
   const own = message.sender_type === 'client';
+  // Media with nothing else in the bubble reads better edge-to-edge.
+  const mediaOnly = message.attachments.length > 0 && !message.body && !message.embed;
+  // A text bubble tucks the time onto the last line (reserved by the spacer
+  // below) instead of spending a whole extra row on "Nice one." + 10:03 PM.
+  const inlineStamp = Boolean(message.body);
+  const stamp = (
+    <span className={own ? 'text-accent-foreground/70' : 'text-muted'}>{formatTime(message.inserted_at)}</span>
+  );
   return (
     <div className={`flex ${own ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-[80%] rounded-2xl px-3 py-2 ${
-          own ? 'rounded-br-sm bg-accent text-accent-foreground' : 'rounded-bl-sm bg-surface-secondary'
-        }`}
+        className={[
+          'relative min-w-0 max-w-[85%] overflow-hidden rounded-2xl',
+          mediaOnly ? 'p-1' : 'px-3 py-2',
+          own ? 'bg-accent text-accent-foreground' : 'border border-border bg-surface',
+          isTail && (own ? 'rounded-br-md' : 'rounded-bl-md'),
+        ]
+          .filter(Boolean)
+          .join(' ')}
       >
-        <div className="grid gap-2">
+        <div className="grid min-w-0 gap-2">
           <MessageAttachments
             attachments={message.attachments}
             failedIds={failedIds}
@@ -51,11 +77,21 @@ function MessageBubble({
             urls={urls}
           />
           {message.embed ? <MessageEmbed embed={message.embed} /> : null}
-          {message.body ? <p className="whitespace-pre-wrap break-words text-sm">{message.body}</p> : null}
+          {message.body ? (
+            <p className="whitespace-pre-wrap wrap-break-word text-[15px] leading-snug">
+              {message.body}
+              <span
+                aria-hidden
+                className="inline-block w-12"
+              />
+            </p>
+          ) : null}
         </div>
-        <p className={`mt-0.5 text-right text-[10px] ${own ? 'text-accent-foreground/70' : 'text-muted'}`}>
-          {formatTime(message.inserted_at)}
-        </p>
+        {inlineStamp ? (
+          <span className="absolute bottom-2 right-3 text-[10px] tabular-nums">{stamp}</span>
+        ) : (
+          <p className={`text-right text-[10px] tabular-nums ${mediaOnly ? 'px-2 pb-1 pt-1' : 'mt-1'}`}>{stamp}</p>
+        )}
       </div>
     </div>
   );
@@ -63,16 +99,16 @@ function MessageBubble({
 
 export default function CoachChat() {
   const [body, setBody] = useState('');
-  const [attachmentState, setAttachmentState] = useState({attachmentIds: [] as string[], busy: false, failed: false});
+  const [attachmentState, setAttachmentState] = useState({ attachmentIds: [] as string[], busy: false, failed: false });
   const [composerKey, setComposerKey] = useState(0);
   const [sendLocked, setSendLocked] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
 
-  const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useClientMessagesInfiniteQuery();
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useClientMessagesInfiniteQuery();
   const sendMessage = useCreateClientConversationMessageMutation();
   const isSendingMessage = sendMessage.isPending;
-  const {mutate: markRead} = useMarkClientConversationReadMutation();
-  const {data: profile} = useGetClientProfileQuery();
+  const { mutate: markRead } = useMarkClientConversationReadMutation();
+  const { data: profile } = useGetClientProfileQuery();
   const coach = profile?.data.coach;
   const coachName = [coach?.first_name, coach?.last_name].filter(Boolean).join(' ') || 'Your coach';
   const coachInitial = coach?.first_name?.[0]?.toUpperCase() ?? 'C';
@@ -95,10 +131,10 @@ export default function CoachChat() {
     }
   }, [lastMessageId, markRead]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll whenever the message-list tail changes
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({behavior: 'instant', block: 'end'});
-  }, [lastMessageId]);
+  // Pins the scroller to its true bottom and re-pins as late media sizes up.
+  // Do NOT go back to scrollIntoView on a sentinel — it cannot cover the
+  // scroller's own bottom padding and fires before images have any height.
+  useEffect(() => stickToBottom(scrollerRef.current), []);
 
   const handleSend = async () => {
     const trimmed = body.trim();
@@ -113,12 +149,12 @@ export default function CoachChat() {
     setSendLocked(true);
     try {
       const result = await sendMessage.mutateAsync({
-        ...(trimmed && {body: trimmed}),
+        ...(trimmed && { body: trimmed }),
         attachment_ids: attachmentState.attachmentIds,
       } as CreateMessageBody);
       appendClientMessage(result.data);
       setBody('');
-      setAttachmentState({attachmentIds: [], busy: false, failed: false});
+      setAttachmentState({ attachmentIds: [], busy: false, failed: false });
       setComposerKey((current) => current + 1);
     } catch (error) {
       toast.danger(getApiErrorMessage(error, "Message wasn't sent. Try again."));
@@ -128,7 +164,7 @@ export default function CoachChat() {
   };
 
   const handleAttachmentChange = useCallback(
-    (state: {attachmentIds: string[]; busy: boolean; failed: boolean}) => setAttachmentState(state),
+    (state: { attachmentIds: string[]; busy: boolean; failed: boolean }) => setAttachmentState(state),
     [],
   );
 
@@ -138,7 +174,7 @@ export default function CoachChat() {
     // Tab bar (h-16) stays visible below — reserve its height.
     <div className="flex h-[calc(100dvh-4rem)] flex-col">
       <header className="flex min-h-14 items-center gap-3 border-b border-border bg-background px-5 pt-[env(safe-area-inset-top)]">
-        <span className="relative grid size-[38px] place-items-center rounded-full bg-accent text-sm font-extrabold text-white">
+        <span className="relative grid size-9.5 place-items-center rounded-full bg-accent text-sm font-extrabold text-white">
           {coachInitial}
           <i className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-background bg-success" />
         </span>
@@ -148,16 +184,19 @@ export default function CoachChat() {
         </span>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-4 py-3">
+      <div
+        className="scrollbar-hide flex-1 overflow-y-auto px-4 py-3"
+        ref={scrollerRef}
+      >
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Spinner />
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col">
             {hasNextPage ? (
               <Button
-                className="self-center"
+                className="mb-2 self-center"
                 isPending={isFetchingNextPage}
                 onPress={() => fetchNextPage()}
                 size="sm"
@@ -171,14 +210,22 @@ export default function CoachChat() {
             ) : null}
             {messages.map((message, index) => {
               const prev = messages[index - 1];
-              const newDay = !prev || formatDay(prev.inserted_at) !== formatDay(message.inserted_at);
+              const next = messages[index + 1];
+              const day = formatDay(message.inserted_at);
+              const newDay = !prev || formatDay(prev.inserted_at) !== day;
+              // Consecutive messages from one sender read as a single block:
+              // tight spacing, and only the last one keeps the pointed corner.
+              const grouped = !newDay && prev?.sender_type === message.sender_type;
+              const isTail = !next || next.sender_type !== message.sender_type || formatDay(next.inserted_at) !== day;
               return (
-                <div key={message.id}>
-                  {newDay ? (
-                    <p className="my-2 text-center text-xs text-muted">{formatDay(message.inserted_at)}</p>
-                  ) : null}
+                <div
+                  className={grouped ? 'mt-0.5' : 'mt-3'}
+                  key={message.id}
+                >
+                  {newDay ? <DaySeparator iso={message.inserted_at} /> : null}
                   <MessageBubble
                     failedIds={failedAttachmentIds}
+                    isTail={isTail}
                     message={message}
                     refresh={refreshAttachmentUrls}
                     urls={attachmentUrls}
@@ -186,18 +233,17 @@ export default function CoachChat() {
                 </div>
               );
             })}
-            <div ref={bottomRef} />
           </div>
         )}
       </div>
 
-      <footer className="border-t border-border bg-[rgba(244,244,242,0.96)] p-3 backdrop-blur-[10px]">
+      <footer className="border-t border-border bg-[rgba(244,244,242,0.96)] px-3 pb-3 pt-2 backdrop-blur-[10px]">
         <AttachmentComposer
           disabled={isSending}
           key={composerKey}
           onChange={handleAttachmentChange}
         />
-        <div className="mt-2 flex items-end gap-2">
+        <div className="mt-1 flex items-end gap-2">
           <TextArea
             aria-label="Message"
             className="min-h-11 flex-1"

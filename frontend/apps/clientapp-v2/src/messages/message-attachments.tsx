@@ -32,7 +32,7 @@ function MessageAttachment({
 
   if (!url || refreshing || mediaFailed) {
     return (
-      <div className="grid min-h-11 place-items-center gap-2 rounded-xl border border-border bg-surface-secondary px-3 py-2 text-center text-muted text-xs">
+      <div className="grid place-items-center gap-2 rounded-xl border border-border bg-surface-secondary px-4 py-6 text-center text-muted text-xs">
         {failed || mediaFailed ? (
           <>
             <span>Media unavailable</span>
@@ -68,6 +68,7 @@ function MessageAttachment({
   if (kind === 'image') {
     return (
       <a
+        className="inline-block max-w-full overflow-hidden rounded-xl bg-surface-secondary align-bottom"
         href={url}
         rel="noreferrer"
         target="_blank"
@@ -75,7 +76,9 @@ function MessageAttachment({
         {/* biome-ignore lint/a11y/noNoninteractiveElementInteractions: media load errors refresh an expired signed URL */}
         <img
           alt="Message attachment"
-          className="max-h-80 w-full rounded-xl object-cover"
+          // Auto width + capped height keeps every aspect ratio intact; the old
+          // `w-full object-cover` cropped portrait photos to a letterbox.
+          className="block max-h-80 w-auto max-w-full"
           onError={onError}
           src={url}
         />
@@ -86,21 +89,31 @@ function MessageAttachment({
     return (
       // biome-ignore lint/a11y/useMediaCaption: user-provided chat video has no caption track
       <video
-        className="max-h-80 w-full rounded-xl bg-black"
+        // No `w-full`: the bubble is shrink-to-fit, so a percentage width has
+        // nothing to resolve against and collapses the player. `preload` gives
+        // the element its real intrinsic size instead.
+        className="block max-h-80 max-w-full rounded-xl bg-black"
         controls
         onError={onError}
+        preload="metadata"
         src={url}
       />
     );
   }
   return (
-    // biome-ignore lint/a11y/useMediaCaption: user-provided voice notes have no caption track
-    <audio
-      className="min-h-11 w-full"
-      controls
-      onError={onError}
-      src={url}
-    />
+    // A definite width is required — `<audio>` has no useful intrinsic size, so
+    // inside a shrink-to-fit bubble it renders as a ~51px stub. No background:
+    // the native control draws its own, and a wrapper fill reads as a box in a box.
+    <div className="w-64 max-w-full">
+      {/* biome-ignore lint/a11y/useMediaCaption: user-provided voice notes have no caption track */}
+      <audio
+        className="block w-full"
+        controls
+        onError={onError}
+        preload="metadata"
+        src={url}
+      />
+    </div>
   );
 }
 

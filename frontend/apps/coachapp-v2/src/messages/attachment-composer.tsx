@@ -1,4 +1,4 @@
-import {IMAGE_CONTENT_TYPES, mediaKind, VIDEO_CONTENT_TYPES} from '@easy/utils';
+import {CAMERA_ACCEPT, mediaKind} from '@easy/utils';
 import {Button, ProgressBar} from '@heroui/react';
 import {Camera, ImagePlus, Mic, RotateCcw, Square, Trash2, X} from 'lucide-react';
 
@@ -31,13 +31,13 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
 
   return (
     <div className="min-w-0">
-      <div className="flex flex-wrap gap-2">
+      <div className="-ml-2 flex flex-wrap items-center gap-1">
         <Button
           aria-label="Take a photo or video"
           isDisabled={controlsDisabled}
           isIconOnly
           onPress={() => document.getElementById(`${inputId}-camera`)?.click()}
-          variant="secondary"
+          variant="ghost"
         >
           <Camera size={18} />
         </Button>
@@ -46,7 +46,7 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
           isDisabled={controlsDisabled}
           isIconOnly
           onPress={() => document.getElementById(`${inputId}-library`)?.click()}
-          variant="secondary"
+          variant="ghost"
         >
           <ImagePlus size={18} />
         </Button>
@@ -63,7 +63,7 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
               aria-label="Cancel recording"
               isIconOnly
               onPress={cancelRecording}
-              variant="secondary"
+              variant="ghost"
             >
               <X size={18} />
             </Button>
@@ -75,13 +75,13 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
             isIconOnly
             isPending={isStarting || isStopping}
             onPress={startRecording}
-            variant="secondary"
+            variant="ghost"
           >
             <Mic size={18} />
           </Button>
         )}
         <input
-          accept={[...IMAGE_CONTENT_TYPES, ...VIDEO_CONTENT_TYPES].join(',')}
+          accept={CAMERA_ACCEPT}
           capture="environment"
           className="sr-only"
           disabled={controlsDisabled}

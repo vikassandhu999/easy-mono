@@ -1,5 +1,6 @@
 import {
   AUDIO_CONTENT_TYPES,
+  CAMERA_ACCEPT,
   IMAGE_CONTENT_TYPES,
   mediaKind,
   putFileToSignedUrl,
@@ -271,14 +272,14 @@ export default function AttachmentComposer({disabled, onChange}: AttachmentCompo
 
   return (
     <div className="min-w-0">
-      <div className="flex flex-wrap gap-2">
+      <div className="-ml-2 flex flex-wrap items-center gap-1">
         <Button
           aria-label="Take a photo or video"
           className="min-h-11 min-w-11"
           isDisabled={controlsDisabled}
           isIconOnly
           onPress={() => document.getElementById(`${inputId}-camera`)?.click()}
-          variant="secondary"
+          variant="ghost"
         >
           <Camera size={18} />
         </Button>
@@ -288,7 +289,7 @@ export default function AttachmentComposer({disabled, onChange}: AttachmentCompo
           isDisabled={controlsDisabled}
           isIconOnly
           onPress={() => document.getElementById(`${inputId}-library`)?.click()}
-          variant="secondary"
+          variant="ghost"
         >
           <ImagePlus size={18} />
         </Button>
@@ -307,7 +308,7 @@ export default function AttachmentComposer({disabled, onChange}: AttachmentCompo
               className="min-h-11 min-w-11"
               isIconOnly
               onPress={cancelRecording}
-              variant="secondary"
+              variant="ghost"
             >
               <X size={18} />
             </Button>
@@ -320,13 +321,13 @@ export default function AttachmentComposer({disabled, onChange}: AttachmentCompo
             isIconOnly
             isPending={isStarting}
             onPress={startRecording}
-            variant="secondary"
+            variant="ghost"
           >
             <Mic size={18} />
           </Button>
         )}
         <input
-          accept={[...IMAGE_CONTENT_TYPES, ...VIDEO_CONTENT_TYPES].join(',')}
+          accept={CAMERA_ACCEPT}
           capture="environment"
           className="sr-only"
           disabled={controlsDisabled}

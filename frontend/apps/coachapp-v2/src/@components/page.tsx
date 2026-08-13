@@ -8,7 +8,7 @@ interface PageProps {
   className?: string;
 }
 
-type PageSize = 'builder' | 'content' | 'wide';
+type PageSize = 'builder' | 'content' | 'thread' | 'wide';
 
 interface PageLayoutProps extends PageProps {
   size?: PageSize;
@@ -24,9 +24,15 @@ interface PageLayoutProps extends PageProps {
 // 2026-08-01): TB puts it on the body Frame under a `wide` header; NB puts it
 // on the HEADER, over a `wide` Frame whose PlanBuilder self-frames narrower —
 // so the NB title/actions hug the meal column instead of stretching page-wide.
+// `thread` is the conversation column. A chat is read line-by-line, so it wants
+// a narrower measure than a list or form: at `content` width the bubbles cap out
+// around 700px and the two sides drift to opposite edges of a near-empty band.
+// It lives here because width is Page's job — the alternative is a hand-rolled
+// max-w on the screen, which is exactly what this table exists to prevent.
 const PAGE_SIZE_CLASS: Record<PageSize, string> = {
   builder: 'mx-auto max-w-235',
   content: 'mx-auto max-w-5xl',
+  thread: 'mx-auto max-w-3xl',
   wide: 'mx-auto max-w-6xl',
 };
 

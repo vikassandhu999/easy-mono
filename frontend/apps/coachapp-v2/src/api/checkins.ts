@@ -7,7 +7,7 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
-import {checkInKeys, formAssignmentKeys, formTemplateKeys, workbenchKeys} from '@/api/keys';
+import {checkInKeys, clientKeys, formAssignmentKeys, formTemplateKeys, workbenchKeys} from '@/api/keys';
 import type {components, operations} from '@/api/schema';
 
 export type ClientProfileCheckInSchedule = components['schemas']['ClientProfileCheckInSchedule'];
@@ -18,6 +18,7 @@ export type ClientProfileCheckInScheduleResponse = components['schemas']['Client
 export type ClientProfileCheckInScheduleListResponse =
   components['schemas']['ClientProfileCheckInScheduleListResponse'];
 export type ClientProfileFormAssignment = components['schemas']['ClientProfileFormAssignment'];
+export type ClientProfileFormAssignmentRequest = components['schemas']['ClientProfileFormAssignmentRequest'];
 export type ClientProfileFormAssignmentUpdateRequest =
   components['schemas']['ClientProfileFormAssignmentUpdateRequest'];
 export type ClientProfileFormAssignmentResponse = components['schemas']['ClientProfileFormAssignmentResponse'];
@@ -276,6 +277,24 @@ export function useListClientFormAssignmentsForCoachQuery(clientId: string, opti
         client.GET('/v1/coach/clients/{client_id}/form-assignments', {params: {path: {client_id: clientId}}}),
       ) as Promise<ClientProfileFormAssignmentListResponse>,
     enabled: options?.enabled ?? true,
+  });
+}
+
+export function useCreateClientFormAssignmentMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({body, clientId}: {body: ClientProfileFormAssignmentRequest; clientId: string}) =>
+      call(
+        client.POST('/v1/coach/clients/{client_id}/form-assignments', {
+          body,
+          params: {path: {client_id: clientId}},
+        }),
+      ) as Promise<ClientProfileFormAssignmentResponse>,
+    onSuccess: (_data, {clientId}) => {
+      qc.invalidateQueries({queryKey: formAssignmentKeys.forClient(clientId)});
+      qc.invalidateQueries({queryKey: clientKeys.detail(clientId)});
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+    },
   });
 }
 

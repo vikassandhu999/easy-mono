@@ -136,6 +136,7 @@ defmodule EasyWeb.Router do
     get "/check-ins/review-queue", CheckInReviewController, :index
     post "/form-submissions/:id/review", CheckInReviewController, :review
     get "/clients/:client_id/form-assignments", FormAssignmentController, :index
+    post "/clients/:client_id/form-assignments", FormAssignmentController, :create
     get "/form-assignments/:id/submissions", FormAssignmentController, :submissions
     patch "/form-assignments/:id", FormAssignmentController, :update
 

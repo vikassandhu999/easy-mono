@@ -2667,6 +2667,16 @@ export interface components {
       id: string;
       last_name: string;
     };
+    /**
+     * ClientProfileFormAssignmentRequest
+     * @example {
+     *       "form_template_id": "0ac4b3bc-e0b6-44ea-ae7a-f48deac42912"
+     *     }
+     */
+    ClientProfileFormAssignmentRequest: {
+      /** Format: uuid */
+      form_template_id: string;
+    };
     /** LibraryMediaUpload */
     LibraryMediaUpload: {
       byte_size: number;

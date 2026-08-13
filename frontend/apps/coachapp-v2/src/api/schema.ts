@@ -262,7 +262,11 @@ export interface paths {
      */
     get: operations['listClientFormAssignmentsForCoach'];
     put?: never;
-    post?: never;
+    /**
+     * Assign a form template to a client
+     * @description Creates a form assignment for a client in the authenticated coach business.
+     */
+    post: operations['createClientFormAssignment'];
     delete?: never;
     options?: never;
     head?: never;
@@ -3747,6 +3751,16 @@ export interface components {
       id: string;
       last_name: string;
     };
+    /**
+     * ClientProfileFormAssignmentRequest
+     * @example {
+     *       "form_template_id": "0ac4b3bc-e0b6-44ea-ae7a-f48deac42912"
+     *     }
+     */
+    ClientProfileFormAssignmentRequest: {
+      /** Format: uuid */
+      form_template_id: string;
+    };
     /** LibraryMediaUpload */
     LibraryMediaUpload: {
       byte_size: number;
@@ -5736,6 +5750,61 @@ export interface operations {
       };
       /** @description Not found */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  createClientFormAssignment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Client id */
+        client_id: string;
+      };
+      cookie?: never;
+    };
+    /** @description Form assignment request */
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ClientProfileFormAssignmentRequest'];
+      };
+    };
+    responses: {
+      /** @description Form assignment created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ClientProfileFormAssignmentResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Validation error */
+      422: {
         headers: {
           [name: string]: unknown;
         };

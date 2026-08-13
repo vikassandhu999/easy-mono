@@ -14,6 +14,50 @@ defmodule EasyWeb.Coaches.FormAssignmentControllerTest do
     %{conn: conn, coach: coach, business: coach.business}
   end
 
+  describe "POST /v1/coach/clients/:client_id/form-assignments" do
+    test "assigns a form template to a client", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, business: business, creator: coach)
+      template = insert(:form_template, business: business, purpose: :intake)
+
+      conn =
+        post(conn, "/v1/coach/clients/#{client.id}/form-assignments", %{
+          "form_template_id" => template.id
+        })
+
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["client_id"] == client.id
+      assert data["form_template_id"] == template.id
+      assert data["purpose"] == "intake"
+      assert data["status"] == "assigned"
+      assert data["form_template"]["id"] == template.id
+      assert_schema(data, "ClientProfileFormAssignment", EasyWeb.ApiSpec.spec())
+    end
+
+    test "404 for a client in another business", %{conn: conn, business: business} do
+      template = insert(:form_template, business: business, purpose: :intake)
+      other_client = insert(:client)
+
+      conn =
+        post(conn, "/v1/coach/clients/#{other_client.id}/form-assignments", %{
+          "form_template_id" => template.id
+        })
+
+      assert json_response(conn, 404)
+    end
+
+    test "404 for a template in another business", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, business: business, creator: coach)
+      other_template = insert(:form_template, purpose: :intake)
+
+      conn =
+        post(conn, "/v1/coach/clients/#{client.id}/form-assignments", %{
+          "form_template_id" => other_template.id
+        })
+
+      assert json_response(conn, 404)
+    end
+  end
+
   describe "GET /v1/coach/form-assignments/:id/submissions" do
     test "lists submissions (answers) for an assignment, newest first", %{
       conn: conn,

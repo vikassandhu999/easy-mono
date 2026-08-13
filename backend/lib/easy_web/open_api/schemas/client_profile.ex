@@ -237,6 +237,26 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileCheckInScheduleListResponse do
   )
 end
 
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignmentRequest do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "ClientProfileFormAssignmentRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        form_template_id: %Schema{type: :string, format: :uuid}
+      },
+      required: [:form_template_id],
+      example: %{"form_template_id" => "0ac4b3bc-e0b6-44ea-ae7a-f48deac42912"}
+    },
+    struct?: false
+  )
+end
+
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignmentUpdateRequest do
   require OpenApiSpex
 

@@ -18,7 +18,8 @@ import {formatDayMonth} from '@/clients/lib/client-detail-data';
  * Two registers, from the design:
  *   .chip      the state itself — Active (succ) / Invited (warn) / Inactive (out)
  *   .attnchip  a thing needing attention, tappable, jumping to where you fix it:
- *              "No active plan" -> Training, "Ends <date>" -> Manage access sheet
+ *              "No active plan" -> Training, "Ends <date>" -> Manage access sheet,
+ *              "Intake pending" -> intake responses.
  *
  * Order matters and is the design's: state first, then attention, so the row
  * reads "what this client is" before "what you owe them".
@@ -102,14 +103,16 @@ export function ClientAttentionChips({className, client}: {className?: string; c
         </Link>
       )}
       {client.intake_incomplete && (
-        <Chip
-          color="warning"
-          size="sm"
-          variant="soft"
-        >
-          <ClipboardList />
-          Intake pending
-        </Chip>
+        <Link to={clientPath(ROUTES.CLIENT_INTAKE)}>
+          <Chip
+            color="warning"
+            size="sm"
+            variant="soft"
+          >
+            <ClipboardList />
+            Intake pending
+          </Chip>
+        </Link>
       )}
     </div>
   );

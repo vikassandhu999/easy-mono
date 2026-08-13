@@ -1,6 +1,6 @@
 import {Chip, ListBox, Select, Switch, Typography, toast} from '@heroui/react';
 import {CalendarCheck, ChevronRight, ClipboardList} from 'lucide-react';
-import {Link} from 'react-router-dom';
+import {generatePath, Link} from 'react-router-dom';
 
 import {EmptyState} from '@/@components/empty-state';
 import {toastMutationError} from '@/@components/mutation-toast';
@@ -118,7 +118,11 @@ export function CheckinsTab({client}: {client: Client}) {
                   </Chip>
                 }
                 title={intake.form_template.name}
-                to={intake.latest_submission ? ROUTES.CLIENT_INTAKE.replace(':id', client.id) : undefined}
+                to={
+                  intake.latest_submission
+                    ? ROUTES.CLIENT_INTAKE.replace(':id', client.id)
+                    : generatePath(ROUTES.CHECKIN_BUILDER, {id: intake.form_template.id})
+                }
               />
             </div>
           </SectionCard>

@@ -1,7 +1,7 @@
 import {Button, Chip, TextArea, TextField, Typography} from '@heroui/react';
-import {Settings2, Sparkles} from 'lucide-react';
+import {ClipboardList, Settings2, Sparkles} from 'lucide-react';
 import {useEffect, useState} from 'react';
-import {Link, useNavigate} from 'react-router-dom';
+import {generatePath, Link, useNavigate} from 'react-router-dom';
 
 import {EmptyState} from '@/@components/empty-state';
 import {toastMutationError} from '@/@components/mutation-toast';
@@ -15,6 +15,7 @@ import {useListCoachMealLogsQuery} from '@/api/nutrition-plans-list';
 import {useListCoachClientTrainingSessionsQuery} from '@/api/training-plans-list';
 import {type AnswerType, formatAnswer, isSummarisableAnswer, submissionPhotoIds} from '@/checkins/lib/form-answers';
 import {DetailRow} from '@/clients/components/detail-row';
+import IntakeAssignControl from '@/clients/components/intake-assign-control';
 import {PhotoThumb} from '@/clients/components/photo-thumb';
 import {SectionCard} from '@/clients/components/section-card';
 import {
@@ -32,14 +33,15 @@ import {
 
 /**
  * Overview: left column is the week (activity + triage); the 320px rail is
- * standing context — private notes and the way into Edit client. Coaching access
- * lives in the page strip (Manage sheet for period + cancel).
+ * standing context — private notes, intake answers, and the way into Edit client.
+ * Coaching access lives in the page strip (Manage sheet for period + cancel).
  */
 export function OverviewTab({client}: {client: Client}) {
   const week = lastNDays(7);
   const from = week[0]!;
   const to = week[6]!;
   const navigate = useNavigate();
+  const [assignOpen, setAssignOpen] = useState(false);
   const clientPath = (route: string) => route.replace(':id', client.id);
 
   const sessions = useListCoachClientTrainingSessionsQuery(client.id, {from, to});
@@ -53,9 +55,12 @@ export function OverviewTab({client}: {client: Client}) {
   // one field this screen reads.
   const trend = weightTrend(weights.data?.entries, (weights.data?.goal?.value as number | undefined) ?? null);
 
-  const submissions = (forms.data?.data ?? []).filter((a) => a.latest_submission && a.purpose === 'check_in');
+  const assignments = forms.data?.data ?? [];
+  const submissions = assignments.filter((a) => a.latest_submission && a.purpose === 'check_in');
   const latest = submissions[0];
   const awaitingReview = submissions.find((a) => a.latest_submission && !a.latest_submission_reviewed_at);
+  const intake = assignments.find((a) => a.purpose === 'intake');
+  const intakeSubmittedOn = intake?.latest_submission?.submitted_at?.slice(0, 10);
 
   const hasAnything = doneDays.size > 0 || loggedDays.size > 0 || trend != null || submissions.length > 0;
 
@@ -129,6 +134,34 @@ export function OverviewTab({client}: {client: Client}) {
         <NotesCard
           client={client}
           key={client.id}
+        />
+        <SectionCard>
+          <DetailRow
+            icon={ClipboardList}
+            meta={
+              intakeSubmittedOn
+                ? `Submitted ${formatDayMonth(intakeSubmittedOn)}`
+                : intake
+                  ? 'Assigned, not submitted yet'
+                  : 'No intake assigned'
+            }
+            onPress={intake ? undefined : () => setAssignOpen(true)}
+            title={intakeSubmittedOn ? 'Intake responses' : (intake?.form_template.name ?? 'Assign intake')}
+            to={
+              intakeSubmittedOn
+                ? clientPath(ROUTES.CLIENT_INTAKE)
+                : intake
+                  ? generatePath(ROUTES.CHECKIN_BUILDER, {id: intake.form_template.id})
+                  : undefined
+            }
+            tone={intakeSubmittedOn ? 'default' : 'muted'}
+          />
+        </SectionCard>
+        <IntakeAssignControl
+          clientId={client.id}
+          clientName={client.first_name ?? 'this client'}
+          isOpen={assignOpen}
+          onOpenChange={setAssignOpen}
         />
         <SectionCard>
           <DetailRow

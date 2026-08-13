@@ -7,13 +7,14 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
 
   alias EasyWeb.OpenApi.Schemas.{
     ClientProfileFormAssignmentListResponse,
+    ClientProfileFormAssignmentRequest,
     ClientProfileFormAssignmentResponse,
     ClientProfileFormAssignmentUpdateRequest,
     ClientProfileFormSubmissionListResponse,
     ErrorResponse
   }
 
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:update]
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update]
 
   tags ["coach form assignments"]
 
@@ -27,6 +28,20 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
       ok: {"Form assignments", "application/json", ClientProfileFormAssignmentListResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :create,
+    summary: "Assign a form template to a client",
+    description: "Creates a form assignment for a client in the authenticated coach business.",
+    operation_id: "createClientFormAssignment",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:client_id, :path, :string, "Client id")],
+    request_body: {"Form assignment request", "application/json", ClientProfileFormAssignmentRequest, required: true},
+    responses: [
+      created: {"Form assignment created", "application/json", ClientProfileFormAssignmentResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
   operation :update,
@@ -61,6 +76,19 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
 
     with {:ok, assignments} <- Forms.list_form_assignments_for_client(ctx, client_id) do
       render(conn, :index, assignments: assignments)
+    end
+  end
+
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def create(conn, _params) do
+    ctx = conn.assigns.ctx
+    client_id = conn.path_params["client_id"]
+    template_id = conn.body_params[:form_template_id]
+
+    with {:ok, assignment} <- Forms.assign_form_template_to_client(ctx, client_id, template_id, %{}) do
+      conn
+      |> put_status(:created)
+      |> render(:show, assignment: assignment)
     end
   end
 

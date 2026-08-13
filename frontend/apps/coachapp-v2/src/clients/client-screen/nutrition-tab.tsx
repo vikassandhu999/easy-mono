@@ -1,6 +1,7 @@
 import {Chip, ProgressBar} from '@heroui/react';
 import {UtensilsCrossed} from 'lucide-react';
-import {Link, useNavigate} from 'react-router-dom';
+import {useEffect, useState} from 'react';
+import {Link, useNavigate, useSearchParams} from 'react-router-dom';
 
 import {toastMutationError} from '@/@components/mutation-toast';
 import {ROUTES} from '@/@config/routes';
@@ -18,8 +19,19 @@ import {formatKcal, formatRowDate, lastNDays} from '@/clients/lib/client-detail-
 /** CD-NU: the active plan, then 14 days of adherence. */
 export function NutritionTab({client}: {client: Client}) {
   const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const [assignFromUrl] = useState(() => params.get('assign') === 'plan');
   const updatePlanMutation = useUpdateNutritionPlanMutation();
   const isEnding = updatePlanMutation.isPending;
+
+  useEffect(() => {
+    if (params.get('assign') !== 'plan') {
+      return;
+    }
+    const next = new URLSearchParams(params);
+    next.delete('assign');
+    setParams(next, {replace: true});
+  }, [params, setParams]);
 
   // "End plan" archives it — the plan and its logged history stay, it just stops
   // being the client's active plan. Confirmed in PlanPanel before it fires.
@@ -71,6 +83,7 @@ export function NutritionTab({client}: {client: Client}) {
     <div className="flex flex-col gap-4">
       <PlanPanel
         icon={UtensilsCrossed}
+        defaultAssignOpen={assignFromUrl}
         emptyBody={`Assign a plan so ${client.first_name ?? 'this client'} can log meals against it.`}
         emptyTitle="No nutrition plan"
         meta={

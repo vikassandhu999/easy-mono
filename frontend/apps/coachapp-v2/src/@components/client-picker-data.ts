@@ -30,24 +30,30 @@ export function clientRecipientName(client: Client, fullName: string): string {
 }
 
 /**
- * The client's coverage story, in the workbench vocabulary (add-to-client
- * spec §2.2). A pending client's enriched plan name still proves coverage
- * (AC-009): invitation status does not make their assigned plan disappear.
- * Copy belongs to the rendering component; this returns the facts.
+ * Coverage story from required services + in-force plan names (include_plans).
+ * Queue membership facts live on workbench endpoints; the picker only needs
+ * whether this client still needs a plan of the chosen discipline.
  */
 export type ClientCoverage =
   | {kind: 'needs-programming'; coverageEnds: null | string}
   | {kind: 'covered'; until: null | string}
   | {kind: 'uncovered'};
 
+export function clientNeedsProgramming(client: Client): boolean {
+  const required = client.required_services as readonly string[];
+  const needsTraining = required.includes('training') && !client.training_plan_name;
+  const needsNutrition = required.includes('nutrition') && !client.nutrition_plan_name;
+  return needsTraining || needsNutrition;
+}
+
 export function clientCoverage(client: Client): ClientCoverage {
-  if (client.needs_programming) {
-    return {coverageEnds: client.covered_until ?? null, kind: 'needs-programming'};
+  if (clientNeedsProgramming(client)) {
+    return {coverageEnds: null, kind: 'needs-programming'};
   }
-  if (client.covered_until) {
-    return {kind: 'covered', until: client.covered_until};
+  if (client.nutrition_plan_name || client.training_plan_name) {
+    return {kind: 'covered', until: null};
   }
-  if (client.nutrition_plan_name || client.training_plan_name || client.status === 'active') {
+  if (client.status === 'active') {
     return {kind: 'covered', until: null};
   }
   return {kind: 'uncovered'};
@@ -70,7 +76,7 @@ export function planAddDecision(client: Client, planKind: PlanKind): PlanAddDeci
   }
   const otherPlanName = (planKind === 'nutrition' ? client.training_plan_name : client.nutrition_plan_name) || null;
   if (otherPlanName || clientCoverage(client).kind === 'covered') {
-    return {coveredUntil: client.covered_until ?? null, kind: 'confirm', otherPlanName};
+    return {coveredUntil: null, kind: 'confirm', otherPlanName};
   }
   return {kind: 'schedule'};
 }

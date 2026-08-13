@@ -1,9 +1,10 @@
 import {type InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
-import {conversationKeys} from '@/api/keys';
+import {conversationKeys, workbenchKeys} from '@/api/keys';
 import {patchQueryData, queryClient} from '@/api/query-client';
 import type {components, paths} from '@/api/schema';
+import {workbenchMutationTargets} from '@/api/workbench-targets';
 
 export type ChatMessage = components['schemas']['ChatMessage'];
 export type ChatMessageEmbed = components['schemas']['ChatMessageEmbed'];
@@ -32,17 +33,6 @@ export function useCoachConversationsInfiniteQuery(search?: string) {
       const nextOffset = lastPageParam + PAGE_SIZE;
       return nextOffset < lastPage.count ? nextOffset : undefined;
     },
-  });
-}
-
-/** The Replies queue: client spoke last, longest-waiting first — filtered and ordered by the server. */
-export function useWaitingConversationsQuery() {
-  return useQuery({
-    queryKey: conversationKeys.list({waiting: true}),
-    queryFn: () =>
-      call(
-        client.GET('/v1/coach/conversations', {params: {query: {limit: PAGE_SIZE, waiting: true}}}),
-      ) as Promise<ConversationListResponse>,
   });
 }
 
@@ -84,6 +74,7 @@ export function useCreateCoachConversationMessageMutation() {
       call(client.POST('/v1/coach/conversations/{id}/messages', {params: {path: {id}}, body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: conversationKeys.lists()});
+      qc.invalidateQueries({queryKey: workbenchKeys.all});
     },
   });
 }
@@ -97,6 +88,22 @@ export function useMarkCoachConversationReadMutation() {
       // The client screen's unread badge reads the client-scoped record, and
       // this mutation only knows the conversation id — invalidate the prefix.
       qc.invalidateQueries({queryKey: conversationKeys.forClients()});
+    },
+  });
+}
+
+export type MarkHandledRequest = components['schemas']['MarkHandledRequest'];
+
+/** Drain a waiting conversation without sending a message. Stale clocks return 409. */
+export function useMarkConversationHandledMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({body, id}: {body: MarkHandledRequest; id: string}) =>
+      call(client.POST('/v1/coach/conversations/{id}/mark-handled', {params: {path: {id}}, body})),
+    onSuccess: () => {
+      for (const queryKey of workbenchMutationTargets().afterMarkHandled) {
+        qc.invalidateQueries({queryKey: [...queryKey]});
+      }
     },
   });
 }

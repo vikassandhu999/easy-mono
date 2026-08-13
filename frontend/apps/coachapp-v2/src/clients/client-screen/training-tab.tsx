@@ -1,6 +1,7 @@
 import {Button, Chip} from '@heroui/react';
 import {Dumbbell} from 'lucide-react';
-import {useNavigate} from 'react-router-dom';
+import {useEffect, useState} from 'react';
+import {useNavigate, useSearchParams} from 'react-router-dom';
 
 import {toastMutationError} from '@/@components/mutation-toast';
 import SectionHeading from '@/@components/section-heading';
@@ -27,8 +28,19 @@ import {sessionWorkoutName} from '@/clients/lib/session';
 /** CD-TR: the active plan, then session history grouped by week. */
 export function TrainingTab({client}: {client: Client}) {
   const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const [assignFromUrl] = useState(() => params.get('assign') === 'plan');
   const updatePlanMutation = useUpdateTrainingPlanMutation();
   const isEnding = updatePlanMutation.isPending;
+
+  useEffect(() => {
+    if (params.get('assign') !== 'plan') {
+      return;
+    }
+    const next = new URLSearchParams(params);
+    next.delete('assign');
+    setParams(next, {replace: true});
+  }, [params, setParams]);
 
   // "End plan" archives it — the plan and its logged history stay, it just stops
   // being the client's active plan. Confirmed in PlanPanel before it fires.
@@ -69,6 +81,7 @@ export function TrainingTab({client}: {client: Client}) {
     <div className="flex flex-col gap-4">
       <PlanPanel
         icon={Dumbbell}
+        defaultAssignOpen={assignFromUrl}
         emptyBody={`Assign a plan so ${client.first_name ?? 'this client'} sees workouts in their app.`}
         emptyTitle="No training plan"
         meta={

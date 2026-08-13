@@ -5,31 +5,33 @@ import {useNavigate} from 'react-router-dom';
 import BrowseListBox from '@/@components/browse-list-box';
 import {EmptyState} from '@/@components/empty-state';
 import {ROUTES} from '@/@config/routes';
-import {type ClientProfileReviewQueueItem, useListCheckInReviewQueueQuery} from '@/api/checkins';
-import {formatRelativeTime} from '@/dashboard/lib/date-format';
+import {useInfiniteItems} from '@/@hooks/use-infinite-items';
+import {useCheckInsQueueInfiniteQuery, type WorkbenchCheckInQueueItem} from '@/api/workbench';
+import {presentCheckInReason} from '@/clients/lib/workbench-reason-presentation';
 
 import {QueueRow} from './queue-row';
 
-/** The endpoint is oldest-first (longest-waiting on top) and this pane is a working queue, not a browse list. */
-const PAGE = 20;
-
 export default function CheckInsView() {
   const navigate = useNavigate();
-  const {data, isError, isLoading, refetch} = useListCheckInReviewQueueQuery({limit: PAGE, offset: 0});
-  const items = data?.data ?? [];
+  const list = useInfiniteItems(useCheckInsQueueInfiniteQuery());
 
-  const openReview = (id: string) => navigate(ROUTES.CHECKIN_REVIEW.replace(':id', id));
+  const openReview = (item: WorkbenchCheckInQueueItem) =>
+    navigate(ROUTES.CHECKIN_REVIEW.replace(':id', item.submission.id));
 
-  const toRow = (item: ClientProfileReviewQueueItem) => ({
-    action: 'Review',
-    id: item.id,
-    initials: getInitials(item.client.first_name, item.client.last_name) || '?',
-    name: [item.client.first_name, item.client.last_name].filter(Boolean).join(' ') || item.client.email || 'Client',
-    onAction: () => openReview(item.id),
-    onOpen: () => openReview(item.id),
-    subtitle: `Submitted ${formatRelativeTime(item.inserted_at)}`,
-    tone: 'accent' as const,
-  });
+  const toRow = (item: WorkbenchCheckInQueueItem) => {
+    const reason = item.reasons[0]!;
+    const presented = presentCheckInReason(reason);
+    return {
+      action: presented.action,
+      id: item.submission.id,
+      initials: getInitials(item.client.first_name, item.client.last_name) || '?',
+      name: [item.client.first_name, item.client.last_name].filter(Boolean).join(' ') || item.client.email || 'Client',
+      onAction: () => openReview(item),
+      onOpen: () => openReview(item),
+      subtitle: `${presented.title} · ${presented.description}`,
+      tone: 'accent' as const,
+    };
+  };
 
   return (
     <BrowseListBox
@@ -42,16 +44,16 @@ export default function CheckInsView() {
           title="All reviewed. Nothing waiting on you."
         />
       }
+      fetchNextPage={list.fetchNextPage}
       grid
-      fetchNextPage={() => undefined}
-      isError={isError}
-      isLoading={isLoading}
-      items={items}
-      onRetry={refetch}
+      isError={list.isError}
+      isLoading={list.isLoading || list.isFetchingNextPage}
+      items={list.items}
+      onRetry={list.refetch}
       renderItem={(item) => (
         <QueueRow
           item={toRow(item)}
-          key={item.id}
+          key={item.submission.id}
         />
       )}
       skeletonAvatar

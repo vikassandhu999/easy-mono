@@ -69,11 +69,10 @@ function getAttentionLabels(client: ListClient): string[] {
   if (client.status !== 'active') {
     return [];
   }
-  return [
-    client.intake_incomplete ? 'Intake incomplete' : null,
-    client.needs_plan ? 'Needs plan' : null,
-    client.expiring_soon ? 'Expiring soon' : null,
-  ].filter((label): label is string => label !== null);
+  const missingPlan = !client.training_plan_name && !client.nutrition_plan_name;
+  return [missingPlan ? 'Needs plan' : null, client.expiring_soon ? 'Expiring soon' : null].filter(
+    (label): label is string => label !== null,
+  );
 }
 
 // The neutral grey chips: the names of the plans in force today, then the
@@ -102,11 +101,8 @@ function getMobileSubtitle(client: ListClient): {isAttention: boolean; text: str
     if (client.expiring_soon) {
       return {isAttention: true, text: 'Coaching period ending soon'};
     }
-    if (client.needs_plan) {
+    if (!client.training_plan_name && !client.nutrition_plan_name) {
       return {isAttention: true, text: 'Needs a plan assigned'};
-    }
-    if (client.intake_incomplete) {
-      return {isAttention: true, text: 'Intake form incomplete'};
     }
     return {isAttention: false, text: client.stage === 'coaching' ? 'Coaching' : 'Onboarding'};
   }

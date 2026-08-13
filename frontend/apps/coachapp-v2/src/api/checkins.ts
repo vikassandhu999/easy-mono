@@ -289,6 +289,7 @@ export function useCreateClientFormAssignmentMutation() {
       qc.invalidateQueries({queryKey: formAssignmentKeys.forClient(clientId)});
       qc.invalidateQueries({queryKey: clientKeys.detail(clientId)});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
+      qc.invalidateQueries({queryKey: workbenchKeys.all});
     },
   });
 }
@@ -321,8 +322,19 @@ export function useReviewFormSubmissionMutation() {
     onSuccess: () => {
       qc.invalidateQueries({queryKey: checkInKeys.reviewQueue()});
       qc.invalidateQueries({queryKey: formAssignmentKeys.all});
-      // The workbench Check-ins count is this queue's length.
-      qc.invalidateQueries({queryKey: workbenchKeys.counts()});
+      qc.invalidateQueries({queryKey: workbenchKeys.all});
+    },
+  });
+}
+
+/** Intake reminder — feedback only; membership is unchanged until the intake completes. */
+export function useRemindFormAssignmentMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => call(client.POST('/v1/coach/form-assignments/{id}/remind', {params: {path: {id}}})),
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: formAssignmentKeys.all});
+      qc.invalidateQueries({queryKey: workbenchKeys.all});
     },
   });
 }

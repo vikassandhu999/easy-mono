@@ -27,7 +27,7 @@ type SetupProgress =
   | {doneCount: number; status: 'ready'; steps: SetupStep[]};
 
 function useDashboardSetupProgress(skip: boolean): SetupProgress {
-  const clients = useListClientsQuery({limit: 20}, {enabled: !skip});
+  const clients = useListClientsQuery({include_plans: true, limit: 20}, {enabled: !skip});
   const trainingPlans = useListTrainingPlansQuery({limit: 1}, {enabled: !skip});
   const nutritionPlans = useListNutritionPlansQuery({limit: 1}, {enabled: !skip});
 
@@ -60,10 +60,12 @@ function useDashboardSetupProgress(skip: boolean): SetupProgress {
   }
 
   const clientRows = clients.data?.data ?? [];
-  const clientNeedingPlan = clientRows.find((client) => client.needs_plan);
+  const clientNeedingPlan = clientRows.find(
+    (client) => client.status === 'active' && !client.training_plan_name && !client.nutrition_plan_name,
+  );
   const hasClient = (clients.data?.count ?? 0) > 0;
   const hasPlan = (trainingPlans.data?.count ?? 0) > 0 || (nutritionPlans.data?.count ?? 0) > 0;
-  const hasAssignedPlan = clientRows.some((client) => !client.needs_plan);
+  const hasAssignedPlan = clientRows.some((client) => Boolean(client.training_plan_name || client.nutrition_plan_name));
 
   const steps: SetupStep[] = [
     {

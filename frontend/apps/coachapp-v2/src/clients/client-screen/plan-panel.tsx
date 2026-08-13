@@ -29,6 +29,7 @@ export type AssignControl = {
 export function PlanPanel({
   assign,
   assignLabel,
+  defaultAssignOpen = false,
   emptyBody,
   emptyTitle,
   icon: Icon,
@@ -42,6 +43,8 @@ export function PlanPanel({
   assign?: (control: AssignControl) => ReactNode;
   /** Empty-state button copy — `Assign plan`. */
   assignLabel?: string;
+  /** Open the assign surface on mount (Programming queue `?assign=plan`). */
+  defaultAssignOpen?: boolean;
   isEnding?: boolean;
   emptyBody: string;
   emptyTitle: string;
@@ -52,7 +55,7 @@ export function PlanPanel({
   onOpen?: () => void;
 }) {
   const endState = useOverlayState();
-  const [assignOpen, setAssignOpen] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(defaultAssignOpen);
   // Two anchors, one per branch: the ⋯ button on an active plan, the Assign
   // button on the empty state. The popover has to point at whatever opened it.
 

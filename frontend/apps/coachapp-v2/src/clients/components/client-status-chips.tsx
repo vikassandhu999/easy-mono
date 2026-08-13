@@ -1,5 +1,5 @@
 import {Chip} from '@heroui/react';
-import {AlarmClock, ClipboardList, Dumbbell} from 'lucide-react';
+import {AlarmClock} from 'lucide-react';
 import {Link} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
@@ -79,50 +79,23 @@ export function ClientStatusChip({client}: {client: Client}) {
  */
 export function ClientAttentionChips({className, client}: {className?: string; client: Client}) {
   const clientPath = (route: string) => route.replace(':id', client.id);
-  const hasAny = (client.needs_plan && client.status === 'active') || client.expiring_soon || client.intake_incomplete;
 
-  if (!hasAny) {
+  if (!client.expiring_soon || !client.subscription_ends_on) {
     return null;
   }
 
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className ?? ''}`}>
-      {client.needs_plan && client.status === 'active' && (
-        <Link to={`${clientPath(ROUTES.CLIENT_DETAIL)}?tab=training`}>
-          <Chip
-            color="warning"
-            size="sm"
-            variant="soft"
-          >
-            <Dumbbell />
-            No active plan
-          </Chip>
-        </Link>
-      )}
-      {client.expiring_soon && client.subscription_ends_on && (
-        <Link to={`${clientPath(ROUTES.CLIENT_DETAIL)}?manage=access`}>
-          <Chip
-            color="danger"
-            size="sm"
-            variant="soft"
-          >
-            <AlarmClock />
-            Ends {formatDayMonth(client.subscription_ends_on)}
-          </Chip>
-        </Link>
-      )}
-      {client.intake_incomplete && (
-        <Link to={clientPath(ROUTES.CLIENT_INTAKE)}>
-          <Chip
-            color="warning"
-            size="sm"
-            variant="soft"
-          >
-            <ClipboardList />
-            Intake pending
-          </Chip>
-        </Link>
-      )}
+      <Link to={`${clientPath(ROUTES.CLIENT_DETAIL)}?manage=access`}>
+        <Chip
+          color="danger"
+          size="sm"
+          variant="soft"
+        >
+          <AlarmClock />
+          Ends {formatDayMonth(client.subscription_ends_on)}
+        </Chip>
+      </Link>
     </div>
   );
 }

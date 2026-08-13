@@ -114,6 +114,7 @@ export function useResendClientInviteMutation() {
     onSuccess: (_data, id) => {
       qc.invalidateQueries({queryKey: clientKeys.detail(id)});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
+      qc.invalidateQueries({queryKey: workbenchKeys.all});
     },
   });
 }

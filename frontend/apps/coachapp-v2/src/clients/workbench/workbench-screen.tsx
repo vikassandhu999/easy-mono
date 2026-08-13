@@ -7,18 +7,16 @@ import {EmptyState} from '@/@components/empty-state';
 import {Page} from '@/@components/page';
 import {TodayCard} from '@/@components/today-card';
 import {ROUTES} from '@/@config/routes';
-import type {ClientQueue} from '@/api/clients';
 import {useListClientsQuery} from '@/api/clients';
 import {useWorkbenchCountsQuery} from '@/api/workbench';
 import {workbenchCount} from '@/clients/lib/workbench-counts';
 import {queueEntries, queueMeta, TODAY_QUEUES, type WorkbenchQueueId} from '@/clients/lib/workbench-queues';
-import OnboardingQueuePrototype from '@/clients/prototypes/onboarding-queue-prototype';
-import ProgrammingQueuePrototype from '@/clients/prototypes/programming-queue-prototype';
-import RepliesHandlingPrototype from '@/clients/prototypes/replies-handling-prototype';
 
 import AllClientsView from './all-clients-view';
 import CheckInsView from './check-ins-view';
-import ClientQueueView from './client-queue-view';
+import {ExpiringView, QuietView} from './expiring-quiet-views';
+import OnboardingView from './onboarding-view';
+import ProgrammingView from './programming-view';
 import {WorkbenchRail} from './rail';
 import RepliesView from './replies-view';
 import {ViewShell} from './view-shell';
@@ -74,14 +72,7 @@ export default function WorkbenchScreen() {
   const view: 'caught-up' | undefined | ViewId =
     requested ?? (countsQuery.isError ? 'all' : counts ? (firstNonEmpty ?? 'caught-up') : undefined);
 
-  const prototypeVariant = searchParams.get('variant');
-  const isOnboardingPrototype =
-    view === 'new' && import.meta.env.DEV && ['A', 'B', 'C'].includes(prototypeVariant ?? '');
-  const todayEntries = queueEntries(counts).map((entry) =>
-    isOnboardingPrototype && entry.id === 'new'
-      ? {...entry, label: 'Onboarding', meta: entry.meta?.replace('in onboarding', 'requiring action')}
-      : entry,
-  );
+  const todayEntries = queueEntries(counts);
   const selectView = (id: string) => setSearchParams({view: id});
 
   const activeQueue = TODAY_QUEUES.find((queue) => queue.id === view);
@@ -89,17 +80,15 @@ export default function WorkbenchScreen() {
   // Mobile levels (desktop ignores both): no explicit `?view=` means the
   // menu; a `?view=` means drilled into that queue.
   const menuMode = requested === undefined;
-  const drillLabel =
-    (isOnboardingPrototype ? 'Onboarding' : activeQueue?.label) ?? (requested === 'all' ? 'All clients' : undefined);
+  const drillLabel = activeQueue?.label ?? (requested === 'all' ? 'All clients' : undefined);
+
+  const queueMetaLine =
+    counts && activeQueue ? queueMeta(activeQueue, workbenchCount(counts, activeQueue.countKey)) : undefined;
 
   let content: ReactNode;
   if (view === undefined) {
     content = <ContentSkeleton />;
   } else if (view === 'caught-up') {
-    // Titled like every other pane: the caught-up state is the Today list with
-    // nothing in it, not a different kind of screen. Without the header its
-    // card started 38px higher than every queue's, and with no rail item
-    // selected the pane read as a failure to load rather than an achievement.
     content = (
       <ViewShell title="Today">
         <EmptyState
@@ -123,41 +112,55 @@ export default function WorkbenchScreen() {
   } else if (view === 'check-ins') {
     content = (
       <ViewShell
-        meta={counts && activeQueue ? queueMeta(activeQueue, workbenchCount(counts, activeQueue.countKey)) : undefined}
+        meta={queueMetaLine}
         title="Check-ins"
       >
         <CheckInsView />
       </ViewShell>
     );
   } else if (view === 'replies') {
-    content =
-      import.meta.env.DEV && ['A', 'B', 'C'].includes(searchParams.get('variant') ?? '') ? (
-        <RepliesHandlingPrototype />
-      ) : (
-        <ViewShell
-          meta={
-            counts && activeQueue ? queueMeta(activeQueue, workbenchCount(counts, activeQueue.countKey)) : undefined
-          }
-          title="Replies"
-        >
-          <RepliesView />
-        </ViewShell>
-      );
-  } else if (
-    view === 'programming' &&
-    import.meta.env.DEV &&
-    ['A', 'B', 'C'].includes(searchParams.get('variant') ?? '')
-  ) {
-    content = <ProgrammingQueuePrototype />;
-  } else if (isOnboardingPrototype) {
-    content = <OnboardingQueuePrototype />;
+    content = (
+      <ViewShell
+        meta={queueMetaLine}
+        title="Replies"
+      >
+        <RepliesView />
+      </ViewShell>
+    );
+  } else if (view === 'programming') {
+    content = (
+      <ViewShell
+        meta={queueMetaLine}
+        title="Programming"
+      >
+        <ProgrammingView />
+      </ViewShell>
+    );
+  } else if (view === 'expiring') {
+    content = (
+      <ViewShell
+        meta={queueMetaLine}
+        title="Expiring"
+      >
+        <ExpiringView />
+      </ViewShell>
+    );
+  } else if (view === 'quiet') {
+    content = (
+      <ViewShell
+        meta={queueMetaLine}
+        title="Quiet"
+      >
+        <QuietView />
+      </ViewShell>
+    );
   } else {
     content = (
       <ViewShell
-        meta={counts && activeQueue ? queueMeta(activeQueue, workbenchCount(counts, activeQueue.countKey)) : undefined}
-        title={activeQueue?.title ?? ''}
+        meta={queueMetaLine}
+        title="Onboarding"
       >
-        <ClientQueueView queue={view as ClientQueue} />
+        <OnboardingView />
       </ViewShell>
     );
   }

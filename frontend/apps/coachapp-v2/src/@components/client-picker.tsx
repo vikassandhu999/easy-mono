@@ -19,6 +19,7 @@ import {
   CLIENT_PICKER_PAGE_SIZE,
   clientContact,
   clientCoverage,
+  clientNeedsProgramming,
   eligibleClientPage,
 } from '@/@components/client-picker-data';
 import {ErrorState} from '@/@components/error-state';
@@ -138,11 +139,10 @@ export default function ClientPickerContent({onSelect}: ClientPickerContentProps
   const refetch = () => Promise.all([activeQuery.refetch(), pendingQuery.refetch()]);
 
   const needsProgramming = clients
-    .filter((client) => client.needs_programming)
-    // The Programming queue's order: no coverage first, then soonest end.
-    .sort((a, b) => (a.covered_until ?? '').localeCompare(b.covered_until ?? ''));
+    .filter((client) => clientNeedsProgramming(client))
+    .sort((a, b) => getFullName(a.first_name, a.last_name).localeCompare(getFullName(b.first_name, b.last_name)));
   const everyoneElse = clients
-    .filter((client) => !client.needs_programming)
+    .filter((client) => !clientNeedsProgramming(client))
     .sort((a, b) => getFullName(a.first_name, a.last_name).localeCompare(getFullName(b.first_name, b.last_name)));
   const showLabels = !searching && needsProgramming.length > 0 && everyoneElse.length > 0;
 

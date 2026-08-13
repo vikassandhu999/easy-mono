@@ -85,7 +85,7 @@ defmodule Easy.Forms do
   end
 
   @spec assign_form_template_to_client(Ctx.t(), String.t(), String.t(), map()) ::
-          {:ok, FormAssignment.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, FormAssignment.t()} | {:error, :not_found | :conflict | Ecto.Changeset.t()}
   def assign_form_template_to_client(%Ctx{} = ctx, client_id, template_id, attrs) do
     with {:ok, template} <- get_form_template(ctx, template_id),
          {:ok, client} <- Clients.authorize_client(ctx, client_id) do
@@ -97,13 +97,54 @@ defmodule Easy.Forms do
         |> Map.take([:priority, :due_date])
         |> Map.merge(%{purpose: template.purpose, status: :assigned})
 
-      with {:ok, assignment} <-
-             ctx.business_id
-             |> FormAssignment.insert_changeset(client.id, template.id, attrs)
-             |> Repo.insert() do
-        get_form_assignment(ctx.business_id, assignment.id)
-      end
+      create_form_assignment(ctx, client, template, attrs)
     end
+  end
+
+  defp create_form_assignment(ctx, client, %FormTemplate{purpose: :intake} = template, attrs) do
+    Repo.transaction(fn -> create_intake_assignment!(ctx, client, template, attrs) end)
+  end
+
+  defp create_form_assignment(ctx, client, template, attrs) do
+    with {:ok, assignment} <- insert_form_assignment(ctx, client, template, attrs) do
+      get_form_assignment(ctx.business_id, assignment.id)
+    end
+  end
+
+  defp create_intake_assignment!(ctx, client, template, attrs) do
+    locked_client =
+      Client
+      |> Client.for_business(ctx.business_id)
+      |> Client.visible_to(ctx)
+      |> where([candidate], candidate.id == ^client.id)
+      |> lock("FOR UPDATE")
+      |> Repo.one()
+
+    if is_nil(locked_client) do
+      Repo.rollback(:not_found)
+    end
+
+    if intake_assignment_exists?(ctx.business_id, client.id) do
+      Repo.rollback(:conflict)
+    end
+
+    case insert_form_assignment(ctx, client, template, attrs) do
+      {:ok, assignment} -> get_form_assignment(ctx.business_id, assignment.id) |> unwrap_or_rollback()
+      {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
+  defp insert_form_assignment(ctx, client, template, attrs) do
+    ctx.business_id
+    |> FormAssignment.insert_changeset(client.id, template.id, attrs)
+    |> Repo.insert()
+  end
+
+  defp intake_assignment_exists?(business_id, client_id) do
+    FormAssignment
+    |> FormAssignment.for_client(business_id, client_id)
+    |> where([assignment], assignment.purpose == :intake)
+    |> Repo.exists?()
   end
 
   @spec list_form_assignments_for_client(Ctx.t(), String.t()) ::
@@ -341,6 +382,22 @@ defmodule Easy.Forms do
     end
   end
 
+  @spec send_intake_reminder(Ctx.t(), String.t()) ::
+          {:ok, FormAssignment.t()}
+          | {:error, :not_found | :invalid_intake_assignment | :reminder_email_missing}
+  def send_intake_reminder(%Ctx{} = ctx, assignment_id) do
+    with {:ok, assignment} <- get_form_assignment(ctx.business_id, assignment_id),
+         {:ok, client} <- Clients.authorize_client(ctx, assignment.client_id),
+         :ok <- ensure_intake_assignment(assignment),
+         :ok <- ensure_reminder_email(client) do
+      name = [client.first_name, client.last_name] |> Enum.filter(&is_binary/1) |> Enum.join(" ")
+      email = Easy.Emails.intake_reminder_email(client.email, name, assignment.id)
+
+      :ok = Easy.MailerDelivery.deliver_async(email, metadata: %{assignment_id: assignment.id})
+      {:ok, assignment}
+    end
+  end
+
   defp submit_assignment_transaction(ctx, client, assignment, answers) do
     case Repo.transaction(fn -> submit_assignment!(ctx, client, assignment, answers) end) do
       {:ok, submission} -> {:ok, attach_submission_attachment(ctx.business_id, submission)}
@@ -360,6 +417,7 @@ defmodule Easy.Forms do
 
     submission = insert_submission!(ctx.business_id, client.id, assignment.id, attrs)
     append_weight_entries!(ctx.business_id, client, template.sections, answers, submission)
+    update_required_services_from_intake!(client, assignment, template.sections, answers)
     submission = complete_assignment!(assignment, submission)
     stamp_client_activity!(ctx.business_id, client.id, submitted_at)
     submission
@@ -389,6 +447,42 @@ defmodule Easy.Forms do
       {:error, reason} -> Repo.rollback(reason)
     end
   end
+
+  defp update_required_services_from_intake!(client, %FormAssignment{purpose: :intake}, sections, answers) do
+    case service_type_answer(sections, answers) do
+      nil ->
+        :ok
+
+      services ->
+        attrs = %{required_services: Enum.map(services, &service_atom/1)}
+
+        case client |> Client.update_changeset(attrs) |> Repo.update() do
+          {:ok, _client} -> :ok
+          {:error, reason} -> Repo.rollback(reason)
+        end
+    end
+  end
+
+  defp update_required_services_from_intake!(_client, _assignment, _sections, _answers), do: :ok
+
+  defp service_type_answer(sections, answers) do
+    question_id =
+      Enum.find_value(List.wrap(sections), fn
+        %{"questions" => questions} ->
+          Enum.find_value(questions, fn
+            %{"id" => id, "type" => "service_type"} -> id
+            _question -> nil
+          end)
+
+        _section ->
+          nil
+      end)
+
+    Map.get(answers, question_id)
+  end
+
+  defp service_atom("training"), do: :training
+  defp service_atom("nutrition"), do: :nutrition
 
   defp append_weight_entries!(business_id, client, sections, answers, submission) do
     weight_answers =
@@ -726,6 +820,12 @@ defmodule Easy.Forms do
     {:error, :assignment_not_submittable}
   end
 
+  defp ensure_intake_assignment(%FormAssignment{purpose: :intake}), do: :ok
+  defp ensure_intake_assignment(%FormAssignment{}), do: {:error, :invalid_intake_assignment}
+
+  defp ensure_reminder_email(%Client{email: email}) when is_binary(email) and email != "", do: :ok
+  defp ensure_reminder_email(%Client{}), do: {:error, :reminder_email_missing}
+
   defp get_client(%Ctx{} = ctx) do
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
       Client
@@ -895,4 +995,7 @@ defmodule Easy.Forms do
 
   defp ok_or_not_found(nil), do: {:error, :not_found}
   defp ok_or_not_found(record), do: {:ok, record}
+
+  defp unwrap_or_rollback({:ok, record}), do: record
+  defp unwrap_or_rollback({:error, reason}), do: Repo.rollback(reason)
 end

@@ -15,6 +15,8 @@ defmodule Easy.Clients.Client do
   @statuses [:pending, :active, :inactive]
   @stages [:onboarding, :coaching]
   @inactive_reasons [:manual, :subscription_expired, :awaiting_seat]
+  @required_services [:training, :nutrition]
+  @required_service_order %{training: 0, nutrition: 1}
   @invitation_validity_days 30
 
   schema "clients" do
@@ -32,7 +34,7 @@ defmodule Easy.Clients.Client do
     field :subscription_started_on, :date
     field :subscription_ends_on, :date
     field :joined_at, :utc_datetime_usec
-    field :required_services, {:array, Ecto.Enum}, values: [:training, :nutrition], default: []
+    field :required_services, {:array, Ecto.Enum}, values: @required_services, default: []
     field :intake_incomplete, :boolean, virtual: true, default: false
     field :needs_plan, :boolean, virtual: true, default: false
     field :expiring_soon, :boolean, virtual: true, default: false
@@ -57,7 +59,7 @@ defmodule Easy.Clients.Client do
     timestamps(type: :utc_datetime)
   end
 
-  @invite_cast_fields [:email, :first_name, :last_name, :phone, :notes]
+  @invite_cast_fields [:email, :first_name, :last_name, :phone, :notes, :required_services]
   @update_cast_fields [
     :first_name,
     :last_name,
@@ -69,7 +71,8 @@ defmodule Easy.Clients.Client do
     :status,
     :stage,
     :subscription_started_on,
-    :subscription_ends_on
+    :subscription_ends_on,
+    :required_services
   ]
   @self_update_cast_fields [:first_name, :last_name, :phone]
 
@@ -89,6 +92,8 @@ defmodule Easy.Clients.Client do
   def invite_changeset(coach, attrs) do
     %__MODULE__{}
     |> cast(attrs, @invite_cast_fields)
+    |> normalize_required_services()
+    |> validate_required_services_unique()
     |> put_change(:business_id, coach.business_id)
     |> validate_required([:business_id])
     |> validate_email_or_phone()
@@ -96,6 +101,7 @@ defmodule Easy.Clients.Client do
     |> put_change(:invitation_token, generate_token())
     |> put_change(:invitation_sent_at, DateTime.utc_now(:second))
     |> unique_constraint(:email, name: :clients_business_id_email_index)
+    |> check_constraint(:required_services, name: :clients_required_services_check)
     |> put_assoc(:creator, coach)
   end
 
@@ -103,6 +109,9 @@ defmodule Easy.Clients.Client do
   def update_changeset(client, attrs) do
     client
     |> cast(attrs, @update_cast_fields)
+    |> normalize_required_services()
+    |> validate_required_services_unique()
+    |> validate_required_services_edit(attrs)
     |> normalize_goal_weight(attrs)
     |> validate_goal_weight_paired()
     |> validate_number(:goal_weight_value, greater_than: 0, less_than: 1000)
@@ -112,6 +121,39 @@ defmodule Easy.Clients.Client do
     |> validate_reactivation_dates(client.status)
     |> put_inactive_reason()
     |> unique_constraint(:email, name: :clients_business_id_email_index)
+    |> check_constraint(:required_services, name: :clients_required_services_check)
+  end
+
+  defp normalize_required_services(changeset) do
+    case fetch_change(changeset, :required_services) do
+      {:ok, services} ->
+        put_change(changeset, :required_services, Enum.sort_by(services, &@required_service_order[&1]))
+
+      :error ->
+        changeset
+    end
+  end
+
+  defp validate_required_services_unique(changeset) do
+    validate_change(changeset, :required_services, fn :required_services, services ->
+      if length(services) == MapSet.size(MapSet.new(services)) do
+        []
+      else
+        [required_services: "must not contain duplicates"]
+      end
+    end)
+  end
+
+  defp validate_required_services_edit(changeset, attrs) do
+    if supplied?(attrs, :required_services) and get_field(changeset, :required_services) == [] do
+      add_error(changeset, :required_services, "must contain at least one service")
+    else
+      changeset
+    end
+  end
+
+  defp supplied?(attrs, field) do
+    Map.has_key?(attrs, field) or Map.has_key?(attrs, Atom.to_string(field))
   end
 
   # If either goal field was explicitly sent as blank, clear both —

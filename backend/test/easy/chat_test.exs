@@ -195,7 +195,7 @@ defmodule Easy.ChatTest do
       assert a.client.id == client.id
     end
 
-    test "waiting: true lists only client-last conversations, longest-waiting first", %{
+    test "waiting: true uses the stable waiting clock, longest-waiting first", %{
       coach: coach,
       client: client
     } do
@@ -205,18 +205,26 @@ defmodule Easy.ChatTest do
           insert(:conversation, business: coach.business, client: page_client)
         end)
 
-      now = DateTime.utc_now()
+      now = DateTime.utc_now(:microsecond)
 
       waiting_old
-      |> Ecto.Changeset.change(last_message_role: :client, last_message_at: DateTime.add(now, -100))
+      |> Ecto.Changeset.change(
+        last_message_role: :client,
+        last_message_at: DateTime.add(now, -10),
+        waiting_since: DateTime.add(now, -100)
+      )
       |> Repo.update!()
 
       waiting_new
-      |> Ecto.Changeset.change(last_message_role: :client, last_message_at: DateTime.add(now, -10))
+      |> Ecto.Changeset.change(
+        last_message_role: :coach,
+        last_message_at: now,
+        waiting_since: DateTime.add(now, -20)
+      )
       |> Repo.update!()
 
       answered
-      |> Ecto.Changeset.change(last_message_role: :coach, last_message_at: now)
+      |> Ecto.Changeset.change(last_message_role: :client, last_message_at: now, waiting_since: nil)
       |> Repo.update!()
 
       _no_messages = insert(:conversation, business: coach.business, client: client)
@@ -523,6 +531,122 @@ defmodule Easy.ChatTest do
       assert reloaded.coach_last_read_at == reloaded.last_message_at
     end
 
+    test "client messages start one waiting clock, repeats preserve it, and a coach reply clears it", %{
+      coach: coach,
+      client: client
+    } do
+      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+
+      assert {:ok, first} = Chat.send_client_message(client_ctx(client), %{body: "first"})
+      after_first = Repo.reload(conversation)
+      assert after_first.waiting_since == first.inserted_at
+      assert after_first.last_message_at == first.inserted_at
+      assert after_first.last_message_role == :client
+
+      assert {:ok, second} = Chat.send_client_message(client_ctx(client), %{body: "second"})
+      after_second = Repo.reload(conversation)
+      assert after_second.waiting_since == first.inserted_at
+      assert after_second.last_message_at == second.inserted_at
+      assert after_second.last_message_role == :client
+
+      assert {:ok, coach_reply} = Chat.send_message(coach_ctx(coach), conversation.id, %{body: "reply"})
+      after_reply = Repo.reload(conversation)
+      assert after_reply.waiting_since == nil
+      assert after_reply.last_message_at == coach_reply.inserted_at
+      assert after_reply.last_message_role == :coach
+    end
+
+    test "mark_read changes only the cursor and preserves waiting state", %{coach: coach, client: client} do
+      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+      assert {:ok, message} = Chat.send_client_message(client_ctx(client), %{body: "still waiting"})
+
+      assert {:ok, read} = Chat.mark_read(coach_ctx(coach), conversation.id)
+      reloaded = Repo.reload(conversation)
+
+      assert read.coach_last_read_at == message.inserted_at
+      assert reloaded.coach_last_read_at == message.inserted_at
+      assert reloaded.waiting_since == message.inserted_at
+    end
+
+    test "mark handled clears the observed sequence idempotently without changing read state", %{
+      coach: coach,
+      client: client
+    } do
+      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+      assert {:ok, message} = Chat.send_client_message(client_ctx(client), %{body: "thanks"})
+      assert {:ok, _read} = Chat.mark_read(coach_ctx(coach), conversation.id)
+      cursor = Repo.reload(conversation).coach_last_read_at
+
+      assert {:ok, :handled} =
+               Chat.mark_conversation_handled(coach_ctx(coach), conversation.id, message.inserted_at)
+
+      handled = Repo.reload(conversation)
+      assert handled.waiting_since == nil
+      assert handled.coach_last_read_at == cursor
+
+      assert {:ok, :handled} =
+               Chat.mark_conversation_handled(coach_ctx(coach), conversation.id, message.inserted_at)
+
+      assert Repo.reload(conversation).coach_last_read_at == cursor
+    end
+
+    test "mark handled returns conflict for a newer waiting message", %{coach: coach, client: client} do
+      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+      assert {:ok, first} = Chat.send_client_message(client_ctx(client), %{body: "first"})
+      assert {:ok, second} = Chat.send_client_message(client_ctx(client), %{body: "newer"})
+
+      assert {:error, :conflict} =
+               Chat.mark_conversation_handled(coach_ctx(coach), conversation.id, first.inserted_at)
+
+      reloaded = Repo.reload(conversation)
+      assert reloaded.waiting_since == first.inserted_at
+      assert reloaded.last_message_at == second.inserted_at
+    end
+
+    test "mark handled supports inactive clients", %{coach: coach, client: client} do
+      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+      assert {:ok, message} = Chat.send_client_message(client_ctx(client), %{body: "before deactivation"})
+
+      client
+      |> Ecto.Changeset.change(status: :inactive, inactive_reason: :manual)
+      |> Repo.update!()
+
+      assert {:ok, :handled} =
+               Chat.mark_conversation_handled(coach_ctx(coach), conversation.id, message.inserted_at)
+
+      assert Repo.reload(conversation).waiting_since == nil
+    end
+
+    test "mark handled is tenant- and trainer-visibility scoped", %{coach: coach, client: client} do
+      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+      assert {:ok, message} = Chat.send_client_message(client_ctx(client), %{body: "private"})
+      other_trainer = insert(:coach, business: coach.business)
+      other_business = insert(:business)
+
+      assert {:error, :not_found} =
+               Chat.mark_conversation_handled(
+                 trainer_ctx(other_trainer),
+                 conversation.id,
+                 message.inserted_at
+               )
+
+      assert {:error, :not_found} =
+               Chat.mark_conversation_handled(
+                 owner_ctx(other_business),
+                 conversation.id,
+                 message.inserted_at
+               )
+
+      assert Repo.reload(conversation).waiting_since == message.inserted_at
+
+      assert {:ok, :handled} =
+               Chat.mark_conversation_handled(
+                 owner_ctx(coach.business),
+                 conversation.id,
+                 message.inserted_at
+               )
+    end
+
     test "client sends create the conversation lazily and set coach unread", %{coach: coach, client: client} do
       assert {:ok, message} = Chat.send_client_message(client_ctx(client), %{body: "help"})
       assert message.sender_type == :client
@@ -590,5 +714,104 @@ defmodule Easy.ChatTest do
     after
       0 -> Enum.reverse(queries)
     end
+  end
+end
+
+defmodule Easy.ChatConcurrencyTest do
+  use ExUnit.Case, async: false
+
+  import Ecto.Query
+  import Easy.Factory
+
+  alias Easy.Chat
+  alias Easy.Chat.Conversation
+  alias Easy.Chat.Message
+  alias Easy.Clients.Client
+  alias Easy.Ctx
+  alias Easy.Identity.User
+  alias Easy.Orgs.Business
+  alias Easy.Orgs.Coach
+  alias Easy.Repo
+  alias Ecto.Adapters.SQL.Sandbox
+
+  setup do
+    Sandbox.checkout(Repo, sandbox: false)
+
+    business = insert(:business)
+    coach = insert(:coach, business: business, user: business.owner)
+    client = insert(:client, business: business, creator: coach, assigned_coach: coach)
+    coach_ctx = Ctx.new(business.id, business.owner_id, coach.id, true)
+    client_ctx = %Ctx{business_id: business.id, user_id: client.user_id, client_id: client.id}
+
+    assert {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx, client.id)
+    assert {:ok, first} = Chat.send_client_message(client_ctx, %{body: "first"})
+
+    on_exit(fn ->
+      Sandbox.checkout(Repo, sandbox: false)
+      cleanup(business, coach, client)
+    end)
+
+    %{
+      business: business,
+      client: client,
+      client_ctx: client_ctx,
+      coach_ctx: coach_ctx,
+      conversation: conversation,
+      first: first
+    }
+  end
+
+  test "a stale Mark handled race cannot clear a newer client sequence", context do
+    parent = self()
+
+    send_task =
+      Task.async(fn ->
+        Sandbox.checkout(Repo, sandbox: false)
+        send(parent, {:ready, self()})
+
+        receive do
+          :go -> Chat.send_client_message(context.client_ctx, %{body: "newer"})
+        end
+      end)
+
+    handle_task =
+      Task.async(fn ->
+        Sandbox.checkout(Repo, sandbox: false)
+        send(parent, {:ready, self()})
+
+        receive do
+          :go ->
+            Chat.mark_conversation_handled(
+              context.coach_ctx,
+              context.conversation.id,
+              context.first.inserted_at
+            )
+        end
+      end)
+
+    workers =
+      for _ <- 1..2 do
+        receive do
+          {:ready, pid} -> pid
+        end
+      end
+
+    Enum.each(workers, &send(&1, :go))
+
+    assert {:ok, newer} = Task.await(send_task, 5_000)
+    assert Task.await(handle_task, 5_000) in [{:ok, :handled}, {:error, :conflict}]
+
+    reloaded = Repo.reload(context.conversation)
+    assert reloaded.last_message_at == newer.inserted_at
+    assert reloaded.waiting_since
+  end
+
+  defp cleanup(business, coach, client) do
+    Repo.delete_all(from message in Message, where: message.business_id == ^business.id)
+    Repo.delete_all(from conversation in Conversation, where: conversation.business_id == ^business.id)
+    Repo.delete_all(from c in Client, where: c.id == ^client.id)
+    Repo.delete_all(from c in Coach, where: c.id == ^coach.id)
+    Repo.delete_all(from b in Business, where: b.id == ^business.id)
+    Repo.delete_all(from u in User, where: u.id in ^[business.owner_id, client.user_id])
   end
 end

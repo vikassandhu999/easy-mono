@@ -48,10 +48,8 @@ defmodule Easy.Chat.Conversation do
   def for_client(query \\ __MODULE__, business_id, client_id),
     do: from(c in query, where: c.business_id == ^business_id and c.client_id == ^client_id)
 
-  # The Replies queue condition: the client spoke last, the ball is in the
-  # coach's court. Clears the moment the coach replies (spec §3 "Replies").
   @spec waiting(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def waiting(query \\ __MODULE__), do: from(c in query, where: c.last_message_role == :client)
+  def waiting(query \\ __MODULE__), do: from(c in query, where: not is_nil(c.waiting_since))
 
   @spec for_client_search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
   def for_client_search(query \\ __MODULE__, term)
@@ -77,7 +75,7 @@ defmodule Easy.Chat.Conversation do
   # The Replies queue order: longest-waiting first.
   @spec oldest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def oldest(query \\ __MODULE__),
-    do: from(c in query, order_by: [asc_nulls_last: c.last_message_at, asc: c.inserted_at, asc: c.id])
+    do: from(c in query, order_by: [asc: c.waiting_since, asc: c.id])
 
   @spec include_client(Ecto.Queryable.t()) :: Ecto.Query.t()
   def include_client(query \\ __MODULE__), do: from(c in query, preload: [:client])

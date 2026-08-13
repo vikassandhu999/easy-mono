@@ -103,6 +103,22 @@ defmodule Easy.Chat do
     end
   end
 
+  @spec mark_conversation_handled(Ctx.t(), String.t(), DateTime.t()) ::
+          {:ok, :handled} | {:error, :not_found | :conflict}
+  def mark_conversation_handled(%Ctx{} = ctx, conversation_id, expected_last_message_at) do
+    Repo.transaction(fn ->
+      conversation =
+        Conversation
+        |> Conversation.for_business(ctx.business_id)
+        |> constrain_to_visible_clients(ctx)
+        |> where([conversation], conversation.id == ^conversation_id)
+        |> lock("FOR UPDATE")
+        |> Repo.one()
+
+      handle_locked_conversation(conversation, expected_last_message_at)
+    end)
+  end
+
   @spec get_client_conversation(Ctx.t()) :: {:ok, Conversation.t()} | {:error, :not_found}
   def get_client_conversation(%Ctx{} = ctx) do
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
@@ -379,20 +395,44 @@ defmodule Easy.Chat do
   end
 
   defp update_conversation(repo, conversation, message, attachments) do
-    Conversation
-    |> where([c], c.id == ^conversation.id and c.business_id == ^conversation.business_id)
-    |> where([c], is_nil(c.last_message_at) or c.last_message_at <= ^message.inserted_at)
-    |> repo.update_all(
-      set: [
-        last_message_at: message.inserted_at,
-        last_message_preview: message_preview(message, attachments),
-        last_message_role: message.sender_type,
-        updated_at: DateTime.truncate(message.inserted_at, :second)
-      ]
-    )
+    result =
+      Conversation
+      |> where([c], c.id == ^conversation.id and c.business_id == ^conversation.business_id)
+      |> where([c], is_nil(c.last_message_at) or c.last_message_at <= ^message.inserted_at)
+      |> repo.update_all(
+        set: [
+          last_message_at: message.inserted_at,
+          last_message_preview: message_preview(message, attachments),
+          last_message_role: message.sender_type,
+          updated_at: DateTime.truncate(message.inserted_at, :second)
+        ]
+      )
+
+    update_waiting_state(repo, conversation, message, result)
 
     {:ok, :updated}
   end
+
+  defp update_waiting_state(repo, conversation, %Message{sender_type: :client} = message, {1, _}) do
+    Conversation
+    |> where(
+      [candidate],
+      candidate.id == ^conversation.id and candidate.business_id == ^conversation.business_id and
+        is_nil(candidate.waiting_since)
+    )
+    |> repo.update_all(set: [waiting_since: message.inserted_at])
+  end
+
+  defp update_waiting_state(repo, conversation, %Message{sender_type: :coach}, {1, _}) do
+    Conversation
+    |> where(
+      [candidate],
+      candidate.id == ^conversation.id and candidate.business_id == ^conversation.business_id
+    )
+    |> repo.update_all(set: [waiting_since: nil])
+  end
+
+  defp update_waiting_state(_repo, _conversation, _message, {0, _}), do: :ok
 
   defp message_preview(%Message{body: body}, _attachments) when is_binary(body),
     do: String.slice(body, 0, 200)
@@ -447,7 +487,11 @@ defmodule Easy.Chat do
   defp constrain_to_visible_clients(query, %Ctx{owner?: true}), do: query
 
   defp constrain_to_visible_clients(query, %Ctx{coach_id: coach_id}) when not is_nil(coach_id) do
-    join(query, :inner, [c], cl in Client, on: cl.id == c.client_id and cl.assigned_coach_id == ^coach_id)
+    join(query, :inner, [c], cl in Client,
+      on:
+        cl.id == c.client_id and cl.business_id == c.business_id and
+          cl.assigned_coach_id == ^coach_id
+    )
   end
 
   # Fail closed: coach routes always provide owner? or coach_id. A ctx with
@@ -460,6 +504,27 @@ defmodule Easy.Chat do
     |> Coach.for_user(ctx.user_id)
     |> Repo.one()
     |> ok_or_not_found()
+  end
+
+  defp handle_locked_conversation(nil, _expected_last_message_at), do: Repo.rollback(:not_found)
+
+  defp handle_locked_conversation(%Conversation{waiting_since: nil}, _expected_last_message_at),
+    do: :handled
+
+  defp handle_locked_conversation(
+         %Conversation{last_message_at: last_message_at} = conversation,
+         expected_last_message_at
+       ) do
+    if DateTime.compare(last_message_at, expected_last_message_at) == :eq do
+      Conversation
+      |> Conversation.for_business(conversation.business_id)
+      |> where([candidate], candidate.id == ^conversation.id)
+      |> Repo.update_all(set: [waiting_since: nil])
+
+      :handled
+    else
+      Repo.rollback(:conflict)
+    end
   end
 
   defp ok_or_not_found(nil), do: {:error, :not_found}

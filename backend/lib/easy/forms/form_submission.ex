@@ -153,6 +153,9 @@ defmodule Easy.Forms.FormSubmission do
   defp missing_required?(%{"required" => true, "id" => id}, answers),
     do: blank_answer?(Map.get(answers, id))
 
+  defp missing_required?(%{"type" => "service_type", "id" => id}, answers),
+    do: blank_answer?(Map.get(answers, id))
+
   defp missing_required?(_question, _answers), do: false
 
   defp blank_answer?(value), do: value in [nil, "", []]
@@ -186,6 +189,9 @@ defmodule Easy.Forms.FormSubmission do
     is_list(value) and value != [] and length(value) <= 4 and length(Enum.uniq(value)) == length(value) and
       Enum.all?(value, &valid_uuid?/1)
   end
+
+  defp valid_value?("service_type", value, _question),
+    do: value in [["training"], ["nutrition"], ["training", "nutrition"]]
 
   defp valid_value?(_type, _value, _question), do: false
 

@@ -11,7 +11,7 @@ defmodule Easy.Forms.FormTemplate do
 
   @purposes [:intake, :check_in]
   @statuses [:active, :archived]
-  @question_types ~w(text number boolean date select multi_select rating weight photo)
+  @question_types ~w(text number boolean date select multi_select rating weight photo service_type)
 
   @type t :: %__MODULE__{}
 
@@ -39,6 +39,7 @@ defmodule Easy.Forms.FormTemplate do
     |> put_change(:business_id, business_id)
     |> validate_required([:business_id, :name, :purpose, :sections, :status])
     |> validate_sections()
+    |> validate_service_type_questions()
     |> check_constraint(:purpose, name: :form_templates_purpose_check)
     |> check_constraint(:status, name: :form_templates_status_check)
     |> foreign_key_constraint(:business_id)
@@ -59,6 +60,7 @@ defmodule Easy.Forms.FormTemplate do
     template
     |> change(sections: sections, system_version: system_version)
     |> validate_sections()
+    |> validate_service_type_questions()
     |> check_constraint(:system_version, name: :form_templates_system_version_positive)
   end
 
@@ -69,6 +71,7 @@ defmodule Easy.Forms.FormTemplate do
     |> cast(attrs, [:name, :sections, :status])
     |> validate_required([:name, :sections, :status])
     |> validate_sections()
+    |> validate_service_type_questions()
     |> check_constraint(:status, name: :form_templates_status_check)
   end
 
@@ -148,8 +151,31 @@ defmodule Easy.Forms.FormTemplate do
        do: options != [] and is_list(options) and Enum.all?(options, &(is_binary(&1) and &1 != ""))
 
   defp valid_question_options?(%{"type" => type}) when type in ["select", "multi_select"], do: false
+  defp valid_question_options?(%{"type" => "service_type"} = question), do: not Map.has_key?(question, "options")
   defp valid_question_options?(_question), do: true
 
   defp valid_required_flag?(%{"required" => required}), do: is_boolean(required)
   defp valid_required_flag?(_question), do: true
+
+  defp validate_service_type_questions(changeset) do
+    questions = service_type_questions(get_field(changeset, :sections))
+
+    case {get_field(changeset, :purpose), length(questions)} do
+      {:check_in, count} when count > 0 ->
+        add_error(changeset, :sections, "Service type is only allowed on Intake templates")
+
+      {:intake, count} when count > 1 ->
+        add_error(changeset, :sections, "may contain at most one Service type question")
+
+      _other ->
+        changeset
+    end
+  end
+
+  defp service_type_questions(sections) do
+    for %{"questions" => questions} <- List.wrap(sections),
+        question when is_map(question) <- List.wrap(questions),
+        question["type"] == "service_type",
+        do: question
+  end
 end

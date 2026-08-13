@@ -732,7 +732,8 @@ defmodule Easy.Clients do
   end
 
   defp do_atomic_accept(client_id, business_id, user_id, accepted_email) do
-    now = DateTime.utc_now(:second)
+    joined_at = DateTime.utc_now(:microsecond)
+    now = DateTime.truncate(joined_at, :second)
 
     with {:ok, {target_status, target_reason}} <-
            Billing.seat_status_for_invitation(%Client{business_id: business_id}) do
@@ -748,6 +749,7 @@ defmodule Easy.Clients do
                status: target_status,
                inactive_reason: target_reason,
                email: accepted_email,
+               joined_at: joined_at,
                updated_at: now
              ]
            ) do

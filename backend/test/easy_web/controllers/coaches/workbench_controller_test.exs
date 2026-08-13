@@ -44,12 +44,17 @@ defmodule EasyWeb.Coaches.WorkbenchControllerTest do
           )
       )
 
-      # Waiting on the coach: the client spoke last.
-      insert(:conversation, business: business, client: client, last_message_role: :client)
+      # Waiting on the coach: an explicit waiting sequence is open.
+      insert(:conversation,
+        business: business,
+        client: client,
+        last_message_role: :client,
+        waiting_since: DateTime.utc_now(:microsecond)
+      )
 
-      # Answered: the coach spoke last — not in Replies.
+      # No waiting sequence: not in Replies, regardless of historical role.
       answered = insert(:client, business: business, creator: coach)
-      insert(:conversation, business: business, client: answered, last_message_role: :coach)
+      insert(:conversation, business: business, client: answered, last_message_role: :client)
 
       conn = get(conn, "/v1/coach/workbench")
 

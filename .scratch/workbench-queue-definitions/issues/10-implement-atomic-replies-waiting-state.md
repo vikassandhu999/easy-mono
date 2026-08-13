@@ -1,7 +1,7 @@
 # Implement atomic Replies waiting state
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 08
 Parent: [Coach workbench v1 delivery](../map.md)
 
@@ -33,3 +33,15 @@ Replace role-derived Replies state with the accepted stable waiting clock and im
 ## Verification
 
 Run `mix test test/easy/chat_test.exs`, then `mix precommit` from `backend/`.
+
+## Answer
+
+Replies membership now comes from an explicit stable `waiting_since` clock. The first client message in a waiting sequence starts the clock, repeated client messages preserve it, and a coach reply clears it. These transitions happen inside the existing message-persistence transaction alongside the conversation summary update, while read-cursor writes remain independent and `last_message_role` remains history only.
+
+`Easy.Chat.mark_conversation_handled/3` now locks the tenant- and visibility-scoped conversation row, includes inactive clients, and clears only the exact observed message sequence. It is idempotent when the conversation is already clear, returns `:conflict` for a newer waiting message, and returns `:not_found` for absent or invisible conversations. The row lock and message transaction ensure a stale confirmation cannot erase concurrent newer client work.
+
+Verification passed:
+
+* `mix test test/easy/chat_test.exs` — 35 tests, 0 failures.
+* Combined Chat and workbench controller suites — 39 tests, 0 failures.
+* `mix precommit` — 1,138 tests, 0 failures; Credo reported only the pre-existing `Easy.Clients.attention_facts/2` complexity advisory.

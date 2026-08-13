@@ -75,6 +75,18 @@ defmodule Easy.Emails do
     |> html_body("<p>Hi #{client_name}, your check-in is overdue: <a href=\"#{url}\">Open check-in</a></p>")
   end
 
+  @spec intake_reminder_email(String.t(), String.t(), String.t()) :: Swoosh.Email.t()
+  def intake_reminder_email(email, client_name, assignment_id) do
+    url = check_in_url(assignment_id)
+
+    new()
+    |> to(email)
+    |> from(from_email())
+    |> subject("Your intake form is waiting")
+    |> text_body("Hi #{client_name}, your coach is waiting for your intake form: #{url}")
+    |> html_body("<p>Hi #{client_name}, your coach is waiting for your intake form: <a href=\"#{url}\">Open intake</a></p>")
+  end
+
   # Private functions for text templates
 
   defp check_in_url(assignment_id) do

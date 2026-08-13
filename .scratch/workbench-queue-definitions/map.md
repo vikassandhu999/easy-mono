@@ -27,6 +27,8 @@ Ship the v1 coach workbench queue definitions across the backend, OpenAPI contra
 * [Define the coordinated schema and API cutover](./issues/06-define-coordinated-schema-api-cutover.md) — Cut over to canonical lifecycle, service, and waiting facts; explicit typed queue resources share reason-bearing list/count predicates, while stale Mark handled actions are conflict-safe.
 * [Create the implementation tickets and execution order](./issues/07-create-implementation-tickets.md) — Eleven dependency-wired tickets carry persistence, domain facts, the API cutover, app interactions, behavioral and query-plan proof, cleanup, and the coordinated release gate.
 * [Add canonical workbench persistence](./issues/08-add-canonical-workbench-persistence.md) — Added reversible lifecycle, service, and waiting facts with a closed required-services constraint and tenant-leading partial indexes for waiting, coverage, and Expiring queries.
+* [Implement client lifecycle and required-service writes](./issues/09-implement-client-lifecycle-and-required-service-writes.md) — Added guarded join timestamps, canonical Invite/edit/Intake service writes, single-Intake serialization, and a visibility-scoped reminder command.
+* [Implement atomic Replies waiting state](./issues/10-implement-atomic-replies-waiting-state.md) — Added transactionally maintained waiting clocks and a visibility-scoped, row-locked Mark handled command that cannot erase newer client work.
 
 ## Not yet specified
 

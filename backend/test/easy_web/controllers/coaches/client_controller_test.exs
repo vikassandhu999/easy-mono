@@ -12,7 +12,7 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
 
   describe "POST /v1/coach/clients/invite" do
     test "invites a client with valid params", %{conn: conn} do
-      attrs = build(:client_attrs)
+      attrs = build(:client_attrs) |> Map.put("required_services", ["training", "nutrition"])
 
       conn = post(conn, "/v1/coach/clients/invite", attrs)
       assert %{"data" => data} = json_response(conn, 201)
@@ -23,6 +23,8 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert data["phone"] == attrs["phone"]
       assert data["notes"] == attrs["notes"]
       assert data["status"] == "pending"
+      assert data["required_services"] == ["training", "nutrition"]
+      assert data["joined_at"] == nil
       assert data["id"]
       assert data["inserted_at"]
       assert data["invite_url"] =~ "/invite/"
@@ -177,6 +179,8 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
           last_name: "Sandhu",
           phone: "+91 98765 43210",
           notes: "Test notes",
+          joined_at: ~U[2026-07-31 09:15:00.123456Z],
+          required_services: [:training, :nutrition],
           last_active_at: ~U[2026-08-01 10:30:00Z]
         )
 
@@ -197,6 +201,8 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert data["goal_weight_unit"] == nil
       assert data["status"] == "active"
       assert data["assigned_coach_id"] == coach.id
+      assert data["joined_at"] == "2026-07-31T09:15:00.123456Z"
+      assert data["required_services"] == ["training", "nutrition"]
       assert data["last_active_at"] == "2026-08-01T10:30:00Z"
       assert data["inserted_at"]
       assert data["updated_at"]
@@ -212,6 +218,10 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       refute Map.has_key?(data, "offer")
       refute Map.has_key?(data, "source")
       refute Map.has_key?(data, "intake_answers")
+      refute Map.has_key?(data, "intake_incomplete")
+      refute Map.has_key?(data, "needs_plan")
+      refute Map.has_key?(data, "needs_programming")
+      refute Map.has_key?(data, "covered_until")
     end
 
     test "returns invite_url for pending clients", %{conn: conn, coach: coach, business: business} do

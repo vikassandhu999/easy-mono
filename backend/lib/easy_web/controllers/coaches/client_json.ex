@@ -11,7 +11,8 @@ defmodule EasyWeb.Coaches.ClientJSON do
     %{data: Enum.map(clients, &data/1), count: count, summary: summary}
   end
 
-  defp data(%Client{} = client) do
+  @spec data(Client.t()) :: map()
+  def data(%Client{} = client) do
     %{
       id: client.id,
       email: client.email,
@@ -26,11 +27,9 @@ defmodule EasyWeb.Coaches.ClientJSON do
       inactive_reason: client.inactive_reason,
       subscription_started_on: client.subscription_started_on,
       subscription_ends_on: client.subscription_ends_on,
-      intake_incomplete: client.intake_incomplete,
-      needs_plan: client.needs_plan,
+      joined_at: client.joined_at,
+      required_services: client.required_services,
       expiring_soon: client.expiring_soon,
-      needs_programming: client.needs_programming,
-      covered_until: client.covered_until,
       last_active_at: client.last_active_at,
       training_plan_name: client.training_plan_name,
       nutrition_plan_name: client.nutrition_plan_name,

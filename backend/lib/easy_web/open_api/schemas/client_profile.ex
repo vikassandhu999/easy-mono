@@ -1,8 +1,9 @@
 defmodule EasyWeb.OpenApi.Schemas.ClientProfile.Common do
+  alias EasyWeb.OpenApi.Schemas.ClientProfileServiceTypeAnswer
   alias OpenApiSpex.Schema
 
   def field_types, do: ~w(text number boolean date select multi_select)
-  def question_types, do: field_types() ++ ~w(rating weight photo)
+  def question_types, do: field_types() ++ ~w(rating weight photo service_type)
   def form_purposes, do: ~w(intake check_in)
   def template_statuses, do: ~w(active archived)
   def assignment_statuses, do: ~w(assigned in_progress completed dismissed missed)
@@ -11,16 +12,20 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfile.Common do
 
   def question_schema do
     %Schema{
-      type: :object,
-      additionalProperties: true,
-      properties: %{
-        id: %Schema{type: :string},
-        label: %Schema{type: :string},
-        type: %Schema{type: :string, enum: question_types()},
-        required: %Schema{type: :boolean},
-        options: %Schema{type: :array, items: %Schema{type: :string}}
-      },
-      required: [:id, :label, :type]
+      oneOf: [standard_question_schema(), service_type_question_schema()]
+    }
+  end
+
+  @spec answer_schema() :: Schema.t()
+  def answer_schema do
+    %Schema{
+      anyOf: [
+        %Schema{type: :string},
+        %Schema{type: :number},
+        %Schema{type: :boolean},
+        %Schema{type: :array, items: %Schema{type: :string}},
+        ClientProfileServiceTypeAnswer
+      ]
     }
   end
 
@@ -35,6 +40,49 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfile.Common do
       required: [:questions]
     }
   end
+
+  defp standard_question_schema do
+    %Schema{
+      type: :object,
+      additionalProperties: true,
+      properties: %{
+        id: %Schema{type: :string},
+        label: %Schema{type: :string},
+        type: %Schema{type: :string, enum: field_types() ++ ~w(rating weight photo)},
+        required: %Schema{type: :boolean},
+        options: %Schema{type: :array, items: %Schema{type: :string}}
+      },
+      required: [:id, :label, :type]
+    }
+  end
+
+  defp service_type_question_schema do
+    %Schema{
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        id: %Schema{type: :string},
+        label: %Schema{type: :string},
+        type: %Schema{type: :string, enum: ["service_type"]},
+        required: %Schema{type: :boolean}
+      },
+      required: [:id, :label, :type]
+    }
+  end
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileServiceTypeAnswer do
+  require OpenApiSpex
+  alias EasyWeb.OpenApi.Schemas.RequiredServicesNonEmpty
+
+  OpenApiSpex.schema(%{
+    title: "ClientProfileServiceTypeAnswer",
+    type: :object,
+    struct?: false,
+    additionalProperties: false,
+    properties: %{services: RequiredServicesNonEmpty},
+    required: [:services]
+  })
 end
 
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateRequest do
@@ -354,6 +402,7 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmissionRequest do
   require OpenApiSpex
 
+  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
@@ -362,7 +411,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmissionRequest do
       type: :object,
       additionalProperties: false,
       properties: %{
-        answers: %Schema{type: :object, additionalProperties: true}
+        answers: %Schema{type: :object, additionalProperties: Common.answer_schema()}
       },
       required: [:answers],
       example: %{
@@ -388,7 +437,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmission do
       id: %Schema{type: :string, format: :uuid},
       form_assignment_id: %Schema{type: :string, format: :uuid},
       question_snapshot: %Schema{type: :array, items: Common.form_section_schema()},
-      answers: %Schema{type: :object, additionalProperties: true},
+      answers: %Schema{type: :object, additionalProperties: Common.answer_schema()},
       submitted_by_type: %Schema{type: :string, enum: Common.submitted_by_types()},
       submitted_at: %Schema{type: :string, format: :"date-time"},
       reviewed_at: %Schema{type: :string, format: :"date-time", nullable: true},

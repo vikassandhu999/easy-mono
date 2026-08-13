@@ -148,13 +148,6 @@ defmodule EasyWeb.Coaches.ClientController do
         :boolean,
         "Include each client's in-force training and nutrition plan names. Off by default — it costs two extra queries per page and only the clients list renders them.",
         required: false
-      ),
-      Operation.parameter(
-        :filter,
-        :query,
-        %Schema{type: :string, enum: ["programming", "expiring", "new", "quiet"]},
-        "Restrict to one workbench queue. `programming`: active clients with no plan in force or coverage ending within 3 days (no-plan first, then soonest end). `expiring`: subscriptions ending within 7 days, minus snoozed (soonest first). `new`: added within 14 days, invite pending over 3 days, or intake incomplete (newest first). `quiet`: missed their last two scheduled sessions or latest check-in, minus snoozed (longest-quiet first). A queue imposes its own sort order.",
-        required: false
       )
     ],
     responses: [
@@ -225,12 +218,6 @@ defmodule EasyWeb.Coaches.ClientController do
   defp parse_sort("last_active"), do: :last_active
   defp parse_sort(_other), do: :newest
 
-  defp parse_filter("programming"), do: :programming
-  defp parse_filter("expiring"), do: :expiring
-  defp parse_filter("new"), do: :new
-  defp parse_filter("quiet"), do: :quiet
-  defp parse_filter(_other), do: nil
-
   # Normalized here rather than trusted from the cast: a query param reaches the
   # action as a string unless the spec has taught the cast otherwise, and the
   # context matches on a real boolean. Anything that isn't an explicit yes is no.
@@ -246,19 +233,11 @@ defmodule EasyWeb.Coaches.ClientController do
       status: Map.get(params, "status"),
       stage: Map.get(params, "stage"),
       sort: parse_sort(Map.get(params, "sort")),
-      filter: parse_filter(Map.get(params, "filter")),
       include_plans: parse_boolean(Map.get(params, "include_plans"))
     ]
 
-    # Quiet membership is schedule-aware and lives in Workbench; every other
-    # queue (and the plain roster) is one facts query in Clients.
-    list =
-      case opts[:filter] do
-        :quiet -> Easy.Workbench.list_quiet_clients(conn.assigns.ctx, opts)
-        _other -> Clients.list_clients(conn.assigns.ctx, opts)
-      end
-
-    with {:ok, %{clients: clients, count: count, summary: summary}} <- list do
+    with {:ok, %{clients: clients, count: count, summary: summary}} <-
+           Clients.list_clients(conn.assigns.ctx, opts) do
       conn
       |> put_status(:ok)
       |> render(:index, count: count, clients: clients, summary: summary)

@@ -104,6 +104,51 @@ defmodule EasyWeb.Clients.FormAssignmentControllerTest do
   end
 
   describe "POST /v1/client/form-assignments/:id/submit" do
+    test "casts and submits a closed Service type answer through the router" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, user: insert(:user))
+
+      template =
+        insert(:form_template,
+          business: coach.business,
+          purpose: :intake,
+          sections: [
+            %{
+              "title" => "Services",
+              "questions" => [
+                %{"id" => "service-type", "label" => "Service type", "type" => "service_type"}
+              ]
+            }
+          ]
+        )
+
+      assignment =
+        insert(:form_assignment,
+          business: coach.business,
+          client: client,
+          form_template: template,
+          purpose: :intake
+        )
+
+      conn =
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> authenticate_client(client)
+        |> post("/v1/client/form-assignments/#{assignment.id}/submit", %{
+          "answers" => %{"service-type" => %{"services" => ["training", "nutrition"]}}
+        })
+
+      assert %{
+               "data" => %{
+                 "answers" => %{
+                   "service-type" => %{"services" => ["training", "nutrition"]}
+                 }
+               }
+             } = json_response(conn, 201)
+
+      assert Repo.reload(client).required_services == [:training, :nutrition]
+    end
+
     test "submits assignment and completes it" do
       coach = insert(:coach)
       client = insert(:client, business: coach.business, creator: coach, user: insert(:user))

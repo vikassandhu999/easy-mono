@@ -1,7 +1,7 @@
 # Cut over the workbench HTTP and OpenAPI contract
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 11, 12, 13
 Parent: [Coach workbench v1 delivery](../map.md)
 
@@ -38,3 +38,11 @@ Expose the six explicit queue operations, strict reason schemas, canonical write
 ## Verification
 
 Run focused controller/OpenAPI tests, `just gen-api`, and `mix precommit` from `backend/`. Record any expected downstream TypeScript failures for the app tickets rather than adding compatibility fields.
+
+## Answer
+
+* Cut the Workbench HTTP surface over to six explicit, independently paginated queue resources and nested Programming counts. Every queue returns a queue-specific envelope with non-empty, strict discriminator-based reasons rendered from the canonical membership facts.
+* Added the conflict-safe Mark handled and no-body Intake reminder commands with 204 success, 409 stale-state, 404 visibility boundaries, and value-level controller coverage. Reminder delivery preserves assignment state and Onboarding membership.
+* Updated the canonical Client, Conversation, form-template, and form-submission contracts for `joined_at`, `required_services`, `waiting_since`, and closed `service_type` shapes. Removed the overloaded Client `filter`, Conversation `waiting`, and generic Client queue projections while retaining `expiring_soon` and historical `last_message_role`.
+* Regenerated the OpenAPI document and both frontend schema clients exclusively through `just gen-api`. Both app typechecks pass without compatibility fields; `just check-rm` is clean.
+* Focused controller/OpenAPI verification passed, including a 30-test final regression subset for the closed Service type boundary. `mix precommit` passed 1,189 tests with no failures; Credo reported only the three pre-existing complexity advisories. The Intake reminder assertion was hardened to wait for its intentionally asynchronous delivery and passed 50 consecutive stress runs.

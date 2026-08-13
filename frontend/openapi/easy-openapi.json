@@ -1586,6 +1586,33 @@
         "x-struct": null,
         "x-validate": null
       },
+      "ReplyNeededReason": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "enum": [
+              "reply_needed"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "waiting_since": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "code",
+          "waiting_since"
+        ],
+        "title": "ReplyNeededReason",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ReplyNeededReason",
+        "x-validate": null
+      },
       "NutritionMealItemListResponse": {
         "additionalProperties": false,
         "properties": {
@@ -1638,6 +1665,68 @@
         "title": "TrainingEquipmentListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingEquipmentListResponse",
+        "x-validate": null
+      },
+      "WorkbenchCheckInAssignment": {
+        "additionalProperties": false,
+        "properties": {
+          "client_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "due_date": {
+            "format": "date",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "form_template_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "purpose": {
+            "enum": [
+              "check_in"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "status": {
+            "enum": [
+              "assigned",
+              "in_progress",
+              "completed",
+              "dismissed",
+              "missed"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "client_id",
+          "form_template_id",
+          "purpose",
+          "status",
+          "due_date"
+        ],
+        "title": "WorkbenchCheckInAssignment",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchCheckInAssignment",
         "x-validate": null
       },
       "TrainingPlanAssignRequest": {
@@ -1694,6 +1783,33 @@
         "title": "FoodLogEntryListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.FoodLogEntryListResponse",
+        "x-validate": null
+      },
+      "WorkbenchRepliesQueueResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbenchRepliesQueueItem"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data",
+          "count"
+        ],
+        "title": "WorkbenchRepliesQueueResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchRepliesQueueResponse",
         "x-validate": null
       },
       "ClientProfileFormAssignmentResponse": {
@@ -1905,6 +2021,24 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingScheduleResponse",
         "x-validate": null
       },
+      "MarkHandledRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_last_message_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "expected_last_message_at"
+        ],
+        "title": "MarkHandledRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "TrainingSessionResponse": {
         "additionalProperties": false,
         "properties": {
@@ -1918,6 +2052,33 @@
         "title": "TrainingSessionResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingSessionResponse",
+        "x-validate": null
+      },
+      "EngagementEndingSoonReason": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "enum": [
+              "engagement_ending_soon"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "ends_on": {
+            "format": "date",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "code",
+          "ends_on"
+        ],
+        "title": "EngagementEndingSoonReason",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.EngagementEndingSoonReason",
         "x-validate": null
       },
       "RecipeIngredientRequest": {
@@ -1987,6 +2148,26 @@
         "title": "ClientTrainingPlanListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientTrainingPlanListResponse",
+        "x-validate": null
+      },
+      "WorkbenchOnboardingReason": {
+        "discriminator": {
+          "mapping": {
+            "intake_overdue": "#/components/schemas/IntakeOverdueReason",
+            "invitation_follow_up_due": "#/components/schemas/InvitationFollowUpDueReason"
+          },
+          "propertyName": "code"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/InvitationFollowUpDueReason"
+          },
+          {
+            "$ref": "#/components/schemas/IntakeOverdueReason"
+          }
+        ],
+        "title": "WorkbenchOnboardingReason",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchOnboardingReason",
         "x-validate": null
       },
       "TrainingPlanListResponse": {
@@ -2419,6 +2600,40 @@
         "title": "ClientChatMessageCreateRequest",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "CheckInAwaitingReviewReason": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "enum": [
+              "check_in_awaiting_review"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "submission_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "submitted_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "code",
+          "submission_id",
+          "submitted_at"
+        ],
+        "title": "CheckInAwaitingReviewReason",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.CheckInAwaitingReviewReason",
         "x-validate": null
       },
       "NutritionDayListResponse": {
@@ -3012,6 +3227,31 @@
         "x-struct": null,
         "x-validate": null
       },
+      "WorkbenchProgrammingQueueItem": {
+        "additionalProperties": false,
+        "properties": {
+          "client": {
+            "$ref": "#/components/schemas/Client"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbenchProgrammingReason"
+            },
+            "minItems": 1,
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "client",
+          "reasons"
+        ],
+        "title": "WorkbenchProgrammingQueueItem",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchProgrammingQueueItem",
+        "x-validate": null
+      },
       "NutritionDayMeal": {
         "properties": {
           "id": {
@@ -3312,35 +3552,31 @@
             "x-validate": null
           },
           "expiring": {
-            "description": "Active clients whose subscription ends within 7 days",
+            "description": "Active clients whose engagement ends within 14 days",
             "minimum": 0,
             "type": "integer",
             "x-struct": null,
             "x-validate": null
           },
-          "new_clients": {
-            "description": "Clients added within 14 days, invites pending over 3 days, or intake incomplete",
+          "onboarding": {
+            "description": "Clients with actionable onboarding work",
             "minimum": 0,
             "type": "integer",
             "x-struct": null,
             "x-validate": null
           },
           "programming": {
-            "description": "Active clients with no plan in force, or whose last scheduled plan day is within 3 days",
-            "minimum": 0,
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "$ref": "#/components/schemas/WorkbenchProgrammingCounts"
           },
           "quiet": {
-            "description": "Active clients who missed their last two scheduled training sessions, or whose latest check-in lapsed to missed. Schedule-aware — rest days never count.",
+            "description": "Active clients whose latest already-due check-in is missed",
             "minimum": 0,
             "type": "integer",
             "x-struct": null,
             "x-validate": null
           },
           "replies": {
-            "description": "Conversations where the client sent the last message and the coach hasn't replied",
+            "description": "Conversations with an open waiting sequence for the coach",
             "minimum": 0,
             "type": "integer",
             "x-struct": null,
@@ -3350,14 +3586,85 @@
         "required": [
           "check_ins",
           "replies",
+          "onboarding",
           "programming",
           "expiring",
-          "new_clients",
           "quiet"
         ],
         "title": "WorkbenchCounts",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchCounts",
+        "x-validate": null
+      },
+      "RequiredServices": {
+        "enum": [
+          [],
+          [
+            "training"
+          ],
+          [
+            "nutrition"
+          ],
+          [
+            "training",
+            "nutrition"
+          ]
+        ],
+        "items": {
+          "enum": [
+            "training",
+            "nutrition"
+          ],
+          "type": "string",
+          "x-struct": null,
+          "x-validate": null
+        },
+        "maxItems": 2,
+        "title": "RequiredServices",
+        "type": "array",
+        "uniqueItems": true,
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.RequiredServices",
+        "x-validate": null
+      },
+      "InvitationFollowUpDueReason": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "enum": [
+              "invitation_follow_up_due"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "follow_up_due_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "invitation_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "sent_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "code",
+          "invitation_id",
+          "sent_at",
+          "follow_up_due_at"
+        ],
+        "title": "InvitationFollowUpDueReason",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.InvitationFollowUpDueReason",
         "x-validate": null
       },
       "ClientProfileFormTemplateUpdateRequest": {
@@ -3378,56 +3685,98 @@
               "properties": {
                 "questions": {
                   "items": {
-                    "additionalProperties": true,
-                    "properties": {
-                      "id": {
-                        "type": "string",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "label": {
-                        "type": "string",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "options": {
-                        "items": {
-                          "type": "string",
-                          "x-struct": null,
-                          "x-validate": null
+                    "oneOf": [
+                      {
+                        "additionalProperties": true,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "label": {
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string",
+                              "x-struct": null,
+                              "x-validate": null
+                            },
+                            "type": "array",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "required": {
+                            "type": "boolean",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "type": {
+                            "enum": [
+                              "text",
+                              "number",
+                              "boolean",
+                              "date",
+                              "select",
+                              "multi_select",
+                              "rating",
+                              "weight",
+                              "photo"
+                            ],
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          }
                         },
-                        "type": "array",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "required": {
-                        "type": "boolean",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "type": {
-                        "enum": [
-                          "text",
-                          "number",
-                          "boolean",
-                          "date",
-                          "select",
-                          "multi_select",
-                          "rating",
-                          "weight",
-                          "photo"
+                        "required": [
+                          "id",
+                          "label",
+                          "type"
                         ],
-                        "type": "string",
+                        "type": "object",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "label": {
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "required": {
+                            "type": "boolean",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "type": {
+                            "enum": [
+                              "service_type"
+                            ],
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "label",
+                          "type"
+                        ],
+                        "type": "object",
                         "x-struct": null,
                         "x-validate": null
                       }
-                    },
-                    "required": [
-                      "id",
-                      "label",
-                      "type"
                     ],
-                    "type": "object",
                     "x-struct": null,
                     "x-validate": null
                   },
@@ -3514,56 +3863,98 @@
               "properties": {
                 "questions": {
                   "items": {
-                    "additionalProperties": true,
-                    "properties": {
-                      "id": {
-                        "type": "string",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "label": {
-                        "type": "string",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "options": {
-                        "items": {
-                          "type": "string",
-                          "x-struct": null,
-                          "x-validate": null
+                    "oneOf": [
+                      {
+                        "additionalProperties": true,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "label": {
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string",
+                              "x-struct": null,
+                              "x-validate": null
+                            },
+                            "type": "array",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "required": {
+                            "type": "boolean",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "type": {
+                            "enum": [
+                              "text",
+                              "number",
+                              "boolean",
+                              "date",
+                              "select",
+                              "multi_select",
+                              "rating",
+                              "weight",
+                              "photo"
+                            ],
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          }
                         },
-                        "type": "array",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "required": {
-                        "type": "boolean",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "type": {
-                        "enum": [
-                          "text",
-                          "number",
-                          "boolean",
-                          "date",
-                          "select",
-                          "multi_select",
-                          "rating",
-                          "weight",
-                          "photo"
+                        "required": [
+                          "id",
+                          "label",
+                          "type"
                         ],
-                        "type": "string",
+                        "type": "object",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "label": {
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "required": {
+                            "type": "boolean",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "type": {
+                            "enum": [
+                              "service_type"
+                            ],
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "label",
+                          "type"
+                        ],
+                        "type": "object",
                         "x-struct": null,
                         "x-validate": null
                       }
-                    },
-                    "required": [
-                      "id",
-                      "label",
-                      "type"
                     ],
-                    "type": "object",
                     "x-struct": null,
                     "x-validate": null
                   },
@@ -4337,6 +4728,31 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDaySlot",
         "x-validate": null
       },
+      "WorkbenchRepliesQueueItem": {
+        "additionalProperties": false,
+        "properties": {
+          "conversation": {
+            "$ref": "#/components/schemas/Conversation"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/ReplyNeededReason"
+            },
+            "minItems": 1,
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "conversation",
+          "reasons"
+        ],
+        "title": "WorkbenchRepliesQueueItem",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchRepliesQueueItem",
+        "x-validate": null
+      },
       "TrainerInvitationPreviewResponse": {
         "additionalProperties": false,
         "properties": {
@@ -4755,6 +5171,9 @@
             "x-struct": null,
             "x-validate": null
           },
+          "required_services": {
+            "$ref": "#/components/schemas/RequiredServicesNonEmpty"
+          },
           "stage": {
             "enum": [
               "onboarding",
@@ -5057,56 +5476,98 @@
               "properties": {
                 "questions": {
                   "items": {
-                    "additionalProperties": true,
-                    "properties": {
-                      "id": {
-                        "type": "string",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "label": {
-                        "type": "string",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "options": {
-                        "items": {
-                          "type": "string",
-                          "x-struct": null,
-                          "x-validate": null
+                    "oneOf": [
+                      {
+                        "additionalProperties": true,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "label": {
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string",
+                              "x-struct": null,
+                              "x-validate": null
+                            },
+                            "type": "array",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "required": {
+                            "type": "boolean",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "type": {
+                            "enum": [
+                              "text",
+                              "number",
+                              "boolean",
+                              "date",
+                              "select",
+                              "multi_select",
+                              "rating",
+                              "weight",
+                              "photo"
+                            ],
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          }
                         },
-                        "type": "array",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "required": {
-                        "type": "boolean",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "type": {
-                        "enum": [
-                          "text",
-                          "number",
-                          "boolean",
-                          "date",
-                          "select",
-                          "multi_select",
-                          "rating",
-                          "weight",
-                          "photo"
+                        "required": [
+                          "id",
+                          "label",
+                          "type"
                         ],
-                        "type": "string",
+                        "type": "object",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "label": {
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "required": {
+                            "type": "boolean",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "type": {
+                            "enum": [
+                              "service_type"
+                            ],
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "label",
+                          "type"
+                        ],
+                        "type": "object",
                         "x-struct": null,
                         "x-validate": null
                       }
-                    },
-                    "required": [
-                      "id",
-                      "label",
-                      "type"
                     ],
-                    "type": "object",
                     "x-struct": null,
                     "x-validate": null
                   },
@@ -5433,7 +5894,40 @@
         },
         "properties": {
           "answers": {
-            "additionalProperties": true,
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                {
+                  "type": "number",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                {
+                  "type": "boolean",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                {
+                  "items": {
+                    "type": "string",
+                    "x-struct": null,
+                    "x-validate": null
+                  },
+                  "type": "array",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                {
+                  "$ref": "#/components/schemas/ClientProfileServiceTypeAnswer"
+                }
+              ],
+              "x-struct": null,
+              "x-validate": null
+            },
             "type": "object",
             "x-struct": null,
             "x-validate": null
@@ -5940,6 +6434,43 @@
         "x-struct": null,
         "x-validate": null
       },
+      "ServiceCoverageMissingReason": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "enum": [
+              "service_coverage_missing"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "first_uncovered_on": {
+            "format": "date",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "service": {
+            "enum": [
+              "training",
+              "nutrition"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "code",
+          "service",
+          "first_uncovered_on"
+        ],
+        "title": "ServiceCoverageMissingReason",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ServiceCoverageMissingReason",
+        "x-validate": null
+      },
       "BillingSummary": {
         "additionalProperties": false,
         "properties": {
@@ -6079,7 +6610,7 @@
             "x-validate": null
           },
           "last_message_role": {
-            "description": "Who spoke last. `client` means the conversation is waiting on the coach (the Replies queue condition).",
+            "description": "Who spoke last in conversation history. Replies membership uses waiting_since.",
             "enum": [
               "coach",
               "client"
@@ -6099,11 +6630,19 @@
             "type": "string",
             "x-struct": null,
             "x-validate": null
+          },
+          "waiting_since": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
           }
         },
         "required": [
           "id",
           "client_id",
+          "waiting_since",
           "unread_count",
           "inserted_at",
           "updated_at"
@@ -6521,14 +7060,6 @@
             "x-struct": null,
             "x-validate": null
           },
-          "covered_until": {
-            "description": "Last day either discipline has an active plan scheduled through; null when neither does",
-            "format": "date",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
           "email": {
             "format": "email",
             "nullable": true,
@@ -6586,11 +7117,6 @@
             "x-struct": null,
             "x-validate": null
           },
-          "intake_incomplete": {
-            "type": "boolean",
-            "x-struct": null,
-            "x-validate": null
-          },
           "invitation_expires_at": {
             "format": "date-time",
             "nullable": true,
@@ -6611,6 +7137,13 @@
             "x-struct": null,
             "x-validate": null
           },
+          "joined_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "last_active_at": {
             "description": "UTC time of the client's latest workout completion, food log, check-in submission, or weight entry",
             "format": "date-time",
@@ -6622,17 +7155,6 @@
           "last_name": {
             "nullable": true,
             "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "needs_plan": {
-            "type": "boolean",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "needs_programming": {
-            "description": "Active client with no plan in force, or whose last scheduled plan day (either discipline) is within 3 days with no successor",
-            "type": "boolean",
             "x-struct": null,
             "x-validate": null
           },
@@ -6654,6 +7176,9 @@
             "type": "string",
             "x-struct": null,
             "x-validate": null
+          },
+          "required_services": {
+            "$ref": "#/components/schemas/RequiredServices"
           },
           "stage": {
             "enum": [
@@ -6716,11 +7241,9 @@
           "inactive_reason",
           "subscription_started_on",
           "subscription_ends_on",
-          "intake_incomplete",
-          "needs_plan",
+          "joined_at",
+          "required_services",
           "expiring_soon",
-          "needs_programming",
-          "covered_until",
           "last_active_at",
           "invite_url",
           "invitation_sent_at",
@@ -6731,6 +7254,40 @@
         "title": "Client",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.Client",
+        "x-validate": null
+      },
+      "MissedCheckInReason": {
+        "additionalProperties": false,
+        "properties": {
+          "assignment_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "code": {
+            "enum": [
+              "missed_check_in"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "due_on": {
+            "format": "date",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "code",
+          "assignment_id",
+          "due_on"
+        ],
+        "title": "MissedCheckInReason",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.MissedCheckInReason",
         "x-validate": null
       },
       "NutritionMealItemResponse": {
@@ -6913,6 +7470,87 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingPlanClient",
         "x-validate": null
       },
+      "WorkbenchCheckInQueueResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbenchCheckInQueueItem"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data",
+          "count"
+        ],
+        "title": "WorkbenchCheckInQueueResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchCheckInQueueResponse",
+        "x-validate": null
+      },
+      "WorkbenchExpiringQueueResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbenchExpiringQueueItem"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data",
+          "count"
+        ],
+        "title": "WorkbenchExpiringQueueResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchExpiringQueueResponse",
+        "x-validate": null
+      },
+      "WorkbenchProgrammingQueueResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbenchProgrammingQueueItem"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data",
+          "count"
+        ],
+        "title": "WorkbenchProgrammingQueueResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchProgrammingQueueResponse",
+        "x-validate": null
+      },
       "ClientProfileFormAssignmentRequest": {
         "additionalProperties": false,
         "example": {
@@ -6932,6 +7570,21 @@
         "title": "ClientProfileFormAssignmentRequest",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "ClientProfileServiceTypeAnswer": {
+        "additionalProperties": false,
+        "properties": {
+          "services": {
+            "$ref": "#/components/schemas/RequiredServicesNonEmpty"
+          }
+        },
+        "required": [
+          "services"
+        ],
+        "title": "ClientProfileServiceTypeAnswer",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileServiceTypeAnswer",
         "x-validate": null
       },
       "LibraryMediaUpload": {
@@ -7020,6 +7673,33 @@
         "title": "LibraryMediaUpload",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.LibraryMediaUpload",
+        "x-validate": null
+      },
+      "WorkbenchOnboardingQueueResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbenchOnboardingQueueItem"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data",
+          "count"
+        ],
+        "title": "WorkbenchOnboardingQueueResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchOnboardingQueueResponse",
         "x-validate": null
       },
       "TrainingPlanPlannedSet": {
@@ -7346,6 +8026,46 @@
         "title": "NutritionSlotOptionMoveRequest",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "WorkbenchCheckInSubmission": {
+        "additionalProperties": false,
+        "properties": {
+          "form_assignment_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "reviewed_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "submitted_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "form_assignment_id",
+          "submitted_at",
+          "reviewed_at"
+        ],
+        "title": "WorkbenchCheckInSubmission",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchCheckInSubmission",
         "x-validate": null
       },
       "NutritionPlanListResponse": {
@@ -7940,6 +8660,9 @@
             "type": "string",
             "x-struct": null,
             "x-validate": null
+          },
+          "required_services": {
+            "$ref": "#/components/schemas/RequiredServices"
           }
         },
         "title": "ClientInviteRequest",
@@ -8606,6 +9329,39 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ConversationResponse",
         "x-validate": null
       },
+      "WorkbenchCheckInQueueItem": {
+        "additionalProperties": false,
+        "properties": {
+          "assignment": {
+            "$ref": "#/components/schemas/WorkbenchCheckInAssignment"
+          },
+          "client": {
+            "$ref": "#/components/schemas/Client"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/CheckInAwaitingReviewReason"
+            },
+            "minItems": 1,
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "submission": {
+            "$ref": "#/components/schemas/WorkbenchCheckInSubmission"
+          }
+        },
+        "required": [
+          "submission",
+          "client",
+          "assignment",
+          "reasons"
+        ],
+        "title": "WorkbenchCheckInQueueItem",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchCheckInQueueItem",
+        "x-validate": null
+      },
       "ProspectUpdateRequest": {
         "additionalProperties": false,
         "example": {
@@ -8637,6 +9393,87 @@
         "title": "ProspectUpdateRequest",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "RequiredServicesNonEmpty": {
+        "enum": [
+          [
+            "training"
+          ],
+          [
+            "nutrition"
+          ],
+          [
+            "training",
+            "nutrition"
+          ]
+        ],
+        "items": {
+          "enum": [
+            "training",
+            "nutrition"
+          ],
+          "type": "string",
+          "x-struct": null,
+          "x-validate": null
+        },
+        "maxItems": 2,
+        "minItems": 1,
+        "title": "RequiredServicesNonEmpty",
+        "type": "array",
+        "uniqueItems": true,
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.RequiredServicesNonEmpty",
+        "x-validate": null
+      },
+      "WorkbenchQuietQueueResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbenchQuietQueueItem"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data",
+          "count"
+        ],
+        "title": "WorkbenchQuietQueueResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchQuietQueueResponse",
+        "x-validate": null
+      },
+      "WorkbenchProgrammingReason": {
+        "discriminator": {
+          "mapping": {
+            "service_coverage_ending_soon": "#/components/schemas/ServiceCoverageEndingSoonReason",
+            "service_coverage_missing": "#/components/schemas/ServiceCoverageMissingReason",
+            "service_never_programmed": "#/components/schemas/ServiceNeverProgrammedReason"
+          },
+          "propertyName": "code"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ServiceNeverProgrammedReason"
+          },
+          {
+            "$ref": "#/components/schemas/ServiceCoverageMissingReason"
+          },
+          {
+            "$ref": "#/components/schemas/ServiceCoverageEndingSoonReason"
+          }
+        ],
+        "title": "WorkbenchProgrammingReason",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchProgrammingReason",
         "x-validate": null
       },
       "NutritionMealItemRequest": {
@@ -8705,6 +9542,31 @@
         "title": "FoodLogEntryResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.FoodLogEntryResponse",
+        "x-validate": null
+      },
+      "WorkbenchQuietQueueItem": {
+        "additionalProperties": false,
+        "properties": {
+          "client": {
+            "$ref": "#/components/schemas/Client"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/MissedCheckInReason"
+            },
+            "minItems": 1,
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "client",
+          "reasons"
+        ],
+        "title": "WorkbenchQuietQueueItem",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchQuietQueueItem",
         "x-validate": null
       },
       "FoodLogEntry": {
@@ -8873,6 +9735,40 @@
         "title": "AttachmentUploadResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.AttachmentUploadResponse",
+        "x-validate": null
+      },
+      "IntakeOverdueReason": {
+        "additionalProperties": false,
+        "properties": {
+          "assignment_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "code": {
+            "enum": [
+              "intake_overdue"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "due_on": {
+            "format": "date",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "code",
+          "assignment_id",
+          "due_on"
+        ],
+        "title": "IntakeOverdueReason",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.IntakeOverdueReason",
         "x-validate": null
       },
       "TrainingMuscleListResponse": {
@@ -9128,6 +10024,80 @@
         "title": "BusinessRequest",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "ServiceCoverageEndingSoonReason": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "enum": [
+              "service_coverage_ending_soon"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "coverage_ends_on": {
+            "format": "date",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "first_uncovered_on": {
+            "format": "date",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "service": {
+            "enum": [
+              "training",
+              "nutrition"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "code",
+          "service",
+          "coverage_ends_on",
+          "first_uncovered_on"
+        ],
+        "title": "ServiceCoverageEndingSoonReason",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ServiceCoverageEndingSoonReason",
+        "x-validate": null
+      },
+      "ServiceNeverProgrammedReason": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "enum": [
+              "service_never_programmed"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "service": {
+            "enum": [
+              "training",
+              "nutrition"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "code",
+          "service"
+        ],
+        "title": "ServiceNeverProgrammedReason",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ServiceNeverProgrammedReason",
         "x-validate": null
       },
       "FoodCategoryListResponse": {
@@ -9596,6 +10566,31 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.PublicLandingPageResponse",
         "x-validate": null
       },
+      "WorkbenchOnboardingQueueItem": {
+        "additionalProperties": false,
+        "properties": {
+          "client": {
+            "$ref": "#/components/schemas/Client"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbenchOnboardingReason"
+            },
+            "minItems": 1,
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "client",
+          "reasons"
+        ],
+        "title": "WorkbenchOnboardingQueueItem",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchOnboardingQueueItem",
+        "x-validate": null
+      },
       "WeightEntryListResponse": {
         "additionalProperties": false,
         "properties": {
@@ -9849,56 +10844,98 @@
               "properties": {
                 "questions": {
                   "items": {
-                    "additionalProperties": true,
-                    "properties": {
-                      "id": {
-                        "type": "string",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "label": {
-                        "type": "string",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "options": {
-                        "items": {
-                          "type": "string",
-                          "x-struct": null,
-                          "x-validate": null
+                    "oneOf": [
+                      {
+                        "additionalProperties": true,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "label": {
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string",
+                              "x-struct": null,
+                              "x-validate": null
+                            },
+                            "type": "array",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "required": {
+                            "type": "boolean",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "type": {
+                            "enum": [
+                              "text",
+                              "number",
+                              "boolean",
+                              "date",
+                              "select",
+                              "multi_select",
+                              "rating",
+                              "weight",
+                              "photo"
+                            ],
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          }
                         },
-                        "type": "array",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "required": {
-                        "type": "boolean",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "type": {
-                        "enum": [
-                          "text",
-                          "number",
-                          "boolean",
-                          "date",
-                          "select",
-                          "multi_select",
-                          "rating",
-                          "weight",
-                          "photo"
+                        "required": [
+                          "id",
+                          "label",
+                          "type"
                         ],
-                        "type": "string",
+                        "type": "object",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "label": {
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "required": {
+                            "type": "boolean",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "type": {
+                            "enum": [
+                              "service_type"
+                            ],
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "label",
+                          "type"
+                        ],
+                        "type": "object",
                         "x-struct": null,
                         "x-validate": null
                       }
-                    },
-                    "required": [
-                      "id",
-                      "label",
-                      "type"
                     ],
-                    "type": "object",
                     "x-struct": null,
                     "x-validate": null
                   },
@@ -10579,6 +11616,31 @@
         "x-struct": null,
         "x-validate": null
       },
+      "WorkbenchExpiringQueueItem": {
+        "additionalProperties": false,
+        "properties": {
+          "client": {
+            "$ref": "#/components/schemas/Client"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/EngagementEndingSoonReason"
+            },
+            "minItems": 1,
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "client",
+          "reasons"
+        ],
+        "title": "WorkbenchExpiringQueueItem",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchExpiringQueueItem",
+        "x-validate": null
+      },
       "Prospect": {
         "additionalProperties": false,
         "properties": {
@@ -11154,6 +12216,38 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.InvitationPreviewResponse",
         "x-validate": null
       },
+      "WorkbenchProgrammingCounts": {
+        "additionalProperties": false,
+        "properties": {
+          "all": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "nutrition": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "training": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "all",
+          "training",
+          "nutrition"
+        ],
+        "title": "WorkbenchProgrammingCounts",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchProgrammingCounts",
+        "x-validate": null
+      },
       "CoachProfile": {
         "additionalProperties": false,
         "properties": {
@@ -11255,7 +12349,40 @@
         "additionalProperties": false,
         "properties": {
           "answers": {
-            "additionalProperties": true,
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                {
+                  "type": "number",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                {
+                  "type": "boolean",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                {
+                  "items": {
+                    "type": "string",
+                    "x-struct": null,
+                    "x-validate": null
+                  },
+                  "type": "array",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                {
+                  "$ref": "#/components/schemas/ClientProfileServiceTypeAnswer"
+                }
+              ],
+              "x-struct": null,
+              "x-validate": null
+            },
             "type": "object",
             "x-struct": null,
             "x-validate": null
@@ -11292,56 +12419,98 @@
               "properties": {
                 "questions": {
                   "items": {
-                    "additionalProperties": true,
-                    "properties": {
-                      "id": {
-                        "type": "string",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "label": {
-                        "type": "string",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "options": {
-                        "items": {
-                          "type": "string",
-                          "x-struct": null,
-                          "x-validate": null
+                    "oneOf": [
+                      {
+                        "additionalProperties": true,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "label": {
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string",
+                              "x-struct": null,
+                              "x-validate": null
+                            },
+                            "type": "array",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "required": {
+                            "type": "boolean",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "type": {
+                            "enum": [
+                              "text",
+                              "number",
+                              "boolean",
+                              "date",
+                              "select",
+                              "multi_select",
+                              "rating",
+                              "weight",
+                              "photo"
+                            ],
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          }
                         },
-                        "type": "array",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "required": {
-                        "type": "boolean",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "type": {
-                        "enum": [
-                          "text",
-                          "number",
-                          "boolean",
-                          "date",
-                          "select",
-                          "multi_select",
-                          "rating",
-                          "weight",
-                          "photo"
+                        "required": [
+                          "id",
+                          "label",
+                          "type"
                         ],
-                        "type": "string",
+                        "type": "object",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "label": {
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "required": {
+                            "type": "boolean",
+                            "x-struct": null,
+                            "x-validate": null
+                          },
+                          "type": {
+                            "enum": [
+                              "service_type"
+                            ],
+                            "type": "string",
+                            "x-struct": null,
+                            "x-validate": null
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "label",
+                          "type"
+                        ],
+                        "type": "object",
                         "x-struct": null,
                         "x-validate": null
                       }
-                    },
-                    "required": [
-                      "id",
-                      "label",
-                      "type"
                     ],
-                    "type": "object",
                     "x-struct": null,
                     "x-validate": null
                   },
@@ -11982,6 +13151,91 @@
         "summary": "Update client",
         "tags": [
           "coach clients"
+        ]
+      }
+    },
+    "/v1/coach/conversations/{id}/mark-handled": {
+      "post": {
+        "callbacks": {},
+        "description": "Clears waiting_since only when the latest message still matches the supplied timestamp.",
+        "operationId": "markCoachConversationHandled",
+        "parameters": [
+          {
+            "description": "Conversation id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkHandledRequest"
+              }
+            }
+          },
+          "description": "Observed message timestamp",
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Conversation marked handled"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A newer message exists"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Mark the observed client-message sequence handled",
+        "tags": [
+          "coach conversations"
         ]
       }
     },
@@ -13883,6 +15137,67 @@
         ]
       }
     },
+    "/v1/coach/workbench/queues/onboarding": {
+      "get": {
+        "callbacks": {},
+        "operationId": "listWorkbenchOnboardingQueue",
+        "parameters": [
+          {
+            "description": "Offset",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Limit (max 100)",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbenchOnboardingQueueResponse"
+                }
+              }
+            },
+            "description": "Onboarding queue"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List onboarding work",
+        "tags": [
+          "coach workbench"
+        ]
+      }
+    },
     "/v1/businesses/me": {
       "get": {
         "callbacks": {},
@@ -14300,17 +15615,6 @@
             "required": false,
             "schema": {
               "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          },
-          {
-            "description": "Only conversations where the client spoke last (the Replies queue), longest-waiting first",
-            "in": "query",
-            "name": "waiting",
-            "required": false,
-            "schema": {
-              "type": "boolean",
               "x-struct": null,
               "x-validate": null
             }
@@ -15189,6 +16493,67 @@
         "summary": "Schedule cancellation",
         "tags": [
           "coach billing"
+        ]
+      }
+    },
+    "/v1/coach/workbench/queues/quiet": {
+      "get": {
+        "callbacks": {},
+        "operationId": "listWorkbenchQuietQueue",
+        "parameters": [
+          {
+            "description": "Offset",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Limit (max 100)",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbenchQuietQueueResponse"
+                }
+              }
+            },
+            "description": "Quiet queue"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List missed check-in follow-up work",
+        "tags": [
+          "coach workbench"
         ]
       }
     },
@@ -16146,6 +17511,88 @@
         ]
       }
     },
+    "/v1/coach/workbench/queues/programming": {
+      "get": {
+        "callbacks": {},
+        "operationId": "listWorkbenchProgrammingQueue",
+        "parameters": [
+          {
+            "description": "Offset",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Limit (max 100)",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Required service",
+            "in": "query",
+            "name": "service",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbenchProgrammingQueueResponse"
+                }
+              }
+            },
+            "description": "Programming queue"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid service"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List programming work",
+        "tags": [
+          "coach workbench"
+        ]
+      }
+    },
     "/v1/coach/nutrition-plans/{plan_id}/schedule": {
       "put": {
         "callbacks": {},
@@ -17058,6 +18505,67 @@
         ]
       }
     },
+    "/v1/coach/workbench/queues/expiring": {
+      "get": {
+        "callbacks": {},
+        "operationId": "listWorkbenchExpiringQueue",
+        "parameters": [
+          {
+            "description": "Offset",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Limit (max 100)",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbenchExpiringQueueResponse"
+                }
+              }
+            },
+            "description": "Expiring queue"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List expiring engagement work",
+        "tags": [
+          "coach workbench"
+        ]
+      }
+    },
     "/v1/coach/clients/invite": {
       "post": {
         "callbacks": {},
@@ -17521,6 +19029,70 @@
         "summary": "Update a performed set",
         "tags": [
           "client performed sets"
+        ]
+      }
+    },
+    "/v1/coach/form-assignments/{id}/remind": {
+      "post": {
+        "callbacks": {},
+        "description": "Sends a reminder without changing the assignment status or Workbench queue membership.",
+        "operationId": "remindClientFormAssignment",
+        "parameters": [
+          {
+            "description": "Form assignment id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Reminder sent"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Send an Intake reminder",
+        "tags": [
+          "coach form assignments"
         ]
       }
     },
@@ -18359,7 +19931,7 @@
     "/v1/coach/workbench": {
       "get": {
         "callbacks": {},
-        "description": "Total items remaining in each workbench queue (work left, not unreads): unreviewed check-in submissions, clients needing programming, subscriptions expiring within 7 days, and clients in onboarding.",
+        "description": "Total items remaining in each explicit workbench queue (work left, not unread indicators).",
         "operationId": "getWorkbenchCounts",
         "parameters": [],
         "responses": {
@@ -20199,23 +21771,6 @@
               "x-struct": null,
               "x-validate": null
             }
-          },
-          {
-            "description": "Restrict to one workbench queue. `programming`: active clients with no plan in force or coverage ending within 3 days (no-plan first, then soonest end). `expiring`: subscriptions ending within 7 days, minus snoozed (soonest first). `new`: added within 14 days, invite pending over 3 days, or intake incomplete (newest first). `quiet`: missed their last two scheduled sessions or latest check-in, minus snoozed (longest-quiet first). A queue imposes its own sort order.",
-            "in": "query",
-            "name": "filter",
-            "required": false,
-            "schema": {
-              "enum": [
-                "programming",
-                "expiring",
-                "new",
-                "quiet"
-              ],
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
           }
         ],
         "responses": {
@@ -21672,6 +23227,67 @@
         ]
       }
     },
+    "/v1/coach/workbench/queues/check-ins": {
+      "get": {
+        "callbacks": {},
+        "operationId": "listWorkbenchCheckInQueue",
+        "parameters": [
+          {
+            "description": "Offset",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Limit (max 100)",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbenchCheckInQueueResponse"
+                }
+              }
+            },
+            "description": "Check-ins queue"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List check-in submissions awaiting review",
+        "tags": [
+          "coach workbench"
+        ]
+      }
+    },
     "/v1/coach/billing/checkout": {
       "post": {
         "callbacks": {},
@@ -22809,6 +24425,67 @@
         "summary": "Razorpay webhook",
         "tags": [
           "billing"
+        ]
+      }
+    },
+    "/v1/coach/workbench/queues/replies": {
+      "get": {
+        "callbacks": {},
+        "operationId": "listWorkbenchRepliesQueue",
+        "parameters": [
+          {
+            "description": "Offset",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Limit (max 100)",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbenchRepliesQueueResponse"
+                }
+              }
+            },
+            "description": "Replies queue"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List conversations awaiting a coach response",
+        "tags": [
+          "coach workbench"
         ]
       }
     },

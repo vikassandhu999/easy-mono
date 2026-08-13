@@ -206,6 +206,78 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
     end
   end
 
+  describe "POST /v1/coach/conversations/:id/mark-handled" do
+    test "clears the observed waiting sequence", %{conn: conn, client: client} do
+      client_conn =
+        build_conn()
+        |> authenticate_client(client)
+        |> put_req_header("content-type", "application/json")
+
+      %{"data" => %{"inserted_at" => expected_last_message_at}} =
+        client_conn
+        |> post("/v1/client/conversation/messages", %{"body" => "Please take a look"})
+        |> json_response(201)
+
+      %{"data" => %{"id" => conversation_id, "waiting_since" => waiting_since}} =
+        conn
+        |> get("/v1/coach/clients/#{client.id}/conversation")
+        |> json_response(200)
+
+      assert is_binary(waiting_since)
+
+      handled_conn =
+        post(conn, "/v1/coach/conversations/#{conversation_id}/mark-handled", %{
+          "expected_last_message_at" => expected_last_message_at
+        })
+
+      assert response(handled_conn, 204) == ""
+
+      %{"data" => %{"waiting_since" => nil}} =
+        conn
+        |> get("/v1/coach/conversations/#{conversation_id}")
+        |> json_response(200)
+    end
+
+    test "returns 409 when a newer client message exists", %{conn: conn, client: client} do
+      client_conn =
+        build_conn()
+        |> authenticate_client(client)
+        |> put_req_header("content-type", "application/json")
+
+      %{"data" => %{"inserted_at" => observed_at}} =
+        client_conn
+        |> post("/v1/client/conversation/messages", %{"body" => "First"})
+        |> json_response(201)
+
+      _newer = post(client_conn, "/v1/client/conversation/messages", %{"body" => "Newer"})
+
+      %{"data" => %{"id" => conversation_id}} =
+        conn
+        |> get("/v1/coach/clients/#{client.id}/conversation")
+        |> json_response(200)
+
+      conflict_conn =
+        post(conn, "/v1/coach/conversations/#{conversation_id}/mark-handled", %{
+          "expected_last_message_at" => observed_at
+        })
+
+      assert json_response(conflict_conn, 409)
+    end
+
+    test "404s for another business's conversation", %{conn: conn} do
+      other_coach = insert(:coach)
+      other_client = insert(:client, business: other_coach.business, creator: other_coach)
+      conversation = insert(:conversation, business: other_coach.business, client: other_client)
+
+      handled_conn =
+        post(conn, "/v1/coach/conversations/#{conversation.id}/mark-handled", %{
+          "expected_last_message_at" => DateTime.to_iso8601(DateTime.utc_now(:microsecond))
+        })
+
+      assert json_response(handled_conn, 404)
+    end
+  end
+
   test "requires authentication" do
     conn = build_conn() |> get("/v1/coach/conversations")
     assert json_response(conn, 403)

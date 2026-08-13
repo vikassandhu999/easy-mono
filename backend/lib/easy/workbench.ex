@@ -17,25 +17,24 @@ defmodule Easy.Workbench do
              check_ins: non_neg_integer(),
              replies: non_neg_integer(),
              onboarding: non_neg_integer(),
-             programming: non_neg_integer(),
+             programming: %{
+               all: non_neg_integer(),
+               training: non_neg_integer(),
+               nutrition: non_neg_integer()
+             },
              expiring: non_neg_integer(),
-             new_clients: non_neg_integer(),
              quiet: non_neg_integer()
            }}
   def counts(%Ctx{} = ctx) do
-    with {:ok, queues} <- Clients.count_workbench_queues(ctx) do
-      check_ins = WorkbenchCheckInQueue.count(ctx)
-      replies = WorkbenchRepliesQueue.count(ctx)
-      onboarding = WorkbenchOnboardingQueue.count(ctx)
-
-      {:ok,
-       queues
-       |> Map.put(:check_ins, check_ins)
-       |> Map.put(:replies, replies)
-       |> Map.put(:onboarding, onboarding)
-       |> Map.put(:expiring, WorkbenchExpiringQueue.count(ctx))
-       |> Map.put(:quiet, WorkbenchQuietQueue.count(ctx))}
-    end
+    {:ok,
+     %{
+       check_ins: WorkbenchCheckInQueue.count(ctx),
+       replies: WorkbenchRepliesQueue.count(ctx),
+       onboarding: WorkbenchOnboardingQueue.count(ctx),
+       programming: WorkbenchProgrammingQueue.counts(ctx),
+       expiring: WorkbenchExpiringQueue.count(ctx),
+       quiet: WorkbenchQuietQueue.count(ctx)
+     }}
   end
 
   @spec list_onboarding_queue(Ctx.t(), keyword()) ::

@@ -478,7 +478,11 @@ defmodule Easy.Forms do
           nil
       end)
 
-    Map.get(answers, question_id)
+    case Map.get(answers, question_id) do
+      %{"services" => services} -> services
+      %{services: services} -> services
+      _answer -> nil
+    end
   end
 
   defp service_atom("training"), do: :training

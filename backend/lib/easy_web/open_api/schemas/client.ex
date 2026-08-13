@@ -1,6 +1,47 @@
+defmodule EasyWeb.OpenApi.Schemas.RequiredServices do
+  require OpenApiSpex
+  alias OpenApiSpex.Schema
+
+  @values Easy.Clients.Client
+          |> Ecto.Enum.values(:required_services)
+          |> Enum.map(&Atom.to_string/1)
+  @canonical_sets [[], [Enum.at(@values, 0)], [Enum.at(@values, 1)], @values]
+
+  @spec values() :: [String.t()]
+  def values, do: @values
+
+  OpenApiSpex.schema(%{
+    title: "RequiredServices",
+    type: :array,
+    items: %Schema{type: :string, enum: @values},
+    enum: @canonical_sets,
+    maxItems: 2,
+    uniqueItems: true
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.RequiredServicesNonEmpty do
+  require OpenApiSpex
+  alias EasyWeb.OpenApi.Schemas.RequiredServices
+  alias OpenApiSpex.Schema
+
+  @values RequiredServices.values()
+
+  OpenApiSpex.schema(%{
+    title: "RequiredServicesNonEmpty",
+    type: :array,
+    items: %Schema{type: :string, enum: @values},
+    enum: [[Enum.at(@values, 0)], [Enum.at(@values, 1)], @values],
+    minItems: 1,
+    maxItems: 2,
+    uniqueItems: true
+  })
+end
+
 defmodule EasyWeb.OpenApi.Schemas.ClientInviteRequest do
   require OpenApiSpex
 
+  alias EasyWeb.OpenApi.Schemas.RequiredServices
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
@@ -13,7 +54,8 @@ defmodule EasyWeb.OpenApi.Schemas.ClientInviteRequest do
         first_name: %Schema{type: :string, nullable: true},
         last_name: %Schema{type: :string, nullable: true},
         phone: %Schema{type: :string, nullable: true},
-        notes: %Schema{type: :string, nullable: true}
+        notes: %Schema{type: :string, nullable: true},
+        required_services: RequiredServices
       },
       example: %{
         "email" => "client@example.com",
@@ -30,6 +72,7 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientUpdateRequest do
   require OpenApiSpex
 
+  alias EasyWeb.OpenApi.Schemas.RequiredServicesNonEmpty
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
@@ -48,7 +91,8 @@ defmodule EasyWeb.OpenApi.Schemas.ClientUpdateRequest do
         status: %Schema{type: :string, enum: ["active", "inactive"]},
         stage: %Schema{type: :string, enum: ["onboarding", "coaching"], nullable: true},
         subscription_started_on: %Schema{type: :string, format: :date, nullable: true},
-        subscription_ends_on: %Schema{type: :string, format: :date, nullable: true}
+        subscription_ends_on: %Schema{type: :string, format: :date, nullable: true},
+        required_services: RequiredServicesNonEmpty
       },
       example: %{
         "first_name" => "Jamie",
@@ -64,7 +108,7 @@ end
 defmodule EasyWeb.OpenApi.Schemas.Client do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.Shared
+  alias EasyWeb.OpenApi.Schemas.{RequiredServices, Shared}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -91,19 +135,9 @@ defmodule EasyWeb.OpenApi.Schemas.Client do
           },
           subscription_started_on: %Schema{type: :string, format: :date, nullable: true},
           subscription_ends_on: %Schema{type: :string, format: :date, nullable: true},
-          intake_incomplete: %Schema{type: :boolean},
-          needs_plan: %Schema{type: :boolean},
+          joined_at: %Schema{type: :string, format: :"date-time", nullable: true},
+          required_services: RequiredServices,
           expiring_soon: %Schema{type: :boolean},
-          needs_programming: %Schema{
-            type: :boolean,
-            description: "Active client with no plan in force, or whose last scheduled plan day (either discipline) is within 3 days with no successor"
-          },
-          covered_until: %Schema{
-            type: :string,
-            format: :date,
-            nullable: true,
-            description: "Last day either discipline has an active plan scheduled through; null when neither does"
-          },
           last_active_at: %Schema{
             type: :string,
             format: :"date-time",
@@ -141,11 +175,9 @@ defmodule EasyWeb.OpenApi.Schemas.Client do
       :inactive_reason,
       :subscription_started_on,
       :subscription_ends_on,
-      :intake_incomplete,
-      :needs_plan,
+      :joined_at,
+      :required_services,
       :expiring_soon,
-      :needs_programming,
-      :covered_until,
       :last_active_at,
       :invite_url,
       :invitation_sent_at,

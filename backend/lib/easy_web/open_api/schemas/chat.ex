@@ -93,13 +93,14 @@ defmodule EasyWeb.OpenApi.Schemas.Conversation do
         type: :string,
         enum: ["coach", "client"],
         nullable: true,
-        description: "Who spoke last. `client` means the conversation is waiting on the coach (the Replies queue condition)."
+        description: "Who spoke last in conversation history. Replies membership uses waiting_since."
       },
+      waiting_since: %Schema{type: :string, format: :"date-time", nullable: true},
       unread_count: %Schema{type: :integer},
       inserted_at: %Schema{type: :string, format: :"date-time"},
       updated_at: %Schema{type: :string, format: :"date-time"}
     },
-    required: [:id, :client_id, :unread_count, :inserted_at, :updated_at]
+    required: [:id, :client_id, :waiting_since, :unread_count, :inserted_at, :updated_at]
   })
 end
 
@@ -136,6 +137,24 @@ defmodule EasyWeb.OpenApi.Schemas.ChatMessagesResponse do
     },
     required: [:data, :has_more]
   })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.MarkHandledRequest do
+  require OpenApiSpex
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "MarkHandledRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        expected_last_message_at: %Schema{type: :string, format: :"date-time"}
+      },
+      required: [:expected_last_message_at]
+    },
+    struct?: false
+  )
 end
 
 defmodule EasyWeb.OpenApi.Schemas.CoachChatMessageCreateRequest do

@@ -75,25 +75,32 @@ defmodule Easy.Forms.RequiredServicesTest do
 
       assert :ok =
                FormSubmission.validate_answers(sections, %{
-                 "service-type" => ["training"]
+                 "service-type" => %{"services" => ["training"]}
                })
 
       assert :ok =
                FormSubmission.validate_answers(sections, %{
-                 "service-type" => ["nutrition"]
+                 "service-type" => %{"services" => ["nutrition"]}
                })
 
       assert :ok =
                FormSubmission.validate_answers(sections, %{
-                 "service-type" => ["training", "nutrition"]
+                 "service-type" => %{"services" => ["training", "nutrition"]}
                })
 
       for invalid <- [nil, [], ["nutrition", "training"], ["training", "training"], ["physio"]] do
         assert {:error, reason} =
-                 FormSubmission.validate_answers(sections, %{"service-type" => invalid})
+                 FormSubmission.validate_answers(sections, %{
+                   "service-type" => %{"services" => invalid}
+                 })
 
         assert reason in [:missing_required_answers, :invalid_answer_values]
       end
+
+      assert {:error, :invalid_answer_values} =
+               FormSubmission.validate_answers(sections, %{
+                 "service-type" => %{"services" => ["training"], "other" => true}
+               })
     end
   end
 
@@ -105,7 +112,7 @@ defmodule Easy.Forms.RequiredServicesTest do
 
       assert {:ok, _submission} =
                Forms.submit_client_form_assignment(client_ctx(client), assignment.id, %{
-                 answers: %{"service-type" => ["training", "nutrition"]}
+                 answers: %{"service-type" => %{"services" => ["training", "nutrition"]}}
                })
 
       assert Repo.reload(client).required_services == [:training, :nutrition]
@@ -138,7 +145,7 @@ defmodule Easy.Forms.RequiredServicesTest do
 
       assert {:ok, _submission} =
                Forms.submit_client_form_assignment(client_ctx(client), assignment.id, %{
-                 answers: %{"service-type" => ["training"]}
+                 answers: %{"service-type" => %{"services" => ["training"]}}
                })
 
       assert Repo.reload(client).required_services == [:nutrition]
@@ -151,7 +158,7 @@ defmodule Easy.Forms.RequiredServicesTest do
 
       assert {:ok, _submission} =
                Forms.submit_client_form_assignment(client_ctx(client), assignment.id, %{
-                 answers: %{"service-type" => ["nutrition"]}
+                 answers: %{"service-type" => %{"services" => ["nutrition"]}}
                })
 
       assert Repo.reload(client).required_services == [:nutrition]
@@ -199,10 +206,9 @@ defmodule Easy.Forms.RequiredServicesTest do
 
       assert reminded.id == assignment.id
 
-      assert_email_sent(
-        to: "intake-reminder@example.com",
-        subject: "Your intake form is waiting"
-      )
+      assert_receive {:email, email}, 1_000
+      assert email.subject == "Your intake form is waiting"
+      assert {"", "intake-reminder@example.com"} in email.to
 
       after_reminder = Repo.reload(assignment)
       assert after_reminder.status == before.status

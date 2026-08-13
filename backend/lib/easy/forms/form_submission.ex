@@ -190,8 +190,13 @@ defmodule Easy.Forms.FormSubmission do
       Enum.all?(value, &valid_uuid?/1)
   end
 
-  defp valid_value?("service_type", value, _question),
-    do: value in [["training"], ["nutrition"], ["training", "nutrition"]]
+  defp valid_value?("service_type", %{"services" => services} = value, _question),
+    do: map_size(value) == 1 and services in [["training"], ["nutrition"], ["training", "nutrition"]]
+
+  defp valid_value?("service_type", %{services: services} = value, _question),
+    do: map_size(value) == 1 and services in [["training"], ["nutrition"], ["training", "nutrition"]]
+
+  defp valid_value?("service_type", _value, _question), do: false
 
   defp valid_value?(_type, _value, _question), do: false
 

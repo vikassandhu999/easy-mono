@@ -14,7 +14,8 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
     ErrorResponse
   }
 
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update]
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true] when action in [:create, :update, :remind]
 
   tags ["coach form assignments"]
 
@@ -70,6 +71,19 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
       not_found: {"Not found", "application/json", ErrorResponse}
     ]
 
+  operation :remind,
+    summary: "Send an Intake reminder",
+    description: "Sends a reminder without changing the assignment status or Workbench queue membership.",
+    operation_id: "remindClientFormAssignment",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Form assignment id")],
+    responses: [
+      no_content: "Reminder sent",
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, %{"client_id" => client_id}) do
     ctx = conn.assigns.ctx
@@ -109,6 +123,15 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
 
     with {:ok, assignment} <- Forms.update_form_assignment(ctx, id, conn.body_params) do
       render(conn, :show, assignment: assignment)
+    end
+  end
+
+  @spec remind(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def remind(conn, _params) do
+    id = conn.path_params["id"]
+
+    with {:ok, _assignment} <- Forms.send_intake_reminder(conn.assigns.ctx, id) do
+      send_resp(conn, :no_content, "")
     end
   end
 end

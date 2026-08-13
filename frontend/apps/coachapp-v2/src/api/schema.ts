@@ -74,6 +74,26 @@ export interface paths {
     patch: operations['updateClient'];
     trace?: never;
   };
+  '/v1/coach/conversations/{id}/mark-handled': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Mark the observed client-message sequence handled
+     * @description Clears waiting_since only when the latest message still matches the supplied timestamp.
+     */
+    post: operations['markCoachConversationHandled'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/coach/prospects/{id}/enroll': {
     parameters: {
       query?: never;
@@ -374,6 +394,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/coach/workbench/queues/onboarding': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List onboarding work */
+    get: operations['listWorkbenchOnboardingQueue'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/businesses/me': {
     parameters: {
       query?: never;
@@ -603,6 +640,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/coach/workbench/queues/quiet': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List missed check-in follow-up work */
+    get: operations['listWorkbenchQuietQueue'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/coach/training-plans/{plan_id}/schedule': {
     parameters: {
       query?: never;
@@ -761,6 +815,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/coach/workbench/queues/programming': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List programming work */
+    get: operations['listWorkbenchProgrammingQueue'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/coach/nutrition-plans/{plan_id}/schedule': {
     parameters: {
       query?: never;
@@ -913,6 +984,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/coach/workbench/queues/expiring': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List expiring engagement work */
+    get: operations['listWorkbenchExpiringQueue'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/coach/clients/invite': {
     parameters: {
       query?: never;
@@ -967,6 +1055,26 @@ export interface paths {
      * @description Verifies an email confirmation token or email OTP and returns auth tokens.
      */
     post: operations['verifyAuth'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/coach/form-assignments/{id}/remind': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Send an Intake reminder
+     * @description Sends a reminder without changing the assignment status or Workbench queue membership.
+     */
+    post: operations['remindClientFormAssignment'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1105,7 +1213,7 @@ export interface paths {
     };
     /**
      * Workbench queue counts
-     * @description Total items remaining in each workbench queue (work left, not unreads): unreviewed check-in submissions, clients needing programming, subscriptions expiring within 7 days, and clients in onboarding.
+     * @description Total items remaining in each explicit workbench queue (work left, not unread indicators).
      */
     get: operations['getWorkbenchCounts'];
     put?: never;
@@ -1684,6 +1792,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/coach/workbench/queues/check-ins': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List check-in submissions awaiting review */
+    get: operations['listWorkbenchCheckInQueue'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/coach/billing/checkout': {
     parameters: {
       query?: never;
@@ -1864,6 +1989,23 @@ export interface paths {
      * @description Creates a recipe in the authenticated business.
      */
     post: operations['createRecipe'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/coach/workbench/queues/replies': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List conversations awaiting a coach response */
+    get: operations['listWorkbenchRepliesQueue'];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -2383,6 +2525,13 @@ export interface components {
       serving_sizes?: components['schemas']['FoodServingSize'][];
       sugar_g_per_100g?: number | null;
     };
+    /** ReplyNeededReason */
+    ReplyNeededReason: {
+      /** @enum {string} */
+      code: 'reply_needed';
+      /** Format: date-time */
+      waiting_since: string;
+    };
     /** NutritionMealItemListResponse */
     NutritionMealItemListResponse: {
       data: components['schemas']['NutritionMealItem'][];
@@ -2394,6 +2543,21 @@ export interface components {
     /** TrainingEquipmentListResponse */
     TrainingEquipmentListResponse: {
       data: components['schemas']['TrainingEquipment'][];
+    };
+    /** WorkbenchCheckInAssignment */
+    WorkbenchCheckInAssignment: {
+      /** Format: uuid */
+      client_id: string;
+      /** Format: date */
+      due_date: string | null;
+      /** Format: uuid */
+      form_template_id: string;
+      /** Format: uuid */
+      id: string;
+      /** @enum {string} */
+      purpose: 'check_in';
+      /** @enum {string} */
+      status: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
     };
     /**
      * TrainingPlanAssignRequest
@@ -2413,6 +2577,11 @@ export interface components {
     /** FoodLogEntryListResponse */
     FoodLogEntryListResponse: {
       data: components['schemas']['FoodLogEntry'][];
+    };
+    /** WorkbenchRepliesQueueResponse */
+    WorkbenchRepliesQueueResponse: {
+      count: number;
+      data: components['schemas']['WorkbenchRepliesQueueItem'][];
     };
     /** ClientProfileFormAssignmentResponse */
     ClientProfileFormAssignmentResponse: {
@@ -2465,9 +2634,21 @@ export interface components {
     TrainingScheduleResponse: {
       data: components['schemas']['TrainingSchedule'];
     };
+    /** MarkHandledRequest */
+    MarkHandledRequest: {
+      /** Format: date-time */
+      expected_last_message_at: string;
+    };
     /** TrainingSessionResponse */
     TrainingSessionResponse: {
       data: components['schemas']['TrainingSession'];
+    };
+    /** EngagementEndingSoonReason */
+    EngagementEndingSoonReason: {
+      /** @enum {string} */
+      code: 'engagement_ending_soon';
+      /** Format: date */
+      ends_on: string;
     };
     /** RecipeIngredientRequest */
     RecipeIngredientRequest: {
@@ -2483,6 +2664,10 @@ export interface components {
       count: number;
       data: components['schemas']['ClientTrainingPlan'][];
     };
+    /** WorkbenchOnboardingReason */
+    WorkbenchOnboardingReason:
+      | components['schemas']['InvitationFollowUpDueReason']
+      | components['schemas']['IntakeOverdueReason'];
     /** TrainingPlanListResponse */
     TrainingPlanListResponse: {
       count: number;
@@ -2593,6 +2778,15 @@ export interface components {
           attachment_ids: string[];
           body?: string | null;
         };
+    /** CheckInAwaitingReviewReason */
+    CheckInAwaitingReviewReason: {
+      /** @enum {string} */
+      code: 'check_in_awaiting_review';
+      /** Format: uuid */
+      submission_id: string;
+      /** Format: date-time */
+      submitted_at: string;
+    };
     /** NutritionDayListResponse */
     NutritionDayListResponse: {
       data: components['schemas']['NutritionDay'][];
@@ -2747,6 +2941,11 @@ export interface components {
       /** @enum {string} */
       type: 'form_submission';
     };
+    /** WorkbenchProgrammingQueueItem */
+    WorkbenchProgrammingQueueItem: {
+      client: components['schemas']['Client'];
+      reasons: components['schemas']['WorkbenchProgrammingReason'][];
+    };
     /** NutritionDayMeal */
     NutritionDayMeal: {
       /** Format: uuid */
@@ -2840,16 +3039,34 @@ export interface components {
     WorkbenchCounts: {
       /** @description Check-in submissions not yet reviewed */
       check_ins: number;
-      /** @description Active clients whose subscription ends within 7 days */
+      /** @description Active clients whose engagement ends within 14 days */
       expiring: number;
-      /** @description Clients added within 14 days, invites pending over 3 days, or intake incomplete */
-      new_clients: number;
-      /** @description Active clients with no plan in force, or whose last scheduled plan day is within 3 days */
-      programming: number;
-      /** @description Active clients who missed their last two scheduled training sessions, or whose latest check-in lapsed to missed. Schedule-aware — rest days never count. */
+      /** @description Clients with actionable onboarding work */
+      onboarding: number;
+      programming: components['schemas']['WorkbenchProgrammingCounts'];
+      /** @description Active clients whose latest already-due check-in is missed */
       quiet: number;
-      /** @description Conversations where the client sent the last message and the coach hasn't replied */
+      /** @description Conversations with an open waiting sequence for the coach */
       replies: number;
+    };
+    /**
+     * RequiredServices
+     * @enum {array}
+     */
+    RequiredServices: never[] | ['training'] | ['nutrition'] | ['training', 'nutrition'];
+    /** InvitationFollowUpDueReason */
+    InvitationFollowUpDueReason: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      code: 'invitation_follow_up_due';
+      /** Format: date-time */
+      follow_up_due_at: string;
+      /** Format: uuid */
+      invitation_id: string;
+      /** Format: date-time */
+      sent_at: string;
     };
     /**
      * ClientProfileFormTemplateUpdateRequest
@@ -2861,16 +3078,25 @@ export interface components {
     ClientProfileFormTemplateUpdateRequest: {
       name?: string;
       sections?: ({
-        questions: ({
-          id: string;
-          label: string;
-          options?: string[];
-          required?: boolean;
-          /** @enum {string} */
-          type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
-        } & {
-          [key: string]: unknown;
-        })[];
+        questions: (
+          | ({
+              id: string;
+              label: string;
+              options?: string[];
+              required?: boolean;
+              /** @enum {string} */
+              type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
+            } & {
+              [key: string]: unknown;
+            })
+          | {
+              id: string;
+              label: string;
+              required?: boolean;
+              /** @enum {string} */
+              type: 'service_type';
+            }
+        )[];
         title?: string;
       } & {
         [key: string]: unknown;
@@ -2893,16 +3119,25 @@ export interface components {
       /** Format: date-time */
       inserted_at: string;
       question_snapshot: ({
-        questions: ({
-          id: string;
-          label: string;
-          options?: string[];
-          required?: boolean;
-          /** @enum {string} */
-          type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
-        } & {
-          [key: string]: unknown;
-        })[];
+        questions: (
+          | ({
+              id: string;
+              label: string;
+              options?: string[];
+              required?: boolean;
+              /** @enum {string} */
+              type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
+            } & {
+              [key: string]: unknown;
+            })
+          | {
+              id: string;
+              label: string;
+              required?: boolean;
+              /** @enum {string} */
+              type: 'service_type';
+            }
+        )[];
         title?: string;
       } & {
         [key: string]: unknown;
@@ -3127,6 +3362,11 @@ export interface components {
       planned_calories?: number | null;
       rows: components['schemas']['MealLogDiaryRow'][];
     };
+    /** WorkbenchRepliesQueueItem */
+    WorkbenchRepliesQueueItem: {
+      conversation: components['schemas']['Conversation'];
+      reasons: components['schemas']['ReplyNeededReason'][];
+    };
     /** TrainerInvitationPreviewResponse */
     TrainerInvitationPreviewResponse: {
       data: {
@@ -3245,6 +3485,7 @@ export interface components {
       last_name?: string | null;
       notes?: string | null;
       phone?: string | null;
+      required_services?: components['schemas']['RequiredServicesNonEmpty'];
       /** @enum {string|null} */
       stage?: 'onboarding' | 'coaching' | null;
       /** @enum {string} */
@@ -3335,16 +3576,25 @@ export interface components {
       /** @enum {string} */
       purpose: 'intake' | 'check_in';
       sections: ({
-        questions: ({
-          id: string;
-          label: string;
-          options?: string[];
-          required?: boolean;
-          /** @enum {string} */
-          type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
-        } & {
-          [key: string]: unknown;
-        })[];
+        questions: (
+          | ({
+              id: string;
+              label: string;
+              options?: string[];
+              required?: boolean;
+              /** @enum {string} */
+              type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
+            } & {
+              [key: string]: unknown;
+            })
+          | {
+              id: string;
+              label: string;
+              required?: boolean;
+              /** @enum {string} */
+              type: 'service_type';
+            }
+        )[];
         title?: string;
       } & {
         [key: string]: unknown;
@@ -3444,7 +3694,7 @@ export interface components {
      */
     ClientProfileFormSubmissionRequest: {
       answers: {
-        [key: string]: unknown;
+        [key: string]: string | number | boolean | string[] | components['schemas']['ClientProfileServiceTypeAnswer'];
       };
     };
     /**
@@ -3607,6 +3857,18 @@ export interface components {
     TrainingExerciseCopyRequest: {
       name: string;
     };
+    /** ServiceCoverageMissingReason */
+    ServiceCoverageMissingReason: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      code: 'service_coverage_missing';
+      /** Format: date */
+      first_uncovered_on: string;
+      /** @enum {string} */
+      service: 'training' | 'nutrition';
+    };
     /** BillingSummary */
     BillingSummary: {
       /** @example 1 */
@@ -3649,13 +3911,15 @@ export interface components {
       last_message_at?: string | null;
       last_message_preview?: string | null;
       /**
-       * @description Who spoke last. `client` means the conversation is waiting on the coach (the Replies queue condition).
+       * @description Who spoke last in conversation history. Replies membership uses waiting_since.
        * @enum {string|null}
        */
       last_message_role?: 'coach' | 'client' | null;
       unread_count: number;
       /** Format: date-time */
       updated_at: string;
+      /** Format: date-time */
+      waiting_since: string | null;
     };
     /** TrainingExerciseRelation */
     TrainingExerciseRelation: {
@@ -3777,11 +4041,6 @@ export interface components {
     Client: {
       /** Format: uuid */
       assigned_coach_id?: string | null;
-      /**
-       * Format: date
-       * @description Last day either discipline has an active plan scheduled through; null when neither does
-       */
-      covered_until: string | null;
       /** Format: email */
       email: string | null;
       expiring_soon: boolean;
@@ -3795,25 +4054,24 @@ export interface components {
       inactive_reason: 'manual' | 'subscription_expired' | 'awaiting_seat' | null;
       /** Format: date-time */
       inserted_at: string;
-      intake_incomplete: boolean;
       /** Format: date-time */
       invitation_expires_at: string | null;
       /** Format: date-time */
       invitation_sent_at: string | null;
       invite_url: string | null;
+      /** Format: date-time */
+      joined_at: string | null;
       /**
        * Format: date-time
        * @description UTC time of the client's latest workout completion, food log, check-in submission, or weight entry
        */
       last_active_at: string | null;
       last_name: string | null;
-      needs_plan: boolean;
-      /** @description Active client with no plan in force, or whose last scheduled plan day (either discipline) is within 3 days with no successor */
-      needs_programming: boolean;
       notes: string | null;
       /** @description Name of the nutrition plan in force today. Null unless the request passed `include_plans=true`, and null when the client has none. */
       nutrition_plan_name?: string | null;
       phone: string | null;
+      required_services: components['schemas']['RequiredServices'];
       /** @enum {string} */
       stage: 'onboarding' | 'coaching';
       /** @enum {string} */
@@ -3826,6 +4084,15 @@ export interface components {
       training_plan_name?: string | null;
       /** Format: date-time */
       updated_at: string;
+    };
+    /** MissedCheckInReason */
+    MissedCheckInReason: {
+      /** Format: uuid */
+      assignment_id: string;
+      /** @enum {string} */
+      code: 'missed_check_in';
+      /** Format: date */
+      due_on: string;
     };
     /** NutritionMealItemResponse */
     NutritionMealItemResponse: {
@@ -3870,6 +4137,21 @@ export interface components {
       id: string;
       last_name: string;
     };
+    /** WorkbenchCheckInQueueResponse */
+    WorkbenchCheckInQueueResponse: {
+      count: number;
+      data: components['schemas']['WorkbenchCheckInQueueItem'][];
+    };
+    /** WorkbenchExpiringQueueResponse */
+    WorkbenchExpiringQueueResponse: {
+      count: number;
+      data: components['schemas']['WorkbenchExpiringQueueItem'][];
+    };
+    /** WorkbenchProgrammingQueueResponse */
+    WorkbenchProgrammingQueueResponse: {
+      count: number;
+      data: components['schemas']['WorkbenchProgrammingQueueItem'][];
+    };
     /**
      * ClientProfileFormAssignmentRequest
      * @example {
@@ -3879,6 +4161,10 @@ export interface components {
     ClientProfileFormAssignmentRequest: {
       /** Format: uuid */
       form_template_id: string;
+    };
+    /** ClientProfileServiceTypeAnswer */
+    ClientProfileServiceTypeAnswer: {
+      services: components['schemas']['RequiredServicesNonEmpty'];
     };
     /** LibraryMediaUpload */
     LibraryMediaUpload: {
@@ -3900,6 +4186,11 @@ export interface components {
       upload_url_expires_at: string;
       /** Format: uri */
       url: string | null;
+    };
+    /** WorkbenchOnboardingQueueResponse */
+    WorkbenchOnboardingQueueResponse: {
+      count: number;
+      data: components['schemas']['WorkbenchOnboardingQueueItem'][];
     };
     /** TrainingPlanPlannedSet */
     TrainingPlanPlannedSet: {
@@ -3981,6 +4272,17 @@ export interface components {
       /** @enum {string} */
       meal_slot?: 'breakfast' | 'morning_snack' | 'lunch' | 'afternoon_snack' | 'dinner' | 'evening_snack';
       position?: number;
+    };
+    /** WorkbenchCheckInSubmission */
+    WorkbenchCheckInSubmission: {
+      /** Format: uuid */
+      form_assignment_id: string;
+      /** Format: uuid */
+      id: string;
+      /** Format: date-time */
+      reviewed_at: string | null;
+      /** Format: date-time */
+      submitted_at: string;
     };
     /** NutritionPlanListResponse */
     NutritionPlanListResponse: {
@@ -4124,6 +4426,7 @@ export interface components {
       last_name?: string | null;
       notes?: string | null;
       phone?: string | null;
+      required_services?: components['schemas']['RequiredServices'];
     };
     /** NutritionDayTargets */
     NutritionDayTargets: {
@@ -4306,6 +4609,13 @@ export interface components {
     ConversationResponse: {
       data: components['schemas']['Conversation'];
     };
+    /** WorkbenchCheckInQueueItem */
+    WorkbenchCheckInQueueItem: {
+      assignment: components['schemas']['WorkbenchCheckInAssignment'];
+      client: components['schemas']['Client'];
+      reasons: components['schemas']['CheckInAwaitingReviewReason'][];
+      submission: components['schemas']['WorkbenchCheckInSubmission'];
+    };
     /**
      * ProspectUpdateRequest
      * @example {
@@ -4318,6 +4628,21 @@ export interface components {
       /** @enum {string} */
       status: 'new' | 'reviewing' | 'won' | 'lost';
     };
+    /**
+     * RequiredServicesNonEmpty
+     * @enum {array}
+     */
+    RequiredServicesNonEmpty: ['training'] | ['nutrition'] | ['training', 'nutrition'];
+    /** WorkbenchQuietQueueResponse */
+    WorkbenchQuietQueueResponse: {
+      count: number;
+      data: components['schemas']['WorkbenchQuietQueueItem'][];
+    };
+    /** WorkbenchProgrammingReason */
+    WorkbenchProgrammingReason:
+      | components['schemas']['ServiceNeverProgrammedReason']
+      | components['schemas']['ServiceCoverageMissingReason']
+      | components['schemas']['ServiceCoverageEndingSoonReason'];
     /**
      * NutritionMealItemRequest
      * @example {
@@ -4340,6 +4665,11 @@ export interface components {
     /** FoodLogEntryResponse */
     FoodLogEntryResponse: {
       data: components['schemas']['FoodLogEntry'];
+    };
+    /** WorkbenchQuietQueueItem */
+    WorkbenchQuietQueueItem: {
+      client: components['schemas']['Client'];
+      reasons: components['schemas']['MissedCheckInReason'][];
     };
     /** FoodLogEntry */
     FoodLogEntry: {
@@ -4384,6 +4714,18 @@ export interface components {
     /** AttachmentUploadResponse */
     AttachmentUploadResponse: {
       data: components['schemas']['AttachmentUpload'];
+    };
+    /** IntakeOverdueReason */
+    IntakeOverdueReason: {
+      /** Format: uuid */
+      assignment_id: string;
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      code: 'intake_overdue';
+      /** Format: date */
+      due_on: string;
     };
     /** TrainingMuscleListResponse */
     TrainingMuscleListResponse: {
@@ -4465,6 +4807,30 @@ export interface components {
       default_weight_unit?: 'kg' | 'lbs';
       handle: string;
       name: string;
+    };
+    /** ServiceCoverageEndingSoonReason */
+    ServiceCoverageEndingSoonReason: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      code: 'service_coverage_ending_soon';
+      /** Format: date */
+      coverage_ends_on: string;
+      /** Format: date */
+      first_uncovered_on: string;
+      /** @enum {string} */
+      service: 'training' | 'nutrition';
+    };
+    /** ServiceNeverProgrammedReason */
+    ServiceNeverProgrammedReason: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      code: 'service_never_programmed';
+      /** @enum {string} */
+      service: 'training' | 'nutrition';
     };
     /**
      * FoodCategoryListResponse
@@ -4618,6 +4984,11 @@ export interface components {
     PublicLandingPageResponse: {
       data: components['schemas']['PublicLandingPage'];
     };
+    /** WorkbenchOnboardingQueueItem */
+    WorkbenchOnboardingQueueItem: {
+      client: components['schemas']['Client'];
+      reasons: components['schemas']['WorkbenchOnboardingReason'][];
+    };
     /** WeightEntryListResponse */
     WeightEntryListResponse: {
       adherence?: {
@@ -4696,16 +5067,25 @@ export interface components {
       /** @description Submissions clients have made against this form */
       response_count?: number;
       sections: ({
-        questions: ({
-          id: string;
-          label: string;
-          options?: string[];
-          required?: boolean;
-          /** @enum {string} */
-          type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
-        } & {
-          [key: string]: unknown;
-        })[];
+        questions: (
+          | ({
+              id: string;
+              label: string;
+              options?: string[];
+              required?: boolean;
+              /** @enum {string} */
+              type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
+            } & {
+              [key: string]: unknown;
+            })
+          | {
+              id: string;
+              label: string;
+              required?: boolean;
+              /** @enum {string} */
+              type: 'service_type';
+            }
+        )[];
         title?: string;
       } & {
         [key: string]: unknown;
@@ -4884,6 +5264,11 @@ export interface components {
       unit?: string | null;
       weight_g?: number | null;
     };
+    /** WorkbenchExpiringQueueItem */
+    WorkbenchExpiringQueueItem: {
+      client: components['schemas']['Client'];
+      reasons: components['schemas']['EngagementEndingSoonReason'][];
+    };
     /** Prospect */
     Prospect: {
       answers: {
@@ -5025,6 +5410,12 @@ export interface components {
         state: 'pending' | 'used' | 'expired' | 'invalid';
       };
     };
+    /** WorkbenchProgrammingCounts */
+    WorkbenchProgrammingCounts: {
+      all: number;
+      nutrition: number;
+      training: number;
+    };
     /** CoachProfile */
     CoachProfile: {
       business: components['schemas']['CoachProfileBusiness'];
@@ -5054,7 +5445,7 @@ export interface components {
     /** ClientProfileFormSubmission */
     ClientProfileFormSubmission: {
       answers: {
-        [key: string]: unknown;
+        [key: string]: string | number | boolean | string[] | components['schemas']['ClientProfileServiceTypeAnswer'];
       };
       attachments: components['schemas']['Attachment'][];
       /** Format: uuid */
@@ -5064,16 +5455,25 @@ export interface components {
       /** Format: date-time */
       inserted_at: string;
       question_snapshot: ({
-        questions: ({
-          id: string;
-          label: string;
-          options?: string[];
-          required?: boolean;
-          /** @enum {string} */
-          type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
-        } & {
-          [key: string]: unknown;
-        })[];
+        questions: (
+          | ({
+              id: string;
+              label: string;
+              options?: string[];
+              required?: boolean;
+              /** @enum {string} */
+              type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
+            } & {
+              [key: string]: unknown;
+            })
+          | {
+              id: string;
+              label: string;
+              required?: boolean;
+              /** @enum {string} */
+              type: 'service_type';
+            }
+        )[];
         title?: string;
       } & {
         [key: string]: unknown;
@@ -5422,6 +5822,68 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SeatLimitError'];
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  markCoachConversationHandled: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Conversation id */
+        id: string;
+      };
+      cookie?: never;
+    };
+    /** @description Observed message timestamp */
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MarkHandledRequest'];
+      };
+    };
+    responses: {
+      /** @description Conversation marked handled */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A newer message exists */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
         };
       };
       /** @description Validation error */
@@ -6296,6 +6758,40 @@ export interface operations {
       };
     };
   };
+  listWorkbenchOnboardingQueue: {
+    parameters: {
+      query?: {
+        /** @description Offset */
+        offset?: number;
+        /** @description Limit (max 100) */
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Onboarding queue */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WorkbenchOnboardingQueueResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
   getCurrentBusiness: {
     parameters: {
       query?: never;
@@ -6482,8 +6978,6 @@ export interface operations {
         limit?: number;
         /** @description Client name, email, or phone */
         search?: string;
-        /** @description Only conversations where the client spoke last (the Replies queue), longest-waiting first */
-        waiting?: boolean;
       };
       header?: never;
       path?: never;
@@ -6877,6 +7371,40 @@ export interface operations {
       };
       /** @description Payment provider error */
       502: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  listWorkbenchQuietQueue: {
+    parameters: {
+      query?: {
+        /** @description Offset */
+        offset?: number;
+        /** @description Limit (max 100) */
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Quiet queue */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WorkbenchQuietQueueResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
         headers: {
           [name: string]: unknown;
         };
@@ -7359,6 +7887,51 @@ export interface operations {
       };
     };
   };
+  listWorkbenchProgrammingQueue: {
+    parameters: {
+      query?: {
+        /** @description Offset */
+        offset?: number;
+        /** @description Limit (max 100) */
+        limit?: number;
+        /** @description Required service */
+        service?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Programming queue */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WorkbenchProgrammingQueueResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Invalid service */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
   updateNutritionPlanSchedule: {
     parameters: {
       query?: never;
@@ -7778,6 +8351,40 @@ export interface operations {
       };
     };
   };
+  listWorkbenchExpiringQueue: {
+    parameters: {
+      query?: {
+        /** @description Offset */
+        offset?: number;
+        /** @description Limit (max 100) */
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Expiring queue */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WorkbenchExpiringQueueResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
   inviteClient: {
     parameters: {
       query?: never;
@@ -7919,6 +8526,54 @@ export interface operations {
       };
       /** @description Token expired */
       410: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  remindClientFormAssignment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Form assignment id */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Reminder sent */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not found */
+      404: {
         headers: {
           [name: string]: unknown;
         };
@@ -9256,8 +9911,6 @@ export interface operations {
         sort?: 'newest' | 'last_active';
         /** @description Include each client's in-force training and nutrition plan names. Off by default — it costs two extra queries per page and only the clients list renders them. */
         include_plans?: boolean;
-        /** @description Restrict to one workbench queue. `programming`: active clients with no plan in force or coverage ending within 3 days (no-plan first, then soonest end). `expiring`: subscriptions ending within 7 days, minus snoozed (soonest first). `new`: added within 14 days, invite pending over 3 days, or intake incomplete (newest first). `quiet`: missed their last two scheduled sessions or latest check-in, minus snoozed (longest-quiet first). A queue imposes its own sort order. */
-        filter?: 'programming' | 'expiring' | 'new' | 'quiet';
       };
       header?: never;
       path?: never;
@@ -10213,6 +10866,40 @@ export interface operations {
       };
     };
   };
+  listWorkbenchCheckInQueue: {
+    parameters: {
+      query?: {
+        /** @description Offset */
+        offset?: number;
+        /** @description Limit (max 100) */
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Check-ins queue */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WorkbenchCheckInQueueResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
   checkoutBilling: {
     parameters: {
       query?: never;
@@ -10792,6 +11479,40 @@ export interface operations {
       };
       /** @description Validation error */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  listWorkbenchRepliesQueue: {
+    parameters: {
+      query?: {
+        /** @description Offset */
+        offset?: number;
+        /** @description Limit (max 100) */
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Replies queue */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WorkbenchRepliesQueueResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
         headers: {
           [name: string]: unknown;
         };

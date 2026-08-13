@@ -105,6 +105,12 @@ defmodule EasyWeb.Router do
     post "/prospects/:id/enroll", ProspectController, :enroll
 
     get "/workbench", WorkbenchController, :index
+    get "/workbench/queues/onboarding", WorkbenchController, :onboarding
+    get "/workbench/queues/programming", WorkbenchController, :programming
+    get "/workbench/queues/expiring", WorkbenchController, :expiring
+    get "/workbench/queues/quiet", WorkbenchController, :quiet
+    get "/workbench/queues/check-ins", WorkbenchController, :check_ins
+    get "/workbench/queues/replies", WorkbenchController, :replies
     put "/clients/:id/queue-snooze", WorkbenchController, :snooze
 
     post "/clients/invite", ClientController, :invite
@@ -140,6 +146,7 @@ defmodule EasyWeb.Router do
     post "/clients/:client_id/form-assignments", FormAssignmentController, :create
     get "/form-assignments/:id/submissions", FormAssignmentController, :submissions
     patch "/form-assignments/:id", FormAssignmentController, :update
+    post "/form-assignments/:id/remind", FormAssignmentController, :remind
 
     # Client-scoped plan lists
     get "/clients/:client_id/training-plans", ClientPlanController, :training_plans
@@ -228,6 +235,7 @@ defmodule EasyWeb.Router do
     get "/conversations/:id/messages", ConversationController, :messages
     post "/conversations/:id/messages", ConversationController, :create_message
     post "/conversations/:id/read", ConversationController, :mark_read
+    post "/conversations/:id/mark-handled", ConversationController, :mark_handled
     get "/clients/:client_id/conversation", ConversationController, :show_for_client
   end
 

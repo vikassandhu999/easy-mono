@@ -21,6 +21,10 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Error.not_found()})
   end
 
+  def call(conn, {:error, :conflict}) do
+    call(conn, {:error, Error.new(:conflict, "The resource changed since it was observed.", %{}, :conflict)})
+  end
+
   def call(conn, {:error, :unauthorized}) do
     call(conn, {:error, Error.unauthorized()})
   end
@@ -258,6 +262,18 @@ defmodule EasyWeb.FallbackController do
 
   def call(conn, {:error, :assignment_not_submittable}) do
     call(conn, {:error, Error.unprocessable(%{fields: %{status: ["cannot be submitted"]}})})
+  end
+
+  def call(conn, {:error, :invalid_intake_assignment}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{purpose: ["must be intake"]}})})
+  end
+
+  def call(conn, {:error, :invalid_service}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{service: ["is invalid"]}})})
+  end
+
+  def call(conn, {:error, :reminder_email_missing}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{email: ["client has no email address"]}})})
   end
 
   def call(conn, {:error, :storage_unavailable}) do

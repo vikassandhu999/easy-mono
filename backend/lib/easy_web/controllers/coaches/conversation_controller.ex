@@ -11,11 +11,12 @@ defmodule EasyWeb.Coaches.ConversationController do
     CoachChatMessageCreateRequest,
     ConversationListResponse,
     ConversationResponse,
-    ErrorResponse
+    ErrorResponse,
+    MarkHandledRequest
   }
 
   plug OpenApiSpex.Plug.CastAndValidate,
-       [json_render_error_v2: true] when action in [:create_message, :mark_read]
+       [json_render_error_v2: true] when action in [:create_message, :mark_read, :mark_handled]
 
   tags ["coach conversations"]
 
@@ -26,14 +27,7 @@ defmodule EasyWeb.Coaches.ConversationController do
     parameters: [
       Operation.parameter(:offset, :query, :integer, "Offset", required: false),
       Operation.parameter(:limit, :query, :integer, "Limit (max 20)", required: false),
-      Operation.parameter(:search, :query, :string, "Client name, email, or phone", required: false),
-      Operation.parameter(
-        :waiting,
-        :query,
-        :boolean,
-        "Only conversations where the client spoke last (the Replies queue), longest-waiting first",
-        required: false
-      )
+      Operation.parameter(:search, :query, :string, "Client name, email, or phone", required: false)
     ],
     responses: [
       ok: {"Conversations", "application/json", ConversationListResponse},
@@ -101,16 +95,30 @@ defmodule EasyWeb.Coaches.ConversationController do
       not_found: {"Not found", "application/json", ErrorResponse}
     ]
 
+  operation :mark_handled,
+    summary: "Mark the observed client-message sequence handled",
+    description: "Clears waiting_since only when the latest message still matches the supplied timestamp.",
+    operation_id: "markCoachConversationHandled",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Conversation id")],
+    request_body: {"Observed message timestamp", "application/json", MarkHandledRequest, required: true},
+    responses: [
+      no_content: "Conversation marked handled",
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"A newer message exists", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     opts =
       [
         offset: parse_int(params["offset"]),
         limit: parse_int(params["limit"]),
-        search: params["search"],
-        waiting: params["waiting"] == "true"
+        search: params["search"]
       ]
-      |> Enum.reject(fn {_k, v} -> v in [nil, false] end)
+      |> Enum.reject(fn {_k, v} -> is_nil(v) end)
 
     with {:ok, %{conversations: conversations, count: count}} <-
            Chat.list_conversations(conn.assigns.ctx, opts) do
@@ -160,6 +168,17 @@ defmodule EasyWeb.Coaches.ConversationController do
 
     with {:ok, conversation} <- Chat.mark_read(conn.assigns.ctx, id) do
       render(conn, :show, conversation: conversation)
+    end
+  end
+
+  @spec mark_handled(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def mark_handled(conn, _params) do
+    id = conn.path_params["id"]
+    expected_last_message_at = conn.body_params[:expected_last_message_at]
+
+    with {:ok, :handled} <-
+           Chat.mark_conversation_handled(conn.assigns.ctx, id, expected_last_message_at) do
+      send_resp(conn, :no_content, "")
     end
   end
 

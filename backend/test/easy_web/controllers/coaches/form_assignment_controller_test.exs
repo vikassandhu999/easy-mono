@@ -163,4 +163,87 @@ defmodule EasyWeb.Coaches.FormAssignmentControllerTest do
       assert json_response(conn, 404)
     end
   end
+
+  describe "POST /v1/coach/form-assignments/:id/remind" do
+    test "sends an Intake reminder without changing the assignment or queue membership", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client = insert(:client, business: business, creator: coach, joined_at: DateTime.utc_now(:second))
+      template = insert(:form_template, business: business, purpose: :intake)
+
+      assignment =
+        insert(:form_assignment,
+          business: business,
+          client: client,
+          form_template: template,
+          purpose: :intake,
+          status: :in_progress,
+          due_date: Date.add(Date.utc_today(), -1)
+        )
+
+      before_queue = get(conn, "/v1/coach/workbench/queues/onboarding")
+      assert %{"count" => 1} = json_response(before_queue, 200)
+
+      remind_conn = post(conn, "/v1/coach/form-assignments/#{assignment.id}/remind")
+      assert response(remind_conn, 204) == ""
+
+      reloaded = Easy.Repo.reload(assignment)
+      assert reloaded.status == assignment.status
+      assert reloaded.completed_at == assignment.completed_at
+      assert reloaded.due_date == assignment.due_date
+
+      after_queue = get(conn, "/v1/coach/workbench/queues/onboarding")
+      assert %{"count" => 1} = json_response(after_queue, 200)
+    end
+
+    test "404s for another business's assignment", %{conn: conn} do
+      assignment = insert(:form_assignment, purpose: :intake)
+
+      remind_conn = post(conn, "/v1/coach/form-assignments/#{assignment.id}/remind")
+
+      assert json_response(remind_conn, 404)
+    end
+
+    test "422s for a non-Intake assignment", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, business: business, creator: coach)
+      template = insert(:form_template, business: business, purpose: :check_in)
+
+      assignment =
+        insert(:form_assignment,
+          business: business,
+          client: client,
+          form_template: template,
+          purpose: :check_in
+        )
+
+      remind_conn = post(conn, "/v1/coach/form-assignments/#{assignment.id}/remind")
+
+      assert %{"error_detail" => %{"fields" => %{"purpose" => ["must be intake"]}}} =
+               json_response(remind_conn, 422)
+    end
+
+    test "422s when the client has no reminder email", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client = insert(:client, business: business, creator: coach, email: nil)
+      template = insert(:form_template, business: business, purpose: :intake)
+
+      assignment =
+        insert(:form_assignment,
+          business: business,
+          client: client,
+          form_template: template,
+          purpose: :intake
+        )
+
+      remind_conn = post(conn, "/v1/coach/form-assignments/#{assignment.id}/remind")
+
+      assert %{"error_detail" => %{"fields" => %{"email" => ["client has no email address"]}}} =
+               json_response(remind_conn, 422)
+    end
+  end
 end

@@ -2,31 +2,31 @@
 
 Date: 2026-08-14
 Branch: `ui-quality/coachapp-2026-08-10`
-Status: in progress
+Status: passed
 
 ## Baseline
 
-* Worktree clean at `c28d972` when the ticket started.
-* Existing AXI session retained a service-worker-backed CoachApp tab and its prior query cache.
-* CoachApp, ClientApp, and the backend were not listening on ports 2021, 1314, and 4000. The cached CoachApp tab supports layout/state inspection, but no fresh requests or mutations; ClientApp could not be reopened offline.
+* Worktree clean at `c28d972` when the ticket started; later unrelated chat/conversation formatting changes remained user-owned and were excluded from ticket commits.
+* The existing authenticated AXI session was reused. Once the user-owned CoachApp, ClientApp, and backend were live, all required requests and mutations were exercised against ports 2021, 1314, and 4000.
+* Every viewport was proved through browser `innerWidth` plus a horizontal-overflow probe; device emulation, not window resize alone, supplied the real 375px and 1280px widths.
 
 ## Route coverage
 
 | route | role | viewport | states covered | result | finding ids |
 | --- | --- | --- | --- | --- | --- |
-| Clients / Check-ins | coach | 375×780 | cached empty state; overflow probe | layout passed; action blocked offline | T18-B1 |
-| Clients / Check-ins | coach | 1280×800 | cached empty state; overflow probe | layout passed; action blocked offline | T18-B1 |
-| Clients / Replies | coach | 375×780 | cached empty state; one-owner responsive surface; overflow probe | layout passed; populated/action state blocked offline | T18-B1 |
-| Clients / Replies | coach | 1280×800 | cached empty state; split surface; overflow probe | layout passed; populated/action state blocked offline | T18-B1 |
+| Clients / Check-ins | coach | 375×780 | empty and populated row; Review navigation; overflow probe | passed | — |
+| Clients / Check-ins | coach | 1280×800 | populated row; Mark reviewed; count/list drain; overflow probe | passed | — |
+| Clients / Replies | coach | 375×780 | socket-created row; inline task pane; confirmation; Mark handled drain; overflow probe | passed | — |
+| Clients / Replies | coach | 1280×800 | populated split surface; selected facts/message/actions; overflow probe | passed | — |
 | Clients / Programming | coach | 375×780 | populated groups, filters, full reason facts, actions; overflow probe | passed | — |
 | Clients / Programming | coach | 1280×800 | populated groups, filters, full reason facts, actions; overflow probe | passed | — |
-| Clients / Expiring | coach | 375×780 | cached empty state; overflow probe | layout passed; action blocked offline | T18-B1 |
-| Clients / Expiring | coach | 1280×800 | cached empty state; overflow probe | layout passed; action blocked offline | T18-B1 |
-| Clients / Quiet | coach | 375×780 | cached empty state; overflow probe | layout passed; action blocked offline | T18-B1 |
-| Clients / Quiet | coach | 1280×800 | cached empty state; overflow probe | layout passed; action blocked offline | T18-B1 |
-| Clients / Onboarding | coach | 375×780 | populated intake-overdue row, mobile identity/action layout; overflow probe | layout passed; reminder blocked offline | T18-B1 |
-| Clients / Onboarding | coach | 1280×800 | populated intake-overdue row, desktop layout; overflow probe | layout passed; reminder blocked offline | T18-B1 |
-| Intake service answer | client | 375×780 | none | blocked: ClientApp and backend offline, prior tab unavailable | T18-B1 |
+| Clients / Expiring | coach | 375×780 | populated renewal row; snooze menu/mutation/drain; overflow probe | passed | — |
+| Clients / Expiring | coach | 1280×800 | populated renewal row; Renew access dialog; overflow probe | passed | — |
+| Clients / Quiet | coach | 375×780 | populated missed-check-in row; overflow probe | passed | — |
+| Clients / Quiet | coach | 1280×800 | Message navigation; snooze menu/mutation/drain; overflow probe | passed | — |
+| Clients / Onboarding | coach | 375×780 | intake-overdue row; reminder confirmation/mutation; row retained; overflow probe | passed | — |
+| Clients / Onboarding | coach | 1280×800 | populated accepted layout and reason facts; overflow probe | passed | — |
+| Intake service answer | client | 375×780 | empty validation; Training + Nutrition selection; submission; completed answer review | passed after T18-04 | T18-04 |
 
 ## Findings
 
@@ -50,6 +50,35 @@ The production Workbench queue registry still used `new` for URL/view state afte
 
 ### T18-B1 — Fresh live-flow verification unavailable
 
-Classification: environment blocker. Status: open.
+Classification: environment blocker. Status: resolved.
 
-CoachApp, ClientApp, and backend ports were all offline. The existing CoachApp service-worker tab allowed cached layout inspection at both required viewports, including populated Programming and Onboarding states, but it cannot prove fresh network behavior or mutations. Replies populated/drain, Check-ins review, Expiring/Quiet actions, Onboarding reminder, and ClientApp Intake submission still require the user-owned dev servers.
+The user-owned servers became available. All previously blocked routes, populated states, and mutations were re-run live; successful queue requests used only the explicit Workbench endpoints. Mark handled, Check-in review, both snoozes, and the Intake reminder returned successful responses and reconciled their list/count state.
+
+### T18-04 — Intake validation stayed stale after the answer became valid
+
+Classification: behavioral/validation defect. Status: fixed.
+
+Submitting the temporary Intake without a required service correctly rendered `Please answer all required questions.`, but selecting Training and Nutrition left that error visible until another submit. `FillForm` only cleared its local error after a fully valid submit. The shared answer update now clears stale validation immediately. The original browser probe failed before the change and passed afterward (`staleError: false`) at 375px. This is the same defect class already documented by RM-150.
+
+### T18-05 — Reload attempted the first socket handshake with an expired token
+
+Classification: behavioral/realtime defect. Status: fixed and verified.
+
+After the access token expired, a CoachApp reload synchronously connected the socket before HTTP middleware refreshed storage, producing an avoidable `403`; the existing `onError` refresh eventually recovered and the socket reached `open`. CoachApp and ClientApp now refresh a stale token before their first socket handshake while retaining the error-path recovery for later reconnects.
+
+The HTTP middleware and socket now use one shared in-flight refresh promise per app, preventing
+duplicate refreshes during reload. Forced stale-token replays on CoachApp and ClientApp each showed
+exactly one `POST /v1/auth/token` returning `200`, a restored roughly five-minute expiry, no console
+errors, and an `open` Phoenix socket.
+
+## Live mutation evidence
+
+* Replies: a ClientApp message appeared through the CoachApp socket, incrementing Replies/Today; confirmed Mark handled returned `204`, drained the row, and restored the count.
+* Check-ins: a previously reviewed verification submission was temporarily reopened, rendered at both widths, and Mark reviewed returned `200`, navigated back with feedback, and drained the count.
+* Expiring and Quiet: reversible fixtures rendered at both widths; Renew/Message opened the correct destinations; 1-week snoozes returned `204` and drained list/count state.
+* Onboarding: the Intake reminder confirmation named Riley, the form, and due date; the `204` reminder preserved the actionable row as designed.
+* ClientApp Intake: a temporary one-question Intake proved required validation, both-service submission shape, completion, and friendly `Training · Nutrition` review rendering.
+
+## Fixture cleanup
+
+The temporary Intake submission/template were deleted and the original dismissed assignment restored. Quinn's original 30 Aug access end, Riley's original 20 Aug Quiet snooze, and Gina's original Check-in review timestamp/coach were restored. A direct read-only database audit confirmed zero temporary templates/submissions and zero Quinn Expiring snoozes. The test reply remains in Gina's existing verification conversation as durable messaging evidence; it was marked handled through the accepted UI.

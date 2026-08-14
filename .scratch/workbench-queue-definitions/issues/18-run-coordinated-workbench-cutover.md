@@ -1,7 +1,7 @@
 # Run the coordinated workbench cutover
 
 Type: task
-Status: in_progress
+Status: resolved
 Blocked by: 15, 16, 17
 Parent: [Coach workbench v1 delivery](../map.md)
 
@@ -28,3 +28,22 @@ Remove remaining superseded behavior and run the full backend, generated-contrac
 ## Acceptance
 
 The map destination is reached only when the full gate passes, no live compatibility layer remains, and the workbench can be drained through the accepted interactions without count/list drift.
+
+## Answer
+
+Completed the coordinated cutover with no runtime compatibility layer. Removed the retired
+`attention_facts`, generic queue filters/fields, `waiting=true`, and `new` route-state paths;
+aligned queue list/count facts and membership-changing cache invalidation; and retained only the
+canonical six Workbench resources and interactions.
+
+The full release gate passed: backend `mix precommit` (1,183 tests), representative query-plan
+checks, migrations, clean second OpenAPI generation, both frontend production builds, repository
+recurring-mistake/UI-contract checks, and diff hygiene. Live verification covered all six CoachApp
+queues at 375px and 1280px plus the ClientApp Intake service answer at 375px. Accepted mutations
+drained or retained rows exactly as specified without count drift, and all reversible fixtures were
+restored.
+
+The live pass also fixed two discrepancies: Intake validation now clears as soon as the required
+answer becomes valid, and both apps share a single token-refresh promise across HTTP and realtime
+startup. Forced stale-token reloads produced exactly one successful refresh request per app, no
+console errors or failed first handshake, and an open Phoenix socket.

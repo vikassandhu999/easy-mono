@@ -1,7 +1,7 @@
 # Coach workbench v1 delivery
 
 Label: wayfinder:map
-Status: active
+Status: resolved
 
 ## Destination
 
@@ -36,6 +36,7 @@ Ship the v1 coach workbench queue definitions across the backend, OpenAPI contra
 * [Implement required-services capture in the apps](./issues/15-implement-required-services-capture-in-the-apps.md) — Added generated-type Invite/edit capture, truthful Unclassified presentation, an Intake-only fixed builder question, and ClientApp Intake submission/review while excluding the question from Check-ins.
 * [Implement the accepted CoachApp queue interactions](./issues/16-implement-accepted-coachapp-queue-interactions.md) — Shipped all six explicit queue interactions, completed the Intake/Replies fact contract, restored the locked responsive layouts, and verified the populated CoachApp flows at mobile and desktop widths.
 * [Prove queue behavior and query plans](./issues/17-prove-queue-behavior-and-query-plans.md) — Completed the source-spec behavior matrix, added representative JSON query-plan checks, bounded Reply enrichment to the selected page, and corrected the generated Programming filter contract.
+* [Run the coordinated workbench cutover](./issues/18-run-coordinated-workbench-cutover.md) — Removed the final compatibility paths, passed the backend/contract/app/database/live-flow gate, fixed the Intake validation and socket-refresh discrepancies found live, restored verification fixtures, and reached the map destination without count/list drift.
 
 ## Not yet specified
 

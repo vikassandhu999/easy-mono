@@ -234,6 +234,26 @@ if rg -q "WorkbenchQueueId.*'new'|id: 'new'" "$workbench_queues"; then
   fail=1
 fi
 
+# RM-211 — socket creation stays synchronous for channel callers, but HTTP and
+# the first handshake share one short-lived-token refresh owner and promise.
+for socket_owner in "$COACH/api/socket.ts" "$CLIENT/api/socket.ts"; do
+  api_dir=${socket_owner%/socket.ts}
+  client_owner="$api_dir/client.ts"
+  refresh_owner="$api_dir/token-refresh.ts"
+  if ! rg -Fq "from '@/api/token-refresh'" "$socket_owner" || \
+     ! rg -Fq "from '@/api/token-refresh'" "$client_owner" || \
+     ! rg -Fq '/v1/auth/token' "$refresh_owner" || \
+     rg -Fq '/v1/auth/token' "$socket_owner" || \
+     rg -Fq '/v1/auth/token' "$client_owner"; then
+    echo "FAIL RM-211 — HTTP and socket must share one token refresh owner: $api_dir"
+    fail=1
+  fi
+  if ! rg -qU 'refreshTokenIfStale\(\)\.finally\(\(\) => \{[[:space:]]+if \(socket === nextSocket\) \{[[:space:]]+nextSocket\.connect\(\)' "$socket_owner"; then
+    echo "FAIL RM-211 — first socket connect must wait for token refresh: $socket_owner"
+    fail=1
+  fi
+done
+
 # RM-302 — a local .claude/skills/<name> shadows the plugin skill of the same
 # name and silently goes stale. Skills the mattpocock-skills plugin provides must
 # never be vendored into this repo.

@@ -1,9 +1,9 @@
 import {toast} from '@heroui/react';
 import createClient, {type Middleware} from 'openapi-fetch';
 
-import {clearTokens, getAccessToken, getRefreshToken, getTokenExpiresAt, setTokens} from '@/api/authStorage';
+import {clearTokens, getAccessToken} from '@/api/authStorage';
 import type {paths} from '@/api/schema';
-import {disconnectSocket} from '@/api/socket';
+import {refreshTokenIfNeeded} from '@/api/token-refresh';
 
 let baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 
@@ -47,42 +47,21 @@ const REFRESH_THRESHOLD_MS = 60_000;
 
 const forceLogout = () => {
   clearTokens();
-  disconnectSocket();
   toast.danger('Session expired. Please sign in again.');
   if (typeof window !== 'undefined') {
     window.location.assign('/login');
   }
 };
 
-let refreshPromise: null | Promise<void> = null;
-
 /** Refresh the access token when it's about to expire. Shared promise so concurrent requests refresh once. */
 async function refreshIfNeeded(): Promise<void> {
-  const expiresAt = getTokenExpiresAt();
-  const refreshToken = getRefreshToken();
-  const shouldRefresh = Boolean(expiresAt && refreshToken && expiresAt - Date.now() < REFRESH_THRESHOLD_MS);
-  if (!shouldRefresh) {
-    return;
+  const failure = await refreshTokenIfNeeded(baseURL, REFRESH_THRESHOLD_MS);
+  if (failure) {
+    // The server rejected the refresh token — the session is over. A network
+    // failure (fetch throws) is NOT a logout; the original request just fails.
+    forceLogout();
+    throw new ApiError(failure.status, failure.data);
   }
-
-  refreshPromise ??= (async () => {
-    const res = await fetch(`${baseURL}/v1/auth/token`, {
-      method: 'POST',
-      headers: {'content-type': 'application/json'},
-      body: JSON.stringify({grant_type: 'refresh_token', refresh_token: refreshToken}),
-    });
-    if (!res.ok) {
-      // The server rejected the refresh token — the session is over. A network
-      // failure (fetch throws) is NOT a logout; the original request just fails.
-      forceLogout();
-      throw new ApiError(res.status, await res.json().catch(() => null));
-    }
-    setTokens(await res.json());
-  })().finally(() => {
-    refreshPromise = null;
-  });
-
-  return refreshPromise;
 }
 
 const authMiddleware: Middleware = {

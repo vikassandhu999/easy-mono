@@ -895,6 +895,18 @@ cutover names one canonical resource, update production route state and discrimi
 locked prototypes and historical evidence stay unchanged. **Enforced by:** `just check-rm` rejects
 the retired `new` workbench id from the production queue registry.
 
+### RM-211 — Refresh an expiring access token before the first socket handshake
+HTTP auth middleware and Phoenix sockets start independently after a reload. Connecting the socket
+synchronously let it race the HTTP refresh with a stored five-minute token, producing a `403`
+before the error callback refreshed storage and a later retry recovered. Giving HTTP and socket
+separate refresh locks then produced duplicate refresh requests. Both apps create the socket
+synchronously for channel callers, but HTTP and socket await the same shared refresh promise before
+their request/first `connect()`; the socket error callback remains the recovery path for later
+disconnects. **Enforced by:** `just check-rm` requires both owners to import one refresh module,
+keeps the token endpoint in that module, and requires refresh before the first socket connect.
+**Verify by:** force the stored expiry into the past, reload, and assert exactly one successful
+token refresh, no console errors or failed first handshake, and an open socket.
+
 ## Deploy / ops
 
 ### RM-201 — Deployable frontends need documented + guarded build-time env

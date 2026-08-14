@@ -21,9 +21,9 @@ import {ClientSearchModal} from '@/@components/client-search-modal';
 import {ROUTES} from '@/@config/routes';
 import {useChannelEvent} from '@/@hooks/use-channel-event';
 import {useInstallPrompt} from '@/@hooks/use-install-prompt';
-import {conversationKeys, workbenchKeys} from '@/api/keys';
 import {useGetCoachProfileQuery} from '@/api/profile';
 import {useWorkbenchCountsQuery} from '@/api/workbench';
+import {workbenchMutationTargets} from '@/api/workbench-targets';
 import {hasWorkbenchAttention} from '@/clients/lib/workbench-queues';
 
 const ICON = 18;
@@ -170,9 +170,9 @@ export default function AppShell() {
   const qc = useQueryClient();
   useChannelEvent('inbox', 'conversation_updated', () => {
     // Payload is id-only; refetch over HTTP where visibility is enforced.
-    qc.invalidateQueries({queryKey: conversationKeys.lists()});
-    // A new message can flip the Replies queue either way.
-    qc.invalidateQueries({queryKey: workbenchKeys.counts()});
+    for (const queryKey of workbenchMutationTargets().afterConversationUpdate) {
+      qc.invalidateQueries({queryKey: [...queryKey]});
+    }
   });
 
   return (

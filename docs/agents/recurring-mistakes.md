@@ -888,6 +888,13 @@ toolbar/stretch/full-fact contract, one-owner Replies split surface, and absence
 **Verify by:** compare populated states at 375px and 1280px against the locked variant, including
 child `scrollWidth <= clientWidth` and a copy pass that leaves only user-facing facts/actions.
 
+### RM-210 — A breaking vocabulary cutover includes internal route state
+Removing an old API name while retaining it in a URL/query-state id leaves a live compatibility
+alias and lets bookmarks, analytics, and UI logic keep teaching the retired vocabulary. When a
+cutover names one canonical resource, update production route state and discriminated unions too;
+locked prototypes and historical evidence stay unchanged. **Enforced by:** `just check-rm` rejects
+the retired `new` workbench id from the production queue registry.
+
 ## Deploy / ops
 
 ### RM-201 — Deployable frontends need documented + guarded build-time env

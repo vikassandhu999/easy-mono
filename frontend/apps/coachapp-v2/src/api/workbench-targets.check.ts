@@ -10,6 +10,18 @@ function assertTrue(value: boolean, label: string) {
 const targets = workbenchMutationTargets();
 
 assertTrue(
+  targets.afterMembershipChange.some((key) => JSON.stringify(key) === JSON.stringify(workbenchKeys.all)),
+  'membership-changing writes invalidate every workbench queue and count',
+);
+assertTrue(
+  targets.afterConversationUpdate.some((key) => JSON.stringify(key) === JSON.stringify(workbenchKeys.all)),
+  'conversation events invalidate Replies membership and rows',
+);
+assertTrue(
+  targets.afterConversationUpdate.some((key) => JSON.stringify(key) === JSON.stringify(conversationKeys.lists())),
+  'conversation events invalidate inbox lists',
+);
+assertTrue(
   targets.afterQueueDrain.some((key) => JSON.stringify(key) === JSON.stringify(workbenchKeys.all)),
   'drain invalidates workbench root',
 );

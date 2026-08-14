@@ -226,6 +226,14 @@ if rg -q "from './queue-row'" "$onboarding_view" || \
   fail=1
 fi
 
+# RM-210 — a breaking vocabulary cutover includes internal URL/view state.
+# Onboarding is the only production name; `new` survives only in locked evidence.
+workbench_queues="$COACH/clients/lib/workbench-queues.ts"
+if rg -q "WorkbenchQueueId.*'new'|id: 'new'" "$workbench_queues"; then
+  echo "FAIL RM-210 — production workbench state still exposes the retired new queue name"
+  fail=1
+fi
+
 # RM-302 — a local .claude/skills/<name> shadows the plugin skill of the same
 # name and silently goes stale. Skills the mattpocock-skills plugin provides must
 # never be vendored into this repo.

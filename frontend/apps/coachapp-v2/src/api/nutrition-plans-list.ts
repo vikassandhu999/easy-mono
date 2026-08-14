@@ -16,6 +16,7 @@ import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack
 import {call, client} from '@/api/client';
 import {clientKeys, mealLogKeys, nutritionDayKeys, nutritionPlanKeys} from '@/api/keys';
 import type {components, paths} from '@/api/schema';
+import {workbenchMutationTargets} from '@/api/workbench-targets';
 
 const PAGE_SIZE = 20;
 
@@ -120,11 +121,10 @@ export function useCreateNutritionPlanMutation() {
  * The mutation owns every cache effect of a plan update — call sites never
  * invalidate. Screens that patch `detail(id)` optimistically (builder/edit)
  * keep doing so for instant UI; the invalidation here reconciles them.
- * Client keys are included because a plan update can flip client-visible
- * fields: archiving flips `needs_plan` (chips on the list, attention tab and
- * the open client detail), and a rename changes the plan-name columns on
- * client rows. The mutation doesn't know which client shows this plan, so
- * details are invalidated by prefix.
+ * Client keys are included because a plan rename changes the plan-name columns
+ * on client rows. Workbench keys reconcile Programming membership when coverage
+ * or status changes. The mutation doesn't know the assigned client, so both
+ * client and workbench caches are invalidated by prefix.
  */
 export function useUpdateNutritionPlanMutation() {
   const qc = useQueryClient();
@@ -138,6 +138,9 @@ export function useUpdateNutritionPlanMutation() {
       qc.invalidateQueries({queryKey: nutritionDayKeys.all});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
       qc.invalidateQueries({queryKey: clientKeys.details()});
+      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
+        qc.invalidateQueries({queryKey: [...queryKey]});
+      }
     },
   });
 }
@@ -153,6 +156,9 @@ export function useDeleteNutritionPlanMutation() {
       qc.invalidateQueries({queryKey: nutritionDayKeys.all});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
       qc.invalidateQueries({queryKey: clientKeys.details()});
+      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
+        qc.invalidateQueries({queryKey: [...queryKey]});
+      }
     },
   });
 }
@@ -169,8 +175,8 @@ export function useDuplicateNutritionPlanMutation() {
 
 /**
  * Invalidates template lists (assigned-client count), that client's plan list,
- * client lists (stat strip's "needs plan" flag), and the client detail —
- * assignment flips server-derived coverage and can auto-advance `stage`.
+ * client lists (plan-name chips), Programming queues, and the client detail —
+ * assignment changes coverage and can auto-advance `stage`.
  */
 export function useAssignNutritionPlanMutation() {
   const qc = useQueryClient();
@@ -183,6 +189,9 @@ export function useAssignNutritionPlanMutation() {
       qc.invalidateQueries({queryKey: nutritionDayKeys.all});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
       qc.invalidateQueries({queryKey: clientKeys.detail(body.client_id)});
+      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
+        qc.invalidateQueries({queryKey: [...queryKey]});
+      }
     },
   });
 }

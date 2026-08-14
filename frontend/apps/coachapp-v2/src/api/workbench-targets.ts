@@ -7,6 +7,8 @@ import {conversationKeys, workbenchKeys} from './keys.ts';
 export function workbenchMutationTargets() {
   return {
     afterMarkHandled: [workbenchKeys.all, conversationKeys.lists(), conversationKeys.forClients()] as const,
+    afterMembershipChange: [workbenchKeys.all] as const,
+    afterConversationUpdate: [conversationKeys.lists(), workbenchKeys.all] as const,
     afterQueueDrain: [workbenchKeys.all] as const,
     afterSnooze: [workbenchKeys.all] as const,
   };

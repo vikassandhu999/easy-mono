@@ -16,6 +16,7 @@ import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack
 import {call, client} from '@/api/client';
 import {clientKeys, trainingPlanKeys, trainingSessionKeys} from '@/api/keys';
 import type {components, paths} from '@/api/schema';
+import {workbenchMutationTargets} from '@/api/workbench-targets';
 
 const PAGE_SIZE = 20;
 
@@ -117,15 +118,17 @@ export function useUpdateTrainingPlanMutation() {
       ) as Promise<TrainingPlanResponse>,
     onSuccess: (_data, {id}) => {
       // The mutation owns every cache effect (see the nutrition twin for the
-      // full rationale): the plan's own entries, plus client keys because
-      // archiving flips `needs_plan` and a rename changes the plan-name
-      // columns on client rows. It doesn't know which client shows this
-      // plan, so client-scoped caches are invalidated by prefix.
+      // full rationale): the plan's own entries, client plan-name columns,
+      // and Programming membership. It doesn't know which client shows this
+      // plan, so client and workbench caches are invalidated by prefix.
       qc.invalidateQueries({queryKey: trainingPlanKeys.detail(id)});
       qc.invalidateQueries({queryKey: trainingPlanKeys.lists()});
       qc.invalidateQueries({queryKey: trainingPlanKeys.forClients()});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
       qc.invalidateQueries({queryKey: clientKeys.details()});
+      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
+        qc.invalidateQueries({queryKey: [...queryKey]});
+      }
     },
   });
 }
@@ -140,6 +143,9 @@ export function useDeleteTrainingPlanMutation() {
       qc.invalidateQueries({queryKey: trainingPlanKeys.forClients()});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
       qc.invalidateQueries({queryKey: clientKeys.details()});
+      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
+        qc.invalidateQueries({queryKey: [...queryKey]});
+      }
     },
   });
 }
@@ -172,9 +178,12 @@ export function useAssignTrainingPlanMutation() {
     onSuccess: (_data, {body}) => {
       qc.invalidateQueries({queryKey: trainingPlanKeys.forClient(body.client_id)});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
-      // Assignment flips the server-derived `needs_plan` chip and can
-      // auto-advance `stage` on the open client screen.
+      // Assignment changes Programming membership and can auto-advance
+      // `stage` on the open client screen.
       qc.invalidateQueries({queryKey: clientKeys.detail(body.client_id)});
+      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
+        qc.invalidateQueries({queryKey: [...queryKey]});
+      }
     },
   });
 }

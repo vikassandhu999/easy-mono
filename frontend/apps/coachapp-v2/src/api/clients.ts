@@ -1,9 +1,10 @@
 import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
-import {billingKeys, clientKeys, workbenchKeys} from '@/api/keys';
+import {billingKeys, clientKeys} from '@/api/keys';
 import type {components, paths} from '@/api/schema';
 import {ApiResponse} from '@/api/shared';
+import {workbenchMutationTargets} from '@/api/workbench-targets';
 
 const PAGE_SIZE = 20;
 
@@ -100,7 +101,9 @@ export function useInviteClientMutation() {
       call(client.POST('/v1/coach/clients/invite', {body})) as Promise<ApiResponse<Client>>,
     onSuccess: () => {
       qc.invalidateQueries({queryKey: clientKeys.lists()});
-      qc.invalidateQueries({queryKey: workbenchKeys.all});
+      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
+        qc.invalidateQueries({queryKey: [...queryKey]});
+      }
       qc.invalidateQueries({queryKey: billingKeys.all});
     },
   });
@@ -114,7 +117,9 @@ export function useResendClientInviteMutation() {
     onSuccess: (_data, id) => {
       qc.invalidateQueries({queryKey: clientKeys.detail(id)});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
-      qc.invalidateQueries({queryKey: workbenchKeys.all});
+      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
+        qc.invalidateQueries({queryKey: [...queryKey]});
+      }
     },
   });
 }
@@ -126,6 +131,9 @@ export function useRevokeClientInviteMutation() {
     onSuccess: (_data, id) => {
       qc.removeQueries({queryKey: clientKeys.detail(id)});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
+      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
+        qc.invalidateQueries({queryKey: [...queryKey]});
+      }
       qc.invalidateQueries({queryKey: billingKeys.all});
     },
   });
@@ -139,7 +147,9 @@ export function useUpdateClientMutation() {
     onSuccess: (_data, {id}) => {
       qc.invalidateQueries({queryKey: clientKeys.detail(id)});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
-      qc.invalidateQueries({queryKey: workbenchKeys.all});
+      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
+        qc.invalidateQueries({queryKey: [...queryKey]});
+      }
       qc.invalidateQueries({queryKey: billingKeys.all});
     },
   });

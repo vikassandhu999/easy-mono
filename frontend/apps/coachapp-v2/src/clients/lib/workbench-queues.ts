@@ -20,7 +20,7 @@ import {workbenchCount} from './workbench-counts';
  * can never drift apart across surfaces (workbench spec §9).
  */
 
-export type WorkbenchQueueId = 'check-ins' | 'expiring' | 'new' | 'programming' | 'quiet' | 'replies';
+export type WorkbenchQueueId = 'check-ins' | 'expiring' | 'onboarding' | 'programming' | 'quiet' | 'replies';
 
 export type QueueDef = {
   countKey: keyof WorkbenchCounts;
@@ -87,7 +87,7 @@ export const TODAY_QUEUES: QueueDef[] = [
     countKey: 'onboarding',
     definition: 'Invitations and overdue intakes requiring action',
     icon: UserPlus,
-    id: 'new',
+    id: 'onboarding',
     label: 'Onboarding',
     meta: (n) => `${n} requiring action`,
     muted: true,

@@ -114,9 +114,10 @@ defmodule EasyWeb.OpenApi.Schemas.IntakeOverdueReason do
     properties: %{
       code: %Schema{type: :string, enum: ["intake_overdue"]},
       assignment_id: %Schema{type: :string, format: :uuid},
-      due_on: %Schema{type: :string, format: :date}
+      due_on: %Schema{type: :string, format: :date},
+      form_title: %Schema{type: :string, description: "Name of the assigned Intake form template"}
     },
-    required: [:code, :assignment_id, :due_on]
+    required: [:code, :assignment_id, :due_on, :form_title]
   })
 end
 
@@ -464,9 +465,19 @@ defmodule EasyWeb.OpenApi.Schemas.WorkbenchRepliesQueueItem do
     additionalProperties: false,
     properties: %{
       conversation: Conversation,
+      waiting_message_count: %Schema{
+        type: :integer,
+        minimum: 0,
+        description: "Client messages in the current waiting sequence"
+      },
+      client_status: %Schema{
+        type: :string,
+        enum: ["active", "pending", "inactive"],
+        description: "Client lifecycle status; inactive clients remain actionable in Replies"
+      },
       reasons: %Schema{type: :array, items: ReplyNeededReason, minItems: 1}
     },
-    required: [:conversation, :reasons]
+    required: [:conversation, :waiting_message_count, :client_status, :reasons]
   })
 end
 

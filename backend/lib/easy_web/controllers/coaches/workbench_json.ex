@@ -52,7 +52,12 @@ defmodule EasyWeb.Coaches.WorkbenchJSON do
   def replies(%{items: items, count: count}) do
     data =
       Enum.map(items, fn item ->
-        %{conversation: ConversationJSON.data(item.conversation), reasons: item.reasons}
+        %{
+          conversation: ConversationJSON.data(item.conversation),
+          waiting_message_count: item.waiting_message_count,
+          client_status: item.client_status,
+          reasons: item.reasons
+        }
       end)
 
     %{data: data, count: count}

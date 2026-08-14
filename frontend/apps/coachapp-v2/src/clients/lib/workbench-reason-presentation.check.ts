@@ -5,6 +5,7 @@ import {
   presentProgrammingReason,
   presentQuietReason,
   presentReplyReason,
+  presentReplySequenceFacts,
   showCallUtility,
 } from './workbench-reason-presentation.ts';
 
@@ -40,10 +41,11 @@ assertEqual(
     assignment_id: 'asg-1',
     code: 'intake_overdue',
     due_on: '2026-08-11',
+    form_title: 'New client intake',
   }),
   {
     action: 'Send reminder',
-    description: 'Due 11 Aug',
+    description: 'New client intake · due 11 Aug',
     title: 'Intake overdue',
   },
   'intake reason',
@@ -141,6 +143,36 @@ assertEqual(
     title: 'Reply needed',
   },
   'reply',
+);
+
+assertEqual(
+  presentReplySequenceFacts({clientStatus: 'active', unreadCount: 2, waitingMessageCount: 1}),
+  {
+    messageCountLabel: '1 client message in this waiting sequence',
+    rowFacts: '1 message · Unread',
+    statusFacts: 'Unread',
+  },
+  'active unread reply sequence',
+);
+
+assertEqual(
+  presentReplySequenceFacts({clientStatus: 'inactive', unreadCount: 0, waitingMessageCount: 3}),
+  {
+    messageCountLabel: '3 client messages in this waiting sequence',
+    rowFacts: '3 messages · Read · Inactive',
+    statusFacts: 'Read · Inactive',
+  },
+  'inactive read reply sequence',
+);
+
+assertEqual(
+  presentReplySequenceFacts({clientStatus: 'pending', unreadCount: 0, waitingMessageCount: 1}),
+  {
+    messageCountLabel: '1 client message in this waiting sequence',
+    rowFacts: '1 message · Read',
+    statusFacts: 'Read',
+  },
+  'pending reply sequence does not claim inactive',
 );
 
 console.log('workbench-reason-presentation: all checks passed');

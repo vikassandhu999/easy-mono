@@ -1,10 +1,11 @@
 import {getInitials} from '@easy/utils';
-import {AlertDialog, Button, toast, useOverlayState} from '@heroui/react';
-import {Phone, UserPlus} from 'lucide-react';
+import {AlertDialog, Avatar, Button, Chip, Description, Label, toast, useOverlayState} from '@heroui/react';
+import {ClipboardList, Mail, Phone, UserPlus} from 'lucide-react';
 import {useState} from 'react';
+import {GridListItem} from 'react-aria-components';
 import {useNavigate} from 'react-router-dom';
 
-import BrowseListBox from '@/@components/browse-list-box';
+import BrowseListBox, {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 import {EmptyState} from '@/@components/empty-state';
 import {toastMutationError} from '@/@components/mutation-toast';
 import {ROUTES} from '@/@config/routes';
@@ -12,12 +13,20 @@ import {useInfiniteItems} from '@/@hooks/use-infinite-items';
 import {useRemindFormAssignmentMutation} from '@/api/checkins';
 import {useResendClientInviteMutation} from '@/api/clients';
 import {useOnboardingQueueInfiniteQuery, type WorkbenchOnboardingQueueItem} from '@/api/workbench';
-import {presentOnboardingReason, showCallUtility} from '@/clients/lib/workbench-reason-presentation';
-
-import {QueueRow} from './queue-row';
+import {
+  formatWorkbenchDate,
+  presentOnboardingReason,
+  showCallUtility,
+} from '@/clients/lib/workbench-reason-presentation';
 
 type PendingAction =
-  | {kind: 'intake'; item: WorkbenchOnboardingQueueItem; assignmentId: string; dueOn: string}
+  | {
+      kind: 'intake';
+      item: WorkbenchOnboardingQueueItem;
+      assignmentId: string;
+      dueOn: string;
+      formTitle: string;
+    }
   | {kind: 'invite'; item: WorkbenchOnboardingQueueItem; email: string};
 
 function clientName(item: WorkbenchOnboardingQueueItem): string {
@@ -56,43 +65,6 @@ export default function OnboardingView() {
     }
   };
 
-  const toRow = (item: WorkbenchOnboardingQueueItem) => {
-    const reason = item.reasons[0]!;
-    const presented = presentOnboardingReason(reason);
-    const name = clientName(item);
-    const phone = item.client.phone;
-
-    return {
-      action: presented.action,
-      id: item.client.id,
-      initials: getInitials(item.client.first_name, item.client.last_name) || '?',
-      name,
-      onAction: () => {
-        if (reason.code === 'intake_overdue') {
-          openConfirm({assignmentId: reason.assignment_id, dueOn: reason.due_on, item, kind: 'intake'});
-        } else {
-          openConfirm({email: item.client.email ?? 'their email', item, kind: 'invite'});
-        }
-      },
-      onOpen: () => navigate(ROUTES.CLIENT_DETAIL.replace(':id', item.client.id)),
-      subtitle: `${presented.title} · ${presented.description}`,
-      tone: reason.code === 'intake_overdue' ? ('warning' as const) : ('accent' as const),
-      trailing: showCallUtility(phone) ? (
-        <Button
-          aria-label={`Call ${name}`}
-          isIconOnly
-          onPress={() => {
-            window.location.href = `tel:${phone}`;
-          }}
-          size="sm"
-          variant="outline"
-        >
-          <Phone />
-        </Button>
-      ) : undefined,
-    };
-  };
-
   const pendingBusy = resend.isPending || remind.isPending;
 
   return (
@@ -113,12 +85,82 @@ export default function OnboardingView() {
         isLoading={list.isLoading || list.isFetchingNextPage}
         items={list.items}
         onRetry={list.refetch}
-        renderItem={(item) => (
-          <QueueRow
-            item={toRow(item)}
-            key={item.client.id}
-          />
-        )}
+        renderItem={(item) => {
+          const reason = item.reasons[0]!;
+          const presented = presentOnboardingReason(reason);
+          const name = clientName(item);
+          const phone = item.client.phone;
+          const requestAction = () => {
+            if (reason.code === 'intake_overdue') {
+              openConfirm({
+                assignmentId: reason.assignment_id,
+                dueOn: reason.due_on,
+                formTitle: reason.form_title,
+                item,
+                kind: 'intake',
+              });
+            } else {
+              openConfirm({email: item.client.email ?? 'their email', item, kind: 'invite'});
+            }
+          };
+
+          return (
+            <GridListItem
+              className={`${LIST_ITEM_CLASS} list-box-item mt-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 py-3 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center sm:px-4`}
+              id={item.client.id}
+              key={item.client.id}
+              onAction={() => navigate(ROUTES.CLIENT_DETAIL.replace(':id', item.client.id))}
+              textValue={name}
+            >
+              <Avatar
+                className="size-9 shrink-0"
+                size="md"
+              >
+                <Avatar.Fallback className="bg-warning-soft type-eyebrow font-semibold text-warning-text">
+                  {getInitials(item.client.first_name, item.client.last_name) || '?'}
+                </Avatar.Fallback>
+              </Avatar>
+
+              <div className="min-w-0">
+                <span className="flex min-w-0 flex-wrap items-center gap-2">
+                  <Label className="truncate type-body font-semibold text-foreground">{name}</Label>
+                  <Chip
+                    color={reason.code === 'intake_overdue' ? 'warning' : 'accent'}
+                    size="sm"
+                    variant="soft"
+                  >
+                    {reason.code === 'intake_overdue' ? <ClipboardList /> : <Mail />}
+                    {presented.title}
+                  </Chip>
+                </span>
+                <Description className="block truncate type-eyebrow text-muted">{presented.description}</Description>
+              </div>
+
+              <div className="col-span-2 flex flex-wrap justify-end gap-2 sm:col-span-1">
+                {showCallUtility(phone) ? (
+                  <Button
+                    aria-label={`Call ${name}`}
+                    isIconOnly
+                    onPress={() => {
+                      window.location.href = `tel:${phone}`;
+                    }}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Phone />
+                  </Button>
+                ) : null}
+                <Button
+                  onPress={requestAction}
+                  size="sm"
+                  variant="outline"
+                >
+                  {presented.action}
+                </Button>
+              </div>
+            </GridListItem>
+          );
+        }}
         skeletonAvatar
       />
 
@@ -144,7 +186,7 @@ export default function OnboardingView() {
             </AlertDialog.Header>
             <AlertDialog.Body>
               {pending?.kind === 'intake'
-                ? `Send ${clientName(pending.item)} a reminder for their intake due ${pending.dueOn}. Sending does not complete the intake.`
+                ? `Remind ${clientName(pending.item)} to complete “${pending.formTitle},” due ${formatWorkbenchDate(pending.dueOn)}. Sending a reminder will not mark the intake complete.`
                 : pending
                   ? `Resend ${clientName(pending.item)}'s invitation to ${pending.email}. Sending restarts the three-day follow-up clock.`
                   : null}

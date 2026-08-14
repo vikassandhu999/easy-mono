@@ -858,6 +858,19 @@ external row state, derive that state into every affected item (or use the colle
 controlled state) so both the previous and next rows invalidate. **Verify by:** select row A,
 then row B; exactly one detail is rendered and it is a descendant of row B.
 
+### RM-209 — A locked queue interaction keeps its queue-specific anatomy
+Ticket 16 had correct queue data and actions but partially flattened three accepted interactions
+into generic production chrome: Onboarding lost its two-column mobile identity/action layout,
+Programming put its filter inside the list, centered an intrinsic-width row, and truncated required
+mobile facts; Replies split one desktop task surface into two cards and then double-bordered it.
+Share data and behavior helpers, but
+do not replace a locked interaction's responsive structure with a generic row or card grammar,
+and do not ship prototype narration that explains the design decision to the end user.
+**Enforced by:** `scripts/check-rm.sh` pins the accepted Onboarding compact grid, Programming
+toolbar/stretch/full-fact contract, one-owner Replies split surface, and absence of known prototype-only narration.
+**Verify by:** compare populated states at 375px and 1280px against the locked variant, including
+child `scrollWidth <= clientWidth` and a copy pass that leaves only user-facing facts/actions.
+
 ## Deploy / ops
 
 ### RM-201 — Deployable frontends need documented + guarded build-time env

@@ -6,6 +6,7 @@ type ExpiringReason = components['schemas']['EngagementEndingSoonReason'];
 type QuietReason = components['schemas']['MissedCheckInReason'];
 type CheckInReason = components['schemas']['CheckInAwaitingReviewReason'];
 type ReplyReason = components['schemas']['ReplyNeededReason'];
+type ReplyClientStatus = components['schemas']['WorkbenchRepliesQueueItem']['client_status'];
 
 export type ReasonPresentation = {
   action: string;
@@ -36,7 +37,7 @@ export function presentOnboardingReason(reason: OnboardingReason): ReasonPresent
   if (reason.code === 'intake_overdue') {
     return {
       action: 'Send reminder',
-      description: `Due ${formatWorkbenchDate(reason.due_on)}`,
+      description: `${reason.form_title} · due ${formatWorkbenchDate(reason.due_on)}`,
       title: 'Intake overdue',
     };
   }
@@ -129,4 +130,24 @@ export function presentReplyReason(
     hours < 1 ? 'Waiting under an hour' : hours < 48 ? `Waiting ${hours}h` : `Waiting ${Math.floor(hours / 24)}d`;
 
   return {description, title: 'Reply needed'};
+}
+
+export function presentReplySequenceFacts({
+  clientStatus,
+  unreadCount,
+  waitingMessageCount,
+}: {
+  clientStatus: ReplyClientStatus;
+  unreadCount: number;
+  waitingMessageCount: number;
+}): {messageCountLabel: string; rowFacts: string; statusFacts: string} {
+  const readState = unreadCount === 0 ? 'Read' : 'Unread';
+  const inactive = clientStatus === 'inactive' ? 'Inactive' : null;
+  const messageCount = `${waitingMessageCount} message${waitingMessageCount === 1 ? '' : 's'}`;
+
+  return {
+    messageCountLabel: `${waitingMessageCount} client message${waitingMessageCount === 1 ? '' : 's'} in this waiting sequence`,
+    rowFacts: [messageCount, readState, inactive].filter(Boolean).join(' · '),
+    statusFacts: [readState, inactive].filter(Boolean).join(' · '),
+  };
 }

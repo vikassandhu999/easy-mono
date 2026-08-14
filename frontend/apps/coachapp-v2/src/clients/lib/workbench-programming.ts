@@ -24,6 +24,12 @@ const PRIORITY_LABEL: Record<ProgrammingPriorityId, string> = {
   never_programmed: 'Never programmed',
 };
 
+const PRIORITY_DESCRIPTION: Record<ProgrammingPriorityId, string> = {
+  coverage_lapsed: 'Coverage is already broken',
+  ending_soon: 'Prepare the successor plan',
+  never_programmed: 'Initial plans first',
+};
+
 export function filterProgrammingReasons(
   reasons: ProgrammingReason[],
   filter: ProgrammingServiceFilter,
@@ -37,6 +43,10 @@ export function programmingPriorityRank(reason: ProgrammingReason): number {
 
 export function programmingPriorityId(reason: ProgrammingReason): ProgrammingPriorityId {
   return PRIORITY[reason.code];
+}
+
+export function programmingGroupDescription(id: ProgrammingPriorityId): string {
+  return PRIORITY_DESCRIPTION[id];
 }
 
 /** Explicit Assign-plan navigation state for the matching Training/Nutrition tab. */

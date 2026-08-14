@@ -16,7 +16,7 @@ import AllClientsView from './all-clients-view';
 import CheckInsView from './check-ins-view';
 import {ExpiringView, QuietView} from './expiring-quiet-views';
 import OnboardingView from './onboarding-view';
-import ProgrammingView from './programming-view';
+import ProgrammingView, {ProgrammingToolbar} from './programming-view';
 import {WorkbenchRail} from './rail';
 import RepliesView from './replies-view';
 import {ViewShell} from './view-shell';
@@ -132,6 +132,7 @@ export default function WorkbenchScreen() {
       <ViewShell
         meta={queueMetaLine}
         title="Programming"
+        toolbar={<ProgrammingToolbar />}
       >
         <ProgrammingView />
       </ViewShell>

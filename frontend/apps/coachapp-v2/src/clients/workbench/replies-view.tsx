@@ -1,9 +1,9 @@
 import {getInitials} from '@easy/utils';
 import {
-  Alert,
   AlertDialog,
   Avatar,
   Button,
+  Chip,
   Description,
   Label,
   Surface,
@@ -12,7 +12,7 @@ import {
   useOverlayState,
 } from '@heroui/react';
 import {cn} from '@heroui/styles';
-import {Check, MessageCircle, Send} from 'lucide-react';
+import {Check, Eye, MessageCircle, Send, UserX} from 'lucide-react';
 import {useEffect, useState} from 'react';
 import {GridListItem} from 'react-aria-components';
 import {useNavigate} from 'react-router-dom';
@@ -26,7 +26,7 @@ import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {ApiError} from '@/api/client';
 import {useMarkCoachConversationReadMutation, useMarkConversationHandledMutation} from '@/api/conversations';
 import {useRepliesQueueInfiniteQuery, type WorkbenchRepliesQueueItem} from '@/api/workbench';
-import {presentReplyReason} from '@/clients/lib/workbench-reason-presentation';
+import {presentReplyReason, presentReplySequenceFacts} from '@/clients/lib/workbench-reason-presentation';
 
 function conversationName(item: WorkbenchRepliesQueueItem): string {
   return item.conversation.client_name || 'Client';
@@ -58,6 +58,45 @@ function TaskActions({
   );
 }
 
+function ConversationMeta({inactive, read, waiting}: {inactive: boolean; read: boolean; waiting: string}) {
+  return (
+    <span className="flex flex-wrap items-center gap-1.5">
+      <Chip
+        color="accent"
+        size="sm"
+        variant="soft"
+      >
+        {waiting}
+      </Chip>
+      {read ? (
+        <Chip
+          size="sm"
+          variant="soft"
+        >
+          <Eye /> Read
+        </Chip>
+      ) : (
+        <Chip
+          color="accent"
+          size="sm"
+          variant="primary"
+        >
+          Unread
+        </Chip>
+      )}
+      {inactive ? (
+        <Chip
+          color="warning"
+          size="sm"
+          variant="soft"
+        >
+          <UserX /> Inactive client
+        </Chip>
+      ) : null}
+    </span>
+  );
+}
+
 function SelectedTaskContent({
   item,
   onHandle,
@@ -67,37 +106,52 @@ function SelectedTaskContent({
 }) {
   const waiting = presentReplyReason(item.reasons[0]!).description;
   const read = item.conversation.unread_count === 0;
+  const inactive = item.client_status === 'inactive';
+  const facts = presentReplySequenceFacts({
+    clientStatus: item.client_status,
+    unreadCount: item.conversation.unread_count,
+    waitingMessageCount: item.waiting_message_count,
+  });
+  const name = conversationName(item);
 
   return (
     <>
-      <div className="flex flex-col gap-2 p-4">
-        <Typography
-          type="body"
-          weight="semibold"
-        >
-          {conversationName(item)}
-        </Typography>
-        <Typography
-          color="muted"
-          type="body-xs"
-        >
-          {waiting} · {read ? 'Read' : 'Unread'}
-        </Typography>
-        {item.conversation.last_message_preview ? (
-          <Typography type="body-sm">{item.conversation.last_message_preview}</Typography>
-        ) : null}
+      <div className="flex min-h-60 flex-col gap-4 p-4 sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <Avatar size="md">
+              <Avatar.Fallback>{getInitials(...name.split(/\s+/)) || '?'}</Avatar.Fallback>
+            </Avatar>
+            <div className="min-w-0">
+              <Typography
+                className="truncate"
+                type="h6"
+              >
+                {name}
+              </Typography>
+              <Typography
+                color="muted"
+                type="body-xs"
+              >
+                {facts.messageCountLabel}
+              </Typography>
+            </div>
+          </div>
+          <ConversationMeta
+            inactive={inactive}
+            read={read}
+            waiting={waiting}
+          />
+        </div>
+
+        <div className="flex flex-1 flex-col justify-end gap-2 rounded-panel bg-surface-secondary p-3">
+          {item.conversation.last_message_preview ? (
+            <Surface className="max-w-4/5 self-start rounded-card p-3">
+              <Typography type="body-sm">{item.conversation.last_message_preview}</Typography>
+            </Surface>
+          ) : null}
+        </div>
       </div>
-      <Alert
-        className="mx-4 mb-4"
-        status="accent"
-      >
-        <Alert.Content>
-          <Alert.Title>Waiting is separate from read state</Alert.Title>
-          <Alert.Description>
-            Opening this pane marked messages read. The task remains until you reply or explicitly handle it.
-          </Alert.Description>
-        </Alert.Content>
-      </Alert>
       <TaskActions
         item={item}
         onHandle={onHandle}
@@ -198,6 +252,11 @@ export default function RepliesView() {
         const waiting = presentReplyReason(item.reasons[0]!).description;
         const name = conversationName(item);
         const selectedRow = item.conversation.id === selected?.conversation.id;
+        const facts = presentReplySequenceFacts({
+          clientStatus: item.client_status,
+          unreadCount: item.conversation.unread_count,
+          waitingMessageCount: item.waiting_message_count,
+        });
         return (
           <GridListItem
             aria-current={selectedRow ? 'true' : undefined}
@@ -235,7 +294,7 @@ export default function RepliesView() {
                   {name}
                 </Label>
                 <Description className="truncate type-eyebrow text-muted">
-                  {[waiting, item.conversation.last_message_preview].filter(Boolean).join(' · ')}
+                  {waiting} · {facts.rowFacts}
                 </Description>
               </div>
             </Button>
@@ -276,9 +335,9 @@ export default function RepliesView() {
 
   return (
     <>
-      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-        <Surface className="overflow-hidden rounded-card border border-border">{queue}</Surface>
-        <Surface className="overflow-hidden rounded-card border border-border">
+      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        <div className="border-r border-border">{queue}</div>
+        <div className="min-w-0">
           {selected ? (
             <SelectedTaskContent
               item={selected}
@@ -291,7 +350,7 @@ export default function RepliesView() {
               title="Choose a reply"
             />
           )}
-        </Surface>
+        </div>
       </div>
       <HandleDialog
         confirm={confirm}

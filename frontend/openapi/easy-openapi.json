@@ -4731,6 +4731,17 @@
       "WorkbenchRepliesQueueItem": {
         "additionalProperties": false,
         "properties": {
+          "client_status": {
+            "description": "Client lifecycle status; inactive clients remain actionable in Replies",
+            "enum": [
+              "active",
+              "pending",
+              "inactive"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "conversation": {
             "$ref": "#/components/schemas/Conversation"
           },
@@ -4742,10 +4753,19 @@
             "type": "array",
             "x-struct": null,
             "x-validate": null
+          },
+          "waiting_message_count": {
+            "description": "Client messages in the current waiting sequence",
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
           }
         },
         "required": [
           "conversation",
+          "waiting_message_count",
+          "client_status",
           "reasons"
         ],
         "title": "WorkbenchRepliesQueueItem",
@@ -9759,12 +9779,19 @@
             "type": "string",
             "x-struct": null,
             "x-validate": null
+          },
+          "form_title": {
+            "description": "Name of the assigned Intake form template",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
           }
         },
         "required": [
           "code",
           "assignment_id",
-          "due_on"
+          "due_on",
+          "form_title"
         ],
         "title": "IntakeOverdueReason",
         "type": "object",

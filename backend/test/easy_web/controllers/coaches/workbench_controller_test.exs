@@ -175,7 +175,8 @@ defmodule EasyWeb.Coaches.WorkbenchControllerTest do
                %{
                  "code" => "intake_overdue",
                  "assignment_id" => assignment.id,
-                 "due_on" => Date.to_iso8601(assignment.due_date)
+                 "due_on" => Date.to_iso8601(assignment.due_date),
+                 "form_title" => template.name
                }
              ]
 
@@ -323,6 +324,8 @@ defmodule EasyWeb.Coaches.WorkbenchControllerTest do
       replies = get(conn, "/v1/coach/workbench/queues/replies")
       assert %{"count" => 1, "data" => [reply_item]} = json_response(replies, 200)
       assert reply_item["conversation"]["id"] == conversation.id
+      assert reply_item["client_status"] == "active"
+      assert reply_item["waiting_message_count"] == 0
       assert hd(reply_item["reasons"])["code"] == "reply_needed"
       assert_schema(json_response(replies, 200), "WorkbenchRepliesQueueResponse", EasyWeb.ApiSpec.spec())
     end

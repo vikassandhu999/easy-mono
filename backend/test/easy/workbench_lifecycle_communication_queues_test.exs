@@ -81,7 +81,12 @@ defmodule Easy.WorkbenchLifecycleCommunicationQueuesTest do
       assert intake_item.client.id == intake.id
 
       assert intake_item.reasons == [
-               %{code: :intake_overdue, assignment_id: assignment.id, due_on: assignment.due_date}
+               %{
+                 code: :intake_overdue,
+                 assignment_id: assignment.id,
+                 due_on: assignment.due_date,
+                 form_title: assignment.form_template.name
+               }
              ]
 
       assert invitation_item.client.id == invitation.id
@@ -279,10 +284,51 @@ defmodule Easy.WorkbenchLifecycleCommunicationQueuesTest do
       assert {:ok, %{count: 2, items: [first, second]}} =
                Workbench.list_replies_queue(owner_ctx(business))
 
-      assert Map.keys(first) |> Enum.sort() == [:conversation, :reasons]
+      assert Map.keys(first) |> Enum.sort() == [
+               :client_status,
+               :conversation,
+               :reasons,
+               :waiting_message_count
+             ]
+
       assert first.reasons == [%{code: :reply_needed, waiting_since: waiting_since}]
       assert first.conversation.id == waiting.id
+      assert first.client_status == :inactive
+      assert first.waiting_message_count == 0
       assert second.conversation.id == later.id
+      assert second.client_status == :active
+
+      insert(:chat_message,
+        conversation: waiting,
+        business: business,
+        sender_type: :client,
+        sender_id: inactive.user_id || inactive.id,
+        inserted_at: DateTime.add(waiting_since, 1, :hour),
+        updated_at: DateTime.add(waiting_since, 1, :hour)
+      )
+
+      insert(:chat_message,
+        conversation: waiting,
+        business: business,
+        sender_type: :client,
+        sender_id: inactive.user_id || inactive.id,
+        inserted_at: DateTime.add(waiting_since, 2, :hour),
+        updated_at: DateTime.add(waiting_since, 2, :hour)
+      )
+
+      # Outside the waiting sequence — must not count.
+      insert(:chat_message,
+        conversation: waiting,
+        business: business,
+        sender_type: :client,
+        sender_id: inactive.user_id || inactive.id,
+        inserted_at: DateTime.add(waiting_since, -1, :hour),
+        updated_at: DateTime.add(waiting_since, -1, :hour)
+      )
+
+      assert {:ok, %{items: [enriched | _]}} = Workbench.list_replies_queue(owner_ctx(business))
+      assert enriched.conversation.id == waiting.id
+      assert enriched.waiting_message_count == 2
     end
 
     test "keeps count/list parity, visibility, and drains after a coach reply" do

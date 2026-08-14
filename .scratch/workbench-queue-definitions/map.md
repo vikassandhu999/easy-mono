@@ -34,6 +34,7 @@ Ship the v1 coach workbench queue definitions across the backend, OpenAPI contra
 * [Build Expiring and Quiet queue facts](./issues/13-build-expiring-and-quiet-queue-facts.md) — Added shared reason-bearing Expiring and Check-in-only Quiet membership queries with canonical counts, snooze semantics, stable ordering, and the 14-day roster window.
 * [Cut over the workbench HTTP and OpenAPI contract](./issues/14-cut-over-workbench-http-and-openapi-contract.md) — Added six explicit typed queue resources, canonical Mark handled and Intake reminder commands, removed overloaded queue parameters and projections, and regenerated both frontend clients from the breaking contract.
 * [Implement required-services capture in the apps](./issues/15-implement-required-services-capture-in-the-apps.md) — Added generated-type Invite/edit capture, truthful Unclassified presentation, an Intake-only fixed builder question, and ClientApp Intake submission/review while excluding the question from Check-ins.
+* [Implement the accepted CoachApp queue interactions](./issues/16-implement-accepted-coachapp-queue-interactions.md) — Shipped all six explicit queue interactions, completed the Intake/Replies fact contract, restored the locked responsive layouts, and verified the populated CoachApp flows at mobile and desktop widths.
 
 ## Not yet specified
 

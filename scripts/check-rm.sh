@@ -206,6 +206,26 @@ check RM-207 "hand-assembled responsive form body (use FormPanel)" \
   "sm:rounded-card[^\"']{0,160}sm:border[^\"']{0,160}sm:bg-surface[^\"']{0,160}sm:p-6" \
   "$COACH" -g '!**/form-panel.tsx'
 
+# RM-209 — the accepted workbench variants deliberately have different
+# anatomy. These anchors prevent them from being flattened back into the
+# generic queue row / loose-card layouts that clipped or lost hierarchy.
+onboarding_view="$COACH/clients/workbench/onboarding-view.tsx"
+programming_view="$COACH/clients/workbench/programming-view.tsx"
+replies_view="$COACH/clients/workbench/replies-view.tsx"
+workbench_screen="$COACH/clients/workbench/workbench-screen.tsx"
+if rg -q "from './queue-row'" "$onboarding_view" || \
+   ! rg -Fq 'grid-cols-[auto_minmax(0,1fr)]' "$onboarding_view" || \
+   ! rg -Fq 'toolbar={<ProgrammingToolbar />}' "$workbench_screen" || \
+   ! rg -Fq 'items-stretch' "$programming_view" || \
+   ! rg -Fq 'programmingGroupDescription' "$programming_view" || \
+   rg -q '<span className="truncate">\{primary\.detail\}</span>' "$programming_view" || \
+   ! rg -Fq 'grid-cols-[minmax(0,2fr)_minmax(0,3fr)]' "$replies_view" || \
+   rg -q '<Surface className="grid min-h-0 flex-1 grid-cols-\[minmax\(0,2fr\)_minmax\(0,3fr\)\]' "$replies_view" || \
+   rg -q 'Waiting is separate from read state|Opening this pane marked messages read' "$replies_view"; then
+  echo "FAIL RM-209 — locked workbench queue anatomy drifted (see docs/agents/recurring-mistakes.md)"
+  fail=1
+fi
+
 # RM-302 — a local .claude/skills/<name> shadows the plugin skill of the same
 # name and silently goes stale. Skills the mattpocock-skills plugin provides must
 # never be vendored into this repo.

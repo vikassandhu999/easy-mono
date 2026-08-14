@@ -1,7 +1,7 @@
 # Implement the accepted CoachApp queue interactions
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 14
 Parent: [Coach workbench v1 delivery](../map.md)
 
@@ -34,3 +34,9 @@ Replace the live CoachApp workbench views with the accepted Onboarding, Programm
 ## Verification
 
 Run CoachApp lint and build, review lint writes, then verify every queue and draining action live at 375px and 1280px.
+
+## Answer
+
+Implemented the six accepted CoachApp queue interactions against the explicit workbench endpoints and generated OpenAPI contract. Onboarding now carries the Intake form title and confirmation facts; Replies carries sequence count, read/inactive state, conflict recovery, and the accepted responsive task pane; Programming preserves overlapping service filters, priority groups, full mobile facts, and direct Assign-plan navigation. Expiring, Quiet, and Check-ins retain their explicit drain/snooze behavior.
+
+The follow-up fidelity pass restored the locked queue-specific layouts, removed prototype-only narration, eliminated nested Replies framing, and prevented mobile Programming facts from clipping. Focused backend tests, full backend precommit (1,189 tests), CoachApp build/checks, generated API output, UI-contract gates, and live 375×780 / 1280×800 checks passed. Detailed evidence and remaining environment-only coverage limits are recorded in [`../verification/16-live-verification.md`](../verification/16-live-verification.md) and [`../verification/16-ui-retest-2026-08-14.md`](../verification/16-ui-retest-2026-08-14.md).

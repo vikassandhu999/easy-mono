@@ -2132,8 +2132,15 @@ export interface components {
     };
     /** WorkbenchRepliesQueueItem */
     WorkbenchRepliesQueueItem: {
+      /**
+       * @description Client lifecycle status; inactive clients remain actionable in Replies
+       * @enum {string}
+       */
+      client_status: 'active' | 'pending' | 'inactive';
       conversation: components['schemas']['Conversation'];
       reasons: components['schemas']['ReplyNeededReason'][];
+      /** @description Client messages in the current waiting sequence */
+      waiting_message_count: number;
     };
     /** TrainerInvitationPreviewResponse */
     TrainerInvitationPreviewResponse: {
@@ -3494,6 +3501,8 @@ export interface components {
       code: 'intake_overdue';
       /** Format: date */
       due_on: string;
+      /** @description Name of the assigned Intake form template */
+      form_title: string;
     };
     /** TrainingMuscleListResponse */
     TrainingMuscleListResponse: {

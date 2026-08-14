@@ -2,6 +2,7 @@ import {
   assignPlanHref,
   filterProgrammingReasons,
   groupProgrammingItems,
+  programmingGroupDescription,
   programmingPriorityRank,
 } from './workbench-programming.ts';
 
@@ -49,6 +50,10 @@ assertEqual(
 assertTrue(programmingPriorityRank(neverTraining) === 0, 'never rank');
 assertTrue(programmingPriorityRank(missingNutrition) === 1, 'missing rank');
 assertTrue(programmingPriorityRank(endingTraining) === 2, 'ending rank');
+
+assertEqual(programmingGroupDescription('never_programmed'), 'Initial plans first', 'never group description');
+assertEqual(programmingGroupDescription('coverage_lapsed'), 'Coverage is already broken', 'lapsed group description');
+assertEqual(programmingGroupDescription('ending_soon'), 'Prepare the successor plan', 'ending group description');
 
 assertTrue(assignPlanHref('client-1', 'training') === '/clients/client-1?tab=training&assign=plan', 'training href');
 assertTrue(assignPlanHref('client-2', 'nutrition') === '/clients/client-2?tab=nutrition&assign=plan', 'nutrition href');

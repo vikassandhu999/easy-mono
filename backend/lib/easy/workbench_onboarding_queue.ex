@@ -4,6 +4,7 @@ defmodule Easy.WorkbenchOnboardingQueue do
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Forms.FormAssignment
+  alias Easy.Forms.FormTemplate
   alias Easy.Repo
 
   @follow_up_days 3
@@ -34,11 +35,12 @@ defmodule Easy.WorkbenchOnboardingQueue do
           ),
         asc: client.id
       )
-      |> select([client, assignment], %{
+      |> select([client, assignment, template], %{
         client: client,
         invitation: is_nil(client.joined_at),
         assignment_id: assignment.id,
         due_on: assignment.due_date,
+        form_title: template.name,
         sent_at: client.invitation_sent_at
       })
       |> Easy.Utils.paginate(offset, limit)
@@ -63,6 +65,10 @@ defmodule Easy.WorkbenchOnboardingQueue do
         assignment.business_id == client.business_id and
           assignment.client_id == client.id and
           assignment.purpose == :intake,
+      left_join: template in FormTemplate,
+      on:
+        template.id == assignment.form_template_id and
+          template.business_id == assignment.business_id,
       where: ^onboarding_member(invitation_cutoff, today)
     )
   end
@@ -113,10 +119,17 @@ defmodule Easy.WorkbenchOnboardingQueue do
     }
   end
 
-  defp to_item(%{client: client, assignment_id: assignment_id, due_on: due_on}) do
+  defp to_item(%{client: client, assignment_id: assignment_id, due_on: due_on, form_title: form_title}) do
     %{
       client: client,
-      reasons: [%{code: :intake_overdue, assignment_id: assignment_id, due_on: due_on}]
+      reasons: [
+        %{
+          code: :intake_overdue,
+          assignment_id: assignment_id,
+          due_on: due_on,
+          form_title: form_title
+        }
+      ]
     }
   end
 

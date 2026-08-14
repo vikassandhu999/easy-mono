@@ -1,7 +1,7 @@
 # Run the coordinated workbench cutover
 
 Type: task
-Status: open
+Status: in_progress
 Blocked by: 15, 16, 17
 Parent: [Coach workbench v1 delivery](../map.md)
 

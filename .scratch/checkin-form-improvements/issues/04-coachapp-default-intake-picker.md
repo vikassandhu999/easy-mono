@@ -21,3 +21,13 @@ Implemented 2026-08-14. Notes:
 - Forms list marks the effective default with a `chip--outline` "Default intake" chip (hidden while the flag-carrier is archived, for the same reason).
 - `useSetDefaultIntakeTemplateMutation` / `useClearDefaultIntakeTemplateMutation` invalidate `formTemplateKeys.all` in `onSettled` — a 422/404 means the picked-from list was stale, so failures refetch too.
 - Verified live in the browser: choose → row + forms-list badge update; clear → back to "Automatic"; picker offers only the active intake template. The new endpoints 500'd until the dev `phx.server` was restarted (RM-004: cached OpenAPI spec).
+
+## E2E verification (2026-08-14)
+
+Full invite loop exercised against the dev stack (settings UI + invite UI + API assertions), three legs:
+
+1. **Chosen default assigned** — created a second intake ("Premium intake"), picked it in settings, invited a client through the UI → the client's sole assignment is `{purpose: intake, template: "Premium intake", status: assigned}`.
+2. **Cleared → automatic fallback** — "Use automatic" in settings, invited a second client → assignment is "Intake" (the oldest active intake), not "Premium intake".
+3. **Archived default → fallback** — re-set "Premium intake" as default, archived it, invited a third client via `POST /v1/coach/clients/invite` → assignment is "Intake"; settings and forms list both read "Automatic"/unbadged while the archived template still carries the flag (effective-default display working as designed).
+
+Dev-data residue: three `e2e-*@example.com` invited clients and an archived "Premium intake" template (flag still set) remain in the dev DB.

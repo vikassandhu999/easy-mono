@@ -38,7 +38,10 @@ defmodule Easy.Forms.CheckInSchedule do
     |> put_change(:form_template_id, form_template_id)
     |> validate_required([:business_id, :client_id, :form_template_id, :frequency, :next_due_on, :active])
     |> check_constraint(:frequency, name: :check_in_schedules_frequency_check)
-    |> unique_constraint(:client_id, name: :check_in_schedules_one_active_index)
+    |> unique_constraint(:form_template_id,
+      name: :check_in_schedules_one_active_index,
+      message: "already has an active schedule for this client"
+    )
     |> foreign_key_constraint(:business_id)
     |> foreign_key_constraint(:client_id, name: :check_in_schedules_client_business_id_fkey)
     |> foreign_key_constraint(:form_template_id, name: :check_in_schedules_template_business_id_fkey)
@@ -50,7 +53,10 @@ defmodule Easy.Forms.CheckInSchedule do
     |> cast(attrs, [:frequency, :next_due_on, :active])
     |> validate_required([:frequency, :next_due_on, :active])
     |> check_constraint(:frequency, name: :check_in_schedules_frequency_check)
-    |> unique_constraint(:client_id, name: :check_in_schedules_one_active_index)
+    |> unique_constraint(:form_template_id,
+      name: :check_in_schedules_one_active_index,
+      message: "already has an active schedule for this client"
+    )
   end
 
   @spec advance(t()) :: {Date.t(), boolean()}

@@ -32,6 +32,33 @@ defmodule Easy.Forms.CheckInSweeperTest do
     refute_email_sent()
   end
 
+  test "sends a due reminder per assignment across a client's schedules" do
+    coach = insert(:coach)
+    client = insert(:client, business: coach.business, creator: coach, email: "multi@example.com")
+    template_a = insert(:form_template, business: coach.business, purpose: :check_in)
+    template_b = insert(:form_template, business: coach.business, purpose: :check_in)
+    ctx = %Ctx{business_id: coach.business_id, user_id: coach.business.owner_id, owner?: true}
+
+    today = Date.utc_today()
+
+    for template <- [template_a, template_b] do
+      assert {:ok, _schedule} =
+               Forms.create_check_in_schedule_for_client(ctx, client.id, %{
+                 form_template_id: template.id,
+                 frequency: :weekly,
+                 next_due_on: today
+               })
+    end
+
+    assert {2, 0} = Forms.send_due_check_in_reminders(today)
+
+    assignments = Repo.all(FormAssignment.for_client(coach.business_id, client.id))
+    assert length(assignments) == 2
+    assert Enum.all?(assignments, & &1.due_reminder_sent_at)
+
+    assert {0, 0} = Forms.send_due_check_in_reminders(today)
+  end
+
   test "sends one overdue reminder after two days" do
     client = insert(:client, email: "late@example.com")
     template = insert(:form_template, business: client.business, purpose: :check_in)

@@ -206,9 +206,16 @@ defmodule Easy.Forms do
     end
   end
 
+  # ponytail: product guess of a cap, cheap to raise; error message names no number
+  @active_check_in_schedule_cap 3
+
   @spec create_check_in_schedule_for_client(Ctx.t(), String.t(), map()) ::
           {:ok, CheckInSchedule.t()}
-          | {:error, :not_found | :invalid_check_in_template | Ecto.Changeset.t()}
+          | {:error,
+             :not_found
+             | :invalid_check_in_template
+             | :check_in_schedule_cap_reached
+             | Ecto.Changeset.t()}
   def create_check_in_schedule_for_client(
         %Ctx{} = ctx,
         client_id,
@@ -223,13 +230,16 @@ defmodule Easy.Forms do
   end
 
   @spec update_check_in_schedule(Ctx.t(), String.t(), map()) ::
-          {:ok, CheckInSchedule.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, CheckInSchedule.t()}
+          | {:error, :not_found | :check_in_schedule_cap_reached | Ecto.Changeset.t()}
   def update_check_in_schedule(%Ctx{} = ctx, schedule_id, attrs) do
     with {:ok, schedule} <- get_check_in_schedule(ctx.business_id, schedule_id),
          :ok <- Clients.authorize_client_id(ctx, schedule.client_id) do
-      case schedule |> CheckInSchedule.update_changeset(attrs) |> Repo.update() do
-        {:ok, updated} -> {:ok, reload_check_in_schedule(updated)}
-        {:error, changeset} -> {:error, changeset}
+      changeset = CheckInSchedule.update_changeset(schedule, attrs)
+
+      with :ok <- ensure_reactivation_within_cap(schedule, changeset),
+           {:ok, updated} <- Repo.update(changeset) do
+        {:ok, reload_check_in_schedule(updated)}
       end
     end
   end
@@ -618,6 +628,12 @@ defmodule Easy.Forms do
   end
 
   defp create_check_in_schedule_transaction(ctx, client, template, attrs) do
+    # ponytail: cap counted app-side inside the transaction; concurrent creates can
+    # overshoot a soft product cap — a DB guard isn't worth it at this stakes level
+    if count_active_check_in_schedules(ctx.business_id, client.id) >= @active_check_in_schedule_cap do
+      Repo.rollback(:check_in_schedule_cap_reached)
+    end
+
     schedule =
       case ctx.business_id |> CheckInSchedule.insert_changeset(client.id, template.id, attrs) |> Repo.insert() do
         {:ok, schedule} -> schedule
@@ -779,6 +795,27 @@ defmodule Easy.Forms do
 
   defp ensure_check_in_template(%FormTemplate{purpose: :check_in}), do: :ok
   defp ensure_check_in_template(_template), do: {:error, :invalid_check_in_template}
+
+  # ponytail: same unserialized count-then-write as create — concurrent
+  # reactivations can overshoot the soft cap, accepted at this stakes level
+  defp ensure_reactivation_within_cap(%CheckInSchedule{active: false} = schedule, changeset) do
+    if Ecto.Changeset.get_field(changeset, :active) and
+         count_active_check_in_schedules(schedule.business_id, schedule.client_id) >=
+           @active_check_in_schedule_cap do
+      {:error, :check_in_schedule_cap_reached}
+    else
+      :ok
+    end
+  end
+
+  defp ensure_reactivation_within_cap(_active_schedule, _changeset), do: :ok
+
+  defp count_active_check_in_schedules(business_id, client_id) do
+    CheckInSchedule
+    |> CheckInSchedule.for_client(business_id, client_id)
+    |> CheckInSchedule.active()
+    |> Repo.aggregate(:count)
+  end
 
   defp get_check_in_schedule(business_id, schedule_id) do
     CheckInSchedule

@@ -60,7 +60,7 @@ defmodule Easy.FormsTest do
                |> CheckInSchedule.insert_changeset(client.id, template.id, attrs)
                |> Repo.insert()
 
-      assert "has already been taken" in errors_on(changeset).client_id
+      assert "already has an active schedule for this client" in errors_on(changeset).form_template_id
     end
 
     test "accepts missed form assignments" do
@@ -739,6 +739,36 @@ defmodule Easy.FormsTest do
       assert {0, 1} = Forms.generate_due_check_ins(~D[2026-07-11])
       assert Repo.reload(schedule).next_due_on == ~D[2026-07-18]
       assert Repo.aggregate(FormAssignment.for_schedule(client.business_id, schedule.id), :count) == 0
+    end
+
+    test "two due schedules for one client each generate an assignment linked to its schedule" do
+      client = insert_client()
+      template_a = insert(:form_template, business: client.business, purpose: :check_in)
+      template_b = insert(:form_template, business: client.business, purpose: :check_in)
+      ctx = owner_ctx(client.business)
+
+      next_week = Date.add(Date.utc_today(), 7)
+
+      assert {:ok, schedule_a} =
+               Forms.create_check_in_schedule_for_client(ctx, client.id, %{
+                 form_template_id: template_a.id,
+                 frequency: :weekly,
+                 next_due_on: next_week
+               })
+
+      assert {:ok, schedule_b} =
+               Forms.create_check_in_schedule_for_client(ctx, client.id, %{
+                 form_template_id: template_b.id,
+                 frequency: :weekly,
+                 next_due_on: next_week
+               })
+
+      assert {2, 0} = Forms.generate_due_check_ins(next_week)
+
+      assert {:ok, assignments} = Forms.list_form_assignments_for_client(ctx, client.id)
+
+      assert assignments |> Enum.map(& &1.check_in_schedule_id) |> Enum.sort() ==
+               Enum.sort([schedule_a.id, schedule_b.id])
     end
 
     test "rejects intake templates and cross-tenant clients" do

@@ -5680,7 +5680,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description Validation error */
+      /** @description Validation error, or reactivation would exceed the active-schedule cap (error_code check_in_schedule_cap_reached) */
       422: {
         headers: {
           [name: string]: unknown;
@@ -7904,7 +7904,7 @@ export interface operations {
         /** @description Limit (max 100) */
         limit?: number;
         /** @description Required service */
-        service?: string;
+        service?: 'all' | 'training' | 'nutrition';
       };
       header?: never;
       path?: never;
@@ -9726,7 +9726,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description Validation error */
+      /** @description Validation error, or active-schedule cap reached (error_code check_in_schedule_cap_reached) */
       422: {
         headers: {
           [name: string]: unknown;

@@ -36,7 +36,7 @@ defmodule EasyWeb.Coaches.CheckInScheduleController do
     responses: [
       created: {"Schedule", "application/json", ClientProfileCheckInScheduleResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+      unprocessable_entity: {"Validation error, or active-schedule cap reached (error_code check_in_schedule_cap_reached)", "application/json", ErrorResponse}
     ]
 
   operation :update,
@@ -48,7 +48,7 @@ defmodule EasyWeb.Coaches.CheckInScheduleController do
     responses: [
       ok: {"Schedule", "application/json", ClientProfileCheckInScheduleResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+      unprocessable_entity: {"Validation error, or reactivation would exceed the active-schedule cap (error_code check_in_schedule_cap_reached)", "application/json", ErrorResponse}
     ]
 
   operation :delete,

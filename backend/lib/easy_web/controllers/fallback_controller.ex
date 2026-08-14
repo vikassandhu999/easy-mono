@@ -232,6 +232,19 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Error.unprocessable(%{fields: %{schedule: ["has assignments"]}})})
   end
 
+  def call(conn, {:error, :check_in_schedule_cap_reached}) do
+    call(
+      conn,
+      {:error,
+       Error.new(
+         :check_in_schedule_cap_reached,
+         "This client already has the maximum number of active check-in schedules.",
+         %{},
+         :unprocessable_entity
+       )}
+    )
+  end
+
   def call(conn, {:error, :invalid_check_in_template}) do
     call(conn, {:error, Error.unprocessable(%{fields: %{form_template_id: ["must be a check-in template"]}})})
   end

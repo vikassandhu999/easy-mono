@@ -12954,7 +12954,7 @@
                 }
               }
             },
-            "description": "Validation error"
+            "description": "Validation error, or reactivation would exceed the active-schedule cap (error_code check_in_schedule_cap_reached)"
           }
         },
         "security": [
@@ -17571,6 +17571,12 @@
             "name": "service",
             "required": false,
             "schema": {
+              "default": "all",
+              "enum": [
+                "all",
+                "training",
+                "nutrition"
+              ],
               "type": "string",
               "x-struct": null,
               "x-validate": null
@@ -21351,7 +21357,7 @@
                 }
               }
             },
-            "description": "Validation error"
+            "description": "Validation error, or active-schedule cap reached (error_code check_in_schedule_cap_reached)"
           }
         },
         "security": [

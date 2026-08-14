@@ -43,13 +43,24 @@ export default function FormTemplateListItem({template}: {template: ClientProfil
       textValue={template.name}
       title={template.name}
       trailing={
-        <Chip
-          color={status.color}
-          size="sm"
-          variant="soft"
-        >
-          {status.label}
-        </Chip>
+        <>
+          {/* Effective default only: an archived flag-carrier no longer wins on invite. */}
+          {template.is_default_intake && template.status === 'active' && (
+            <Chip
+              className="chip--outline"
+              size="sm"
+            >
+              Default intake
+            </Chip>
+          )}
+          <Chip
+            color={status.color}
+            size="sm"
+            variant="soft"
+          >
+            {status.label}
+          </Chip>
+        </>
       }
     />
   );

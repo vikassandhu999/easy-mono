@@ -20,6 +20,7 @@ import {type CoachProfile, useGetCoachProfileQuery, useUpdateCoachProfileMutatio
 import {queryClient} from '@/api/query-client';
 import {disconnectSocket} from '@/api/socket';
 import BillingSection from '@/settings/billing';
+import DefaultIntakeRow from '@/settings/components/default-intake-row';
 import EditableRow from '@/settings/components/editable-row';
 import {SettingsSectionHeader} from '@/settings/components/settings-section-header';
 import TeamSection from '@/settings/team';
@@ -121,6 +122,15 @@ function ProfilePanel({
           onSave={handleWhatsappSave}
           value={profile.business.whatsapp_number}
         />
+      </div>
+
+      <SettingsSectionHeader
+        description="What new clients receive automatically"
+        title="Client onboarding"
+      />
+
+      <div className={CARD_CLASS}>
+        <DefaultIntakeRow />
       </div>
     </div>
   );

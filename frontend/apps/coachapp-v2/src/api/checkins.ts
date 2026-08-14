@@ -234,6 +234,35 @@ export function useDeleteFormTemplateMutation() {
   });
 }
 
+/** The default-intake flag moves between templates, so refresh every template
+ *  query — on failure too, since a 422/404 means the list the user picked from
+ *  was stale. */
+export function useSetDefaultIntakeTemplateMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      call(
+        client.PUT('/v1/coach/form-templates/{id}/default-intake', {params: {path: {id}}}),
+      ) as Promise<ClientProfileFormTemplateResponse>,
+    onSettled: () => {
+      qc.invalidateQueries({queryKey: formTemplateKeys.all});
+    },
+  });
+}
+
+export function useClearDefaultIntakeTemplateMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      call(
+        client.DELETE('/v1/coach/form-templates/{id}/default-intake', {params: {path: {id}}}),
+      ) as Promise<ClientProfileFormTemplateResponse>,
+    onSettled: () => {
+      qc.invalidateQueries({queryKey: formTemplateKeys.all});
+    },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Check-in schedules
 // ---------------------------------------------------------------------------

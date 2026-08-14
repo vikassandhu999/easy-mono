@@ -64,6 +64,7 @@ defmodule EasyWeb.Clients.FormAssignmentJSON do
       purpose: template.purpose,
       sections: template.sections,
       status: template.status,
+      is_default_intake: template.is_default_intake,
       inserted_at: template.inserted_at,
       updated_at: template.updated_at
     }

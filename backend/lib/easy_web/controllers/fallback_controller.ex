@@ -232,6 +232,10 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Error.unprocessable(%{fields: %{schedule: ["has assignments"]}})})
   end
 
+  def call(conn, {:error, :invalid_default_intake_template}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{form_template_id: ["must be an active intake template"]}})})
+  end
+
   def call(conn, {:error, :check_in_schedule_cap_reached}) do
     call(
       conn,

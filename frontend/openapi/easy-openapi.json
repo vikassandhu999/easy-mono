@@ -10845,6 +10845,12 @@
             "x-struct": null,
             "x-validate": null
           },
+          "is_default_intake": {
+            "description": "Intake auto-assigned to newly invited clients (one per business)",
+            "type": "boolean",
+            "x-struct": null,
+            "x-validate": null
+          },
           "name": {
             "type": "string",
             "x-struct": null,
@@ -11009,6 +11015,7 @@
           "purpose",
           "sections",
           "status",
+          "is_default_intake",
           "inserted_at",
           "updated_at"
         ],
@@ -16841,6 +16848,136 @@
         "summary": "Copy a food into the coach's business",
         "tags": [
           "coach foods"
+        ]
+      }
+    },
+    "/v1/coach/form-templates/{id}/default-intake": {
+      "delete": {
+        "callbacks": {},
+        "description": "Unmarks this template; newly invited clients fall back to the automatic default.",
+        "operationId": "clearDefaultIntakeTemplate",
+        "parameters": [
+          {
+            "description": "Form template id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientProfileFormTemplateResponse"
+                }
+              }
+            },
+            "description": "Form template updated"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Clear default intake template",
+        "tags": [
+          "coach form templates"
+        ]
+      },
+      "put": {
+        "callbacks": {},
+        "description": "Marks this template as the intake auto-assigned to newly invited clients.",
+        "operationId": "setDefaultIntakeTemplate",
+        "parameters": [
+          {
+            "description": "Form template id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientProfileFormTemplateResponse"
+                }
+              }
+            },
+            "description": "Form template updated"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not an active intake template"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Set default intake template",
+        "tags": [
+          "coach form templates"
         ]
       }
     },

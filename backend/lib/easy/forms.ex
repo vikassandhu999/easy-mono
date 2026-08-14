@@ -40,7 +40,7 @@ defmodule Easy.Forms do
   @spec assign_default_intake_to_client(Ctx.t(), String.t()) ::
           {:ok, FormAssignment.t()} | {:error, term()}
   def assign_default_intake_to_client(%Ctx{} = ctx, client_id) do
-    with {:ok, template} <- get_or_create_default_intake_template(ctx) do
+    with {:ok, template} <- default_intake_template(ctx) do
       assign_form_template_to_client(ctx, client_id, template.id, %{})
     end
   end
@@ -62,6 +62,44 @@ defmodule Easy.Forms do
       |> Repo.update()
     end
   end
+
+  @spec set_default_intake_template(Ctx.t(), String.t()) ::
+          {:ok, FormTemplate.t()}
+          | {:error, :not_found | :invalid_default_intake_template | Ecto.Changeset.t()}
+  def set_default_intake_template(%Ctx{} = ctx, template_id) do
+    with {:ok, template} <- get_form_template(ctx, template_id),
+         :ok <- ensure_active_intake_template(template) do
+      Repo.transaction(fn -> set_default_intake_template_transaction(ctx, template) end)
+    end
+  end
+
+  @spec clear_default_intake_template(Ctx.t(), String.t()) ::
+          {:ok, FormTemplate.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def clear_default_intake_template(%Ctx{} = ctx, template_id) do
+    with {:ok, template} <- get_form_template(ctx, template_id) do
+      template |> Ecto.Changeset.change(is_default_intake: false) |> Repo.update()
+    end
+  end
+
+  defp set_default_intake_template_transaction(ctx, template) do
+    FormTemplate
+    |> FormTemplate.for_business(ctx.business_id)
+    |> FormTemplate.default_intake()
+    |> where([t], t.id != ^template.id)
+    |> Repo.update_all(set: [is_default_intake: false, updated_at: DateTime.utc_now(:second)])
+
+    template
+    |> Ecto.Changeset.change(is_default_intake: true)
+    |> Ecto.Changeset.unique_constraint(:is_default_intake, name: :form_templates_one_default_intake_index)
+    |> Repo.update()
+    |> case do
+      {:ok, updated} -> updated
+      {:error, changeset} -> Repo.rollback(changeset)
+    end
+  end
+
+  defp ensure_active_intake_template(%FormTemplate{purpose: :intake, status: :active}), do: :ok
+  defp ensure_active_intake_template(_template), do: {:error, :invalid_default_intake_template}
 
   @spec delete_form_template(Ctx.t(), String.t()) ::
           {:ok, FormTemplate.t()} | {:error, :not_found | :form_template_assigned | Ecto.Changeset.t()}
@@ -890,10 +928,25 @@ defmodule Easy.Forms do
     |> ok_or_not_found()
   end
 
+  # The flagged default wins while it is still an active intake template;
+  # otherwise (none flagged, archived, or deleted) fall back to the
+  # oldest-active-or-create behavior. Never rewrites existing assignments.
+  defp default_intake_template(%Ctx{} = ctx) do
+    FormTemplate
+    |> FormTemplate.for_business(ctx.business_id)
+    |> FormTemplate.active_intake()
+    |> FormTemplate.default_intake()
+    |> Repo.one()
+    |> case do
+      nil -> get_or_create_default_intake_template(ctx)
+      template -> {:ok, template}
+    end
+  end
+
   defp get_or_create_default_intake_template(%Ctx{} = ctx) do
     FormTemplate
     |> FormTemplate.for_business(ctx.business_id)
-    |> where([t], t.purpose == :intake and t.status == :active)
+    |> FormTemplate.active_intake()
     |> order_by([t], asc: t.inserted_at, asc: t.id)
     |> limit(1)
     |> Repo.one()

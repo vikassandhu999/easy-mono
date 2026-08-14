@@ -1,6 +1,6 @@
 # 04 — Coach app: default intake picker in settings + default badge on forms list
 
-**What to build:** From the coach app's settings surface, a coach chooses which intake form new clients automatically receive, changes it at any time, or clears it to return to the automatic default. The picker offers only active intake-purpose templates, so the coach can never select an archived or check-in template. On the forms list, the current default template is visibly marked, so the coach doesn't have to open settings to remember which one it is. Reads and writes go through the existing business update endpoint.
+**What to build:** From the coach app's settings surface, a coach chooses which intake form new clients automatically receive, changes it at any time, or clears it to return to the automatic default. The picker offers only active intake-purpose templates, so the coach can never select an archived or check-in template. On the forms list, the current default template is visibly marked, so the coach doesn't have to open settings to remember which one it is. ~~Reads and writes go through the existing business update endpoint.~~ **Contract changed by 03's design revision:** reads come from `is_default_intake` on the form-template list; writes are `PUT`/`DELETE /v1/coach/form-templates/{id}/default-intake`.
 
 **Blocked by:** 03 — Backend: business default intake template setting + invite flow.
 

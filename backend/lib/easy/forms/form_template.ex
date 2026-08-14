@@ -20,6 +20,7 @@ defmodule Easy.Forms.FormTemplate do
     field :purpose, Ecto.Enum, values: @purposes
     field :sections, {:array, :map}, default: []
     field :status, Ecto.Enum, values: @statuses, default: :active
+    field :is_default_intake, :boolean, default: false
     # How many times clients have submitted this form. Counted through assignments,
     # since a submission belongs to an assignment rather than to the template.
     field :response_count, :integer, virtual: true, default: 0
@@ -78,6 +79,16 @@ defmodule Easy.Forms.FormTemplate do
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do
     from(t in query, where: t.business_id == ^business_id)
+  end
+
+  @spec active_intake(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def active_intake(query \\ __MODULE__) do
+    from(t in query, where: t.purpose == :intake and t.status == :active)
+  end
+
+  @spec default_intake(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def default_intake(query \\ __MODULE__) do
+    from(t in query, where: t.is_default_intake)
   end
 
   # `join_*`, not `include_*`: a computed column rather than a preload (AGENTS.md

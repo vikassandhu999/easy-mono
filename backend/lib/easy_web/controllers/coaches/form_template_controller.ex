@@ -14,7 +14,8 @@ defmodule EasyWeb.Coaches.FormTemplateController do
   }
 
   plug OpenApiSpex.Plug.CastAndValidate,
-       [json_render_error_v2: true] when action in [:create, :update, :delete]
+       [json_render_error_v2: true]
+       when action in [:create, :update, :delete, :set_default_intake, :clear_default_intake]
 
   tags ["coach form templates"]
 
@@ -79,6 +80,31 @@ defmodule EasyWeb.Coaches.FormTemplateController do
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
+  operation :set_default_intake,
+    summary: "Set default intake template",
+    description: "Marks this template as the intake auto-assigned to newly invited clients.",
+    operation_id: "setDefaultIntakeTemplate",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Form template id")],
+    responses: [
+      ok: {"Form template updated", "application/json", ClientProfileFormTemplateResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Not an active intake template", "application/json", ErrorResponse}
+    ]
+
+  operation :clear_default_intake,
+    summary: "Clear default intake template",
+    description: "Unmarks this template; newly invited clients fall back to the automatic default.",
+    operation_id: "clearDefaultIntakeTemplate",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Form template id")],
+    responses: [
+      ok: {"Form template updated", "application/json", ClientProfileFormTemplateResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
     ctx = conn.assigns.ctx
@@ -125,6 +151,26 @@ defmodule EasyWeb.Coaches.FormTemplateController do
 
     with {:ok, _template} <- Forms.delete_form_template(ctx, id) do
       send_resp(conn, :no_content, "")
+    end
+  end
+
+  @spec set_default_intake(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def set_default_intake(conn, _params) do
+    ctx = conn.assigns.ctx
+    id = conn.path_params["id"]
+
+    with {:ok, template} <- Forms.set_default_intake_template(ctx, id) do
+      render(conn, :show, template: template)
+    end
+  end
+
+  @spec clear_default_intake(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def clear_default_intake(conn, _params) do
+    ctx = conn.assigns.ctx
+    id = conn.path_params["id"]
+
+    with {:ok, template} <- Forms.clear_default_intake_template(ctx, id) do
+      render(conn, :show, template: template)
     end
   end
 end

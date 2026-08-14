@@ -3838,6 +3838,8 @@ export interface components {
       id: string;
       /** Format: date-time */
       inserted_at: string;
+      /** @description Intake auto-assigned to newly invited clients (one per business) */
+      is_default_intake: boolean;
       name: string;
       /** @enum {string} */
       purpose: 'intake' | 'check_in';

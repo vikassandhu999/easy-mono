@@ -235,4 +235,56 @@ defmodule EasyWeb.Coaches.FormTemplateControllerTest do
       assert Repo.get!(FormAssignment, assignment.id).status == :assigned
     end
   end
+
+  describe "PUT /v1/coach/form-templates/:id/default-intake" do
+    test "marks the template default and moves the flag on a second set", %{conn: conn, business: business} do
+      first = insert(:form_template, business: business, purpose: :intake)
+      second = insert(:form_template, business: business, purpose: :intake)
+
+      conn = put(conn, "/v1/coach/form-templates/#{first.id}/default-intake")
+      assert %{"data" => %{"is_default_intake" => true} = data} = json_response(conn, 200)
+      OpenApiSpex.TestAssertions.assert_schema(data, "ClientProfileFormTemplate", EasyWeb.ApiSpec.spec())
+
+      conn = recycle_json(conn) |> put("/v1/coach/form-templates/#{second.id}/default-intake")
+      assert %{"data" => %{"is_default_intake" => true}} = json_response(conn, 200)
+
+      conn = recycle_json(conn) |> get("/v1/coach/form-templates")
+      assert %{"data" => templates} = json_response(conn, 200)
+
+      defaults = templates |> Enum.filter(& &1["is_default_intake"]) |> Enum.map(& &1["id"])
+      assert defaults == [second.id]
+    end
+
+    test "rejects archived, non-intake, and cross-tenant templates", %{conn: conn, business: business} do
+      archived = insert(:form_template, business: business, purpose: :intake, status: :archived)
+      check_in = insert(:form_template, business: business, purpose: :check_in)
+      other = insert(:form_template, purpose: :intake)
+
+      for template <- [archived, check_in] do
+        conn = recycle_json(conn) |> put("/v1/coach/form-templates/#{template.id}/default-intake")
+
+        assert %{"error_detail" => %{"fields" => %{"form_template_id" => [_message]}}} =
+                 json_response(conn, 422)
+      end
+
+      conn = recycle_json(conn) |> put("/v1/coach/form-templates/#{other.id}/default-intake")
+      assert json_response(conn, 404)
+      refute Repo.reload(other).is_default_intake
+    end
+  end
+
+  describe "DELETE /v1/coach/form-templates/:id/default-intake" do
+    test "clears the default", %{conn: conn, business: business} do
+      template = insert(:form_template, business: business, purpose: :intake, is_default_intake: true)
+
+      conn = delete(conn, "/v1/coach/form-templates/#{template.id}/default-intake")
+
+      assert %{"data" => %{"is_default_intake" => false}} = json_response(conn, 200)
+      refute Repo.reload(template).is_default_intake
+    end
+  end
+
+  defp recycle_json(conn) do
+    conn |> recycle() |> put_req_header("content-type", "application/json")
+  end
 end

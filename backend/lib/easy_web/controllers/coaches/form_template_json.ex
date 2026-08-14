@@ -19,6 +19,7 @@ defmodule EasyWeb.Coaches.FormTemplateJSON do
       purpose: template.purpose,
       sections: template.sections,
       status: template.status,
+      is_default_intake: template.is_default_intake,
       response_count: template.response_count,
       inserted_at: template.inserted_at,
       updated_at: template.updated_at

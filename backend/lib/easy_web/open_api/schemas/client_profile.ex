@@ -165,11 +165,15 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplate do
           purpose: %Schema{type: :string, enum: Common.form_purposes()},
           sections: %Schema{type: :array, items: Common.form_section_schema()},
           status: %Schema{type: :string, enum: Common.template_statuses()},
+          is_default_intake: %Schema{
+            type: :boolean,
+            description: "Intake auto-assigned to newly invited clients (one per business)"
+          },
           response_count: %Schema{type: :integer, description: "Submissions clients have made against this form"}
         },
         Shared.timestamps()
       ),
-    required: [:id, :name, :purpose, :sections, :status, :inserted_at, :updated_at]
+    required: [:id, :name, :purpose, :sections, :status, :is_default_intake, :inserted_at, :updated_at]
   })
 end
 

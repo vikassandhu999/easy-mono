@@ -136,6 +136,8 @@ defmodule EasyWeb.Router do
     get "/form-templates/:id", FormTemplateController, :show
     patch "/form-templates/:id", FormTemplateController, :update
     delete "/form-templates/:id", FormTemplateController, :delete
+    put "/form-templates/:id/default-intake", FormTemplateController, :set_default_intake
+    delete "/form-templates/:id/default-intake", FormTemplateController, :clear_default_intake
     get "/clients/:client_id/check-in-schedules", CheckInScheduleController, :index
     post "/clients/:client_id/check-in-schedules", CheckInScheduleController, :create
     patch "/check-in-schedules/:id", CheckInScheduleController, :update

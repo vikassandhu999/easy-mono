@@ -429,6 +429,101 @@ defmodule Easy.FormsTest do
       assert assignment2.form_template_id == assignment.form_template_id
       assert Repo.aggregate(FormTemplate, :count) == 1
     end
+
+    test "assigns the flagged default intake template" do
+      client = insert_client()
+      ctx = owner_ctx(client.business)
+
+      _oldest = insert(:form_template, business: client.business, purpose: :intake)
+      chosen = insert(:form_template, business: client.business, purpose: :intake)
+
+      assert {:ok, %{is_default_intake: true}} = Forms.set_default_intake_template(ctx, chosen.id)
+
+      assert {:ok, assignment} = Forms.assign_default_intake_to_client(ctx, client.id)
+      assert assignment.form_template_id == chosen.id
+    end
+
+    test "setting a new default unsets the previous one" do
+      client = insert_client()
+      ctx = owner_ctx(client.business)
+
+      first = insert(:form_template, business: client.business, purpose: :intake)
+      second = insert(:form_template, business: client.business, purpose: :intake)
+
+      assert {:ok, _template} = Forms.set_default_intake_template(ctx, first.id)
+      assert {:ok, _template} = Forms.set_default_intake_template(ctx, second.id)
+
+      refute Repo.reload(first).is_default_intake
+      assert Repo.reload(second).is_default_intake
+    end
+
+    test "rejects archived, non-intake, and cross-tenant defaults" do
+      business = insert(:business)
+      ctx = owner_ctx(business)
+
+      archived = insert(:form_template, business: business, purpose: :intake, status: :archived)
+      check_in = insert(:form_template, business: business, purpose: :check_in)
+      other = insert(:form_template, purpose: :intake)
+
+      assert {:error, :invalid_default_intake_template} = Forms.set_default_intake_template(ctx, archived.id)
+      assert {:error, :invalid_default_intake_template} = Forms.set_default_intake_template(ctx, check_in.id)
+      assert {:error, :not_found} = Forms.set_default_intake_template(ctx, other.id)
+      assert {:error, :not_found} = Forms.clear_default_intake_template(ctx, other.id)
+    end
+
+    test "setting the current default again is a no-op success" do
+      business = insert(:business)
+      ctx = owner_ctx(business)
+
+      template = insert(:form_template, business: business, purpose: :intake)
+
+      assert {:ok, %{is_default_intake: true}} = Forms.set_default_intake_template(ctx, template.id)
+      assert {:ok, %{is_default_intake: true}} = Forms.set_default_intake_template(ctx, template.id)
+    end
+
+    test "falls back to the oldest active intake when the default is archived" do
+      client = insert_client()
+      ctx = owner_ctx(client.business)
+
+      oldest = insert(:form_template, business: client.business, purpose: :intake)
+      chosen = insert(:form_template, business: client.business, purpose: :intake)
+
+      assert {:ok, _template} = Forms.set_default_intake_template(ctx, chosen.id)
+      chosen |> Ecto.Changeset.change(status: :archived) |> Repo.update!()
+
+      assert {:ok, assignment} = Forms.assign_default_intake_to_client(ctx, client.id)
+      assert assignment.form_template_id == oldest.id
+    end
+
+    test "after deleting the default template later invites fall back" do
+      client = insert_client()
+      ctx = owner_ctx(client.business)
+
+      oldest = insert(:form_template, business: client.business, purpose: :intake)
+      chosen = insert(:form_template, business: client.business, purpose: :intake)
+
+      assert {:ok, _template} = Forms.set_default_intake_template(ctx, chosen.id)
+      assert {:ok, _template} = Forms.delete_form_template(ctx, chosen.id)
+
+      assert {:ok, assignment} = Forms.assign_default_intake_to_client(ctx, client.id)
+      assert assignment.form_template_id == oldest.id
+    end
+
+    test "changing or clearing the default does not touch existing assignments" do
+      client = insert_client()
+      ctx = owner_ctx(client.business)
+
+      first = insert(:form_template, business: client.business, purpose: :intake)
+      second = insert(:form_template, business: client.business, purpose: :intake)
+
+      assert {:ok, _template} = Forms.set_default_intake_template(ctx, first.id)
+      assert {:ok, assignment} = Forms.assign_default_intake_to_client(ctx, client.id)
+      assert assignment.form_template_id == first.id
+
+      assert {:ok, _template} = Forms.set_default_intake_template(ctx, second.id)
+      assert {:ok, %{is_default_intake: false}} = Forms.clear_default_intake_template(ctx, second.id)
+      assert Repo.reload(assignment).form_template_id == first.id
+    end
   end
 
   describe "list_form_templates/1 default weekly check-in" do

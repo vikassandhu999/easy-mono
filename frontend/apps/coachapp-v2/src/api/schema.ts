@@ -694,6 +694,30 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/coach/form-templates/{id}/default-intake': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Set default intake template
+     * @description Marks this template as the intake auto-assigned to newly invited clients.
+     */
+    put: operations['setDefaultIntakeTemplate'];
+    post?: never;
+    /**
+     * Clear default intake template
+     * @description Unmarks this template; newly invited clients fall back to the automatic default.
+     */
+    delete: operations['clearDefaultIntakeTemplate'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/coach/training-plans/{plan_id}/training-workouts': {
     parameters: {
       query?: never;
@@ -5070,6 +5094,8 @@ export interface components {
       id: string;
       /** Format: date-time */
       inserted_at: string;
+      /** @description Intake auto-assigned to newly invited clients (one per business) */
+      is_default_intake: boolean;
       name: string;
       /** @enum {string} */
       purpose: 'intake' | 'check_in';
@@ -7495,6 +7521,97 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['FoodResponse'];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  setDefaultIntakeTemplate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Form template id */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Form template updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ClientProfileFormTemplateResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not an active intake template */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  clearDefaultIntakeTemplate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Form template id */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Form template updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ClientProfileFormTemplateResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
         };
       };
       /** @description Not found */

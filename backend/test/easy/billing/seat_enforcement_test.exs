@@ -93,7 +93,7 @@ defmodule Easy.Billing.SeatEnforcementTest do
     assert {:ok, _} = Clients.update_client(ctx_for(business), client.id, %{first_name: "New"})
   end
 
-  test "update return recomputes virtual attention flags (expiring_soon)" do
+  test "update return recomputes the roster expiry fact" do
     business = insert(:business)
     client = insert(:client, business: business, status: :active, subscription_ends_on: nil)
 

@@ -121,8 +121,8 @@ defmodule Easy.Clients.ReadBoundaryTest do
     end
   end
 
-  describe "attention flags" do
-    test "flags are derived per client" do
+  describe "roster expiry fact" do
+    test "is derived from the accepted 14-day window" do
       business = insert(:business)
       ctx = owner_ctx(business)
 
@@ -138,32 +138,8 @@ defmodule Easy.Clients.ReadBoundaryTest do
       {:ok, %{clients: clients}} = Clients.list_clients(ctx)
       by_id = Map.new(clients, &{&1.id, &1})
 
-      assert by_id[fresh.id].needs_plan
-      refute by_id[fresh.id].intake_incomplete
       refute by_id[fresh.id].expiring_soon
       assert by_id[expiring.id].expiring_soon
-    end
-
-    test "an open intake assignment sets intake_incomplete; an active plan clears needs_plan" do
-      business = insert(:business)
-      ctx = owner_ctx(business)
-      client = insert(:client, business: business, status: :active)
-
-      template = insert(:form_template, business: business, purpose: :intake)
-
-      insert(:form_assignment,
-        business: business,
-        client: client,
-        form_template: template,
-        purpose: :intake,
-        status: :assigned
-      )
-
-      insert(:training_plan, business: business, client: client, status: :active)
-
-      {:ok, %{clients: [loaded]}} = Clients.list_clients(ctx)
-      assert loaded.intake_incomplete
-      refute loaded.needs_plan
     end
   end
 
@@ -266,14 +242,6 @@ defmodule Easy.Clients.ReadBoundaryTest do
 
       assert {:error, :not_found} =
                Clients.reassign_client(owner_ctx(business), other_client.id, new_coach.id)
-    end
-  end
-
-  defp received_queries(queries \\ []) do
-    receive do
-      {:query, query} -> received_queries([query | queries])
-    after
-      0 -> queries
     end
   end
 end

@@ -5,7 +5,6 @@ defmodule Easy.Clients do
   alias Easy.Billing
   alias Easy.Clients.Client
   alias Easy.Ctx
-  alias Easy.Forms.FormAssignment
   alias Easy.Identity.User
   alias Easy.Nutrition.Plan
   alias Easy.Orgs
@@ -13,12 +12,6 @@ defmodule Easy.Clients do
   alias Easy.Training.TrainingPlan
 
   @expiring_soon_days 14
-  # Workbench queue windows (spec: docs/archive/specs/2026-08-06-coach-workbench-spec.md §11.2).
-  @programming_horizon_days 3
-  @new_client_window_days 14
-  @invite_stale_days 3
-
-  @workbench_queues [:programming, :expiring, :new]
 
   @spec get_client(Ctx.t(), String.t()) :: {:ok, Client.t()} | {:error, :not_found}
   def get_client(%Ctx{} = ctx, client_id), do: authorize_client(ctx, client_id)
@@ -36,7 +29,7 @@ defmodule Easy.Clients do
         {:error, :not_found}
 
       client ->
-        {:ok, client |> List.wrap() |> put_attention_flags_for_clients(ctx.business_id) |> hd()}
+        {:ok, put_expiring_flag(client)}
     end
   end
 
@@ -98,7 +91,6 @@ defmodule Easy.Clients do
     status = Keyword.get(opts, :status)
     stage = Keyword.get(opts, :stage)
     sort = Keyword.get(opts, :sort, :newest)
-    filter = Keyword.get(opts, :filter)
     include_plans? = Keyword.get(opts, :include_plans, false)
     offset = max(Keyword.get(opts, :offset, 0), 0)
     limit = min(max(Keyword.get(opts, :limit, 20), 0), 20)
@@ -110,7 +102,6 @@ defmodule Easy.Clients do
       |> Client.search(search)
       |> Client.for_status(status)
       |> Client.for_stage(stage)
-      |> for_workbench_queue(filter, ctx.business_id)
 
     {:ok,
      %{
@@ -118,128 +109,17 @@ defmodule Easy.Clients do
        summary: summary(Client |> Client.for_business(ctx.business_id) |> Client.visible_to(ctx)),
        clients:
          base
-         |> sort_clients(sort, filter)
+         |> sort_clients(sort)
          |> Easy.Utils.paginate(offset, limit)
          |> Client.include_preloads(ctx.business_id)
          |> Repo.all()
-         |> put_attention_flags_for_clients(ctx.business_id)
+         |> Enum.map(&put_expiring_flag/1)
          |> put_plan_names_for_clients(ctx.business_id, include_plans?)
      }}
   end
 
-  # The Quiet queue's loader: membership and order are computed in
-  # Easy.Workbench (schedule-aware, not expressible as one facts query), and
-  # this turns that ordered id list into one page of client rows with the same
-  # response shape as list_clients/2.
-  @spec list_clients_in_order(Ctx.t(), [String.t()], keyword()) ::
-          {:ok, %{clients: [Client.t()], count: non_neg_integer(), summary: map()}}
-  def list_clients_in_order(%Ctx{} = ctx, ids, opts \\ []) do
-    include_plans? = Keyword.get(opts, :include_plans, false)
-    offset = max(Keyword.get(opts, :offset, 0), 0)
-    limit = min(max(Keyword.get(opts, :limit, 20), 0), 20)
-
-    page_ids = ids |> Enum.drop(offset) |> Enum.take(limit)
-    position = page_ids |> Enum.with_index() |> Map.new()
-
-    clients =
-      Client
-      |> Client.for_business(ctx.business_id)
-      |> where([c], c.id in ^page_ids)
-      |> Client.include_preloads(ctx.business_id)
-      |> Repo.all()
-      |> put_attention_flags_for_clients(ctx.business_id)
-      |> put_plan_names_for_clients(ctx.business_id, include_plans?)
-      |> Enum.sort_by(&Map.fetch!(position, &1.id))
-
-    {:ok,
-     %{
-       count: length(ids),
-       summary: summary(Client |> Client.for_business(ctx.business_id) |> Client.visible_to(ctx)),
-       clients: clients
-     }}
-  end
-
-  # A queue imposes its own order (the actionable-first order from the spec);
-  # the caller's sort applies only to the plain roster.
-  defp sort_clients(query, sort, nil), do: sort_clients(query, sort)
-  defp sort_clients(query, _sort, queue), do: order_workbench_queue(query, queue)
-
   defp sort_clients(query, :last_active), do: Client.by_last_active(query)
   defp sort_clients(query, _newest), do: Client.newest(query)
-
-  @spec count_workbench_queues(Ctx.t()) ::
-          {:ok, %{programming: non_neg_integer(), expiring: non_neg_integer(), new_clients: non_neg_integer()}}
-  def count_workbench_queues(%Ctx{} = ctx) do
-    horizon = Date.add(Date.utc_today(), @programming_horizon_days)
-
-    facts =
-      Client
-      |> Client.for_business(ctx.business_id)
-      |> Client.visible_to(ctx)
-      |> attention_facts(ctx.business_id)
-
-    counts =
-      from(f in subquery(facts),
-        select: %{
-          programming:
-            count(
-              fragment(
-                "CASE WHEN ? = 'active' AND NOT ? AND (? IS NULL OR ? <= ?) THEN 1 END",
-                f.status,
-                f.open_ended,
-                f.covered_until,
-                f.covered_until,
-                ^horizon
-              )
-            ),
-          expiring: count(fragment("CASE WHEN ? AND NOT ? THEN 1 END", f.expiring_soon, f.expiring_snoozed)),
-          new_clients: count(fragment("CASE WHEN ? THEN 1 END", f.new_client))
-        }
-      )
-      |> Repo.one()
-
-    {:ok, counts}
-  end
-
-  defp for_workbench_queue(query, nil, _business_id), do: query
-
-  defp for_workbench_queue(query, queue, business_id) when queue in @workbench_queues do
-    facts = query |> attention_facts(business_id) |> filter_queue_facts(queue)
-
-    from client in Client,
-      join: f in subquery(facts),
-      as: :queue_facts,
-      on: f.id == client.id
-  end
-
-  defp filter_queue_facts(facts, :programming) do
-    horizon = Date.add(Date.utc_today(), @programming_horizon_days)
-
-    from f in subquery(facts),
-      where:
-        f.status == :active and not f.open_ended and
-          (is_nil(f.covered_until) or f.covered_until <= ^horizon)
-  end
-
-  defp filter_queue_facts(facts, :expiring) do
-    from f in subquery(facts), where: f.expiring_soon and not f.expiring_snoozed
-  end
-
-  defp filter_queue_facts(facts, :new) do
-    from f in subquery(facts), where: f.new_client
-  end
-
-  # No-plan clients first (nothing to build on), then whoever runs out soonest.
-  defp order_workbench_queue(query, :programming) do
-    from [client, queue_facts: f] in query,
-      order_by: [asc_nulls_first: f.covered_until, desc: client.inserted_at, desc: client.id]
-  end
-
-  defp order_workbench_queue(query, :expiring) do
-    from client in query, order_by: [asc: client.subscription_ends_on, desc: client.id]
-  end
-
-  defp order_workbench_queue(query, :new), do: Client.newest(query)
 
   @spec invite_client(Ctx.t(), map()) :: {:ok, Client.t()} | {:error, any()}
   def invite_client(%Ctx{} = ctx, invite_attrs) do
@@ -270,9 +150,7 @@ defmodule Easy.Clients do
     with {:ok, client} <- get_client_with_preloads(ctx, client_id),
          {:ok, updated_client} <- write_client_update(ctx, client, attrs),
          {:ok, preloaded} <- preload_client(updated_client) do
-      # Attention flags are virtual: recompute post-update so the mutation response
-      # carries the same derived shape as GET/list, not stale defaults.
-      {:ok, preloaded |> List.wrap() |> put_attention_flags_for_clients(ctx.business_id) |> hd()}
+      {:ok, put_expiring_flag(preloaded)}
     end
   end
 
@@ -398,96 +276,6 @@ defmodule Easy.Clients do
     end
   end
 
-  defp attention_facts(query, business_id) do
-    {open_intake, active_training, active_nutrition} = attention_subqueries(business_id)
-    today = Date.utc_today()
-    horizon = Date.add(today, @expiring_soon_days)
-    now = DateTime.utc_now(:second)
-    new_cutoff = DateTime.add(now, -@new_client_window_days, :day)
-    invite_cutoff = DateTime.add(now, -@invite_stale_days, :day)
-
-    expiring_snooze =
-      from s in Easy.Workbench.QueueSnooze,
-        where:
-          s.business_id == ^business_id and
-            s.client_id == parent_as(:attention_client).id and
-            s.queue == :expiring and s.snoozed_until >= ^today,
-        select: 1
-
-    from c in query,
-      as: :attention_client,
-      left_join: tc in subquery(plan_coverage(TrainingPlan, business_id, today)),
-      on: tc.client_id == c.id,
-      left_join: nc in subquery(plan_coverage(Plan, business_id, today)),
-      on: nc.client_id == c.id,
-      select: %{
-        id: c.id,
-        inserted_at: c.inserted_at,
-        status: c.status,
-        intake_incomplete: exists(subquery(open_intake)),
-        needs_plan: not exists(subquery(active_training)) and not exists(subquery(active_nutrition)),
-        expiring_soon:
-          c.status == :active and not is_nil(c.subscription_ends_on) and
-            c.subscription_ends_on >= ^today and c.subscription_ends_on <= ^horizon,
-        # Snooze hides queue rows and counts; the expiring_soon flag itself is
-        # untouched so roster chips stay honest (quiet-queue sub-spec).
-        expiring_snoozed: exists(subquery(expiring_snooze)),
-        # GREATEST skips NULLs in Postgres, so this is "the last day either
-        # discipline has a plan scheduled through", null when neither does.
-        covered_until: fragment("GREATEST(?, ?)", tc.covered_until, nc.covered_until),
-        # An active plan with no end_date is open-ended (nutrition allows this):
-        # coverage never runs out, whatever covered_until says.
-        open_ended: coalesce(tc.open_ended, false) or coalesce(nc.open_ended, false),
-        new_client:
-          c.status != :inactive and
-            (c.inserted_at >= ^new_cutoff or
-               (c.status == :pending and coalesce(c.invitation_sent_at, c.inserted_at) <= ^invite_cutoff) or
-               exists(subquery(open_intake)))
-      }
-  end
-
-  # One row per client holding plans that still cover today or the future:
-  # the max end_date is how far out that discipline's programming reaches, and
-  # `open_ended` marks a plan with no end date at all.
-  defp plan_coverage(schema, business_id, today) do
-    from p in schema,
-      where:
-        p.business_id == ^business_id and p.status == :active and
-          (is_nil(p.end_date) or p.end_date >= ^today),
-      group_by: p.client_id,
-      select: %{
-        client_id: p.client_id,
-        covered_until: max(p.end_date),
-        open_ended: fragment("bool_or(? IS NULL)", p.end_date)
-      }
-  end
-
-  defp attention_subqueries(business_id) do
-    open_intake =
-      from fa in FormAssignment,
-        where:
-          fa.business_id == ^business_id and
-            fa.client_id == parent_as(:attention_client).id and
-            fa.purpose == :intake and fa.status in [:assigned, :in_progress],
-        select: 1
-
-    active_training =
-      from tp in TrainingPlan,
-        where:
-          tp.business_id == ^business_id and
-            tp.client_id == parent_as(:attention_client).id and tp.status == :active,
-        select: 1
-
-    active_nutrition =
-      from np in Plan,
-        where:
-          np.business_id == ^business_id and
-            np.client_id == parent_as(:attention_client).id and np.status == :active,
-        select: 1
-
-    {open_intake, active_training, active_nutrition}
-  end
-
   # Opt-in (`include_plans: true`): the clients list wants each row's in-force plan
   # names for its chips. Two extra queries per PAGE, not per row, and skipped
   # entirely for every caller that doesn't ask.
@@ -521,46 +309,16 @@ defmodule Easy.Clients do
     |> Enum.reduce(%{}, fn {client_id, name}, acc -> Map.put_new(acc, client_id, name) end)
   end
 
-  defp put_attention_flags_for_clients([], _business_id), do: []
+  defp put_expiring_flag(%Client{} = client) do
+    today = Date.utc_today()
+    horizon = Date.add(today, @expiring_soon_days)
 
-  defp put_attention_flags_for_clients(clients, business_id) do
-    ids = Enum.map(clients, & &1.id)
+    expiring_soon =
+      client.status == :active and not is_nil(client.subscription_ends_on) and
+        Date.compare(client.subscription_ends_on, today) != :lt and
+        Date.compare(client.subscription_ends_on, horizon) != :gt
 
-    flags =
-      Client
-      |> Client.for_business(business_id)
-      |> where([client], client.id in ^ids)
-      |> attention_facts(business_id)
-      |> Repo.all()
-      |> Map.new(&{&1.id, &1})
-
-    Enum.map(clients, &put_attention_flags(&1, flags))
-  end
-
-  defp put_attention_flags(client, flags) do
-    case Map.fetch(flags, client.id) do
-      {:ok, attention} -> put_attention_flags({client, attention})
-      :error -> client
-    end
-  end
-
-  defp put_attention_flags({client, attention}) do
-    %{
-      client
-      | intake_incomplete: attention.intake_incomplete,
-        needs_plan: attention.needs_plan,
-        expiring_soon: attention.expiring_soon,
-        needs_programming:
-          attention.status == :active and not attention.open_ended and
-            programming_due?(attention.covered_until),
-        covered_until: attention.covered_until
-    }
-  end
-
-  defp programming_due?(nil), do: true
-
-  defp programming_due?(covered_until) do
-    Date.compare(covered_until, Date.add(Date.utc_today(), @programming_horizon_days)) != :gt
+    %{client | expiring_soon: expiring_soon}
   end
 
   defp ok_or_not_found(nil), do: {:error, :not_found}

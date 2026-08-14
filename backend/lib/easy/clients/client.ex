@@ -35,11 +35,7 @@ defmodule Easy.Clients.Client do
     field :subscription_ends_on, :date
     field :joined_at, :utc_datetime_usec
     field :required_services, {:array, Ecto.Enum}, values: @required_services, default: []
-    field :intake_incomplete, :boolean, virtual: true, default: false
-    field :needs_plan, :boolean, virtual: true, default: false
     field :expiring_soon, :boolean, virtual: true, default: false
-    field :needs_programming, :boolean, virtual: true, default: false
-    field :covered_until, :date, virtual: true
     field :last_active_at, :utc_datetime
     # The names of the plans in force for this client TODAY, for the clients-list
     # row chips. Only populated when the caller asks (`include_plans: true`) —

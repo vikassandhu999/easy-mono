@@ -19,7 +19,6 @@ defmodule Easy.Chat do
   def list_conversations(%Ctx{} = ctx, opts \\ []) do
     offset = max(Keyword.get(opts, :offset, 0), 0)
     limit = min(max(Keyword.get(opts, :limit, 20), 0), 20)
-    waiting? = Keyword.get(opts, :waiting, false)
 
     base =
       Conversation
@@ -27,33 +26,18 @@ defmodule Easy.Chat do
       |> Conversation.for_visible_clients(ctx)
       |> Conversation.for_client_search(Keyword.get(opts, :search))
 
-    base = if waiting?, do: Conversation.waiting(base), else: base
-    order = if waiting?, do: &Conversation.oldest/1, else: &Conversation.recent/1
-
     count = Repo.aggregate(base, :count)
 
     conversations =
       base
       |> Conversation.include_client()
-      |> order.()
+      |> Conversation.recent()
       |> offset(^offset)
       |> limit(^limit)
       |> Repo.all()
       |> attach_unread_counts(ctx.business_id, :coach)
 
     {:ok, %{count: count, conversations: conversations}}
-  end
-
-  @spec count_waiting_conversations(Ctx.t()) :: {:ok, non_neg_integer()}
-  def count_waiting_conversations(%Ctx{} = ctx) do
-    count =
-      Conversation
-      |> Conversation.for_business(ctx.business_id)
-      |> Conversation.waiting()
-      |> Conversation.for_visible_clients(ctx)
-      |> Repo.aggregate(:count)
-
-    {:ok, count}
   end
 
   @spec get_conversation(Ctx.t(), String.t()) :: {:ok, Conversation.t()} | {:error, :not_found}

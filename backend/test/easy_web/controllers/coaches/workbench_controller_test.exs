@@ -91,10 +91,10 @@ defmodule EasyWeb.Coaches.WorkbenchControllerTest do
       }
 
       {:ok, _} = Easy.Chat.send_client_message(client_ctx, %{body: "Coach, question!"})
-      assert {:ok, 1} = Easy.Chat.count_waiting_conversations(coach_ctx)
+      assert {:ok, %{replies: 1}} = Easy.Workbench.counts(coach_ctx)
 
       {:ok, _} = Easy.Chat.send_message(coach_ctx, conversation.id, %{body: "On it."})
-      assert {:ok, 0} = Easy.Chat.count_waiting_conversations(coach_ctx)
+      assert {:ok, %{replies: 0}} = Easy.Workbench.counts(coach_ctx)
     end
 
     test "requires auth" do

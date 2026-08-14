@@ -1,6 +1,5 @@
 defmodule Easy.Workbench do
   alias Easy.Clients
-  alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Repo
   alias Easy.Workbench.QueueSnooze
@@ -77,20 +76,6 @@ defmodule Easy.Workbench do
           {:ok, %{all: non_neg_integer(), training: non_neg_integer(), nutrition: non_neg_integer()}}
   def programming_counts(%Ctx{} = ctx) do
     {:ok, WorkbenchProgrammingQueue.counts(ctx)}
-  end
-
-  @spec list_quiet_clients(Ctx.t(), keyword()) ::
-          {:ok, %{clients: [Client.t()], count: non_neg_integer(), summary: map()}}
-  def list_quiet_clients(%Ctx{} = ctx, opts \\ []) do
-    with {:ok, %{count: count, items: items}} <- list_quiet_queue(ctx, opts),
-         ids = Enum.map(items, & &1.client.id),
-         {:ok, result} <-
-           Clients.list_clients_in_order(ctx, ids,
-             limit: length(ids),
-             include_plans: Keyword.get(opts, :include_plans, false)
-           ) do
-      {:ok, %{result | count: count}}
-    end
   end
 
   @spec snooze_queue_for_client(Ctx.t(), String.t(), map()) ::

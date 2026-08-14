@@ -195,46 +195,6 @@ defmodule Easy.ChatTest do
       assert a.client.id == client.id
     end
 
-    test "waiting: true uses the stable waiting clock, longest-waiting first", %{
-      coach: coach,
-      client: client
-    } do
-      [waiting_old, waiting_new, answered] =
-        Enum.map(1..3, fn _n ->
-          page_client = insert(:client, business: coach.business, creator: coach)
-          insert(:conversation, business: coach.business, client: page_client)
-        end)
-
-      now = DateTime.utc_now(:microsecond)
-
-      waiting_old
-      |> Ecto.Changeset.change(
-        last_message_role: :client,
-        last_message_at: DateTime.add(now, -10),
-        waiting_since: DateTime.add(now, -100)
-      )
-      |> Repo.update!()
-
-      waiting_new
-      |> Ecto.Changeset.change(
-        last_message_role: :coach,
-        last_message_at: now,
-        waiting_since: DateTime.add(now, -20)
-      )
-      |> Repo.update!()
-
-      answered
-      |> Ecto.Changeset.change(last_message_role: :client, last_message_at: now, waiting_since: nil)
-      |> Repo.update!()
-
-      _no_messages = insert(:conversation, business: coach.business, client: client)
-
-      assert {:ok, %{count: 2, conversations: conversations}} =
-               Chat.list_conversations(owner_coach_ctx(coach), waiting: true)
-
-      assert Enum.map(conversations, & &1.id) == [waiting_old.id, waiting_new.id]
-    end
-
     test "batches unread counts for a deterministic conversation page", %{coach: coach, client: client} do
       other_client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
 

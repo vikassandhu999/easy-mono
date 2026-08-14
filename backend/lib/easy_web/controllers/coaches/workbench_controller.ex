@@ -69,9 +69,16 @@ defmodule EasyWeb.Coaches.WorkbenchController do
     parameters:
       @pagination_parameters ++
         [
-          Operation.parameter(:service, :query, :string, "Required service",
-            required: false,
-            schema: %OpenApiSpex.Schema{type: :string, enum: ["all", "training", "nutrition"], default: "all"}
+          Operation.parameter(
+            :service,
+            :query,
+            %OpenApiSpex.Schema{
+              type: :string,
+              enum: ["all", "training", "nutrition"],
+              default: "all"
+            },
+            "Required service",
+            required: false
           )
         ],
     responses: [

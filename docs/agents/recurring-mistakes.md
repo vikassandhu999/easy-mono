@@ -194,6 +194,23 @@ full suite fails before the supervised task runs. At async-delivery seams, use a
 **Enforced by:** the Intake-reminder regression test in
 `test/easy/forms/required_services_test.exs` and review of new `deliver_async` tests.
 
+### RM-027 — `Operation.parameter/5` takes its schema as the third argument
+Passing `:string` as the third argument and a richer schema in `schema:` silently discards
+the richer schema when OpenApiSpex calls `Parameter.put_schema/2`. The Programming filter
+lost its enum and default this way even though the source appeared to declare both. Pass
+the `%OpenApiSpex.Schema{}` as the third argument. **Enforced by:**
+`test/easy_web/controllers/workbench_open_api_test.exs` asserts the resolved parameter enum
+and default, and generated-client checks require the closed union.
+
+### RM-028 — A bounded page enrichment must query by the page keys directly
+The Replies message-count enrichment already had each selected conversation id and its
+waiting timestamp, but joined `conversations` again to recover those facts. PostgreSQL
+scanned all 1,800 representative conversations for a five-row page. Build the grouped
+child query from the tenant id and captured page facts; do not rejoin an unbounded parent
+relation for values already loaded. **Enforced by:**
+`test/easy/workbench_query_plan_test.exs` rejects large sequential scans and per-client
+query growth across every Workbench projection.
+
 ---
 
 ## Frontend

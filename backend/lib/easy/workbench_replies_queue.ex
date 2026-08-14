@@ -26,7 +26,7 @@ defmodule Easy.WorkbenchRepliesQueue do
       |> Repo.all()
       |> attach_unread_counts(ctx.business_id)
 
-    waiting_counts = waiting_message_counts(conversations)
+    waiting_counts = waiting_message_counts(conversations, ctx.business_id)
 
     items =
       Enum.map(conversations, fn conversation ->
@@ -62,9 +62,9 @@ defmodule Easy.WorkbenchRepliesQueue do
     Enum.map(conversations, &Map.put(&1, :unread_count, Map.get(counts, &1.id, 0)))
   end
 
-  defp waiting_message_counts([]), do: %{}
+  defp waiting_message_counts([], _business_id), do: %{}
 
-  defp waiting_message_counts(conversations) do
+  defp waiting_message_counts(conversations, business_id) do
     pairs =
       for %{id: id, waiting_since: waiting_since} <- conversations,
           not is_nil(waiting_since),
@@ -73,17 +73,20 @@ defmodule Easy.WorkbenchRepliesQueue do
     if pairs == [] do
       %{}
     else
-      ids = Enum.map(pairs, &elem(&1, 0))
+      waiting_sequence =
+        Enum.reduce(pairs, dynamic(false), fn {conversation_id, waiting_since}, predicate ->
+          dynamic(
+            [message],
+            ^predicate or
+              (message.conversation_id == ^conversation_id and
+                 message.inserted_at >= ^waiting_since)
+          )
+        end)
 
       Message
-      |> where([message], message.conversation_id in ^ids)
+      |> where([message], message.business_id == ^business_id)
       |> where([message], message.sender_type == :client)
-      |> join(:inner, [message], conversation in Conversation, on: conversation.id == message.conversation_id)
-      |> where(
-        [message, conversation],
-        not is_nil(conversation.waiting_since) and
-          message.inserted_at >= conversation.waiting_since
-      )
+      |> where(^waiting_sequence)
       |> group_by([message], message.conversation_id)
       |> select([message], {message.conversation_id, count(message.id)})
       |> Repo.all()

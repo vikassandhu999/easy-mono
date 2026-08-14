@@ -4,7 +4,8 @@ defmodule EasyWeb.WorkbenchOpenApiTest do
   alias EasyWeb.OpenApi.Schemas.{
     ClientProfileFormSubmissionRequest,
     ClientProfileFormTemplateRequest,
-    ClientProfileServiceTypeAnswer
+    ClientProfileServiceTypeAnswer,
+    MarkHandledRequest
   }
 
   test "publishes explicit Workbench paths and removes the overloaded list parameters" do
@@ -39,6 +40,53 @@ defmodule EasyWeb.WorkbenchOpenApiTest do
     end
 
     assert Map.has_key?(client.properties, :expiring_soon)
+  end
+
+  test "publishes queue filters, nullable lifecycle clocks, and drain actions precisely" do
+    spec = EasyWeb.ApiSpec.spec() |> OpenApiSpex.resolve_schema_modules()
+
+    programming = spec.paths["/v1/coach/workbench/queues/programming"].get
+    service = Enum.find(programming.parameters, &(&1.name == :service))
+    assert service.schema.enum == ["all", "training", "nutrition"]
+    assert service.schema.default == "all"
+
+    client = spec.components.schemas["Client"]
+    assert client.properties.joined_at.type == :string
+    assert client.properties.joined_at.format == :"date-time"
+    assert client.properties.joined_at.nullable
+    assert :joined_at in client.required
+
+    conversation = spec.components.schemas["Conversation"]
+    assert conversation.properties.waiting_since.type == :string
+    assert conversation.properties.waiting_since.format == :"date-time"
+    assert conversation.properties.waiting_since.nullable
+    assert :waiting_since in conversation.required
+
+    mark_handled = spec.components.schemas[MarkHandledRequest.schema().title]
+
+    assert {:ok, _} =
+             OpenApiSpex.cast_value(
+               %{"expected_last_message_at" => "2026-08-14T10:30:00.123456Z"},
+               mark_handled,
+               spec
+             )
+
+    for invalid <- [
+          %{},
+          %{"expected_last_message_at" => "not-a-timestamp"},
+          %{"expected_last_message_at" => "2026-08-14T10:30:00Z", "extra" => true}
+        ] do
+      assert {:error, _} = OpenApiSpex.cast_value(invalid, mark_handled, spec)
+    end
+
+    mark_handled_operation = spec.paths["/v1/coach/conversations/{id}/mark-handled"].post
+    assert mark_handled_operation.requestBody.required
+    assert Map.has_key?(mark_handled_operation.responses, 204)
+    assert Map.has_key?(mark_handled_operation.responses, 409)
+
+    reminder = spec.paths["/v1/coach/form-assignments/{id}/remind"].post
+    assert reminder.requestBody == nil
+    assert Map.has_key?(reminder.responses, 204)
   end
 
   test "service_type templates and answers are closed by the OpenAPI contract" do

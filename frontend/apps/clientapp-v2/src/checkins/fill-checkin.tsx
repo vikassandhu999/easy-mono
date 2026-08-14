@@ -64,6 +64,11 @@ function FillForm({assignment}: {assignment: ClientProfileFormAssignment}) {
   const photoUploadBusy = Object.values(photoUploadStates).some((state) => state.busy);
   const photoUploadFailed = Object.values(photoUploadStates).some((state) => state.failed);
 
+  const updateAnswer = useCallback((questionId: string, value: AnswerValue) => {
+    setAnswers((current) => ({...current, [questionId]: value}));
+    setError(null);
+  }, []);
+
   const updatePhotoUploadState = useCallback((questionId: string, state: PhotoUploadState) => {
     setPhotoUploadStates((current) => {
       const previous = current[questionId];
@@ -133,7 +138,7 @@ function FillForm({assignment}: {assignment: ClientProfileFormAssignment}) {
                   .map((question) => (
                     <CheckinField
                       key={question.id}
-                      onChange={(value) => setAnswers((prev) => ({...prev, [question.id]: value}))}
+                      onChange={(value) => updateAnswer(question.id, value)}
                       question={question}
                       value={answers[question.id] ?? null}
                       weightUnit={weightUnit}

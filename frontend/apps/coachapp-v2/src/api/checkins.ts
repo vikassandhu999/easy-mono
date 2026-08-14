@@ -37,6 +37,15 @@ export type ListCheckInReviewQueueParams = NonNullable<operations['listCheckInRe
 
 export type FormPurpose = 'check_in' | 'intake';
 
+export type CheckInFrequency = NonNullable<ClientProfileCheckInSchedule['frequency']>;
+
+export const CHECK_IN_FREQUENCIES: {id: CheckInFrequency; label: string}[] = [
+  {id: 'once', label: 'Once'},
+  {id: 'weekly', label: 'Weekly'},
+  {id: 'biweekly', label: 'Every 2 weeks'},
+  {id: 'monthly', label: 'Monthly'},
+];
+
 export const PURPOSE_LABELS: Record<FormPurpose, string> = {
   check_in: 'Check-in',
   intake: 'Intake',
@@ -240,6 +249,25 @@ export function useListCheckInSchedulesForClientQuery(clientId: string, options?
   });
 }
 
+/** A schedule due today generates its first assignment immediately. */
+export function useCreateCheckInScheduleMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({body, clientId}: {body: ClientProfileCheckInScheduleRequest; clientId: string}) =>
+      call(
+        client.POST('/v1/coach/clients/{client_id}/check-in-schedules', {
+          body,
+          params: {path: {client_id: clientId}},
+        }),
+      ) as Promise<ClientProfileCheckInScheduleResponse>,
+    onSuccess: (_data, {clientId}) => {
+      qc.invalidateQueries({queryKey: checkInKeys.schedules(clientId)});
+      qc.invalidateQueries({queryKey: formAssignmentKeys.forClient(clientId)});
+      qc.invalidateQueries({queryKey: workbenchKeys.all});
+    },
+  });
+}
+
 /**
  * Update only knows the schedule id, not its client, so refresh every cached
  * check-in query plus every form-assignment list (mirrors the old
@@ -256,6 +284,18 @@ export function useUpdateCheckInScheduleMutation() {
     onSuccess: () => {
       qc.invalidateQueries({queryKey: checkInKeys.all});
       qc.invalidateQueries({queryKey: formAssignmentKeys.all});
+    },
+  });
+}
+
+/** Delete only knows the schedule id — refresh every cached schedules list.
+ *  Only unused schedules can be deleted, so assignments are unaffected. */
+export function useDeleteCheckInScheduleMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => call(client.DELETE('/v1/coach/check-in-schedules/{id}', {params: {path: {id}}})),
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: checkInKeys.all});
     },
   });
 }

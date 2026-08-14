@@ -1,5 +1,16 @@
-import {Chip, ListBox, Select, Switch, Typography, toast} from '@heroui/react';
-import {CalendarCheck, ChevronRight, ClipboardList} from 'lucide-react';
+import {
+  AlertDialog,
+  Button,
+  Chip,
+  ListBox,
+  Select,
+  Spinner,
+  Switch,
+  Typography,
+  toast,
+  useOverlayState,
+} from '@heroui/react';
+import {CalendarCheck, ChevronRight, ClipboardList, Plus, Trash2} from 'lucide-react';
 import {generatePath, Link} from 'react-router-dom';
 
 import {EmptyState} from '@/@components/empty-state';
@@ -8,12 +19,18 @@ import {ROUTES} from '@/@config/routes';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import type {ClientProfileCheckInSchedule} from '@/api/checkins';
 import {
+  CHECK_IN_FREQUENCIES,
+  type CheckInFrequency,
+  useDeleteCheckInScheduleMutation,
   useListCheckInSchedulesForClientQuery,
   useListClientFormAssignmentsForCoachQuery,
   useUpdateCheckInScheduleMutation,
 } from '@/api/checkins';
 import type {Client} from '@/api/clients';
+import {getApiErrorCode, getApiErrorMessage} from '@/api/shared';
 import {submissionPhotoIds} from '@/checkins/lib/form-answers';
+import AssignSurface from '@/clients/components/assign-surface';
+import CheckinScheduleAddContent from '@/clients/components/checkin-schedule-add-content';
 import {PhotoThumb} from '@/clients/components/photo-thumb';
 import {SectionCard} from '@/clients/components/section-card';
 import {formatDayMonth} from '@/clients/lib/client-detail-data';
@@ -23,7 +40,7 @@ export function CheckinsTab({client}: {client: Client}) {
   const schedules = useListCheckInSchedulesForClientQuery(client.id);
   const forms = useListClientFormAssignmentsForCoachQuery(client.id);
 
-  const schedule = schedules.data?.data?.[0];
+  const scheduleList = schedules.data?.data ?? [];
   const assignments = forms.data?.data ?? [];
   // Newest first. The endpoint does not promise an order, and it came back with
   // 9 Jul above 16 Jul — sort on the submission date, falling back to the due date
@@ -44,9 +61,16 @@ export function CheckinsTab({client}: {client: Client}) {
   return (
     <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_320px] sm:items-start">
       <div className="flex min-w-0 flex-col gap-4">
-        {schedule ? (
-          <ScheduleCard schedule={schedule} />
-        ) : (
+        {scheduleList.map((schedule) => (
+          <ScheduleCard
+            // Until the assignments have loaded we don't know whether the
+            // schedule is unused, so keep delete hidden rather than flash it.
+            hasAssignments={!forms.isSuccess || assignments.some((a) => a.check_in_schedule_id === schedule.id)}
+            key={schedule.id}
+            schedule={schedule}
+          />
+        ))}
+        {scheduleList.length === 0 && (
           <SectionCard>
             <EmptyState
               body={`Set a cadence and ${client.first_name ?? 'this client'} will get the form automatically.`}
@@ -55,6 +79,25 @@ export function CheckinsTab({client}: {client: Client}) {
             />
           </SectionCard>
         )}
+        <AssignSurface
+          ariaLabel="Add check-in schedule"
+          label={
+            <>
+              <Plus size={14} />
+              Add schedule
+            </>
+          }
+          triggerClassName="w-full"
+          triggerVariant="outline"
+        >
+          {(close) => (
+            <CheckinScheduleAddContent
+              clientId={client.id}
+              clientName={client.first_name ?? 'this client'}
+              onClose={close}
+            />
+          )}
+        </AssignSurface>
 
         {checkIns.length > 0 && (
           <SectionCard
@@ -142,20 +185,59 @@ export function CheckinsTab({client}: {client: Client}) {
 /**
  * The schedule is EDITED here, not just described: the design gives it a Frequency
  * select and an Active switch, and both mutate on change (INTERACTIONS §CD). The
- * summary line it replaced could only be read.
+ * summary line it replaced could only be read. A schedule that hasn't generated
+ * any check-ins yet can also be deleted (set up by mistake).
  */
-function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
+function ScheduleCard({hasAssignments, schedule}: {hasAssignments: boolean; schedule: ClientProfileCheckInSchedule}) {
   const updateScheduleMutation = useUpdateCheckInScheduleMutation();
-  const isLoading = updateScheduleMutation.isPending;
+  const deleteScheduleMutation = useDeleteCheckInScheduleMutation();
+  const deleteAlertState = useOverlayState();
+  const isLoading = updateScheduleMutation.isPending || deleteScheduleMutation.isPending;
 
-  const save = (body: {active?: boolean; frequency?: Frequency}, done: string) =>
+  const save = (body: {active?: boolean; frequency?: CheckInFrequency}, done: string) =>
     updateScheduleMutation
       .mutateAsync({body, id: schedule.id})
       .then(() => toast.success(done, {timeout: 1000}))
-      .catch((error) => toastMutationError(error, "The schedule wasn't updated. Try again."));
+      .catch((error) => {
+        // Resuming past the schedule cap carries its own human message.
+        if (getApiErrorCode(error) === 'check_in_schedule_cap_reached') {
+          toast.danger(getApiErrorMessage(error, "The schedule wasn't updated. Try again."));
+        } else {
+          toastMutationError(error, "The schedule wasn't updated. Try again.");
+        }
+      });
+
+  const confirmDelete = () =>
+    deleteScheduleMutation
+      .mutateAsync(schedule.id)
+      .then(() => {
+        toast.success('Schedule deleted', {timeout: 1000});
+        deleteAlertState.close();
+      })
+      .catch((error) => {
+        deleteAlertState.close();
+        toastMutationError(error, "The schedule wasn't deleted. Try again.");
+      });
 
   return (
-    <SectionCard title="Check-in schedule">
+    <SectionCard
+      action={
+        hasAssignments ? undefined : (
+          <Button
+            aria-label="Delete schedule"
+            className="text-muted hover:text-danger"
+            isDisabled={isLoading}
+            isIconOnly
+            onPress={() => deleteAlertState.open()}
+            size="sm"
+            variant="ghost"
+          >
+            <Trash2 size={16} />
+          </Button>
+        )
+      }
+      title="Check-in schedule"
+    >
       <div className="px-4 pb-4">
         <div className="flex items-center gap-3">
           <span className="flex size-9.5 shrink-0 items-center justify-center rounded-control bg-accent-soft text-accent">
@@ -190,7 +272,7 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
           <Select
             aria-label="Check-in frequency"
             isDisabled={isLoading}
-            onSelectionChange={(key) => save({frequency: key as Frequency}, 'Schedule updated')}
+            onSelectionChange={(key) => save({frequency: key as CheckInFrequency}, 'Schedule updated')}
             selectedKey={schedule.frequency}
           >
             <Select.Trigger className="w-auto">
@@ -199,7 +281,7 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
             </Select.Trigger>
             <Select.Popover>
               <ListBox>
-                {FREQUENCIES.map((f) => (
+                {CHECK_IN_FREQUENCIES.map((f) => (
                   <ListBox.Item
                     id={f.id}
                     key={f.id}
@@ -250,18 +332,59 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
           </Switch>
         </div>
       </div>
+
+      <AlertDialog.Backdrop
+        isDismissable={!deleteScheduleMutation.isPending}
+        isOpen={deleteAlertState.isOpen}
+        onOpenChange={deleteAlertState.setOpen}
+        variant="transparent"
+      >
+        <AlertDialog.Container>
+          <AlertDialog.Dialog>
+            <AlertDialog.CloseTrigger />
+            <AlertDialog.Header>
+              <AlertDialog.Icon status="danger" />
+              <AlertDialog.Heading>
+                Delete schedule: <strong>{schedule.form_template?.name ?? 'Check-in'}</strong>
+              </AlertDialog.Heading>
+            </AlertDialog.Header>
+            <AlertDialog.Body>
+              The client will stop receiving this check-in. You can add it again later.
+            </AlertDialog.Body>
+            <AlertDialog.Footer>
+              <Button
+                isDisabled={deleteScheduleMutation.isPending}
+                slot="close"
+                variant="tertiary"
+              >
+                Cancel
+              </Button>
+              <Button
+                className="relative"
+                isPending={deleteScheduleMutation.isPending}
+                onPress={confirmDelete}
+                variant="danger"
+              >
+                {/* RM-125: constant-width pending button — spinner overlays an
+                    invisible copy of the label instead of swapping children */}
+                <span className={deleteScheduleMutation.isPending ? 'invisible' : undefined}>Delete schedule</span>
+                {deleteScheduleMutation.isPending ? (
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <Spinner
+                      color="current"
+                      size="sm"
+                    />
+                    <span className="sr-only">Deleting</span>
+                  </span>
+                ) : null}
+              </Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </AlertDialog.Backdrop>
     </SectionCard>
   );
 }
-
-type Frequency = NonNullable<ClientProfileCheckInSchedule['frequency']>;
-
-const FREQUENCIES: {id: Frequency; label: string}[] = [
-  {id: 'once', label: 'Once'},
-  {id: 'weekly', label: 'Weekly'},
-  {id: 'biweekly', label: 'Every 2 weeks'},
-  {id: 'monthly', label: 'Monthly'},
-];
 
 /** Title, then the date and the state on the same line — the design's history row. */
 function HistoryRow({date, status, title, to}: {date?: string; status: React.ReactNode; title: string; to?: string}) {

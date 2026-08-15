@@ -136,6 +136,10 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
   end
 
   describe "Client Plan reads and lifecycle" do
+    test "exports the canonical Client Plan lifecycle vocabulary" do
+      assert TrainingPlan.lifecycles() == [:incomplete, :upcoming, :current, :ended, :archived]
+    end
+
     test "lists visible Client Plans and derives lifecycle from Coverage dates" do
       coach = insert(:coach)
       client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)

@@ -107,7 +107,8 @@ export const trainingPlanKeys = {
   ...domain('training-plans'),
   /** Prefix over every client's assigned-plans list — for mutations that don't know which client. */
   forClients: () => ['training-plans', 'for-client'] as const,
-  forClient: (clientId: string) => [...trainingPlanKeys.forClients(), clientId] as const,
+  forClient: (clientId: string, filters?: Filters) =>
+    [...trainingPlanKeys.forClients(), clientId, filters ?? {}] as const,
 };
 
 export const trainingSessionKeys = {

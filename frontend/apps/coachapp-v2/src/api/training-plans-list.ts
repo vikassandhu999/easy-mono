@@ -16,6 +16,7 @@ import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack
 import {call, client} from '@/api/client';
 import {clientKeys, trainingPlanKeys, trainingSessionKeys} from '@/api/keys';
 import type {components, paths} from '@/api/schema';
+import {trainingPlanAssignmentRequest} from '@/api/training-plan-requests';
 import {workbenchMutationTargets} from '@/api/workbench-targets';
 
 const PAGE_SIZE = 20;
@@ -25,12 +26,14 @@ export type TrainingPlanCreateRequest = components['schemas']['TrainingPlanCreat
 export type TrainingPlanUpdateRequest = components['schemas']['TrainingPlanUpdateRequest'];
 export type TrainingPlanRevisionRequest = components['schemas']['TrainingPlanRevisionRequest'];
 export type TrainingPlanAssignRequest = components['schemas']['TrainingPlanAssignRequest'];
+export type ClientTrainingPlan = components['schemas']['ClientTrainingPlan'];
 export type ClientTrainingPlanListResponse = components['schemas']['ClientTrainingPlanListResponse'];
 export type TrainingSession = components['schemas']['TrainingSession'];
 export type TrainingPerformedSet = components['schemas']['TrainingPerformedSet'];
 export type TrainingSessionListResponse = components['schemas']['TrainingSessionListResponse'];
 
 type TrainingPlanResponse = components['schemas']['TrainingPlanResponse'];
+type ClientTrainingPlanResponse = components['schemas']['ClientTrainingPlanResponse'];
 type TrainingSessionResponse = components['schemas']['TrainingSessionResponse'];
 
 type ListTrainingPlansQuery = NonNullable<paths['/v1/coach/training-plans']['get']['parameters']['query']>;
@@ -88,7 +91,7 @@ export function useListCoachClientTrainingPlansQuery(
   options?: {enabled?: boolean},
 ) {
   return useQuery({
-    queryKey: trainingPlanKeys.forClient(clientId),
+    queryKey: trainingPlanKeys.forClient(clientId, params),
     queryFn: () =>
       call(
         client.GET('/v1/coach/clients/{client_id}/training-plans', {
@@ -219,11 +222,11 @@ export function useAssignTrainingPlanMutation() {
   return useMutation({
     mutationFn: ({clientId, id, body}: {clientId: string; id: string; body: TrainingPlanAssignRequest}) =>
       call(
-        client.POST('/v1/coach/clients/{client_id}/training-plans/{id}/assign', {
-          params: {path: {client_id: clientId, id}},
-          body,
-        }),
-      ) as Promise<TrainingPlanResponse>,
+        client.POST(
+          '/v1/coach/clients/{client_id}/training-plans/{id}/assign',
+          trainingPlanAssignmentRequest({body, clientId, id}),
+        ),
+      ) as Promise<ClientTrainingPlanResponse>,
     onSuccess: (_data, {clientId}) => {
       qc.invalidateQueries({queryKey: trainingPlanKeys.forClient(clientId)});
       qc.invalidateQueries({queryKey: clientKeys.lists()});

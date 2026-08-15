@@ -43,6 +43,10 @@ defmodule EasyWeb.TrainingPlanOpenApiTest do
     assignment = paths["/v1/coach/clients/{client_id}/training-plans/{id}/assign"].post
     assert assignment.requestBody.required == true
     assert assignment.responses[201]
+
+    assert Map.fetch!(assignment.responses[201].content["application/json"].schema, :"$ref") ==
+             "#/components/schemas/ClientTrainingPlanResponse"
+
     assert assignment.responses[404]
     assert assignment.responses[422]
 

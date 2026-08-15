@@ -28,7 +28,7 @@ import {call, client} from '@/api/client';
 import {clientKeys, trainingPlanKeys} from '@/api/keys';
 import {patchQueryData, queryClient} from '@/api/query-client';
 import type {components} from '@/api/schema';
-import {trainingPlanRevisionRequest} from '@/api/training-plan-lifecycle';
+import {trainingPlanPeriodRequest} from '@/api/training-plan-requests';
 import {planToPrescriptionRequest} from '@/api/training-prescription';
 import {workbenchMutationTargets} from '@/api/workbench-targets';
 
@@ -119,7 +119,7 @@ export async function updatePlanPeriod(
   const response = (await call(
     client.PATCH('/v1/coach/training-plans/{id}', {
       params: {path: {id: planId}},
-      body: {...body, ...trainingPlanRevisionRequest(plan)},
+      body: trainingPlanPeriodRequest(plan, body),
     }),
   )) as TrainingPlanResponse;
   queryClient.invalidateQueries({queryKey: trainingPlanKeys.detail(planId)});

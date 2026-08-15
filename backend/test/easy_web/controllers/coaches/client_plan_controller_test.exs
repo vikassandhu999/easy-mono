@@ -11,13 +11,15 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
 
   describe "GET /v1/coach/clients/:client_id/training-plans" do
     test "lists only this client's training plans", ctx do
+      today = Date.utc_today()
+
       insert(:training_plan,
         creator: ctx.coach.user,
         business: ctx.business,
         client: ctx.client,
         kind: :client_plan,
-        start_date: ~D[2026-01-01],
-        end_date: ~D[2026-01-31]
+        start_date: Date.add(today, -31),
+        end_date: Date.add(today, -1)
       )
 
       # Template — should NOT appear

@@ -23894,7 +23894,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TrainingPlanResponse"
+                  "$ref": "#/components/schemas/ClientTrainingPlanResponse"
                 }
               }
             },

@@ -5,6 +5,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   alias Easy.Training.Programming
 
   alias EasyWeb.OpenApi.Schemas.{
+    ClientTrainingPlanResponse,
     ErrorResponse,
     TrainingPlanAssignRequest,
     TrainingPlanCreateRequest,
@@ -168,7 +169,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     ],
     request_body: {"Training Template Assignment request", "application/json", TrainingPlanAssignRequest, required: true},
     responses: [
-      created: {"Client Plan created", "application/json", TrainingPlanResponse},
+      created: {"Client Plan created", "application/json", ClientTrainingPlanResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}

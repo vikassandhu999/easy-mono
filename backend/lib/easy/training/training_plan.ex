@@ -15,6 +15,7 @@ defmodule Easy.Training.TrainingPlan do
   @foreign_key_type :binary_id
 
   @kinds [:template, :client_plan]
+  @lifecycles [:incomplete, :upcoming, :current, :ended, :archived]
   @template_fields [:name, :description]
   @client_plan_fields [:client_id, :source_template_id, :start_date, :end_date]
 
@@ -43,6 +44,9 @@ defmodule Easy.Training.TrainingPlan do
 
   @spec statuses() :: [atom()]
   def statuses, do: [:active, :archived]
+
+  @spec lifecycles() :: [atom()]
+  def lifecycles, do: @lifecycles
 
   @spec lifecycle(t(), Date.t()) :: :incomplete | :upcoming | :current | :ended | :archived | nil
   def lifecycle(plan, date \\ Date.utc_today())
@@ -74,9 +78,9 @@ defmodule Easy.Training.TrainingPlan do
     |> apply_constraints()
   end
 
-  @spec assignment_changeset(String.t(), String.t(), String.t(), t(), map()) ::
+  @spec insert_changeset(String.t(), String.t(), String.t(), t(), map()) ::
           Ecto.Changeset.t()
-  def assignment_changeset(business_id, creator_id, client_id, source_template, attrs) do
+  def insert_changeset(business_id, creator_id, client_id, source_template, attrs) do
     %__MODULE__{}
     |> cast(attrs, [:start_date, :end_date])
     |> put_change(:kind, :client_plan)

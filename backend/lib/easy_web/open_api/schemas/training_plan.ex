@@ -272,6 +272,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.TrainingPlan do
   require OpenApiSpex
 
+  alias Easy.Training.TrainingPlan, as: DomainTrainingPlan
+
   alias EasyWeb.OpenApi.Schemas.{
     Shared,
     TrainingPlanClient,
@@ -297,7 +299,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlan do
           status: %Schema{type: :string, enum: ["active", "archived"]},
           lifecycle: %Schema{
             type: :string,
-            enum: ["incomplete", "upcoming", "current", "ended", "archived"],
+            enum: Enum.map(DomainTrainingPlan.lifecycles(), &Atom.to_string/1),
             nullable: true
           },
           start_date: %Schema{type: :string, format: :date, nullable: true},
@@ -365,6 +367,7 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientTrainingPlan do
   require OpenApiSpex
 
+  alias Easy.Training.TrainingPlan, as: DomainTrainingPlan
   alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPlanWorkout, TrainingSchedule}
   alias OpenApiSpex.Schema
 
@@ -382,7 +385,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientTrainingPlan do
           revision: %Schema{type: :integer, minimum: 1},
           archived_at: %Schema{type: :string, format: :"date-time", nullable: true},
           status: %Schema{type: :string, enum: ["active", "archived"]},
-          lifecycle: %Schema{type: :string, enum: ["incomplete", "upcoming", "current", "ended", "archived"]},
+          lifecycle: %Schema{type: :string, enum: Enum.map(DomainTrainingPlan.lifecycles(), &Atom.to_string/1)},
           start_date: %Schema{type: :string, format: :date, nullable: true},
           end_date: %Schema{type: :string, format: :date, nullable: true},
           workouts: %Schema{type: :array, items: TrainingPlanWorkout},

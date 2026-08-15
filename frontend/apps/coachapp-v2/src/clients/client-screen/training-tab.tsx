@@ -9,6 +9,7 @@ import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
 import {clientPlanLifecycleLabel, trainingPlanRevisionRequest} from '@/api/training-plan-lifecycle';
 import {
+  type ClientTrainingPlan,
   useArchiveTrainingPlanMutation,
   useCoachClientTrainingSessionsInfiniteQuery,
   useListCoachClientTrainingPlansQuery,
@@ -27,11 +28,13 @@ import {
 import {sessionWorkoutName} from '@/clients/lib/session';
 import {handleStaleTrainingPlanConflict} from '@/training-plans/lib/stale-training-plan-conflict';
 
-/** CD-TR: the active plan, then session history grouped by week. */
+/** CD-TR: active and archived Client Plans, then session history grouped by week. */
 export function TrainingTab({client}: {client: Client}) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [assignFromUrl] = useState(() => params.get('assign') === 'plan');
+  const [assignOpen, setAssignOpen] = useState(assignFromUrl);
+  const [showArchived, setShowArchived] = useState(false);
   const archivePlanMutation = useArchiveTrainingPlanMutation();
 
   useEffect(() => {
@@ -44,7 +47,12 @@ export function TrainingTab({client}: {client: Client}) {
   }, [params, setParams]);
 
   const window = lastNDays(56);
-  const plans = useListCoachClientTrainingPlansQuery(client.id, {status: 'active'});
+  const plans = useListCoachClientTrainingPlansQuery(client.id, {limit: 100, status: 'active'});
+  const archivedPlans = useListCoachClientTrainingPlansQuery(
+    client.id,
+    {limit: 100, status: 'archived'},
+    {enabled: showArchived},
+  );
   // An eight-week window can hold more than the server's 20-row page cap, so
   // this list paginates and "Show more" walks the rest of the window.
   const sessions = useCoachClientTrainingSessionsInfiniteQuery(client.id, {
@@ -52,18 +60,15 @@ export function TrainingTab({client}: {client: Client}) {
     to: window[window.length - 1]!,
   });
 
-  const plan = plans.data?.data?.[0];
+  const activePlans = plans.data?.data ?? [];
+  const archivedPlanRows = archivedPlans.data?.data ?? [];
 
-  const endPlan = async () => {
-    if (!plan) {
-      return;
-    }
-
+  const endPlan = async (plan: ClientTrainingPlan) => {
     try {
       await archivePlanMutation.mutateAsync({id: plan.id, body: trainingPlanRevisionRequest(plan)});
     } catch (err) {
       const handled = await handleStaleTrainingPlanConflict(err, {
-        refetchLatest: async () => (await plans.refetch()).data?.data?.[0],
+        refetchLatest: async () => (await plans.refetch()).data?.data.find(({id}) => id === plan.id),
         notify: (message) => {
           toast.info(message, {timeout: 4000});
         },
@@ -77,12 +82,25 @@ export function TrainingTab({client}: {client: Client}) {
     }
   };
 
-  const scheduledDays = plan ? Object.values(plan.schedule).filter(Boolean).length : 0;
   // A session records WHICH workout it performed, not its name, and
   // `planned_snapshot` is null on sessions logged against a live plan. The name
   // comes from the plan's own workouts. A session against an archived plan will not
   // be in this map, which is what the fallback is for.
-  const workoutNames = new Map((plan?.workouts ?? []).map((w) => [w.id, w.name]));
+  const workoutNames = new Map(
+    activePlans.flatMap((plan) => plan.workouts.map((workout) => [workout.id, workout.name])),
+  );
+
+  const planMeta = (plan: ClientTrainingPlan) => {
+    const scheduledDays = Object.values(plan.schedule).filter(Boolean).length;
+
+    return [
+      clientPlanLifecycleLabel(plan.lifecycle),
+      plan.start_date ? `Started ${formatDayMonth(plan.start_date)}` : null,
+      scheduledDays ? `${scheduledDays} days a week` : null,
+    ]
+      .filter(Boolean)
+      .join(' · ');
+  };
 
   // Newest first, which is the order the design lists them in.
   const rows = (sessions.data?.pages.flatMap((page) => page.data) ?? [])
@@ -95,36 +113,67 @@ export function TrainingTab({client}: {client: Client}) {
 
   return (
     <div className="flex flex-col gap-4">
-      <PlanPanel
-        icon={Dumbbell}
-        defaultAssignOpen={assignFromUrl}
-        emptyBody={`Assign a plan so ${client.first_name ?? 'this client'} sees workouts in their app.`}
-        emptyTitle="No training plan"
-        meta={
-          plan
-            ? [
-                clientPlanLifecycleLabel(plan.lifecycle),
-                plan.start_date ? `Started ${formatDayMonth(plan.start_date)}` : null,
-                scheduledDays ? `${scheduledDays} days a week` : null,
-              ]
-                .filter(Boolean)
-                .join(' · ')
-            : null
-        }
-        assign={(control) => (
-          <PlanAssignControl
-            {...control}
-            clientId={client.id}
-            clientName={client.first_name ?? 'this client'}
-            kind="training"
+      <div className="flex justify-end">
+        <Button
+          onPress={() => setAssignOpen(true)}
+          size="sm"
+          variant="outline"
+        >
+          Assign plan
+        </Button>
+        <PlanAssignControl
+          clientId={client.id}
+          clientName={client.first_name ?? 'this client'}
+          isOpen={assignOpen}
+          kind="training"
+          onOpenChange={setAssignOpen}
+        />
+      </div>
+
+      {activePlans.length === 0 ? (
+        <PlanPanel
+          icon={Dumbbell}
+          emptyBody={`Assign a plan so ${client.first_name ?? 'this client'} sees workouts in their app.`}
+          emptyTitle="No training plan"
+        />
+      ) : (
+        activePlans.map((plan) => (
+          <PlanPanel
+            key={plan.id}
+            icon={Dumbbell}
+            emptyBody=""
+            emptyTitle=""
+            isEnding={archivePlanMutation.isPending}
+            meta={planMeta(plan)}
+            name={plan.name}
+            onEnd={() => endPlan(plan)}
+            onOpen={() => navigate(ROUTES.TRAINING_PLAN_DETAIL.replace(':id', plan.id))}
           />
-        )}
-        assignLabel="Assign plan"
-        isEnding={archivePlanMutation.isPending}
-        name={plan?.name}
-        onEnd={plan ? endPlan : undefined}
-        onOpen={plan ? () => navigate(ROUTES.TRAINING_PLAN_DETAIL.replace(':id', plan.id)) : undefined}
-      />
+        ))
+      )}
+
+      <div className="flex justify-start">
+        <Button
+          isPending={showArchived && archivedPlans.isPending}
+          onPress={() => setShowArchived((shown) => !shown)}
+          size="sm"
+          variant="ghost"
+        >
+          {showArchived ? 'Hide archived plans' : 'Show archived plans'}
+        </Button>
+      </div>
+      {showArchived &&
+        archivedPlanRows.map((plan) => (
+          <PlanPanel
+            key={plan.id}
+            icon={Dumbbell}
+            emptyBody=""
+            emptyTitle=""
+            meta={planMeta(plan)}
+            name={plan.name}
+            onOpen={() => navigate(ROUTES.TRAINING_PLAN_DETAIL.replace(':id', plan.id))}
+          />
+        ))}
 
       {rows.length > 0 && (
         <SectionCard divided>

@@ -60,7 +60,6 @@ defmodule Easy.Training.Programming do
          {:ok, _client} <- Clients.authorize_client(ctx, client_id) do
       query =
         TrainingPlan
-        |> TrainingPlan.for_business(ctx.business_id)
         |> TrainingPlan.for_kind(:client_plan)
         |> TrainingPlan.for_client(ctx.business_id, client_id)
         |> TrainingPlan.for_archived(archived)
@@ -214,20 +213,20 @@ defmodule Easy.Training.Programming do
   end
 
   defp duplicate_locked_template(ctx, template_id) do
-    template =
-      ctx
-      |> template_query()
-      |> TrainingPlan.for_archived(false)
-      |> lock("FOR UPDATE")
-      |> Repo.get(template_id)
-
-    case template do
-      nil -> Repo.rollback(:not_found)
-      template -> duplicate_template_rows(ctx, preload_duplicate_source(template))
-    end
+    ctx
+    |> get_locked_active_template(template_id)
+    |> preload_duplicate_source()
+    |> then(&duplicate_template_rows(ctx, &1))
   end
 
   defp assign_locked_template(ctx, client_id, template_id, attrs) do
+    ctx
+    |> get_locked_active_template(template_id)
+    |> preload_duplicate_source()
+    |> then(&assign_template_rows(ctx, client_id, &1, attrs))
+  end
+
+  defp get_locked_active_template(ctx, template_id) do
     template =
       ctx
       |> template_query()
@@ -235,10 +234,7 @@ defmodule Easy.Training.Programming do
       |> lock("FOR UPDATE")
       |> Repo.get(template_id)
 
-    case template do
-      nil -> Repo.rollback(:not_found)
-      template -> assign_template_rows(ctx, client_id, preload_duplicate_source(template), attrs)
-    end
+    template || Repo.rollback(:not_found)
   end
 
   defp assign_visible_template(ctx, client_id, template_id, attrs) do
@@ -250,7 +246,7 @@ defmodule Easy.Training.Programming do
 
   defp assign_template_rows(ctx, client_id, template, attrs) do
     with {:ok, copy} <-
-           TrainingPlan.assignment_changeset(
+           TrainingPlan.insert_changeset(
              ctx.business_id,
              ctx.user_id,
              client_id,

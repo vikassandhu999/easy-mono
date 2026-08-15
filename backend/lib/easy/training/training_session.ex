@@ -21,15 +21,12 @@ defmodule Easy.Training.TrainingSession do
     field :date, :date
     field :started_at, :utc_datetime
     field :closed_at, :utc_datetime
-    field :ended_at, :utc_datetime, virtual: true
-    field :planned_snapshot, :map, virtual: true
     field :notes, :string
     field :soreness_rating, :integer
     field :snapshot_version, :integer
     field :prescription_snapshot, :map
     field :source_plan_id, :binary_id
     field :source_workout_id, :binary_id
-    field :training_workout_id, :binary_id, virtual: true
 
     belongs_to :client, Clients.Client
     belongs_to :business, Orgs.Business

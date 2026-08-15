@@ -249,20 +249,32 @@ defmodule Easy.WorkbenchProgrammingQueue do
   end
 
   defp active_plan_intervals(business_id) do
-    TrainingPlan
-    |> active_plan_rows(business_id, "training")
-    |> union_all(^active_plan_rows(Plan, business_id, "nutrition"))
+    covering_training_plans(business_id)
+    |> union_all(^active_nutrition_plans(business_id))
   end
 
-  defp active_plan_rows(schema, business_id, service) do
-    from(plan in schema,
+  defp covering_training_plans(business_id) do
+    from(plan in TrainingPlan,
       where:
-        plan.business_id == ^business_id and not is_nil(plan.client_id) and
-          plan.status == :active,
+        plan.business_id == ^business_id and plan.kind == :client_plan and is_nil(plan.archived_at) and
+          not is_nil(plan.start_date),
       select: %{
         business_id: plan.business_id,
         client_id: plan.client_id,
-        service: type(^service, :string),
+        service: type(^"training", :string),
+        start_date: plan.start_date,
+        end_date: plan.end_date
+      }
+    )
+  end
+
+  defp active_nutrition_plans(business_id) do
+    from(plan in Plan,
+      where: plan.business_id == ^business_id and not is_nil(plan.client_id) and plan.status == :active,
+      select: %{
+        business_id: plan.business_id,
+        client_id: plan.client_id,
+        service: type(^"nutrition", :string),
         start_date: plan.start_date,
         end_date: plan.end_date
       }

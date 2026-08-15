@@ -1,6 +1,5 @@
 defmodule EasyWeb.Coaches.WorkoutSessionJSON do
   alias Easy.Training.{TrainingExercise, TrainingPerformedSet, TrainingSession}
-  alias EasyWeb.TrainingSessionJSON
 
   @spec show(map()) :: map()
   def show(%{session: session}) do
@@ -27,9 +26,6 @@ defmodule EasyWeb.Coaches.WorkoutSessionJSON do
       prescription_snapshot: session.prescription_snapshot,
       source_plan_id: session.source_plan_id,
       source_workout_id: session.source_workout_id,
-      ended_at: session.closed_at || session.ended_at,
-      training_workout_id: session.source_workout_id || session.training_workout_id,
-      planned_snapshot: TrainingSessionJSON.legacy_snapshot(session),
       performed_sets: performed_sets_data(session.performed_sets),
       inserted_at: session.inserted_at,
       updated_at: session.updated_at

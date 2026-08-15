@@ -95,4 +95,29 @@ defmodule EasyWeb.TrainingPlanOpenApiTest do
 
     refute Enum.any?(spec.paths["/v1/client/training-plans"].get.parameters, &(&1.name == :status))
   end
+
+  test "generated OpenAPI does not include replaced child mutation routes or session aliases" do
+    spec = EasyWeb.ApiSpec.spec() |> OpenApiSpex.resolve_schema_modules()
+    paths = spec.paths
+    session = spec.components.schemas["TrainingSession"]
+    components = Map.keys(spec.components.schemas)
+
+    refute Map.has_key?(paths, "/v1/coach/training-plans/{plan_id}/training-workouts")
+    refute Map.has_key?(paths, "/v1/coach/training-workouts/{id}")
+    refute Map.has_key?(paths, "/v1/coach/training-workouts/{workout_id}/exercises")
+    refute Map.has_key?(paths, "/v1/coach/training-workouts/{workout_id}/exercises/reorder")
+    refute Map.has_key?(paths, "/v1/coach/training-workout-exercises/{id}")
+    refute Map.has_key?(paths, "/v1/coach/training-plans/{plan_id}/schedule")
+
+    refute :ended_at in Map.keys(session.properties)
+    refute :planned_snapshot in Map.keys(session.properties)
+    refute :training_workout_id in Map.keys(session.properties)
+    assert :closed_at in Map.keys(session.properties)
+    assert :prescription_snapshot in Map.keys(session.properties)
+    assert :source_workout_id in Map.keys(session.properties)
+
+    refute "TrainingWorkoutRequest" in components
+    refute "TrainingWorkoutReorderRequest" in components
+    refute "TrainingScheduleRequest" in components
+  end
 end

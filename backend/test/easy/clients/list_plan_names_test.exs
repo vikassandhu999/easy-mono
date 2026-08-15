@@ -16,12 +16,12 @@ defmodule Easy.Clients.ListPlanNamesTest do
         business: business,
         coach: coach,
         client: client,
-        window: [start_date: nil, end_date: nil]
+        window: [start_date: Date.utc_today(), end_date: nil]
       }
     end
 
     test "is off by default", %{business: business, coach: coach, client: client, window: window} do
-      insert(:training_plan, [business: business, creator: coach, client: client, status: :active] ++ window)
+      insert(:training_plan, [business: business, creator: coach, client: client] ++ window)
       insert(:plan, business: business, creator: coach, client: client, status: :active)
 
       assert {:ok, %{clients: [listed]}} = Clients.list_clients(owner_ctx(business))
@@ -32,7 +32,7 @@ defmodule Easy.Clients.ListPlanNamesTest do
     test "returns both plan names when asked", %{business: business, coach: coach, client: client, window: window} do
       insert(
         :training_plan,
-        [business: business, creator: coach, client: client, name: "Strength base", status: :active] ++ window
+        [business: business, creator: coach, client: client, name: "Strength base"] ++ window
       )
 
       insert(:plan,
@@ -63,7 +63,8 @@ defmodule Easy.Clients.ListPlanNamesTest do
     test "ignores archived plans and templates", %{business: business, coach: coach, client: client, window: window} do
       insert(
         :training_plan,
-        [business: business, creator: coach, client: client, name: "Old block", status: :archived] ++ window
+        [business: business, creator: coach, client: client, name: "Old block", archived_at: DateTime.utc_now(:second)] ++
+          window
       )
 
       # A template — no client_id — must never leak onto a client's row.
@@ -82,7 +83,6 @@ defmodule Easy.Clients.ListPlanNamesTest do
         creator: coach,
         client: client,
         name: "Finished block",
-        status: :active,
         start_date: Date.add(today, -30),
         end_date: Date.add(today, -1)
       )
@@ -93,24 +93,22 @@ defmodule Easy.Clients.ListPlanNamesTest do
 
     test "does not leak another business's plan onto a client", %{
       business: business,
-      client: client,
-      window: window
+      client: client
     } do
       other_business = insert(:business)
       other_coach = insert(:coach, business: other_business)
+      other_client = insert(:client, business: other_business, creator: other_coach)
 
-      insert(
-        :training_plan,
-        [
-          business: other_business,
-          creator: other_coach,
-          client: client,
-          name: "Other tenant plan",
-          status: :active
-        ] ++ window
+      insert(:training_plan,
+        business: other_business,
+        creator: other_coach,
+        client: other_client,
+        name: "Other tenant plan",
+        start_date: Date.utc_today()
       )
 
       assert {:ok, %{clients: [listed]}} = Clients.list_clients(owner_ctx(business), include_plans: true)
+      assert listed.id == client.id
       assert listed.training_plan_name == nil
     end
   end

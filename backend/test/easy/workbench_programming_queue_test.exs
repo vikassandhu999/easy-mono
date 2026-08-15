@@ -46,7 +46,7 @@ defmodule Easy.WorkbenchProgrammingQueueTest do
 
   test "classifies history, lapsed coverage, and both lookahead boundaries", ctx do
     archived = insert_client(ctx, [:training])
-    insert_training_plan(ctx, archived, Date.add(ctx.today, -20), Date.add(ctx.today, -10), :archived)
+    insert_training_plan(ctx, archived, Date.add(ctx.today, -20), Date.add(ctx.today, -10), true)
 
     lapsed = insert_client(ctx, [:nutrition])
     insert_nutrition_plan(ctx, lapsed, Date.add(ctx.today, -20), Date.add(ctx.today, -1))
@@ -101,7 +101,7 @@ defmodule Easy.WorkbenchProgrammingQueueTest do
     insert_nutrition_plan(ctx, gap, Date.add(ctx.today, 4), Date.add(ctx.today, 20))
 
     open_ended = insert_client(ctx, [:training])
-    insert_training_plan(ctx, open_ended, nil, nil)
+    insert_training_plan(ctx, open_ended, Date.add(ctx.today, -10), nil)
 
     assert {:ok, %{count: 1, items: [item]}} = Workbench.list_programming_queue(ctx.ctx)
     assert item.client.id == gap.id
@@ -123,7 +123,6 @@ defmodule Easy.WorkbenchProgrammingQueueTest do
       business: ctx.business,
       creator: ctx.coach,
       client: nil,
-      status: :active,
       start_date: Date.add(ctx.today, -10),
       end_date: Date.add(ctx.today, 20)
     )
@@ -238,12 +237,12 @@ defmodule Easy.WorkbenchProgrammingQueueTest do
     )
   end
 
-  defp insert_training_plan(ctx, client, start_date, end_date, status \\ :active) do
+  defp insert_training_plan(ctx, client, start_date, end_date, archived? \\ false) do
     insert(:training_plan,
       business: ctx.business,
       creator: ctx.coach,
       client: client,
-      status: status,
+      archived_at: if(archived?, do: DateTime.utc_now(:second)),
       start_date: start_date,
       end_date: end_date
     )

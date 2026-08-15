@@ -97,7 +97,7 @@ function Detail({session}: {session: TrainingSession}) {
   const exerciseCount = exercises.filter((_, i) => (assigned[i]?.length ?? 0) > 0).length + added.size;
   const sub = [
     formatDayDate(session.started_at),
-    formatDuration(session.started_at, session.ended_at),
+    formatDuration(session.started_at, session.closed_at),
     sorenessEmoji(session.soreness_rating),
   ]
     .filter(Boolean)

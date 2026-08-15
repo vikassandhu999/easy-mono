@@ -3,10 +3,9 @@ defmodule Easy.Training.ExerciseDeleteTest do
 
   alias Easy.Ctx
   alias Easy.Repo
-  alias Easy.Training.{Execution, TrainingExercise}
+  alias Easy.Training.{Execution, PrescribedExercise, TrainingExercise}
   alias Easy.Training.Library
   alias Easy.Training.TrainingPerformedSet
-  alias Easy.Workouts
 
   # Deleting an exercise used to succeed and leave workout elements pointing at
   # nothing: the element kept its planned_sets, so a client was prescribed sets of
@@ -51,13 +50,14 @@ defmodule Easy.Training.ExerciseDeleteTest do
     end
   end
 
-  describe "update_workout_element/3" do
+  describe "PrescribedExercise.update_changeset/2" do
     test "rejects clearing the exercise" do
       s = scenario()
       exercise = insert(:exercise, business: s.business, creator: s.coach)
       element = insert(:workout_element, workout: s.workout, business: s.business, exercise: exercise)
 
-      assert {:error, changeset} = Workouts.update_workout_element(s.ctx, element.id, %{exercise_id: nil})
+      changeset = PrescribedExercise.update_changeset(element, %{exercise_id: nil})
+      refute changeset.valid?
       assert "can't be blank" in errors_on(changeset).exercise_id
       assert Repo.reload!(element).exercise_id == exercise.id
     end

@@ -221,7 +221,6 @@ defmodule EasyWeb.Coaches.WorkbenchControllerTest do
         business: business,
         creator: coach,
         client: missing,
-        status: :active,
         start_date: Date.add(today, -7),
         end_date: Date.add(today, -1)
       )
@@ -230,7 +229,6 @@ defmodule EasyWeb.Coaches.WorkbenchControllerTest do
         business: business,
         creator: coach,
         client: ending,
-        status: :active,
         start_date: Date.add(today, -7),
         end_date: Date.add(today, 2)
       )

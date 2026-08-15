@@ -10,7 +10,6 @@ defmodule Easy.Training.SchemaBoundaryTest do
     "lib/easy/training/planned_set.ex",
     "lib/easy/training/training_plan.ex",
     "lib/easy/training/training_workout.ex",
-    "lib/easy/training/training_workout_exercise.ex",
     "lib/easy/training/training_session.ex",
     "lib/easy/training/workout_schedule.ex"
   ]

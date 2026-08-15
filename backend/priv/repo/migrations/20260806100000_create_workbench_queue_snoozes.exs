@@ -10,8 +10,7 @@ defmodule Easy.Repo.Migrations.CreateWorkbenchQueueSnoozes do
       add :business_id, references(:businesses, type: :binary_id, on_delete: :delete_all),
         null: false
 
-      add :client_id, references(:clients, type: :binary_id, on_delete: :delete_all),
-        null: false
+      add :client_id, references(:clients, type: :binary_id, on_delete: :delete_all), null: false
 
       timestamps(type: :utc_datetime)
     end

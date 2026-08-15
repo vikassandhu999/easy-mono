@@ -453,19 +453,38 @@ defmodule Easy.Factory do
     }
   end
 
-  def training_plan_factory do
-    business = build(:business)
-    creator = build(:user)
+  def training_plan_factory(attrs) do
+    attrs = Map.new(attrs)
+    {creator, attrs} = Map.pop(attrs, :creator)
+    {business, attrs} = Map.pop(attrs, :business)
+    {client, attrs} = Map.pop(attrs, :client)
+    {kind, attrs} = Map.pop(attrs, :kind)
+    {archived_at, attrs} = Map.pop(attrs, :archived_at)
+    {start_date, attrs} = Map.pop(attrs, :start_date)
+    {end_date, attrs} = Map.pop(attrs, :end_date)
+
+    business = business || build(:business)
+    kind = kind || if(client || attrs[:client_id], do: :client_plan, else: :template)
+    period? = kind == :client_plan
 
     %TrainingPlan{
-      kind: :template,
+      kind: kind,
       name: sequence(:training_plan_name, &"Training Plan #{&1}"),
       description: "Weekly strength plan",
       revision: 1,
-      creator: creator,
-      business: business
+      archived_at: archived_at,
+      start_date: if(period?, do: start_date),
+      end_date: if(period?, do: end_date),
+      creator: unwrap_training_plan_creator(creator),
+      business: business,
+      client: client
     }
+    |> merge_attributes(attrs)
   end
+
+  defp unwrap_training_plan_creator(%Coach{user: %User{} = user}), do: user
+  defp unwrap_training_plan_creator(nil), do: build(:user)
+  defp unwrap_training_plan_creator(creator), do: creator
 
   def training_plan_attrs_factory do
     %{
@@ -483,10 +502,6 @@ defmodule Easy.Factory do
       plan: training_plan,
       business: training_plan.business
     }
-  end
-
-  def workout_attrs_factory do
-    %{"name" => sequence(:workout_attr_name, &"Workout Attr #{&1}")}
   end
 
   def workout_element_factory do
@@ -515,26 +530,8 @@ defmodule Easy.Factory do
     }
   end
 
-  def workout_element_attrs_factory do
-    %{
-      "planned_sets" => [
-        %{
-          "set_type" => "working",
-          "reps" => "8-12",
-          "load_value" => "80",
-          "load_unit" => "kg",
-          "rpe" => 8,
-          "rest_seconds" => 90,
-          "duration_seconds" => nil,
-          "distance_value" => nil,
-          "distance_unit" => nil,
-          "notes" => nil
-        }
-      ]
-    }
-  end
-
   def workout_session_factory(attrs) do
+    attrs = Map.new(attrs)
     business = attrs[:business] || build(:business)
     creator = attrs[:creator] || build(:coach, business: business)
     client = attrs[:client] || build(:client, business: business, creator: creator)
@@ -543,7 +540,7 @@ defmodule Easy.Factory do
     closed_at = attrs[:closed_at] || if(state in [:completed, :discarded], do: started_at)
 
     %TrainingSession{
-      kind: :freestyle,
+      kind: attrs[:kind] || :freestyle,
       date: Date.utc_today(),
       started_at: started_at,
       closed_at: closed_at,

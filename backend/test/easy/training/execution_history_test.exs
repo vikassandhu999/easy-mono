@@ -66,7 +66,7 @@ defmodule Easy.Training.ExecutionHistoryTest do
       assert second.notes == "First"
       assert second.closed_at == first.closed_at
       assert Repo.reload(ctx.client).last_active_at == first.closed_at
-      refute Enum.any?(queries, &String.contains?(&1, ~s(UPDATE "clients")))
+      refute Enum.any?(queries, &String.contains?(&1, ~s(SET "last_active_at")))
     end
   end
 
@@ -83,7 +83,7 @@ defmodule Easy.Training.ExecutionHistoryTest do
       assert discarded.state == :discarded
       assert %DateTime{} = discarded.closed_at
       assert is_nil(Repo.reload(ctx.client).last_active_at)
-      refute Enum.any?(queries, &String.contains?(&1, ~s(UPDATE "clients")))
+      refute Enum.any?(queries, &String.contains?(&1, ~s(SET "last_active_at")))
     end
 
     test "repeating discard is idempotent", ctx do

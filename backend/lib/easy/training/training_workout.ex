@@ -2,7 +2,7 @@ defmodule Easy.Training.TrainingWorkout do
   use Ecto.Schema
 
   alias Easy.Orgs
-  alias Easy.Training.{PrescribedExercise, TrainingWorkoutExercise, WorkoutSchedule}
+  alias Easy.Training.{PrescribedExercise, WorkoutSchedule}
 
   import Ecto.Changeset
   import Ecto.Query
@@ -22,8 +22,6 @@ defmodule Easy.Training.TrainingWorkout do
     belongs_to :plan, Easy.Training.TrainingPlan, foreign_key: :training_plan_id
 
     has_many :prescribed_exercises, PrescribedExercise, foreign_key: :training_workout_id
-
-    has_many :workout_elements, TrainingWorkoutExercise, foreign_key: :training_workout_id
 
     timestamps(type: :utc_datetime)
   end
@@ -97,18 +95,4 @@ defmodule Easy.Training.TrainingWorkout do
 
     from(workout in query, preload: [prescribed_exercises: ^prescribed_query])
   end
-
-  @spec include_exercises(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def include_exercises(query, business_id) do
-    prescribed_query =
-      TrainingWorkoutExercise
-      |> TrainingWorkoutExercise.for_business(business_id)
-      |> TrainingWorkoutExercise.by_position()
-      |> TrainingWorkoutExercise.include_exercise(business_id)
-
-    from(workout in query, preload: [workout_elements: ^prescribed_query])
-  end
-
-  @spec oldest(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def oldest(query \\ __MODULE__), do: by_position(query)
 end

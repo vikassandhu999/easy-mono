@@ -25,7 +25,7 @@ function SessionRow({session}: {session: TrainingSession}) {
   const name = snapshotOf(session).workout_name ?? 'Workout';
   const sets = session.performed_sets.length;
   const stats = [
-    formatDuration(session.started_at, session.ended_at),
+    formatDuration(session.started_at, session.closed_at),
     `${sets} set${sets === 1 ? '' : 's'}`,
     `${formatVolume(sessionVolumeKg(session.performed_sets))} volume`,
   ]

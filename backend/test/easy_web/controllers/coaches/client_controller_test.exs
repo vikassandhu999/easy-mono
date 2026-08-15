@@ -719,7 +719,6 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
         creator: coach,
         client: client,
         name: "Strength base",
-        status: :active,
         start_date: Date.add(today, -7),
         end_date: Date.add(today, 7)
       )

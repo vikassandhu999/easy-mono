@@ -4,79 +4,69 @@ Owner: Training
 
 ## Supported outcome
 
-A coach can build reusable weekly training plans, copy them to clients for a bounded period, and tailor each assigned copy without changing the reusable source or another client's plan.
+A coach can author reusable Training Templates, replace a complete Prescription atomically, assign an independent Client Plan, and tailor that copy without changing the Template or another client's plan.
 
 ## Available information
 
-* Reusable plan collection: matching count, newest-first results, name search, active or archived filtering, and pagination.
-* Plan: name, description, active or archived state, optional start and end dates, creator identifier, source-plan identifier when copied, assigned client when present, creation time, and last update time.
-* Workout: name, optional notes, ordered planned exercises, creation time, and last update time.
-* Planned exercise: linked exercise, position, optional notes, optional superset-group identifier, and an ordered collection of planned sets.
-* Planned set: working, warm-up, or drop-set type; repetitions as text; optional load and unit; duration; distance and unit; RPE; rest; and notes.
-* Weekly workout schedule: one workout reference or rest for each weekday. The same workout may be used on several weekdays.
+* Training Template collection: matching count, newest-first results, name search, archived filtering, and pagination.
+* Plan: kind (`template` or `client_plan`), name, description, archive timestamp, revision, optional start and end dates, derived lifecycle for Client Plans, creator identifier, source Template when assigned, assigned client when present, creation time, and last update time.
+* Workout: name, explicit position, ordered Prescribed Exercises, and the weekdays that schedule it.
+* Prescribed Exercise: linked visible exercise, explicit position, and an ordered collection of Prescribed Sets.
+* Prescribed Set: working, warm-up, or drop-set type; repetitions as text; optional load and unit; duration; distance and unit; RPE; rest; and notes.
+* Workout Schedule: sparse weekday rows. Absence means rest. The same workout may occupy several weekdays.
 
 ## Supported actions
 
-* Any coach can inspect the shared reusable-plan library and create, edit, archive, restore, duplicate, or delete a reusable plan.
-* On a reusable plan or an assigned plan they can access, a coach can add, rename, and delete workouts.
-* On a plan they can access, a coach can add a visible exercise to a workout, replace its planned-set collection, edit its notes or superset identifier, remove it, and reorder all planned exercises.
-* On a plan they can access, a coach can set one workout for a weekday or clear that weekday to rest.
-* A coach can assign a reusable plan to a visible client with a start and end date. The result is an independent assigned plan.
-* A coach can inspect and edit an assigned plan for a visible client, including its metadata, workouts, planned exercises, sets, and weekly schedule.
-* A coach can archive, restore, or delete an assigned plan for a visible client.
+* Any coach can inspect the shared Template library and create, edit, archive, restore, duplicate, or delete a Training Template.
+* On a Template or Client Plan they can access, a coach replaces the complete Prescription and Workout Schedule in one revisioned write. Omitted persisted nodes are deleted.
+* A coach can assign an unarchived Training Template to a visible client. The result is an independent Client Plan, and onboarding advances in the same transaction.
+* A coach can inspect and edit a Client Plan for a visible client, including its period dates, Prescription, and Workout Schedule.
+* A coach can archive, restore, or delete a Client Plan for a visible client.
 
 ## Lifecycle
 
-* A new reusable plan starts active and empty. It has no workouts or weekly schedule until a coach adds them.
-* Duplicating a reusable plan creates another active reusable plan with copied workouts, planned exercises, sets, and weekday schedule.
-* Assignment deep-copies the same structure, records the source plan, and advances an onboarding client to coaching. The reusable plan remains unchanged.
-* Later structural edits do not synchronize between a reusable plan and an assigned copy. Shared exercise definitions remain live references in both.
-* An assigned plan is current for a date only while active and while the date falls within its inclusive start and end dates.
-* Deleting a workout also removes its weekday schedule entries. Existing workout sessions retain their stored snapshots and may lose only the live workout link.
-* Deleting an assigned plan removes its workouts and schedule. Existing workout-session history remains available through stored session information.
+* A new Training Template starts unarchived and empty. It has no workouts or Workout Schedule until a coach replaces its Prescription.
+* Duplicating a Template creates another unarchived Template with copied workouts, Prescribed Exercises, sets, and weekday schedule.
+* Assignment clones the complete ordered Prescription, records the source Template, and advances an onboarding client to coaching. The Template remains unchanged.
+* Later structural edits do not synchronize between a Template and an assigned copy. Shared exercise definitions remain live references in both.
+* A Client Plan supplies Coverage only while unarchived, with a start date on or before the requested UTC date, and with no end date or an end date on or after that date. A missing start date is incomplete and supplies no Coverage.
+* Deleting a Training Template leaves assigned Client Plans unchanged. Deleting a Client Plan removes its workouts and schedule. Existing Training Session history remains available through frozen snapshots.
 
 ## Conditions
 
-* Reusable plans are shared across the business. A trainer can work with any reusable plan, regardless of creator.
-* The business owner can access every assigned plan. A trainer can access assigned plans only for clients they currently coach.
-* Active date ranges for one client's assigned training plans cannot overlap. Archived assigned plans do not participate in the overlap rule.
-* Each weekday has at most one scheduled workout. Absence of a schedule entry means rest.
-* A planned exercise must use a globally shared exercise or a business-owned exercise from the same business.
+* Training Templates are shared across the business. A trainer can work with any Template, regardless of creator.
+* The business owner can access every Client Plan. A trainer can access Client Plans only for clients they currently coach. Inaccessible plans return not found.
+* Unarchived Coverage periods for one client cannot overlap. At most one unarchived incomplete Client Plan exists per client.
+* Each weekday has at most one scheduled workout. Archived Templates cannot be duplicated or assigned. A Client Plan cannot be used as a duplication or Assignment source.
+* A Prescribed Exercise must use a globally shared exercise or a business-owned exercise from the same business.
+* Every plan write supplies the expected revision. A stale revision is rejected with the current revision.
 
 ## UX-relevant constraints
 
-* Plan and workout names are required and accept at most 255 characters. Plan description, workout notes, and planned-exercise notes accept at most 5,000 characters.
-* An assigned training plan needs both start and end dates to become current. End date may equal start date but cannot be earlier.
-* The assignment request currently accepts missing dates and stores the copy. Such a plan is never current for a day, and a later metadata edit rejects it until both dates are supplied. This is an implementation gap, not a useful undated-plan state.
-* Dates stored on a reusable plan are not copied as assignment defaults. Assignment dates must be supplied separately.
-* Archived reusable plans are still technically assignable because source status is not enforced. Treat assignment as an active reusable-plan action until that rule is made explicit.
-* Assignment and duplication are described as reusable-plan actions, but the backend does not enforce that the source has no client. Reusing an assigned plan is not an approved design affordance.
-* The weekly schedule repeats implicitly over the assigned date range. It does not create dated occurrences, completion states, skips, or exceptions.
-* Reordering planned exercises requires the complete current set of planned-exercise identifiers. A partial reorder is rejected.
-* A planned exercise can have no planned sets. Set fields are not validated against the exercise tracking type; tracking type only tells an experience which fields are relevant.
-* Planned-set RPE is limited to 1 through 10. Repetitions are free text, while load, duration, distance, rest, and notes are optional.
-* Superset groups are arbitrary shared identifiers with no separate name, ordering, or lifecycle.
-* There is no authoring draft, publish step, revision history, rollback, concurrent-author edit detection, or automatic save recovery.
+* Plan and workout names are required and accept at most 255 characters. Plan description and notes accept at most 5,000 characters.
+* Client Plan end date may equal start date but cannot be earlier. Open-ended Coverage uses a start date with no end date.
+* The weekly schedule repeats implicitly over the Coverage period. It does not create dated occurrences, completion states, skips, or exceptions.
+* A Prescribed Exercise can have no Prescribed Sets. Set fields are not validated against the exercise tracking type; tracking type only tells an experience which fields are relevant.
+* Prescribed-set RPE is limited to 1 through 10. Repetitions are free text, while load, duration, distance, rest, and notes are optional.
+* There is no authoring draft, publish step, revision history, rollback, or automatic save recovery. Concurrent writers recover by refetching and reapplying.
 
 ## Related capabilities
 
-* Exercise library: supplies the exercise definitions and tracking types used by planned exercises.
-* Workout execution and history: resolves a current assigned plan, starts a workout session, and records actual work.
-* Client relationships: supplies client visibility and advances onboarding to coaching after the first plan assignment.
+* Exercise library: supplies the exercise definitions and tracking types used by Prescribed Exercises.
+* Workout execution and history: resolves Coverage, starts a Training Session, and records actual work.
+* Client relationships: supplies client visibility and advances onboarding to coaching after the first Assignment.
 
 ## Unsupported assumptions
 
 * Multiweek phases, progression rules, dated workout occurrences, more than one scheduled workout per weekday, time-of-day scheduling, schedule exceptions, deload generation, and automatic program progression are not supported.
-* Live synchronization from a reusable plan into assigned copies is not supported.
+* Live synchronization from a Training Template into Client Plans is not supported.
 * Bulk assignment, assignment to client groups, plan approval, client acceptance, reminders, and notifications are not supported.
-* A reusable workout library outside a plan, workout copying between plans, and dedicated set-reorder actions are not supported.
-* Automatic validation of planned fields against tracking type or automatic target calculation requires product work.
+* A reusable workout library outside a Training Template is not supported.
+* Automatic validation of prescribed fields against tracking type or automatic target calculation requires product work.
 
 ## Verification evidence
 
-* `backend/lib/easy/training_plans.ex`: reusable-plan listing, cloning, assignment, schedule updates, client visibility, and coaching-stage effects.
-* `backend/lib/easy/workouts.ex`: workout and planned-exercise actions, ordering, and exercise validation.
-* `backend/lib/easy/training/training_plan.ex`, `backend/lib/easy/training/training_workout_exercise.ex`, and `backend/lib/easy/training/planned_set.ex`: fields, date rules, set data, and validation.
+* `backend/lib/easy/training_programming.ex`: Template and Client Plan lifecycle, Prescription replacement, Assignment, Coverage, and revision conflicts.
+* `backend/lib/easy/training/training_plan.ex`, `backend/lib/easy/training/prescribed_exercise.ex`, and `backend/lib/easy/training/planned_set.ex`: kind rules, positions, set data, and validation.
 * `backend/lib/easy_web/open_api/schemas/training_plan.ex` and `backend/lib/easy_web/open_api/schemas/training_children.ex`: supported request and response contracts.
-* `backend/test/easy_web/controllers/coaches/training_plan_controller_test.exs`, `backend/test/easy_web/controllers/coaches/training_schedule_controller_test.exs`, and `backend/test/easy_web/controllers/coaches/workout_element_controller_test.exs`: copy behavior, undated assignment, schedule semantics, ordering, and isolation.
-* `backend/test/easy/training_plans_test.exs` and `backend/test/easy/workouts_test.exs`: business-wide reusable libraries and trainer access to assigned content.
+* `backend/test/easy/training/programming_template_test.exs`, `backend/test/easy/training/programming_prescription_test.exs`, and `backend/test/easy/training/programming_client_plan_test.exs`: copy behavior, schedule semantics, ordering, isolation, and Assignment.

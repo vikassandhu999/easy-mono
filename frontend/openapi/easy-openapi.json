@@ -11902,13 +11902,6 @@
             "x-struct": null,
             "x-validate": null
           },
-          "ended_at": {
-            "format": "date-time",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
           "id": {
             "format": "uuid",
             "type": "string",
@@ -11941,13 +11934,6 @@
               "$ref": "#/components/schemas/TrainingPerformedSet"
             },
             "type": "array",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "planned_snapshot": {
-            "additionalProperties": true,
-            "nullable": true,
-            "type": "object",
             "x-struct": null,
             "x-validate": null
           },
@@ -12006,13 +11992,6 @@
             "x-struct": null,
             "x-validate": null
           },
-          "training_workout_id": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
           "updated_at": {
             "format": "date-time",
             "type": "string",
@@ -12026,7 +12005,6 @@
           "date",
           "started_at",
           "closed_at",
-          "ended_at",
           "state",
           "snapshot_version",
           "prescription_snapshot",

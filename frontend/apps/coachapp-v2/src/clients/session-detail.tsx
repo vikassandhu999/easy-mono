@@ -10,7 +10,7 @@ import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import type {TrainingPerformedSet} from '@/api/training-plans-list';
-import {useGetCoachClientTrainingSessionQuery, useListCoachClientTrainingPlansQuery} from '@/api/training-plans-list';
+import {useGetCoachClientTrainingSessionQuery} from '@/api/training-plans-list';
 import {SectionCard} from '@/clients/components/section-card';
 import {formatCompactDuration, formatRowDate} from '@/clients/lib/client-detail-data';
 import {buildExerciseGroups, type ExerciseGroup, formatLoad, sessionWorkoutName} from '@/clients/lib/session';
@@ -27,11 +27,6 @@ export default function SessionDetail() {
   const {clientId = '', sessionId = ''} = useParams<{clientId: string; sessionId: string}>();
   const goBack = useGoBack(`${ROUTES.CLIENT_DETAIL.replace(':id', clientId)}?tab=training`);
   const {data, isError, isLoading, refetch} = useGetCoachClientTrainingSessionQuery(clientId, sessionId);
-  // The design titles this screen with the WORKOUT's name ("Upper B — Pull"), which
-  // a session only carries by id — so the active plan's workouts supply it, exactly
-  // as the CD-TR rows do.
-  const plans = useListCoachClientTrainingPlansQuery(clientId, {status: 'active'});
-  const workoutNames = new Map((plans.data?.data?.[0]?.workouts ?? []).map((w) => [w.id, w.name]));
 
   const header = (
     <Page.Header size="content">
@@ -78,7 +73,7 @@ export default function SessionDetail() {
 
   const session = data.data;
   const groups = buildExerciseGroups(session);
-  const duration = formatCompactDuration(session.started_at, session.ended_at);
+  const duration = formatCompactDuration(session.started_at, session.closed_at);
   const subtitle = [session.date ? formatRowDate(session.date) : null, duration].filter(Boolean).join(' · ');
 
   return (
@@ -87,7 +82,7 @@ export default function SessionDetail() {
         <Page.TitleGroup className="flex items-center">
           <BackButton onPress={goBack} />
           <div className="min-w-0">
-            <Page.Title>{sessionWorkoutName(session, workoutNames)}</Page.Title>
+            <Page.Title>{sessionWorkoutName(session)}</Page.Title>
             {subtitle && <Page.Description>{subtitle}</Page.Description>}
           </div>
         </Page.TitleGroup>

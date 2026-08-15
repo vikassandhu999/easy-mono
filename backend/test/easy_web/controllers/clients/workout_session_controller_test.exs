@@ -24,8 +24,8 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
 
       assert %{"data" => data} = json_response(conn, 201)
       assert data["state"] == "active"
-      assert data["training_workout_id"] == nil
-      assert data["planned_snapshot"] == nil
+      assert data["source_workout_id"] == nil
+      assert data["prescription_snapshot"] == nil
       assert data["started_at"] != nil
     end
 
@@ -67,8 +67,8 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
 
       assert %{"data" => data} = json_response(conn, 201)
       assert data["state"] == "active"
-      assert data["training_workout_id"] == workout.id
-      assert data["planned_snapshot"] != nil
+      assert data["source_workout_id"] == workout.id
+      assert data["prescription_snapshot"] != nil
     end
 
     test "rejects creating session when active session exists", ctx do
@@ -130,10 +130,10 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
         |> post("/v1/client/training-sessions", Jason.encode!(%{"training_workout_id" => workout.id}))
 
       assert %{"data" => data} = json_response(conn, 201)
-      assert data["planned_snapshot"] != nil
+      assert data["prescription_snapshot"] != nil
 
-      [exercise_snap] = data["planned_snapshot"]["exercises"]
-      assert exercise_snap["name"] == "System Squat"
+      [exercise_snap] = data["prescription_snapshot"]["workout"]["exercises"]
+      assert exercise_snap["exercise_name"] == "System Squat"
     end
   end
 
@@ -360,7 +360,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
       assert_schema(response, "TrainingSessionResponse", EasyWeb.ApiSpec.spec())
       assert data["state"] == "completed"
       assert data["closed_at"] != nil
-      assert data["ended_at"] == data["closed_at"]
+      refute Map.has_key?(data, "ended_at")
       assert data["soreness_rating"] == 4
       assert data["notes"] == "Great!"
     end

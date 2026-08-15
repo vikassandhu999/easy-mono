@@ -5257,8 +5257,6 @@ export interface components {
       closed_at: string | null;
       /** Format: date */
       date: string;
-      /** Format: date-time */
-      ended_at: string | null;
       /** Format: uuid */
       id: string;
       /** Format: date-time */
@@ -5267,9 +5265,6 @@ export interface components {
       kind: 'planned' | 'freestyle';
       notes?: string | null;
       performed_sets: components['schemas']['TrainingPerformedSet'][];
-      planned_snapshot?: {
-        [key: string]: unknown;
-      } | null;
       prescription_snapshot: components['schemas']['TrainingSessionPrescriptionSnapshot'] | null;
       snapshot_version: number | null;
       soreness_rating?: number | null;
@@ -5281,8 +5276,6 @@ export interface components {
       started_at: string;
       /** @enum {string} */
       state: 'active' | 'completed' | 'discarded';
-      /** Format: uuid */
-      training_workout_id?: string | null;
       /** Format: date-time */
       updated_at: string;
     };

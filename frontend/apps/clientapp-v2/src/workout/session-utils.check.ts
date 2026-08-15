@@ -23,7 +23,6 @@ const plannedSet = {
 const session = {
   closed_at: null,
   date: '2026-08-02',
-  ended_at: null,
   id: 'session',
   inserted_at: timestamp,
   kind: 'planned',

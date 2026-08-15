@@ -83,14 +83,6 @@ export function TrainingTab({client}: {client: Client}) {
     }
   };
 
-  // A session records WHICH workout it performed, not its name, and
-  // `planned_snapshot` is null on sessions logged against a live plan. The name
-  // comes from the plan's own workouts. A session against an archived plan will not
-  // be in this map, which is what the fallback is for.
-  const workoutNames = new Map(
-    activePlans.flatMap((plan) => plan.workouts.map((workout) => [workout.id, workout.name])),
-  );
-
   const planMeta = (plan: ClientTrainingPlan) => {
     const scheduledDays = Object.values(plan.schedule).filter(Boolean).length;
 
@@ -209,7 +201,7 @@ export function TrainingTab({client}: {client: Client}) {
             lastGroup = group;
             const setCount = session.performed_sets.length;
             const exerciseCount = new Set(session.performed_sets.map((s) => s.exercise_id)).size;
-            const duration = formatCompactDuration(session.started_at, session.ended_at);
+            const duration = formatCompactDuration(session.started_at, session.closed_at);
             const isDone = session.state === 'completed';
 
             return (
@@ -235,7 +227,7 @@ export function TrainingTab({client}: {client: Client}) {
                             .join(' · ')
                         : 'No session logged'
                     }
-                    title={sessionWorkoutName(session, workoutNames)}
+                    title={sessionWorkoutName(session)}
                     to={
                       isDone
                         ? ROUTES.CLIENT_SESSION_DETAIL.replace(':clientId', client.id).replace(':sessionId', session.id)

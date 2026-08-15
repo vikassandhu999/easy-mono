@@ -120,15 +120,14 @@ defmodule Easy.WorkbenchExpiringQuietQueuesTest do
       missed = insert_check_in(waiting, Date.add(ctx.today, -5), :missed)
       insert_check_in(waiting, Date.add(ctx.today, 5), :assigned)
 
-      waiting_workout = insert_training_schedule(ctx, waiting)
+      insert_training_schedule(ctx, waiting)
 
       insert(:workout_session,
         date: Date.add(ctx.today, -1),
         state: :completed,
         started_at: DateTime.utc_now(:second),
         client: waiting,
-        business: ctx.business,
-        workout: waiting_workout
+        business: ctx.business
       )
 
       due_today = insert_client(ctx, [])
@@ -276,7 +275,6 @@ defmodule Easy.WorkbenchExpiringQuietQueuesTest do
         business: ctx.business,
         creator: ctx.coach,
         client: client,
-        status: :active,
         start_date: Date.add(ctx.today, -30),
         end_date: Date.add(ctx.today, 30)
       )

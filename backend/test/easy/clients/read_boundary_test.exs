@@ -7,7 +7,7 @@ defmodule Easy.Clients.ReadBoundaryTest do
     "lib/easy/training/training_exercise.ex",
     "lib/easy/training/training_plan.ex",
     "lib/easy/training/training_workout.ex",
-    "lib/easy/training/training_workout_exercise.ex",
+    "lib/easy/training/prescribed_exercise.ex",
     "lib/easy/training/training_session.ex"
   ]
 

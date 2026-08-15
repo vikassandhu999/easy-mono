@@ -365,6 +365,21 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
       assert data["notes"] == "Great!"
     end
 
+    test "completing a discarded Training Session conflicts", ctx do
+      session = insert(:workout_session, client: ctx.client, business: ctx.business, state: :active)
+
+      discarded = post(ctx.conn, "/v1/client/training-sessions/#{session.id}/discard")
+      assert json_response(discarded, 200)
+
+      completed =
+        build_conn()
+        |> authenticate_client(ctx.client)
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/client/training-sessions/#{session.id}/complete", Jason.encode!(%{}))
+
+      assert %{"error_code" => "conflict"} = json_response(completed, 409)
+    end
+
     test "repeating complete is idempotent", ctx do
       session = insert(:workout_session, client: ctx.client, business: ctx.business, state: :active)
 

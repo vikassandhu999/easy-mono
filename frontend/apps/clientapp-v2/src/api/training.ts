@@ -11,8 +11,7 @@ import type {components, paths} from '@/api/schema';
 import {clientTrainingCoverageRequest} from '@/api/training-coverage';
 
 export type ClientTrainingPlan = components['schemas']['ClientTrainingPlan'];
-export type ClientTrainingCoverage = components['schemas']['ClientTrainingCoverage'];
-export type ClientTrainingCoverageResponse = components['schemas']['ClientTrainingCoverageResponse'];
+type ClientTrainingCoverageResponse = components['schemas']['ClientTrainingCoverageResponse'];
 export type TrainingPerformedSet = components['schemas']['TrainingPerformedSet'];
 export type TrainingPlanWorkout = components['schemas']['TrainingPlanWorkout'];
 export type TrainingSession = components['schemas']['TrainingSession'];

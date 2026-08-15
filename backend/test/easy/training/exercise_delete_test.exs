@@ -7,15 +7,15 @@ defmodule Easy.Training.ExerciseDeleteTest do
   alias Easy.Training.Library
   alias Easy.Training.TrainingPerformedSet
 
-  # Deleting an exercise used to succeed and leave workout elements pointing at
-  # nothing: the element kept its planned_sets, so a client was prescribed sets of
+  # Deleting an exercise used to succeed and leave prescribed exercises pointing at
+  # nothing: the row kept its planned sets, so a client was prescribed sets of
   # a nameless movement. Blocked as a conflict now.
 
   describe "delete_exercise/2" do
-    test "is blocked while a workout element still uses the exercise" do
+    test "is blocked while a prescribed exercise still uses the exercise" do
       s = scenario()
       exercise = insert(:exercise, business: s.business, creator: s.coach)
-      insert(:workout_element, workout: s.workout, business: s.business, exercise: exercise)
+      insert(:prescribed_exercise, workout: s.workout, business: s.business, exercise: exercise)
 
       assert {:error, :in_use} = Library.delete_exercise(s.ctx, exercise.id)
       assert Repo.get(TrainingExercise, exercise.id)
@@ -54,12 +54,12 @@ defmodule Easy.Training.ExerciseDeleteTest do
     test "rejects clearing the exercise" do
       s = scenario()
       exercise = insert(:exercise, business: s.business, creator: s.coach)
-      element = insert(:workout_element, workout: s.workout, business: s.business, exercise: exercise)
+      prescribed = insert(:prescribed_exercise, workout: s.workout, business: s.business, exercise: exercise)
 
-      changeset = PrescribedExercise.update_changeset(element, %{exercise_id: nil})
+      changeset = PrescribedExercise.update_changeset(prescribed, %{exercise_id: nil})
       refute changeset.valid?
       assert "can't be blank" in errors_on(changeset).exercise_id
-      assert Repo.reload!(element).exercise_id == exercise.id
+      assert Repo.reload!(prescribed).exercise_id == exercise.id
     end
   end
 

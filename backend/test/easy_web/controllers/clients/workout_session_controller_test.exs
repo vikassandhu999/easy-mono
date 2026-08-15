@@ -43,8 +43,8 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
       workout = insert(:workout, plan: plan, business: ctx.business)
       exercise = insert(:exercise, business: ctx.business)
 
-      _element =
-        insert(:workout_element,
+      _prescribed =
+        insert(:prescribed_exercise,
           workout: workout,
           exercise: exercise,
           business: ctx.business,
@@ -107,8 +107,8 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
       system_exercise =
         insert(:exercise, source: "system", business: nil, name: "System Squat")
 
-      _element =
-        insert(:workout_element,
+      _prescribed =
+        insert(:prescribed_exercise,
           workout: workout,
           exercise: system_exercise,
           business: ctx.business,

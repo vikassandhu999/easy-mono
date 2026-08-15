@@ -23,7 +23,7 @@ export function formatLoad(value: null | number, unit: null | string): string {
 }
 
 function performedSetName(set: TrainingPerformedSet): string {
-  return set.exercise?.name ?? set.exercise_name ?? 'Unknown exercise';
+  return set.exercise_name;
 }
 
 function performedSetKey(set: TrainingPerformedSet): string {
@@ -84,14 +84,7 @@ export function buildExerciseGroups(session: TrainingSession): ExerciseGroup[] {
 
   for (const exercise of planned) {
     const matchKey =
-      (exercise.ref && groupOrder.find((key) => key === exercise.ref && !matchedKeys.has(key))) ||
-      groupOrder.find((key) => {
-        if (matchedKeys.has(key)) {
-          return false;
-        }
-        const first = groupMap.get(key)?.[0];
-        return first != null && performedSetName(first) === exercise.exercise_name;
-      });
+      exercise.ref && groupOrder.find((key) => key === exercise.ref && !matchedKeys.has(key));
     const setsForExercise = matchKey ? (groupMap.get(matchKey) ?? []) : [];
     if (matchKey) {
       matchedKeys.add(matchKey);

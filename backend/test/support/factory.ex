@@ -31,8 +31,8 @@ defmodule Easy.Factory do
   alias Easy.Training.TrainingPlan
   alias Easy.Training.TrainingPerformedSet
   alias Easy.Training.TrainingSession
+  alias Easy.Training.PrescribedExercise
   alias Easy.Training.TrainingWorkout, as: Workout
-  alias Easy.Training.PrescribedExercise, as: WorkoutElement
   alias Easy.Training.WorkoutSchedule
 
   def user_factory do
@@ -504,11 +504,11 @@ defmodule Easy.Factory do
     }
   end
 
-  def workout_element_factory do
+  def prescribed_exercise_factory do
     workout = build(:workout)
     exercise = build(:exercise, business: workout.business)
 
-    %WorkoutElement{
+    %PrescribedExercise{
       position: 0,
       workout: workout,
       exercise: exercise,
@@ -516,8 +516,6 @@ defmodule Easy.Factory do
       prescribed_sets: []
     }
   end
-
-  def prescribed_exercise_factory, do: workout_element_factory()
 
   def workout_schedule_factory do
     workout = build(:workout)

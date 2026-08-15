@@ -4,219 +4,71 @@ description: >
   Destructively rewrite code from first principles. Use when the user asks to
   rebuild, rewrite, or rethink code from scratch; replace a patched or inherited
   design; or create the code that should exist without preserving its present
-  architecture. Prefer full replacement and deletion over incremental fixes,
-  compatibility layers, or conservative refactoring.
+  architecture.
 ---
 
 # First-principles edit
 
-Treat the implementation inside the requested scope as disposable.
+The implementation inside the requested scope is **disposable**. Determine the
+fundamental job, build the implementation that should exist, migrate every caller to
+it, and delete what it replaced. Optimize for the clearest correct system after the
+rewrite, not for a small diff.
 
-Do not patch the design that exists. Determine what the system fundamentally needs
-to do, build the implementation that should exist, migrate the codebase to it, and
-delete what it replaces.
+Destructive applies to code only: implementations, interfaces, abstractions, files,
+tests, types, wrappers, flags, obsolete contracts. User data, production resources,
+credentials, and unrelated work stay untouched.
 
-Destructive means destructive to code: implementations, interfaces, abstractions,
-files, tests, types, wrappers, flags, and obsolete contracts may be deleted or
-replaced. It never means deleting user data, production resources, credentials, or
-unrelated user-owned work.
+Architecture is in scope: module boundaries, interfaces, and ownership are as
+disposable as any function body. When the rewrite redraws them, load
+`codebase-design` during step 3 for the deep-module vocabulary — then keep moving;
+this skill ends in executed code, not a review.
 
-Do not invoke or pair this skill with `codebase-design`. This is an editing mode, not
-an architecture-review process.
+## 1. State the fundamental job
 
-## Governing rule
+Describe the problem without referring to the present implementation: what outcome
+must this code produce, who or what depends on it, and how the rewrite will be
+judged correct. Separate job from symptom — "add another condition" is a symptom;
+"represent these states so an invalid transition is unrepresentable" is a job.
 
-Prefer a ground-up rewrite over an incremental patch.
+**Gate:** the job and success criteria are stated without naming the implementation
+being replaced.
 
-The present code is evidence about requirements, not a template for the solution.
-Preserve only constraints that remain true. Everything else must justify its
-continued existence.
+## 2. Sort ground truths from habits
 
-Do not optimize for a small diff. Optimize for the clearest correct system after the
-rewrite.
+Everything inherited — file layout, module boundaries, interfaces, state shape,
+framework patterns, tests, wrappers, flags — is replaceable until it survives one of
+three tests:
 
-## Phase 1: State the fundamental job
+* Required by the user or product outcome.
+* Imposed by a real external system — one you can name, not a speculated consumer.
+* A data, security, language, or runtime invariant.
 
-Describe the problem without referring to the present implementation.
+What survives is a **ground truth**: write the full list down. Everything that fails
+all three exists only because earlier code was shaped that way — demolition
+material. Investigate anything uncertain that would materially change the rewrite.
 
-Answer:
+Current interfaces are not ground truths merely because callers use them — callers
+migrate. Current behavior is preserved when the job requires it; incidental behavior
+changes when the correct design demands, reported explicitly. Tests are claims, not
+laws: keep tests that protect real outcomes, delete tests that protect structure.
 
-* What outcome must this code produce?
-* Who or what depends on that outcome?
-* What would the ideal implementation accomplish if no code had been written yet?
-* How will we know the rewrite is correct?
+**Gate:** every preserved constraint has a reason outside the code being replaced.
 
-Separate the job from its symptoms. "Add another condition" is not a job. "Represent
-these states without allowing an invalid transition" is a job.
+## 3. Design greenfield
 
-### Gate
+Reason upward from the ground truths as if the repository were empty: the simplest
+complete model that does the job, state and ownership defined directly, one
+authoritative path with one source of truth, invalid states unrepresentable where
+practical. Each abstraction, layer, dependency, and branch earns its place by citing
+a ground truth. A valid target may replace many files with one, one with several, or
+remove an abstraction entirely.
 
-Do not edit until the job and success criteria can be stated without naming the
-implementation being replaced.
+Apply the **removal test** to every part of the present design: "would I create this
+if the repository did not already contain it?" No → it goes.
 
-## Phase 2: Challenge every inherited assumption
+## 4. Write the demolition brief
 
-Assume the following are replaceable until proven otherwise:
-
-* File and directory structure.
-* Function, class, component, context, and module boundaries.
-* Public and internal interfaces inside the requested scope.
-* State shape and ownership.
-* Framework patterns and project conventions copied without a concrete reason.
-* Tests that encode implementation details.
-* Compatibility wrappers, deprecated paths, feature flags, and migration scaffolding.
-* Comments and documentation that describe the design being removed.
-
-For each assumption, ask:
-
-* Is this required by the user or product outcome?
-* Is it imposed by a real external system?
-* Is it a data, security, language, or runtime invariant?
-* Is there evidence that violating it causes failure?
-* Does it exist only because earlier code was shaped this way?
-
-Keep the first three categories. Delete the last category. Investigate anything that
-remains uncertain and materially changes the rewrite.
-
-Tests are claims about behavior, not laws. Keep tests that protect real outcomes.
-Delete or rewrite tests that protect obsolete structure.
-
-## Phase 3: Establish ground truths
-
-Write the irreducible facts the replacement must satisfy. Use only facts that survive
-Phase 2.
-
-Ground truths may include:
-
-* Required user-visible and domain outcomes.
-* Data invariants and persisted formats that cannot be migrated in this change.
-* Security, authorization, privacy, and tenant-isolation requirements.
-* External protocols or consumers that the user explicitly requires compatibility
-  with.
-* Error, ordering, idempotency, concurrency, and performance requirements.
-* Language, runtime, platform, and repository constraints.
-
-Current interfaces are not ground truths merely because callers use them. Update the
-callers when the target design makes those interfaces unnecessary.
-
-Current behavior is not automatically sacred. Preserve behavior required by the job.
-Change incidental behavior when doing so produces the correct design, and report the
-change explicitly.
-
-### Gate
-
-Every preserved constraint must have a reason outside the implementation being
-replaced.
-
-## Phase 4: Design from zero
-
-Ignore the present decomposition and reason upward from the ground truths.
-
-1. Choose the simplest complete model that performs the fundamental job.
-2. Define the state and ownership rules directly.
-3. Give each abstraction one clear responsibility.
-4. Add a layer, dependency, branch, or extension point only when a ground truth
-   requires it.
-5. Make invalid states unrepresentable where practical.
-6. Design one authoritative path with one source of truth.
-7. Design tests around outcomes produced by the target system.
-
-Do not begin by adapting current classes, helpers, or files. Write the target shape
-first, then compare it with the code that will be destroyed.
-
-A valid target may replace many files with one, one file with several, change every
-internal interface, move ownership, or remove an abstraction entirely.
-
-### Removal test
-
-For every part of the present design, ask: "Would I create this if the repository did
-not already contain it?"
-
-If the answer is no, remove it.
-
-## Phase 5: Rewrite destructively
-
-Build the target system directly.
-
-* Replace implementations rather than wrapping them.
-* Update callers rather than preserving obsolete interfaces for their convenience.
-* Replace state models rather than translating back into the former shape.
-* Rewrite tests around the target behavior.
-* Update types, schemas, documentation, configuration, and examples to describe one
-  system.
-* Delete superseded files and code as soon as their callers move.
-* Remove dead flags, adapters, aliases, branches, comments, and tests.
-
-Do not leave:
-
-* A compatibility wrapper around the former implementation.
-* A second implementation selected by a flag.
-* Deprecated aliases with no external migration requirement.
-* An adapter that translates the target model back into the obsolete model.
-* Commented-out code or "temporary" duplicate paths.
-* Tests whose only purpose is protecting the removed design.
-
-Compatibility is opt-in, not the default. Add a compatibility path only when the
-user explicitly requires one. State what external consumer needs it and when it can
-be deleted.
-
-When the rewrite exposes more of the same broken idea inside the requested area,
-continue replacing it. Do not stop at an arbitrary file boundary and build a shim.
-
-## Phase 6: Verify the replacement
-
-Verify the system that should exist, not resemblance to the system that was removed.
-
-Run the relevant tests, type checks, linters, builds, and end-to-end probes. Then
-confirm:
-
-* The fundamental job succeeds.
-* Ground truths remain true.
-* All intended callers use the target design.
-* No active path depends on the removed interfaces or state model.
-* No duplicate source of truth or compatibility shadow remains.
-* Searches for deleted symbols, flags, files, and concepts return no stale usages.
-* Tests describe target behavior rather than removed implementation details.
-* The final code is coherent when read without knowledge of the former design.
-
-If a check fails because a caller still expects the obsolete design, migrate the
-caller. Do not restore the obsolete layer merely to make the check pass.
-
-## Failure patterns
-
-### Patch disguised as rewrite
-
-The diff adds conditions, options, wrappers, or helpers around the same design. Stop
-and replace the design itself.
-
-### Rewrite beside the former system
-
-The target exists, but the former path remains active. Migrate its callers and delete
-it.
-
-### Compatibility by reflex
-
-The rewrite preserves every interface in case something depends on it. Find actual
-consumers. Migrate internal consumers and keep only compatibility the user requires.
-
-### Test obedience
-
-The target is distorted to satisfy tests coupled to private structure. Delete those
-tests and test the required outcome.
-
-### Timid scope
-
-The rewrite stops where the wrong abstraction crosses a file boundary. Follow the
-wrong idea through the requested scope and remove it completely.
-
-### Aesthetic replacement
-
-Names and files change, but state, ownership, and control flow remain the same. The
-underlying design survived, so the rewrite failed.
-
-## Output contract
-
-Before editing, state:
+Before editing, state briefly and concretely:
 
 ```markdown
 Fundamental job:
@@ -227,22 +79,40 @@ Code to delete or replace:
 Verification:
 ```
 
-Keep this brief and concrete. It is a demolition and rebuild brief, not a menu of
-options.
+## 5. Rewrite destructively
 
-After editing, report:
+Build the target directly: replace implementations, migrate callers to the new
+interfaces, rebuild the state model in its target shape, rewrite tests around target
+behavior, and update types, schemas, docs, and config to describe one system. Delete
+superseded code the moment its callers move — files, flags, adapters, aliases,
+comments describing the old design, and tests that only protected it.
 
-* What was rebuilt.
-* What was deleted.
-* Which interfaces, behaviors, tests, or assumptions were intentionally broken.
-* Which ground truths were preserved.
-* Exact verification commands and results.
-* Any compatibility code that remains because the user explicitly required it.
+External contracts that survived step 2 are honored by the target design itself. A
+shim translating for the obsolete interface is different — that is opt-in: add one
+only when the user names the consumer that needs it, and record when it can be
+deleted. When the rewrite exposes more of
+the same broken idea inside the requested scope, keep replacing — follow the idea to
+its end, not to the nearest file boundary.
 
-## Completion gate
+## 6. Verify the replacement
 
-The edit is incomplete while the former design remains active, callers depend on
-obsolete interfaces, duplicate paths exist, or tests still define the removed
-implementation.
+Run the relevant tests, type checks, linters, builds, and end-to-end probes. When a
+check fails because a caller expects the obsolete design, migrate the caller — the
+obsolete layer stays gone.
 
-Done means the target design stands alone and the superseded design is gone.
+**Done means the target design stands alone:**
+
+* The fundamental job succeeds and every ground truth holds.
+* All callers use the target design; searches for deleted symbols, flags, and files
+  return nothing.
+* One source of truth, one active path — no compatibility shadow.
+* Tests describe target behavior.
+* Every piece of surviving structure passed the removal test on merit — structure
+  that persists only under new names means the former design survived and the
+  rewrite is still open.
+* The code reads coherently with no knowledge of the former design.
+
+Then report: what was rebuilt, what was deleted, which interfaces, behaviors, tests,
+or assumptions were intentionally broken, which ground truths were preserved, exact
+verification commands and results, and any compatibility code the user explicitly
+required.

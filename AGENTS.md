@@ -3,6 +3,7 @@
 This is a full-stack monorepo. Two ecosystems, one tree:
 
 ## Map
+
 - **`frontend/`** — pnpm workspace, TypeScript/React.
   - Apps: `frontend/apps/{coachapp-v2,clientapp-v2,website}`
   - Shared packages: `frontend/packages/{utils,error-parser}` — the only two. `ui`, `hooks`, `chat`,
@@ -19,11 +20,16 @@ This is a full-stack monorepo. Two ecosystems, one tree:
   don't reshape). New specs and tickets go to `.scratch/`, not here. The **FE↔BE API contract** is the backend's OpenApiSpex schemas (`backend/lib/easy_web/open_api/`), which generate the OpenAPI document the frontend consumes.
 
 ## Working rules
+
 - Frontend changes: work inside `frontend/`; `@easy/*` imports resolve within the pnpm workspace.
 - Backend changes: work inside `backend/`; use `mix`. Follow `backend/AGENTS.md` (the `elixir-conventions` skill summarizes it) and run `mix precommit` before finishing.
 - When changing an API: update the backend OpenApiSpex schema AND both sides.
 - Use the root `Justfile` (`just --list`) for common tasks.
 - **Don't repeat past mistakes.** `docs/agents/recurring-mistakes.md` is a ledger of violations we've hit, each written as a prevention rule — skim the entries for the area you touch before finishing. When you discover a NEW recurring mistake, fixing the instance isn't enough: add a rule there (and a mechanical check — credo/biome/test — when feasible) so no future run repeats it.
+
+## Quality Rules
+
+Keep the implementation small, sharp, easy to understand. Try to write elegant code in a state of grace. Don't settle for the first thing that comes to mind, try to find the most minimal and better working design. Don't introduce slop: very fragile code that just patches specific cases, dead code, useless code and code ways more complicated of how it should be.
 
 ## Agent skills
 
@@ -50,6 +56,7 @@ Single-context — `CONTEXT.md` and `docs/adr/` at the root, both created on dem
 `docs/agents/domain.md`.
 
 ## Common commands
+
 - `just setup` — install both stacks
 - `just web` / `just backend` / `just dev`
 - `just lint` / `just test` / `just build`

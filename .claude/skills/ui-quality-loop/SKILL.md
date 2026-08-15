@@ -1,28 +1,29 @@
 ---
 name: ui-quality-loop
-description: Use when auditing or repairing UI/UX across one or more easy-mono React routes, including visual regressions, responsive layout, spacing, borders, typography, hover/focus states, accessibility, browser interactions, behavioral bugs found by exercising flows, or design-system inconsistencies.
+description: Use when auditing or repairing UI/UX across easy-mono React routes — visual defects, design-system inconsistencies, or behavioral bugs surfaced by exercising live flows.
 ---
 
 # UI quality loop
 
-Own the full evidence loop: inventory, exercise, inspect, classify, repair, verify,
-and write back prevention. The loop's value is exercising REAL flows with real data —
-half the highest-severity findings are behavioral (an action that loses data or
-does nothing), and those are invisible in screenshots of static states.
+Inventory, exercise, classify, repair, verify, prevent. The loop's value is
+exercising REAL flows with real data: the highest-severity findings are
+behavioral — an action that loses data or silently no-ops — and invisible in
+screenshots of static states.
 
-## Preconditions
+## 1. Setup
 
-1. Read the root, frontend, and target-app `AGENTS.md` files, `design-handoff/UI-CONTRACT.md`, and the frontend entries in `docs/agents/recurring-mistakes.md`.
-2. **REQUIRED SUB-SKILL:** `design-pro` for CoachApp visual/design work; `chrome-devtools-axi` for live browser work.
-3. Dev servers are the user's: assume coachapp :2021, clientapp :1314, backend already running — verify with one request, never start/restart them. Reuse the authenticated AXI session first; if a login IS needed, use the standing seed account `admin@example.com` with dev OTP `123456` (any login/signup accepts it in dev — see root AGENTS.md). Never invent a new account when this one serves.
-4. Record `git status --short --branch`. Treat every existing change as user-owned.
-5. For an implementation run, use a dedicated `ui-quality/<app>-<date>` branch created from a clean tree. Dirty tree → clean worktree or ask; never switch branches over unrelated changes.
-6. Never push, merge, rebase, or force-push.
+1. Read the root, frontend, and target-app `AGENTS.md`, `design-handoff/UI-CONTRACT.md`, and the frontend entries in `docs/agents/recurring-mistakes.md`.
+2. Required sub-skills: `design-pro` for CoachApp visual/design work; `chrome-devtools-axi` for live browser work.
+3. Dev servers are the user's — coachapp :2021, clientapp :1314, backend already up. Verify with one request; if one is down, report and stop rather than starting it. Reuse the authenticated AXI session; when a login is needed, use the standing seed accounts coach: `admin@example.com` and client: `gina.lanetti@example.com` with dev OTP `123456`.
+4. Record `git status --short --branch`. Every existing change is user-owned.
+5. Implementation runs happen on a dedicated `ui-quality/<app>-<date>` branch created from a clean tree. Dirty tree → clean worktree, or ask.
+6. Work stays on the local branch — never push, merge, rebase, or force-push.
 
-## Worklist file (the loop's spine)
+## 2. Worklist file (the spine)
 
-Long runs outlive one context window. Before auditing, write
-`<scratchpad>/ui-audit-<app>-<date>.md` and keep it current after EVERY route:
+Long runs outlive one context window; resume from the worklist file, not from
+memory. Before auditing, write `<scratchpad>/ui-audit-<app>-<date>.md` and keep
+it current after EVERY route:
 
 ```
 | route | role | viewport | states covered | result | finding ids |
@@ -30,46 +31,43 @@ Long runs outlive one context window. Before auditing, write
 
 plus a findings section: one entry per finding with id, route, state, viewport,
 severity, evidence (screenshot path or eval output), classification, status
-(open / fixed@<file> / reported / excluded-why). Resume runs from this file, not
-from memory. "Whole application" means every router entry is accounted for as
-tested, blocked, or excluded with a reason — enumerate routes from the real
-router file, never from the nav.
+(open / fixed@<file> / reported / excluded-why).
 
-## Exercise states, don't just view them
+Coverage bound: every entry in the real router file is accounted for as tested,
+blocked, or excluded with a reason. Enumerate routes from the router, never from
+the nav.
 
-Use 375px and 1280px unless the app defines other widths. For each route cover the
-applicable: default, loading, empty, error, hover, keyboard-focus, active,
-disabled, overlay/modal, validation (submit empty AND submit invalid), and
-post-action states.
+## 3. Exercise states, don't just view them
 
+Viewports: 375px and 1280px unless the app defines others. Per route, cover
+every applicable state: default, loading, empty, error, hover, keyboard-focus,
+active, disabled, overlay/modal, validation (submit empty AND submit
+mid-filled), post-action.
+
+- Verify every add/edit/delete flow by its OUTCOME, not its animation: after
+  "add 2 items" assert 2 items exist; after save, reopen the detail route and
+  confirm the round-trip. A flow that renders nicely and drops data is a
+  top-severity finding.
+- Silent validation (focus moves, no message) is a known app-wide defect class —
+  the empty and mid-filled submits exist to catch it.
 - Reaching a state often needs data: create it (a test recipe, a test client),
   exercise it, then DELETE it before finishing. Name test entities `Test <Noun>`
-  so leaks are findable. Never mutate real-looking records.
-- Every add/edit/delete flow is verified by its OUTCOME, not its animation:
-  after "add 2 items" assert 2 items exist; after save, reopen the detail
-  route and confirm the round-trip. A flow that renders nicely and drops data
-  is a top-severity finding.
-- Submit every form once empty and once mid-filled: silent validation (focus
-  moves, no message) is a known app-wide defect class.
+  so leaks are findable; mutate only entities this run created.
 
-## Split the tools
+### Browser work
 
-Every browser step follows the root `AGENTS.md` **Browser efficiency policy**. Applied to
-this loop:
+Every browser step follows the root `AGENTS.md` Browser efficiency policy.
+Applied to this loop:
 
-- One one-shot script per route state sweep (default/empty/error/validation/post-action);
-  one per root-cause group for post-fix verification (reopen route, re-run flow, both
-  viewports, seam consumers).
-- Scripts log themselves in: seed account + dev OTP against the running dev server.
+- One one-shot script per route state sweep; one per root-cause group for
+  post-fix verification (reopen route, re-run flow, both viewports, seam
+  consumers). Scripts log themselves in with the seed account.
 - AXI exploration starts with `chrome-devtools-axi pages`; judge only after
-  spinners/"Loading more…" settle; leave browser state as you found it.
-- Deterministic checks the repo already owns: approved baselines,
-  `design-handoff/scripts/style-diff.mjs`, stable scripted flows. Baselines come only
-  from approved designs — a UI under investigation proves nothing about itself.
-- Without an approved design, screenshot, or prior baseline, a finding is a defect or
-  inconsistency, never a regression.
+  spinners/"Loading more…" settle; leave browser state as found.
+- Prefer deterministic checks the repo already owns: approved baselines,
+  `design-handoff/scripts/style-diff.mjs`, stable scripted flows.
 
-### Browser field notes (hard-won; apply in one-shot scripts AND the rare AXI fallback)
+### Field notes (hard-won; apply in one-shot scripts AND the rare AXI fallback)
 
 - Refs go stale on every re-render. Snapshot and act immediately; for multi-step interactions (select two rows then confirm) prefer ONE `eval` with chained `setTimeout` promises over separate CLI calls.
 - react-aria/HeroUI widgets ignore synthetic `.click()` for press/selection in ListBox options: dispatch `pointerdown` + `pointerup` (bubbles) then `.click()`. Press-visual states (`data-pressed`) never trigger from synthetic events at all — verify press styling by SETTING the data attribute and reading computed style instead.
@@ -77,14 +75,19 @@ this loop:
 - `window.scrollTo` is often a no-op — screens scroll in an inner container. Find the ancestor with `scrollHeight > clientHeight` and scroll that.
 - Console evidence: filter out Vite/HMR noise before reporting; a finding needs a message tied to the exercised action.
 
-## Classify before editing (fix in this order)
+## 4. Classify before editing (fix in this order)
 
 1. **Behavioral defect:** an interaction whose outcome is wrong — data lost or duplicated, action silently no-ops, wrong navigation, state not persisted, stale error kept. Highest priority.
-2. **Objective visual defect:** clipping, overlap, overflow/spill past a container, unreadable contrast, missing focus, layout shift, inaccessible control.
+2. **Objective visual defect:** clipping, overlap, overflow past a container, unreadable contrast, missing focus, layout shift, inaccessible control.
 3. **System inconsistency:** violates the UI contract, theme, canonical component (PickerModal for pickers, control-height tiers, `type-*` sizes…), or an established repeated pattern.
-4. **Subjective:** a preference without an authority. Report; don't fix unless the user asked for redesign.
+4. **Subjective:** a preference without an authority. Report; fix only if the user asked for redesign.
 
-## Repair and verify
+A "regression" claim needs an authority: an approved design, screenshot, or
+prior baseline. Without one, the finding is a defect or inconsistency.
+Baselines come only from approved designs — a UI under investigation proves
+nothing about itself.
+
+## 5. Repair and verify
 
 Handle one coherent root-cause group at a time. Before changing a shared seam
 (theme rule, `@components`, `builder-kit`), enumerate ALL its consumers
@@ -105,9 +108,9 @@ After each group:
 2. Reopen the exact route, state, and viewport with fresh browser evidence; re-run the flow end-to-end when the fix touched behavior.
 3. Check the other required viewport and every consumer of a changed shared seam.
 4. Check console and relevant network failures.
-5. Run focused Biome, app typecheck/build, `./scripts/check-rm.sh`, `./scripts/check-ui-contract.sh` when applicable, and `git diff --check` before completion. Pre-existing failures are recorded, not silently absorbed into the run.
+5. Run focused Biome, app typecheck/build, `./scripts/check-rm.sh`, `./scripts/check-ui-contract.sh` when applicable, and `git diff --check`. Record pre-existing failures as pre-existing; a run absorbs only its own.
 
-## Write back prevention
+## 6. Write back prevention
 
 A fixed instance without a prevention rule will recur. For every defect CLASS
 found (not each instance): add a rule to `docs/agents/recurring-mistakes.md`
@@ -115,23 +118,16 @@ with a "verify by" line, plus a mechanical grep in `scripts/check-rm.sh` when
 the pattern is greppable. If the fix changed a canonical component's contract,
 update the app `AGENTS.md` canonical-components section in the same run.
 
-## Git policy
-
-Default to **no commits**. Commit only when the user explicitly authorizes commits for the run.
-
-When authorized:
-
-- One commit per coherent root-cause group: shared component, theme seam, or complete interaction flow.
-- Commit once the group compiles and renders so work cannot be lost; amend only the latest unpushed agent-owned commit until its verification is green.
-- Never commit per screenshot, route, CSS property, or tiny follow-up. Never hide unrelated defects in one giant commit.
-- Stage explicit paths only; never `git add -A` or include baseline-dirty files.
-- State the cause, affected routes/states, and validation in the commit body.
-- After the branch passes its full audit, present the commit list and diff; prefer a squash merge so the target branch gets one clean commit while the audit branch keeps reversible checkpoints.
-
-## Completion
+## 7. Report
 
 Report from the worklist file: coverage table, fixes by class, prevention rules
 added, checks run, commits, subjective suggestions left unchanged, test data
-created and confirmed deleted, and every blocked/excluded state. Never claim
-the whole UI is fixed while coverage has gaps, validation is red, or a probe
-was never proven able to fail.
+created and confirmed deleted, and every blocked/excluded state. The run is
+complete only when coverage has no gaps, validation is green, and every probe
+was proven able to fail — otherwise report it as partial.
+
+## Git
+
+Default: **no commits** — fixes stay in the working tree for the user to
+review. Only when the user explicitly authorizes commits for the run, follow
+[COMMITS.md](COMMITS.md).

@@ -1,6 +1,8 @@
 defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
   use Easy.ConnCase
 
+  import OpenApiSpex.TestAssertions
+
   alias Easy.Ctx
 
   setup do
@@ -220,6 +222,14 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
       assert length(data) == 1
     end
 
+    test "rejects malformed and reversed date filters", ctx do
+      malformed = get(ctx.conn, "/v1/client/training-sessions?from=not-a-date")
+      assert json_response(malformed, 422)
+
+      reversed = get(ctx.conn, "/v1/client/training-sessions?from=2026-08-10&to=2026-08-01")
+      assert json_response(reversed, 422)
+    end
+
     test "paginates with offset/limit while count stays the total", ctx do
       today = Date.utc_today()
 
@@ -272,39 +282,6 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
   end
 
   describe "PATCH /v1/client/training-sessions/:id" do
-    test "completes session with state: completed", ctx do
-      session = insert(:workout_session, client: ctx.client, business: ctx.business, state: :active)
-
-      conn =
-        ctx.conn
-        |> put_req_header("content-type", "application/json")
-        |> patch(
-          "/v1/client/training-sessions/#{session.id}",
-          Jason.encode!(%{"state" => "completed", "soreness_rating" => 4, "notes" => "Great!"})
-        )
-
-      assert %{"data" => data} = json_response(conn, 200)
-      assert data["state"] == "completed"
-      assert data["ended_at"] != nil
-      assert data["soreness_rating"] == 4
-      assert data["notes"] == "Great!"
-    end
-
-    test "discards session with state: discarded", ctx do
-      session = insert(:workout_session, client: ctx.client, business: ctx.business, state: :active)
-
-      conn =
-        ctx.conn
-        |> put_req_header("content-type", "application/json")
-        |> patch(
-          "/v1/client/training-sessions/#{session.id}",
-          Jason.encode!(%{"state" => "discarded"})
-        )
-
-      assert %{"data" => data} = json_response(conn, 200)
-      assert data["state"] == "discarded"
-    end
-
     test "updates notes and soreness_rating without changing state", ctx do
       session = insert(:workout_session, client: ctx.client, business: ctx.business, state: :active)
 
@@ -320,23 +297,35 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
       assert data["notes"] == "Felt tired"
       assert data["soreness_rating"] == 3
       assert data["state"] == "active"
+      assert data["closed_at"] == nil
     end
 
-    test "does not persist ended_at without a state transition", ctx do
-      session = insert(:workout_session, client: ctx.client, business: ctx.business, state: :active)
-      ended_at = DateTime.utc_now(:second) |> DateTime.add(60, :second)
+    test "rejects notes on a terminal Training Session", ctx do
+      session = insert(:workout_session, client: ctx.client, business: ctx.business, state: :completed)
 
       conn =
         ctx.conn
         |> put_req_header("content-type", "application/json")
         |> patch(
           "/v1/client/training-sessions/#{session.id}",
-          Jason.encode!(%{"ended_at" => ended_at})
+          Jason.encode!(%{"notes" => "Rewrite history"})
         )
 
-      assert %{"data" => data} = json_response(conn, 200)
-      assert data["state"] == "active"
-      assert data["ended_at"] == nil
+      assert %{"error_code" => "conflict"} = json_response(conn, 409)
+    end
+
+    test "rejects generic state mutation", ctx do
+      session = insert(:workout_session, client: ctx.client, business: ctx.business, state: :active)
+
+      conn =
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> patch(
+          "/v1/client/training-sessions/#{session.id}",
+          Jason.encode!(%{"state" => "completed"})
+        )
+
+      assert json_response(conn, 422)
     end
 
     test "returns 404 for another client's session", ctx do
@@ -352,6 +341,80 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
         )
 
       assert json_response(conn, 404)
+    end
+  end
+
+  describe "POST /v1/client/training-sessions/:id/complete" do
+    test "completes an active Training Session with server closing time", ctx do
+      session = insert(:workout_session, client: ctx.client, business: ctx.business, state: :active)
+
+      conn =
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> post(
+          "/v1/client/training-sessions/#{session.id}/complete",
+          Jason.encode!(%{"soreness_rating" => 4, "notes" => "Great!"})
+        )
+
+      assert %{"data" => data} = response = json_response(conn, 200)
+      assert_schema(response, "TrainingSessionResponse", EasyWeb.ApiSpec.spec())
+      assert data["state"] == "completed"
+      assert data["closed_at"] != nil
+      assert data["ended_at"] == data["closed_at"]
+      assert data["soreness_rating"] == 4
+      assert data["notes"] == "Great!"
+    end
+
+    test "repeating complete is idempotent", ctx do
+      session = insert(:workout_session, client: ctx.client, business: ctx.business, state: :active)
+
+      first =
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/client/training-sessions/#{session.id}/complete", Jason.encode!(%{"notes" => "First"}))
+
+      assert %{"data" => %{"closed_at" => closed_at, "notes" => "First"}} = json_response(first, 200)
+
+      second =
+        build_conn()
+        |> authenticate_client(ctx.client)
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/client/training-sessions/#{session.id}/complete", Jason.encode!(%{"notes" => "Retry"}))
+
+      assert %{"data" => data} = json_response(second, 200)
+      assert data["state"] == "completed"
+      assert data["notes"] == "First"
+      assert data["closed_at"] == closed_at
+    end
+  end
+
+  describe "POST /v1/client/training-sessions/:id/discard" do
+    test "discards an active Training Session with server closing time", ctx do
+      session = insert(:workout_session, client: ctx.client, business: ctx.business, state: :active)
+
+      conn = post(ctx.conn, "/v1/client/training-sessions/#{session.id}/discard")
+      assert %{"data" => data} = response = json_response(conn, 200)
+      assert_schema(response, "TrainingSessionResponse", EasyWeb.ApiSpec.spec())
+      assert data["state"] == "discarded"
+      assert data["closed_at"] != nil
+    end
+
+    test "the opposite terminal command conflicts", ctx do
+      session = insert(:workout_session, client: ctx.client, business: ctx.business, state: :active)
+
+      conn =
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/client/training-sessions/#{session.id}/complete", Jason.encode!(%{}))
+
+      assert json_response(conn, 200)
+
+      discarded =
+        build_conn()
+        |> authenticate_client(ctx.client)
+        |> post("/v1/client/training-sessions/#{session.id}/discard")
+
+      assert %{"error_code" => "conflict"} = json_response(discarded, 409)
     end
   end
 

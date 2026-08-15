@@ -230,12 +230,10 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingSessionUpdateRequest do
       type: :object,
       additionalProperties: false,
       properties: %{
-        state: %Schema{type: :string, enum: ["completed", "discarded"]},
-        ended_at: %Schema{type: :string, format: :"date-time"},
         soreness_rating: %Schema{type: :integer, minimum: 1, maximum: 5},
-        notes: %Schema{type: :string}
+        notes: %Schema{type: :string, maxLength: 5000}
       },
-      example: %{"state" => "completed", "soreness_rating" => 3, "notes" => "Felt strong."}
+      example: %{"soreness_rating" => 3, "notes" => "Felt strong."}
     },
     struct?: false
   )

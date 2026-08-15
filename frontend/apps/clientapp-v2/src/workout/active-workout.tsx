@@ -6,7 +6,7 @@
  * steppers + a hold-timer for duration, pre-filled from the plan. Done sets collapse to
  * rows above. The current card carries labeled Swap / Skip actions; Add exercise sits at
  * the list bottom (planned/substituted identity persists through snapshot_exercise_ref).
- * Full-screen. log = create performed set; finish/discard = update session state.
+ * Full-screen. log = create performed set; finish = complete; discard = discard.
  *
  * Deferred to a follow-up: rest timer, tap-to-type keypad, RPE field.
  */
@@ -18,12 +18,13 @@ import {ROUTES} from '@/@config/routes';
 import {
   type TrainingPerformedSet,
   type TrainingSession,
+  useCompleteClientTrainingSessionMutation,
   useCreateClientPerformedSetMutation,
   useDeleteClientPerformedSetMutation,
+  useDiscardClientTrainingSessionMutation,
   useGetClientActiveTrainingSessionQuery,
   useListClientExercisesQuery,
   useUpdateClientPerformedSetMutation,
-  useUpdateClientTrainingSessionMutation,
 } from '@/api/training';
 import {
   type ActiveExerciseCard,
@@ -380,11 +381,12 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
   const createSet = useCreateClientPerformedSetMutation();
   const updateSet = useUpdateClientPerformedSetMutation();
   const deleteSet = useDeleteClientPerformedSetMutation();
-  const updateSession = useUpdateClientTrainingSessionMutation();
+  const completeSession = useCompleteClientTrainingSessionMutation();
+  const discardSession = useDiscardClientTrainingSessionMutation();
   const isLogging = createSet.isPending;
   const isUpdating = updateSet.isPending;
   const isDeleting = deleteSet.isPending;
-  const isFinishing = updateSession.isPending;
+  const isFinishing = completeSession.isPending || discardSession.isPending;
   const finishOverlay = useOverlayState();
 
   // Client-side session edits — the Prescription snapshot is immutable, so swap/skip/add
@@ -507,21 +509,16 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
   };
 
   const finish = async (state: 'completed' | 'discarded') => {
-    // Soft intake: soreness + note are captured on save but never required.
-    const body: {ended_at: string; state: 'completed' | 'discarded'; soreness_rating?: number; notes?: string} = {
-      ended_at: new Date().toISOString(),
-      state,
-    };
-    if (state === 'completed') {
-      if (soreness != null) {
-        body.soreness_rating = soreness;
-      }
-      if (note.trim()) {
-        body.notes = note.trim();
-      }
-    }
     try {
-      await updateSession.mutateAsync({id: session.id, ...body});
+      if (state === 'completed') {
+        await completeSession.mutateAsync({
+          id: session.id,
+          ...(soreness != null ? {soreness_rating: soreness} : {}),
+          ...(note.trim() ? {notes: note.trim()} : {}),
+        });
+      } else {
+        await discardSession.mutateAsync({id: session.id});
+      }
       finishOverlay.close();
       toast.success(state === 'completed' ? 'Workout saved' : 'Workout discarded');
       navigate(ROUTES.TRAINING);

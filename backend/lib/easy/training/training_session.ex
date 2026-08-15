@@ -44,13 +44,21 @@ defmodule Easy.Training.TrainingSession do
   @spec states() :: [atom()]
   def states, do: @states
 
-  @spec active_metadata_changeset(t(), map()) :: Ecto.Changeset.t()
-  def active_metadata_changeset(session, attrs) do
+  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
+  def update_changeset(session, attrs) do
     session
     |> cast(attrs, [:notes, :soreness_rating])
-    |> validate_length(:notes, max: 5000)
-    |> validate_number(:soreness_rating, greater_than_or_equal_to: 1, less_than_or_equal_to: 5)
-    |> check_constraint(:soreness_rating, name: :training_sessions_soreness_rating_check)
+    |> active_metadata_validations()
+  end
+
+  @spec update_changeset(t(), :completed | :discarded, DateTime.t(), map()) :: Ecto.Changeset.t()
+  def update_changeset(session, state, closed_at, attrs) when state in [:completed, :discarded] do
+    session
+    |> update_changeset(attrs)
+    |> put_change(:state, state)
+    |> put_change(:closed_at, closed_at)
+    |> check_constraint(:state, name: :training_sessions_closing_check)
+    |> check_constraint(:started_at, name: :training_sessions_chronology_check)
   end
 
   @spec insert_changeset(String.t(), String.t(), map(), map()) :: Ecto.Changeset.t()
@@ -76,24 +84,6 @@ defmodule Easy.Training.TrainingSession do
     |> check_constraint(:prescription_snapshot, name: :training_sessions_snapshot_check)
     |> check_constraint(:started_at, name: :training_sessions_chronology_check)
     |> foreign_key_constraint(:client_id, name: :training_sessions_client_business_id_fkey)
-  end
-
-  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(session, attrs) do
-    session
-    |> cast(attrs, [:state, :ended_at, :notes, :soreness_rating])
-    |> put_closed_at_from_legacy()
-    |> active_metadata_validations()
-  end
-
-  @spec update_changeset(t(), map(), :client) :: Ecto.Changeset.t()
-  def update_changeset(session, attrs, :client), do: active_metadata_changeset(session, attrs)
-
-  defp put_closed_at_from_legacy(changeset) do
-    case get_change(changeset, :ended_at) do
-      nil -> changeset
-      ended_at -> put_change(changeset, :closed_at, ended_at)
-    end
   end
 
   defp active_metadata_validations(changeset) do

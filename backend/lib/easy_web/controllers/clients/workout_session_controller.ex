@@ -2,7 +2,6 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.Sessions
   alias Easy.Training.Execution
 
   alias EasyWeb.OpenApi.Schemas.{
@@ -14,9 +13,10 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
     TrainingSessionUpdateRequest
   }
 
-  alias OpenApiSpex.Operation
+  alias OpenApiSpex.{Operation, Schema}
 
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update]
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true] when action in [:create, :update, :complete, :discard]
 
   tags ["client training sessions"]
 
@@ -25,14 +25,15 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
     operation_id: "listClientTrainingSessions",
     security: [%{"bearerAuth" => []}],
     parameters: [
-      Operation.parameter(:from, :query, :string, "Start date (YYYY-MM-DD)", required: false),
-      Operation.parameter(:to, :query, :string, "End date (YYYY-MM-DD)", required: false),
+      Operation.parameter(:from, :query, %Schema{type: :string, format: :date}, "Inclusive start date (YYYY-MM-DD)", required: false),
+      Operation.parameter(:to, :query, %Schema{type: :string, format: :date}, "Inclusive end date (YYYY-MM-DD)", required: false),
       Operation.parameter(:offset, :query, :integer, "Number of training sessions to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Maximum training sessions to return (max 20)", required: false)
+      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 100)", required: false)
     ],
     responses: [
       ok: {"Training sessions", "application/json", TrainingSessionListResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      unprocessable_entity: {"Invalid date filter", "application/json", ErrorResponse}
     ]
 
   operation :create,
@@ -68,7 +69,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
     ]
 
   operation :update,
-    summary: "Update a training session (complete/discard/notes)",
+    summary: "Update notes and soreness on an active Training Session",
     operation_id: "updateClientTrainingSession",
     security: [%{"bearerAuth" => []}],
     parameters: [Operation.parameter(:id, :path, :string, "Training session id")],
@@ -77,19 +78,46 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
       ok: {"Training session updated", "application/json", TrainingSessionResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Training Session is terminal", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :complete,
+    summary: "Complete a Training Session",
+    operation_id: "completeClientTrainingSession",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Training session id")],
+    request_body: {"Optional notes and soreness", "application/json", TrainingSessionUpdateRequest, required: true},
+    responses: [
+      ok: {"Training session completed", "application/json", TrainingSessionResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Training Session already discarded", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :discard,
+    summary: "Discard a Training Session",
+    operation_id: "discardClientTrainingSession",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Training session id")],
+    responses: [
+      ok: {"Training session discarded", "application/json", TrainingSessionResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Training Session already completed", "application/json", ErrorResponse}
     ]
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     opts = [
-      from: Easy.Utils.safe_date(params["from"]),
-      to: Easy.Utils.safe_date(params["to"]),
+      from: params["from"],
+      to: params["to"],
       offset: parse_integer(params, "offset", 0),
       limit: parse_integer(params, "limit", 20)
     ]
 
-    with {:ok, %{sessions: sessions, count: count}} <- Sessions.list_client_sessions(conn.assigns.ctx, opts) do
+    with {:ok, %{sessions: sessions, count: count}} <- Execution.list_client_sessions(conn.assigns.ctx, opts) do
       render(conn, :index, sessions: sessions, count: count)
     end
   end
@@ -117,7 +145,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
   def show(conn, _params) do
     id = conn.path_params["id"]
 
-    with {:ok, session} <- Sessions.get_client_session(conn.assigns.ctx, id) do
+    with {:ok, session} <- Execution.get_client_session(conn.assigns.ctx, id) do
       render(conn, :show, session: session)
     end
   end
@@ -126,8 +154,26 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
   def update(conn, _params) do
     id = conn.path_params["id"]
 
-    with {:ok, updated} <- Sessions.update_client_session(conn.assigns.ctx, id, conn.body_params) do
+    with {:ok, updated} <- Execution.update_client_session(conn.assigns.ctx, id, conn.body_params) do
       render(conn, :show, session: updated)
+    end
+  end
+
+  @spec complete(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def complete(conn, _params) do
+    id = conn.path_params["id"]
+
+    with {:ok, session} <- Execution.complete_client_session(conn.assigns.ctx, id, conn.body_params) do
+      render(conn, :show, session: session)
+    end
+  end
+
+  @spec discard(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def discard(conn, _params) do
+    id = conn.path_params["id"]
+
+    with {:ok, session} <- Execution.discard_client_session(conn.assigns.ctx, id) do
+      render(conn, :show, session: session)
     end
   end
 end

@@ -73,6 +73,14 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
       conn = get(conn, "/v1/coach/clients/#{client.id}/training-sessions")
       assert %{"data" => [], "count" => 0} = json_response(conn, 200)
     end
+
+    test "rejects malformed and reversed date filters", %{conn: conn, client: client} do
+      malformed = get(conn, "/v1/coach/clients/#{client.id}/training-sessions?from=not-a-date")
+      assert json_response(malformed, 422)
+
+      reversed = get(conn, "/v1/coach/clients/#{client.id}/training-sessions?from=2026-08-10&to=2026-08-01")
+      assert json_response(reversed, 422)
+    end
   end
 
   describe "GET /v1/coach/clients/:client_id/training-sessions/:id" do

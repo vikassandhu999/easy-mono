@@ -3671,17 +3671,12 @@ export interface components {
      * TrainingSessionUpdateRequest
      * @example {
      *       "notes": "Felt strong.",
-     *       "soreness_rating": 3,
-     *       "state": "completed"
+     *       "soreness_rating": 3
      *     }
      */
     TrainingSessionUpdateRequest: {
-      /** Format: date-time */
-      ended_at?: string;
       notes?: string;
       soreness_rating?: number;
-      /** @enum {string} */
-      state?: 'completed' | 'discarded';
     };
     /** ActiveTrainingSessionResponse */
     ActiveTrainingSessionResponse: {
@@ -6278,13 +6273,13 @@ export interface operations {
   listCoachClientTrainingSessions: {
     parameters: {
       query?: {
-        /** @description Start date (YYYY-MM-DD) */
+        /** @description Inclusive start date (YYYY-MM-DD) */
         from?: string;
-        /** @description End date (YYYY-MM-DD) */
+        /** @description Inclusive end date (YYYY-MM-DD) */
         to?: string;
         /** @description Number of training sessions to skip */
         offset?: number;
-        /** @description Maximum training sessions to return (max 20) */
+        /** @description Page size (default 20, max 100) */
         limit?: number;
       };
       header?: never;
@@ -6307,6 +6302,24 @@ export interface operations {
       };
       /** @description Unauthorized */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Invalid date filter */
+      422: {
         headers: {
           [name: string]: unknown;
         };

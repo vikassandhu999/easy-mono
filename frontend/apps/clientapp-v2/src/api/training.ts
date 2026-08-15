@@ -9,6 +9,11 @@ import {call, client} from '@/api/client';
 import {exerciseKeys, sessionKeys, trainingPlanKeys} from '@/api/keys';
 import type {components, paths} from '@/api/schema';
 import {clientTrainingCoverageRequest} from '@/api/training-coverage';
+import {
+  clientTrainingSessionCompleteRequest,
+  clientTrainingSessionDiscardRequest,
+  clientTrainingSessionHistoryRequest,
+} from '@/api/training-session-commands';
 
 export type ClientTrainingPlan = components['schemas']['ClientTrainingPlan'];
 type ClientTrainingCoverageResponse = components['schemas']['ClientTrainingCoverageResponse'];
@@ -54,21 +59,25 @@ export function useResolveClientTrainingCoverageQuery(date?: string) {
 export function useListClientTrainingSessionsQuery(query: SessionListQuery = {}) {
   return useQuery({
     queryKey: sessionKeys.list(query),
-    queryFn: () => call(client.GET('/v1/client/training-sessions', {params: {query}})) as Promise<SessionListResponse>,
+    queryFn: () =>
+      call(
+        client.GET('/v1/client/training-sessions', clientTrainingSessionHistoryRequest(query)),
+      ) as Promise<SessionListResponse>,
   });
 }
 
 const SESSION_PAGE_SIZE = 20;
 
-/** Full history, offset-paginated 20 at a time (the server caps limit at 20). */
+/** Full history, offset-paginated 20 at a time (the server max is 100). */
 export function useClientTrainingSessionsInfiniteQuery() {
   return useInfiniteQuery({
     queryKey: sessionKeys.infinite(),
     queryFn: ({pageParam}) =>
       call(
-        client.GET('/v1/client/training-sessions', {
-          params: {query: {limit: SESSION_PAGE_SIZE, offset: pageParam}},
-        }),
+        client.GET(
+          '/v1/client/training-sessions',
+          clientTrainingSessionHistoryRequest({limit: SESSION_PAGE_SIZE, offset: pageParam}),
+        ),
       ) as Promise<SessionListResponse>,
     initialPageParam: 0,
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
@@ -111,6 +120,36 @@ export function useUpdateClientTrainingSessionMutation() {
   return useMutation({
     mutationFn: ({id, ...body}: TrainingSessionUpdateRequest & {id: string}) =>
       call(client.PATCH('/v1/client/training-sessions/{id}', {params: {path: {id}}, body})) as Promise<SessionResponse>,
+    onSuccess: (_data, {id}) => {
+      qc.invalidateQueries({queryKey: sessionKeys.detail(id)});
+      qc.invalidateQueries({queryKey: sessionKeys.lists()});
+      return qc.invalidateQueries({queryKey: sessionKeys.active()});
+    },
+  });
+}
+
+export function useCompleteClientTrainingSessionMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: TrainingSessionUpdateRequest & {id: string}) =>
+      call(
+        client.POST('/v1/client/training-sessions/{id}/complete', clientTrainingSessionCompleteRequest(input)),
+      ) as Promise<SessionResponse>,
+    onSuccess: (_data, {id}) => {
+      qc.invalidateQueries({queryKey: sessionKeys.detail(id)});
+      qc.invalidateQueries({queryKey: sessionKeys.lists()});
+      return qc.invalidateQueries({queryKey: sessionKeys.active()});
+    },
+  });
+}
+
+export function useDiscardClientTrainingSessionMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {id: string}) =>
+      call(
+        client.POST('/v1/client/training-sessions/{id}/discard', clientTrainingSessionDiscardRequest(input)),
+      ) as Promise<SessionResponse>,
     onSuccess: (_data, {id}) => {
       qc.invalidateQueries({queryKey: sessionKeys.detail(id)});
       qc.invalidateQueries({queryKey: sessionKeys.lists()});

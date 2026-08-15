@@ -59,6 +59,23 @@ export interface paths {
     patch: operations['updateFoodLogEntry'];
     trace?: never;
   };
+  '/v1/client/training-sessions/{id}/discard': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Discard a Training Session */
+    post: operations['discardClientTrainingSession'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/client/training-sessions': {
     parameters: {
       query?: never;
@@ -279,6 +296,23 @@ export interface paths {
     put?: never;
     /** Log planned day */
     post: operations['logDay'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/client/training-sessions/{id}/complete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Complete a Training Session */
+    post: operations['completeClientTrainingSession'];
     delete?: never;
     options?: never;
     head?: never;
@@ -615,7 +649,7 @@ export interface paths {
     delete?: never;
     options?: never;
     head?: never;
-    /** Update a training session (complete/discard/notes) */
+    /** Update notes and soreness on an active Training Session */
     patch: operations['updateClientTrainingSession'];
     trace?: never;
   };
@@ -2500,17 +2534,12 @@ export interface components {
      * TrainingSessionUpdateRequest
      * @example {
      *       "notes": "Felt strong.",
-     *       "soreness_rating": 3,
-     *       "state": "completed"
+     *       "soreness_rating": 3
      *     }
      */
     TrainingSessionUpdateRequest: {
-      /** Format: date-time */
-      ended_at?: string;
       notes?: string;
       soreness_rating?: number;
-      /** @enum {string} */
-      state?: 'completed' | 'discarded';
     };
     /** ActiveTrainingSessionResponse */
     ActiveTrainingSessionResponse: {
@@ -4604,16 +4633,66 @@ export interface operations {
       };
     };
   };
+  discardClientTrainingSession: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Training session id */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Training session discarded */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TrainingSessionResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Training Session already completed */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
   listClientTrainingSessions: {
     parameters: {
       query?: {
-        /** @description Start date (YYYY-MM-DD) */
+        /** @description Inclusive start date (YYYY-MM-DD) */
         from?: string;
-        /** @description End date (YYYY-MM-DD) */
+        /** @description Inclusive end date (YYYY-MM-DD) */
         to?: string;
         /** @description Number of training sessions to skip */
         offset?: number;
-        /** @description Maximum training sessions to return (max 20) */
+        /** @description Page size (default 20, max 100) */
         limit?: number;
       };
       header?: never;
@@ -4633,6 +4712,15 @@ export interface operations {
       };
       /** @description Unauthorized */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Invalid date filter */
+      422: {
         headers: {
           [name: string]: unknown;
         };
@@ -5127,6 +5215,70 @@ export interface operations {
       };
       /** @description Unauthorized */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  completeClientTrainingSession: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Training session id */
+        id: string;
+      };
+      cookie?: never;
+    };
+    /** @description Optional notes and soreness */
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TrainingSessionUpdateRequest'];
+      };
+    };
+    responses: {
+      /** @description Training session completed */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TrainingSessionResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Training Session already discarded */
+      409: {
         headers: {
           [name: string]: unknown;
         };
@@ -6057,6 +6209,15 @@ export interface operations {
       };
       /** @description Not found */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Training Session is terminal */
+      409: {
         headers: {
           [name: string]: unknown;
         };

@@ -6069,17 +6069,11 @@
         "additionalProperties": false,
         "example": {
           "notes": "Felt strong.",
-          "soreness_rating": 3,
-          "state": "completed"
+          "soreness_rating": 3
         },
         "properties": {
-          "ended_at": {
-            "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
           "notes": {
+            "maxLength": 5000,
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -6088,15 +6082,6 @@
             "maximum": 5,
             "minimum": 1,
             "type": "integer",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "state": {
-            "enum": [
-              "completed",
-              "discarded"
-            ],
-            "type": "string",
             "x-struct": null,
             "x-validate": null
           }
@@ -14288,6 +14273,76 @@
         ]
       }
     },
+    "/v1/client/training-sessions/{id}/discard": {
+      "post": {
+        "callbacks": {},
+        "operationId": "discardClientTrainingSession",
+        "parameters": [
+          {
+            "description": "Training session id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingSessionResponse"
+                }
+              }
+            },
+            "description": "Training session discarded"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Training Session already completed"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Discard a Training Session",
+        "tags": [
+          "client training sessions"
+        ]
+      }
+    },
     "/v1/coach/me": {
       "get": {
         "callbacks": {},
@@ -14563,22 +14618,24 @@
             }
           },
           {
-            "description": "Start date (YYYY-MM-DD)",
+            "description": "Inclusive start date (YYYY-MM-DD)",
             "in": "query",
             "name": "from",
             "required": false,
             "schema": {
+              "format": "date",
               "type": "string",
               "x-struct": null,
               "x-validate": null
             }
           },
           {
-            "description": "End date (YYYY-MM-DD)",
+            "description": "Inclusive end date (YYYY-MM-DD)",
             "in": "query",
             "name": "to",
             "required": false,
             "schema": {
+              "format": "date",
               "type": "string",
               "x-struct": null,
               "x-validate": null
@@ -14596,7 +14653,7 @@
             }
           },
           {
-            "description": "Maximum training sessions to return (max 20)",
+            "description": "Page size (default 20, max 100)",
             "in": "query",
             "name": "limit",
             "required": false,
@@ -14627,6 +14684,26 @@
               }
             },
             "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid date filter"
           }
         },
         "security": [
@@ -14750,22 +14827,24 @@
         "operationId": "listClientTrainingSessions",
         "parameters": [
           {
-            "description": "Start date (YYYY-MM-DD)",
+            "description": "Inclusive start date (YYYY-MM-DD)",
             "in": "query",
             "name": "from",
             "required": false,
             "schema": {
+              "format": "date",
               "type": "string",
               "x-struct": null,
               "x-validate": null
             }
           },
           {
-            "description": "End date (YYYY-MM-DD)",
+            "description": "Inclusive end date (YYYY-MM-DD)",
             "in": "query",
             "name": "to",
             "required": false,
             "schema": {
+              "format": "date",
               "type": "string",
               "x-struct": null,
               "x-validate": null
@@ -14783,7 +14862,7 @@
             }
           },
           {
-            "description": "Maximum training sessions to return (max 20)",
+            "description": "Page size (default 20, max 100)",
             "in": "query",
             "name": "limit",
             "required": false,
@@ -14814,6 +14893,16 @@
               }
             },
             "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid date filter"
           }
         },
         "security": [
@@ -16801,6 +16890,97 @@
         "summary": "Log planned day",
         "tags": [
           "client food log entries"
+        ]
+      }
+    },
+    "/v1/client/training-sessions/{id}/complete": {
+      "post": {
+        "callbacks": {},
+        "operationId": "completeClientTrainingSession",
+        "parameters": [
+          {
+            "description": "Training session id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainingSessionUpdateRequest"
+              }
+            }
+          },
+          "description": "Optional notes and soreness",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingSessionResponse"
+                }
+              }
+            },
+            "description": "Training session completed"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Training Session already discarded"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Complete a Training Session",
+        "tags": [
+          "client training sessions"
         ]
       }
     },
@@ -20354,6 +20534,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Training Session is terminal"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -20370,7 +20560,7 @@
             "bearerAuth": []
           }
         ],
-        "summary": "Update a training session (complete/discard/notes)",
+        "summary": "Update notes and soreness on an active Training Session",
         "tags": [
           "client training sessions"
         ]

@@ -17,6 +17,7 @@ import {call, client} from '@/api/client';
 import {clientKeys, trainingPlanKeys, trainingSessionKeys} from '@/api/keys';
 import type {components, paths} from '@/api/schema';
 import {trainingPlanAssignmentRequest} from '@/api/training-plan-requests';
+import {coachClientTrainingSessionHistoryRequest} from '@/api/training-session-history';
 import {workbenchMutationTargets} from '@/api/workbench-targets';
 
 const PAGE_SIZE = 20;
@@ -279,9 +280,10 @@ export function useCoachClientTrainingSessionsInfiniteQuery(
     queryKey: trainingSessionKeys.forClientInfinite(clientId, filters),
     queryFn: ({pageParam}) =>
       call(
-        client.GET('/v1/coach/clients/{client_id}/training-sessions', {
-          params: {path: {client_id: clientId}, query: {...filters, limit: PAGE_SIZE, offset: pageParam}},
-        }),
+        client.GET(
+          '/v1/coach/clients/{client_id}/training-sessions',
+          coachClientTrainingSessionHistoryRequest(clientId, {...filters, limit: PAGE_SIZE, offset: pageParam}),
+        ),
       ) as Promise<TrainingSessionListResponse>,
     initialPageParam: 0,
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
@@ -300,9 +302,10 @@ export function useListCoachClientTrainingSessionsQuery(
     queryKey: trainingSessionKeys.forClient(clientId, filters),
     queryFn: () =>
       call(
-        client.GET('/v1/coach/clients/{client_id}/training-sessions', {
-          params: {path: {client_id: clientId}, query: filters ?? undefined},
-        }),
+        client.GET(
+          '/v1/coach/clients/{client_id}/training-sessions',
+          coachClientTrainingSessionHistoryRequest(clientId, filters),
+        ),
       ) as Promise<TrainingSessionListResponse>,
     enabled: options?.enabled ?? true,
   });

@@ -248,7 +248,7 @@ defmodule EasyWeb.Router do
 
     # Training plans (read-only)
     get "/training-plans", TrainingPlanController, :index
-    get "/training-plans/today", TrainingPlanController, :today
+    get "/training-plans/coverage", TrainingPlanController, :coverage
     get "/training-plans/:id", TrainingPlanController, :show
 
     # Exercises (read-only)

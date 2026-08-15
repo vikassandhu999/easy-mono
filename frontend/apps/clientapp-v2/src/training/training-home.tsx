@@ -10,14 +10,13 @@ import {
   type TrainingPlanWorkout,
   type TrainingSession,
   useCreateClientTrainingSessionMutation,
-  useListClientTrainingPlansQuery,
   useListClientTrainingSessionsQuery,
+  useResolveClientTrainingCoverageQuery,
 } from '@/api/training';
 import {
   currentPlanWeek,
   currentWeekDates,
   estimatedMinutes,
-  todayWorkout,
   totalSets,
   workoutForDay,
   workoutPreviewPath,
@@ -146,11 +145,11 @@ function WeekList({
 
 export default function TrainingHome() {
   const navigate = useNavigate();
-  const {data: plans, isLoading: loadingPlans} = useListClientTrainingPlansQuery({status: 'active'});
+  const {data: coverage, isLoading: loadingCoverage} = useResolveClientTrainingCoverageQuery();
   const {data: sessions, isLoading: loadingSessions} = useListClientTrainingSessionsQuery({});
   const createSession = useCreateClientTrainingSessionMutation();
   const starting = createSession.isPending;
-  const plan = plans?.data[0];
+  const plan = coverage?.data?.plan;
   const active = sessions?.data.find((session) => session.state === 'active');
   const recent = (sessions?.data ?? []).filter((session) => session.state === 'completed').slice(0, 3);
 
@@ -163,7 +162,7 @@ export default function TrainingHome() {
     }
   };
 
-  if (loadingPlans || loadingSessions) {
+  if (loadingCoverage || loadingSessions) {
     return (
       <PageLayout title="Training">
         <div className="grid min-h-56 place-items-center">
@@ -201,7 +200,7 @@ export default function TrainingHome() {
             plan={plan}
             starting={starting}
           />
-          {todayWorkout(plan) == null ? (
+          {coverage.data?.workout == null ? (
             <div className="mb-5 rounded-2xl bg-surface-secondary p-4 text-center text-sm text-muted">
               Rest day — recover well.
             </div>

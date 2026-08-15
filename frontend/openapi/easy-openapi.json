@@ -565,7 +565,9 @@
           "id",
           "name",
           "mechanics",
-          "force"
+          "force",
+          "tracking_type",
+          "images"
         ],
         "title": "TrainingPlanExercise",
         "type": "object",
@@ -3417,6 +3419,7 @@
           "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
           "inserted_at": "2026-05-30T12:00:00Z",
           "kind": "client_plan",
+          "lifecycle": "current",
           "name": "Four Day Strength",
           "revision": 1,
           "schedule": {
@@ -3469,6 +3472,17 @@
           "kind": {
             "enum": [
               "client_plan"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "lifecycle": {
+            "enum": [
+              "incomplete",
+              "upcoming",
+              "current",
+              "ended"
             ],
             "type": "string",
             "x-struct": null,
@@ -3527,6 +3541,7 @@
           "revision",
           "archived_at",
           "status",
+          "lifecycle",
           "start_date",
           "end_date",
           "workouts",
@@ -6655,6 +6670,54 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.Conversation",
         "x-validate": null
       },
+      "ClientTrainingCoverage": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "format": "date",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "plan": {
+            "$ref": "#/components/schemas/ClientTrainingPlan"
+          },
+          "weekday": {
+            "enum": [
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday",
+              "saturday",
+              "sunday"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "workout": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrainingPlanWorkout"
+              }
+            ],
+            "nullable": true,
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "date",
+          "weekday",
+          "plan",
+          "workout"
+        ],
+        "title": "ClientTrainingCoverage",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientTrainingCoverage",
+        "x-validate": null
+      },
       "TrainingExerciseRelation": {
         "additionalProperties": false,
         "properties": {
@@ -7005,6 +7068,7 @@
           "name",
           "position",
           "weekdays",
+          "training_plan_id",
           "workout_elements",
           "inserted_at",
           "updated_at"
@@ -9021,6 +9085,28 @@
         "title": "ClientProfileReviewQueueListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileReviewQueueListResponse",
+        "x-validate": null
+      },
+      "ClientTrainingCoverageResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ClientTrainingCoverage"
+              }
+            ],
+            "nullable": true,
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ClientTrainingCoverageResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientTrainingCoverageResponse",
         "x-validate": null
       },
       "NutritionMealLogResponse": {
@@ -11509,6 +11595,7 @@
           "id",
           "position",
           "exercise_id",
+          "workout_id",
           "exercise",
           "planned_sets",
           "inserted_at",
@@ -16356,67 +16443,6 @@
         ]
       }
     },
-    "/v1/client/training-plans/today": {
-      "get": {
-        "callbacks": {},
-        "description": "Returns the active training plan and today's scheduled workout for the authenticated client.",
-        "operationId": "getClientTrainingPlanToday",
-        "parameters": [
-          {
-            "description": "Date (YYYY-MM-DD), defaults to today",
-            "in": "query",
-            "name": "date",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientTrainingPlanResponse"
-                }
-              }
-            },
-            "description": "Today's training plan day"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "No active plan for today"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Get today's training plan day",
-        "tags": [
-          "client training plans"
-        ]
-      }
-    },
     "/v1/client/nutrition-food-log-entries/log-day": {
       "post": {
         "callbacks": {},
@@ -18324,7 +18350,7 @@
     "/v1/client/training-plans": {
       "get": {
         "callbacks": {},
-        "description": "Lists training plans assigned to the authenticated client in the current business.",
+        "description": "Lists the authenticated client's incomplete, upcoming, current, and ended unarchived Client Plans.",
         "operationId": "listClientTrainingPlans",
         "parameters": [
           {
@@ -18339,27 +18365,12 @@
             }
           },
           {
-            "description": "Page size (default 20, max 20)",
+            "description": "Page size (default 20, max 100)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
               "type": "integer",
-              "x-struct": null,
-              "x-validate": null
-            }
-          },
-          {
-            "description": "Only training plans with this status",
-            "in": "query",
-            "name": "status",
-            "required": false,
-            "schema": {
-              "enum": [
-                "active",
-                "archived"
-              ],
-              "type": "string",
               "x-struct": null,
               "x-validate": null
             }
@@ -19491,6 +19502,58 @@
         "summary": "Update nutrition plan",
         "tags": [
           "coach nutrition plans"
+        ]
+      }
+    },
+    "/v1/client/training-plans/coverage": {
+      "get": {
+        "callbacks": {},
+        "description": "Returns the authenticated client's unarchived Client Plan supplying Coverage on a UTC date and the scheduled workout guidance. Data is null when no plan supplies Coverage.",
+        "operationId": "resolveClientTrainingCoverage",
+        "parameters": [
+          {
+            "description": "UTC date, defaults to today",
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "schema": {
+              "format": "date",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientTrainingCoverageResponse"
+                }
+              }
+            },
+            "description": "Resolved training Coverage"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Resolve client training Coverage",
+        "tags": [
+          "client training plans"
         ]
       }
     },

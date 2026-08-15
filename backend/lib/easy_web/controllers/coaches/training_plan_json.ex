@@ -85,6 +85,7 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
       id: element.id,
       position: element.position,
       exercise_id: element.exercise_id,
+      workout_id: element.training_workout_id,
       exercise: exercise_data(element.exercise),
       planned_sets: planned_sets_data(element.prescribed_sets),
       inserted_at: element.inserted_at,
@@ -98,7 +99,8 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
       name: exercise.name,
       mechanics: exercise.mechanics,
       force: exercise.force,
-      tracking_type: exercise.tracking_type
+      tracking_type: exercise.tracking_type,
+      images: exercise.images
     }
   end
 

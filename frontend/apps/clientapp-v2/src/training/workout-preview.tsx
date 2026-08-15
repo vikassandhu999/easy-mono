@@ -5,20 +5,20 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {ROUTES} from '@/@config/routes';
 import {
   useCreateClientTrainingSessionMutation,
-  useListClientTrainingPlansQuery,
   useListClientTrainingSessionsQuery,
+  useResolveClientTrainingCoverageQuery,
 } from '@/api/training';
-import {estimatedMinutes, todayWorkout, totalSets} from '@/training/training-utils';
+import {estimatedMinutes, totalSets} from '@/training/training-utils';
 
 export default function WorkoutPreview() {
   const {workoutId} = useParams();
   const navigate = useNavigate();
-  const {data, isLoading} = useListClientTrainingPlansQuery({status: 'active'});
+  const {data, isLoading} = useResolveClientTrainingCoverageQuery();
   const {data: sessions} = useListClientTrainingSessionsQuery({});
   const createSession = useCreateClientTrainingSessionMutation();
   const starting = createSession.isPending;
-  const workout = data?.data.flatMap((plan) => plan.workouts).find((candidate) => candidate.id === workoutId);
-  const scheduledToday = data?.data.some((plan) => todayWorkout(plan)?.id === workoutId) ?? false;
+  const workout = data?.data?.plan.workouts.find((candidate) => candidate.id === workoutId);
+  const scheduledToday = data?.data?.workout?.id === workoutId;
   const active = sessions?.data.find((session) => session.state === 'active');
 
   const start = async () => {

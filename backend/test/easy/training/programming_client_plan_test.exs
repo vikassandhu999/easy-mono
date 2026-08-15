@@ -177,6 +177,124 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
       assert {:error, :not_found} =
                Programming.list_plans_for_client(trainer_ctx(colleague), client.id)
     end
+
+    test "client-self lists only its unarchived Client Plans and can inspect their Prescription" do
+      today = ~D[2026-08-15]
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      other_client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      other_coach = insert(:coach)
+
+      other_business_client =
+        insert(:client, business: other_coach.business, creator: other_coach, assigned_coach: other_coach)
+
+      incomplete = insert_client_plan(coach, client, name: "Incomplete")
+      ended = insert_client_plan(coach, client, name: "Ended", start_date: ~D[2026-06-01], end_date: ~D[2026-06-30])
+      current = insert_client_plan(coach, client, name: "Current", start_date: ~D[2026-08-01], end_date: today)
+      upcoming = insert_client_plan(coach, client, name: "Upcoming", start_date: ~D[2026-09-01], end_date: ~D[2026-09-30])
+      archived = insert_client_plan(coach, client, name: "Archived", archived_at: ~U[2026-08-15 12:00:00Z])
+      insert_client_plan(coach, other_client, name: "Other client", start_date: ~D[2026-10-01])
+      insert_client_plan(other_coach, other_business_client, name: "Other business", start_date: ~D[2026-10-01])
+
+      workout = insert(:workout, business: coach.business, plan: current, name: "Lower", position: 3)
+      exercise = insert(:exercise, business: coach.business, tracking_type: "weight_reps")
+
+      insert(:prescribed_exercise,
+        business: coach.business,
+        workout: workout,
+        exercise: exercise,
+        position: 4,
+        prescribed_sets: [
+          %{
+            set_type: :working,
+            reps: "5",
+            load_value: Decimal.new("100"),
+            load_unit: :kg,
+            duration_seconds: 45,
+            distance_value: Decimal.new("1.5"),
+            distance_unit: :km,
+            rpe: Decimal.new("8.5"),
+            rest_seconds: 120,
+            notes: "Controlled"
+          }
+        ]
+      )
+
+      insert(:workout_schedule, business: coach.business, plan: current, workout: workout, weekday: :friday)
+      ctx = client_ctx(client)
+
+      assert {:ok, %{count: 4, plans: plans}} = Programming.list_client_plans(ctx)
+      assert MapSet.new(Enum.map(plans, & &1.id)) == MapSet.new([incomplete.id, ended.id, current.id, upcoming.id])
+      refute Enum.any?(plans, &(&1.id == archived.id))
+
+      assert {:ok, inspected} = Programming.get_client_plan(ctx, current.id)
+      assert [%{position: 3, prescribed_exercises: [%{position: 4, prescribed_sets: [set]}]}] = inspected.workouts
+      assert set.notes == "Controlled"
+      assert [%{weekday: :friday, training_workout_id: workout_id}] = inspected.workout_schedule
+      assert workout_id == workout.id
+
+      for hidden_id <- [archived.id, insert(:training_plan, business: coach.business, creator: coach.user).id] do
+        assert {:error, :not_found} = Programming.get_client_plan(ctx, hidden_id)
+      end
+    end
+
+    test "client-self reads require the trusted client id from Ctx" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      plan = insert_client_plan(coach, client)
+      missing_client_ctx = %Easy.Ctx{business_id: coach.business_id, user_id: client.user_id}
+
+      assert {:error, :not_found} = Programming.list_client_plans(missing_client_ctx)
+      assert {:error, :not_found} = Programming.get_client_plan(missing_client_ctx, plan.id)
+      assert {:error, :not_found} = Programming.resolve_client_coverage(missing_client_ctx, ~D[2026-08-15])
+    end
+  end
+
+  describe "resolve_client_coverage/2" do
+    test "resolves inclusive bounded Coverage and its scheduled workout guidance" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      plan = insert_client_plan(coach, client, start_date: ~D[2026-08-15], end_date: ~D[2026-08-15])
+      workout = insert(:workout, business: coach.business, plan: plan, position: 0)
+      insert(:workout_schedule, business: coach.business, plan: plan, workout: workout, weekday: :saturday)
+
+      assert {:ok, %{plan: resolved, workout: guided, date: ~D[2026-08-15], weekday: :saturday}} =
+               Programming.resolve_client_coverage(client_ctx(client), ~D[2026-08-15])
+
+      assert resolved.id == plan.id
+      assert guided.id == workout.id
+    end
+
+    test "resolves open-ended Coverage on and after its start date and returns nil on a rest day" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      plan = insert_client_plan(coach, client, start_date: ~D[2026-08-15], end_date: nil)
+      insert(:workout, business: coach.business, plan: plan, position: 0)
+
+      assert {:ok, %{plan: resolved, workout: nil, weekday: :monday}} =
+               Programming.resolve_client_coverage(client_ctx(client), ~D[2026-08-17])
+
+      assert resolved.id == plan.id
+    end
+
+    test "returns a successful nil result when no eligible Client Plan supplies Coverage" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      other_client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      other_coach = insert(:coach)
+
+      other_business_client =
+        insert(:client, business: other_coach.business, creator: other_coach, assigned_coach: other_coach)
+
+      insert_client_plan(coach, client)
+      insert_client_plan(coach, client, start_date: ~D[2026-09-01], end_date: ~D[2026-09-30])
+      insert_client_plan(coach, client, start_date: ~D[2026-06-01], end_date: ~D[2026-06-30])
+      insert_client_plan(coach, client, start_date: ~D[2026-08-01], archived_at: ~U[2026-08-15 12:00:00Z])
+      insert_client_plan(coach, other_client, start_date: ~D[2026-08-01])
+      insert_client_plan(other_coach, other_business_client, start_date: ~D[2026-08-01])
+
+      assert {:ok, nil} = Programming.resolve_client_coverage(client_ctx(client), ~D[2026-08-15])
+    end
   end
 
   defp insert_client_plan(coach, client, attrs \\ []) do
@@ -187,5 +305,13 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
         attrs
       )
     )
+  end
+
+  defp client_ctx(client) do
+    %Easy.Ctx{
+      business_id: client.business_id,
+      user_id: client.user_id,
+      client_id: client.id
+    }
   end
 end

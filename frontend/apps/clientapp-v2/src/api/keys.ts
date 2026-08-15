@@ -44,7 +44,11 @@ export const conversationKeys = {
 };
 
 /** Old tags: TrainingPlan/{id,LIST}. */
-export const trainingPlanKeys = domain('training-plans');
+const trainingPlanDomain = domain('training-plans');
+export const trainingPlanKeys = {
+  ...trainingPlanDomain,
+  coverage: (date?: string) => [...trainingPlanDomain.all, 'coverage', date ?? 'today'] as const,
+};
 
 /** Old tags: WorkoutSession/{id,LIST}. */
 export const sessionKeys = domain('training-sessions');

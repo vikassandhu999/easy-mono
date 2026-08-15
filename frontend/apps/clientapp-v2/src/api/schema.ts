@@ -268,26 +268,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/v1/client/training-plans/today': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get today's training plan day
-     * @description Returns the active training plan and today's scheduled workout for the authenticated client.
-     */
-    get: operations['getClientTrainingPlanToday'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   '/v1/client/nutrition-food-log-entries/log-day': {
     parameters: {
       query?: never;
@@ -468,7 +448,7 @@ export interface paths {
     };
     /**
      * List client training plans
-     * @description Lists training plans assigned to the authenticated client in the current business.
+     * @description Lists the authenticated client's incomplete, upcoming, current, and ended unarchived Client Plans.
      */
     get: operations['listClientTrainingPlans'];
     put?: never;
@@ -579,6 +559,26 @@ export interface paths {
     head?: never;
     /** Update a performed set */
     patch: operations['updateClientPerformedSet'];
+    trace?: never;
+  };
+  '/v1/client/training-plans/coverage': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Resolve client training Coverage
+     * @description Returns the authenticated client's unarchived Client Plan supplying Coverage on a UTC date and the scheduled workout guidance. Data is null when no plan supplies Coverage.
+     */
+    get: operations['resolveClientTrainingCoverage'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
   '/v1/client/nutrition-plans/{id}': {
@@ -1039,12 +1039,12 @@ export interface components {
       force: 'push' | 'pull' | 'static' | null;
       /** Format: uuid */
       id: string;
-      images?: string[];
+      images: string[];
       /** @enum {string|null} */
       mechanics: 'compound' | 'isolation' | 'isometric' | null;
       name: string;
       /** @enum {string|null} */
-      tracking_type?:
+      tracking_type:
         | 'weight_reps'
         | 'bodyweight_reps'
         | 'weighted_bodyweight'
@@ -1759,6 +1759,7 @@ export interface components {
      *       "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
      *       "inserted_at": "2026-05-30T12:00:00Z",
      *       "kind": "client_plan",
+     *       "lifecycle": "current",
      *       "name": "Four Day Strength",
      *       "revision": 1,
      *       "schedule": {
@@ -1788,6 +1789,8 @@ export interface components {
       inserted_at: string;
       /** @enum {string} */
       kind: 'client_plan';
+      /** @enum {string} */
+      lifecycle: 'incomplete' | 'upcoming' | 'current' | 'ended';
       name: string;
       revision: number;
       schedule: components['schemas']['TrainingSchedule'];
@@ -2673,6 +2676,15 @@ export interface components {
       /** Format: date-time */
       waiting_since: string | null;
     };
+    /** ClientTrainingCoverage */
+    ClientTrainingCoverage: {
+      /** Format: date */
+      date: string;
+      plan: components['schemas']['ClientTrainingPlan'];
+      /** @enum {string} */
+      weekday: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+      workout: components['schemas']['TrainingPlanWorkout'] | null;
+    };
     /** TrainingExerciseRelation */
     TrainingExerciseRelation: {
       description: string | null;
@@ -2767,7 +2779,7 @@ export interface components {
       name: string;
       position: number;
       /** Format: uuid */
-      training_plan_id?: string;
+      training_plan_id: string;
       /** Format: date-time */
       updated_at: string;
       weekdays: ('monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday')[];
@@ -3262,6 +3274,10 @@ export interface components {
     ClientProfileReviewQueueListResponse: {
       count: number;
       data: components['schemas']['ClientProfileReviewQueueItem'][];
+    };
+    /** ClientTrainingCoverageResponse */
+    ClientTrainingCoverageResponse: {
+      data: components['schemas']['ClientTrainingCoverage'] | null;
     };
     /** NutritionMealLogResponse */
     NutritionMealLogResponse: {
@@ -3960,7 +3976,7 @@ export interface components {
       /** Format: date-time */
       updated_at: string;
       /** Format: uuid */
-      workout_id?: string;
+      workout_id: string;
     };
     /**
      * AttachmentUploadRequest
@@ -4986,47 +5002,6 @@ export interface operations {
       };
     };
   };
-  getClientTrainingPlanToday: {
-    parameters: {
-      query?: {
-        /** @description Date (YYYY-MM-DD), defaults to today */
-        date?: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Today's training plan day */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientTrainingPlanResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description No active plan for today */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
   logDay: {
     parameters: {
       query?: never;
@@ -5462,10 +5437,8 @@ export interface operations {
       query?: {
         /** @description Number of training plans to skip */
         offset?: number;
-        /** @description Page size (default 20, max 20) */
+        /** @description Page size (default 20, max 100) */
         limit?: number;
-        /** @description Only training plans with this status */
-        status?: 'active' | 'archived';
       };
       header?: never;
       path?: never;
@@ -5806,6 +5779,38 @@ export interface operations {
       };
       /** @description Validation error */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  resolveClientTrainingCoverage: {
+    parameters: {
+      query?: {
+        /** @description UTC date, defaults to today */
+        date?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Resolved training Coverage */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ClientTrainingCoverageResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
         headers: {
           [name: string]: unknown;
         };

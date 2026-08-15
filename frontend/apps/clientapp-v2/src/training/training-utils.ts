@@ -1,4 +1,4 @@
-import {getTrainingWeekdayFromDate, TRAINING_WEEKDAYS, type TrainingWeekday} from '@easy/utils';
+import {TRAINING_WEEKDAYS, type TrainingWeekday} from '@easy/utils';
 
 import type {ClientTrainingPlan, TrainingPlanWorkout} from '@/api/training';
 
@@ -40,10 +40,6 @@ export function currentWeekDates(): Array<{date: Date; day: TrainingWeekday}> {
     date.setDate(monday.getDate() + index);
     return {date, day};
   });
-}
-
-export function todayWorkout(plan?: ClientTrainingPlan): null | TrainingPlanWorkout {
-  return plan ? workoutForDay(plan, getTrainingWeekdayFromDate(new Date())) : null;
 }
 
 export function workoutPreviewPath(workoutId: string): string {

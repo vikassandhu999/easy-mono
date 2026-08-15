@@ -10,6 +10,8 @@ import {exerciseKeys, sessionKeys, trainingPlanKeys} from '@/api/keys';
 import type {components, paths} from '@/api/schema';
 
 export type ClientTrainingPlan = components['schemas']['ClientTrainingPlan'];
+export type ClientTrainingCoverage = components['schemas']['ClientTrainingCoverage'];
+export type ClientTrainingCoverageResponse = components['schemas']['ClientTrainingCoverageResponse'];
 export type TrainingPerformedSet = components['schemas']['TrainingPerformedSet'];
 export type TrainingPlanWorkout = components['schemas']['TrainingPlanWorkout'];
 export type TrainingSession = components['schemas']['TrainingSession'];
@@ -32,6 +34,18 @@ export function useListClientTrainingPlansQuery(query: PlanListQuery = {}) {
   return useQuery({
     queryKey: trainingPlanKeys.list(query),
     queryFn: () => call(client.GET('/v1/client/training-plans', {params: {query}})) as Promise<PlanListResponse>,
+  });
+}
+
+export function useResolveClientTrainingCoverageQuery(date?: string) {
+  const query = date ? {date} : {};
+
+  return useQuery({
+    queryKey: trainingPlanKeys.coverage(date),
+    queryFn: () =>
+      call(
+        client.GET('/v1/client/training-plans/coverage', {params: {query}}),
+      ) as Promise<ClientTrainingCoverageResponse>,
   });
 }
 

@@ -76,6 +76,60 @@ defmodule Easy.Training.Programming do
     end
   end
 
+  @spec list_client_plans(Ctx.t(), keyword()) ::
+          {:ok, %{count: non_neg_integer(), plans: [TrainingPlan.t()]}} | {:error, :not_found}
+  def list_client_plans(%Ctx{} = ctx, opts \\ []) do
+    offset = max(Keyword.get(opts, :offset, 0), 0)
+    limit = opts |> Keyword.get(:limit, 20) |> max(1) |> min(100)
+
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+      query = client_plan_query(ctx, client_id)
+
+      plans =
+        query
+        |> TrainingPlan.newest()
+        |> Utils.paginate(offset, limit)
+        |> TrainingPlan.include_workouts(ctx.business_id)
+        |> Repo.all()
+
+      {:ok, %{count: Repo.aggregate(query, :count, :id), plans: plans}}
+    end
+  end
+
+  @spec get_client_plan(Ctx.t(), String.t()) :: {:ok, TrainingPlan.t()} | {:error, :not_found}
+  def get_client_plan(%Ctx{} = ctx, plan_id) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+      ctx
+      |> client_plan_query(client_id)
+      |> TrainingPlan.include_workouts(ctx.business_id)
+      |> Repo.get(plan_id)
+      |> ok_or_not_found()
+    end
+  end
+
+  @spec resolve_client_coverage(Ctx.t(), Date.t()) ::
+          {:ok,
+           nil
+           | %{
+               plan: TrainingPlan.t(),
+               workout: TrainingWorkout.t() | nil,
+               date: Date.t(),
+               weekday: atom()
+             }}
+          | {:error, :not_found}
+  def resolve_client_coverage(%Ctx{} = ctx, %Date{} = date) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+      plan =
+        ctx
+        |> client_plan_query(client_id)
+        |> TrainingPlan.covering(client_id, date)
+        |> TrainingPlan.include_workouts(ctx.business_id)
+        |> Repo.one()
+
+      resolve_coverage_plan(plan, date)
+    end
+  end
+
   @spec get_template(Ctx.t(), String.t()) :: {:ok, TrainingPlan.t()} | {:error, :not_found}
   def get_template(%Ctx{} = ctx, template_id) do
     with :ok <- ensure_coach(ctx) do
@@ -799,6 +853,27 @@ defmodule Easy.Training.Programming do
     TrainingPlan
     |> TrainingPlan.for_business(ctx.business_id)
     |> TrainingPlan.templates()
+  end
+
+  defp client_plan_query(%Ctx{} = ctx, client_id) do
+    TrainingPlan
+    |> TrainingPlan.for_kind(:client_plan)
+    |> TrainingPlan.for_client(ctx.business_id, client_id)
+    |> TrainingPlan.for_archived(false)
+  end
+
+  defp resolve_coverage_plan(nil, _date), do: {:ok, nil}
+
+  defp resolve_coverage_plan(plan, date) do
+    weekday = Enum.at(WorkoutSchedule.weekdays(), Date.day_of_week(date) - 1)
+    scheduled = Enum.find(plan.workout_schedule, &(&1.weekday == weekday))
+
+    workout =
+      if scheduled do
+        Enum.find(plan.workouts, &(&1.id == scheduled.training_workout_id))
+      end
+
+    {:ok, %{plan: plan, workout: workout, date: date, weekday: weekday}}
   end
 
   defp plan_query(%Ctx{} = ctx), do: TrainingPlan.for_business(TrainingPlan, ctx.business_id)

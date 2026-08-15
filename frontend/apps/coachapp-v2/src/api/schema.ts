@@ -2227,12 +2227,12 @@ export interface components {
       force: 'push' | 'pull' | 'static' | null;
       /** Format: uuid */
       id: string;
-      images?: string[];
+      images: string[];
       /** @enum {string|null} */
       mechanics: 'compound' | 'isolation' | 'isometric' | null;
       name: string;
       /** @enum {string|null} */
-      tracking_type?:
+      tracking_type:
         | 'weight_reps'
         | 'bodyweight_reps'
         | 'weighted_bodyweight'
@@ -2947,6 +2947,7 @@ export interface components {
      *       "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
      *       "inserted_at": "2026-05-30T12:00:00Z",
      *       "kind": "client_plan",
+     *       "lifecycle": "current",
      *       "name": "Four Day Strength",
      *       "revision": 1,
      *       "schedule": {
@@ -2976,6 +2977,8 @@ export interface components {
       inserted_at: string;
       /** @enum {string} */
       kind: 'client_plan';
+      /** @enum {string} */
+      lifecycle: 'incomplete' | 'upcoming' | 'current' | 'ended';
       name: string;
       revision: number;
       schedule: components['schemas']['TrainingSchedule'];
@@ -3861,6 +3864,15 @@ export interface components {
       /** Format: date-time */
       waiting_since: string | null;
     };
+    /** ClientTrainingCoverage */
+    ClientTrainingCoverage: {
+      /** Format: date */
+      date: string;
+      plan: components['schemas']['ClientTrainingPlan'];
+      /** @enum {string} */
+      weekday: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+      workout: components['schemas']['TrainingPlanWorkout'] | null;
+    };
     /** TrainingExerciseRelation */
     TrainingExerciseRelation: {
       description: string | null;
@@ -3955,7 +3967,7 @@ export interface components {
       name: string;
       position: number;
       /** Format: uuid */
-      training_plan_id?: string;
+      training_plan_id: string;
       /** Format: date-time */
       updated_at: string;
       weekdays: ('monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday')[];
@@ -4450,6 +4462,10 @@ export interface components {
     ClientProfileReviewQueueListResponse: {
       count: number;
       data: components['schemas']['ClientProfileReviewQueueItem'][];
+    };
+    /** ClientTrainingCoverageResponse */
+    ClientTrainingCoverageResponse: {
+      data: components['schemas']['ClientTrainingCoverage'] | null;
     };
     /** NutritionMealLogResponse */
     NutritionMealLogResponse: {
@@ -5148,7 +5164,7 @@ export interface components {
       /** Format: date-time */
       updated_at: string;
       /** Format: uuid */
-      workout_id?: string;
+      workout_id: string;
     };
     /**
      * AttachmentUploadRequest

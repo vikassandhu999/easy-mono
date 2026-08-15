@@ -18,24 +18,16 @@ defmodule EasyWeb.Clients.TrainingPlanJSON do
     %{data: Enum.map(plans, &data/1), count: count}
   end
 
-  @spec today(map()) :: map()
-  def today(%{plan: plan, workout: workout, date: date, day: day}) do
+  @spec coverage(map()) :: map()
+  def coverage(%{coverage: nil}), do: %{data: nil}
+
+  def coverage(%{coverage: %{plan: plan, workout: workout, date: date, weekday: weekday}}) do
     %{
       data: %{
-        id: plan.id,
-        kind: plan.kind,
-        name: plan.name,
-        description: plan.description,
-        revision: plan.revision,
-        archived_at: plan.archived_at,
-        status: if(plan.archived_at, do: :archived, else: :active),
-        start_date: plan.start_date,
-        end_date: plan.end_date,
         date: date,
-        day: day,
-        workout: if(workout, do: workout_data(workout, []), else: nil),
-        inserted_at: plan.inserted_at,
-        updated_at: plan.updated_at
+        weekday: weekday,
+        plan: data(plan),
+        workout: if(workout, do: workout_data(workout, plan.workout_schedule), else: nil)
       }
     }
   end
@@ -49,6 +41,7 @@ defmodule EasyWeb.Clients.TrainingPlanJSON do
       revision: plan.revision,
       archived_at: plan.archived_at,
       status: if(plan.archived_at, do: :archived, else: :active),
+      lifecycle: TrainingPlan.lifecycle(plan),
       start_date: plan.start_date,
       end_date: plan.end_date,
       workouts: workouts_data(plan.workouts, plan.workout_schedule),
@@ -83,7 +76,9 @@ defmodule EasyWeb.Clients.TrainingPlanJSON do
     %{
       id: workout.id,
       name: workout.name,
+      position: workout.position,
       weekdays: weekdays,
+      training_plan_id: workout.training_plan_id,
       workout_elements: elements_data(workout.prescribed_exercises),
       inserted_at: workout.inserted_at,
       updated_at: workout.updated_at
@@ -98,6 +93,7 @@ defmodule EasyWeb.Clients.TrainingPlanJSON do
       id: element.id,
       position: element.position,
       exercise_id: element.exercise_id,
+      workout_id: element.training_workout_id,
       exercise: exercise_data(element.exercise),
       planned_sets: planned_sets_data(element.prescribed_sets),
       inserted_at: element.inserted_at,
@@ -111,6 +107,7 @@ defmodule EasyWeb.Clients.TrainingPlanJSON do
       name: exercise.name,
       mechanics: exercise.mechanics,
       force: exercise.force,
+      tracking_type: exercise.tracking_type,
       images: exercise.images
     }
   end

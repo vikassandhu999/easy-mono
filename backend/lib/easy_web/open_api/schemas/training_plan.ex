@@ -166,7 +166,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlanExercise do
       },
       images: %Schema{type: :array, items: %Schema{type: :string}}
     },
-    required: [:id, :name, :mechanics, :force]
+    required: [:id, :name, :mechanics, :force, :tracking_type, :images]
   })
 end
 
@@ -239,7 +239,16 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlanWorkoutExercise do
         },
         Shared.timestamps()
       ),
-    required: [:id, :position, :exercise_id, :exercise, :planned_sets, :inserted_at, :updated_at]
+    required: [
+      :id,
+      :position,
+      :exercise_id,
+      :workout_id,
+      :exercise,
+      :planned_sets,
+      :inserted_at,
+      :updated_at
+    ]
   })
 end
 
@@ -265,7 +274,16 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlanWorkout do
         },
         Shared.timestamps()
       ),
-    required: [:id, :name, :position, :weekdays, :workout_elements, :inserted_at, :updated_at]
+    required: [
+      :id,
+      :name,
+      :position,
+      :weekdays,
+      :training_plan_id,
+      :workout_elements,
+      :inserted_at,
+      :updated_at
+    ]
   })
 end
 
@@ -384,6 +402,10 @@ defmodule EasyWeb.OpenApi.Schemas.ClientTrainingPlan do
           revision: %Schema{type: :integer, minimum: 1},
           archived_at: %Schema{type: :string, format: :"date-time", nullable: true},
           status: %Schema{type: :string, enum: ["active", "archived"]},
+          lifecycle: %Schema{
+            type: :string,
+            enum: ["incomplete", "upcoming", "current", "ended"]
+          },
           start_date: %Schema{type: :string, format: :date, nullable: true},
           end_date: %Schema{type: :string, format: :date, nullable: true},
           workouts: %Schema{type: :array, items: TrainingPlanWorkout},
@@ -399,6 +421,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientTrainingPlan do
       :revision,
       :archived_at,
       :status,
+      :lifecycle,
       :start_date,
       :end_date,
       :workouts,
@@ -414,6 +437,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientTrainingPlan do
       "revision" => 1,
       "archived_at" => nil,
       "status" => "active",
+      "lifecycle" => "current",
       "start_date" => "2026-06-01",
       "end_date" => "2026-06-28",
       "workouts" => [],
@@ -429,6 +453,41 @@ defmodule EasyWeb.OpenApi.Schemas.ClientTrainingPlan do
       "inserted_at" => "2026-05-30T12:00:00Z",
       "updated_at" => "2026-05-30T12:00:00Z"
     }
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientTrainingCoverage do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.{ClientTrainingPlan, Shared, TrainingPlanWorkout}
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "ClientTrainingCoverage",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      date: %Schema{type: :string, format: :date},
+      weekday: %Schema{type: :string, enum: Shared.days_of_week()},
+      plan: ClientTrainingPlan,
+      workout: %Schema{allOf: [TrainingPlanWorkout], nullable: true}
+    },
+    required: [:date, :weekday, :plan, :workout]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientTrainingCoverageResponse do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.ClientTrainingCoverage
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "ClientTrainingCoverageResponse",
+    type: :object,
+    additionalProperties: false,
+    properties: %{data: %Schema{allOf: [ClientTrainingCoverage], nullable: true}},
+    required: [:data]
   })
 end
 

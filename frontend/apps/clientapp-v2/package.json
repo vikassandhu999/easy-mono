@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --port 1314 --host",
     "build": "tsc --noEmit -p tsconfig.app.json && pnpm run check && vite build",
-    "check": "node --experimental-strip-types ../../packages/utils/src/stick-to-bottom.check.ts && node --experimental-strip-types src/workout/session-utils.check.ts",
+    "check": "node --experimental-strip-types ../../packages/utils/src/stick-to-bottom.check.ts && node --experimental-strip-types src/workout/session-utils.check.ts && node --experimental-strip-types src/training/training-coverage.check.ts",
     "gen:api": "openapi-typescript ../../openapi/client.openapi.json -o src/api/schema.ts",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "lint": "biome check --write .",

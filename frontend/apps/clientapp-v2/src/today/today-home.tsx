@@ -9,18 +9,18 @@ import {useListClientNutritionDaysQuery} from '@/api/nutrition';
 import {useGetClientProfileQuery} from '@/api/profile';
 import {
   useCreateClientTrainingSessionMutation,
-  useListClientTrainingPlansQuery,
   useListClientTrainingSessionsQuery,
+  useResolveClientTrainingCoverageQuery,
 } from '@/api/training';
 import CheckinNudgeCard from '@/checkins/checkin-nudge-card';
 import IntakeCard from '@/checkins/intake-card';
 import {dayConsumed, dayTargets} from '@/nutrition/nutrition-utils';
-import {estimatedMinutes, todayWorkout, totalSets, workoutPreviewPath} from '@/training/training-utils';
+import {estimatedMinutes, totalSets, workoutPreviewPath} from '@/training/training-utils';
 
 export default function TodayHome() {
   const navigate = useNavigate();
   const {data: profileData} = useGetClientProfileQuery();
-  const {data: plansData, isLoading: plansLoading} = useListClientTrainingPlansQuery({status: 'active'});
+  const {data: coverageData, isLoading: coverageLoading} = useResolveClientTrainingCoverageQuery();
   const {data: sessionsData, isLoading: sessionsLoading} = useListClientTrainingSessionsQuery({});
   const {data: nutritionDays, isLoading: nutritionLoading} = useListClientNutritionDaysQuery({
     date: formatDateISO(new Date()),
@@ -29,8 +29,8 @@ export default function TodayHome() {
   const createSession = useCreateClientTrainingSessionMutation();
   const starting = createSession.isPending;
   const profile = profileData?.data;
-  const plan = plansData?.data[0];
-  const workout = todayWorkout(plan);
+  const plan = coverageData?.data?.plan;
+  const workout = coverageData?.data?.workout;
   const activeSession = sessionsData?.data.find((session) => session.state === 'active');
   const coachName = profile?.coach?.first_name || 'your coach';
   const firstName = profile?.first_name || 'there';
@@ -91,7 +91,7 @@ export default function TodayHome() {
       <p className="mb-3 mt-[22px] text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted">
         Today&apos;s plan
       </p>
-      {plansLoading || sessionsLoading ? (
+      {coverageLoading || sessionsLoading ? (
         <div className="grid min-h-36 place-items-center rounded-[20px] border border-border bg-surface">
           <Spinner />
         </div>

@@ -20,6 +20,10 @@ defmodule EasyWeb.TrainingPlanOpenApiTest do
              "duplicateTrainingPlan"
 
     assert paths["/v1/client/training-plans"].get.operationId == "listClientTrainingPlans"
+
+    assert paths["/v1/client/training-plans/coverage"].get.operationId ==
+             "resolveClientTrainingCoverage"
+
     assert paths["/v1/client/training-plans/{id}"].get.operationId == "getClientTrainingPlan"
   end
 
@@ -54,7 +58,41 @@ defmodule EasyWeb.TrainingPlanOpenApiTest do
     assert paths["/v1/coach/training-plans/{id}/duplicate"].post.responses[404]
 
     assert paths["/v1/client/training-plans"].get.responses[200]
+    coverage = paths["/v1/client/training-plans/coverage"].get
+    assert coverage.responses[200]
+    assert coverage.parameters |> Enum.find(&(&1.name == :date)) |> Map.fetch!(:schema) |> Map.fetch!(:format) == :date
     assert paths["/v1/client/training-plans/{id}"].get.responses[200]
     assert paths["/v1/client/training-plans/{id}"].get.responses[404]
+  end
+
+  test "client plan contract exposes nullable Coverage and the complete Prescription shape" do
+    spec = EasyWeb.ApiSpec.spec() |> OpenApiSpex.resolve_schema_modules()
+    schemas = spec.components.schemas
+    client_plan = schemas["ClientTrainingPlan"]
+    coverage_response = schemas["ClientTrainingCoverageResponse"]
+    workout = schemas["TrainingPlanWorkout"]
+    prescribed_exercise = schemas["TrainingPlanWorkoutExercise"]
+    exercise = schemas["TrainingPlanExercise"]
+
+    assert coverage_response.properties.data.nullable
+    assert client_plan.properties.kind.enum == ["client_plan"]
+    assert client_plan.properties.lifecycle.enum == ["incomplete", "upcoming", "current", "ended"]
+
+    for field <- [:kind, :lifecycle, :workouts, :schedule] do
+      assert field in client_plan.required
+    end
+
+    for field <- [:position, :training_plan_id, :workout_elements] do
+      assert field in workout.required
+    end
+
+    for field <- [:position, :workout_id, :exercise, :planned_sets] do
+      assert field in prescribed_exercise.required
+    end
+
+    assert :tracking_type in exercise.required
+    assert :images in exercise.required
+
+    refute Enum.any?(spec.paths["/v1/client/training-plans"].get.parameters, &(&1.name == :status))
   end
 end

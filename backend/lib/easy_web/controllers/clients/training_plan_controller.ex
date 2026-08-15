@@ -2,12 +2,12 @@ defmodule EasyWeb.Clients.TrainingPlanController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.Training.TrainingPlan
-  alias Easy.TrainingPlans, as: Plans
+  alias Easy.Training.Programming
 
   alias EasyWeb.OpenApi.Schemas.{
     ClientTrainingPlanListResponse,
     ClientTrainingPlanResponse,
+    ClientTrainingCoverageResponse,
     ErrorResponse
   }
 
@@ -15,35 +15,34 @@ defmodule EasyWeb.Clients.TrainingPlanController do
 
   tags ["client training plans"]
 
-  operation :today,
-    summary: "Get today's training plan day",
-    description: "Returns the active training plan and today's scheduled workout for the authenticated client.",
-    operation_id: "getClientTrainingPlanToday",
+  operation :coverage,
+    summary: "Resolve client training Coverage",
+    description:
+      "Returns the authenticated client's unarchived Client Plan supplying Coverage on a UTC date and the scheduled workout guidance. Data is null when no plan supplies Coverage.",
+    operation_id: "resolveClientTrainingCoverage",
     security: [%{"bearerAuth" => []}],
     parameters: [
-      Operation.parameter(:date, :query, :string, "Date (YYYY-MM-DD), defaults to today", required: false)
+      Operation.parameter(
+        :date,
+        :query,
+        %Schema{type: :string, format: :date},
+        "UTC date, defaults to today",
+        required: false
+      )
     ],
     responses: [
-      ok: {"Today's training plan day", "application/json", ClientTrainingPlanResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"No active plan for today", "application/json", ErrorResponse}
+      ok: {"Resolved training Coverage", "application/json", ClientTrainingCoverageResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
     ]
 
   operation :index,
     summary: "List client training plans",
-    description: "Lists training plans assigned to the authenticated client in the current business.",
+    description: "Lists the authenticated client's incomplete, upcoming, current, and ended unarchived Client Plans.",
     operation_id: "listClientTrainingPlans",
     security: [%{"bearerAuth" => []}],
     parameters: [
       Operation.parameter(:offset, :query, :integer, "Number of training plans to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 20)", required: false),
-      Operation.parameter(
-        :status,
-        :query,
-        %Schema{type: :string, enum: ["active", "archived"]},
-        "Only training plans with this status",
-        required: false
-      )
+      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 100)", required: false)
     ],
     responses: [
       ok: {"Training plans", "application/json", ClientTrainingPlanListResponse},
@@ -65,12 +64,12 @@ defmodule EasyWeb.Clients.TrainingPlanController do
       not_found: {"Not found", "application/json", ErrorResponse}
     ]
 
-  @spec today(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def today(conn, params) do
+  @spec coverage(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def coverage(conn, params) do
     date = Easy.Utils.safe_date(params["date"]) || Date.utc_today()
 
-    with {:ok, result} <- Plans.get_client_active_plan_day(conn.assigns.ctx, date) do
-      render(conn, :today, result)
+    with {:ok, result} <- Programming.resolve_client_coverage(conn.assigns.ctx, date) do
+      render(conn, :coverage, coverage: result)
     end
   end
 
@@ -78,14 +77,9 @@ defmodule EasyWeb.Clients.TrainingPlanController do
   def index(conn, params) do
     offset = parse_integer(params, "offset", 0)
     limit = parse_integer(params, "limit", 20)
-    status = parse_enum(params, "status", TrainingPlan.statuses())
 
     with {:ok, %{plans: plans, count: count}} <-
-           Plans.list_client_plans(conn.assigns.ctx,
-             status: status,
-             offset: offset,
-             limit: limit
-           ) do
+           Programming.list_client_plans(conn.assigns.ctx, offset: offset, limit: limit) do
       render(conn, :index, plans: plans, count: count)
     end
   end
@@ -94,7 +88,7 @@ defmodule EasyWeb.Clients.TrainingPlanController do
   def show(conn, _params) do
     id = conn.path_params["id"]
 
-    with {:ok, plan} <- Plans.get_client_plan_full(conn.assigns.ctx, id) do
+    with {:ok, plan} <- Programming.get_client_plan(conn.assigns.ctx, id) do
       render(conn, :show, plan: plan)
     end
   end

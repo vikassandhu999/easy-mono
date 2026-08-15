@@ -1,14 +1,14 @@
 defmodule Easy.Training.PerformedSetConcurrencyTest do
   use ExUnit.Case, async: false
 
+  import Ecto.Changeset
   import Ecto.Query
-  import Easy.Factory
 
   alias Easy.Clients.Client
+  alias Easy.{Ctx, Repo}
   alias Easy.Identity.User
   alias Easy.Orgs.{Business, Coach}
-  alias Easy.Training.{TrainingExercise, TrainingPerformedSet, TrainingSession}
-  alias Easy.{Ctx, Repo, Sessions}
+  alias Easy.Training.{Execution, TrainingExercise, TrainingPerformedSet, TrainingSession}
   alias Ecto.Adapters.SQL.Sandbox
 
   @append_count 8
@@ -16,22 +16,19 @@ defmodule Easy.Training.PerformedSetConcurrencyTest do
   setup do
     Sandbox.checkout(Repo, sandbox: false)
 
-    business = insert(:business)
-    coach = insert(:coach, business: business)
-    client = insert(:client, user: insert(:user), creator: coach, business: business)
-    session = insert(:workout_session, client: client, business: business, state: :active)
-    exercise = insert(:exercise, business: business)
-    ctx = %Ctx{user_id: client.user_id, business_id: business.id, client_id: client.id}
+    fixture = insert_fixture()
+    ctx = %Ctx{business_id: fixture.business.id, user_id: fixture.client.user_id, client_id: fixture.client.id}
+    {:ok, session} = Execution.start_client_session(ctx, nil, %{})
 
     on_exit(fn ->
       Sandbox.checkout(Repo, sandbox: false)
-      cleanup(business, [business.owner_id, coach.user_id, client.user_id])
+      cleanup(fixture.business, fixture.user_ids)
     end)
 
-    %{ctx: ctx, session: session, exercise: exercise}
+    %{ctx: ctx, exercise: fixture.exercise, session: session}
   end
 
-  test "same-session concurrent appends receive distinct positions", ctx do
+  test "same-session concurrent appends receive contiguous positions", ctx do
     parent = self()
 
     tasks =
@@ -44,9 +41,8 @@ defmodule Easy.Training.PerformedSetConcurrencyTest do
             :go -> :ok
           end
 
-          Sessions.create_client_performed_set(ctx.ctx, ctx.session.id, %{
+          Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{
             exercise_id: ctx.exercise.id,
-            set_type: "working",
             reps: "10"
           })
         end)
@@ -68,6 +64,120 @@ defmodule Easy.Training.PerformedSetConcurrencyTest do
       |> Enum.sort()
 
     assert positions == Enum.to_list(0..(@append_count - 1))
+  end
+
+  test "an update waiting on session completion cannot change terminal history", ctx do
+    assert_terminal_transition_wins(ctx, fn set ->
+      Execution.update_client_performed_set(ctx.ctx, set.id, %{reps: "12"})
+    end)
+  end
+
+  test "a delete waiting on session completion cannot change terminal history", ctx do
+    assert_terminal_transition_wins(ctx, fn set ->
+      Execution.delete_client_performed_set(ctx.ctx, set.id)
+    end)
+  end
+
+  defp assert_terminal_transition_wins(ctx, mutation) do
+    {:ok, set} =
+      Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{
+        exercise_id: ctx.exercise.id,
+        reps: "10"
+      })
+
+    parent = self()
+
+    terminal_transition =
+      Task.async(fn ->
+        Sandbox.checkout(Repo, sandbox: false)
+
+        Repo.transaction(fn ->
+          session =
+            TrainingSession
+            |> TrainingSession.for_business(ctx.ctx.business_id)
+            |> lock("FOR UPDATE")
+            |> Repo.get!(ctx.session.id)
+
+          send(parent, {:session_locked, self()})
+
+          receive do
+            :complete ->
+              session
+              |> change(state: :completed, closed_at: DateTime.utc_now(:second))
+              |> Repo.update!()
+          end
+        end)
+      end)
+
+    locker =
+      receive do
+        {:session_locked, pid} -> pid
+      end
+
+    attempted_mutation =
+      Task.async(fn ->
+        Sandbox.checkout(Repo, sandbox: false)
+        mutation.(set)
+      end)
+
+    assert Task.yield(attempted_mutation, 100) == nil
+    send(locker, :complete)
+
+    assert {:ok, %TrainingSession{state: :completed}} = Task.await(terminal_transition, 5_000)
+    assert {:error, :not_found} = Task.await(attempted_mutation, 5_000)
+  end
+
+  defp insert_fixture do
+    suffix = System.unique_integer([:positive])
+    owner = insert_user!("performed-set-owner-#{suffix}@test.com")
+
+    business =
+      owner
+      |> Business.insert_changeset(%{name: "Performed set concurrency", handle: "performed-set-#{suffix}"})
+      |> Repo.insert!()
+
+    coach_user = insert_user!("performed-set-coach-#{suffix}@test.com")
+
+    coach =
+      %{first_name: "Performed", last_name: "Coach"}
+      |> Coach.insert_changeset()
+      |> put_change(:business_id, business.id)
+      |> put_change(:user_id, coach_user.id)
+      |> put_change(:email, coach_user.email)
+      |> Repo.insert!()
+
+    client_user = insert_user!("performed-set-client-#{suffix}@test.com")
+
+    client =
+      change(%Client{}, %{
+        business_id: business.id,
+        creator_id: coach.id,
+        assigned_coach_id: coach.id,
+        user_id: client_user.id,
+        email: client_user.email,
+        first_name: "Performed",
+        last_name: "Client",
+        status: :active
+      })
+      |> Repo.insert!()
+
+    exercise =
+      business.id
+      |> TrainingExercise.insert_changeset(coach.id, %{name: "Race exercise"})
+      |> Repo.insert!()
+
+    %{
+      business: business,
+      client: client,
+      exercise: exercise,
+      user_ids: [owner.id, coach_user.id, client_user.id]
+    }
+  end
+
+  defp insert_user!(email) do
+    %{email: email, first_name: "Performed", last_name: "User"}
+    |> User.insert_changeset()
+    |> Repo.insert!()
   end
 
   defp cleanup(business, user_ids) do

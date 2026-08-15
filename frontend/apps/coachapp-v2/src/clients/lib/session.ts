@@ -58,6 +58,10 @@ function performedSetName(set: TrainingPerformedSet): string {
   return set.exercise?.name ?? set.exercise_name ?? 'Unknown exercise';
 }
 
+function performedSetKey(set: TrainingPerformedSet): string {
+  return set.exercise_id ?? `name:${set.exercise_name}`;
+}
+
 function plannedExerciseSets(
   exercise: PlannedSnapshotExercise,
 ): Array<{loadUnit: null | string; loadValue: null | string; targetReps: null | string}> {
@@ -72,11 +76,8 @@ function plannedExerciseSets(
  * Group a session's performed sets into per-exercise rows, aligning with the
  * planned snapshot where one exists.
  *
- * NOTE: the kebab TrainingSession contract dropped the per-set
- * `workout_element_id` ↔ snapshot `element_id` linkage, so performed sets are
- * grouped by `exercise_id` and matched to planned snapshot exercises by name.
- * Exercise *replacement* detection (which the old element-linked model
- * supported) is no longer derivable and has been removed (see slice report).
+ * The coach history screen still consumes the legacy snapshot projection here;
+ * the typed Prescription snapshot is owned by the execution/history rewrite.
  */
 export function buildExerciseGroups(session: TrainingSession): ExerciseGroup[] {
   const snapshot = getPlannedSnapshot(session);
@@ -86,7 +87,7 @@ export function buildExerciseGroups(session: TrainingSession): ExerciseGroup[] {
   const groupMap = new Map<string, TrainingPerformedSet[]>();
   const groupOrder: string[] = [];
   for (const set of [...sets].sort((a, b) => a.position - b.position)) {
-    const key = set.exercise_id;
+    const key = performedSetKey(set);
     const existing = groupMap.get(key);
     if (existing) {
       existing.push(set);

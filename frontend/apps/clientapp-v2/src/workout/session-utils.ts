@@ -11,17 +11,18 @@ export type SnapshotExercise = {
   exercise_id?: null | string;
   name?: null | string;
   position?: number;
+  ref?: string;
   sets?: SnapshotSet[];
   tracking_type?: null | string;
 };
-export type ExercisePick = {id: string; name: string; tracking_type: null | string};
+export type ExercisePick = {id: null | string; name: string; tracking_type: null | string};
 export type ActiveExerciseCard = {
   added: boolean;
   badge: null | {from: string} | 'added';
   done: TrainingPerformedSet[];
   exercise: SnapshotExercise;
   id: string;
-  logSwappedFrom: null | string;
+  logSnapshotRef: null | string;
   name: string;
   plannedIndex: null | number;
   removable: boolean;
@@ -41,6 +42,7 @@ export function snapshotOf(session: TrainingSession): Snapshot {
       exercise_id: exercise.exercise_id,
       name: exercise.exercise_name,
       position: exercise.position,
+      ref: exercise.ref,
       sets: exercise.sets,
       tracking_type: exercise.tracking_type,
     })),
@@ -51,64 +53,39 @@ export function snapshotExercises(session: TrainingSession): SnapshotExercise[] 
   return [...(snapshotOf(session).exercises ?? [])].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
 }
 
-// The planned slot a performed set belongs to: its swapped-from exercise when the
-// client swapped this slot, else the exercise it was logged under.
-function plannedKey(p: TrainingPerformedSet): string {
-  return p.swapped_from_exercise_id ?? p.exercise_id ?? '';
-}
-
-// Assign performed sets to exercise occurrences.
-//
-// A set logged by the current app carries `planned_exercise_index` — the snapshot
-// slot it was logged under — so it maps back exactly, even when the same exercise
-// appears twice in a workout, and even when the slot was swapped.
-//
-// Rows written before that field existed carry only their (planned-slot) exercise
-// id, with no per-occurrence key, so they fall back to the original scheme: consume
-// them greedily in logged (position) order, each occurrence claiming up to its
-// planned set count. Swapped legacy sets map back via plannedKey.
 export function assignPerformed(
   exercises: SnapshotExercise[],
   performed: TrainingPerformedSet[],
 ): TrainingPerformedSet[][] {
   const bySlot: TrainingPerformedSet[][] = exercises.map(() => []);
-  const queues = new Map<string, TrainingPerformedSet[]>();
+  const slotByRef = new Map(exercises.map((exercise, index) => [exercise.ref, index]));
   for (const p of [...performed].sort((a, b) => a.position - b.position)) {
-    const slot = p.planned_exercise_index;
+    const slot = slotByRef.get(p.snapshot_exercise_ref ?? undefined);
     if (slot != null) {
       bySlot[slot]?.push(p);
-      continue;
     }
-    const key = plannedKey(p);
-    const q = queues.get(key) ?? [];
-    q.push(p);
-    queues.set(key, q);
   }
-  return exercises.map((ex, index) => {
-    const exact = bySlot[index] ?? [];
-    if (exact.length > 0) {
-      return exact;
-    }
-    const q = queues.get(ex.exercise_id ?? '');
-    return q ? q.splice(0, (ex.sets ?? []).length) : [];
-  });
+  return bySlot;
 }
 
-// Performed sets that belong to no planned slot — extras added during the workout
-// (grouped by the exercise actually performed). A set with a planned_exercise_index
-// is by definition in a slot; a legacy set is excluded when its plannedKey names a
-// planned exercise, which is also how swapped legacy sets stay out.
+function performedExerciseKey(performed: TrainingPerformedSet): string {
+  return performed.exercise_id ?? `name:${performed.exercise_name}`;
+}
+
+function pickedExerciseKey(exercise: ExercisePick): string {
+  return exercise.id ?? `name:${exercise.name}`;
+}
+
 export function addedExercises(
-  exercises: SnapshotExercise[],
+  _exercises: SnapshotExercise[],
   performed: TrainingPerformedSet[],
 ): Map<string, TrainingPerformedSet[]> {
-  const planned = new Set(exercises.map((e) => e.exercise_id ?? ''));
   const extra = new Map<string, TrainingPerformedSet[]>();
   for (const p of [...performed].sort((a, b) => a.position - b.position)) {
-    if (p.planned_exercise_index != null || planned.has(plannedKey(p))) {
+    if (p.snapshot_exercise_ref != null) {
       continue;
     }
-    const key = p.exercise_id ?? '';
+    const key = performedExerciseKey(p);
     const q = extra.get(key) ?? [];
     q.push(p);
     extra.set(key, q);
@@ -116,13 +93,19 @@ export function addedExercises(
   return extra;
 }
 
-// If a planned slot's logged sets were swapped, the exercise actually performed.
-export function swapOf(sets: TrainingPerformedSet[]): null | {
-  id: string;
+export function swapOf(
+  exercise: SnapshotExercise,
+  sets: TrainingPerformedSet[],
+): null | {
+  id: null | string;
   name: string;
   trackingType: null | string;
 } {
-  const swapped = sets.find((p) => p.swapped_from_exercise_id != null);
+  const swapped = sets.find(
+    (performed) =>
+      performed.exercise_name !== exercise.name ||
+      (performed.exercise_id != null && exercise.exercise_id != null && performed.exercise_id !== exercise.exercise_id),
+  );
   return swapped
     ? {
         id: swapped.exercise_id,
@@ -140,7 +123,7 @@ export function activeExerciseCards(
   const assigned = assignPerformed(planned, session.performed_sets);
   const extra = addedExercises(planned, session.performed_sets);
   const cards = planned.map((exercise, index): ActiveExerciseCard => {
-    const persistedSwap = swapOf(assigned[index] ?? []);
+    const persistedSwap = swapOf(exercise, assigned[index] ?? []);
     const swap =
       edits.swaps.get(index) ??
       (persistedSwap && {
@@ -162,7 +145,7 @@ export function activeExerciseCards(
           }
         : exercise,
       id: `p${index}`,
-      logSwappedFrom: swap ? (exercise.exercise_id ?? null) : null,
+      logSnapshotRef: exercise.ref ?? null,
       name: swap?.name ?? exercise.name ?? 'Exercise',
       plannedIndex: index,
       removable: false,
@@ -171,18 +154,18 @@ export function activeExerciseCards(
   });
 
   const additions = new Map<string, ExercisePick>();
-  for (const [id, sets] of extra) {
-    additions.set(id, {
-      id,
+  for (const [key, sets] of extra) {
+    additions.set(key, {
+      id: sets[0]?.exercise_id ?? null,
       name: sets[0]?.exercise_name ?? 'Exercise',
-      tracking_type: sets[0]?.exercise?.tracking_type ?? null,
+      tracking_type: sets[0]?.exercise?.tracking_type ?? 'weight_reps',
     });
   }
   for (const exercise of edits.added) {
-    additions.set(exercise.id, exercise);
+    additions.set(pickedExerciseKey(exercise), exercise);
   }
-  for (const exercise of additions.values()) {
-    const done = extra.get(exercise.id) ?? [];
+  for (const [key, exercise] of additions) {
+    const done = extra.get(key) ?? [];
     cards.push({
       added: true,
       badge: 'added',
@@ -193,8 +176,8 @@ export function activeExerciseCards(
         sets: [],
         tracking_type: exercise.tracking_type,
       },
-      id: `a${exercise.id}`,
-      logSwappedFrom: null,
+      id: `a${key}`,
+      logSnapshotRef: null,
       name: exercise.name,
       plannedIndex: null,
       removable: done.length === 0,

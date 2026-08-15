@@ -10,9 +10,9 @@ defmodule EasyWeb.Clients.PerformedSetJSON do
     %{
       id: set.id,
       exercise_name: set.exercise_name,
+      snapshot_exercise_ref: set.snapshot_exercise_ref,
       set_type: set.set_type,
       position: set.position,
-      planned_exercise_index: set.planned_exercise_index,
       reps: set.reps,
       load_value: set.load_value,
       load_unit: set.load_unit,
@@ -20,10 +20,8 @@ defmodule EasyWeb.Clients.PerformedSetJSON do
       duration_seconds: set.duration_seconds,
       distance_value: set.distance_value,
       distance_unit: set.distance_unit,
-      completed: set.completed,
       notes: set.notes,
       exercise_id: set.exercise_id,
-      swapped_from_exercise_id: set.swapped_from_exercise_id,
       training_session_id: set.training_session_id,
       exercise: exercise_data(set.exercise),
       inserted_at: set.inserted_at,
@@ -37,7 +35,8 @@ defmodule EasyWeb.Clients.PerformedSetJSON do
       name: exercise.name,
       mechanics: exercise.mechanics,
       force: exercise.force,
-      tracking_type: exercise.tracking_type
+      tracking_type: exercise.tracking_type,
+      images: exercise.images
     }
   end
 

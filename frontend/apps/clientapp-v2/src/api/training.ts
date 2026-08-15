@@ -17,7 +17,8 @@ export type TrainingPlanWorkout = components['schemas']['TrainingPlanWorkout'];
 export type TrainingSession = components['schemas']['TrainingSession'];
 type TrainingSessionRequest = components['schemas']['TrainingSessionRequest'];
 type TrainingSessionUpdateRequest = components['schemas']['TrainingSessionUpdateRequest'];
-type TrainingPerformedSetRequest = components['schemas']['TrainingPerformedSetRequest'];
+type TrainingPerformedSetCreateRequest = components['schemas']['TrainingPerformedSetCreateRequest'];
+type TrainingPerformedSetUpdateRequest = components['schemas']['TrainingPerformedSetUpdateRequest'];
 
 type PlanListQuery = paths['/v1/client/training-plans']['get']['parameters']['query'];
 type SessionListQuery = paths['/v1/client/training-sessions']['get']['parameters']['query'];
@@ -123,7 +124,7 @@ export function useUpdateClientTrainingSessionMutation() {
 export function useCreateClientPerformedSetMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({sessionId, ...body}: TrainingPerformedSetRequest & {sessionId: string}) =>
+    mutationFn: ({sessionId, ...body}: TrainingPerformedSetCreateRequest & {sessionId: string}) =>
       call(
         client.POST('/v1/client/training-sessions/{session_id}/performed-sets', {
           params: {path: {session_id: sessionId}},
@@ -150,7 +151,11 @@ export function useCreateClientPerformedSetMutation() {
 export function useUpdateClientPerformedSetMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({id, sessionId: _sessionId, ...body}: TrainingPerformedSetRequest & {id: string; sessionId: string}) =>
+    mutationFn: ({
+      id,
+      sessionId: _sessionId,
+      ...body
+    }: TrainingPerformedSetUpdateRequest & {id: string; sessionId: string}) =>
       call(client.PATCH('/v1/client/training-performed-sets/{id}', {params: {path: {id}}, body})),
     onSuccess: (_data, {sessionId}) => {
       qc.invalidateQueries({queryKey: sessionKeys.lists()});

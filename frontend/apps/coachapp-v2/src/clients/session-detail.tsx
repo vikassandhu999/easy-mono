@@ -1,5 +1,5 @@
 import {Chip, Typography} from '@heroui/react';
-import {Check, Dumbbell, Minus, Quote} from 'lucide-react';
+import {Check, Dumbbell, Quote} from 'lucide-react';
 import {useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
@@ -163,7 +163,7 @@ const GRID = 'grid grid-cols-[52px_1fr_76px_40px_22px] gap-2 sm:grid-cols-[88px_
 const COL_HEAD = 'type-eyebrow font-semibold text-muted';
 
 function ExerciseCard({group}: {group: ExerciseGroup}) {
-  const done = group.sets.filter((set) => set.completed).length;
+  const done = group.sets.length;
   const total = group.sets.length || group.plannedSets.length;
 
   return (
@@ -218,7 +218,7 @@ function ExerciseCard({group}: {group: ExerciseGroup}) {
             <span>{set.reps ?? '—'}</span>
             <span>{formatLoad(set.load_value, set.load_unit) || '—'}</span>
             <span>{set.rpe ?? '—'}</span>
-            {set.completed ? <Check className="text-success" /> : <Minus className="text-muted" />}
+            <Check className="text-success" />
           </div>
         ))}
         {group.sets.length === 0 && <div className="py-2 type-eyebrow text-muted">Not logged.</div>}

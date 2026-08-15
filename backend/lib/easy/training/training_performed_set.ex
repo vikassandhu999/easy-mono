@@ -17,9 +17,6 @@ defmodule Easy.Training.TrainingPerformedSet do
     field :position, :integer
     field :exercise_name, :string
     field :snapshot_exercise_ref, :string
-    field :planned_exercise_index, :integer, virtual: true
-    field :completed, :boolean, virtual: true, default: false
-    field :swapped_from_exercise_id, :binary_id, virtual: true
     field :set_type, Ecto.Enum, values: SetVocab.set_types(), default: :working
     field :reps, :string
     field :load_value, :decimal
@@ -37,8 +34,7 @@ defmodule Easy.Training.TrainingPerformedSet do
     timestamps(type: :utc_datetime)
   end
 
-  @cast_fields [
-    :position,
+  @create_fields [
     :exercise_name,
     :snapshot_exercise_ref,
     :set_type,
@@ -53,19 +49,32 @@ defmodule Easy.Training.TrainingPerformedSet do
     :exercise_id
   ]
 
-  @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(business_id, session_id, attrs) do
+  @measurement_fields [
+    :set_type,
+    :reps,
+    :load_value,
+    :load_unit,
+    :duration_seconds,
+    :distance_value,
+    :distance_unit,
+    :rpe,
+    :notes
+  ]
+
+  @spec insert_changeset(String.t(), String.t(), non_neg_integer(), map()) :: Ecto.Changeset.t()
+  def insert_changeset(business_id, session_id, position, attrs) do
     %__MODULE__{}
-    |> cast(attrs, @cast_fields)
+    |> cast(attrs, @create_fields)
     |> put_change(:training_session_id, session_id)
     |> put_change(:business_id, business_id)
+    |> put_change(:position, position)
     |> validate_fields()
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(performed_set, attrs) do
     performed_set
-    |> cast(attrs, @cast_fields -- [:exercise_id])
+    |> cast(attrs, @measurement_fields)
     |> validate_fields()
   end
 

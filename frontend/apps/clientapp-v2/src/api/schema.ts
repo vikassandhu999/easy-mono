@@ -2474,6 +2474,29 @@ export interface components {
       };
     };
     /**
+     * TrainingPerformedSetUpdateRequest
+     * @example {
+     *       "load_unit": "kg",
+     *       "load_value": 82.5,
+     *       "reps": "8",
+     *       "rpe": 9
+     *     }
+     */
+    TrainingPerformedSetUpdateRequest: {
+      /** @enum {string|null} */
+      distance_unit?: 'meters' | 'km' | 'miles' | 'none' | null;
+      distance_value?: number | null;
+      duration_seconds?: number | null;
+      /** @enum {string|null} */
+      load_unit?: 'kg' | 'lbs' | 'bodyweight' | 'none' | null;
+      load_value?: number | null;
+      notes?: string | null;
+      reps?: string | null;
+      rpe?: number | null;
+      /** @enum {string|null} */
+      set_type?: 'working' | 'warmup' | 'dropset' | null;
+    };
+    /**
      * TrainingSessionUpdateRequest
      * @example {
      *       "notes": "Felt strong.",
@@ -3149,14 +3172,13 @@ export interface components {
     };
     /** TrainingPerformedSet */
     TrainingPerformedSet: {
-      completed: boolean;
       distance_unit?: string | null;
       distance_value?: number | null;
       duration_seconds?: number | null;
       exercise?: components['schemas']['TrainingPlanExercise'] | null;
       /** Format: uuid */
-      exercise_id: string;
-      exercise_name?: string | null;
+      exercise_id: string | null;
+      exercise_name: string;
       /** Format: uuid */
       id: string;
       /** Format: date-time */
@@ -3164,16 +3186,15 @@ export interface components {
       load_unit: string | null;
       load_value: number | null;
       notes?: string | null;
-      planned_exercise_index: number | null;
       position: number;
       reps: string | null;
       rpe?: number | null;
-      /** @enum {string|null} */
-      set_type?: 'working' | 'warmup' | 'dropset' | null;
+      /** @enum {string} */
+      set_type: 'working' | 'warmup' | 'dropset';
       /** Format: uuid */
-      swapped_from_exercise_id?: string | null;
+      snapshot_exercise_ref: string | null;
       /** Format: uuid */
-      training_session_id?: string | null;
+      training_session_id: string;
       /** Format: date-time */
       updated_at: string;
     };
@@ -3451,6 +3472,38 @@ export interface components {
       | components['schemas']['ServiceNeverProgrammedReason']
       | components['schemas']['ServiceCoverageMissingReason']
       | components['schemas']['ServiceCoverageEndingSoonReason'];
+    /**
+     * TrainingPerformedSetCreateRequest
+     * @example {
+     *       "exercise_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+     *       "load_unit": "kg",
+     *       "load_value": 80,
+     *       "reps": "10",
+     *       "snapshot_exercise_ref": "f9c443b8-07d3-4ee8-aa7e-a287a013ea55"
+     *     }
+     */
+    TrainingPerformedSetCreateRequest: {
+      /** @enum {string|null} */
+      distance_unit?: 'meters' | 'km' | 'miles' | 'none' | null;
+      distance_value?: number | null;
+      duration_seconds?: number | null;
+      /** Format: uuid */
+      exercise_id?: string | null;
+      exercise_name?: string | null;
+      /** @enum {string|null} */
+      load_unit?: 'kg' | 'lbs' | 'bodyweight' | 'none' | null;
+      load_value?: number | null;
+      notes?: string | null;
+      reps?: string | null;
+      rpe?: number | null;
+      /** @enum {string|null} */
+      set_type?: 'working' | 'warmup' | 'dropset' | null;
+      /**
+       * Format: uuid
+       * @description Stable ref of the Prescribed Exercise in this Training Session snapshot
+       */
+      snapshot_exercise_ref?: string | null;
+    };
     /**
      * NutritionMealItemRequest
      * @example {
@@ -3798,41 +3851,6 @@ export interface components {
       /** Format: date-time */
       updated_at: string;
       workouts: components['schemas']['TrainingPlanWorkout'][];
-    };
-    /**
-     * TrainingPerformedSetRequest
-     * @example {
-     *       "completed": true,
-     *       "exercise_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-     *       "load_unit": "kg",
-     *       "load_value": 80,
-     *       "planned_exercise_index": 0,
-     *       "position": 0,
-     *       "reps": "10"
-     *     }
-     */
-    TrainingPerformedSetRequest: {
-      completed?: boolean;
-      /** @enum {string|null} */
-      distance_unit?: 'meters' | 'km' | 'miles' | 'none' | null;
-      distance_value?: number | null;
-      duration_seconds?: number | null;
-      /** Format: uuid */
-      exercise_id?: string;
-      exercise_name?: string | null;
-      /** @enum {string|null} */
-      load_unit?: 'kg' | 'lbs' | 'bodyweight' | 'none' | null;
-      load_value?: number | null;
-      notes?: string | null;
-      /** @description Index of the planned_snapshot exercise this set was logged under; null when added on the fly */
-      planned_exercise_index?: number | null;
-      position?: number;
-      reps?: string | null;
-      rpe?: number | null;
-      /** @enum {string|null} */
-      set_type?: 'working' | 'warmup' | 'dropset' | null;
-      /** Format: uuid */
-      swapped_from_exercise_id?: string | null;
     };
     /** BillingCheckoutPayload */
     BillingCheckoutPayload: {
@@ -5343,7 +5361,7 @@ export interface operations {
     /** @description Performed set request */
     requestBody: {
       content: {
-        'application/json': components['schemas']['TrainingPerformedSetRequest'];
+        'application/json': components['schemas']['TrainingPerformedSetCreateRequest'];
       };
     };
     responses: {
@@ -5358,6 +5376,15 @@ export interface operations {
       };
       /** @description Unauthorized */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not found */
+      404: {
         headers: {
           [name: string]: unknown;
         };
@@ -5828,7 +5855,7 @@ export interface operations {
     /** @description Performed set request */
     requestBody: {
       content: {
-        'application/json': components['schemas']['TrainingPerformedSetRequest'];
+        'application/json': components['schemas']['TrainingPerformedSetUpdateRequest'];
       };
     };
     responses: {

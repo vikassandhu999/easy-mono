@@ -131,7 +131,7 @@ function Detail({session}: {session: TrainingSession}) {
 
       {exercises.map((ex, i) => {
         const done = assigned[i] ?? [];
-        const swap = swapOf(done);
+        const swap = swapOf(ex, done);
         const tt = swap?.trackingType ?? ex.tracking_type;
         return (
           <ExerciseCard

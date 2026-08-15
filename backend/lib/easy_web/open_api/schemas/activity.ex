@@ -1,23 +1,23 @@
-defmodule EasyWeb.OpenApi.Schemas.TrainingPerformedSetRequest do
+defmodule EasyWeb.OpenApi.Schemas.TrainingPerformedSetCreateRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
-      title: "TrainingPerformedSetRequest",
+      title: "TrainingPerformedSetCreateRequest",
       type: :object,
       additionalProperties: false,
       properties: %{
-        exercise_name: %Schema{type: :string, nullable: true},
-        set_type: %Schema{type: :string, enum: ["working", "warmup", "dropset"], nullable: true},
-        position: %Schema{type: :integer, minimum: 0},
-        planned_exercise_index: %Schema{
-          type: :integer,
-          minimum: 0,
+        exercise_name: %Schema{type: :string, minLength: 1, nullable: true},
+        exercise_id: %Schema{type: :string, format: :uuid, nullable: true},
+        snapshot_exercise_ref: %Schema{
+          type: :string,
+          format: :uuid,
           nullable: true,
-          description: "Index of the planned_snapshot exercise this set was logged under; null when added on the fly"
+          description: "Stable ref of the Prescribed Exercise in this Training Session snapshot"
         },
+        set_type: %Schema{type: :string, enum: ["working", "warmup", "dropset"], nullable: true},
         reps: %Schema{type: :string, nullable: true},
         load_value: %Schema{type: :number, nullable: true},
         load_unit: %Schema{type: :string, enum: ["kg", "lbs", "bodyweight", "none"], nullable: true},
@@ -25,20 +25,42 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPerformedSetRequest do
         duration_seconds: %Schema{type: :integer, minimum: 0, nullable: true},
         distance_value: %Schema{type: :number, nullable: true},
         distance_unit: %Schema{type: :string, enum: ["meters", "km", "miles", "none"], nullable: true},
-        completed: %Schema{type: :boolean},
-        notes: %Schema{type: :string, maxLength: 5000, nullable: true},
-        exercise_id: %Schema{type: :string, format: :uuid},
-        swapped_from_exercise_id: %Schema{type: :string, format: :uuid, nullable: true}
+        notes: %Schema{type: :string, maxLength: 5000, nullable: true}
       },
       example: %{
-        "position" => 0,
-        "planned_exercise_index" => 0,
         "exercise_id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+        "snapshot_exercise_ref" => "f9c443b8-07d3-4ee8-aa7e-a287a013ea55",
         "reps" => "10",
         "load_value" => 80,
-        "load_unit" => "kg",
-        "completed" => true
+        "load_unit" => "kg"
       }
+    },
+    struct?: false
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.TrainingPerformedSetUpdateRequest do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "TrainingPerformedSetUpdateRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        set_type: %Schema{type: :string, enum: ["working", "warmup", "dropset"], nullable: true},
+        reps: %Schema{type: :string, nullable: true},
+        load_value: %Schema{type: :number, nullable: true},
+        load_unit: %Schema{type: :string, enum: ["kg", "lbs", "bodyweight", "none"], nullable: true},
+        rpe: %Schema{type: :number, minimum: 1, maximum: 10, nullable: true},
+        duration_seconds: %Schema{type: :integer, minimum: 0, nullable: true},
+        distance_value: %Schema{type: :number, nullable: true},
+        distance_unit: %Schema{type: :string, enum: ["meters", "km", "miles", "none"], nullable: true},
+        notes: %Schema{type: :string, maxLength: 5000, nullable: true}
+      },
+      example: %{"reps" => "8", "load_value" => 82.5, "load_unit" => "kg", "rpe" => 9}
     },
     struct?: false
   )
@@ -58,10 +80,10 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPerformedSet do
       Map.merge(
         %{
           id: %Schema{type: :string, format: :uuid},
-          exercise_name: %Schema{type: :string, nullable: true},
-          set_type: %Schema{type: :string, enum: ["working", "warmup", "dropset"], nullable: true},
+          exercise_name: %Schema{type: :string},
+          snapshot_exercise_ref: %Schema{type: :string, format: :uuid, nullable: true},
+          set_type: %Schema{type: :string, enum: ["working", "warmup", "dropset"]},
           position: %Schema{type: :integer},
-          planned_exercise_index: %Schema{type: :integer, nullable: true},
           reps: %Schema{type: :string, nullable: true},
           load_value: %Schema{type: :number, nullable: true},
           load_unit: %Schema{type: :string, nullable: true},
@@ -69,11 +91,9 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPerformedSet do
           duration_seconds: %Schema{type: :integer, nullable: true},
           distance_value: %Schema{type: :number, nullable: true},
           distance_unit: %Schema{type: :string, nullable: true},
-          completed: %Schema{type: :boolean},
           notes: %Schema{type: :string, nullable: true},
-          exercise_id: %Schema{type: :string, format: :uuid},
-          swapped_from_exercise_id: %Schema{type: :string, format: :uuid, nullable: true},
-          training_session_id: %Schema{type: :string, format: :uuid, nullable: true},
+          exercise_id: %Schema{type: :string, format: :uuid, nullable: true},
+          training_session_id: %Schema{type: :string, format: :uuid},
           exercise: %Schema{allOf: [TrainingPlanExercise], nullable: true}
         },
         Shared.timestamps()
@@ -81,12 +101,14 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPerformedSet do
     required: [
       :id,
       :position,
-      :planned_exercise_index,
+      :exercise_name,
+      :snapshot_exercise_ref,
+      :set_type,
       :reps,
       :load_value,
       :load_unit,
-      :completed,
       :exercise_id,
+      :training_session_id,
       :inserted_at,
       :updated_at
     ]

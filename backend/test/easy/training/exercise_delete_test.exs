@@ -3,8 +3,7 @@ defmodule Easy.Training.ExerciseDeleteTest do
 
   alias Easy.Ctx
   alias Easy.Repo
-  alias Easy.Sessions
-  alias Easy.Training.TrainingExercise
+  alias Easy.Training.{Execution, TrainingExercise}
   alias Easy.Training.Library
   alias Easy.Training.TrainingPerformedSet
   alias Easy.Workouts
@@ -29,7 +28,7 @@ defmodule Easy.Training.ExerciseDeleteTest do
       session = insert(:workout_session, business: s.business, client: s.client)
 
       assert {:ok, set} =
-               Sessions.create_client_performed_set(s.client_ctx, session.id, %{
+               Execution.create_client_performed_set(s.client_ctx, session.id, %{
                  exercise_id: exercise.id,
                  exercise_name: "Back Squat",
                  set_type: :working,
@@ -41,7 +40,7 @@ defmodule Easy.Training.ExerciseDeleteTest do
       # History is denormalised: the name outlives the exercise row.
       kept = Repo.get!(TrainingPerformedSet, set.id)
       assert kept.exercise_id == nil
-      assert kept.exercise_name == "Back Squat"
+      assert kept.exercise_name == exercise.name
     end
 
     test "succeeds when nothing references the exercise" do
@@ -68,7 +67,7 @@ defmodule Easy.Training.ExerciseDeleteTest do
     business = insert(:business, owner: build(:user, email: unique_email()))
     coach = insert(:coach, business: business, user: build(:user, email: unique_email()))
     client = insert(:client, business: business, creator: coach, assigned_coach: coach)
-    plan = insert(:training_plan, business: business, creator: coach)
+    plan = insert(:training_plan, business: business, creator: coach.user)
     workout = insert(:workout, plan: plan, business: business)
 
     %{

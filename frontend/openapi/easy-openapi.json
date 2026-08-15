@@ -5975,6 +5975,96 @@
         "x-struct": null,
         "x-validate": null
       },
+      "TrainingPerformedSetUpdateRequest": {
+        "additionalProperties": false,
+        "example": {
+          "load_unit": "kg",
+          "load_value": 82.5,
+          "reps": "8",
+          "rpe": 9
+        },
+        "properties": {
+          "distance_unit": {
+            "enum": [
+              "meters",
+              "km",
+              "miles",
+              "none"
+            ],
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "distance_value": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "duration_seconds": {
+            "minimum": 0,
+            "nullable": true,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "load_unit": {
+            "enum": [
+              "kg",
+              "lbs",
+              "bodyweight",
+              "none"
+            ],
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "load_value": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "notes": {
+            "maxLength": 5000,
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "reps": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "rpe": {
+            "maximum": 10,
+            "minimum": 1,
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "set_type": {
+            "enum": [
+              "working",
+              "warmup",
+              "dropset"
+            ],
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "title": "TrainingPerformedSetUpdateRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "TrainingSessionUpdateRequest": {
         "additionalProperties": false,
         "example": {
@@ -8528,11 +8618,6 @@
       "TrainingPerformedSet": {
         "additionalProperties": false,
         "properties": {
-          "completed": {
-            "type": "boolean",
-            "x-struct": null,
-            "x-validate": null
-          },
           "distance_unit": {
             "nullable": true,
             "type": "string",
@@ -8563,12 +8648,12 @@
           },
           "exercise_id": {
             "format": "uuid",
+            "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null
           },
           "exercise_name": {
-            "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -8603,12 +8688,6 @@
             "x-struct": null,
             "x-validate": null
           },
-          "planned_exercise_index": {
-            "nullable": true,
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
-          },
           "position": {
             "type": "integer",
             "x-struct": null,
@@ -8632,12 +8711,11 @@
               "warmup",
               "dropset"
             ],
-            "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null
           },
-          "swapped_from_exercise_id": {
+          "snapshot_exercise_ref": {
             "format": "uuid",
             "nullable": true,
             "type": "string",
@@ -8646,7 +8724,6 @@
           },
           "training_session_id": {
             "format": "uuid",
-            "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -8661,12 +8738,14 @@
         "required": [
           "id",
           "position",
-          "planned_exercise_index",
+          "exercise_name",
+          "snapshot_exercise_ref",
+          "set_type",
           "reps",
           "load_value",
           "load_unit",
-          "completed",
           "exercise_id",
+          "training_session_id",
           "inserted_at",
           "updated_at"
         ],
@@ -9733,6 +9812,119 @@
         ],
         "title": "WorkbenchProgrammingReason",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchProgrammingReason",
+        "x-validate": null
+      },
+      "TrainingPerformedSetCreateRequest": {
+        "additionalProperties": false,
+        "example": {
+          "exercise_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+          "load_unit": "kg",
+          "load_value": 80,
+          "reps": "10",
+          "snapshot_exercise_ref": "f9c443b8-07d3-4ee8-aa7e-a287a013ea55"
+        },
+        "properties": {
+          "distance_unit": {
+            "enum": [
+              "meters",
+              "km",
+              "miles",
+              "none"
+            ],
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "distance_value": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "duration_seconds": {
+            "minimum": 0,
+            "nullable": true,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "exercise_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "exercise_name": {
+            "minLength": 1,
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "load_unit": {
+            "enum": [
+              "kg",
+              "lbs",
+              "bodyweight",
+              "none"
+            ],
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "load_value": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "notes": {
+            "maxLength": 5000,
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "reps": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "rpe": {
+            "maximum": 10,
+            "minimum": 1,
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "set_type": {
+            "enum": [
+              "working",
+              "warmup",
+              "dropset"
+            ],
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "snapshot_exercise_ref": {
+            "description": "Stable ref of the Prescribed Exercise in this Training Session snapshot",
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "title": "TrainingPerformedSetCreateRequest",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "NutritionMealItemRequest": {
@@ -10848,137 +11040,6 @@
         "title": "TrainingPlan",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingPlan",
-        "x-validate": null
-      },
-      "TrainingPerformedSetRequest": {
-        "additionalProperties": false,
-        "example": {
-          "completed": true,
-          "exercise_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-          "load_unit": "kg",
-          "load_value": 80,
-          "planned_exercise_index": 0,
-          "position": 0,
-          "reps": "10"
-        },
-        "properties": {
-          "completed": {
-            "type": "boolean",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "distance_unit": {
-            "enum": [
-              "meters",
-              "km",
-              "miles",
-              "none"
-            ],
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "distance_value": {
-            "nullable": true,
-            "type": "number",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "duration_seconds": {
-            "minimum": 0,
-            "nullable": true,
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "exercise_id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "exercise_name": {
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "load_unit": {
-            "enum": [
-              "kg",
-              "lbs",
-              "bodyweight",
-              "none"
-            ],
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "load_value": {
-            "nullable": true,
-            "type": "number",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "notes": {
-            "maxLength": 5000,
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "planned_exercise_index": {
-            "description": "Index of the planned_snapshot exercise this set was logged under; null when added on the fly",
-            "minimum": 0,
-            "nullable": true,
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "position": {
-            "minimum": 0,
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "reps": {
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "rpe": {
-            "maximum": 10,
-            "minimum": 1,
-            "nullable": true,
-            "type": "number",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "set_type": {
-            "enum": [
-              "working",
-              "warmup",
-              "dropset"
-            ],
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "swapped_from_exercise_id": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "title": "TrainingPerformedSetRequest",
-        "type": "object",
-        "x-struct": null,
         "x-validate": null
       },
       "BillingCheckoutPayload": {
@@ -17785,7 +17846,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TrainingPerformedSetRequest"
+                "$ref": "#/components/schemas/TrainingPerformedSetCreateRequest"
               }
             }
           },
@@ -17812,6 +17873,16 @@
               }
             },
             "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
           },
           "422": {
             "content": {
@@ -19429,7 +19500,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TrainingPerformedSetRequest"
+                "$ref": "#/components/schemas/TrainingPerformedSetUpdateRequest"
               }
             }
           },

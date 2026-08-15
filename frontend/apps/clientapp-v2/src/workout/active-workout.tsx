@@ -5,7 +5,7 @@
  * driven by the exercise's tracking_type (weight / reps / time / distance) with ±
  * steppers + a hold-timer for duration, pre-filled from the plan. Done sets collapse to
  * rows above. The current card carries labeled Swap / Skip actions; Add exercise sits at
- * the list bottom (added/swapped exercises persist via performed_sets + swapped_from).
+ * the list bottom (planned/substituted identity persists through snapshot_exercise_ref).
  * Full-screen. log = create performed set; finish/discard = update session state.
  *
  * Deferred to a follow-up: rest timer, tap-to-type keypad, RPE field.
@@ -324,6 +324,7 @@ function ExercisePicker({
         </button>
         <input
           className="flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-accent"
+          name="exercise-search"
           onChange={(e) => setQ(e.target.value)}
           placeholder={title}
           ref={inputRef}
@@ -331,6 +332,16 @@ function ExercisePicker({
         />
       </div>
       <div className="flex-1 overflow-y-auto p-3 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+        {q.trim() ? (
+          <button
+            className="mb-2 flex w-full items-center justify-between gap-2 rounded-xl border border-dashed border-accent bg-accent-soft px-3 py-2.5 text-left active:opacity-80"
+            onClick={() => onPick({id: null, name: q.trim(), tracking_type: 'weight_reps'})}
+            type="button"
+          >
+            <span className="min-w-0 truncate font-medium">Log “{q.trim()}”</span>
+            <span className="shrink-0 text-[10px] text-accent">custom name</span>
+          </button>
+        ) : null}
         {isFetching && items.length === 0 ? (
           <div className="flex justify-center py-10">
             <Spinner />
@@ -406,7 +417,7 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
   const performed = session.performed_sets;
   const summary = {
     sets: performed.length,
-    exercises: new Set(performed.map((p) => p.exercise_id)).size,
+    exercises: new Set(performed.map((p) => p.exercise_id ?? `name:${p.exercise_name}`)).size,
     volume: formatVolume(sessionVolumeKg(performed)),
   };
   const cards = activeExerciseCards(session, {added, swaps});
@@ -417,7 +428,7 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
         if (!skipped.has(c.plannedIndex) && (c.total ?? 0) > c.done.length) {
           return c.id;
         }
-      } else if (!doneAdded.has(c.exercise.exercise_id ?? '')) {
+      } else if (!doneAdded.has(c.id)) {
         return c.id;
       }
     }
@@ -429,7 +440,7 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
     (card) =>
       (card.total != null && card.done.length >= card.total) ||
       (card.plannedIndex != null && skipped.has(card.plannedIndex)) ||
-      (card.added && doneAdded.has(card.exercise.exercise_id ?? '')),
+      (card.added && doneAdded.has(card.id)),
   );
   const upNext =
     currentPosition < 0 ? [] : cards.slice(currentPosition + 1).filter((card) => !completedCards.includes(card));
@@ -438,13 +449,9 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
 
   const handleLog = async (card: ActiveExerciseCard, setIndex: number, values: LoggedSet, restSeconds: number) => {
     const plannedSet = (card.exercise.sets ?? [])[setIndex];
-    const cardPosition = cards
-      .slice(0, cards.indexOf(card))
-      .reduce((total, item) => total + (item.total ?? item.done.length + 1), 0);
     try {
       await createSet.mutateAsync({
         sessionId: session.id,
-        completed: true,
         distance_unit:
           values.distance_value == null
             ? 'none'
@@ -455,13 +462,9 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
         exercise_name: card.name,
         load_unit: values.load_value == null ? 'none' : ((plannedSet?.load_unit as 'kg' | 'lbs' | null) ?? 'kg'),
         load_value: values.load_value,
-        // Which snapshot slot this set belongs to — null for an exercise added
-        // mid-workout. Lets the reader map sets back exactly instead of guessing.
-        planned_exercise_index: card.plannedIndex ?? undefined,
-        position: cardPosition + setIndex,
         reps: values.reps ?? undefined,
         set_type: (plannedSet?.set_type as 'dropset' | 'warmup' | 'working' | null) ?? 'working',
-        swapped_from_exercise_id: card.logSwappedFrom ?? undefined,
+        snapshot_exercise_ref: card.logSnapshotRef ?? undefined,
       });
       setRest({left: restSeconds, total: restSeconds});
     } catch {
@@ -471,7 +474,7 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
 
   const handleUpdate = async (id: string, values: LoggedSet) => {
     try {
-      await updateSet.mutateAsync({id, sessionId: session.id, ...values, completed: true});
+      await updateSet.mutateAsync({id, sessionId: session.id, ...values});
     } catch {
       toast.danger("Couldn't update set. Try again.");
     }
@@ -627,9 +630,7 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
                 <>
                   <ActionButton
                     label="Next"
-                    onPress={() =>
-                      setDoneAdded((current) => new Set(current).add(currentCard.exercise.exercise_id ?? ''))
-                    }
+                    onPress={() => setDoneAdded((current) => new Set(current).add(currentCard.id))}
                   >
                     <Check size={14} />
                   </ActionButton>
@@ -637,7 +638,11 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
                     <ActionButton
                       label="Remove"
                       onPress={() =>
-                        setAdded((items) => items.filter((item) => item.id !== currentCard.exercise.exercise_id))
+                        setAdded((items) =>
+                          items.filter(
+                            (item) => item.id !== currentCard.exercise.exercise_id || item.name !== currentCard.name,
+                          ),
+                        )
                       }
                     >
                       <X size={14} />

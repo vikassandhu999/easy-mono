@@ -37,7 +37,49 @@ An Intake-only question asking whether the client requires Training, Nutrition, 
 An active client with no required service selected. An unclassified client does not enter Programming until Training or Nutrition is selected.
 
 **Coverage**:
-The dates for which an active assigned plan supplies a required service.
+The dates for which a Client Plan supplies a required service. Coverage begins on its start date and is open-ended when it has no end date.
+
+**Training Template**:
+A reusable training prescription that can be copied for a client. It is never itself assigned to a client.
+_Avoid_: Reusable training plan, template plan
+
+**Client Plan**:
+An independent training prescription owned by one client. It may originate from a Training Template, but later changes never affect its source or another Client Plan.
+_Avoid_: Assigned copy, assigned training plan
+
+**Assignment**:
+The act of creating a Client Plan from a Training Template for a client. It is not a persistent object separate from the resulting Client Plan.
+_Avoid_: Assigned plan
+
+**Training Session**:
+One client's record of performing a planned or freestyle workout. A completed or discarded Training Session is final historical evidence.
+_Avoid_: Workout log
+
+**Planned Training Session**:
+A Training Session begun from any workout in the Client Plan supplying Coverage that day. Its prescription is captured when the session begins; the Workout Schedule is guidance, not an eligibility rule.
+
+**Freestyle Training Session**:
+A Training Session begun without a Client Plan workout.
+
+**Workout Schedule**:
+The repeating weekly guidance that maps each weekday to at most one workout in a Training Template or Client Plan. A weekday with no workout is a rest day.
+_Avoid_: Calendar, workout calendar
+
+**Prescription**:
+The ordered workouts, Prescribed Exercises, Prescribed Sets, and Workout Schedule authored inside a Training Template or Client Plan.
+_Avoid_: Plan structure
+
+**Prescribed Exercise**:
+An exercise selected inside a workout with its ordered Prescribed Sets.
+_Avoid_: Workout element
+
+**Prescribed Set**:
+A target set within a Prescribed Exercise. It describes intended work and has no lifecycle outside that prescription.
+_Avoid_: Planned set
+
+**Performed Set**:
+A historical record of work performed during a Training Session. It freezes the exercise name even when it retains a live exercise reference.
+_Avoid_: Logged set
 
 **Waiting conversation**:
 A conversation in which the client has started an unanswered message sequence. It remains waiting until a coach replies or marks it handled.

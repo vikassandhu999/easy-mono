@@ -1,4 +1,4 @@
-defmodule Easy.Exercises do
+defmodule Easy.Training.Library do
   alias Easy.Ctx
   alias Easy.LibraryMedia
   alias Easy.Repo
@@ -10,9 +10,9 @@ defmodule Easy.Exercises do
 
   import Ecto.Query
 
-  @type exercise_response :: {:ok, TrainingExercise.t()} | {:error, :not_found}
+  @type exercise_result :: {:ok, TrainingExercise.t()} | {:error, :not_found}
 
-  @spec get_exercise(Ctx.t() | String.t(), String.t()) :: exercise_response()
+  @spec get_exercise(Ctx.t(), String.t()) :: exercise_result()
   def get_exercise(%Ctx{} = ctx, exercise_id) do
     TrainingExercise
     |> TrainingExercise.for_business_or_system(ctx.business_id)
@@ -21,13 +21,31 @@ defmodule Easy.Exercises do
     |> ok_or_not_found()
   end
 
-  @spec get_owned_exercise(Ctx.t() | String.t(), String.t()) :: exercise_response()
+  @spec get_owned_exercise(Ctx.t(), String.t()) :: exercise_result()
   def get_owned_exercise(%Ctx{} = ctx, exercise_id) do
     TrainingExercise
     |> TrainingExercise.for_business(ctx.business_id)
     |> TrainingExercise.include_muscles_and_equipment()
     |> Repo.get(exercise_id)
     |> ok_or_not_found()
+  end
+
+  @spec get_exercises(Ctx.t(), [String.t()]) ::
+          {:ok, %{String.t() => TrainingExercise.t()}} | {:error, :not_found}
+  def get_exercises(%Ctx{} = ctx, exercise_ids) do
+    exercise_ids = Enum.uniq(exercise_ids)
+
+    exercises =
+      TrainingExercise
+      |> TrainingExercise.for_business_or_system(ctx.business_id)
+      |> where([exercise], exercise.id in ^exercise_ids)
+      |> Repo.all()
+
+    if length(exercises) == length(exercise_ids) do
+      {:ok, Map.new(exercises, &{&1.id, &1})}
+    else
+      {:error, :not_found}
+    end
   end
 
   @spec list_exercises(Ctx.t(), keyword()) ::
@@ -122,7 +140,8 @@ defmodule Easy.Exercises do
 
   defp load_equipment(_ids), do: nil
 
-  @spec update_exercise(Ctx.t(), String.t(), map()) :: exercise_response()
+  @spec update_exercise(Ctx.t(), String.t(), map()) ::
+          {:ok, TrainingExercise.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_exercise(%Ctx{} = ctx, exercise_id, attrs) do
     with {:ok, exercise} <- get_owned_exercise(ctx, exercise_id),
          :ok <- LibraryMedia.authorize_attach(ctx, attrs[:media_id]),
@@ -145,9 +164,9 @@ defmodule Easy.Exercises do
     end
   end
 
-  # A workout element pointing at no exercise is unrenderable, so an exercise still
-  # used by a plan is a conflict rather than a cascade. Performed sets are different:
-  # they denormalise `exercise_name`, so logged history nilifies safely and survives.
+  # A Prescribed Exercise without a library exercise cannot render, so a reference
+  # from a Prescription blocks deletion. Performed Sets freeze `exercise_name`, so
+  # their live reference can be cleared without damaging history.
   defp ensure_exercise_not_in_use(business_id, exercise_id) do
     if Repo.exists?(
          from(e in TrainingWorkoutExercise.for_business(business_id),

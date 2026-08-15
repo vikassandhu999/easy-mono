@@ -2,7 +2,7 @@ defmodule EasyWeb.Coaches.ExerciseController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.Exercises
+  alias Easy.Training.Library
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
@@ -131,7 +131,7 @@ defmodule EasyWeb.Coaches.ExerciseController do
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _) do
-    with {:ok, exercise} <- Exercises.create_exercise(conn.assigns.ctx, conn.body_params) do
+    with {:ok, exercise} <- Library.create_exercise(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, exercise: exercise)
@@ -140,7 +140,7 @@ defmodule EasyWeb.Coaches.ExerciseController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
-    with {:ok, exercise} <- Exercises.get_exercise(conn.assigns.ctx, id) do
+    with {:ok, exercise} <- Library.get_exercise(conn.assigns.ctx, id) do
       render(conn, :show, exercise: exercise)
     end
   end
@@ -149,7 +149,7 @@ defmodule EasyWeb.Coaches.ExerciseController do
   def update(conn, _params) do
     id = conn.path_params["id"]
 
-    with {:ok, updated} <- Exercises.update_exercise(conn.assigns.ctx, id, conn.body_params) do
+    with {:ok, updated} <- Library.update_exercise(conn.assigns.ctx, id, conn.body_params) do
       render(conn, :show, exercise: updated)
     end
   end
@@ -158,7 +158,7 @@ defmodule EasyWeb.Coaches.ExerciseController do
   def delete(conn, _params) do
     id = conn.path_params["id"]
 
-    with {:ok, _deleted} <- Exercises.delete_exercise(conn.assigns.ctx, id) do
+    with {:ok, _deleted} <- Library.delete_exercise(conn.assigns.ctx, id) do
       send_resp(conn, :no_content, "")
     end
   end
@@ -167,7 +167,7 @@ defmodule EasyWeb.Coaches.ExerciseController do
   def copy(conn, _params) do
     id = conn.path_params["id"]
 
-    with {:ok, duplicated} <- Exercises.duplicate_exercise(conn.assigns.ctx, id, conn.body_params) do
+    with {:ok, duplicated} <- Library.duplicate_exercise(conn.assigns.ctx, id, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, exercise: duplicated)
@@ -184,7 +184,7 @@ defmodule EasyWeb.Coaches.ExerciseController do
       equipment_ids: parse_list(params, "equipment_ids")
     ]
 
-    with {:ok, res} <- Exercises.list_exercises(conn.assigns.ctx, opts) do
+    with {:ok, res} <- Library.list_exercises(conn.assigns.ctx, opts) do
       render(conn, :index, exercises: res.exercises, count: res.count)
     end
   end

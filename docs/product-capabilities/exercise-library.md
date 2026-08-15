@@ -63,7 +63,7 @@ A coaching business can maintain a shared business-owned exercise library for bu
 
 ## Verification evidence
 
-* `backend/lib/easy/exercises.ex` and `backend/lib/easy/training/training_exercise.ex`: library visibility, search, filters, mutations, defaults, and validation.
+* `backend/lib/easy/training_library.ex` and `backend/lib/easy/training/training_exercise.ex`: library visibility, search, filters, mutations, defaults, and validation.
 * `backend/lib/easy_web/open_api/schemas/exercise.ex`: supported request and response information.
 * `backend/lib/easy_web/controllers/coaches/exercise_controller.ex` and `backend/lib/easy_web/controllers/clients/exercise_controller.ex`: coach and client actions.
 * `backend/priv/repo/migrations/20260703000300_create_training.exs`: business-name uniqueness and deletion behavior for exercise references.

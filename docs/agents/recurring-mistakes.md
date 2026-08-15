@@ -75,7 +75,7 @@ Grep + editing the obvious route block misses sibling scopes (a kebab-case pass 
 scopes, then regenerate clients and update tests.
 
 ### RM-010 — Public context functions are Ctx-first
-Take `%Easy.Ctx{} = ctx` first (see `Easy.Exercises`), never threaded
+Take `%Easy.Ctx{} = ctx` first (see `Easy.Training.Library`), never threaded
 `business_id`/`user_id` args. **Enforced by:** `backend/AGENTS.md` conventions review.
 
 ### RM-011 — Payment flows branch on local payment STATE, not external-id presence

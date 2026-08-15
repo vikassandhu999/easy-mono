@@ -2,10 +2,10 @@ defmodule Easy.Training.ExerciseDeleteTest do
   use Easy.SchemaCase, async: false
 
   alias Easy.Ctx
-  alias Easy.Exercises
   alias Easy.Repo
   alias Easy.Sessions
   alias Easy.Training.TrainingExercise
+  alias Easy.Training.Library
   alias Easy.Training.TrainingPerformedSet
   alias Easy.Workouts
 
@@ -19,7 +19,7 @@ defmodule Easy.Training.ExerciseDeleteTest do
       exercise = insert(:exercise, business: s.business, creator: s.coach)
       insert(:workout_element, workout: s.workout, business: s.business, exercise: exercise)
 
-      assert {:error, :in_use} = Exercises.delete_exercise(s.ctx, exercise.id)
+      assert {:error, :in_use} = Library.delete_exercise(s.ctx, exercise.id)
       assert Repo.get(TrainingExercise, exercise.id)
     end
 
@@ -36,7 +36,7 @@ defmodule Easy.Training.ExerciseDeleteTest do
                  reps: "5"
                })
 
-      assert {:ok, _} = Exercises.delete_exercise(s.ctx, exercise.id)
+      assert {:ok, _} = Library.delete_exercise(s.ctx, exercise.id)
 
       # History is denormalised: the name outlives the exercise row.
       kept = Repo.get!(TrainingPerformedSet, set.id)
@@ -48,7 +48,7 @@ defmodule Easy.Training.ExerciseDeleteTest do
       s = scenario()
       exercise = insert(:exercise, business: s.business, creator: s.coach)
 
-      assert {:ok, _} = Exercises.delete_exercise(s.ctx, exercise.id)
+      assert {:ok, _} = Library.delete_exercise(s.ctx, exercise.id)
     end
   end
 

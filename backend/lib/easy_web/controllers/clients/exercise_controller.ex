@@ -2,7 +2,7 @@ defmodule EasyWeb.Clients.ExerciseController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.Exercises
+  alias Easy.Training.Library
   alias EasyWeb.OpenApi.Schemas.{ErrorResponse, TrainingExerciseListResponse, TrainingExerciseResponse}
   alias OpenApiSpex.{Operation, Schema}
 
@@ -64,14 +64,14 @@ defmodule EasyWeb.Clients.ExerciseController do
     ]
 
     with {:ok, %{exercises: exercises, count: count}} <-
-           Exercises.list_exercises(conn.assigns.ctx, opts) do
+           Library.list_exercises(conn.assigns.ctx, opts) do
       render(conn, :index, exercises: exercises, count: count)
     end
   end
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
-    with {:ok, exercise} <- Exercises.get_exercise(conn.assigns.ctx, id) do
+    with {:ok, exercise} <- Library.get_exercise(conn.assigns.ctx, id) do
       render(conn, :show, exercise: exercise)
     end
   end

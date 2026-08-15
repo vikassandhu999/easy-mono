@@ -2,7 +2,7 @@ defmodule EasyWeb.Coaches.MuscleController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.Exercises
+  alias Easy.Training.Library
   alias EasyWeb.OpenApi.Schemas.{ErrorResponse, TrainingMuscleListResponse}
   alias OpenApiSpex.Operation
 
@@ -25,7 +25,7 @@ defmodule EasyWeb.Coaches.MuscleController do
   def index(conn, params) do
     search = Map.get(params, "search", "")
 
-    with {:ok, muscles} <- Exercises.list_muscles(search) do
+    with {:ok, muscles} <- Library.list_muscles(search) do
       render(conn, :index, muscles: muscles)
     end
   end

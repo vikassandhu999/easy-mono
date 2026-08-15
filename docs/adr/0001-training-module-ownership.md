@@ -1,0 +1,3 @@
+# Split Training by responsibility and keep one typed plan aggregate
+
+Training is divided into Library, Programming, and Execution modules so each interface owns one coherent responsibility. Programming stores Training Templates and Client Plans in one plan aggregate with an explicit kind because both own the same Prescription, while database checks enforce their different identity and lifecycle rules. Execution owns Training Sessions and versioned Prescription snapshots so performed history never depends on mutable Programming data. We rejected separate template and client-plan storage because it would duplicate the Prescription model, and rejected generic plan, workout, and session resource modules because they exposed storage operations instead of domain behavior.

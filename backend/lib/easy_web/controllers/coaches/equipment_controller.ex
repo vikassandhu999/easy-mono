@@ -2,7 +2,7 @@ defmodule EasyWeb.Coaches.EquipmentController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.Exercises
+  alias Easy.Training.Library
   alias EasyWeb.OpenApi.Schemas.{ErrorResponse, TrainingEquipmentListResponse}
   alias OpenApiSpex.Operation
 
@@ -25,7 +25,7 @@ defmodule EasyWeb.Coaches.EquipmentController do
   def index(conn, params) do
     search = Map.get(params, "search", "")
 
-    with {:ok, equipment} <- Exercises.list_equipment(search) do
+    with {:ok, equipment} <- Library.list_equipment(search) do
       render(conn, :index, equipment: equipment)
     end
   end

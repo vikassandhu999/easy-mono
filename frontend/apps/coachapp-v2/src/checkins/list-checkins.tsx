@@ -7,6 +7,7 @@ import ListEmptyState from '@/@components/list-empty-state';
 import {ROUTES} from '@/@config/routes';
 import {useListFormTemplatesQuery} from '@/api/checkins';
 
+import DefaultIntakeControl from './components/default-intake-control';
 import FormTemplateListItem from './form-template-list-item';
 
 type StatusFilter = 'active' | 'all' | 'archived';
@@ -52,6 +53,7 @@ export default function ListCheckins() {
   return (
     <BrowseScreen
       action={{icon: <Plus />, label: 'Create form', to: ROUTES.CREATE_CHECKIN}}
+      actionsExtra={<DefaultIntakeControl />}
       backTo={ROUTES.LIBRARY}
       description="Intake and check-in forms for your clients"
       empty={

@@ -22,6 +22,20 @@ Implemented 2026-08-14. Notes:
 - `useSetDefaultIntakeTemplateMutation` / `useClearDefaultIntakeTemplateMutation` invalidate `formTemplateKeys.all` in `onSettled` — a 422/404 means the picked-from list was stale, so failures refetch too.
 - Verified live in the browser: choose → row + forms-list badge update; clear → back to "Automatic"; picker offers only the active intake template. The new endpoints 500'd until the dev `phx.server` was restarted (RM-004: cached OpenAPI spec).
 
+## Placement revision (2026-08-15)
+
+The Settings placement was prototyped against alternatives (branch
+`prototype/default-intake-placement` — variants A/B/C on `/library/check-ins`,
+kept as primary source). Verdict: **variant A** — the control moved to the
+Forms page header as an accent pill ("New clients get *X*") beside "Create
+form", visible at every width, always opening a picker dialog. "Automatic"
+(clear) is an option inside the dialog rather than a second button. The
+Settings "Client onboarding" card was removed entirely — one home only. The
+"Default intake" row badge stays. Implementation:
+`src/checkins/components/default-intake-control.tsx` + an `actionsExtra` slot
+on `BrowseScreen` (documented single caller). Verified live at 375px and
+1280px: set → pill + row badge update; Automatic → cleared.
+
 ## E2E verification (2026-08-14)
 
 Full invite loop exercised against the dev stack (settings UI + invite UI + API assertions), three legs:

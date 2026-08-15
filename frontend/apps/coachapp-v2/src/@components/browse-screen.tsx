@@ -74,6 +74,14 @@ type BrowseQuery<T> = {
 
 type Props<T extends object, Id extends string> = {
   action?: BrowseAction;
+  /**
+   * Rendered inside Page.Actions before the primary action button, at every
+   * width. ONE caller: the default-intake control on the forms list — a
+   * setting that lives beside "Create form" by product decision (2026-08-15,
+   * prototype/default-intake-placement). Same rule as `toolbarEnd`: a second
+   * caller means modelling it properly, not reaching for the slot.
+   */
+  actionsExtra?: ReactNode;
   /** Route for the header back button. Library lists have one; top-level ones don't. */
   backTo?: string;
   description?: ReactNode;
@@ -185,6 +193,7 @@ function FilterCount({count, countTestId, isSelected}: {count: number; countTest
 
 export default function BrowseScreen<T extends object, Id extends string>({
   action,
+  actionsExtra,
   backTo,
   description,
   empty,
@@ -242,18 +251,21 @@ export default function BrowseScreen<T extends object, Id extends string>({
             )}
           </div>
         </Page.TitleGroup>
-        {action ? (
+        {action || actionsExtra ? (
           <Page.Actions>
-            <Button
-              aria-label={action.label}
-              className="tap-target rounded-control"
-              data-testid={testId ? `${testId}-create` : undefined}
-              onPress={() => navigate(action.to)}
-              variant="primary"
-            >
-              {action.icon}
-              <span className="hidden sm:inline">{action.label}</span>
-            </Button>
+            {actionsExtra}
+            {action ? (
+              <Button
+                aria-label={action.label}
+                className="tap-target rounded-control"
+                data-testid={testId ? `${testId}-create` : undefined}
+                onPress={() => navigate(action.to)}
+                variant="primary"
+              >
+                {action.icon}
+                <span className="hidden sm:inline">{action.label}</span>
+              </Button>
+            ) : null}
           </Page.Actions>
         ) : null}
       </Page.Header>

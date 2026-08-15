@@ -2,44 +2,5 @@
   "enabledPlugins": {
     "mattpocock-skills@claude-plugins-official": true,
     "superpowers@claude-plugins-official": false
-  },
-  "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "startup|resume|clear|compact",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "hooks/claude-inject.sh SessionStart",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "SubagentStart": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "hooks/claude-inject.sh SubagentStart",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Grep|Glob",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "hooks/claude-pretool.sh",
-            "timeout": 3,
-            "statusMessage": "cbm AXI graph hint"
-          }
-        ]
-      }
-    ]
   }
 }

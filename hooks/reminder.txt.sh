@@ -1,1 +1,0 @@
-/Users/vikassandhu/Desktop/cbm-axi/hooks/reminder.txt.sh

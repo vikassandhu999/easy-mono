@@ -38,7 +38,9 @@ defmodule Easy.Training.PlannedSet do
   def changeset(planned_set, attrs) do
     planned_set
     |> cast(attrs, @fields)
+    |> validate_number(:duration_seconds, greater_than_or_equal_to: 0)
     |> validate_number(:rpe, greater_than_or_equal_to: 1, less_than_or_equal_to: 10)
+    |> validate_number(:rest_seconds, greater_than_or_equal_to: 0)
   end
 
   @spec to_attrs(t()) :: map()

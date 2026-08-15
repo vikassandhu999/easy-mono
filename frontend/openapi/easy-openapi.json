@@ -2006,21 +2006,6 @@
         "x-struct": null,
         "x-validate": null
       },
-      "TrainingScheduleResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/TrainingSchedule"
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "title": "TrainingScheduleResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingScheduleResponse",
-        "x-validate": null
-      },
       "MarkHandledRequest": {
         "additionalProperties": false,
         "properties": {
@@ -2743,6 +2728,55 @@
         "title": "MealLog",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.MealLog",
+        "x-validate": null
+      },
+      "TrainingPrescriptionExerciseInput": {
+        "additionalProperties": false,
+        "description": "A persisted Prescribed Exercise uses id; a new one uses a request-local local_ref.",
+        "properties": {
+          "exercise_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "local_ref": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "position": {
+            "maximum": 2147483647,
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "prescribed_sets": {
+            "items": {
+              "$ref": "#/components/schemas/TrainingPrescriptionPlannedSetInput"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "exercise_id",
+          "position",
+          "prescribed_sets"
+        ],
+        "title": "TrainingPrescriptionExerciseInput",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "ClientProfileCheckInScheduleListResponse": {
@@ -4125,74 +4159,6 @@
         "x-struct": null,
         "x-validate": null
       },
-      "TrainingScheduleRequest": {
-        "additionalProperties": false,
-        "description": "The plan's full Mon..Sun map. Every weekday must be present; a null means a rest day, and every workout id must belong to this plan.",
-        "properties": {
-          "friday": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "monday": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "saturday": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "sunday": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "thursday": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "tuesday": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "wednesday": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "monday",
-          "tuesday",
-          "wednesday",
-          "thursday",
-          "friday",
-          "saturday",
-          "sunday"
-        ],
-        "title": "TrainingScheduleRequest",
-        "type": "object",
-        "x-struct": null,
-        "x-validate": null
-      },
       "Business": {
         "additionalProperties": false,
         "properties": {
@@ -4831,27 +4797,6 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileFormSubmissionResponse",
         "x-validate": null
       },
-      "TrainingWorkoutRequest": {
-        "additionalProperties": false,
-        "example": {
-          "name": "Lower Body Strength"
-        },
-        "properties": {
-          "name": {
-            "maxLength": 255,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "name"
-        ],
-        "title": "TrainingWorkoutRequest",
-        "type": "object",
-        "x-struct": null,
-        "x-validate": null
-      },
       "NutritionDay": {
         "additionalProperties": false,
         "properties": {
@@ -5117,26 +5062,6 @@
         "x-struct": null,
         "x-validate": null
       },
-      "TrainingWorkoutExerciseArrayResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/TrainingPlanWorkoutExercise"
-            },
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "title": "TrainingWorkoutExerciseArrayResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingWorkoutExerciseArrayResponse",
-        "x-validate": null
-      },
       "ClientUpdateRequest": {
         "additionalProperties": false,
         "example": {
@@ -5375,41 +5300,6 @@
         "title": "ClientProfile",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfile",
-        "x-validate": null
-      },
-      "TrainingWorkoutExercisesCreateRequest": {
-        "additionalProperties": false,
-        "description": "Appends exercises to a workout in one transaction, in the order given.",
-        "example": {
-          "exercises": [
-            {
-              "exercise_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-              "planned_sets": [
-                {
-                  "load_unit": "kg",
-                  "reps": "8-10"
-                }
-              ]
-            }
-          ]
-        },
-        "properties": {
-          "exercises": {
-            "items": {
-              "$ref": "#/components/schemas/TrainingWorkoutExerciseRequest"
-            },
-            "minItems": 1,
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "exercises"
-        ],
-        "title": "TrainingWorkoutExercisesCreateRequest",
-        "type": "object",
-        "x-struct": null,
         "x-validate": null
       },
       "ProspectResponse": {
@@ -5963,24 +5853,6 @@
         "x-struct": null,
         "x-validate": null
       },
-      "TrainingWorkoutUpdateRequest": {
-        "additionalProperties": false,
-        "example": {
-          "name": "Updated Lower Body Strength"
-        },
-        "properties": {
-          "name": {
-            "maxLength": 255,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "title": "TrainingWorkoutUpdateRequest",
-        "type": "object",
-        "x-struct": null,
-        "x-validate": null
-      },
       "TrainingSessionUpdateRequest": {
         "additionalProperties": false,
         "example": {
@@ -6206,6 +6078,45 @@
         "title": "ClientProfileFormAssignmentListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileFormAssignmentListResponse",
+        "x-validate": null
+      },
+      "TrainingPrescriptionReplaceRequest": {
+        "additionalProperties": false,
+        "description": "The authoritative ordered Prescription and complete Monday-Sunday Workout Schedule. Omitted persisted nodes are deleted atomically.",
+        "properties": {
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "schedule": {
+            "items": {
+              "$ref": "#/components/schemas/TrainingPrescriptionScheduleEntry"
+            },
+            "maxItems": 7,
+            "minItems": 7,
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "workouts": {
+            "items": {
+              "$ref": "#/components/schemas/TrainingPrescriptionWorkoutInput"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "expected_revision",
+          "workouts",
+          "schedule"
+        ],
+        "title": "TrainingPrescriptionReplaceRequest",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "CoachProfileUpdateRequest": {
@@ -6727,37 +6638,6 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingExerciseRelation",
         "x-validate": null
       },
-      "TrainingWorkoutReorderRequest": {
-        "additionalProperties": false,
-        "example": {
-          "element_ids": [
-            "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-            "a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
-          ]
-        },
-        "properties": {
-          "element_ids": {
-            "description": "Workout element ids in the desired order (must be exactly the workout's elements).",
-            "items": {
-              "format": "uuid",
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            },
-            "minItems": 1,
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "element_ids"
-        ],
-        "title": "TrainingWorkoutReorderRequest",
-        "type": "object",
-        "x-struct": null,
-        "x-validate": null
-      },
       "RecipeRequest": {
         "additionalProperties": false,
         "example": {
@@ -7004,21 +6884,6 @@
         "title": "ClientProfileFormAssignmentUpdateRequest",
         "type": "object",
         "x-struct": null,
-        "x-validate": null
-      },
-      "TrainingWorkoutResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/TrainingPlanWorkout"
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "title": "TrainingWorkoutResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingWorkoutResponse",
         "x-validate": null
       },
       "TrainingPlanWorkout": {
@@ -7724,6 +7589,100 @@
         "title": "LibraryMediaUpload",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.LibraryMediaUpload",
+        "x-validate": null
+      },
+      "TrainingPrescriptionPlannedSetInput": {
+        "additionalProperties": false,
+        "example": {
+          "reps": "8-10",
+          "rest_seconds": 90
+        },
+        "properties": {
+          "distance_unit": {
+            "enum": [
+              "meters",
+              "km",
+              "miles",
+              "none"
+            ],
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "distance_value": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "duration_seconds": {
+            "minimum": 0,
+            "nullable": true,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "load_unit": {
+            "enum": [
+              "kg",
+              "lbs",
+              "bodyweight",
+              "none"
+            ],
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "load_value": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "notes": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "reps": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "rest_seconds": {
+            "minimum": 0,
+            "nullable": true,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "rpe": {
+            "maximum": 10,
+            "minimum": 1,
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "set_type": {
+            "enum": [
+              "working",
+              "warmup",
+              "dropset"
+            ],
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "title": "TrainingPrescriptionPlannedSetInput",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "WorkbenchOnboardingQueueResponse": {
@@ -9148,39 +9107,6 @@
         "x-struct": null,
         "x-validate": null
       },
-      "TrainingWorkoutExerciseRequest": {
-        "additionalProperties": false,
-        "example": {
-          "exercise_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-          "planned_sets": [
-            {
-              "load_unit": "kg",
-              "reps": "8-10"
-            }
-          ]
-        },
-        "properties": {
-          "exercise_id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "planned_sets": {
-            "items": {
-              "$ref": "#/components/schemas/TrainingPlanPlannedSet"
-            },
-            "minItems": 1,
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "title": "TrainingWorkoutExerciseRequest",
-        "type": "object",
-        "x-struct": null,
-        "x-validate": null
-      },
       "NutritionMealRequest": {
         "additionalProperties": false,
         "example": {
@@ -9348,6 +9274,46 @@
         "title": "ClientProfileFormAssignment",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileFormAssignment",
+        "x-validate": null
+      },
+      "TrainingPrescriptionScheduleEntry": {
+        "additionalProperties": false,
+        "description": "One weekday in the complete schedule. Omit both workout fields for rest; otherwise use exactly one persisted workout_id or request-local workout_ref.",
+        "properties": {
+          "weekday": {
+            "enum": [
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday",
+              "saturday",
+              "sunday"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "workout_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "workout_ref": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "weekday"
+        ],
+        "title": "TrainingPrescriptionScheduleEntry",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "ClientProfileFormTemplateResponse": {
@@ -10156,6 +10122,55 @@
         "title": "ServiceNeverProgrammedReason",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ServiceNeverProgrammedReason",
+        "x-validate": null
+      },
+      "TrainingPrescriptionWorkoutInput": {
+        "additionalProperties": false,
+        "description": "A persisted workout uses id; a new one uses a request-local local_ref.",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "local_ref": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "name": {
+            "maxLength": 255,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "position": {
+            "maximum": 2147483647,
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "prescribed_exercises": {
+            "items": {
+              "$ref": "#/components/schemas/TrainingPrescriptionExerciseInput"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "name",
+          "position",
+          "prescribed_exercises"
+        ],
+        "title": "TrainingPrescriptionWorkoutInput",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "FoodCategoryListResponse": {
@@ -11181,21 +11196,6 @@
         "title": "LibraryMedia",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.LibraryMedia",
-        "x-validate": null
-      },
-      "TrainingWorkoutExerciseResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/TrainingPlanWorkoutExercise"
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "title": "TrainingWorkoutExerciseResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingWorkoutExerciseResponse",
         "x-validate": null
       },
       "NutritionMealItem": {
@@ -16782,88 +16782,6 @@
         ]
       }
     },
-    "/v1/coach/training-plans/{plan_id}/schedule": {
-      "put": {
-        "callbacks": {},
-        "description": "Takes the full Mon..Sun map; a null weekday is a rest day and every workout must belong to this plan.",
-        "operationId": "updateTrainingPlanSchedule",
-        "parameters": [
-          {
-            "description": "",
-            "in": "path",
-            "name": "plan_id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TrainingScheduleRequest"
-              }
-            }
-          },
-          "description": "Schedule",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TrainingScheduleResponse"
-                }
-              }
-            },
-            "description": "Schedule"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Replace a training plan's weekday schedule",
-        "tags": [
-          "coach training schedule"
-        ]
-      }
-    },
     "/v1/client/form-assignments": {
       "get": {
         "callbacks": {},
@@ -17169,88 +17087,6 @@
         "summary": "Set default intake template",
         "tags": [
           "coach form templates"
-        ]
-      }
-    },
-    "/v1/coach/training-plans/{plan_id}/training-workouts": {
-      "post": {
-        "callbacks": {},
-        "description": "Creates a workout in a training plan.",
-        "operationId": "createWorkout",
-        "parameters": [
-          {
-            "description": "Training plan id",
-            "in": "path",
-            "name": "plan_id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TrainingWorkoutRequest"
-              }
-            }
-          },
-          "description": "Workout create request",
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TrainingWorkoutResponse"
-                }
-              }
-            },
-            "description": "Workout created"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Create workout",
-        "tags": [
-          "coach workouts"
         ]
       }
     },
@@ -18997,88 +18833,6 @@
         ]
       }
     },
-    "/v1/coach/training-workouts/{workout_id}/exercises": {
-      "post": {
-        "callbacks": {},
-        "description": "Appends one or more workout elements with their planned sets, in one transaction.",
-        "operationId": "createWorkoutElements",
-        "parameters": [
-          {
-            "description": "Workout id",
-            "in": "path",
-            "name": "workout_id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TrainingWorkoutExercisesCreateRequest"
-              }
-            }
-          },
-          "description": "Workout elements create request",
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TrainingWorkoutExerciseArrayResponse"
-                }
-              }
-            },
-            "description": "Workout elements created"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Create workout elements",
-        "tags": [
-          "coach workout elements"
-        ]
-      }
-    },
     "/v1/auth/verify": {
       "post": {
         "callbacks": {},
@@ -19647,88 +19401,6 @@
         "summary": "Update nutrition plan",
         "tags": [
           "coach nutrition plans"
-        ]
-      }
-    },
-    "/v1/coach/training-workouts/{workout_id}/exercises/reorder": {
-      "put": {
-        "callbacks": {},
-        "description": "Reorders the exercises within a workout to match the given element id order.",
-        "operationId": "reorderWorkoutElements",
-        "parameters": [
-          {
-            "description": "Workout id",
-            "in": "path",
-            "name": "workout_id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TrainingWorkoutReorderRequest"
-              }
-            }
-          },
-          "description": "Reorder request",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TrainingWorkoutExerciseArrayResponse"
-                }
-              }
-            },
-            "description": "Workout elements reordered"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Reorder workout elements",
-        "tags": [
-          "coach workout elements"
         ]
       }
     },
@@ -20868,140 +20540,6 @@
         ]
       }
     },
-    "/v1/coach/training-workouts/{id}": {
-      "delete": {
-        "callbacks": {},
-        "description": "Deletes a workout.",
-        "operationId": "deleteWorkout",
-        "parameters": [
-          {
-            "description": "Workout id",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Workout deleted"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Delete workout",
-        "tags": [
-          "coach workouts"
-        ]
-      },
-      "patch": {
-        "callbacks": {},
-        "description": "Updates a workout.",
-        "operationId": "updateWorkout",
-        "parameters": [
-          {
-            "description": "Workout id",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TrainingWorkoutUpdateRequest"
-              }
-            }
-          },
-          "description": "Workout update request",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TrainingWorkoutResponse"
-                }
-              }
-            },
-            "description": "Workout updated"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Update workout",
-        "tags": [
-          "coach workouts"
-        ]
-      }
-    },
     "/v1/coach/clients/{client_id}/weight_entries": {
       "get": {
         "callbacks": {},
@@ -21484,6 +21022,98 @@
         ]
       }
     },
+    "/v1/coach/training-plans/{id}/prescription": {
+      "put": {
+        "callbacks": {},
+        "description": "Atomically replaces ordered workouts, Prescribed Exercises, Prescribed Sets, and the complete Workout Schedule for one authorized Training Template or Client Plan.",
+        "operationId": "replaceTrainingPrescription",
+        "parameters": [
+          {
+            "description": "Training Template or Client Plan id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainingPrescriptionReplaceRequest"
+              }
+            }
+          },
+          "description": "Complete Prescription",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingPlanResponse"
+                }
+              }
+            },
+            "description": "Training Template or Client Plan with replaced Prescription"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingPlanStaleRevisionError"
+                }
+              }
+            },
+            "description": "Stale revision"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Replace a complete Prescription",
+        "tags": [
+          "coach training plans"
+        ]
+      }
+    },
     "/v1/coach/nutrition-day-meals/{id}": {
       "delete": {
         "callbacks": {},
@@ -21885,140 +21515,6 @@
         "summary": "Create form template",
         "tags": [
           "coach form templates"
-        ]
-      }
-    },
-    "/v1/coach/training-workout-exercises/{id}": {
-      "delete": {
-        "callbacks": {},
-        "description": "Deletes a workout element.",
-        "operationId": "deleteWorkoutElement",
-        "parameters": [
-          {
-            "description": "Workout element id",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Workout element deleted"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Delete workout element",
-        "tags": [
-          "coach workout elements"
-        ]
-      },
-      "patch": {
-        "callbacks": {},
-        "description": "Updates a workout element and its planned sets.",
-        "operationId": "updateWorkoutElement",
-        "parameters": [
-          {
-            "description": "Workout element id",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TrainingWorkoutExerciseRequest"
-              }
-            }
-          },
-          "description": "Workout element request",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TrainingWorkoutExerciseResponse"
-                }
-              }
-            },
-            "description": "Workout element updated"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Update workout element",
-        "tags": [
-          "coach workout elements"
         ]
       }
     },

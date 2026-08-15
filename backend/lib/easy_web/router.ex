@@ -208,22 +208,12 @@ defmodule EasyWeb.Router do
     post "/training-plans", TrainingPlanController, :create
     get "/training-plans/:id", TrainingPlanController, :show
     patch "/training-plans/:id", TrainingPlanController, :update
+    put "/training-plans/:id/prescription", TrainingPlanController, :replace_prescription
     delete "/training-plans/:id", TrainingPlanController, :delete
     post "/training-plans/:id/archive", TrainingPlanController, :archive
     post "/training-plans/:id/restore", TrainingPlanController, :restore
     post "/training-plans/:id/assign", TrainingPlanController, :assign
     post "/training-plans/:id/duplicate", TrainingPlanController, :duplicate
-
-    post "/training-plans/:plan_id/training-workouts", WorkoutController, :create
-    patch "/training-workouts/:id", WorkoutController, :update
-    delete "/training-workouts/:id", WorkoutController, :delete
-
-    put "/training-plans/:plan_id/schedule", TrainingScheduleController, :update
-
-    post "/training-workouts/:workout_id/exercises", WorkoutElementController, :create
-    put "/training-workouts/:workout_id/exercises/reorder", WorkoutElementController, :reorder
-    patch "/training-workout-exercises/:id", WorkoutElementController, :update
-    delete "/training-workout-exercises/:id", WorkoutElementController, :delete
 
     # Client-scoped training sessions (read-only)
     get "/clients/:client_id/training-sessions", WorkoutSessionController, :index

@@ -10,17 +10,18 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     TrainingPlanAssignRequest,
     TrainingPlanCreateRequest,
     TrainingPlanListResponse,
-    TrainingPlanRevisionRequest,
     TrainingPlanResponse,
+    TrainingPlanRevisionRequest,
     TrainingPlanStaleRevisionError,
-    TrainingPlanUpdateRequest
+    TrainingPlanUpdateRequest,
+    TrainingPrescriptionReplaceRequest
   }
 
   alias OpenApiSpex.{Operation, Schema}
 
   plug OpenApiSpex.Plug.CastAndValidate,
        [json_render_error_v2: true]
-       when action in [:create, :update, :delete, :archive, :restore, :assign, :duplicate]
+       when action in [:create, :update, :delete, :archive, :restore, :replace_prescription, :assign, :duplicate]
 
   tags ["coach training plans"]
 
@@ -109,6 +110,22 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       conflict: {"Stale revision", "application/json", TrainingPlanStaleRevisionError}
+    ]
+
+  operation :replace_prescription,
+    summary: "Replace a complete Prescription",
+    description:
+      "Atomically replaces ordered workouts, Prescribed Exercises, Prescribed Sets, and the complete Workout Schedule for one authorized Training Template or Client Plan.",
+    operation_id: "replaceTrainingPrescription",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Training Template or Client Plan id")],
+    request_body: {"Complete Prescription", "application/json", TrainingPrescriptionReplaceRequest, required: true},
+    responses: [
+      ok: {"Training Template or Client Plan with replaced Prescription", "application/json", TrainingPlanResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Stale revision", "application/json", TrainingPlanStaleRevisionError},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
   operation :archive,
@@ -200,6 +217,18 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     with {:ok, updated} <-
            Programming.update_plan(conn.assigns.ctx, id, expected_revision, attrs) do
       render(conn, :show, plan: updated)
+    end
+  end
+
+  @spec replace_prescription(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def replace_prescription(conn, _params) do
+    id = conn.path_params["id"]
+    expected_revision = conn.body_params[:expected_revision]
+    attrs = Map.delete(conn.body_params, :expected_revision)
+
+    with {:ok, plan} <-
+           Programming.replace_prescription(conn.assigns.ctx, id, expected_revision, attrs) do
+      render(conn, :show, plan: plan)
     end
   end
 

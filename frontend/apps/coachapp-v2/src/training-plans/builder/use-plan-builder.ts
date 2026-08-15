@@ -24,7 +24,12 @@ export function usePlanBuilder(planId: string) {
   );
 
   // Leaving the screen must not drop a debounced edit.
-  useEffect(() => () => flush(), [flush]);
+  useEffect(
+    () => () => {
+      flush().catch(() => undefined);
+    },
+    [flush],
+  );
 
   return {...commands, isAddingWorkout, isRemovingWorkout};
 }

@@ -9,19 +9,12 @@
  * Mon..Sun map — server-ordered, so the builder needs no second query and
  * there is no second key to get wrong.
  *
- * The read is a React Query hook; everything else here is a PLAIN FUNCTION.
- * The builder's writes are optimistic and invalidation-free by design — the
- * command layer patches the cache itself and reconciles from replies (see
- * `builder/commands.ts`) — so `useMutation` would contribute nothing here:
- * its `onSuccess` invalidation is deliberately unused, retry is off
- * app-wide, `isPending` is tracked by the two commands that surface it, and
- * its per-render result objects are exactly the footgun RM-142 exists for. A
- * write layer with no hooks can't re-grow that bug, and plain functions need
- * no dependency arrays to keep honest. (`patchPlan`/`readPlan`/`refetchPlan`
- * are plain for the same reason — `queryClient` is a module singleton, and
- * wrapping module state in hooks only manufactures identities.)
+ * The read is a React Query hook; writes are plain functions. Every structural
+ * save sends the whole authoritative Prescription through one revisioned
+ * operation, and the command layer serializes those saves and reconciles the
+ * complete response into this same cache entry.
  *
- * Plan-level CRUD that ISN'T part of the optimistic protocol —
+ * Plan-level CRUD that is not part of Prescription replacement —
  * create/update/assign/duplicate/delete/list — lives in
  * `src/api/training-plans-list.ts` instead, since it invalidates normally.
  * `updatePlanPeriod` is the one hybrid: the builder edits an assigned plan's
@@ -35,6 +28,7 @@ import {call, client} from '@/api/client';
 import {clientKeys, trainingPlanKeys} from '@/api/keys';
 import {patchQueryData, queryClient} from '@/api/query-client';
 import type {components} from '@/api/schema';
+import {planToPrescriptionRequest} from '@/api/training-prescription';
 import {trainingPlanRevisionRequest} from '@/api/training-plan-lifecycle';
 import {workbenchMutationTargets} from '@/api/workbench-targets';
 
@@ -46,14 +40,6 @@ export type TrainingPlanPlannedSet = components['schemas']['TrainingPlanPlannedS
 
 type TrainingPlanResponse = components['schemas']['TrainingPlanResponse'];
 type TrainingPlanUpdateRequest = components['schemas']['TrainingPlanUpdateRequest'];
-type TrainingWorkoutRequest = components['schemas']['TrainingWorkoutRequest'];
-type TrainingWorkoutUpdateRequest = components['schemas']['TrainingWorkoutUpdateRequest'];
-type TrainingWorkoutResponse = components['schemas']['TrainingWorkoutResponse'];
-type TrainingScheduleResponse = components['schemas']['TrainingScheduleResponse'];
-type TrainingWorkoutExerciseRequest = components['schemas']['TrainingWorkoutExerciseRequest'];
-type TrainingWorkoutExercisesCreateRequest = components['schemas']['TrainingWorkoutExercisesCreateRequest'];
-type TrainingWorkoutExerciseResponse = components['schemas']['TrainingWorkoutExerciseResponse'];
-type TrainingWorkoutExerciseArrayResponse = components['schemas']['TrainingWorkoutExerciseArrayResponse'];
 
 /**
  * General-purpose fetch for one training plan.
@@ -96,88 +82,17 @@ export function readPlan(planId: string): TrainingPlan | undefined {
   return queryClient.getQueryData<TrainingPlanResponse>(trainingPlanKeys.detail(planId))?.data;
 }
 
-/**
- * Throws away local state and re-reads the plan from the server — the
- * recovery move for a failed coalesced write, where undoing one patch out of
- * order would leave the cache describing a state neither side believes in.
- * (Builder writes are invalidation-free, so this can't go through
- * `invalidateQueries` — it has to force a real refetch.)
- */
-export function refetchPlan(planId: string) {
-  queryClient.refetchQueries({queryKey: trainingPlanKeys.detail(planId)});
-}
-
 // ---------------------------------------------------------------------------
-// Requests — thin, unwrapped, no cache effects
+// Complete Prescription replacement
 // ---------------------------------------------------------------------------
 
-export async function createWorkout(planId: string, body: TrainingWorkoutRequest): Promise<TrainingPlanWorkout> {
+export async function replacePrescription(planId: string, plan: TrainingPlan): Promise<TrainingPlan> {
   const response = (await call(
-    client.POST('/v1/coach/training-plans/{plan_id}/training-workouts', {
-      params: {path: {plan_id: planId}},
-      body,
+    client.PUT('/v1/coach/training-plans/{id}/prescription', {
+      params: {path: {id: planId}},
+      body: planToPrescriptionRequest(plan),
     }),
-  )) as TrainingWorkoutResponse;
-  return response.data;
-}
-
-export async function updateWorkout(id: string, body: TrainingWorkoutUpdateRequest): Promise<TrainingPlanWorkout> {
-  const response = (await call(
-    client.PATCH('/v1/coach/training-workouts/{id}', {params: {path: {id}}, body}),
-  )) as TrainingWorkoutResponse;
-  return response.data;
-}
-
-export async function deleteWorkout(id: string): Promise<void> {
-  await call(client.DELETE('/v1/coach/training-workouts/{id}', {params: {path: {id}}}));
-}
-
-/** Full Mon..Sun map — the server replaces the plan's whole schedule with it. */
-export async function replaceSchedule(planId: string, schedule: TrainingSchedule): Promise<TrainingSchedule> {
-  const response = (await call(
-    client.PUT('/v1/coach/training-plans/{plan_id}/schedule', {
-      params: {path: {plan_id: planId}},
-      body: schedule,
-    }),
-  )) as TrainingScheduleResponse;
-  return response.data;
-}
-
-/** Batch create — one transaction, elements land in the order given. */
-export async function createElements(
-  workoutId: string,
-  body: TrainingWorkoutExercisesCreateRequest,
-): Promise<TrainingPlanWorkoutExercise[]> {
-  const response = (await call(
-    client.POST('/v1/coach/training-workouts/{workout_id}/exercises', {
-      params: {path: {workout_id: workoutId}},
-      body,
-    }),
-  )) as TrainingWorkoutExerciseArrayResponse;
-  return response.data;
-}
-
-export async function updateElement(
-  id: string,
-  body: TrainingWorkoutExerciseRequest,
-): Promise<TrainingPlanWorkoutExercise> {
-  const response = (await call(
-    client.PATCH('/v1/coach/training-workout-exercises/{id}', {params: {path: {id}}, body}),
-  )) as TrainingWorkoutExerciseResponse;
-  return response.data;
-}
-
-export async function deleteElement(id: string): Promise<void> {
-  await call(client.DELETE('/v1/coach/training-workout-exercises/{id}', {params: {path: {id}}}));
-}
-
-export async function reorderElements(workoutId: string, elementIds: string[]): Promise<TrainingPlanWorkoutExercise[]> {
-  const response = (await call(
-    client.PUT('/v1/coach/training-workouts/{workout_id}/exercises/reorder', {
-      params: {path: {workout_id: workoutId}},
-      body: {element_ids: elementIds},
-    }),
-  )) as TrainingWorkoutExerciseArrayResponse;
+  )) as TrainingPlanResponse;
   return response.data;
 }
 
@@ -190,18 +105,18 @@ export async function reorderElements(workoutId: string, elementIds: string[]): 
 export async function updatePlanPeriod(
   planId: string,
   body: Pick<TrainingPlanUpdateRequest, 'end_date' | 'start_date'>,
-): Promise<void> {
+): Promise<TrainingPlan> {
   const plan = readPlan(planId);
   if (!plan) {
     throw new Error('Cannot update Client Plan Coverage before the plan is loaded');
   }
 
-  await call(
+  const response = (await call(
     client.PATCH('/v1/coach/training-plans/{id}', {
       params: {path: {id: planId}},
       body: {...body, ...trainingPlanRevisionRequest(plan)},
     }),
-  );
+  )) as TrainingPlanResponse;
   queryClient.invalidateQueries({queryKey: trainingPlanKeys.detail(planId)});
   queryClient.invalidateQueries({queryKey: trainingPlanKeys.lists()});
   queryClient.invalidateQueries({queryKey: trainingPlanKeys.forClients()});
@@ -210,4 +125,5 @@ export async function updatePlanPeriod(
   for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
     queryClient.invalidateQueries({queryKey: [...queryKey]});
   }
+  return response.data;
 }

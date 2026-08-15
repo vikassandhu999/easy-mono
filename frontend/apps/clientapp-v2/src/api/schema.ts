@@ -1398,10 +1398,6 @@ export interface components {
           body?: string | null;
           embed: components['schemas']['ChatMessageEmbedRequest'];
         };
-    /** TrainingScheduleResponse */
-    TrainingScheduleResponse: {
-      data: components['schemas']['TrainingSchedule'];
-    };
     /** MarkHandledRequest */
     MarkHandledRequest: {
       /** Format: date-time */
@@ -1579,6 +1575,19 @@ export interface components {
       rows: components['schemas']['MealLogDiaryRow'][];
       /** Format: date-time */
       updated_at: string;
+    };
+    /**
+     * TrainingPrescriptionExerciseInput
+     * @description A persisted Prescribed Exercise uses id; a new one uses a request-local local_ref.
+     */
+    TrainingPrescriptionExerciseInput: {
+      /** Format: uuid */
+      exercise_id: string;
+      /** Format: uuid */
+      id?: string;
+      local_ref?: string;
+      position: number;
+      prescribed_sets: components['schemas']['TrainingPrescriptionPlannedSetInput'][];
     };
     /** ClientProfileCheckInScheduleListResponse */
     ClientProfileCheckInScheduleListResponse: {
@@ -1950,26 +1959,6 @@ export interface components {
       name: string;
       phone?: string | null;
     };
-    /**
-     * TrainingScheduleRequest
-     * @description The plan's full Mon..Sun map. Every weekday must be present; a null means a rest day, and every workout id must belong to this plan.
-     */
-    TrainingScheduleRequest: {
-      /** Format: uuid */
-      friday: string | null;
-      /** Format: uuid */
-      monday: string | null;
-      /** Format: uuid */
-      saturday: string | null;
-      /** Format: uuid */
-      sunday: string | null;
-      /** Format: uuid */
-      thursday: string | null;
-      /** Format: uuid */
-      tuesday: string | null;
-      /** Format: uuid */
-      wednesday: string | null;
-    };
     /** Business */
     Business: {
       about: string | null;
@@ -2156,15 +2145,6 @@ export interface components {
     ClientProfileFormSubmissionResponse: {
       data: components['schemas']['ClientProfileFormSubmission'];
     };
-    /**
-     * TrainingWorkoutRequest
-     * @example {
-     *       "name": "Lower Body Strength"
-     *     }
-     */
-    TrainingWorkoutRequest: {
-      name: string;
-    };
     /** NutritionDay */
     NutritionDay: {
       /** Format: date */
@@ -2238,10 +2218,6 @@ export interface components {
       unit?: string | null;
       weight_g?: number | null;
     };
-    /** TrainingWorkoutExerciseArrayResponse */
-    TrainingWorkoutExerciseArrayResponse: {
-      data: components['schemas']['TrainingPlanWorkoutExercise'][];
-    };
     /**
      * ClientUpdateRequest
      * @example {
@@ -2297,26 +2273,6 @@ export interface components {
       subscription_ends_on: string | null;
       /** Format: date */
       subscription_started_on: string | null;
-    };
-    /**
-     * TrainingWorkoutExercisesCreateRequest
-     * @description Appends exercises to a workout in one transaction, in the order given.
-     * @example {
-     *       "exercises": [
-     *         {
-     *           "exercise_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-     *           "planned_sets": [
-     *             {
-     *               "load_unit": "kg",
-     *               "reps": "8-10"
-     *             }
-     *           ]
-     *         }
-     *       ]
-     *     }
-     */
-    TrainingWorkoutExercisesCreateRequest: {
-      exercises: components['schemas']['TrainingWorkoutExerciseRequest'][];
     };
     /** ProspectResponse */
     ProspectResponse: {
@@ -2474,15 +2430,6 @@ export interface components {
       };
     };
     /**
-     * TrainingWorkoutUpdateRequest
-     * @example {
-     *       "name": "Updated Lower Body Strength"
-     *     }
-     */
-    TrainingWorkoutUpdateRequest: {
-      name?: string;
-    };
-    /**
      * TrainingSessionUpdateRequest
      * @example {
      *       "notes": "Felt strong.",
@@ -2553,6 +2500,15 @@ export interface components {
     /** ClientProfileFormAssignmentListResponse */
     ClientProfileFormAssignmentListResponse: {
       data: components['schemas']['ClientProfileFormAssignment'][];
+    };
+    /**
+     * TrainingPrescriptionReplaceRequest
+     * @description The authoritative ordered Prescription and complete Monday-Sunday Workout Schedule. Omitted persisted nodes are deleted atomically.
+     */
+    TrainingPrescriptionReplaceRequest: {
+      expected_revision: number;
+      schedule: components['schemas']['TrainingPrescriptionScheduleEntry'][];
+      workouts: components['schemas']['TrainingPrescriptionWorkoutInput'][];
     };
     /**
      * CoachProfileUpdateRequest
@@ -2715,19 +2671,6 @@ export interface components {
       name: string;
     };
     /**
-     * TrainingWorkoutReorderRequest
-     * @example {
-     *       "element_ids": [
-     *         "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-     *         "a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
-     *       ]
-     *     }
-     */
-    TrainingWorkoutReorderRequest: {
-      /** @description Workout element ids in the desired order (must be exactly the workout's elements). */
-      element_ids: string[];
-    };
-    /**
      * RecipeRequest
      * @example {
      *       "description": "A high-protein meal prep bowl.",
@@ -2804,10 +2747,6 @@ export interface components {
       priority?: 'high' | 'normal';
       /** @enum {string} */
       status?: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
-    };
-    /** TrainingWorkoutResponse */
-    TrainingWorkoutResponse: {
-      data: components['schemas']['TrainingPlanWorkout'];
     };
     /** TrainingPlanWorkout */
     TrainingPlanWorkout: {
@@ -2973,6 +2912,28 @@ export interface components {
       upload_url_expires_at: string;
       /** Format: uri */
       url: string | null;
+    };
+    /**
+     * TrainingPrescriptionPlannedSetInput
+     * @example {
+     *       "reps": "8-10",
+     *       "rest_seconds": 90
+     *     }
+     */
+    TrainingPrescriptionPlannedSetInput: {
+      /** @enum {string|null} */
+      distance_unit?: 'meters' | 'km' | 'miles' | 'none' | null;
+      distance_value?: string | null;
+      duration_seconds?: number | null;
+      /** @enum {string|null} */
+      load_unit?: 'kg' | 'lbs' | 'bodyweight' | 'none' | null;
+      load_value?: string | null;
+      notes?: string | null;
+      reps?: string | null;
+      rest_seconds?: number | null;
+      rpe?: number | null;
+      /** @enum {string|null} */
+      set_type?: 'working' | 'warmup' | 'dropset' | null;
     };
     /** WorkbenchOnboardingQueueResponse */
     WorkbenchOnboardingQueueResponse: {
@@ -3329,23 +3290,6 @@ export interface components {
       otp: string;
     };
     /**
-     * TrainingWorkoutExerciseRequest
-     * @example {
-     *       "exercise_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-     *       "planned_sets": [
-     *         {
-     *           "load_unit": "kg",
-     *           "reps": "8-10"
-     *         }
-     *       ]
-     *     }
-     */
-    TrainingWorkoutExerciseRequest: {
-      /** Format: uuid */
-      exercise_id?: string;
-      planned_sets?: components['schemas']['TrainingPlanPlannedSet'][];
-    };
-    /**
      * NutritionMealRequest
      * @example {
      *       "name": "Breakfast"
@@ -3387,6 +3331,17 @@ export interface components {
       status: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
       /** Format: date-time */
       updated_at: string;
+    };
+    /**
+     * TrainingPrescriptionScheduleEntry
+     * @description One weekday in the complete schedule. Omit both workout fields for rest; otherwise use exactly one persisted workout_id or request-local workout_ref.
+     */
+    TrainingPrescriptionScheduleEntry: {
+      /** @enum {string} */
+      weekday: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+      /** Format: uuid */
+      workout_id?: string;
+      workout_ref?: string;
     };
     /** ClientProfileFormTemplateResponse */
     ClientProfileFormTemplateResponse: {
@@ -3620,6 +3575,18 @@ export interface components {
       code: 'service_never_programmed';
       /** @enum {string} */
       service: 'training' | 'nutrition';
+    };
+    /**
+     * TrainingPrescriptionWorkoutInput
+     * @description A persisted workout uses id; a new one uses a request-local local_ref.
+     */
+    TrainingPrescriptionWorkoutInput: {
+      /** Format: uuid */
+      id?: string;
+      local_ref?: string;
+      name: string;
+      position: number;
+      prescribed_exercises: components['schemas']['TrainingPrescriptionExerciseInput'][];
     };
     /**
      * FoodCategoryListResponse
@@ -3925,10 +3892,6 @@ export interface components {
       kind: 'image' | 'video';
       /** Format: uri */
       url: string | null;
-    };
-    /** TrainingWorkoutExerciseResponse */
-    TrainingWorkoutExerciseResponse: {
-      data: components['schemas']['TrainingPlanWorkoutExercise'];
     };
     /** NutritionMealItem */
     NutritionMealItem: {

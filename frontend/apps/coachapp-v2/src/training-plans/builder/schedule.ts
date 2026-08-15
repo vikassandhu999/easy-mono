@@ -1,11 +1,9 @@
 /**
  * The weekly schedule, as values.
  *
- * The server keeps the schedule ON the workouts (`TrainingWorkout.weekdays`)
- * and renders it back as one Mon..Sun map where a `null` weekday is a rest day.
- * A weekday therefore holds at most one workout by construction, and every
- * write is the whole map — these helpers build the next map so the optimistic
- * patch and the PUT body are literally the same value.
+ * The server stores sparse Workout Schedule rows and renders one Mon..Sun map
+ * where a `null` weekday is a rest day. These helpers keep that complete
+ * interface synchronized with local Prescription edits.
  */
 import {TRAINING_WEEKDAYS as ORDERED_DAYS, type TrainingWeekday} from '@easy/utils';
 

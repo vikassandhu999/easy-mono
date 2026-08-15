@@ -100,9 +100,7 @@ export function useMarkCoachConversationReadMutation() {
             pages: cached.pages.map((page) => ({
               ...page,
               data: page.data.map((item) =>
-                item.conversation.id === id
-                  ? {...item, conversation: {...item.conversation, unread_count: 0}}
-                  : item,
+                item.conversation.id === id ? {...item, conversation: {...item.conversation, unread_count: 0}} : item,
               ),
             })),
           };

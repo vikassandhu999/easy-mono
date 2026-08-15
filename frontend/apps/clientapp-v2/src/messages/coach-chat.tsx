@@ -1,7 +1,7 @@
-import { stickToBottom } from '@easy/utils';
-import { Button, Spinner, TextArea, toast } from '@heroui/react';
-import { Send } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {stickToBottom} from '@easy/utils';
+import {Button, Spinner, TextArea, toast} from '@heroui/react';
+import {Send} from 'lucide-react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {
   appendClientMessage,
@@ -11,21 +11,21 @@ import {
   useCreateClientConversationMessageMutation,
   useMarkClientConversationReadMutation,
 } from '@/api/conversation';
-import { useGetClientProfileQuery } from '@/api/profile';
-import { getApiErrorMessage } from '@/api/shared';
+import {useGetClientProfileQuery} from '@/api/profile';
+import {getApiErrorMessage} from '@/api/shared';
 import AttachmentComposer from '@/messages/attachment-composer';
 import MessageAttachments from '@/messages/message-attachments';
 import MessageEmbed from '@/messages/message-embed';
 
 function formatDay(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(iso).toLocaleDateString(undefined, {day: 'numeric', month: 'short', year: 'numeric'});
 }
 
 function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'});
 }
 
-function DaySeparator({ iso }: { iso: string }) {
+function DaySeparator({iso}: {iso: string}) {
   return (
     <div className="flex justify-center pb-3 pt-2">
       <span className="rounded-full bg-surface-secondary px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-muted">
@@ -99,16 +99,16 @@ function MessageBubble({
 
 export default function CoachChat() {
   const [body, setBody] = useState('');
-  const [attachmentState, setAttachmentState] = useState({ attachmentIds: [] as string[], busy: false, failed: false });
+  const [attachmentState, setAttachmentState] = useState({attachmentIds: [] as string[], busy: false, failed: false});
   const [composerKey, setComposerKey] = useState(0);
   const [sendLocked, setSendLocked] = useState(false);
   const scrollerRef = useRef<HTMLDivElement>(null);
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useClientMessagesInfiniteQuery();
+  const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useClientMessagesInfiniteQuery();
   const sendMessage = useCreateClientConversationMessageMutation();
   const isSendingMessage = sendMessage.isPending;
-  const { mutate: markRead } = useMarkClientConversationReadMutation();
-  const { data: profile } = useGetClientProfileQuery();
+  const {mutate: markRead} = useMarkClientConversationReadMutation();
+  const {data: profile} = useGetClientProfileQuery();
   const coach = profile?.data.coach;
   const coachName = [coach?.first_name, coach?.last_name].filter(Boolean).join(' ') || 'Your coach';
   const coachInitial = coach?.first_name?.[0]?.toUpperCase() ?? 'C';
@@ -149,12 +149,12 @@ export default function CoachChat() {
     setSendLocked(true);
     try {
       const result = await sendMessage.mutateAsync({
-        ...(trimmed && { body: trimmed }),
+        ...(trimmed && {body: trimmed}),
         attachment_ids: attachmentState.attachmentIds,
       } as CreateMessageBody);
       appendClientMessage(result.data);
       setBody('');
-      setAttachmentState({ attachmentIds: [], busy: false, failed: false });
+      setAttachmentState({attachmentIds: [], busy: false, failed: false});
       setComposerKey((current) => current + 1);
     } catch (error) {
       toast.danger(getApiErrorMessage(error, "Message wasn't sent. Try again."));
@@ -164,7 +164,7 @@ export default function CoachChat() {
   };
 
   const handleAttachmentChange = useCallback(
-    (state: { attachmentIds: string[]; busy: boolean; failed: boolean }) => setAttachmentState(state),
+    (state: {attachmentIds: string[]; busy: boolean; failed: boolean}) => setAttachmentState(state),
     [],
   );
 

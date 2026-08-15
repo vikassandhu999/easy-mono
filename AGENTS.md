@@ -58,46 +58,20 @@ Single-context — `CONTEXT.md` and `docs/adr/` at the root, both created on dem
 ## Whole-application UI quality
 
 For broad UI/UX audits and repair passes, follow `.claude/skills/ui-quality-loop/SKILL.md`
-end-to-end. It owns route/state coverage, AXI-vs-Playwright selection, live verification,
-and branch/commit safety. Its default is no commits; a run may commit only with explicit
+end-to-end. It owns route/state coverage, live verification, and branch/commit safety. Its default is no commits; a run may commit only with explicit
 user authorization.
-
-## UI redesign ports
-
-All redesign work follows `design-handoff/UI-CONTRACT.md` — read it before touching any screen.
-**Port screens with `/port-screen XX`** (`.claude/commands/port-screen.md`) — it encodes the read order, the screenshot-vs-reference convergence loop, and the gates. One badge per branch, presentation only.
-Per-screen workflow, reference images, exact copy, and behavior specs: `design-handoff/README.md`.
-Never read `design-handoff/design/Dashboard Redesign.dc.html` whole — grep `data-screen-label="XX"` for your screen's slice. It is a spec, not source; never copy its markup or styles.
-
-
-## Code navigation and Search
-
-Use `codebase-memeory-axi` skill for codenavigation.
 
 ### Dev OTPs
 
 In Dev mode otp for any login/signup is always 123456.
 
-## Browser automation
+## Browser efficiency policy
 
-Use `chrome-devtools-axi` for interactive browser tasks.
-
-Browser-state rules:
-
-1. Reuse the existing AXI browser session and open tabs.
-2. Before navigating or authenticating, run:
-   `chrome-devtools-axi pages`
-3. Select an existing relevant tab rather than opening a duplicate.
-4. Never log in when an authenticated session already exists.
-5. Never clear cookies, storage, browser data, or the AXI user-data directory.
-6. Do not stop or restart the AXI bridge unless it is unhealthy.
-7. Prefer one combined `run` or `eval` operation over many individual commands.
-8. Use `snapshot` only when the current page state is unknown or changed.
-9. Avoid screenshots unless visual inspection is required.
-10. Save large network responses to files instead of printing them into context.
-
-<!-- cbm-axi-begin -->
-## Codebase Memory AXI
-
-For structural questions, prefer local `cbm` + skill `codebase-memory-axi`. Known symbol → find|code|refs|trace; unknown → one short `cbm search` with user nouns (max 2–3) — do not invent symbols. Callers/callees → trace; rename/remove → refs --verify; impact → cbm impact; dead-code/fan → cbm query + LIMIT; literals → Grep/Read. No `cbm status` preflight. Scout / Verify (default) / Auditor discipline applies quietly. Optional agents: `codebase-memory-axi-scout`, `codebase-memory-axi`, `codebase-memory-axi-auditor`.
-<!-- cbm-axi-end -->
+`chrome-devtools-axi` covers short interactive tasks (1–2 actions). Any longer
+deterministic workflow is **one-shot**: a temporary Playwright script covering the whole
+sequence — navigate, interact, wait, assert, screenshot — executed in a single shell call.
+Snapshot an unknown page once to learn its structure, then go one-shot. Scripts locate by
+role/label/text/test-id, return a compact structured result (assertions, key values,
+errors, screenshot paths), and save the screenshots that visual judgement then reads from
+disk. Interactive tools re-enter only when a script fails because page structure is
+unknown.

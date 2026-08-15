@@ -54,11 +54,22 @@ post-action states.
 
 ## Split the tools
 
-- AXI for exploration, LLM visual judgement, the authenticated session, interaction, screenshots, a11y snapshots, computed styles, console, network. Run `chrome-devtools-axi pages` first; wait for spinners/"Loading more…" to settle before judging; never clear browser state.
-- Playwright only for deterministic checks the repo already supports: approved baselines, `design-handoff/scripts/style-diff.mjs`, stable scripted flows. Never mint a baseline from the UI under investigation.
-- Without an approved design, screenshot, or prior baseline, call a finding a defect or inconsistency — not a regression.
+Every browser step follows the root `AGENTS.md` **Browser efficiency policy**. Applied to
+this loop:
 
-### AXI field notes (hard-won; follow them)
+- One one-shot script per route state sweep (default/empty/error/validation/post-action);
+  one per root-cause group for post-fix verification (reopen route, re-run flow, both
+  viewports, seam consumers).
+- Scripts log themselves in: seed account + dev OTP against the running dev server.
+- AXI exploration starts with `chrome-devtools-axi pages`; judge only after
+  spinners/"Loading more…" settle; leave browser state as you found it.
+- Deterministic checks the repo already owns: approved baselines,
+  `design-handoff/scripts/style-diff.mjs`, stable scripted flows. Baselines come only
+  from approved designs — a UI under investigation proves nothing about itself.
+- Without an approved design, screenshot, or prior baseline, a finding is a defect or
+  inconsistency, never a regression.
+
+### Browser field notes (hard-won; apply in one-shot scripts AND the rare AXI fallback)
 
 - Refs go stale on every re-render. Snapshot and act immediately; for multi-step interactions (select two rows then confirm) prefer ONE `eval` with chained `setTimeout` promises over separate CLI calls.
 - react-aria/HeroUI widgets ignore synthetic `.click()` for press/selection in ListBox options: dispatch `pointerdown` + `pointerup` (bubbles) then `.click()`. Press-visual states (`data-pressed`) never trigger from synthetic events at all — verify press styling by SETTING the data attribute and reading computed style instead.

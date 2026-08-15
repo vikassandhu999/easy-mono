@@ -250,19 +250,6 @@ export function useSetDefaultIntakeTemplateMutation() {
   });
 }
 
-export function useClearDefaultIntakeTemplateMutation() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) =>
-      call(
-        client.DELETE('/v1/coach/form-templates/{id}/default-intake', {params: {path: {id}}}),
-      ) as Promise<ClientProfileFormTemplateResponse>,
-    onSettled: () => {
-      qc.invalidateQueries({queryKey: formTemplateKeys.all});
-    },
-  });
-}
-
 // ---------------------------------------------------------------------------
 // Check-in schedules
 // ---------------------------------------------------------------------------

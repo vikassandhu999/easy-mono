@@ -27,14 +27,34 @@ Implemented 2026-08-14. Notes:
 The Settings placement was prototyped against alternatives (branch
 `prototype/default-intake-placement` — variants A/B/C on `/library/check-ins`,
 kept as primary source). Verdict: **variant A** — the control moved to the
-Forms page header as an accent pill ("New clients get *X*") beside "Create
-form", visible at every width, always opening a picker dialog. "Automatic"
-(clear) is an option inside the dialog rather than a second button. The
-Settings "Client onboarding" card was removed entirely — one home only. The
-"Default intake" row badge stays. Implementation:
-`src/checkins/components/default-intake-control.tsx` + an `actionsExtra` slot
-on `BrowseScreen` (documented single caller). Verified live at 375px and
-1280px: set → pill + row badge update; Automatic → cleared.
+Forms page header beside "Create form", as a neutral outline select reading
+"New clients get: *X*", opening a picker dialog. It is inline on desktop and
+takes its own full-width line below the title on mobile (the browse header now
+wraps for it) — capping the value alone still crushed the page title to "Fo…"
+with a long form name. The Settings "Client onboarding" card was removed
+entirely — one home only. The "Default intake" row badge stays.
+Implementation: `src/checkins/components/default-intake-control.tsx` + an
+`actionsExtra` slot on `BrowseScreen` (documented single caller).
+
+**"Clear back to unset" was cut from the UI** (supersedes the third checkbox
+above). It surfaced an internal state as a user-facing option: when no template
+carries the flag the backend assigns the oldest active intake, which is a
+bootstrap detail, not a decision a coach wants to make. Exposing it as an
+"Automatic" / "Choose for me" row was rejected on review — 2026-08-15. Instead
+the control always names the form a new client would actually receive (the flag
+holder, else the oldest active intake — the list endpoint and
+`Forms.get_or_create_default_intake_template/1` share the `inserted_at` order),
+and the picker only offers forms. An archived flag-holder self-heals to the
+fallback, so no clear path is needed.
+
+Consequence: `useClearDefaultIntakeTemplateMutation` was deleted (zero
+importers). `DELETE /v1/coach/form-templates/{id}/default-intake` still exists
+and is still tested, but now has no frontend consumer — **design debt**, left
+in place rather than churned out of the API contract.
+
+Verified live at 375px and 1280px: switching between two intake forms updates
+the trigger and the row badge; tapping the form that is already current just
+dismisses.
 
 ## E2E verification (2026-08-14)
 

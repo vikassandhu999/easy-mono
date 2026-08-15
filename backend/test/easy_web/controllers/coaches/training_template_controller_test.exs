@@ -122,6 +122,18 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
              } = stale_response
 
       assert_schema(stale_response, "TrainingPlanStaleRevisionError", EasyWeb.ApiSpec.spec())
+      assert Repo.get!(TrainingPlan, template.id).name == "Revised Template"
+
+      stale_archive_conn =
+        post(conn, "/v1/coach/training-plans/#{template.id}/archive", %{"expected_revision" => 1})
+
+      assert %{
+               "error_code" => "stale_revision",
+               "error_detail" => %{"current_revision" => 2}
+             } = json_response(stale_archive_conn, 409)
+
+      assert Repo.get!(TrainingPlan, template.id).archived_at == nil
+      assert Repo.get!(TrainingPlan, template.id).name == "Revised Template"
 
       archive_conn =
         post(conn, "/v1/coach/training-plans/#{template.id}/archive", %{"expected_revision" => 2})
@@ -130,6 +142,18 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
                json_response(archive_conn, 200)
 
       assert archived_at
+
+      stale_restore_conn =
+        post(conn, "/v1/coach/training-plans/#{template.id}/restore", %{"expected_revision" => 2})
+
+      stale_restore_response = json_response(stale_restore_conn, 409)
+
+      assert %{
+               "error_code" => "stale_revision",
+               "error_detail" => %{"current_revision" => 3}
+             } = stale_restore_response
+
+      assert Repo.get!(TrainingPlan, template.id).archived_at
 
       restore_conn =
         post(conn, "/v1/coach/training-plans/#{template.id}/restore", %{"expected_revision" => 3})
@@ -260,6 +284,128 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
                "error_code" => "invalid_input",
                "error_detail" => %{"fields" => %{"start_date" => [_]}}
              } = response
+    end
+  end
+
+  describe "Training Template duplication" do
+    test "duplicates only an active Template with a complete independent Prescription", %{conn: conn} do
+      coach = insert(:coach)
+      conn = authenticate_coach(conn, coach)
+      template = insert(:training_plan, business: coach.business, creator: coach.user, name: "HTTP Strength")
+      squat = insert(:exercise, business: coach.business, name: "Back Squat")
+      press = insert(:exercise, business: coach.business, name: "Press")
+      lower = insert(:workout, business: coach.business, plan: template, name: "Lower", position: 10)
+      upper = insert(:workout, business: coach.business, plan: template, name: "Upper", position: 20)
+
+      lower_item =
+        insert(:prescribed_exercise,
+          business: coach.business,
+          workout: lower,
+          exercise: squat,
+          position: 0,
+          prescribed_sets: [%{set_type: :working, reps: "5", load_value: Decimal.new("100"), load_unit: :kg}]
+        )
+
+      upper_item =
+        insert(:prescribed_exercise,
+          business: coach.business,
+          workout: upper,
+          exercise: press,
+          position: 0,
+          prescribed_sets: [%{set_type: :working, reps: "8-10"}]
+        )
+
+      insert(:workout_schedule, business: coach.business, plan: template, workout: lower, weekday: :monday)
+      insert(:workout_schedule, business: coach.business, plan: template, workout: upper, weekday: :friday)
+
+      response =
+        conn
+        |> post("/v1/coach/training-plans/#{template.id}/duplicate")
+        |> json_response(201)
+
+      assert %{
+               "data" =>
+                 %{
+                   "id" => duplicate_id,
+                   "kind" => "template",
+                   "name" => "HTTP Strength (Copy)",
+                   "revision" => 1,
+                   "client_id" => nil,
+                   "source_template_id" => nil,
+                   "workouts" => [
+                     %{
+                       "id" => copied_lower_id,
+                       "name" => "Lower",
+                       "position" => 10,
+                       "workout_elements" => [
+                         %{
+                           "id" => copied_lower_item_id,
+                           "exercise_id" => squat_id,
+                           "planned_sets" => [%{"reps" => "5", "load_unit" => "kg"}]
+                         }
+                       ]
+                     },
+                     %{
+                       "id" => copied_upper_id,
+                       "name" => "Upper",
+                       "position" => 20,
+                       "workout_elements" => [
+                         %{
+                           "id" => copied_upper_item_id,
+                           "exercise_id" => press_id,
+                           "planned_sets" => [%{"reps" => "8-10"}]
+                         }
+                       ]
+                     }
+                   ],
+                   "schedule" => copied_schedule
+                 } = data
+             } = response
+
+      assert duplicate_id != template.id
+      assert copied_lower_id != lower.id
+      assert copied_upper_id != upper.id
+      assert copied_lower_item_id != lower_item.id
+      assert copied_upper_item_id != upper_item.id
+      assert squat_id == squat.id
+      assert press_id == press.id
+      assert copied_schedule["monday"] == copied_lower_id
+      assert copied_schedule["friday"] == copied_upper_id
+      assert_schema(data, "TrainingPlan", EasyWeb.ApiSpec.spec())
+    end
+
+    test "returns not found for archived, Client Plan, and cross-tenant sources", %{conn: conn} do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      other = insert(:coach)
+      conn = authenticate_coach(conn, coach)
+
+      archived =
+        insert(:training_plan,
+          business: coach.business,
+          creator: coach.user,
+          archived_at: ~U[2026-08-15 12:00:00Z]
+        )
+
+      client_plan =
+        insert(:training_plan,
+          business: coach.business,
+          creator: coach.user,
+          client: client,
+          kind: :client_plan,
+          start_date: ~D[2026-09-01]
+        )
+
+      hidden = insert(:training_plan, business: other.business, creator: other.user)
+
+      for source <- [archived, client_plan, hidden] do
+        response =
+          conn
+          |> post("/v1/coach/training-plans/#{source.id}/duplicate")
+          |> json_response(404)
+
+        assert %{"error_code" => "not_found"} = response
+      end
     end
   end
 end

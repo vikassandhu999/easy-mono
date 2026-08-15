@@ -17481,11 +17481,11 @@
     "/v1/coach/training-plans/{id}/duplicate": {
       "post": {
         "callbacks": {},
-        "description": "Copies a training plan template in the authenticated business, including workouts and their weekdays.",
+        "description": "Copies an active Training Template in the authenticated business, including its metadata, ordered Prescription, and Workout Schedule.",
         "operationId": "duplicateTrainingPlan",
         "parameters": [
           {
-            "description": "Training plan id",
+            "description": "Training Template id",
             "in": "path",
             "name": "id",
             "required": true,
@@ -17505,7 +17505,7 @@
                 }
               }
             },
-            "description": "Training plan duplicated"
+            "description": "Training Template duplicated"
           },
           "401": {
             "content": {
@@ -17543,7 +17543,7 @@
             "bearerAuth": []
           }
         ],
-        "summary": "Duplicate training plan",
+        "summary": "Duplicate a Training Template",
         "tags": [
           "coach training plans"
         ]

@@ -1,8 +1,9 @@
 defmodule Easy.Training.Programming do
   alias Easy.Clients
   alias Easy.Ctx
+  alias Easy.Orgs.Business
   alias Easy.Repo
-  alias Easy.Training.{Library, PrescribedExercise, TrainingPlan, TrainingWorkout, WorkoutSchedule}
+  alias Easy.Training.{Library, PlannedSet, PrescribedExercise, TrainingPlan, TrainingWorkout, WorkoutSchedule}
   alias Easy.Utils
 
   import Ecto.Changeset
@@ -56,6 +57,20 @@ defmodule Easy.Training.Programming do
       |> TrainingPlan.include_workouts(ctx.business_id)
       |> Repo.get(template_id)
       |> ok_or_not_found()
+    end
+  end
+
+  @spec duplicate_template(Ctx.t(), String.t()) ::
+          {:ok, TrainingPlan.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def duplicate_template(%Ctx{} = ctx, template_id) do
+    with :ok <- ensure_coach(ctx) do
+      result =
+        Repo.transaction(fn ->
+          lock_business_for_duplicate_name(ctx.business_id)
+          duplicate_locked_template(ctx, template_id)
+        end)
+
+      finalize_template_mutation(result, ctx, true)
     end
   end
 
@@ -158,6 +173,82 @@ defmodule Easy.Training.Programming do
   defp mutate_locked_template(ctx, template_id, expected_revision, mutation) do
     template = ctx |> template_query() |> lock("FOR UPDATE") |> Repo.get(template_id)
     mutate_revisioned(template, expected_revision, mutation)
+  end
+
+  defp duplicate_locked_template(ctx, template_id) do
+    template =
+      ctx
+      |> template_query()
+      |> TrainingPlan.for_archived(false)
+      |> lock("FOR UPDATE")
+      |> Repo.get(template_id)
+
+    case template do
+      nil -> Repo.rollback(:not_found)
+      template -> duplicate_template_rows(ctx, preload_duplicate_source(template))
+    end
+  end
+
+  defp duplicate_template_rows(ctx, template) do
+    attrs = %{
+      name: duplicate_template_name(template.name, ctx.business_id),
+      description: template.description
+    }
+
+    with {:ok, copy} <- TrainingPlan.insert_changeset(ctx.business_id, ctx.user_id, attrs) |> Repo.insert(),
+         {:ok, workout_ids} <- duplicate_workout_rows(ctx, template.workouts, copy),
+         :ok <- duplicate_schedule_rows(ctx, template.workout_schedule, copy, workout_ids) do
+      copy
+    else
+      {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
+  defp preload_duplicate_source(template) do
+    TrainingPlan
+    |> TrainingPlan.for_business(template.business_id)
+    |> TrainingPlan.include_workouts(template.business_id)
+    |> Repo.get(template.id)
+  end
+
+  defp duplicate_workout_rows(ctx, workouts, copy) do
+    Enum.reduce_while(workouts, {:ok, %{}}, fn workout, {:ok, workout_ids} ->
+      attrs = %{name: workout.name, position: workout.position}
+
+      with {:ok, copied_workout} <- TrainingWorkout.insert_changeset(ctx.business_id, copy.id, attrs) |> Repo.insert(),
+           :ok <- duplicate_prescribed_exercise_rows(ctx, workout.prescribed_exercises, copied_workout) do
+        {:cont, {:ok, Map.put(workout_ids, workout.id, copied_workout.id)}}
+      else
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp duplicate_prescribed_exercise_rows(ctx, prescribed_exercises, copied_workout) do
+    Enum.reduce_while(prescribed_exercises, :ok, fn prescribed_exercise, :ok ->
+      attrs = %{
+        exercise_id: prescribed_exercise.exercise_id,
+        position: prescribed_exercise.position,
+        prescribed_sets: Enum.map(prescribed_exercise.prescribed_sets, &PlannedSet.to_attrs/1)
+      }
+
+      case PrescribedExercise.insert_changeset(ctx.business_id, copied_workout.id, attrs) |> Repo.insert() do
+        {:ok, _row} -> {:cont, :ok}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp duplicate_schedule_rows(ctx, schedule, copy, workout_ids) do
+    Enum.reduce_while(schedule, :ok, fn row, :ok ->
+      attrs = %{weekday: row.weekday}
+      copied_workout_id = Map.fetch!(workout_ids, row.training_workout_id)
+
+      case WorkoutSchedule.insert_changeset(ctx.business_id, copy.id, copied_workout_id, attrs) |> Repo.insert() do
+        {:ok, _row} -> {:cont, :ok}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
   end
 
   defp mutate_locked_plan(ctx, plan_id, expected_revision, mutation) do
@@ -609,6 +700,25 @@ defmodule Easy.Training.Programming do
     else
       {:ok, plan}
     end
+  end
+
+  defp duplicate_template_name(original_name, business_id) do
+    existing_names =
+      TrainingPlan
+      |> TrainingPlan.for_business(business_id)
+      |> TrainingPlan.templates()
+      |> select([template], template.name)
+      |> Repo.all()
+
+    Easy.CopyName.next(original_name, existing_names)
+  end
+
+  defp lock_business_for_duplicate_name(business_id) do
+    Business
+    |> where([business], business.id == ^business_id)
+    |> select([business], business.id)
+    |> lock("FOR UPDATE")
+    |> Repo.one()
   end
 
   defp template_query(%Ctx{} = ctx) do

@@ -8,8 +8,8 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {applyFormErrors} from '@/api/shared';
 import {patchPlan, type TrainingPlan, useGetTrainingPlanQuery} from '@/api/training-plan-builder';
-import {getStaleTrainingPlanRevision} from '@/api/training-plan-lifecycle';
 import {useUpdateTrainingPlanMutation} from '@/api/training-plans-list';
+import {handleStaleTrainingPlanConflict} from '@/training-plans/lib/stale-training-plan-conflict';
 import TrainingPlanForm, {useTrainingPlanForm} from '@/training-plans/training-plan-form/training-plan-form';
 import {
   type TrainingPlanFormValues,
@@ -47,7 +47,17 @@ function EditTrainingPlanHeader({goBack, kind}: {goBack: () => void; kind?: Trai
   );
 }
 
-function EditTrainingPlanForm({backPath, plan, planId}: {backPath: string; plan: TrainingPlan; planId: string}) {
+function EditTrainingPlanForm({
+  backPath,
+  plan,
+  planId,
+  refetchLatest,
+}: {
+  backPath: string;
+  plan: TrainingPlan;
+  planId: string;
+  refetchLatest: () => Promise<TrainingPlan | undefined>;
+}) {
   const goBack = useGoBack(backPath);
   const updatePlanMutation = useUpdateTrainingPlanMutation();
   const form = useTrainingPlanForm({
@@ -66,12 +76,17 @@ function EditTrainingPlanForm({backPath, plan, planId}: {backPath: string; plan:
       });
       goBack();
     } catch (err) {
-      const currentRevision = getStaleTrainingPlanRevision(err);
-      if (currentRevision) {
-        form.setError('root', {
-          message: `This plan changed elsewhere (revision ${currentRevision}). Reload it before saving again.`,
-        });
-      } else {
+      const handled = await handleStaleTrainingPlanConflict(err, {
+        refetchLatest,
+        replaceWithLatest: (latest) => {
+          form.reset(trainingPlanToFormValues(latest));
+        },
+        notify: (message) => {
+          form.setError('root', {message});
+        },
+      });
+
+      if (!handled) {
         applyFormErrors(err, "Training plan wasn't updated. Check the details and try again", form.setError);
       }
     }
@@ -148,6 +163,7 @@ export default function EditTrainingPlan() {
       backPath={backPath}
       plan={data.data}
       planId={id!}
+      refetchLatest={async () => (await refetch()).data?.data}
     />
   );
 }

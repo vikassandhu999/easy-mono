@@ -1,7 +1,7 @@
 import {toast} from '@heroui/react';
 import {useNavigate} from 'react-router-dom';
 
-import {PlanActionsMenu} from '@/@components/plan-actions-menu';
+import {type PlanActionOutcome, PlanActionsMenu} from '@/@components/plan-actions-menu';
 import {ROUTES} from '@/@config/routes';
 import type {NutritionPlan} from '@/api/nutrition-plan-builder';
 import {patchPlan} from '@/api/nutrition-plan-builder';
@@ -24,7 +24,7 @@ export function NutritionPlanActions({plan, onDeleted}: Props) {
 
   // Optimistically patch the cached detail so the dropdown flips
   // Archive<->Restore immediately, roll back on failure.
-  const setStatus = async (status: 'active' | 'archived') => {
+  const setStatus = async (status: 'active' | 'archived'): Promise<PlanActionOutcome> => {
     const patched = patchPlan(plan.id, (draft) => {
       draft.status = status;
     });
@@ -34,6 +34,7 @@ export function NutritionPlanActions({plan, onDeleted}: Props) {
       patched.undo();
       throw e;
     }
+    return 'applied';
   };
 
   const copy = async () => {
@@ -42,7 +43,10 @@ export function NutritionPlanActions({plan, onDeleted}: Props) {
     navigate(ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', result.data.id));
   };
 
-  const remove = () => deletePlan.mutateAsync(plan.id);
+  const remove = async (): Promise<PlanActionOutcome> => {
+    await deletePlan.mutateAsync(plan.id);
+    return 'applied';
+  };
 
   return (
     <PlanActionsMenu

@@ -789,8 +789,8 @@ export interface paths {
     get?: never;
     put?: never;
     /**
-     * Duplicate training plan
-     * @description Copies a training plan template in the authenticated business, including workouts and their weekdays.
+     * Duplicate a Training Template
+     * @description Copies an active Training Template in the authenticated business, including its metadata, ordered Prescription, and Workout Schedule.
      */
     post: operations['duplicateTrainingPlan'];
     delete?: never;
@@ -7783,14 +7783,14 @@ export interface operations {
       query?: never;
       header?: never;
       path: {
-        /** @description Training plan id */
+        /** @description Training Template id */
         id: string;
       };
       cookie?: never;
     };
     requestBody?: never;
     responses: {
-      /** @description Training plan duplicated */
+      /** @description Training Template duplicated */
       201: {
         headers: {
           [name: string]: unknown;

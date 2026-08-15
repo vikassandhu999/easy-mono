@@ -76,6 +76,7 @@ export default function TrainingPlanBuilderScreen() {
           <PlanActions
             onDeleted={() => goBack()}
             plan={plan}
+            refetchLatest={async () => (await refetch()).data?.data}
           />
         </Page.Actions>
       </Page.Header>

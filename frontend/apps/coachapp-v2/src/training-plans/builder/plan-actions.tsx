@@ -1,7 +1,7 @@
 import {toast} from '@heroui/react';
 import {useNavigate} from 'react-router-dom';
 
-import {PlanActionsMenu} from '@/@components/plan-actions-menu';
+import {type PlanActionOutcome, PlanActionsMenu} from '@/@components/plan-actions-menu';
 import {ROUTES} from '@/@config/routes';
 import type {TrainingPlan} from '@/api/training-plan-builder';
 import {patchPlan} from '@/api/training-plan-builder';
@@ -12,25 +12,51 @@ import {
   useDuplicateTrainingPlanMutation,
   useRestoreTrainingPlanMutation,
 } from '@/api/training-plans-list';
+import {handleStaleTrainingPlanConflict} from '@/training-plans/lib/stale-training-plan-conflict';
 
 export type Props = {
   plan: TrainingPlan;
   onDeleted: () => void;
+  refetchLatest: () => Promise<TrainingPlan | undefined>;
 };
 
-export function PlanActions({plan, onDeleted}: Props) {
+export function PlanActions({plan, onDeleted, refetchLatest}: Props) {
   const navigate = useNavigate();
   const archivePlanMutation = useArchiveTrainingPlanMutation();
   const restorePlanMutation = useRestoreTrainingPlanMutation();
   const duplicatePlanMutation = useDuplicateTrainingPlanMutation();
   const deletePlanMutation = useDeleteTrainingPlanMutation();
 
-  const setStatus = async (status: 'active' | 'archived') => {
+  const handleStaleConflict = (error: unknown) =>
+    handleStaleTrainingPlanConflict(error, {
+      refetchLatest,
+      replaceWithLatest: (latest) => {
+        patchPlan(plan.id, (draft) => {
+          Object.assign(draft, latest);
+        });
+      },
+      notify: (message) => {
+        toast.info(message, {timeout: 4000});
+      },
+    });
+
+  const setStatus = async (status: 'active' | 'archived'): Promise<PlanActionOutcome> => {
     const mutation = status === 'archived' ? archivePlanMutation : restorePlanMutation;
-    const result = await mutation.mutateAsync({id: plan.id, body: trainingPlanRevisionRequest(plan)});
+    let result: Awaited<ReturnType<typeof mutation.mutateAsync>>;
+
+    try {
+      result = await mutation.mutateAsync({id: plan.id, body: trainingPlanRevisionRequest(plan)});
+    } catch (error) {
+      if (await handleStaleConflict(error)) {
+        return 'stale';
+      }
+      throw error;
+    }
+
     patchPlan(plan.id, (draft) => {
       Object.assign(draft, result.data);
     });
+    return 'applied';
   };
 
   const copy = async () => {
@@ -39,13 +65,22 @@ export function PlanActions({plan, onDeleted}: Props) {
     navigate(ROUTES.TRAINING_PLAN_DETAIL.replace(':id', result.data.id));
   };
 
-  const remove = async () => {
+  const remove = async (): Promise<PlanActionOutcome> => {
     // useDeleteTrainingPlanMutation invalidates the list cache itself.
-    await deletePlanMutation.mutateAsync(trainingPlanDeleteRequest(plan));
+    try {
+      await deletePlanMutation.mutateAsync(trainingPlanDeleteRequest(plan));
+    } catch (error) {
+      if (await handleStaleConflict(error)) {
+        return 'stale';
+      }
+      throw error;
+    }
+    return 'applied';
   };
 
   return (
     <PlanActionsMenu
+      canCopy={plan.kind === 'template' && plan.status === 'active'}
       deleteBody="Are you sure you want to delete the training plan permanently?"
       deleting={deletePlanMutation.isPending}
       onCopy={copy}

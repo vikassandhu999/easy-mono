@@ -11,15 +11,18 @@ import type {ReactNode} from 'react';
 import {toastMutationError} from '@/@components/mutation-toast';
 import {AS_ICON_BUTTON} from '@/@components/ua-defaults';
 
+export type PlanActionOutcome = 'applied' | 'stale';
+
 type Props = {
   plan: {id: string; name: string; status?: string | null};
   pending: boolean;
   deleting: boolean;
+  canCopy?: boolean;
   deleteBody: string;
   onEdit: () => void;
   onCopy: () => Promise<void>;
-  onSetStatus: (status: 'active' | 'archived') => Promise<void>;
-  onDelete: () => Promise<void>;
+  onSetStatus: (status: 'active' | 'archived') => Promise<PlanActionOutcome>;
+  onDelete: () => Promise<PlanActionOutcome>;
   onDeleted: () => void;
 };
 
@@ -38,6 +41,7 @@ export function PlanActionsMenu({
   plan,
   pending,
   deleting,
+  canCopy = true,
   deleteBody,
   onEdit,
   onCopy,
@@ -50,15 +54,21 @@ export function PlanActionsMenu({
 
   const setStatus = (status: 'active' | 'archived', successMessage: string, failureMessage: string) =>
     onSetStatus(status)
-      .then(() => toast.success(successMessage, {timeout: 1000}))
+      .then((outcome) => {
+        if (outcome === 'applied') {
+          toast.success(successMessage, {timeout: 1000});
+        }
+      })
       .catch((e) => toastMutationError(e, failureMessage));
 
   const confirmDelete = () =>
     onDelete()
-      .then(() => {
-        toast.success('Plan deleted', {timeout: 1000});
+      .then((outcome) => {
         deleteAlertState.close();
-        onDeleted();
+        if (outcome === 'applied') {
+          toast.success('Plan deleted', {timeout: 1000});
+          onDeleted();
+        }
       })
       .catch((e: unknown) => {
         deleteAlertState.close();
@@ -139,18 +149,20 @@ export function PlanActionsMenu({
                 </Dropdown.Item>
               ) : null}
             </Dropdown.Section>
-            <Dropdown.Section>
-              <Dropdown.Item
-                id="copy-plan"
-                isDisabled={blocking}
-                textValue="Copy"
-              >
-                <ItemBody
-                  icon={<Copy className="shrink-0 text-muted" />}
-                  label="Copy"
-                />
-              </Dropdown.Item>
-            </Dropdown.Section>
+            {canCopy ? (
+              <Dropdown.Section>
+                <Dropdown.Item
+                  id="copy-plan"
+                  isDisabled={blocking}
+                  textValue="Copy"
+                >
+                  <ItemBody
+                    icon={<Copy className="shrink-0 text-muted" />}
+                    label="Copy"
+                  />
+                </Dropdown.Item>
+              </Dropdown.Section>
+            ) : null}
             <Separator />
             <Dropdown.Section>
               <Dropdown.Item

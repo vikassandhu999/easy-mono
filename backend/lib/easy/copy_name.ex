@@ -7,11 +7,12 @@ defmodule Easy.CopyName do
     base = original_name |> String.replace(~r/\s+\(Copy(?: \d+)?\)$/, "") |> String.trim()
     existing = MapSet.new(existing_names)
 
-    Enum.find_value(1..100, fn attempt ->
+    Stream.iterate(1, &(&1 + 1))
+    |> Enum.find_value(fn attempt ->
       suffix = if attempt == 1, do: " (Copy)", else: " (Copy #{attempt})"
       candidate = "#{String.slice(base, 0, 255 - String.length(suffix))}#{suffix}"
 
       if !MapSet.member?(existing, candidate), do: candidate
-    end) || "#{String.slice(base, 0, 237)} (Copy #{System.system_time(:second)})"
+    end)
   end
 end

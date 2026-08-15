@@ -28,8 +28,8 @@ import {call, client} from '@/api/client';
 import {clientKeys, trainingPlanKeys} from '@/api/keys';
 import {patchQueryData, queryClient} from '@/api/query-client';
 import type {components} from '@/api/schema';
-import {planToPrescriptionRequest} from '@/api/training-prescription';
 import {trainingPlanRevisionRequest} from '@/api/training-plan-lifecycle';
+import {planToPrescriptionRequest} from '@/api/training-prescription';
 import {workbenchMutationTargets} from '@/api/workbench-targets';
 
 export type TrainingPlan = components['schemas']['TrainingPlan'];
@@ -80,6 +80,11 @@ export function patchPlan(planId: string, recipe: (plan: TrainingPlan) => void) 
  */
 export function readPlan(planId: string): TrainingPlan | undefined {
   return queryClient.getQueryData<TrainingPlanResponse>(trainingPlanKeys.detail(planId))?.data;
+}
+
+export async function refetchTrainingPlan(planId: string): Promise<TrainingPlan | undefined> {
+  await queryClient.refetchQueries({queryKey: trainingPlanKeys.detail(planId), type: 'active'});
+  return readPlan(planId);
 }
 
 // ---------------------------------------------------------------------------

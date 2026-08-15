@@ -6,6 +6,7 @@ import type {TrainingPlan, TrainingPlanWorkout, TrainingPlanWorkoutExercise} fro
 import * as api from '@/api/training-plan-builder';
 import {createLocalNodeId} from '@/api/training-prescription';
 import {createCoalescingQueue} from '@/builder-kit/coalescing-queue';
+import {handleStaleTrainingPlanConflict} from '@/training-plans/lib/stale-training-plan-conflict';
 import {periodError} from './period';
 import {findElement, findWorkout, moveId} from './plan-tree';
 import {clearWorkoutFromSchedule, type Day, setScheduleDay} from './schedule';
@@ -24,6 +25,7 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
   const patch = (recipe: (plan: TrainingPlan) => void) => api.patchPlan(planId, recipe);
   const read = () => api.readPlan(planId);
   let writes: Promise<unknown> = Promise.resolve();
+  let writeEpoch = 0;
 
   const serialize = <T>(write: () => Promise<T>): Promise<T> => {
     const result = writes.then(write, write);
@@ -34,12 +36,38 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
     return result;
   };
 
+  const handleStaleConflict = async (error: unknown) => {
+    const handled = await handleStaleTrainingPlanConflict<TrainingPlan>(error, {
+      refetchLatest: () => api.refetchTrainingPlan(planId),
+      replaceWithLatest: (latest) => {
+        patch((draft) => {
+          Object.assign(draft, latest);
+        });
+      },
+      notify: (message) => {
+        toast.info(message, {timeout: 4000});
+      },
+    });
+
+    if (handled) {
+      writeEpoch += 1;
+    }
+
+    return handled;
+  };
+
   const savePrescription = <Marker, Result>(
     recipe: (plan: TrainingPlan) => Marker,
     resolve: (saved: TrainingPlan, marker: Marker) => Result,
     failMessage: string,
-  ): Promise<Result | undefined> =>
-    serialize(async () => {
+  ): Promise<Result | undefined> => {
+    const requestedEpoch = writeEpoch;
+
+    return serialize(async () => {
+      if (requestedEpoch !== writeEpoch) {
+        return undefined;
+      }
+
       let marker: Marker | undefined;
       const patched = patch((plan) => {
         marker = recipe(plan);
@@ -58,10 +86,14 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
         return resolve(saved, marker);
       } catch (error) {
         patched.undo();
+        if (await handleStaleConflict(error)) {
+          return undefined;
+        }
         toastMutationError(error, failMessage);
         return undefined;
       }
     });
+  };
 
   const addWorkout = async (): Promise<TrainingPlanWorkout | undefined> => {
     notifyBusy('addWorkout', true);
@@ -207,24 +239,30 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
       "Couldn't reorder exercises",
     );
 
-  const pendingSetEdits = new Map<string, (plan: TrainingPlan) => string>();
+  const pendingSetEdits = new Map<string, {epoch: number; recipe: (plan: TrainingPlan) => string}>();
   const setQueue = createCoalescingQueue(async (elementId) => {
-    const recipe = pendingSetEdits.get(elementId);
+    const pending = pendingSetEdits.get(elementId);
     pendingSetEdits.delete(elementId);
-    if (recipe) {
-      await savePrescription(recipe, () => undefined, "Couldn't save set");
+    if (pending?.epoch === writeEpoch) {
+      await savePrescription(pending.recipe, () => undefined, "Couldn't save set");
     }
   });
 
   const writeSets = (elementId: string, recipe: (sets: PlannedSet[]) => PlannedSet[], delayMs = 0) => {
     const previous = pendingSetEdits.get(elementId);
-    pendingSetEdits.set(elementId, (plan) => {
-      previous?.(plan);
-      const found = findElement(plan, elementId);
-      if (found) {
-        found.element.planned_sets = recipe(found.element.planned_sets);
-      }
-      return elementId;
+    const epoch = writeEpoch;
+    pendingSetEdits.set(elementId, {
+      epoch,
+      recipe: (plan) => {
+        if (previous?.epoch === epoch) {
+          previous.recipe(plan);
+        }
+        const found = findElement(plan, elementId);
+        if (found) {
+          found.element.planned_sets = recipe(found.element.planned_sets);
+        }
+        return elementId;
+      },
     });
     setQueue.mark(elementId, delayMs);
   };
@@ -234,8 +272,14 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
   const addSet = (elementId: string) => writeSets(elementId, appendSet);
   const dropSet = (elementId: string, index: number) => writeSets(elementId, (sets) => removeSet(sets, index));
 
-  const setPlanPeriod = (startDate: string | null, endDate: string | null): Promise<void> =>
-    serialize(async () => {
+  const setPlanPeriod = (startDate: string | null, endDate: string | null): Promise<void> => {
+    const requestedEpoch = writeEpoch;
+
+    return serialize(async () => {
+      if (requestedEpoch !== writeEpoch) {
+        return;
+      }
+
       const error = periodError(startDate, endDate);
       if (error) {
         toast.danger(error);
@@ -252,9 +296,13 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
         });
       } catch (error) {
         patched.undo();
+        if (await handleStaleConflict(error)) {
+          return;
+        }
         toastMutationError(error, "Couldn't save changes");
       }
     });
+  };
 
   return {
     addExercises,

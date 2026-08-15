@@ -1,4 +1,4 @@
-import {Button, Chip} from '@heroui/react';
+import {Button, Chip, toast} from '@heroui/react';
 import {Dumbbell} from 'lucide-react';
 import {useEffect, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
@@ -25,6 +25,7 @@ import {
   weekGroupLabel,
 } from '@/clients/lib/client-detail-data';
 import {sessionWorkoutName} from '@/clients/lib/session';
+import {handleStaleTrainingPlanConflict} from '@/training-plans/lib/stale-training-plan-conflict';
 
 /** CD-TR: the active plan, then session history grouped by week. */
 export function TrainingTab({client}: {client: Client}) {
@@ -61,6 +62,17 @@ export function TrainingTab({client}: {client: Client}) {
     try {
       await archivePlanMutation.mutateAsync({id: plan.id, body: trainingPlanRevisionRequest(plan)});
     } catch (err) {
+      const handled = await handleStaleTrainingPlanConflict(err, {
+        refetchLatest: async () => (await plans.refetch()).data?.data?.[0],
+        notify: (message) => {
+          toast.info(message, {timeout: 4000});
+        },
+      });
+
+      if (handled) {
+        return;
+      }
+
       toastMutationError(err, "The Client Plan wasn't ended. Try again.");
     }
   };

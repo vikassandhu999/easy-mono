@@ -175,15 +175,15 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     ]
 
   operation :duplicate,
-    summary: "Duplicate training plan",
-    description: "Copies a training plan template in the authenticated business, including workouts and their weekdays.",
+    summary: "Duplicate a Training Template",
+    description: "Copies an active Training Template in the authenticated business, including its metadata, ordered Prescription, and Workout Schedule.",
     operation_id: "duplicateTrainingPlan",
     security: [%{"bearerAuth" => []}],
     parameters: [
-      Operation.parameter(:id, :path, :string, "Training plan id")
+      Operation.parameter(:id, :path, :string, "Training Template id")
     ],
     responses: [
-      created: {"Training plan duplicated", "application/json", TrainingPlanResponse},
+      created: {"Training Template duplicated", "application/json", TrainingPlanResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
@@ -292,7 +292,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   def duplicate(conn, _params) do
     id = conn.path_params["id"]
 
-    with {:ok, duplicated} <- Plans.duplicate_plan(conn.assigns.ctx, id) do
+    with {:ok, duplicated} <- Programming.duplicate_template(conn.assigns.ctx, id) do
       conn
       |> put_status(:created)
       |> render(:show, plan: duplicated)

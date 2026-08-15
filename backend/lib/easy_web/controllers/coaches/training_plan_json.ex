@@ -3,10 +3,11 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
 
   alias Easy.Training.{
     PlannedSet,
+    PrescribedExercise,
     TrainingExercise,
     TrainingPlan,
     TrainingWorkout,
-    TrainingWorkoutExercise
+    WorkoutSchedule
   }
 
   @spec show(map()) :: map()
@@ -22,44 +23,54 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
   defp data(%TrainingPlan{} = plan) do
     %{
       id: plan.id,
+      kind: plan.kind,
       name: plan.name,
       description: plan.description,
-      status: plan.status,
+      revision: plan.revision,
+      archived_at: plan.archived_at,
+      status: if(plan.archived_at, do: :archived, else: :active),
       start_date: plan.start_date,
       end_date: plan.end_date,
       client_id: plan.client_id,
       client: client_data(plan.client),
       creator_id: plan.creator_id,
       source_template_id: plan.source_template_id,
-      workouts: workouts_data(plan.workouts),
-      schedule: schedule_data(plan.workouts),
+      workouts: workouts_data(plan.workouts, plan.workout_schedule),
+      schedule: schedule_data(plan.workout_schedule),
       inserted_at: plan.inserted_at,
       updated_at: plan.updated_at
     }
   end
 
-  defp workouts_data(workouts) when is_list(workouts), do: Enum.map(workouts, &workout_data/1)
-  defp workouts_data(_), do: []
+  defp workouts_data(workouts, schedule) when is_list(workouts) and is_list(schedule),
+    do: Enum.map(workouts, &workout_data(&1, schedule))
 
-  # The weekday map, derived from where each workout says it sits. One workout
-  # per weekday is the rule `update_plan_schedule` writes, so the last writer of
-  # a weekday is the only one that can claim it.
-  defp schedule_data(workouts) when is_list(workouts) do
+  defp workouts_data(_, _), do: []
+
+  defp schedule_data(schedule) when is_list(schedule) do
     scheduled =
-      for workout <- workouts, weekday <- workout.weekdays, into: %{}, do: {weekday, workout.id}
+      Map.new(schedule, fn %WorkoutSchedule{} = row ->
+        {Atom.to_string(row.weekday), row.training_workout_id}
+      end)
 
     Map.new(TrainingWorkout.day_names(), fn weekday -> {weekday, scheduled[weekday]} end)
   end
 
   defp schedule_data(_), do: Map.new(TrainingWorkout.day_names(), &{&1, nil})
 
-  defp workout_data(%TrainingWorkout{} = workout) do
+  defp workout_data(%TrainingWorkout{} = workout, schedule) do
+    weekdays =
+      for row <- schedule,
+          row.training_workout_id == workout.id,
+          do: Atom.to_string(row.weekday)
+
     %{
       id: workout.id,
       name: workout.name,
-      weekdays: workout.weekdays,
+      position: workout.position,
+      weekdays: weekdays,
       training_plan_id: workout.training_plan_id,
-      workout_elements: elements_data(workout.workout_elements),
+      workout_elements: elements_data(workout.prescribed_exercises),
       inserted_at: workout.inserted_at,
       updated_at: workout.updated_at
     }
@@ -68,14 +79,13 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
   defp elements_data(elements) when is_list(elements), do: Enum.map(elements, &element_data/1)
   defp elements_data(_), do: []
 
-  defp element_data(%TrainingWorkoutExercise{} = element) do
+  defp element_data(%PrescribedExercise{} = element) do
     %{
       id: element.id,
       position: element.position,
       exercise_id: element.exercise_id,
-      training_workout_id: element.training_workout_id,
       exercise: exercise_data(element.exercise),
-      planned_sets: planned_sets_data(element.planned_sets),
+      planned_sets: planned_sets_data(element.prescribed_sets),
       inserted_at: element.inserted_at,
       updated_at: element.updated_at
     }

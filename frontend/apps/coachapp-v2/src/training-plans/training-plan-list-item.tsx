@@ -4,13 +4,6 @@ import {Dumbbell} from 'lucide-react';
 import {BrowseRow} from '@/@components/browse-list-box';
 import type {TrainingPlan} from '@/api/training-plan-builder';
 
-type TrainingPlanStatus = TrainingPlan['status'];
-
-const STATUS_MAP: Record<TrainingPlanStatus, {color: 'success' | 'warning'; label: string}> = {
-  active: {color: 'success', label: 'Active'},
-  archived: {color: 'warning', label: 'Archived'},
-};
-
 function getTrainingPlanMeta(plan: TrainingPlan): string {
   const workoutCount = plan.workouts.length;
   const exerciseCount = plan.workouts.reduce((sum, workout) => sum + workout.workout_elements.length, 0);
@@ -24,7 +17,7 @@ function getTrainingPlanMeta(plan: TrainingPlan): string {
 }
 
 export default function TrainingPlanListItem({isFirst, plan}: {isFirst?: boolean; plan: TrainingPlan}) {
-  const status = STATUS_MAP[plan.status];
+  const archived = plan.archived_at !== null;
   const meta = getTrainingPlanMeta(plan);
 
   return (
@@ -37,11 +30,11 @@ export default function TrainingPlanListItem({isFirst, plan}: {isFirst?: boolean
       title={plan.name}
       trailing={
         <Chip
-          color={status.color}
+          color={archived ? 'warning' : 'success'}
           size="sm"
           variant="soft"
         >
-          {status.label}
+          {archived ? 'Archived' : 'Active'}
         </Chip>
       }
     />

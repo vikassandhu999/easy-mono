@@ -34,9 +34,9 @@ export default function CreateTrainingPlan() {
         <Page.TitleGroup>
           <div className="flex items-center">
             <BackButton onPress={goBack} />
-            <Page.Title>Create training plan</Page.Title>
+            <Page.Title>Create training template</Page.Title>
           </div>
-          <Page.Description>Name the plan now, then build workouts next.</Page.Description>
+          <Page.Description>Name the reusable template now, then build its Prescription next.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
       <Page.Content bare>
@@ -49,8 +49,8 @@ export default function CreateTrainingPlan() {
             isSubmitting={createPlanMutation.isPending}
             onCancel={goBack}
             onSubmit={onSubmit}
-            submitLabel="Create plan"
-            submittingLabel="Creating plan"
+            submitLabel="Create template"
+            submittingLabel="Creating template"
           />
         </Page.Frame>
       </Page.Content>

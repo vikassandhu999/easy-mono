@@ -20,30 +20,30 @@ export default function ListTrainingPlans() {
   const deferredSearch = useDeferredValue(search);
   const list = useCoachTrainingPlansInfiniteQuery({
     search: deferredSearch,
-    status: status === 'all' ? undefined : status,
+    archived: status === 'all' ? undefined : status === 'archived',
   });
   const {fetchNextPage, isError, isLoading, items, refetch} = useInfiniteItems(list);
 
-  // Per-status counts for the tabs. `count` is the total matching the filter
+  // Per-archive-state counts for the tabs. `count` is the total matching the filter
   // regardless of `limit`, so `limit: 1` reads it back cheaply. `All` is derived
-  // rather than fetched — status is a closed active|archived enum.
-  const {data: activeData} = useListTrainingPlansQuery({limit: 1, status: 'active'});
-  const {data: archivedData} = useListTrainingPlansQuery({limit: 1, status: 'archived'});
+  // rather than fetched.
+  const {data: activeData} = useListTrainingPlansQuery({archived: false, limit: 1});
+  const {data: archivedData} = useListTrainingPlansQuery({archived: true, limit: 1});
   const activeCount = activeData?.count ?? 0;
   const archivedCount = archivedData?.count ?? 0;
 
   return (
     <BrowseScreen
-      action={{icon: <Plus />, label: 'Create plan', to: ROUTES.CREATE_TRAINING_PLAN}}
+      action={{icon: <Plus />, label: 'Create template', to: ROUTES.CREATE_TRAINING_PLAN}}
       backTo={ROUTES.LIBRARY}
       description="Reusable workout splits and progressions for your clients"
       empty={
         <ListEmptyState
-          createLabel="Create training plan"
+          createLabel="Create training template"
           createRoute={ROUTES.CREATE_TRAINING_PLAN}
-          emptyDescription="Create your first training plan to get started."
+          emptyDescription="Create your first Training Template to get started."
           hasFilter={!!deferredSearch || status !== 'all'}
-          nounPlural="training plans"
+          nounPlural="training templates"
         />
       }
       filters={{
@@ -65,13 +65,13 @@ export default function ListTrainingPlans() {
       )}
       search={{
         onChange: setSearch,
-        placeholder: 'Search training plans\u2026',
-        shortPlaceholder: 'Search plans\u2026',
+        placeholder: 'Search training templates\u2026',
+        shortPlaceholder: 'Search templates\u2026',
         value: search,
       }}
       shortTitle="Training"
       testId="tr"
-      title="Training plans"
+      title="Training templates"
     />
   );
 }

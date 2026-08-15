@@ -41,9 +41,9 @@ type ListCoachClientTrainingSessionsQuery = NonNullable<
 >;
 
 /** Filter params — offset/limit are handled by the infinite query machinery. */
-export type CoachTrainingPlansFilters = Pick<ListTrainingPlansQuery, 'status'> & {search?: string};
+export type CoachTrainingPlansFilters = Pick<ListTrainingPlansQuery, 'archived'> & {search?: string};
 
-export type ListTrainingPlansApiArg = Pick<ListTrainingPlansQuery, 'limit' | 'offset' | 'search' | 'status'>;
+export type ListTrainingPlansApiArg = Pick<ListTrainingPlansQuery, 'archived' | 'limit' | 'offset' | 'search'>;
 
 export function useCoachTrainingPlansInfiniteQuery(filters?: CoachTrainingPlansFilters, options?: {enabled?: boolean}) {
   return useInfiniteQuery({
@@ -55,7 +55,7 @@ export function useCoachTrainingPlansInfiniteQuery(filters?: CoachTrainingPlansF
           params: {
             query: {
               ...(filters?.search ? {search: filters.search} : {}),
-              ...(filters?.status ? {status: filters.status} : {}),
+              ...(filters?.archived !== undefined ? {archived: filters.archived} : {}),
               offset: pageParam,
               limit: PAGE_SIZE,
             },

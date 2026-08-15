@@ -3344,11 +3344,14 @@
       "ClientTrainingPlan": {
         "additionalProperties": false,
         "example": {
+          "archived_at": null,
           "description": "Upper/lower strength block.",
           "end_date": "2026-06-28",
           "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
           "inserted_at": "2026-05-30T12:00:00Z",
+          "kind": "client_plan",
           "name": "Four Day Strength",
+          "revision": 1,
           "schedule": {
             "friday": null,
             "monday": null,
@@ -3364,6 +3367,13 @@
           "workouts": []
         },
         "properties": {
+          "archived_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "description": {
             "nullable": true,
             "type": "string",
@@ -3389,8 +3399,22 @@
             "x-struct": null,
             "x-validate": null
           },
+          "kind": {
+            "enum": [
+              "client_plan"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "name": {
             "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "revision": {
+            "minimum": 1,
+            "type": "integer",
             "x-struct": null,
             "x-validate": null
           },
@@ -3430,8 +3454,11 @@
         },
         "required": [
           "id",
+          "kind",
           "name",
           "description",
+          "revision",
+          "archived_at",
           "status",
           "start_date",
           "end_date",
@@ -3491,8 +3518,7 @@
         "description": "Request body for creating a coach training plan template.",
         "example": {
           "description": "Upper/lower strength block.",
-          "name": "Four Day Strength Template",
-          "status": "active"
+          "name": "Four Day Strength Template"
         },
         "properties": {
           "description": {
@@ -3502,32 +3528,8 @@
             "x-struct": null,
             "x-validate": null
           },
-          "end_date": {
-            "format": "date",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
           "name": {
             "maxLength": 255,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "start_date": {
-            "format": "date",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "status": {
-            "enum": [
-              "active",
-              "archived"
-            ],
-            "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -7017,6 +7019,12 @@
             "x-struct": null,
             "x-validate": null
           },
+          "position": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
           "training_plan_id": {
             "format": "uuid",
             "type": "string",
@@ -7060,6 +7068,7 @@
         "required": [
           "id",
           "name",
+          "position",
           "weekdays",
           "workout_elements",
           "inserted_at",
@@ -10283,6 +10292,7 @@
       "TrainingPlan": {
         "additionalProperties": false,
         "example": {
+          "archived_at": null,
           "client": null,
           "client_id": null,
           "creator_id": "c8e8fe38-d9cc-4506-9514-8527a8b56d68",
@@ -10290,7 +10300,9 @@
           "end_date": null,
           "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
           "inserted_at": "2026-05-30T12:00:00Z",
+          "kind": "template",
           "name": "Four Day Strength Template",
+          "revision": 1,
           "schedule": {
             "friday": null,
             "monday": null,
@@ -10307,6 +10319,13 @@
           "workouts": []
         },
         "properties": {
+          "archived_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "client": {
             "allOf": [
               {
@@ -10355,8 +10374,23 @@
             "x-struct": null,
             "x-validate": null
           },
+          "kind": {
+            "enum": [
+              "template",
+              "client_plan"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "name": {
             "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "revision": {
+            "minimum": 1,
+            "type": "integer",
             "x-struct": null,
             "x-validate": null
           },
@@ -10403,8 +10437,11 @@
         },
         "required": [
           "id",
+          "kind",
           "name",
           "description",
+          "revision",
+          "archived_at",
           "status",
           "start_date",
           "end_date",
@@ -12725,7 +12762,7 @@
             }
           },
           {
-            "description": "Page size (default 20, max 20)",
+            "description": "Page size (default 20, max 100)",
             "in": "query",
             "name": "limit",
             "required": false,
@@ -12747,16 +12784,12 @@
             }
           },
           {
-            "description": "Only training plans with this status",
+            "description": "Filter by whether the Training Template is archived",
             "in": "query",
-            "name": "status",
+            "name": "archived",
             "required": false,
             "schema": {
-              "enum": [
-                "active",
-                "archived"
-              ],
-              "type": "string",
+              "type": "boolean",
               "x-struct": null,
               "x-validate": null
             }

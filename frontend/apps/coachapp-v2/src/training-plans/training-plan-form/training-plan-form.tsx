@@ -46,8 +46,8 @@ export default function TrainingPlanForm({
     <FormLayout onSubmit={handleSubmit(onSubmit)}>
       <FormPanel>
         <Fieldset>
-          <Fieldset.Legend>Plan details</Fieldset.Legend>
-          <Description>Name the plan and describe who it's for.</Description>
+          <Fieldset.Legend>Template details</Fieldset.Legend>
+          <Description>Name the reusable Training Template and describe its purpose.</Description>
 
           <Fieldset.Group>
             <FormTextField

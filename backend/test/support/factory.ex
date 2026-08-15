@@ -29,9 +29,11 @@ defmodule Easy.Factory do
   alias Easy.Training.TrainingExercise
   alias Easy.Training.TrainingMuscle
   alias Easy.Training.TrainingPlan
+  alias Easy.Training.TrainingPerformedSet
   alias Easy.Training.TrainingSession
   alias Easy.Training.TrainingWorkout, as: Workout
-  alias Easy.Training.TrainingWorkoutExercise, as: WorkoutElement
+  alias Easy.Training.PrescribedExercise, as: WorkoutElement
+  alias Easy.Training.WorkoutSchedule
 
   def user_factory do
     %User{
@@ -453,12 +455,13 @@ defmodule Easy.Factory do
 
   def training_plan_factory do
     business = build(:business)
-    creator = build(:coach, business: business)
+    creator = build(:user)
 
     %TrainingPlan{
+      kind: :template,
       name: sequence(:training_plan_name, &"Training Plan #{&1}"),
       description: "Weekly strength plan",
-      status: :active,
+      revision: 1,
       creator: creator,
       business: business
     }
@@ -467,8 +470,7 @@ defmodule Easy.Factory do
   def training_plan_attrs_factory do
     %{
       "name" => sequence(:training_plan_attr_name, &"Training Plan Attr #{&1}"),
-      "description" => "Created via test",
-      "status" => "active"
+      "description" => "Created via test"
     }
   end
 
@@ -477,7 +479,7 @@ defmodule Easy.Factory do
 
     %Workout{
       name: sequence(:workout_name, &"Workout #{&1}"),
-      weekdays: [],
+      position: 0,
       plan: training_plan,
       business: training_plan.business
     }
@@ -496,7 +498,20 @@ defmodule Easy.Factory do
       workout: workout,
       exercise: exercise,
       business: workout.business,
-      planned_sets: []
+      prescribed_sets: []
+    }
+  end
+
+  def prescribed_exercise_factory, do: workout_element_factory()
+
+  def workout_schedule_factory do
+    workout = build(:workout)
+
+    %WorkoutSchedule{
+      weekday: :monday,
+      business: workout.business,
+      plan: workout.plan,
+      workout: workout
     }
   end
 
@@ -525,12 +540,25 @@ defmodule Easy.Factory do
     client = build(:client, business: business, creator: creator)
 
     %TrainingSession{
+      kind: :freestyle,
       date: Date.utc_today(),
       started_at: DateTime.utc_now() |> DateTime.truncate(:second),
       state: :active,
       notes: "Session note",
       client: client,
       business: business
+    }
+  end
+
+  def performed_set_factory do
+    session = build(:workout_session)
+
+    %TrainingPerformedSet{
+      position: 0,
+      exercise_name: "Freestyle exercise",
+      set_type: :working,
+      session: session,
+      business: session.business
     }
   end
 

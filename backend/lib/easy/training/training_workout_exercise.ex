@@ -9,10 +9,10 @@ defmodule Easy.Training.TrainingWorkoutExercise do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  schema "training_workout_exercises" do
-    field :position, :integer, default: 0
+  schema "training_prescribed_exercises" do
+    field :position, :integer
 
-    embeds_many :planned_sets, PlannedSet, on_replace: :delete
+    embeds_many :planned_sets, PlannedSet, on_replace: :delete, source: :prescribed_sets
 
     belongs_to :business, Orgs.Business
     belongs_to :workout, TrainingWorkout, foreign_key: :training_workout_id

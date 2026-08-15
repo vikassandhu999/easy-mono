@@ -1738,11 +1738,14 @@ export interface components {
     /**
      * ClientTrainingPlan
      * @example {
+     *       "archived_at": null,
      *       "description": "Upper/lower strength block.",
      *       "end_date": "2026-06-28",
      *       "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
      *       "inserted_at": "2026-05-30T12:00:00Z",
+     *       "kind": "client_plan",
      *       "name": "Four Day Strength",
+     *       "revision": 1,
      *       "schedule": {
      *         "friday": null,
      *         "monday": null,
@@ -1759,6 +1762,8 @@ export interface components {
      *     }
      */
     ClientTrainingPlan: {
+      /** Format: date-time */
+      archived_at: string | null;
       description: string | null;
       /** Format: date */
       end_date: string | null;
@@ -1766,7 +1771,10 @@ export interface components {
       id: string;
       /** Format: date-time */
       inserted_at: string;
+      /** @enum {string} */
+      kind: 'client_plan';
       name: string;
+      revision: number;
       schedule: components['schemas']['TrainingSchedule'];
       /** Format: date */
       start_date: string | null;
@@ -1789,19 +1797,12 @@ export interface components {
      * @description Request body for creating a coach training plan template.
      * @example {
      *       "description": "Upper/lower strength block.",
-     *       "name": "Four Day Strength Template",
-     *       "status": "active"
+     *       "name": "Four Day Strength Template"
      *     }
      */
     TrainingPlanCreateRequest: {
       description?: string | null;
-      /** Format: date */
-      end_date?: string | null;
       name: string;
-      /** Format: date */
-      start_date?: string | null;
-      /** @enum {string|null} */
-      status?: 'active' | 'archived' | null;
     };
     /** WorkbenchCounts */
     WorkbenchCounts: {
@@ -2805,6 +2806,7 @@ export interface components {
       /** Format: date-time */
       inserted_at: string;
       name: string;
+      position: number;
       /** Format: uuid */
       training_plan_id?: string;
       /** Format: date-time */
@@ -3666,6 +3668,7 @@ export interface components {
     /**
      * TrainingPlan
      * @example {
+     *       "archived_at": null,
      *       "client": null,
      *       "client_id": null,
      *       "creator_id": "c8e8fe38-d9cc-4506-9514-8527a8b56d68",
@@ -3673,7 +3676,9 @@ export interface components {
      *       "end_date": null,
      *       "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
      *       "inserted_at": "2026-05-30T12:00:00Z",
+     *       "kind": "template",
      *       "name": "Four Day Strength Template",
+     *       "revision": 1,
      *       "schedule": {
      *         "friday": null,
      *         "monday": null,
@@ -3691,6 +3696,8 @@ export interface components {
      *     }
      */
     TrainingPlan: {
+      /** Format: date-time */
+      archived_at: string | null;
       client: components['schemas']['TrainingPlanClient'] | null;
       /** Format: uuid */
       client_id: string | null;
@@ -3703,7 +3710,10 @@ export interface components {
       id: string;
       /** Format: date-time */
       inserted_at: string;
+      /** @enum {string} */
+      kind: 'template' | 'client_plan';
       name: string;
+      revision: number;
       schedule: components['schemas']['TrainingSchedule'];
       /** Format: uuid */
       source_template_id: string | null;

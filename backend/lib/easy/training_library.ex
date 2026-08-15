@@ -2,10 +2,10 @@ defmodule Easy.Training.Library do
   alias Easy.Ctx
   alias Easy.LibraryMedia
   alias Easy.Repo
+  alias Easy.Training.PrescribedExercise
   alias Easy.Training.TrainingEquipment
   alias Easy.Training.TrainingExercise
   alias Easy.Training.TrainingMuscle
-  alias Easy.Training.TrainingWorkoutExercise
   alias Easy.Utils
 
   import Ecto.Query
@@ -169,7 +169,7 @@ defmodule Easy.Training.Library do
   # their live reference can be cleared without damaging history.
   defp ensure_exercise_not_in_use(business_id, exercise_id) do
     if Repo.exists?(
-         from(e in TrainingWorkoutExercise.for_business(business_id),
+         from(e in PrescribedExercise.for_business(business_id),
            where: e.exercise_id == ^exercise_id
          )
        ),

@@ -9,7 +9,18 @@ import Ecto.Query
 alias Easy.Repo
 
 alias Easy.Clients.Client
-alias Easy.Training.{TrainingPlan, TrainingWorkout, TrainingWorkoutExercise, PlannedSet, TrainingSession, TrainingPerformedSet, TrainingExercise}
+
+alias Easy.Training.{
+  PlannedSet,
+  PrescribedExercise,
+  TrainingExercise,
+  TrainingPerformedSet,
+  TrainingPlan,
+  TrainingSession,
+  TrainingWorkout,
+  WorkoutSchedule
+}
+
 alias Easy.Nutrition.{Plan, MealLog, FoodLogEntry, Food}
 alias Easy.Fitness.WeightEntry
 alias Easy.Forms.{FormTemplate, FormAssignment, FormSubmission, CheckInSchedule}
@@ -19,10 +30,11 @@ client = Repo.get!(Client, client_id)
 bid = client.business_id
 coach_id = client.assigned_coach_id || client.creator_id
 coach = Repo.get_by(Easy.Orgs.Coach, id: coach_id)
-coach_user_id = coach && coach.user_id
+coach_user_id = (coach && coach.user_id) || raise("client requires an assigned coach user")
 today = Date.utc_today()
 
 d = fn x -> Decimal.new(to_string(x)) end
+
 dt = fn %Date{} = date, {h, m} ->
   DateTime.new!(date, Time.new!(h, m, 0), "Etc/UTC") |> DateTime.truncate(:second)
 end
@@ -65,13 +77,14 @@ else
 
   plan =
     Repo.insert!(%TrainingPlan{
+      kind: :client_plan,
       name: plan_name,
       description: "6-week push/pull/legs block. Progressive overload, ~4 sessions per week.",
-      status: :active,
+      revision: 1,
       start_date: Date.add(today, -42),
       end_date: nil,
       business_id: bid,
-      creator_id: coach_id,
+      creator_id: coach_user_id,
       client_id: client_id
     })
 
@@ -81,11 +94,11 @@ else
     end
   end
 
-  make_workout = fn name, weekdays, exercises ->
+  make_workout = fn name, position, exercises ->
     w =
       Repo.insert!(%TrainingWorkout{
         name: name,
-        weekdays: weekdays,
+        position: position,
         business_id: bid,
         training_plan_id: plan.id
       })
@@ -94,28 +107,63 @@ else
       exercises
       |> Enum.with_index()
       |> Enum.map(fn {ex, pos} ->
-        Repo.insert!(%TrainingWorkoutExercise{
-          position: pos,
-          business_id: bid,
-          training_workout_id: w.id,
-          exercise_id: ex.id,
-          planned_sets: planned_sets.(3, "8", 60),
-          exercise: nil
-        })
-        |> Map.put(:name, ex.name)
-        |> Map.put(:ex_name, ex.name)
-        |> Map.put(:ex_id, ex.id)
+        sets = planned_sets.(3, "8", 60)
+
+        prescribed =
+          Repo.insert!(%PrescribedExercise{
+            position: pos,
+            business_id: bid,
+            training_workout_id: w.id,
+            exercise_id: ex.id,
+            prescribed_sets: sets,
+            exercise: nil
+          })
+
+        %{
+          prescription_id: prescribed.id,
+          ex_name: ex.name,
+          ex_id: ex.id,
+          sets: sets
+        }
       end)
 
     {w, elements}
   end
 
-  # ~4 days/week, written straight onto each workout
-  {push_w, push_els} = make_workout.("Push", ["monday", "saturday"], Enum.slice(ex_pool, 0, 3))
-  {pull_w, pull_els} = make_workout.("Pull", ["tuesday"], Enum.slice(ex_pool, 3, 3))
-  {legs_w, legs_els} = make_workout.("Legs", ["thursday"], Enum.slice(ex_pool, 6, 3))
+  {push_w, push_els} = make_workout.("Push", 0, Enum.slice(ex_pool, 0, 3))
+  {pull_w, pull_els} = make_workout.("Pull", 1, Enum.slice(ex_pool, 3, 3))
+  {legs_w, legs_els} = make_workout.("Legs", 2, Enum.slice(ex_pool, 6, 3))
 
   workout_for = %{monday: {push_w, push_els}, tuesday: {pull_w, pull_els}, thursday: {legs_w, legs_els}, saturday: {push_w, push_els}}
+
+  for {weekday, {workout, _elements}} <- workout_for do
+    Repo.insert!(%WorkoutSchedule{
+      weekday: weekday,
+      business_id: bid,
+      training_plan_id: plan.id,
+      training_workout_id: workout.id
+    })
+  end
+
+  snapshot_for = fn workout, elements ->
+    %{
+      "version" => 1,
+      "plan" => %{"id" => plan.id, "name" => plan.name, "revision" => plan.revision},
+      "workout" => %{
+        "id" => workout.id,
+        "name" => workout.name,
+        "exercises" =>
+          Enum.map(elements, fn element ->
+            %{
+              "ref" => element.prescription_id,
+              "exercise_id" => element.ex_id,
+              "exercise_name" => element.ex_name,
+              "sets" => Enum.map(element.sets, &PlannedSet.to_snapshot/1)
+            }
+          end)
+      }
+    }
+  end
 
   scheduled_days = MapSet.new([:monday, :tuesday, :thursday, :saturday])
 
@@ -133,6 +181,7 @@ else
 
   perform_sets = fn session_id, els, week_idx ->
     base_bump = week_idx * 2
+
     els
     |> Enum.with_index()
     |> Enum.reduce(0, fn {el, ex_idx}, pos ->
@@ -145,20 +194,22 @@ else
       |> Enum.with_index()
       |> Enum.reduce(pos, fn {{stype, reps, load}, i}, p ->
         last_working? = stype == :working and i == length(sets) - 1
+
         Repo.insert!(%TrainingPerformedSet{
           exercise_name: el.ex_name,
+          snapshot_exercise_ref: el.prescription_id,
           set_type: stype,
           position: p,
           reps: reps,
           load_value: d.(load),
           load_unit: :kg,
           rpe: if(last_working?, do: d.("8.5"), else: nil),
-          completed: true,
           notes: if(last_working? and ex_idx == 0, do: "Felt strong, could add weight next week", else: nil),
           business_id: bid,
           training_session_id: session_id,
           exercise_id: el.ex_id
         })
+
         p + 1
       end)
     end)
@@ -175,10 +226,15 @@ else
 
       session =
         Repo.insert!(%TrainingSession{
+          kind: :planned,
           date: date,
           started_at: dt.(date, {18, 0}),
-          ended_at: dt.(date, {19, 5}),
+          closed_at: dt.(date, {19, 5}),
           state: :completed,
+          snapshot_version: 1,
+          prescription_snapshot: snapshot_for.(w, els),
+          source_plan_id: plan.id,
+          source_workout_id: w.id,
           soreness_rating: if(add_feedback?, do: Enum.random(2..4), else: nil),
           notes: if(add_feedback?, do: "Good session. Legs a bit sore from last time but pushed through.", else: nil),
           business_id: bid,
@@ -196,33 +252,38 @@ else
 
   active =
     Repo.insert!(%TrainingSession{
+      kind: :planned,
       date: today,
       started_at: dt.(today, {17, 30}),
-      ended_at: nil,
+      closed_at: nil,
       state: :active,
+      snapshot_version: 1,
+      prescription_snapshot: snapshot_for.(w_today, els_today),
+      source_plan_id: plan.id,
+      source_workout_id: w_today.id,
       business_id: bid,
-      client_id: client_id,
-      training_workout_id: w_today.id
+      client_id: client_id
     })
 
-  # a few sets already logged in the in-progress session (last one not completed)
+  # a few sets already logged in the in-progress session
   els_today
   |> Enum.slice(0, 2)
   |> Enum.with_index()
   |> Enum.reduce(0, fn {el, _ex_idx}, pos ->
-    Enum.reduce(0..2, pos, fn i, p ->
+    Enum.reduce(0..2, pos, fn _i, p ->
       Repo.insert!(%TrainingPerformedSet{
         exercise_name: el.ex_name,
+        snapshot_exercise_ref: el.prescription_id,
         set_type: :working,
         position: p,
         reps: "8",
         load_value: d.(62),
         load_unit: :kg,
-        completed: i < 2,
         business_id: bid,
         training_session_id: active.id,
         exercise_id: el.ex_id
       })
+
       p + 1
     end)
   end)
@@ -279,9 +340,10 @@ else
   fp = fn i -> Enum.at(food_pool, rem(i, length(food_pool))) end
   r1 = fn x -> Float.round(x * 1.0, 1) end
 
-  # build an entry map (as a struct) from a food + grams + source + planned index
-  entry = fn meal_log_id, food, grams, source, planned_idx ->
+  # build an entry from a food and its frozen planned-item identity
+  entry = fn meal_log_id, food, grams, source, planned_item_id ->
     factor = grams / 100.0
+
     %FoodLogEntry{
       food_name: food.name,
       amount: grams * 1.0,
@@ -292,8 +354,7 @@ else
       carbs_g: r1.((food.c || 0.0) * factor),
       fat_g: r1.((food.fat || 0.0) * factor),
       fiber_g: r1.((food.fiber || 0.0) * factor),
-      source: source,
-      planned_item_index: planned_idx,
+      planned_item_id: if(source == :unplanned, do: nil, else: planned_item_id),
       nutrition_meal_log_id: meal_log_id,
       food_id: food.id
     }
@@ -302,7 +363,9 @@ else
   # snapshot item map matching the shape build_planned_snapshot/2 produces
   snap_item = fn food, grams ->
     factor = grams / 100.0
+
     %{
+      "id" => Ecto.UUID.generate(),
       "food_name" => food.name,
       "amount" => grams,
       "unit" => "g",
@@ -362,7 +425,7 @@ else
                     true -> {:planned, food}
                   end
 
-                {mls, [{this_food, logged_grams, source, pos} | es], [snap | ss]}
+                {mls, [{this_food, logged_grams, source, snap["id"]} | es], [snap | ss]}
               end)
 
             snap_items_ordered = Enum.reverse(snap_items)
@@ -397,8 +460,8 @@ else
               })
 
             inserted =
-              Enum.reduce(entry_specs, 0.0, fn {food, grams, source, pos}, kcal_acc ->
-                e = entry.(meal_log.id, food, grams, source, pos)
+              Enum.reduce(entry_specs, 0.0, fn {food, grams, source, planned_item_id}, kcal_acc ->
+                e = entry.(meal_log.id, food, grams, source, planned_item_id)
                 Repo.insert!(e)
                 kcal_acc + e.calories
               end)

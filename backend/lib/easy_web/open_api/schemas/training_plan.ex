@@ -11,16 +11,12 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlanCreateRequest do
       additionalProperties: false,
       properties: %{
         name: %Schema{type: :string, maxLength: 255},
-        description: %Schema{type: :string, maxLength: 5000, nullable: true},
-        status: %Schema{type: :string, enum: ["active", "archived"], nullable: true},
-        start_date: %Schema{type: :string, format: :date, nullable: true},
-        end_date: %Schema{type: :string, format: :date, nullable: true}
+        description: %Schema{type: :string, maxLength: 5000, nullable: true}
       },
       required: [:name],
       example: %{
         "name" => "Four Day Strength Template",
-        "description" => "Upper/lower strength block.",
-        "status" => "active"
+        "description" => "Upper/lower strength block."
       }
     },
     struct?: false
@@ -218,13 +214,14 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlanWorkout do
         %{
           id: %Schema{type: :string, format: :uuid},
           name: %Schema{type: :string},
+          position: %Schema{type: :integer, minimum: 0},
           weekdays: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.days_of_week()}},
           training_plan_id: %Schema{type: :string, format: :uuid},
           workout_elements: %Schema{type: :array, items: TrainingPlanWorkoutExercise}
         },
         Shared.timestamps()
       ),
-    required: [:id, :name, :weekdays, :workout_elements, :inserted_at, :updated_at]
+    required: [:id, :name, :position, :weekdays, :workout_elements, :inserted_at, :updated_at]
   })
 end
 
@@ -248,8 +245,11 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlan do
       Map.merge(
         %{
           id: %Schema{type: :string, format: :uuid},
+          kind: %Schema{type: :string, enum: ["template", "client_plan"]},
           name: %Schema{type: :string},
           description: %Schema{type: :string, nullable: true},
+          revision: %Schema{type: :integer, minimum: 1},
+          archived_at: %Schema{type: :string, format: :"date-time", nullable: true},
           status: %Schema{type: :string, enum: ["active", "archived"]},
           start_date: %Schema{type: :string, format: :date, nullable: true},
           end_date: %Schema{type: :string, format: :date, nullable: true},
@@ -264,8 +264,11 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlan do
       ),
     required: [
       :id,
+      :kind,
       :name,
       :description,
+      :revision,
+      :archived_at,
       :status,
       :start_date,
       :end_date,
@@ -280,8 +283,11 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlan do
     ],
     example: %{
       "id" => "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
+      "kind" => "template",
       "name" => "Four Day Strength Template",
       "description" => "Upper/lower strength block.",
+      "revision" => 1,
+      "archived_at" => nil,
       "status" => "active",
       "start_date" => nil,
       "end_date" => nil,
@@ -319,8 +325,11 @@ defmodule EasyWeb.OpenApi.Schemas.ClientTrainingPlan do
       Map.merge(
         %{
           id: %Schema{type: :string, format: :uuid},
+          kind: %Schema{type: :string, enum: ["client_plan"]},
           name: %Schema{type: :string},
           description: %Schema{type: :string, nullable: true},
+          revision: %Schema{type: :integer, minimum: 1},
+          archived_at: %Schema{type: :string, format: :"date-time", nullable: true},
           status: %Schema{type: :string, enum: ["active", "archived"]},
           start_date: %Schema{type: :string, format: :date, nullable: true},
           end_date: %Schema{type: :string, format: :date, nullable: true},
@@ -331,8 +340,11 @@ defmodule EasyWeb.OpenApi.Schemas.ClientTrainingPlan do
       ),
     required: [
       :id,
+      :kind,
       :name,
       :description,
+      :revision,
+      :archived_at,
       :status,
       :start_date,
       :end_date,
@@ -343,8 +355,11 @@ defmodule EasyWeb.OpenApi.Schemas.ClientTrainingPlan do
     ],
     example: %{
       "id" => "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
+      "kind" => "client_plan",
       "name" => "Four Day Strength",
       "description" => "Upper/lower strength block.",
+      "revision" => 1,
+      "archived_at" => nil,
       "status" => "active",
       "start_date" => "2026-06-01",
       "end_date" => "2026-06-28",

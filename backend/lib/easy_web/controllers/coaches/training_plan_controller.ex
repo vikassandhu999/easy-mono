@@ -2,7 +2,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.Training.TrainingPlan
+  alias Easy.Training.Programming
   alias Easy.TrainingPlans, as: Plans
 
   alias EasyWeb.OpenApi.Schemas.{
@@ -29,13 +29,13 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     security: [%{"bearerAuth" => []}],
     parameters: [
       Operation.parameter(:offset, :query, :integer, "Number of training plans to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 20)", required: false),
+      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 100)", required: false),
       Operation.parameter(:search, :query, :string, "Case-insensitive training plan name search", required: false),
       Operation.parameter(
-        :status,
+        :archived,
         :query,
-        %Schema{type: :string, enum: ["active", "archived"]},
-        "Only training plans with this status",
+        %Schema{type: :boolean},
+        "Filter by whether the Training Template is archived",
         required: false
       )
     ],
@@ -133,7 +133,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
-    with {:ok, plan} <- Plans.create_plan(conn.assigns.ctx, conn.body_params) do
+    with {:ok, plan} <- Programming.create_template(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, plan: plan)
@@ -172,18 +172,24 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     offset = parse_integer(params, "offset", 0)
     limit = parse_integer(params, "limit", 20)
     search = Map.get(params, "search", "")
-    status = parse_enum(params, "status", TrainingPlan.statuses())
+    archived = parse_optional_boolean(Map.get(params, "archived"))
 
-    with {:ok, %{plans: plans, count: count}} <-
-           Plans.list_template_plans(conn.assigns.ctx,
+    with {:ok, %{templates: plans, count: count}} <-
+           Programming.list_templates(conn.assigns.ctx,
              search: search,
-             status: status,
+             archived: archived,
              offset: offset,
              limit: limit
            ) do
       render(conn, :index, plans: plans, count: count)
     end
   end
+
+  defp parse_optional_boolean(true), do: true
+  defp parse_optional_boolean("true"), do: true
+  defp parse_optional_boolean(false), do: false
+  defp parse_optional_boolean("false"), do: false
+  defp parse_optional_boolean(_value), do: nil
 
   @spec duplicate(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def duplicate(conn, _params) do

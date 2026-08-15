@@ -26,4 +26,11 @@ if (
   throw new Error('active and archived Client Plan lists must use distinct cache keys');
 }
 
+if (
+  JSON.stringify(trainingPlanKeys.forClient('client-id', {status: 'active'})) ===
+  JSON.stringify(trainingPlanKeys.forClientInfinite('client-id', {status: 'active'}))
+) {
+  throw new Error('flat and infinite Client Plan lists must use distinct cache keys');
+}
+
 console.log('query-keys: all checks passed');

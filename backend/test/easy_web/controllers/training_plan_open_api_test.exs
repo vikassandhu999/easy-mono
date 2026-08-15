@@ -45,7 +45,7 @@ defmodule EasyWeb.TrainingPlanOpenApiTest do
     assert assignment.responses[201]
 
     assert Map.fetch!(assignment.responses[201].content["application/json"].schema, :"$ref") ==
-             "#/components/schemas/ClientTrainingPlanResponse"
+             "#/components/schemas/CoachClientTrainingPlanResponse"
 
     assert assignment.responses[404]
     assert assignment.responses[422]

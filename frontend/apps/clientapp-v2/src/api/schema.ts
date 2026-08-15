@@ -1026,6 +1026,13 @@ export interface components {
     NutritionMealResponse: {
       data: components['schemas']['NutritionMeal'];
     };
+    /** CoachClientTrainingPlan */
+    CoachClientTrainingPlan: components['schemas']['TrainingPlan'] & {
+      /** @enum {string} */
+      kind: 'client_plan';
+      /** @enum {string} */
+      lifecycle: 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived';
+    };
     /** TrainingPlanExercise */
     TrainingPlanExercise: {
       /** @enum {string|null} */
@@ -1752,7 +1759,6 @@ export interface components {
      *       "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
      *       "inserted_at": "2026-05-30T12:00:00Z",
      *       "kind": "client_plan",
-     *       "lifecycle": "current",
      *       "name": "Four Day Strength",
      *       "revision": 1,
      *       "schedule": {
@@ -1782,8 +1788,6 @@ export interface components {
       inserted_at: string;
       /** @enum {string} */
       kind: 'client_plan';
-      /** @enum {string} */
-      lifecycle: 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived';
       name: string;
       revision: number;
       schedule: components['schemas']['TrainingSchedule'];
@@ -2248,6 +2252,10 @@ export interface components {
       subscription_ends_on?: string | null;
       /** Format: date */
       subscription_started_on?: string | null;
+    };
+    /** CoachClientTrainingPlanResponse */
+    CoachClientTrainingPlanResponse: {
+      data: components['schemas']['CoachClientTrainingPlan'];
     };
     /** ClientProfileCoach */
     ClientProfileCoach: {
@@ -3033,6 +3041,11 @@ export interface components {
       reviewed_at: string | null;
       /** Format: date-time */
       submitted_at: string;
+    };
+    /** CoachClientTrainingPlanListResponse */
+    CoachClientTrainingPlanListResponse: {
+      count: number;
+      data: components['schemas']['CoachClientTrainingPlan'][];
     };
     /** NutritionPlanListResponse */
     NutritionPlanListResponse: {

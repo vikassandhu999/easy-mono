@@ -456,6 +456,47 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionMealResponse",
         "x-validate": null
       },
+      "CoachClientTrainingPlan": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TrainingPlan"
+          },
+          {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "client_plan"
+                ],
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "lifecycle": {
+                "enum": [
+                  "incomplete",
+                  "upcoming",
+                  "current",
+                  "ended",
+                  "archived"
+                ],
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "required": [
+              "kind",
+              "lifecycle"
+            ],
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          }
+        ],
+        "title": "CoachClientTrainingPlan",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.CoachClientTrainingPlan",
+        "x-validate": null
+      },
       "TrainingPlanExercise": {
         "additionalProperties": false,
         "properties": {
@@ -3376,7 +3417,6 @@
           "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
           "inserted_at": "2026-05-30T12:00:00Z",
           "kind": "client_plan",
-          "lifecycle": "current",
           "name": "Four Day Strength",
           "revision": 1,
           "schedule": {
@@ -3429,18 +3469,6 @@
           "kind": {
             "enum": [
               "client_plan"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "lifecycle": {
-            "enum": [
-              "incomplete",
-              "upcoming",
-              "current",
-              "ended",
-              "archived"
             ],
             "type": "string",
             "x-struct": null,
@@ -3499,7 +3527,6 @@
           "revision",
           "archived_at",
           "status",
-          "lifecycle",
           "start_date",
           "end_date",
           "workouts",
@@ -5164,6 +5191,21 @@
         "title": "ClientUpdateRequest",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "CoachClientTrainingPlanResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CoachClientTrainingPlan"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "CoachClientTrainingPlanResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.CoachClientTrainingPlanResponse",
         "x-validate": null
       },
       "ClientProfileCoach": {
@@ -8082,6 +8124,33 @@
         "title": "WorkbenchCheckInSubmission",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchCheckInSubmission",
+        "x-validate": null
+      },
+      "CoachClientTrainingPlanListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/CoachClientTrainingPlan"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data",
+          "count"
+        ],
+        "title": "CoachClientTrainingPlanListResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.CoachClientTrainingPlanListResponse",
         "x-validate": null
       },
       "NutritionPlanListResponse": {
@@ -14714,7 +14783,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClientTrainingPlanListResponse"
+                  "$ref": "#/components/schemas/CoachClientTrainingPlanListResponse"
                 }
               }
             },
@@ -23894,7 +23963,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClientTrainingPlanResponse"
+                  "$ref": "#/components/schemas/CoachClientTrainingPlanResponse"
                 }
               }
             },

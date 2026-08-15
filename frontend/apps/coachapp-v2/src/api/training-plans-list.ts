@@ -26,20 +26,21 @@ export type TrainingPlanCreateRequest = components['schemas']['TrainingPlanCreat
 export type TrainingPlanUpdateRequest = components['schemas']['TrainingPlanUpdateRequest'];
 export type TrainingPlanRevisionRequest = components['schemas']['TrainingPlanRevisionRequest'];
 export type TrainingPlanAssignRequest = components['schemas']['TrainingPlanAssignRequest'];
-export type ClientTrainingPlan = components['schemas']['ClientTrainingPlan'];
-export type ClientTrainingPlanListResponse = components['schemas']['ClientTrainingPlanListResponse'];
+export type ClientTrainingPlan = components['schemas']['CoachClientTrainingPlan'];
+export type ClientTrainingPlanListResponse = components['schemas']['CoachClientTrainingPlanListResponse'];
 export type TrainingSession = components['schemas']['TrainingSession'];
 export type TrainingPerformedSet = components['schemas']['TrainingPerformedSet'];
 export type TrainingSessionListResponse = components['schemas']['TrainingSessionListResponse'];
 
 type TrainingPlanResponse = components['schemas']['TrainingPlanResponse'];
-type ClientTrainingPlanResponse = components['schemas']['ClientTrainingPlanResponse'];
+type ClientTrainingPlanResponse = components['schemas']['CoachClientTrainingPlanResponse'];
 type TrainingSessionResponse = components['schemas']['TrainingSessionResponse'];
 
 type ListTrainingPlansQuery = NonNullable<paths['/v1/coach/training-plans']['get']['parameters']['query']>;
 type ListCoachClientTrainingPlansQuery = NonNullable<
   paths['/v1/coach/clients/{client_id}/training-plans']['get']['parameters']['query']
 >;
+type CoachClientTrainingPlansFilters = Omit<ListCoachClientTrainingPlansQuery, 'limit' | 'offset'>;
 type ListCoachClientTrainingSessionsQuery = NonNullable<
   paths['/v1/coach/clients/{client_id}/training-sessions']['get']['parameters']['query']
 >;
@@ -99,6 +100,31 @@ export function useListCoachClientTrainingPlansQuery(
         }),
       ) as Promise<ClientTrainingPlanListResponse>,
     enabled: options?.enabled ?? true,
+  });
+}
+
+export function useCoachClientTrainingPlansInfiniteQuery(
+  clientId: string,
+  filters?: CoachClientTrainingPlansFilters,
+  options?: {enabled?: boolean},
+) {
+  return useInfiniteQuery({
+    queryKey: trainingPlanKeys.forClientInfinite(clientId, filters),
+    enabled: options?.enabled ?? true,
+    queryFn: ({pageParam}) =>
+      call(
+        client.GET('/v1/coach/clients/{client_id}/training-plans', {
+          params: {
+            path: {client_id: clientId},
+            query: {...filters, limit: PAGE_SIZE, offset: pageParam},
+          },
+        }),
+      ) as Promise<ClientTrainingPlanListResponse>,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+      const nextOffset = lastPageParam + PAGE_SIZE;
+      return nextOffset < lastPage.count ? nextOffset : undefined;
+    },
   });
 }
 
@@ -228,7 +254,7 @@ export function useAssignTrainingPlanMutation() {
         ),
       ) as Promise<ClientTrainingPlanResponse>,
     onSuccess: (_data, {clientId}) => {
-      qc.invalidateQueries({queryKey: trainingPlanKeys.forClient(clientId)});
+      qc.invalidateQueries({queryKey: trainingPlanKeys.forClientLists(clientId)});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
       // Assignment changes Programming membership and can auto-advance
       // `stage` on the open client screen.

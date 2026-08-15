@@ -9,7 +9,7 @@ defmodule EasyWeb.Coaches.ClientPlanController do
   alias EasyWeb.Coaches.{NutritionPlanJSON, TrainingPlanJSON}
 
   alias EasyWeb.OpenApi.Schemas.{
-    ClientTrainingPlanListResponse,
+    CoachClientTrainingPlanListResponse,
     ErrorResponse,
     NutritionPlanListResponse
   }
@@ -35,7 +35,7 @@ defmodule EasyWeb.Coaches.ClientPlanController do
       )
     ],
     responses: [
-      ok: {"Training plans", "application/json", ClientTrainingPlanListResponse},
+      ok: {"Training plans", "application/json", CoachClientTrainingPlanListResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse}
     ]

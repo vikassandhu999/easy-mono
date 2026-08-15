@@ -1,6 +1,6 @@
 import type {components} from './schema.ts';
 
-export type ClientPlanLifecycle = components['schemas']['ClientTrainingPlan']['lifecycle'];
+export type ClientPlanLifecycle = components['schemas']['CoachClientTrainingPlan']['lifecycle'];
 
 const CLIENT_PLAN_LIFECYCLE_LABELS: Record<ClientPlanLifecycle, string> = {
   archived: 'Archived',

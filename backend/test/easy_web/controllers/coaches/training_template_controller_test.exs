@@ -464,7 +464,7 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
       assert copied_prescribed_id != prescribed.id
       assert scheduled_workout_id == copied_workout_id
       assert Repo.get!(Easy.Clients.Client, client.id).stage == :coaching
-      assert_schema(data, "TrainingPlan", EasyWeb.ApiSpec.spec())
+      assert_schema(data, "CoachClientTrainingPlan", EasyWeb.ApiSpec.spec())
     end
 
     test "conceals archived and inaccessible Assignment inputs", %{conn: conn} do

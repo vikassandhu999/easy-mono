@@ -11,8 +11,8 @@ import {clientPlanLifecycleLabel, trainingPlanRevisionRequest} from '@/api/train
 import {
   type ClientTrainingPlan,
   useArchiveTrainingPlanMutation,
+  useCoachClientTrainingPlansInfiniteQuery,
   useCoachClientTrainingSessionsInfiniteQuery,
-  useListCoachClientTrainingPlansQuery,
 } from '@/api/training-plans-list';
 import {PlanPanel} from '@/clients/client-screen/plan-panel';
 import {DetailRow} from '@/clients/components/detail-row';
@@ -47,10 +47,10 @@ export function TrainingTab({client}: {client: Client}) {
   }, [params, setParams]);
 
   const window = lastNDays(56);
-  const plans = useListCoachClientTrainingPlansQuery(client.id, {limit: 100, status: 'active'});
-  const archivedPlans = useListCoachClientTrainingPlansQuery(
+  const plans = useCoachClientTrainingPlansInfiniteQuery(client.id, {status: 'active'});
+  const archivedPlans = useCoachClientTrainingPlansInfiniteQuery(
     client.id,
-    {limit: 100, status: 'archived'},
+    {status: 'archived'},
     {enabled: showArchived},
   );
   // An eight-week window can hold more than the server's 20-row page cap, so
@@ -60,15 +60,16 @@ export function TrainingTab({client}: {client: Client}) {
     to: window[window.length - 1]!,
   });
 
-  const activePlans = plans.data?.data ?? [];
-  const archivedPlanRows = archivedPlans.data?.data ?? [];
+  const activePlans = plans.data?.pages.flatMap((page) => page.data) ?? [];
+  const archivedPlanRows = archivedPlans.data?.pages.flatMap((page) => page.data) ?? [];
 
   const endPlan = async (plan: ClientTrainingPlan) => {
     try {
       await archivePlanMutation.mutateAsync({id: plan.id, body: trainingPlanRevisionRequest(plan)});
     } catch (err) {
       const handled = await handleStaleTrainingPlanConflict(err, {
-        refetchLatest: async () => (await plans.refetch()).data?.data.find(({id}) => id === plan.id),
+        refetchLatest: async () =>
+          (await plans.refetch()).data?.pages.flatMap((page) => page.data).find(({id}) => id === plan.id),
         notify: (message) => {
           toast.info(message, {timeout: 4000});
         },
@@ -152,6 +153,19 @@ export function TrainingTab({client}: {client: Client}) {
         ))
       )}
 
+      {plans.hasNextPage && (
+        <div className="flex justify-center">
+          <Button
+            isPending={plans.isFetchingNextPage}
+            onPress={() => plans.fetchNextPage()}
+            size="sm"
+            variant="ghost"
+          >
+            Show more plans
+          </Button>
+        </div>
+      )}
+
       <div className="flex justify-start">
         <Button
           isPending={showArchived && archivedPlans.isPending}
@@ -174,6 +188,18 @@ export function TrainingTab({client}: {client: Client}) {
             onOpen={() => navigate(ROUTES.TRAINING_PLAN_DETAIL.replace(':id', plan.id))}
           />
         ))}
+      {showArchived && archivedPlans.hasNextPage && (
+        <div className="flex justify-center">
+          <Button
+            isPending={archivedPlans.isFetchingNextPage}
+            onPress={() => archivedPlans.fetchNextPage()}
+            size="sm"
+            variant="ghost"
+          >
+            Show more archived plans
+          </Button>
+        </div>
+      )}
 
       {rows.length > 0 && (
         <SectionCard divided>

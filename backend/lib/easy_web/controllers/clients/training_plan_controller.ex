@@ -13,6 +13,8 @@ defmodule EasyWeb.Clients.TrainingPlanController do
 
   alias OpenApiSpex.{Operation, Schema}
 
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:coverage]
+
   tags ["client training plans"]
 
   operation :coverage,
@@ -32,7 +34,8 @@ defmodule EasyWeb.Clients.TrainingPlanController do
     ],
     responses: [
       ok: {"Resolved training Coverage", "application/json", ClientTrainingCoverageResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      unprocessable_entity: {"Invalid UTC date", "application/json", ErrorResponse}
     ]
 
   operation :index,
@@ -66,7 +69,7 @@ defmodule EasyWeb.Clients.TrainingPlanController do
 
   @spec coverage(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def coverage(conn, params) do
-    date = Easy.Utils.safe_date(params["date"]) || Date.utc_today()
+    date = params["date"] || Date.utc_today()
 
     with {:ok, result} <- Programming.resolve_client_coverage(conn.assigns.ctx, date) do
       render(conn, :coverage, coverage: result)

@@ -13,6 +13,7 @@ import {
   useListClientTrainingSessionsQuery,
   useResolveClientTrainingCoverageQuery,
 } from '@/api/training';
+import {clientTrainingPlanFromCoverage} from '@/api/training-coverage';
 import {
   currentPlanWeek,
   currentWeekDates,
@@ -149,7 +150,7 @@ export default function TrainingHome() {
   const {data: sessions, isLoading: loadingSessions} = useListClientTrainingSessionsQuery({});
   const createSession = useCreateClientTrainingSessionMutation();
   const starting = createSession.isPending;
-  const plan = coverage?.data?.plan;
+  const plan = clientTrainingPlanFromCoverage(coverage);
   const active = sessions?.data.find((session) => session.state === 'active');
   const recent = (sessions?.data ?? []).filter((session) => session.state === 'completed').slice(0, 3);
 
@@ -200,7 +201,7 @@ export default function TrainingHome() {
             plan={plan}
             starting={starting}
           />
-          {coverage.data?.workout == null ? (
+          {coverage?.data?.workout == null ? (
             <div className="mb-5 rounded-2xl bg-surface-secondary p-4 text-center text-sm text-muted">
               Rest day — recover well.
             </div>

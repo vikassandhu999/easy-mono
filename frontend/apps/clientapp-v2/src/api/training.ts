@@ -8,6 +8,7 @@ import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack
 import {call, client} from '@/api/client';
 import {exerciseKeys, sessionKeys, trainingPlanKeys} from '@/api/keys';
 import type {components, paths} from '@/api/schema';
+import {clientTrainingCoverageRequest} from '@/api/training-coverage';
 
 export type ClientTrainingPlan = components['schemas']['ClientTrainingPlan'];
 export type ClientTrainingCoverage = components['schemas']['ClientTrainingCoverage'];
@@ -38,13 +39,11 @@ export function useListClientTrainingPlansQuery(query: PlanListQuery = {}) {
 }
 
 export function useResolveClientTrainingCoverageQuery(date?: string) {
-  const query = date ? {date} : {};
-
   return useQuery({
     queryKey: trainingPlanKeys.coverage(date),
     queryFn: () =>
       call(
-        client.GET('/v1/client/training-plans/coverage', {params: {query}}),
+        client.GET('/v1/client/training-plans/coverage', clientTrainingCoverageRequest(date)),
       ) as Promise<ClientTrainingCoverageResponse>,
   });
 }

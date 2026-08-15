@@ -12,6 +12,7 @@ import {
   useListClientTrainingSessionsQuery,
   useResolveClientTrainingCoverageQuery,
 } from '@/api/training';
+import {clientTrainingPlanFromCoverage} from '@/api/training-coverage';
 import CheckinNudgeCard from '@/checkins/checkin-nudge-card';
 import IntakeCard from '@/checkins/intake-card';
 import {dayConsumed, dayTargets} from '@/nutrition/nutrition-utils';
@@ -29,7 +30,7 @@ export default function TodayHome() {
   const createSession = useCreateClientTrainingSessionMutation();
   const starting = createSession.isPending;
   const profile = profileData?.data;
-  const plan = coverageData?.data?.plan;
+  const plan = clientTrainingPlanFromCoverage(coverageData);
   const workout = coverageData?.data?.workout;
   const activeSession = sessionsData?.data.find((session) => session.state === 'active');
   const coachName = profile?.coach?.first_name || 'your coach';

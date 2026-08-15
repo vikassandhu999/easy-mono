@@ -1,6 +1,8 @@
 defmodule EasyWeb.Clients.TrainingPlanControllerTest do
   use Easy.ConnCase
 
+  import OpenApiSpex.TestAssertions
+
   setup do
     coach = insert(:coach)
     client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
@@ -32,6 +34,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
       assert %{"kind" => "client_plan", "lifecycle" => "incomplete"} = Enum.find(plans, &(&1["id"] == incomplete.id))
       assert %{"lifecycle" => "current"} = Enum.find(plans, &(&1["id"] == current.id))
       refute Enum.any?(plans, &(&1["id"] == archived.id))
+      Enum.each(plans, &assert_schema(&1, "ClientTrainingPlan", EasyWeb.ApiSpec.spec()))
     end
 
     test "rejects unauthenticated and coach-authenticated requests", ctx do
@@ -112,6 +115,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
       refute Map.has_key?(data, "business_id")
       refute Map.has_key?(data, "client_id")
       refute Map.has_key?(data, "source_template_id")
+      assert_schema(data, "ClientTrainingPlan", EasyWeb.ApiSpec.spec())
     end
 
     test "conceals archived, other-client, other-business, and Template plans", ctx do
@@ -164,15 +168,23 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
                  "plan" => %{"id" => plan_id, "kind" => "client_plan"},
                  "workout" => %{"id" => workout_id}
                }
-             } = json_response(conn, 200)
+             } = response = json_response(conn, 200)
 
       assert plan_id == plan.id
       assert workout_id == workout.id
+      assert_schema(response, "ClientTrainingCoverageResponse", EasyWeb.ApiSpec.spec())
     end
 
     test "returns a successful nullable result when no Client Plan supplies Coverage", ctx do
       conn = get(ctx.conn, "/v1/client/training-plans/coverage", %{"date" => "2026-08-15"})
-      assert %{"data" => nil} = json_response(conn, 200)
+      assert %{"data" => nil} = response = json_response(conn, 200)
+      assert_schema(response, "ClientTrainingCoverageResponse", EasyWeb.ApiSpec.spec())
+    end
+
+    test "rejects a malformed UTC date instead of resolving today", ctx do
+      conn = get(ctx.conn, "/v1/client/training-plans/coverage", %{"date" => "not-a-date"})
+
+      assert %{"errors" => [%{"source" => %{"pointer" => "/date"}}]} = json_response(conn, 422)
     end
   end
 

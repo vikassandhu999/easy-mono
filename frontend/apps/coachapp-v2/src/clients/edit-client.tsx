@@ -37,6 +37,7 @@ import RequiredServicesField, {
   nonEmptyRequiredServices,
   REQUIRED_SERVICE_VALUES,
 } from '@/clients/components/required-services-field';
+import {isUnclassified} from '@/clients/lib/client';
 
 /**
  * Profile fields share the client update endpoint; coach assignment is a
@@ -250,7 +251,7 @@ function EditClientForm({
 
               <Separator className="my-6" />
 
-              {client.required_services.length === 0 ? (
+              {isUnclassified(client) ? (
                 <Surface className="mb-6 rounded-card border border-warning bg-warning-soft p-4">
                   <div className="flex items-start gap-3">
                     <TriangleAlert className="mt-0.5 size-5 shrink-0 text-warning" />

@@ -75,7 +75,7 @@ export default function RequiredServicesField({
               const selected = services.includes(service);
               return (
                 <ToggleButton
-                  className={`rounded-card border p-4 outline-none ${
+                  className={`toggle-button--row rounded-card border p-4 outline-none ${
                     selected ? 'border-accent bg-accent-soft' : 'border-border bg-surface'
                   }`}
                   id={service}

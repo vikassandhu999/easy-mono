@@ -234,6 +234,87 @@ if rg -q "WorkbenchQueueId.*'new'|id: 'new'" "$workbench_queues"; then
   fail=1
 fi
 
+# RM-212 — grouped queue rendering must not classify an absent page before
+# loading/error feedback has passed through the canonical list wrapper.
+if ! rg -Fq 'if (list.isLoading || list.isError)' "$programming_view" || \
+   ! rg -Fq 'ariaLabel="Programming queue"' "$programming_view"; then
+  echo "FAIL RM-212 — Programming grouping must surface loading/error before empty classification"
+  fail=1
+fi
+
+# RM-213 — the Replies task pane only has meaning when a queue row exists.
+if ! rg -Fq 'if (!selected)' "$replies_view" || \
+   ! rg -Fq 'return queue;' "$replies_view"; then
+  echo "FAIL RM-213 — Replies must not render a task-pane instruction without a selected row"
+  fail=1
+fi
+
+# RM-214 — Unclassified vs required-plan debt is one classification helper.
+# Presentation (roster, chips, edit warning) must call it, not re-derive from
+# plan-name absence.
+client_lib="$COACH/clients/lib/client.ts"
+client_list_item="$COACH/clients/clients-list/client-list-item.tsx"
+if ! rg -Fq 'export function isUnclassified' "$client_lib" || \
+   ! rg -Fq 'export function needsRequiredPlan' "$client_lib" || \
+   ! rg -Fq 'isUnclassified(client)' "$client_list_item" || \
+   ! rg -Fq 'needsRequiredPlan(client)' "$client_list_item" || \
+   ! rg -Fq 'isUnclassified(client)' "$COACH/clients/components/client-status-chips.tsx" || \
+   ! rg -Fq 'isUnclassified(client)' "$COACH/clients/edit-client.tsx"; then
+  echo "FAIL RM-214 — roster must distinguish Unclassified clients from required-plan debt"
+  fail=1
+fi
+
+# RM-215 — service choices are content cards, not one-line control-height
+# toggles. Release the theme's fixed ToggleButton height so both text lines fit.
+required_services_field="$COACH/clients/components/required-services-field.tsx"
+if ! rg -Fq 'className={`toggle-button--row rounded-card border p-4 outline-none' "$required_services_field" || \
+   ! rg -Fq ':not(.toggle-button--row)' "$COACH/index.css" || \
+   ! rg -Fq '.toggle-button--row {' "$COACH/index.css"; then
+  echo "FAIL RM-215 — required-service cards must release ToggleButton's fixed height"
+  fail=1
+fi
+
+# RM-216 — Service type locks every identity control through one helper, and
+# every draft commit clears stale builder validation.
+checkin_builder="$COACH/checkins/checkin-builder.tsx"
+if ! rg -Fq 'export function questionIdentityLocked' "$COACH/checkins/question-type-meta.ts" || \
+   [ "$(rg -Fc 'isDisabled={locked}' "$checkin_builder")" -lt 2 ] || \
+   ! rg -qU 'const commitSections[^}]+setError\(null\);[^}]+setSections' "$checkin_builder"; then
+  echo "FAIL RM-216 — Service type must stay locked and stale builder errors must clear on draft edits"
+  fail=1
+fi
+
+# RM-217 — the ClientApp fill/review route uses stable loading geometry and
+# the shared retryable page-error surface.
+fill_checkin="$CLIENT/checkins/fill-checkin.tsx"
+if ! rg -Fq "import ErrorState from '@/@components/error-state'" "$fill_checkin" || \
+   ! rg -Fq 'Skeleton className=' "$fill_checkin" || \
+   ! rg -Fq 'onRetry={() => refetch()}' "$fill_checkin"; then
+  echo "FAIL RM-217 — ClientApp check-in detail must keep skeleton and retryable error states"
+  fail=1
+fi
+
+# RM-218 — completed client forms keep their Intake/Check-in vocabulary.
+if ! rg -Fq '${purposeLabel(assignment.purpose)} submitted' "$fill_checkin"; then
+  echo "FAIL RM-218 — completed Intake review must not claim a Check-in was submitted"
+  fail=1
+fi
+
+# RM-219 — shared queue facts wrap on mobile and truncate only on desktop.
+queue_row="$COACH/clients/workbench/queue-row.tsx"
+if ! rg -Fq 'whitespace-normal type-eyebrow leading-tight text-muted sm:truncate' "$queue_row"; then
+  echo "FAIL RM-219 — mobile queue rows must not clip their actionable absolute fact"
+  fail=1
+fi
+
+# RM-220 — long row identity text stays inside its minmax track instead of
+# painting under the action and snooze controls on narrow screens.
+if ! rg -Fq 'flex min-w-0 flex-col overflow-hidden' "$queue_row" || \
+   ! rg -Fq 'block min-w-0 max-w-full truncate type-body' "$queue_row"; then
+  echo "FAIL RM-220 — queue identity text must stay contained beside mobile controls"
+  fail=1
+fi
+
 # RM-211 — socket creation stays synchronous for channel callers, but HTTP and
 # the first handshake share one short-lived-token refresh owner and promise.
 for socket_owner in "$COACH/api/socket.ts" "$CLIENT/api/socket.ts"; do

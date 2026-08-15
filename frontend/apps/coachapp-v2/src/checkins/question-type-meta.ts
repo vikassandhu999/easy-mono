@@ -45,6 +45,12 @@ export function questionTypeOrder(purpose: FormPurpose, serviceTypeAvailable = t
     : [...QUESTION_TYPE_ORDER];
 }
 
+/** Service type's label, answer type, required flag, and uniqueness are the
+ *  capture contract — the builder must not let a coach edit them. */
+export function questionIdentityLocked(type: FormQuestionType): boolean {
+  return type === 'service_type';
+}
+
 export function questionTypeLabel(type: FormQuestionType): string {
   return FORM_QUESTION_TYPE_LABELS[type];
 }

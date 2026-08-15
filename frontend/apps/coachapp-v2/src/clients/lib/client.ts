@@ -1,5 +1,19 @@
 import type {Client, ClientUpdateRequest} from '@/api/clients';
 
+/** Active with an empty required-services set. Distinct from missing a plan
+ *  for a service that was actually chosen — Programming excludes these. */
+export function isUnclassified(client: Pick<Client, 'required_services' | 'status'>): boolean {
+  return client.status === 'active' && client.required_services.length === 0;
+}
+
+export function needsRequiredPlan(
+  client: Pick<Client, 'nutrition_plan_name' | 'required_services' | 'training_plan_name'>,
+): boolean {
+  return client.required_services.some((service) =>
+    service === 'training' ? !client.training_plan_name : !client.nutrition_plan_name,
+  );
+}
+
 // The word "pending" is reserved for invites (the list's status cell shows
 // "Invited") — the intake flag always reads "Intake incomplete", never "pending".
 export const INACTIVE_REASON_LABEL: Record<string, string> = {

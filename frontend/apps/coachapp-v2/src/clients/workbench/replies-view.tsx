@@ -313,6 +313,10 @@ export default function RepliesView() {
     />
   );
 
+  if (!selected) {
+    return queue;
+  }
+
   if (!isDesktop) {
     return (
       <>
@@ -338,18 +342,10 @@ export default function RepliesView() {
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <div className="border-r border-border">{queue}</div>
         <div className="min-w-0">
-          {selected ? (
-            <SelectedTaskContent
-              item={selected}
-              onHandle={requestHandle}
-            />
-          ) : (
-            <EmptyState
-              body="Select a waiting conversation to reply or mark it handled."
-              icon={MessageCircle}
-              title="Choose a reply"
-            />
-          )}
+          <SelectedTaskContent
+            item={selected}
+            onHandle={requestHandle}
+          />
         </div>
       </div>
       <HandleDialog

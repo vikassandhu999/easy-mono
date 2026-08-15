@@ -4,7 +4,7 @@ import {Link} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
-import {type CoachingAccessState, coachingAccessState} from '@/clients/lib/client';
+import {type CoachingAccessState, coachingAccessState, isUnclassified} from '@/clients/lib/client';
 import {formatDayMonth} from '@/clients/lib/client-detail-data';
 
 /**
@@ -59,7 +59,7 @@ export function ClientStatusChip({client}: {client: Client}) {
           {inactiveLabel(access.mode)}
         </Chip>
       )}
-      {client.status === 'active' && client.required_services.length === 0 && (
+      {isUnclassified(client) && (
         <Chip
           color="warning"
           size="sm"

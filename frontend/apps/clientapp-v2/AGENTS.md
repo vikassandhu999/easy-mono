@@ -116,9 +116,10 @@ One component per job — don't hand-roll these:
 
 These are deliberate, not drift. Don't "fix" them toward coachapp without a reason:
 
-- **Loading is a centred `Spinner`, not a skeleton.** coachapp mandates layout-approximating
-  skeletons; these screens are short and phone-sized, and the spinner is the established
-  pattern across all 20 of them. Changing it is a design decision, not a cleanup.
+- **Loading is a centred `Spinner`, not a skeleton**, except the form-assignment
+  detail route (`fill-checkin.tsx`): that screen is a form, so it keeps a
+  content-shaped skeleton and the shared `ErrorState` with Retry (RM-217).
+  Other screens stay on the spinner. Changing the rest is a design decision, not a cleanup.
 - **Type sizes are arbitrary values (`text-[13px]`)**, because this app has no `type-*`
   scale. coachapp's "never `text-*` for size" rule does not apply until one exists.
 - **Light mode only.** There is no dark block in `index.css`.

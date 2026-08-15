@@ -20,6 +20,7 @@ import {QUESTION_PRESET_CATEGORIES, QUESTION_PRESETS} from '@/checkins/question-
 import {
   QUESTION_TYPE_ICONS,
   QUESTION_TYPES_WITH_OPTIONS,
+  questionIdentityLocked,
   questionTypeLabel,
   questionTypeOrder,
 } from '@/checkins/question-type-meta';
@@ -31,9 +32,9 @@ const PALETTE_TITLE = 'Add question';
 function questionOfType(type: FormQuestionType, label = ''): QuestionDraft {
   return {
     ...newQuestion(),
-    label: type === 'service_type' ? 'Service type' : label,
+    label: questionIdentityLocked(type) ? questionTypeLabel(type) : label,
     options: QUESTION_TYPES_WITH_OPTIONS.includes(type) ? [''] : [],
-    required: type === 'service_type',
+    required: questionIdentityLocked(type),
     type,
   };
 }

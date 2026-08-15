@@ -55,6 +55,11 @@ export type QueueRowItem = {
  * between rows, and Tab left the page. `list-box-item` is kept as the base
  * class so the row keeps the design system's row chrome and focus ring; only
  * the collection semantics changed.
+ *
+ * The identity track is `minmax(0, 1fr)` plus its own overflow clip: a long
+ * name must ellipsize inside that column instead of painting under the verb
+ * and snooze controls. The subtitle is the actionable fact (end date, missed
+ * due date), so it wraps below `sm` and truncates only when the row has room.
  */
 export function QueueRow({item}: {item: QueueRowItem}) {
   return (
@@ -83,9 +88,11 @@ export function QueueRow({item}: {item: QueueRowItem}) {
         </Avatar.Fallback>
       </Avatar>
 
-      <div className="flex min-w-0 flex-col">
-        <Label className="min-w-0 truncate type-body font-semibold text-foreground">{item.name}</Label>
-        <Description className="max-w-full truncate type-eyebrow text-muted">{item.subtitle}</Description>
+      <div className="flex min-w-0 flex-col overflow-hidden">
+        <Label className="block min-w-0 max-w-full truncate type-body font-semibold text-foreground">{item.name}</Label>
+        <Description className="max-w-full whitespace-normal type-eyebrow leading-tight text-muted sm:truncate">
+          {item.subtitle}
+        </Description>
       </div>
 
       {/* gap-2, not gap-1: the controls are 36px (below the 44px pointer

@@ -13,6 +13,7 @@ import {Button, Description, Label, ListBox, Typography, toast} from '@heroui/re
 import {Check, ChevronDown, ClipboardList} from 'lucide-react';
 import {useState} from 'react';
 
+import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 import {toastMutationError} from '@/@components/mutation-toast';
 import {useListFormTemplatesQuery, useSetDefaultIntakeTemplateMutation} from '@/api/checkins';
 import {PickerModal} from '@/builder-kit/picker-modal';
@@ -111,7 +112,7 @@ export default function DefaultIntakeControl() {
               const isCurrent = template.id === effective?.id;
               return (
                 <ListBox.Item
-                  className="gap-3 px-3 py-2.5"
+                  className={LIST_ITEM_CLASS}
                   id={template.id}
                   key={template.id}
                   textValue={template.name}

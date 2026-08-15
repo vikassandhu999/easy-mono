@@ -5,14 +5,8 @@ import {cn} from '@heroui/styles';
 import {ChevronRight} from 'lucide-react';
 
 import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
-// The hand-written `Client` type in `@/api/clients` does not yet carry the
-// `training_plan_name`/`nutrition_plan_name` fields the schema exposes
-// (opt-in via `include_plans`), so this row derives its own type straight
-// from the schema rather than widening the shared type for one consumer.
-import type {components} from '@/api/schema';
-import {INACTIVE_REASON_LABEL} from '@/clients/lib/client';
-
-type ListClient = components['schemas']['Client'];
+import type {Client} from '@/api/clients';
+import {INACTIVE_REASON_LABEL, isUnclassified, needsRequiredPlan} from '@/clients/lib/client';
 
 // RECIPES.md R5 — plan chip (neutral grey) and attention chip (warning-soft).
 // Plain spans, not `Chip`: the spec chip is 7px radius / 11.5px / 600, and the
@@ -35,7 +29,7 @@ const MOBILE_SUBTITLE_ATTENTION_CLASS = 'block max-w-full truncate type-eyebrow 
 
 type StatusCell = {label: string; time: null | string; tone: keyof typeof DOT_CLASS};
 
-function isExpired(client: ListClient): boolean {
+function isExpired(client: Client): boolean {
   return (
     client.status === 'inactive' && client.inactive_reason === 'subscription_expired' && !!client.subscription_ends_on
   );
@@ -44,7 +38,7 @@ function isExpired(client: ListClient): boolean {
 // COPY.md §CL row status strings. `last_active_at` is the latest successful
 // workout completion, food log, check-in submission, or weight upsert. A client
 // who has never done one shows the dot and label alone.
-function getStatusCell(client: ListClient): StatusCell {
+function getStatusCell(client: Client): StatusCell {
   if (client.status === 'active') {
     return {
       label: 'Active',
@@ -65,12 +59,12 @@ function getStatusCell(client: ListClient): StatusCell {
   return {label: 'Inactive', time: null, tone: 'muted'};
 }
 
-function getAttentionLabels(client: ListClient): string[] {
+function getAttentionLabels(client: Client): string[] {
   if (client.status !== 'active') {
     return [];
   }
-  const missingPlan = !client.training_plan_name && !client.nutrition_plan_name;
-  return [missingPlan ? 'Needs plan' : null, client.expiring_soon ? 'Expiring soon' : null].filter(
+  const serviceAttention = isUnclassified(client) ? 'Unclassified' : needsRequiredPlan(client) ? 'Needs plan' : null;
+  return [serviceAttention, client.expiring_soon ? 'Expiring soon' : null].filter(
     (label): label is string => label !== null,
   );
 }
@@ -79,7 +73,7 @@ function getAttentionLabels(client: ListClient): string[] {
 // coaching stage. The plan names arrive only because this list asks for them
 // (`include_plans` — see `api/clients.ts`), and are absent for a client with no
 // assigned plan, so the stage is what a bare row still shows.
-function getNeutralChipLabels(client: ListClient): string[] {
+function getNeutralChipLabels(client: Client): string[] {
   if (client.status === 'active') {
     return [
       client.training_plan_name,
@@ -96,12 +90,15 @@ function getNeutralChipLabels(client: ListClient): string[] {
 }
 
 // COPY.md §CL mobile row subtitles.
-function getMobileSubtitle(client: ListClient): {isAttention: boolean; text: string} {
+function getMobileSubtitle(client: Client): {isAttention: boolean; text: string} {
   if (client.status === 'active') {
     if (client.expiring_soon) {
       return {isAttention: true, text: 'Coaching period ending soon'};
     }
-    if (!client.training_plan_name && !client.nutrition_plan_name) {
+    if (isUnclassified(client)) {
+      return {isAttention: true, text: 'Unclassified · coaching services not set'};
+    }
+    if (needsRequiredPlan(client)) {
       return {isAttention: true, text: 'Needs a plan assigned'};
     }
     return {isAttention: false, text: client.stage === 'coaching' ? 'Coaching' : 'Onboarding'};
@@ -114,7 +111,7 @@ function getMobileSubtitle(client: ListClient): {isAttention: boolean; text: str
   return {isAttention: false, text: getNeutralChipLabels(client)[0] ?? client.email ?? client.phone ?? '—'};
 }
 
-export default function ClientListItem({client}: {client: ListClient}) {
+export default function ClientListItem({client}: {client: Client}) {
   const name = [client.first_name, client.last_name].filter(Boolean).join(' ') || client.email || 'Client';
   const initials = getInitials(client.first_name, client.last_name);
   const status = getStatusCell(client);

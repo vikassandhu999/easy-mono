@@ -1,15 +1,17 @@
 import {formatIsoDateOnly} from '@easy/utils';
-import {Button, Spinner, toast} from '@heroui/react';
+import {Button, Skeleton, toast} from '@heroui/react';
 import {ArrowLeft, CheckCircle2, CircleX} from 'lucide-react';
 import {useCallback, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
+import ErrorState from '@/@components/error-state';
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {
   type ClientProfileFormAssignment,
   type ClientProfileFormSubmissionRequest,
+  PURPOSE_LABELS,
   useGetClientFormAssignmentQuery,
   useSubmitClientFormAssignmentMutation,
 } from '@/api/checkins';
@@ -18,6 +20,17 @@ import CheckinField, {type AnswerValue, type CheckinQuestion} from '@/checkins/c
 import type {PhotoUploadState} from '@/checkins/photo-answer-field';
 
 type Section = ClientProfileFormAssignment['form_template']['sections'][number];
+
+function purposeLabel(purpose: ClientProfileFormAssignment['purpose']): string {
+  return PURPOSE_LABELS[purpose] ?? 'Form';
+}
+
+function visibleQuestions<T extends {type: string}>(
+  purpose: ClientProfileFormAssignment['purpose'],
+  questions: T[],
+): T[] {
+  return questions.filter((question) => purpose === 'intake' || question.type !== 'service_type');
+}
 
 function isEmpty(value: AnswerValue | undefined): boolean {
   if (value == null || value === '') {
@@ -55,9 +68,10 @@ function FillForm({assignment}: {assignment: ClientProfileFormAssignment}) {
   const [photoUploadStates, setPhotoUploadStates] = useState<Record<string, PhotoUploadState>>({});
 
   const sections = (assignment.form_template?.sections ?? []) as Section[];
-  const questions = sections
-    .flatMap((s) => s.questions ?? [])
-    .filter((question) => assignment.purpose === 'intake' || question.type !== 'service_type');
+  const questions = visibleQuestions(
+    assignment.purpose,
+    sections.flatMap((s) => s.questions ?? []),
+  );
   const weightUnit = (profileData?.data.goal_weight_unit ?? profileData?.data.default_weight_unit ?? 'kg') as
     | 'kg'
     | 'lbs';
@@ -116,7 +130,7 @@ function FillForm({assignment}: {assignment: ClientProfileFormAssignment}) {
 
     try {
       await submit.mutateAsync({id: assignment.id, answers: payload});
-      toast.success(assignment.purpose === 'intake' ? 'Intake submitted' : 'Check-in submitted');
+      toast.success(`${purposeLabel(assignment.purpose)} submitted`);
       navigate(ROUTES.CHECKINS);
     } catch {
       toast.danger("Couldn't submit. Please try again.");
@@ -124,7 +138,7 @@ function FillForm({assignment}: {assignment: ClientProfileFormAssignment}) {
   };
 
   return (
-    <PageLayout title={assignment.form_template?.name ?? 'Check-in'}>
+    <PageLayout title={assignment.form_template?.name ?? purposeLabel(assignment.purpose)}>
       <div className="max-w-lg">
         <BackButton onPress={goBack} />
 
@@ -133,18 +147,16 @@ function FillForm({assignment}: {assignment: ClientProfileFormAssignment}) {
             <section key={section.title ?? si}>
               {section.title ? <h2 className="mb-3 text-sm font-medium">{section.title}</h2> : null}
               <div className="flex flex-col gap-4">
-                {(section.questions ?? [])
-                  .filter((question) => assignment.purpose === 'intake' || question.type !== 'service_type')
-                  .map((question) => (
-                    <CheckinField
-                      key={question.id}
-                      onChange={(value) => updateAnswer(question.id, value)}
-                      question={question}
-                      value={answers[question.id] ?? null}
-                      weightUnit={weightUnit}
-                      onUploadStateChange={(state) => updatePhotoUploadState(question.id, state)}
-                    />
-                  ))}
+                {visibleQuestions(assignment.purpose, section.questions ?? []).map((question) => (
+                  <CheckinField
+                    key={question.id}
+                    onChange={(value) => updateAnswer(question.id, value)}
+                    question={question}
+                    value={answers[question.id] ?? null}
+                    weightUnit={weightUnit}
+                    onUploadStateChange={(state) => updatePhotoUploadState(question.id, state)}
+                  />
+                ))}
               </div>
             </section>
           ))}
@@ -157,7 +169,7 @@ function FillForm({assignment}: {assignment: ClientProfileFormAssignment}) {
             onPress={handleSubmit}
             variant="primary"
           >
-            {isLoading ? 'Submitting…' : assignment.purpose === 'intake' ? 'Submit intake' : 'Submit check-in'}
+            {isLoading ? 'Submitting…' : `Submit ${purposeLabel(assignment.purpose).toLowerCase()}`}
           </Button>
         </div>
       </div>
@@ -196,7 +208,7 @@ function CompletedState({assignment}: {assignment: ClientProfileFormAssignment})
   };
 
   return (
-    <PageLayout title={assignment.form_template?.name ?? 'Check-in'}>
+    <PageLayout title={assignment.form_template?.name ?? purposeLabel(assignment.purpose)}>
       <div className="max-w-lg">
         <BackButton onPress={() => navigate(ROUTES.CHECKINS)} />
         <div className="rounded-xl border border-border bg-surface p-8 text-center">
@@ -206,7 +218,7 @@ function CompletedState({assignment}: {assignment: ClientProfileFormAssignment})
               size={24}
             />
           </div>
-          <h3 className="text-base font-medium">Check-in submitted</h3>
+          <h3 className="text-base font-medium">{`${purposeLabel(assignment.purpose)} submitted`}</h3>
           <p className="mt-2 text-sm text-muted">
             {assignment.completed_at
               ? `You completed this on ${formatIsoDateOnly(assignment.completed_at)}.`
@@ -221,44 +233,44 @@ function CompletedState({assignment}: {assignment: ClientProfileFormAssignment})
                 {submission.reviewed_at ? 'Reviewed by your coach' : 'Awaiting coach review'}
               </span>
             </div>
-            {sections
-              .flatMap((section) => section.questions)
-              .filter((question) => assignment.purpose === 'intake' || question.type !== 'service_type')
-              .map((question) => {
-                const answer = submission.answers[question.id];
-                const ids = question.type === 'photo' && Array.isArray(answer) ? answer.map(String) : [];
-                return (
-                  <div
-                    className="border-t border-separator pt-3 first:border-0 first:pt-0"
-                    key={question.id}
-                  >
-                    <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{question.label}</p>
-                    {ids.length > 0 ? (
-                      <div className="mt-2 grid grid-cols-2 gap-2">
-                        {ids.map((id) =>
-                          photoUrls[id] ? (
-                            <img
-                              alt="Check-in upload"
-                              className="aspect-[3/4] w-full rounded-xl object-cover"
-                              key={id}
-                              src={photoUrls[id]}
-                            />
-                          ) : (
-                            <div
-                              className="grid aspect-[3/4] place-items-center rounded-xl bg-surface-secondary text-xs text-muted"
-                              key={id}
-                            >
-                              Loading photo…
-                            </div>
-                          ),
-                        )}
-                      </div>
-                    ) : (
-                      <p className="mt-1 text-sm font-semibold">{formatAnswer(question, answer)}</p>
-                    )}
-                  </div>
-                );
-              })}
+            {visibleQuestions(
+              assignment.purpose,
+              sections.flatMap((section) => section.questions),
+            ).map((question) => {
+              const answer = submission.answers[question.id];
+              const ids = question.type === 'photo' && Array.isArray(answer) ? answer.map(String) : [];
+              return (
+                <div
+                  className="border-t border-separator pt-3 first:border-0 first:pt-0"
+                  key={question.id}
+                >
+                  <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{question.label}</p>
+                  {ids.length > 0 ? (
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      {ids.map((id) =>
+                        photoUrls[id] ? (
+                          <img
+                            alt="Check-in upload"
+                            className="aspect-[3/4] w-full rounded-xl object-cover"
+                            key={id}
+                            src={photoUrls[id]}
+                          />
+                        ) : (
+                          <div
+                            className="grid aspect-[3/4] place-items-center rounded-xl bg-surface-secondary text-xs text-muted"
+                            key={id}
+                          >
+                            Loading photo…
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-sm font-semibold">{formatAnswer(question, answer)}</p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         ) : null}
       </div>
@@ -269,8 +281,9 @@ function CompletedState({assignment}: {assignment: ClientProfileFormAssignment})
 function ClosedState({assignment}: {assignment: ClientProfileFormAssignment}) {
   const navigate = useNavigate();
   const missed = assignment.status === 'missed';
+  const noun = purposeLabel(assignment.purpose).toLowerCase();
   return (
-    <PageLayout title={assignment.form_template?.name ?? 'Check-in'}>
+    <PageLayout title={assignment.form_template?.name ?? purposeLabel(assignment.purpose)}>
       <div className="max-w-lg">
         <BackButton onPress={() => navigate(ROUTES.CHECKINS)} />
         <div className="rounded-xl border border-border bg-surface p-8 text-center">
@@ -280,11 +293,13 @@ function ClosedState({assignment}: {assignment: ClientProfileFormAssignment}) {
               size={24}
             />
           </div>
-          <h3 className="text-base font-medium">{missed ? 'Check-in missed' : 'Check-in closed'}</h3>
+          <h3 className="text-base font-medium">
+            {missed ? `${purposeLabel(assignment.purpose)} missed` : `${purposeLabel(assignment.purpose)} closed`}
+          </h3>
           <p className="mt-2 text-sm text-muted">
             {missed
-              ? 'This check-in is no longer open. Complete the latest check-in from your list.'
-              : 'This check-in was closed by your coach.'}
+              ? `This ${noun} is no longer open. Complete the latest one from your list.`
+              : `This ${noun} was closed by your coach.`}
           </p>
         </div>
       </div>
@@ -295,13 +310,18 @@ function ClosedState({assignment}: {assignment: ClientProfileFormAssignment}) {
 export default function FillCheckin() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
-  const {data, isError, isLoading} = useGetClientFormAssignmentQuery(id ?? '', {enabled: Boolean(id)});
+  const {data, isError, isLoading, refetch} = useGetClientFormAssignmentQuery(id ?? '', {enabled: Boolean(id)});
 
   if (isLoading) {
     return (
       <PageLayout title="Check-in">
-        <div className="flex items-center justify-center py-20">
-          <Spinner />
+        <div className="max-w-lg space-y-6">
+          <Skeleton className="h-8 w-24 rounded-lg" />
+          <div className="space-y-4 rounded-xl border border-border bg-surface p-4">
+            <Skeleton className="h-4 w-28 rounded" />
+            <Skeleton className="h-11 w-full rounded-lg" />
+            <Skeleton className="h-11 w-full rounded-lg" />
+          </div>
         </div>
       </PageLayout>
     );
@@ -312,9 +332,10 @@ export default function FillCheckin() {
       <PageLayout title="Check-in">
         <div className="max-w-lg">
           <BackButton onPress={() => navigate(ROUTES.CHECKINS)} />
-          <div className="rounded-xl border border-border bg-surface p-6 text-center">
-            <p className="text-sm text-danger">Check-in couldn&apos;t load.</p>
-          </div>
+          <ErrorState
+            message="Couldn't load this check-in."
+            onRetry={() => refetch()}
+          />
         </div>
       </PageLayout>
     );

@@ -118,11 +118,29 @@ export default function ProgrammingView() {
   const [params] = useSearchParams();
   const filter = parseFilter(params.get('service'));
   const list = useInfiniteItems(useProgrammingQueueInfiniteQuery(filter));
+
+  if (list.isLoading || list.isError) {
+    return (
+      <BrowseListBox
+        ariaLabel="Programming queue"
+        emptyState={null}
+        fetchNextPage={() => undefined}
+        grid
+        isError={list.isError}
+        isLoading={list.isLoading}
+        items={[] as WorkbenchProgrammingQueueItem[]}
+        onRetry={list.refetch}
+        renderItem={() => null}
+        skeletonAvatar
+      />
+    );
+  }
+
   const groups = groupProgrammingItems(list.items, filter);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {groups.length === 0 && !list.isLoading ? (
+      {groups.length === 0 ? (
         <EmptyState
           body="Clients appear here when a required service has never been programmed, has lapsed, or ends within the coverage window."
           icon={Dumbbell}
@@ -154,8 +172,7 @@ export default function ProgrammingView() {
               emptyState={null}
               fetchNextPage={group.id === groups[groups.length - 1]?.id ? list.fetchNextPage : () => undefined}
               grid
-              isError={list.isError}
-              isLoading={list.isLoading}
+              isLoading={false}
               items={group.items}
               onRetry={list.refetch}
               renderItem={(item) => {

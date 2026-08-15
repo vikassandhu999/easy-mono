@@ -907,6 +907,88 @@ keeps the token endpoint in that module, and requires refresh before the first s
 **Verify by:** force the stored expiry into the past, reload, and assert exactly one successful
 token refresh, no console errors or failed first handshake, and an open socket.
 
+### RM-212 — Resolve grouped-list loading and errors before classifying an empty result
+Programming partitioned fetched rows into priority groups before rendering its canonical
+`BrowseListBox`. While the request was loading, the empty group map painted a blank pane; when the
+request failed, the same empty array selected the successful “Everyone's programmed” state and hid
+the error and Retry action. A grouped or derived collection must pass loading/error through its
+canonical list surface before branching on derived emptiness. **Enforced by:** `just check-rm`
+pins Programming's pre-group loading/error gate. **Verify by:** delay the first queue response and
+require list skeleton rows, then fail it and require “Couldn't load” plus a working Retry; the
+successful empty message must appear only after a successful empty response.
+
+### RM-213 — A dependent pane does not render instructions without its source item
+Desktop Replies always rendered its selected-task pane, even with zero conversations. The queue's
+truthful “Replies cleared” card then sat beside “Choose a reply,” an impossible instruction; the
+same stale pane appeared beside loading and fetch-error states. A detail/task pane that depends on
+a selected collection item renders only when that item exists, leaving the canonical collection
+state to own the full surface otherwise. **Enforced by:** `just check-rm` pins the no-selection
+guard in Replies. **Verify by:** exercise loading, error, and successful empty responses at desktop
+width and require one state surface with no selection instruction; then populate one row and
+require the locked split surface.
+
+### RM-214 — Presentation predicates move with a coordinated domain cutover
+The roster still derived “Needs plan” from both plan names being absent after Programming moved to
+explicit `required_services`. Active clients with an empty set were therefore told they needed a
+plan even though the domain classifies them as Unclassified and deliberately excludes them from
+Programming. When a coordinated cutover replaces a predicate, audit presentation helpers and copy
+as well as endpoint/query code; derive UI state from the canonical domain field. **Enforced by:**
+`just check-rm` pins `isUnclassified` / `needsRequiredPlan` in `clients/lib/client.ts` and their
+roster call sites. **Verify by:** render an active
+client with `required_services: []` and require Unclassified at both widths, then render a
+classified client missing a required service plan and require “Needs plan.”
+
+### RM-215 — Multi-line toggle cards must release the theme's control height
+The required-services selector used `ToggleButton` for correct multi-select semantics, but inherited
+the theme's one-line control height while rendering a 40px icon plus a label and description. Both
+Invite and Edit visibly clipped the description at mobile and desktop widths. A toggle styled as a
+content card must use the theme's named row release; the fixed control tier only fits compact toggles.
+**Enforced by:** `just check-rm` pins `toggle-button--row` at the shared field and in the theme's
+control-height exclusion/release.
+**Verify by:** render Training and Nutrition selected at 375px and desktop and require each card's
+scroll height to equal its client height with both text lines fully visible.
+
+### RM-216 — Special builder questions lock every invariant and edits clear stale errors
+The Intake builder created `Service type` as required and non-duplicable, but still let coaches
+rename it or change its answer type. It also left “Add at least one question” visible after the
+question was added. A domain-special question locks every invariant its server meaning depends on,
+and validation feedback is cleared when the relevant draft changes so the screen never contradicts
+its current state. **Enforced by:** `just check-rm` pins `questionIdentityLocked` and the builder's
+draft-commit error reset. **Verify by:** add Service type after an empty-save
+error; require the error to disappear, Question and Answer type to be disabled, Required selected and
+disabled, no Options editor, no Duplicate action, and no second palette item.
+
+### RM-217 — Client form detail keeps stable loading geometry and a recovery action
+The ClientApp Intake/check-in detail used a lone centered spinner during load and a bespoke failure
+card with no Retry. The required-services completion route therefore jumped from almost-empty chrome
+to a form and stranded transient request failures. Detail routes render a content-shaped skeleton and
+the app's shared `ErrorState` wired to the query refetch. **Enforced by:** `just check-rm` pins Skeleton,
+shared ErrorState, and Retry wiring in `fill-checkin.tsx`. **Verify by:** delay the assignment GET and
+require form skeleton blocks, then fail it and require “Couldn't load” plus a Retry that recovers.
+
+### RM-218 — Shared form completion copy follows the assignment purpose
+The shared ClientApp completed state always said “Check-in submitted,” including on a page titled
+Test Intake with an Intake assignment. Shared rendering must not flatten the domain vocabulary it
+already receives; branch user-facing completion copy on `assignment.purpose`. **Enforced by:**
+`just check-rm` pins `purposeLabel` on the completed heading. **Verify by:** complete one Intake and
+one Check-in and require the matching noun while their common completed layout stays identical.
+
+### RM-219 — Mobile queue rows keep the actionable absolute fact visible
+The shared queue row truncated every subtitle at all widths. With Renew and Snooze controls present,
+the 375px Expiring row collapsed “Engagement ending soon · Ends 20 Aug” to “Engagement ending s…”,
+hiding the date that explains the action; Quiet's missed date had the same risk. Queue facts wrap on
+mobile and return to truncation at the desktop breakpoint. **Enforced by:** `just check-rm` pins the
+mobile-wrap/desktop-truncate class at the shared row. **Verify by:** populate Expiring and Quiet at
+375px with both trailing controls present and require the complete reason plus absolute date.
+
+### RM-220 — Queue identity text stays inside its grid track
+The long `Test Workbench Client` name painted underneath Expiring's Renew and Quiet's Message control
+groups at 375px even though its grid track used `minmax(0, 1fr)`. The text column must also clip its
+own paint and the single-line label must own an explicit block-width truncation boundary. **Enforced
+by:** `just check-rm` pins `overflow-hidden` on the text column and the block/max-width truncation
+boundary on its label. **Verify by:** populate Expiring and Quiet with a long client name at 375px and
+require an ellipsis before the action group with no overlapping pixels.
+
 ## Deploy / ops
 
 ### RM-201 — Deployable frontends need documented + guarded build-time env

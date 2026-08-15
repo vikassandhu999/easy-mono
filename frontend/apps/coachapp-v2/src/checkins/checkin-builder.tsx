@@ -49,6 +49,7 @@ import AddQuestionControl from '@/checkins/question-palette';
 import {
   QUESTION_TYPE_ICONS,
   QUESTION_TYPES_WITH_OPTIONS,
+  questionIdentityLocked,
   questionTypeLabel,
   questionTypeOrder,
 } from '@/checkins/question-type-meta';
@@ -168,6 +169,7 @@ function QuestionRow({
   serviceTypeExists: boolean;
 }) {
   const Icon = QUESTION_TYPE_ICONS[question.type];
+  const locked = questionIdentityLocked(question.type);
   const showOptions = QUESTION_TYPES_WITH_OPTIONS.includes(question.type);
 
   return (
@@ -245,7 +247,7 @@ function QuestionRow({
                 </Dropdown.Item>
                 <Dropdown.Item
                   id="duplicate"
-                  isDisabled={question.type === 'service_type'}
+                  isDisabled={locked}
                   textValue="Duplicate"
                 >
                   <MenuItemBody
@@ -286,6 +288,7 @@ function QuestionRow({
         <div className="flex flex-col gap-4 border-t border-separator p-3">
           <TextField
             className="w-full"
+            isDisabled={locked}
             onChange={(value) => onChange({label: value})}
             value={question.label}
           >
@@ -296,6 +299,7 @@ function QuestionRow({
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             <Select
               className="min-w-0 flex-1"
+              isDisabled={locked}
               onChange={(key) => {
                 if (!key) {
                   return;
@@ -303,7 +307,7 @@ function QuestionRow({
                 const type = key as QuestionDraft['type'];
                 onChange({
                   options: QUESTION_TYPES_WITH_OPTIONS.includes(type) ? question.options : [],
-                  required: type === 'service_type' ? true : question.required,
+                  required: questionIdentityLocked(type) ? true : question.required,
                   type,
                 });
               }}
@@ -317,7 +321,7 @@ function QuestionRow({
               </Select.Trigger>
               <Select.Popover>
                 <ListBox>
-                  {questionTypeOrder(purpose, question.type === 'service_type' || !serviceTypeExists).map((type) => (
+                  {questionTypeOrder(purpose, locked || !serviceTypeExists).map((type) => (
                     <ListBox.Item
                       id={type}
                       key={type}
@@ -333,7 +337,7 @@ function QuestionRow({
 
             <div className="flex min-h-11 shrink-0 items-center">
               <Switch
-                isDisabled={question.type === 'service_type'}
+                isDisabled={locked}
                 isSelected={question.required}
                 onChange={(value) => onChange({required: value})}
               >
@@ -397,7 +401,7 @@ function SectionCard({
 
   const duplicateQuestion = (position: number) => {
     const source = section.questions[position];
-    if (!source || source.type === 'service_type') {
+    if (!source || questionIdentityLocked(source.type)) {
       return;
     }
     const copy: QuestionDraft = {...source, id: '', key: newQuestion().key, options: [...source.options]};
@@ -570,7 +574,7 @@ export default function CheckinBuilder({
   const [error, setError] = useState<null | string>(null);
   const errorRef = useRef<HTMLDivElement>(null);
   const serviceTypeExists = sections.some((section) =>
-    section.questions.some((question) => question.type === 'service_type'),
+    section.questions.some((question) => questionIdentityLocked(question.type)),
   );
 
   const expand = (key: string) => setExpandedKeys((keys) => new Set(keys).add(key));
@@ -584,8 +588,13 @@ export default function CheckinBuilder({
       return next;
     });
 
+  const commitSections = (update: (current: SectionDraft[]) => SectionDraft[]) => {
+    setError(null);
+    setSections(update);
+  };
+
   const setSection = (index: number, section: SectionDraft) => {
-    setSections((s) => s.map((item, i) => (i === index ? section : item)));
+    commitSections((current) => current.map((item, i) => (i === index ? section : item)));
   };
 
   const validate = (): null | string => {
@@ -596,10 +605,10 @@ export default function CheckinBuilder({
     if (questions.some((q) => !q.label.trim())) {
       return 'Every question needs a label.';
     }
-    if (purpose === 'check_in' && questions.some((q) => q.type === 'service_type')) {
+    if (purpose === 'check_in' && questions.some((q) => questionIdentityLocked(q.type))) {
       return 'Service type is only available on Intake forms.';
     }
-    if (questions.filter((q) => q.type === 'service_type').length > 1) {
+    if (questions.filter((q) => questionIdentityLocked(q.type)).length > 1) {
       return 'Service type can appear only once.';
     }
     if (
@@ -682,8 +691,8 @@ export default function CheckinBuilder({
                   key={section.key}
                   onChange={(next) => setSection(index, next)}
                   onExpand={expand}
-                  onMove={(dir) => setSections((s) => moveInList(s, index, dir))}
-                  onRemove={() => setSections((s) => s.filter((_, i) => i !== index))}
+                  onMove={(dir) => commitSections((s) => moveInList(s, index, dir))}
+                  onRemove={() => commitSections((s) => s.filter((_, i) => i !== index))}
                   onToggleExpand={toggleExpand}
                   purpose={purpose}
                   section={section}
@@ -693,7 +702,7 @@ export default function CheckinBuilder({
 
               <Button
                 className={DASHED_BUTTON_CLASS}
-                onPress={() => setSections((s) => [...s, newSection('New section')])}
+                onPress={() => commitSections((s) => [...s, newSection('New section')])}
                 variant="ghost"
               >
                 <FolderPlus />

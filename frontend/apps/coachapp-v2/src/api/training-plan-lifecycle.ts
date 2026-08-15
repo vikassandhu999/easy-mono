@@ -1,3 +1,19 @@
+import type {components} from './schema.ts';
+
+export type ClientPlanLifecycle = components['schemas']['ClientTrainingPlan']['lifecycle'];
+
+const CLIENT_PLAN_LIFECYCLE_LABELS: Record<ClientPlanLifecycle, string> = {
+  archived: 'Archived',
+  current: 'Current',
+  ended: 'Ended',
+  incomplete: 'Incomplete',
+  upcoming: 'Upcoming',
+};
+
+export function clientPlanLifecycleLabel(lifecycle: ClientPlanLifecycle): string {
+  return CLIENT_PLAN_LIFECYCLE_LABELS[lifecycle];
+}
+
 type RevisionedTrainingPlan = {
   id: string;
   revision: number;

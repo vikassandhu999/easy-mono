@@ -24,6 +24,7 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
       assert created["name"] == "Strength Foundation"
       assert created["revision"] == 1
       assert created["archived_at"] == nil
+      assert created["lifecycle"] == nil
       assert created["client_id"] == nil
       refute Map.has_key?(created, "business_id")
       assert_schema(created, "TrainingPlan", EasyWeb.ApiSpec.spec())
@@ -402,6 +403,82 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
         response =
           conn
           |> post("/v1/coach/training-plans/#{source.id}/duplicate")
+          |> json_response(404)
+
+        assert %{"error_code" => "not_found"} = response
+      end
+    end
+  end
+
+  describe "Training Template Assignment" do
+    test "assigns a complete independent Client Plan and advances onboarding", %{conn: conn} do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach, stage: :onboarding)
+      template = insert(:training_plan, business: coach.business, creator: coach.user, name: "HTTP Assignment")
+      workout = insert(:workout, business: coach.business, plan: template, name: "Lower", position: 10)
+      exercise = insert(:exercise, business: coach.business, name: "Back Squat")
+
+      prescribed =
+        insert(:prescribed_exercise,
+          business: coach.business,
+          workout: workout,
+          exercise: exercise,
+          position: 20,
+          prescribed_sets: [%{set_type: :working, reps: "5"}]
+        )
+
+      insert(:workout_schedule, business: coach.business, plan: template, workout: workout, weekday: :monday)
+
+      response =
+        conn
+        |> authenticate_coach(coach)
+        |> post("/v1/coach/clients/#{client.id}/training-plans/#{template.id}/assign", %{
+          "start_date" => nil,
+          "end_date" => nil
+        })
+        |> json_response(201)
+
+      assert %{
+               "data" =>
+                 %{
+                   "id" => assigned_id,
+                   "kind" => "client_plan",
+                   "lifecycle" => "incomplete",
+                   "revision" => 1,
+                   "client_id" => client_id,
+                   "source_template_id" => source_id,
+                   "workouts" => [
+                     %{
+                       "id" => copied_workout_id,
+                       "workout_elements" => [%{"id" => copied_prescribed_id}]
+                     }
+                   ],
+                   "schedule" => %{"monday" => scheduled_workout_id}
+                 } = data
+             } = response
+
+      assert assigned_id != template.id
+      assert client_id == client.id
+      assert source_id == template.id
+      assert copied_workout_id != workout.id
+      assert copied_prescribed_id != prescribed.id
+      assert scheduled_workout_id == copied_workout_id
+      assert Repo.get!(Easy.Clients.Client, client.id).stage == :coaching
+      assert_schema(data, "TrainingPlan", EasyWeb.ApiSpec.spec())
+    end
+
+    test "conceals archived and inaccessible Assignment inputs", %{conn: conn} do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      archived = insert(:training_plan, business: coach.business, creator: coach.user, archived_at: ~U[2026-08-15 12:00:00Z])
+      other = insert(:coach)
+      hidden_client = insert(:client, business: other.business, creator: other, assigned_coach: other)
+      conn = authenticate_coach(conn, coach)
+
+      for target <- [client.id, hidden_client.id] do
+        response =
+          conn
+          |> post("/v1/coach/clients/#{target}/training-plans/#{archived.id}/assign", %{})
           |> json_response(404)
 
         assert %{"error_code" => "not_found"} = response

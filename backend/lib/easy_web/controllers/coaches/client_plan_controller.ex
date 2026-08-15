@@ -4,8 +4,7 @@ defmodule EasyWeb.Coaches.ClientPlanController do
 
   alias Easy.Nutrition.Plan
   alias Easy.NutritionPlans, as: NutritionPlans
-  alias Easy.Training.TrainingPlan
-  alias Easy.TrainingPlans, as: TrainingPlans
+  alias Easy.Training.Programming
 
   alias EasyWeb.Coaches.{NutritionPlanJSON, TrainingPlanJSON}
 
@@ -26,7 +25,7 @@ defmodule EasyWeb.Coaches.ClientPlanController do
     parameters: [
       Operation.parameter(:client_id, :path, :string, "Client id"),
       Operation.parameter(:offset, :query, :integer, "Number of plans to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 20)", required: false),
+      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 100)", required: false),
       Operation.parameter(
         :status,
         :query,
@@ -67,13 +66,14 @@ defmodule EasyWeb.Coaches.ClientPlanController do
   def training_plans(conn, %{"client_id" => client_id} = params) do
     offset = parse_integer(params, "offset", 0)
     limit = parse_integer(params, "limit", 20)
-    status = parse_enum(params, "status", TrainingPlan.statuses())
+    status = parse_enum(params, "status", [:active, :archived])
+    archived = if status, do: status == :archived, else: nil
 
     with {:ok, %{plans: plans, count: count}} <-
-           TrainingPlans.list_plans_for_client(
+           Programming.list_plans_for_client(
              conn.assigns.ctx,
              client_id,
-             status: status,
+             archived: archived,
              offset: offset,
              limit: limit
            ) do

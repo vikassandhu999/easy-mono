@@ -49,6 +49,34 @@ defmodule Easy.Training.Programming do
     end
   end
 
+  @spec list_plans_for_client(Ctx.t(), String.t(), keyword()) ::
+          {:ok, %{count: non_neg_integer(), plans: [TrainingPlan.t()]}} | {:error, :not_found}
+  def list_plans_for_client(%Ctx{} = ctx, client_id, opts \\ []) do
+    offset = max(Keyword.get(opts, :offset, 0), 0)
+    limit = opts |> Keyword.get(:limit, 20) |> max(1) |> min(100)
+    archived = Keyword.get(opts, :archived)
+
+    with :ok <- ensure_coach(ctx),
+         {:ok, _client} <- Clients.authorize_client(ctx, client_id) do
+      query =
+        TrainingPlan
+        |> TrainingPlan.for_business(ctx.business_id)
+        |> TrainingPlan.for_kind(:client_plan)
+        |> TrainingPlan.for_client(ctx.business_id, client_id)
+        |> TrainingPlan.for_archived(archived)
+
+      plans =
+        query
+        |> TrainingPlan.newest()
+        |> Utils.paginate(offset, limit)
+        |> TrainingPlan.include_workouts(ctx.business_id)
+        |> TrainingPlan.include_client(ctx.business_id)
+        |> Repo.all()
+
+      {:ok, %{count: Repo.aggregate(query, :count, :id), plans: plans}}
+    end
+  end
+
   @spec get_template(Ctx.t(), String.t()) :: {:ok, TrainingPlan.t()} | {:error, :not_found}
   def get_template(%Ctx{} = ctx, template_id) do
     with :ok <- ensure_coach(ctx) do
@@ -71,6 +99,16 @@ defmodule Easy.Training.Programming do
         end)
 
       finalize_template_mutation(result, ctx, true)
+    end
+  end
+
+  @spec assign_template_to_client(Ctx.t(), String.t(), String.t(), map()) ::
+          {:ok, TrainingPlan.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def assign_template_to_client(%Ctx{} = ctx, client_id, template_id, attrs) do
+    with :ok <- ensure_coach(ctx) do
+      result = Repo.transaction(fn -> assign_visible_template(ctx, client_id, template_id, attrs) end)
+
+      finalize_plan_mutation(result, ctx, true)
     end
   end
 
@@ -186,6 +224,46 @@ defmodule Easy.Training.Programming do
     case template do
       nil -> Repo.rollback(:not_found)
       template -> duplicate_template_rows(ctx, preload_duplicate_source(template))
+    end
+  end
+
+  defp assign_locked_template(ctx, client_id, template_id, attrs) do
+    template =
+      ctx
+      |> template_query()
+      |> TrainingPlan.for_archived(false)
+      |> lock("FOR UPDATE")
+      |> Repo.get(template_id)
+
+    case template do
+      nil -> Repo.rollback(:not_found)
+      template -> assign_template_rows(ctx, client_id, preload_duplicate_source(template), attrs)
+    end
+  end
+
+  defp assign_visible_template(ctx, client_id, template_id, attrs) do
+    case Clients.authorize_client(ctx, client_id) do
+      {:ok, _client} -> assign_locked_template(ctx, client_id, template_id, attrs)
+      {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
+  defp assign_template_rows(ctx, client_id, template, attrs) do
+    with {:ok, copy} <-
+           TrainingPlan.assignment_changeset(
+             ctx.business_id,
+             ctx.user_id,
+             client_id,
+             template,
+             attrs
+           )
+           |> Repo.insert(),
+         {:ok, workout_ids} <- duplicate_workout_rows(ctx, template.workouts, copy),
+         :ok <- duplicate_schedule_rows(ctx, template.workout_schedule, copy, workout_ids),
+         :ok <- Clients.advance_stage_to_coaching(ctx, client_id) do
+      copy
+    else
+      {:error, reason} -> Repo.rollback(reason)
     end
   end
 

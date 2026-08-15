@@ -1331,12 +1331,11 @@ export interface components {
      * TrainingPlanAssignRequest
      * @description Request body for assigning a template to a client.
      * @example {
-     *       "client_id": "0c6ee321-1fb1-41c7-93c2-b4e4649eb2eb"
+     *       "end_date": null,
+     *       "start_date": "2026-09-01"
      *     }
      */
     TrainingPlanAssignRequest: {
-      /** Format: uuid */
-      client_id: string;
       /** Format: date */
       end_date?: string | null;
       /** Format: date */
@@ -1753,6 +1752,7 @@ export interface components {
      *       "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
      *       "inserted_at": "2026-05-30T12:00:00Z",
      *       "kind": "client_plan",
+     *       "lifecycle": "current",
      *       "name": "Four Day Strength",
      *       "revision": 1,
      *       "schedule": {
@@ -1782,6 +1782,8 @@ export interface components {
       inserted_at: string;
       /** @enum {string} */
       kind: 'client_plan';
+      /** @enum {string} */
+      lifecycle: 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived';
       name: string;
       revision: number;
       schedule: components['schemas']['TrainingSchedule'];
@@ -3654,6 +3656,7 @@ export interface components {
      *       "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
      *       "inserted_at": "2026-05-30T12:00:00Z",
      *       "kind": "template",
+     *       "lifecycle": null,
      *       "name": "Four Day Strength Template",
      *       "revision": 1,
      *       "schedule": {
@@ -3689,6 +3692,8 @@ export interface components {
       inserted_at: string;
       /** @enum {string} */
       kind: 'template' | 'client_plan';
+      /** @enum {string|null} */
+      lifecycle: 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived' | null;
       name: string;
       revision: number;
       schedule: components['schemas']['TrainingSchedule'];

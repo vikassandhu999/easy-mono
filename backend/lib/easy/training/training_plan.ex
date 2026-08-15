@@ -44,6 +44,20 @@ defmodule Easy.Training.TrainingPlan do
   @spec statuses() :: [atom()]
   def statuses, do: [:active, :archived]
 
+  @spec lifecycle(t(), Date.t()) :: :incomplete | :upcoming | :current | :ended | :archived | nil
+  def lifecycle(plan, date \\ Date.utc_today())
+  def lifecycle(%__MODULE__{kind: :template}, _date), do: nil
+  def lifecycle(%__MODULE__{archived_at: archived_at}, _date) when not is_nil(archived_at), do: :archived
+  def lifecycle(%__MODULE__{start_date: nil}, _date), do: :incomplete
+
+  def lifecycle(%__MODULE__{start_date: start_date, end_date: end_date}, date) do
+    cond do
+      Date.after?(start_date, date) -> :upcoming
+      end_date && Date.before?(end_date, date) -> :ended
+      true -> :current
+    end
+  end
+
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, creator_id, attrs) do
     supplied_fields = attrs |> Map.keys() |> Enum.map(&to_string/1) |> MapSet.new()
@@ -60,16 +74,18 @@ defmodule Easy.Training.TrainingPlan do
     |> apply_constraints()
   end
 
-  @spec insert_changeset(String.t(), String.t(), String.t(), String.t() | nil, map()) ::
+  @spec assignment_changeset(String.t(), String.t(), String.t(), t(), map()) ::
           Ecto.Changeset.t()
-  def insert_changeset(business_id, creator_id, client_id, source_template_id, attrs) do
+  def assignment_changeset(business_id, creator_id, client_id, source_template, attrs) do
     %__MODULE__{}
-    |> cast(attrs, @template_fields ++ [:start_date, :end_date])
+    |> cast(attrs, [:start_date, :end_date])
     |> put_change(:kind, :client_plan)
+    |> put_change(:name, source_template.name)
+    |> put_change(:description, source_template.description)
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, creator_id)
     |> put_change(:client_id, client_id)
-    |> put_change(:source_template_id, source_template_id)
+    |> put_change(:source_template_id, source_template.id)
     |> put_change(:revision, 1)
     |> validate_common_fields()
     |> validate_required([:kind, :business_id, :creator_id, :client_id, :revision])

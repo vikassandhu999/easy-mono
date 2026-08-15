@@ -29,6 +29,7 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
       revision: plan.revision,
       archived_at: plan.archived_at,
       status: if(plan.archived_at, do: :archived, else: :active),
+      lifecycle: TrainingPlan.lifecycle(plan),
       start_date: plan.start_date,
       end_date: plan.end_date,
       client_id: plan.client_id,

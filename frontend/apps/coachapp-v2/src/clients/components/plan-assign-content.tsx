@@ -97,8 +97,9 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
         });
       } else {
         await assignTrainingMutation.mutateAsync({
+          clientId,
           id: selected.id,
-          body: {client_id: clientId, start_date: startDate, end_date: endDate},
+          body: {start_date: startDate, end_date: endDate},
         });
       }
       toast.success(`"${selected.name}" assigned to ${clientName}`);

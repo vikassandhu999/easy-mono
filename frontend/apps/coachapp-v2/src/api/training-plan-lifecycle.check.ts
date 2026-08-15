@@ -1,8 +1,23 @@
 import {
+  clientPlanLifecycleLabel,
   getStaleTrainingPlanRevision,
   trainingPlanDeleteRequest,
   trainingPlanRevisionRequest,
 } from './training-plan-lifecycle.ts';
+
+const lifecycleLabels = {
+  incomplete: 'Incomplete',
+  upcoming: 'Upcoming',
+  current: 'Current',
+  ended: 'Ended',
+  archived: 'Archived',
+} as const;
+
+for (const [lifecycle, expected] of Object.entries(lifecycleLabels)) {
+  if (clientPlanLifecycleLabel(lifecycle as keyof typeof lifecycleLabels) !== expected) {
+    throw new Error(`${lifecycle} Client Plans must use the generated lifecycle label`);
+  }
+}
 
 const plan = {id: 'plan-1', revision: 7};
 

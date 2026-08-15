@@ -7,7 +7,7 @@ import {toastMutationError} from '@/@components/mutation-toast';
 import SectionHeading from '@/@components/section-heading';
 import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
-import {trainingPlanRevisionRequest} from '@/api/training-plan-lifecycle';
+import {clientPlanLifecycleLabel, trainingPlanRevisionRequest} from '@/api/training-plan-lifecycle';
 import {
   useArchiveTrainingPlanMutation,
   useCoachClientTrainingSessionsInfiniteQuery,
@@ -103,6 +103,7 @@ export function TrainingTab({client}: {client: Client}) {
         meta={
           plan
             ? [
+                clientPlanLifecycleLabel(plan.lifecycle),
                 plan.start_date ? `Started ${formatDayMonth(plan.start_date)}` : null,
                 scheduledDays ? `${scheduledDays} days a week` : null,
               ]

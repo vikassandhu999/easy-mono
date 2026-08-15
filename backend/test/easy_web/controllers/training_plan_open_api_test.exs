@@ -13,7 +13,8 @@ defmodule EasyWeb.TrainingPlanOpenApiTest do
     assert paths["/v1/coach/training-plans/{id}"].patch.operationId == "updateTrainingPlan"
     assert paths["/v1/coach/training-plans/{id}"].delete.operationId == "deleteTrainingPlan"
 
-    assert paths["/v1/coach/training-plans/{id}/assign"].post.operationId == "assignTrainingPlan"
+    assert paths["/v1/coach/clients/{client_id}/training-plans/{id}/assign"].post.operationId ==
+             "assignTrainingPlan"
 
     assert paths["/v1/coach/training-plans/{id}/duplicate"].post.operationId ==
              "duplicateTrainingPlan"
@@ -39,9 +40,11 @@ defmodule EasyWeb.TrainingPlanOpenApiTest do
     assert paths["/v1/coach/training-plans/{id}"].delete.responses[204]
     assert paths["/v1/coach/training-plans/{id}"].delete.responses[404]
 
-    assert paths["/v1/coach/training-plans/{id}/assign"].post.requestBody.required == true
-    assert paths["/v1/coach/training-plans/{id}/assign"].post.responses[201]
-    assert paths["/v1/coach/training-plans/{id}/assign"].post.responses[422]
+    assignment = paths["/v1/coach/clients/{client_id}/training-plans/{id}/assign"].post
+    assert assignment.requestBody.required == true
+    assert assignment.responses[201]
+    assert assignment.responses[404]
+    assert assignment.responses[422]
 
     assert paths["/v1/coach/training-plans/{id}/duplicate"].post.responses[201]
     assert paths["/v1/coach/training-plans/{id}/duplicate"].post.responses[404]

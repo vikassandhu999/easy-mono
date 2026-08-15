@@ -217,16 +217,19 @@ export function useDuplicateTrainingPlanMutation() {
 export function useAssignTrainingPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({id, body}: {id: string; body: TrainingPlanAssignRequest}) =>
+    mutationFn: ({clientId, id, body}: {clientId: string; id: string; body: TrainingPlanAssignRequest}) =>
       call(
-        client.POST('/v1/coach/training-plans/{id}/assign', {params: {path: {id}}, body}),
+        client.POST('/v1/coach/clients/{client_id}/training-plans/{id}/assign', {
+          params: {path: {client_id: clientId, id}},
+          body,
+        }),
       ) as Promise<TrainingPlanResponse>,
-    onSuccess: (_data, {body}) => {
-      qc.invalidateQueries({queryKey: trainingPlanKeys.forClient(body.client_id)});
+    onSuccess: (_data, {clientId}) => {
+      qc.invalidateQueries({queryKey: trainingPlanKeys.forClient(clientId)});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
       // Assignment changes Programming membership and can auto-advance
       // `stage` on the open client screen.
-      qc.invalidateQueries({queryKey: clientKeys.detail(body.client_id)});
+      qc.invalidateQueries({queryKey: clientKeys.detail(clientId)});
       for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
         qc.invalidateQueries({queryKey: [...queryKey]});
       }

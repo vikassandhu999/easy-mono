@@ -1733,15 +1733,10 @@
         "additionalProperties": false,
         "description": "Request body for assigning a template to a client.",
         "example": {
-          "client_id": "0c6ee321-1fb1-41c7-93c2-b4e4649eb2eb"
+          "end_date": null,
+          "start_date": "2026-09-01"
         },
         "properties": {
-          "client_id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
           "end_date": {
             "format": "date",
             "nullable": true,
@@ -1757,9 +1752,6 @@
             "x-validate": null
           }
         },
-        "required": [
-          "client_id"
-        ],
         "title": "TrainingPlanAssignRequest",
         "type": "object",
         "x-struct": null,
@@ -3384,6 +3376,7 @@
           "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
           "inserted_at": "2026-05-30T12:00:00Z",
           "kind": "client_plan",
+          "lifecycle": "current",
           "name": "Four Day Strength",
           "revision": 1,
           "schedule": {
@@ -3436,6 +3429,18 @@
           "kind": {
             "enum": [
               "client_plan"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "lifecycle": {
+            "enum": [
+              "incomplete",
+              "upcoming",
+              "current",
+              "ended",
+              "archived"
             ],
             "type": "string",
             "x-struct": null,
@@ -3494,6 +3499,7 @@
           "revision",
           "archived_at",
           "status",
+          "lifecycle",
           "start_date",
           "end_date",
           "workouts",
@@ -10338,6 +10344,7 @@
           "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
           "inserted_at": "2026-05-30T12:00:00Z",
           "kind": "template",
+          "lifecycle": null,
           "name": "Four Day Strength Template",
           "revision": 1,
           "schedule": {
@@ -10420,6 +10427,19 @@
             "x-struct": null,
             "x-validate": null
           },
+          "lifecycle": {
+            "enum": [
+              "incomplete",
+              "upcoming",
+              "current",
+              "ended",
+              "archived"
+            ],
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "name": {
             "type": "string",
             "x-struct": null,
@@ -10480,6 +10500,7 @@
           "revision",
           "archived_at",
           "status",
+          "lifecycle",
           "start_date",
           "end_date",
           "client_id",
@@ -14662,7 +14683,7 @@
             }
           },
           {
-            "description": "Page size (default 20, max 20)",
+            "description": "Page size (default 20, max 100)",
             "in": "query",
             "name": "limit",
             "required": false,
@@ -20848,88 +20869,6 @@
         ]
       }
     },
-    "/v1/coach/training-plans/{id}/assign": {
-      "post": {
-        "callbacks": {},
-        "description": "Copies a template training plan to a client in the authenticated business and returns the assigned copy.",
-        "operationId": "assignTrainingPlan",
-        "parameters": [
-          {
-            "description": "Training plan id",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TrainingPlanAssignRequest"
-              }
-            }
-          },
-          "description": "Training plan assign request",
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TrainingPlanResponse"
-                }
-              }
-            },
-            "description": "Training plan assigned"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Assign training plan",
-        "tags": [
-          "coach training plans"
-        ]
-      }
-    },
     "/v1/coach/training-plans/{id}/archive": {
       "post": {
         "callbacks": {},
@@ -23907,6 +23846,99 @@
         "summary": "Verify trainer invitation OTP",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/v1/coach/clients/{client_id}/training-plans/{id}/assign": {
+      "post": {
+        "callbacks": {},
+        "description": "Copies an active Training Template's complete Prescription to an independent Client Plan and advances onboarding atomically.",
+        "operationId": "assignTrainingPlan",
+        "parameters": [
+          {
+            "description": "Visible client id",
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Training Template id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainingPlanAssignRequest"
+              }
+            }
+          },
+          "description": "Training Template Assignment request",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingPlanResponse"
+                }
+              }
+            },
+            "description": "Client Plan created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Assign a Training Template",
+        "tags": [
+          "coach training plans"
         ]
       }
     },

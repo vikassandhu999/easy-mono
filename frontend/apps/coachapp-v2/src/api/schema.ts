@@ -1309,26 +1309,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/v1/coach/training-plans/{id}/assign': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Assign training plan
-     * @description Copies a template training plan to a client in the authenticated business and returns the assigned copy.
-     */
-    post: operations['assignTrainingPlan'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   '/v1/coach/training-plans/{id}/archive': {
     parameters: {
       query?: never;
@@ -1884,6 +1864,26 @@ export interface paths {
      * @description Verifies a trainer invitation OTP, links or creates the user, and returns auth tokens.
      */
     post: operations['trainerAcceptInviteVerify'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/coach/clients/{client_id}/training-plans/{id}/assign': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Assign a Training Template
+     * @description Copies an active Training Template's complete Prescription to an independent Client Plan and advances onboarding atomically.
+     */
+    post: operations['assignTrainingPlan'];
     delete?: never;
     options?: never;
     head?: never;
@@ -2519,12 +2519,11 @@ export interface components {
      * TrainingPlanAssignRequest
      * @description Request body for assigning a template to a client.
      * @example {
-     *       "client_id": "0c6ee321-1fb1-41c7-93c2-b4e4649eb2eb"
+     *       "end_date": null,
+     *       "start_date": "2026-09-01"
      *     }
      */
     TrainingPlanAssignRequest: {
-      /** Format: uuid */
-      client_id: string;
       /** Format: date */
       end_date?: string | null;
       /** Format: date */
@@ -2941,6 +2940,7 @@ export interface components {
      *       "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
      *       "inserted_at": "2026-05-30T12:00:00Z",
      *       "kind": "client_plan",
+     *       "lifecycle": "current",
      *       "name": "Four Day Strength",
      *       "revision": 1,
      *       "schedule": {
@@ -2970,6 +2970,8 @@ export interface components {
       inserted_at: string;
       /** @enum {string} */
       kind: 'client_plan';
+      /** @enum {string} */
+      lifecycle: 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived';
       name: string;
       revision: number;
       schedule: components['schemas']['TrainingSchedule'];
@@ -4842,6 +4844,7 @@ export interface components {
      *       "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
      *       "inserted_at": "2026-05-30T12:00:00Z",
      *       "kind": "template",
+     *       "lifecycle": null,
      *       "name": "Four Day Strength Template",
      *       "revision": 1,
      *       "schedule": {
@@ -4877,6 +4880,8 @@ export interface components {
       inserted_at: string;
       /** @enum {string} */
       kind: 'template' | 'client_plan';
+      /** @enum {string|null} */
+      lifecycle: 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived' | null;
       name: string;
       revision: number;
       schedule: components['schemas']['TrainingSchedule'];
@@ -6418,7 +6423,7 @@ export interface operations {
       query?: {
         /** @description Number of plans to skip */
         offset?: number;
-        /** @description Page size (default 20, max 20) */
+        /** @description Page size (default 20, max 100) */
         limit?: number;
         /** @description Only plans with this status */
         status?: 'active' | 'archived';
@@ -9263,61 +9268,6 @@ export interface operations {
       };
     };
   };
-  assignTrainingPlan: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Training plan id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Training plan assign request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TrainingPlanAssignRequest'];
-      };
-    };
-    responses: {
-      /** @description Training plan assigned */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingPlanResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
   archiveTrainingPlan: {
     parameters: {
       query?: never;
@@ -11147,6 +11097,63 @@ export interface operations {
       };
       /** @description Invitation or OTP expired */
       410: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  assignTrainingPlan: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Visible client id */
+        client_id: string;
+        /** @description Training Template id */
+        id: string;
+      };
+      cookie?: never;
+    };
+    /** @description Training Template Assignment request */
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TrainingPlanAssignRequest'];
+      };
+    };
+    responses: {
+      /** @description Client Plan created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TrainingPlanResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not found */
+      404: {
         headers: {
           [name: string]: unknown;
         };

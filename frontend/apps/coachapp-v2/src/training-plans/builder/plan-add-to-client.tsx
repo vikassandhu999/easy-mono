@@ -27,8 +27,9 @@ export function PlanAddToClient({plan}: Props) {
   const assign = async (client: Client, dates: PlanAssignmentDates) => {
     const clientName = clientRecipientName(client, getFullName(client.first_name, client.last_name));
     const result = await assignTrainingMutation.mutateAsync({
+      clientId: client.id,
       id: plan.id,
-      body: {client_id: client.id, end_date: dates.endDate, start_date: dates.startDate},
+      body: {end_date: dates.endDate, start_date: dates.startDate},
     });
     // Reflect the assignment in the cached detail so the header/date fields
     // update without a reload. Assign may return a copy (new id) — only

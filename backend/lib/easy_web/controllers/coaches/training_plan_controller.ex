@@ -3,7 +3,6 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   use OpenApiSpex.ControllerSpecs
 
   alias Easy.Training.Programming
-  alias Easy.TrainingPlans, as: Plans
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
@@ -159,16 +158,17 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     ]
 
   operation :assign,
-    summary: "Assign training plan",
-    description: "Copies a template training plan to a client in the authenticated business and returns the assigned copy.",
+    summary: "Assign a Training Template",
+    description: "Copies an active Training Template's complete Prescription to an independent Client Plan and advances onboarding atomically.",
     operation_id: "assignTrainingPlan",
     security: [%{"bearerAuth" => []}],
     parameters: [
-      Operation.parameter(:id, :path, :string, "Training plan id")
+      Operation.parameter(:client_id, :path, :string, "Visible client id"),
+      Operation.parameter(:id, :path, :string, "Training Template id")
     ],
-    request_body: {"Training plan assign request", "application/json", TrainingPlanAssignRequest, required: true},
+    request_body: {"Training Template Assignment request", "application/json", TrainingPlanAssignRequest, required: true},
     responses: [
-      created: {"Training plan assigned", "application/json", TrainingPlanResponse},
+      created: {"Client Plan created", "application/json", TrainingPlanResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
@@ -302,10 +302,10 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   @spec assign(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def assign(conn, _params) do
     id = conn.path_params["id"]
-    client_id = conn.body_params[:client_id]
+    client_id = conn.path_params["client_id"]
 
     with {:ok, assigned} <-
-           Plans.assign_plan_to_client(conn.assigns.ctx, client_id, id, conn.body_params) do
+           Programming.assign_template_to_client(conn.assigns.ctx, client_id, id, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, plan: assigned)

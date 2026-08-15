@@ -108,12 +108,10 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlanAssignRequest do
       type: :object,
       additionalProperties: false,
       properties: %{
-        client_id: %Schema{type: :string, format: :uuid},
         start_date: %Schema{type: :string, format: :date, nullable: true},
         end_date: %Schema{type: :string, format: :date, nullable: true}
       },
-      required: [:client_id],
-      example: %{"client_id" => "0c6ee321-1fb1-41c7-93c2-b4e4649eb2eb"}
+      example: %{"start_date" => "2026-09-01", "end_date" => nil}
     },
     struct?: false
   )
@@ -297,6 +295,11 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlan do
           revision: %Schema{type: :integer, minimum: 1},
           archived_at: %Schema{type: :string, format: :"date-time", nullable: true},
           status: %Schema{type: :string, enum: ["active", "archived"]},
+          lifecycle: %Schema{
+            type: :string,
+            enum: ["incomplete", "upcoming", "current", "ended", "archived"],
+            nullable: true
+          },
           start_date: %Schema{type: :string, format: :date, nullable: true},
           end_date: %Schema{type: :string, format: :date, nullable: true},
           client_id: %Schema{type: :string, format: :uuid, nullable: true},
@@ -316,6 +319,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlan do
       :revision,
       :archived_at,
       :status,
+      :lifecycle,
       :start_date,
       :end_date,
       :client_id,
@@ -335,6 +339,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlan do
       "revision" => 1,
       "archived_at" => nil,
       "status" => "active",
+      "lifecycle" => nil,
       "start_date" => nil,
       "end_date" => nil,
       "client_id" => nil,
@@ -377,6 +382,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientTrainingPlan do
           revision: %Schema{type: :integer, minimum: 1},
           archived_at: %Schema{type: :string, format: :"date-time", nullable: true},
           status: %Schema{type: :string, enum: ["active", "archived"]},
+          lifecycle: %Schema{type: :string, enum: ["incomplete", "upcoming", "current", "ended", "archived"]},
           start_date: %Schema{type: :string, format: :date, nullable: true},
           end_date: %Schema{type: :string, format: :date, nullable: true},
           workouts: %Schema{type: :array, items: TrainingPlanWorkout},
@@ -392,6 +398,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientTrainingPlan do
       :revision,
       :archived_at,
       :status,
+      :lifecycle,
       :start_date,
       :end_date,
       :workouts,
@@ -407,6 +414,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientTrainingPlan do
       "revision" => 1,
       "archived_at" => nil,
       "status" => "active",
+      "lifecycle" => "current",
       "start_date" => "2026-06-01",
       "end_date" => "2026-06-28",
       "workouts" => [],

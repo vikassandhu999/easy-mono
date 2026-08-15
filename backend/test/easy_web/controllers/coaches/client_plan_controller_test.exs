@@ -12,23 +12,25 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
   describe "GET /v1/coach/clients/:client_id/training-plans" do
     test "lists only this client's training plans", ctx do
       insert(:training_plan,
-        creator: ctx.coach,
+        creator: ctx.coach.user,
         business: ctx.business,
-        client_id: ctx.client.id,
+        client: ctx.client,
+        kind: :client_plan,
         start_date: ~D[2026-01-01],
         end_date: ~D[2026-01-31]
       )
 
       # Template — should NOT appear
-      insert(:training_plan, creator: ctx.coach, business: ctx.business)
+      insert(:training_plan, creator: ctx.coach.user, business: ctx.business)
 
       # Other client's plan — should NOT appear
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
 
       insert(:training_plan,
-        creator: ctx.coach,
+        creator: ctx.coach.user,
         business: ctx.business,
-        client_id: other_client.id,
+        client: other_client,
+        kind: :client_plan,
         start_date: ~D[2026-01-01],
         end_date: ~D[2026-01-31]
       )
@@ -38,6 +40,7 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
       assert length(data) == 1
       assert hd(data)["client_id"] == ctx.client.id
       assert hd(data)["client"]["id"] == ctx.client.id
+      assert hd(data)["lifecycle"] == "ended"
     end
 
     test "returns empty list when client has no plans", ctx do
@@ -47,19 +50,20 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
 
     test "filters by status", ctx do
       insert(:training_plan,
-        creator: ctx.coach,
+        creator: ctx.coach.user,
         business: ctx.business,
-        client_id: ctx.client.id,
-        status: :active,
+        client: ctx.client,
+        kind: :client_plan,
         start_date: ~D[2026-01-01],
         end_date: ~D[2026-01-31]
       )
 
       insert(:training_plan,
-        creator: ctx.coach,
+        creator: ctx.coach.user,
         business: ctx.business,
-        client_id: ctx.client.id,
-        status: :archived,
+        client: ctx.client,
+        kind: :client_plan,
+        archived_at: ~U[2026-08-15 12:00:00Z],
         start_date: ~D[2026-01-01],
         end_date: ~D[2026-01-31]
       )

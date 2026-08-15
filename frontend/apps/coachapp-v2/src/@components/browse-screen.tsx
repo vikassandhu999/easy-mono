@@ -75,11 +75,12 @@ type BrowseQuery<T> = {
 type Props<T extends object, Id extends string> = {
   action?: BrowseAction;
   /**
-   * Rendered inside Page.Actions before the primary action button, at every
-   * width. ONE caller: the default-intake control on the forms list — a
-   * setting that lives beside "Create form" by product decision (2026-08-15,
-   * prototype/default-intake-placement). Same rule as `toolbarEnd`: a second
-   * caller means modelling it properly, not reaching for the slot.
+   * A header-level control that is a setting, not a navigation action: inline
+   * before the action button from `sm` up, and on its own full-width line below
+   * the title on mobile (the header wraps for it). ONE caller: the default-intake
+   * control on the forms list, placed beside "Create form" by product decision
+   * (2026-08-15, `prototype/default-intake-placement`). Same rule as `toolbarEnd`:
+   * a second caller means modelling it properly, not reaching for the slot.
    */
   actionsExtra?: ReactNode;
   /** Route for the header back button. Library lists have one; top-level ones don't. */
@@ -139,7 +140,9 @@ type Props<T extends object, Id extends string> = {
  * the look. Values are the majority spelling across the eight screens — the
  * header string was already identical on seven of them.
  */
-const HEADER = 'bg-surface pb-1 sm:bg-transparent sm:pb-2';
+// `flex-wrap` carries `actionsExtra` onto its own line below the title on mobile;
+// with no such child nothing wraps, so it is a no-op for the other seven screens.
+const HEADER = 'flex-wrap bg-surface pb-1 sm:bg-transparent sm:pb-2';
 
 // `flex-wrap` is a superset: with no filter row nothing wraps, so one toolbar
 // serves both shapes. Only the mobile bottom padding differs — the pill row
@@ -251,21 +254,22 @@ export default function BrowseScreen<T extends object, Id extends string>({
             )}
           </div>
         </Page.TitleGroup>
-        {action || actionsExtra ? (
+        {/* Its own flex child, not a child of Page.Actions: only then can it take
+            a full-width line on mobile while the action button stays up beside
+            the title. `order-last` puts it after the button in the flex order. */}
+        {actionsExtra ? <div className="order-last w-full sm:order-none sm:w-auto">{actionsExtra}</div> : null}
+        {action ? (
           <Page.Actions>
-            {actionsExtra}
-            {action ? (
-              <Button
-                aria-label={action.label}
-                className="tap-target rounded-control"
-                data-testid={testId ? `${testId}-create` : undefined}
-                onPress={() => navigate(action.to)}
-                variant="primary"
-              >
-                {action.icon}
-                <span className="hidden sm:inline">{action.label}</span>
-              </Button>
-            ) : null}
+            <Button
+              aria-label={action.label}
+              className="tap-target rounded-control"
+              data-testid={testId ? `${testId}-create` : undefined}
+              onPress={() => navigate(action.to)}
+              variant="primary"
+            >
+              {action.icon}
+              <span className="hidden sm:inline">{action.label}</span>
+            </Button>
           </Page.Actions>
         ) : null}
       </Page.Header>

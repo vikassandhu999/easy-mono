@@ -3,6 +3,7 @@ import {ClipboardCheck} from 'lucide-react';
 
 import {BrowseRow} from '@/@components/browse-list-box';
 import {type ClientProfileFormTemplate, PURPOSE_LABELS} from '@/api/checkins';
+import {questionCount} from '@/checkins/lib/form-templates';
 
 type TemplateStatus = ClientProfileFormTemplate['status'];
 
@@ -10,13 +11,6 @@ const STATUS_MAP: Record<TemplateStatus, {color: 'success' | 'warning'; label: s
   active: {color: 'success', label: 'Active'},
   archived: {color: 'warning', label: 'Archived'},
 };
-
-function questionCount(template: ClientProfileFormTemplate): number {
-  return (template.sections ?? []).reduce(
-    (sum, section) => sum + (Array.isArray(section.questions) ? section.questions.length : 0),
-    0,
-  );
-}
 
 // COPY.md §FM row meta: `{Type} · {n} questions · {m} responses`.
 function getTemplateMeta(template: ClientProfileFormTemplate): string {

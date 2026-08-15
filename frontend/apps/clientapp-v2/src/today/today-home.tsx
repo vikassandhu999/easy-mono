@@ -9,6 +9,7 @@ import {useListClientNutritionDaysQuery} from '@/api/nutrition';
 import {useGetClientProfileQuery} from '@/api/profile';
 import {
   useCreateClientTrainingSessionMutation,
+  useGetClientActiveTrainingSessionQuery,
   useListClientTrainingSessionsQuery,
   useResolveClientTrainingCoverageQuery,
 } from '@/api/training';
@@ -23,6 +24,7 @@ export default function TodayHome() {
   const {data: profileData} = useGetClientProfileQuery();
   const {data: coverageData, isLoading: coverageLoading} = useResolveClientTrainingCoverageQuery();
   const {data: sessionsData, isLoading: sessionsLoading} = useListClientTrainingSessionsQuery({});
+  const {data: activeData, isLoading: activeLoading} = useGetClientActiveTrainingSessionQuery();
   const {data: nutritionDays, isLoading: nutritionLoading} = useListClientNutritionDaysQuery({
     date: formatDateISO(new Date()),
   });
@@ -32,7 +34,7 @@ export default function TodayHome() {
   const profile = profileData?.data;
   const plan = clientTrainingPlanFromCoverage(coverageData);
   const workout = coverageData?.data?.workout;
-  const activeSession = sessionsData?.data.find((session) => session.state === 'active');
+  const activeSession = activeData?.data;
   const coachName = profile?.coach?.first_name || 'your coach';
   const firstName = profile?.first_name || 'there';
 
@@ -41,12 +43,8 @@ export default function TodayHome() {
       navigate(ROUTES.WORKOUT_ACTIVE);
       return;
     }
-    if (!workout) {
-      navigate(ROUTES.TRAINING);
-      return;
-    }
     try {
-      await createSession.mutateAsync({training_workout_id: workout.id});
+      await createSession.mutateAsync(workout ? {training_workout_id: workout.id} : {});
       navigate(ROUTES.WORKOUT_ACTIVE);
     } catch {
       // the mutation's error state surfaces the failure.
@@ -92,7 +90,7 @@ export default function TodayHome() {
       <p className="mb-3 mt-[22px] text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted">
         Today&apos;s plan
       </p>
-      {coverageLoading || sessionsLoading ? (
+      {coverageLoading || sessionsLoading || activeLoading ? (
         <div className="grid min-h-36 place-items-center rounded-[20px] border border-border bg-surface">
           <Spinner />
         </div>
@@ -114,20 +112,18 @@ export default function TodayHome() {
                 {workout?.name ?? (plan ? 'Rest day' : 'Plan on the way')}
               </span>
             </button>
-            {workout || activeSession ? (
-              <button
-                className="flex items-center gap-1 rounded-[11px] bg-accent px-3.5 py-2.5 text-[13px] font-extrabold text-white disabled:opacity-50"
-                disabled={starting}
-                onClick={openWorkout}
-                type="button"
-              >
-                <Play
-                  fill="currentColor"
-                  size={12}
-                />{' '}
-                {activeSession ? 'Resume' : 'Start'}
-              </button>
-            ) : null}
+            <button
+              className="flex items-center gap-1 rounded-[11px] bg-accent px-3.5 py-2.5 text-[13px] font-extrabold text-white disabled:opacity-50"
+              disabled={starting}
+              onClick={openWorkout}
+              type="button"
+            >
+              <Play
+                fill="currentColor"
+                size={12}
+              />{' '}
+              {activeSession ? 'Resume' : workout ? 'Start' : 'Freestyle'}
+            </button>
           </div>
           {workout ? (
             <div className="mt-3.5 grid grid-cols-3 rounded-[13px] bg-surface-secondary py-2.5 text-center">

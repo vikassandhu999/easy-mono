@@ -2280,6 +2280,13 @@ export interface components {
       unit: 'kg' | 'lbs';
       value: number;
     };
+    /** TrainingSessionSnapshotPlan */
+    TrainingSessionSnapshotPlan: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      revision: number;
+    };
     /** ClientProfileCheckInScheduleRequest */
     ClientProfileCheckInScheduleRequest: {
       /** Format: uuid */
@@ -2928,6 +2935,13 @@ export interface components {
       /** Format: uuid */
       nutrition_plan_day_id?: string;
       position: number;
+    };
+    /** TrainingSessionPrescriptionSnapshot */
+    TrainingSessionPrescriptionSnapshot: {
+      plan: components['schemas']['TrainingSessionSnapshotPlan'];
+      /** @enum {integer} */
+      version: 1;
+      workout: components['schemas']['TrainingSessionSnapshotWorkout'];
     };
     /** NutritionSwitchOptionRequest */
     NutritionSwitchOptionRequest: {
@@ -3645,6 +3659,10 @@ export interface components {
       soreness_rating?: number;
       /** @enum {string} */
       state?: 'completed' | 'discarded';
+    };
+    /** ActiveTrainingSessionResponse */
+    ActiveTrainingSessionResponse: {
+      data: components['schemas']['TrainingSession'] | null;
     };
     /**
      * TrainingEquipment
@@ -4632,6 +4650,13 @@ export interface components {
       client: components['schemas']['Client'];
       reasons: components['schemas']['MissedCheckInReason'][];
     };
+    /** TrainingSessionSnapshotWorkout */
+    TrainingSessionSnapshotWorkout: {
+      exercises: components['schemas']['TrainingSessionSnapshotExercise'][];
+      /** Format: uuid */
+      id: string;
+      name: string;
+    };
     /** FoodLogEntry */
     FoodLogEntry: {
       amount: number | null;
@@ -4707,6 +4732,27 @@ export interface components {
       end_date?: string | null;
       /** Format: date */
       start_date?: string | null;
+    };
+    /** TrainingSessionSnapshotExercise */
+    TrainingSessionSnapshotExercise: {
+      /** Format: uuid */
+      exercise_id: string;
+      exercise_name: string;
+      position: number;
+      /** Format: uuid */
+      ref: string;
+      sets: components['schemas']['TrainingPlanPlannedSet'][];
+      /** @enum {string} */
+      tracking_type:
+        | 'weight_reps'
+        | 'bodyweight_reps'
+        | 'weighted_bodyweight'
+        | 'assisted_bodyweight'
+        | 'reps_only'
+        | 'duration'
+        | 'weight_duration'
+        | 'distance_duration'
+        | 'weight_distance';
     };
     /**
      * TrainingSessionRequest
@@ -5194,6 +5240,8 @@ export interface components {
     TrainingSession: {
       /** Format: uuid */
       client_id?: string | null;
+      /** Format: date-time */
+      closed_at: string | null;
       /** Format: date */
       date: string;
       /** Format: date-time */
@@ -5202,12 +5250,20 @@ export interface components {
       id: string;
       /** Format: date-time */
       inserted_at: string;
+      /** @enum {string} */
+      kind: 'planned' | 'freestyle';
       notes?: string | null;
       performed_sets: components['schemas']['TrainingPerformedSet'][];
       planned_snapshot?: {
         [key: string]: unknown;
       } | null;
+      prescription_snapshot: components['schemas']['TrainingSessionPrescriptionSnapshot'] | null;
+      snapshot_version: number | null;
       soreness_rating?: number | null;
+      /** Format: uuid */
+      source_plan_id: string | null;
+      /** Format: uuid */
+      source_workout_id: string | null;
       /** Format: date-time */
       started_at: string;
       /** @enum {string} */

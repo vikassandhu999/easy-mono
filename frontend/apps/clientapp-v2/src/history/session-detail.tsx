@@ -1,6 +1,6 @@
 /**
  * Session detail — actual vs plan (spec: assets/client-training/07-history.html, detail).
- * Reconstructs plan-vs-actual from planned_snapshot (targets) + performed_sets (actuals):
+ * Reconstructs plan-vs-actual from the Prescription snapshot (targets) + performed_sets (actuals):
  * matched ✓, beat ↑, missed ↓; a planned exercise with no sets = skipped, a performed
  * exercise not in the plan = added. Coach note shown. Read-only. Dark + periwinkle, new schema.
  */

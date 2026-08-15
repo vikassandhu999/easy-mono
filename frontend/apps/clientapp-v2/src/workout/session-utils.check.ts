@@ -8,11 +8,25 @@ function assert(condition: unknown, message: string): asserts condition {
 }
 
 const timestamp = '2026-08-02T10:00:00Z';
+const plannedSet = {
+  distance_unit: null,
+  distance_value: null,
+  duration_seconds: null,
+  load_unit: null,
+  load_value: null,
+  notes: null,
+  reps: '10',
+  rest_seconds: null,
+  rpe: null,
+  set_type: 'working' as const,
+};
 const session = {
+  closed_at: null,
   date: '2026-08-02',
   ended_at: null,
   id: 'session',
   inserted_at: timestamp,
+  kind: 'planned',
   performed_sets: [
     {
       completed: true,
@@ -43,18 +57,27 @@ const session = {
       updated_at: timestamp,
     },
   ],
-  planned_snapshot: {
-    exercises: [
-      {
-        exercise_id: 'back-squat',
-        name: 'Back squat',
-        position: 0,
-        sets: [{}, {}],
-        tracking_type: 'weight_reps',
-      },
-    ],
-    workout_name: 'Leg day',
+  prescription_snapshot: {
+    plan: {id: 'plan', name: 'Strength', revision: 1},
+    version: 1,
+    workout: {
+      exercises: [
+        {
+          exercise_id: 'back-squat',
+          exercise_name: 'Back squat',
+          position: 0,
+          ref: 'prescribed-exercise',
+          sets: [plannedSet, plannedSet],
+          tracking_type: 'weight_reps',
+        },
+      ],
+      id: 'workout',
+      name: 'Leg day',
+    },
   },
+  snapshot_version: 1,
+  source_plan_id: 'plan',
+  source_workout_id: 'workout',
   started_at: timestamp,
   state: 'active',
   updated_at: timestamp,

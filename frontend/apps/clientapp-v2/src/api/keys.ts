@@ -51,7 +51,11 @@ export const trainingPlanKeys = {
 };
 
 /** Old tags: WorkoutSession/{id,LIST}. */
-export const sessionKeys = domain('training-sessions');
+const sessionDomain = domain('training-sessions');
+export const sessionKeys = {
+  ...sessionDomain,
+  active: () => [...sessionDomain.all, 'active'] as const,
+};
 
 export const exerciseKeys = domain('training-exercises');
 

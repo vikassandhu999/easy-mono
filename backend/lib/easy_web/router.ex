@@ -258,6 +258,7 @@ defmodule EasyWeb.Router do
     # Training sessions
     get "/training-sessions", WorkoutSessionController, :index
     post "/training-sessions", WorkoutSessionController, :create
+    get "/training-sessions/active", WorkoutSessionController, :active
     get "/training-sessions/:id", WorkoutSessionController, :show
     patch "/training-sessions/:id", WorkoutSessionController, :update
     post "/training-sessions/:session_id/performed-sets", PerformedSetController, :create

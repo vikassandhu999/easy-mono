@@ -60,16 +60,10 @@ defmodule Easy.Training.PlannedSet do
   end
 
   @spec to_snapshot(t()) :: map()
-  def to_snapshot(%__MODULE__{} = s) do
-    %{
-      "set_type" => s.set_type,
-      "reps" => s.reps,
-      "load_value" => s.load_value,
-      "load_unit" => s.load_unit,
-      "duration_seconds" => s.duration_seconds,
-      "distance_value" => s.distance_value,
-      "distance_unit" => s.distance_unit,
-      "rpe" => s.rpe
-    }
+  def to_snapshot(%__MODULE__{} = planned_set) do
+    Map.update!(to_attrs(planned_set), "rpe", &decimal_to_number/1)
   end
+
+  defp decimal_to_number(nil), do: nil
+  defp decimal_to_number(%Decimal{} = value), do: Decimal.to_float(value)
 end

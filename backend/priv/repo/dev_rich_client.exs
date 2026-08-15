@@ -123,6 +123,8 @@ else
           prescription_id: prescribed.id,
           ex_name: ex.name,
           ex_id: ex.id,
+          position: pos,
+          tracking_type: ex.tracking_type,
           sets: sets
         }
       end)
@@ -156,8 +158,10 @@ else
           Enum.map(elements, fn element ->
             %{
               "ref" => element.prescription_id,
+              "position" => element.position,
               "exercise_id" => element.ex_id,
               "exercise_name" => element.ex_name,
+              "tracking_type" => element.tracking_type,
               "sets" => Enum.map(element.sets, &PlannedSet.to_snapshot/1)
             }
           end)

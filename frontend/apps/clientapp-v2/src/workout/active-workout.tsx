@@ -20,9 +20,8 @@ import {
   type TrainingSession,
   useCreateClientPerformedSetMutation,
   useDeleteClientPerformedSetMutation,
-  useGetClientTrainingSessionQuery,
+  useGetClientActiveTrainingSessionQuery,
   useListClientExercisesQuery,
-  useListClientTrainingSessionsQuery,
   useUpdateClientPerformedSetMutation,
   useUpdateClientTrainingSessionMutation,
 } from '@/api/training';
@@ -377,7 +376,7 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
   const isFinishing = updateSession.isPending;
   const finishOverlay = useOverlayState();
 
-  // Client-side session edits — the planned_snapshot is immutable, so swap/skip/add
+  // Client-side session edits — the Prescription snapshot is immutable, so swap/skip/add
   // live in component state for the session (a reload re-derives from performed_sets).
   const [skipped, setSkipped] = useState<Set<number>>(() => new Set());
   const [swaps, setSwaps] = useState<Map<number, ExercisePick>>(() => new Map());
@@ -403,7 +402,7 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
     }
   }, [rest?.left]);
 
-  const workoutName = (session.planned_snapshot as {workout_name?: string} | null)?.workout_name ?? 'Workout';
+  const workoutName = session.prescription_snapshot?.workout.name ?? 'Workout';
   const performed = session.performed_sets;
   const summary = {
     sets: performed.length,
@@ -823,11 +822,10 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
 
 export default function ActiveWorkoutScreen() {
   const navigate = useNavigate();
-  const {data: sessionsData, isLoading: isLoadingList} = useListClientTrainingSessionsQuery({});
-  const activeId = sessionsData?.data.find((s) => s.state === 'active')?.id;
-  const {data, isLoading} = useGetClientTrainingSessionQuery(activeId ?? '', {enabled: Boolean(activeId)});
+  const {data, isLoading} = useGetClientActiveTrainingSessionQuery();
+  const active = data?.data;
 
-  if (isLoadingList || (activeId && isLoading)) {
+  if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Spinner />
@@ -835,7 +833,7 @@ export default function ActiveWorkoutScreen() {
     );
   }
 
-  if (!activeId || !data) {
+  if (!active) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background p-6 text-center">
         <p className="text-sm text-muted">No workout in progress.</p>
@@ -849,5 +847,5 @@ export default function ActiveWorkoutScreen() {
     );
   }
 
-  return <ActiveWorkout session={data.data} />;
+  return <ActiveWorkout session={active} />;
 }

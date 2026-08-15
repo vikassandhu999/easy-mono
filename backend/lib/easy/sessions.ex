@@ -3,13 +3,9 @@ defmodule Easy.Sessions do
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Repo
-  alias Easy.Training.PlannedSet
   alias Easy.Training.TrainingExercise
   alias Easy.Training.TrainingPerformedSet
-  alias Easy.Training.TrainingPlan
   alias Easy.Training.TrainingSession
-  alias Easy.Training.TrainingWorkout
-  alias Easy.Training.TrainingWorkoutExercise
 
   import Ecto.Changeset
   import Ecto.Query
@@ -55,14 +51,6 @@ defmodule Easy.Sessions do
   def get_client_session(%Ctx{} = ctx, session_id) do
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
       fetch_client_session_preloaded(ctx.business_id, client_id, session_id)
-    end
-  end
-
-  @spec create_client_session(Ctx.t(), String.t() | nil, map()) ::
-          {:ok, TrainingSession.t()} | {:error, :not_found | :active_session_exists | Ecto.Changeset.t()}
-  def create_client_session(%Ctx{} = ctx, workout_id, attrs) do
-    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
-      create_client_workout_session(ctx.business_id, client_id, workout_id, attrs)
     end
   end
 
@@ -169,21 +157,6 @@ defmodule Easy.Sessions do
     |> ok_or_not_found()
   end
 
-  defp create_client_workout_session(business_id, client_id, workout_id, attrs) do
-    attrs = put_default_date(attrs)
-
-    with :ok <- ensure_no_active_workout_session(business_id, client_id),
-         {:ok, changeset} <-
-           business_id
-           |> TrainingSession.insert_changeset(client_id, workout_id, attrs)
-           |> validate_client_workout_accessible(business_id, client_id) do
-      changeset
-      |> put_planned_snapshot(business_id)
-      |> Repo.insert()
-      |> preload_session()
-    end
-  end
-
   defp update_client_workout_session(%TrainingSession{} = session, attrs) do
     session
     |> TrainingSession.update_changeset(attrs, :client)
@@ -218,110 +191,15 @@ defmodule Easy.Sessions do
 
   defp discard_workout_session(%TrainingSession{} = session) do
     session
-    |> TrainingSession.update_changeset(%{state: :discarded})
+    |> TrainingSession.update_changeset(%{state: :discarded, ended_at: DateTime.utc_now(:second)})
     |> Repo.update()
     |> preload_session()
-  end
-
-  defp ensure_no_active_workout_session(business_id, client_id) do
-    exists =
-      TrainingSession
-      |> TrainingSession.for_client(business_id, client_id)
-      |> TrainingSession.for_state(:active)
-      |> Repo.exists?()
-
-    if exists do
-      {:error, :active_session_exists}
-    else
-      :ok
-    end
   end
 
   defp maybe_for_date_range(query, nil, nil), do: query
   defp maybe_for_date_range(query, from, nil), do: TrainingSession.for_date_from(query, from)
   defp maybe_for_date_range(query, nil, to), do: TrainingSession.for_date_to(query, to)
   defp maybe_for_date_range(query, from, to), do: TrainingSession.for_date_range(query, from, to)
-
-  defp validate_client_workout_accessible(%{valid?: false} = changeset, _business_id, _client_id),
-    do: {:ok, changeset}
-
-  defp validate_client_workout_accessible(changeset, business_id, client_id) do
-    case get_field(changeset, :training_workout_id) do
-      nil ->
-        {:ok, changeset}
-
-      workout_id ->
-        today = Date.utc_today()
-
-        exists? =
-          TrainingPlan
-          |> TrainingPlan.for_business(business_id)
-          |> TrainingPlan.active_for_client(client_id, today)
-          |> join(:inner, [t], w in TrainingWorkout,
-            on:
-              w.training_plan_id == t.id and w.business_id == ^business_id and
-                w.id == ^workout_id
-          )
-          |> Repo.exists?()
-
-        if exists?, do: {:ok, changeset}, else: {:error, :not_found}
-    end
-  end
-
-  defp put_planned_snapshot(changeset, business_id) do
-    case get_field(changeset, :training_workout_id) do
-      nil ->
-        changeset
-
-      workout_id ->
-        case build_snapshot(business_id, workout_id) do
-          nil -> add_error(changeset, :training_workout_id, "does not exist")
-          snapshot -> put_change(changeset, :planned_snapshot, snapshot)
-        end
-    end
-  end
-
-  defp build_snapshot(business_id, workout_id) do
-    element_query =
-      TrainingWorkoutExercise
-      |> TrainingWorkoutExercise.for_business(business_id)
-      |> TrainingWorkoutExercise.by_position()
-      |> TrainingWorkoutExercise.include_exercise(business_id)
-
-    TrainingWorkout
-    |> TrainingWorkout.for_business(business_id)
-    |> Repo.get(workout_id)
-    |> case do
-      nil ->
-        nil
-
-      workout ->
-        workout = Repo.preload(workout, workout_elements: element_query)
-
-        %{
-          "workout_name" => workout.name,
-          "exercises" => Enum.map(workout.workout_elements, &element_to_snapshot/1)
-        }
-    end
-  end
-
-  defp element_to_snapshot(element) do
-    %{
-      "exercise_id" => element.exercise_id,
-      "name" => element.exercise && element.exercise.name,
-      "tracking_type" => element.exercise && element.exercise.tracking_type,
-      "position" => element.position,
-      "sets" => Enum.map(element.planned_sets, &PlannedSet.to_snapshot/1)
-    }
-  end
-
-  defp put_default_date(attrs) do
-    if present?(Map.get(attrs, :date)) do
-      attrs
-    else
-      Map.put(attrs, :date, Date.utc_today())
-    end
-  end
 
   defp put_exercise_name(attrs, nil), do: attrs
 

@@ -720,6 +720,37 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WeightEntry",
         "x-validate": null
       },
+      "TrainingSessionSnapshotPlan": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "name": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "revision": {
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "revision"
+        ],
+        "title": "TrainingSessionSnapshotPlan",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingSessionSnapshotPlan",
+        "x-validate": null
+      },
       "ClientProfileCheckInScheduleRequest": {
         "additionalProperties": false,
         "properties": {
@@ -3371,6 +3402,34 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayMeal",
         "x-validate": null
       },
+      "TrainingSessionPrescriptionSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "plan": {
+            "$ref": "#/components/schemas/TrainingSessionSnapshotPlan"
+          },
+          "version": {
+            "enum": [
+              1
+            ],
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "workout": {
+            "$ref": "#/components/schemas/TrainingSessionSnapshotWorkout"
+          }
+        },
+        "required": [
+          "version",
+          "plan",
+          "workout"
+        ],
+        "title": "TrainingSessionPrescriptionSnapshot",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingSessionPrescriptionSnapshot",
+        "x-validate": null
+      },
       "NutritionSwitchOptionRequest": {
         "additionalProperties": false,
         "properties": {
@@ -5955,6 +6014,28 @@
         "title": "TrainingSessionUpdateRequest",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "ActiveTrainingSessionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrainingSession"
+              }
+            ],
+            "nullable": true,
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ActiveTrainingSessionResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ActiveTrainingSessionResponse",
         "x-validate": null
       },
       "TrainingEquipment": {
@@ -9747,6 +9828,39 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchQuietQueueItem",
         "x-validate": null
       },
+      "TrainingSessionSnapshotWorkout": {
+        "additionalProperties": false,
+        "properties": {
+          "exercises": {
+            "items": {
+              "$ref": "#/components/schemas/TrainingSessionSnapshotExercise"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "name": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "exercises"
+        ],
+        "title": "TrainingSessionSnapshotWorkout",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingSessionSnapshotWorkout",
+        "x-validate": null
+      },
       "FoodLogEntry": {
         "additionalProperties": false,
         "properties": {
@@ -10009,6 +10123,70 @@
         "title": "NutritionPlanAssignRequest",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "TrainingSessionSnapshotExercise": {
+        "additionalProperties": false,
+        "properties": {
+          "exercise_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "exercise_name": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "position": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "ref": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "sets": {
+            "items": {
+              "$ref": "#/components/schemas/TrainingPlanPlannedSet"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "tracking_type": {
+            "enum": [
+              "weight_reps",
+              "bodyweight_reps",
+              "weighted_bodyweight",
+              "assisted_bodyweight",
+              "reps_only",
+              "duration",
+              "weight_duration",
+              "distance_duration",
+              "weight_distance"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "ref",
+          "position",
+          "exercise_id",
+          "exercise_name",
+          "tracking_type",
+          "sets"
+        ],
+        "title": "TrainingSessionSnapshotExercise",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingSessionSnapshotExercise",
         "x-validate": null
       },
       "TrainingSessionRequest": {
@@ -11665,6 +11843,13 @@
             "x-struct": null,
             "x-validate": null
           },
+          "closed_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "date": {
             "format": "date",
             "type": "string",
@@ -11690,6 +11875,15 @@
             "x-struct": null,
             "x-validate": null
           },
+          "kind": {
+            "enum": [
+              "planned",
+              "freestyle"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "notes": {
             "nullable": true,
             "type": "string",
@@ -11711,11 +11905,42 @@
             "x-struct": null,
             "x-validate": null
           },
+          "prescription_snapshot": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrainingSessionPrescriptionSnapshot"
+              }
+            ],
+            "nullable": true,
+            "x-struct": null,
+            "x-validate": null
+          },
+          "snapshot_version": {
+            "minimum": 1,
+            "nullable": true,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
           "soreness_rating": {
             "maximum": 5,
             "minimum": 1,
             "nullable": true,
             "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "source_plan_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "source_workout_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
             "x-struct": null,
             "x-validate": null
           },
@@ -11751,10 +11976,16 @@
         },
         "required": [
           "id",
+          "kind",
           "date",
           "started_at",
+          "closed_at",
           "ended_at",
           "state",
+          "snapshot_version",
+          "prescription_snapshot",
+          "source_plan_id",
+          "source_workout_id",
           "performed_sets",
           "inserted_at",
           "updated_at"
@@ -14569,6 +14800,16 @@
               }
             },
             "description": "Unauthorized"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A training session is already active"
           },
           "422": {
             "content": {
@@ -23347,6 +23588,44 @@
         "summary": "List check-in submissions awaiting review",
         "tags": [
           "coach workbench"
+        ]
+      }
+    },
+    "/v1/client/training-sessions/active": {
+      "get": {
+        "callbacks": {},
+        "operationId": "getClientActiveTrainingSession",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActiveTrainingSessionResponse"
+                }
+              }
+            },
+            "description": "Active Training Session"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get the active client Training Session",
+        "tags": [
+          "client training sessions"
         ]
       }
     },

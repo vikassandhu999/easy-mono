@@ -534,20 +534,25 @@ defmodule Easy.Factory do
     }
   end
 
-  def workout_session_factory do
-    business = build(:business)
-    creator = build(:coach, business: business)
-    client = build(:client, business: business, creator: creator)
+  def workout_session_factory(attrs) do
+    business = attrs[:business] || build(:business)
+    creator = attrs[:creator] || build(:coach, business: business)
+    client = attrs[:client] || build(:client, business: business, creator: creator)
+    state = attrs[:state] || :active
+    started_at = attrs[:started_at] || DateTime.utc_now(:second)
+    closed_at = attrs[:closed_at] || if(state in [:completed, :discarded], do: started_at)
 
     %TrainingSession{
       kind: :freestyle,
       date: Date.utc_today(),
-      started_at: DateTime.utc_now() |> DateTime.truncate(:second),
-      state: :active,
+      started_at: started_at,
+      closed_at: closed_at,
+      state: state,
       notes: "Session note",
       client: client,
       business: business
     }
+    |> merge_attributes(attrs)
   end
 
   def performed_set_factory do

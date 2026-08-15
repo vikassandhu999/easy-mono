@@ -5,7 +5,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {ROUTES} from '@/@config/routes';
 import {
   useCreateClientTrainingSessionMutation,
-  useListClientTrainingSessionsQuery,
+  useGetClientActiveTrainingSessionQuery,
   useResolveClientTrainingCoverageQuery,
 } from '@/api/training';
 import {estimatedMinutes, totalSets} from '@/training/training-utils';
@@ -14,12 +14,11 @@ export default function WorkoutPreview() {
   const {workoutId} = useParams();
   const navigate = useNavigate();
   const {data, isLoading} = useResolveClientTrainingCoverageQuery();
-  const {data: sessions} = useListClientTrainingSessionsQuery({});
+  const {data: activeData, isLoading: activeLoading} = useGetClientActiveTrainingSessionQuery();
   const createSession = useCreateClientTrainingSessionMutation();
   const starting = createSession.isPending;
   const workout = data?.data?.plan.workouts.find((candidate) => candidate.id === workoutId);
-  const scheduledToday = data?.data?.workout?.id === workoutId;
-  const active = sessions?.data.find((session) => session.state === 'active');
+  const active = activeData?.data;
 
   const start = async () => {
     if (active) {
@@ -37,7 +36,7 @@ export default function WorkoutPreview() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || activeLoading) {
     return (
       <div className="grid min-h-dvh place-items-center">
         <Spinner />
@@ -86,24 +85,18 @@ export default function WorkoutPreview() {
           </div>
         ))}
       </div>
-      {active || scheduledToday ? (
-        <button
-          className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[15px] bg-accent text-base font-extrabold text-white disabled:opacity-50"
-          disabled={starting}
-          onClick={start}
-          type="button"
-        >
-          <Play
-            fill="currentColor"
-            size={16}
-          />
-          {active ? 'Resume workout' : starting ? 'Starting…' : 'Start workout'}
-        </button>
-      ) : (
-        <p className="mt-5 rounded-2xl border border-border bg-surface p-3 text-center text-xs text-muted">
-          This workout can be started on its scheduled day.
-        </p>
-      )}
+      <button
+        className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[15px] bg-accent text-base font-extrabold text-white disabled:opacity-50"
+        disabled={starting}
+        onClick={start}
+        type="button"
+      >
+        <Play
+          fill="currentColor"
+          size={16}
+        />
+        {active ? 'Resume workout' : starting ? 'Starting…' : 'Start workout'}
+      </button>
     </div>
   );
 }

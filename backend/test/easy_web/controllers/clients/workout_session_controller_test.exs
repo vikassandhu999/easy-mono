@@ -30,10 +30,11 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
     test "starts a planned workout from an open-ended plan with snapshot", ctx do
       plan =
         insert(:training_plan,
-          creator: ctx.coach,
+          kind: :client_plan,
+          creator: ctx.coach.user,
           business: ctx.business,
-          client_id: ctx.client.id,
-          start_date: nil,
+          client: ctx.client,
+          start_date: Date.utc_today(),
           end_date: nil
         )
 
@@ -45,7 +46,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
           workout: workout,
           exercise: exercise,
           business: ctx.business,
-          planned_sets: [
+          prescribed_sets: [
             %{
               set_type: "working",
               reps: "8-10",
@@ -76,7 +77,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
         |> put_req_header("content-type", "application/json")
         |> post("/v1/client/training-sessions", Jason.encode!(%{}))
 
-      assert %{"error_code" => "invalid_input"} = json_response(conn, 422)
+      assert %{"error_code" => "conflict"} = json_response(conn, 409)
     end
 
     test "rejects unauthenticated request", _ctx do
@@ -91,9 +92,10 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
     test "snapshot captures name of a system exercise", ctx do
       plan =
         insert(:training_plan,
-          creator: ctx.coach,
+          kind: :client_plan,
+          creator: ctx.coach.user,
           business: ctx.business,
-          client_id: ctx.client.id,
+          client: ctx.client,
           start_date: Date.add(Date.utc_today(), -1),
           end_date: Date.add(Date.utc_today(), 30)
         )
@@ -108,7 +110,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
           workout: workout,
           exercise: system_exercise,
           business: ctx.business,
-          planned_sets: [
+          prescribed_sets: [
             %{
               set_type: "working",
               reps: "5",

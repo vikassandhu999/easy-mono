@@ -3,8 +3,10 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
   use OpenApiSpex.ControllerSpecs
 
   alias Easy.Sessions
+  alias Easy.Training.Execution
 
   alias EasyWeb.OpenApi.Schemas.{
+    ActiveTrainingSessionResponse,
     ErrorResponse,
     TrainingSessionListResponse,
     TrainingSessionRequest,
@@ -40,6 +42,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
     request_body: {"Training session request", "application/json", TrainingSessionRequest, required: true},
     responses: [
       created: {"Training session created", "application/json", TrainingSessionResponse},
+      conflict: {"A training session is already active", "application/json", ErrorResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
@@ -53,6 +56,15 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
       ok: {"Training session", "application/json", TrainingSessionResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :active,
+    summary: "Get the active client Training Session",
+    operation_id: "getClientActiveTrainingSession",
+    security: [%{"bearerAuth" => []}],
+    responses: [
+      ok: {"Active Training Session", "application/json", ActiveTrainingSessionResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
     ]
 
   operation :update,
@@ -87,10 +99,17 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
     workout_id = conn.body_params[:training_workout_id]
     attrs = Map.delete(conn.body_params, :training_workout_id)
 
-    with {:ok, session} <- Sessions.create_client_session(conn.assigns.ctx, workout_id, attrs) do
+    with {:ok, session} <- Execution.start_client_session(conn.assigns.ctx, workout_id, attrs) do
       conn
       |> put_status(:created)
       |> render(:show, session: session)
+    end
+  end
+
+  @spec active(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def active(conn, _params) do
+    with {:ok, session} <- Execution.get_client_active_session(conn.assigns.ctx) do
+      render(conn, :active, session: session)
     end
   end
 

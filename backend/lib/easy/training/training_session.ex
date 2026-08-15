@@ -53,21 +53,29 @@ defmodule Easy.Training.TrainingSession do
     |> check_constraint(:soreness_rating, name: :training_sessions_soreness_rating_check)
   end
 
-  @spec insert_changeset(String.t(), String.t(), String.t() | nil, map()) :: Ecto.Changeset.t()
-  def insert_changeset(business_id, client_id, workout_id, attrs) do
-    started_at = DateTime.utc_now(:second)
-    kind = if workout_id, do: :planned, else: :freestyle
-
+  @spec insert_changeset(String.t(), String.t(), map(), map()) :: Ecto.Changeset.t()
+  def insert_changeset(business_id, client_id, start, attrs) when is_map(start) do
     %__MODULE__{}
-    |> cast(attrs, [:date, :notes, :soreness_rating, :planned_snapshot])
+    |> cast(attrs, [:notes, :soreness_rating])
     |> put_change(:business_id, business_id)
     |> put_change(:client_id, client_id)
-    |> put_change(:kind, kind)
+    |> put_change(:kind, Map.fetch!(start, :kind))
     |> put_change(:state, :active)
-    |> put_change(:started_at, started_at)
-    |> put_legacy_snapshot(workout_id)
+    |> put_change(:date, Map.fetch!(start, :date))
+    |> put_change(:started_at, Map.fetch!(start, :started_at))
+    |> put_change(:snapshot_version, Map.get(start, :snapshot_version))
+    |> put_change(:prescription_snapshot, Map.get(start, :prescription_snapshot))
+    |> put_change(:source_plan_id, Map.get(start, :source_plan_id))
+    |> put_change(:source_workout_id, Map.get(start, :source_workout_id))
     |> validate_required([:kind, :state, :date, :started_at, :business_id, :client_id])
     |> active_metadata_validations()
+    |> unique_constraint(:client_id, name: :training_sessions_one_active_client_index)
+    |> check_constraint(:kind, name: :training_sessions_kind_check)
+    |> check_constraint(:state, name: :training_sessions_state_check)
+    |> check_constraint(:state, name: :training_sessions_closing_check)
+    |> check_constraint(:prescription_snapshot, name: :training_sessions_snapshot_check)
+    |> check_constraint(:started_at, name: :training_sessions_chronology_check)
+    |> foreign_key_constraint(:client_id, name: :training_sessions_client_business_id_fkey)
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
@@ -80,19 +88,6 @@ defmodule Easy.Training.TrainingSession do
 
   @spec update_changeset(t(), map(), :client) :: Ecto.Changeset.t()
   def update_changeset(session, attrs, :client), do: active_metadata_changeset(session, attrs)
-
-  defp put_legacy_snapshot(changeset, nil), do: changeset
-
-  defp put_legacy_snapshot(changeset, workout_id) do
-    snapshot = get_field(changeset, :planned_snapshot) || %{}
-
-    changeset
-    |> put_change(:source_plan_id, Map.get(snapshot, "plan_id", Ecto.UUID.generate()))
-    |> put_change(:source_workout_id, workout_id)
-    |> put_change(:training_workout_id, workout_id)
-    |> put_change(:snapshot_version, 1)
-    |> put_change(:prescription_snapshot, snapshot)
-  end
 
   defp put_closed_at_from_legacy(changeset) do
     case get_change(changeset, :ended_at) do

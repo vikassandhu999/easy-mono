@@ -10,6 +10,7 @@ import {
   type TrainingPlanWorkout,
   type TrainingSession,
   useCreateClientTrainingSessionMutation,
+  useGetClientActiveTrainingSessionQuery,
   useListClientTrainingSessionsQuery,
   useResolveClientTrainingCoverageQuery,
 } from '@/api/training';
@@ -148,22 +149,23 @@ export default function TrainingHome() {
   const navigate = useNavigate();
   const {data: coverage, isLoading: loadingCoverage} = useResolveClientTrainingCoverageQuery();
   const {data: sessions, isLoading: loadingSessions} = useListClientTrainingSessionsQuery({});
+  const {data: activeData, isLoading: loadingActive} = useGetClientActiveTrainingSessionQuery();
   const createSession = useCreateClientTrainingSessionMutation();
   const starting = createSession.isPending;
   const plan = clientTrainingPlanFromCoverage(coverage);
-  const active = sessions?.data.find((session) => session.state === 'active');
+  const active = activeData?.data;
   const recent = (sessions?.data ?? []).filter((session) => session.state === 'completed').slice(0, 3);
 
-  const start = async (workout: TrainingPlanWorkout) => {
+  const start = async (workout?: TrainingPlanWorkout) => {
     try {
-      await createSession.mutateAsync({training_workout_id: workout.id});
+      await createSession.mutateAsync(workout ? {training_workout_id: workout.id} : {});
       navigate(ROUTES.WORKOUT_ACTIVE);
     } catch {
       // the mutation's error state surfaces the failure.
     }
   };
 
-  if (loadingCoverage || loadingSessions) {
+  if (loadingCoverage || loadingSessions || loadingActive) {
     return (
       <PageLayout title="Training">
         <div className="grid min-h-56 place-items-center">
@@ -175,6 +177,12 @@ export default function TrainingHome() {
 
   return (
     <PageLayout title="Training">
+      {active ? (
+        <ResumeBanner
+          onResume={() => navigate(ROUTES.WORKOUT_ACTIVE)}
+          session={active}
+        />
+      ) : null}
       {!plan ? (
         <div className="rounded-[20px] border border-border bg-surface px-6 py-9 text-center">
           <div className="mx-auto mb-3 grid size-12 place-items-center rounded-full bg-accent-soft text-accent">
@@ -184,26 +192,40 @@ export default function TrainingHome() {
           <p className="mx-auto mt-1.5 max-w-60 text-xs leading-5 text-muted">
             Your coach is putting your training plan together.
           </p>
+          {!active ? (
+            <button
+              className="mt-5 min-h-11 rounded-[13px] bg-accent px-5 text-sm font-extrabold text-white disabled:opacity-50"
+              disabled={starting}
+              onClick={() => start()}
+              type="button"
+            >
+              {starting ? 'Starting…' : 'Start freestyle workout'}
+            </button>
+          ) : null}
         </div>
       ) : (
         <>
-          {active ? (
-            <ResumeBanner
-              onResume={() => navigate(ROUTES.WORKOUT_ACTIVE)}
-              session={active}
-            />
-          ) : null}
           <PlanCard plan={plan} />
           <p className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted">This week</p>
           <WeekList
-            active={active}
+            active={active ?? undefined}
             onStart={start}
             plan={plan}
             starting={starting}
           />
           {coverage?.data?.workout == null ? (
             <div className="mb-5 rounded-2xl bg-surface-secondary p-4 text-center text-sm text-muted">
-              Rest day — recover well.
+              <p>Rest day — recover well.</p>
+              {!active ? (
+                <button
+                  className="mt-3 min-h-10 rounded-[11px] bg-accent px-4 text-xs font-extrabold text-white disabled:opacity-50"
+                  disabled={starting}
+                  onClick={() => start()}
+                  type="button"
+                >
+                  {starting ? 'Starting…' : 'Start freestyle workout'}
+                </button>
+              ) : null}
             </div>
           ) : null}
           <div className="mb-3 flex items-center justify-between">

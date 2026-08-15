@@ -1,7 +1,7 @@
 /**
  * Client training. `schedule` is the plan's Mon..Sun map of weekday -> workout id,
  * where a null weekday is a rest day; sessions have state active/completed/discarded
- * with performed_sets vs planned_snapshot.
+ * with performed_sets vs the versioned Prescription snapshot.
  */
 import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
@@ -26,6 +26,7 @@ type ExerciseListQuery = paths['/v1/client/training-exercises']['get']['paramete
 type PlanListResponse = components['schemas']['ClientTrainingPlanListResponse'];
 type SessionListResponse = components['schemas']['TrainingSessionListResponse'];
 type SessionResponse = components['schemas']['TrainingSessionResponse'];
+type ActiveSessionResponse = components['schemas']['ActiveTrainingSessionResponse'];
 type ExerciseListResponse = components['schemas']['TrainingExerciseListResponse'];
 
 // ── Plans ────────────────────────────────────────────────────
@@ -85,12 +86,20 @@ export function useGetClientTrainingSessionQuery(id: string, options?: {enabled?
   });
 }
 
+export function useGetClientActiveTrainingSessionQuery() {
+  return useQuery({
+    queryKey: sessionKeys.active(),
+    queryFn: () => call(client.GET('/v1/client/training-sessions/active')) as Promise<ActiveSessionResponse>,
+  });
+}
+
 export function useCreateClientTrainingSessionMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: TrainingSessionRequest) =>
       call(client.POST('/v1/client/training-sessions', {body})) as Promise<SessionResponse>,
-    onSuccess: () => {
+    onSuccess: (session) => {
+      qc.setQueryData(sessionKeys.active(), session);
       qc.invalidateQueries({queryKey: sessionKeys.lists()});
     },
   });
@@ -104,6 +113,7 @@ export function useUpdateClientTrainingSessionMutation() {
     onSuccess: (_data, {id}) => {
       qc.invalidateQueries({queryKey: sessionKeys.detail(id)});
       qc.invalidateQueries({queryKey: sessionKeys.lists()});
+      return qc.invalidateQueries({queryKey: sessionKeys.active()});
     },
   });
 }
@@ -125,6 +135,7 @@ export function useCreateClientPerformedSetMutation() {
     onSuccess: (_data, {sessionId}) => {
       qc.invalidateQueries({queryKey: sessionKeys.detail(sessionId)});
       qc.invalidateQueries({queryKey: sessionKeys.lists()});
+      return qc.invalidateQueries({queryKey: sessionKeys.active()});
     },
   });
 }
@@ -132,9 +143,9 @@ export function useCreateClientPerformedSetMutation() {
 /**
  * The set paths only need the set id, but the cache effect is on the session —
  * callers pass `sessionId` so the mutation owns its own invalidation.
- * `onSuccess` returns the detail invalidation, so `mutateAsync` resolves only
- * after the session refetch settles (the active screen used to `await
- * refetch()` by hand for this); the list refresh doesn't need to block.
+ * `onSuccess` returns the active-session invalidation, so `mutateAsync`
+ * resolves only after the active screen's canonical session refetch settles;
+ * detail and list refreshes don't need to block.
  */
 export function useUpdateClientPerformedSetMutation() {
   const qc = useQueryClient();
@@ -143,7 +154,8 @@ export function useUpdateClientPerformedSetMutation() {
       call(client.PATCH('/v1/client/training-performed-sets/{id}', {params: {path: {id}}, body})),
     onSuccess: (_data, {sessionId}) => {
       qc.invalidateQueries({queryKey: sessionKeys.lists()});
-      return qc.invalidateQueries({queryKey: sessionKeys.detail(sessionId)});
+      qc.invalidateQueries({queryKey: sessionKeys.detail(sessionId)});
+      return qc.invalidateQueries({queryKey: sessionKeys.active()});
     },
   });
 }
@@ -155,7 +167,8 @@ export function useDeleteClientPerformedSetMutation() {
       call(client.DELETE('/v1/client/training-performed-sets/{id}', {params: {path: {id}}})),
     onSuccess: (_data, {sessionId}) => {
       qc.invalidateQueries({queryKey: sessionKeys.lists()});
-      return qc.invalidateQueries({queryKey: sessionKeys.detail(sessionId)});
+      qc.invalidateQueries({queryKey: sessionKeys.detail(sessionId)});
+      return qc.invalidateQueries({queryKey: sessionKeys.active()});
     },
   });
 }

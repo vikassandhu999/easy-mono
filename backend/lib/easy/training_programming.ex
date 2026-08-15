@@ -130,6 +130,23 @@ defmodule Easy.Training.Programming do
     end
   end
 
+  @spec resolve_client_startable_prescription(Ctx.t(), String.t(), Date.t()) ::
+          {:ok, %{plan: TrainingPlan.t(), workout: TrainingWorkout.t()}} | {:error, :not_found}
+  def resolve_client_startable_prescription(%Ctx{} = ctx, workout_id, %Date{} = date) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
+         %TrainingPlan{} = plan <-
+           ctx
+           |> client_plan_query(client_id)
+           |> TrainingPlan.covering(client_id, date)
+           |> TrainingPlan.include_workouts(ctx.business_id)
+           |> Repo.one(),
+         %TrainingWorkout{} = workout <- Enum.find(plan.workouts, &(&1.id == workout_id)) do
+      {:ok, %{plan: plan, workout: workout}}
+    else
+      _ -> {:error, :not_found}
+    end
+  end
+
   @spec get_template(Ctx.t(), String.t()) :: {:ok, TrainingPlan.t()} | {:error, :not_found}
   def get_template(%Ctx{} = ctx, template_id) do
     with :ok <- ensure_coach(ctx) do

@@ -57,6 +57,9 @@ defmodule Easy.Training.TrainingExercise do
     timestamps(type: :utc_datetime)
   end
 
+  @spec tracking_types() :: [atom()]
+  def tracking_types, do: @tracking_types
+
   @cast_fields [
     :source,
     :tracking_type,

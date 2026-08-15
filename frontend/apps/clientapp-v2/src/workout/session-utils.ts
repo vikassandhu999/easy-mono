@@ -1,21 +1,12 @@
 /**
- * Shared helpers for reading a training session's planned_snapshot + performed_sets.
+ * Shared helpers for reading a training session's Prescription snapshot + performed_sets.
  * Used by the live logger (active-workout) and the read-only history detail so the
  * plan-vs-actual reconstruction stays identical on both sides.
  */
+import type {components} from '@/api/schema';
 import type {TrainingPerformedSet, TrainingSession} from '@/api/training';
 
-export type SnapshotSet = {
-  distance_unit?: null | string;
-  distance_value?: null | number | string;
-  duration_seconds?: null | number;
-  load_unit?: null | string;
-  load_value?: null | string;
-  reps?: null | string;
-  rest_seconds?: null | number;
-  rpe?: null | number | string;
-  set_type?: null | string;
-};
+export type SnapshotSet = Partial<components['schemas']['TrainingPlanPlannedSet']>;
 export type SnapshotExercise = {
   exercise_id?: null | string;
   name?: null | string;
@@ -39,7 +30,21 @@ export type ActiveExerciseCard = {
 type Snapshot = {exercises?: SnapshotExercise[]; workout_name?: string};
 
 export function snapshotOf(session: TrainingSession): Snapshot {
-  return (session.planned_snapshot ?? {}) as Snapshot;
+  const snapshot = session.prescription_snapshot;
+  if (!snapshot) {
+    return {};
+  }
+
+  return {
+    workout_name: snapshot.workout.name,
+    exercises: snapshot.workout.exercises.map((exercise) => ({
+      exercise_id: exercise.exercise_id,
+      name: exercise.exercise_name,
+      position: exercise.position,
+      sets: exercise.sets,
+      tracking_type: exercise.tracking_type,
+    })),
+  };
 }
 
 export function snapshotExercises(session: TrainingSession): SnapshotExercise[] {

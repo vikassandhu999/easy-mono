@@ -79,25 +79,50 @@ defmodule Easy.Training.TrainingPlan do
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(plan, attrs) do
+    fields = if plan.kind == :template, do: @template_fields, else: @template_fields ++ [:start_date, :end_date]
+    supplied_fields = attrs |> Map.keys() |> Enum.map(&to_string/1) |> MapSet.new()
+
     plan
-    |> cast(attrs, @template_fields ++ [:start_date, :end_date])
-    |> maybe_put_archive(attrs)
+    |> cast(attrs, fields)
+    |> reject_fields_invalid_for_kind(plan.kind, supplied_fields)
     |> validate_common_fields()
     |> validate_date_range()
     |> apply_constraints()
   end
 
-  defp maybe_put_archive(changeset, attrs) do
-    case Ecto.Changeset.get_change(cast(%__MODULE__{}, attrs, [:archived_at]), :archived_at) do
-      nil -> changeset
-      archived_at -> put_change(changeset, :archived_at, archived_at)
-    end
+  @spec lifecycle_changeset(t(), map()) :: Ecto.Changeset.t()
+  def lifecycle_changeset(plan, attrs) do
+    plan
+    |> change(attrs)
+    |> apply_constraints()
+  end
+
+  defp reject_fields_invalid_for_kind(changeset, :template, supplied_fields) do
+    reject_fields(changeset, @client_plan_fields, supplied_fields, "is not valid for a Training Template")
+  end
+
+  defp reject_fields_invalid_for_kind(changeset, :client_plan, supplied_fields) do
+    reject_fields(
+      changeset,
+      [:client_id, :source_template_id],
+      supplied_fields,
+      "cannot be changed on a Client Plan"
+    )
   end
 
   defp reject_template_relationship_fields(changeset, supplied_fields) do
-    Enum.reduce(@client_plan_fields, changeset, fn field, changeset ->
+    reject_fields(
+      changeset,
+      @client_plan_fields,
+      supplied_fields,
+      "is not valid for a Training Template"
+    )
+  end
+
+  defp reject_fields(changeset, fields, supplied_fields, message) do
+    Enum.reduce(fields, changeset, fn field, changeset ->
       if MapSet.member?(supplied_fields, Atom.to_string(field)) do
-        add_error(changeset, field, "is not valid for a Training Template")
+        add_error(changeset, field, message)
       else
         changeset
       end
@@ -230,7 +255,7 @@ defmodule Easy.Training.TrainingPlan do
 
   @spec include_client(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def include_client(query \\ __MODULE__, business_id) do
-    client_query = Easy.Clients.Client.for_business(Easy.Clients.Client, business_id)
+    client_query = Client.for_business(Client, business_id)
     from(plan in query, preload: [client: ^client_query])
   end
 end

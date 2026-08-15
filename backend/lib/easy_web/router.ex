@@ -209,6 +209,8 @@ defmodule EasyWeb.Router do
     get "/training-plans/:id", TrainingPlanController, :show
     patch "/training-plans/:id", TrainingPlanController, :update
     delete "/training-plans/:id", TrainingPlanController, :delete
+    post "/training-plans/:id/archive", TrainingPlanController, :archive
+    post "/training-plans/:id/restore", TrainingPlanController, :restore
     post "/training-plans/:id/assign", TrainingPlanController, :assign
     post "/training-plans/:id/duplicate", TrainingPlanController, :duplicate
 

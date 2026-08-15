@@ -8,6 +8,7 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {applyFormErrors} from '@/api/shared';
 import {patchPlan, type TrainingPlan, useGetTrainingPlanQuery} from '@/api/training-plan-builder';
+import {getStaleTrainingPlanRevision} from '@/api/training-plan-lifecycle';
 import {useUpdateTrainingPlanMutation} from '@/api/training-plans-list';
 import TrainingPlanForm, {useTrainingPlanForm} from '@/training-plans/training-plan-form/training-plan-form';
 import {
@@ -18,18 +19,29 @@ import {
 
 // The one header for every state (loading / error / loaded). Keeps the back
 // button, title, and description identical so only the body swaps.
-function EditTrainingPlanHeader({goBack}: {goBack: () => void}) {
+function EditTrainingPlanHeader({goBack, kind}: {goBack: () => void; kind?: TrainingPlan['kind']}) {
+  const title =
+    kind === 'client_plan' ? 'Edit Client Plan' : kind === 'template' ? 'Edit Training Template' : 'Edit Training';
+  const shortTitle =
+    kind === 'client_plan' ? 'Edit client plan' : kind === 'template' ? 'Edit template' : 'Edit training';
+
   return (
     <Page.Header size="content">
       <Page.TitleGroup>
         <div className="flex items-center">
           <BackButton onPress={goBack} />
           <Page.Title>
-            <span className="sm:hidden">Edit plan</span>
-            <span className="hidden sm:inline">Edit training plan</span>
+            <span className="sm:hidden">{shortTitle}</span>
+            <span className="hidden sm:inline">{title}</span>
           </Page.Title>
         </div>
-        <Page.Description>Update the plan's details. Workouts &amp; schedule live in the builder.</Page.Description>
+        <Page.Description>
+          {kind === 'client_plan'
+            ? 'Update Client Plan metadata and Coverage dates.'
+            : kind === 'template'
+              ? 'Update Template metadata. Its Prescription remains in the builder.'
+              : 'Update Programming metadata.'}
+        </Page.Description>
       </Page.TitleGroup>
     </Page.Header>
   );
@@ -46,7 +58,7 @@ function EditTrainingPlanForm({backPath, plan, planId}: {backPath: string; plan:
     try {
       const result = await updatePlanMutation.mutateAsync({
         id: planId,
-        body: trainingPlanToUpdateRequest(formData),
+        body: trainingPlanToUpdateRequest(formData, plan.revision),
       });
       // Sync the cached detail so the builder shows the new values.
       patchPlan(planId, (draft) => {
@@ -54,13 +66,23 @@ function EditTrainingPlanForm({backPath, plan, planId}: {backPath: string; plan:
       });
       goBack();
     } catch (err) {
-      applyFormErrors(err, "Training plan wasn't updated. Check the details and try again", form.setError);
+      const currentRevision = getStaleTrainingPlanRevision(err);
+      if (currentRevision) {
+        form.setError('root', {
+          message: `This plan changed elsewhere (revision ${currentRevision}). Reload it before saving again.`,
+        });
+      } else {
+        applyFormErrors(err, "Training plan wasn't updated. Check the details and try again", form.setError);
+      }
     }
   };
 
   return (
     <Page>
-      <EditTrainingPlanHeader goBack={goBack} />
+      <EditTrainingPlanHeader
+        goBack={goBack}
+        kind={plan.kind}
+      />
       <Page.Content bare>
         <Page.Frame
           className="pt-4 pb-6"

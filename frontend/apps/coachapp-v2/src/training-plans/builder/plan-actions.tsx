@@ -5,10 +5,12 @@ import {PlanActionsMenu} from '@/@components/plan-actions-menu';
 import {ROUTES} from '@/@config/routes';
 import type {TrainingPlan} from '@/api/training-plan-builder';
 import {patchPlan} from '@/api/training-plan-builder';
+import {trainingPlanDeleteRequest, trainingPlanRevisionRequest} from '@/api/training-plan-lifecycle';
 import {
+  useArchiveTrainingPlanMutation,
   useDeleteTrainingPlanMutation,
   useDuplicateTrainingPlanMutation,
-  useUpdateTrainingPlanMutation,
+  useRestoreTrainingPlanMutation,
 } from '@/api/training-plans-list';
 
 export type Props = {
@@ -18,22 +20,17 @@ export type Props = {
 
 export function PlanActions({plan, onDeleted}: Props) {
   const navigate = useNavigate();
-  const updatePlanMutation = useUpdateTrainingPlanMutation();
+  const archivePlanMutation = useArchiveTrainingPlanMutation();
+  const restorePlanMutation = useRestoreTrainingPlanMutation();
   const duplicatePlanMutation = useDuplicateTrainingPlanMutation();
   const deletePlanMutation = useDeleteTrainingPlanMutation();
 
-  // Optimistically patch the cached detail so the dropdown flips
-  // Archive<->Restore immediately, roll back on failure.
   const setStatus = async (status: 'active' | 'archived') => {
-    const patched = patchPlan(plan.id, (draft) => {
-      draft.status = status;
+    const mutation = status === 'archived' ? archivePlanMutation : restorePlanMutation;
+    const result = await mutation.mutateAsync({id: plan.id, body: trainingPlanRevisionRequest(plan)});
+    patchPlan(plan.id, (draft) => {
+      Object.assign(draft, result.data);
     });
-    try {
-      await updatePlanMutation.mutateAsync({id: plan.id, body: {status}});
-    } catch (e) {
-      patched.undo();
-      throw e;
-    }
   };
 
   const copy = async () => {
@@ -44,7 +41,7 @@ export function PlanActions({plan, onDeleted}: Props) {
 
   const remove = async () => {
     // useDeleteTrainingPlanMutation invalidates the list cache itself.
-    await deletePlanMutation.mutateAsync(plan.id);
+    await deletePlanMutation.mutateAsync(trainingPlanDeleteRequest(plan));
   };
 
   return (
@@ -56,7 +53,7 @@ export function PlanActions({plan, onDeleted}: Props) {
       onDeleted={onDeleted}
       onEdit={() => navigate(ROUTES.EDIT_TRAINING_PLAN.replace(':id', plan.id))}
       onSetStatus={setStatus}
-      pending={updatePlanMutation.isPending || duplicatePlanMutation.isPending}
+      pending={archivePlanMutation.isPending || restorePlanMutation.isPending || duplicatePlanMutation.isPending}
       plan={plan}
     />
   );

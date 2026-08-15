@@ -6,7 +6,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlanCreateRequest do
   OpenApiSpex.schema(
     %{
       title: "TrainingPlanCreateRequest",
-      description: "Request body for creating a coach training plan template.",
+      description: "Request body for creating a reusable Training Template.",
       type: :object,
       additionalProperties: false,
       properties: %{
@@ -31,23 +31,69 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlanUpdateRequest do
   OpenApiSpex.schema(
     %{
       title: "TrainingPlanUpdateRequest",
-      description: "Request body for updating coach-editable training plan metadata.",
+      description: "Revisioned metadata for a Training Template, or metadata and Coverage dates for a Client Plan.",
       type: :object,
       additionalProperties: false,
       properties: %{
+        expected_revision: %Schema{type: :integer, minimum: 1},
         name: %Schema{type: :string, maxLength: 255},
         description: %Schema{type: :string, maxLength: 5000, nullable: true},
-        status: %Schema{type: :string, enum: ["active", "archived"], nullable: true},
         start_date: %Schema{type: :string, format: :date, nullable: true},
         end_date: %Schema{type: :string, format: :date, nullable: true}
       },
+      required: [:expected_revision],
       example: %{
+        "expected_revision" => 3,
         "name" => "Updated Strength Template",
         "description" => "Updated training focus."
       }
     },
     struct?: false
   )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.TrainingPlanRevisionRequest do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "TrainingPlanRevisionRequest",
+      description: "Optimistic revision required by an explicit Training Template or Client Plan lifecycle command.",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        expected_revision: %Schema{type: :integer, minimum: 1}
+      },
+      required: [:expected_revision],
+      example: %{"expected_revision" => 3}
+    },
+    struct?: false
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.TrainingPlanStaleRevisionError do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "TrainingPlanStaleRevisionError",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      error_code: %Schema{type: :string, enum: ["stale_revision"]},
+      error_message: %Schema{type: :string},
+      error_detail: %Schema{
+        type: :object,
+        additionalProperties: false,
+        properties: %{current_revision: %Schema{type: :integer, minimum: 1}},
+        required: [:current_revision]
+      }
+    },
+    required: [:error_code, :error_message, :error_detail]
+  })
 end
 
 defmodule EasyWeb.OpenApi.Schemas.TrainingPlanAssignRequest do

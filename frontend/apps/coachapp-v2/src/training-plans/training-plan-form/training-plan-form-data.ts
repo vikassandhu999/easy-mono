@@ -29,8 +29,12 @@ export function trainingPlanToCreateRequest(values: TrainingPlanFormValues): Tra
   });
 }
 
-export function trainingPlanToUpdateRequest(values: TrainingPlanFormValues): TrainingPlanUpdateRequest {
+export function trainingPlanToUpdateRequest(
+  values: TrainingPlanFormValues,
+  expectedRevision: number,
+): TrainingPlanUpdateRequest {
   return {
+    expected_revision: expectedRevision,
     name: values.name,
     description: toNullableText(values.description),
   };

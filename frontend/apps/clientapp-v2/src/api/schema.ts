@@ -1794,7 +1794,7 @@ export interface components {
     };
     /**
      * TrainingPlanCreateRequest
-     * @description Request body for creating a coach training plan template.
+     * @description Request body for creating a reusable Training Template.
      * @example {
      *       "description": "Upper/lower strength block.",
      *       "name": "Four Day Strength Template"
@@ -2632,6 +2632,16 @@ export interface components {
      */
     TrainingExerciseCopyRequest: {
       name: string;
+    };
+    /**
+     * TrainingPlanRevisionRequest
+     * @description Optimistic revision required by an explicit Training Template or Client Plan lifecycle command.
+     * @example {
+     *       "expected_revision": 3
+     *     }
+     */
+    TrainingPlanRevisionRequest: {
+      expected_revision: number;
     };
     /** ServiceCoverageMissingReason */
     ServiceCoverageMissingReason: {
@@ -3886,9 +3896,10 @@ export interface components {
     };
     /**
      * TrainingPlanUpdateRequest
-     * @description Request body for updating coach-editable training plan metadata.
+     * @description Revisioned metadata for a Training Template, or metadata and Coverage dates for a Client Plan.
      * @example {
      *       "description": "Updated training focus.",
+     *       "expected_revision": 3,
      *       "name": "Updated Strength Template"
      *     }
      */
@@ -3896,11 +3907,10 @@ export interface components {
       description?: string | null;
       /** Format: date */
       end_date?: string | null;
+      expected_revision: number;
       name?: string;
       /** Format: date */
       start_date?: string | null;
-      /** @enum {string|null} */
-      status?: 'active' | 'archived' | null;
     };
     /**
      * LibraryMedia
@@ -4021,6 +4031,15 @@ export interface components {
       training_workout_id?: string | null;
       /** Format: date-time */
       updated_at: string;
+    };
+    /** TrainingPlanStaleRevisionError */
+    TrainingPlanStaleRevisionError: {
+      /** @enum {string} */
+      error_code: 'stale_revision';
+      error_detail: {
+        current_revision: number;
+      };
+      error_message: string;
     };
     /** BillingResponse */
     BillingResponse: {

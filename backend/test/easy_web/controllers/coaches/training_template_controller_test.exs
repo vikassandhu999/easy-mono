@@ -76,4 +76,190 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
       assert %{"errors" => [_ | _]} = json_response(response, 422)
     end
   end
+
+  describe "Training Template lifecycle" do
+    test "shows, updates, archives, restores, and deletes through revisioned commands", %{conn: conn} do
+      coach = insert(:coach)
+      conn = authenticate_coach(conn, coach)
+      template = insert(:training_plan, business: coach.business, creator: coach.user)
+      workout = insert(:workout, business: coach.business, plan: template, position: 0)
+      exercise = insert(:exercise, business: coach.business)
+
+      insert(:prescribed_exercise,
+        business: coach.business,
+        workout: workout,
+        exercise: exercise,
+        position: 0
+      )
+
+      show_conn = get(conn, "/v1/coach/training-plans/#{template.id}")
+      assert %{"data" => shown} = json_response(show_conn, 200)
+      assert shown["kind"] == "template"
+      assert shown["revision"] == 1
+      assert [%{"workout_elements" => [_]}] = shown["workouts"]
+      assert_schema(shown, "TrainingPlan", EasyWeb.ApiSpec.spec())
+
+      update_conn =
+        patch(conn, "/v1/coach/training-plans/#{template.id}", %{
+          "expected_revision" => 1,
+          "name" => "Revised Template"
+        })
+
+      assert %{"data" => %{"name" => "Revised Template", "revision" => 2}} =
+               json_response(update_conn, 200)
+
+      stale_conn =
+        patch(conn, "/v1/coach/training-plans/#{template.id}", %{
+          "expected_revision" => 1,
+          "name" => "Lost write"
+        })
+
+      stale_response = json_response(stale_conn, 409)
+
+      assert %{
+               "error_code" => "stale_revision",
+               "error_detail" => %{"current_revision" => 2}
+             } = stale_response
+
+      assert_schema(stale_response, "TrainingPlanStaleRevisionError", EasyWeb.ApiSpec.spec())
+
+      archive_conn =
+        post(conn, "/v1/coach/training-plans/#{template.id}/archive", %{"expected_revision" => 2})
+
+      assert %{"data" => %{"archived_at" => archived_at, "revision" => 3}} =
+               json_response(archive_conn, 200)
+
+      assert archived_at
+
+      restore_conn =
+        post(conn, "/v1/coach/training-plans/#{template.id}/restore", %{"expected_revision" => 3})
+
+      assert %{"data" => %{"archived_at" => nil, "revision" => 4}} =
+               json_response(restore_conn, 200)
+
+      delete_conn = delete(conn, "/v1/coach/training-plans/#{template.id}?expected_revision=4")
+
+      assert response(delete_conn, 204) == ""
+      assert Repo.get(TrainingPlan, template.id) == nil
+    end
+
+    test "conceals another business Template for every lifecycle operation", %{conn: conn} do
+      coach = insert(:coach)
+      other = insert(:coach)
+      hidden = insert(:training_plan, business: other.business, creator: other.user)
+      conn = authenticate_coach(conn, coach)
+
+      assert json_response(get(conn, "/v1/coach/training-plans/#{hidden.id}"), 404)
+
+      assert json_response(
+               patch(conn, "/v1/coach/training-plans/#{hidden.id}", %{
+                 "expected_revision" => 1,
+                 "name" => "Nope"
+               }),
+               404
+             )
+
+      assert json_response(
+               post(conn, "/v1/coach/training-plans/#{hidden.id}/archive", %{
+                 "expected_revision" => 1
+               }),
+               404
+             )
+
+      assert json_response(
+               post(conn, "/v1/coach/training-plans/#{hidden.id}/restore", %{
+                 "expected_revision" => 1
+               }),
+               404
+             )
+
+      assert json_response(
+               delete(conn, "/v1/coach/training-plans/#{hidden.id}?expected_revision=1"),
+               404
+             )
+    end
+
+    test "preserves the shared Client Plan detail, Coverage, and end-plan flow", %{conn: conn} do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+
+      client_plan =
+        insert(:training_plan,
+          business: coach.business,
+          creator: coach.user,
+          client: client,
+          kind: :client_plan,
+          start_date: ~D[2026-09-01]
+        )
+
+      conn = authenticate_coach(conn, coach)
+
+      assert %{"data" => %{"kind" => "client_plan", "revision" => 1}} =
+               conn
+               |> get("/v1/coach/training-plans/#{client_plan.id}")
+               |> json_response(200)
+
+      assert %{
+               "data" => %{
+                 "start_date" => "2026-09-08",
+                 "end_date" => "2026-10-08",
+                 "revision" => 2
+               }
+             } =
+               conn
+               |> patch("/v1/coach/training-plans/#{client_plan.id}", %{
+                 "expected_revision" => 1,
+                 "start_date" => "2026-09-08",
+                 "end_date" => "2026-10-08"
+               })
+               |> json_response(200)
+
+      assert %{"data" => %{"archived_at" => archived_at, "revision" => 3}} =
+               conn
+               |> post("/v1/coach/training-plans/#{client_plan.id}/archive", %{
+                 "expected_revision" => 2
+               })
+               |> json_response(200)
+
+      assert archived_at
+    end
+
+    test "returns validation instead of raising when Client Plan restore conflicts with Coverage", %{conn: conn} do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+
+      archived_plan =
+        insert(:training_plan,
+          business: coach.business,
+          creator: coach.user,
+          client: client,
+          kind: :client_plan,
+          start_date: ~D[2026-09-01],
+          end_date: ~D[2026-09-30],
+          archived_at: ~U[2026-08-15 12:00:00Z]
+        )
+
+      insert(:training_plan,
+        business: coach.business,
+        creator: coach.user,
+        client: client,
+        kind: :client_plan,
+        start_date: ~D[2026-09-15],
+        end_date: ~D[2026-10-15]
+      )
+
+      response =
+        conn
+        |> authenticate_coach(coach)
+        |> post("/v1/coach/training-plans/#{archived_plan.id}/restore", %{
+          "expected_revision" => 1
+        })
+        |> json_response(422)
+
+      assert %{
+               "error_code" => "invalid_input",
+               "error_detail" => %{"fields" => %{"start_date" => [_]}}
+             } = response
+    end
+  end
 end

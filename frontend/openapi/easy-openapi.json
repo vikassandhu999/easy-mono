@@ -3515,7 +3515,7 @@
       },
       "TrainingPlanCreateRequest": {
         "additionalProperties": false,
-        "description": "Request body for creating a coach training plan template.",
+        "description": "Request body for creating a reusable Training Template.",
         "example": {
           "description": "Upper/lower strength block.",
           "name": "Four Day Strength Template"
@@ -6452,6 +6452,28 @@
           "name"
         ],
         "title": "TrainingExerciseCopyRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
+      "TrainingPlanRevisionRequest": {
+        "additionalProperties": false,
+        "description": "Optimistic revision required by an explicit Training Template or Client Plan lifecycle command.",
+        "example": {
+          "expected_revision": 3
+        },
+        "properties": {
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "expected_revision"
+        ],
+        "title": "TrainingPlanRevisionRequest",
         "type": "object",
         "x-struct": null,
         "x-validate": null
@@ -11063,9 +11085,10 @@
       },
       "TrainingPlanUpdateRequest": {
         "additionalProperties": false,
-        "description": "Request body for updating coach-editable training plan metadata.",
+        "description": "Revisioned metadata for a Training Template, or metadata and Coverage dates for a Client Plan.",
         "example": {
           "description": "Updated training focus.",
+          "expected_revision": 3,
           "name": "Updated Strength Template"
         },
         "properties": {
@@ -11083,6 +11106,12 @@
             "x-struct": null,
             "x-validate": null
           },
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
           "name": {
             "maxLength": 255,
             "type": "string",
@@ -11095,18 +11124,11 @@
             "type": "string",
             "x-struct": null,
             "x-validate": null
-          },
-          "status": {
-            "enum": [
-              "active",
-              "archived"
-            ],
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
           }
         },
+        "required": [
+          "expected_revision"
+        ],
         "title": "TrainingPlanUpdateRequest",
         "type": "object",
         "x-struct": null,
@@ -11563,6 +11585,50 @@
         "title": "TrainingSession",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingSession",
+        "x-validate": null
+      },
+      "TrainingPlanStaleRevisionError": {
+        "additionalProperties": false,
+        "properties": {
+          "error_code": {
+            "enum": [
+              "stale_revision"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "error_detail": {
+            "additionalProperties": false,
+            "properties": {
+              "current_revision": {
+                "minimum": 1,
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "required": [
+              "current_revision"
+            ],
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "error_message": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "error_code",
+          "error_message",
+          "error_detail"
+        ],
+        "title": "TrainingPlanStaleRevisionError",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingPlanStaleRevisionError",
         "x-validate": null
       },
       "BillingResponse": {
@@ -12747,7 +12813,7 @@
     "/v1/coach/training-plans": {
       "get": {
         "callbacks": {},
-        "description": "Lists coach training plan templates for planning screens. Only unassigned templates from the authenticated business are returned.",
+        "description": "Lists reusable Training Templates from the authenticated business for Programming screens.",
         "operationId": "listTrainingPlans",
         "parameters": [
           {
@@ -12804,7 +12870,7 @@
                 }
               }
             },
-            "description": "Training plans"
+            "description": "Training Templates"
           },
           "401": {
             "content": {
@@ -12822,14 +12888,14 @@
             "bearerAuth": []
           }
         ],
-        "summary": "List training plan templates",
+        "summary": "List Training Templates",
         "tags": [
           "coach training plans"
         ]
       },
       "post": {
         "callbacks": {},
-        "description": "Creates a coach-owned training plan template in the authenticated business. The server sets business and author ownership from trusted auth context.",
+        "description": "Creates a reusable Training Template in the authenticated business. The server sets business and creator ownership from trusted auth context.",
         "operationId": "createTrainingPlan",
         "parameters": [],
         "requestBody": {
@@ -12840,7 +12906,7 @@
               }
             }
           },
-          "description": "Training plan create request",
+          "description": "Training Template create request",
           "required": true
         },
         "responses": {
@@ -12852,7 +12918,7 @@
                 }
               }
             },
-            "description": "Training plan created"
+            "description": "Training Template created"
           },
           "401": {
             "content": {
@@ -12880,7 +12946,7 @@
             "bearerAuth": []
           }
         ],
-        "summary": "Create training plan",
+        "summary": "Create a Training Template",
         "tags": [
           "coach training plans"
         ]
@@ -13218,6 +13284,98 @@
         "summary": "Update client",
         "tags": [
           "coach clients"
+        ]
+      }
+    },
+    "/v1/coach/training-plans/{id}/restore": {
+      "post": {
+        "callbacks": {},
+        "description": "Restores a revisioned Training Template or authorized Client Plan.",
+        "operationId": "restoreTrainingPlan",
+        "parameters": [
+          {
+            "description": "Training Template or Client Plan id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainingPlanRevisionRequest"
+              }
+            }
+          },
+          "description": "Expected revision",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingPlanResponse"
+                }
+              }
+            },
+            "description": "Training Template or Client Plan restored"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingPlanStaleRevisionError"
+                }
+              }
+            },
+            "description": "Stale revision"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Restore a Training Template or visible Client Plan",
+        "tags": [
+          "coach training plans"
         ]
       }
     },
@@ -21234,6 +21392,98 @@
         ]
       }
     },
+    "/v1/coach/training-plans/{id}/archive": {
+      "post": {
+        "callbacks": {},
+        "description": "Archives a revisioned Training Template or authorized Client Plan without deleting its history.",
+        "operationId": "archiveTrainingPlan",
+        "parameters": [
+          {
+            "description": "Training Template or Client Plan id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainingPlanRevisionRequest"
+              }
+            }
+          },
+          "description": "Expected revision",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingPlanResponse"
+                }
+              }
+            },
+            "description": "Training Template or Client Plan archived"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingPlanStaleRevisionError"
+                }
+              }
+            },
+            "description": "Stale revision"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Archive a Training Template or visible Client Plan",
+        "tags": [
+          "coach training plans"
+        ]
+      }
+    },
     "/v1/coach/nutrition-day-meals/{id}": {
       "delete": {
         "callbacks": {},
@@ -22081,7 +22331,7 @@
     "/v1/coach/training-plans/{id}": {
       "delete": {
         "callbacks": {},
-        "description": "Deletes one training plan from the authenticated business.",
+        "description": "Deletes one revisioned Training Template or authorized Client Plan.",
         "operationId": "deleteTrainingPlan",
         "parameters": [
           {
@@ -22094,11 +22344,23 @@
               "x-struct": null,
               "x-validate": null
             }
+          },
+          {
+            "description": "Revision observed by the deleting client",
+            "in": "query",
+            "name": "expected_revision",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
           }
         ],
         "responses": {
           "204": {
-            "description": "Training plan deleted"
+            "description": "Training Template or Client Plan deleted"
           },
           "401": {
             "content": {
@@ -22119,6 +22381,16 @@
               }
             },
             "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingPlanStaleRevisionError"
+                }
+              }
+            },
+            "description": "Stale revision"
           }
         },
         "security": [
@@ -22126,14 +22398,14 @@
             "bearerAuth": []
           }
         ],
-        "summary": "Delete training plan",
+        "summary": "Delete a Training Template or visible Client Plan",
         "tags": [
           "coach training plans"
         ]
       },
       "get": {
         "callbacks": {},
-        "description": "Loads one training plan from the authenticated business with workouts, workout elements, the weekday schedule, and assigned client summary.",
+        "description": "Loads one Training Template or authorized Client Plan with its complete Prescription.",
         "operationId": "getTrainingPlan",
         "parameters": [
           {
@@ -22157,7 +22429,7 @@
                 }
               }
             },
-            "description": "Training plan"
+            "description": "Training Template or Client Plan"
           },
           "401": {
             "content": {
@@ -22185,14 +22457,14 @@
             "bearerAuth": []
           }
         ],
-        "summary": "Get training plan",
+        "summary": "Get a Training Template or visible Client Plan",
         "tags": [
           "coach training plans"
         ]
       },
       "patch": {
         "callbacks": {},
-        "description": "Updates coach-editable training plan metadata. Relationship ids and tenant ownership are not accepted from the request body.",
+        "description": "Updates revisioned metadata and, for a Client Plan, its Coverage dates. Relationship ids and tenant ownership are never accepted.",
         "operationId": "updateTrainingPlan",
         "parameters": [
           {
@@ -22215,7 +22487,7 @@
               }
             }
           },
-          "description": "Training plan update request",
+          "description": "Training Template or Client Plan update request",
           "required": true
         },
         "responses": {
@@ -22227,7 +22499,7 @@
                 }
               }
             },
-            "description": "Training plan updated"
+            "description": "Training Template or Client Plan updated"
           },
           "401": {
             "content": {
@@ -22249,6 +22521,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingPlanStaleRevisionError"
+                }
+              }
+            },
+            "description": "Stale revision"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -22265,7 +22547,7 @@
             "bearerAuth": []
           }
         ],
-        "summary": "Update training plan",
+        "summary": "Update a Training Template or visible Client Plan",
         "tags": [
           "coach training plans"
         ]

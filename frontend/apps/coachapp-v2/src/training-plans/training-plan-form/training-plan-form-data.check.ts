@@ -21,9 +21,12 @@ if (!trimmed.success || trimmed.data.name !== 'Test Plan') {
   throw new Error('training plan name must be normalized before submission');
 }
 
-const cleared = trainingPlanToUpdateRequest({...TRAINING_PLAN_FORM_DEFAULTS, name: 'Test Plan'});
+const cleared = trainingPlanToUpdateRequest({...TRAINING_PLAN_FORM_DEFAULTS, name: 'Test Plan'}, 3);
 if (cleared.description !== null) {
   throw new Error('clearing description must send null');
+}
+if (cleared.expected_revision !== 3) {
+  throw new Error('Template metadata updates must send the observed revision');
 }
 
 console.log('training-plan-form-data: all checks passed');

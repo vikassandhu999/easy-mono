@@ -35,6 +35,8 @@ import {call, client} from '@/api/client';
 import {clientKeys, trainingPlanKeys} from '@/api/keys';
 import {patchQueryData, queryClient} from '@/api/query-client';
 import type {components} from '@/api/schema';
+import {trainingPlanRevisionRequest} from '@/api/training-plan-lifecycle';
+import {workbenchMutationTargets} from '@/api/workbench-targets';
 
 export type TrainingPlan = components['schemas']['TrainingPlan'];
 export type TrainingPlanWorkout = components['schemas']['TrainingPlanWorkout'];
@@ -185,11 +187,27 @@ export async function reorderElements(workoutId: string, elementIds: string[]): 
  * `useUpdateTrainingPlanMutation`'s invalidations (detail included — the
  * refetch confirms the optimistic patch, same as the screens' flow).
  */
-export async function updatePlanPeriod(planId: string, body: TrainingPlanUpdateRequest): Promise<void> {
-  await call(client.PATCH('/v1/coach/training-plans/{id}', {params: {path: {id: planId}}, body}));
+export async function updatePlanPeriod(
+  planId: string,
+  body: Pick<TrainingPlanUpdateRequest, 'end_date' | 'start_date'>,
+): Promise<void> {
+  const plan = readPlan(planId);
+  if (!plan) {
+    throw new Error('Cannot update Client Plan Coverage before the plan is loaded');
+  }
+
+  await call(
+    client.PATCH('/v1/coach/training-plans/{id}', {
+      params: {path: {id: planId}},
+      body: {...body, ...trainingPlanRevisionRequest(plan)},
+    }),
+  );
   queryClient.invalidateQueries({queryKey: trainingPlanKeys.detail(planId)});
   queryClient.invalidateQueries({queryKey: trainingPlanKeys.lists()});
   queryClient.invalidateQueries({queryKey: trainingPlanKeys.forClients()});
   queryClient.invalidateQueries({queryKey: clientKeys.lists()});
   queryClient.invalidateQueries({queryKey: clientKeys.details()});
+  for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
+    queryClient.invalidateQueries({queryKey: [...queryKey]});
+  }
 }

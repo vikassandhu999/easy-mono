@@ -12,14 +12,14 @@ export interface paths {
       cookie?: never;
     };
     /**
-     * List training plan templates
-     * @description Lists coach training plan templates for planning screens. Only unassigned templates from the authenticated business are returned.
+     * List Training Templates
+     * @description Lists reusable Training Templates from the authenticated business for Programming screens.
      */
     get: operations['listTrainingPlans'];
     put?: never;
     /**
-     * Create training plan
-     * @description Creates a coach-owned training plan template in the authenticated business. The server sets business and author ownership from trusted auth context.
+     * Create a Training Template
+     * @description Creates a reusable Training Template in the authenticated business. The server sets business and creator ownership from trusted auth context.
      */
     post: operations['createTrainingPlan'];
     delete?: never;
@@ -72,6 +72,26 @@ export interface paths {
      * @description Updates coach-editable client fields and allowed status transitions.
      */
     patch: operations['updateClient'];
+    trace?: never;
+  };
+  '/v1/coach/training-plans/{id}/restore': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Restore a Training Template or visible Client Plan
+     * @description Restores a revisioned Training Template or authorized Client Plan.
+     */
+    post: operations['restoreTrainingPlan'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
   '/v1/coach/conversations/{id}/mark-handled': {
@@ -1413,6 +1433,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/coach/training-plans/{id}/archive': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Archive a Training Template or visible Client Plan
+     * @description Archives a revisioned Training Template or authorized Client Plan without deleting its history.
+     */
+    post: operations['archiveTrainingPlan'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/coach/nutrition-day-meals/{id}': {
     parameters: {
       query?: never;
@@ -1545,22 +1585,22 @@ export interface paths {
       cookie?: never;
     };
     /**
-     * Get training plan
-     * @description Loads one training plan from the authenticated business with workouts, workout elements, the weekday schedule, and assigned client summary.
+     * Get a Training Template or visible Client Plan
+     * @description Loads one Training Template or authorized Client Plan with its complete Prescription.
      */
     get: operations['getTrainingPlan'];
     put?: never;
     post?: never;
     /**
-     * Delete training plan
-     * @description Deletes one training plan from the authenticated business.
+     * Delete a Training Template or visible Client Plan
+     * @description Deletes one revisioned Training Template or authorized Client Plan.
      */
     delete: operations['deleteTrainingPlan'];
     options?: never;
     head?: never;
     /**
-     * Update training plan
-     * @description Updates coach-editable training plan metadata. Relationship ids and tenant ownership are not accepted from the request body.
+     * Update a Training Template or visible Client Plan
+     * @description Updates revisioned metadata and, for a Client Plan, its Coverage dates. Relationship ids and tenant ownership are never accepted.
      */
     patch: operations['updateTrainingPlan'];
     trace?: never;
@@ -3050,7 +3090,7 @@ export interface components {
     };
     /**
      * TrainingPlanCreateRequest
-     * @description Request body for creating a coach training plan template.
+     * @description Request body for creating a reusable Training Template.
      * @example {
      *       "description": "Upper/lower strength block.",
      *       "name": "Four Day Strength Template"
@@ -3888,6 +3928,16 @@ export interface components {
      */
     TrainingExerciseCopyRequest: {
       name: string;
+    };
+    /**
+     * TrainingPlanRevisionRequest
+     * @description Optimistic revision required by an explicit Training Template or Client Plan lifecycle command.
+     * @example {
+     *       "expected_revision": 3
+     *     }
+     */
+    TrainingPlanRevisionRequest: {
+      expected_revision: number;
     };
     /** ServiceCoverageMissingReason */
     ServiceCoverageMissingReason: {
@@ -5142,9 +5192,10 @@ export interface components {
     };
     /**
      * TrainingPlanUpdateRequest
-     * @description Request body for updating coach-editable training plan metadata.
+     * @description Revisioned metadata for a Training Template, or metadata and Coverage dates for a Client Plan.
      * @example {
      *       "description": "Updated training focus.",
+     *       "expected_revision": 3,
      *       "name": "Updated Strength Template"
      *     }
      */
@@ -5152,11 +5203,10 @@ export interface components {
       description?: string | null;
       /** Format: date */
       end_date?: string | null;
+      expected_revision: number;
       name?: string;
       /** Format: date */
       start_date?: string | null;
-      /** @enum {string|null} */
-      status?: 'active' | 'archived' | null;
     };
     /**
      * LibraryMedia
@@ -5277,6 +5327,15 @@ export interface components {
       training_workout_id?: string | null;
       /** Format: date-time */
       updated_at: string;
+    };
+    /** TrainingPlanStaleRevisionError */
+    TrainingPlanStaleRevisionError: {
+      /** @enum {string} */
+      error_code: 'stale_revision';
+      error_detail: {
+        current_revision: number;
+      };
+      error_message: string;
     };
     /** BillingResponse */
     BillingResponse: {
@@ -5579,7 +5638,7 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description Training plans */
+      /** @description Training Templates */
       200: {
         headers: {
           [name: string]: unknown;
@@ -5606,14 +5665,14 @@ export interface operations {
       path?: never;
       cookie?: never;
     };
-    /** @description Training plan create request */
+    /** @description Training Template create request */
     requestBody: {
       content: {
         'application/json': components['schemas']['TrainingPlanCreateRequest'];
       };
     };
     responses: {
-      /** @description Training plan created */
+      /** @description Training Template created */
       201: {
         headers: {
           [name: string]: unknown;
@@ -5867,6 +5926,70 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SeatLimitError'];
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  restoreTrainingPlan: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Training Template or Client Plan id */
+        id: string;
+      };
+      cookie?: never;
+    };
+    /** @description Expected revision */
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TrainingPlanRevisionRequest'];
+      };
+    };
+    responses: {
+      /** @description Training Template or Client Plan restored */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TrainingPlanResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Stale revision */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TrainingPlanStaleRevisionError'];
         };
       };
       /** @description Validation error */
@@ -9653,6 +9776,70 @@ export interface operations {
       };
     };
   };
+  archiveTrainingPlan: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Training Template or Client Plan id */
+        id: string;
+      };
+      cookie?: never;
+    };
+    /** @description Expected revision */
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TrainingPlanRevisionRequest'];
+      };
+    };
+    responses: {
+      /** @description Training Template or Client Plan archived */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TrainingPlanResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Stale revision */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TrainingPlanStaleRevisionError'];
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
   removeNutritionSlotOption: {
     parameters: {
       query?: never;
@@ -10095,7 +10282,7 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description Training plan */
+      /** @description Training Template or Client Plan */
       200: {
         headers: {
           [name: string]: unknown;
@@ -10126,7 +10313,10 @@ export interface operations {
   };
   deleteTrainingPlan: {
     parameters: {
-      query?: never;
+      query: {
+        /** @description Revision observed by the deleting client */
+        expected_revision: number;
+      };
       header?: never;
       path: {
         /** @description Training plan id */
@@ -10136,7 +10326,7 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description Training plan deleted */
+      /** @description Training Template or Client Plan deleted */
       204: {
         headers: {
           [name: string]: unknown;
@@ -10161,6 +10351,15 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
+      /** @description Stale revision */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TrainingPlanStaleRevisionError'];
+        };
+      };
     };
   };
   updateTrainingPlan: {
@@ -10173,14 +10372,14 @@ export interface operations {
       };
       cookie?: never;
     };
-    /** @description Training plan update request */
+    /** @description Training Template or Client Plan update request */
     requestBody: {
       content: {
         'application/json': components['schemas']['TrainingPlanUpdateRequest'];
       };
     };
     responses: {
-      /** @description Training plan updated */
+      /** @description Training Template or Client Plan updated */
       200: {
         headers: {
           [name: string]: unknown;
@@ -10205,6 +10404,15 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Stale revision */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TrainingPlanStaleRevisionError'];
         };
       };
       /** @description Validation error */

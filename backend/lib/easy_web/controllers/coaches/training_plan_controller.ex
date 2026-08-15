@@ -10,7 +10,9 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     TrainingPlanAssignRequest,
     TrainingPlanCreateRequest,
     TrainingPlanListResponse,
+    TrainingPlanRevisionRequest,
     TrainingPlanResponse,
+    TrainingPlanStaleRevisionError,
     TrainingPlanUpdateRequest
   }
 
@@ -18,13 +20,13 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
 
   plug OpenApiSpex.Plug.CastAndValidate,
        [json_render_error_v2: true]
-       when action in [:create, :update, :delete, :assign, :duplicate]
+       when action in [:create, :update, :delete, :archive, :restore, :assign, :duplicate]
 
   tags ["coach training plans"]
 
   operation :index,
-    summary: "List training plan templates",
-    description: "Lists coach training plan templates for planning screens. Only unassigned templates from the authenticated business are returned.",
+    summary: "List Training Templates",
+    description: "Lists reusable Training Templates from the authenticated business for Programming screens.",
     operation_id: "listTrainingPlans",
     security: [%{"bearerAuth" => []}],
     parameters: [
@@ -40,64 +42,103 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
       )
     ],
     responses: [
-      ok: {"Training plans", "application/json", TrainingPlanListResponse},
+      ok: {"Training Templates", "application/json", TrainingPlanListResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse}
     ]
 
   operation :create,
-    summary: "Create training plan",
-    description: "Creates a coach-owned training plan template in the authenticated business. The server sets business and author ownership from trusted auth context.",
+    summary: "Create a Training Template",
+    description: "Creates a reusable Training Template in the authenticated business. The server sets business and creator ownership from trusted auth context.",
     operation_id: "createTrainingPlan",
     security: [%{"bearerAuth" => []}],
-    request_body: {"Training plan create request", "application/json", TrainingPlanCreateRequest, required: true},
+    request_body: {"Training Template create request", "application/json", TrainingPlanCreateRequest, required: true},
     responses: [
-      created: {"Training plan created", "application/json", TrainingPlanResponse},
+      created: {"Training Template created", "application/json", TrainingPlanResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
   operation :show,
-    summary: "Get training plan",
-    description: "Loads one training plan from the authenticated business with workouts, workout elements, the weekday schedule, and assigned client summary.",
+    summary: "Get a Training Template or visible Client Plan",
+    description: "Loads one Training Template or authorized Client Plan with its complete Prescription.",
     operation_id: "getTrainingPlan",
     security: [%{"bearerAuth" => []}],
     parameters: [
       Operation.parameter(:id, :path, :string, "Training plan id")
     ],
     responses: [
-      ok: {"Training plan", "application/json", TrainingPlanResponse},
+      ok: {"Training Template or Client Plan", "application/json", TrainingPlanResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse}
     ]
 
   operation :update,
-    summary: "Update training plan",
-    description: "Updates coach-editable training plan metadata. Relationship ids and tenant ownership are not accepted from the request body.",
+    summary: "Update a Training Template or visible Client Plan",
+    description: "Updates revisioned metadata and, for a Client Plan, its Coverage dates. Relationship ids and tenant ownership are never accepted.",
     operation_id: "updateTrainingPlan",
     security: [%{"bearerAuth" => []}],
     parameters: [
       Operation.parameter(:id, :path, :string, "Training plan id")
     ],
-    request_body: {"Training plan update request", "application/json", TrainingPlanUpdateRequest, required: true},
+    request_body: {"Training Template or Client Plan update request", "application/json", TrainingPlanUpdateRequest, required: true},
     responses: [
-      ok: {"Training plan updated", "application/json", TrainingPlanResponse},
+      ok: {"Training Template or Client Plan updated", "application/json", TrainingPlanResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Stale revision", "application/json", TrainingPlanStaleRevisionError},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
   operation :delete,
-    summary: "Delete training plan",
-    description: "Deletes one training plan from the authenticated business.",
+    summary: "Delete a Training Template or visible Client Plan",
+    description: "Deletes one revisioned Training Template or authorized Client Plan.",
     operation_id: "deleteTrainingPlan",
     security: [%{"bearerAuth" => []}],
     parameters: [
-      Operation.parameter(:id, :path, :string, "Training plan id")
+      Operation.parameter(:id, :path, :string, "Training plan id"),
+      Operation.parameter(
+        :expected_revision,
+        :query,
+        %Schema{type: :integer, minimum: 1},
+        "Revision observed by the deleting client",
+        required: true
+      )
     ],
     responses: [
-      no_content: "Training plan deleted",
+      no_content: "Training Template or Client Plan deleted",
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse}
+      not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Stale revision", "application/json", TrainingPlanStaleRevisionError}
+    ]
+
+  operation :archive,
+    summary: "Archive a Training Template or visible Client Plan",
+    description: "Archives a revisioned Training Template or authorized Client Plan without deleting its history.",
+    operation_id: "archiveTrainingPlan",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Training Template or Client Plan id")],
+    request_body: {"Expected revision", "application/json", TrainingPlanRevisionRequest, required: true},
+    responses: [
+      ok: {"Training Template or Client Plan archived", "application/json", TrainingPlanResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Stale revision", "application/json", TrainingPlanStaleRevisionError},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :restore,
+    summary: "Restore a Training Template or visible Client Plan",
+    description: "Restores a revisioned Training Template or authorized Client Plan.",
+    operation_id: "restoreTrainingPlan",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Training Template or Client Plan id")],
+    request_body: {"Expected revision", "application/json", TrainingPlanRevisionRequest, required: true},
+    responses: [
+      ok: {"Training Template or Client Plan restored", "application/json", TrainingPlanResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Stale revision", "application/json", TrainingPlanStaleRevisionError},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
   operation :assign,
@@ -144,7 +185,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   def show(conn, _params) do
     id = conn.path_params["id"]
 
-    with {:ok, plan} <- Plans.get_plan_full(conn.assigns.ctx, id) do
+    with {:ok, plan} <- Programming.get_plan(conn.assigns.ctx, id) do
       render(conn, :show, plan: plan)
     end
   end
@@ -153,7 +194,11 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   def update(conn, _params) do
     id = conn.path_params["id"]
 
-    with {:ok, updated} <- Plans.update_plan(conn.assigns.ctx, id, conn.body_params) do
+    expected_revision = conn.body_params[:expected_revision]
+    attrs = Map.delete(conn.body_params, :expected_revision)
+
+    with {:ok, updated} <-
+           Programming.update_plan(conn.assigns.ctx, id, expected_revision, attrs) do
       render(conn, :show, plan: updated)
     end
   end
@@ -162,8 +207,31 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   def delete(conn, _params) do
     id = conn.path_params["id"]
 
-    with {:ok, _plan} <- Plans.delete_plan(conn.assigns.ctx, id) do
+    expected_revision = parse_integer(conn.query_params, "expected_revision", 0)
+
+    with {:ok, _plan} <-
+           Programming.delete_plan(conn.assigns.ctx, id, expected_revision) do
       send_resp(conn, :no_content, "")
+    end
+  end
+
+  @spec archive(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def archive(conn, _params) do
+    id = conn.path_params["id"]
+
+    with {:ok, plan} <-
+           Programming.archive_plan(conn.assigns.ctx, id, conn.body_params[:expected_revision]) do
+      render(conn, :show, plan: plan)
+    end
+  end
+
+  @spec restore(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def restore(conn, _params) do
+    id = conn.path_params["id"]
+
+    with {:ok, plan} <-
+           Programming.restore_plan(conn.assigns.ctx, id, conn.body_params[:expected_revision]) do
+      render(conn, :show, plan: plan)
     end
   end
 

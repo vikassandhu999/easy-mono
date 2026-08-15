@@ -25,6 +25,19 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Error.new(:conflict, "The resource changed since it was observed.", %{}, :conflict)})
   end
 
+  def call(conn, {:error, %Ecto.Changeset{action: :stale_revision, data: %{revision: current_revision}}}) do
+    call(
+      conn,
+      {:error,
+       Error.new(
+         :stale_revision,
+         "The Training Template or Client Plan changed since it was observed.",
+         %{current_revision: current_revision},
+         :conflict
+       )}
+    )
+  end
+
   def call(conn, {:error, :unauthorized}) do
     call(conn, {:error, Error.unauthorized()})
   end

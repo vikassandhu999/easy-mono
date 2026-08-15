@@ -23,6 +23,7 @@ const PAGE_SIZE = 20;
 export type TrainingPlanListResponse = components['schemas']['TrainingPlanListResponse'];
 export type TrainingPlanCreateRequest = components['schemas']['TrainingPlanCreateRequest'];
 export type TrainingPlanUpdateRequest = components['schemas']['TrainingPlanUpdateRequest'];
+export type TrainingPlanRevisionRequest = components['schemas']['TrainingPlanRevisionRequest'];
 export type TrainingPlanAssignRequest = components['schemas']['TrainingPlanAssignRequest'];
 export type ClientTrainingPlanListResponse = components['schemas']['ClientTrainingPlanListResponse'];
 export type TrainingSession = components['schemas']['TrainingSession'];
@@ -136,9 +137,54 @@ export function useUpdateTrainingPlanMutation() {
 export function useDeleteTrainingPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => call(client.DELETE('/v1/coach/training-plans/{id}', {params: {path: {id}}})),
-    onSuccess: (_data, id) => {
+    mutationFn: ({id, expectedRevision}: {id: string; expectedRevision: number}) =>
+      call(
+        client.DELETE('/v1/coach/training-plans/{id}', {
+          params: {path: {id}, query: {expected_revision: expectedRevision}},
+        }),
+      ),
+    onSuccess: (_data, {id}) => {
       qc.removeQueries({queryKey: trainingPlanKeys.detail(id)});
+      qc.invalidateQueries({queryKey: trainingPlanKeys.lists()});
+      qc.invalidateQueries({queryKey: trainingPlanKeys.forClients()});
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+      qc.invalidateQueries({queryKey: clientKeys.details()});
+      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
+        qc.invalidateQueries({queryKey: [...queryKey]});
+      }
+    },
+  });
+}
+
+export function useArchiveTrainingPlanMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({id, body}: {id: string; body: TrainingPlanRevisionRequest}) =>
+      call(
+        client.POST('/v1/coach/training-plans/{id}/archive', {params: {path: {id}}, body}),
+      ) as Promise<TrainingPlanResponse>,
+    onSuccess: (_data, {id}) => {
+      qc.invalidateQueries({queryKey: trainingPlanKeys.detail(id)});
+      qc.invalidateQueries({queryKey: trainingPlanKeys.lists()});
+      qc.invalidateQueries({queryKey: trainingPlanKeys.forClients()});
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+      qc.invalidateQueries({queryKey: clientKeys.details()});
+      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
+        qc.invalidateQueries({queryKey: [...queryKey]});
+      }
+    },
+  });
+}
+
+export function useRestoreTrainingPlanMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({id, body}: {id: string; body: TrainingPlanRevisionRequest}) =>
+      call(
+        client.POST('/v1/coach/training-plans/{id}/restore', {params: {path: {id}}, body}),
+      ) as Promise<TrainingPlanResponse>,
+    onSuccess: (_data, {id}) => {
+      qc.invalidateQueries({queryKey: trainingPlanKeys.detail(id)});
       qc.invalidateQueries({queryKey: trainingPlanKeys.lists()});
       qc.invalidateQueries({queryKey: trainingPlanKeys.forClients()});
       qc.invalidateQueries({queryKey: clientKeys.lists()});

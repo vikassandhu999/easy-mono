@@ -7,10 +7,11 @@ import {toastMutationError} from '@/@components/mutation-toast';
 import SectionHeading from '@/@components/section-heading';
 import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
+import {trainingPlanRevisionRequest} from '@/api/training-plan-lifecycle';
 import {
+  useArchiveTrainingPlanMutation,
   useCoachClientTrainingSessionsInfiniteQuery,
   useListCoachClientTrainingPlansQuery,
-  useUpdateTrainingPlanMutation,
 } from '@/api/training-plans-list';
 import {PlanPanel} from '@/clients/client-screen/plan-panel';
 import {DetailRow} from '@/clients/components/detail-row';
@@ -30,8 +31,7 @@ export function TrainingTab({client}: {client: Client}) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [assignFromUrl] = useState(() => params.get('assign') === 'plan');
-  const updatePlanMutation = useUpdateTrainingPlanMutation();
-  const isEnding = updatePlanMutation.isPending;
+  const archivePlanMutation = useArchiveTrainingPlanMutation();
 
   useEffect(() => {
     if (params.get('assign') !== 'plan') {
@@ -42,15 +42,6 @@ export function TrainingTab({client}: {client: Client}) {
     setParams(next, {replace: true});
   }, [params, setParams]);
 
-  // "End plan" archives it — the plan and its logged history stay, it just stops
-  // being the client's active plan. Confirmed in PlanPanel before it fires.
-  const endPlan = async (planId: string) => {
-    try {
-      await updatePlanMutation.mutateAsync({id: planId, body: {status: 'archived'}});
-    } catch (err) {
-      toastMutationError(err, "The plan wasn't ended. Try again.");
-    }
-  };
   const window = lastNDays(56);
   const plans = useListCoachClientTrainingPlansQuery(client.id, {status: 'active'});
   // An eight-week window can hold more than the server's 20-row page cap, so
@@ -61,6 +52,19 @@ export function TrainingTab({client}: {client: Client}) {
   });
 
   const plan = plans.data?.data?.[0];
+
+  const endPlan = async () => {
+    if (!plan) {
+      return;
+    }
+
+    try {
+      await archivePlanMutation.mutateAsync({id: plan.id, body: trainingPlanRevisionRequest(plan)});
+    } catch (err) {
+      toastMutationError(err, "The Client Plan wasn't ended. Try again.");
+    }
+  };
+
   const scheduledDays = plan ? Object.values(plan.schedule).filter(Boolean).length : 0;
   // A session records WHICH workout it performed, not its name, and
   // `planned_snapshot` is null on sessions logged against a live plan. The name
@@ -103,9 +107,9 @@ export function TrainingTab({client}: {client: Client}) {
           />
         )}
         assignLabel="Assign plan"
-        isEnding={isEnding}
+        isEnding={archivePlanMutation.isPending}
         name={plan?.name}
-        onEnd={plan ? () => endPlan(plan.id) : undefined}
+        onEnd={plan ? endPlan : undefined}
         onOpen={plan ? () => navigate(ROUTES.TRAINING_PLAN_DETAIL.replace(':id', plan.id)) : undefined}
       />
 

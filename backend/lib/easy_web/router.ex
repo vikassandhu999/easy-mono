@@ -180,6 +180,7 @@ defmodule EasyWeb.Router do
     post "/nutrition-plans/:id/archive", NutritionPlanController, :archive
     post "/nutrition-plans/:id/restore", NutritionPlanController, :restore
     post "/nutrition-plans/:id/duplicate", NutritionPlanController, :duplicate
+    put "/nutrition-plans/:id/menu", NutritionPlanController, :replace_menu
 
     get "/training-exercises", ExerciseController, :index
     post "/training-exercises", ExerciseController, :create

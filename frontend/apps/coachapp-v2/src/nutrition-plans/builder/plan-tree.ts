@@ -37,14 +37,20 @@ export function findDay(plan: NutritionPlan, dayId: string): NutritionPlanDay | 
   return getDays(plan).find((day) => day.id === dayId);
 }
 
-export function findMeal(_plan: NutritionPlan, _mealId: string): NutritionMeal | undefined {
-  return undefined;
+export function findMeal(plan: NutritionPlan, mealId: string): NutritionMeal | undefined {
+  return plan.meals.find((meal) => meal.id === mealId);
 }
 
 export function findItem(
-  _plan: NutritionPlan,
-  _itemId: string,
+  plan: NutritionPlan,
+  itemId: string,
 ): {item: NutritionMealItem; meal: NutritionMeal} | undefined {
+  for (const meal of plan.meals) {
+    const item = meal.meal_items.find((candidate) => candidate.id === itemId);
+    if (item) {
+      return {item, meal};
+    }
+  }
   return undefined;
 }
 

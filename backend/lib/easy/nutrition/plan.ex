@@ -304,8 +304,13 @@ defmodule Easy.Nutrition.Plan do
       |> WeekSchedule.for_business(business_id)
       |> WeekSchedule.by_weekday()
 
+    meal_query =
+      Meal
+      |> Meal.for_business(business_id)
+      |> Meal.include_items(business_id)
+
     from(plan in query,
-      preload: [day_patterns: ^pattern_query, week_schedule: ^schedule_query]
+      preload: [day_patterns: ^pattern_query, week_schedule: ^schedule_query, meals: ^meal_query]
     )
   end
 

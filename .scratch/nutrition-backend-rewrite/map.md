@@ -18,6 +18,7 @@ Rewrite Nutrition around Library, Programming, and Diary. The effort ends when t
 * [Rewrite the Food Library contract](./issues/02-food-library.md) — `Easy.Nutrition.Library` owns Food CRUD, revisioned writes, serving-size embeds, nullable canonical nutrients with one-decimal JSON rounding, and copy; coach and client apps consume the generated Food contract.
 * [Rewrite the Recipe Library contract](./issues/03-recipe-library.md) — Library owns Recipe CRUD, full ingredient replacement, serving and gram Portions, `NutrientTotals`, and `resolve_items/2`; coach and client apps consume the generated Recipe contract.
 * [Reset Programming and deliver Template lifecycle](./issues/04-template-lifecycle.md) — `Easy.Nutrition.Programming` owns one plan aggregate (`kind`, `revision`, `archived_at`); create Template stamps an empty Everyday Day Pattern onto all seven weekdays; coach list/create/edit/detail use revisioned archive, restore, delete, and duplicate.
+* [Author Meals through atomic Menu replacement](./issues/05-atomic-menu-meals.md) — `Programming.replace_menu/4` and `PUT /v1/coach/nutrition-plans/:id/menu` replace the complete Meal tree at the expected revision; Library resolves Food/Recipe Portions; the coach builder saves add/edit/reorder/remove through that one write.
 
 ## Not yet specified
 

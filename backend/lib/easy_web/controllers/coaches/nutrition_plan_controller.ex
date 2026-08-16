@@ -6,6 +6,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
+    NutritionMenuReplaceRequest,
     NutritionPlanCreateRequest,
     NutritionPlanListResponse,
     NutritionPlanResponse,
@@ -18,7 +19,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
 
   plug OpenApiSpex.Plug.CastAndValidate,
        [json_render_error_v2: true]
-       when action in [:create, :update, :delete, :archive, :restore, :duplicate]
+       when action in [:create, :update, :delete, :archive, :restore, :duplicate, :replace_menu]
 
   tags ["coach nutrition plans"]
 
@@ -135,6 +136,21 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
+  operation :replace_menu,
+    summary: "Replace a complete Menu",
+    description: "Atomically replaces ordered Meals and Menu Items for one authorized Nutrition Template or Client Plan. Every item is resolved through the Library.",
+    operation_id: "replaceNutritionMenu",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Nutrition Template or Client Plan id")],
+    request_body: {"Complete Menu", "application/json", NutritionMenuReplaceRequest, required: true},
+    responses: [
+      ok: {"Nutrition Template or Client Plan with replaced Menu", "application/json", NutritionPlanResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Stale revision", "application/json", StaleRevisionError},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
   operation :duplicate,
     summary: "Duplicate a Nutrition Template",
     description: "Copies an active Nutrition Template, including its empty Day Pattern and Week Schedule, using the expected source revision.",
@@ -218,6 +234,17 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
              limit: limit
            ) do
       render(conn, :index, plans: plans, count: count)
+    end
+  end
+
+  @spec replace_menu(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def replace_menu(conn, _params) do
+    expected_revision = conn.body_params[:expected_revision]
+    attrs = Map.delete(conn.body_params, :expected_revision)
+
+    with {:ok, plan} <-
+           Programming.replace_menu(conn.assigns.ctx, conn.path_params["id"], expected_revision, attrs) do
+      render(conn, :show, plan: plan)
     end
   end
 

@@ -2,7 +2,7 @@ defmodule Easy.Nutrition.Programming do
   alias Easy.Clients
   alias Easy.CopyName
   alias Easy.Ctx
-  alias Easy.Nutrition.{DayPattern, Plan, WeekSchedule}
+  alias Easy.Nutrition.{DayPattern, Library, Meal, MealItem, Plan, WeekSchedule}
   alias Easy.Orgs.Business
   alias Easy.Repo
   alias Easy.Utils
@@ -11,21 +11,12 @@ defmodule Easy.Nutrition.Programming do
   import Ecto.Query
 
   @everyday "Everyday"
+  @max_position 2_147_483_647
 
   @spec create_template(Ctx.t(), map()) :: {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_template(%Ctx{} = ctx, attrs) do
     with :ok <- ensure_coach(ctx) do
-      result =
-        Repo.transaction(fn ->
-          with {:ok, plan} <- ctx.business_id |> Plan.insert_changeset(ctx.user_id, attrs) |> Repo.insert(),
-               {:ok, pattern} <- insert_everyday_pattern(plan),
-               :ok <- assign_everyday_week(plan, pattern) do
-            plan
-          else
-            {:error, reason} -> Repo.rollback(reason)
-          end
-        end)
-
+      result = Repo.transaction(fn -> insert_everyday_template(ctx, attrs) end)
       preload_created(result, ctx.business_id)
     end
   end
@@ -209,6 +200,425 @@ defmodule Easy.Nutrition.Programming do
     end
   end
 
+  @spec replace_menu(Ctx.t(), String.t(), pos_integer(), map()) ::
+          {:ok, Plan.t()} | {:error, :not_found | :invalid_portion | Ecto.Changeset.t()}
+  def replace_menu(%Ctx{} = ctx, plan_id, expected_revision, attrs) do
+    mutate_plan(ctx, plan_id, expected_revision, fn plan ->
+      replace_locked_menu(ctx, plan, attrs)
+    end)
+  end
+
+  defp replace_locked_menu(_ctx, %Plan{archived_at: archived_at} = plan, _attrs) when not is_nil(archived_at) do
+    {:error, archived_changeset(plan)}
+  end
+
+  defp replace_locked_menu(ctx, plan, attrs) do
+    with {:ok, menu} <- validate_menu(ctx, plan, attrs),
+         {:ok, _meals} <- persist_menu_meals(plan, menu) do
+      plan
+      |> Plan.lifecycle_changeset(%{revision: plan.revision + 1})
+      |> Repo.update()
+    end
+  end
+
+  defp validate_menu(ctx, plan, attrs) do
+    meals = Map.get(attrs, :meals)
+
+    with :ok <- validate_menu_collections(plan, meals),
+         {:ok, existing} <- validate_persisted_menu_nodes(plan, meals),
+         :ok <- validate_menu_local_references(plan, meals),
+         :ok <- validate_menu_positions(plan, meals),
+         {:ok, resolved} <- resolve_menu_items(ctx, plan, meals) do
+      {:ok, %{meals: attach_resolved(meals, resolved), existing: existing}}
+    end
+  end
+
+  defp validate_menu_collections(plan, meals) do
+    if is_list(meals) and Enum.all?(meals, &valid_meal_collection?/1) do
+      :ok
+    else
+      {:error, menu_error(plan, :meals, "is invalid")}
+    end
+  end
+
+  defp valid_meal_collection?(meal) when is_map(meal), do: is_list(meal_items(meal))
+  defp valid_meal_collection?(_meal), do: false
+
+  defp validate_persisted_menu_nodes(plan, meals) do
+    existing_meals =
+      Meal
+      |> Meal.for_business(plan.business_id)
+      |> Meal.for_plan(plan.id)
+      |> Repo.all()
+      |> Map.new(&{&1.id, &1})
+
+    existing_items =
+      MealItem
+      |> MealItem.for_business(plan.business_id)
+      |> MealItem.for_plan(plan.id)
+      |> Repo.all()
+      |> Map.new(&{&1.id, &1})
+
+    if persisted_menu_nodes_valid?(meals, existing_meals, existing_items) do
+      {:ok, %{meals: existing_meals, items: existing_items}}
+    else
+      {:error, menu_error(plan, :meals, "contains an unknown persisted node")}
+    end
+  end
+
+  defp persisted_menu_nodes_valid?(meals, existing_meals, existing_items) do
+    meal_ids = meals |> Enum.map(&node_id/1) |> Enum.reject(&is_nil/1)
+    item_ids = meals |> Enum.flat_map(&meal_items/1) |> Enum.map(&node_id/1) |> Enum.reject(&is_nil/1)
+
+    unique?(meal_ids) and unique?(item_ids) and
+      Enum.all?(meal_ids, &(valid_uuid?(&1) and Map.has_key?(existing_meals, &1))) and
+      Enum.all?(meals, &persisted_items_belong_to_meal?(&1, existing_items))
+  end
+
+  defp persisted_items_belong_to_meal?(meal, existing_items) do
+    Enum.all?(meal_items(meal), fn input ->
+      case node_id(input) do
+        nil -> true
+        id -> persisted_item_belongs?(Map.get(existing_items, id), meal)
+      end
+    end)
+  end
+
+  defp persisted_item_belongs?(%MealItem{nutrition_meal_id: meal_id}, meal), do: meal_id == node_id(meal)
+  defp persisted_item_belongs?(_item, _meal), do: false
+
+  defp validate_menu_local_references(plan, meals) do
+    nodes = meals ++ Enum.flat_map(meals, &meal_items/1)
+    refs = nodes |> Enum.map(&node_ref/1) |> Enum.reject(&is_nil/1)
+
+    if Enum.all?(nodes, &valid_node_identity?/1) and unique?(refs) do
+      :ok
+    else
+      {:error, menu_error(plan, :meals, "contains invalid or duplicate local references")}
+    end
+  end
+
+  defp valid_node_identity?(node) do
+    case {node_id(node), node_ref(node)} do
+      {id, nil} -> valid_uuid?(id)
+      {nil, ref} -> valid_local_ref?(ref)
+      {_id, _ref} -> false
+    end
+  end
+
+  defp validate_menu_positions(plan, meals) do
+    meals_valid? = unique_nonnegative_positions?(meals)
+    items_valid? = Enum.all?(meals, &unique_nonnegative_positions?(meal_items(&1)))
+
+    if meals_valid? and items_valid? do
+      :ok
+    else
+      {:error, menu_error(plan, :meals, "positions must be unique nonnegative integers")}
+    end
+  end
+
+  defp unique_nonnegative_positions?(nodes) do
+    positions = Enum.map(nodes, &node_position/1)
+    Enum.all?(positions, &valid_position?/1) and unique?(positions)
+  end
+
+  defp valid_position?(position), do: is_integer(position) and position >= 0 and position <= @max_position
+
+  defp resolve_menu_items(ctx, plan, meals) do
+    specs = meals |> Enum.flat_map(&meal_items/1) |> Enum.map(&library_item/1)
+
+    cond do
+      Enum.any?(specs, &is_nil/1) ->
+        {:error, menu_error(plan, :meals, "contains an invalid Menu Item")}
+
+      specs == [] ->
+        {:ok, []}
+
+      true ->
+        resolve_library_items(ctx, plan, specs)
+    end
+  end
+
+  defp resolve_library_items(ctx, plan, specs) do
+    case Library.resolve_items(ctx, specs) do
+      {:ok, resolved} -> {:ok, resolved}
+      {:error, :not_found} -> {:error, :not_found}
+      {:error, :invalid_portion} -> {:error, menu_error(plan, :meals, "contains an invalid Portion")}
+    end
+  end
+
+  defp library_item(input) do
+    portion = normalize_portion(Map.get(input, :portion))
+
+    case {item_kind(input), Map.get(input, :food_id), Map.get(input, :recipe_id), portion} do
+      {:food, food_id, nil, portion} when is_binary(food_id) and not is_nil(portion) ->
+        %{kind: :food, id: food_id, portion: portion}
+
+      {:recipe, nil, recipe_id, portion} when is_binary(recipe_id) and not is_nil(portion) ->
+        %{kind: :recipe, id: recipe_id, portion: portion}
+
+      _invalid ->
+        nil
+    end
+  end
+
+  defp item_kind(input) do
+    case Map.get(input, :kind) do
+      kind when kind in [:food, "food"] -> :food
+      kind when kind in [:recipe, "recipe"] -> :recipe
+      _other -> nil
+    end
+  end
+
+  defp normalize_portion(portion) when is_map(portion) do
+    case portion_kind(Map.get(portion, :kind)) do
+      nil ->
+        nil
+
+      kind ->
+        %{
+          kind: kind,
+          grams: Map.get(portion, :grams),
+          amount: Map.get(portion, :amount),
+          unit: Map.get(portion, :unit),
+          label: Map.get(portion, :label)
+        }
+    end
+  end
+
+  defp normalize_portion(_portion), do: nil
+
+  defp portion_kind(kind) when kind in [:gram, "gram"], do: :gram
+  defp portion_kind(kind) when kind in [:serving, "serving"], do: :serving
+  defp portion_kind(_kind), do: nil
+
+  defp attach_resolved(meals, resolved) do
+    {attached, _remaining} =
+      Enum.map_reduce(meals, resolved, fn meal, remaining ->
+        count = length(meal_items(meal))
+        {resolved_items, rest} = Enum.split(remaining, count)
+        {Map.put(meal, :resolved_items, Enum.zip(meal_items(meal), resolved_items)), rest}
+      end)
+
+    attached
+  end
+
+  defp persist_menu_meals(plan, menu) do
+    with :ok <- stage_retained_meals(plan, menu),
+         :ok <- delete_omitted_meals(plan, menu.meals) do
+      persist_meal_inputs(plan, menu)
+    end
+  end
+
+  defp persist_meal_inputs(plan, menu) do
+    Enum.reduce_while(menu.meals, {:ok, []}, fn input, {:ok, saved} ->
+      case persist_meal(plan, input, menu.existing) do
+        {:ok, meal} -> {:cont, {:ok, [meal | saved]}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp persist_meal(plan, input, existing) do
+    result =
+      case node_id(input) do
+        nil ->
+          Meal.insert_changeset(plan.business_id, plan.id, input) |> Repo.insert()
+
+        id ->
+          existing.meals
+          |> Map.fetch!(id)
+          |> Meal.update_changeset(input)
+          |> force_requested_position(input)
+          |> Repo.update()
+      end
+
+    case result do
+      {:ok, meal} -> persist_meal_items(plan, meal, input, existing)
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  defp persist_meal_items(plan, meal, meal_input, existing) do
+    inputs = Map.get(meal_input, :resolved_items) || []
+
+    with :ok <- stage_retained_items(plan, meal, inputs, existing),
+         :ok <- delete_omitted_items(plan, meal, inputs) do
+      persist_item_inputs(plan, meal, inputs, existing)
+    end
+  end
+
+  defp persist_item_inputs(plan, meal, inputs, existing) do
+    Enum.reduce_while(inputs, {:ok, meal}, fn {input, resolved}, {:ok, meal} ->
+      case persist_meal_item(plan, meal, input, resolved, existing) do
+        {:ok, _item} -> {:cont, {:ok, meal}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp persist_meal_item(plan, meal, input, resolved, existing) do
+    attrs = meal_item_attrs(input, resolved)
+
+    case node_id(input) do
+      nil ->
+        MealItem.insert_changeset(plan.business_id, plan.id, meal.id, attrs) |> Repo.insert()
+
+      id ->
+        existing.items
+        |> Map.fetch!(id)
+        |> MealItem.update_changeset(attrs)
+        |> force_requested_position(input)
+        |> Repo.update()
+    end
+  end
+
+  defp meal_item_attrs(input, resolved) do
+    portion = resolved.portion
+    nutrients = resolved.nutrients
+    kind = normalize_portion(Map.get(input, :portion)).kind
+
+    %{
+      portion_kind: kind,
+      weight_g: portion.grams,
+      amount: portion.amount,
+      unit: portion[:unit],
+      serving_label: portion[:label],
+      position: node_position(input),
+      food_id: if(resolved.kind == :food, do: resolved.item.id),
+      recipe_id: if(resolved.kind == :recipe, do: resolved.item.id),
+      calories: nutrients.calories,
+      protein: nutrients.protein,
+      carbohydrates: nutrients.carbohydrates,
+      fat: nutrients.fat,
+      fiber: nutrients.fiber,
+      complete: nutrients.complete
+    }
+  end
+
+  defp stage_retained_meals(plan, menu) do
+    retained =
+      menu.meals
+      |> Enum.map(&node_id/1)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.map(&Map.fetch!(menu.existing.meals, &1))
+
+    current_positions = Enum.map(Map.values(menu.existing.meals), & &1.position)
+    requested_positions = Enum.map(menu.meals, &node_position/1)
+
+    stage_positions(plan, retained, current_positions ++ requested_positions, fn meal, position ->
+      Meal
+      |> Meal.for_business(plan.business_id)
+      |> Meal.for_plan(plan.id)
+      |> where([row], row.id == ^meal.id)
+      |> Repo.update_all(set: [position: position])
+    end)
+  end
+
+  defp delete_omitted_meals(plan, meals) do
+    requested_ids = meals |> Enum.map(&node_id/1) |> Enum.reject(&is_nil/1)
+
+    Meal
+    |> Meal.for_business(plan.business_id)
+    |> Meal.for_plan(plan.id)
+    |> where([meal], meal.id not in ^requested_ids)
+    |> Repo.delete_all()
+
+    :ok
+  end
+
+  defp stage_retained_items(plan, meal, inputs, existing) do
+    retained =
+      inputs
+      |> Enum.map(fn {input, _resolved} -> node_id(input) end)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.map(&Map.fetch!(existing.items, &1))
+
+    existing_for_meal =
+      existing.items
+      |> Map.values()
+      |> Enum.filter(&(&1.nutrition_meal_id == meal.id))
+
+    current_positions = Enum.map(existing_for_meal, & &1.position)
+    requested_positions = Enum.map(inputs, fn {input, _resolved} -> node_position(input) end)
+
+    stage_positions(plan, retained, current_positions ++ requested_positions, fn item, position ->
+      MealItem
+      |> MealItem.for_business(plan.business_id)
+      |> MealItem.for_meal(meal.id)
+      |> where([row], row.id == ^item.id)
+      |> Repo.update_all(set: [position: position])
+    end)
+  end
+
+  defp delete_omitted_items(plan, meal, inputs) do
+    requested_ids =
+      inputs
+      |> Enum.map(fn {input, _resolved} -> node_id(input) end)
+      |> Enum.reject(&is_nil/1)
+
+    MealItem
+    |> MealItem.for_business(plan.business_id)
+    |> MealItem.for_meal(meal.id)
+    |> where([item], item.id not in ^requested_ids)
+    |> Repo.delete_all()
+
+    :ok
+  end
+
+  defp force_requested_position(changeset, input) do
+    force_change(changeset, :position, node_position(input))
+  end
+
+  defp stage_positions(_owner, [], _positions, _update), do: :ok
+
+  defp stage_positions(owner, retained, positions, update) do
+    used = MapSet.new(positions)
+
+    case free_stage_positions(used, length(retained)) do
+      {:ok, staged} ->
+        retained
+        |> Enum.zip(staged)
+        |> Enum.each(fn {row, position} -> update.(row, position) end)
+
+        :ok
+
+      :error ->
+        {:error, menu_error(owner, :meals, "positions are too large to safely reorder")}
+    end
+  end
+
+  defp free_stage_positions(used, count) do
+    positions =
+      0..min(@max_position, MapSet.size(used) + count)
+      |> Stream.reject(&MapSet.member?(used, &1))
+      |> Enum.take(count)
+
+    if length(positions) == count, do: {:ok, positions}, else: :error
+  end
+
+  defp meal_items(meal), do: Map.get(meal, :meal_items) || []
+  defp node_id(node), do: Map.get(node, :id)
+  defp node_ref(node), do: Map.get(node, :local_ref)
+  defp node_position(node), do: Map.get(node, :position)
+  defp unique?(values), do: length(values) == MapSet.size(MapSet.new(values))
+  defp valid_uuid?(value), do: match?({:ok, _uuid}, Ecto.UUID.cast(value))
+
+  defp valid_local_ref?(value),
+    do: is_binary(value) and value == String.trim(value) and value != "" and byte_size(value) <= 100
+
+  defp menu_error(plan, field, message), do: plan |> change() |> add_error(field, message)
+
+  defp insert_everyday_template(ctx, attrs) do
+    with {:ok, plan} <- ctx.business_id |> Plan.insert_changeset(ctx.user_id, attrs) |> Repo.insert(),
+         {:ok, pattern} <- insert_everyday_pattern(plan),
+         :ok <- assign_everyday_week(plan, pattern) do
+      plan
+    else
+      {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
   defp insert_everyday_pattern(plan) do
     DayPattern.insert_changeset(plan.business_id, plan.id, %{name: @everyday, position: 0})
     |> Repo.insert()
@@ -315,7 +725,8 @@ defmodule Easy.Nutrition.Programming do
 
     with {:ok, copy} <- Plan.insert_changeset(ctx.business_id, ctx.user_id, attrs) |> Repo.insert(),
          {:ok, pattern_ids} <- duplicate_day_pattern_rows(template.day_patterns, copy),
-         :ok <- duplicate_schedule_rows(template.week_schedule, copy, pattern_ids) do
+         :ok <- duplicate_schedule_rows(template.week_schedule, copy, pattern_ids),
+         :ok <- duplicate_meal_rows(template.meals, copy) do
       {:ok, copy}
     end
   end
@@ -337,6 +748,48 @@ defmodule Easy.Nutrition.Programming do
 
       case WeekSchedule.insert_changeset(copy.business_id, copy.id, copied_pattern_id, %{weekday: row.weekday})
            |> Repo.insert() do
+        {:ok, _row} -> {:cont, :ok}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp duplicate_meal_rows(meals, copy) do
+    Enum.reduce_while(meals, :ok, fn meal, :ok -> copy_meal_row(meal, copy) end)
+  end
+
+  defp copy_meal_row(meal, copy) do
+    attrs = %{name: meal.name, notes: meal.notes, position: meal.position}
+
+    case Meal.insert_changeset(copy.business_id, copy.id, attrs) |> Repo.insert() do
+      {:ok, copied} -> continue_or_halt(duplicate_meal_item_rows(meal.meal_items, copy, copied))
+      {:error, reason} -> {:halt, {:error, reason}}
+    end
+  end
+
+  defp continue_or_halt(:ok), do: {:cont, :ok}
+  defp continue_or_halt({:error, reason}), do: {:halt, {:error, reason}}
+
+  defp duplicate_meal_item_rows(items, copy, copied_meal) do
+    Enum.reduce_while(items, :ok, fn item, :ok ->
+      attrs = %{
+        portion_kind: item.portion_kind,
+        weight_g: item.weight_g,
+        amount: item.amount,
+        unit: item.unit,
+        serving_label: item.serving_label,
+        position: item.position,
+        food_id: item.food_id,
+        recipe_id: item.recipe_id,
+        calories: item.calories,
+        protein: item.protein,
+        carbohydrates: item.carbohydrates,
+        fat: item.fat,
+        fiber: item.fiber,
+        complete: item.complete
+      }
+
+      case MealItem.insert_changeset(copy.business_id, copy.id, copied_meal.id, attrs) |> Repo.insert() do
         {:ok, _row} -> {:cont, :ok}
         {:error, reason} -> {:halt, {:error, reason}}
       end

@@ -30,16 +30,25 @@ defmodule Easy.Nutrition.MealLogConcurrencyTest do
       )
 
     meal =
-      business.id
-      |> Meal.insert_changeset(coach.id, plan.id, %{name: "Concurrent breakfast"})
-      |> Repo.insert!()
+      insert(:meal,
+        business: business,
+        creator: coach,
+        plan: plan,
+        name: "Concurrent breakfast",
+        position: 0
+      )
 
     food = insert(:food, business: business, creator: coach)
 
     item =
-      business.id
-      |> MealItem.insert_changeset(meal.id, %{food_id: food.id, weight_g: 100.0})
-      |> Repo.insert!()
+      insert(:meal_item,
+        meal: meal,
+        business: business,
+        food: food,
+        portion_kind: :gram,
+        weight_g: 100.0,
+        position: 0
+      )
 
     ctx = %Ctx{business_id: business.id, user_id: client.user_id, client_id: client.id}
     user_ids = Enum.uniq([business.owner_id, coach.user_id, client.user_id])

@@ -65,6 +65,18 @@ defmodule Easy.Nutrition.NutrientTotals do
     }
   end
 
+  @spec from_fields(map()) :: t()
+  def from_fields(item) do
+    complete(item.calories, item.protein, item.carbohydrates, item.fat, item.fiber)
+  end
+
+  @spec sum([map()]) :: t()
+  def sum([]), do: @empty
+
+  def sum([first | rest]) do
+    Enum.reduce(rest, from_fields(first), fn item, totals -> add(totals, from_fields(item)) end)
+  end
+
   defp from_ingredient(%RecipeIngredient{food: %Food{} = food, weight_g: weight})
        when is_number(weight) and weight > 0 do
     scale(from_food(food), weight / 100)

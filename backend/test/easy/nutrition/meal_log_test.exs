@@ -475,8 +475,6 @@ defmodule Easy.Nutrition.MealLogTest do
     test "a same-position twin still logs after one item was logged individually" do
       %{client_ctx: client_ctx, business: business, creator: creator, oats: oats} = build_scenario()
 
-      # The builder renounced position uniqueness, so a second item can land on
-      # position 0 beside the first.
       oat_flakes = Repo.get_by!(MealItem, nutrition_meal_id: oats.id, position: 0)
 
       raisins = insert(:food, business: business, creator: creator, name: "Raisins", calories_per_100g: 300.0)
@@ -486,10 +484,8 @@ defmodule Easy.Nutrition.MealLogTest do
           meal: oats,
           business: business,
           food: raisins,
-          amount: 30.0,
-          unit: "g",
           weight_g: 30.0,
-          position: 0
+          position: 1
         )
 
       # The client logs one planned item on its own, naming it by id.
@@ -552,9 +548,11 @@ defmodule Easy.Nutrition.MealLogTest do
 
       assert length(entries) == 2
 
-      # The coach drags the items into a new order — positions are renumbered.
-      Repo.update!(Ecto.Changeset.change(first, position: 1))
+      # The coach drags the items into a new order — positions are renumbered
+      # through a staging value so the unique (meal, position) index holds.
+      Repo.update!(Ecto.Changeset.change(first, position: 99))
       Repo.update!(Ecto.Changeset.change(second, position: 0))
+      Repo.update!(Ecto.Changeset.change(first, position: 1))
 
       pinned =
         FoodLogEntry

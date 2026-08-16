@@ -1197,6 +1197,36 @@ export interface components {
       };
     };
     /**
+     * NutritionMenuReplaceRequest
+     * @description Authoritative Meals and Menu Items for one plan revision. Omitted persisted nodes are deleted atomically.
+     * @example {
+     *       "expected_revision": 1,
+     *       "meals": [
+     *         {
+     *           "local_ref": "breakfast",
+     *           "meal_items": [
+     *             {
+     *               "food_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+     *               "kind": "food",
+     *               "local_ref": "yogurt",
+     *               "portion": {
+     *                 "grams": 50,
+     *                 "kind": "gram"
+     *               },
+     *               "position": 0
+     *             }
+     *           ],
+     *           "name": "Breakfast",
+     *           "position": 0
+     *         }
+     *       ]
+     *     }
+     */
+    NutritionMenuReplaceRequest: {
+      expected_revision: number;
+      meals: components['schemas']['NutritionMealInput'][];
+    };
+    /**
      * BusinessUpdateRequest
      * @example {
      *       "about": "Updated business profile.",
@@ -1454,6 +1484,22 @@ export interface components {
       /** @enum {string} */
       status: 'invited' | 'active' | 'inactive';
     };
+    /** NutritionMeal */
+    NutritionMeal: {
+      /** Format: uuid */
+      id: string;
+      /** Format: date-time */
+      inserted_at: string;
+      meal_items: components['schemas']['NutritionMealItem'][];
+      name: string;
+      notes: string | null;
+      nutrients: components['schemas']['NutrientTotals'];
+      /** Format: uuid */
+      nutrition_plan_id: string;
+      position: number;
+      /** Format: date-time */
+      updated_at: string;
+    };
     /**
      * TrainingExercise
      * @example {
@@ -1597,6 +1643,19 @@ export interface components {
     /** BusinessResponse */
     BusinessResponse: {
       data: components['schemas']['Business'];
+    };
+    /**
+     * NutritionMealInput
+     * @description A persisted Meal uses id; a new one uses a request-local local_ref.
+     */
+    NutritionMealInput: {
+      /** Format: uuid */
+      id?: string;
+      local_ref?: string;
+      meal_items: components['schemas']['NutritionMealItemInput'][];
+      name: string;
+      notes?: string | null;
+      position: number;
     };
     /** ClientProfileReviewClient */
     ClientProfileReviewClient: {
@@ -2731,6 +2790,18 @@ export interface components {
       type: 'email_confirmation' | 'authentication';
     };
     /**
+     * NutritionPortion
+     * @description A gram or serving Portion. Food servings retain display values and resolved grams.
+     */
+    NutritionPortion: {
+      amount: number | null;
+      grams: number | null;
+      /** @enum {string} */
+      kind: 'gram' | 'serving';
+      label: string | null;
+      unit: string | null;
+    };
+    /**
      * ClientProfileFormAssignmentUpdateRequest
      * @example {
      *       "priority": "normal",
@@ -2759,6 +2830,15 @@ export interface components {
       updated_at: string;
       weekdays: ('monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday')[];
       workout_elements: components['schemas']['TrainingPlanWorkoutExercise'][];
+    };
+    /** NutritionPortionInput */
+    NutritionPortionInput: {
+      amount?: number | null;
+      grams?: number | null;
+      /** @enum {string} */
+      kind: 'gram' | 'serving';
+      label?: string | null;
+      unit?: string | null;
     };
     /** NutritionPlanClient */
     NutritionPlanClient: {
@@ -3304,6 +3384,23 @@ export interface components {
       email: string;
       invitation_token: string;
       otp: string;
+    };
+    /**
+     * NutritionMealItemInput
+     * @description A persisted Menu Item uses id; a new one uses a request-local local_ref.
+     */
+    NutritionMealItemInput: {
+      /** Format: uuid */
+      food_id?: string | null;
+      /** Format: uuid */
+      id?: string;
+      /** @enum {string} */
+      kind: 'food' | 'recipe';
+      local_ref?: string;
+      portion: components['schemas']['NutritionPortionInput'];
+      position: number;
+      /** Format: uuid */
+      recipe_id?: string | null;
     };
     /** ClientProfileFormAssignment */
     ClientProfileFormAssignment: {
@@ -3936,6 +4033,27 @@ export interface components {
       /** Format: uri */
       url: string | null;
     };
+    /** NutritionMealItem */
+    NutritionMealItem: {
+      /** Format: uuid */
+      food_id: string | null;
+      /** Format: uuid */
+      id: string;
+      /** Format: date-time */
+      inserted_at: string;
+      /** @enum {string} */
+      kind: 'food' | 'recipe';
+      name: string | null;
+      nutrients: components['schemas']['NutrientTotals'];
+      /** Format: uuid */
+      nutrition_meal_id: string;
+      portion: components['schemas']['NutritionPortion'];
+      position: number;
+      /** Format: uuid */
+      recipe_id: string | null;
+      /** Format: date-time */
+      updated_at: string;
+    };
     /** MessageResponse */
     MessageResponse: {
       message: string;
@@ -4104,6 +4222,7 @@ export interface components {
      *       "inserted_at": "2026-05-30T12:00:00Z",
      *       "kind": "template",
      *       "lifecycle": null,
+     *       "meals": [],
      *       "name": "Cut Block",
      *       "revision": 1,
      *       "schedule": {
@@ -4147,6 +4266,7 @@ export interface components {
       kind: 'template' | 'client_plan';
       /** @enum {string|null} */
       lifecycle: 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived' | null;
+      meals: components['schemas']['NutritionMeal'][];
       name: string;
       revision: number;
       schedule: components['schemas']['NutritionWeekSchedule'];

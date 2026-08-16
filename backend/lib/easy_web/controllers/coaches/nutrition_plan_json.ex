@@ -1,6 +1,6 @@
 defmodule EasyWeb.Coaches.NutritionPlanJSON do
   alias Easy.Clients.Client
-  alias Easy.Nutrition.{DayPattern, Plan, WeekSchedule}
+  alias Easy.Nutrition.{DayPattern, Food, Meal, MealItem, NutrientTotals, Plan, Recipe, WeekSchedule}
 
   @spec show(map()) :: map()
   def show(%{plan: plan}) do
@@ -34,10 +34,66 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
       client: client_data(plan.client),
       creator_id: plan.creator_id,
       source_template_id: plan.source_template_id,
+      meals: meals_data(plan.meals),
       day_patterns: day_patterns_data(plan.day_patterns, plan.week_schedule),
       schedule: schedule_data(plan.week_schedule),
       inserted_at: plan.inserted_at,
       updated_at: plan.updated_at
+    }
+  end
+
+  defp meals_data(meals) when is_list(meals), do: Enum.map(meals, &meal_data/1)
+  defp meals_data(_), do: []
+
+  defp meal_data(%Meal{} = meal) do
+    items = if is_list(meal.meal_items), do: meal.meal_items, else: []
+
+    %{
+      id: meal.id,
+      name: meal.name,
+      notes: meal.notes,
+      position: meal.position,
+      nutrition_plan_id: meal.nutrition_plan_id,
+      nutrients: NutrientTotals.round(NutrientTotals.sum(items)),
+      meal_items: meal_items_data(items),
+      inserted_at: meal.inserted_at,
+      updated_at: meal.updated_at
+    }
+  end
+
+  defp meal_items_data(items) when is_list(items), do: Enum.map(items, &meal_item_data/1)
+  defp meal_items_data(_), do: []
+
+  defp meal_item_data(%MealItem{} = item) do
+    %{
+      id: item.id,
+      kind: item_kind(item),
+      name: item_name(item),
+      food_id: item.food_id,
+      recipe_id: item.recipe_id,
+      position: item.position,
+      portion: portion_data(item),
+      nutrients: NutrientTotals.round(NutrientTotals.from_fields(item)),
+      nutrition_meal_id: item.nutrition_meal_id,
+      inserted_at: item.inserted_at,
+      updated_at: item.updated_at
+    }
+  end
+
+  defp item_kind(%MealItem{food_id: food_id}) when not is_nil(food_id), do: :food
+  defp item_kind(%MealItem{}), do: :recipe
+
+  defp item_name(%MealItem{food: %Food{name: name}}), do: name
+  defp item_name(%MealItem{recipe: %Recipe{name: name}}), do: name
+  defp item_name(_item), do: nil
+
+  defp portion_data(%MealItem{} = item) do
+    %{
+      kind: item.portion_kind,
+      grams: item.weight_g,
+      amount: item.amount,
+      unit: item.unit,
+      label: item.serving_label
     }
   end
 

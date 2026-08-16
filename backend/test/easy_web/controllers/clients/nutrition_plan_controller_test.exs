@@ -34,7 +34,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
       assert length(data) == 1
       assert hd(data)["id"] != nil
-      refute Map.has_key?(hd(data), "meals")
+      assert hd(data)["meals"] == []
       assert Map.has_key?(hd(data), "day_patterns")
     end
 
@@ -84,7 +84,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       assert data["id"] == plan.id
       assert data["kind"] == "client_plan"
       assert data["day_patterns"] == []
-      refute Map.has_key?(data, "meals")
+      assert data["meals"] == []
     end
 
     test "returns 404 for other client's plan", ctx do

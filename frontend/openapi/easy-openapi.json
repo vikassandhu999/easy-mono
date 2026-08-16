@@ -983,6 +983,56 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.FoodImpactResponse",
         "x-validate": null
       },
+      "NutritionMenuReplaceRequest": {
+        "additionalProperties": false,
+        "description": "Authoritative Meals and Menu Items for one plan revision. Omitted persisted nodes are deleted atomically.",
+        "example": {
+          "expected_revision": 1,
+          "meals": [
+            {
+              "local_ref": "breakfast",
+              "meal_items": [
+                {
+                  "food_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+                  "kind": "food",
+                  "local_ref": "yogurt",
+                  "portion": {
+                    "grams": 50,
+                    "kind": "gram"
+                  },
+                  "position": 0
+                }
+              ],
+              "name": "Breakfast",
+              "position": 0
+            }
+          ]
+        },
+        "properties": {
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meals": {
+            "items": {
+              "$ref": "#/components/schemas/NutritionMealInput"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "expected_revision",
+          "meals"
+        ],
+        "title": "NutritionMenuReplaceRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "BusinessUpdateRequest": {
         "additionalProperties": false,
         "example": {
@@ -2067,6 +2117,78 @@
         "x-struct": null,
         "x-validate": null
       },
+      "NutritionMeal": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "inserted_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_items": {
+            "items": {
+              "$ref": "#/components/schemas/NutritionMealItem"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "name": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "notes": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "nutrients": {
+            "$ref": "#/components/schemas/NutrientTotals"
+          },
+          "nutrition_plan_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "position": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "notes",
+          "position",
+          "nutrition_plan_id",
+          "nutrients",
+          "meal_items",
+          "inserted_at",
+          "updated_at"
+        ],
+        "title": "NutritionMeal",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionMeal",
+        "x-validate": null
+      },
       "TrainingExercise": {
         "additionalProperties": false,
         "example": {
@@ -2609,6 +2731,61 @@
         "title": "BusinessResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.BusinessResponse",
+        "x-validate": null
+      },
+      "NutritionMealInput": {
+        "additionalProperties": false,
+        "description": "A persisted Meal uses id; a new one uses a request-local local_ref.",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "local_ref": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_items": {
+            "items": {
+              "$ref": "#/components/schemas/NutritionMealItemInput"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "name": {
+            "maxLength": 255,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "notes": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "position": {
+            "maximum": 2147483647,
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "name",
+          "position",
+          "meal_items"
+        ],
+        "title": "NutritionMealInput",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "ClientProfileReviewClient": {
@@ -6692,6 +6869,60 @@
         "x-struct": null,
         "x-validate": null
       },
+      "NutritionPortion": {
+        "additionalProperties": false,
+        "description": "A gram or serving Portion. Food servings retain display values and resolved grams.",
+        "properties": {
+          "amount": {
+            "exclusiveMinimum": true,
+            "minimum": 0,
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "grams": {
+            "exclusiveMinimum": true,
+            "minimum": 0,
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "kind": {
+            "enum": [
+              "gram",
+              "serving"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "label": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "unit": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "kind",
+          "grams",
+          "amount",
+          "unit",
+          "label"
+        ],
+        "title": "NutritionPortion",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionPortion",
+        "x-validate": null
+      },
       "ClientProfileFormAssignmentUpdateRequest": {
         "additionalProperties": false,
         "example": {
@@ -6812,6 +7043,55 @@
         "title": "TrainingPlanWorkout",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingPlanWorkout",
+        "x-validate": null
+      },
+      "NutritionPortionInput": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "exclusiveMinimum": true,
+            "minimum": 0,
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "grams": {
+            "exclusiveMinimum": true,
+            "minimum": 0,
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "kind": {
+            "enum": [
+              "gram",
+              "serving"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "label": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "unit": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "NutritionPortionInput",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "NutritionPlanClient": {
@@ -9063,6 +9343,67 @@
         "x-struct": null,
         "x-validate": null
       },
+      "NutritionMealItemInput": {
+        "additionalProperties": false,
+        "description": "A persisted Menu Item uses id; a new one uses a request-local local_ref.",
+        "properties": {
+          "food_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "kind": {
+            "enum": [
+              "food",
+              "recipe"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "local_ref": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "portion": {
+            "$ref": "#/components/schemas/NutritionPortionInput"
+          },
+          "position": {
+            "maximum": 2147483647,
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "recipe_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "kind",
+          "position",
+          "portion"
+        ],
+        "title": "NutritionMealItemInput",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "ClientProfileFormAssignment": {
         "additionalProperties": false,
         "properties": {
@@ -11293,6 +11634,93 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.LibraryMedia",
         "x-validate": null
       },
+      "NutritionMealItem": {
+        "additionalProperties": false,
+        "properties": {
+          "food_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "inserted_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "kind": {
+            "enum": [
+              "food",
+              "recipe"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "name": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "nutrients": {
+            "$ref": "#/components/schemas/NutrientTotals"
+          },
+          "nutrition_meal_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "portion": {
+            "$ref": "#/components/schemas/NutritionPortion"
+          },
+          "position": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "recipe_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "food_id",
+          "recipe_id",
+          "position",
+          "portion",
+          "nutrients",
+          "nutrition_meal_id",
+          "inserted_at",
+          "updated_at"
+        ],
+        "title": "NutritionMealItem",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionMealItem",
+        "x-validate": null
+      },
       "MessageResponse": {
         "additionalProperties": false,
         "properties": {
@@ -11934,6 +12362,7 @@
           "inserted_at": "2026-05-30T12:00:00Z",
           "kind": "template",
           "lifecycle": null,
+          "meals": [],
           "name": "Cut Block",
           "revision": 1,
           "schedule": {
@@ -12048,6 +12477,14 @@
             "x-struct": null,
             "x-validate": null
           },
+          "meals": {
+            "items": {
+              "$ref": "#/components/schemas/NutritionMeal"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
           "name": {
             "type": "string",
             "x-struct": null,
@@ -12143,6 +12580,7 @@
           "client",
           "creator_id",
           "source_template_id",
+          "meals",
           "day_patterns",
           "schedule",
           "inserted_at",
@@ -20761,6 +21199,98 @@
         "summary": "Replace a complete Prescription",
         "tags": [
           "coach training plans"
+        ]
+      }
+    },
+    "/v1/coach/nutrition-plans/{id}/menu": {
+      "put": {
+        "callbacks": {},
+        "description": "Atomically replaces ordered Meals and Menu Items for one authorized Nutrition Template or Client Plan. Every item is resolved through the Library.",
+        "operationId": "replaceNutritionMenu",
+        "parameters": [
+          {
+            "description": "Nutrition Template or Client Plan id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NutritionMenuReplaceRequest"
+              }
+            }
+          },
+          "description": "Complete Menu",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutritionPlanResponse"
+                }
+              }
+            },
+            "description": "Nutrition Template or Client Plan with replaced Menu"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaleRevisionError"
+                }
+              }
+            },
+            "description": "Stale revision"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Replace a complete Menu",
+        "tags": [
+          "coach nutrition plans"
         ]
       }
     },

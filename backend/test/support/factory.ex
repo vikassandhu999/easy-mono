@@ -37,7 +37,7 @@ defmodule Easy.Factory do
 
   def user_factory do
     %User{
-      email: sequence(:email, &"user-#{&1}@test.com"),
+      email: sequence(:email, &unique_test_email("user", &1)),
       first_name: "Test",
       last_name: "User"
     }
@@ -46,7 +46,7 @@ defmodule Easy.Factory do
   def business_factory do
     %Business{
       name: sequence(:business_name, &"Business #{&1}"),
-      handle: sequence(:handle, &"biz-#{&1}"),
+      handle: sequence(:handle, &"biz-#{&1}-#{System.unique_integer([:positive])}"),
       timezone: Easy.LocalCalendar.default_timezone(),
       owner: build(:user)
     }
@@ -65,7 +65,7 @@ defmodule Easy.Factory do
     %Coach{
       first_name: "Test",
       last_name: "Coach",
-      email: sequence(:coach_email, &"coach-#{&1}@test.com"),
+      email: sequence(:coach_email, &unique_test_email("coach", &1)),
       status: :active,
       user: build(:user),
       business: build(:business)
@@ -94,14 +94,14 @@ defmodule Easy.Factory do
     business =
       attrs[:business] ||
         insert(:business,
-          owner: build(:user, email: sequence(:business_owner_email, &"business-owner-#{&1}@test.com"))
+          owner: build(:user, email: sequence(:business_owner_email, &unique_test_email("business-owner", &1)))
         )
 
     creator =
       attrs[:creator] ||
         insert(:coach,
           business: business,
-          user: build(:user, email: sequence(:coach_user_email, &"coach-user-#{&1}@test.com"))
+          user: build(:user, email: sequence(:coach_user_email, &unique_test_email("coach-user", &1)))
         )
 
     %Client{
@@ -112,7 +112,7 @@ defmodule Easy.Factory do
       notes: "Test client",
       status: :active,
       timezone: Easy.LocalCalendar.default_timezone(),
-      user: build(:user, email: sequence(:client_user_email, &"client-user-#{&1}@test.com")),
+      user: build(:user, email: sequence(:client_user_email, &unique_test_email("client-user", &1))),
       business: business,
       creator: creator,
       assigned_coach: creator
@@ -370,17 +370,25 @@ defmodule Easy.Factory do
     }
   end
 
-  def meal_factory do
-    plan = build(:plan)
-    creator = insert(:coach, business: plan.business)
+  def meal_factory(attrs) do
+    attrs = Map.new(attrs)
+    {plan, attrs} = Map.pop(attrs, :plan)
+    {business, attrs} = Map.pop(attrs, :business)
+    {creator, attrs} = Map.pop(attrs, :creator)
+
+    business = business || (plan && plan.business) || insert(:business)
+    creator = creator || insert(:coach, business: business)
+    plan = plan || build(:plan, business: business, creator: creator)
 
     %Meal{
       name: sequence(:meal_name, &"Meal #{&1}"),
       notes: nil,
+      position: sequence(:meal_position, & &1),
       creator: creator,
-      business: plan.business,
+      business: business,
       plan: plan
     }
+    |> merge_attributes(attrs)
   end
 
   def plan_day_factory do
@@ -408,20 +416,62 @@ defmodule Easy.Factory do
     }
   end
 
-  def meal_item_factory do
-    meal = build(:meal)
-    food = build(:food, business: meal.plan.business, creator: meal.creator)
+  def meal_item_factory(attrs) do
+    attrs = Map.new(attrs)
+    {meal, attrs} = Map.pop(attrs, :meal)
+    {business, attrs} = Map.pop(attrs, :business)
+    {plan, attrs} = Map.pop(attrs, :plan)
+    {food, attrs} = Map.pop(attrs, :food)
+    {recipe, attrs} = Map.pop(attrs, :recipe)
+    {portion, attrs} = pop_meal_item_portion(attrs)
+
+    meal = meal || build(:meal)
+    plan = plan || meal.plan
+    business = business || meal.business
+    food = food || unless(recipe, do: build(:food, business: business, creator: meal.creator))
 
     %MealItem{
-      weight_g: 100.0,
-      amount: 1.0,
-      unit: "serving",
+      portion_kind: portion.kind,
+      weight_g: portion.weight_g,
+      amount: portion.amount,
+      unit: portion.unit,
+      serving_label: portion.serving_label,
       position: 0,
+      calories: nil,
+      protein: nil,
+      carbohydrates: nil,
+      fat: nil,
+      fiber: nil,
+      complete: false,
       food: food,
-      business: meal.plan.business,
+      recipe: recipe,
+      business: business,
+      plan: plan,
       meal: meal
     }
+    |> merge_attributes(attrs)
   end
+
+  defp pop_meal_item_portion(attrs) do
+    {portion_kind, attrs} = Map.pop(attrs, :portion_kind)
+    {amount, attrs} = Map.pop(attrs, :amount)
+    {unit, attrs} = Map.pop(attrs, :unit)
+    {weight_g, attrs} = Map.pop(attrs, :weight_g)
+    {serving_label, attrs} = Map.pop(attrs, :serving_label)
+
+    portion =
+      if gram_meal_item?(portion_kind, amount, unit) do
+        %{kind: :gram, amount: nil, unit: nil, serving_label: nil, weight_g: weight_g || 100.0}
+      else
+        %{kind: :serving, amount: amount || 1.0, unit: unit || "serving", serving_label: serving_label, weight_g: weight_g}
+      end
+
+    {portion, attrs}
+  end
+
+  defp gram_meal_item?(:gram, _amount, _unit), do: true
+  defp gram_meal_item?(nil, amount, unit) when is_nil(amount) or unit in [nil, "g"], do: true
+  defp gram_meal_item?(_kind, _amount, _unit), do: false
 
   def meal_item_attrs_factory do
     %{
@@ -658,4 +708,6 @@ defmodule Easy.Factory do
       attachment: attachment
     }
   end
+
+  defp unique_test_email(prefix, n), do: "#{prefix}-#{n}-#{System.unique_integer([:positive])}@test.com"
 end

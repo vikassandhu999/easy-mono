@@ -152,6 +152,222 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionDayPattern do
   })
 end
 
+defmodule EasyWeb.OpenApi.Schemas.NutritionPortion do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "NutritionPortion",
+    description: "A gram or serving Portion. Food servings retain display values and resolved grams.",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      kind: %Schema{type: :string, enum: ["gram", "serving"]},
+      grams: %Schema{type: :number, exclusiveMinimum: true, minimum: 0, nullable: true},
+      amount: %Schema{type: :number, exclusiveMinimum: true, minimum: 0, nullable: true},
+      unit: %Schema{type: :string, nullable: true},
+      label: %Schema{type: :string, nullable: true}
+    },
+    required: [:kind, :grams, :amount, :unit, :label]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionPortionInput do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "NutritionPortionInput",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        kind: %Schema{type: :string, enum: ["gram", "serving"]},
+        grams: %Schema{type: :number, exclusiveMinimum: true, minimum: 0, nullable: true},
+        amount: %Schema{type: :number, exclusiveMinimum: true, minimum: 0, nullable: true},
+        unit: %Schema{type: :string, nullable: true},
+        label: %Schema{type: :string, nullable: true}
+      },
+      required: [:kind]
+    },
+    struct?: false
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionMealItemInput do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.NutritionPortionInput
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "NutritionMealItemInput",
+      description: "A persisted Menu Item uses id; a new one uses a request-local local_ref.",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        id: %Schema{type: :string, format: :uuid},
+        local_ref: %Schema{type: :string, minLength: 1, maxLength: 100},
+        kind: %Schema{type: :string, enum: ["food", "recipe"]},
+        food_id: %Schema{type: :string, format: :uuid, nullable: true},
+        recipe_id: %Schema{type: :string, format: :uuid, nullable: true},
+        position: %Schema{type: :integer, minimum: 0, maximum: 2_147_483_647},
+        portion: NutritionPortionInput
+      },
+      required: [:kind, :position, :portion]
+    },
+    struct?: false
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionMealInput do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.NutritionMealItemInput
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "NutritionMealInput",
+      description: "A persisted Meal uses id; a new one uses a request-local local_ref.",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        id: %Schema{type: :string, format: :uuid},
+        local_ref: %Schema{type: :string, minLength: 1, maxLength: 100},
+        name: %Schema{type: :string, maxLength: 255},
+        notes: %Schema{type: :string, nullable: true},
+        position: %Schema{type: :integer, minimum: 0, maximum: 2_147_483_647},
+        meal_items: %Schema{type: :array, items: NutritionMealItemInput}
+      },
+      required: [:name, :position, :meal_items]
+    },
+    struct?: false
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionMenuReplaceRequest do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.NutritionMealInput
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "NutritionMenuReplaceRequest",
+      description: "Authoritative Meals and Menu Items for one plan revision. Omitted persisted nodes are deleted atomically.",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        expected_revision: %Schema{type: :integer, minimum: 1},
+        meals: %Schema{type: :array, items: NutritionMealInput}
+      },
+      required: [:expected_revision, :meals],
+      example: %{
+        "expected_revision" => 1,
+        "meals" => [
+          %{
+            "local_ref" => "breakfast",
+            "name" => "Breakfast",
+            "position" => 0,
+            "meal_items" => [
+              %{
+                "local_ref" => "yogurt",
+                "kind" => "food",
+                "food_id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+                "position" => 0,
+                "portion" => %{"kind" => "gram", "grams" => 50}
+              }
+            ]
+          }
+        ]
+      }
+    },
+    struct?: false
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionMealItem do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.{NutrientTotals, NutritionPortion, Shared}
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "NutritionMealItem",
+    type: :object,
+    additionalProperties: false,
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          kind: %Schema{type: :string, enum: ["food", "recipe"]},
+          name: %Schema{type: :string, nullable: true},
+          food_id: %Schema{type: :string, format: :uuid, nullable: true},
+          recipe_id: %Schema{type: :string, format: :uuid, nullable: true},
+          position: %Schema{type: :integer, minimum: 0},
+          portion: NutritionPortion,
+          nutrients: NutrientTotals,
+          nutrition_meal_id: %Schema{type: :string, format: :uuid}
+        },
+        Shared.timestamps()
+      ),
+    required: [
+      :id,
+      :kind,
+      :name,
+      :food_id,
+      :recipe_id,
+      :position,
+      :portion,
+      :nutrients,
+      :nutrition_meal_id,
+      :inserted_at,
+      :updated_at
+    ]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionMeal do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.{NutrientTotals, NutritionMealItem, Shared}
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "NutritionMeal",
+    type: :object,
+    additionalProperties: false,
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          name: %Schema{type: :string},
+          notes: %Schema{type: :string, nullable: true},
+          position: %Schema{type: :integer, minimum: 0},
+          nutrition_plan_id: %Schema{type: :string, format: :uuid},
+          nutrients: NutrientTotals,
+          meal_items: %Schema{type: :array, items: NutritionMealItem}
+        },
+        Shared.timestamps()
+      ),
+    required: [
+      :id,
+      :name,
+      :notes,
+      :position,
+      :nutrition_plan_id,
+      :nutrients,
+      :meal_items,
+      :inserted_at,
+      :updated_at
+    ]
+  })
+end
+
 defmodule EasyWeb.OpenApi.Schemas.NutritionPlan do
   require OpenApiSpex
 
@@ -159,6 +375,7 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlan do
 
   alias EasyWeb.OpenApi.Schemas.{
     NutritionDayPattern,
+    NutritionMeal,
     NutritionPlanClient,
     NutritionWeekSchedule,
     Shared
@@ -197,6 +414,7 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlan do
           client: %Schema{allOf: [NutritionPlanClient], nullable: true},
           creator_id: %Schema{type: :string, format: :uuid, nullable: true},
           source_template_id: %Schema{type: :string, format: :uuid, nullable: true},
+          meals: %Schema{type: :array, items: NutritionMeal},
           day_patterns: %Schema{type: :array, items: NutritionDayPattern},
           schedule: NutritionWeekSchedule
         },
@@ -223,6 +441,7 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlan do
       :client,
       :creator_id,
       :source_template_id,
+      :meals,
       :day_patterns,
       :schedule,
       :inserted_at,
@@ -249,6 +468,7 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlan do
       "client" => nil,
       "creator_id" => "c8e8fe38-d9cc-4506-9514-8527a8b56d68",
       "source_template_id" => nil,
+      "meals" => [],
       "day_patterns" => [],
       "schedule" => %{
         "monday" => nil,

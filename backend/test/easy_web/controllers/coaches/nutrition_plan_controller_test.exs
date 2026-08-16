@@ -1,64 +1,85 @@
 defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
   use Easy.ConnCase
 
-  setup do
-    coach = insert(:coach)
+  import OpenApiSpex.TestAssertions
 
-    conn =
-      build_conn()
-      |> put_req_header("content-type", "application/json")
-      |> authenticate_coach(coach)
+  alias Easy.Nutrition.Plan
+  alias Easy.Repo
 
-    %{conn: conn, coach: coach, business: coach.business}
-  end
+  describe "Nutrition Template collection" do
+    test "creates and lists discriminated templates with an empty Everyday Day Pattern", %{conn: conn} do
+      coach = insert(:coach)
+      conn = authenticate_coach(conn, coach)
 
-  describe "POST /v1/coach/nutrition-plans" do
-    test "creates a plan with valid params", %{conn: conn} do
-      attrs = build(:plan_attrs)
+      create_conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/coach/nutrition-plans", %{
+          "name" => "Cut Block",
+          "description" => "Reusable cutting Template",
+          "target_calories" => 2000,
+          "target_protein_g" => 150
+        })
 
-      conn = post(conn, "/v1/coach/nutrition-plans", attrs)
-      assert %{"data" => data} = json_response(conn, 201)
+      assert %{"data" => created} = json_response(create_conn, 201)
+      assert created["kind"] == "template"
+      assert created["name"] == "Cut Block"
+      assert created["revision"] == 1
+      assert created["archived_at"] == nil
+      assert created["lifecycle"] == nil
+      assert created["client_id"] == nil
+      assert created["status"] == "active"
+      refute Map.has_key?(created, "business_id")
 
-      assert data["name"] == attrs["name"]
-      assert data["description"] == attrs["description"]
-      assert data["tags"] == attrs["tags"]
-      assert data["target_calories"] == attrs["target_calories"]
-      assert data["target_protein_g"] == attrs["target_protein_g"]
-      assert data["target_carbs_g"] == attrs["target_carbs_g"]
-      assert data["target_fat_g"] == attrs["target_fat_g"]
-      assert data["target_fiber_g"] == attrs["target_fiber_g"]
-      assert data["status"] == attrs["status"]
-      assert data["id"]
-      assert data["creator_id"]
-      refute Map.has_key?(data, "business_id")
+      assert [%{"name" => "Everyday", "position" => 0, "id" => pattern_id, "weekdays" => weekdays}] =
+               created["day_patterns"]
+
+      assert Enum.sort(weekdays) == Enum.sort(~w(monday tuesday wednesday thursday friday saturday sunday))
+
+      assert created["schedule"] == %{
+               "monday" => pattern_id,
+               "tuesday" => pattern_id,
+               "wednesday" => pattern_id,
+               "thursday" => pattern_id,
+               "friday" => pattern_id,
+               "saturday" => pattern_id,
+               "sunday" => pattern_id
+             }
+
+      assert_schema(created, "NutritionPlan", EasyWeb.ApiSpec.spec())
+
+      list_conn = get(conn, "/v1/coach/nutrition-plans", %{"search" => "cut"})
+
+      assert %{"data" => [listed], "count" => 1} = json_response(list_conn, 200)
+      assert listed["id"] == created["id"]
+      assert listed["kind"] == "template"
+      assert_schema(listed, "NutritionPlan", EasyWeb.ApiSpec.spec())
     end
 
-    test "returns validation error when name is missing", %{conn: conn} do
-      attrs = build(:plan_attrs) |> Map.delete("name")
+    test "rejects client-plan fields on the template collection", %{conn: conn} do
+      coach = insert(:coach)
 
-      conn = post(conn, "/v1/coach/nutrition-plans", attrs)
-      assert json_response(conn, 422)
+      response =
+        conn
+        |> authenticate_coach(coach)
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/coach/nutrition-plans", %{
+          "name" => "Invalid Template",
+          "client_id" => Ecto.UUID.generate(),
+          "start_date" => "2026-08-15"
+        })
+
+      assert %{"errors" => [_ | _]} = json_response(response, 422)
     end
 
-    test "returns 403 without auth token" do
-      conn = build_conn() |> post("/v1/coach/nutrition-plans", %{"name" => "Plan"})
-      assert json_response(conn, 403)
-    end
-  end
+    test "lists only templates for this business", %{conn: conn} do
+      coach = insert(:coach)
+      conn = authenticate_coach(conn, coach)
+      insert(:plan, creator: coach, business: coach.business)
 
-  describe "GET /v1/coach/nutrition-plans" do
-    test "lists only templates for this business", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      insert(:plan, creator: coach, business: business)
+      client = insert(:client, creator: coach, business: coach.business)
+      insert(:plan, creator: coach, business: coach.business, client_id: client.id)
 
-      # Personal plan — should NOT appear
-      client = insert(:client, creator: coach, business: business)
-      insert(:plan, creator: coach, business: business, client_id: client.id)
-
-      # Other business template — should NOT appear
       other = insert(:coach)
       insert(:plan, creator: other, business: other.business)
 
@@ -67,321 +88,229 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       assert length(data) == 1
       assert hd(data)["client_id"] == nil
     end
-
-    test "filters templates by name", %{conn: conn, coach: coach, business: business} do
-      matching = insert(:plan, creator: coach, business: business, name: "High Protein")
-      insert(:plan, creator: coach, business: business, name: "Recovery")
-
-      conn = get(conn, "/v1/coach/nutrition-plans?search=protein")
-
-      assert %{"data" => [%{"id" => id}], "count" => 1} = json_response(conn, 200)
-      assert id == matching.id
-    end
   end
 
-  describe "GET /v1/coach/nutrition-plans/:id" do
-    test "returns template with client as nil", %{conn: conn, coach: coach, business: business} do
-      plan = insert(:plan, creator: coach, business: business)
+  describe "Nutrition Template lifecycle" do
+    test "shows, updates, archives, restores, and deletes through revisioned commands", %{conn: conn} do
+      coach = insert(:coach)
+      conn = authenticate_coach(conn, coach)
+      template = insert(:plan, business: coach.business, creator: coach.user)
 
-      conn = get(conn, "/v1/coach/nutrition-plans/#{plan.id}")
-      assert %{"data" => data} = json_response(conn, 200)
+      show_conn = get(conn, "/v1/coach/nutrition-plans/#{template.id}")
+      assert %{"data" => shown} = json_response(show_conn, 200)
+      assert shown["kind"] == "template"
+      assert shown["revision"] == 1
+      assert shown["day_patterns"] == []
+      assert_schema(shown, "NutritionPlan", EasyWeb.ApiSpec.spec())
 
-      assert data["id"] == plan.id
-      assert data["name"] == plan.name
-      assert data["client"] == nil
+      update_conn =
+        patch(conn, "/v1/coach/nutrition-plans/#{template.id}", %{
+          "expected_revision" => 1,
+          "name" => "Revised Template"
+        })
+
+      assert %{"data" => %{"name" => "Revised Template", "revision" => 2}} =
+               json_response(update_conn, 200)
+
+      stale_conn =
+        patch(conn, "/v1/coach/nutrition-plans/#{template.id}", %{
+          "expected_revision" => 1,
+          "name" => "Lost write"
+        })
+
+      stale_response = json_response(stale_conn, 409)
+
+      assert %{
+               "error_code" => "stale_revision",
+               "error_detail" => %{"current_revision" => 2}
+             } = stale_response
+
+      assert_schema(stale_response, "StaleRevisionError", EasyWeb.ApiSpec.spec())
+      assert Repo.get!(Plan, template.id).name == "Revised Template"
+
+      stale_archive_conn =
+        post(conn, "/v1/coach/nutrition-plans/#{template.id}/archive", %{"expected_revision" => 1})
+
+      assert %{
+               "error_code" => "stale_revision",
+               "error_detail" => %{"current_revision" => 2}
+             } = json_response(stale_archive_conn, 409)
+
+      archive_conn =
+        post(conn, "/v1/coach/nutrition-plans/#{template.id}/archive", %{"expected_revision" => 2})
+
+      assert %{"data" => %{"archived_at" => archived_at, "revision" => 3, "status" => "archived"}} =
+               json_response(archive_conn, 200)
+
+      assert archived_at
+
+      stale_restore_conn =
+        post(conn, "/v1/coach/nutrition-plans/#{template.id}/restore", %{"expected_revision" => 2})
+
+      assert %{
+               "error_code" => "stale_revision",
+               "error_detail" => %{"current_revision" => 3}
+             } = json_response(stale_restore_conn, 409)
+
+      restore_conn =
+        post(conn, "/v1/coach/nutrition-plans/#{template.id}/restore", %{"expected_revision" => 3})
+
+      assert %{"data" => %{"archived_at" => nil, "revision" => 4, "status" => "active"}} =
+               json_response(restore_conn, 200)
+
+      delete_conn = delete(conn, "/v1/coach/nutrition-plans/#{template.id}?expected_revision=4")
+
+      assert response(delete_conn, 204) == ""
+      assert Repo.get(Plan, template.id) == nil
     end
 
-    test "returns personal plan with client preloaded", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      client = insert(:client, creator: coach, business: business)
+    test "conceals another business Template for every lifecycle operation", %{conn: conn} do
+      coach = insert(:coach)
+      other = insert(:coach)
+      hidden = insert(:plan, business: other.business, creator: other.user)
+      conn = authenticate_coach(conn, coach)
 
-      plan =
+      assert json_response(get(conn, "/v1/coach/nutrition-plans/#{hidden.id}"), 404)
+
+      assert json_response(
+               patch(conn, "/v1/coach/nutrition-plans/#{hidden.id}", %{
+                 "expected_revision" => 1,
+                 "name" => "Nope"
+               }),
+               404
+             )
+
+      assert json_response(
+               post(conn, "/v1/coach/nutrition-plans/#{hidden.id}/archive", %{
+                 "expected_revision" => 1
+               }),
+               404
+             )
+
+      assert json_response(
+               post(conn, "/v1/coach/nutrition-plans/#{hidden.id}/restore", %{
+                 "expected_revision" => 1
+               }),
+               404
+             )
+
+      assert json_response(
+               delete(conn, "/v1/coach/nutrition-plans/#{hidden.id}?expected_revision=1"),
+               404
+             )
+    end
+
+    test "preserves Client Plan detail and Coverage updates", %{conn: conn} do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+
+      client_plan =
         insert(:plan,
-          creator: coach,
-          business: business,
-          client_id: client.id
+          business: coach.business,
+          creator: coach.user,
+          client: client,
+          kind: :client_plan,
+          start_date: ~D[2026-09-01]
         )
 
-      conn = get(conn, "/v1/coach/nutrition-plans/#{plan.id}")
-      assert %{"data" => data} = json_response(conn, 200)
+      conn = authenticate_coach(conn, coach)
 
-      assert data["id"] == plan.id
-      assert data["client"]["id"] == client.id
-      assert data["client"]["first_name"] == client.first_name
-      assert data["client"]["last_name"] == client.last_name
-    end
+      assert %{"data" => %{"kind" => "client_plan", "revision" => 1, "client" => %{"id" => client_id}}} =
+               conn
+               |> get("/v1/coach/nutrition-plans/#{client_plan.id}")
+               |> json_response(200)
 
-    test "returns 404 for non-existent plan", %{conn: conn} do
-      conn = get(conn, "/v1/coach/nutrition-plans/#{Ecto.UUID.generate()}")
-      assert json_response(conn, 404)
-    end
+      assert client_id == client.id
 
-    test "cannot access plan from another business", %{conn: conn} do
-      other_coach = insert(:coach)
-      other_plan = insert(:plan, creator: other_coach, business: other_coach.business)
-
-      conn = get(conn, "/v1/coach/nutrition-plans/#{other_plan.id}")
-      assert json_response(conn, 404)
-    end
-
-    test "meal items include per-item nutrition snapshot for food item", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      plan = insert(:plan, creator: coach, business: business)
-      meal = insert(:meal, creator: coach, plan: plan, business: business)
-
-      food =
-        insert(:food,
-          creator: coach,
-          business: business,
-          calories_per_100g: 200.0,
-          protein_g_per_100g: 20.0,
-          carbs_g_per_100g: 30.0,
-          fat_g_per_100g: 5.0,
-          fiber_g_per_100g: 2.0
-        )
-
-      insert(:meal_item, meal: meal, business: business, food: food, weight_g: 150.0)
-
-      conn = get(conn, "/v1/coach/nutrition-plans/#{plan.id}")
-      assert %{"data" => data} = json_response(conn, 200)
-
-      [meal_data] = data["meals"]
-      [item] = meal_data["meal_items"]
-      nutrition = item["nutrition"]
-
-      # weight_g=150 × per_100g macros / 100 → rounded to 1 decimal
-      assert nutrition["calories"] == 300.0
-      assert nutrition["protein_g"] == 30.0
-      assert nutrition["carbs_g"] == 45.0
-      assert nutrition["fat_g"] == 7.5
-      assert nutrition["fiber_g"] == 3.0
-    end
-
-    test "meal items include per-item nutrition snapshot for recipe item", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      plan = insert(:plan, creator: coach, business: business)
-      meal = insert(:meal, creator: coach, plan: plan, business: business)
-
-      food =
-        insert(:food,
-          creator: coach,
-          business: business,
-          calories_per_100g: 100.0,
-          protein_g_per_100g: 10.0,
-          carbs_g_per_100g: 10.0,
-          fat_g_per_100g: 5.0,
-          fiber_g_per_100g: 1.0
-        )
-
-      # recipe: one ingredient 200g of the food above, cooked_weight_g: 400g
-      # recipe totals: cal=200, prot=20, carbs=20, fat=10, fiber=2
-      # item weight_g=200 → factor=200/400=0.5
-      # item nutrition: cal=100, prot=10, carbs=10, fat=5, fiber=1
-      recipe =
-        insert(:recipe,
-          creator: coach,
-          business: business,
-          cooked_weight_g: 400.0,
-          recipe_ingredients: [
-            build(:recipe_ingredient, business: business, food: food, weight_g: 200.0)
-          ]
-        )
-
-      insert(:meal_item, meal: meal, business: business, food: nil, recipe: recipe, weight_g: 200.0)
-
-      conn = get(conn, "/v1/coach/nutrition-plans/#{plan.id}")
-      assert %{"data" => data} = json_response(conn, 200)
-
-      [meal_data] = data["meals"]
-      [item] = meal_data["meal_items"]
-      nutrition = item["nutrition"]
-
-      assert nutrition["calories"] == 100.0
-      assert nutrition["protein_g"] == 10.0
-    end
-
-    test "food meal item includes food name", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      plan = insert(:plan, creator: coach, business: business)
-      meal = insert(:meal, creator: coach, plan: plan, business: business)
-      food = insert(:food, creator: coach, business: business, name: "Rolled Oats")
-      insert(:meal_item, meal: meal, business: business, food: food, weight_g: 80.0)
-
-      conn = get(conn, "/v1/coach/nutrition-plans/#{plan.id}")
-      assert %{"data" => data} = json_response(conn, 200)
-
-      [meal_data] = data["meals"]
-      [item] = meal_data["meal_items"]
-      assert item["name"] == "Rolled Oats"
-    end
-
-    test "recipe meal item includes recipe name", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      plan = insert(:plan, creator: coach, business: business)
-      meal = insert(:meal, creator: coach, plan: plan, business: business)
-
-      food = insert(:food, creator: coach, business: business)
-
-      recipe =
-        insert(:recipe,
-          creator: coach,
-          business: business,
-          name: "Turkey Rice Bowl",
-          cooked_weight_g: 400.0,
-          recipe_ingredients: [
-            build(:recipe_ingredient, business: business, food: food, weight_g: 200.0)
-          ]
-        )
-
-      insert(:meal_item, meal: meal, business: business, food: nil, recipe: recipe, weight_g: 200.0)
-
-      conn = get(conn, "/v1/coach/nutrition-plans/#{plan.id}")
-      assert %{"data" => data} = json_response(conn, 200)
-
-      [meal_data] = data["meals"]
-      [item] = meal_data["meal_items"]
-      assert item["name"] == "Turkey Rice Bowl"
-    end
-
-    test "meal item nutrition is zero-valued map when food has no macros set", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      plan = insert(:plan, creator: coach, business: business)
-      meal = insert(:meal, creator: coach, plan: plan, business: business)
-
-      food =
-        insert(:food,
-          creator: coach,
-          business: business,
-          calories_per_100g: 0.0,
-          protein_g_per_100g: 0.0,
-          carbs_g_per_100g: 0.0,
-          fat_g_per_100g: 0.0,
-          fiber_g_per_100g: 0.0
-        )
-
-      insert(:meal_item, meal: meal, business: business, food: food, weight_g: 100.0)
-
-      conn = get(conn, "/v1/coach/nutrition-plans/#{plan.id}")
-      assert %{"data" => data} = json_response(conn, 200)
-
-      [meal_data] = data["meals"]
-      [item] = meal_data["meal_items"]
-
-      # nutrition map present, all zeros — no crash
-      assert is_map(item["nutrition"])
-      assert item["nutrition"]["calories"] == 0.0
+      assert %{
+               "data" => %{
+                 "start_date" => "2026-09-08",
+                 "end_date" => "2026-10-08",
+                 "revision" => 2
+               }
+             } =
+               conn
+               |> patch("/v1/coach/nutrition-plans/#{client_plan.id}", %{
+                 "expected_revision" => 1,
+                 "start_date" => "2026-09-08",
+                 "end_date" => "2026-10-08"
+               })
+               |> json_response(200)
     end
   end
 
-  describe "PATCH /v1/coach/nutrition-plans/:id" do
-    test "updates a plan with valid params", %{conn: conn, coach: coach, business: business} do
-      plan = insert(:plan, creator: coach, business: business)
+  describe "Nutrition Template duplication" do
+    test "duplicates only an active Template with an independent Everyday menu", %{conn: conn} do
+      coach = insert(:coach)
+      conn = authenticate_coach(conn, coach)
 
-      conn = patch(conn, "/v1/coach/nutrition-plans/#{plan.id}", %{"name" => "Updated Plan"})
-      assert %{"data" => data} = json_response(conn, 200)
+      created =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/coach/nutrition-plans", %{"name" => "HTTP Cut"})
+        |> json_response(201)
+        |> Map.fetch!("data")
 
-      assert data["name"] == "Updated Plan"
-      assert data["id"] == plan.id
-    end
-
-    test "returns 404 when updating plan from another business", %{conn: conn} do
-      other_coach = insert(:coach)
-      other_plan = insert(:plan, creator: other_coach, business: other_coach.business)
-
-      conn = patch(conn, "/v1/coach/nutrition-plans/#{other_plan.id}", %{"name" => "Updated"})
-      assert json_response(conn, 404)
-    end
-  end
-
-  describe "DELETE /v1/coach/nutrition-plans/:id" do
-    test "deletes a plan", %{conn: conn, coach: coach, business: business} do
-      plan = insert(:plan, creator: coach, business: business)
-
-      conn = delete(conn, "/v1/coach/nutrition-plans/#{plan.id}")
-      assert response(conn, 204)
-    end
-
-    test "returns 404 when deleting plan from another business", %{conn: conn} do
-      other_coach = insert(:coach)
-      other_plan = insert(:plan, creator: other_coach, business: other_coach.business)
-
-      conn = delete(conn, "/v1/coach/nutrition-plans/#{other_plan.id}")
-      assert json_response(conn, 404)
-    end
-  end
-
-  describe "POST /v1/coach/nutrition-plans/:id/assign" do
-    test "assigns a plan to a client", %{conn: conn, coach: coach, business: business} do
-      plan = insert(:plan, creator: coach, business: business)
-      client = insert(:client, creator: coach, business: business)
-
-      conn =
-        post(conn, "/v1/coach/nutrition-plans/#{plan.id}/assign", %{"client_id" => client.id})
-
-      assert %{"data" => data} = json_response(conn, 201)
-
-      assert data["client_id"] == client.id
-      assert data["source_template_id"] == plan.id
-    end
-
-    test "returns 404 when assigning plan from another business", %{conn: conn} do
-      other_coach = insert(:coach)
-      other_plan = insert(:plan, creator: other_coach, business: other_coach.business)
-      client = insert(:client, creator: other_coach, business: other_coach.business)
-
-      conn =
-        post(conn, "/v1/coach/nutrition-plans/#{other_plan.id}/assign", %{
-          "client_id" => client.id
+      response =
+        conn
+        |> post("/v1/coach/nutrition-plans/#{created["id"]}/duplicate", %{
+          "expected_revision" => created["revision"]
         })
+        |> json_response(201)
 
-      assert json_response(conn, 404)
+      assert %{
+               "data" =>
+                 %{
+                   "id" => duplicate_id,
+                   "kind" => "template",
+                   "name" => "HTTP Cut (Copy)",
+                   "revision" => 1,
+                   "client_id" => nil,
+                   "source_template_id" => nil,
+                   "day_patterns" => [%{"id" => copied_pattern_id, "name" => "Everyday"}],
+                   "schedule" => copied_schedule
+                 } = data
+             } = response
+
+      assert duplicate_id != created["id"]
+      assert copied_pattern_id != hd(created["day_patterns"])["id"]
+      assert copied_schedule["monday"] == copied_pattern_id
+      assert copied_schedule["sunday"] == copied_pattern_id
+      assert_schema(data, "NutritionPlan", EasyWeb.ApiSpec.spec())
     end
-  end
 
-  describe "POST /v1/coach/nutrition-plans/:id/duplicate" do
-    test "duplicates a plan", %{conn: conn, coach: coach, business: business} do
-      plan = insert(:plan, creator: coach, business: business)
+    test "returns not found for archived, Client Plan, and cross-tenant sources", %{conn: conn} do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      other = insert(:coach)
+      conn = authenticate_coach(conn, coach)
 
-      conn = post(conn, "/v1/coach/nutrition-plans/#{plan.id}/duplicate")
-      assert %{"data" => data} = json_response(conn, 201)
+      archived =
+        insert(:plan,
+          business: coach.business,
+          creator: coach.user,
+          archived_at: ~U[2026-08-15 12:00:00Z]
+        )
 
-      assert data["name"] == "#{plan.name} (Copy)"
-      assert data["source_template_id"] == plan.id
-    end
+      client_plan =
+        insert(:plan,
+          business: coach.business,
+          creator: coach.user,
+          client: client,
+          kind: :client_plan,
+          start_date: ~D[2026-09-01]
+        )
 
-    test "returns 404 when client is from another business", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      plan = insert(:plan, creator: coach, business: business)
-      other_coach = insert(:coach)
-      other_client = insert(:client, creator: other_coach, business: other_coach.business)
+      hidden = insert(:plan, business: other.business, creator: other.user)
 
-      conn =
-        post(conn, "/v1/coach/nutrition-plans/#{plan.id}/assign", %{
-          "client_id" => other_client.id
-        })
+      for source <- [archived, client_plan, hidden] do
+        response =
+          conn
+          |> post("/v1/coach/nutrition-plans/#{source.id}/duplicate", %{"expected_revision" => 1})
+          |> json_response(404)
 
-      assert json_response(conn, 404)
+        assert %{"error_code" => "not_found"} = response
+      end
     end
   end
 end

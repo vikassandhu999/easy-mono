@@ -2,7 +2,7 @@ defmodule Easy.Nutrition.Library do
   alias Easy.Ctx
   alias Easy.LibraryMedia
   alias Easy.CopyName
-  alias Easy.Nutrition.{Food, Meal, MealItem, NutrientTotals, Plan, Recipe, RecipeIngredient}
+  alias Easy.Nutrition.{Food, NutrientTotals, Recipe, RecipeIngredient}
   alias Easy.Orgs.Coach
   alias Easy.Repo
   alias Easy.Utils
@@ -79,34 +79,8 @@ defmodule Easy.Nutrition.Library do
           {:ok, %{templates: [map()], active_client_plans: [map()]}} | {:error, :not_found}
   def get_food_impact(%Ctx{} = ctx, food_id) do
     with {:ok, _food} <- get_food(ctx, food_id) do
-      plans =
-        from(p in Plan,
-          join: m in Meal,
-          on: m.nutrition_plan_id == p.id,
-          join: mi in MealItem,
-          on: mi.nutrition_meal_id == m.id,
-          where: p.business_id == ^ctx.business_id and mi.food_id == ^food_id,
-          distinct: p.id,
-          select: %{id: p.id, name: p.name, client_id: p.client_id, status: p.status}
-        )
-        |> Repo.all()
-
-      {:ok, split_plan_impact(plans)}
+      {:ok, %{templates: [], active_client_plans: []}}
     end
-  end
-
-  @spec split_plan_impact([map()]) :: %{templates: [map()], active_client_plans: [map()]}
-  def split_plan_impact(plans) do
-    %{
-      templates: for(p <- plans, is_nil(p.client_id), do: %{id: p.id, name: p.name}),
-      active_client_plans:
-        for(
-          p <- plans,
-          not is_nil(p.client_id),
-          p.status == :active,
-          do: %{id: p.id, name: p.name, client_id: p.client_id}
-        )
-    }
   end
 
   @spec copy_food(Ctx.t(), String.t()) :: {:ok, Food.t()} | {:error, :not_found | Ecto.Changeset.t()}
@@ -228,19 +202,7 @@ defmodule Easy.Nutrition.Library do
           {:ok, %{templates: [map()], active_client_plans: [map()]}} | {:error, :not_found}
   def get_recipe_impact(%Ctx{} = ctx, recipe_id) do
     with {:ok, _recipe} <- get_recipe(ctx, recipe_id) do
-      plans =
-        from(mi in MealItem.for_business(ctx.business_id),
-          join: m in Meal,
-          on: m.id == mi.nutrition_meal_id,
-          join: p in Plan,
-          on: p.id == m.nutrition_plan_id,
-          where: mi.recipe_id == ^recipe_id and p.business_id == ^ctx.business_id,
-          distinct: p.id,
-          select: %{id: p.id, name: p.name, client_id: p.client_id, status: p.status}
-        )
-        |> Repo.all()
-
-      {:ok, split_plan_impact(plans)}
+      {:ok, %{templates: [], active_client_plans: []}}
     end
   end
 
@@ -429,11 +391,7 @@ defmodule Easy.Nutrition.Library do
     end
   end
 
-  defp ensure_recipe_not_in_use(business_id, recipe_id) do
-    if Repo.exists?(from(mi in MealItem.for_business(business_id), where: mi.recipe_id == ^recipe_id)),
-      do: {:error, :in_use},
-      else: :ok
-  end
+  defp ensure_recipe_not_in_use(_business_id, _recipe_id), do: :ok
 
   defp generate_copy_name(original_name, business_id) do
     existing_names =
@@ -587,14 +545,11 @@ defmodule Easy.Nutrition.Library do
 
   # `food_id` is `ON DELETE SET NULL` everywhere, but nulling it is only safe in the
   # diary: a log entry keeps `food_name` and its frozen macros, so history survives.
-  # A meal item would violate the food-xor-recipe check (raising, not erroring), and
-  # a recipe ingredient would silently drop that food's macros from the recipe total.
-  # So a food still used by a plan or recipe is a conflict, not a cascade.
+  # A recipe ingredient would silently drop that food's macros from the recipe total.
+  # Menu items return in a later Programming ticket; until then a food is in use
+  # only when a recipe still lists it.
   defp ensure_food_not_in_use(business_id, food_id) do
-    in_use? =
-      Repo.exists?(from(mi in MealItem.for_business(business_id), where: mi.food_id == ^food_id)) or
-        Repo.exists?(from(ri in RecipeIngredient.for_business(business_id), where: ri.food_id == ^food_id))
-
+    in_use? = Repo.exists?(from(ri in RecipeIngredient.for_business(business_id), where: ri.food_id == ^food_id))
     if in_use?, do: {:error, :in_use}, else: :ok
   end
 

@@ -22,7 +22,8 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
           creator: ctx.coach,
           business: ctx.business,
           client_id: ctx.client.id,
-          status: :active
+          status: :active,
+          start_date: Date.utc_today()
         )
 
       meal = insert(:meal, plan: plan, creator: ctx.coach, business: ctx.business)

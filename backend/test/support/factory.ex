@@ -318,50 +318,66 @@ defmodule Easy.Factory do
     }
   end
 
-  def plan_factory do
-    # `business` is persisted (not merely built) because it's referenced from two
-    # belongs_to paths below (plan.business and plan.creator.business) — see
-    # client_factory's comment for why an unsaved struct shared across two paths
-    # gets cascade-inserted twice, tripping unique constraints.
-    business = insert(:business)
-    creator = insert(:coach, business: business)
+  def plan_factory(attrs) do
+    attrs = Map.new(attrs)
+    {creator, attrs} = Map.pop(attrs, :creator)
+    {business, attrs} = Map.pop(attrs, :business)
+    {client, attrs} = Map.pop(attrs, :client)
+    {kind, attrs} = Map.pop(attrs, :kind)
+    {archived_at, attrs} = Map.pop(attrs, :archived_at)
+    {status, attrs} = Map.pop(attrs, :status)
+    {start_date, attrs} = Map.pop(attrs, :start_date)
+    {end_date, attrs} = Map.pop(attrs, :end_date)
+
+    business = business || insert(:business)
+    kind = kind || if(client || attrs[:client_id], do: :client_plan, else: :template)
+    period? = kind == :client_plan
+    archived_at = archived_at || if(status in [:archived, "archived"], do: DateTime.utc_now(:second))
 
     %Plan{
+      kind: kind,
       name: sequence(:plan_name, &"Plan #{&1}"),
       description: "Weekly plan",
-      tags: ["balanced"],
+      revision: 1,
+      archived_at: archived_at,
       target_calories: 2000.0,
       target_protein_g: 150.0,
       target_carbs_g: 200.0,
       target_fat_g: 60.0,
       target_fiber_g: 30.0,
-      status: :active,
-      creator: creator,
-      business: business
+      start_date: if(period?, do: start_date),
+      end_date: if(period?, do: end_date),
+      creator: unwrap_plan_creator(creator),
+      business: business,
+      client: client
     }
+    |> merge_attributes(attrs)
   end
+
+  defp unwrap_plan_creator(%Coach{user: %User{} = user}), do: user
+  defp unwrap_plan_creator(nil), do: build(:user)
+  defp unwrap_plan_creator(creator), do: creator
 
   def plan_attrs_factory do
     %{
       "name" => sequence(:plan_attr_name, &"New Plan #{&1}"),
       "description" => "Plan created via test",
-      "tags" => ["test"],
       "target_calories" => 1800.0,
       "target_protein_g" => 120.0,
       "target_carbs_g" => 180.0,
       "target_fat_g" => 50.0,
-      "target_fiber_g" => 25.0,
-      "status" => "active"
+      "target_fiber_g" => 25.0
     }
   end
 
   def meal_factory do
     plan = build(:plan)
+    creator = insert(:coach, business: plan.business)
 
     %Meal{
       name: sequence(:meal_name, &"Meal #{&1}"),
       notes: nil,
-      creator: plan.creator,
+      creator: creator,
       business: plan.business,
       plan: plan
     }
@@ -380,13 +396,13 @@ defmodule Easy.Factory do
   end
 
   def day_meal_factory do
-    day = build(:plan_day)
-    meal = build(:meal, plan: day.plan, creator: day.plan.creator)
+    meal = build(:meal)
+    day = build(:plan_day, plan: meal.plan, business: meal.business)
 
     %DayMeal{
       meal_slot: "breakfast",
       position: 0,
-      business: day.plan.business,
+      business: meal.business,
       plan_day: day,
       meal: meal
     }

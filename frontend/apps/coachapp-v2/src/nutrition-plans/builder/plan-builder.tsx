@@ -27,16 +27,8 @@ import {DayHeader} from './components/day-header';
 import {DeleteDayDialog} from './components/delete-day-dialog';
 import {MealCard, type MealSwap} from './components/meal-card';
 import type {HydratedMealItem} from './components/meal-item-row';
-import {AddMealControl, type MealPaletteOption} from './components/meal-palette';
 import {computeDayTotals} from './macros';
-import {
-  assignmentCounts,
-  firstFreeSlot,
-  getDays,
-  getWeekdayAssignments,
-  mealPlacementSummary,
-  slotRows,
-} from './plan-tree';
+import {assignmentCounts, getDays, getWeekdayAssignments, slotRows} from './plan-tree';
 import {assignedWeekdays} from './schedule';
 import {useActiveDay, usePlanBuilder} from './use-plan-builder';
 
@@ -45,8 +37,8 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
 
   const days = useMemo(() => getDays(plan), [plan]);
   const weekdayAssignments = useMemo(() => getWeekdayAssignments(plan), [plan]);
-  const meals = plan.meals ?? [];
-  const mealById = useMemo(() => new Map((plan.meals ?? []).map((m) => [m.id, m])), [plan.meals]);
+  const meals: NutritionMeal[] = [];
+  const mealById = useMemo(() => new Map<string, NutritionMeal>(), []);
 
   const [activeDay, selectDay] = useActiveDay(days);
 
@@ -89,40 +81,16 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
     }
   };
 
-  const createMeal = async () => {
-    if (!activeDay) {
-      return;
-    }
-    const meal = await commands.createMeal(activeDay.id, firstFreeSlot(activeDay));
-    if (meal) {
-      setOpenMealId(meal.id);
-      setAutoRenameMealId(meal.id);
-    }
-  };
-
-  // Derived per-day views of the plan. Memoized because this component
-  // re-renders per keystroke (day rename, meal rename) and reusableMeals /
-  // counts are O(meals x days) placement scans over the whole plan.
   const derived = useMemo(() => {
     if (!activeDay) {
       return null;
     }
-    const dayMealIds = new Set(activeDay.day_meals.map((dm) => dm.nutrition_meal_id));
-    const reusable: MealPaletteOption[] = (plan.meals ?? [])
-      .filter((m) => !dayMealIds.has(m.id))
-      .map((m) => ({
-        id: m.id,
-        meta: m.nutrition?.calories != null ? `${Math.round(m.nutrition.calories)} kcal` : undefined,
-        name: m.name,
-        sub: mealPlacementSummary(m.id, days, weekdayAssignments),
-      }));
     return {
       counts: assignmentCounts(days),
-      reusableMeals: reusable,
       rows: slotRows(activeDay),
       totals: computeDayTotals(activeDay, mealById),
     };
-  }, [activeDay, days, mealById, plan.meals, weekdayAssignments]);
+  }, [activeDay, days, mealById]);
 
   if (!activeDay || !derived) {
     return (
@@ -135,7 +103,7 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
     );
   }
 
-  const {counts, reusableMeals, rows, totals} = derived;
+  const {counts, rows, totals} = derived;
 
   // Style-diff anchors (design-handoff/manifests/NB.json): one card per visual
   // variant carries the id the manifest pairs against. First match wins, so a
@@ -204,7 +172,7 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
           className="rounded-panel border border-dashed border-border p-5 text-center type-eyebrow text-muted"
           data-testid="nb-day-empty"
         >
-          No meals on this day yet — add the first one below.
+          No meals on this day yet.
         </div>
       ) : (
         <div
@@ -260,17 +228,7 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
         </div>
       )}
 
-      {/* Add meal */}
-      <AddMealControl
-        onCreate={() => {
-          createMeal().catch(() => undefined);
-        }}
-        onReuse={(mealId) => {
-          commands.addOption(activeDay.id, firstFreeSlot(activeDay), mealId).catch(() => undefined);
-        }}
-        planMealCount={meals.length}
-        reusable={reusableMeals}
-      />
+      {/* Menu writes return in a later Programming ticket. */}
 
       {/* Delete day confirm */}
       <DeleteDayDialog

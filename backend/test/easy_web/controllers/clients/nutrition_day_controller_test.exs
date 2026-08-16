@@ -23,6 +23,7 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
           business: ctx.business,
           client_id: ctx.client.id,
           status: :active,
+          start_date: Date.utc_today(),
           target_calories: 2000.0
         )
 
@@ -90,7 +91,8 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
           creator: ctx.coach,
           business: ctx.business,
           client_id: ctx.client.id,
-          status: :active
+          status: :active,
+          start_date: ~D[2026-03-01]
         )
 
       meal = insert(:meal, plan: plan, creator: ctx.coach, business: ctx.business)
@@ -128,7 +130,8 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
           creator: ctx.coach,
           business: ctx.business,
           client_id: ctx.client.id,
-          status: :active
+          status: :active,
+          start_date: Date.utc_today()
         )
 
       meal = insert(:meal, plan: plan, creator: ctx.coach, business: ctx.business, name: "Original")
@@ -166,7 +169,8 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
           creator: ctx.coach,
           business: ctx.business,
           client_id: ctx.client.id,
-          status: :active
+          status: :active,
+          start_date: Date.utc_today()
         )
 
       meal = insert(:meal, plan: plan, creator: ctx.coach, business: ctx.business, name: "Dinner")

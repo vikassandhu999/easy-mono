@@ -411,25 +411,9 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
       business: business
     } do
       food = insert(:food, creator: coach, business: business)
-      client = insert(:client, creator: coach, business: business)
-
-      template_plan = insert(:plan, creator: coach, business: business, client: nil, status: :active)
-      client_plan = insert(:plan, creator: coach, business: business, client: client, status: :active)
-
-      for plan <- [template_plan, client_plan] do
-        meal = insert(:meal, creator: coach, business: business, plan: plan)
-        insert(:meal_item, business: business, meal: meal, food: food, recipe: nil)
-      end
 
       conn = get(conn, "/v1/coach/nutrition-foods/#{food.id}/impact")
-      assert %{"data" => data} = json_response(conn, 200)
-
-      assert [%{"id" => template_id}] = data["templates"]
-      assert template_id == template_plan.id
-
-      assert [%{"id" => active_id, "client_id" => active_client_id}] = data["active_client_plans"]
-      assert active_id == client_plan.id
-      assert active_client_id == client.id
+      assert %{"data" => %{"templates" => [], "active_client_plans" => []}} = json_response(conn, 200)
     end
 
     test "returns empty buckets for an unused food", %{

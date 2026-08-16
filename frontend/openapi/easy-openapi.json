@@ -269,37 +269,6 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.Recipe",
         "x-validate": null
       },
-      "NutritionDayMealResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/NutritionDayMeal"
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "title": "NutritionDayMealResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayMealResponse",
-        "x-validate": null
-      },
-      "NutritionPlanDayUpdateRequest": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "name"
-        ],
-        "title": "NutritionPlanDayUpdateRequest",
-        "type": "object",
-        "x-struct": null,
-        "x-validate": null
-      },
       "ChatMessage": {
         "additionalProperties": false,
         "properties": {
@@ -407,21 +376,6 @@
         "title": "AttachmentDownload",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.AttachmentDownload",
-        "x-validate": null
-      },
-      "NutritionMealResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/NutritionMeal"
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "title": "NutritionMealResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionMealResponse",
         "x-validate": null
       },
       "CoachClientTrainingPlan": {
@@ -943,98 +897,6 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.LandingPage",
         "x-validate": null
       },
-      "NutritionPlanRequest": {
-        "additionalProperties": false,
-        "example": {
-          "name": "Fat Loss Plan",
-          "target_calories": 2200,
-          "target_protein_g": 180
-        },
-        "properties": {
-          "description": {
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "end_date": {
-            "format": "date",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "name": {
-            "maxLength": 255,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "start_date": {
-            "format": "date",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "status": {
-            "enum": [
-              "active",
-              "archived"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "tags": {
-            "items": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            },
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "target_calories": {
-            "nullable": true,
-            "type": "number",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "target_carbs_g": {
-            "nullable": true,
-            "type": "number",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "target_fat_g": {
-            "nullable": true,
-            "type": "number",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "target_fiber_g": {
-            "nullable": true,
-            "type": "number",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "target_protein_g": {
-            "nullable": true,
-            "type": "number",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "name"
-        ],
-        "title": "NutritionPlanRequest",
-        "type": "object",
-        "x-struct": null,
-        "x-validate": null
-      },
       "BillingCheckoutResponse": {
         "additionalProperties": false,
         "properties": {
@@ -1256,60 +1118,6 @@
         "title": "TrainingExerciseUpdateRequest",
         "type": "object",
         "x-struct": null,
-        "x-validate": null
-      },
-      "NutritionDayMealWithMeal": {
-        "properties": {
-          "id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "meal": {
-            "$ref": "#/components/schemas/NutritionMeal"
-          },
-          "meal_slot": {
-            "enum": [
-              "breakfast",
-              "morning_snack",
-              "lunch",
-              "afternoon_snack",
-              "dinner",
-              "evening_snack"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "nutrition_meal_id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "nutrition_plan_day_id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "position": {
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "id",
-          "meal_slot",
-          "position",
-          "nutrition_meal_id",
-          "meal"
-        ],
-        "title": "NutritionDayMealWithMeal",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayMealWithMeal",
         "x-validate": null
       },
       "PublicLandingPage": {
@@ -1663,40 +1471,6 @@
         "title": "ReplyNeededReason",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ReplyNeededReason",
-        "x-validate": null
-      },
-      "NutritionMealItemListResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/NutritionMealItem"
-            },
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "title": "NutritionMealItemListResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionMealItemListResponse",
-        "x-validate": null
-      },
-      "NutritionPlanDayCreateRequest": {
-        "properties": {
-          "name": {
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "title": "NutritionPlanDayCreateRequest",
-        "type": "object",
-        "x-struct": null,
         "x-validate": null
       },
       "TrainingEquipmentListResponse": {
@@ -2293,111 +2067,6 @@
         "x-struct": null,
         "x-validate": null
       },
-      "NutritionMeal": {
-        "additionalProperties": false,
-        "properties": {
-          "creator_id": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "inserted_at": {
-            "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "meal_items": {
-            "items": {
-              "$ref": "#/components/schemas/NutritionMealItem"
-            },
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "name": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "notes": {
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "nutrition": {
-            "nullable": true,
-            "properties": {
-              "calories": {
-                "nullable": true,
-                "type": "number",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "carbs_g": {
-                "nullable": true,
-                "type": "number",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "fat_g": {
-                "nullable": true,
-                "type": "number",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "fiber_g": {
-                "nullable": true,
-                "type": "number",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "protein_g": {
-                "nullable": true,
-                "type": "number",
-                "x-struct": null,
-                "x-validate": null
-              }
-            },
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "nutrition_plan_id": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "updated_at": {
-            "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "meal_items",
-          "inserted_at",
-          "updated_at"
-        ],
-        "title": "NutritionMeal",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionMeal",
-        "x-validate": null
-      },
       "TrainingExercise": {
         "additionalProperties": false,
         "example": {
@@ -2667,6 +2336,73 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.CheckInAwaitingReviewReason",
         "x-validate": null
       },
+      "NutritionWeekSchedule": {
+        "additionalProperties": false,
+        "properties": {
+          "friday": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "monday": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "saturday": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "sunday": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "thursday": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "tuesday": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "wednesday": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday"
+        ],
+        "title": "NutritionWeekSchedule",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionWeekSchedule",
+        "x-validate": null
+      },
       "NutritionDayListResponse": {
         "additionalProperties": false,
         "properties": {
@@ -2858,35 +2594,6 @@
         "title": "NutritionPlanResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionPlanResponse",
-        "x-validate": null
-      },
-      "NutritionMealItemsCreateRequest": {
-        "additionalProperties": false,
-        "example": {
-          "items": [
-            {
-              "food_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-              "weight_g": 120
-            }
-          ]
-        },
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/NutritionMealItemRequest"
-            },
-            "minItems": 1,
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "items"
-        ],
-        "title": "NutritionMealItemsCreateRequest",
-        "type": "object",
-        "x-struct": null,
         "x-validate": null
       },
       "BusinessResponse": {
@@ -3142,66 +2849,6 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.Food",
         "x-validate": null
       },
-      "NutritionSchedule": {
-        "additionalProperties": false,
-        "properties": {
-          "friday": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "monday": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "saturday": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "sunday": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "thursday": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "tuesday": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "wednesday": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "monday",
-          "tuesday",
-          "wednesday",
-          "thursday",
-          "friday",
-          "saturday",
-          "sunday"
-        ],
-        "title": "NutritionSchedule",
-        "type": "object",
-        "x-struct": null,
-        "x-validate": null
-      },
       "BillingEvent": {
         "additionalProperties": false,
         "properties": {
@@ -3341,56 +2988,6 @@
         "title": "WorkbenchProgrammingQueueItem",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchProgrammingQueueItem",
-        "x-validate": null
-      },
-      "NutritionDayMeal": {
-        "properties": {
-          "id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "meal_slot": {
-            "enum": [
-              "breakfast",
-              "morning_snack",
-              "lunch",
-              "afternoon_snack",
-              "dinner",
-              "evening_snack"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "nutrition_meal_id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "nutrition_plan_day_id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "position": {
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "id",
-          "meal_slot",
-          "position",
-          "nutrition_meal_id"
-        ],
-        "title": "NutritionDayMeal",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayMeal",
         "x-validate": null
       },
       "TrainingSessionPrescriptionSnapshot": {
@@ -5641,21 +5238,6 @@
         "x-struct": null,
         "x-validate": null
       },
-      "NutritionDayMealWithMealResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/NutritionDayMealWithMeal"
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "title": "NutritionDayMealWithMealResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayMealWithMealResponse",
-        "x-validate": null
-      },
       "WeightEntryRequest": {
         "additionalProperties": false,
         "example": {
@@ -7232,6 +6814,38 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingPlanWorkout",
         "x-validate": null
       },
+      "NutritionPlanClient": {
+        "additionalProperties": false,
+        "properties": {
+          "first_name": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "last_name": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "first_name",
+          "last_name"
+        ],
+        "title": "NutritionPlanClient",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionPlanClient",
+        "x-validate": null
+      },
       "Client": {
         "additionalProperties": false,
         "properties": {
@@ -7472,21 +7086,6 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.MissedCheckInReason",
         "x-validate": null
       },
-      "NutritionMealItemResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/NutritionMealItem"
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "title": "NutritionMealItemResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionMealItemResponse",
-        "x-validate": null
-      },
       "RecipeListResponse": {
         "additionalProperties": false,
         "properties": {
@@ -7512,79 +7111,6 @@
         "title": "RecipeListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.RecipeListResponse",
-        "x-validate": null
-      },
-      "NutritionPlanDay": {
-        "properties": {
-          "day_meals": {
-            "items": {
-              "$ref": "#/components/schemas/NutritionDayMeal"
-            },
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "name": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "position": {
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "weekdays": {
-            "items": {
-              "enum": [
-                "monday",
-                "tuesday",
-                "wednesday",
-                "thursday",
-                "friday",
-                "saturday",
-                "sunday"
-              ],
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            },
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "position",
-          "weekdays",
-          "day_meals"
-        ],
-        "title": "NutritionPlanDay",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionPlanDay",
-        "x-validate": null
-      },
-      "NutritionPlanDayResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/NutritionPlanDay"
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "title": "NutritionPlanDayResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionPlanDayResponse",
         "x-validate": null
       },
       "TrainerAcceptInviteVerifyRequest": {
@@ -8380,35 +7906,6 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientResponse",
         "x-validate": null
       },
-      "NutritionSlotOptionMoveRequest": {
-        "additionalProperties": false,
-        "description": "Re-slots and/or repositions a day meal. Omitted `position` appends to the target slot.",
-        "properties": {
-          "meal_slot": {
-            "enum": [
-              "breakfast",
-              "morning_snack",
-              "lunch",
-              "afternoon_snack",
-              "dinner",
-              "evening_snack"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "position": {
-            "minimum": 0,
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "title": "NutritionSlotOptionMoveRequest",
-        "type": "object",
-        "x-struct": null,
-        "x-validate": null
-      },
       "WorkbenchCheckInSubmission": {
         "additionalProperties": false,
         "properties": {
@@ -8629,78 +8126,6 @@
         "title": "LandingProgramInput",
         "type": "object",
         "x-struct": null,
-        "x-validate": null
-      },
-      "NutritionScheduleResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "additionalProperties": false,
-            "properties": {
-              "friday": {
-                "format": "uuid",
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "monday": {
-                "format": "uuid",
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "saturday": {
-                "format": "uuid",
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "sunday": {
-                "format": "uuid",
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "thursday": {
-                "format": "uuid",
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "tuesday": {
-                "format": "uuid",
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "wednesday": {
-                "format": "uuid",
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
-              }
-            },
-            "required": [
-              "monday",
-              "tuesday",
-              "wednesday",
-              "thursday",
-              "friday",
-              "saturday",
-              "sunday"
-            ],
-            "title": "NutritionSchedule",
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "title": "NutritionScheduleResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionScheduleResponse",
         "x-validate": null
       },
       "TrainingPerformedSet": {
@@ -9067,6 +8492,73 @@
         "x-struct": null,
         "x-validate": null
       },
+      "NutritionPlanCreateRequest": {
+        "additionalProperties": false,
+        "description": "Request body for creating a reusable Nutrition Template.",
+        "example": {
+          "description": "Reusable cutting Template.",
+          "name": "Cut Block",
+          "target_calories": 2000,
+          "target_protein_g": 150
+        },
+        "properties": {
+          "description": {
+            "maxLength": 5000,
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "name": {
+            "maxLength": 255,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "target_calories": {
+            "minimum": 0,
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "target_carbs_g": {
+            "minimum": 0,
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "target_fat_g": {
+            "minimum": 0,
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "target_fiber_g": {
+            "minimum": 0,
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "target_protein_g": {
+            "minimum": 0,
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "NutritionPlanCreateRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "NutritionDayTargets": {
         "additionalProperties": false,
         "properties": {
@@ -9104,6 +8596,78 @@
         "title": "NutritionDayTargets",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayTargets",
+        "x-validate": null
+      },
+      "NutritionDayPattern": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "inserted_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "name": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "nutrition_plan_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "position": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "weekdays": {
+            "items": {
+              "enum": [
+                "monday",
+                "tuesday",
+                "wednesday",
+                "thursday",
+                "friday",
+                "saturday",
+                "sunday"
+              ],
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "position",
+          "weekdays",
+          "nutrition_plan_id",
+          "inserted_at",
+          "updated_at"
+        ],
+        "title": "NutritionDayPattern",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayPattern",
         "x-validate": null
       },
       "TrainingSchedule": {
@@ -9257,67 +8821,6 @@
         "title": "ClientTrainingPlanResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientTrainingPlanResponse",
-        "x-validate": null
-      },
-      "NutritionScheduleRequest": {
-        "additionalProperties": false,
-        "description": "The plan's full weekday map. Every weekday must point at a day of this plan.",
-        "properties": {
-          "friday": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "monday": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "saturday": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "sunday": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "thursday": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "tuesday": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "wednesday": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "monday",
-          "tuesday",
-          "wednesday",
-          "thursday",
-          "friday",
-          "saturday",
-          "sunday"
-        ],
-        "title": "NutritionScheduleRequest",
-        "type": "object",
-        "x-struct": null,
         "x-validate": null
       },
       "QueueSnoozeRequest": {
@@ -9556,33 +9059,6 @@
           "otp"
         ],
         "title": "AcceptInviteVerifyRequest",
-        "type": "object",
-        "x-struct": null,
-        "x-validate": null
-      },
-      "NutritionMealRequest": {
-        "additionalProperties": false,
-        "example": {
-          "name": "Breakfast"
-        },
-        "properties": {
-          "name": {
-            "maxLength": 255,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "notes": {
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "name"
-        ],
-        "title": "NutritionMealRequest",
         "type": "object",
         "x-struct": null,
         "x-validate": null
@@ -9922,6 +9398,92 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchQuietQueueResponse",
         "x-validate": null
       },
+      "NutritionPlanUpdateRequest": {
+        "additionalProperties": false,
+        "description": "Revisioned metadata and nutrient targets for a Nutrition Template or Client Nutrition Plan.",
+        "example": {
+          "expected_revision": 3,
+          "name": "Updated Cut Block",
+          "target_calories": 1800
+        },
+        "properties": {
+          "description": {
+            "maxLength": 5000,
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "end_date": {
+            "format": "date",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "name": {
+            "maxLength": 255,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "start_date": {
+            "format": "date",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "target_calories": {
+            "minimum": 0,
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "target_carbs_g": {
+            "minimum": 0,
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "target_fat_g": {
+            "minimum": 0,
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "target_fiber_g": {
+            "minimum": 0,
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "target_protein_g": {
+            "minimum": 0,
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "expected_revision"
+        ],
+        "title": "NutritionPlanUpdateRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "WorkbenchProgrammingReason": {
         "discriminator": {
           "mapping": {
@@ -10059,59 +9621,6 @@
         "x-struct": null,
         "x-validate": null
       },
-      "NutritionMealItemRequest": {
-        "additionalProperties": false,
-        "example": {
-          "amount": 1,
-          "food_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-          "position": 0,
-          "unit": "serving"
-        },
-        "properties": {
-          "amount": {
-            "nullable": true,
-            "type": "number",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "food_id": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "position": {
-            "minimum": 0,
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "recipe_id": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "unit": {
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "weight_g": {
-            "nullable": true,
-            "type": "number",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "title": "NutritionMealItemRequest",
-        "type": "object",
-        "x-struct": null,
-        "x-validate": null
-      },
       "FoodLogEntryResponse": {
         "additionalProperties": false,
         "properties": {
@@ -10150,6 +9659,28 @@
         "title": "WorkbenchQuietQueueItem",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchQuietQueueItem",
+        "x-validate": null
+      },
+      "NutritionPlanRevisionRequest": {
+        "additionalProperties": false,
+        "description": "Optimistic revision required by an explicit Nutrition Template or Client Plan lifecycle command.",
+        "example": {
+          "expected_revision": 3
+        },
+        "properties": {
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "expected_revision"
+        ],
+        "title": "NutritionPlanRevisionRequest",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "TrainingSessionSnapshotWorkout": {
@@ -10412,41 +9943,6 @@
         "title": "TrainingMuscleListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingMuscleListResponse",
-        "x-validate": null
-      },
-      "NutritionPlanAssignRequest": {
-        "additionalProperties": false,
-        "example": {
-          "client_id": "0ac4b3bc-e0b6-44ea-ae7a-f48deac42912"
-        },
-        "properties": {
-          "client_id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "end_date": {
-            "format": "date",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "start_date": {
-            "format": "date",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "client_id"
-        ],
-        "title": "NutritionPlanAssignRequest",
-        "type": "object",
-        "x-struct": null,
         "x-validate": null
       },
       "TrainingSessionSnapshotExercise": {
@@ -11797,133 +11293,6 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.LibraryMedia",
         "x-validate": null
       },
-      "NutritionMealItem": {
-        "additionalProperties": false,
-        "properties": {
-          "amount": {
-            "nullable": true,
-            "type": "number",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "food_id": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "inserted_at": {
-            "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "name": {
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "nutrition": {
-            "nullable": true,
-            "properties": {
-              "calories": {
-                "nullable": true,
-                "type": "number",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "carbs_g": {
-                "nullable": true,
-                "type": "number",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "fat_g": {
-                "nullable": true,
-                "type": "number",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "fiber_g": {
-                "nullable": true,
-                "type": "number",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "protein_g": {
-                "nullable": true,
-                "type": "number",
-                "x-struct": null,
-                "x-validate": null
-              }
-            },
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "nutrition_meal_id": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "position": {
-            "minimum": 0,
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "recipe_id": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "unit": {
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "updated_at": {
-            "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "weight_g": {
-            "nullable": true,
-            "type": "number",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "id",
-          "weight_g",
-          "amount",
-          "unit",
-          "position",
-          "recipe_id",
-          "food_id",
-          "inserted_at",
-          "updated_at"
-        ],
-        "title": "NutritionMealItem",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionMealItem",
-        "x-validate": null
-      },
       "MessageResponse": {
         "additionalProperties": false,
         "properties": {
@@ -12552,42 +11921,61 @@
       },
       "NutritionPlan": {
         "additionalProperties": false,
+        "example": {
+          "archived_at": null,
+          "assigned_client_count": 0,
+          "client": null,
+          "client_id": null,
+          "creator_id": "c8e8fe38-d9cc-4506-9514-8527a8b56d68",
+          "day_patterns": [],
+          "description": "Reusable cutting Template.",
+          "end_date": null,
+          "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
+          "inserted_at": "2026-05-30T12:00:00Z",
+          "kind": "template",
+          "lifecycle": null,
+          "name": "Cut Block",
+          "revision": 1,
+          "schedule": {
+            "friday": null,
+            "monday": null,
+            "saturday": null,
+            "sunday": null,
+            "thursday": null,
+            "tuesday": null,
+            "wednesday": null
+          },
+          "source_template_id": null,
+          "start_date": null,
+          "status": "active",
+          "target_calories": 2000,
+          "target_carbs_g": 200,
+          "target_fat_g": 60,
+          "target_fiber_g": 30,
+          "target_protein_g": 150,
+          "updated_at": "2026-05-30T12:00:00Z"
+        },
         "properties": {
+          "archived_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "assigned_client_count": {
-            "description": "Clients this template is currently assigned to (0 for a client's own plan)",
+            "minimum": 0,
             "type": "integer",
             "x-struct": null,
             "x-validate": null
           },
           "client": {
-            "additionalProperties": false,
-            "nullable": true,
-            "properties": {
-              "first_name": {
-                "nullable": true,
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "id": {
-                "format": "uuid",
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "last_name": {
-                "nullable": true,
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NutritionPlanClient"
               }
-            },
-            "required": [
-              "id",
-              "first_name",
-              "last_name"
             ],
-            "type": "object",
+            "nullable": true,
             "x-struct": null,
             "x-validate": null
           },
@@ -12605,9 +11993,9 @@
             "x-struct": null,
             "x-validate": null
           },
-          "days": {
+          "day_patterns": {
             "items": {
-              "$ref": "#/components/schemas/NutritionPlanDay"
+              "$ref": "#/components/schemas/NutritionDayPattern"
             },
             "type": "array",
             "x-struct": null,
@@ -12638,11 +12026,25 @@
             "x-struct": null,
             "x-validate": null
           },
-          "meals": {
-            "items": {
-              "$ref": "#/components/schemas/NutritionMeal"
-            },
-            "type": "array",
+          "kind": {
+            "enum": [
+              "template",
+              "client_plan"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "lifecycle": {
+            "enum": [
+              "incomplete",
+              "upcoming",
+              "current",
+              "ended",
+              "archived"
+            ],
+            "nullable": true,
+            "type": "string",
             "x-struct": null,
             "x-validate": null
           },
@@ -12650,6 +12052,15 @@
             "type": "string",
             "x-struct": null,
             "x-validate": null
+          },
+          "revision": {
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/NutritionWeekSchedule"
           },
           "source_template_id": {
             "format": "uuid",
@@ -12671,16 +12082,6 @@
               "archived"
             ],
             "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "tags": {
-            "items": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            },
-            "type": "array",
             "x-struct": null,
             "x-validate": null
           },
@@ -12719,28 +12120,31 @@
             "type": "string",
             "x-struct": null,
             "x-validate": null
-          },
-          "weekday_assignments": {
-            "additionalProperties": {
-              "format": "uuid",
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            },
-            "description": "Weekday name -> nutrition plan day id",
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
           }
         },
         "required": [
           "id",
+          "kind",
           "name",
           "description",
-          "tags",
+          "revision",
+          "archived_at",
           "status",
+          "lifecycle",
+          "assigned_client_count",
+          "target_calories",
+          "target_protein_g",
+          "target_carbs_g",
+          "target_fat_g",
+          "target_fiber_g",
           "start_date",
           "end_date",
+          "client_id",
+          "client",
+          "creator_id",
+          "source_template_id",
+          "day_patterns",
+          "schedule",
           "inserted_at",
           "updated_at"
         ],
@@ -12839,46 +12243,6 @@
         "title": "WeightEntryResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WeightEntryResponse",
-        "x-validate": null
-      },
-      "NutritionDayMealCreateRequest": {
-        "additionalProperties": false,
-        "description": "Places a meal on a day's slot. Give exactly one of `nutrition_meal_id` (place an existing meal of this plan) or `name` (create a new meal in the plan and place it).",
-        "properties": {
-          "meal_slot": {
-            "enum": [
-              "breakfast",
-              "morning_snack",
-              "lunch",
-              "afternoon_snack",
-              "dinner",
-              "evening_snack"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "name": {
-            "maxLength": 255,
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "nutrition_meal_id": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "meal_slot"
-        ],
-        "title": "NutritionDayMealCreateRequest",
-        "type": "object",
-        "x-struct": null,
         "x-validate": null
       },
       "RecipeResponse": {
@@ -15877,7 +15241,7 @@
     "/v1/coach/nutrition-plans": {
       "get": {
         "callbacks": {},
-        "description": "Lists nutrition plan templates in the authenticated business.",
+        "description": "Lists reusable Nutrition Templates from the authenticated business.",
         "operationId": "listNutritionPlans",
         "parameters": [
           {
@@ -15892,7 +15256,7 @@
             }
           },
           {
-            "description": "Page size (default 20, max 20)",
+            "description": "Page size (default 20, max 100)",
             "in": "query",
             "name": "limit",
             "required": false,
@@ -15914,16 +15278,12 @@
             }
           },
           {
-            "description": "Only nutrition plans with this status",
+            "description": "Filter by whether the Nutrition Template is archived",
             "in": "query",
-            "name": "status",
+            "name": "archived",
             "required": false,
             "schema": {
-              "enum": [
-                "active",
-                "archived"
-              ],
-              "type": "string",
+              "type": "boolean",
               "x-struct": null,
               "x-validate": null
             }
@@ -15938,7 +15298,7 @@
                 }
               }
             },
-            "description": "Nutrition plans"
+            "description": "Nutrition Templates"
           },
           "401": {
             "content": {
@@ -15956,25 +15316,25 @@
             "bearerAuth": []
           }
         ],
-        "summary": "List nutrition plans",
+        "summary": "List Nutrition Templates",
         "tags": [
           "coach nutrition plans"
         ]
       },
       "post": {
         "callbacks": {},
-        "description": "Creates a nutrition plan template in the authenticated business.",
+        "description": "Creates a reusable Nutrition Template with one empty Everyday Day Pattern assigned to every weekday.",
         "operationId": "createNutritionPlan",
         "parameters": [],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NutritionPlanRequest"
+                "$ref": "#/components/schemas/NutritionPlanCreateRequest"
               }
             }
           },
-          "description": "Nutrition plan request",
+          "description": "Nutrition Template create request",
           "required": true
         },
         "responses": {
@@ -15986,7 +15346,7 @@
                 }
               }
             },
-            "description": "Nutrition plan created"
+            "description": "Nutrition Template created"
           },
           "401": {
             "content": {
@@ -16014,7 +15374,7 @@
             "bearerAuth": []
           }
         ],
-        "summary": "Create nutrition plan",
+        "summary": "Create a Nutrition Template",
         "tags": [
           "coach nutrition plans"
         ]
@@ -16400,88 +15760,6 @@
         ]
       }
     },
-    "/v1/coach/nutrition-meals/{meal_id}/items": {
-      "post": {
-        "callbacks": {},
-        "description": "Adds one or more food/recipe items to a meal in a single transaction, in the order given.",
-        "operationId": "createMealItems",
-        "parameters": [
-          {
-            "description": "Meal id",
-            "in": "path",
-            "name": "meal_id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NutritionMealItemsCreateRequest"
-              }
-            }
-          },
-          "description": "Meal items request",
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NutritionMealItemListResponse"
-                }
-              }
-            },
-            "description": "Meal items created"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Create meal items",
-        "tags": [
-          "coach meal items"
-        ]
-      }
-    },
     "/v1/client/nutrition-food-log-entries/log-planned-item": {
       "post": {
         "callbacks": {},
@@ -16827,6 +16105,98 @@
         "summary": "List client recipes",
         "tags": [
           "client recipes"
+        ]
+      }
+    },
+    "/v1/coach/nutrition-plans/{id}/restore": {
+      "post": {
+        "callbacks": {},
+        "description": "Restores a revisioned Nutrition Template or authorized Client Nutrition Plan.",
+        "operationId": "restoreNutritionPlan",
+        "parameters": [
+          {
+            "description": "Nutrition Template or Client Plan id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NutritionPlanRevisionRequest"
+              }
+            }
+          },
+          "description": "Expected revision",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutritionPlanResponse"
+                }
+              }
+            },
+            "description": "Nutrition Template or Client Plan restored"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaleRevisionError"
+                }
+              }
+            },
+            "description": "Stale revision"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Restore a Nutrition Template or visible Client Plan",
+        "tags": [
+          "coach nutrition plans"
         ]
       }
     },
@@ -17218,77 +16588,6 @@
         "summary": "Get (or create) a client's conversation",
         "tags": [
           "coach conversations"
-        ]
-      }
-    },
-    "/v1/coach/nutrition-plans/{plan_id}/days": {
-      "post": {
-        "callbacks": {},
-        "operationId": "createNutritionPlanDay",
-        "parameters": [
-          {
-            "description": "",
-            "in": "path",
-            "name": "plan_id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NutritionPlanDayCreateRequest"
-              }
-            }
-          },
-          "description": "Day",
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NutritionPlanDayResponse"
-                }
-              }
-            },
-            "description": "Day"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Add a day to a nutrition plan",
-        "tags": [
-          "coach nutrition plan days"
         ]
       }
     },
@@ -17947,241 +17246,6 @@
         ]
       }
     },
-    "/v1/coach/nutrition-days/{id}": {
-      "delete": {
-        "callbacks": {},
-        "description": "The last remaining day of a plan cannot be deleted. Its weekdays move to the first remaining day.",
-        "operationId": "deleteNutritionPlanDay",
-        "parameters": [
-          {
-            "description": "",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Day deleted"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Last day"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Delete a nutrition plan day",
-        "tags": [
-          "coach nutrition plan days"
-        ]
-      },
-      "patch": {
-        "callbacks": {},
-        "operationId": "updateNutritionPlanDay",
-        "parameters": [
-          {
-            "description": "",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NutritionPlanDayUpdateRequest"
-              }
-            }
-          },
-          "description": "Day",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NutritionPlanDayResponse"
-                }
-              }
-            },
-            "description": "Day"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Rename a nutrition plan day",
-        "tags": [
-          "coach nutrition plan days"
-        ]
-      }
-    },
-    "/v1/coach/nutrition-days/{day_id}/meals": {
-      "post": {
-        "callbacks": {},
-        "description": "Creates a new plan meal (`name`) or places an existing one (`nutrition_meal_id`) — exactly one.",
-        "operationId": "addNutritionDayMeal",
-        "parameters": [
-          {
-            "description": "",
-            "in": "path",
-            "name": "day_id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NutritionDayMealCreateRequest"
-              }
-            }
-          },
-          "description": "Day meal",
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NutritionDayMealWithMealResponse"
-                }
-              }
-            },
-            "description": "Day meal"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Too many options"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Place a meal on a plan day's slot",
-        "tags": [
-          "coach nutrition plan days"
-        ]
-      }
-    },
     "/v1/client/training-sessions/{session_id}/performed-sets": {
       "post": {
         "callbacks": {},
@@ -18572,88 +17636,6 @@
         "summary": "List programming work",
         "tags": [
           "coach workbench"
-        ]
-      }
-    },
-    "/v1/coach/nutrition-plans/{plan_id}/schedule": {
-      "put": {
-        "callbacks": {},
-        "description": "Takes the full Mon..Sun map; every weekday must point at a day of this plan.",
-        "operationId": "updateNutritionPlanSchedule",
-        "parameters": [
-          {
-            "description": "",
-            "in": "path",
-            "name": "plan_id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NutritionScheduleRequest"
-              }
-            }
-          },
-          "description": "Schedule",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NutritionScheduleResponse"
-                }
-              }
-            },
-            "description": "Schedule"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Replace a nutrition plan's weekday schedule",
-        "tags": [
-          "coach nutrition plan days"
         ]
       }
     },
@@ -19085,88 +18067,6 @@
         "summary": "List client training plans",
         "tags": [
           "client training plans"
-        ]
-      }
-    },
-    "/v1/coach/nutrition-plans/{id}/assign": {
-      "post": {
-        "callbacks": {},
-        "description": "Copies a nutrition plan template to a client.",
-        "operationId": "assignNutritionPlan",
-        "parameters": [
-          {
-            "description": "Nutrition plan id",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NutritionPlanAssignRequest"
-              }
-            }
-          },
-          "description": "Nutrition plan assign request",
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NutritionPlanResponse"
-                }
-              }
-            },
-            "description": "Nutrition plan assigned"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Assign nutrition plan",
-        "tags": [
-          "coach nutrition plans"
         ]
       }
     },
@@ -19984,7 +18884,7 @@
     "/v1/coach/nutrition-plans/{id}": {
       "delete": {
         "callbacks": {},
-        "description": "Deletes a nutrition plan.",
+        "description": "Deletes one revisioned Nutrition Template or authorized Client Nutrition Plan.",
         "operationId": "deleteNutritionPlan",
         "parameters": [
           {
@@ -19997,11 +18897,23 @@
               "x-struct": null,
               "x-validate": null
             }
+          },
+          {
+            "description": "Revision observed by the deleting client",
+            "in": "query",
+            "name": "expected_revision",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
           }
         ],
         "responses": {
           "204": {
-            "description": "Nutrition plan deleted"
+            "description": "Nutrition Template or Client Plan deleted"
           },
           "401": {
             "content": {
@@ -20022,6 +18934,16 @@
               }
             },
             "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaleRevisionError"
+                }
+              }
+            },
+            "description": "Stale revision"
           }
         },
         "security": [
@@ -20029,14 +18951,14 @@
             "bearerAuth": []
           }
         ],
-        "summary": "Delete nutrition plan",
+        "summary": "Delete a Nutrition Template or visible Client Plan",
         "tags": [
           "coach nutrition plans"
         ]
       },
       "get": {
         "callbacks": {},
-        "description": "Loads one nutrition plan with meals and scheduled plan items.",
+        "description": "Loads one Nutrition Template or authorized Client Nutrition Plan.",
         "operationId": "getNutritionPlan",
         "parameters": [
           {
@@ -20060,7 +18982,7 @@
                 }
               }
             },
-            "description": "Nutrition plan"
+            "description": "Nutrition Template or Client Plan"
           },
           "401": {
             "content": {
@@ -20088,14 +19010,14 @@
             "bearerAuth": []
           }
         ],
-        "summary": "Get nutrition plan",
+        "summary": "Get a Nutrition Template or visible Client Plan",
         "tags": [
           "coach nutrition plans"
         ]
       },
       "patch": {
         "callbacks": {},
-        "description": "Updates a nutrition plan.",
+        "description": "Updates revisioned metadata and nutrient targets. Relationship ids and tenant ownership are never accepted.",
         "operationId": "updateNutritionPlan",
         "parameters": [
           {
@@ -20114,11 +19036,11 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NutritionPlanRequest"
+                "$ref": "#/components/schemas/NutritionPlanUpdateRequest"
               }
             }
           },
-          "description": "Nutrition plan request",
+          "description": "Nutrition Template or Client Plan update request",
           "required": true
         },
         "responses": {
@@ -20130,7 +19052,7 @@
                 }
               }
             },
-            "description": "Nutrition plan updated"
+            "description": "Nutrition Template or Client Plan updated"
           },
           "401": {
             "content": {
@@ -20152,6 +19074,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaleRevisionError"
+                }
+              }
+            },
+            "description": "Stale revision"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -20168,7 +19100,7 @@
             "bearerAuth": []
           }
         ],
-        "summary": "Update nutrition plan",
+        "summary": "Update a Nutrition Template or visible Client Plan",
         "tags": [
           "coach nutrition plans"
         ]
@@ -20531,6 +19463,98 @@
         "summary": "Get client nutrition plan",
         "tags": [
           "client nutrition plans"
+        ]
+      }
+    },
+    "/v1/coach/nutrition-plans/{id}/archive": {
+      "post": {
+        "callbacks": {},
+        "description": "Archives a revisioned Nutrition Template or authorized Client Nutrition Plan without deleting it.",
+        "operationId": "archiveNutritionPlan",
+        "parameters": [
+          {
+            "description": "Nutrition Template or Client Plan id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NutritionPlanRevisionRequest"
+              }
+            }
+          },
+          "description": "Expected revision",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutritionPlanResponse"
+                }
+              }
+            },
+            "description": "Nutrition Template or Client Plan archived"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaleRevisionError"
+                }
+              }
+            },
+            "description": "Stale revision"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Archive a Nutrition Template or visible Client Plan",
+        "tags": [
+          "coach nutrition plans"
         ]
       }
     },
@@ -21187,140 +20211,6 @@
         ]
       }
     },
-    "/v1/coach/nutrition-meals/{id}": {
-      "delete": {
-        "callbacks": {},
-        "description": "Deletes a meal.",
-        "operationId": "deleteMeal",
-        "parameters": [
-          {
-            "description": "Meal id",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Meal deleted"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Delete meal",
-        "tags": [
-          "coach meals"
-        ]
-      },
-      "patch": {
-        "callbacks": {},
-        "description": "Updates a meal.",
-        "operationId": "updateMeal",
-        "parameters": [
-          {
-            "description": "Meal id",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NutritionMealRequest"
-              }
-            }
-          },
-          "description": "Meal request",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NutritionMealResponse"
-                }
-              }
-            },
-            "description": "Meal updated"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Update meal",
-        "tags": [
-          "coach meals"
-        ]
-      }
-    },
     "/v1/client/training-plans/{id}": {
       "get": {
         "callbacks": {},
@@ -21871,138 +20761,6 @@
         "summary": "Replace a complete Prescription",
         "tags": [
           "coach training plans"
-        ]
-      }
-    },
-    "/v1/coach/nutrition-day-meals/{id}": {
-      "delete": {
-        "callbacks": {},
-        "operationId": "removeNutritionSlotOption",
-        "parameters": [
-          {
-            "description": "",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Option deleted"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Remove a meal option from a plan day's slot",
-        "tags": [
-          "coach nutrition plan days"
-        ]
-      },
-      "patch": {
-        "callbacks": {},
-        "operationId": "moveNutritionSlotOption",
-        "parameters": [
-          {
-            "description": "",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NutritionSlotOptionMoveRequest"
-              }
-            }
-          },
-          "description": "Option",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NutritionDayMealResponse"
-                }
-              }
-            },
-            "description": "Option"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Too many options"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Move a meal option to another slot or position on the same day",
-        "tags": [
-          "coach nutrition plan days"
         ]
       }
     },
@@ -23141,140 +21899,6 @@
         ]
       }
     },
-    "/v1/coach/nutrition-meal-items/{id}": {
-      "delete": {
-        "callbacks": {},
-        "description": "Deletes a meal item.",
-        "operationId": "deleteMealItem",
-        "parameters": [
-          {
-            "description": "Meal item id",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Meal item deleted"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Delete meal item",
-        "tags": [
-          "coach meal items"
-        ]
-      },
-      "patch": {
-        "callbacks": {},
-        "description": "Updates a meal item amount, unit, weight, or position.",
-        "operationId": "updateMealItem",
-        "parameters": [
-          {
-            "description": "Meal item id",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NutritionMealItemRequest"
-              }
-            }
-          },
-          "description": "Meal item request",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NutritionMealItemResponse"
-                }
-              }
-            },
-            "description": "Meal item updated"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Update meal item",
-        "tags": [
-          "coach meal items"
-        ]
-      }
-    },
     "/v1/coach/team/{id}/reactivate": {
       "post": {
         "callbacks": {},
@@ -23753,11 +22377,11 @@
     "/v1/coach/nutrition-plans/{id}/duplicate": {
       "post": {
         "callbacks": {},
-        "description": "Copies a nutrition plan template.",
+        "description": "Copies an active Nutrition Template, including its empty Day Pattern and Week Schedule, using the expected source revision.",
         "operationId": "duplicateNutritionPlan",
         "parameters": [
           {
-            "description": "Nutrition plan id",
+            "description": "Nutrition Template id",
             "in": "path",
             "name": "id",
             "required": true,
@@ -23768,6 +22392,17 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NutritionPlanRevisionRequest"
+              }
+            }
+          },
+          "description": "Expected source revision",
+          "required": true
+        },
         "responses": {
           "201": {
             "content": {
@@ -23777,7 +22412,7 @@
                 }
               }
             },
-            "description": "Nutrition plan duplicated"
+            "description": "Nutrition Template duplicated"
           },
           "401": {
             "content": {
@@ -23799,6 +22434,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaleRevisionError"
+                }
+              }
+            },
+            "description": "Stale revision"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -23815,7 +22460,7 @@
             "bearerAuth": []
           }
         ],
-        "summary": "Duplicate nutrition plan",
+        "summary": "Duplicate a Nutrition Template",
         "tags": [
           "coach nutrition plans"
         ]

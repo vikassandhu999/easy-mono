@@ -1384,8 +1384,9 @@ defmodule Easy.MealLogs do
 
     Plan
     |> Plan.for_client(business_id, client_id)
-    |> Plan.for_status(:active)
-    |> where([plan], is_nil(plan.start_date) or plan.start_date <= ^to_date)
+    |> Plan.for_kind(:client_plan)
+    |> Plan.for_archived(false)
+    |> where([plan], not is_nil(plan.start_date) and plan.start_date <= ^to_date)
     |> where([plan], is_nil(plan.end_date) or plan.end_date >= ^from_date)
     |> Plan.newest()
     |> preload(days: ^PlanDay.include_day_meals(PlanDay.by_position(), business_id))

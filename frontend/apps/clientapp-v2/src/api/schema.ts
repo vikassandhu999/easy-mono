@@ -1033,14 +1033,6 @@ export interface components {
       /** Format: date-time */
       updated_at: string;
     };
-    /** NutritionDayMealResponse */
-    NutritionDayMealResponse: {
-      data: components['schemas']['NutritionDayMeal'];
-    };
-    /** NutritionPlanDayUpdateRequest */
-    NutritionPlanDayUpdateRequest: {
-      name: string;
-    };
     /** ChatMessage */
     ChatMessage: {
       /** @default [] */
@@ -1066,10 +1058,6 @@ export interface components {
       download_url_expires_at: string;
       /** Format: uuid */
       id: string;
-    };
-    /** NutritionMealResponse */
-    NutritionMealResponse: {
-      data: components['schemas']['NutritionMeal'];
     };
     /** CoachClientTrainingPlan */
     CoachClientTrainingPlan: components['schemas']['TrainingPlan'] & {
@@ -1189,30 +1177,6 @@ export interface components {
       /** Format: date-time */
       updated_at?: string;
     };
-    /**
-     * NutritionPlanRequest
-     * @example {
-     *       "name": "Fat Loss Plan",
-     *       "target_calories": 2200,
-     *       "target_protein_g": 180
-     *     }
-     */
-    NutritionPlanRequest: {
-      description?: string | null;
-      /** Format: date */
-      end_date?: string | null;
-      name: string;
-      /** Format: date */
-      start_date?: string | null;
-      /** @enum {string} */
-      status?: 'active' | 'archived';
-      tags?: string[];
-      target_calories?: number | null;
-      target_carbs_g?: number | null;
-      target_fat_g?: number | null;
-      target_fiber_g?: number | null;
-      target_protein_g?: number | null;
-    };
     /** BillingCheckoutResponse */
     BillingCheckoutResponse: {
       data: components['schemas']['BillingCheckoutResult'];
@@ -1269,19 +1233,6 @@ export interface components {
       media_id?: string | null;
       muscle_ids?: string[];
       name?: string;
-    };
-    /** NutritionDayMealWithMeal */
-    NutritionDayMealWithMeal: {
-      /** Format: uuid */
-      id: string;
-      meal: components['schemas']['NutritionMeal'];
-      /** @enum {string} */
-      meal_slot: 'breakfast' | 'morning_snack' | 'lunch' | 'afternoon_snack' | 'dinner' | 'evening_snack';
-      /** Format: uuid */
-      nutrition_meal_id: string;
-      /** Format: uuid */
-      nutrition_plan_day_id?: string;
-      position: number;
     };
     /** PublicLandingPage */
     PublicLandingPage: {
@@ -1360,14 +1311,6 @@ export interface components {
       code: 'reply_needed';
       /** Format: date-time */
       waiting_since: string;
-    };
-    /** NutritionMealItemListResponse */
-    NutritionMealItemListResponse: {
-      data: components['schemas']['NutritionMealItem'][];
-    };
-    /** NutritionPlanDayCreateRequest */
-    NutritionPlanDayCreateRequest: {
-      name?: string | null;
     };
     /** TrainingEquipmentListResponse */
     TrainingEquipmentListResponse: {
@@ -1511,29 +1454,6 @@ export interface components {
       /** @enum {string} */
       status: 'invited' | 'active' | 'inactive';
     };
-    /** NutritionMeal */
-    NutritionMeal: {
-      /** Format: uuid */
-      creator_id?: string | null;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      meal_items: components['schemas']['NutritionMealItem'][];
-      name: string;
-      notes?: string | null;
-      nutrition?: {
-        calories?: number | null;
-        carbs_g?: number | null;
-        fat_g?: number | null;
-        fiber_g?: number | null;
-        protein_g?: number | null;
-      } | null;
-      /** Format: uuid */
-      nutrition_plan_id?: string | null;
-      /** Format: date-time */
-      updated_at: string;
-    };
     /**
      * TrainingExercise
      * @example {
@@ -1611,6 +1531,23 @@ export interface components {
       /** Format: date-time */
       submitted_at: string;
     };
+    /** NutritionWeekSchedule */
+    NutritionWeekSchedule: {
+      /** Format: uuid */
+      friday: string | null;
+      /** Format: uuid */
+      monday: string | null;
+      /** Format: uuid */
+      saturday: string | null;
+      /** Format: uuid */
+      sunday: string | null;
+      /** Format: uuid */
+      thursday: string | null;
+      /** Format: uuid */
+      tuesday: string | null;
+      /** Format: uuid */
+      wednesday: string | null;
+    };
     /** NutritionDayListResponse */
     NutritionDayListResponse: {
       data: components['schemas']['NutritionDay'][];
@@ -1656,20 +1593,6 @@ export interface components {
     /** NutritionPlanResponse */
     NutritionPlanResponse: {
       data: components['schemas']['NutritionPlan'];
-    };
-    /**
-     * NutritionMealItemsCreateRequest
-     * @example {
-     *       "items": [
-     *         {
-     *           "food_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-     *           "weight_g": 120
-     *         }
-     *       ]
-     *     }
-     */
-    NutritionMealItemsCreateRequest: {
-      items: components['schemas']['NutritionMealItemRequest'][];
     };
     /** BusinessResponse */
     BusinessResponse: {
@@ -1724,23 +1647,6 @@ export interface components {
       /** Format: date-time */
       updated_at: string;
     };
-    /** NutritionSchedule */
-    NutritionSchedule: {
-      /** Format: uuid */
-      friday: string;
-      /** Format: uuid */
-      monday: string;
-      /** Format: uuid */
-      saturday: string;
-      /** Format: uuid */
-      sunday: string;
-      /** Format: uuid */
-      thursday: string;
-      /** Format: uuid */
-      tuesday: string;
-      /** Format: uuid */
-      wednesday: string;
-    };
     /** BillingEvent */
     BillingEvent: {
       /**
@@ -1784,18 +1690,6 @@ export interface components {
     WorkbenchProgrammingQueueItem: {
       client: components['schemas']['Client'];
       reasons: components['schemas']['WorkbenchProgrammingReason'][];
-    };
-    /** NutritionDayMeal */
-    NutritionDayMeal: {
-      /** Format: uuid */
-      id: string;
-      /** @enum {string} */
-      meal_slot: 'breakfast' | 'morning_snack' | 'lunch' | 'afternoon_snack' | 'dinner' | 'evening_snack';
-      /** Format: uuid */
-      nutrition_meal_id: string;
-      /** Format: uuid */
-      nutrition_plan_day_id?: string;
-      position: number;
     };
     /** TrainingSessionPrescriptionSnapshot */
     TrainingSessionPrescriptionSnapshot: {
@@ -2410,10 +2304,6 @@ export interface components {
       /** @enum {string} */
       status?: 'active' | 'archived';
     };
-    /** NutritionDayMealWithMealResponse */
-    NutritionDayMealWithMealResponse: {
-      data: components['schemas']['NutritionDayMealWithMeal'];
-    };
     /**
      * WeightEntryRequest
      * @example {
@@ -2870,6 +2760,13 @@ export interface components {
       weekdays: ('monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday')[];
       workout_elements: components['schemas']['TrainingPlanWorkoutExercise'][];
     };
+    /** NutritionPlanClient */
+    NutritionPlanClient: {
+      first_name: string | null;
+      /** Format: uuid */
+      id: string;
+      last_name: string | null;
+    };
     /** Client */
     Client: {
       /** Format: uuid */
@@ -2927,27 +2824,10 @@ export interface components {
       /** Format: date */
       due_on: string;
     };
-    /** NutritionMealItemResponse */
-    NutritionMealItemResponse: {
-      data: components['schemas']['NutritionMealItem'];
-    };
     /** RecipeListResponse */
     RecipeListResponse: {
       count: number;
       data: components['schemas']['Recipe'][];
-    };
-    /** NutritionPlanDay */
-    NutritionPlanDay: {
-      day_meals: components['schemas']['NutritionDayMeal'][];
-      /** Format: uuid */
-      id: string;
-      name: string;
-      position: number;
-      weekdays: ('monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday')[];
-    };
-    /** NutritionPlanDayResponse */
-    NutritionPlanDayResponse: {
-      data: components['schemas']['NutritionPlanDay'];
     };
     /**
      * TrainerAcceptInviteVerifyRequest
@@ -3148,15 +3028,6 @@ export interface components {
     ClientResponse: {
       data: components['schemas']['Client'];
     };
-    /**
-     * NutritionSlotOptionMoveRequest
-     * @description Re-slots and/or repositions a day meal. Omitted `position` appends to the target slot.
-     */
-    NutritionSlotOptionMoveRequest: {
-      /** @enum {string} */
-      meal_slot?: 'breakfast' | 'morning_snack' | 'lunch' | 'afternoon_snack' | 'dinner' | 'evening_snack';
-      position?: number;
-    };
     /** WorkbenchCheckInSubmission */
     WorkbenchCheckInSubmission: {
       /** Format: uuid */
@@ -3205,26 +3076,6 @@ export interface components {
       name: string;
       price_display?: string | null;
       promise?: string | null;
-    };
-    /** NutritionScheduleResponse */
-    NutritionScheduleResponse: {
-      /** NutritionSchedule */
-      data: {
-        /** Format: uuid */
-        friday: string;
-        /** Format: uuid */
-        monday: string;
-        /** Format: uuid */
-        saturday: string;
-        /** Format: uuid */
-        sunday: string;
-        /** Format: uuid */
-        thursday: string;
-        /** Format: uuid */
-        tuesday: string;
-        /** Format: uuid */
-        wednesday: string;
-      };
     };
     /** TrainingPerformedSet */
     TrainingPerformedSet: {
@@ -3315,6 +3166,25 @@ export interface components {
       phone?: string | null;
       required_services?: components['schemas']['RequiredServices'];
     };
+    /**
+     * NutritionPlanCreateRequest
+     * @description Request body for creating a reusable Nutrition Template.
+     * @example {
+     *       "description": "Reusable cutting Template.",
+     *       "name": "Cut Block",
+     *       "target_calories": 2000,
+     *       "target_protein_g": 150
+     *     }
+     */
+    NutritionPlanCreateRequest: {
+      description?: string | null;
+      name: string;
+      target_calories?: number | null;
+      target_carbs_g?: number | null;
+      target_fat_g?: number | null;
+      target_fiber_g?: number | null;
+      target_protein_g?: number | null;
+    };
     /** NutritionDayTargets */
     NutritionDayTargets: {
       calories?: number | null;
@@ -3322,6 +3192,20 @@ export interface components {
       fat_g?: number | null;
       fiber_g?: number | null;
       protein_g?: number | null;
+    };
+    /** NutritionDayPattern */
+    NutritionDayPattern: {
+      /** Format: uuid */
+      id: string;
+      /** Format: date-time */
+      inserted_at: string;
+      name: string;
+      /** Format: uuid */
+      nutrition_plan_id: string;
+      position: number;
+      /** Format: date-time */
+      updated_at: string;
+      weekdays: ('monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday')[];
     };
     /** TrainingSchedule */
     TrainingSchedule: {
@@ -3357,26 +3241,6 @@ export interface components {
     /** ClientTrainingPlanResponse */
     ClientTrainingPlanResponse: {
       data: components['schemas']['ClientTrainingPlan'];
-    };
-    /**
-     * NutritionScheduleRequest
-     * @description The plan's full weekday map. Every weekday must point at a day of this plan.
-     */
-    NutritionScheduleRequest: {
-      /** Format: uuid */
-      friday: string;
-      /** Format: uuid */
-      monday: string;
-      /** Format: uuid */
-      saturday: string;
-      /** Format: uuid */
-      sunday: string;
-      /** Format: uuid */
-      thursday: string;
-      /** Format: uuid */
-      tuesday: string;
-      /** Format: uuid */
-      wednesday: string;
     };
     /**
      * QueueSnoozeRequest
@@ -3440,16 +3304,6 @@ export interface components {
       email: string;
       invitation_token: string;
       otp: string;
-    };
-    /**
-     * NutritionMealRequest
-     * @example {
-     *       "name": "Breakfast"
-     *     }
-     */
-    NutritionMealRequest: {
-      name: string;
-      notes?: string | null;
     };
     /** ClientProfileFormAssignment */
     ClientProfileFormAssignment: {
@@ -3532,6 +3386,29 @@ export interface components {
       count: number;
       data: components['schemas']['WorkbenchQuietQueueItem'][];
     };
+    /**
+     * NutritionPlanUpdateRequest
+     * @description Revisioned metadata and nutrient targets for a Nutrition Template or Client Nutrition Plan.
+     * @example {
+     *       "expected_revision": 3,
+     *       "name": "Updated Cut Block",
+     *       "target_calories": 1800
+     *     }
+     */
+    NutritionPlanUpdateRequest: {
+      description?: string | null;
+      /** Format: date */
+      end_date?: string | null;
+      expected_revision: number;
+      name?: string;
+      /** Format: date */
+      start_date?: string | null;
+      target_calories?: number | null;
+      target_carbs_g?: number | null;
+      target_fat_g?: number | null;
+      target_fiber_g?: number | null;
+      target_protein_g?: number | null;
+    };
     /** WorkbenchProgrammingReason */
     WorkbenchProgrammingReason:
       | components['schemas']['ServiceNeverProgrammedReason']
@@ -3569,25 +3446,6 @@ export interface components {
        */
       snapshot_exercise_ref?: string | null;
     };
-    /**
-     * NutritionMealItemRequest
-     * @example {
-     *       "amount": 1,
-     *       "food_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-     *       "position": 0,
-     *       "unit": "serving"
-     *     }
-     */
-    NutritionMealItemRequest: {
-      amount?: number | null;
-      /** Format: uuid */
-      food_id?: string | null;
-      position?: number;
-      /** Format: uuid */
-      recipe_id?: string | null;
-      unit?: string | null;
-      weight_g?: number | null;
-    };
     /** FoodLogEntryResponse */
     FoodLogEntryResponse: {
       data: components['schemas']['FoodLogEntry'];
@@ -3596,6 +3454,16 @@ export interface components {
     WorkbenchQuietQueueItem: {
       client: components['schemas']['Client'];
       reasons: components['schemas']['MissedCheckInReason'][];
+    };
+    /**
+     * NutritionPlanRevisionRequest
+     * @description Optimistic revision required by an explicit Nutrition Template or Client Plan lifecycle command.
+     * @example {
+     *       "expected_revision": 3
+     *     }
+     */
+    NutritionPlanRevisionRequest: {
+      expected_revision: number;
     };
     /** TrainingSessionSnapshotWorkout */
     TrainingSessionSnapshotWorkout: {
@@ -3665,20 +3533,6 @@ export interface components {
     /** TrainingMuscleListResponse */
     TrainingMuscleListResponse: {
       data: components['schemas']['TrainingMuscle'][];
-    };
-    /**
-     * NutritionPlanAssignRequest
-     * @example {
-     *       "client_id": "0ac4b3bc-e0b6-44ea-ae7a-f48deac42912"
-     *     }
-     */
-    NutritionPlanAssignRequest: {
-      /** Format: uuid */
-      client_id: string;
-      /** Format: date */
-      end_date?: string | null;
-      /** Format: date */
-      start_date?: string | null;
     };
     /** TrainingSessionSnapshotExercise */
     TrainingSessionSnapshotExercise: {
@@ -4082,33 +3936,6 @@ export interface components {
       /** Format: uri */
       url: string | null;
     };
-    /** NutritionMealItem */
-    NutritionMealItem: {
-      amount: number | null;
-      /** Format: uuid */
-      food_id: string | null;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      name?: string | null;
-      nutrition?: {
-        calories?: number | null;
-        carbs_g?: number | null;
-        fat_g?: number | null;
-        fiber_g?: number | null;
-        protein_g?: number | null;
-      } | null;
-      /** Format: uuid */
-      nutrition_meal_id?: string | null;
-      position: number;
-      /** Format: uuid */
-      recipe_id: string | null;
-      unit: string | null;
-      /** Format: date-time */
-      updated_at: string;
-      weight_g: number | null;
-    };
     /** MessageResponse */
     MessageResponse: {
       message: string;
@@ -4262,21 +4089,53 @@ export interface components {
       last_name?: string | null;
       status: string;
     };
-    /** NutritionPlan */
+    /**
+     * NutritionPlan
+     * @example {
+     *       "archived_at": null,
+     *       "assigned_client_count": 0,
+     *       "client": null,
+     *       "client_id": null,
+     *       "creator_id": "c8e8fe38-d9cc-4506-9514-8527a8b56d68",
+     *       "day_patterns": [],
+     *       "description": "Reusable cutting Template.",
+     *       "end_date": null,
+     *       "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
+     *       "inserted_at": "2026-05-30T12:00:00Z",
+     *       "kind": "template",
+     *       "lifecycle": null,
+     *       "name": "Cut Block",
+     *       "revision": 1,
+     *       "schedule": {
+     *         "friday": null,
+     *         "monday": null,
+     *         "saturday": null,
+     *         "sunday": null,
+     *         "thursday": null,
+     *         "tuesday": null,
+     *         "wednesday": null
+     *       },
+     *       "source_template_id": null,
+     *       "start_date": null,
+     *       "status": "active",
+     *       "target_calories": 2000,
+     *       "target_carbs_g": 200,
+     *       "target_fat_g": 60,
+     *       "target_fiber_g": 30,
+     *       "target_protein_g": 150,
+     *       "updated_at": "2026-05-30T12:00:00Z"
+     *     }
+     */
     NutritionPlan: {
-      /** @description Clients this template is currently assigned to (0 for a client's own plan) */
-      assigned_client_count?: number;
-      client?: {
-        first_name: string | null;
-        /** Format: uuid */
-        id: string;
-        last_name: string | null;
-      } | null;
+      /** Format: date-time */
+      archived_at: string | null;
+      assigned_client_count: number;
+      client: components['schemas']['NutritionPlanClient'] | null;
       /** Format: uuid */
-      client_id?: string | null;
+      client_id: string | null;
       /** Format: uuid */
-      creator_id?: string | null;
-      days?: components['schemas']['NutritionPlanDay'][];
+      creator_id: string | null;
+      day_patterns: components['schemas']['NutritionDayPattern'][];
       description: string | null;
       /** Format: date */
       end_date: string | null;
@@ -4284,26 +4143,26 @@ export interface components {
       id: string;
       /** Format: date-time */
       inserted_at: string;
-      meals?: components['schemas']['NutritionMeal'][];
+      /** @enum {string} */
+      kind: 'template' | 'client_plan';
+      /** @enum {string|null} */
+      lifecycle: 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived' | null;
       name: string;
+      revision: number;
+      schedule: components['schemas']['NutritionWeekSchedule'];
       /** Format: uuid */
-      source_template_id?: string | null;
+      source_template_id: string | null;
       /** Format: date */
       start_date: string | null;
       /** @enum {string} */
       status: 'active' | 'archived';
-      tags: string[];
-      target_calories?: number | null;
-      target_carbs_g?: number | null;
-      target_fat_g?: number | null;
-      target_fiber_g?: number | null;
-      target_protein_g?: number | null;
+      target_calories: number | null;
+      target_carbs_g: number | null;
+      target_fat_g: number | null;
+      target_fiber_g: number | null;
+      target_protein_g: number | null;
       /** Format: date-time */
       updated_at: string;
-      /** @description Weekday name -> nutrition plan day id */
-      weekday_assignments?: {
-        [key: string]: string;
-      };
     };
     /**
      * DashboardSetupUpdateRequest
@@ -4332,17 +4191,6 @@ export interface components {
     /** WeightEntryResponse */
     WeightEntryResponse: {
       data: components['schemas']['WeightEntry'];
-    };
-    /**
-     * NutritionDayMealCreateRequest
-     * @description Places a meal on a day's slot. Give exactly one of `nutrition_meal_id` (place an existing meal of this plan) or `name` (create a new meal in the plan and place it).
-     */
-    NutritionDayMealCreateRequest: {
-      /** @enum {string} */
-      meal_slot: 'breakfast' | 'morning_snack' | 'lunch' | 'afternoon_snack' | 'dinner' | 'evening_snack';
-      name?: string | null;
-      /** Format: uuid */
-      nutrition_meal_id?: string | null;
     };
     /** RecipeResponse */
     RecipeResponse: {

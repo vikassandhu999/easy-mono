@@ -22,7 +22,6 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetNutritionPlanQuery} from '@/api/nutrition-plan-builder';
 
 import {NutritionPlanActions} from './plan-actions';
-import {PlanAddToClient} from './plan-add-to-client';
 import {PlanBuilder} from './plan-builder';
 
 export default function NutritionPlanBuilderScreen() {
@@ -78,10 +77,10 @@ export default function NutritionPlanBuilderScreen() {
           <Page.Title testId="nb-title">{clientName ? `${plan.name} — ${clientName}` : plan.name}</Page.Title>
         </Page.TitleGroup>
         <Page.Actions>
-          <PlanAddToClient plan={plan} />
           <NutritionPlanActions
             onDeleted={() => goBack()}
             plan={plan}
+            refetchLatest={async () => (await refetch()).data?.data}
           />
         </Page.Actions>
       </Page.Header>

@@ -21,10 +21,13 @@ defmodule Easy.Nutrition.MealLogConcurrencyTest do
     client = insert(:client, business: business, creator: coach)
 
     plan =
-      business.id
-      |> Plan.insert_changeset(coach.id, %{name: "Concurrent logging plan"})
-      |> Ecto.Changeset.put_change(:client_id, client.id)
-      |> Repo.insert!()
+      insert(:plan,
+        business: business,
+        creator: coach.user,
+        client: client,
+        kind: :client_plan,
+        start_date: Date.utc_today()
+      )
 
     meal =
       business.id

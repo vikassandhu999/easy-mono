@@ -338,40 +338,6 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionMeal do
   })
 end
 
-defmodule EasyWeb.OpenApi.Schemas.NutritionPlanRequest do
-  require OpenApiSpex
-
-  alias OpenApiSpex.Schema
-
-  OpenApiSpex.schema(
-    %{
-      title: "NutritionPlanRequest",
-      type: :object,
-      additionalProperties: false,
-      properties: %{
-        name: %Schema{type: :string, maxLength: 255},
-        description: %Schema{type: :string, nullable: true},
-        tags: %Schema{type: :array, items: %Schema{type: :string}},
-        target_calories: %Schema{type: :number, nullable: true},
-        target_protein_g: %Schema{type: :number, nullable: true},
-        target_carbs_g: %Schema{type: :number, nullable: true},
-        target_fat_g: %Schema{type: :number, nullable: true},
-        target_fiber_g: %Schema{type: :number, nullable: true},
-        status: %Schema{type: :string, enum: ["active", "archived"]},
-        start_date: %Schema{type: :string, format: :date, nullable: true},
-        end_date: %Schema{type: :string, format: :date, nullable: true}
-      },
-      required: [:name],
-      example: %{
-        "name" => "Fat Loss Plan",
-        "target_calories" => 2200,
-        "target_protein_g" => 180
-      }
-    },
-    struct?: false
-  )
-end
-
 defmodule EasyWeb.OpenApi.Schemas.NutritionPlanAssignRequest do
   require OpenApiSpex
 
@@ -462,94 +428,6 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionDayMealWithMeal do
     },
     required: [:id, :meal_slot, :position, :nutrition_meal_id, :meal]
   })
-end
-
-defmodule EasyWeb.OpenApi.Schemas.NutritionPlan do
-  require OpenApiSpex
-
-  alias OpenApiSpex.Schema
-
-  alias EasyWeb.OpenApi.Schemas.{
-    NutritionMeal,
-    NutritionPlanDay,
-    Shared
-  }
-
-  OpenApiSpex.schema(%{
-    title: "NutritionPlan",
-    type: :object,
-    additionalProperties: false,
-    properties:
-      Map.merge(
-        %{
-          id: %Schema{type: :string, format: :uuid},
-          name: %Schema{type: :string},
-          description: %Schema{type: :string, nullable: true},
-          tags: %Schema{type: :array, items: %Schema{type: :string}},
-          target_calories: %Schema{type: :number, nullable: true},
-          target_protein_g: %Schema{type: :number, nullable: true},
-          target_carbs_g: %Schema{type: :number, nullable: true},
-          target_fat_g: %Schema{type: :number, nullable: true},
-          target_fiber_g: %Schema{type: :number, nullable: true},
-          status: %Schema{type: :string, enum: ["active", "archived"]},
-          assigned_client_count: %Schema{
-            type: :integer,
-            description: "Clients this template is currently assigned to (0 for a client's own plan)"
-          },
-          start_date: %Schema{type: :string, format: :date, nullable: true},
-          end_date: %Schema{type: :string, format: :date, nullable: true},
-          client_id: %Schema{type: :string, format: :uuid, nullable: true},
-          client: %Schema{
-            type: :object,
-            nullable: true,
-            additionalProperties: false,
-            properties: %{
-              id: %Schema{type: :string, format: :uuid},
-              first_name: %Schema{type: :string, nullable: true},
-              last_name: %Schema{type: :string, nullable: true}
-            },
-            required: [:id, :first_name, :last_name]
-          },
-          source_template_id: %Schema{type: :string, format: :uuid, nullable: true},
-          creator_id: %Schema{type: :string, format: :uuid, nullable: true},
-          meals: %Schema{type: :array, items: NutritionMeal},
-          days: %Schema{type: :array, items: NutritionPlanDay},
-          weekday_assignments: %Schema{
-            type: :object,
-            description: "Weekday name -> nutrition plan day id",
-            additionalProperties: %Schema{type: :string, format: :uuid}
-          }
-        },
-        Shared.timestamps()
-      ),
-    required: [
-      :id,
-      :name,
-      :description,
-      :tags,
-      :status,
-      :start_date,
-      :end_date,
-      :inserted_at,
-      :updated_at
-    ]
-  })
-end
-
-defmodule EasyWeb.OpenApi.Schemas.NutritionPlanResponse do
-  require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.{NutritionPlan, Shared}
-
-  OpenApiSpex.schema(Shared.data_response(NutritionPlan, "NutritionPlanResponse"))
-end
-
-defmodule EasyWeb.OpenApi.Schemas.NutritionPlanListResponse do
-  require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.{NutritionPlan, Shared}
-
-  OpenApiSpex.schema(Shared.list_response(NutritionPlan, "NutritionPlanListResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.NutritionMealResponse do

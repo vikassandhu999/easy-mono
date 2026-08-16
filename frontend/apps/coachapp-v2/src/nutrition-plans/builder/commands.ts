@@ -99,8 +99,8 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
     try {
       const day = await api.createDay(planId);
       patch((plan) => {
-        plan.days ??= [];
-        plan.days.push(day);
+        const {day_meals: _dayMeals, ...pattern} = day;
+        plan.day_patterns = [...plan.day_patterns, pattern];
       });
       refetch();
       return day;
@@ -115,9 +115,9 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
   const renameDay = (dayId: string, name: string) =>
     commit(
       (plan) => {
-        const day = findDay(plan, dayId);
-        if (day) {
-          day.name = name;
+        const pattern = plan.day_patterns.find((candidate) => candidate.id === dayId);
+        if (pattern) {
+          pattern.name = name;
         }
       },
       () => api.updateDay(dayId, {name}),
@@ -151,9 +151,9 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
       notifyBusy('removeDay', false);
     }
     patch((draft) => {
-      draft.days = (draft.days ?? []).filter((day) => day.id !== dayId);
-      if (draft.weekday_assignments && fallback) {
-        draft.weekday_assignments = reassignWeekdays(draft.weekday_assignments, dayId, fallback.id);
+      draft.day_patterns = draft.day_patterns.filter((day) => day.id !== dayId);
+      if (draft.schedule && fallback) {
+        draft.schedule = reassignWeekdays(draft.schedule, dayId, fallback.id);
       }
     });
     refetch();
@@ -175,8 +175,9 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
     }
     const body = assignWeekday(getWeekdayAssignments(plan), getDays(plan), weekday, dayId);
     patch((draft) => {
-      draft.weekday_assignments ??= {};
-      draft.weekday_assignments[weekday] = dayId;
+      if (draft.schedule) {
+        draft.schedule[weekday as keyof typeof draft.schedule] = dayId;
+      }
     });
     enqueue('schedule', async () => {
       try {
@@ -205,16 +206,12 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
     failMessage: string,
   ): Promise<NutritionMeal | null> => {
     try {
-      const {meal, ...option} = await api.addDayMeal(dayId, body);
+      const option = await api.addDayMeal(dayId, body);
       patch((draft) => {
-        draft.meals ??= [];
-        if (!draft.meals.some((m) => m.id === meal.id)) {
-          draft.meals.push(meal);
-        }
         findDay(draft, dayId)?.day_meals.push(option);
       });
       refetch();
-      return meal;
+      return null;
     } catch (error) {
       if (getErrorCode(error) === 'max_options') {
         toast.danger('Only 3 options are allowed per slot.');
@@ -284,15 +281,7 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
 
   const removeMeal = (mealId: string) =>
     commit(
-      (plan) => {
-        plan.meals = (plan.meals ?? []).filter((meal) => meal.id !== mealId);
-        // The backend cascades day_meals with the meal (FK on_delete:
-        // :delete_all) — mirror that, or a slot keeps pointing at an option
-        // whose meal no longer exists.
-        for (const day of plan.days ?? []) {
-          day.day_meals = day.day_meals.filter((dm) => dm.nutrition_meal_id !== mealId);
-        }
-      },
+      () => undefined,
       () => api.deleteMeal(mealId),
       "Couldn't delete meal",
     );

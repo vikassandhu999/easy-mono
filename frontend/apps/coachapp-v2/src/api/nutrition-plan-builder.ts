@@ -34,19 +34,69 @@ import {patchQueryData, queryClient} from '@/api/query-client';
 import type {components} from '@/api/schema';
 
 export type NutritionPlan = components['schemas']['NutritionPlan'];
-export type NutritionMeal = components['schemas']['NutritionMeal'];
-export type NutritionMealItem = components['schemas']['NutritionMealItem'];
-export type NutritionPlanDay = components['schemas']['NutritionPlanDay'];
-export type NutritionDayMeal = components['schemas']['NutritionDayMeal'];
-export type NutritionScheduleRequest = components['schemas']['NutritionScheduleRequest'];
-export type NutritionDayMealCreateRequest = components['schemas']['NutritionDayMealCreateRequest'];
-export type NutritionMealItemRequest = components['schemas']['NutritionMealItemRequest'];
+export type NutritionDayPattern = components['schemas']['NutritionDayPattern'];
+export type NutritionWeekSchedule = components['schemas']['NutritionWeekSchedule'];
+export type NutritionScheduleRequest = NutritionWeekSchedule;
+
+/** Menu types return with later Programming tickets. Local stand-ins keep the empty builder compiling. */
+export type NutritionDayMeal = {
+  id: string;
+  meal_slot: string;
+  nutrition_meal_id: string;
+  position: number;
+};
+
+export type NutritionPlanDay = NutritionDayPattern & {day_meals: NutritionDayMeal[]};
+
+export type NutritionSnapshot = {
+  calories?: number | null;
+  carbs_g?: number | null;
+  fat_g?: number | null;
+  fiber_g?: number | null;
+  protein_g?: number | null;
+};
+
+export type NutritionMealItem = {
+  amount?: number | null;
+  food_id?: string | null;
+  id: string;
+  inserted_at?: string;
+  name?: string | null;
+  nutrition?: NutritionSnapshot;
+  position?: number;
+  recipe_id?: string | null;
+  unit?: string | null;
+  updated_at?: string;
+  weight_g?: number | null;
+};
+
+export type NutritionMeal = {
+  id: string;
+  meal_items: NutritionMealItem[];
+  name: string;
+  notes?: string | null;
+  nutrition?: NutritionSnapshot;
+};
+
+export type NutritionDayMealCreateRequest = {
+  meal_slot: string;
+  name?: string;
+  nutrition_meal_id?: string;
+};
+
+export type NutritionMealItemRequest = {
+  amount?: number | null;
+  food_id?: string | null;
+  recipe_id?: string | null;
+  unit?: string | null;
+  weight_g?: number | null;
+};
 
 type NutritionPlanResponse = {data: NutritionPlan};
-type NutritionMealItemsCreateRequest = components['schemas']['NutritionMealItemsCreateRequest'];
-type NutritionMealRequest = components['schemas']['NutritionMealRequest'];
-type NutritionPlanDayUpdateRequest = components['schemas']['NutritionPlanDayUpdateRequest'];
-type NutritionSlotOptionMoveRequest = components['schemas']['NutritionSlotOptionMoveRequest'];
+type NutritionMealItemsCreateRequest = {items: NutritionMealItemRequest[]};
+type NutritionMealRequest = {name?: string; notes?: string | null};
+type NutritionPlanDayUpdateRequest = {name: string};
+type NutritionSlotOptionMoveRequest = {meal_slot?: string; position?: number};
 
 /**
  * General-purpose fetch for one nutrition plan.
@@ -105,65 +155,56 @@ export function refetchPlan(planId: string) {
 // Requests — thin, unwrapped, no cache effects
 // ---------------------------------------------------------------------------
 
-/** Full Mon..Sun map — the server replaces the plan's whole schedule with it. */
-export async function replaceSchedule(planId: string, body: NutritionScheduleRequest) {
-  await call(client.PUT('/v1/coach/nutrition-plans/{plan_id}/schedule', {params: {path: {plan_id: planId}}, body}));
+const menuUnavailable = () => Promise.reject(new Error('Menu editing returns in a later ticket'));
+
+export async function replaceSchedule(_planId: string, _body: NutritionScheduleRequest) {
+  await menuUnavailable();
 }
 
-export async function createDay(planId: string): Promise<NutritionPlanDay> {
-  const response = await call(
-    client.POST('/v1/coach/nutrition-plans/{plan_id}/days', {params: {path: {plan_id: planId}}, body: {}}),
-  );
-  return response.data;
+export async function createDay(_planId: string): Promise<NutritionPlanDay> {
+  await menuUnavailable();
+  throw new Error('unreachable');
 }
 
-export async function updateDay(id: string, body: NutritionPlanDayUpdateRequest): Promise<NutritionPlanDay> {
-  const response = await call(client.PATCH('/v1/coach/nutrition-days/{id}', {params: {path: {id}}, body}));
-  return response.data;
+export async function updateDay(_id: string, _body: NutritionPlanDayUpdateRequest): Promise<NutritionPlanDay> {
+  await menuUnavailable();
+  throw new Error('unreachable');
 }
 
-export async function deleteDay(id: string): Promise<void> {
-  await call(client.DELETE('/v1/coach/nutrition-days/{id}', {params: {path: {id}}}));
+export async function deleteDay(_id: string): Promise<void> {
+  await menuUnavailable();
 }
 
-/**
- * One endpoint for both "place this plan meal here" (`nutrition_meal_id`) and
- * "create a meal and place it" (`name`) — exactly one of the two. The response
- * embeds the full meal, so the builder can push it into `plan.meals`.
- */
-export async function addDayMeal(dayId: string, body: NutritionDayMealCreateRequest) {
-  const response = await call(
-    client.POST('/v1/coach/nutrition-days/{day_id}/meals', {params: {path: {day_id: dayId}}, body}),
-  );
-  return response.data;
+export async function addDayMeal(_dayId: string, _body: NutritionDayMealCreateRequest): Promise<NutritionDayMeal> {
+  await menuUnavailable();
+  throw new Error('unreachable');
 }
 
-export async function moveSlotOption(id: string, body: NutritionSlotOptionMoveRequest) {
-  const response = await call(client.PATCH('/v1/coach/nutrition-day-meals/{id}', {params: {path: {id}}, body}));
-  return response.data;
+export async function moveSlotOption(_id: string, _body: NutritionSlotOptionMoveRequest): Promise<NutritionDayMeal> {
+  await menuUnavailable();
+  throw new Error('unreachable');
 }
 
-export async function removeSlotOption(id: string): Promise<void> {
-  await call(client.DELETE('/v1/coach/nutrition-day-meals/{id}', {params: {path: {id}}}));
+export async function removeSlotOption(_id: string): Promise<void> {
+  await menuUnavailable();
 }
 
-export async function updateMeal(id: string, body: NutritionMealRequest): Promise<void> {
-  await call(client.PATCH('/v1/coach/nutrition-meals/{id}', {params: {path: {id}}, body}));
+export async function updateMeal(_id: string, _body: NutritionMealRequest): Promise<void> {
+  await menuUnavailable();
 }
 
-export async function deleteMeal(id: string): Promise<void> {
-  await call(client.DELETE('/v1/coach/nutrition-meals/{id}', {params: {path: {id}}}));
+export async function deleteMeal(_id: string): Promise<void> {
+  await menuUnavailable();
 }
 
-/** Batch create — one transaction, items land in the order given. */
-export async function createMealItems(mealId: string, body: NutritionMealItemsCreateRequest): Promise<void> {
-  await call(client.POST('/v1/coach/nutrition-meals/{meal_id}/items', {params: {path: {meal_id: mealId}}, body}));
+export async function createMealItems(_mealId: string, _body: NutritionMealItemsCreateRequest): Promise<void> {
+  await menuUnavailable();
 }
 
-export async function updateMealItem(id: string, body: NutritionMealItemRequest): Promise<void> {
-  await call(client.PATCH('/v1/coach/nutrition-meal-items/{id}', {params: {path: {id}}, body}));
+export async function updateMealItem(_id: string, _body: NutritionMealItemRequest): Promise<void> {
+  await menuUnavailable();
 }
 
-export async function deleteMealItem(id: string): Promise<void> {
-  await call(client.DELETE('/v1/coach/nutrition-meal-items/{id}', {params: {path: {id}}}));
+export async function deleteMealItem(_id: string): Promise<void> {
+  await menuUnavailable();
 }

@@ -2,8 +2,7 @@ defmodule EasyWeb.Clients.NutritionPlanController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.Nutrition.Plan
-  alias Easy.NutritionPlans, as: Plans
+  alias Easy.Nutrition.Programming
   alias OpenApiSpex.{Operation, Schema}
 
   alias EasyWeb.OpenApi.Schemas.{
@@ -52,17 +51,18 @@ defmodule EasyWeb.Clients.NutritionPlanController do
   def index(conn, params) do
     offset = parse_integer(params, "offset", 0)
     lim = parse_integer(params, "limit", 20)
-    status = parse_enum(params, "status", Plan.statuses())
+    status = parse_enum(params, "status", [:active, :archived])
+    archived = if status, do: status == :archived, else: nil
 
     with {:ok, %{plans: plans, count: count}} <-
-           Plans.list_client_plans(conn.assigns.ctx, status: status, offset: offset, limit: lim) do
+           Programming.list_client_plans(conn.assigns.ctx, archived: archived, offset: offset, limit: lim) do
       render(conn, :index, plans: plans, count: count)
     end
   end
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
-    with {:ok, plan} <- Plans.get_client_plan_full(conn.assigns.ctx, id) do
+    with {:ok, plan} <- Programming.get_client_plan(conn.assigns.ctx, id) do
       render(conn, :show, plan: plan)
     end
   end

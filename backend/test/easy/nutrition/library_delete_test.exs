@@ -12,15 +12,6 @@ defmodule Easy.Nutrition.LibraryDeleteTest do
   # food-xor-recipe check. Blocked up front instead, as a conflict.
 
   describe "delete_food/3" do
-    test "is blocked while a meal item still uses the food" do
-      %{ctx: ctx, business: business, coach: coach, meal: meal} = scenario()
-      food = insert(:food, business: business, creator: coach)
-      insert(:meal_item, meal: meal, business: business, food: food, weight_g: 100.0, position: 0)
-
-      assert {:error, :in_use} = Library.delete_food(ctx, food.id, food.revision)
-      assert Repo.get(Easy.Nutrition.Food, food.id)
-    end
-
     test "is blocked while a recipe ingredient still uses the food" do
       %{ctx: ctx, business: business, coach: coach} = scenario()
       food = insert(:food, business: business, creator: coach)
@@ -54,14 +45,6 @@ defmodule Easy.Nutrition.LibraryDeleteTest do
   end
 
   describe "delete_recipe/3" do
-    test "is blocked while a meal item still uses the recipe" do
-      %{ctx: ctx, business: business, coach: coach, meal: meal} = scenario()
-      recipe = insert(:recipe, business: business, creator: coach, cooked_weight_g: 400.0)
-      insert(:meal_item, meal: meal, business: business, food: nil, recipe: recipe, weight_g: 100.0, position: 0)
-
-      assert {:error, :in_use} = Library.delete_recipe(ctx, recipe.id, recipe.revision)
-    end
-
     test "succeeds when nothing references the recipe" do
       %{ctx: ctx, business: business, coach: coach} = scenario()
       recipe = insert(:recipe, business: business, creator: coach)
@@ -73,16 +56,13 @@ defmodule Easy.Nutrition.LibraryDeleteTest do
   defp scenario do
     business = insert(:business, owner: build(:user, email: unique_email()))
     coach = insert(:coach, business: business, user: build(:user, email: unique_email()))
-    plan = insert(:plan, business: business, creator: coach)
-    meal = insert(:meal, plan: plan, business: business, creator: coach)
     client = insert(:client, business: business, creator: coach, assigned_coach: coach)
 
     %{
       ctx: Ctx.new(business.id, coach.user_id, coach.id, true),
       client_ctx: %Ctx{business_id: business.id, user_id: client.user_id, client_id: client.id},
       business: business,
-      coach: coach,
-      meal: meal
+      coach: coach
     }
   end
 

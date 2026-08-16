@@ -9,36 +9,42 @@
  */
 import {MEAL_SLOTS, WEEKDAY_SHORT_LABELS, WEEKDAYS} from '@easy/utils';
 
-import type {NutritionDayMeal, NutritionMeal, NutritionPlan, NutritionPlanDay} from '@/api/nutrition-plan-builder';
+import type {
+  NutritionDayMeal,
+  NutritionMeal,
+  NutritionMealItem,
+  NutritionPlan,
+  NutritionPlanDay,
+} from '@/api/nutrition-plan-builder';
 
 import {slotLabel} from './slots';
 
-/** Mon..Sun map of day ids — `plan.weekday_assignments` with its null guard. */
-export type WeekdayAssignments = Record<string, string | undefined>;
+/** Mon..Sun map of Day Pattern ids — `plan.schedule` with its null guard. */
+export type WeekdayAssignments = Record<string, string | null | undefined>;
 
 export function getDays(plan: NutritionPlan): NutritionPlanDay[] {
-  return (plan.days ?? []).slice().sort((a, b) => a.position - b.position);
+  return (plan.day_patterns ?? [])
+    .slice()
+    .sort((a, b) => a.position - b.position)
+    .map((pattern) => ({...pattern, day_meals: []}));
 }
 
 export function getWeekdayAssignments(plan: NutritionPlan): WeekdayAssignments {
-  return plan.weekday_assignments ?? {};
+  return plan.schedule ?? {};
 }
 
 export function findDay(plan: NutritionPlan, dayId: string): NutritionPlanDay | undefined {
-  return plan.days?.find((day) => day.id === dayId);
+  return getDays(plan).find((day) => day.id === dayId);
 }
 
-export function findMeal(plan: NutritionPlan, mealId: string): NutritionMeal | undefined {
-  return plan.meals?.find((meal) => meal.id === mealId);
+export function findMeal(_plan: NutritionPlan, _mealId: string): NutritionMeal | undefined {
+  return undefined;
 }
 
-export function findItem(plan: NutritionPlan, itemId: string) {
-  for (const meal of plan.meals ?? []) {
-    const item = meal.meal_items.find((candidate) => candidate.id === itemId);
-    if (item) {
-      return {meal, item};
-    }
-  }
+export function findItem(
+  _plan: NutritionPlan,
+  _itemId: string,
+): {item: NutritionMealItem; meal: NutritionMeal} | undefined {
   return undefined;
 }
 

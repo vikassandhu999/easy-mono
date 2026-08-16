@@ -177,22 +177,9 @@ defmodule EasyWeb.Router do
     get "/nutrition-plans/:id", NutritionPlanController, :show
     patch "/nutrition-plans/:id", NutritionPlanController, :update
     delete "/nutrition-plans/:id", NutritionPlanController, :delete
-    post "/nutrition-plans/:id/assign", NutritionPlanController, :assign
+    post "/nutrition-plans/:id/archive", NutritionPlanController, :archive
+    post "/nutrition-plans/:id/restore", NutritionPlanController, :restore
     post "/nutrition-plans/:id/duplicate", NutritionPlanController, :duplicate
-    patch "/nutrition-meals/:id", MealController, :update
-    delete "/nutrition-meals/:id", MealController, :delete
-
-    post "/nutrition-meals/:meal_id/items", MealItemController, :create
-    patch "/nutrition-meal-items/:id", MealItemController, :update
-    delete "/nutrition-meal-items/:id", MealItemController, :delete
-
-    post "/nutrition-plans/:plan_id/days", PlanDayController, :create
-    patch "/nutrition-days/:id", PlanDayController, :update
-    delete "/nutrition-days/:id", PlanDayController, :delete
-    put "/nutrition-plans/:plan_id/schedule", PlanDayController, :update_schedule
-    post "/nutrition-days/:day_id/meals", PlanDayController, :add_meal
-    patch "/nutrition-day-meals/:id", PlanDayController, :move_option
-    delete "/nutrition-day-meals/:id", PlanDayController, :remove_option
 
     get "/training-exercises", ExerciseController, :index
     post "/training-exercises", ExerciseController, :create

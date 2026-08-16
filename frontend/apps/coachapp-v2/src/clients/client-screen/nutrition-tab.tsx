@@ -1,4 +1,4 @@
-import {Chip, ProgressBar} from '@heroui/react';
+import {Chip, ProgressBar, toast} from '@heroui/react';
 import {UtensilsCrossed} from 'lucide-react';
 import {useEffect, useState} from 'react';
 import {Link, useNavigate, useSearchParams} from 'react-router-dom';
@@ -6,23 +6,26 @@ import {Link, useNavigate, useSearchParams} from 'react-router-dom';
 import {toastMutationError} from '@/@components/mutation-toast';
 import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
+import {nutritionPlanRevisionRequest} from '@/api/nutrition-plan-lifecycle';
 import {
+  type NutritionPlan,
+  useArchiveNutritionPlanMutation,
   useListCoachClientNutritionPlansQuery,
   useListCoachNutritionDaysQuery,
-  useUpdateNutritionPlanMutation,
 } from '@/api/nutrition-plans-list';
 import {PlanPanel} from '@/clients/client-screen/plan-panel';
 import PlanAssignControl from '@/clients/components/plan-assign-control';
 import {SectionCard} from '@/clients/components/section-card';
 import {formatKcal, formatRowDate, lastNDays} from '@/clients/lib/client-detail-data';
+import {handleStaleNutritionPlanConflict} from '@/nutrition-plans/lib/stale-nutrition-plan-conflict';
 
 /** CD-NU: the active plan, then 14 days of adherence. */
 export function NutritionTab({client}: {client: Client}) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [assignFromUrl] = useState(() => params.get('assign') === 'plan');
-  const updatePlanMutation = useUpdateNutritionPlanMutation();
-  const isEnding = updatePlanMutation.isPending;
+  const archivePlanMutation = useArchiveNutritionPlanMutation();
+  const isEnding = archivePlanMutation.isPending;
 
   useEffect(() => {
     if (params.get('assign') !== 'plan') {
@@ -33,17 +36,6 @@ export function NutritionTab({client}: {client: Client}) {
     setParams(next, {replace: true});
   }, [params, setParams]);
 
-  // "End plan" archives it — the plan and its logged history stay, it just stops
-  // being the client's active plan. Confirmed in PlanPanel before it fires.
-  // `NutritionPlanRequest` is a full replace rather than a patch, so the name has
-  // to be sent back unchanged — omitting it fails validation.
-  const endPlan = async (planId: string, planName: string) => {
-    try {
-      await updatePlanMutation.mutateAsync({id: planId, body: {name: planName, status: 'archived'}});
-    } catch (err) {
-      toastMutationError(err, "The plan wasn't ended. Try again.");
-    }
-  };
   const days = lastNDays(14);
   const plans = useListCoachClientNutritionPlansQuery(client.id, {status: 'active'});
   const nutritionDays = useListCoachNutritionDaysQuery(client.id, {
@@ -52,6 +44,28 @@ export function NutritionTab({client}: {client: Client}) {
   });
 
   const plan = plans.data?.data?.[0];
+
+  const endPlan = async (activePlan: NutritionPlan) => {
+    try {
+      await archivePlanMutation.mutateAsync({
+        id: activePlan.id,
+        body: nutritionPlanRevisionRequest(activePlan),
+      });
+    } catch (err) {
+      const handled = await handleStaleNutritionPlanConflict(err, {
+        refetchLatest: async () => (await plans.refetch()).data?.data?.find(({id}) => id === activePlan.id),
+        notify: (message) => {
+          toast.info(message, {timeout: 4000});
+        },
+      });
+
+      if (handled) {
+        return;
+      }
+
+      toastMutationError(err, "The plan wasn't ended. Try again.");
+    }
+  };
 
   // One row per day, newest first — including days with nothing logged, which the
   // design shows as "Not logged" rather than omitting.
@@ -109,7 +123,7 @@ export function NutritionTab({client}: {client: Client}) {
         assignLabel="Assign plan"
         isEnding={isEnding}
         name={plan?.name}
-        onEnd={plan ? () => endPlan(plan.id, plan.name) : undefined}
+        onEnd={plan ? () => endPlan(plan) : undefined}
         onOpen={plan ? () => navigate(ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', plan.id)) : undefined}
       />
 

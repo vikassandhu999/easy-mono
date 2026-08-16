@@ -9,7 +9,6 @@ defmodule Easy.Nutrition.MealLogTest do
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.MealLog
   alias Easy.Nutrition.PlanDay
-  alias Easy.NutritionPlans
   alias Easy.Repo
 
   @date ~D[2026-07-06]
@@ -256,12 +255,17 @@ defmodule Easy.Nutrition.MealLogTest do
     test "add_client_extra with an explicit meal_id returns not_found for another client's meal" do
       %{client_ctx: client_ctx, client: client, business: business, creator: creator} = build_scenario()
 
-      coach_ctx = Ctx.new(business.id, creator.user_id, creator.id, false)
-      {:ok, other_template} = NutritionPlans.create_plan(coach_ctx, %{"name" => "Other Template"})
-      other_client = insert(:client, business: business, creator: creator)
+      other_client = insert(:client, business: business, creator: creator, assigned_coach: creator)
 
-      {:ok, other_assigned_plan} =
-        NutritionPlans.assign_plan_to_client(coach_ctx, other_client.id, other_template.id, %{})
+      other_assigned_plan =
+        insert(:plan,
+          business: business,
+          creator: creator.user,
+          client: other_client,
+          kind: :client_plan,
+          start_date: @date,
+          end_date: Date.add(@date, 30)
+        )
 
       other_meal =
         insert(:meal, plan: other_assigned_plan, creator: creator, business: business, name: "Other Client's Meal")
@@ -463,8 +467,8 @@ defmodule Easy.Nutrition.MealLogTest do
     end
   end
 
-  defp ctx_for(plan) do
-    Ctx.new(plan.business_id, plan.creator.user_id, plan.creator.id, false)
+  defp coach_ctx(coach) do
+    Ctx.new(coach.business_id, coach.user_id, coach.id, false)
   end
 
   describe "planned-item reconciliation" do
@@ -862,24 +866,39 @@ defmodule Easy.Nutrition.MealLogTest do
   end
 
   defp build_scenario do
-    plan = insert(:plan)
-    ctx = ctx_for(plan)
+    coach = insert(:coach)
+    business = coach.business
+    ctx = coach_ctx(coach)
+    client = insert(:client, business: business, creator: coach, assigned_coach: coach)
+    client_ctx = %Ctx{business_id: business.id, user_id: client.user_id, client_id: client.id}
 
-    {:ok, template} = NutritionPlans.create_plan(ctx, %{"name" => "Template"})
-    client = insert(:client, business: plan.business, assigned_coach: plan.creator)
-    client_ctx = %Ctx{business_id: plan.business_id, user_id: client.user_id, client_id: client.id}
-    {:ok, assigned_plan} = NutritionPlans.assign_plan_to_client(ctx, client.id, template.id, %{})
+    assigned_plan =
+      insert(:plan,
+        business: business,
+        creator: coach.user,
+        client: client,
+        kind: :client_plan,
+        start_date: @date,
+        end_date: Date.add(@date, 30)
+      )
 
-    [day] = PlanDay |> PlanDay.for_plan(assigned_plan.id) |> Repo.all()
+    day =
+      insert(:plan_day,
+        plan: assigned_plan,
+        business: business,
+        name: "Everyday",
+        position: 0,
+        weekdays: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+      )
 
     oats_food =
-      insert(:food, creator: plan.creator, business: plan.business, name: "Oat Flakes", calories_per_100g: 300.0)
+      insert(:food, creator: coach, business: business, name: "Oat Flakes", calories_per_100g: 300.0)
 
-    oats = insert(:meal, plan: assigned_plan, creator: plan.creator, business: plan.business, name: "Oats")
+    oats = insert(:meal, plan: assigned_plan, creator: coach, business: business, name: "Oats")
 
     insert(:meal_item,
       meal: oats,
-      business: plan.business,
+      business: business,
       food: oats_food,
       amount: 100.0,
       unit: "g",
@@ -887,12 +906,12 @@ defmodule Easy.Nutrition.MealLogTest do
       position: 0
     )
 
-    eggs_food = insert(:food, creator: plan.creator, business: plan.business, name: "Egg", calories_per_100g: 150.0)
-    eggs = insert(:meal, plan: assigned_plan, creator: plan.creator, business: plan.business, name: "Eggs")
+    eggs_food = insert(:food, creator: coach, business: business, name: "Egg", calories_per_100g: 150.0)
+    eggs = insert(:meal, plan: assigned_plan, creator: coach, business: business, name: "Eggs")
 
     insert(:meal_item,
       meal: eggs,
-      business: plan.business,
+      business: business,
       food: eggs_food,
       amount: 2.0,
       unit: "unit",
@@ -900,12 +919,12 @@ defmodule Easy.Nutrition.MealLogTest do
       position: 0
     )
 
-    rice_food = insert(:food, creator: plan.creator, business: plan.business, name: "Rice", calories_per_100g: 130.0)
-    rice = insert(:meal, plan: assigned_plan, creator: plan.creator, business: plan.business, name: "Rice")
+    rice_food = insert(:food, creator: coach, business: business, name: "Rice", calories_per_100g: 130.0)
+    rice = insert(:meal, plan: assigned_plan, creator: coach, business: business, name: "Rice")
 
     insert(:meal_item,
       meal: rice,
-      business: plan.business,
+      business: business,
       food: rice_food,
       amount: 150.0,
       unit: "g",
@@ -914,28 +933,28 @@ defmodule Easy.Nutrition.MealLogTest do
     )
 
     snack_food =
-      insert(:food, creator: plan.creator, business: plan.business, name: "Banana", calories_per_100g: 90.0)
+      insert(:food, creator: coach, business: business, name: "Banana", calories_per_100g: 90.0)
 
     # A recipe with no cooked weight can only be sized in servings.
     dal_food =
-      insert(:food, creator: plan.creator, business: plan.business, name: "Dal", calories_per_100g: 800.0)
+      insert(:food, creator: coach, business: business, name: "Dal", calories_per_100g: 800.0)
 
     dal_recipe =
       insert(:recipe,
-        creator: plan.creator,
-        business: plan.business,
+        creator: coach,
+        business: business,
         name: "Dal Tadka",
         servings_count: 2,
         cooked_weight_g: nil
       )
 
-    insert(:recipe_ingredient, business: plan.business, recipe: dal_recipe, food: dal_food, weight_g: 100.0)
+    insert(:recipe_ingredient, business: business, recipe: dal_recipe, food: dal_food, weight_g: 100.0)
 
-    dal = insert(:meal, plan: assigned_plan, creator: plan.creator, business: plan.business, name: "Dal Dinner")
+    dal = insert(:meal, plan: assigned_plan, creator: coach, business: business, name: "Dal Dinner")
 
     insert(:meal_item,
       meal: dal,
-      business: plan.business,
+      business: business,
       food: nil,
       recipe: dal_recipe,
       amount: 1.0,
@@ -944,22 +963,37 @@ defmodule Easy.Nutrition.MealLogTest do
       position: 0
     )
 
-    {:ok, _} =
-      NutritionPlans.add_day_meal(ctx, day.id, %{meal_slot: "breakfast", nutrition_meal_id: oats.id})
+    insert(:day_meal,
+      plan_day: day,
+      meal: oats,
+      business: business,
+      meal_slot: "breakfast",
+      position: 0
+    )
 
-    {:ok, _} =
-      NutritionPlans.add_day_meal(ctx, day.id, %{meal_slot: "breakfast", nutrition_meal_id: eggs.id})
+    insert(:day_meal,
+      plan_day: day,
+      meal: eggs,
+      business: business,
+      meal_slot: "breakfast",
+      position: 1
+    )
 
-    {:ok, _} =
-      NutritionPlans.add_day_meal(ctx, day.id, %{meal_slot: "lunch", nutrition_meal_id: rice.id})
+    insert(:day_meal,
+      plan_day: day,
+      meal: rice,
+      business: business,
+      meal_slot: "lunch",
+      position: 0
+    )
 
     %{
       ctx: ctx,
       client: client,
       client_ctx: client_ctx,
       plan: assigned_plan,
-      business: plan.business,
-      creator: plan.creator,
+      business: business,
+      creator: coach,
       oats: oats,
       eggs: eggs,
       rice: rice,

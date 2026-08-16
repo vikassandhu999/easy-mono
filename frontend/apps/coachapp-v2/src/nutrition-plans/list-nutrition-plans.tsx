@@ -20,15 +20,15 @@ export default function ListNutritionPlans() {
   const deferredSearch = useDeferredValue(search);
   const list = useCoachNutritionPlansInfiniteQuery({
     search: deferredSearch,
-    status: status === 'all' ? undefined : status,
+    archived: status === 'all' ? undefined : status === 'archived',
   });
   const {fetchNextPage, isError, isLoading, items, refetch} = useInfiniteItems(list);
 
-  // Per-status counts for the tabs. `count` is the total matching the filter
+  // Per-archive-state counts for the tabs. `count` is the total matching the filter
   // regardless of `limit`, so `limit: 1` reads it back cheaply. `All` is derived
-  // rather than fetched — status is a closed active|archived enum.
-  const {data: activeData} = useListNutritionPlansQuery({limit: 1, status: 'active'});
-  const {data: archivedData} = useListNutritionPlansQuery({limit: 1, status: 'archived'});
+  // rather than fetched.
+  const {data: activeData} = useListNutritionPlansQuery({archived: false, limit: 1});
+  const {data: archivedData} = useListNutritionPlansQuery({archived: true, limit: 1});
   const activeCount = activeData?.count ?? 0;
   const archivedCount = archivedData?.count ?? 0;
 

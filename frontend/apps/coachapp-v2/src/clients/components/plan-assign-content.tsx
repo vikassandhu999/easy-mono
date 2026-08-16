@@ -20,11 +20,7 @@ import {
 } from '@/@components/plan-assignment-dates';
 import PlanScheduleStep from '@/@components/plan-schedule-step';
 import {ROUTES} from '@/@config/routes';
-import {
-  type NutritionPlan,
-  useAssignNutritionPlanMutation,
-  useCoachNutritionPlansInfiniteQuery,
-} from '@/api/nutrition-plans-list';
+import {type NutritionPlan, useCoachNutritionPlansInfiniteQuery} from '@/api/nutrition-plans-list';
 import type {TrainingPlan} from '@/api/training-plan-builder';
 import {useAssignTrainingPlanMutation, useCoachTrainingPlansInfiniteQuery} from '@/api/training-plans-list';
 
@@ -63,16 +59,18 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
   const [selected, setSelected] = useState<NutritionPlan | TrainingPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const nutritionQuery = useCoachNutritionPlansInfiniteQuery({search: deferredSearch}, {enabled: isNutrition});
+  const nutritionQuery = useCoachNutritionPlansInfiniteQuery(
+    {archived: false, search: deferredSearch},
+    {enabled: isNutrition},
+  );
   const trainingQuery = useCoachTrainingPlansInfiniteQuery({search: deferredSearch}, {enabled: !isNutrition});
   const query = isNutrition ? nutritionQuery : trainingQuery;
   const items: (NutritionPlan | TrainingPlan)[] = isNutrition
     ? (nutritionQuery.data?.pages.flatMap((page) => page.data) ?? [])
     : (trainingQuery.data?.pages.flatMap((page) => page.data) ?? []);
 
-  const assignNutritionMutation = useAssignNutritionPlanMutation();
   const assignTrainingMutation = useAssignTrainingPlanMutation();
-  const assigning = isNutrition ? assignNutritionMutation.isPending : assignTrainingMutation.isPending;
+  const assigning = isNutrition ? false : assignTrainingMutation.isPending;
 
   const Icon = isNutrition ? Utensils : Dumbbell;
   const iconWrap = isNutrition ? 'bg-success-soft text-success' : 'bg-accent-soft text-accent';
@@ -91,17 +89,14 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
     setError(null);
     try {
       if (isNutrition) {
-        await assignNutritionMutation.mutateAsync({
-          id: selected.id,
-          body: {client_id: clientId, start_date: startDate, end_date: endDate},
-        });
-      } else {
-        await assignTrainingMutation.mutateAsync({
-          clientId,
-          id: selected.id,
-          body: {start_date: startDate, end_date: endDate},
-        });
+        setError('Nutrition assignment returns in a later update.');
+        return;
       }
+      await assignTrainingMutation.mutateAsync({
+        clientId,
+        id: selected.id,
+        body: {start_date: startDate, end_date: endDate},
+      });
       toast.success(`"${selected.name}" assigned to ${clientName}`);
       onClose();
     } catch (e) {

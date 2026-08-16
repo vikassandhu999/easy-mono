@@ -22,7 +22,7 @@ defmodule Easy.Clients.ListPlanNamesTest do
 
     test "is off by default", %{business: business, coach: coach, client: client, window: window} do
       insert(:training_plan, [business: business, creator: coach, client: client] ++ window)
-      insert(:plan, business: business, creator: coach, client: client, status: :active)
+      insert(:plan, business: business, creator: coach, client: client, status: :active, start_date: Date.utc_today())
 
       assert {:ok, %{clients: [listed]}} = Clients.list_clients(owner_ctx(business))
       assert listed.training_plan_name == nil
@@ -40,7 +40,8 @@ defmodule Easy.Clients.ListPlanNamesTest do
         creator: coach,
         client: client,
         name: "Fat loss",
-        status: :active
+        status: :active,
+        start_date: Date.utc_today()
       )
 
       assert {:ok, %{clients: [listed]}} = Clients.list_clients(owner_ctx(business), include_plans: true)
@@ -53,7 +54,7 @@ defmodule Easy.Clients.ListPlanNamesTest do
       coach: coach,
       client: client
     } do
-      insert(:plan, business: business, creator: coach, client: client, name: "Fat loss", status: :active)
+      insert(:plan, business: business, creator: coach, client: client, name: "Fat loss", status: :active, start_date: Date.utc_today())
 
       assert {:ok, %{clients: [listed]}} = Clients.list_clients(owner_ctx(business), include_plans: true)
       assert listed.training_plan_name == nil

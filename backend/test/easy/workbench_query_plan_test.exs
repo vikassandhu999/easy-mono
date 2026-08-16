@@ -81,8 +81,7 @@ defmodule Easy.WorkbenchQueryPlanTest do
       MapSet.new([
         "clients_active_subscription_ends_on_index",
         "clients_business_id_assigned_coach_id_index",
-        "conversations_waiting_since_index",
-        "nutrition_plans_active_client_coverage_index"
+        "conversations_waiting_since_index"
       ])
 
     assert MapSet.subset?(expected_indexes, used_indexes),
@@ -90,6 +89,9 @@ defmodule Easy.WorkbenchQueryPlanTest do
 
     assert Enum.any?(used_indexes, &String.starts_with?(&1, "training_plans_")),
            "training queue queries should use a tenant-leading training_plans index, got: #{inspect(used_indexes)}"
+
+    assert Enum.any?(used_indexes, &String.starts_with?(&1, "nutrition_plans_")),
+           "nutrition queue queries should use a tenant-leading nutrition_plans index, got: #{inspect(used_indexes)}"
 
     large_relations = Map.keys(row_counts)
 
@@ -458,17 +460,17 @@ defmodule Easy.WorkbenchQueryPlanTest do
 
       %{
         id: Ecto.UUID.generate(),
+        kind: :client_plan,
+        revision: 1,
         business_id: tenant.business.id,
         client_id: client_id,
-        creator_id: tenant.owner_coach.id,
+        creator_id: tenant.owner_coach.user_id,
         end_date: end_date,
         inserted_at: seeded_at,
         name: "Plan #{client_index} #{service}",
         start_date: start_date,
-        status: :active,
         updated_at: seeded_at
       }
-      |> maybe_add_nutrition_tags(Plan)
     end
   end
 
@@ -486,19 +488,15 @@ defmodule Easy.WorkbenchQueryPlanTest do
 
   defp historical_plan_rows(Plan, current, client_index, service) do
     for history_index <- 1..4 do
-      current
-      |> Map.merge(%{
+      Map.merge(current, %{
         id: Ecto.UUID.generate(),
+        archived_at: current.inserted_at,
         end_date: Date.add(current.start_date, -history_index * 31),
         name: "Historical #{client_index} #{service} #{history_index}",
-        start_date: Date.add(current.start_date, -(history_index * 31 + 30)),
-        status: :archived
+        start_date: Date.add(current.start_date, -(history_index * 31 + 30))
       })
-      |> maybe_add_nutrition_tags(Plan)
     end
   end
-
-  defp maybe_add_nutrition_tags(row, Plan), do: Map.put(row, :tags, [])
 
   defp message_rows(_business_id, _client_id, _conversation_id, false, _seeded_at_usec), do: []
 

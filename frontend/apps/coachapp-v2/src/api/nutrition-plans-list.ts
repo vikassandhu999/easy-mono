@@ -21,14 +21,16 @@ import {workbenchMutationTargets} from '@/api/workbench-targets';
 const PAGE_SIZE = 20;
 
 export type NutritionPlan = components['schemas']['NutritionPlan'];
-export type NutritionPlanRequest = components['schemas']['NutritionPlanRequest'];
+export type NutritionPlanCreateRequest = components['schemas']['NutritionPlanCreateRequest'];
+export type NutritionPlanUpdateRequest = components['schemas']['NutritionPlanUpdateRequest'];
+export type NutritionPlanRevisionRequest = components['schemas']['NutritionPlanRevisionRequest'];
 export type MealLog = components['schemas']['MealLog'];
 export type MealLogDiaryRow = components['schemas']['MealLogDiaryRow'];
 export type NutritionDay = components['schemas']['NutritionDay'];
 export type NutritionDaySlot = components['schemas']['NutritionDaySlot'];
 
 type NutritionPlanListResponse = components['schemas']['NutritionPlanListResponse'];
-type NutritionPlanAssignRequest = components['schemas']['NutritionPlanAssignRequest'];
+type NutritionPlanResponse = components['schemas']['NutritionPlanResponse'];
 
 type ListNutritionPlansQuery = NonNullable<paths['/v1/coach/nutrition-plans']['get']['parameters']['query']>;
 type ListCoachClientNutritionPlansQuery = NonNullable<
@@ -42,7 +44,9 @@ type ListCoachNutritionDaysQuery = NonNullable<
 >;
 
 /** Filter params — offset/limit are handled by the infinite query machinery. */
-export type CoachNutritionPlansFilters = Pick<ListNutritionPlansQuery, 'search' | 'status'>;
+export type CoachNutritionPlansFilters = Pick<ListNutritionPlansQuery, 'archived'> & {search?: string};
+
+export type ListNutritionPlansParams = Pick<ListNutritionPlansQuery, 'archived' | 'limit' | 'offset' | 'search'>;
 
 export function useCoachNutritionPlansInfiniteQuery(
   filters?: CoachNutritionPlansFilters,
@@ -56,8 +60,8 @@ export function useCoachNutritionPlansInfiniteQuery(
         client.GET('/v1/coach/nutrition-plans', {
           params: {
             query: {
-              ...(filters?.search && {search: filters.search}),
-              ...(filters?.status && {status: filters.status}),
+              ...(filters?.search ? {search: filters.search} : {}),
+              ...(filters?.archived !== undefined ? {archived: filters.archived} : {}),
               offset: pageParam,
               limit: PAGE_SIZE,
             },
@@ -71,8 +75,6 @@ export function useCoachNutritionPlansInfiniteQuery(
     },
   });
 }
-
-export type ListNutritionPlansParams = Pick<ListNutritionPlansQuery, 'limit' | 'offset' | 'search' | 'status'>;
 
 export function useListNutritionPlansQuery(params?: ListNutritionPlansParams, options?: {enabled?: boolean}) {
   return useQuery({
@@ -110,7 +112,8 @@ export function useListCoachClientNutritionPlansQuery(
 export function useCreateNutritionPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: NutritionPlanRequest) => call(client.POST('/v1/coach/nutrition-plans', {body})),
+    mutationFn: (body: NutritionPlanCreateRequest) =>
+      call(client.POST('/v1/coach/nutrition-plans', {body})) as Promise<NutritionPlanResponse>,
     onSuccess: () => {
       qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
     },
@@ -129,8 +132,10 @@ export function useCreateNutritionPlanMutation() {
 export function useUpdateNutritionPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({body, id}: {body: NutritionPlanRequest; id: string}) =>
-      call(client.PATCH('/v1/coach/nutrition-plans/{id}', {params: {path: {id}}, body})),
+    mutationFn: ({body, id}: {body: NutritionPlanUpdateRequest; id: string}) =>
+      call(
+        client.PATCH('/v1/coach/nutrition-plans/{id}', {params: {path: {id}}, body}),
+      ) as Promise<NutritionPlanResponse>,
     onSuccess: (_data, {id}) => {
       qc.invalidateQueries({queryKey: nutritionPlanKeys.detail(id)});
       qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
@@ -148,9 +153,56 @@ export function useUpdateNutritionPlanMutation() {
 export function useDeleteNutritionPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => call(client.DELETE('/v1/coach/nutrition-plans/{id}', {params: {path: {id}}})),
-    onSuccess: (_data, id) => {
+    mutationFn: ({id, expectedRevision}: {id: string; expectedRevision: number}) =>
+      call(
+        client.DELETE('/v1/coach/nutrition-plans/{id}', {
+          params: {path: {id}, query: {expected_revision: expectedRevision}},
+        }),
+      ),
+    onSuccess: (_data, {id}) => {
       qc.removeQueries({queryKey: nutritionPlanKeys.detail(id)});
+      qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
+      qc.invalidateQueries({queryKey: nutritionPlanKeys.forClients()});
+      qc.invalidateQueries({queryKey: nutritionDayKeys.all});
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+      qc.invalidateQueries({queryKey: clientKeys.details()});
+      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
+        qc.invalidateQueries({queryKey: [...queryKey]});
+      }
+    },
+  });
+}
+
+export function useArchiveNutritionPlanMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({id, body}: {id: string; body: NutritionPlanRevisionRequest}) =>
+      call(
+        client.POST('/v1/coach/nutrition-plans/{id}/archive', {params: {path: {id}}, body}),
+      ) as Promise<NutritionPlanResponse>,
+    onSuccess: (_data, {id}) => {
+      qc.invalidateQueries({queryKey: nutritionPlanKeys.detail(id)});
+      qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
+      qc.invalidateQueries({queryKey: nutritionPlanKeys.forClients()});
+      qc.invalidateQueries({queryKey: nutritionDayKeys.all});
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+      qc.invalidateQueries({queryKey: clientKeys.details()});
+      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
+        qc.invalidateQueries({queryKey: [...queryKey]});
+      }
+    },
+  });
+}
+
+export function useRestoreNutritionPlanMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({id, body}: {id: string; body: NutritionPlanRevisionRequest}) =>
+      call(
+        client.POST('/v1/coach/nutrition-plans/{id}/restore', {params: {path: {id}}, body}),
+      ) as Promise<NutritionPlanResponse>,
+    onSuccess: (_data, {id}) => {
+      qc.invalidateQueries({queryKey: nutritionPlanKeys.detail(id)});
       qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
       qc.invalidateQueries({queryKey: nutritionPlanKeys.forClients()});
       qc.invalidateQueries({queryKey: nutritionDayKeys.all});
@@ -166,32 +218,12 @@ export function useDeleteNutritionPlanMutation() {
 export function useDuplicateNutritionPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => call(client.POST('/v1/coach/nutrition-plans/{id}/duplicate', {params: {path: {id}}})),
+    mutationFn: ({id, body}: {id: string; body: NutritionPlanRevisionRequest}) =>
+      call(
+        client.POST('/v1/coach/nutrition-plans/{id}/duplicate', {params: {path: {id}}, body}),
+      ) as Promise<NutritionPlanResponse>,
     onSuccess: () => {
       qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
-    },
-  });
-}
-
-/**
- * Invalidates template lists (assigned-client count), that client's plan list,
- * client lists (plan-name chips), Programming queues, and the client detail —
- * assignment changes coverage and can auto-advance `stage`.
- */
-export function useAssignNutritionPlanMutation() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({body, id}: {body: NutritionPlanAssignRequest; id: string}) =>
-      call(client.POST('/v1/coach/nutrition-plans/{id}/assign', {params: {path: {id}}, body})),
-    onSuccess: (_data, {body}) => {
-      qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
-      qc.invalidateQueries({queryKey: nutritionPlanKeys.forClient(body.client_id)});
-      qc.invalidateQueries({queryKey: nutritionDayKeys.all});
-      qc.invalidateQueries({queryKey: clientKeys.lists()});
-      qc.invalidateQueries({queryKey: clientKeys.detail(body.client_id)});
-      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
-        qc.invalidateQueries({queryKey: [...queryKey]});
-      }
     },
   });
 }

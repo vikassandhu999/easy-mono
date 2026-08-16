@@ -1,7 +1,7 @@
 # Add CI that reruns claimed checks
 
 Type: task
-Status: ready-for-agent
+Status: wontfix
 Blocked by: 04 — Glob-run frontend checks.
 Parent: [Agent development process](../map.md)
 
@@ -41,3 +41,7 @@ If `origin` is not GitHub, stop, write that in `## Answer`, and leave the workfl
 ## Verification
 
 Push the ticket branch (or open a draft PR) and wait for the workflow. Record the run URL in `## Answer`. If the first run fails on env (Elixir version, Postgres, pnpm store), fix the workflow in this ticket until it is green on a known-good SHA, or document the remaining blocker as Fog on the map — do not leave a red workflow as "done".
+
+## Answer
+
+Maintainer: do not add CI in this effort. Ticket is `wontfix`. Finish gates stay local (`mix precommit`, app `check` + typecheck, `just check-rm`).

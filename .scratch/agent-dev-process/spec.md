@@ -10,7 +10,7 @@ Sessions infer scope from a dirty tree and a stale branch name instead of a clai
 
 ## Solution
 
-Make the existing ticket shape the only way a coding session starts. Make verification match the ticket while iterating and the full gate once at the end. Make frontend `.check.ts` files self-register. Write the API-change sequence as a skill. Cut always-on context to a map plus the RM section that applies. Add CI that reruns what the agent claimed. Bust the OpenAPI spec cache in dev so schema edits do not require a full Phoenix restart.
+Make the existing ticket shape the only way a coding session starts. Make verification match the ticket while iterating and the full gate once at the end. Make frontend `.check.ts` files self-register. Write the API-change sequence as a skill. Cut always-on context to a map plus the RM section that applies. Bust the OpenAPI spec cache in dev so schema edits do not require a full Phoenix restart.
 
 ## Operating loop
 
@@ -30,6 +30,7 @@ This is the contract every later ticket encodes. A coding session:
 - Rewriting the Training, Workbench, or meal-logging product.
 - Claiming or finishing Training ticket 03 (apply the loop there after ticket 01 of this effort).
 - A UI quality loop in CI.
+- GitHub Actions / CI that reruns claimed checks ([Add CI that reruns claimed checks](./issues/07-add-ci-that-reruns-claimed-checks.md) — `wontfix`).
 - Force-deleting local branches (ticket 09 is a human checklist).
 - Big-bang rewrite of the recurring-mistakes ledger. Ticket 06 adds an index and a read rule; graduation of individual RM entries stays the existing ledger lifecycle.
 

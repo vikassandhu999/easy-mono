@@ -1,84 +1,28 @@
-# easy-mono — Agent Guide
+# easy-mono
 
-This is a full-stack monorepo. Two ecosystems, one tree:
+Phoenix API and pnpm React apps in one tree. Commands: `just --list`.
 
-## Map
+## Tree
 
-- **`frontend/`** — pnpm workspace, TypeScript/React.
-  - Apps: `frontend/apps/{coachapp-v2,clientapp-v2,website}`
-  - Shared packages: `frontend/packages/{utils,error-parser}` — the only two. `ui`, `hooks`, `chat`,
-    `websocket` and `typings` appear in older docs; all are deleted. `ui`/`hooks`/`typings` had zero
-    importers and `ui` broke `pnpm build`, so treat a package with no importers as dead, not pending.
-  - Lint/format: Biome (`frontend/biome.json`). Run from `frontend/`.
-  - Detailed FE guide: `frontend/AGENTS.md`
-- **`backend/`** — Elixir / Phoenix / Ecto API.
-  - Domain: `backend/lib/easy`; web layer: `backend/lib/easy_web`
-  - Migrations: `backend/priv/repo`. Deploys to Fly.io.
-  - Detailed BE guide: `backend/AGENTS.md`
-- **`docs/`** — long-lived reference: `docs/agents/` (skill config + the recurring-mistakes ledger),
-  ADRs, and `docs/archive/` (pre-2026-08-09 specs and plans; still cited from source, so read but
-  don't reshape). New specs and tickets go to `.scratch/`, not here. The **FE↔BE API contract** is the backend's OpenApiSpex schemas (`backend/lib/easy_web/open_api/`), which generate the OpenAPI document the frontend consumes.
+- `frontend/` — `frontend/AGENTS.md`, then the app's `AGENTS.md` when you are inside that app.
+- `backend/` — `backend/AGENTS.md`. `elixir-conventions` is the working checklist.
+- `.scratch/<slug>/` — specs and tickets. Loop: `docs/agents/issue-tracker.md`.
+- `docs/` — ledger and ADRs. Specs go in `.scratch/`. Cited older plans: `docs/archive/` (read; leave in place).
 
-## Working rules
+The FE↔BE **contract** is OpenApiSpex under `backend/lib/easy_web/open_api/`.
 
-- Frontend changes: work inside `frontend/`; `@easy/*` imports resolve within the pnpm workspace.
-- Backend changes: work inside `backend/`; use `mix`. Follow `backend/AGENTS.md` (the `elixir-conventions` skill summarizes it) and run `mix precommit` before finishing.
-- When changing an API: update the backend OpenApiSpex schema AND both sides.
-- Use the root `Justfile` (`just --list`) for common tasks.
-- **Don't repeat past mistakes.** `docs/agents/recurring-mistakes.md` is a ledger of prevention rules. Before finishing, read only the section that matches the files you touched (`## Backend`, `## Frontend`, `## Deploy / ops`, `## Docs`). Do not read the other sections. Do not load the file at session start. When you discover a NEW recurring mistake, fixing the instance isn't enough: add a rule there (and a mechanical check — credo/biome/test — when feasible) so no future run repeats it.
+## Reach
 
-## Quality Rules
+Each line is a pointer: leading word, the branch that fires it, where to go.
 
-Keep the implementation small, sharp, easy to understand. Try to write elegant code in a state of grace. Don't settle for the first thing that comes to mind, try to find the most minimal and better working design. Don't introduce slop: very fragile code that just patches specific cases, dead code, useless code and code ways more complicated of how it should be.
+- **Frontend** — editing `frontend/` (Vite, React, Biome, `@easy/*`): `frontend/AGENTS.md`.
+- **Backend** — editing `backend/` (mix, Ecto, Ctx, OpenAPI): `backend/AGENTS.md`.
+- **API** — public JSON endpoint or field: change the OpenApiSpex schema and the JSON view together, then `just gen-api`.
+- **Ticket** — implementing a `.scratch` issue: claim it, name the branch after it, follow `docs/agents/issue-tracker.md`.
+- **Vocabulary** — naming a product term: `CONTEXT.md`. Locked decisions: `docs/adr/`.
+- **Ledger** — finishing a change: read only the matching section of `docs/agents/recurring-mistakes.md` (`## Backend`, `## Frontend`, `## Deploy / ops`, `## Docs`). New recurrence: add a rule there, with a mechanical check when you can.
+- **Audit** — whole-app UI/UX pass: `.claude/skills/ui-quality-loop/SKILL.md`. No commits unless asked.
+- **Browser** — 1–2 interactive AXI actions (`chrome-devtools-axi`). Any longer deterministic flow is a **one-shot** Playwright script (navigate, interact, wait, assert, screenshot) in a single shell call. Re-enter AXI only when page structure is unknown.
+- **Skill** — which flow to use: `/ask-matt`. Repo-owned skills live in `.claude/skills/` and compose with mattpocock-skills.
 
-## Agent skills
-
-This project runs on the [mattpocock/skills](https://github.com/mattpocock/skills) set, installed as
-the `mattpocock-skills` plugin. Run `/ask-matt` for which skill or flow fits a situation.
-
-**The `superpowers` plugin is retired — never invoke a `superpowers:*` skill and never write to
-`docs/superpowers/`.** It is disabled in `.claude/settings.json`.
-
-Skills in `.claude/skills/` are the ones this repo owns and compose with the plugin. Never vendor a
-copy of a plugin skill in there; the local copy shadows the plugin and goes stale.
-
-### Issue tracker
-
-Local markdown under `.scratch/<feature-slug>/`. See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-The five canonical roles, unrenamed. See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context — `CONTEXT.md` and `docs/adr/` at the root, both created on demand. See
-`docs/agents/domain.md`.
-
-## Common commands
-
-- `just setup` — install both stacks
-- `just web` / `just backend` / `just dev`
-- `just lint` / `just test` / `just build`
-- `just deploy` — deploy backend to Fly (from `backend/`)
-
-## Whole-application UI quality
-
-For broad UI/UX audits and repair passes, follow `.claude/skills/ui-quality-loop/SKILL.md`
-end-to-end. It owns route/state coverage, live verification, and branch/commit safety. Its default is no commits; a run may commit only with explicit
-user authorization.
-
-### Dev OTPs
-
-In Dev mode otp for any login/signup is always 123456.
-
-## Browser efficiency policy
-
-`chrome-devtools-axi` covers short interactive tasks (1–2 actions). Any longer
-deterministic workflow is **one-shot**: a temporary Playwright script covering the whole
-sequence — navigate, interact, wait, assert, screenshot — executed in a single shell call.
-Snapshot an unknown page once to learn its structure, then go one-shot. Scripts locate by
-role/label/text/test-id, return a compact structured result (assertions, key values,
-errors, screenshot paths), and save the screenshots that visual judgement then reads from
-disk. Interactive tools re-enter only when a script fails because page structure is
-unknown.
+Dev login OTP is `123456`.

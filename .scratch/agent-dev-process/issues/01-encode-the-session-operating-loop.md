@@ -1,7 +1,7 @@
 # Encode the session operating loop
 
 Type: task
-Status: ready-for-agent
+Status: resolved
 Blocked by: None — can start immediately.
 Parent: [Agent development process](../map.md)
 
@@ -33,11 +33,17 @@ Required rules, in this vocabulary:
 
 ## Acceptance
 
-- [ ] `docs/agents/issue-tracker.md` states claim-before-edit, branch naming, session inputs, no mixed product/skill commits, WIP-commit + push, spec `resolved` when the last issue resolves.
-- [ ] Triage labels include `claimed` and `resolved`.
-- [ ] Root `AGENTS.md` points at that file in a few lines; it does not grow by a page.
-- [ ] An agent reading only those two files can start a session without opening the process spec.
+- [x] `docs/agents/issue-tracker.md` states claim-before-edit, branch naming, session inputs, no mixed product/skill commits, WIP-commit + push, spec `resolved` when the last issue resolves.
+- [x] Triage labels include `claimed` and `resolved`.
+- [x] Root `AGENTS.md` points at that file in a few lines; it does not grow by a page.
+- [x] An agent reading only those two files can start a session without opening the process spec.
 
 ## Verification
 
 Read the three files. Confirm no new always-on rule file was added. Do not run the product test suite.
+
+## Answer
+
+The loop lives in `docs/agents/issue-tracker.md` § Session (claim → branch `<effort-slug>/<NN>-<slug>` → scope → product-only commits → WIP push → resolve, and spec `resolved` when the last issue closes). Tracker headings match mattpocock-skills (`When a skill says…`, `Wayfinding operations`); `claimed` / `resolved` stay as wayfinding states, not extra triage roles. Historical `complete` means `resolved`. Root `AGENTS.md` **Ticket** pointer: claim, name the branch, follow the issue tracker. No new always-on file.
+
+This session ran on the existing `ui-quality/coachapp-2026-08-10` branch because in-flight work was already there. New tickets after this use the named branch.

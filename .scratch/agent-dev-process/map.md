@@ -15,6 +15,7 @@ The operating loop in [Agent development process](./spec.md) is encoded in AGENT
 
 ## Decisions so far
 
+* [Encode the session operating loop](./issues/01-encode-the-session-operating-loop.md) — A coding session is one claimed issue; branch `<effort-slug>/<NN>-<slug>`; loop in `docs/agents/issue-tracker.md`; `complete` means `resolved`.
 * [Shrink always-on agent context](./issues/06-shrink-always-on-agent-context.md) — Agents read one RM section at finish, not the whole ledger; the ledger has a 139-row index; the cbm Cursor rule is a repo-local glob-scoped file instead of the always-on cbm-axi symlink.
 
 ## Fog
@@ -27,7 +28,6 @@ The operating loop in [Agent development process](./spec.md) is encoded in AGENT
 
 Unblocked, unclaimed, lowest number first:
 
-* [Encode the session operating loop](./issues/01-encode-the-session-operating-loop.md)
 * [Close finished specs](./issues/02-close-finished-specs.md)
 * [Narrow the backend verify loop](./issues/03-narrow-the-backend-verify-loop.md)
 * [Glob-run frontend checks](./issues/04-glob-run-frontend-checks.md)

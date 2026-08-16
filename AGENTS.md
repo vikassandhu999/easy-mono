@@ -26,3 +26,7 @@ Each line is a pointer: leading word, the branch that fires it, where to go.
 - **Skill** — which flow to use: `/ask-matt`. Repo-owned skills live in `.claude/skills/` and compose with mattpocock-skills.
 
 Dev login OTP is `123456`.
+
+## Quality Rules
+
+Keep the implementation small, sharp, easy to understand. Try to write elegant code in a state of grace. Don't settle for the first thing that comes to mind, try to find the most minimal and better working design. Don't introduce slop: very fragile code that just patches specific cases, dead code, useless code and code ways more complicated of how it should be.

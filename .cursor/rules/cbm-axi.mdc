@@ -1,1 +1,13 @@
-/Users/vikassandhu/Desktop/cbm-axi/.cursor/rules/cbm-axi.mdc
+---
+description: Prefer local cbm AXI for structural codebase questions
+globs: backend/lib/**,backend/test/**,frontend/apps/**,frontend/packages/**
+alwaysApply: false
+---
+
+For structural codebase work, prefer local `cbm` + skill `codebase-memory-axi`.
+
+- Known symbol → `cbm find|code|refs|trace`. Unknown → one short `cbm search` with **user nouns** (max 2–3). Do **not** invent PascalCase names.
+- Callers/callees → `trace --in|--out|--both`. Rename/remove → `refs --verify`. Impact → `cbm impact`. Architecture → `cbm architecture`. Dead-code/fan → `cbm query` + LIMIT.
+- Exact strings/CSS/copy/config → Grep/Read.
+- No `cbm status` preflight. After a hit: one follow-up.
+- Tiers: Scout = provisional few calls; Verify = default; Auditor = bounded + `--verify`/query + disclose gaps.

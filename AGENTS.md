@@ -25,7 +25,7 @@ This is a full-stack monorepo. Two ecosystems, one tree:
 - Backend changes: work inside `backend/`; use `mix`. Follow `backend/AGENTS.md` (the `elixir-conventions` skill summarizes it) and run `mix precommit` before finishing.
 - When changing an API: update the backend OpenApiSpex schema AND both sides.
 - Use the root `Justfile` (`just --list`) for common tasks.
-- **Don't repeat past mistakes.** `docs/agents/recurring-mistakes.md` is a ledger of violations we've hit, each written as a prevention rule — skim the entries for the area you touch before finishing. When you discover a NEW recurring mistake, fixing the instance isn't enough: add a rule there (and a mechanical check — credo/biome/test — when feasible) so no future run repeats it.
+- **Don't repeat past mistakes.** `docs/agents/recurring-mistakes.md` is a ledger of prevention rules. Before finishing, read only the section that matches the files you touched (`## Backend`, `## Frontend`, `## Deploy / ops`, `## Docs`). Do not read the other sections. Do not load the file at session start. When you discover a NEW recurring mistake, fixing the instance isn't enough: add a rule there (and a mechanical check — credo/biome/test — when feasible) so no future run repeats it.
 
 ## Quality Rules
 

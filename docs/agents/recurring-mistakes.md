@@ -5,7 +5,10 @@ future agent run repeats it. This is prevention, not bug-tracking: when you disc
 violation, the job isn't done when the instance is fixed — add (or update) the rule here.
 
 **How to use**
-- Before finishing any change, skim the entries for the area you touched.
+- Before finishing, read only the section that matches the files you touched
+  (`## Backend`, `## Frontend`, `## Deploy / ops`, `## Docs`). Do not read the
+  other sections. Do not load this file at session start. Use the index to jump
+  to a single id.
 - When you find a NEW recurring mistake, add an entry: the rule, why, and **how it's
   enforced**. Prefer a mechanical check (credo / biome / `scripts/check-rm.sh` / a test) —
   that's the only thing that *guarantees* it won't recur.
@@ -21,6 +24,150 @@ violation, the job isn't done when the instance is fixed — add (or update) the
 - **Retire**: delete entries whose subject no longer exists. Git remembers.
 
 Severity of the rule isn't the point; recurrence is.
+
+**Index** — id, title, section, enforcement (`check-rm` / `test` / `review`, or the named gate). Duplicate ids are two distinct rules; jump to the heading that matches the title.
+
+| Id | Title | Section | Enforced |
+| --- | --- | --- | --- |
+| RM-001 | `order_by` must be a total order | Backend | review |
+| RM-002 | OpenApiSpex schema ↔ JSON view parity | Backend | test |
+| RM-003 | Function nesting ≤ 2 | Backend | credo |
+| RM-004 | OpenAPI spec cached in the running dev server | Backend | review |
+| RM-005 | Write responses tested at value level | Backend | test |
+| RM-006 | OpenApiSpex enums and examples mirror domain enums | Backend | review |
+| RM-007 | Nested request schemas need map output | Backend | test |
+| RM-008 | CastAndValidate controllers read `conn.body_params` | Backend | test |
+| RM-009 | Route renames verified from generated OpenAPI | Backend | review |
+| RM-010 | Public context functions are Ctx-first | Backend | review |
+| RM-011 | Payment flows branch on local payment state | Backend | test |
+| RM-012 | Access-control sweeps are route-driven | Backend | review |
+| RM-013 | Authorization helpers written fail-closed | Backend | review |
+| RM-014 | Tenant-owned child rows carry `business_id` | Backend | test |
+| RM-015 | Drop incompatible checks before data remaps | Backend | review |
+| RM-016 | Tests must not hard-code calendar dates vs today | Backend | review |
+| RM-017 | ILIKE search terms must escape `%`/`_` | Backend | review |
+| RM-018 | Dropping uniqueness is an API change for readers | Backend | review |
+| RM-019 | `ON DELETE SET NULL` + CHECK over same columns | Backend | review |
+| RM-020 | Required-on-create FK required on update and delete | Backend | review |
+| RM-021 | Existence guards are tenant-scoped queries | Backend | review |
+| RM-022 | `max(position) + 1` needs a parent-row lock | Backend | test |
+| RM-023 | A process timer is not a cluster-wide singleton | Backend | test |
+| RM-024 | One SQL statement can hide one aggregate per row | Backend | test |
+| RM-025 | Real-connection tests must not use insert-side-effect factories | Backend | check-rm |
+| RM-026 | Async delivery tests must wait for the mailbox | Backend | test |
+| RM-027 | `Operation.parameter/5` schema is the third argument | Backend | test |
+| RM-028 | Page enrichment queries by the page keys directly | Backend | test |
+| RM-101 | No dead HeroUI v2 Tailwind tokens | Frontend | check-rm |
+| RM-102 | Use ROUTES + `generatePath`, never a path string | Frontend | check-rm |
+| RM-103 | No orphan routes / no dead screens | Frontend | review |
+| RM-104 | Stable React keys for editable lists | Frontend | biome |
+| RM-105 | Run biome + tsc before finishing FE work | Frontend | biome |
+| RM-106 | Never `as unknown` to read absent contract fields | Frontend | review |
+| RM-107 | Field-driving logic has one shared source of truth | Frontend | review |
+| RM-108 | Do not optimistically send values the server rejects | Frontend | review |
+| RM-109 | No literal brand colors in UI | Frontend | check-rm |
+| RM-110 | Verify HeroUI semantics before "fixing" them | Frontend | review |
+| RM-111 | Spec audits quote exact spec text | Frontend | review |
+| RM-112 | Pickers use the responsive overlay pattern | Frontend | promoted |
+| RM-113 | Standard coachapp page alignment | Frontend | promoted |
+| RM-114 | Do not let legacy components drive builder architecture | Frontend | review |
+| RM-115 | Headers/form actions follow the exercise screen | Frontend | promoted |
+| RM-116 | HeroUI v3 primitives over raw HTML controls | Frontend | promoted |
+| RM-117 | Detail surface, not permanent edit forms | Frontend | promoted |
+| RM-118 | Mutations invalidate every visible list/detail | Frontend | review |
+| RM-119 | No blind visual redesigns without live verification | Frontend | review |
+| RM-120 | Shared form wrappers must not mount uncontrolled | Frontend | review |
+| RM-121 | No react-aria `NumberField` for numeric entry | Frontend | check-rm |
+| RM-122 | Forms from shared primitives; no optional/required labels | Frontend | check-rm |
+| RM-123 | Browse lists use `BrowseListBox` | Frontend | check-rm |
+| RM-124 | Do not stack inline `translateX` with Tailwind translate | Frontend | check-rm |
+| RM-125 | Loading/pending states must not change layout | Frontend | check-rm |
+| RM-126 | Server field errors + HeroUI validation deadlock | Frontend | review |
+| RM-127 | `bg-foreground`/`text-background` invert with theme | Frontend | check-rm |
+| RM-128 | Status colors fail AA on body copy | Frontend | check-rm |
+| RM-129 | Screen body is `Page.Content bare` + `Page.Frame` | Frontend | check-rm |
+| RM-130 | Backend decimals arrive as JSON strings | Frontend | review |
+| RM-131 | Screen builds committed when they render, own branch | Frontend | review |
+| RM-132 | `--type-*` / `--radius-*` scale is a closed vocabulary | Frontend | check-ui-contract |
+| RM-133 | Theme rules for vendor classes: verify the effect | Frontend | check-theme-selectors |
+| RM-134 | Size tokens live in `--type-*`; `text-*` is colour | Frontend | check-ui-contract |
+| RM-135 | Renaming a custom property means grepping `var(--old)` | Frontend | check-theme-selectors |
+| RM-136 | A recurring look is a component variant | Frontend | check-rm |
+| RM-137 | Colour is a `text-*` token, never `color:` | Frontend | check-rm |
+| RM-138 | Same token on both sides of a responsive pair | Frontend | check-rm |
+| RM-139 | Unlayered theme rule released only by its own `:not()` | Frontend | review |
+| RM-140 | Visual spacing does not separate a flex accessible name | Frontend | review |
+| RM-141 | Overlay gutter is one theme rule | Frontend | check-rm |
+| RM-142 | Colour utility needs a `--color-*` alias | Frontend | check-color-utilities |
+| RM-142 | `useMutation` result is a new object every render | Frontend | review |
+| RM-143 | List-shaped query keys nest under `lists()` | Frontend | review |
+| RM-144 | Every shared concept has an owning feature | Frontend | check-rm |
+| RM-145 | Neutralise HeroUI press scale with `transform-none` | Frontend | review |
+| RM-146 | Committed overlay action visible in both shells | Frontend | review |
+| RM-147 | Action verb lands at the workflow it promises | Frontend | review |
+| RM-148 | Composite progress inside a button needs an action name | Frontend | review |
+| RM-149 | Search matches the composite label the list displays | Frontend | test |
+| RM-150 | Load-more sentinel needs `hasNextPage`-guarded fetch | Frontend | review |
+| RM-150 | Alternative-field validation clears when either is valid | Frontend | review |
+| RM-151 | Lifecycle gates cover every dependent surface | Frontend | review |
+| RM-152 | Management surface exposes API lifecycle actions | Frontend | review |
+| RM-153 | Action eligibility mirrors endpoint preconditions | Frontend | review |
+| RM-154 | Async media must not define a navigation control's name | Frontend | review |
+| RM-155 | Shared page-title component carries heading semantics | Frontend | review |
+| RM-156 | Edit form must not offer fields its read contract overrides | Frontend | review |
+| RM-157 | Infinite-scroll sentinels must not compete with terminal states | Frontend | review |
+| RM-158 | Recoverable query error owns a Retry outcome | Frontend | review |
+| RM-159 | Query failure is not an empty collection | Frontend | review |
+| RM-160 | Custom form controls render their field errors | Frontend | test |
+| RM-161 | Feature pickers use the canonical button primitive | Frontend | check-ui-contract |
+| RM-162 | Form schemas mirror request-string normalization | Frontend | test |
+| RM-163 | Collect user-owned mutation prerequisites first | Frontend | review |
+| RM-164 | Composite controls name trigger and overlay | Frontend | review |
+| RM-165 | Update mappers distinguish omitted fields from clears | Frontend | test |
+| RM-166 | Provenance controls mutation affordances by allowlist | Frontend | test |
+| RM-167 | Loaded edit forms use defaults, not live overwrite | Frontend | test |
+| RM-168 | Controlled fields use an explicit empty value | Frontend | test |
+| RM-169 | Copies receive a distinguishable, bounded name | Frontend | test |
+| RM-170 | Resolved weight must not erase the selected amount | Frontend | test |
+| RM-171 | Buffered numeric editors commit the final draft | Frontend | test |
+| RM-172 | Bulk clones preserve source collection order | Frontend | test |
+| RM-173 | Incremental multi-field editors have valid intermediate states | Frontend | test |
+| RM-174 | Theme skin for a vendor surface covers the family | Frontend | review |
+| RM-175 | A copied class string freezes | Frontend | check-rm |
+| RM-176 | One object, one component | Frontend | review |
+| RM-177 | Empty-state sentence must not assert what it can't know | Frontend | review |
+| RM-178 | A row with its own controls is a grid row | Frontend | review |
+| RM-179 | A pane inside `Page.Content` must not stretch to the viewport | Frontend | review |
+| RM-180 | `scale-100!` cannot cancel vendor `transform: scale` | Frontend | check-rm |
+| RM-181 | Responsively-hidden button label still needs `aria-label` | Frontend | check-rm |
+| RM-182 | Submit far from validation scrolls the message into view | Frontend | review |
+| RM-183 | Keyboard sheet needs offset-aware visual-viewport geometry | Frontend | test |
+| RM-184 | Overlay locks are reference counted and exit-lived | Frontend | test |
+| RM-185 | Apply eligibility before forming a limited page | Frontend | review |
+| RM-186 | Open-ended date windows need explicit NULL in queries | Frontend | test |
+| RM-201 | Deployable frontends need guarded build-time env | Deploy / ops | review |
+| RM-202 | A verification command that can no-op is not verification | Deploy / ops | review |
+| RM-203 | Height-released row in a capped scroll column needs `shrink-0` | Deploy / ops | review |
+| RM-204 | Date-only "today" from the browser must hold on both clocks | Deploy / ops | review |
+| RM-205 | A picker collection is a ListBox | Deploy / ops | check-rm |
+| RM-206 | Overlay motion belongs to the theme | Deploy / ops | check-rm |
+| RM-207 | Create/edit form body chrome belongs to `FormPanel` | Deploy / ops | check-rm |
+| RM-208 | Collection rows receive external state that changes rendering | Frontend | review |
+| RM-209 | Locked queue interaction keeps queue-specific anatomy | Frontend | check-rm |
+| RM-210 | Breaking vocabulary cutover includes internal route state | Frontend | check-rm |
+| RM-211 | Refresh expiring access token before first socket handshake | Frontend | check-rm |
+| RM-212 | Resolve grouped-list loading/errors before empty | Frontend | check-rm |
+| RM-213 | Dependent pane does not render instructions without its item | Frontend | check-rm |
+| RM-214 | Presentation predicates move with a domain cutover | Frontend | check-rm |
+| RM-215 | Multi-line toggle cards release control height | Frontend | check-rm |
+| RM-216 | Special builder questions lock invariants; edits clear errors | Frontend | check-rm |
+| RM-217 | Client form detail keeps stable loading geometry | Frontend | check-rm |
+| RM-218 | Shared form completion copy follows assignment purpose | Frontend | check-rm |
+| RM-219 | Mobile queue rows keep the actionable absolute fact visible | Frontend | check-rm |
+| RM-220 | Queue identity text stays inside its grid track | Frontend | check-rm |
+| RM-301 | Retiring an architecture artifact means grepping the docs | Docs | review |
+| RM-302 | Never vendor a plugin skill into `.claude/skills/` | Docs | check-rm |
+| RM-303 | The `superpowers` plugin is retired | Docs | check-rm |
 
 ---
 

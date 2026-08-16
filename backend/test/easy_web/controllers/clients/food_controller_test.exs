@@ -1,6 +1,8 @@
 defmodule EasyWeb.Clients.FoodControllerTest do
   use Easy.ConnCase
 
+  import OpenApiSpex.TestAssertions
+
   setup do
     coach = insert(:coach)
     client = insert(:client, creator: coach, business: coach.business)
@@ -62,9 +64,26 @@ defmodule EasyWeb.Clients.FoodControllerTest do
 
       conn = get(ctx.conn, "/v1/client/nutrition-foods/#{food.id}")
       assert %{"data" => data} = json_response(conn, 200)
+      assert_schema(data, "Food", EasyWeb.ApiSpec.spec())
       assert data["id"] == food.id
       assert data["name"] == "Dal"
+      assert data["revision"] == 1
+      assert data["nutrients"]["complete"] == true
       assert data["calories_per_100g"] != nil
+    end
+
+    test "rounds canonical nutrients to one decimal", ctx do
+      food =
+        insert(:food,
+          creator: ctx.coach,
+          business: ctx.business,
+          calories_per_100g: 10.16
+        )
+
+      conn = get(ctx.conn, "/v1/client/nutrition-foods/#{food.id}")
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["calories_per_100g"] == 10.2
+      assert data["nutrients"]["calories"] == 10.2
     end
 
     test "returns 404 for other business food", ctx do

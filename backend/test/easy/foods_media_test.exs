@@ -1,14 +1,14 @@
 defmodule Easy.FoodsMediaTest do
   use Easy.DataCase, async: false
 
-  alias Easy.Foods
+  alias Easy.Nutrition.Library
 
   test "attaches same-business media and exposes it on the food" do
     coach = insert(:coach)
     media = insert(:library_media, business: coach.business)
 
     attrs = params_for(:food_attrs) |> Map.put("media_id", media.id)
-    assert {:ok, food} = Foods.create_food(trainer_ctx(coach), atomize(attrs))
+    assert {:ok, food} = Library.create_food(trainer_ctx(coach), atomize(attrs))
 
     assert food.media_id == media.id
     assert food.media.id == media.id
@@ -19,7 +19,7 @@ defmodule Easy.FoodsMediaTest do
     other_media = insert(:library_media)
 
     attrs = params_for(:food_attrs) |> Map.put("media_id", other_media.id) |> atomize()
-    assert {:error, :not_found} = Foods.create_food(trainer_ctx(coach), attrs)
+    assert {:error, :not_found} = Library.create_food(trainer_ctx(coach), attrs)
   end
 
   test "replace and remove keep other fields intact" do
@@ -29,13 +29,13 @@ defmodule Easy.FoodsMediaTest do
     ctx = trainer_ctx(coach)
 
     {:ok, food} =
-      Foods.create_food(ctx, atomize(Map.merge(params_for(:food_attrs), %{"name" => "Yogurt", "media_id" => media_a.id})))
+      Library.create_food(ctx, atomize(Map.merge(params_for(:food_attrs), %{"name" => "Yogurt", "media_id" => media_a.id})))
 
-    {:ok, replaced} = Foods.update_food(ctx, food.id, %{media_id: media_b.id})
+    {:ok, replaced} = Library.update_food(ctx, food.id, food.revision, %{media_id: media_b.id})
     assert replaced.media_id == media_b.id
     assert replaced.name == "Yogurt"
 
-    {:ok, removed} = Foods.update_food(ctx, food.id, %{media_id: nil})
+    {:ok, removed} = Library.update_food(ctx, food.id, replaced.revision, %{media_id: nil})
     assert removed.media_id == nil
     assert removed.media == nil
     assert removed.name == "Yogurt"

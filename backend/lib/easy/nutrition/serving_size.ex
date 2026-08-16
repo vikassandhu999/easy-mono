@@ -1,8 +1,11 @@
 defmodule Easy.Nutrition.ServingSize do
   use Ecto.Schema
 
+  import Ecto.Changeset
+
   @type t() :: %__MODULE__{}
 
+  @primary_key false
   embedded_schema do
     field :label, :string
     field :amount, :float
@@ -14,7 +17,9 @@ defmodule Easy.Nutrition.ServingSize do
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(serving_size, attrs) do
     serving_size
-    |> Ecto.Changeset.cast(attrs, [:label, :amount, :unit, :weight_g, :is_default])
-    |> Ecto.Changeset.validate_required([:unit, :weight_g])
+    |> cast(attrs, [:label, :amount, :unit, :weight_g, :is_default])
+    |> validate_required([:label, :amount, :unit, :weight_g])
+    |> validate_number(:amount, greater_than: 0)
+    |> validate_number(:weight_g, greater_than: 0)
   end
 end

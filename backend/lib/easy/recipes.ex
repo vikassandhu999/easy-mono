@@ -109,7 +109,7 @@ defmodule Easy.Recipes do
         )
         |> Repo.all()
 
-      {:ok, Easy.Foods.split_plan_impact(plans)}
+      {:ok, Easy.Nutrition.Library.split_plan_impact(plans)}
     end
   end
 

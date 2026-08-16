@@ -31,7 +31,7 @@ defmodule EasyWeb.FallbackController do
       {:error,
        Error.new(
          :stale_revision,
-         "The Training Template or Client Plan changed since it was observed.",
+         "The resource changed since it was observed.",
          %{current_revision: current_revision},
          :conflict
        )}

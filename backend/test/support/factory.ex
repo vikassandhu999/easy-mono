@@ -261,6 +261,7 @@ defmodule Easy.Factory do
       dietary_tags: ["high_protein"],
       notes: "Test food",
       serving_sizes: [],
+      revision: 1,
       creator: build(:coach),
       business: build(:business)
     }

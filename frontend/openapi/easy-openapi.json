@@ -1522,6 +1522,7 @@
           "dietary_tags": [
             "high_protein"
           ],
+          "expected_revision": 1,
           "name": "Plain Greek Yogurt"
         },
         "properties": {
@@ -1597,6 +1598,12 @@
             "x-struct": null,
             "x-validate": null
           },
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
           "fat_g_per_100g": {
             "nullable": true,
             "type": "number",
@@ -1655,6 +1662,9 @@
             "x-validate": null
           }
         },
+        "required": [
+          "expected_revision"
+        ],
         "title": "FoodUpdateRequest",
         "type": "object",
         "x-struct": null,
@@ -3096,9 +3106,18 @@
             "x-struct": null,
             "x-validate": null
           },
+          "nutrients": {
+            "$ref": "#/components/schemas/NutrientTotals"
+          },
           "protein_g_per_100g": {
             "nullable": true,
             "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "revision": {
+            "minimum": 1,
+            "type": "integer",
             "x-struct": null,
             "x-validate": null
           },
@@ -3138,6 +3157,8 @@
           "id",
           "name",
           "source",
+          "revision",
+          "nutrients",
           "category",
           "notes",
           "image_url",
@@ -3617,6 +3638,8 @@
         "additionalProperties": false,
         "properties": {
           "amount": {
+            "exclusiveMinimum": true,
+            "minimum": 0,
             "type": "number",
             "x-struct": null,
             "x-validate": null
@@ -3637,6 +3660,8 @@
             "x-validate": null
           },
           "weight_g": {
+            "exclusiveMinimum": true,
+            "minimum": 0,
             "type": "number",
             "x-struct": null,
             "x-validate": null
@@ -9097,6 +9122,50 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ConversationListResponse",
         "x-validate": null
       },
+      "StaleRevisionError": {
+        "additionalProperties": false,
+        "properties": {
+          "error_code": {
+            "enum": [
+              "stale_revision"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "error_detail": {
+            "additionalProperties": false,
+            "properties": {
+              "current_revision": {
+                "minimum": 1,
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "required": [
+              "current_revision"
+            ],
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "error_message": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "error_code",
+          "error_message",
+          "error_detail"
+        ],
+        "title": "StaleRevisionError",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.StaleRevisionError",
+        "x-validate": null
+      },
       "ClientTrainingPlanResponse": {
         "additionalProperties": false,
         "properties": {
@@ -11065,6 +11134,58 @@
         "title": "PublicLandingPageResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.PublicLandingPageResponse",
+        "x-validate": null
+      },
+      "NutrientTotals": {
+        "additionalProperties": false,
+        "properties": {
+          "calories": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "carbohydrates": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "complete": {
+            "type": "boolean",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "fat": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "fiber": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "protein": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "calories",
+          "protein",
+          "carbohydrates",
+          "fat",
+          "fiber",
+          "complete"
+        ],
+        "title": "NutrientTotals",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutrientTotals",
         "x-validate": null
       },
       "WorkbenchOnboardingQueueItem": {
@@ -25178,6 +25299,18 @@
               "x-struct": null,
               "x-validate": null
             }
+          },
+          {
+            "description": "Revision observed by the deleting client",
+            "in": "query",
+            "name": "expected_revision",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
           }
         ],
         "responses": {
@@ -25208,11 +25341,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/StaleRevisionError"
                 }
               }
             },
-            "description": "Still in use — a food still used by a plan or recipe"
+            "description": "Stale revision"
           }
         },
         "security": [
@@ -25342,6 +25475,16 @@
               }
             },
             "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaleRevisionError"
+                }
+              }
+            },
+            "description": "Stale revision"
           },
           "422": {
             "content": {

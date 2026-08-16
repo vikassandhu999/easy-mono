@@ -2,7 +2,7 @@ defmodule Easy.Nutrition.LibraryDeleteTest do
   use Easy.SchemaCase, async: false
 
   alias Easy.Ctx
-  alias Easy.Foods
+  alias Easy.Nutrition.Library
   alias Easy.MealLogs
   alias Easy.Nutrition.FoodLogEntry
   alias Easy.Recipes
@@ -12,13 +12,13 @@ defmodule Easy.Nutrition.LibraryDeleteTest do
   # `recipe_id` are ON DELETE SET NULL, and nulling one on a meal item violates the
   # food-xor-recipe check. Blocked up front instead, as a conflict.
 
-  describe "delete_food/2" do
+  describe "delete_food/3" do
     test "is blocked while a meal item still uses the food" do
       %{ctx: ctx, business: business, coach: coach, meal: meal} = scenario()
       food = insert(:food, business: business, creator: coach)
       insert(:meal_item, meal: meal, business: business, food: food, weight_g: 100.0, position: 0)
 
-      assert {:error, :in_use} = Foods.delete_food(ctx, food.id)
+      assert {:error, :in_use} = Library.delete_food(ctx, food.id, food.revision)
       assert Repo.get(Easy.Nutrition.Food, food.id)
     end
 
@@ -29,7 +29,7 @@ defmodule Easy.Nutrition.LibraryDeleteTest do
       insert(:recipe_ingredient, business: business, recipe: recipe, food: food, weight_g: 100.0)
 
       # Nulling this would silently drop the food's macros from the recipe total.
-      assert {:error, :in_use} = Foods.delete_food(ctx, food.id)
+      assert {:error, :in_use} = Library.delete_food(ctx, food.id, food.revision)
     end
 
     test "succeeds when only a logged entry references the food, and the log survives" do
@@ -44,7 +44,7 @@ defmodule Easy.Nutrition.LibraryDeleteTest do
                  weight_g: 100.0
                })
 
-      assert {:ok, _deleted} = Foods.delete_food(ctx, food.id)
+      assert {:ok, _deleted} = Library.delete_food(ctx, food.id, food.revision)
 
       # History is denormalised: name and frozen macros outlive the food row.
       kept = Repo.get(FoodLogEntry, entry.id)

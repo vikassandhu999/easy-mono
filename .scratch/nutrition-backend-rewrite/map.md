@@ -15,10 +15,11 @@ Rewrite Nutrition around Library, Programming, and Diary. The effort ends when t
 ## Decisions so far
 
 * [Install local-calendar and Nutrition foundations](./issues/01-local-calendar-foundations.md) — Business and Client store validated IANA timezones stamped to `Asia/Kolkata`; `Easy.LocalCalendar` owns fallback and local dates; `Easy.Nutrition.MealSlot` owns the closed ordinary/workout vocabulary; glossary and ADR 0002 record Library, Programming, and Diary.
+* [Rewrite the Food Library contract](./issues/02-food-library.md) — `Easy.Nutrition.Library` owns Food CRUD, revisioned writes, serving-size embeds, nullable canonical nutrients with one-decimal JSON rounding, and copy; coach and client apps consume the generated Food contract.
 
 ## Not yet specified
 
-* Later tickets still own Library, Programming, Diary, contract cutover, and reset.
+* Later tickets still own Recipes, Programming, Diary, contract cutover, and reset.
 
 ## Out of scope
 

@@ -3,6 +3,7 @@ defmodule EasyWeb.Clients.RecipeJSON do
   alias Easy.Nutrition.Food
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient
+  alias EasyWeb.FoodPayload
 
   @spec show(map()) :: map()
   def show(%{recipe: recipe}) do
@@ -48,17 +49,6 @@ defmodule EasyWeb.Clients.RecipeJSON do
     }
   end
 
-  defp food_data(%Food{} = food) do
-    %{
-      id: food.id,
-      name: food.name,
-      calories_per_100g: food.calories_per_100g,
-      protein_g_per_100g: food.protein_g_per_100g,
-      carbs_g_per_100g: food.carbs_g_per_100g,
-      fat_g_per_100g: food.fat_g_per_100g,
-      fiber_g_per_100g: food.fiber_g_per_100g
-    }
-  end
-
+  defp food_data(%Food{} = food), do: FoodPayload.data(food)
   defp food_data(_), do: nil
 end

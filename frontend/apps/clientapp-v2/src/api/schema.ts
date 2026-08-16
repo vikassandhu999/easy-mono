@@ -1326,6 +1326,7 @@ export interface components {
      *       "dietary_tags": [
      *         "high_protein"
      *       ],
+     *       "expected_revision": 1,
      *       "name": "Plain Greek Yogurt"
      *     }
      */
@@ -1347,6 +1348,7 @@ export interface components {
         | 'keto'
         | 'high_protein'
       )[];
+      expected_revision: number;
       fat_g_per_100g?: number | null;
       fiber_g_per_100g?: number | null;
       image_url?: string | null;
@@ -1718,7 +1720,9 @@ export interface components {
       media: components['schemas']['LibraryMedia'] | null;
       name: string;
       notes: string | null;
+      nutrients: components['schemas']['NutrientTotals'];
       protein_g_per_100g?: number | null;
+      revision: number;
       serving_sizes: components['schemas']['FoodServingSize'][];
       /** @enum {string|null} */
       source: 'system' | 'imported' | 'custom' | null;
@@ -3318,6 +3322,15 @@ export interface components {
       count: number;
       data: components['schemas']['Conversation'][];
     };
+    /** StaleRevisionError */
+    StaleRevisionError: {
+      /** @enum {string} */
+      error_code: 'stale_revision';
+      error_detail: {
+        current_revision: number;
+      };
+      error_message: string;
+    };
     /** ClientTrainingPlanResponse */
     ClientTrainingPlanResponse: {
       data: components['schemas']['ClientTrainingPlan'];
@@ -3891,6 +3904,15 @@ export interface components {
     /** PublicLandingPageResponse */
     PublicLandingPageResponse: {
       data: components['schemas']['PublicLandingPage'];
+    };
+    /** NutrientTotals */
+    NutrientTotals: {
+      calories: number | null;
+      carbohydrates: number | null;
+      complete: boolean;
+      fat: number | null;
+      fiber: number | null;
+      protein: number | null;
     };
     /** WorkbenchOnboardingQueueItem */
     WorkbenchOnboardingQueueItem: {

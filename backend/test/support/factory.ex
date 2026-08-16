@@ -47,6 +47,7 @@ defmodule Easy.Factory do
     %Business{
       name: sequence(:business_name, &"Business #{&1}"),
       handle: sequence(:handle, &"biz-#{&1}"),
+      timezone: Easy.LocalCalendar.default_timezone(),
       owner: build(:user)
     }
   end
@@ -110,6 +111,7 @@ defmodule Easy.Factory do
       phone: "123-456-7890",
       notes: "Test client",
       status: :active,
+      timezone: Easy.LocalCalendar.default_timezone(),
       user: build(:user, email: sequence(:client_user_email, &"client-user-#{&1}@test.com")),
       business: business,
       creator: creator,

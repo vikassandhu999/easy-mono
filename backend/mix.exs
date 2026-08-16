@@ -53,6 +53,7 @@ defmodule Easy.MixProject do
       {:resend, "~> 0.4.4"},
       {:open_api_spex, "~> 3.22"},
       {:nimble_csv, "~> 1.2"},
+      {:tzdata, "~> 1.1"},
       {:ex_machina, "~> 2.8", only: :test},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]

@@ -1,6 +1,6 @@
-# CoachApp v2 Agent Instructions
+# Coach app contract
 
-Use this file as the app contract.
+This file is the contract for `coachapp-v2`. Follow it while writing and reviewing. Workspace rules live in `frontend/AGENTS.md`.
 
 ## Stack And Commands
 

@@ -1214,7 +1214,7 @@ Four mattpocock skills (`codebase-design`, `diagnosing-bugs`, `prototype`, `hand
 copied into `.claude/skills/`. A local copy shadows the plugin, so the agent kept loading the
 vendored version while upstream moved on — the stale `diagnosing-bugs` was missing the
 secret-redaction section entirely. `.claude/skills/` is for skills this repo owns
-(`elixir-conventions`, `design-pro`, `ui-quality-loop`, …). Enforced by `scripts/check-rm.sh`
+(`design-pro`, `ui-quality-loop`, `first-principles-edit`, …). Enforced by `scripts/check-rm.sh`
 (RM-302): fails if a directory there collides with a plugin skill name.
 
 ### RM-301 — Retiring an architecture-level artifact means grepping the docs for it

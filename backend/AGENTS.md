@@ -1,6 +1,6 @@
 # Backend contract
 
-Elixir / Phoenix / Ecto under `backend/`. `elixir-conventions` is the checklist; this file wins when they disagree.
+This file is the contract for Elixir / Phoenix / Ecto under `backend/`. Follow it while writing and reviewing. Cursor loads it when you edit this tree.
 
 Prefer deletion, names over comments, functions over macros, explicit arguments, database guarantees, and tests.
 
@@ -49,11 +49,11 @@ Controllers pass `conn.assigns.ctx`. They do not destructure `conn.assigns.claim
 
 The function name declares actor and target. `_for_user`, `_for_coach_user`, `_as_coach`, `_as_client` are retired.
 
-| Case | Actor → target | Name |
-| --- | --- | --- |
-| Coach in system | coach → business scope | `verb_noun(ctx, …)` |
-| Coach for a client | coach → one client | `verb_noun_{for,to}_client(ctx, client_id, …)` — `client_id` second |
-| Client themselves | client → self | `verb_client_noun(ctx, …)` — no `client_id` arg |
+| Case | Actor → target | Name | Example |
+| --- | --- | --- | --- |
+| Coach in system | coach → business scope | `verb_noun(ctx, …)` | `create_plan(ctx, attrs)` |
+| Coach for a client | coach → one client | `verb_noun_{for,to}_client(ctx, client_id, …)` — `client_id` second | `list_plans_for_client(ctx, client_id)` |
+| Client themselves | client → self | `verb_client_noun(ctx, …)` — no `client_id` arg | `list_client_plans(ctx)` |
 
 Case 1 stamps `creator_id = ctx.user_id`. Case 2 authorizes the client in `ctx.business_id`. Case 3 targets `ctx.client_id`.
 
@@ -64,6 +64,8 @@ HTTP adapters: read `conn.assigns.ctx`, take params, call one context function, 
 Writes use `OpenApiSpex.Plug.CastAndValidate` and a co-located `operation`. After the plug, the body is `conn.body_params` (RM-008). Nested object schemas that feed `cast_embed` / `cast_assoc` set `struct?: false` (RM-007).
 
 Identity ids come from `conn.path_params` (strings) as explicit context args. The body carries only editable fields, which go to `cast/3`. `cast/3` is key-agnostic; do not probe `Map.get("x") || Map.get(:x)`.
+
+`business_id` stays out of JSON responses.
 
 Exception: `AuthController` (signup, OTP, token refresh) may render raw `json(%{...})`.
 
@@ -117,6 +119,7 @@ Cover the rule: valid and invalid input, trusted ids not cast, tenant scope, cro
 
 ## Finish
 
-While iterating, run the ticket's `mix test <path>`. Before resolving, `cd backend && mix precommit` (compile `--warnings-as-errors`, format, credo, full test). Do not claim those checks passed unless they were run.
+1. **Iterate** — `mix test <path>` named by the ticket. Done when that file is green. Credo and format issues in files you touched get fixed on this loop.
+2. **Resolve** — `cd backend && mix precommit` (compile `--warnings-as-errors`, format, credo, full `mix test`). Done when it exits 0. Claim it passed only after it ran.
 
-Credo owns mechanical nesting. Reviews check this file. Legacy debt is fixed on the boundary you touch, not big-bang. New code on that boundary follows this file even when neighbours do not.
+Reviews check this file. Credo owns nesting. Legacy debt is fixed on the boundary you touch; new code on that boundary follows this file even when neighbours do not.

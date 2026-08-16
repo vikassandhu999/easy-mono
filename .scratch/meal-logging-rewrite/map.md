@@ -12,7 +12,7 @@ Ship the meal-log diary rewrite in [Meal logging diary](./spec.md): one freeze p
 * The source specification is [Meal logging diary](./spec.md). Read the Design brief before any ticket: fundamental job, ground truths, inherited assumptions to discard, target design, and code to delete. Tickets slice that brief; they do not replace it. The planning conversation is not available to later sessions.
 * This map carries execution. Product decisions are closed in the Design brief. Do not reopen them unless a ticket proves the brief is wrong.
 * An implementation that keeps a discarded assumption (positional join, `source` as identity, kitchen-sink request body, opaque today map, nullifying FK) has not finished the ticket.
-* Prefer `first-principles-edit` over bolting status onto the old join. Use `elixir-conventions` for backend writes and `codebase-memory-axi` for structural discovery.
+* Prefer `first-principles-edit` over bolting status onto the old join. Follow `backend/AGENTS.md` for backend writes and `codebase-memory-axi` for structural discovery.
 * Refer to map tickets by title in human-facing notes.
 
 ## Decisions so far

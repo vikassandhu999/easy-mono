@@ -4,8 +4,8 @@ Phoenix API and pnpm React apps in one tree. Commands: `just --list`.
 
 ## Tree
 
-- `frontend/` — `frontend/AGENTS.md`, then the app's `AGENTS.md` when you are inside that app.
-- `backend/` — `backend/AGENTS.md`. `elixir-conventions` is the working checklist.
+- `frontend/` — `frontend/AGENTS.md` (the contract), then the app's `AGENTS.md` when you are inside that app.
+- `backend/` — `backend/AGENTS.md` (the contract).
 - `.scratch/<slug>/` — specs and tickets. Loop: `docs/agents/issue-tracker.md`.
 - `docs/` — ledger and ADRs. Specs go in `.scratch/`. Cited older plans: `docs/archive/` (read; leave in place).
 

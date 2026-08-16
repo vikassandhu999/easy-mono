@@ -1,6 +1,6 @@
-# ClientApp v2 Agent Instructions
+# Client app contract
 
-Use this file as the app contract. Workspace-wide rules live in `frontend/AGENTS.md`.
+This file is the contract for `clientapp-v2`. Follow it while writing and reviewing. Workspace rules live in `frontend/AGENTS.md`.
 
 This is the **client-facing** app: a mobile-first PWA that also ships as a Capacitor
 native shell. It is not a small coachapp — the audience, the layout and the interaction

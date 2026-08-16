@@ -1,6 +1,6 @@
-# Frontend workspace
+# Frontend contract
 
-Shared contract for every app and package under `frontend/`. App screens, routing, and UI live in that app's `AGENTS.md` — read it before editing inside the app.
+This file is the contract for every app and package under `frontend/`. Follow it while writing and reviewing. Cursor loads it when you edit this tree. App screens, routing, and UI live in that app's `AGENTS.md` — read it before editing inside the app.
 
 Commands: the app's `package.json` `scripts`, or `just --list` from the repo root.
 

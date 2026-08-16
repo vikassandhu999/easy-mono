@@ -1,7 +1,7 @@
 # Agent development process
 
 Label: wayfinder:map
-Status: active
+Status: resolved
 
 ## Destination
 
@@ -22,6 +22,7 @@ The operating loop in [Agent development process](./spec.md) is encoded in AGENT
 * [Add an api-change skill](./issues/05-add-an-api-change-skill.md) — Public JSON changes follow `.claude/skills/api-change/SKILL.md` (schema + view, gen-api, hooks; spec reloads in dev).
 * [Shrink always-on agent context](./issues/06-shrink-always-on-agent-context.md) — Agents read one RM section at finish, not the whole ledger; the ledger has a 139-row index; the cbm Cursor rule is a repo-local glob-scoped file instead of the always-on cbm-axi symlink.
 * [Bust the OpenAPI spec cache in dev](./issues/08-bust-the-openapi-spec-cache-in-dev.md) — `:dev` uses `OpenApiSpex.Plug.NoneCache`; the next request rebuilds the spec.
+* [Backup and prune local branches](./issues/09-backup-and-prune-local-branches.md) — `origin/main` is `acd2c68b` (fast-forward, no force). No local branches deleted; archive candidates listed on the ticket.
 
 ## Out of scope
 
@@ -29,6 +30,4 @@ The operating loop in [Agent development process](./spec.md) is encoded in AGENT
 
 ## Frontier
 
-Unblocked, unclaimed, lowest number first:
-
-* [Backup and prune local branches](./issues/09-backup-and-prune-local-branches.md) (human)
+None. The last issue is resolved.

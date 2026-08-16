@@ -1,7 +1,7 @@
 # Backup and prune local branches
 
 Type: task
-Status: ready-for-human
+Status: resolved
 Blocked by: None — can start immediately.
 Parent: [Agent development process](../map.md)
 
@@ -28,11 +28,29 @@ Checklist:
 
 ## Acceptance
 
-- [ ] The in-flight product branch exists on `origin`.
-- [ ] A written list of archived/deleted local branches is in `## Answer` (or a comment here).
-- [ ] `main` either matches the intended integration point or the gap is named (what is still local-only).
-- [ ] No force-push to `main`.
+- [x] The in-flight product branch exists on `origin`.
+- [x] A written list of archived/deleted local branches is in `## Answer` (or a comment here).
+- [x] `main` either matches the intended integration point or the gap is named (what is still local-only).
+- [x] No force-push to `main`.
 
 ## Verification
 
 `git status -sb`, `git branch -vv`, `git log origin/main..HEAD --oneline` recorded in `## Answer`.
+
+## Answer
+
+Fast-forwarded local `main` to `acd2c68b` and pushed `origin/main` (no force). Training rewrite + process tickets 01–07 are on `origin/main`. Ticket 08 is `d589bf38` on `origin/agent-dev-process/08-bust-the-openapi-spec-cache-in-dev` (one commit ahead of `origin/main`).
+
+No local branches were deleted (agent must not force-delete). Inventory of local branches with **no remote**:
+
+**Safe to delete locally** (commits already on `origin/main` or an ancestor): `agent-dev-process/02-close-finished-specs`, `03-narrow-the-backend-verify-loop`, `04-glob-run-frontend-checks`, `05-add-an-api-change-skill`.
+
+**Archive candidates** (`port/*`, `prototype/*`, old ui-quality): `port/cd-ci`, `port/cd-dt`, `port/cd-ir`, `port/cd-nd`, `port/cd-nu`, `port/cd-ov`, `port/cd-ph`, `port/cd-sd`, `port/cd-tr`, `port/cd-wh`, `port/nb`, `port/np`, `port/tb`, `prototype/default-intake-placement`, `prototype/nb-amount-flow`, `prototype/tb-exercise-card-2026-08-06`, `ui-quality/coachapp-2026-08-04`, `ui-quality/coachapp-2026-08-10`, `ui-quality/coachapp-training-builder-2026-08-04`, `archive/claude-coachapp-2026-07-13`.
+
+**Keep until you confirm unique commits are elsewhere:** `arch/coachapp-v2-deepening`, `backend-ts-rewrite`, `backup/migration-pre-squash`, `base-design`, `before-migrate`, `coachapp-design`, `codex/audit-cl-2026-07-20`, `designs-preserved`, `feat/client-edit-redesign`, `feat/fe-typed-api-clients`, `feat/public-library-media`, `fix/backend-seed-scripts`, `fix/clientapp-v2-token-sweep`, `fix/coachapp-mobile-responsiveness`, `quality/coachapp-v2`, `recovery/coachapp-design`, `refactor/coachapp-api-simplify`, `schema-refactor/2026-06-09`.
+
+**Worktree, do not delete:** `backend-clean-room` → `/Users/vikassandhu/Desktop/10x/easy-mono-cleanroom`.
+
+`git status -sb` (this ticket branch, before this commit): `## agent-dev-process/09-backup-and-prune-local-branches`
+
+`git log origin/main..HEAD --oneline`: `d589bf38 fix(api): rebuild the OpenAPI spec on each dev request`

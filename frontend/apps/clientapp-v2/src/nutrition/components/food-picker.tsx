@@ -10,6 +10,11 @@ import {useEffect, useRef, useState} from 'react';
 
 import {type Food, type Recipe, useListClientFoodsQuery, useListClientRecipesQuery} from '@/api/nutrition';
 
+function recipeCaloriesLabel(recipe: Recipe): string {
+  const kcal = recipe.nutrients.calories;
+  return kcal == null ? '—' : `${Math.round(kcal)} kcal total`;
+}
+
 export type Picked = {
   // A recipe with no cooked weight has no gram equivalent, so it is sized in
   // servings instead: exactly one of these two is set.
@@ -89,7 +94,7 @@ export default function FoodPicker({
       id: r.id,
       kind: 'recipe',
       name: r.name,
-      perUnit: `${Math.round(r.nutrition?.calories ?? 0)} kcal total`,
+      perUnit: recipeCaloriesLabel(r),
       slot,
     });
 
@@ -178,7 +183,7 @@ export default function FoodPicker({
             >
               <span className="min-w-0">
                 <span className="block truncate text-sm font-medium">{r.name}</span>
-                <span className="text-[10px] text-muted">{Math.round(r.nutrition?.calories ?? 0)} kcal total</span>
+                <span className="text-[10px] text-muted">{recipeCaloriesLabel(r)}</span>
               </span>
               <span className="shrink-0 text-muted">›</span>
             </button>

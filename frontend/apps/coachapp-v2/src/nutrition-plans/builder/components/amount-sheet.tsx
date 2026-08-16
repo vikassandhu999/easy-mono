@@ -236,20 +236,19 @@ export function AmountSheetContent({
       return formatMacroPreview(computed);
     }
 
-    if (recipe?.nutrition) {
-      // Recipe: recipe.nutrition holds the TOTAL macros for the whole recipe
-      // (summed from ingredients at their recorded weights). Mirrors the
-      // backend's MacroCalc: a weighed item scales by cooked_weight_g; a
-      // servings item scales totals by entered/servings_count (default 1).
-      const n = recipe.nutrition;
+    if (recipe) {
+      // Recipe: nutrients are TOTALS for the whole recipe (summed from
+      // ingredients at their recorded weights). A weighed item scales by
+      // cooked_weight_g; a servings item scales totals by entered/servings_count.
+      const n = recipe.nutrients;
 
       if (resolvedWeightG != null && recipe.cooked_weight_g != null && recipe.cooked_weight_g > 0) {
         // Weighed serving — per-100g basis over cooked weight.
         const perHundred = {
           calories_per_100g: ((n.calories ?? 0) / recipe.cooked_weight_g) * 100,
-          protein_g: ((n.protein_g ?? 0) / recipe.cooked_weight_g) * 100,
-          carbs_g: ((n.carbs_g ?? 0) / recipe.cooked_weight_g) * 100,
-          fats_g: ((n.fat_g ?? 0) / recipe.cooked_weight_g) * 100,
+          protein_g: ((n.protein ?? 0) / recipe.cooked_weight_g) * 100,
+          carbs_g: ((n.carbohydrates ?? 0) / recipe.cooked_weight_g) * 100,
+          fats_g: ((n.fat ?? 0) / recipe.cooked_weight_g) * 100,
         };
         const computed = computeMacrosFromSnapshot(perHundred, resolvedWeightG);
         return formatMacroPreview(computed);
@@ -263,9 +262,9 @@ export function AmountSheetContent({
         const scale = servingsEntered / recipeServings(recipe);
         const computed = {
           calories: (n.calories ?? 0) * scale,
-          protein: (n.protein_g ?? 0) * scale,
-          carbs: (n.carbs_g ?? 0) * scale,
-          fat: (n.fat_g ?? 0) * scale,
+          protein: (n.protein ?? 0) * scale,
+          carbs: (n.carbohydrates ?? 0) * scale,
+          fat: (n.fat ?? 0) * scale,
         };
         return formatMacroPreview(computed);
       }

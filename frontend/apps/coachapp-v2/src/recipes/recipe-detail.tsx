@@ -13,18 +13,17 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import type {Recipe} from '@/api/nutrition-foods';
+import type {NutrientTotals, Recipe} from '@/api/nutrition-foods';
 import {useCopyNutritionRecipeMutation, useDeleteRecipeMutation, useGetRecipeQuery} from '@/api/nutrition-foods';
 
-// recipe.nutrition holds the recipe's total computed macros (not per-100g).
-// The backend derives it from recipe_ingredients; it is null when no ingredient
-// carries weight data. We display it as recipe totals.
-type RecipeNutrition = NonNullable<Recipe['nutrition']>;
-
-const MACRO_SEGMENTS: {color: 'accent' | 'success' | 'warning'; key: keyof RecipeNutrition; label: string}[] = [
-  {color: 'accent', key: 'protein_g', label: 'Protein'},
-  {color: 'success', key: 'carbs_g', label: 'Carbs'},
-  {color: 'warning', key: 'fat_g', label: 'Fats'},
+const MACRO_SEGMENTS: {
+  color: 'accent' | 'success' | 'warning';
+  key: keyof Pick<NutrientTotals, 'carbohydrates' | 'fat' | 'protein'>;
+  label: string;
+}[] = [
+  {color: 'accent', key: 'protein', label: 'Protein'},
+  {color: 'success', key: 'carbohydrates', label: 'Carbs'},
+  {color: 'warning', key: 'fat', label: 'Fats'},
 ];
 
 export default function RecipeDetail() {
@@ -47,16 +46,16 @@ export default function RecipeDetail() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async ({expectedRevision, id}: {expectedRevision: number; id: string}) => {
     try {
-      await deleteRecipe.mutateAsync(id!);
+      await deleteRecipe.mutateAsync({expectedRevision, id});
       navigate(ROUTES.RECIPES, {replace: true});
     } catch {
       toast.danger("Couldn't delete recipe");
     }
   };
 
-  const renderDeleteDialog = (trigger: ReactNode, recipeName: string) => (
+  const renderDeleteDialog = (trigger: ReactNode, recipe: Recipe) => (
     <AlertDialog>
       {trigger}
       <AlertDialog.Backdrop variant="transparent">
@@ -69,7 +68,7 @@ export default function RecipeDetail() {
             </AlertDialog.Header>
             <AlertDialog.Body>
               <Typography>
-                This will permanently delete <strong>{recipeName}</strong>. This action cannot be undone.
+                This will permanently delete <strong>{recipe.name}</strong>. This action cannot be undone.
               </Typography>
             </AlertDialog.Body>
             <AlertDialog.Footer>
@@ -81,7 +80,7 @@ export default function RecipeDetail() {
               </Button>
               <Button
                 isPending={isDeleting}
-                onPress={handleDelete}
+                onPress={() => handleDelete({expectedRevision: recipe.revision, id: recipe.id})}
                 variant="danger"
               >
                 {isDeleting ? 'Deleting' : 'Delete'}
@@ -142,12 +141,11 @@ export default function RecipeDetail() {
   const ingredientCount = recipe.recipe_ingredients.length;
   // Render ingredients in their stored order (position is the source of truth).
   const orderedIngredients = [...recipe.recipe_ingredients].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-  const nutrition = recipe.nutrition;
-  const kcal = nutrition?.calories;
-  const segments = MACRO_SEGMENTS.map((s) => ({...s, value: (nutrition?.[s.key] as number | null) ?? 0})).filter(
-    (s) => s.value > 0,
+  const kcal = recipe.nutrients.calories;
+  const segments = MACRO_SEGMENTS.map((s) => ({...s, value: recipe.nutrients[s.key]})).filter(
+    (s): s is typeof s & {value: number} => s.value != null && s.value > 0,
   );
-  const fiber = nutrition?.fiber_g;
+  const fiber = recipe.nutrients.fiber;
 
   return (
     <Page>
@@ -179,7 +177,7 @@ export default function RecipeDetail() {
             >
               <Trash2 />
             </Button>,
-            recipe.name,
+            recipe,
           )}
         </Page.Actions>
       </Page.Header>
@@ -208,6 +206,14 @@ export default function RecipeDetail() {
                     variant="secondary"
                   >
                     {recipe.cooked_weight_g} g cooked
+                  </Chip>
+                )}
+                {!recipe.nutrients.complete && (
+                  <Chip
+                    className={OUTLINE_CHIP_CLASS}
+                    variant="secondary"
+                  >
+                    Incomplete
                   </Chip>
                 )}
               </div>
@@ -332,7 +338,7 @@ export default function RecipeDetail() {
             >
               <Trash2 />
             </Button>,
-            recipe.name,
+            recipe,
           )}
         </div>
       </Page.Content>

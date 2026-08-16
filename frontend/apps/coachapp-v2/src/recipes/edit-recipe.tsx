@@ -35,7 +35,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
   const leaveConfirm = useOverlayState();
 
   const form = useRecipeForm({
-    defaultValues: recipeToFormValues({...recipe, servings_count: recipe.servings_count ?? null}),
+    defaultValues: recipeToFormValues(recipe),
   });
 
   const hasUnsavedChanges = form.formState.isDirty || contentChanged;
@@ -57,7 +57,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
     try {
       await updateRecipe.mutateAsync({
         id: recipeId,
-        body: recipeToUpdateRequest({ingredients, values: formData}),
+        body: recipeToUpdateRequest({expectedRevision: recipe.revision, ingredients, values: formData}),
       });
       goBack();
     } catch (err) {

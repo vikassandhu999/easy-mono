@@ -5,7 +5,6 @@ defmodule Easy.Nutrition.LibraryDeleteTest do
   alias Easy.Nutrition.Library
   alias Easy.MealLogs
   alias Easy.Nutrition.FoodLogEntry
-  alias Easy.Recipes
   alias Easy.Repo
 
   # Deleting library rows used to raise Ecto.ConstraintError (a 500): `food_id` and
@@ -54,20 +53,20 @@ defmodule Easy.Nutrition.LibraryDeleteTest do
     end
   end
 
-  describe "delete_recipe/2" do
+  describe "delete_recipe/3" do
     test "is blocked while a meal item still uses the recipe" do
       %{ctx: ctx, business: business, coach: coach, meal: meal} = scenario()
       recipe = insert(:recipe, business: business, creator: coach, cooked_weight_g: 400.0)
       insert(:meal_item, meal: meal, business: business, food: nil, recipe: recipe, weight_g: 100.0, position: 0)
 
-      assert {:error, :in_use} = Recipes.delete_recipe(ctx, recipe.id)
+      assert {:error, :in_use} = Library.delete_recipe(ctx, recipe.id, recipe.revision)
     end
 
     test "succeeds when nothing references the recipe" do
       %{ctx: ctx, business: business, coach: coach} = scenario()
       recipe = insert(:recipe, business: business, creator: coach)
 
-      assert {:ok, _deleted} = Recipes.delete_recipe(ctx, recipe.id)
+      assert {:ok, _deleted} = Library.delete_recipe(ctx, recipe.id, recipe.revision)
     end
   end
 

@@ -1,9 +1,7 @@
 defmodule Easy.Nutrition.RecipeTest do
   use Easy.SchemaCase, async: false
 
-  alias Easy.Ctx
-  alias Easy.Nutrition.Recipe
-  alias Easy.Recipes
+  alias Easy.Nutrition.Library
 
   describe "copy_recipe/2" do
     test "uses distinguishable names and preserves the remaining scalar fields" do
@@ -21,44 +19,46 @@ defmodule Easy.Nutrition.RecipeTest do
           ]
         )
 
-      assert {:ok, copy} = Recipes.copy_recipe(ctx(coach), source.id)
-      assert {:ok, second_copy} = Recipes.copy_recipe(ctx(coach), copy.id)
+      assert {:ok, copy} = Library.copy_recipe(trainer_ctx(coach), source.id)
+      assert {:ok, second_copy} = Library.copy_recipe(trainer_ctx(coach), copy.id)
 
       assert copy.name == "#{source.name} (Copy)"
       assert second_copy.name == "#{source.name} (Copy 2)"
-
-      for field <- Recipe.scalar_fields() -- [:name] do
-        assert Map.get(copy, field) == Map.get(source, field), "field #{field} not copied"
-      end
+      assert copy.description == source.description
+      assert copy.instructions == source.instructions
+      assert copy.servings_count == source.servings_count
+      assert copy.cooked_weight_g == source.cooked_weight_g
+      assert copy.allergens == source.allergens
+      assert copy.dietary_tags == source.dietary_tags
     end
   end
 
-  describe "create/2" do
+  describe "create_recipe/2" do
     test "trims names and rejects values beyond the API limit" do
       coach = insert_coach()
 
       assert {:ok, recipe} =
-               Recipes.create_recipe(ctx(coach), %{
-                 "name" => "  Test Recipe  ",
-                 "servings_count" => 1
+               Library.create_recipe(trainer_ctx(coach), %{
+                 name: "  Test Recipe  ",
+                 servings_count: 1
                })
 
       assert recipe.name == "Test Recipe"
 
       assert {:error, create_blank_changeset} =
-               Recipes.create_recipe(ctx(coach), %{"name" => "   ", "servings_count" => 1})
+               Library.create_recipe(trainer_ctx(coach), %{name: "   ", servings_count: 1})
 
       assert "can't be blank" in errors_on(create_blank_changeset).name
 
       assert {:error, blank_changeset} =
-               Recipes.update_recipe(ctx(coach), recipe.id, %{"name" => "   "})
+               Library.update_recipe(trainer_ctx(coach), recipe.id, recipe.revision, %{name: "   "})
 
       assert "can't be blank" in errors_on(blank_changeset).name
 
       assert {:error, changeset} =
-               Recipes.create_recipe(ctx(coach), %{
-                 "name" => String.duplicate("x", 256),
-                 "servings_count" => 1
+               Library.create_recipe(trainer_ctx(coach), %{
+                 name: String.duplicate("x", 256),
+                 servings_count: 1
                })
 
       assert "should be at most 255 character(s)" in errors_on(changeset).name
@@ -70,19 +70,17 @@ defmodule Easy.Nutrition.RecipeTest do
       other_food = insert(:food, business: other_coach.business, creator: other_coach)
 
       attrs = %{
-        "name" => "Cross tenant recipe",
-        "servings_count" => 2,
-        "recipe_ingredients" => [
-          %{"food_id" => other_food.id, "weight_g" => 100.0}
+        name: "Cross tenant recipe",
+        servings_count: 2,
+        recipe_ingredients: [
+          %{food_id: other_food.id, weight_g: 100.0}
         ]
       }
 
-      assert {:error, changeset} = Recipes.create_recipe(ctx(coach), attrs)
+      assert {:error, changeset} = Library.create_recipe(trainer_ctx(coach), attrs)
       assert "has invalid food" in errors_on(changeset).recipe_ingredients
     end
   end
-
-  defp ctx(coach), do: Ctx.new(coach.business_id, coach.user_id)
 
   defp insert_coach do
     business = insert(:business, owner: build(:user, email: unique_email()))

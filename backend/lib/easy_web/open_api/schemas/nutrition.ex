@@ -12,10 +12,10 @@ defmodule EasyWeb.OpenApi.Schemas.RecipeIngredientRequest do
         food_id: %Schema{type: :string, format: :uuid},
         unit: %Schema{type: :string, nullable: true},
         amount: %Schema{type: :number, nullable: true},
-        weight_g: %Schema{type: :number, nullable: true},
+        weight_g: %Schema{type: :number, exclusiveMinimum: true, minimum: 0},
         position: %Schema{type: :integer, minimum: 0}
       },
-      required: [:food_id]
+      required: [:food_id, :weight_g]
     },
     struct?: false
   )
@@ -36,10 +36,10 @@ defmodule EasyWeb.OpenApi.Schemas.RecipeIngredient do
       food: %Schema{allOf: [Food], nullable: true},
       unit: %Schema{type: :string, nullable: true},
       amount: %Schema{type: :number, nullable: true},
-      weight_g: %Schema{type: :number, nullable: true},
+      weight_g: %Schema{type: :number, exclusiveMinimum: true, minimum: 0},
       position: %Schema{type: :integer, minimum: 0}
     },
-    required: [:food_id, :food, :unit, :amount, :weight_g]
+    required: [:food_id, :food, :weight_g, :position]
   })
 end
 
@@ -62,13 +62,13 @@ defmodule EasyWeb.OpenApi.Schemas.RecipeRequest do
         name: %Schema{type: :string, maxLength: 255},
         description: %Schema{type: :string, nullable: true},
         instructions: %Schema{type: :string, nullable: true},
-        servings_count: %Schema{type: :integer, nullable: true},
-        cooked_weight_g: %Schema{type: :number, nullable: true},
+        servings_count: %Schema{type: :integer, minimum: 1},
+        cooked_weight_g: %Schema{type: :number, nullable: true, exclusiveMinimum: true, minimum: 0},
         allergens: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.allergens()}},
         dietary_tags: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.dietary_tags()}},
         recipe_ingredients: %Schema{type: :array, items: RecipeIngredientRequest}
       },
-      required: [:name],
+      required: [:name, :servings_count],
       example: %{
         "name" => "Turkey Rice Bowl",
         "description" => "A high-protein meal prep bowl.",
@@ -82,13 +82,50 @@ defmodule EasyWeb.OpenApi.Schemas.RecipeRequest do
   )
 end
 
+defmodule EasyWeb.OpenApi.Schemas.RecipeUpdateRequest do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  alias EasyWeb.OpenApi.Schemas.{
+    RecipeIngredientRequest,
+    Shared
+  }
+
+  OpenApiSpex.schema(
+    %{
+      title: "RecipeUpdateRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        name: %Schema{type: :string, maxLength: 255},
+        description: %Schema{type: :string, nullable: true},
+        instructions: %Schema{type: :string, nullable: true},
+        servings_count: %Schema{type: :integer, minimum: 1},
+        cooked_weight_g: %Schema{type: :number, nullable: true, exclusiveMinimum: true, minimum: 0},
+        expected_revision: %Schema{type: :integer, minimum: 1},
+        allergens: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.allergens()}},
+        dietary_tags: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.dietary_tags()}},
+        recipe_ingredients: %Schema{type: :array, items: RecipeIngredientRequest}
+      },
+      required: [:expected_revision],
+      example: %{
+        "expected_revision" => 1,
+        "name" => "Turkey Rice Bowl",
+        "servings_count" => 4
+      }
+    },
+    struct?: false
+  )
+end
+
 defmodule EasyWeb.OpenApi.Schemas.Recipe do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
 
   alias EasyWeb.OpenApi.Schemas.{
-    Food,
+    NutrientTotals,
     RecipeIngredient,
     Shared
   }
@@ -104,23 +141,13 @@ defmodule EasyWeb.OpenApi.Schemas.Recipe do
           name: %Schema{type: :string},
           description: %Schema{type: :string, nullable: true},
           instructions: %Schema{type: :string, nullable: true},
-          servings_count: %Schema{type: :integer, nullable: true},
-          cooked_weight_g: %Schema{type: :number, nullable: true},
+          servings_count: %Schema{type: :integer, minimum: 1},
+          cooked_weight_g: %Schema{type: :number, nullable: true, exclusiveMinimum: true, minimum: 0},
+          revision: %Schema{type: :integer, minimum: 1},
           allergens: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.allergens()}},
           dietary_tags: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.dietary_tags()}},
-          nutrition: %Schema{
-            type: :object,
-            nullable: true,
-            properties: %{
-              calories: %Schema{type: :number, nullable: true},
-              protein_g: %Schema{type: :number, nullable: true},
-              carbs_g: %Schema{type: :number, nullable: true},
-              fat_g: %Schema{type: :number, nullable: true},
-              fiber_g: %Schema{type: :number, nullable: true}
-            }
-          },
+          nutrients: NutrientTotals,
           recipe_ingredients: %Schema{type: :array, items: RecipeIngredient},
-          foods: %Schema{type: :array, items: Food},
           creator_id: %Schema{type: :string, format: :uuid, nullable: true}
         },
         Shared.timestamps()
@@ -128,6 +155,9 @@ defmodule EasyWeb.OpenApi.Schemas.Recipe do
     required: [
       :id,
       :name,
+      :servings_count,
+      :revision,
+      :nutrients,
       :instructions,
       :cooked_weight_g,
       :recipe_ingredients,

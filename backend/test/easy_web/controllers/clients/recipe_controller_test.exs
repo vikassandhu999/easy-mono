@@ -1,6 +1,8 @@
 defmodule EasyWeb.Clients.RecipeControllerTest do
   use Easy.ConnCase
 
+  import OpenApiSpex.TestAssertions
+
   setup do
     coach = insert(:coach)
     client = insert(:client, creator: coach, business: coach.business)
@@ -58,8 +60,12 @@ defmodule EasyWeb.Clients.RecipeControllerTest do
 
       conn = get(ctx.conn, "/v1/client/nutrition-recipes/#{recipe.id}")
       assert %{"data" => data} = json_response(conn, 200)
+      assert_schema(data, "Recipe", EasyWeb.ApiSpec.spec())
       assert data["id"] == recipe.id
       assert data["name"] == "Butter Chicken"
+      assert data["revision"] == 1
+      assert data["nutrients"]
+      refute Map.has_key?(data, "creator_id")
       assert length(data["recipe_ingredients"]) == 1
 
       ingredient = hd(data["recipe_ingredients"])

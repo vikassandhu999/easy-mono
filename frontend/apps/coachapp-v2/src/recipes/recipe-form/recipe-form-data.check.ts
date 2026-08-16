@@ -24,12 +24,20 @@ if (!trimmed.success || trimmed.data.name !== 'Test Recipe') {
   throw new Error('recipe name must be normalized before submission');
 }
 
+if (parses({cooked_weight_g: 0}).success) {
+  throw new Error('cooked weight must be positive when present');
+}
+
 const cleared = recipeToUpdateRequest({
+  expectedRevision: 1,
   ingredients: [],
   values: {...RECIPE_FORM_DEFAULTS, name: 'Test Recipe'},
 });
 if (cleared.instructions !== null || cleared.cooked_weight_g !== null) {
   throw new Error('cleared recipe scalars must send null on update');
+}
+if (cleared.expected_revision !== 1) {
+  throw new Error('update must send the observed revision');
 }
 
 console.log('recipe-form-data: all checks passed');

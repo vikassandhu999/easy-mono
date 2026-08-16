@@ -1,7 +1,8 @@
 defmodule Easy.Nutrition.Library do
   alias Easy.Ctx
   alias Easy.LibraryMedia
-  alias Easy.Nutrition.{Food, Meal, MealItem, NutrientTotals, Plan, RecipeIngredient}
+  alias Easy.CopyName
+  alias Easy.Nutrition.{Food, Meal, MealItem, NutrientTotals, Plan, Recipe, RecipeIngredient}
   alias Easy.Orgs.Coach
   alias Easy.Repo
   alias Easy.Utils
@@ -163,6 +164,376 @@ defmodule Easy.Nutrition.Library do
   @spec food_nutrients(Food.t()) :: NutrientTotals.t()
   def food_nutrients(%Food{} = food), do: NutrientTotals.from_food(food)
 
+  @spec get_recipe(Ctx.t(), String.t()) :: {:ok, Recipe.t()} | {:error, :not_found}
+  def get_recipe(%Ctx{} = ctx, recipe_id) do
+    Recipe
+    |> Recipe.for_business(ctx.business_id)
+    |> Recipe.include_ingredients(ctx.business_id)
+    |> Repo.get(recipe_id)
+    |> ok_or_not_found()
+  end
+
+  @spec list_recipes(Ctx.t(), keyword()) :: {:ok, %{count: non_neg_integer(), recipes: [Recipe.t()]}}
+  def list_recipes(%Ctx{} = ctx, opts \\ []) do
+    search = String.trim(Keyword.get(opts, :search, "") || "")
+    offset = Keyword.get(opts, :offset, 0)
+    limit = min(Keyword.get(opts, :limit, 20), 20)
+
+    base = Recipe |> Recipe.for_business(ctx.business_id) |> Recipe.search(search)
+    ordered = Recipe.newest(base)
+
+    {:ok,
+     %{
+       count: Repo.aggregate(base, :count, :id),
+       recipes: ordered |> Utils.paginate(offset, limit) |> Recipe.include_ingredients(ctx.business_id) |> Repo.all()
+     }}
+  end
+
+  @spec create_recipe(Ctx.t(), map()) :: {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def create_recipe(%Ctx{} = ctx, attrs) do
+    {ingredients, scalar_attrs} = pop_ingredients(attrs)
+
+    with {:ok, coach} <- get_coach(ctx) do
+      persist_recipe(
+        ctx,
+        fn ->
+          ctx.business_id |> Recipe.insert_changeset(coach.id, scalar_attrs) |> Repo.insert()
+        end,
+        ingredients
+      )
+    end
+  end
+
+  @spec update_recipe(Ctx.t(), String.t(), pos_integer(), map()) ::
+          {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def update_recipe(%Ctx{} = ctx, recipe_id, expected_revision, attrs) do
+    {ingredients, scalar_attrs} = pop_ingredients(attrs)
+
+    with :ok <- ensure_coach(ctx) do
+      mutate_recipe(ctx, recipe_id, expected_revision, fn recipe ->
+        persist_locked_recipe(ctx, recipe, scalar_attrs, ingredients)
+      end)
+    end
+  end
+
+  @spec delete_recipe(Ctx.t(), String.t(), pos_integer()) ::
+          {:ok, Recipe.t()} | {:error, :not_found | :in_use | Ecto.Changeset.t()}
+  def delete_recipe(%Ctx{} = ctx, recipe_id, expected_revision) do
+    with :ok <- ensure_coach(ctx) do
+      mutate_recipe(ctx, recipe_id, expected_revision, &delete_locked_recipe(ctx, &1), reload?: false)
+    end
+  end
+
+  @spec get_recipe_impact(Ctx.t(), String.t()) ::
+          {:ok, %{templates: [map()], active_client_plans: [map()]}} | {:error, :not_found}
+  def get_recipe_impact(%Ctx{} = ctx, recipe_id) do
+    with {:ok, _recipe} <- get_recipe(ctx, recipe_id) do
+      plans =
+        from(mi in MealItem.for_business(ctx.business_id),
+          join: m in Meal,
+          on: m.id == mi.nutrition_meal_id,
+          join: p in Plan,
+          on: p.id == m.nutrition_plan_id,
+          where: mi.recipe_id == ^recipe_id and p.business_id == ^ctx.business_id,
+          distinct: p.id,
+          select: %{id: p.id, name: p.name, client_id: p.client_id, status: p.status}
+        )
+        |> Repo.all()
+
+      {:ok, split_plan_impact(plans)}
+    end
+  end
+
+  @spec copy_recipe(Ctx.t(), String.t()) :: {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def copy_recipe(%Ctx{} = ctx, recipe_id) do
+    with {:ok, recipe} <- get_recipe(ctx, recipe_id) do
+      create_recipe(ctx, %{
+        name: generate_copy_name(recipe.name, ctx.business_id),
+        description: recipe.description,
+        instructions: recipe.instructions,
+        servings_count: recipe.servings_count,
+        cooked_weight_g: recipe.cooked_weight_g,
+        allergens: recipe.allergens,
+        dietary_tags: recipe.dietary_tags,
+        recipe_ingredients:
+          Enum.map(recipe.recipe_ingredients, fn ingredient ->
+            %{
+              food_id: ingredient.food_id,
+              amount: ingredient.amount,
+              unit: ingredient.unit,
+              weight_g: ingredient.weight_g
+            }
+          end)
+      })
+    end
+  end
+
+  @spec resolve_recipe_portion(Recipe.t(), map()) ::
+          {:ok, %{grams: float() | nil, amount: float() | nil}} | {:error, :invalid_portion}
+  def resolve_recipe_portion(%Recipe{servings_count: servings, cooked_weight_g: cooked}, %{
+        kind: :serving,
+        amount: amount
+      })
+      when is_integer(servings) and servings > 0 and is_number(amount) and amount > 0 do
+    grams =
+      case cooked do
+        weight when is_number(weight) and weight > 0 -> amount / servings * weight
+        _missing -> nil
+      end
+
+    {:ok, %{amount: amount / 1, grams: grams}}
+  end
+
+  def resolve_recipe_portion(%Recipe{cooked_weight_g: cooked}, %{kind: :gram, grams: grams})
+      when is_number(cooked) and cooked > 0 and is_number(grams) and grams > 0 do
+    {:ok, %{amount: nil, grams: grams / 1}}
+  end
+
+  def resolve_recipe_portion(_recipe, _portion), do: {:error, :invalid_portion}
+
+  @spec recipe_nutrients(Recipe.t()) :: NutrientTotals.t()
+  def recipe_nutrients(%Recipe{} = recipe), do: NutrientTotals.from_recipe(recipe)
+
+  @spec resolve_items(Ctx.t(), [map()]) ::
+          {:ok, [map()]} | {:error, :not_found | :invalid_portion}
+  def resolve_items(%Ctx{} = ctx, items) when is_list(items) do
+    {foods, recipes} = load_resolve_targets(ctx, items)
+
+    items
+    |> Enum.reduce_while([], &accumulate_resolved(&1, &2, foods, recipes))
+    |> reverse_resolved()
+  end
+
+  defp persist_recipe(ctx, insert_fun, ingredients) do
+    result =
+      Repo.transaction(fn ->
+        recipe = insert_recipe!(insert_fun)
+        replace_ingredients!(ctx, recipe, ingredients)
+        recipe
+      end)
+
+    finalize_recipe(result)
+  end
+
+  defp insert_recipe!(insert_fun) do
+    case insert_fun.() do
+      {:ok, recipe} -> recipe
+      {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
+  defp persist_locked_recipe(ctx, recipe, scalar_attrs, ingredients) do
+    with {:ok, updated} <-
+           recipe
+           |> Recipe.update_changeset(scalar_attrs)
+           |> put_change(:revision, recipe.revision + 1)
+           |> Repo.update() do
+      ingredients
+      |> then(&replace_ingredients(ctx, updated, &1))
+      |> ok_updated(updated)
+    end
+  end
+
+  defp ok_updated(:ok, updated), do: {:ok, updated}
+  defp ok_updated({:error, reason}, _updated), do: {:error, reason}
+
+  defp replace_ingredients!(ctx, recipe, ingredients) do
+    case replace_ingredients(ctx, recipe, ingredients) do
+      :ok -> :ok
+      {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
+  defp replace_ingredients(_ctx, _recipe, :unchanged), do: :ok
+
+  defp replace_ingredients(ctx, recipe, ingredients) when is_list(ingredients) do
+    changesets =
+      Enum.with_index(ingredients, fn attrs, position ->
+        RecipeIngredient.insert_changeset(recipe.business_id, recipe.id, position, attrs)
+      end)
+
+    replace_ingredient_changesets(ctx, recipe, changesets)
+  end
+
+  defp replace_ingredient_changesets(_ctx, recipe, changesets) do
+    cond do
+      Enum.any?(changesets, &(not &1.valid?)) ->
+        {:error, ingredient_errors(recipe, changesets)}
+
+      invalid_ingredient_foods?(recipe.business_id, changesets) ->
+        {:error, add_error(change(recipe), :recipe_ingredients, "has invalid food")}
+
+      true ->
+        Repo.delete_all(from(ri in RecipeIngredient.for_business(recipe.business_id), where: ri.recipe_id == ^recipe.id))
+        insert_ingredient_changesets(changesets)
+    end
+  end
+
+  defp insert_ingredient_changesets(changesets) do
+    Enum.reduce_while(changesets, :ok, fn changeset, :ok ->
+      case Repo.insert(changeset) do
+        {:ok, _row} -> {:cont, :ok}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp ingredient_errors(recipe, changesets) do
+    %{recipe | recipe_ingredients: []}
+    |> change()
+    |> put_assoc(:recipe_ingredients, changesets)
+  end
+
+  defp invalid_ingredient_foods?(business_id, changesets) do
+    food_ids =
+      changesets
+      |> Enum.map(&get_field(&1, :food_id))
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+
+    food_ids != [] and invalid_food_ids(food_ids, business_id) != []
+  end
+
+  defp invalid_food_ids(food_ids, business_id) do
+    valid_ids =
+      Food
+      |> Food.for_business_or_system(business_id)
+      |> where([f], f.id in ^food_ids)
+      |> select([f], f.id)
+      |> Repo.all()
+      |> MapSet.new()
+
+    Enum.reject(food_ids, &MapSet.member?(valid_ids, &1))
+  end
+
+  defp pop_ingredients(attrs) when is_map(attrs), do: Map.pop(attrs, :recipe_ingredients, :unchanged)
+
+  defp mutate_recipe(ctx, recipe_id, expected_revision, mutation, opts \\ []) do
+    result =
+      Repo.transaction(fn ->
+        recipe =
+          Recipe
+          |> Recipe.for_business(ctx.business_id)
+          |> lock("FOR UPDATE")
+          |> Repo.get(recipe_id)
+
+        mutate_revisioned(recipe, expected_revision, mutation)
+      end)
+
+    finalize_recipe(result, Keyword.get(opts, :reload?, true))
+  end
+
+  defp delete_locked_recipe(ctx, recipe) do
+    with :ok <- ensure_recipe_not_in_use(ctx.business_id, recipe.id) do
+      Repo.delete(recipe)
+    end
+  end
+
+  defp ensure_recipe_not_in_use(business_id, recipe_id) do
+    if Repo.exists?(from(mi in MealItem.for_business(business_id), where: mi.recipe_id == ^recipe_id)),
+      do: {:error, :in_use},
+      else: :ok
+  end
+
+  defp generate_copy_name(original_name, business_id) do
+    existing_names =
+      Recipe
+      |> Recipe.for_business(business_id)
+      |> select([r], r.name)
+      |> Repo.all()
+
+    CopyName.next(original_name, existing_names)
+  end
+
+  defp load_resolve_targets(ctx, items) do
+    {fetch_visible_foods(ctx, for(%{kind: :food, id: id} <- items, do: id)), fetch_visible_recipes(ctx, for(%{kind: :recipe, id: id} <- items, do: id))}
+  end
+
+  defp fetch_visible_foods(_ctx, []), do: %{}
+
+  defp fetch_visible_foods(ctx, ids) do
+    Food
+    |> Food.for_business_or_system(ctx.business_id)
+    |> where([f], f.id in ^ids)
+    |> Repo.all()
+    |> Map.new(&{&1.id, &1})
+  end
+
+  defp fetch_visible_recipes(_ctx, []), do: %{}
+
+  defp fetch_visible_recipes(ctx, ids) do
+    Recipe
+    |> Recipe.for_business(ctx.business_id)
+    |> Recipe.include_ingredients(ctx.business_id)
+    |> where([r], r.id in ^ids)
+    |> Repo.all()
+    |> Map.new(&{&1.id, &1})
+  end
+
+  defp accumulate_resolved(item, acc, foods, recipes) do
+    case resolve_item(item, foods, recipes) do
+      {:ok, resolved} -> {:cont, [resolved | acc]}
+      {:error, reason} -> {:halt, {:error, reason}}
+    end
+  end
+
+  defp reverse_resolved({:error, reason}), do: {:error, reason}
+  defp reverse_resolved(resolved), do: {:ok, Enum.reverse(resolved)}
+
+  defp resolve_item(%{kind: :food, id: id, portion: portion}, foods, _recipes) do
+    with {:ok, food} <- Map.fetch(foods, id),
+         {:ok, resolved} <- resolve_food_portion(food, portion) do
+      {:ok,
+       %{
+         kind: :food,
+         item: food,
+         portion: resolved,
+         nutrients: NutrientTotals.scale(NutrientTotals.from_food(food), resolved.grams / 100)
+       }}
+    else
+      :error -> {:error, :not_found}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp resolve_item(%{kind: :recipe, id: id, portion: portion}, _foods, recipes) do
+    with {:ok, recipe} <- Map.fetch(recipes, id),
+         {:ok, resolved} <- resolve_recipe_portion(recipe, portion) do
+      {:ok,
+       %{
+         kind: :recipe,
+         item: recipe,
+         portion: resolved,
+         nutrients: recipe_portion_nutrients(recipe, resolved)
+       }}
+    else
+      :error -> {:error, :not_found}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp recipe_portion_nutrients(recipe, %{amount: amount}) when is_number(amount) do
+    NutrientTotals.scale(NutrientTotals.from_recipe(recipe), amount / recipe.servings_count)
+  end
+
+  defp recipe_portion_nutrients(%{cooked_weight_g: cooked} = recipe, %{grams: grams})
+       when is_number(cooked) and cooked > 0 and is_number(grams) do
+    NutrientTotals.scale(NutrientTotals.from_recipe(recipe), grams / cooked)
+  end
+
+  defp finalize_recipe(result, reload? \\ true)
+
+  defp finalize_recipe({:ok, recipe}, true) do
+    Recipe
+    |> Recipe.for_business(recipe.business_id)
+    |> Recipe.include_ingredients(recipe.business_id)
+    |> Repo.get(recipe.id)
+    |> ok_or_not_found()
+  end
+
+  defp finalize_recipe({:ok, recipe}, false), do: {:ok, recipe}
+  defp finalize_recipe({:error, reason}, _reload?), do: {:error, reason}
+
   defp mutate_food(ctx, food_id, expected_revision, mutation, opts \\ []) do
     result =
       Repo.transaction(fn ->
@@ -184,12 +555,12 @@ defmodule Easy.Nutrition.Library do
        when source in [:system, :imported],
        do: Repo.rollback(:read_only_source)
 
-  defp mutate_revisioned(%Food{revision: revision} = food, expected_revision, _mutation)
+  defp mutate_revisioned(%{revision: revision} = record, expected_revision, _mutation)
        when revision != expected_revision,
-       do: Repo.rollback(stale_revision_changeset(food))
+       do: Repo.rollback(stale_revision_changeset(record))
 
-  defp mutate_revisioned(food, _expected_revision, mutation) do
-    case mutation.(food) do
+  defp mutate_revisioned(record, _expected_revision, mutation) do
+    case mutation.(record) do
       {:ok, changed} -> changed
       {:error, reason} -> Repo.rollback(reason)
     end

@@ -1,6 +1,8 @@
 defmodule EasyWeb.Coaches.RecipeControllerTest do
   use Easy.ConnCase
 
+  import OpenApiSpex.TestAssertions
+
   setup do
     coach = insert(:coach)
 
@@ -18,16 +20,17 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
 
       conn = post(conn, "/v1/coach/nutrition-recipes", attrs)
       assert %{"data" => data} = json_response(conn, 201)
+      assert_schema(data, "Recipe", EasyWeb.ApiSpec.spec())
 
       assert data["name"] == attrs["name"]
       assert data["description"] == attrs["description"]
       assert data["instructions"] == attrs["instructions"]
       assert data["servings_count"] == attrs["servings_count"]
       assert data["cooked_weight_g"] == attrs["cooked_weight_g"]
-      assert data["nutrition"]
-
-      # A recipe's portion comes from its yield (cooked_weight_g / servings_count),
-      # so it carries no serving_sizes of its own.
+      assert data["revision"] == 1
+      assert data["nutrients"]["complete"] == false
+      refute Map.has_key?(data, "nutrition")
+      refute Map.has_key?(data, "foods")
       refute Map.has_key?(data, "serving_sizes")
 
       assert data["id"]
@@ -35,27 +38,71 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
       assert data["inserted_at"]
     end
 
-    test "creates a recipe with ingredients", %{conn: conn, coach: coach, business: business} do
-      food = insert(:food, creator: coach, business: business, calories_per_100g: 100.0)
+    test "creates a recipe with ingredients and rounded nutrients", %{conn: conn, coach: coach, business: business} do
+      food =
+        insert(:food,
+          creator: coach,
+          business: business,
+          calories_per_100g: 10.16,
+          protein_g_per_100g: 1.0,
+          carbs_g_per_100g: 2.0,
+          fat_g_per_100g: 3.0,
+          fiber_g_per_100g: 4.0
+        )
 
       attrs =
         build(:recipe_attrs)
         |> Map.put("recipe_ingredients", [
-          %{"food_id" => food.id, "amount" => 2.0, "unit" => "cup", "weight_g" => 480.0}
+          %{"food_id" => food.id, "amount" => 2.0, "unit" => "cup", "weight_g" => 100.0}
         ])
 
       conn = post(conn, "/v1/coach/nutrition-recipes", attrs)
       assert %{"data" => data} = json_response(conn, 201)
+      assert_schema(data, "Recipe", EasyWeb.ApiSpec.spec())
 
       assert [ingredient] = data["recipe_ingredients"]
       assert ingredient["food_id"] == food.id
-      assert ingredient["amount"] == 2.0
-      assert ingredient["unit"] == "cup"
-      assert ingredient["weight_g"] == 480.0
+      assert ingredient["position"] == 0
+      assert data["nutrients"]["calories"] == 10.2
+      assert data["nutrients"]["complete"] == true
+    end
 
-      # Derived nutrition must be correct on create, not silently zero.
-      # 100.0 cal/100g x 480g / 100 = 480.0
-      assert data["nutrition"]["calories"] == 480.0
+    test "unknown ingredient nutrients stay null and mark totals incomplete", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      food =
+        insert(:food,
+          creator: coach,
+          business: business,
+          calories_per_100g: 100.0,
+          protein_g_per_100g: nil,
+          carbs_g_per_100g: 10.0,
+          fat_g_per_100g: 5.0,
+          fiber_g_per_100g: 2.0
+        )
+
+      attrs =
+        build(:recipe_attrs)
+        |> Map.put("recipe_ingredients", [%{"food_id" => food.id, "weight_g" => 50.0}])
+
+      conn = post(conn, "/v1/coach/nutrition-recipes", attrs)
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["nutrients"]["calories"] == 50.0
+      assert data["nutrients"]["protein"] == nil
+      assert data["nutrients"]["complete"] == false
+    end
+
+    test "rejects a subrecipe ingredient at the contract boundary", %{conn: conn} do
+      attrs =
+        build(:recipe_attrs)
+        |> Map.put("recipe_ingredients", [
+          %{"recipe_id" => Ecto.UUID.generate(), "weight_g" => 100.0}
+        ])
+
+      conn = post(conn, "/v1/coach/nutrition-recipes", attrs)
+      assert json_response(conn, 422)
     end
 
     test "returns validation error when name is missing", %{conn: conn} do
@@ -66,7 +113,7 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
     end
 
     test "returns 403 without auth token" do
-      conn = build_conn() |> post("/v1/coach/nutrition-recipes", %{"name" => "Test"})
+      conn = build_conn() |> post("/v1/coach/nutrition-recipes", %{"name" => "Test", "servings_count" => 1})
       assert json_response(conn, 403)
     end
   end
@@ -77,9 +124,11 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
 
       conn = get(conn, "/v1/coach/nutrition-recipes/#{recipe.id}")
       assert %{"data" => data} = json_response(conn, 200)
+      assert_schema(data, "Recipe", EasyWeb.ApiSpec.spec())
 
       assert data["id"] == recipe.id
       assert data["name"] == recipe.name
+      assert data["revision"] == 1
     end
 
     test "returns recipe with preloaded ingredients", %{
@@ -125,27 +174,68 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
         weight_g: 200.0
       )
 
-      conn = patch(conn, "/v1/coach/nutrition-recipes/#{recipe.id}", %{"name" => "Updated Recipe"})
-      assert %{"data" => data} = json_response(conn, 200)
+      conn =
+        patch(conn, "/v1/coach/nutrition-recipes/#{recipe.id}", %{
+          "expected_revision" => 1,
+          "name" => "Updated Recipe",
+          "servings_count" => recipe.servings_count,
+          "recipe_ingredients" => [%{"food_id" => food.id, "weight_g" => 200.0}]
+        })
 
+      assert %{"data" => data} = json_response(conn, 200)
+      assert_schema(data, "Recipe", EasyWeb.ApiSpec.spec())
       assert data["name"] == "Updated Recipe"
       assert data["id"] == recipe.id
+      assert data["revision"] == 2
+      assert data["nutrients"]["calories"] == 200.0
+    end
 
-      # Derived nutrition must be correct on update, not silently zero.
-      # 100.0 cal/100g x 200g / 100 = 200.0
-      assert data["nutrition"]["calories"] == 200.0
+    test "returns conflict when the expected revision is stale", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      recipe = insert(:recipe, creator: coach, business: business)
+
+      patch(conn, "/v1/coach/nutrition-recipes/#{recipe.id}", %{
+        "expected_revision" => 1,
+        "name" => "First",
+        "servings_count" => recipe.servings_count
+      })
+
+      conn =
+        patch(conn, "/v1/coach/nutrition-recipes/#{recipe.id}", %{
+          "expected_revision" => 1,
+          "name" => "Second",
+          "servings_count" => recipe.servings_count
+        })
+
+      assert %{
+               "error_code" => "stale_revision",
+               "error_detail" => %{"current_revision" => 2}
+             } = json_response(conn, 409)
     end
 
     test "returns 404 when updating recipe from another business", %{conn: conn} do
       other_coach = insert(:coach)
       other_recipe = insert(:recipe, creator: other_coach, business: other_coach.business)
 
-      conn = patch(conn, "/v1/coach/nutrition-recipes/#{other_recipe.id}", %{"name" => "Hacked"})
+      conn =
+        patch(conn, "/v1/coach/nutrition-recipes/#{other_recipe.id}", %{
+          "expected_revision" => 1,
+          "name" => "Hacked"
+        })
+
       assert json_response(conn, 404)
     end
 
     test "returns 404 for non-existent recipe", %{conn: conn} do
-      conn = patch(conn, "/v1/coach/nutrition-recipes/#{Ecto.UUID.generate()}", %{"name" => "Nope"})
+      conn =
+        patch(conn, "/v1/coach/nutrition-recipes/#{Ecto.UUID.generate()}", %{
+          "expected_revision" => 1,
+          "name" => "Nope"
+        })
+
       assert json_response(conn, 404)
     end
   end
@@ -154,16 +244,15 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
     test "deletes a recipe successfully", %{conn: conn, coach: coach, business: business} do
       recipe = insert(:recipe, creator: coach, business: business)
 
-      conn = delete(conn, "/v1/coach/nutrition-recipes/#{recipe.id}")
+      conn = delete(conn, "/v1/coach/nutrition-recipes/#{recipe.id}?expected_revision=1")
       assert response(conn, 204)
 
-      # Verify the recipe is actually gone
       conn = build_conn() |> authenticate_coach(coach) |> get("/v1/coach/nutrition-recipes/#{recipe.id}")
       assert json_response(conn, 404)
     end
 
     test "returns 404 for non-existent recipe", %{conn: conn} do
-      conn = delete(conn, "/v1/coach/nutrition-recipes/#{Ecto.UUID.generate()}")
+      conn = delete(conn, "/v1/coach/nutrition-recipes/#{Ecto.UUID.generate()}?expected_revision=1")
       assert json_response(conn, 404)
     end
 
@@ -171,7 +260,7 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
       other_coach = insert(:coach)
       other_recipe = insert(:recipe, creator: other_coach, business: other_coach.business)
 
-      conn = delete(conn, "/v1/coach/nutrition-recipes/#{other_recipe.id}")
+      conn = delete(conn, "/v1/coach/nutrition-recipes/#{other_recipe.id}?expected_revision=1")
       assert json_response(conn, 404)
     end
 
@@ -254,14 +343,14 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
 
       conn = post(conn, "/v1/coach/nutrition-recipes/#{recipe.id}/copy")
       assert %{"data" => data} = json_response(conn, 201)
+      assert_schema(data, "Recipe", EasyWeb.ApiSpec.spec())
 
       assert data["name"] == "Original Bowl (Copy)"
+      assert data["revision"] == 1
       refute data["id"] == recipe.id
       assert [ingredient] = data["recipe_ingredients"]
       assert ingredient["food_id"] == food.id
-
-      # Derived nutrition is recomputed on the copy: 100 cal/100g x 200g / 100 = 200.0
-      assert data["nutrition"]["calories"] == 200.0
+      assert data["nutrients"]["calories"] == 200.0
     end
 
     test "returns 404 for a non-existent recipe", %{conn: conn} do

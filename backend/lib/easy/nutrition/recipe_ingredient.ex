@@ -42,16 +42,30 @@ defmodule Easy.Nutrition.RecipeIngredient do
     )
   end
 
-  @spec update_changeset(t(), String.t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(recipe_ingredient, business_id, attrs) do
-    recipe_ingredient
-    |> cast(attrs, [:food_id, :amount, :unit, :weight_g, :position])
+  @spec insert_changeset(String.t(), String.t(), non_neg_integer(), map()) :: Ecto.Changeset.t()
+  def insert_changeset(business_id, recipe_id, position, attrs) do
+    %__MODULE__{}
+    |> cast(attrs, [:food_id, :amount, :unit, :weight_g])
     |> put_change(:business_id, business_id)
-    |> validate_required([:business_id, :food_id, :weight_g])
+    |> put_change(:recipe_id, recipe_id)
+    |> put_change(:position, position)
+    |> reject_subrecipe(attrs)
+    |> validate_required([:business_id, :recipe_id, :food_id, :weight_g, :position])
     |> validate_number(:weight_g, greater_than: 0)
+    |> validate_number(:position, greater_than_or_equal_to: 0)
+    |> unique_constraint(:position, name: :nutrition_recipe_ingredients_recipe_id_position_index)
     |> check_constraint(:weight_g,
       name: :nutrition_recipe_ingredients_weight_positive,
       message: "must be greater than 0"
     )
+    |> check_constraint(:position, name: :nutrition_recipe_ingredients_position_nonnegative)
+  end
+
+  defp reject_subrecipe(changeset, attrs) do
+    if Map.has_key?(attrs, :recipe_id) do
+      add_error(changeset, :food_id, "subrecipes are not allowed")
+    else
+      changeset
+    end
   end
 end

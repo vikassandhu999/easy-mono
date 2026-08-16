@@ -2,15 +2,18 @@ defmodule EasyWeb.Coaches.RecipeController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.Recipes
+  alias Easy.Nutrition.Library
   alias OpenApiSpex.Operation
+  alias OpenApiSpex.Schema
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
     RecipeImpactResponse,
     RecipeListResponse,
     RecipeRequest,
-    RecipeResponse
+    RecipeResponse,
+    RecipeUpdateRequest,
+    StaleRevisionError
   }
 
   plug OpenApiSpex.Plug.CastAndValidate,
@@ -48,11 +51,12 @@ defmodule EasyWeb.Coaches.RecipeController do
     operation_id: "updateRecipe",
     security: [%{"bearerAuth" => []}],
     parameters: [Operation.parameter(:id, :path, :string, "Recipe id")],
-    request_body: {"Recipe request", "application/json", RecipeRequest, required: true},
+    request_body: {"Recipe update request", "application/json", RecipeUpdateRequest, required: true},
     responses: [
       ok: {"Recipe updated", "application/json", RecipeResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Stale revision", "application/json", StaleRevisionError},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
@@ -61,12 +65,21 @@ defmodule EasyWeb.Coaches.RecipeController do
     description: "Deletes a recipe in the authenticated business.",
     operation_id: "deleteRecipe",
     security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Recipe id")],
+    parameters: [
+      Operation.parameter(:id, :path, :string, "Recipe id"),
+      Operation.parameter(
+        :expected_revision,
+        :query,
+        %Schema{type: :integer, minimum: 1},
+        "Revision observed by the deleting client",
+        required: true
+      )
+    ],
     responses: [
       no_content: "Recipe deleted",
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
-      conflict: {"Still in use — a recipe still used by a plan", "application/json", ErrorResponse}
+      conflict: {"Stale revision or still in use", "application/json", ErrorResponse}
     ]
 
   operation :index,
@@ -106,7 +119,7 @@ defmodule EasyWeb.Coaches.RecipeController do
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
-    with {:ok, recipe} <- Recipes.create_recipe(conn.assigns.ctx, conn.body_params) do
+    with {:ok, recipe} <- Library.create_recipe(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, recipe: recipe)
@@ -115,7 +128,7 @@ defmodule EasyWeb.Coaches.RecipeController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => recipe_id}) do
-    with {:ok, recipe} <- Recipes.get_recipe(conn.assigns.ctx, recipe_id) do
+    with {:ok, recipe} <- Library.get_recipe(conn.assigns.ctx, recipe_id) do
       render(conn, :show, recipe: recipe)
     end
   end
@@ -123,8 +136,10 @@ defmodule EasyWeb.Coaches.RecipeController do
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, _params) do
     recipe_id = conn.path_params["id"]
+    expected_revision = conn.body_params[:expected_revision]
+    attrs = Map.delete(conn.body_params, :expected_revision)
 
-    with {:ok, updated_recipe} <- Recipes.update_recipe(conn.assigns.ctx, recipe_id, conn.body_params) do
+    with {:ok, updated_recipe} <- Library.update_recipe(conn.assigns.ctx, recipe_id, expected_revision, attrs) do
       render(conn, :show, recipe: updated_recipe)
     end
   end
@@ -132,8 +147,9 @@ defmodule EasyWeb.Coaches.RecipeController do
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, _params) do
     recipe_id = conn.path_params["id"]
+    expected_revision = parse_integer(conn.query_params, "expected_revision", 0)
 
-    with {:ok, _deleted} <- Recipes.delete_recipe(conn.assigns.ctx, recipe_id) do
+    with {:ok, _deleted} <- Library.delete_recipe(conn.assigns.ctx, recipe_id, expected_revision) do
       send_resp(conn, :no_content, "")
     end
   end
@@ -147,7 +163,7 @@ defmodule EasyWeb.Coaches.RecipeController do
     ]
 
     with {:ok, %{count: count, recipes: recipes}} <-
-           Recipes.list_recipes(conn.assigns.ctx, opts) do
+           Library.list_recipes(conn.assigns.ctx, opts) do
       conn
       |> put_status(:ok)
       |> render(:index, count: count, recipes: recipes)
@@ -156,7 +172,7 @@ defmodule EasyWeb.Coaches.RecipeController do
 
   @spec impact(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def impact(conn, %{"id" => id}) do
-    with {:ok, impact} <- Recipes.get_recipe_impact(conn.assigns.ctx, id) do
+    with {:ok, impact} <- Library.get_recipe_impact(conn.assigns.ctx, id) do
       render(conn, :impact, impact)
     end
   end
@@ -165,7 +181,7 @@ defmodule EasyWeb.Coaches.RecipeController do
   def copy(conn, _params) do
     id = conn.path_params["id"]
 
-    with {:ok, recipe} <- Recipes.copy_recipe(conn.assigns.ctx, id) do
+    with {:ok, recipe} <- Library.copy_recipe(conn.assigns.ctx, id) do
       conn |> put_status(:created) |> render(:show, recipe: recipe)
     end
   end

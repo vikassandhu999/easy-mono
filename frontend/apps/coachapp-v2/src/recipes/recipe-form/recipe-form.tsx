@@ -24,10 +24,14 @@ import {RECIPE_FORM_DEFAULTS, type RecipeFormValues, recipeFormSchema} from '@/r
 
 // P/C/F ratio-bar segments (grams drive segment widths), mirroring the recipe
 // detail page's nutrition card. Fiber shows as a legend stat only, not a segment.
-const MACRO_SEGMENTS: {color: 'accent' | 'success' | 'warning'; key: keyof RecipeTotals; label: string}[] = [
-  {color: 'accent', key: 'protein_g', label: 'Protein'},
-  {color: 'success', key: 'carbs_g', label: 'Carbs'},
-  {color: 'warning', key: 'fats_g', label: 'Fats'},
+const MACRO_SEGMENTS: {
+  color: 'accent' | 'success' | 'warning';
+  key: keyof Pick<RecipeTotals, 'carbohydrates' | 'fat' | 'protein'>;
+  label: string;
+}[] = [
+  {color: 'accent', key: 'protein', label: 'Protein'},
+  {color: 'success', key: 'carbohydrates', label: 'Carbs'},
+  {color: 'warning', key: 'fat', label: 'Fats'},
 ];
 
 export function useRecipeForm(options?: {defaultValues?: RecipeFormValues}) {
@@ -73,7 +77,11 @@ export default function RecipeForm({
     () => (canComputeRecipeNutrition(ingredients) ? computeRecipeTotalsFromIngredients(ingredients) : null),
     [ingredients],
   );
-  const segments = totals ? MACRO_SEGMENTS.map((s) => ({...s, value: totals[s.key]})).filter((s) => s.value > 0) : [];
+  const segments = totals
+    ? MACRO_SEGMENTS.map((s) => ({...s, value: totals[s.key]})).filter(
+        (s): s is typeof s & {value: number} => s.value != null && s.value > 0,
+      )
+    : [];
 
   // Batch, not per-food: appending one at a time from a loop would spread the
   // same stale `ingredients` array and keep only the last pick.
@@ -99,11 +107,10 @@ export default function RecipeForm({
         setError('root', {message: 'Add at least one ingredient'});
         return;
       }
-      // The backend rejects a recipe whose ingredients can't be costed into
-      // macros — which in practice means no ingredient has a weight yet (fresh
-      // rows start empty). Say that, instead of a generic 422.
+      // The backend requires a positive weight on every ingredient. Fresh rows
+      // start empty — say that, instead of a generic 422.
       if (!canComputeRecipeNutrition(ingredients)) {
-        setError('root', {message: 'Set a weight (g) on at least one ingredient.'});
+        setError('root', {message: 'Set a weight (g) on every ingredient.'});
         return;
       }
       clearErrors('root');
@@ -150,7 +157,7 @@ export default function RecipeForm({
               description="Optional — weigh the finished dish to log it in grams"
               fullWidth
               label="Cooked weight (g)"
-              minValue={0}
+              minValue={0.1}
               name="cooked_weight_g"
             />
           </Fieldset.Group>
@@ -186,7 +193,7 @@ export default function RecipeForm({
               </Fieldset.Legend>
               <MacroBreakdownCard
                 caption="kcal total"
-                fiber={totals.fiber_g}
+                fiber={totals.fiber}
                 kcal={totals.calories}
                 segments={segments}
               />

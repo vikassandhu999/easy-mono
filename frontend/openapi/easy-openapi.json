@@ -158,6 +158,8 @@
             "x-validate": null
           },
           "cooked_weight_g": {
+            "exclusiveMinimum": true,
+            "minimum": 0,
             "nullable": true,
             "type": "number",
             "x-struct": null,
@@ -197,14 +199,6 @@
             "x-struct": null,
             "x-validate": null
           },
-          "foods": {
-            "items": {
-              "$ref": "#/components/schemas/Food"
-            },
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
-          },
           "id": {
             "format": "uuid",
             "type": "string",
@@ -228,43 +222,8 @@
             "x-struct": null,
             "x-validate": null
           },
-          "nutrition": {
-            "nullable": true,
-            "properties": {
-              "calories": {
-                "nullable": true,
-                "type": "number",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "carbs_g": {
-                "nullable": true,
-                "type": "number",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "fat_g": {
-                "nullable": true,
-                "type": "number",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "fiber_g": {
-                "nullable": true,
-                "type": "number",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "protein_g": {
-                "nullable": true,
-                "type": "number",
-                "x-struct": null,
-                "x-validate": null
-              }
-            },
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
+          "nutrients": {
+            "$ref": "#/components/schemas/NutrientTotals"
           },
           "recipe_ingredients": {
             "items": {
@@ -274,8 +233,14 @@
             "x-struct": null,
             "x-validate": null
           },
+          "revision": {
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
           "servings_count": {
-            "nullable": true,
+            "minimum": 1,
             "type": "integer",
             "x-struct": null,
             "x-validate": null
@@ -290,6 +255,9 @@
         "required": [
           "id",
           "name",
+          "servings_count",
+          "revision",
+          "nutrients",
           "instructions",
           "cooked_weight_g",
           "recipe_ingredients",
@@ -2170,14 +2138,16 @@
             "x-validate": null
           },
           "weight_g": {
-            "nullable": true,
+            "exclusiveMinimum": true,
+            "minimum": 0,
             "type": "number",
             "x-struct": null,
             "x-validate": null
           }
         },
         "required": [
-          "food_id"
+          "food_id",
+          "weight_g"
         ],
         "title": "RecipeIngredientRequest",
         "type": "object",
@@ -6967,6 +6937,8 @@
             "x-validate": null
           },
           "cooked_weight_g": {
+            "exclusiveMinimum": true,
+            "minimum": 0,
             "nullable": true,
             "type": "number",
             "x-struct": null,
@@ -7020,14 +6992,15 @@
             "x-validate": null
           },
           "servings_count": {
-            "nullable": true,
+            "minimum": 1,
             "type": "integer",
             "x-struct": null,
             "x-validate": null
           }
         },
         "required": [
-          "name"
+          "name",
+          "servings_count"
         ],
         "title": "RecipeRequest",
         "type": "object",
@@ -8287,6 +8260,111 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.HealthResponse",
         "x-validate": null
       },
+      "RecipeUpdateRequest": {
+        "additionalProperties": false,
+        "example": {
+          "expected_revision": 1,
+          "name": "Turkey Rice Bowl",
+          "servings_count": 4
+        },
+        "properties": {
+          "allergens": {
+            "items": {
+              "enum": [
+                "dairy",
+                "egg",
+                "fish",
+                "shellfish",
+                "tree_nuts",
+                "peanuts",
+                "wheat",
+                "soy",
+                "sesame"
+              ],
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "cooked_weight_g": {
+            "exclusiveMinimum": true,
+            "minimum": 0,
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "description": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "dietary_tags": {
+            "items": {
+              "enum": [
+                "vegan",
+                "vegetarian",
+                "halal",
+                "kosher",
+                "gluten_free",
+                "dairy_free",
+                "low_fodmap",
+                "keto",
+                "high_protein"
+              ],
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "instructions": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "name": {
+            "maxLength": 255,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "recipe_ingredients": {
+            "items": {
+              "$ref": "#/components/schemas/RecipeIngredientRequest"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "servings_count": {
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "expected_revision"
+        ],
+        "title": "RecipeUpdateRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "ClientResponse": {
         "additionalProperties": false,
         "properties": {
@@ -9429,7 +9507,8 @@
             "x-validate": null
           },
           "weight_g": {
-            "nullable": true,
+            "exclusiveMinimum": true,
+            "minimum": 0,
             "type": "number",
             "x-struct": null,
             "x-validate": null
@@ -9438,9 +9517,8 @@
         "required": [
           "food_id",
           "food",
-          "unit",
-          "amount",
-          "weight_g"
+          "weight_g",
+          "position"
         ],
         "title": "RecipeIngredient",
         "type": "object",
@@ -25778,6 +25856,18 @@
               "x-struct": null,
               "x-validate": null
             }
+          },
+          {
+            "description": "Revision observed by the deleting client",
+            "in": "query",
+            "name": "expected_revision",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
           }
         ],
         "responses": {
@@ -25812,7 +25902,7 @@
                 }
               }
             },
-            "description": "Still in use — a recipe still used by a plan"
+            "description": "Stale revision or still in use"
           }
         },
         "security": [
@@ -25905,11 +25995,11 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RecipeRequest"
+                "$ref": "#/components/schemas/RecipeUpdateRequest"
               }
             }
           },
-          "description": "Recipe request",
+          "description": "Recipe update request",
           "required": true
         },
         "responses": {
@@ -25942,6 +26032,16 @@
               }
             },
             "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaleRevisionError"
+                }
+              }
+            },
+            "description": "Stale revision"
           },
           "422": {
             "content": {

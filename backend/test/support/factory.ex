@@ -289,6 +289,7 @@ defmodule Easy.Factory do
       instructions: "Mix and serve",
       servings_count: 2,
       cooked_weight_g: 400.0,
+      revision: 1,
       allergens: [],
       dietary_tags: [],
       recipe_ingredients: [],

@@ -2157,22 +2157,16 @@ export interface components {
         | 'keto'
         | 'high_protein'
       )[];
-      foods?: components['schemas']['Food'][];
       /** Format: uuid */
       id: string;
       /** Format: date-time */
       inserted_at: string;
       instructions: string | null;
       name: string;
-      nutrition?: {
-        calories?: number | null;
-        carbs_g?: number | null;
-        fat_g?: number | null;
-        fiber_g?: number | null;
-        protein_g?: number | null;
-      } | null;
+      nutrients: components['schemas']['NutrientTotals'];
       recipe_ingredients: components['schemas']['RecipeIngredient'][];
-      servings_count?: number | null;
+      revision: number;
+      servings_count: number;
       /** Format: date-time */
       updated_at: string;
     };
@@ -2624,7 +2618,7 @@ export interface components {
       food_id: string;
       position?: number;
       unit?: string | null;
-      weight_g?: number | null;
+      weight_g: number;
     };
     /** ClientTrainingPlanListResponse */
     ClientTrainingPlanListResponse: {
@@ -3953,7 +3947,7 @@ export interface components {
       instructions?: string | null;
       name: string;
       recipe_ingredients?: components['schemas']['RecipeIngredientRequest'][];
-      servings_count?: number | null;
+      servings_count: number;
     };
     /** ProspectListResponse */
     ProspectListResponse: {
@@ -4258,6 +4252,35 @@ export interface components {
       /** @example 1.0.0 */
       version: string;
     };
+    /**
+     * RecipeUpdateRequest
+     * @example {
+     *       "expected_revision": 1,
+     *       "name": "Turkey Rice Bowl",
+     *       "servings_count": 4
+     *     }
+     */
+    RecipeUpdateRequest: {
+      allergens?: ('dairy' | 'egg' | 'fish' | 'shellfish' | 'tree_nuts' | 'peanuts' | 'wheat' | 'soy' | 'sesame')[];
+      cooked_weight_g?: number | null;
+      description?: string | null;
+      dietary_tags?: (
+        | 'vegan'
+        | 'vegetarian'
+        | 'halal'
+        | 'kosher'
+        | 'gluten_free'
+        | 'dairy_free'
+        | 'low_fodmap'
+        | 'keto'
+        | 'high_protein'
+      )[];
+      expected_revision: number;
+      instructions?: string | null;
+      name?: string;
+      recipe_ingredients?: components['schemas']['RecipeIngredientRequest'][];
+      servings_count?: number;
+    };
     /** ClientResponse */
     ClientResponse: {
       data: components['schemas']['Client'];
@@ -4533,13 +4556,13 @@ export interface components {
     };
     /** RecipeIngredient */
     RecipeIngredient: {
-      amount: number | null;
+      amount?: number | null;
       food: components['schemas']['Food'] | null;
       /** Format: uuid */
       food_id: string;
-      position?: number;
-      unit: string | null;
-      weight_g: number | null;
+      position: number;
+      unit?: string | null;
+      weight_g: number;
     };
     /**
      * AcceptInviteVerifyRequest
@@ -11871,7 +11894,10 @@ export interface operations {
   };
   deleteRecipe: {
     parameters: {
-      query?: never;
+      query: {
+        /** @description Revision observed by the deleting client */
+        expected_revision: number;
+      };
       header?: never;
       path: {
         /** @description Recipe id */
@@ -11906,7 +11932,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description Still in use — a recipe still used by a plan */
+      /** @description Stale revision or still in use */
       409: {
         headers: {
           [name: string]: unknown;
@@ -11927,10 +11953,10 @@ export interface operations {
       };
       cookie?: never;
     };
-    /** @description Recipe request */
+    /** @description Recipe update request */
     requestBody: {
       content: {
-        'application/json': components['schemas']['RecipeRequest'];
+        'application/json': components['schemas']['RecipeUpdateRequest'];
       };
     };
     responses: {
@@ -11959,6 +11985,15 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Stale revision */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StaleRevisionError'];
         };
       };
       /** @description Validation error */

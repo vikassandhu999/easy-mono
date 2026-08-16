@@ -17,14 +17,14 @@ export function isRecipe(item: FoodOrRecipe): item is Recipe {
 }
 
 function perServingCalories(recipe: Recipe): number | null | undefined {
-  const kcal = recipe.nutrition?.calories;
+  const kcal = recipe.nutrients.calories;
   return kcal == null ? kcal : kcal / recipeServings(recipe);
 }
 
 /** Protein badge — per 100g for foods, per serving for recipes. e.g. "80P". */
 function macroBadge(item: FoodOrRecipe): string {
   if (isRecipe(item)) {
-    const protein = item.nutrition?.protein_g;
+    const protein = item.nutrients.protein;
     return `${fmt(protein == null ? protein : protein / recipeServings(item))}P`;
   }
   return `${fmt(item.protein_g_per_100g)}P`;

@@ -24,6 +24,7 @@ export type NutrientTotals = components['schemas']['NutrientTotals'];
 
 export type Recipe = components['schemas']['Recipe'];
 export type RecipeRequest = components['schemas']['RecipeRequest'];
+export type RecipeUpdateRequest = components['schemas']['RecipeUpdateRequest'];
 export type RecipeIngredient = components['schemas']['RecipeIngredient'];
 export type RecipeIngredientRequest = components['schemas']['RecipeIngredientRequest'];
 
@@ -186,7 +187,7 @@ export function useCreateRecipeMutation() {
 export function useUpdateRecipeMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({id, body}: {id: string; body: RecipeRequest}) =>
+    mutationFn: ({id, body}: {id: string; body: RecipeUpdateRequest}) =>
       call(client.PATCH('/v1/coach/nutrition-recipes/{id}', {params: {path: {id}}, body})),
     onSuccess: (_data, {id}) => {
       qc.invalidateQueries({queryKey: recipeKeys.detail(id)});
@@ -198,8 +199,13 @@ export function useUpdateRecipeMutation() {
 export function useDeleteRecipeMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => call(client.DELETE('/v1/coach/nutrition-recipes/{id}', {params: {path: {id}}})),
-    onSuccess: (_data, id) => {
+    mutationFn: ({id, expectedRevision}: {id: string; expectedRevision: number}) =>
+      call(
+        client.DELETE('/v1/coach/nutrition-recipes/{id}', {
+          params: {path: {id}, query: {expected_revision: expectedRevision}},
+        }),
+      ),
+    onSuccess: (_data, {id}) => {
       qc.removeQueries({queryKey: recipeKeys.detail(id)});
       qc.invalidateQueries({queryKey: recipeKeys.lists()});
     },

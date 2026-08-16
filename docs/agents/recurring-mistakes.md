@@ -32,7 +32,7 @@ Severity of the rule isn't the point; recurrence is.
 | RM-001 | `order_by` must be a total order | Backend | review |
 | RM-002 | OpenApiSpex schema ↔ JSON view parity | Backend | test |
 | RM-003 | Function nesting ≤ 2 | Backend | credo |
-| RM-004 | OpenAPI spec cached in the running dev server | Backend | review |
+| RM-004 | OpenAPI spec cache is off in `:dev` | Backend | config |
 | RM-005 | Write responses tested at value level | Backend | test |
 | RM-006 | OpenApiSpex enums and examples mirror domain enums | Backend | review |
 | RM-007 | Nested request schemas need map output | Backend | test |
@@ -192,9 +192,8 @@ view's controller test asserts the rendered entity with
 
 ### RM-003 — Keep function nesting ≤ 2. **Enforced by:** `mix credo` (in `mix precommit`).
 
-### RM-004 — OpenApiSpex spec is cached in the running dev server
-Schema edits 422 ("Unexpected field") until `phx.server` is fully restarted — the spec is
-built once at boot; code-reload doesn't bust it.
+### RM-004 — OpenApiSpex spec cache is off in `:dev`
+`config/dev.exs` sets `config :open_api_spex, :cache_adapter, OpenApiSpex.Plug.NoneCache`, so a schema or controller reload applies on the next request. Prod and test keep the default `PersistentTermCache`. A 422 "Unexpected field" after a schema edit in dev is a real mismatch, not a stale cache.
 
 ### RM-005 — Write responses must be tested at value level, not just truthiness
 Create/update must return the same fully-preloaded shape as GET; truthiness-only tests let

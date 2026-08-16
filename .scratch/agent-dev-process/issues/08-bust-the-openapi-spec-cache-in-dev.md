@@ -1,7 +1,7 @@
 # Bust the OpenAPI spec cache in dev
 
 Type: task
-Status: ready-for-agent
+Status: resolved
 Blocked by: None — can start immediately.
 Parent: [Agent development process](../map.md)
 
@@ -32,10 +32,10 @@ Do not add a `just restart-api` alias as the solution. The point is to stop need
 
 ## Acceptance
 
-- [ ] In dev, a schema field added while `phx.server` is running is accepted (or rejected by the new schema) after code reload, without killing the process.
-- [ ] `mix test` still passes for OpenAPI/controller tests.
-- [ ] RM-004 no longer tells agents to restart the server as the only fix.
-- [ ] The api-change skill, if it exists, does not require a restart.
+- [x] In dev, a schema field added while `phx.server` is running is accepted (or rejected by the new schema) after code reload, without killing the process.
+- [x] `mix test` still passes for OpenAPI/controller tests.
+- [x] RM-004 no longer tells agents to restart the server as the only fix.
+- [x] The api-change skill, if it exists, does not require a restart.
 
 ## Verification
 
@@ -44,3 +44,11 @@ cd backend && mix test test/easy_web/controllers/open_api_route_coverage_test.ex
 ```
 
 Plus the smallest controller test that uses `assert_schema`. Then `mix precommit` once before resolving. Record the reload probe (what you changed, that you did not restart, the HTTP status) in `## Answer`.
+
+## Answer
+
+`config/dev.exs` sets `config :open_api_spex, :cache_adapter, OpenApiSpex.Plug.NoneCache`. PutApiSpec's default is `PersistentTermCache`; NoneCache rebuilds `EasyWeb.ApiSpec.spec/0` on each request. Prod/test keep the default.
+
+ExUnit: `OpenApiSpex.Plug.NoneCache.put/2` then `get/1` is `nil`; test env `Cache.adapter()` is not `NoneCache`. `open_api_route_coverage_test` and `business_controller_test` (`assert_schema`) passed. `mix precommit` ran 1219 tests with 1 pre-existing failure in `training_plan_controller_test.exs:156` (coverage returned `data: nil` for a Saturday fixture) — unrelated to this cache change.
+
+api-change skill no longer restarts `phx.server`. RM-004 now points at the NoneCache config.

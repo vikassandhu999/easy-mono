@@ -16,5 +16,4 @@ description: >
 2. **Tests** — controller tests go through the real router. Write responses use `OpenApiSpex.TestAssertions.assert_schema/3`. Nested request schemas that feed `cast_embed` / `cast_assoc` set `struct?: false` (RM-007). Done when the focused controller test is green.
 3. **Generate** — `just gen-api`. `src/api/schema.ts` is always overwritten. Done when both apps' generated files contain the new field or path.
 4. **Hooks** — hand-written hooks in `src/api/*.ts` consume the new types. Invalidation lives in the mutation via `src/api/keys.ts` factories (RM-118, RM-143). Types come from `schema.ts`; no `as unknown as` on API objects (RM-106). Done when the owning hook and keys compile against the generated types.
-5. **Restart** — fully restart `phx.server` before hitting the endpoint in the browser. Code-reload does not bust the spec cache (RM-004). Done when a request to the running server returns the new shape. Ticket 08 retires this step.
-6. **Finish** — the focused controller test and `just gen-api` ran in this session. Done when both completed.
+5. **Finish** — the focused controller test and `just gen-api` ran in this session. In `:dev` the next request rebuilds the spec (`NoneCache`, RM-004). Done when both completed.

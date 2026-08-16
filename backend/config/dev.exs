@@ -29,6 +29,10 @@ config :easy, EasyWeb.Endpoint,
   secret_key_base: "RAAfGUm9emTKfbukUTJcJnM+vcAKFWhNOdfT2ZQG9l7Cctc0NN5f1JBT9p1RoAvY",
   watchers: []
 
+# Rebuild the OpenAPI spec on each request so schema/controller reloads apply
+# without restarting phx.server (RM-004). Prod and test keep PersistentTermCache.
+config :open_api_spex, :cache_adapter, OpenApiSpex.Plug.NoneCache
+
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
 

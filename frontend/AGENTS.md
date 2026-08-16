@@ -1,80 +1,38 @@
-# Easy Apps Agent Instructions
+# Frontend workspace
 
-This is the frontend-workspace contract: what applies to all apps and packages. App-specific rules (routing, forms, API usage, UI) live in that app's `AGENTS.md` — read it before editing inside the app, and don't copy its rules here.
+Shared contract for every app and package under `frontend/`. App screens, routing, and UI live in that app's `AGENTS.md` — read it before editing inside the app.
 
-## Repository Map
+Commands: the app's `package.json` `scripts`, or `just --list` from the repo root.
 
-- Package manager: `pnpm@10.27.0`.
-- Apps:
-  - `apps/coachapp-v2`: primary coach app, React 19 + Vite, port 2021.
-  - `apps/clientapp-v2`: client PWA and Capacitor shell, React 19 + Vite, port 1314.
-  - `apps/website`: marketing site, Next.js 16, port 3000.
-- Shared packages: `packages/utils` (46 imports) and `packages/error-parser`. Nothing else — `ui`,
-  `hooks` and `typings` were deleted for having zero importers.
+## Boundary
 
-## Commands
+Apps depend on `packages/*`. Packages do not depend on app internals. Package exports are public contracts.
 
-- All apps dev: `pnpm dev`.
-- App dev/build:
-  - Coach: `pnpm dev:coachapp`, `pnpm build:coachapp`.
-  - Client: `pnpm dev:clientapp-v2`, `pnpm build:clientapp-v2`.
-  - Website: `pnpm dev:website`, `pnpm build:website`.
-- Whole repo build: `pnpm build`.
-- Whole repo lint/format: `pnpm lint`, `pnpm format`.
-- Path-local commands are valid: `pnpm -C <path> <script>`.
-- Prefer the narrowest command that proves the change. Use repo-wide commands for repo-wide changes.
-- `lint` runs Biome with `--write`; review any files it changes.
-- There is no general test suite configured. Use build, lint, and manual/browser checks appropriate to the touched surface.
+A shared concept has an owning feature (`lib/` or a feature-root file). Other features import that surface. Feature `components/`, screens, and form files stay inside the feature; UI used by two features moves to `@components/`. RM-144.
 
-## Boundary Rules
+`@easy/utils` is for product-agnostic helpers (dates, names, numbers). Check it before writing one.
 
-- App code may depend on shared packages; shared packages must not depend on app internals.
-- Shared package exports are public contracts. Treat package changes as higher risk than app-local changes.
-- Do not add app-specific routing, copy, environment assumptions, or design-system details to shared packages.
-- Reuse existing types and utilities instead of re-declaring shapes.
-- Check package manifests before changing dependency or peer dependency assumptions.
+## API
 
-## Verification
+Both coach and client apps: TanStack React Query 5 + `openapi-typescript` types + `openapi-fetch`. Hooks are hand-written. There is no hook codegen.
 
-- App code changes: run that app's build command.
-- Shared package changes: run the package build and at least one relevant consuming app build.
-- Repo-wide refactors: run `pnpm build`; run `pnpm lint` only when formatting/lint writes are intended.
-- UI or routing changes: verify the touched flow in a browser at mobile and desktop widths after the build succeeds.
+`just gen-api` dumps the backend spec, splits it, and regenerates both apps' `src/api/schema.ts`. That file is always overwritten.
 
-## API Clients
+- Types come from `schema.ts` (`components['schemas'][...]`, `paths[...]`). The owning `src/api/*.ts` file re-exports them. Derive with `Pick` / `Omit` / indexed access; do not redeclare the shape.
+- Runtime calls: `call(client.VERB(path, ...))` from `src/api/client.ts`. Non-2xx throws `ApiError {status, data}`.
+- Query keys come only from `src/api/keys.ts` factories: `{all, lists(), list(filters), infinite(filters), details(), detail(id)}`. List-shaped keys nest under `lists()` (RM-143). Flat and infinite lists use different keys.
+- Invalidation lives in the mutation hook (`detail(id)` + `lists()` on update; deletes `removeQueries` their detail). A mutation with neither invalidation nor an optimistic patch leaves stale screens. Call sites `await mutateAsync(...)` and stop. Socket handlers are the only `invalidateQueries` outside `src/api/`.
+- Optimistic writes: `patchQueryData(key, recipe)` from `src/api/query-client.ts`.
+- Logout: `queryClient.clear()`.
 
-Both apps use the SAME stack — TanStack React Query 5 + `openapi-typescript` types + `openapi-fetch`
-— fed by the same backend OpenAPI spec, split per app. There is no hook codegen and no Redux
-anywhere; RTK Query was removed from clientapp-v2 on 2026-07-28.
+A public JSON field or endpoint: OpenApiSpex schema and JSON view together, then `just gen-api`, then the hand-written hook and keys. Root `AGENTS.md` **API** pointer.
 
-### Regenerating
+## Verify
 
-After any backend API change:
+`pnpm -C apps/<app> build` is the finish gate (typecheck `-p tsconfig.app.json`, `check`, Vite). A bare `tsc --noEmit` on a solution `tsconfig.json` compiles nothing and exits 0 (RM-202).
 
-```
-just gen-api
-```
+`*.check.ts` files are the unit suite. `build` runs them via the app's `check` script; a new file is live only once that script lists it.
 
-This runs: backend spec dump → coach/client split → `gen:api` in both apps → Biome format on both output files.
+`pnpm -C apps/<app> lint` is Biome `--write` — review its edits.
 
-If you only need to regenerate without re-dumping the spec:
-
-```
-cd frontend && pnpm --filter coachapp-v2 gen:api && pnpm --filter clientapp-v2 gen:api
-```
-
-### Both apps: TanStack React Query + openapi-typescript
-
-Coachapp reads `frontend/openapi/coach.openapi.json`, clientapp reads `client.openapi.json`; the
-rules below are identical for both.
-
-- `src/api/schema.ts` is generated by `openapi-typescript` from that app's spec (types only — `paths` + `components`). Never hand-edit; always overwritten.
-- Runtime calls go through `openapi-fetch` (`src/api/client.ts`: `client` + `call()` unwrap + `ApiError {status, data}` + the auth/refresh middleware).
-- Hooks are HAND-WRITTEN React Query hooks, one domain per `src/api/*.ts` file. There is no hook codegen.
-- Query keys live in the single registry `src/api/keys.ts` — factories shaped `{all, lists(), list(filters), infinite(filters), details(), detail(id)}` plus domain extras. Mutations invalidate via these factories (`detail(id)` + `lists()` for an update, etc.). Flat and infinite lists use different keys (`list` vs `infinite`) because the cached shapes differ.
-- `src/api/query-client.ts` owns the `QueryClient` (retry off, no focus refetch, 60s staleTime) and `patchQueryData(key, immerRecipe)` → `{undo}` for optimistic cache patches (the plan builders and chat use it).
-- Types derive from `schema.ts` (`components['schemas'][...]`, `paths[...]`), re-exported under their old names from the owning domain file. Don't re-declare shapes.
-- Mutations take the request body directly (`mutateAsync(body)`), or `{id, ...body}` when the path
-  needs an id. Call sites use `mutation.isPending` and `await mutation.mutateAsync(...)` in
-  try/catch — never the RTK `[trigger, {isLoading}]` tuple or `.unwrap()`.
-- Clearing the cache on logout is `queryClient.clear()` (the replacement for `api.util.resetApiState()`).
+UI or routing: exercise the touched flow in a browser (root **Browser** pointer). Coach: 375px and 1280px. Client: 375px.

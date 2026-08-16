@@ -42,7 +42,7 @@ model are different, and several coachapp rules deliberately do NOT apply here (
 
 ## Data And API
 
-Identical in shape to coachapp — see `frontend/AGENTS.md` § API Clients for the full
+Identical in shape to coachapp — see `frontend/AGENTS.md` § API for the full
 contract. The parts that bite:
 
 - `src/api/schema.ts` is generated from `frontend/openapi/client.openapi.json` by

@@ -1,6 +1,6 @@
 # Check-in form improvements: multiple schedules and default intake selection
 
-Status: ready-for-agent
+Status: resolved
 
 Source research: `.scratch/checkin-form-assignment-research/research.md` (competitor and coach-workflow analysis, 2026-08-14). This spec covers the top two ranked improvements from that research, scoped against what the codebase already does.
 

@@ -1,6 +1,6 @@
 # Coach workbench queue definitions
 
-Status: ready-for-agent
+Status: resolved
 
 ## Problem Statement
 

@@ -1,7 +1,7 @@
 # Meal logging diary rewrite
 
 Label: wayfinder:map
-Status: active
+Status: resolved
 
 ## Destination
 

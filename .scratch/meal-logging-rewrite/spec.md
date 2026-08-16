@@ -1,6 +1,6 @@
 # Meal logging diary
 
-Status: ready-for-agent
+Status: resolved
 
 ## Problem Statement
 

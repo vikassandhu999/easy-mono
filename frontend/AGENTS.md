@@ -31,7 +31,7 @@ A public JSON field or endpoint: OpenApiSpex schema and JSON view together, then
 
 `pnpm -C apps/<app> build` is the finish gate (typecheck `-p tsconfig.app.json`, `check`, Vite). A bare `tsc --noEmit` on a solution `tsconfig.json` compiles nothing and exits 0 (RM-202).
 
-`*.check.ts` files are the unit suite. `build` runs them via the app's `check` script; a new file is live only once that script lists it.
+`*.check.ts` files are the frontend unit suite. `pnpm -C apps/<app> check` globs them (`src` plus `@easy/utils`; client also `scripts/`). A new file is live with no `package.json` edit. A new mapper, predicate, or lifecycle helper ships with a sibling `.check.ts` in the same change.
 
 `pnpm -C apps/<app> lint` is Biome `--write` — review its edits.
 

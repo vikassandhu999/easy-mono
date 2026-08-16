@@ -18,7 +18,7 @@ model are different, and several coachapp rules deliberately do NOT apply here (
   (`"files": []`), so a bare `tsc --noEmit` compiles nothing and exits 0. It did exactly
   that for months while 183 errors accumulated (RM-202).
 - Lint/format: `pnpm -C apps/clientapp-v2 lint` — Biome with `--write`, so expect edits.
-- No test suite. Verify with build + browser checks at a phone width.
+- Unit suite: sibling `*.check.ts` files. `pnpm -C apps/clientapp-v2 check` globs `src`, `scripts`, and `@easy/utils`. A new mapper, predicate, or lifecycle helper ships with its `.check.ts` in the same change. Verify UI at a phone width.
 - Native: `pnpm native` (build + `cap sync`), then `cap open ios|android`.
 
 ## Source Layout

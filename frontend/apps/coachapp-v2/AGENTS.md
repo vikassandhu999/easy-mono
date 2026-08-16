@@ -8,7 +8,7 @@ Use this file as the app contract.
 - Dev server: `pnpm -C apps/coachapp-v2 dev` on port 2021.
 - Build/type-check: `pnpm -C apps/coachapp-v2 build`.
 - Lint/format: `pnpm -C apps/coachapp-v2 lint`. This runs Biome with `--write`, so expect file changes.
-- There is no app test suite configured. For code changes, use build plus focused manual/browser verification when behavior or UI changed.
+- Unit suite: sibling `*.check.ts` files. `pnpm -C apps/coachapp-v2 check` globs `src` and `@easy/utils`. A new mapper, predicate, or lifecycle helper ships with its `.check.ts` in the same change.
 
 ## Source Layout
 

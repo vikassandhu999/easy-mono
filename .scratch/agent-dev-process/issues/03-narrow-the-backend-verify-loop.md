@@ -41,3 +41,7 @@ If `backend/AGENTS.md` "Enforcement" still says "Run `mix precommit` before fini
 ## Verification
 
 Read the skill (and AGENTS.md if touched). No product tests required. Confirm the skill still names `mix precommit` as the finish command so this is not a silent weakening of the gate.
+
+## Comments
+
+2026-08-16 (from the glob-run-frontend-checks session): `elixir-conventions` restates `backend/AGENTS.md` and then contradicts its Finish section (`mix precommit` after every change). `backend/AGENTS.md` is the path-scoped contract Cursor already loads when editing `backend/` — not optional markdown. Recommendation: delete the skill; keep iterate-vs-finish only in `backend/AGENTS.md` Finish. A model-invoked skill pays always-on description cost; this one has no steps that file does not already own.

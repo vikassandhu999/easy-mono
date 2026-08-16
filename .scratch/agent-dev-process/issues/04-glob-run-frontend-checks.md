@@ -1,7 +1,7 @@
 # Glob-run frontend checks
 
 Type: task
-Status: ready-for-agent
+Status: resolved
 Blocked by: None — can start immediately.
 Parent: [Agent development process](../map.md)
 
@@ -42,11 +42,11 @@ Do not introduce Vitest/Jest in this ticket. Keep the existing `node --experimen
 
 ## Acceptance
 
-- [ ] `rg 'node --experimental-strip-types src/' frontend/apps/*/package.json` returns no per-file list.
-- [ ] `pnpm -C frontend/apps/coachapp-v2 check` and `pnpm -C frontend/apps/clientapp-v2 check` both pass and print every discovered file (or fail on the first).
-- [ ] A throwaway `.check.ts` under coachapp `src/` is picked up without a `package.json` edit; delete it before finishing.
-- [ ] AGENTS files call `.check.ts` the frontend unit suite and require a sibling check for new mappers/predicates/lifecycle helpers.
-- [ ] `build` still runs `check`.
+- [x] `rg 'node --experimental-strip-types src/' frontend/apps/*/package.json` returns no per-file list.
+- [x] `pnpm -C frontend/apps/coachapp-v2 check` and `pnpm -C frontend/apps/clientapp-v2 check` both pass and print every discovered file (or fail on the first).
+- [x] A throwaway `.check.ts` under coachapp `src/` is picked up without a `package.json` edit; delete it before finishing.
+- [x] AGENTS files call `.check.ts` the frontend unit suite and require a sibling check for new mappers/predicates/lifecycle helpers.
+- [x] `build` still runs `check`.
 
 ## Verification
 
@@ -56,3 +56,7 @@ pnpm -C frontend/apps/clientapp-v2 check
 ```
 
 Prove empty-run failure by briefly pointing the runner at an empty temp dir (or a documented equivalent) if that is cheap; otherwise prove it by reading the zero-files branch in the script.
+
+## Answer
+
+`frontend/scripts/run-checks.mjs` globs `*.check.ts` under the dirs each app's `check` script passes. Coach: `src` + `@easy/utils`. Client: `src`, `scripts`, + `@easy/utils`. Zero matches exits 1 (RM-202). Both app `check` runs passed; an empty temp dir failed; `src/_glob-probe.check.ts` was listed then deleted. AGENTS files name `.check.ts` as the unit suite and require a sibling file for new mappers, predicates, and lifecycle helpers. Ticket 07 (CI) is unblocked.

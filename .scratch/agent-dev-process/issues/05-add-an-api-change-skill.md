@@ -1,7 +1,7 @@
 # Add an api-change skill
 
 Type: task
-Status: ready-for-agent
+Status: resolved
 Blocked by: None — can start immediately.
 Parent: [Agent development process](../map.md)
 
@@ -31,11 +31,15 @@ Root `AGENTS.md` "When changing an API" should point at this skill in one senten
 
 ## Acceptance
 
-- [ ] The skill is in `.claude/skills/` and does not collide with a plugin skill name.
-- [ ] An agent following only the skill will touch schema + view together, regenerate both clients, and update hooks/keys.
-- [ ] Phoenix restart is present if 08 is open, absent if 08 is resolved.
-- [ ] Root `AGENTS.md` growth is one sentence.
+- [x] The skill is in `.claude/skills/` and does not collide with a plugin skill name.
+- [x] An agent following only the skill will touch schema + view together, regenerate both clients, and update hooks/keys.
+- [x] Phoenix restart is present if 08 is open, absent if 08 is resolved.
+- [x] Root `AGENTS.md` growth is one sentence.
 
 ## Verification
 
 Read the skill and the AGENTS pointer. Confirm RM-302 (`scripts/check-rm.sh`) still passes: `just check-rm`.
+
+## Answer
+
+The sequence lives in `.claude/skills/api-change/SKILL.md`: schema + view together, focused controller/`assert_schema` tests, `just gen-api`, hooks/keys, restart `phx.server` (RM-004; ticket 08 still open), then finish. `backend/AGENTS.md` and `frontend/AGENTS.md` stay the contracts. Root **API** pointer is one sentence to that skill. `just check-rm` passed (RM-302).

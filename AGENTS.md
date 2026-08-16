@@ -17,7 +17,7 @@ Each line is a pointer: leading word, the branch that fires it, where to go.
 
 - **Frontend** — editing `frontend/` (Vite, React, Biome, `@easy/*`): `frontend/AGENTS.md`.
 - **Backend** — editing `backend/` (mix, Ecto, Ctx, OpenAPI): `backend/AGENTS.md`.
-- **API** — public JSON endpoint or field: change the OpenApiSpex schema and the JSON view together, then `just gen-api`.
+- **API** — public JSON endpoint or field: `.claude/skills/api-change/SKILL.md`.
 - **Ticket** — implementing a `.scratch` issue: claim it, name the branch after it, follow `docs/agents/issue-tracker.md`.
 - **Vocabulary** — naming a product term: `CONTEXT.md`. Locked decisions: `docs/adr/`.
 - **Ledger** — finishing a change: read only the matching section of `docs/agents/recurring-mistakes.md` (`## Backend`, `## Frontend`, `## Deploy / ops`, `## Docs`). New recurrence: add a rule there, with a mechanical check when you can.

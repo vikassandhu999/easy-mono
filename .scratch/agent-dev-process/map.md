@@ -19,6 +19,7 @@ The operating loop in [Agent development process](./spec.md) is encoded in AGENT
 * [Close finished specs](./issues/02-close-finished-specs.md) — Workbench, meal-logging, check-in, and training specs are `resolved`; nutrition rewrite and this effort stay open.
 * [Narrow the backend verify loop](./issues/03-narrow-the-backend-verify-loop.md) — `backend/AGENTS.md` is the contract; `elixir-conventions` is deleted. Iterate `mix test <path>`, resolve `mix precommit`.
 * [Glob-run frontend checks](./issues/04-glob-run-frontend-checks.md) — `frontend/scripts/run-checks.mjs` globs `*.check.ts`; a new sibling file is live with no `package.json` edit. Ticket 07 is unblocked.
+* [Add an api-change skill](./issues/05-add-an-api-change-skill.md) — Public JSON changes follow `.claude/skills/api-change/SKILL.md` (schema + view, gen-api, hooks, restart until ticket 08).
 * [Shrink always-on agent context](./issues/06-shrink-always-on-agent-context.md) — Agents read one RM section at finish, not the whole ledger; the ledger has a 139-row index; the cbm Cursor rule is a repo-local glob-scoped file instead of the always-on cbm-axi symlink.
 
 ## Fog
@@ -31,7 +32,6 @@ The operating loop in [Agent development process](./spec.md) is encoded in AGENT
 
 Unblocked, unclaimed, lowest number first:
 
-* [Add an api-change skill](./issues/05-add-an-api-change-skill.md)
 * [Add CI that reruns claimed checks](./issues/07-add-ci-that-reruns-claimed-checks.md)
 * [Bust the OpenAPI spec cache in dev](./issues/08-bust-the-openapi-spec-cache-in-dev.md)
 * [Backup and prune local branches](./issues/09-backup-and-prune-local-branches.md) (human)

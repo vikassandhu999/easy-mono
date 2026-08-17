@@ -1,8 +1,8 @@
 defmodule Easy.Nutrition.Library do
+  alias Easy.CopyName
   alias Easy.Ctx
   alias Easy.LibraryMedia
-  alias Easy.CopyName
-  alias Easy.Nutrition.{Food, NutrientTotals, Recipe, RecipeIngredient}
+  alias Easy.Nutrition.{Food, MealItem, NutrientTotals, Plan, Recipe, RecipeIngredient}
   alias Easy.Orgs.Coach
   alias Easy.Repo
   alias Easy.Utils
@@ -76,10 +76,15 @@ defmodule Easy.Nutrition.Library do
   end
 
   @spec get_food_impact(Ctx.t(), String.t()) ::
-          {:ok, %{templates: [map()], active_client_plans: [map()]}} | {:error, :not_found}
+          {:ok, %{recipes: [map()], templates: [map()], active_client_plans: [map()]}} | {:error, :not_found}
   def get_food_impact(%Ctx{} = ctx, food_id) do
-    with {:ok, _food} <- get_food(ctx, food_id) do
-      {:ok, %{templates: [], active_client_plans: []}}
+    with {:ok, food} <- get_food(ctx, food_id) do
+      {:ok,
+       Map.put(
+         menu_usage(ctx.business_id, :food_id, food.id),
+         :recipes,
+         recipe_usage(ctx.business_id, food.id)
+       )}
     end
   end
 
@@ -201,8 +206,8 @@ defmodule Easy.Nutrition.Library do
   @spec get_recipe_impact(Ctx.t(), String.t()) ::
           {:ok, %{templates: [map()], active_client_plans: [map()]}} | {:error, :not_found}
   def get_recipe_impact(%Ctx{} = ctx, recipe_id) do
-    with {:ok, _recipe} <- get_recipe(ctx, recipe_id) do
-      {:ok, %{templates: [], active_client_plans: []}}
+    with {:ok, recipe} <- get_recipe(ctx, recipe_id) do
+      {:ok, menu_usage(ctx.business_id, :recipe_id, recipe.id)}
     end
   end
 
@@ -285,7 +290,8 @@ defmodule Easy.Nutrition.Library do
   end
 
   defp persist_locked_recipe(ctx, recipe, scalar_attrs, ingredients) do
-    with {:ok, updated} <-
+    with :ok <- ensure_recipe_edit_valid(ctx.business_id, recipe, scalar_attrs),
+         {:ok, updated} <-
            recipe
            |> Recipe.update_changeset(scalar_attrs)
            |> put_change(:revision, recipe.revision + 1)
@@ -294,6 +300,28 @@ defmodule Easy.Nutrition.Library do
       |> then(&replace_ingredients(ctx, updated, &1))
       |> ok_updated(updated)
     end
+  end
+
+  defp ensure_recipe_edit_valid(business_id, recipe, attrs) do
+    if removing_cooked_weight?(recipe, attrs) and recipe_gram_portion_in_use?(business_id, recipe.id) do
+      {:error, :in_use}
+    else
+      :ok
+    end
+  end
+
+  defp removing_cooked_weight?(%{cooked_weight_g: cooked}, attrs) when is_number(cooked) and cooked > 0 do
+    Map.has_key?(attrs, :cooked_weight_g) and is_nil(attrs[:cooked_weight_g])
+  end
+
+  defp removing_cooked_weight?(_recipe, _attrs), do: false
+
+  defp recipe_gram_portion_in_use?(business_id, recipe_id) do
+    Repo.exists?(
+      from(item in MealItem.for_business(business_id),
+        where: item.recipe_id == ^recipe_id and item.portion_kind == :gram
+      )
+    )
   end
 
   defp ok_updated(:ok, updated), do: {:ok, updated}
@@ -391,7 +419,45 @@ defmodule Easy.Nutrition.Library do
     end
   end
 
-  defp ensure_recipe_not_in_use(_business_id, _recipe_id), do: :ok
+  defp ensure_recipe_not_in_use(business_id, recipe_id) do
+    if Repo.exists?(from(item in MealItem.for_business(business_id), where: item.recipe_id == ^recipe_id)) do
+      {:error, :in_use}
+    else
+      :ok
+    end
+  end
+
+  defp recipe_usage(business_id, food_id) do
+    from(recipe in Recipe.for_business(business_id),
+      join: ingredient in RecipeIngredient,
+      on: ingredient.recipe_id == recipe.id and ingredient.business_id == recipe.business_id,
+      where: ingredient.food_id == ^food_id,
+      distinct: true,
+      order_by: [asc: recipe.name, asc: recipe.id],
+      select: %{id: recipe.id, name: recipe.name}
+    )
+    |> Repo.all()
+  end
+
+  defp menu_usage(business_id, item_field, item_id) do
+    %{
+      templates: menu_plan_usage(business_id, item_field, item_id, :template),
+      active_client_plans: menu_plan_usage(business_id, item_field, item_id, :client_plan)
+    }
+  end
+
+  defp menu_plan_usage(business_id, item_field, item_id, kind) do
+    from(plan in Plan.for_business(business_id),
+      join: item in MealItem,
+      on: item.nutrition_plan_id == plan.id and item.business_id == plan.business_id,
+      where: plan.kind == ^kind,
+      where: field(item, ^item_field) == ^item_id,
+      distinct: true,
+      order_by: [asc: plan.name, asc: plan.id],
+      select: %{id: plan.id, name: plan.name, client_id: plan.client_id}
+    )
+    |> Repo.all()
+  end
 
   defp generate_copy_name(original_name, business_id) do
     existing_names =
@@ -404,7 +470,10 @@ defmodule Easy.Nutrition.Library do
   end
 
   defp load_resolve_targets(ctx, items) do
-    {fetch_visible_foods(ctx, for(%{kind: :food, id: id} <- items, do: id)), fetch_visible_recipes(ctx, for(%{kind: :recipe, id: id} <- items, do: id))}
+    {
+      fetch_visible_foods(ctx, for(%{kind: :food, id: id} <- items, do: id)),
+      fetch_visible_recipes(ctx, for(%{kind: :recipe, id: id} <- items, do: id))
+    }
   end
 
   defp fetch_visible_foods(_ctx, []), do: %{}
@@ -543,14 +612,15 @@ defmodule Easy.Nutrition.Library do
   defp finalize_food({:ok, food}, false), do: {:ok, food}
   defp finalize_food({:error, reason}, _reload?), do: {:error, reason}
 
-  # `food_id` is `ON DELETE SET NULL` everywhere, but nulling it is only safe in the
-  # diary: a log entry keeps `food_name` and its frozen macros, so history survives.
-  # A recipe ingredient would silently drop that food's macros from the recipe total.
-  # Menu items return in a later Programming ticket; until then a food is in use
-  # only when a recipe still lists it.
+  # Structural rows keep restrictive FKs. Diary entries freeze name and macros, so
+  # their live food_id can be cleared. Application :in_use must win before Postgres.
   defp ensure_food_not_in_use(business_id, food_id) do
-    in_use? = Repo.exists?(from(ri in RecipeIngredient.for_business(business_id), where: ri.food_id == ^food_id))
-    if in_use?, do: {:error, :in_use}, else: :ok
+    if food_used_structurally?(business_id, food_id), do: {:error, :in_use}, else: :ok
+  end
+
+  defp food_used_structurally?(business_id, food_id) do
+    Repo.exists?(from(ri in RecipeIngredient.for_business(business_id), where: ri.food_id == ^food_id)) or
+      Repo.exists?(from(item in MealItem.for_business(business_id), where: item.food_id == ^food_id))
   end
 
   defp serving_size_attrs(serving) do

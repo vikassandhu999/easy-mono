@@ -1,0 +1,242 @@
+defmodule Easy.Nutrition.LibraryProtectionTest do
+  use Easy.SchemaCase, async: true
+
+  alias Easy.Nutrition.Library
+
+  describe "delete_food/3" do
+    test "is blocked while a Menu Item still uses the food" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      food = insert(:food, business: coach.business, creator: coach)
+      put_food_on_menu(coach, food)
+
+      assert {:error, :in_use} = Library.delete_food(ctx, food.id, food.revision)
+    end
+
+    test "is blocked while an archived plan still uses the food" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      food = insert(:food, business: coach.business, creator: coach)
+      put_food_on_menu(coach, food, archived_at: DateTime.utc_now(:second))
+
+      assert {:error, :in_use} = Library.delete_food(ctx, food.id, food.revision)
+    end
+
+    test "is not blocked by another business's Menu" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      food = insert(:food, business: coach.business, creator: coach)
+
+      other = insert(:coach)
+      other_food = insert(:food, business: other.business, creator: other)
+      put_food_on_menu(other, other_food)
+
+      assert {:ok, _} = Library.delete_food(ctx, food.id, food.revision)
+    end
+  end
+
+  describe "update_recipe/4" do
+    test "rejects removing cooked weight while a Menu uses a gram Portion of the Recipe" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      recipe = insert(:recipe, business: coach.business, creator: coach, cooked_weight_g: 400.0, servings_count: 2)
+      put_recipe_on_menu(coach, recipe, portion: :gram)
+
+      assert {:error, :in_use} =
+               Library.update_recipe(ctx, recipe.id, recipe.revision, %{
+                 name: recipe.name,
+                 servings_count: recipe.servings_count,
+                 cooked_weight_g: nil
+               })
+    end
+
+    test "allows removing cooked weight when Menus only use serving Portions" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      recipe = insert(:recipe, business: coach.business, creator: coach, cooked_weight_g: 400.0, servings_count: 2)
+      put_recipe_on_menu(coach, recipe, portion: :serving)
+
+      assert {:ok, updated} =
+               Library.update_recipe(ctx, recipe.id, recipe.revision, %{
+                 name: recipe.name,
+                 servings_count: recipe.servings_count,
+                 cooked_weight_g: nil
+               })
+
+      assert updated.cooked_weight_g == nil
+    end
+  end
+
+  describe "update_food/4" do
+    test "allows editing serving sizes used by a Menu Item that already stored grams" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+
+      food =
+        insert(:food,
+          business: coach.business,
+          creator: coach,
+          serving_sizes: [
+            %{label: "cup", amount: 1.0, unit: "cup", weight_g: 200.0, is_default: true}
+          ]
+        )
+
+      plan = insert_plan(coach, [])
+      meal = insert(:meal, business: coach.business, plan: plan, creator: coach)
+
+      insert(:meal_item,
+        business: coach.business,
+        plan: plan,
+        meal: meal,
+        food: food,
+        portion_kind: :serving,
+        amount: 1.0,
+        unit: "cup",
+        serving_label: "cup",
+        weight_g: 200.0
+      )
+
+      assert {:ok, updated} =
+               Library.update_food(ctx, food.id, food.revision, %{
+                 serving_sizes: [
+                   %{label: "scoop", amount: 1.0, unit: "scoop", weight_g: 30.0, is_default: true}
+                 ]
+               })
+
+      assert [%{unit: "scoop", weight_g: 30.0}] = updated.serving_sizes
+    end
+  end
+
+  describe "get_food_impact/2" do
+    test "lists Recipe Ingredients and Menu references across plan states without leaking tenants" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      food = insert(:food, business: coach.business, creator: coach, name: "Yogurt")
+      recipe = insert(:recipe, business: coach.business, creator: coach, name: "Lassi")
+      insert(:recipe_ingredient, business: coach.business, recipe: recipe, food: food, weight_g: 100.0)
+
+      template = put_food_on_menu(coach, food, name: "Cut Template")
+      archived = put_food_on_menu(coach, food, name: "Old Cut", archived_at: DateTime.utc_now(:second))
+
+      client_plan =
+        put_food_on_menu(coach, food,
+          kind: :client_plan,
+          client: client,
+          name: "Client Cut",
+          start_date: ~D[2026-09-01]
+        )
+
+      other = insert(:coach)
+      other_food = insert(:food, business: other.business, creator: other)
+      other_recipe = insert(:recipe, business: other.business, creator: other, name: "Secret")
+      insert(:recipe_ingredient, business: other.business, recipe: other_recipe, food: other_food, weight_g: 50.0)
+      put_food_on_menu(other, other_food, name: "Other Cut")
+
+      assert {:ok, impact} = Library.get_food_impact(ctx, food.id)
+      assert [%{id: recipe_id, name: "Lassi"}] = impact.recipes
+      assert recipe_id == recipe.id
+      refute Enum.any?(impact.recipes, &(&1.id == other_recipe.id))
+
+      template_ids = Enum.map(impact.templates, & &1.id)
+      assert template.id in template_ids
+      assert archived.id in template_ids
+      refute Enum.any?(impact.templates, &(&1.name == "Other Cut"))
+      refute Enum.any?(impact.templates, &Map.has_key?(&1, :business_id))
+
+      assert [%{id: client_plan_id, name: "Client Cut", client_id: client_id}] = impact.active_client_plans
+      assert client_plan_id == client_plan.id
+      assert client_id == client.id
+    end
+
+    test "does not leak another business's food" do
+      coach = insert(:coach)
+      other = insert(:coach)
+      food = insert(:food, business: other.business, creator: other)
+
+      assert {:error, :not_found} = Library.get_food_impact(trainer_ctx(coach), food.id)
+    end
+  end
+
+  describe "get_recipe_impact/2" do
+    test "lists direct Menu references for Templates and Client Plans, including archived" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      recipe = insert(:recipe, business: coach.business, creator: coach, name: "Dal")
+
+      template = put_recipe_on_menu(coach, recipe, name: "Cut Template")
+      archived = put_recipe_on_menu(coach, recipe, name: "Old Cut", archived_at: DateTime.utc_now(:second))
+
+      client_plan =
+        put_recipe_on_menu(coach, recipe,
+          kind: :client_plan,
+          client: client,
+          name: "Client Cut",
+          start_date: ~D[2026-09-01]
+        )
+
+      other = insert(:coach)
+      other_recipe = insert(:recipe, business: other.business, creator: other)
+      put_recipe_on_menu(other, other_recipe, name: "Other Cut")
+
+      assert {:ok, impact} = Library.get_recipe_impact(ctx, recipe.id)
+      template_ids = Enum.map(impact.templates, & &1.id)
+      assert template.id in template_ids
+      assert archived.id in template_ids
+      refute Enum.any?(impact.templates, &(&1.name == "Other Cut"))
+
+      assert [%{id: client_plan_id, name: "Client Cut", client_id: client_id}] = impact.active_client_plans
+      assert client_plan_id == client_plan.id
+      assert client_id == client.id
+    end
+  end
+
+  describe "delete_recipe/3" do
+    test "is blocked while a Menu Item still uses the recipe, including archived plans" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      recipe = insert(:recipe, business: coach.business, creator: coach)
+      put_recipe_on_menu(coach, recipe, archived_at: DateTime.utc_now(:second))
+
+      assert {:error, :in_use} = Library.delete_recipe(ctx, recipe.id, recipe.revision)
+    end
+
+    test "is not blocked by another business's Menu" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      recipe = insert(:recipe, business: coach.business, creator: coach)
+
+      other = insert(:coach)
+      other_recipe = insert(:recipe, business: other.business, creator: other)
+      put_recipe_on_menu(other, other_recipe)
+
+      assert {:ok, _} = Library.delete_recipe(ctx, recipe.id, recipe.revision)
+    end
+  end
+
+  defp put_food_on_menu(coach, food, attrs \\ []) do
+    plan = insert_plan(coach, attrs)
+    meal = insert(:meal, business: coach.business, plan: plan, creator: coach)
+    insert(:meal_item, business: coach.business, plan: plan, meal: meal, food: food)
+    plan
+  end
+
+  defp put_recipe_on_menu(coach, recipe, attrs \\ []) do
+    {portion, attrs} = Keyword.pop(attrs, :portion, :gram)
+    plan = insert_plan(coach, attrs)
+    meal = insert(:meal, business: coach.business, plan: plan, creator: coach)
+    insert(:meal_item, business: coach.business, plan: plan, meal: meal, recipe: recipe, food: nil, portion_kind: portion)
+    plan
+  end
+
+  defp insert_plan(coach, attrs) do
+    insert(
+      :plan,
+      Keyword.merge(
+        [business: coach.business, creator: coach.user, kind: :template, name: "Cut"],
+        attrs
+      )
+    )
+  end
+end

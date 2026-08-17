@@ -1,7 +1,8 @@
 defmodule Easy.Nutrition.CanonicalSchemaTest do
   use Easy.DataCase, async: true
 
-  alias Easy.Nutrition.Programming
+  alias Easy.MealLogs
+  alias Easy.Nutrition.{Food, FoodLogEntry, Programming, Recipe}
 
   describe "canonical Nutrition Programming constraints" do
     test "the database rejects client-plan fields on a template" do
@@ -380,6 +381,69 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       assert Repo.get!(Easy.Nutrition.Recipe, recipe.id).name == "Kept Recipe"
       assert Repo.get!(Easy.Clients.Client, client.id)
       assert Repo.get!(Easy.Orgs.Business, coach.business_id)
+    end
+  end
+
+  describe "Library structural foreign keys" do
+    test "Menu Items and Recipe Ingredients restrict Food deletion" do
+      coach = insert(:coach)
+      food = insert(:food, business: coach.business, creator: coach)
+      recipe = insert(:recipe, business: coach.business, creator: coach)
+      insert(:recipe_ingredient, business: coach.business, recipe: recipe, food: food, weight_g: 100.0)
+
+      assert_raise Ecto.ConstraintError, fn ->
+        Repo.delete!(Repo.get!(Food, food.id))
+      end
+
+      ctx = trainer_ctx(coach)
+      assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
+      {1, [%{id: meal_id}]} = Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
+      unused = insert(:food, business: coach.business, creator: coach)
+      Repo.insert_all("nutrition_meal_items", [meal_item_row(coach, plan, meal_id, unused)])
+
+      assert_raise Ecto.ConstraintError, fn ->
+        Repo.delete!(Repo.get!(Food, unused.id))
+      end
+    end
+
+    test "Menu Items restrict Recipe deletion" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
+      recipe = insert(:recipe, business: coach.business, creator: coach)
+      {1, [%{id: meal_id}]} = Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
+
+      Repo.insert_all("nutrition_meal_items", [
+        meal_item_row(coach, plan, meal_id, recipe,
+          food_id: nil,
+          recipe_id: dump_uuid(recipe.id)
+        )
+      ])
+
+      assert_raise Ecto.ConstraintError, fn ->
+        Repo.delete!(Repo.get!(Recipe, recipe.id))
+      end
+    end
+
+    test "Diary entries nullify Food deletion" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      food = insert(:food, business: coach.business, creator: coach, name: "Banana", calories_per_100g: 90.0)
+
+      client_ctx = %Easy.Ctx{business_id: client.business_id, user_id: client.user_id, client_id: client.id}
+
+      assert {:ok, entry} =
+               MealLogs.add_client_extra(client_ctx, %{
+                 date: Date.utc_today(),
+                 meal_slot: "breakfast",
+                 food_id: food.id,
+                 weight_g: 100.0
+               })
+
+      Repo.delete!(Repo.get!(Food, food.id))
+      kept = Repo.get!(FoodLogEntry, entry.id)
+      assert kept.food_id == nil
+      assert kept.food_name == "Banana"
     end
   end
 

@@ -8,14 +8,21 @@ import {BackButton} from '@/@components/back-button';
 import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
 import {DETAIL_SECTION_CLASS, DetailSectionHeading} from '@/@components/detail-section-heading';
 import {ErrorState} from '@/@components/error-state';
+import {LibraryUsageSection} from '@/@components/library-usage';
 import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import type {Food, NutrientTotals} from '@/api/nutrition-foods';
-import {useCopyNutritionFoodMutation, useDeleteFoodMutation, useGetFoodQuery} from '@/api/nutrition-foods';
+import {
+  useCopyNutritionFoodMutation,
+  useDeleteFoodMutation,
+  useGetFoodImpactQuery,
+  useGetFoodQuery,
+} from '@/api/nutrition-foods';
 import {isFoodEditable} from '@/foods/food-form/food-form-data';
+import {hasLibraryUsage, libraryInUseMessage, normalizeLibraryImpact} from '@/foods/lib/library-impact';
 
 const MACRO_SEGMENTS: {
   color: 'accent' | 'success' | 'warning';
@@ -32,17 +39,18 @@ export default function FoodDetail() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.FOODS);
   const {data, isError, isLoading, refetch} = useGetFoodQuery(id!);
+  const {data: impactData} = useGetFoodImpactQuery(id!);
   const deleteFoodMutation = useDeleteFoodMutation();
   const copyFood = useCopyNutritionFoodMutation();
+  const impact = normalizeLibraryImpact(impactData?.data);
+  const inUse = hasLibraryUsage(impact);
 
   const handleDelete = async ({expectedRevision, id}: {expectedRevision: number; id: string}) => {
     try {
-      // useDeleteFoodMutation invalidates the list itself, so the deleted
-      // item doesn't linger when we land back on it.
       await deleteFoodMutation.mutateAsync({id, expectedRevision});
       navigate(ROUTES.FOODS, {replace: true});
-    } catch {
-      toast.danger("Couldn't delete food");
+    } catch (error) {
+      toast.danger(libraryInUseMessage(error, "Couldn't delete food"));
     }
   };
 
@@ -55,27 +63,35 @@ export default function FoodDetail() {
             <AlertDialog.CloseTrigger />
             <AlertDialog.Header>
               <AlertDialog.Icon status="danger" />
-              <AlertDialog.Heading>Delete food?</AlertDialog.Heading>
+              <AlertDialog.Heading>{inUse ? 'Food is in use' : 'Delete food?'}</AlertDialog.Heading>
             </AlertDialog.Header>
             <AlertDialog.Body>
-              <Typography>
-                This will permanently delete <strong>{food.name}</strong>. This action cannot be undone.
-              </Typography>
+              {inUse ? (
+                <Typography>
+                  <strong>{food.name}</strong> is used by a recipe or plan. Remove it there before deleting.
+                </Typography>
+              ) : (
+                <Typography>
+                  This will permanently delete <strong>{food.name}</strong>. This action cannot be undone.
+                </Typography>
+              )}
             </AlertDialog.Body>
             <AlertDialog.Footer>
               <Button
                 slot="close"
                 variant="tertiary"
               >
-                Cancel
+                {inUse ? 'Close' : 'Cancel'}
               </Button>
-              <Button
-                isPending={deleteFoodMutation.isPending}
-                onPress={() => handleDelete({id: food.id, expectedRevision: food.revision})}
-                variant="danger"
-              >
-                {deleteFoodMutation.isPending ? 'Deleting' : 'Delete'}
-              </Button>
+              {!inUse && (
+                <Button
+                  isPending={deleteFoodMutation.isPending}
+                  onPress={() => handleDelete({id: food.id, expectedRevision: food.revision})}
+                  variant="danger"
+                >
+                  {deleteFoodMutation.isPending ? 'Deleting' : 'Delete'}
+                </Button>
+              )}
             </AlertDialog.Footer>
           </AlertDialog.Dialog>
         </AlertDialog.Container>
@@ -280,6 +296,8 @@ export default function FoodDetail() {
               <Typography className="mt-2 whitespace-pre-wrap">{food.notes}</Typography>
             </section>
           )}
+
+          <LibraryUsageSection impact={impact} />
 
           <section className="mt-8 border-t border-separator pt-5">
             <div className="grid grid-cols-2 gap-3">

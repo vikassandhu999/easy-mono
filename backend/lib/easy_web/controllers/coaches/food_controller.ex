@@ -84,7 +84,7 @@ defmodule EasyWeb.Coaches.FoodController do
       no_content: "Food deleted",
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
-      conflict: {"Stale revision", "application/json", StaleRevisionError}
+      conflict: {"Stale revision or still in use", "application/json", ErrorResponse}
     ]
 
   operation :index,

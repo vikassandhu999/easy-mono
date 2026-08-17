@@ -12,8 +12,7 @@ defmodule EasyWeb.Coaches.RecipeController do
     RecipeListResponse,
     RecipeRequest,
     RecipeResponse,
-    RecipeUpdateRequest,
-    StaleRevisionError
+    RecipeUpdateRequest
   }
 
   plug OpenApiSpex.Plug.CastAndValidate,
@@ -56,7 +55,7 @@ defmodule EasyWeb.Coaches.RecipeController do
       ok: {"Recipe updated", "application/json", RecipeResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
-      conflict: {"Stale revision", "application/json", StaleRevisionError},
+      conflict: {"Stale revision or still in use", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 

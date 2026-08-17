@@ -240,6 +240,14 @@ defmodule EasyWeb.OpenApi.Schemas.FoodImpactResponse do
     }
   }
 
+  @recipe_ref %Schema{
+    type: :object,
+    properties: %{
+      id: %Schema{type: :string},
+      name: %Schema{type: :string}
+    }
+  }
+
   OpenApiSpex.schema(%{
     title: "FoodImpactResponse",
     type: :object,
@@ -247,6 +255,7 @@ defmodule EasyWeb.OpenApi.Schemas.FoodImpactResponse do
       data: %Schema{
         type: :object,
         properties: %{
+          recipes: %Schema{type: :array, items: @recipe_ref},
           templates: %Schema{type: :array, items: @plan_ref},
           active_client_plans: %Schema{type: :array, items: @plan_ref}
         }

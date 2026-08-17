@@ -8,13 +8,20 @@ import {BackButton} from '@/@components/back-button';
 import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
 import {DETAIL_SECTION_CLASS, DetailSectionHeading} from '@/@components/detail-section-heading';
 import {ErrorState} from '@/@components/error-state';
+import {LibraryUsageSection} from '@/@components/library-usage';
 import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import type {NutrientTotals, Recipe} from '@/api/nutrition-foods';
-import {useCopyNutritionRecipeMutation, useDeleteRecipeMutation, useGetRecipeQuery} from '@/api/nutrition-foods';
+import {
+  useCopyNutritionRecipeMutation,
+  useDeleteRecipeMutation,
+  useGetRecipeImpactQuery,
+  useGetRecipeQuery,
+} from '@/api/nutrition-foods';
+import {hasLibraryUsage, libraryInUseMessage, normalizeLibraryImpact} from '@/foods/lib/library-impact';
 
 const MACRO_SEGMENTS: {
   color: 'accent' | 'success' | 'warning';
@@ -31,10 +38,13 @@ export default function RecipeDetail() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.RECIPES);
   const {data, isError, isLoading, refetch} = useGetRecipeQuery(id!);
+  const {data: impactData} = useGetRecipeImpactQuery(id!);
   const deleteRecipe = useDeleteRecipeMutation();
   const copyRecipe = useCopyNutritionRecipeMutation();
   const isDeleting = deleteRecipe.isPending;
   const isDuplicating = copyRecipe.isPending;
+  const impact = normalizeLibraryImpact(impactData?.data);
+  const inUse = hasLibraryUsage(impact);
 
   const handleDuplicate = async () => {
     try {
@@ -50,8 +60,8 @@ export default function RecipeDetail() {
     try {
       await deleteRecipe.mutateAsync({expectedRevision, id});
       navigate(ROUTES.RECIPES, {replace: true});
-    } catch {
-      toast.danger("Couldn't delete recipe");
+    } catch (error) {
+      toast.danger(libraryInUseMessage(error, "Couldn't delete recipe"));
     }
   };
 
@@ -64,27 +74,35 @@ export default function RecipeDetail() {
             <AlertDialog.CloseTrigger />
             <AlertDialog.Header>
               <AlertDialog.Icon status="danger" />
-              <AlertDialog.Heading>Delete recipe?</AlertDialog.Heading>
+              <AlertDialog.Heading>{inUse ? 'Recipe is in use' : 'Delete recipe?'}</AlertDialog.Heading>
             </AlertDialog.Header>
             <AlertDialog.Body>
-              <Typography>
-                This will permanently delete <strong>{recipe.name}</strong>. This action cannot be undone.
-              </Typography>
+              {inUse ? (
+                <Typography>
+                  <strong>{recipe.name}</strong> is used by a plan. Remove it there before deleting.
+                </Typography>
+              ) : (
+                <Typography>
+                  This will permanently delete <strong>{recipe.name}</strong>. This action cannot be undone.
+                </Typography>
+              )}
             </AlertDialog.Body>
             <AlertDialog.Footer>
               <Button
                 slot="close"
                 variant="tertiary"
               >
-                Cancel
+                {inUse ? 'Close' : 'Cancel'}
               </Button>
-              <Button
-                isPending={isDeleting}
-                onPress={() => handleDelete({expectedRevision: recipe.revision, id: recipe.id})}
-                variant="danger"
-              >
-                {isDeleting ? 'Deleting' : 'Delete'}
-              </Button>
+              {!inUse && (
+                <Button
+                  isPending={isDeleting}
+                  onPress={() => handleDelete({expectedRevision: recipe.revision, id: recipe.id})}
+                  variant="danger"
+                >
+                  {isDeleting ? 'Deleting' : 'Delete'}
+                </Button>
+              )}
             </AlertDialog.Footer>
           </AlertDialog.Dialog>
         </AlertDialog.Container>
@@ -286,6 +304,8 @@ export default function RecipeDetail() {
               </Typography>
             </section>
           )}
+
+          <LibraryUsageSection impact={impact} />
 
           <section className="mt-8 border-t border-separator pt-5">
             <div className="grid grid-cols-2 gap-3">

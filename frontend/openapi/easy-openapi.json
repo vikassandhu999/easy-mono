@@ -944,6 +944,28 @@
                 "x-struct": null,
                 "x-validate": null
               },
+              "recipes": {
+                "items": {
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "x-struct": null,
+                      "x-validate": null
+                    },
+                    "name": {
+                      "type": "string",
+                      "x-struct": null,
+                      "x-validate": null
+                    }
+                  },
+                  "type": "object",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "type": "array",
+                "x-struct": null,
+                "x-validate": null
+              },
               "templates": {
                 "items": {
                   "properties": {
@@ -9961,7 +9983,7 @@
       },
       "NutritionPlanUpdateRequest": {
         "additionalProperties": false,
-        "description": "Revisioned metadata and nutrient targets for a Nutrition Template or Client Nutrition Plan.",
+        "description": "Revisioned metadata and nutrient targets. Client Nutrition Plans also accept Coverage dates.",
         "example": {
           "expected_revision": 3,
           "name": "Updated Cut Block",
@@ -25100,11 +25122,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StaleRevisionError"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             },
-            "description": "Stale revision"
+            "description": "Stale revision or still in use"
           }
         },
         "security": [
@@ -25718,11 +25740,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StaleRevisionError"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             },
-            "description": "Stale revision"
+            "description": "Stale revision or still in use"
           },
           "422": {
             "content": {

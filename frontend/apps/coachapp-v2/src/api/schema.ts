@@ -2222,6 +2222,10 @@ export interface components {
           id?: string;
           name?: string;
         }[];
+        recipes?: {
+          id?: string;
+          name?: string;
+        }[];
         templates?: {
           client_id?: string | null;
           id?: string;
@@ -4591,7 +4595,7 @@ export interface components {
     };
     /**
      * NutritionPlanUpdateRequest
-     * @description Revisioned metadata and nutrient targets for a Nutrition Template or Client Nutrition Plan.
+     * @description Revisioned metadata and nutrient targets. Client Nutrition Plans also accept Coverage dates.
      * @example {
      *       "expected_revision": 3,
      *       "name": "Updated Cut Block",
@@ -11278,13 +11282,13 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description Stale revision */
+      /** @description Stale revision or still in use */
       409: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['StaleRevisionError'];
+          'application/json': components['schemas']['ErrorResponse'];
         };
       };
     };
@@ -11645,13 +11649,13 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description Stale revision */
+      /** @description Stale revision or still in use */
       409: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['StaleRevisionError'];
+          'application/json': components['schemas']['ErrorResponse'];
         };
       };
       /** @description Validation error */

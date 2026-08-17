@@ -59,6 +59,7 @@ defmodule Easy.Nutrition.RecipeIngredient do
       message: "must be greater than 0"
     )
     |> check_constraint(:position, name: :nutrition_recipe_ingredients_position_nonnegative)
+    |> foreign_key_constraint(:food_id)
   end
 
   defp reject_subrecipe(changeset, attrs) do

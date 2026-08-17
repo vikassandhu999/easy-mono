@@ -18,8 +18,14 @@ defmodule EasyWeb.Coaches.FoodJSON do
   end
 
   @spec impact(map()) :: map()
-  def impact(%{templates: templates, active_client_plans: active_client_plans}) do
-    %{data: %{templates: templates, active_client_plans: active_client_plans}}
+  def impact(%{templates: templates, active_client_plans: active_client_plans} = assigns) do
+    %{
+      data: %{
+        recipes: Map.get(assigns, :recipes, []),
+        templates: templates,
+        active_client_plans: active_client_plans
+      }
+    }
   end
 
   defp data(%Food{} = food) do

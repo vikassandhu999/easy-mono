@@ -9,6 +9,7 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/nutrition-foods';
 import {applyFormErrors} from '@/api/shared';
+import {libraryInUseMessage} from '@/foods/lib/library-impact';
 import type {IngredientItem} from '@/recipes/lib/recipe-math';
 import RecipeForm, {useRecipeForm} from '@/recipes/recipe-form/recipe-form';
 import {
@@ -61,7 +62,11 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
       });
       goBack();
     } catch (err) {
-      applyFormErrors(err, "Recipe wasn't updated. Check the details and try again", form.setError);
+      applyFormErrors(
+        err,
+        libraryInUseMessage(err, "Recipe wasn't updated. Check the details and try again"),
+        form.setError,
+      );
     }
   };
 

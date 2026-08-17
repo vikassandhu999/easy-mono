@@ -1,7 +1,7 @@
 defmodule Easy.Nutrition.ProgrammingMenuTest do
   use Easy.DataCase, async: true
 
-  alias Easy.Nutrition.{DayPattern, Meal, MealItem, MealOption, Plan, Programming, WeekSchedule}
+  alias Easy.Nutrition.{DayPattern, Library, Meal, MealItem, MealOption, Plan, Programming, WeekSchedule}
   alias Easy.Repo
 
   describe "replace_menu/4" do
@@ -90,6 +90,47 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
                dinner.meal_items
 
       assert recipe_id == recipe.id
+    end
+
+    test "keeps a stored Food serving Portion after Library serving sizes change" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      assert {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})
+
+      food =
+        insert(:food,
+          business: coach.business,
+          creator: coach,
+          serving_sizes: [
+            %{label: "1 cup", amount: 1.0, unit: "cup", weight_g: 80.0, is_default: true}
+          ]
+        )
+
+      assert {:ok, replaced} =
+               Programming.replace_menu(
+                 ctx,
+                 template.id,
+                 1,
+                 menu(template,
+                   meals: [
+                     meal_input("breakfast", "Breakfast", 0, [
+                       food_item("cup", food.id, 0, %{kind: :serving, amount: 1, unit: "cup", label: "1 cup"})
+                     ])
+                   ]
+                 )
+               )
+
+      assert [%{unit: "cup", serving_label: "1 cup", weight_g: 80.0}] = hd(replaced.meals).meal_items
+
+      assert {:ok, _} =
+               Library.update_food(ctx, food.id, food.revision, %{
+                 serving_sizes: [
+                   %{label: "scoop", amount: 1.0, unit: "scoop", weight_g: 30.0, is_default: true}
+                 ]
+               })
+
+      assert {:ok, current} = Programming.get_template(ctx, template.id)
+      assert [%{unit: "cup", serving_label: "1 cup", weight_g: 80.0}] = hd(current.meals).meal_items
     end
 
     test "retains persisted identities, reorders nodes, and deletes omitted Meals and Menu Items" do

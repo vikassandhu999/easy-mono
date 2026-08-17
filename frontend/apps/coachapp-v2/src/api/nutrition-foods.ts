@@ -27,6 +27,8 @@ export type RecipeRequest = components['schemas']['RecipeRequest'];
 export type RecipeUpdateRequest = components['schemas']['RecipeUpdateRequest'];
 export type RecipeIngredient = components['schemas']['RecipeIngredient'];
 export type RecipeIngredientRequest = components['schemas']['RecipeIngredientRequest'];
+export type FoodImpactResponse = components['schemas']['FoodImpactResponse'];
+export type RecipeImpactResponse = components['schemas']['RecipeImpactResponse'];
 
 type FoodListResponse = components['schemas']['FoodListResponse'];
 type RecipeListResponse = components['schemas']['RecipeListResponse'];
@@ -106,6 +108,15 @@ export function useGetFoodQuery(id: string, options?: {enabled?: boolean}) {
   });
 }
 
+export function useGetFoodImpactQuery(id: string, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: foodKeys.impact(id),
+    queryFn: () =>
+      call(client.GET('/v1/coach/nutrition-foods/{id}/impact', {params: {path: {id}}})) as Promise<FoodImpactResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
+
 export function useUpdateFoodMutation() {
   const qc = useQueryClient();
   return useMutation({
@@ -113,6 +124,7 @@ export function useUpdateFoodMutation() {
       call(client.PATCH('/v1/coach/nutrition-foods/{id}', {params: {path: {id}}, body})),
     onSuccess: (_data, {id}) => {
       qc.invalidateQueries({queryKey: foodKeys.detail(id)});
+      qc.invalidateQueries({queryKey: foodKeys.impact(id)});
       qc.invalidateQueries({queryKey: foodKeys.lists()});
     },
   });
@@ -174,6 +186,17 @@ export function useGetRecipeQuery(id: string, options?: {enabled?: boolean}) {
   });
 }
 
+export function useGetRecipeImpactQuery(id: string, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: recipeKeys.impact(id),
+    queryFn: () =>
+      call(
+        client.GET('/v1/coach/nutrition-recipes/{id}/impact', {params: {path: {id}}}),
+      ) as Promise<RecipeImpactResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
+
 export function useCreateRecipeMutation() {
   const qc = useQueryClient();
   return useMutation({
@@ -191,6 +214,7 @@ export function useUpdateRecipeMutation() {
       call(client.PATCH('/v1/coach/nutrition-recipes/{id}', {params: {path: {id}}, body})),
     onSuccess: (_data, {id}) => {
       qc.invalidateQueries({queryKey: recipeKeys.detail(id)});
+      qc.invalidateQueries({queryKey: recipeKeys.impact(id)});
       qc.invalidateQueries({queryKey: recipeKeys.lists()});
     },
   });

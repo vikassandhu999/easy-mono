@@ -1189,6 +1189,10 @@ export interface components {
           id?: string;
           name?: string;
         }[];
+        recipes?: {
+          id?: string;
+          name?: string;
+        }[];
         templates?: {
           client_id?: string | null;
           id?: string;
@@ -3558,7 +3562,7 @@ export interface components {
     };
     /**
      * NutritionPlanUpdateRequest
-     * @description Revisioned metadata and nutrient targets for a Nutrition Template or Client Nutrition Plan.
+     * @description Revisioned metadata and nutrient targets. Client Nutrition Plans also accept Coverage dates.
      * @example {
      *       "expected_revision": 3,
      *       "name": "Updated Cut Block",

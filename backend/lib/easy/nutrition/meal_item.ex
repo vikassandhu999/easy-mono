@@ -86,6 +86,8 @@ defmodule Easy.Nutrition.MealItem do
     |> check_constraint(:position, name: :nutrition_meal_items_position_check)
     |> unique_constraint(:position, name: :nutrition_meal_items_nutrition_meal_id_position_index)
     |> foreign_key_constraint(:nutrition_meal_id, name: :nutrition_meal_items_meal_plan_business_id_fkey)
+    |> foreign_key_constraint(:food_id, name: :nutrition_meal_items_food_id_fkey)
+    |> foreign_key_constraint(:recipe_id, name: :nutrition_meal_items_recipe_id_fkey)
   end
 
   defp validate_food_or_recipe(changeset) do

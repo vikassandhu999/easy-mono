@@ -216,6 +216,27 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
              } = json_response(conn, 409)
     end
 
+    test "returns 409 when removing cooked weight would invalidate a Menu gram Portion", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      recipe = insert(:recipe, creator: coach, business: business, cooked_weight_g: 400.0, servings_count: 2)
+      plan = insert(:plan, business: business, creator: coach.user, kind: :template)
+      meal = insert(:meal, business: business, plan: plan, creator: coach)
+      insert(:meal_item, business: business, plan: plan, meal: meal, recipe: recipe, food: nil, portion_kind: :gram)
+
+      conn =
+        patch(conn, "/v1/coach/nutrition-recipes/#{recipe.id}", %{
+          "expected_revision" => 1,
+          "name" => recipe.name,
+          "servings_count" => 2,
+          "cooked_weight_g" => nil
+        })
+
+      assert %{"error_code" => "in_use"} = json_response(conn, 409)
+    end
+
     test "returns 404 when updating recipe from another business", %{conn: conn} do
       other_coach = insert(:coach)
       other_recipe = insert(:recipe, creator: other_coach, business: other_coach.business)
@@ -262,6 +283,16 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
 
       conn = delete(conn, "/v1/coach/nutrition-recipes/#{other_recipe.id}?expected_revision=1")
       assert json_response(conn, 404)
+    end
+
+    test "returns 409 when a Menu still uses the recipe", %{conn: conn, coach: coach, business: business} do
+      recipe = insert(:recipe, creator: coach, business: business)
+      plan = insert(:plan, business: business, creator: coach.user, kind: :template)
+      meal = insert(:meal, business: business, plan: plan, creator: coach)
+      insert(:meal_item, business: business, plan: plan, meal: meal, recipe: recipe, food: nil)
+
+      conn = delete(conn, "/v1/coach/nutrition-recipes/#{recipe.id}?expected_revision=1")
+      assert %{"error_code" => "in_use"} = json_response(conn, 409)
     end
 
     test "returns 403 without auth token" do
@@ -360,15 +391,22 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
   end
 
   describe "GET /v1/coach/nutrition-recipes/:id/impact" do
-    test "returns templates and active client plan buckets", %{
+    test "returns plan buckets for structural Menu usage", %{
       conn: conn,
       coach: coach,
       business: business
     } do
-      recipe = insert(:recipe, creator: coach, business: business)
+      recipe = insert(:recipe, creator: coach, business: business, name: "Dal")
+      plan = insert(:plan, business: business, creator: coach.user, kind: :template, name: "Cut")
+      meal = insert(:meal, business: business, plan: plan, creator: coach)
+      insert(:meal_item, business: business, plan: plan, meal: meal, recipe: recipe, food: nil)
 
       conn = get(conn, "/v1/coach/nutrition-recipes/#{recipe.id}/impact")
-      assert %{"data" => %{"templates" => [], "active_client_plans" => []}} = json_response(conn, 200)
+      assert %{"data" => data} = json_response(conn, 200)
+      assert_schema(%{"data" => data}, "RecipeImpactResponse", EasyWeb.ApiSpec.spec())
+      assert [%{"id" => plan_id, "name" => "Cut"}] = data["templates"]
+      assert plan_id == plan.id
+      assert data["active_client_plans"] == []
     end
 
     test "returns empty buckets for an unused recipe", %{
@@ -380,6 +418,14 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
 
       conn = get(conn, "/v1/coach/nutrition-recipes/#{recipe.id}/impact")
       assert %{"data" => %{"templates" => [], "active_client_plans" => []}} = json_response(conn, 200)
+    end
+
+    test "returns 404 for another business's recipe", %{conn: conn} do
+      other = insert(:coach)
+      recipe = insert(:recipe, creator: other, business: other.business)
+
+      conn = get(conn, "/v1/coach/nutrition-recipes/#{recipe.id}/impact")
+      assert json_response(conn, 404)
     end
   end
 end

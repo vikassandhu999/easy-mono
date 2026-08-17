@@ -81,9 +81,14 @@ export const equipmentKeys = {
 export const foodKeys = {
   ...domain('nutrition-foods'),
   categories: () => ['nutrition-foods', 'categories'] as const,
+  impact: (id: string) => [...foodKeys.detail(id), 'impact'] as const,
 };
 
-export const recipeKeys = domain('nutrition-recipes');
+const recipeDomain = domain('nutrition-recipes');
+export const recipeKeys = {
+  ...recipeDomain,
+  impact: (id: string) => [...recipeDomain.detail(id), 'impact'] as const,
+};
 
 export const nutritionPlanKeys = {
   ...domain('nutrition-plans'),

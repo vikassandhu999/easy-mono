@@ -1,0 +1,92 @@
+defmodule Easy.Nutrition.DiaryConcurrencyTest do
+  use ExUnit.Case, async: false
+
+  import Ecto.Query
+  import Easy.Factory
+
+  alias Easy.Clients.Client
+  alias Easy.Ctx
+  alias Easy.Identity.User
+  alias Easy.Nutrition.{Diary, DiaryEntry, DiarySlot, Food}
+  alias Easy.Orgs.{Business, Coach}
+  alias Easy.Repo
+  alias Ecto.Adapters.SQL.Sandbox
+
+  setup do
+    Sandbox.checkout(Repo, sandbox: false)
+
+    business = insert(:business)
+    coach = insert(:coach, business: business)
+    client = insert(:client, business: business, creator: coach)
+    food = insert(:food, business: business, creator: coach)
+    ctx = %Ctx{business_id: business.id, user_id: client.user_id, client_id: client.id}
+    user_ids = Enum.uniq([business.owner_id, coach.user_id, client.user_id])
+
+    on_exit(fn ->
+      Sandbox.checkout(Repo, sandbox: false)
+      cleanup(business.id, user_ids)
+    end)
+
+    %{ctx: ctx, food: food, business: business}
+  end
+
+  test "simultaneous extras with the same key create one Diary Entry", ctx do
+    parent = self()
+    key = Ecto.UUID.generate()
+    today = Date.utc_today()
+
+    attrs = %{
+      meal_slot: :breakfast,
+      food_id: ctx.food.id,
+      portion: %{kind: :gram, grams: 50.0}
+    }
+
+    run = fn ->
+      Task.async(fn ->
+        Sandbox.checkout(Repo, sandbox: false)
+        send(parent, {:ready, self()})
+
+        receive do
+          :go -> :ok
+        end
+
+        Diary.add_client_extra(ctx.ctx, today, attrs, key)
+      end)
+    end
+
+    tasks = [run.(), run.()]
+
+    ready =
+      for _ <- tasks,
+          do:
+            (receive do
+               {:ready, pid} -> pid
+             end)
+
+    Enum.each(ready, &send(&1, :go))
+    results = Enum.map(tasks, &Task.await(&1, 5_000))
+
+    assert Enum.all?(results, &match?({:ok, _}, &1))
+
+    ids =
+      results
+      |> Enum.map(fn {:ok, day} -> hd(hd(day.slots).rows).entry.id end)
+      |> Enum.uniq()
+
+    assert length(ids) == 1
+
+    assert Repo.aggregate(
+             from(entry in DiaryEntry, where: entry.business_id == ^ctx.business.id),
+             :count
+           ) == 1
+  end
+
+  defp cleanup(business_id, user_ids) do
+    for schema <- [DiaryEntry, Easy.Nutrition.DiaryCommandLedger, DiarySlot, Food, Client, Coach] do
+      Repo.delete_all(from row in schema, where: row.business_id == ^business_id)
+    end
+
+    Repo.delete_all(from business in Business, where: business.id == ^business_id)
+    Repo.delete_all(from user in User, where: user.id in ^user_ids)
+  end
+end

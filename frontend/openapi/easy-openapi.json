@@ -1582,6 +1582,21 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ReplyNeededReason",
         "x-validate": null
       },
+      "NutritionDayResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/NutritionDay"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "NutritionDayResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayResponse",
+        "x-validate": null
+      },
       "TrainingEquipmentListResponse": {
         "additionalProperties": false,
         "properties": {
@@ -4059,6 +4074,7 @@
           },
           "meal_id": {
             "format": "uuid",
+            "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -4665,7 +4681,7 @@
           },
           "rows": {
             "items": {
-              "$ref": "#/components/schemas/MealLogDiaryRow"
+              "$ref": "#/components/schemas/NutritionDayRow"
             },
             "type": "array",
             "x-struct": null,
@@ -7765,6 +7781,68 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileServiceTypeAnswer",
         "x-validate": null
       },
+      "DiaryAddExtraRequest": {
+        "additionalProperties": false,
+        "example": {
+          "food_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+          "meal_slot": "breakfast",
+          "portion": {
+            "grams": 80,
+            "kind": "gram"
+          }
+        },
+        "properties": {
+          "food_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_slot": {
+            "enum": [
+              "early_morning",
+              "breakfast",
+              "mid_morning",
+              "lunch",
+              "afternoon",
+              "evening",
+              "dinner",
+              "pre_sleep",
+              "pre_workout",
+              "during_workout",
+              "post_workout"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "notes": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "portion": {
+            "$ref": "#/components/schemas/NutritionPortionInput"
+          },
+          "recipe_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "meal_slot",
+          "portion"
+        ],
+        "title": "DiaryAddExtraRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "LibraryMediaUpload": {
         "additionalProperties": false,
         "properties": {
@@ -8645,6 +8723,89 @@
         "title": "LandingProgramInput",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "NutritionDayEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "food_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "inserted_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "kind": {
+            "enum": [
+              "food",
+              "recipe"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "name": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "notes": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "nutrients": {
+            "$ref": "#/components/schemas/NutrientTotals"
+          },
+          "portion": {
+            "$ref": "#/components/schemas/NutritionPortion"
+          },
+          "recipe_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "revision": {
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "portion",
+          "nutrients",
+          "revision",
+          "inserted_at",
+          "updated_at"
+        ],
+        "title": "NutritionDayEntry",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayEntry",
         "x-validate": null
       },
       "TrainingPerformedSet": {
@@ -10908,6 +11069,51 @@
         "title": "ServiceNeverProgrammedReason",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ServiceNeverProgrammedReason",
+        "x-validate": null
+      },
+      "NutritionDayRow": {
+        "additionalProperties": false,
+        "properties": {
+          "entry": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NutritionDayEntry"
+              }
+            ],
+            "nullable": true,
+            "x-struct": null,
+            "x-validate": null
+          },
+          "planned": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NutritionDayOptionItem"
+              }
+            ],
+            "nullable": true,
+            "x-struct": null,
+            "x-validate": null
+          },
+          "status": {
+            "enum": [
+              "as_planned",
+              "swapped",
+              "pending",
+              "skipped",
+              "added",
+              "recorded"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "NutritionDayRow",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayRow",
         "x-validate": null
       },
       "TrainingPrescriptionWorkoutInput": {
@@ -17247,6 +17453,100 @@
         "summary": "Get a conversation",
         "tags": [
           "coach conversations"
+        ]
+      }
+    },
+    "/v1/client/nutrition-days/{date}/extras": {
+      "post": {
+        "callbacks": {},
+        "operationId": "addClientNutritionDayExtra",
+        "parameters": [
+          {
+            "description": "Client-local date",
+            "in": "path",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "UUID identifying this client intent",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiaryAddExtraRequest"
+              }
+            }
+          },
+          "description": "Add extra request",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutritionDayResponse"
+                }
+              }
+            },
+            "description": "Nutrition day"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Idempotency key reused with a different payload"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Record an extra Food or Recipe on a Nutrition Day slot",
+        "tags": [
+          "client nutrition days"
         ]
       }
     },

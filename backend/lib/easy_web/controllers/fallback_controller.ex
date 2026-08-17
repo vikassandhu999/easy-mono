@@ -345,6 +345,24 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Error.unprocessable(%{fields: %{date: ["cannot be in the future"]}})})
   end
 
+  def call(conn, {:error, :outside_correction_window}) do
+    call(
+      conn,
+      {:error, Error.unprocessable(%{fields: %{date: ["must be today or within the previous 7 local dates"]}})}
+    )
+  end
+
+  def call(conn, {:error, :invalid_idempotency_key}) do
+    call(
+      conn,
+      {:error, Error.unprocessable(%{fields: %{"Idempotency-Key" => ["must be a UUID"]}})}
+    )
+  end
+
+  def call(conn, {:error, :invalid_portion}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{portion: ["is invalid"]}})})
+  end
+
   def call(conn, {:error, :invalid_date_range}) do
     call(conn, {:error, Error.unprocessable(%{fields: %{range: ["from must be on or before to"]}})})
   end

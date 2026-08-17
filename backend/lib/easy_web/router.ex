@@ -271,6 +271,7 @@ defmodule EasyWeb.Router do
     # Meal logs + reconciled nutrition days
     get "/nutrition-meal-logs", MealLogController, :index
     get "/nutrition-days", NutritionDayController, :index
+    post "/nutrition-days/:date/extras", NutritionDayController, :add_extra
 
     # Food log entries
     post "/nutrition-food-log-entries/log-planned-item", FoodLogEntryController, :log_planned_item

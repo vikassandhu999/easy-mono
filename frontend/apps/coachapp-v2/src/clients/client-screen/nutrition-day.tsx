@@ -10,7 +10,7 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import type {MealLogDiaryRow, NutritionDayOptionItem, NutritionDaySlot} from '@/api/nutrition-plans-list';
+import type {NutritionDayOptionItem, NutritionDayRow, NutritionDaySlot} from '@/api/nutrition-plans-list';
 import {useListCoachNutritionDaysQuery} from '@/api/nutrition-plans-list';
 import {SectionCard} from '@/clients/components/section-card';
 import {formatKcal, formatRowDate} from '@/clients/lib/client-detail-data';
@@ -22,8 +22,9 @@ import {formatKcal, formatRowDate} from '@/clients/lib/client-detail-data';
  */
 const KCAL_COL = 'min-w-16 shrink-0 whitespace-nowrap text-right';
 
-const STATUS_CHIP: Partial<Record<NonNullable<MealLogDiaryRow['status']>, string>> = {
+const STATUS_CHIP: Partial<Record<NutritionDayRow['status'], string>> = {
   added: 'Added',
+  recorded: 'Recorded',
   skipped: 'Skipped',
   swapped: 'Swapped',
 };
@@ -88,9 +89,9 @@ export default function NutritionDay() {
       acc.kcal += slot.logged_calories ?? 0;
       acc.target += slot.planned_calories ?? 0;
       for (const row of slot.rows ?? []) {
-        acc.protein += row.entry?.protein_g ?? 0;
-        acc.carbs += row.entry?.carbs_g ?? 0;
-        acc.fat += row.entry?.fat_g ?? 0;
+        acc.protein += row.entry?.nutrients.protein ?? 0;
+        acc.carbs += row.entry?.nutrients.carbohydrates ?? 0;
+        acc.fat += row.entry?.nutrients.fat ?? 0;
       }
       return acc;
     },
@@ -160,7 +161,7 @@ export default function NutritionDay() {
               >
                 {rows.map((row, index) => (
                   <DiaryRow
-                    key={row.entry?.id ?? row.planned?.id ?? `row-${index}`}
+                    key={row.entry?.id ?? row.planned?.meal_item_id ?? `row-${index}`}
                     row={row}
                   />
                 ))}
@@ -189,17 +190,17 @@ export default function NutritionDay() {
   );
 }
 
-function DiaryRow({row}: {row: MealLogDiaryRow}) {
+function DiaryRow({row}: {row: NutritionDayRow}) {
   const skipped = row.status === 'skipped';
-  const name = skipped ? (row.planned?.food_name ?? 'Planned item') : (row.entry?.food_name ?? 'Food');
-  const protein = skipped ? null : row.entry?.protein_g;
-  const carbs = skipped ? null : row.entry?.carbs_g;
-  const fat = skipped ? null : row.entry?.fat_g;
-  const weightG = skipped ? null : row.entry?.weight_g;
-  const amount = skipped ? null : row.entry?.amount;
-  const unit = skipped ? null : row.entry?.unit;
-  const calories = skipped ? row.planned?.calories : row.entry?.calories;
-  const chip = row.status ? STATUS_CHIP[row.status] : undefined;
+  const name = skipped ? (row.planned?.name ?? 'Planned item') : (row.entry?.name ?? 'Food');
+  const protein = skipped ? null : row.entry?.nutrients.protein;
+  const carbs = skipped ? null : row.entry?.nutrients.carbohydrates;
+  const fat = skipped ? null : row.entry?.nutrients.fat;
+  const grams = skipped ? null : row.entry?.portion.grams;
+  const amount = skipped ? null : row.entry?.portion.amount;
+  const unit = skipped ? null : row.entry?.portion.unit;
+  const calories = skipped ? row.planned?.nutrients.calories : row.entry?.nutrients.calories;
+  const chip = STATUS_CHIP[row.status];
 
   return (
     <div className={`flex items-center gap-3 px-4 py-3${skipped ? ' opacity-55' : ''}`}>
@@ -235,13 +236,13 @@ function DiaryRow({row}: {row: MealLogDiaryRow}) {
           {chip}
         </Chip>
       )}
-      {!skipped && (weightG != null || amount != null) && (
+      {!skipped && (grams != null || amount != null) && (
         <Typography
           className="shrink-0"
           color="muted"
           type="body-xs"
         >
-          {weightG != null ? `${Math.round(weightG)} g` : `${amount} ${unit ?? 'serving'}`}
+          {grams != null ? `${Math.round(grams)} g` : `${amount} ${unit ?? 'serving'}`}
         </Typography>
       )}
       {calories != null && (

@@ -27,8 +27,8 @@ export type NutritionPlanUpdateRequest = components['schemas']['NutritionPlanUpd
 export type NutritionPlanRevisionRequest = components['schemas']['NutritionPlanRevisionRequest'];
 export type NutritionPlanAssignRequest = components['schemas']['NutritionPlanAssignRequest'];
 export type MealLog = components['schemas']['MealLog'];
-export type MealLogDiaryRow = components['schemas']['MealLogDiaryRow'];
 export type NutritionDay = components['schemas']['NutritionDay'];
+export type NutritionDayRow = components['schemas']['NutritionDayRow'];
 export type NutritionDaySlot = components['schemas']['NutritionDaySlot'];
 export type NutritionDayOptionItem = components['schemas']['NutritionDayOptionItem'];
 

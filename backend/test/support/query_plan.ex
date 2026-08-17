@@ -14,7 +14,7 @@ defmodule Easy.QueryPlan do
       handler_id,
       [:easy, :repo, :query],
       fn _event, _measurements, metadata, _config ->
-        if String.starts_with?(metadata.query, "SELECT") do
+        if self() == parent and String.starts_with?(metadata.query, "SELECT") do
           send(parent, {:query_plan_query, %{sql: metadata.query, params: metadata.params}})
         end
       end,

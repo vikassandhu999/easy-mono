@@ -6,24 +6,21 @@
 import {type MacroTotals, MEAL_SLOT_LABELS} from '@easy/utils';
 
 import type {
-  FoodLogEntry,
   NutritionDay,
+  NutritionDayEntry,
   NutritionDayOption,
   NutritionDayOptionItem,
+  NutritionDayRow,
   NutritionDaySlot,
 } from '@/api/nutrition';
-import type {components} from '@/api/schema';
 
-type MealLogDiaryRow = components['schemas']['MealLogDiaryRow'];
-type MealLogPlannedItem = components['schemas']['MealLogPlannedItem'];
-
-function macroSum(entries: FoodLogEntry[]): MacroTotals {
+function macroSum(entries: NutritionDayEntry[]): MacroTotals {
   const t: MacroTotals = {calories: 0, carbs: 0, fat: 0, protein: 0};
   for (const e of entries) {
-    t.calories += e.calories ?? 0;
-    t.protein += e.protein_g ?? 0;
-    t.carbs += e.carbs_g ?? 0;
-    t.fat += e.fat_g ?? 0;
+    t.calories += e.nutrients.calories ?? 0;
+    t.protein += e.nutrients.protein ?? 0;
+    t.carbs += e.nutrients.carbohydrates ?? 0;
+    t.fat += e.nutrients.fat ?? 0;
   }
   return t;
 }
@@ -31,12 +28,12 @@ function macroSum(entries: FoodLogEntry[]): MacroTotals {
 /** One row on Today: either a live checklist item or a server diary row. */
 export type SlotRow = {
   calories: null | number;
-  entry: FoodLogEntry | null;
+  entry: NutritionDayEntry | null;
   mealItemId: null | string;
   name: string;
   plannedItem: null | NutritionDayOptionItem;
-  /** as_planned / swapped / added are checked; checklist / skipped are not. */
-  status: 'added' | 'as_planned' | 'checklist' | 'skipped' | 'swapped';
+  /** as_planned / swapped / added / recorded are checked; checklist / skipped / pending are not. */
+  status: NutritionDayRow['status'] | 'checklist';
 };
 
 export type SlotView = {
@@ -74,7 +71,7 @@ function plannedItemCalories(item: NutritionDayOptionItem): null | number {
   return item.nutrients.calories;
 }
 
-function plannedFulfilments(rows: MealLogDiaryRow[]): boolean {
+function plannedFulfilments(rows: NutritionDayRow[]): boolean {
   return rows.some((r) => r.status === 'as_planned' || r.status === 'swapped');
 }
 
@@ -89,63 +86,33 @@ function checklistRow(item: NutritionDayOptionItem): SlotRow {
   };
 }
 
-function freezeAsOptionItem(planned: MealLogPlannedItem): null | NutritionDayOptionItem {
-  if (!planned.id) {
-    return null;
-  }
-  return {
-    food_id: planned.food_id ?? null,
-    kind: planned.recipe_id ? 'recipe' : 'food',
-    meal_item_id: planned.id,
-    name: planned.food_name ?? null,
-    nutrients: {
-      calories: planned.calories ?? null,
-      carbohydrates: planned.carbs_g ?? null,
-      complete: false,
-      fat: planned.fat_g ?? null,
-      fiber: planned.fiber_g ?? null,
-      protein: planned.protein_g ?? null,
-    },
-    portion: {
-      amount: planned.amount ?? null,
-      grams: planned.weight_g ?? null,
-      kind: planned.weight_g != null ? 'gram' : 'serving',
-      label: null,
-      unit: planned.unit ?? null,
-    },
-    position: 0,
-    recipe_id: planned.recipe_id ?? null,
-  };
-}
-
-function diaryRow(row: MealLogDiaryRow): SlotRow {
+function diaryRow(row: NutritionDayRow): SlotRow {
   const planned = row.planned ?? null;
   const entry = row.entry ?? null;
-  const plannedItem = planned ? freezeAsOptionItem(planned) : null;
 
-  if (row.status === 'added') {
+  if (row.status === 'added' || row.status === 'recorded') {
     return {
-      calories: entry?.calories ?? null,
+      calories: entry?.nutrients.calories ?? null,
       entry,
       mealItemId: null,
-      name: entry?.food_name ?? 'Food',
+      name: entry?.name ?? 'Food',
       plannedItem: null,
-      status: 'added',
+      status: row.status,
     };
   }
 
   return {
-    calories: entry?.calories ?? plannedItemCalories(plannedItem!) ?? planned?.calories ?? null,
+    calories: entry?.nutrients.calories ?? (planned ? plannedItemCalories(planned) : null),
     entry,
-    mealItemId: planned?.id ?? null,
-    name: entry?.food_name ?? planned?.food_name ?? 'Food',
-    plannedItem,
+    mealItemId: planned?.meal_item_id ?? null,
+    name: entry?.name ?? planned?.name ?? 'Food',
+    plannedItem: planned,
     status: row.status,
   };
 }
 
-function extrasFromDiary(rows: MealLogDiaryRow[]): SlotRow[] {
-  return rows.filter((r) => r.status === 'added').map(diaryRow);
+function extrasFromDiary(rows: NutritionDayRow[]): SlotRow[] {
+  return rows.filter((r) => r.status === 'added' || r.status === 'recorded').map(diaryRow);
 }
 
 function slotShell(
@@ -158,7 +125,7 @@ function slotShell(
   hasLog: boolean,
   hasPlannedLog: boolean,
 ): SlotView {
-  const plannedRows = rows.filter((r) => r.status !== 'added' && r.status !== 'checklist');
+  const plannedRows = rows.filter((r) => r.status !== 'added' && r.status !== 'recorded' && r.status !== 'checklist');
   const allPlannedLogged =
     plannedRows.length > 0 && plannedRows.every((r) => r.status === 'as_planned' || r.status === 'swapped');
 
@@ -195,7 +162,6 @@ export function slotsFromDay(
   return day.slots.map((daySlot) => {
     const option = activeOption(daySlot, selections[daySlot.meal_slot]);
     const rows = daySlot.rows ?? [];
-    // Presence of any diary row (incl. skipped) means the slot has a meal log.
     const logged = rows.length > 0;
     const loggedCalories = daySlot.logged_calories ?? 0;
 
@@ -238,7 +204,7 @@ export function dayConsumed(day: null | NutritionDay): MacroTotals {
     return {calories: 0, carbs: 0, fat: 0, protein: 0};
   }
   const entries = day.slots.flatMap((s) =>
-    (s.rows ?? []).map((r) => r.entry).filter((e): e is FoodLogEntry => e != null),
+    (s.rows ?? []).map((r) => r.entry).filter((e): e is NutritionDayEntry => e != null),
   );
   return macroSum(entries);
 }

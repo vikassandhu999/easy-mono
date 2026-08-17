@@ -1,9 +1,14 @@
 defmodule EasyWeb.NutritionDayJSON do
-  alias Easy.Nutrition.{FoodLogEntry, NutrientTotals}
+  alias Easy.Nutrition.NutrientTotals
 
   @spec index(map()) :: map()
   def index(%{days: days}) do
     %{data: Enum.map(days, &day_data/1)}
+  end
+
+  @spec show(map()) :: map()
+  def show(%{day: day}) do
+    %{data: day_data(day)}
   end
 
   defp day_data(day) do
@@ -49,31 +54,25 @@ defmodule EasyWeb.NutritionDayJSON do
     }
   end
 
-  defp row_data(%{status: status, planned: planned, entry: entry}) do
+  defp row_data(row) do
     %{
-      status: status,
-      planned: planned,
-      entry: entry && entry_data(entry)
+      status: row.status,
+      planned: row.planned && item_data(row.planned),
+      entry: row.entry && entry_data(row.entry)
     }
   end
 
-  defp entry_data(%FoodLogEntry{} = entry) do
+  defp entry_data(entry) do
     %{
       id: entry.id,
-      food_name: entry.food_name,
-      amount: entry.amount,
-      unit: entry.unit,
-      weight_g: entry.weight_g,
-      calories: round_one(entry.calories),
-      protein_g: round_one(entry.protein_g),
-      carbs_g: round_one(entry.carbs_g),
-      fat_g: round_one(entry.fat_g),
-      fiber_g: round_one(entry.fiber_g),
-      notes: entry.notes,
-      planned_item_id: entry.planned_item_id,
+      kind: entry.kind,
+      name: entry.name,
       food_id: entry.food_id,
       recipe_id: entry.recipe_id,
-      nutrition_meal_log_id: entry.nutrition_meal_log_id,
+      portion: entry.portion,
+      nutrients: NutrientTotals.round(entry.nutrients),
+      notes: entry.notes,
+      revision: entry.revision,
       inserted_at: entry.inserted_at,
       updated_at: entry.updated_at
     }

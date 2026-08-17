@@ -525,7 +525,7 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionDayOption do
     type: :object,
     additionalProperties: false,
     properties: %{
-      meal_id: %Schema{type: :string, format: :uuid},
+      meal_id: %Schema{type: :string, format: :uuid, nullable: true},
       meal_name: %Schema{type: :string, nullable: true},
       position: %Schema{type: :integer},
       items: %Schema{type: :array, items: NutritionDayOptionItem}
@@ -534,10 +534,90 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionDayOption do
   })
 end
 
+defmodule EasyWeb.OpenApi.Schemas.NutritionDayEntry do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.{NutrientTotals, NutritionPortion, Shared}
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "NutritionDayEntry",
+    type: :object,
+    additionalProperties: false,
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          kind: %Schema{type: :string, enum: ["food", "recipe"]},
+          name: %Schema{type: :string},
+          food_id: %Schema{type: :string, format: :uuid, nullable: true},
+          recipe_id: %Schema{type: :string, format: :uuid, nullable: true},
+          portion: NutritionPortion,
+          nutrients: NutrientTotals,
+          notes: %Schema{type: :string, nullable: true},
+          revision: %Schema{type: :integer, minimum: 1}
+        },
+        Shared.timestamps()
+      ),
+    required: [:id, :kind, :name, :portion, :nutrients, :revision, :inserted_at, :updated_at]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionDayRow do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.{NutritionDayEntry, NutritionDayOptionItem}
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "NutritionDayRow",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      status: %Schema{
+        type: :string,
+        enum: ["as_planned", "swapped", "pending", "skipped", "added", "recorded"]
+      },
+      planned: %Schema{allOf: [NutritionDayOptionItem], nullable: true},
+      entry: %Schema{allOf: [NutritionDayEntry], nullable: true}
+    },
+    required: [:status]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.DiaryAddExtraRequest do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.NutritionPortionInput
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "DiaryAddExtraRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        meal_slot: %Schema{type: :string, enum: Easy.Nutrition.MealSlot.names()},
+        food_id: %Schema{type: :string, format: :uuid, nullable: true},
+        recipe_id: %Schema{type: :string, format: :uuid, nullable: true},
+        portion: NutritionPortionInput,
+        notes: %Schema{type: :string, nullable: true}
+      },
+      required: [:meal_slot, :portion],
+      example: %{
+        "meal_slot" => "breakfast",
+        "food_id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+        "portion" => %{"kind" => "gram", "grams" => 80}
+      }
+    },
+    struct?: false
+  )
+end
+
 defmodule EasyWeb.OpenApi.Schemas.NutritionDaySlot do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.{MealLogDiaryRow, NutritionDayOption}
+  alias EasyWeb.OpenApi.Schemas.{NutritionDayOption, NutritionDayRow}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -550,7 +630,7 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionDaySlot do
       planned_calories: %Schema{type: :number, nullable: true},
       logged_calories: %Schema{type: :number, nullable: true},
       options: %Schema{type: :array, items: NutritionDayOption},
-      rows: %Schema{type: :array, items: MealLogDiaryRow}
+      rows: %Schema{type: :array, items: NutritionDayRow}
     },
     required: [:meal_slot, :options, :rows]
   })

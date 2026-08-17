@@ -49,7 +49,7 @@ export default function OptionSheet({
                 className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-sm ${
                   active ? 'border-accent bg-accent-soft' : 'border-border'
                 }`}
-                key={option.meal_id}
+                key={option.meal_id ?? `option-${option.position ?? 0}`}
                 onClick={() => onSelect(option)}
                 type="button"
               >

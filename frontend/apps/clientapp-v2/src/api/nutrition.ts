@@ -1,6 +1,7 @@
 /**
  * Client nutrition. Day view is GET /nutrition-days (targets + options + diary
- * rows). Writes are typed verbs under /nutrition-food-log-entries/*.
+ * rows). Extras write through POST /nutrition-days/{date}/extras with an
+ * Idempotency-Key. Other writes still use /nutrition-food-log-entries/*.
  */
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
@@ -11,8 +12,10 @@ import type {components, paths} from '@/api/schema';
 export type Food = components['schemas']['Food'];
 export type FoodLogEntry = components['schemas']['FoodLogEntry'];
 export type NutritionDay = components['schemas']['NutritionDay'];
+export type NutritionDayEntry = components['schemas']['NutritionDayEntry'];
 export type NutritionDayOption = components['schemas']['NutritionDayOption'];
 export type NutritionDayOptionItem = components['schemas']['NutritionDayOptionItem'];
+export type NutritionDayRow = components['schemas']['NutritionDayRow'];
 export type NutritionDaySlot = components['schemas']['NutritionDaySlot'];
 export type NutritionPlan = components['schemas']['NutritionPlan'];
 export type Recipe = components['schemas']['Recipe'];
@@ -89,7 +92,8 @@ function useInvalidateNutritionDays() {
 }
 
 type LogPlannedItemRequest = components['schemas']['LogPlannedItemRequest'];
-type AddExtraRequest = components['schemas']['AddExtraRequest'];
+type AddExtraRequest = components['schemas']['DiaryAddExtraRequest'];
+type NutritionDayResponse = components['schemas']['NutritionDayResponse'];
 type ReplaceItemRequest = components['schemas']['ReplaceItemRequest'];
 type LogMealRequest = components['schemas']['LogMealRequest'];
 type LogDayRequest = components['schemas']['LogDayRequest'];
@@ -109,8 +113,13 @@ export function useLogPlannedItemMutation() {
 export function useAddExtraMutation() {
   const invalidate = useInvalidateNutritionDays();
   return useMutation({
-    mutationFn: (body: AddExtraRequest) =>
-      call(client.POST('/v1/client/nutrition-food-log-entries/add-extra', {body})) as Promise<FoodLogEntryResponse>,
+    mutationFn: ({date, idempotencyKey, ...body}: AddExtraRequest & {date: string; idempotencyKey: string}) =>
+      call(
+        client.POST('/v1/client/nutrition-days/{date}/extras', {
+          params: {path: {date}, header: {'Idempotency-Key': idempotencyKey}},
+          body,
+        }),
+      ) as Promise<NutritionDayResponse>,
     onSuccess: invalidate,
   });
 }

@@ -102,6 +102,102 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
     end
   end
 
+  describe "POST /v1/client/nutrition-days/:date/extras" do
+    test "records an extra, freezes Coverage, and replays an identical idempotency key", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Oats")
+      extra = insert(:food, creator: ctx.coach, business: ctx.business, name: "Banana")
+      assign_covering_plan(ctx, food)
+      today = Date.to_iso8601(local_today(ctx.client))
+      key = Ecto.UUID.generate()
+
+      body = %{
+        "meal_slot" => "breakfast",
+        "food_id" => extra.id,
+        "portion" => %{"kind" => "gram", "grams" => 80}
+      }
+
+      conn =
+        ctx.conn
+        |> put_req_header("idempotency-key", key)
+        |> post("/v1/client/nutrition-days/#{today}/extras", body)
+
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["date"] == today
+      [slot] = data["slots"]
+      assert slot["meal_slot"] == "breakfast"
+      assert hd(slot["options"])["meal_name"] == "Breakfast"
+      assert Enum.any?(slot["rows"], &(&1["status"] == "added" and &1["entry"]["name"] == "Banana"))
+      assert_schema(data, "NutritionDay", EasyWeb.ApiSpec.spec())
+
+      replay =
+        ctx.conn
+        |> put_req_header("idempotency-key", key)
+        |> post("/v1/client/nutrition-days/#{today}/extras", body)
+
+      assert %{"data" => replayed} = json_response(replay, 201)
+      assert replayed["slots"] == data["slots"]
+    end
+
+    test "returns conflict when the same key is reused with a different payload", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Banana")
+      other = insert(:food, creator: ctx.coach, business: ctx.business, name: "Apple")
+      today = Date.to_iso8601(local_today(ctx.client))
+      key = Ecto.UUID.generate()
+
+      ctx.conn
+      |> put_req_header("idempotency-key", key)
+      |> post("/v1/client/nutrition-days/#{today}/extras", %{
+        "meal_slot" => "breakfast",
+        "food_id" => food.id,
+        "portion" => %{"kind" => "gram", "grams" => 50}
+      })
+      |> json_response(201)
+
+      conn =
+        ctx.conn
+        |> put_req_header("idempotency-key", key)
+        |> post("/v1/client/nutrition-days/#{today}/extras", %{
+          "meal_slot" => "breakfast",
+          "food_id" => other.id,
+          "portion" => %{"kind" => "gram", "grams" => 50}
+        })
+
+      assert json_response(conn, 409)
+    end
+
+    test "rejects a missing idempotency key", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business)
+      today = Date.to_iso8601(local_today(ctx.client))
+
+      conn =
+        post(ctx.conn, "/v1/client/nutrition-days/#{today}/extras", %{
+          "meal_slot" => "breakfast",
+          "food_id" => food.id,
+          "portion" => %{"kind" => "gram", "grams" => 50}
+        })
+
+      assert json_response(conn, 422)
+    end
+
+    test "is not available to coaches", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business)
+      today = Date.to_iso8601(local_today(ctx.client))
+
+      conn =
+        build_conn()
+        |> authenticate_coach(ctx.coach)
+        |> put_req_header("content-type", "application/json")
+        |> put_req_header("idempotency-key", Ecto.UUID.generate())
+        |> post("/v1/client/nutrition-days/#{today}/extras", %{
+          "meal_slot" => "breakfast",
+          "food_id" => food.id,
+          "portion" => %{"kind" => "gram", "grams" => 50}
+        })
+
+      assert conn.status in [401, 403, 404]
+    end
+  end
+
   defp assign_covering_plan(ctx, food, opts \\ []) do
     coach_ctx = trainer_ctx(ctx.coach)
     {:ok, template} = Programming.create_template(coach_ctx, %{"name" => "Cut", "target_calories" => 2000.0})

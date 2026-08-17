@@ -447,6 +447,30 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
     end
   end
 
+  describe "canonical Nutrition Diary constraints" do
+    test "the database rejects a duplicate Diary Slot identity" do
+      client = insert(:client)
+      today = Date.utc_today()
+
+      Repo.insert_all("nutrition_diary_slots", [diary_slot_row(client, today)])
+
+      assert_raise Postgrex.Error, fn ->
+        Repo.insert_all("nutrition_diary_slots", [diary_slot_row(client, today)])
+      end
+    end
+
+    test "the database rejects a duplicate idempotency key for one client" do
+      client = insert(:client)
+      key = dump_uuid()
+
+      Repo.insert_all("nutrition_diary_command_ledger", [ledger_row(client, key)])
+
+      assert_raise Postgrex.Error, fn ->
+        Repo.insert_all("nutrition_diary_command_ledger", [ledger_row(client, key)])
+      end
+    end
+  end
+
   defp plan_row(coach, overrides) do
     timestamps(
       Map.merge(
@@ -551,6 +575,32 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
   defp timestamps(attrs) do
     now = DateTime.utc_now(:second)
     Map.merge(%{inserted_at: now, updated_at: now}, attrs)
+  end
+
+  defp diary_slot_row(client, date) do
+    timestamps(%{
+      id: dump_uuid(),
+      local_date: date,
+      meal_slot: "breakfast",
+      applied_timezone: "Asia/Kolkata",
+      has_coverage: false,
+      revision: 1,
+      business_id: dump_uuid(client.business_id),
+      client_id: dump_uuid(client.id)
+    })
+  end
+
+  defp ledger_row(client, key) do
+    now = DateTime.utc_now(:second)
+
+    timestamps(%{
+      id: dump_uuid(),
+      idempotency_key: key,
+      fingerprint: "abc",
+      expires_at: DateTime.add(now, 30, :day),
+      business_id: dump_uuid(client.business_id),
+      client_id: dump_uuid(client.id)
+    })
   end
 
   defp dump_uuid(uuid \\ Ecto.UUID.generate()), do: Ecto.UUID.dump!(uuid)

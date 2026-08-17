@@ -118,6 +118,196 @@ defmodule Easy.Nutrition.DiaryTest do
     end
   end
 
+  describe "add_client_extra/4" do
+    test "first same-day extra under Coverage freezes every offered option and reports added" do
+      %{client: client, coach: coach, food: food} = covering_setup(menu: :two_options)
+      extra = insert(:food, business: coach.business, creator: coach, name: "Banana")
+      today = local_today(client)
+
+      assert {:ok, day} =
+               Diary.add_client_extra(client_ctx(client), today, extra_attrs(extra, grams: 80.0), Ecto.UUID.generate())
+
+      [slot] = Enum.filter(day.slots, &(&1.meal_slot == :breakfast))
+      assert Enum.map(slot.options, & &1.meal_name) == ["Breakfast A", "Breakfast B"]
+      assert Enum.map(hd(slot.options).items, & &1.name) == [food.name]
+      assert Enum.any?(slot.rows, &(&1.status == :pending && &1.planned && &1.planned.name == food.name))
+      assert extra_row = Enum.find(slot.rows, &(&1.status == :added))
+      assert extra_row.entry.name == "Banana"
+      assert extra_row.entry.portion.grams == 80.0
+      assert extra_row.entry.nutrients.calories == 160.0
+    end
+
+    test "an extra without Coverage creates a slot with no frozen options and is recorded" do
+      client = insert(:client)
+      food = insert(:food, business: client.business, name: "Yogurt")
+      today = local_today(client)
+
+      assert {:ok, day} =
+               Diary.add_client_extra(client_ctx(client), today, extra_attrs(food), Ecto.UUID.generate())
+
+      [slot] = day.slots
+      assert slot.meal_slot == :breakfast
+      assert slot.options == []
+      assert [%{status: :recorded, entry: entry}] = slot.rows
+      assert entry.name == food.name
+      assert entry.food_id == food.id
+    end
+
+    test "an unstarted past date in the correction window records an extra without consulting Programming" do
+      %{client: client, plan: plan} = covering_setup(start_offset: -7)
+      food = insert(:food, business: client.business, name: "Apple")
+      past = Date.add(local_today(client), -1)
+
+      assert {:ok, day} =
+               Diary.add_client_extra(client_ctx(client), past, extra_attrs(food), Ecto.UUID.generate())
+
+      assert day.plan_id == nil
+      assert [%{options: [], rows: [%{status: :recorded}]}] = day.slots
+      assert Repo.get!(Easy.Nutrition.Plan, plan.id).start_date != nil
+    end
+
+    test "repeated extras of the same Food create distinct Diary Entries" do
+      client = insert(:client)
+      food = insert(:food, business: client.business, name: "Almonds")
+      today = local_today(client)
+      attrs = extra_attrs(food, grams: 20.0)
+
+      assert {:ok, first} = Diary.add_client_extra(client_ctx(client), today, attrs, Ecto.UUID.generate())
+      assert {:ok, second} = Diary.add_client_extra(client_ctx(client), today, attrs, Ecto.UUID.generate())
+
+      ids =
+        second.slots
+        |> hd()
+        |> Map.fetch!(:rows)
+        |> Enum.map(& &1.entry.id)
+
+      assert length(ids) == 2
+      assert ids == Enum.uniq(ids)
+      assert length(hd(first.slots).rows) == 1
+    end
+
+    test "accepts today and the previous seven local dates including the seventh prior date" do
+      client = insert(:client)
+      food = insert(:food, business: client.business)
+      today = local_today(client)
+
+      Enum.each(0..7, fn offset ->
+        date = Date.add(today, -offset)
+
+        assert {:ok, day} =
+                 Diary.add_client_extra(client_ctx(client), date, extra_attrs(food, slot: :lunch), Ecto.UUID.generate())
+
+        assert day.date == date
+        assert day.write_eligible == true
+      end)
+    end
+
+    test "rejects a future local date and a date eight days before today" do
+      client = insert(:client)
+      food = insert(:food, business: client.business)
+      today = local_today(client)
+
+      assert {:error, :future_date} =
+               Diary.add_client_extra(
+                 client_ctx(client),
+                 Date.add(today, 1),
+                 extra_attrs(food),
+                 Ecto.UUID.generate()
+               )
+
+      assert {:error, :outside_correction_window} =
+               Diary.add_client_extra(
+                 client_ctx(client),
+                 Date.add(today, -8),
+                 extra_attrs(food),
+                 Ecto.UUID.generate()
+               )
+    end
+
+    test "an identical idempotency retry returns the stored result" do
+      client = insert(:client)
+      food = insert(:food, business: client.business, name: "Rice")
+      today = local_today(client)
+      key = Ecto.UUID.generate()
+      attrs = extra_attrs(food)
+
+      assert {:ok, first} = Diary.add_client_extra(client_ctx(client), today, attrs, key)
+      assert {:ok, replay} = Diary.add_client_extra(client_ctx(client), today, attrs, key)
+
+      [entry] = hd(first.slots).rows
+      [again] = hd(replay.slots).rows
+      assert again.entry.id == entry.entry.id
+      assert length(hd(replay.slots).rows) == 1
+    end
+
+    test "reusing a key with a different payload returns a conflict" do
+      client = insert(:client)
+      food = insert(:food, business: client.business)
+      other = insert(:food, business: client.business, name: "Other")
+      today = local_today(client)
+      key = Ecto.UUID.generate()
+
+      assert {:ok, _} = Diary.add_client_extra(client_ctx(client), today, extra_attrs(food), key)
+
+      assert {:error, :conflict} =
+               Diary.add_client_extra(client_ctx(client), today, extra_attrs(other), key)
+    end
+
+    test "ledger lookup returns the stored result after the date leaves the correction window" do
+      client = insert(:client)
+      food = insert(:food, business: client.business)
+      today = local_today(client)
+      key = Ecto.UUID.generate()
+      attrs = extra_attrs(food)
+
+      assert {:ok, first} = Diary.add_client_extra(client_ctx(client), today, attrs, key)
+
+      stale = Date.add(today, -8)
+      ledger = Repo.get_by!(Easy.Nutrition.DiaryCommandLedger, idempotency_key: key)
+
+      ledger
+      |> Ecto.Changeset.change(fingerprint: Easy.Nutrition.DiaryCommandLedger.fingerprint("POST", extra_path(stale), extra_payload(attrs)))
+      |> Repo.update!()
+
+      assert {:ok, replay} = Diary.add_client_extra(client_ctx(client), stale, attrs, key)
+
+      assert hd(replay.slots).rows |> hd() |> Map.fetch!(:entry) |> Map.fetch!(:id) ==
+               hd(first.slots).rows |> hd() |> Map.fetch!(:entry) |> Map.fetch!(:id)
+    end
+
+    test "coaches and inactive clients cannot add extras" do
+      %{client: client, coach: coach, food: food} = covering_setup()
+      today = local_today(client)
+
+      assert {:error, :not_found} =
+               Diary.add_client_extra(trainer_ctx(coach), today, extra_attrs(food), Ecto.UUID.generate())
+
+      inactive = insert(:client, status: :inactive, business: client.business)
+      extra = insert(:food, business: inactive.business)
+
+      assert {:error, :client_inactive} =
+               Diary.add_client_extra(client_ctx(inactive), today, extra_attrs(extra), Ecto.UUID.generate())
+    end
+
+    test "bounded cleanup removes ledger rows older than 30 days" do
+      client = insert(:client)
+      food = insert(:food, business: client.business)
+      today = local_today(client)
+      key = Ecto.UUID.generate()
+
+      assert {:ok, _} = Diary.add_client_extra(client_ctx(client), today, extra_attrs(food), key)
+
+      ledger = Repo.get_by!(Easy.Nutrition.DiaryCommandLedger, idempotency_key: key)
+
+      ledger
+      |> Ecto.Changeset.change(expires_at: DateTime.add(DateTime.utc_now(:second), -1, :day))
+      |> Repo.update!()
+
+      assert {:ok, 1} = Diary.purge_expired_command_ledger()
+      assert Repo.get(Easy.Nutrition.DiaryCommandLedger, ledger.id) == nil
+    end
+  end
+
   describe "coach and owner reads" do
     test "return the same Nutrition Day as the client" do
       %{client: client, coach: coach, plan: plan} = covering_setup()
@@ -163,6 +353,7 @@ defmodule Easy.Nutrition.DiaryTest do
     menu =
       case Keyword.get(opts, :menu) do
         :ordered -> ordered_menu(template, food)
+        :two_options -> two_option_menu(template, food)
         _ -> breakfast_menu(template, food)
       end
 
@@ -190,6 +381,48 @@ defmodule Easy.Nutrition.DiaryTest do
       %{meal_slot: :post_workout, local_ref: "post", name: "Post workout", grams: 30},
       %{meal_slot: :breakfast, local_ref: "breakfast", name: "Breakfast", grams: 50}
     ])
+  end
+
+  defp two_option_menu(plan, food) do
+    pattern = hd(plan.day_patterns)
+
+    %{
+      meals: [
+        %{
+          local_ref: "a",
+          name: "Breakfast A",
+          position: 0,
+          meal_items: [
+            %{local_ref: "a-item", kind: :food, food_id: food.id, position: 0, portion: %{kind: :gram, grams: 50}}
+          ]
+        },
+        %{
+          local_ref: "b",
+          name: "Breakfast B",
+          position: 1,
+          meal_items: [
+            %{local_ref: "b-item", kind: :food, food_id: food.id, position: 0, portion: %{kind: :gram, grams: 40}}
+          ]
+        }
+      ],
+      day_patterns: [
+        %{
+          id: pattern.id,
+          name: pattern.name,
+          position: 0,
+          slots: [
+            %{
+              meal_slot: :breakfast,
+              options: [
+                %{local_ref: "opt-a", meal_local_ref: "a", position: 0},
+                %{local_ref: "opt-b", meal_local_ref: "b", position: 1}
+              ]
+            }
+          ]
+        }
+      ],
+      schedule: Map.new(WeekSchedule.weekdays(), &{&1, pattern.id})
+    }
   end
 
   defp slot_menu(plan, food, slots) do
@@ -225,6 +458,26 @@ defmodule Easy.Nutrition.DiaryTest do
       meals: meals,
       day_patterns: [%{id: pattern.id, name: pattern.name, position: 0, slots: options}],
       schedule: Map.new(WeekSchedule.weekdays(), &{&1, pattern.id})
+    }
+  end
+
+  defp extra_attrs(food, opts \\ []) do
+    %{
+      meal_slot: Keyword.get(opts, :slot, :breakfast),
+      food_id: food.id,
+      portion: %{kind: :gram, grams: Keyword.get(opts, :grams, 50.0)}
+    }
+  end
+
+  defp extra_path(date), do: "/v1/client/nutrition-days/#{Date.to_iso8601(date)}/extras"
+
+  defp extra_payload(attrs) do
+    %{
+      meal_slot: attrs.meal_slot,
+      food_id: attrs.food_id,
+      recipe_id: nil,
+      portion: attrs.portion,
+      notes: nil
     }
   end
 

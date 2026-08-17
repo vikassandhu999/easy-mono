@@ -3731,6 +3731,27 @@ export interface components {
       name: string;
     };
     /**
+     * DiaryLogPlannedOptionRequest
+     * @example {
+     *       "meal_slot": "breakfast"
+     *     }
+     */
+    DiaryLogPlannedOptionRequest: {
+      /** @enum {string} */
+      meal_slot:
+        | 'early_morning'
+        | 'breakfast'
+        | 'mid_morning'
+        | 'lunch'
+        | 'afternoon'
+        | 'evening'
+        | 'dinner'
+        | 'pre_sleep'
+        | 'pre_workout'
+        | 'during_workout'
+        | 'post_workout';
+    };
+    /**
      * TrainingPlanRevisionRequest
      * @description Optimistic revision required by an explicit Training Template or Client Plan lifecycle command.
      * @example {
@@ -5281,6 +5302,30 @@ export interface components {
       recipe_id: string | null;
       /** Format: date-time */
       updated_at: string;
+    };
+    /**
+     * DiaryLogPlannedItemRequest
+     * @example {
+     *       "meal_item_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+     *       "meal_slot": "breakfast"
+     *     }
+     */
+    DiaryLogPlannedItemRequest: {
+      /** Format: uuid */
+      meal_item_id: string;
+      /** @enum {string} */
+      meal_slot:
+        | 'early_morning'
+        | 'breakfast'
+        | 'mid_morning'
+        | 'lunch'
+        | 'afternoon'
+        | 'evening'
+        | 'dinner'
+        | 'pre_sleep'
+        | 'pre_workout'
+        | 'during_workout'
+        | 'post_workout';
     };
     /** MessageResponse */
     MessageResponse: {

@@ -8,12 +8,16 @@ defmodule EasyWeb.Clients.NutritionDayController do
 
   alias EasyWeb.OpenApi.Schemas.{
     DiaryAddExtraRequest,
+    DiaryLogPlannedItemRequest,
+    DiaryLogPlannedOptionRequest,
     ErrorResponse,
     NutritionDayListResponse,
     NutritionDayResponse
   }
 
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:add_extra]
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true]
+       when action in [:add_extra, :log_planned_item, :log_planned_option, :log_planned_day]
 
   tags ["client nutrition days"]
 
@@ -55,6 +59,71 @@ defmodule EasyWeb.Clients.NutritionDayController do
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
+  operation :log_planned_item,
+    summary: "Log one planned item on a Nutrition Day slot",
+    operation_id: "logClientNutritionDayPlannedItem",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:date, :path, %Schema{type: :string, format: :date}, "Client-local date", required: true),
+      Operation.parameter(
+        :"Idempotency-Key",
+        :header,
+        %Schema{type: :string, format: :uuid},
+        "UUID identifying this client intent",
+        required: true
+      )
+    ],
+    request_body: {"Log planned item request", "application/json", DiaryLogPlannedItemRequest, required: true},
+    responses: [
+      created: {"Nutrition day", "application/json", NutritionDayResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      conflict: {"Idempotency key reused with a different payload", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :log_planned_option,
+    summary: "Log every remaining item in the active option for a slot",
+    operation_id: "logClientNutritionDayPlannedOption",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:date, :path, %Schema{type: :string, format: :date}, "Client-local date", required: true),
+      Operation.parameter(
+        :"Idempotency-Key",
+        :header,
+        %Schema{type: :string, format: :uuid},
+        "UUID identifying this client intent",
+        required: true
+      )
+    ],
+    request_body: {"Log planned option request", "application/json", DiaryLogPlannedOptionRequest, required: true},
+    responses: [
+      created: {"Nutrition day", "application/json", NutritionDayResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      conflict: {"Idempotency key reused with a different payload", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :log_planned_day,
+    summary: "Log every scheduled active option for the day",
+    operation_id: "logClientNutritionDayPlannedDay",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:date, :path, %Schema{type: :string, format: :date}, "Client-local date", required: true),
+      Operation.parameter(
+        :"Idempotency-Key",
+        :header,
+        %Schema{type: :string, format: :uuid},
+        "UUID identifying this client intent",
+        required: true
+      )
+    ],
+    responses: [
+      created: {"Nutrition day", "application/json", NutritionDayResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      conflict: {"Idempotency key reused with a different payload", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     with {:ok, date} <- Utils.parse_optional_date(params["date"]),
@@ -73,6 +142,45 @@ defmodule EasyWeb.Clients.NutritionDayController do
 
     with {:ok, date} <- parse_date(date),
          {:ok, day} <- Diary.add_client_extra(conn.assigns.ctx, date, conn.body_params, key) do
+      conn
+      |> put_status(:created)
+      |> render(:show, day: day)
+    end
+  end
+
+  @spec log_planned_item(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def log_planned_item(conn, _params) do
+    date = conn.path_params["date"]
+    key = conn |> get_req_header("idempotency-key") |> List.first()
+
+    with {:ok, date} <- parse_date(date),
+         {:ok, day} <- Diary.log_client_planned_item(conn.assigns.ctx, date, conn.body_params, key) do
+      conn
+      |> put_status(:created)
+      |> render(:show, day: day)
+    end
+  end
+
+  @spec log_planned_option(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def log_planned_option(conn, _params) do
+    date = conn.path_params["date"]
+    key = conn |> get_req_header("idempotency-key") |> List.first()
+
+    with {:ok, date} <- parse_date(date),
+         {:ok, day} <- Diary.log_client_planned_option(conn.assigns.ctx, date, conn.body_params, key) do
+      conn
+      |> put_status(:created)
+      |> render(:show, day: day)
+    end
+  end
+
+  @spec log_planned_day(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def log_planned_day(conn, _params) do
+    date = conn.path_params["date"]
+    key = conn |> get_req_header("idempotency-key") |> List.first()
+
+    with {:ok, date} <- parse_date(date),
+         {:ok, day} <- Diary.log_client_planned_day(conn.assigns.ctx, date, key) do
       conn
       |> put_status(:created)
       |> render(:show, day: day)

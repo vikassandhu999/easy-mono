@@ -1,4 +1,10 @@
-import {diaryCommandKey, extraIntentFingerprint} from './diary-command-key.ts';
+import {
+  diaryCommandKey,
+  extraIntentFingerprint,
+  plannedDayIntentFingerprint,
+  plannedItemIntentFingerprint,
+  plannedOptionIntentFingerprint,
+} from './diary-command-key.ts';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
@@ -57,4 +63,15 @@ assert(
       slot: 'breakfast',
     }),
   'changing the Nutrition Day date rotates the extra fingerprint',
+);
+
+assert(
+  plannedItemIntentFingerprint({date: '2026-08-17', mealItemId: 'item-1', slot: 'breakfast'}) ===
+    plannedItemIntentFingerprint({date: '2026-08-17', mealItemId: 'item-1', slot: 'breakfast'}),
+  'planned-item fingerprints are stable',
+);
+assert(
+  plannedOptionIntentFingerprint({date: '2026-08-17', slot: 'breakfast'}) !==
+    plannedDayIntentFingerprint({date: '2026-08-17'}),
+  'option and day intents stay distinct',
 );

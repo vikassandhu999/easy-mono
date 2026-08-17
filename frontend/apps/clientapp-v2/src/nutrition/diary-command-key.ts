@@ -24,3 +24,15 @@ export function extraIntentFingerprint(picked: {
     weight: picked.defaultWeightG ?? null,
   });
 }
+
+export function plannedItemIntentFingerprint(input: {date: string; mealItemId: string; slot: string}): string {
+  return JSON.stringify({date: input.date, mealItemId: input.mealItemId, scope: 'planned-item', slot: input.slot});
+}
+
+export function plannedOptionIntentFingerprint(input: {date: string; slot: string}): string {
+  return JSON.stringify({date: input.date, scope: 'planned-option', slot: input.slot});
+}
+
+export function plannedDayIntentFingerprint(input: {date: string}): string {
+  return JSON.stringify({date: input.date, scope: 'planned-day'});
+}

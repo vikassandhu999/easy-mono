@@ -7,7 +7,16 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Identity.User
-  alias Easy.Nutrition.{Diary, DiaryEntry, DiarySlot, Food}
+
+  alias Easy.Nutrition.{
+    Diary,
+    DiaryEntry,
+    DiaryFrozenOption,
+    DiaryFrozenPlannedItem,
+    DiarySlot,
+    Food
+  }
+
   alias Easy.Orgs.{Business, Coach}
   alias Easy.Repo
   alias Ecto.Adapters.SQL.Sandbox
@@ -27,7 +36,7 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
       cleanup(business.id, user_ids)
     end)
 
-    %{ctx: ctx, food: food, business: business}
+    %{ctx: ctx, food: food, business: business, client: client}
   end
 
   test "simultaneous extras with the same key create one Diary Entry", ctx do
@@ -81,8 +90,106 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
            ) == 1
   end
 
+  test "simultaneous planned-option taps fulfil each active item once", ctx do
+    today = Date.utc_today()
+    parent = self()
+    seed_frozen_option!(ctx.client, ctx.food, today)
+    attrs = %{meal_slot: :breakfast}
+
+    run = fn ->
+      Task.async(fn ->
+        Sandbox.checkout(Repo, sandbox: false)
+        send(parent, {:ready, self()})
+
+        receive do
+          :go -> :ok
+        end
+
+        Diary.log_client_planned_option(ctx.ctx, today, attrs, Ecto.UUID.generate())
+      end)
+    end
+
+    tasks = [run.(), run.()]
+
+    ready =
+      for _ <- tasks,
+          do:
+            (receive do
+               {:ready, pid} -> pid
+             end)
+
+    Enum.each(ready, &send(&1, :go))
+    results = Enum.map(tasks, &Task.await(&1, 5_000))
+
+    assert Enum.all?(results, &match?({:ok, _}, &1))
+
+    assert Repo.aggregate(
+             from(entry in DiaryEntry,
+               where: entry.business_id == ^ctx.business.id and not is_nil(entry.frozen_planned_item_id)
+             ),
+             :count
+           ) == 2
+  end
+
+  defp seed_frozen_option!(client, food, date) do
+    {:ok, slot} =
+      Repo.insert(
+        DiarySlot.insert_changeset(client.business_id, client.id, %{
+          local_date: date,
+          meal_slot: :breakfast,
+          applied_timezone: "Asia/Kolkata",
+          has_coverage: true,
+          revision: 1
+        })
+      )
+
+    {:ok, option} =
+      Repo.insert(
+        DiaryFrozenOption.insert_changeset(client.business_id, slot.id, %{
+          position: 0,
+          meal_name: "Breakfast"
+        })
+      )
+
+    for {grams, position} <- [{50.0, 0}, {30.0, 1}] do
+      {:ok, _item} =
+        Repo.insert(
+          DiaryFrozenPlannedItem.insert_changeset(client.business_id, slot.id, option.id, %{
+            kind: :food,
+            display_name: food.name,
+            portion_kind: :gram,
+            weight_g: grams,
+            calories: grams * 2,
+            protein: 1.0,
+            carbohydrates: 1.0,
+            fat: 1.0,
+            fiber: 0.0,
+            complete: true,
+            position: position,
+            food_id: food.id
+          })
+        )
+    end
+
+    {:ok, _} = Repo.update(DiarySlot.update_changeset(slot, %{active_frozen_option_id: option.id}))
+    :ok
+  end
+
   defp cleanup(business_id, user_ids) do
-    for schema <- [DiaryEntry, Easy.Nutrition.DiaryCommandLedger, DiarySlot, Food, Client, Coach] do
+    Repo.update_all(from(slot in DiarySlot, where: slot.business_id == ^business_id),
+      set: [active_frozen_option_id: nil]
+    )
+
+    for schema <- [
+          DiaryEntry,
+          DiaryFrozenPlannedItem,
+          DiaryFrozenOption,
+          Easy.Nutrition.DiaryCommandLedger,
+          DiarySlot,
+          Food,
+          Client,
+          Coach
+        ] do
       Repo.delete_all(from row in schema, where: row.business_id == ^business_id)
     end
 

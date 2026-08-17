@@ -2,8 +2,18 @@ defmodule Easy.Nutrition.DiaryTest do
   use Easy.DataCase, async: true
 
   alias Easy.LocalCalendar
-  alias Easy.Nutrition.{Diary, Programming, WeekSchedule}
+
+  alias Easy.Nutrition.{
+    Diary,
+    DiaryFrozenPlannedItem,
+    DiarySlot,
+    Programming,
+    WeekSchedule
+  }
+
   alias Easy.Repo
+
+  import Ecto.Query
 
   describe "get_client_nutrition_day/2" do
     test "returns live Meal Options for an unstarted slot on the client's local day" do
@@ -308,6 +318,216 @@ defmodule Easy.Nutrition.DiaryTest do
     end
   end
 
+  describe "log_client_planned_item/4" do
+    test "logs one planned item as as_planned and freezes the slot on the local day" do
+      %{client: client, food: food} = covering_setup()
+      today = local_today(client)
+      meal_item_id = live_meal_item_id(client, today)
+
+      assert {:ok, day} =
+               Diary.log_client_planned_item(
+                 client_ctx(client),
+                 today,
+                 %{meal_slot: :breakfast, meal_item_id: meal_item_id},
+                 Ecto.UUID.generate()
+               )
+
+      [slot] = day.slots
+      assert slot.meal_slot == :breakfast
+      assert Enum.any?(slot.options, &(&1.meal_name == "Breakfast"))
+      assert [%{status: :as_planned, planned: planned, entry: entry}] = slot.rows
+      assert planned.name == food.name
+      assert entry.name == food.name
+      assert entry.food_id == food.id
+      assert entry.portion.grams == planned.portion.grams
+      assert entry.nutrients.calories == planned.nutrients.calories
+    end
+
+    test "a second distinct command for the same planned item stores an added extra" do
+      %{client: client} = covering_setup()
+      today = local_today(client)
+      meal_item_id = live_meal_item_id(client, today)
+      attrs = %{meal_slot: :breakfast, meal_item_id: meal_item_id}
+
+      assert {:ok, _} = Diary.log_client_planned_item(client_ctx(client), today, attrs, Ecto.UUID.generate())
+
+      assert {:ok, day} =
+               Diary.log_client_planned_item(client_ctx(client), today, attrs, Ecto.UUID.generate())
+
+      statuses = day.slots |> hd() |> Map.fetch!(:rows) |> Enum.map(& &1.status) |> Enum.sort()
+      assert statuses == [:added, :as_planned]
+    end
+
+    test "two planned items sharing one Food stay distinct fulfilments" do
+      %{client: client, food: food} = covering_setup(menu: :two_same_food)
+      today = local_today(client)
+
+      assert {:ok, day} = Diary.get_client_nutrition_day(client_ctx(client), today)
+      item_ids = day.slots |> hd() |> Map.fetch!(:options) |> hd() |> Map.fetch!(:items) |> Enum.map(& &1.meal_item_id)
+      assert length(item_ids) == 2
+
+      Enum.each(item_ids, fn meal_item_id ->
+        assert {:ok, _} =
+                 Diary.log_client_planned_item(
+                   client_ctx(client),
+                   today,
+                   %{meal_slot: :breakfast, meal_item_id: meal_item_id},
+                   Ecto.UUID.generate()
+                 )
+      end)
+
+      assert {:ok, logged} = Diary.get_client_nutrition_day(client_ctx(client), today)
+      rows = hd(logged.slots).rows
+      assert Enum.map(rows, & &1.status) == [:as_planned, :as_planned]
+      assert Enum.map(rows, & &1.planned.food_id) == [food.id, food.id]
+      assert Enum.map(rows, & &1.planned.meal_item_id) |> Enum.uniq() |> length() == 2
+    end
+
+    test "rejects creating a past unstarted slot and accepts fulfilment on an already frozen past slot" do
+      %{client: client, coach: coach} = covering_setup(start_offset: -7)
+      today = local_today(client)
+      past = Date.add(today, -1)
+      meal_item_id = live_meal_item_id(client, today)
+      extra = insert(:food, business: coach.business, creator: coach, name: "Banana")
+
+      assert {:error, :cannot_start_past_slot} =
+               Diary.log_client_planned_item(
+                 client_ctx(client),
+                 past,
+                 %{meal_slot: :breakfast, meal_item_id: meal_item_id},
+                 Ecto.UUID.generate()
+               )
+
+      assert {:ok, _} =
+               Diary.add_client_extra(client_ctx(client), today, extra_attrs(extra), Ecto.UUID.generate())
+
+      slot = Repo.get_by!(DiarySlot, client_id: client.id, meal_slot: :breakfast)
+      slot |> Ecto.Changeset.change(local_date: past) |> Repo.update!()
+
+      frozen_id =
+        DiaryFrozenPlannedItem
+        |> DiaryFrozenPlannedItem.for_business(client.business_id)
+        |> where([item], item.nutrition_diary_slot_id == ^slot.id)
+        |> Repo.one!()
+        |> Map.fetch!(:id)
+
+      assert {:ok, day} =
+               Diary.log_client_planned_item(
+                 client_ctx(client),
+                 past,
+                 %{meal_slot: :breakfast, meal_item_id: frozen_id},
+                 Ecto.UUID.generate()
+               )
+
+      assert day.date == past
+      assert Enum.any?(hd(day.slots).rows, &(&1.status == :as_planned && &1.planned.meal_item_id == frozen_id))
+    end
+
+    test "an identical planned-item retry returns the stored result" do
+      %{client: client} = covering_setup()
+      today = local_today(client)
+      meal_item_id = live_meal_item_id(client, today)
+      key = Ecto.UUID.generate()
+      attrs = %{meal_slot: :breakfast, meal_item_id: meal_item_id}
+
+      assert {:ok, first} = Diary.log_client_planned_item(client_ctx(client), today, attrs, key)
+      assert {:ok, replay} = Diary.log_client_planned_item(client_ctx(client), today, attrs, key)
+
+      assert hd(replay.slots).rows == hd(first.slots).rows
+    end
+  end
+
+  describe "log_client_planned_option/4" do
+    test "logs every remaining active-option item and is safe to retry" do
+      %{client: client, food: food} = covering_setup(menu: :two_same_food)
+      today = local_today(client)
+      attrs = %{meal_slot: :breakfast}
+
+      assert {:ok, day} =
+               Diary.log_client_planned_option(client_ctx(client), today, attrs, Ecto.UUID.generate())
+
+      rows = hd(day.slots).rows
+      assert length(rows) == 2
+      assert Enum.all?(rows, &(&1.status == :as_planned))
+      assert Enum.all?(rows, &(&1.planned.food_id == food.id))
+
+      assert {:ok, again} =
+               Diary.log_client_planned_option(client_ctx(client), today, attrs, Ecto.UUID.generate())
+
+      assert Enum.map(hd(again.slots).rows, & &1.entry.id) == Enum.map(rows, & &1.entry.id)
+    end
+
+    test "skips already fulfilled items when logging the rest of an option" do
+      %{client: client} = covering_setup(menu: :two_same_food)
+      today = local_today(client)
+      [first, _second] = live_meal_item_ids(client, today)
+
+      assert {:ok, _} =
+               Diary.log_client_planned_item(
+                 client_ctx(client),
+                 today,
+                 %{meal_slot: :breakfast, meal_item_id: first},
+                 Ecto.UUID.generate()
+               )
+
+      assert {:ok, day} =
+               Diary.log_client_planned_option(
+                 client_ctx(client),
+                 today,
+                 %{meal_slot: :breakfast},
+                 Ecto.UUID.generate()
+               )
+
+      assert length(hd(day.slots).rows) == 2
+      assert Enum.all?(hd(day.slots).rows, &(&1.status == :as_planned))
+    end
+  end
+
+  describe "log_client_planned_day/3" do
+    test "logs every scheduled active option for the day" do
+      %{client: client} = covering_setup(menu: :ordered)
+      today = local_today(client)
+
+      assert {:ok, day} =
+               Diary.log_client_planned_day(client_ctx(client), today, Ecto.UUID.generate())
+
+      assert Enum.map(day.slots, & &1.meal_slot) == [:breakfast, :post_workout]
+      assert Enum.all?(day.slots, fn slot -> Enum.all?(slot.rows, &(&1.status == :as_planned)) end)
+    end
+
+    test "a day retry inserts nothing twice" do
+      %{client: client} = covering_setup(menu: :ordered)
+      today = local_today(client)
+
+      assert {:ok, first} = Diary.log_client_planned_day(client_ctx(client), today, Ecto.UUID.generate())
+      assert {:ok, second} = Diary.log_client_planned_day(client_ctx(client), today, Ecto.UUID.generate())
+
+      first_ids = first.slots |> Enum.flat_map(& &1.rows) |> Enum.map(& &1.entry.id) |> Enum.sort()
+      second_ids = second.slots |> Enum.flat_map(& &1.rows) |> Enum.map(& &1.entry.id) |> Enum.sort()
+      assert second_ids == first_ids
+    end
+  end
+
+  describe "derived planned statuses" do
+    test "unfulfilled active items are pending today and skipped after the local date ends" do
+      %{client: client, food: food} = covering_setup()
+      today = local_today(client)
+      extra = insert(:food, business: client.business, name: "Banana")
+
+      assert {:ok, day} =
+               Diary.add_client_extra(client_ctx(client), today, extra_attrs(extra), Ecto.UUID.generate())
+
+      assert Enum.any?(hd(day.slots).rows, &(&1.status == :pending && &1.planned.name == food.name))
+
+      slot = Repo.get_by!(Easy.Nutrition.DiarySlot, client_id: client.id, meal_slot: :breakfast)
+      past = Date.add(today, -1)
+      slot |> Ecto.Changeset.change(local_date: past) |> Repo.update!()
+
+      assert {:ok, past_day} = Diary.get_client_nutrition_day(client_ctx(client), past)
+      assert Enum.any?(hd(past_day.slots).rows, &(&1.status == :skipped && &1.planned.name == food.name))
+    end
+  end
+
   describe "coach and owner reads" do
     test "return the same Nutrition Day as the client" do
       %{client: client, coach: coach, plan: plan} = covering_setup()
@@ -354,6 +574,7 @@ defmodule Easy.Nutrition.DiaryTest do
       case Keyword.get(opts, :menu) do
         :ordered -> ordered_menu(template, food)
         :two_options -> two_option_menu(template, food)
+        :two_same_food -> two_same_food_menu(template, food)
         _ -> breakfast_menu(template, food)
       end
 
@@ -423,6 +644,48 @@ defmodule Easy.Nutrition.DiaryTest do
       ],
       schedule: Map.new(WeekSchedule.weekdays(), &{&1, pattern.id})
     }
+  end
+
+  defp two_same_food_menu(plan, food) do
+    pattern = hd(plan.day_patterns)
+
+    %{
+      meals: [
+        %{
+          local_ref: "breakfast",
+          name: "Breakfast",
+          position: 0,
+          meal_items: [
+            %{local_ref: "oats-1", kind: :food, food_id: food.id, position: 0, portion: %{kind: :gram, grams: 50}},
+            %{local_ref: "oats-2", kind: :food, food_id: food.id, position: 1, portion: %{kind: :gram, grams: 30}}
+          ]
+        }
+      ],
+      day_patterns: [
+        %{
+          id: pattern.id,
+          name: pattern.name,
+          position: 0,
+          slots: [
+            %{meal_slot: :breakfast, options: [%{local_ref: "opt", meal_local_ref: "breakfast", position: 0}]}
+          ]
+        }
+      ],
+      schedule: Map.new(WeekSchedule.weekdays(), &{&1, pattern.id})
+    }
+  end
+
+  defp live_meal_item_id(client, date), do: hd(live_meal_item_ids(client, date))
+
+  defp live_meal_item_ids(client, date) do
+    {:ok, day} = Diary.get_client_nutrition_day(client_ctx(client), date)
+
+    day.slots
+    |> hd()
+    |> Map.fetch!(:options)
+    |> hd()
+    |> Map.fetch!(:items)
+    |> Enum.map(& &1.meal_item_id)
   end
 
   defp slot_menu(plan, food, slots) do

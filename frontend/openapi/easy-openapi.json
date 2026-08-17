@@ -6472,6 +6472,39 @@
         "x-struct": null,
         "x-validate": null
       },
+      "DiaryLogPlannedOptionRequest": {
+        "additionalProperties": false,
+        "example": {
+          "meal_slot": "breakfast"
+        },
+        "properties": {
+          "meal_slot": {
+            "enum": [
+              "early_morning",
+              "breakfast",
+              "mid_morning",
+              "lunch",
+              "afternoon",
+              "evening",
+              "dinner",
+              "pre_sleep",
+              "pre_workout",
+              "during_workout",
+              "post_workout"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "meal_slot"
+        ],
+        "title": "DiaryLogPlannedOptionRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "TrainingPlanRevisionRequest": {
         "additionalProperties": false,
         "description": "Optimistic revision required by an explicit Training Template or Client Plan lifecycle command.",
@@ -12297,6 +12330,47 @@
         "title": "NutritionMealItem",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionMealItem",
+        "x-validate": null
+      },
+      "DiaryLogPlannedItemRequest": {
+        "additionalProperties": false,
+        "example": {
+          "meal_item_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+          "meal_slot": "breakfast"
+        },
+        "properties": {
+          "meal_item_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_slot": {
+            "enum": [
+              "early_morning",
+              "breakfast",
+              "mid_morning",
+              "lunch",
+              "afternoon",
+              "evening",
+              "dinner",
+              "pre_sleep",
+              "pre_workout",
+              "during_workout",
+              "post_workout"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "meal_slot",
+          "meal_item_id"
+        ],
+        "title": "DiaryLogPlannedItemRequest",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "MessageResponse": {
@@ -21402,6 +21476,100 @@
         ]
       }
     },
+    "/v1/client/nutrition-days/{date}/planned-options": {
+      "post": {
+        "callbacks": {},
+        "operationId": "logClientNutritionDayPlannedOption",
+        "parameters": [
+          {
+            "description": "Client-local date",
+            "in": "path",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "UUID identifying this client intent",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiaryLogPlannedOptionRequest"
+              }
+            }
+          },
+          "description": "Log planned option request",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutritionDayResponse"
+                }
+              }
+            },
+            "description": "Nutrition day"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Idempotency key reused with a different payload"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Log every remaining item in the active option for a slot",
+        "tags": [
+          "client nutrition days"
+        ]
+      }
+    },
     "/v1/coach/team/{id}": {
       "delete": {
         "callbacks": {},
@@ -24217,6 +24385,100 @@
         ]
       }
     },
+    "/v1/client/nutrition-days/{date}/planned-items": {
+      "post": {
+        "callbacks": {},
+        "operationId": "logClientNutritionDayPlannedItem",
+        "parameters": [
+          {
+            "description": "Client-local date",
+            "in": "path",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "UUID identifying this client intent",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiaryLogPlannedItemRequest"
+              }
+            }
+          },
+          "description": "Log planned item request",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutritionDayResponse"
+                }
+              }
+            },
+            "description": "Nutrition day"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Idempotency key reused with a different payload"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Log one planned item on a Nutrition Day slot",
+        "tags": [
+          "client nutrition days"
+        ]
+      }
+    },
     "/v1/client/nutrition-meal-logs": {
       "get": {
         "callbacks": {},
@@ -25256,6 +25518,89 @@
         "summary": "Create recipe",
         "tags": [
           "coach recipes"
+        ]
+      }
+    },
+    "/v1/client/nutrition-days/{date}/planned-day": {
+      "post": {
+        "callbacks": {},
+        "operationId": "logClientNutritionDayPlannedDay",
+        "parameters": [
+          {
+            "description": "Client-local date",
+            "in": "path",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "UUID identifying this client intent",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutritionDayResponse"
+                }
+              }
+            },
+            "description": "Nutrition day"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Idempotency key reused with a different payload"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Log every scheduled active option for the day",
+        "tags": [
+          "client nutrition days"
         ]
       }
     },

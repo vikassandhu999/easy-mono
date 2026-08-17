@@ -7,16 +7,17 @@
  * platform feature, and macros still update live on change.
  */
 import {Trash2} from 'lucide-react';
-import {useState} from 'react';
+import {useRef, useState} from 'react';
 
 import {
+  type DiaryMealSlot,
   type FoodLogEntry,
-  type SwitchOptionRequest,
   type TodayPlanItem,
   useDeleteFoodLogEntryMutation,
   useLogPlannedItemMutation,
   useUpdateFoodLogEntryMutation,
 } from '@/api/nutrition';
+import {type DiaryCommandIntent, diaryCommandKey, plannedItemIntentFingerprint} from '@/nutrition/diary-command-key';
 
 export type SheetTarget = {
   date: string;
@@ -44,6 +45,7 @@ export default function AmountSheet({
   const updateEntry = useUpdateFoodLogEntryMutation();
   const deleteEntry = useDeleteFoodLogEntryMutation();
   const busy = logPlanned.isPending || updateEntry.isPending || deleteEntry.isPending;
+  const plannedIntent = useRef<DiaryCommandIntent | null>(null);
 
   const {loggedEntry, plannedItem} = target;
   const portion = plannedItem?.portion;
@@ -92,13 +94,22 @@ export default function AmountSheet({
       if (loggedEntry) {
         await updateEntry.mutateAsync({...portion, id: loggedEntry.id});
       } else if (plannedItem && target.mealItemId) {
+        // Planned logging freezes the planned Portion; amount edits land in ticket 14.
+        plannedIntent.current = diaryCommandKey(
+          plannedIntent.current,
+          plannedItemIntentFingerprint({
+            date: target.date,
+            mealItemId: target.mealItemId,
+            slot: target.slot,
+          }),
+        );
         await logPlanned.mutateAsync({
           date: target.date,
-          meal_id: target.mealId ?? undefined,
-          meal_slot: target.slot as SwitchOptionRequest['meal_slot'],
-          planned_item_id: target.mealItemId,
-          ...portion,
+          idempotencyKey: plannedIntent.current.key,
+          meal_item_id: target.mealItemId,
+          meal_slot: target.slot as DiaryMealSlot,
         });
+        plannedIntent.current = null;
       }
       onClose();
     } catch {

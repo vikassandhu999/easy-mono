@@ -352,6 +352,16 @@ defmodule EasyWeb.FallbackController do
     )
   end
 
+  def call(conn, {:error, :cannot_start_past_slot}) do
+    call(
+      conn,
+      {:error,
+       Error.unprocessable(%{
+         fields: %{date: ["planned logging cannot start an unfrozen past Diary Slot"]}
+       })}
+    )
+  end
+
   def call(conn, {:error, :invalid_idempotency_key}) do
     call(
       conn,

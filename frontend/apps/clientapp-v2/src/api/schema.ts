@@ -688,6 +688,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/client/nutrition-days/{date}/planned-options': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Log every remaining item in the active option for a slot */
+    post: operations['logClientNutritionDayPlannedOption'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/client/training-plans/{id}': {
     parameters: {
       query?: never;
@@ -854,6 +871,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/client/nutrition-days/{date}/planned-items': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Log one planned item on a Nutrition Day slot */
+    post: operations['logClientNutritionDayPlannedItem'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/client/nutrition-meal-logs': {
     parameters: {
       query?: never;
@@ -942,6 +976,23 @@ export interface paths {
     get: operations['listClientExercises'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/client/nutrition-days/{date}/planned-day': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Log every scheduled active option for the day */
+    post: operations['logClientNutritionDayPlannedDay'];
     delete?: never;
     options?: never;
     head?: never;
@@ -2715,6 +2766,27 @@ export interface components {
       name: string;
     };
     /**
+     * DiaryLogPlannedOptionRequest
+     * @example {
+     *       "meal_slot": "breakfast"
+     *     }
+     */
+    DiaryLogPlannedOptionRequest: {
+      /** @enum {string} */
+      meal_slot:
+        | 'early_morning'
+        | 'breakfast'
+        | 'mid_morning'
+        | 'lunch'
+        | 'afternoon'
+        | 'evening'
+        | 'dinner'
+        | 'pre_sleep'
+        | 'pre_workout'
+        | 'during_workout'
+        | 'post_workout';
+    };
+    /**
      * TrainingPlanRevisionRequest
      * @description Optimistic revision required by an explicit Training Template or Client Plan lifecycle command.
      * @example {
@@ -4265,6 +4337,30 @@ export interface components {
       recipe_id: string | null;
       /** Format: date-time */
       updated_at: string;
+    };
+    /**
+     * DiaryLogPlannedItemRequest
+     * @example {
+     *       "meal_item_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+     *       "meal_slot": "breakfast"
+     *     }
+     */
+    DiaryLogPlannedItemRequest: {
+      /** Format: uuid */
+      meal_item_id: string;
+      /** @enum {string} */
+      meal_slot:
+        | 'early_morning'
+        | 'breakfast'
+        | 'mid_morning'
+        | 'lunch'
+        | 'afternoon'
+        | 'evening'
+        | 'dinner'
+        | 'pre_sleep'
+        | 'pre_workout'
+        | 'during_workout'
+        | 'post_workout';
     };
     /** MessageResponse */
     MessageResponse: {
@@ -6643,6 +6739,64 @@ export interface operations {
       };
     };
   };
+  logClientNutritionDayPlannedOption: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description UUID identifying this client intent */
+        'Idempotency-Key': string;
+      };
+      path: {
+        /** @description Client-local date */
+        date: string;
+      };
+      cookie?: never;
+    };
+    /** @description Log planned option request */
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DiaryLogPlannedOptionRequest'];
+      };
+    };
+    responses: {
+      /** @description Nutrition day */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NutritionDayResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Idempotency key reused with a different payload */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
   getClientTrainingPlan: {
     parameters: {
       query?: never;
@@ -7073,6 +7227,64 @@ export interface operations {
       };
     };
   };
+  logClientNutritionDayPlannedItem: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description UUID identifying this client intent */
+        'Idempotency-Key': string;
+      };
+      path: {
+        /** @description Client-local date */
+        date: string;
+      };
+      cookie?: never;
+    };
+    /** @description Log planned item request */
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DiaryLogPlannedItemRequest'];
+      };
+    };
+    responses: {
+      /** @description Nutrition day */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NutritionDayResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Idempotency key reused with a different payload */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
   listClientMealLogs: {
     parameters: {
       query?: {
@@ -7301,6 +7513,59 @@ export interface operations {
       };
       /** @description Unauthorized */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  logClientNutritionDayPlannedDay: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description UUID identifying this client intent */
+        'Idempotency-Key': string;
+      };
+      path: {
+        /** @description Client-local date */
+        date: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Nutrition day */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NutritionDayResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Idempotency key reused with a different payload */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Validation error */
+      422: {
         headers: {
           [name: string]: unknown;
         };

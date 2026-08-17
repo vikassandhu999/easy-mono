@@ -198,6 +198,107 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
     end
   end
 
+  describe "POST /v1/client/nutrition-days/:date/planned-items" do
+    test "logs a planned item, freezes Coverage, and replays an identical key", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Oats")
+      assign_covering_plan(ctx, food)
+      today = Date.to_iso8601(local_today(ctx.client))
+      meal_item_id = live_meal_item_id(ctx)
+      key = Ecto.UUID.generate()
+
+      body = %{"meal_slot" => "breakfast", "meal_item_id" => meal_item_id}
+
+      conn =
+        ctx.conn
+        |> put_req_header("idempotency-key", key)
+        |> post("/v1/client/nutrition-days/#{today}/planned-items", body)
+
+      assert %{"data" => data} = json_response(conn, 201)
+      [slot] = data["slots"]
+      assert Enum.any?(slot["rows"], &(&1["status"] == "as_planned" and &1["entry"]["name"] == "Oats"))
+      assert_schema(data, "NutritionDay", EasyWeb.ApiSpec.spec())
+
+      replay =
+        ctx.conn
+        |> put_req_header("idempotency-key", key)
+        |> post("/v1/client/nutrition-days/#{today}/planned-items", body)
+
+      assert %{"data" => replayed} = json_response(replay, 201)
+      assert replayed["slots"] == data["slots"]
+    end
+
+    test "returns conflict when the same key is reused with a different payload", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Oats")
+      assign_covering_plan(ctx, food)
+      today = Date.to_iso8601(local_today(ctx.client))
+      meal_item_id = live_meal_item_id(ctx)
+      key = Ecto.UUID.generate()
+
+      ctx.conn
+      |> put_req_header("idempotency-key", key)
+      |> post("/v1/client/nutrition-days/#{today}/planned-items", %{
+        "meal_slot" => "breakfast",
+        "meal_item_id" => meal_item_id
+      })
+      |> json_response(201)
+
+      conn =
+        ctx.conn
+        |> put_req_header("idempotency-key", key)
+        |> post("/v1/client/nutrition-days/#{today}/planned-items", %{
+          "meal_slot" => "lunch",
+          "meal_item_id" => meal_item_id
+        })
+
+      assert json_response(conn, 409)
+    end
+  end
+
+  describe "POST /v1/client/nutrition-days/:date/planned-options" do
+    test "logs the active option and remains idempotent under a fresh key", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Oats")
+      assign_covering_plan(ctx, food)
+      today = Date.to_iso8601(local_today(ctx.client))
+
+      conn =
+        ctx.conn
+        |> put_req_header("idempotency-key", Ecto.UUID.generate())
+        |> post("/v1/client/nutrition-days/#{today}/planned-options", %{"meal_slot" => "breakfast"})
+
+      assert %{"data" => data} = json_response(conn, 201)
+      assert Enum.all?(hd(data["slots"])["rows"], &(&1["status"] == "as_planned"))
+      assert_schema(data, "NutritionDay", EasyWeb.ApiSpec.spec())
+
+      again =
+        ctx.conn
+        |> put_req_header("idempotency-key", Ecto.UUID.generate())
+        |> post("/v1/client/nutrition-days/#{today}/planned-options", %{"meal_slot" => "breakfast"})
+
+      assert %{"data" => replayed} = json_response(again, 201)
+
+      assert Enum.map(hd(replayed["slots"])["rows"], & &1["entry"]["id"]) ==
+               Enum.map(hd(data["slots"])["rows"], & &1["entry"]["id"])
+    end
+  end
+
+  describe "POST /v1/client/nutrition-days/:date/planned-day" do
+    test "logs every scheduled slot for the day", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Oats")
+      assign_covering_plan(ctx, food)
+      today = Date.to_iso8601(local_today(ctx.client))
+
+      conn =
+        ctx.conn
+        |> put_req_header("idempotency-key", Ecto.UUID.generate())
+        |> post("/v1/client/nutrition-days/#{today}/planned-day", %{})
+
+      assert %{"data" => data} = json_response(conn, 201)
+      assert Enum.any?(data["slots"], &(&1["meal_slot"] == "breakfast"))
+      assert Enum.all?(hd(data["slots"])["rows"], &(&1["status"] == "as_planned"))
+      assert_schema(data, "NutritionDay", EasyWeb.ApiSpec.spec())
+    end
+  end
+
   defp assign_covering_plan(ctx, food, opts \\ []) do
     coach_ctx = trainer_ctx(ctx.coach)
     {:ok, template} = Programming.create_template(coach_ctx, %{"name" => "Cut", "target_calories" => 2000.0})
@@ -212,6 +313,17 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       })
 
     plan
+  end
+
+  defp live_meal_item_id(ctx) do
+    hd(live_meal_item_ids(ctx))
+  end
+
+  defp live_meal_item_ids(ctx) do
+    today = Date.to_iso8601(local_today(ctx.client))
+    conn = get(ctx.conn, "/v1/client/nutrition-days", %{"date" => today})
+    assert %{"data" => [data]} = json_response(conn, 200)
+    hd(hd(data["slots"])["options"])["items"] |> Enum.map(& &1["meal_item_id"])
   end
 
   defp breakfast_menu(plan, food) do

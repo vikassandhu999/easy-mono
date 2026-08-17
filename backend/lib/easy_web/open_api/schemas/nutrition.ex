@@ -614,6 +614,50 @@ defmodule EasyWeb.OpenApi.Schemas.DiaryAddExtraRequest do
   )
 end
 
+defmodule EasyWeb.OpenApi.Schemas.DiaryLogPlannedItemRequest do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "DiaryLogPlannedItemRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        meal_slot: %Schema{type: :string, enum: Easy.Nutrition.MealSlot.names()},
+        meal_item_id: %Schema{type: :string, format: :uuid}
+      },
+      required: [:meal_slot, :meal_item_id],
+      example: %{
+        "meal_slot" => "breakfast",
+        "meal_item_id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c"
+      }
+    },
+    struct?: false
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.DiaryLogPlannedOptionRequest do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "DiaryLogPlannedOptionRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        meal_slot: %Schema{type: :string, enum: Easy.Nutrition.MealSlot.names()}
+      },
+      required: [:meal_slot],
+      example: %{"meal_slot" => "breakfast"}
+    },
+    struct?: false
+  )
+end
+
 defmodule EasyWeb.OpenApi.Schemas.NutritionDaySlot do
   require OpenApiSpex
 

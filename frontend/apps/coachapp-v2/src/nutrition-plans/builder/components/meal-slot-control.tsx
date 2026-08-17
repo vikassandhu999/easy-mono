@@ -7,15 +7,12 @@
  * behaviour, so a menu trigger must be a `Button` (UI-CONTRACT §2 "Any button").
  */
 
-import {MEAL_SLOTS} from '@easy/utils';
 import {Button, Label, ListBox} from '@heroui/react';
 import {ChevronDown} from 'lucide-react';
 import {useRef, useState} from 'react';
-
 import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
 import {TAG} from '@/builder-kit/ui';
-
-import {slotLabel} from '../slots';
+import {MEAL_SLOTS, slotLabel} from '../slots';
 
 interface MealSlotControlProps {
   slot: string;

@@ -1257,7 +1257,7 @@ export interface paths {
     get?: never;
     /**
      * Replace a complete Menu
-     * @description Atomically replaces ordered Meals and Menu Items for one authorized Nutrition Template or Client Plan. Every item is resolved through the Library.
+     * @description Atomically replaces Meals, Day Patterns, Meal Options, and the Week Schedule for one authorized Nutrition Template or Client Plan. Every Menu Item is resolved through the Library.
      */
     put: operations['replaceNutritionMenu'];
     post?: never;
@@ -2211,8 +2211,27 @@ export interface components {
     };
     /**
      * NutritionMenuReplaceRequest
-     * @description Authoritative Meals and Menu Items for one plan revision. Omitted persisted nodes are deleted atomically.
+     * @description Authoritative Meals, Day Patterns, Meal Options, and Week Schedule for one plan revision. Omitted persisted nodes are deleted atomically.
      * @example {
+     *       "day_patterns": [
+     *         {
+     *           "local_ref": "everyday",
+     *           "name": "Everyday",
+     *           "position": 0,
+     *           "slots": [
+     *             {
+     *               "meal_slot": "breakfast",
+     *               "options": [
+     *                 {
+     *                   "local_ref": "default",
+     *                   "meal_local_ref": "breakfast",
+     *                   "position": 0
+     *                 }
+     *               ]
+     *             }
+     *           ]
+     *         }
+     *       ],
      *       "expected_revision": 1,
      *       "meals": [
      *         {
@@ -2232,12 +2251,23 @@ export interface components {
      *           "name": "Breakfast",
      *           "position": 0
      *         }
-     *       ]
+     *       ],
+     *       "schedule": {
+     *         "friday": "everyday",
+     *         "monday": "everyday",
+     *         "saturday": "everyday",
+     *         "sunday": "everyday",
+     *         "thursday": "everyday",
+     *         "tuesday": "everyday",
+     *         "wednesday": "everyday"
+     *       }
      *     }
      */
     NutritionMenuReplaceRequest: {
+      day_patterns: components['schemas']['NutritionDayPatternInput'][];
       expected_revision: number;
       meals: components['schemas']['NutritionMealInput'][];
+      schedule: components['schemas']['NutritionWeekScheduleInput'];
     };
     /**
      * BusinessUpdateRequest
@@ -2648,6 +2678,19 @@ export interface components {
     /** ClientProfileCheckInScheduleListResponse */
     ClientProfileCheckInScheduleListResponse: {
       data: components['schemas']['ClientProfileCheckInSchedule'][];
+    };
+    /**
+     * NutritionMealOptionInput
+     * @description A persisted Meal Option uses id; a new one uses a request-local local_ref. The Meal is a persisted id or a meal_local_ref from this Menu.
+     */
+    NutritionMealOptionInput: {
+      /** Format: uuid */
+      id?: string;
+      local_ref?: string;
+      meal_local_ref?: string;
+      /** Format: uuid */
+      nutrition_meal_id?: string;
+      position: number;
     };
     /** NutritionPlanResponse */
     NutritionPlanResponse: {
@@ -3785,6 +3828,23 @@ export interface components {
         won?: number;
       };
     };
+    /** NutritionWeekScheduleInput */
+    NutritionWeekScheduleInput: {
+      /** @description A persisted Day Pattern id or a request-local local_ref from this Menu. */
+      friday: string;
+      /** @description A persisted Day Pattern id or a request-local local_ref from this Menu. */
+      monday: string;
+      /** @description A persisted Day Pattern id or a request-local local_ref from this Menu. */
+      saturday: string;
+      /** @description A persisted Day Pattern id or a request-local local_ref from this Menu. */
+      sunday: string;
+      /** @description A persisted Day Pattern id or a request-local local_ref from this Menu. */
+      thursday: string;
+      /** @description A persisted Day Pattern id or a request-local local_ref from this Menu. */
+      tuesday: string;
+      /** @description A persisted Day Pattern id or a request-local local_ref from this Menu. */
+      wednesday: string;
+    };
     /** FoodResponse */
     FoodResponse: {
       data: components['schemas']['Food'];
@@ -4137,6 +4197,18 @@ export interface components {
       count: number;
       data: components['schemas']['CoachClientTrainingPlan'][];
     };
+    /**
+     * NutritionDayPatternInput
+     * @description A persisted Day Pattern uses id; a new one uses a request-local local_ref. Omitted persisted patterns are deleted.
+     */
+    NutritionDayPatternInput: {
+      /** Format: uuid */
+      id?: string;
+      local_ref?: string;
+      name: string;
+      position: number;
+      slots: components['schemas']['NutritionDayPatternSlotInput'][];
+    };
     /** NutritionPlanListResponse */
     NutritionPlanListResponse: {
       count: number;
@@ -4296,6 +4368,7 @@ export interface components {
       /** Format: uuid */
       nutrition_plan_id: string;
       position: number;
+      slots: components['schemas']['NutritionDayPatternSlot'][];
       /** Format: date-time */
       updated_at: string;
       weekdays: ('monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday')[];
@@ -4888,6 +4961,23 @@ export interface components {
       /** @example sub_123 */
       subscription_id: string;
     };
+    /** NutritionDayPatternSlotInput */
+    NutritionDayPatternSlotInput: {
+      /** @enum {string} */
+      meal_slot:
+        | 'early_morning'
+        | 'breakfast'
+        | 'mid_morning'
+        | 'lunch'
+        | 'afternoon'
+        | 'evening'
+        | 'dinner'
+        | 'pre_sleep'
+        | 'pre_workout'
+        | 'during_workout'
+        | 'post_workout';
+      options: components['schemas']['NutritionMealOptionInput'][];
+    };
     /** PublicLandingPageResponse */
     PublicLandingPageResponse: {
       data: components['schemas']['PublicLandingPage'];
@@ -4900,6 +4990,18 @@ export interface components {
       fat: number | null;
       fiber: number | null;
       protein: number | null;
+    };
+    /** NutritionMealOption */
+    NutritionMealOption: {
+      /** Format: uuid */
+      id: string;
+      /** Format: date-time */
+      inserted_at: string;
+      /** Format: uuid */
+      nutrition_meal_id: string;
+      position: number;
+      /** Format: date-time */
+      updated_at: string;
     };
     /** WorkbenchOnboardingQueueItem */
     WorkbenchOnboardingQueueItem: {
@@ -5228,7 +5330,26 @@ export interface components {
      *       "client": null,
      *       "client_id": null,
      *       "creator_id": "c8e8fe38-d9cc-4506-9514-8527a8b56d68",
-     *       "day_patterns": [],
+     *       "day_patterns": [
+     *         {
+     *           "id": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+     *           "inserted_at": "2026-05-30T12:00:00Z",
+     *           "name": "Everyday",
+     *           "nutrition_plan_id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
+     *           "position": 0,
+     *           "slots": [],
+     *           "updated_at": "2026-05-30T12:00:00Z",
+     *           "weekdays": [
+     *             "monday",
+     *             "tuesday",
+     *             "wednesday",
+     *             "thursday",
+     *             "friday",
+     *             "saturday",
+     *             "sunday"
+     *           ]
+     *         }
+     *       ],
      *       "description": "Reusable cutting Template.",
      *       "end_date": null,
      *       "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
@@ -5239,13 +5360,13 @@ export interface components {
      *       "name": "Cut Block",
      *       "revision": 1,
      *       "schedule": {
-     *         "friday": null,
-     *         "monday": null,
-     *         "saturday": null,
-     *         "sunday": null,
-     *         "thursday": null,
-     *         "tuesday": null,
-     *         "wednesday": null
+     *         "friday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+     *         "monday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+     *         "saturday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+     *         "sunday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+     *         "thursday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+     *         "tuesday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+     *         "wednesday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11"
      *       },
      *       "source_template_id": null,
      *       "start_date": null,
@@ -5340,6 +5461,23 @@ export interface components {
       /** Format: email */
       email: string;
       invitation_token: string;
+    };
+    /** NutritionDayPatternSlot */
+    NutritionDayPatternSlot: {
+      /** @enum {string} */
+      meal_slot:
+        | 'early_morning'
+        | 'breakfast'
+        | 'mid_morning'
+        | 'lunch'
+        | 'afternoon'
+        | 'evening'
+        | 'dinner'
+        | 'pre_sleep'
+        | 'pre_workout'
+        | 'during_workout'
+        | 'post_workout';
+      options: components['schemas']['NutritionMealOption'][];
     };
     /** InvitationPreviewResponse */
     InvitationPreviewResponse: {

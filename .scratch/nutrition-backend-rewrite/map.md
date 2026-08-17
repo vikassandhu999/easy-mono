@@ -19,6 +19,7 @@ Rewrite Nutrition around Library, Programming, and Diary. The effort ends when t
 * [Rewrite the Recipe Library contract](./issues/03-recipe-library.md) — Library owns Recipe CRUD, full ingredient replacement, serving and gram Portions, `NutrientTotals`, and `resolve_items/2`; coach and client apps consume the generated Recipe contract.
 * [Reset Programming and deliver Template lifecycle](./issues/04-template-lifecycle.md) — `Easy.Nutrition.Programming` owns one plan aggregate (`kind`, `revision`, `archived_at`); create Template stamps an empty Everyday Day Pattern onto all seven weekdays; coach list/create/edit/detail use revisioned archive, restore, delete, and duplicate.
 * [Author Meals through atomic Menu replacement](./issues/05-atomic-menu-meals.md) — `Programming.replace_menu/4` and `PUT /v1/coach/nutrition-plans/:id/menu` replace the complete Meal tree at the expected revision; Library resolves Food/Recipe Portions; the coach builder saves add/edit/reorder/remove through that one write.
+* [Author Day Patterns, Meal Slots, and Week Schedules](./issues/06-day-patterns-slots-schedule.md) — the same Menu write now carries Day Patterns, ordered Meal Options in the closed 11-slot vocabulary, and a complete Mon–Sun Week Schedule; Postgres rejects incomplete schedules and cross-tenant parentage; the coach builder saves day, slot, and weekday edits through that one PUT.
 
 ## Not yet specified
 

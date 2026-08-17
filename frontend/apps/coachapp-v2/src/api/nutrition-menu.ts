@@ -7,10 +7,13 @@ export type NutritionPortionInput = components['schemas']['NutritionPortionInput
 type NutritionPlan = components['schemas']['NutritionPlan'];
 type NutritionMeal = components['schemas']['NutritionMeal'];
 type NutritionMealItem = components['schemas']['NutritionMealItem'];
+type NutritionWeekSchedule = components['schemas']['NutritionWeekSchedule'];
+
+const WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 
 const LOCAL_ID_PREFIX = 'local:';
 
-export function createLocalNodeId(kind: 'meal' | 'item'): string {
+export function createLocalNodeId(kind: 'meal' | 'item' | 'pattern' | 'option'): string {
   return `${LOCAL_ID_PREFIX}${kind}-${crypto.randomUUID()}`;
 }
 
@@ -44,6 +47,20 @@ export function planToMenuRequest(plan: NutritionPlan): NutritionMenuReplaceRequ
         portion: portionInput(item.portion),
       })),
     })),
+    day_patterns: plan.day_patterns.map((pattern) => ({
+      ...identity(pattern.id),
+      name: pattern.name,
+      position: pattern.position,
+      slots: pattern.slots.map((slot) => ({
+        meal_slot: slot.meal_slot,
+        options: slot.options.map((option) => ({
+          ...identity(option.id),
+          position: option.position,
+          ...mealIdentity(option.nutrition_meal_id),
+        })),
+      })),
+    })),
+    schedule: scheduleInput(plan.schedule),
   };
 }
 
@@ -110,6 +127,23 @@ export function mealItemFromDraft(
 
 function identity(id: string): {id: string} | {local_ref: string} {
   return isLocalNodeId(id) ? {local_ref: id.slice(LOCAL_ID_PREFIX.length)} : {id};
+}
+
+function mealIdentity(mealId: string): {nutrition_meal_id: string} | {meal_local_ref: string} {
+  return isLocalNodeId(mealId) ? {meal_local_ref: mealId.slice(LOCAL_ID_PREFIX.length)} : {nutrition_meal_id: mealId};
+}
+
+function scheduleInput(schedule: NutritionWeekSchedule): NutritionMenuReplaceRequest['schedule'] {
+  return Object.fromEntries(
+    WEEKDAYS.map((weekday) => [weekday, scheduleDayRef(schedule[weekday])]),
+  ) as NutritionMenuReplaceRequest['schedule'];
+}
+
+function scheduleDayRef(patternId: string | null): string {
+  if (patternId === null) {
+    throw new Error('Day Pattern schedule is incomplete');
+  }
+  return isLocalNodeId(patternId) ? patternId.slice(LOCAL_ID_PREFIX.length) : patternId;
 }
 
 function portionInput(portion: NutritionMealItem['portion']): NutritionPortionInput {

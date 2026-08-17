@@ -413,42 +413,72 @@ export function MealCard({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              {swaps.map((swap) => (
-                <div
-                  className="flex min-h-11 items-center gap-2 rounded-control border border-border px-3 py-2 sm:min-h-0"
-                  data-testid={openId('nb-swap-row')}
-                  key={swap.optionId}
-                >
-                  <ArrowLeftRight className="size-3.5 shrink-0 text-muted" />
-                  <span
-                    className="min-w-0 flex-1 truncate type-eyebrow text-foreground"
-                    data-testid={openId('nb-swap-name')}
+              {swaps.map((swap, index) => {
+                const optionIndex = index + 1;
+                return (
+                  <div
+                    className="flex min-h-11 items-center gap-2 rounded-control border border-border px-3 py-2 sm:min-h-0"
+                    data-testid={openId('nb-swap-row')}
+                    key={swap.optionId}
                   >
-                    {swap.meal.name}
-                  </span>
-                  {kcalLabel(swap.meal.nutrients) ? (
+                    <ArrowLeftRight className="size-3.5 shrink-0 text-muted" />
                     <span
-                      className="shrink-0 whitespace-nowrap type-eyebrow text-muted"
-                      data-testid={openId('nb-swap-kcal')}
+                      className="min-w-0 flex-1 truncate type-eyebrow text-foreground"
+                      data-testid={openId('nb-swap-name')}
                     >
-                      {kcalLabel(swap.meal.nutrients)}
+                      {swap.meal.name}
                     </span>
-                  ) : null}
-                  <Button
-                    aria-label={`Remove swap ${swap.meal.name}`}
-                    className={`  shrink-0 rounded-chip bg-transparent p-0 text-muted  sm:size-5.5   ${AS_TEXT} ${NO_GAP}`}
-                    data-testid={openId('nb-swap-remove')}
-                    isIconOnly
-                    onPress={() => {
-                      commands.removeOption(dayId, swap.optionId).catch(() => undefined);
-                    }}
-                    size="sm"
-                    variant="ghost"
-                  >
-                    <X className="size-3.5" />
-                  </Button>
-                </div>
-              ))}
+                    {kcalLabel(swap.meal.nutrients) ? (
+                      <span
+                        className="shrink-0 whitespace-nowrap type-eyebrow text-muted"
+                        data-testid={openId('nb-swap-kcal')}
+                      >
+                        {kcalLabel(swap.meal.nutrients)}
+                      </span>
+                    ) : null}
+                    <Button
+                      aria-label={`Move swap ${swap.meal.name} up`}
+                      className={`shrink-0 rounded-chip bg-transparent p-0 text-muted sm:size-5.5 ${AS_TEXT} ${NO_GAP}`}
+                      data-testid={openId('nb-swap-move-up')}
+                      isIconOnly
+                      onPress={() => {
+                        commands.moveOption(dayId, slot, optionIndex, optionIndex - 1).catch(() => undefined);
+                      }}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <ChevronUp className="size-3.5" />
+                    </Button>
+                    <Button
+                      aria-label={`Move swap ${swap.meal.name} down`}
+                      className={`shrink-0 rounded-chip bg-transparent p-0 text-muted sm:size-5.5 ${AS_TEXT} ${NO_GAP}`}
+                      data-testid={openId('nb-swap-move-down')}
+                      isDisabled={index === swaps.length - 1}
+                      isIconOnly
+                      onPress={() => {
+                        commands.moveOption(dayId, slot, optionIndex, optionIndex + 1).catch(() => undefined);
+                      }}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <ChevronDown className="size-3.5" />
+                    </Button>
+                    <Button
+                      aria-label={`Remove swap ${swap.meal.name}`}
+                      className={`  shrink-0 rounded-chip bg-transparent p-0 text-muted  sm:size-5.5   ${AS_TEXT} ${NO_GAP}`}
+                      data-testid={openId('nb-swap-remove')}
+                      isIconOnly
+                      onPress={() => {
+                        commands.removeOption(dayId, swap.optionId).catch(() => undefined);
+                      }}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <X className="size-3.5" />
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="mt-2">

@@ -1,8 +1,8 @@
 defmodule Easy.Nutrition.DayPattern do
   use Ecto.Schema
 
+  alias Easy.Nutrition.{MealOption, Plan, WeekSchedule}
   alias Easy.Orgs
-  alias Easy.Nutrition.{Plan, WeekSchedule}
 
   import Ecto.Changeset
   import Ecto.Query
@@ -19,6 +19,7 @@ defmodule Easy.Nutrition.DayPattern do
 
     belongs_to :business, Orgs.Business
     belongs_to :plan, Plan, foreign_key: :nutrition_plan_id
+    has_many :meal_options, MealOption, foreign_key: :nutrition_day_pattern_id
 
     timestamps(type: :utc_datetime)
   end
@@ -61,6 +62,19 @@ defmodule Easy.Nutrition.DayPattern do
   @spec by_position(Ecto.Queryable.t()) :: Ecto.Query.t()
   def by_position(query \\ __MODULE__),
     do: from(pattern in query, order_by: [asc: pattern.position, asc: pattern.id])
+
+  @spec include_options(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def include_options(query \\ __MODULE__, business_id) do
+    option_query =
+      MealOption
+      |> MealOption.for_business(business_id)
+      |> MealOption.by_slot_position()
+
+    from(pattern in query,
+      where: pattern.business_id == ^business_id,
+      preload: [meal_options: ^option_query]
+    )
+  end
 
   @spec weekdays_for(t(), [WeekSchedule.t()]) :: [String.t()]
   def weekdays_for(%__MODULE__{id: id}, schedule) when is_list(schedule) do

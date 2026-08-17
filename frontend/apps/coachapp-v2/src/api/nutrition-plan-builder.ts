@@ -10,9 +10,10 @@
  * weekday assignments.
  *
  * The read is a React Query hook; Menu writes are plain functions. Every
- * Meal / Menu Item save sends the whole authoritative Menu through one
- * revisioned operation, and the command layer serializes those saves and
- * reconciles the complete response into this same cache entry.
+ * Meal, Day Pattern, Meal Option, and Week Schedule save sends the whole
+ * authoritative Menu through one revisioned operation, and the command layer
+ * serializes those saves and reconciles the complete response into this same
+ * cache entry.
  *
  * Plan-level CRUD that ISN'T part of the Menu replacement —
  * create/update/assign/duplicate/delete/list — lives in
@@ -29,33 +30,20 @@ import type {components} from '@/api/schema';
 
 export type NutritionPlan = components['schemas']['NutritionPlan'];
 export type NutritionDayPattern = components['schemas']['NutritionDayPattern'];
+export type NutritionDayPatternSlot = components['schemas']['NutritionDayPatternSlot'];
+export type NutritionMealOption = components['schemas']['NutritionMealOption'];
 export type NutritionWeekSchedule = components['schemas']['NutritionWeekSchedule'];
-export type NutritionScheduleRequest = NutritionWeekSchedule;
+export type NutritionScheduleRequest = components['schemas']['NutritionWeekScheduleInput'];
 export type NutritionMeal = components['schemas']['NutritionMeal'];
 export type NutritionMealItem = components['schemas']['NutritionMealItem'];
 export type NutritionPortion = components['schemas']['NutritionPortion'];
 export type NutritionMealItemInput = components['schemas']['NutritionMealItemInput'];
 export type NutritionPortionInput = components['schemas']['NutritionPortionInput'];
 
-/** Slot placement returns with the Day Pattern ticket. Local stand-ins keep the empty builder compiling. */
-export type NutritionDayMeal = {
-  id: string;
-  meal_slot: string;
-  nutrition_meal_id: string;
-  position: number;
-};
-
+export type NutritionDayMeal = NutritionMealOption & {meal_slot: NutritionDayPatternSlot['meal_slot']};
 export type NutritionPlanDay = NutritionDayPattern & {day_meals: NutritionDayMeal[]};
 
-export type NutritionDayMealCreateRequest = {
-  meal_slot: string;
-  name?: string;
-  nutrition_meal_id?: string;
-};
-
 type NutritionPlanResponse = components['schemas']['NutritionPlanResponse'];
-type NutritionPlanDayUpdateRequest = {name: string};
-type NutritionSlotOptionMoveRequest = {meal_slot?: string; position?: number};
 
 /**
  * General-purpose fetch for one nutrition plan.
@@ -127,42 +115,4 @@ export async function replaceMenu(planId: string, plan: NutritionPlan): Promise<
     }),
   )) as NutritionPlanResponse;
   return response.data;
-}
-
-// ---------------------------------------------------------------------------
-// Day Pattern / slot placement — later Programming ticket
-// ---------------------------------------------------------------------------
-
-const scheduleUnavailable = () => Promise.reject(new Error('Day Pattern editing returns in a later ticket'));
-
-export async function replaceSchedule(_planId: string, _body: NutritionScheduleRequest) {
-  await scheduleUnavailable();
-}
-
-export async function createDay(_planId: string): Promise<NutritionPlanDay> {
-  await scheduleUnavailable();
-  throw new Error('unreachable');
-}
-
-export async function updateDay(_id: string, _body: NutritionPlanDayUpdateRequest): Promise<NutritionPlanDay> {
-  await scheduleUnavailable();
-  throw new Error('unreachable');
-}
-
-export async function deleteDay(_id: string): Promise<void> {
-  await scheduleUnavailable();
-}
-
-export async function addDayMeal(_dayId: string, _body: NutritionDayMealCreateRequest): Promise<NutritionDayMeal> {
-  await scheduleUnavailable();
-  throw new Error('unreachable');
-}
-
-export async function moveSlotOption(_id: string, _body: NutritionSlotOptionMoveRequest): Promise<NutritionDayMeal> {
-  await scheduleUnavailable();
-  throw new Error('unreachable');
-}
-
-export async function removeSlotOption(_id: string): Promise<void> {
-  await scheduleUnavailable();
 }

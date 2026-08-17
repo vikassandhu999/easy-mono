@@ -138,7 +138,8 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
 
   operation :replace_menu,
     summary: "Replace a complete Menu",
-    description: "Atomically replaces ordered Meals and Menu Items for one authorized Nutrition Template or Client Plan. Every item is resolved through the Library.",
+    description:
+      "Atomically replaces Meals, Day Patterns, Meal Options, and the Week Schedule for one authorized Nutrition Template or Client Plan. Every Menu Item is resolved through the Library.",
     operation_id: "replaceNutritionMenu",
     security: [%{"bearerAuth" => []}],
     parameters: [Operation.parameter(:id, :path, :string, "Nutrition Template or Client Plan id")],

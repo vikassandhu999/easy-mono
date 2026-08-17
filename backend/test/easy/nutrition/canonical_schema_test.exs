@@ -185,6 +185,117 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       end
     end
 
+    test "the database rejects an incomplete Week Schedule at transaction commit" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
+
+      assert_raise Postgrex.Error, fn ->
+        Repo.transaction(fn ->
+          Repo.query!("SET CONSTRAINTS ALL IMMEDIATE")
+
+          Repo.delete_all(from(row in "nutrition_week_schedule", where: row.nutrition_plan_id == ^dump_uuid(plan.id)))
+        end)
+      end
+    end
+
+    test "Meal Options use the closed Meal Slot vocabulary and unique Meal plus position per slot" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
+      pattern = hd(plan.day_patterns)
+      {1, [%{id: meal_id}]} = Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
+
+      assert_raise Postgrex.Error, fn ->
+        Repo.insert_all("nutrition_meal_options", [
+          option_row(coach, plan, pattern, meal_id, meal_slot: "brunch")
+        ])
+      end
+
+      Repo.insert_all("nutrition_meal_options", [option_row(coach, plan, pattern, meal_id)])
+
+      assert_raise Postgrex.Error, fn ->
+        Repo.insert_all("nutrition_meal_options", [option_row(coach, plan, pattern, meal_id, position: 1)])
+      end
+
+      {1, [%{id: other_meal_id}]} =
+        Repo.insert_all("nutrition_meals", [meal_row(coach, plan, position: 1)], returning: [:id])
+
+      assert_raise Postgrex.Error, fn ->
+        Repo.insert_all("nutrition_meal_options", [
+          option_row(coach, plan, pattern, other_meal_id, position: 0)
+        ])
+      end
+    end
+
+    test "a schedule row cannot carry another business's tenant id" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
+      other_business = insert(:business)
+
+      assert_raise Postgrex.Error, fn ->
+        Repo.query!(
+          """
+          UPDATE nutrition_week_schedule
+          SET business_id = $1
+          WHERE nutrition_plan_id = $2 AND weekday = 'monday'
+          """,
+          [dump_uuid(other_business.id), dump_uuid(plan.id)]
+        )
+      end
+    end
+
+    test "a Meal Option cannot carry another business's tenant id" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
+      pattern = hd(plan.day_patterns)
+      {1, [%{id: meal_id}]} = Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
+      other_business = insert(:business)
+
+      assert_raise Postgrex.Error, fn ->
+        Repo.insert_all("nutrition_meal_options", [
+          option_row(coach, plan, pattern, meal_id, business_id: dump_uuid(other_business.id))
+        ])
+      end
+    end
+
+    test "a Meal Option cannot reference a Meal from another plan, and a slot has no option-count limit" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      assert {:ok, first} = Programming.create_template(ctx, %{"name" => "First"})
+      assert {:ok, second} = Programming.create_template(ctx, %{"name" => "Second"})
+      pattern = hd(first.day_patterns)
+      {1, [%{id: foreign_meal_id}]} = Repo.insert_all("nutrition_meals", [meal_row(coach, second)], returning: [:id])
+
+      assert_raise Postgrex.Error, fn ->
+        Repo.insert_all("nutrition_meal_options", [
+          option_row(coach, first, pattern, foreign_meal_id, nutrition_plan_id: dump_uuid(first.id))
+        ])
+      end
+
+      meal_ids =
+        Enum.map(0..3, fn position ->
+          {1, [%{id: meal_id}]} =
+            Repo.insert_all("nutrition_meals", [meal_row(coach, first, position: position)], returning: [:id])
+
+          meal_id
+        end)
+
+      Enum.with_index(meal_ids, fn meal_id, position ->
+        {1, _} =
+          Repo.insert_all("nutrition_meal_options", [
+            option_row(coach, first, pattern, meal_id, position: position)
+          ])
+      end)
+
+      assert Repo.aggregate(
+               from(option in "nutrition_meal_options", where: option.nutrition_plan_id == ^dump_uuid(first.id)),
+               :count
+             ) == 4
+    end
+
     test "retained Library rows survive the Programming reset" do
       coach = insert(:coach)
       food = insert(:food, business: coach.business, creator: coach, name: "Kept Food")
@@ -275,6 +386,23 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
           recipe_id: nil,
           business_id: dump_uuid(coach.business_id),
           nutrition_plan_id: dump_uuid(plan.id),
+          nutrition_meal_id: meal_id
+        },
+        Map.new(overrides)
+      )
+    )
+  end
+
+  defp option_row(coach, plan, pattern, meal_id, overrides \\ []) do
+    timestamps(
+      Map.merge(
+        %{
+          id: dump_uuid(),
+          meal_slot: "breakfast",
+          position: 0,
+          business_id: dump_uuid(coach.business_id),
+          nutrition_plan_id: dump_uuid(plan.id),
+          nutrition_day_pattern_id: dump_uuid(pattern.id),
           nutrition_meal_id: meal_id
         },
         Map.new(overrides)

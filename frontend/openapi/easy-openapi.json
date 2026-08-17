@@ -985,8 +985,27 @@
       },
       "NutritionMenuReplaceRequest": {
         "additionalProperties": false,
-        "description": "Authoritative Meals and Menu Items for one plan revision. Omitted persisted nodes are deleted atomically.",
+        "description": "Authoritative Meals, Day Patterns, Meal Options, and Week Schedule for one plan revision. Omitted persisted nodes are deleted atomically.",
         "example": {
+          "day_patterns": [
+            {
+              "local_ref": "everyday",
+              "name": "Everyday",
+              "position": 0,
+              "slots": [
+                {
+                  "meal_slot": "breakfast",
+                  "options": [
+                    {
+                      "local_ref": "default",
+                      "meal_local_ref": "breakfast",
+                      "position": 0
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
           "expected_revision": 1,
           "meals": [
             {
@@ -1006,9 +1025,27 @@
               "name": "Breakfast",
               "position": 0
             }
-          ]
+          ],
+          "schedule": {
+            "friday": "everyday",
+            "monday": "everyday",
+            "saturday": "everyday",
+            "sunday": "everyday",
+            "thursday": "everyday",
+            "tuesday": "everyday",
+            "wednesday": "everyday"
+          }
         },
         "properties": {
+          "day_patterns": {
+            "items": {
+              "$ref": "#/components/schemas/NutritionDayPatternInput"
+            },
+            "minItems": 1,
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
           "expected_revision": {
             "minimum": 1,
             "type": "integer",
@@ -1022,11 +1059,16 @@
             "type": "array",
             "x-struct": null,
             "x-validate": null
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/NutritionWeekScheduleInput"
           }
         },
         "required": [
           "expected_revision",
-          "meals"
+          "meals",
+          "day_patterns",
+          "schedule"
         ],
         "title": "NutritionMenuReplaceRequest",
         "type": "object",
@@ -2701,6 +2743,52 @@
         "title": "ClientProfileCheckInScheduleListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileCheckInScheduleListResponse",
+        "x-validate": null
+      },
+      "NutritionMealOptionInput": {
+        "additionalProperties": false,
+        "description": "A persisted Meal Option uses id; a new one uses a request-local local_ref. The Meal is a persisted id or a meal_local_ref from this Menu.",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "local_ref": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_local_ref": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "nutrition_meal_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "position": {
+            "maximum": 2147483647,
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "position"
+        ],
+        "title": "NutritionMealOptionInput",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "NutritionPlanResponse": {
@@ -6822,6 +6910,80 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ProspectListResponse",
         "x-validate": null
       },
+      "NutritionWeekScheduleInput": {
+        "additionalProperties": false,
+        "properties": {
+          "friday": {
+            "description": "A persisted Day Pattern id or a request-local local_ref from this Menu.",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "monday": {
+            "description": "A persisted Day Pattern id or a request-local local_ref from this Menu.",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "saturday": {
+            "description": "A persisted Day Pattern id or a request-local local_ref from this Menu.",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "sunday": {
+            "description": "A persisted Day Pattern id or a request-local local_ref from this Menu.",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "thursday": {
+            "description": "A persisted Day Pattern id or a request-local local_ref from this Menu.",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "tuesday": {
+            "description": "A persisted Day Pattern id or a request-local local_ref from this Menu.",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "wednesday": {
+            "description": "A persisted Day Pattern id or a request-local local_ref from this Menu.",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday"
+        ],
+        "title": "NutritionWeekScheduleInput",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "FoodResponse": {
         "additionalProperties": false,
         "properties": {
@@ -8253,6 +8415,55 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.CoachClientTrainingPlanListResponse",
         "x-validate": null
       },
+      "NutritionDayPatternInput": {
+        "additionalProperties": false,
+        "description": "A persisted Day Pattern uses id; a new one uses a request-local local_ref. Omitted persisted patterns are deleted.",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "local_ref": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "name": {
+            "maxLength": 255,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "position": {
+            "maximum": 2147483647,
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/NutritionDayPatternSlotInput"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "name",
+          "position",
+          "slots"
+        ],
+        "title": "NutritionDayPatternInput",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "NutritionPlanListResponse": {
         "additionalProperties": false,
         "properties": {
@@ -8910,6 +9121,14 @@
             "x-struct": null,
             "x-validate": null
           },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/NutritionDayPatternSlot"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
           "updated_at": {
             "format": "date-time",
             "type": "string",
@@ -8941,6 +9160,7 @@
           "name",
           "position",
           "weekdays",
+          "slots",
           "nutrition_plan_id",
           "inserted_at",
           "updated_at"
@@ -11036,6 +11256,46 @@
         "x-struct": null,
         "x-validate": null
       },
+      "NutritionDayPatternSlotInput": {
+        "additionalProperties": false,
+        "properties": {
+          "meal_slot": {
+            "enum": [
+              "early_morning",
+              "breakfast",
+              "mid_morning",
+              "lunch",
+              "afternoon",
+              "evening",
+              "dinner",
+              "pre_sleep",
+              "pre_workout",
+              "during_workout",
+              "post_workout"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/NutritionMealOptionInput"
+            },
+            "minItems": 1,
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "meal_slot",
+          "options"
+        ],
+        "title": "NutritionDayPatternSlotInput",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "PublicLandingPageResponse": {
         "additionalProperties": false,
         "properties": {
@@ -11101,6 +11361,52 @@
         "title": "NutrientTotals",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutrientTotals",
+        "x-validate": null
+      },
+      "NutritionMealOption": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "inserted_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "nutrition_meal_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "position": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "nutrition_meal_id",
+          "inserted_at",
+          "updated_at"
+        ],
+        "title": "NutritionMealOption",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionMealOption",
         "x-validate": null
       },
       "WorkbenchOnboardingQueueItem": {
@@ -12355,7 +12661,26 @@
           "client": null,
           "client_id": null,
           "creator_id": "c8e8fe38-d9cc-4506-9514-8527a8b56d68",
-          "day_patterns": [],
+          "day_patterns": [
+            {
+              "id": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+              "inserted_at": "2026-05-30T12:00:00Z",
+              "name": "Everyday",
+              "nutrition_plan_id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
+              "position": 0,
+              "slots": [],
+              "updated_at": "2026-05-30T12:00:00Z",
+              "weekdays": [
+                "monday",
+                "tuesday",
+                "wednesday",
+                "thursday",
+                "friday",
+                "saturday",
+                "sunday"
+              ]
+            }
+          ],
           "description": "Reusable cutting Template.",
           "end_date": null,
           "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
@@ -12366,13 +12691,13 @@
           "name": "Cut Block",
           "revision": 1,
           "schedule": {
-            "friday": null,
-            "monday": null,
-            "saturday": null,
-            "sunday": null,
-            "thursday": null,
-            "tuesday": null,
-            "wednesday": null
+            "friday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+            "monday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+            "saturday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+            "sunday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+            "thursday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+            "tuesday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+            "wednesday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11"
           },
           "source_template_id": null,
           "start_date": null,
@@ -12724,6 +13049,46 @@
         "title": "TrainerAcceptInviteRequest",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "NutritionDayPatternSlot": {
+        "additionalProperties": false,
+        "properties": {
+          "meal_slot": {
+            "enum": [
+              "early_morning",
+              "breakfast",
+              "mid_morning",
+              "lunch",
+              "afternoon",
+              "evening",
+              "dinner",
+              "pre_sleep",
+              "pre_workout",
+              "during_workout",
+              "post_workout"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/NutritionMealOption"
+            },
+            "minItems": 1,
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "meal_slot",
+          "options"
+        ],
+        "title": "NutritionDayPatternSlot",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayPatternSlot",
         "x-validate": null
       },
       "InvitationPreviewResponse": {
@@ -21205,7 +21570,7 @@
     "/v1/coach/nutrition-plans/{id}/menu": {
       "put": {
         "callbacks": {},
-        "description": "Atomically replaces ordered Meals and Menu Items for one authorized Nutrition Template or Client Plan. Every item is resolved through the Library.",
+        "description": "Atomically replaces Meals, Day Patterns, Meal Options, and the Week Schedule for one authorized Nutrition Template or Client Plan. Every Menu Item is resolved through the Library.",
         "operationId": "replaceNutritionMenu",
         "parameters": [
           {

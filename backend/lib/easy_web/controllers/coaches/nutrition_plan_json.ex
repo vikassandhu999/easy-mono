@@ -1,6 +1,18 @@
 defmodule EasyWeb.Coaches.NutritionPlanJSON do
   alias Easy.Clients.Client
-  alias Easy.Nutrition.{DayPattern, Food, Meal, MealItem, NutrientTotals, Plan, Recipe, WeekSchedule}
+
+  alias Easy.Nutrition.{
+    DayPattern,
+    Food,
+    Meal,
+    MealItem,
+    MealOption,
+    MealSlot,
+    NutrientTotals,
+    Plan,
+    Recipe,
+    WeekSchedule
+  }
 
   @spec show(map()) :: map()
   def show(%{plan: plan}) do
@@ -119,9 +131,39 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
       name: pattern.name,
       position: pattern.position,
       weekdays: DayPattern.weekdays_for(pattern, schedule),
+      slots: slots_data(pattern.meal_options),
       nutrition_plan_id: pattern.nutrition_plan_id,
       inserted_at: pattern.inserted_at,
       updated_at: pattern.updated_at
+    }
+  end
+
+  defp slots_data(options) when is_list(options) do
+    grouped = Enum.group_by(options, & &1.meal_slot)
+
+    MealSlot.values()
+    |> Enum.filter(&Map.has_key?(grouped, &1))
+    |> Enum.map(fn slot ->
+      %{
+        meal_slot: slot,
+        options:
+          grouped
+          |> Map.fetch!(slot)
+          |> Enum.sort_by(&{&1.position, &1.id})
+          |> Enum.map(&option_data/1)
+      }
+    end)
+  end
+
+  defp slots_data(_), do: []
+
+  defp option_data(%MealOption{} = option) do
+    %{
+      id: option.id,
+      position: option.position,
+      nutrition_meal_id: option.nutrition_meal_id,
+      inserted_at: option.inserted_at,
+      updated_at: option.updated_at
     }
   end
 

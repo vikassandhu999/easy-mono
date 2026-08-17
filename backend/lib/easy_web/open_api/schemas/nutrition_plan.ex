@@ -127,10 +127,83 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionWeekSchedule do
   })
 end
 
-defmodule EasyWeb.OpenApi.Schemas.NutritionDayPattern do
+defmodule EasyWeb.OpenApi.Schemas.NutritionWeekScheduleInput do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  @weekday %Schema{
+    type: :string,
+    minLength: 1,
+    maxLength: 100,
+    description: "A persisted Day Pattern id or a request-local local_ref from this Menu."
+  }
+
+  OpenApiSpex.schema(
+    %{
+      title: "NutritionWeekScheduleInput",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        monday: @weekday,
+        tuesday: @weekday,
+        wednesday: @weekday,
+        thursday: @weekday,
+        friday: @weekday,
+        saturday: @weekday,
+        sunday: @weekday
+      },
+      required: [:monday, :tuesday, :wednesday, :thursday, :friday, :saturday, :sunday]
+    },
+    struct?: false
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionMealOption do
   require OpenApiSpex
 
   alias EasyWeb.OpenApi.Schemas.Shared
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "NutritionMealOption",
+    type: :object,
+    additionalProperties: false,
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          position: %Schema{type: :integer, minimum: 0},
+          nutrition_meal_id: %Schema{type: :string, format: :uuid}
+        },
+        Shared.timestamps()
+      ),
+    required: [:id, :position, :nutrition_meal_id, :inserted_at, :updated_at]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionDayPatternSlot do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.NutritionMealOption
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "NutritionDayPatternSlot",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      meal_slot: %Schema{type: :string, enum: Easy.Nutrition.MealSlot.names()},
+      options: %Schema{type: :array, minItems: 1, items: NutritionMealOption}
+    },
+    required: [:meal_slot, :options]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionDayPattern do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.{NutritionDayPatternSlot, Shared}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -144,11 +217,12 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionDayPattern do
           name: %Schema{type: :string},
           position: %Schema{type: :integer, minimum: 0},
           weekdays: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.days_of_week()}},
+          slots: %Schema{type: :array, items: NutritionDayPatternSlot},
           nutrition_plan_id: %Schema{type: :string, format: :uuid}
         },
         Shared.timestamps()
       ),
-    required: [:id, :name, :position, :weekdays, :nutrition_plan_id, :inserted_at, :updated_at]
+    required: [:id, :name, :position, :weekdays, :slots, :nutrition_plan_id, :inserted_at, :updated_at]
   })
 end
 
@@ -249,23 +323,95 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionMealInput do
   )
 end
 
+defmodule EasyWeb.OpenApi.Schemas.NutritionMealOptionInput do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "NutritionMealOptionInput",
+      description: "A persisted Meal Option uses id; a new one uses a request-local local_ref. The Meal is a persisted id or a meal_local_ref from this Menu.",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        id: %Schema{type: :string, format: :uuid},
+        local_ref: %Schema{type: :string, minLength: 1, maxLength: 100},
+        nutrition_meal_id: %Schema{type: :string, format: :uuid},
+        meal_local_ref: %Schema{type: :string, minLength: 1, maxLength: 100},
+        position: %Schema{type: :integer, minimum: 0, maximum: 2_147_483_647}
+      },
+      required: [:position]
+    },
+    struct?: false
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionDayPatternSlotInput do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.NutritionMealOptionInput
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "NutritionDayPatternSlotInput",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        meal_slot: %Schema{type: :string, enum: Easy.Nutrition.MealSlot.names()},
+        options: %Schema{type: :array, minItems: 1, items: NutritionMealOptionInput}
+      },
+      required: [:meal_slot, :options]
+    },
+    struct?: false
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionDayPatternInput do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.NutritionDayPatternSlotInput
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "NutritionDayPatternInput",
+      description: "A persisted Day Pattern uses id; a new one uses a request-local local_ref. Omitted persisted patterns are deleted.",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        id: %Schema{type: :string, format: :uuid},
+        local_ref: %Schema{type: :string, minLength: 1, maxLength: 100},
+        name: %Schema{type: :string, maxLength: 255},
+        position: %Schema{type: :integer, minimum: 0, maximum: 2_147_483_647},
+        slots: %Schema{type: :array, items: NutritionDayPatternSlotInput}
+      },
+      required: [:name, :position, :slots]
+    },
+    struct?: false
+  )
+end
+
 defmodule EasyWeb.OpenApi.Schemas.NutritionMenuReplaceRequest do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.NutritionMealInput
+  alias EasyWeb.OpenApi.Schemas.{NutritionDayPatternInput, NutritionMealInput, NutritionWeekScheduleInput}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
       title: "NutritionMenuReplaceRequest",
-      description: "Authoritative Meals and Menu Items for one plan revision. Omitted persisted nodes are deleted atomically.",
+      description: "Authoritative Meals, Day Patterns, Meal Options, and Week Schedule for one plan revision. Omitted persisted nodes are deleted atomically.",
       type: :object,
       additionalProperties: false,
       properties: %{
         expected_revision: %Schema{type: :integer, minimum: 1},
-        meals: %Schema{type: :array, items: NutritionMealInput}
+        meals: %Schema{type: :array, items: NutritionMealInput},
+        day_patterns: %Schema{type: :array, minItems: 1, items: NutritionDayPatternInput},
+        schedule: NutritionWeekScheduleInput
       },
-      required: [:expected_revision, :meals],
+      required: [:expected_revision, :meals, :day_patterns, :schedule],
       example: %{
         "expected_revision" => 1,
         "meals" => [
@@ -283,7 +429,29 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionMenuReplaceRequest do
               }
             ]
           }
-        ]
+        ],
+        "day_patterns" => [
+          %{
+            "local_ref" => "everyday",
+            "name" => "Everyday",
+            "position" => 0,
+            "slots" => [
+              %{
+                "meal_slot" => "breakfast",
+                "options" => [%{"local_ref" => "default", "meal_local_ref" => "breakfast", "position" => 0}]
+              }
+            ]
+          }
+        ],
+        "schedule" => %{
+          "monday" => "everyday",
+          "tuesday" => "everyday",
+          "wednesday" => "everyday",
+          "thursday" => "everyday",
+          "friday" => "everyday",
+          "saturday" => "everyday",
+          "sunday" => "everyday"
+        }
       }
     },
     struct?: false
@@ -469,15 +637,26 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlan do
       "creator_id" => "c8e8fe38-d9cc-4506-9514-8527a8b56d68",
       "source_template_id" => nil,
       "meals" => [],
-      "day_patterns" => [],
+      "day_patterns" => [
+        %{
+          "id" => "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+          "name" => "Everyday",
+          "position" => 0,
+          "weekdays" => ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+          "slots" => [],
+          "nutrition_plan_id" => "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
+          "inserted_at" => "2026-05-30T12:00:00Z",
+          "updated_at" => "2026-05-30T12:00:00Z"
+        }
+      ],
       "schedule" => %{
-        "monday" => nil,
-        "tuesday" => nil,
-        "wednesday" => nil,
-        "thursday" => nil,
-        "friday" => nil,
-        "saturday" => nil,
-        "sunday" => nil
+        "monday" => "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+        "tuesday" => "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+        "wednesday" => "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+        "thursday" => "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+        "friday" => "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+        "saturday" => "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
+        "sunday" => "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11"
       },
       "inserted_at" => "2026-05-30T12:00:00Z",
       "updated_at" => "2026-05-30T12:00:00Z"

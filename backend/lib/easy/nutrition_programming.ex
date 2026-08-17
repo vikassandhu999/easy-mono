@@ -2,7 +2,7 @@ defmodule Easy.Nutrition.Programming do
   alias Easy.Clients
   alias Easy.CopyName
   alias Easy.Ctx
-  alias Easy.Nutrition.{DayPattern, Library, Meal, MealItem, Plan, WeekSchedule}
+  alias Easy.Nutrition.{DayPattern, Library, Meal, MealItem, MealOption, MealSlot, Plan, WeekSchedule}
   alias Easy.Orgs.Business
   alias Easy.Repo
   alias Easy.Utils
@@ -214,7 +214,11 @@ defmodule Easy.Nutrition.Programming do
 
   defp replace_locked_menu(ctx, plan, attrs) do
     with {:ok, menu} <- validate_menu(ctx, plan, attrs),
-         {:ok, _meals} <- persist_menu_meals(plan, menu) do
+         {:ok, meal_ids} <- persist_menu_meals(plan, menu),
+         {:ok, pattern_ids} <- persist_menu_patterns(plan, menu),
+         :ok <- persist_menu_options(plan, menu, meal_ids, pattern_ids),
+         :ok <- persist_menu_schedule(plan, menu, pattern_ids),
+         :ok <- delete_omitted_patterns(plan, Map.values(pattern_ids)) do
       plan
       |> Plan.lifecycle_changeset(%{revision: plan.revision + 1})
       |> Repo.update()
@@ -223,56 +227,85 @@ defmodule Easy.Nutrition.Programming do
 
   defp validate_menu(ctx, plan, attrs) do
     meals = Map.get(attrs, :meals)
+    patterns = Map.get(attrs, :day_patterns)
+    schedule = Map.get(attrs, :schedule)
 
-    with :ok <- validate_menu_collections(plan, meals),
-         {:ok, existing} <- validate_persisted_menu_nodes(plan, meals),
-         :ok <- validate_menu_local_references(plan, meals),
-         :ok <- validate_menu_positions(plan, meals),
+    with :ok <- validate_menu_collections(plan, meals, patterns, schedule),
+         {:ok, existing} <- validate_persisted_menu_nodes(plan, meals, patterns),
+         :ok <- validate_menu_local_references(plan, meals, patterns),
+         :ok <- validate_menu_positions(plan, meals, patterns),
+         :ok <- validate_day_patterns(plan, patterns, meals),
+         :ok <- validate_schedule(plan, schedule, patterns),
          {:ok, resolved} <- resolve_menu_items(ctx, plan, meals) do
-      {:ok, %{meals: attach_resolved(meals, resolved), existing: existing}}
+      {:ok,
+       %{
+         meals: attach_resolved(meals, resolved),
+         day_patterns: patterns,
+         schedule: schedule,
+         existing: existing
+       }}
     end
   end
 
-  defp validate_menu_collections(plan, meals) do
-    if is_list(meals) and Enum.all?(meals, &valid_meal_collection?/1) do
-      :ok
-    else
-      {:error, menu_error(plan, :meals, "is invalid")}
+  defp validate_menu_collections(plan, meals, patterns, schedule) do
+    cond do
+      not valid_meal_list?(meals) ->
+        {:error, menu_error(plan, :meals, "is invalid")}
+
+      not valid_pattern_list?(patterns) ->
+        {:error, menu_error(plan, :day_patterns, "is invalid")}
+
+      not is_map(schedule) ->
+        {:error, menu_error(plan, :schedule, "is invalid")}
+
+      true ->
+        :ok
     end
   end
+
+  defp valid_meal_list?(meals), do: is_list(meals) and Enum.all?(meals, &valid_meal_collection?/1)
+  defp valid_pattern_list?(patterns), do: is_list(patterns) and Enum.all?(patterns, &is_map/1)
 
   defp valid_meal_collection?(meal) when is_map(meal), do: is_list(meal_items(meal))
   defp valid_meal_collection?(_meal), do: false
 
-  defp validate_persisted_menu_nodes(plan, meals) do
-    existing_meals =
-      Meal
-      |> Meal.for_business(plan.business_id)
-      |> Meal.for_plan(plan.id)
-      |> Repo.all()
-      |> Map.new(&{&1.id, &1})
+  defp validate_persisted_menu_nodes(plan, meals, patterns) do
+    existing = load_existing_menu(plan)
 
-    existing_items =
-      MealItem
-      |> MealItem.for_business(plan.business_id)
-      |> MealItem.for_plan(plan.id)
-      |> Repo.all()
-      |> Map.new(&{&1.id, &1})
-
-    if persisted_menu_nodes_valid?(meals, existing_meals, existing_items) do
-      {:ok, %{meals: existing_meals, items: existing_items}}
+    if persisted_meals_valid?(meals, existing) and persisted_patterns_valid?(patterns, existing) do
+      {:ok, existing}
     else
       {:error, menu_error(plan, :meals, "contains an unknown persisted node")}
     end
   end
 
-  defp persisted_menu_nodes_valid?(meals, existing_meals, existing_items) do
+  defp load_existing_menu(plan) do
+    %{
+      meals: load_menu_rows(Meal.for_plan(Meal.for_business(plan.business_id), plan.id)),
+      items: load_menu_rows(MealItem.for_plan(MealItem.for_business(plan.business_id), plan.id)),
+      patterns: load_menu_rows(DayPattern.for_plan(DayPattern.for_business(plan.business_id), plan.id)),
+      options: load_menu_rows(MealOption.for_plan(MealOption.for_business(plan.business_id), plan.id))
+    }
+  end
+
+  defp load_menu_rows(query), do: query |> Repo.all() |> Map.new(&{&1.id, &1})
+
+  defp persisted_meals_valid?(meals, existing) do
     meal_ids = meals |> Enum.map(&node_id/1) |> Enum.reject(&is_nil/1)
     item_ids = meals |> Enum.flat_map(&meal_items/1) |> Enum.map(&node_id/1) |> Enum.reject(&is_nil/1)
 
     unique?(meal_ids) and unique?(item_ids) and
-      Enum.all?(meal_ids, &(valid_uuid?(&1) and Map.has_key?(existing_meals, &1))) and
-      Enum.all?(meals, &persisted_items_belong_to_meal?(&1, existing_items))
+      Enum.all?(meal_ids, &(valid_uuid?(&1) and Map.has_key?(existing.meals, &1))) and
+      Enum.all?(meals, &persisted_items_belong_to_meal?(&1, existing.items))
+  end
+
+  defp persisted_patterns_valid?(patterns, existing) do
+    pattern_ids = patterns |> Enum.map(&node_id/1) |> Enum.reject(&is_nil/1)
+    option_ids = patterns |> all_options() |> Enum.map(&node_id/1) |> Enum.reject(&is_nil/1)
+
+    unique?(pattern_ids) and unique?(option_ids) and
+      Enum.all?(pattern_ids, &(valid_uuid?(&1) and Map.has_key?(existing.patterns, &1))) and
+      Enum.all?(option_ids, &(valid_uuid?(&1) and Map.has_key?(existing.options, &1)))
   end
 
   defp persisted_items_belong_to_meal?(meal, existing_items) do
@@ -287,8 +320,8 @@ defmodule Easy.Nutrition.Programming do
   defp persisted_item_belongs?(%MealItem{nutrition_meal_id: meal_id}, meal), do: meal_id == node_id(meal)
   defp persisted_item_belongs?(_item, _meal), do: false
 
-  defp validate_menu_local_references(plan, meals) do
-    nodes = meals ++ Enum.flat_map(meals, &meal_items/1)
+  defp validate_menu_local_references(plan, meals, patterns) do
+    nodes = meals ++ Enum.flat_map(meals, &meal_items/1) ++ patterns ++ all_options(patterns)
     refs = nodes |> Enum.map(&node_ref/1) |> Enum.reject(&is_nil/1)
 
     if Enum.all?(nodes, &valid_node_identity?/1) and unique?(refs) do
@@ -306,15 +339,109 @@ defmodule Easy.Nutrition.Programming do
     end
   end
 
-  defp validate_menu_positions(plan, meals) do
+  defp validate_menu_positions(plan, meals, patterns) do
     meals_valid? = unique_nonnegative_positions?(meals)
     items_valid? = Enum.all?(meals, &unique_nonnegative_positions?(meal_items(&1)))
+    patterns_valid? = unique_nonnegative_positions?(patterns)
 
-    if meals_valid? and items_valid? do
+    if meals_valid? and items_valid? and patterns_valid? do
       :ok
     else
       {:error, menu_error(plan, :meals, "positions must be unique nonnegative integers")}
     end
+  end
+
+  defp validate_day_patterns(plan, patterns, meals) do
+    meal_ids = submitted_identities(meals)
+
+    cond do
+      patterns == [] ->
+        {:error, menu_error(plan, :day_patterns, "must contain at least one Day Pattern")}
+
+      Enum.all?(patterns, &valid_pattern_slots?(&1, meal_ids)) ->
+        :ok
+
+      true ->
+        {:error, menu_error(plan, :day_patterns, "contains invalid Meal Slots or Meal Options")}
+    end
+  end
+
+  defp valid_pattern_slots?(pattern, meal_ids) do
+    case Map.get(pattern, :slots, []) do
+      slots when is_list(slots) -> unique_slots?(slots) and Enum.all?(slots, &valid_slot?(&1, meal_ids))
+      _other -> false
+    end
+  end
+
+  defp unique_slots?(slots) do
+    names = Enum.map(slots, &slot_name/1)
+    Enum.all?(names, &(not is_nil(&1))) and unique?(names)
+  end
+
+  defp valid_slot?(slot, meal_ids) when is_map(slot) do
+    options = slot_options(slot)
+
+    is_list(options) and options != [] and contiguous_from_zero?(options) and unique_option_meals?(options) and
+      Enum.all?(options, &valid_option_meal?(&1, meal_ids))
+  end
+
+  defp valid_slot?(_slot, _meal_ids), do: false
+
+  defp unique_option_meals?(options) do
+    identities = Enum.map(options, &option_meal_identity/1)
+    Enum.all?(identities, &(not is_nil(&1))) and unique?(identities)
+  end
+
+  defp valid_option_meal?(option, meal_ids) do
+    case option_meal_identity(option) do
+      {_kind, value} -> Map.has_key?(meal_ids, value)
+      nil -> false
+    end
+  end
+
+  defp option_meal_identity(option) when is_map(option) do
+    case {Map.get(option, :nutrition_meal_id), Map.get(option, :meal_local_ref)} do
+      {id, nil} when is_binary(id) -> {:id, id}
+      {nil, ref} when is_binary(ref) -> {:ref, ref}
+      _other -> nil
+    end
+  end
+
+  defp option_meal_identity(_option), do: nil
+
+  defp validate_schedule(plan, schedule, patterns) do
+    if valid_schedule?(schedule, submitted_identities(patterns)) do
+      :ok
+    else
+      {:error, menu_error(plan, :schedule, "must map every weekday to a Day Pattern in this Menu")}
+    end
+  end
+
+  defp valid_schedule?(schedule, pattern_ids) when is_map(schedule) do
+    Enum.all?(WeekSchedule.weekdays(), fn weekday ->
+      case schedule_pattern(schedule, weekday) do
+        value when is_binary(value) -> Map.has_key?(pattern_ids, value)
+        _other -> false
+      end
+    end)
+  end
+
+  defp valid_schedule?(_schedule, _pattern_ids), do: false
+
+  defp schedule_pattern(schedule, weekday) do
+    Map.get(schedule, weekday) || Map.get(schedule, Atom.to_string(weekday))
+  end
+
+  defp submitted_identities(nodes) do
+    Map.new(Enum.flat_map(nodes, &node_identities/1), &{&1, true})
+  end
+
+  defp node_identities(node), do: Enum.reject([node_id(node), node_ref(node)], &is_nil/1)
+
+  defp contiguous_from_zero?(nodes) do
+    count = length(nodes)
+    positions = Enum.map(nodes, &node_position/1)
+    Enum.all?(positions, &valid_position?/1) and Enum.sort(positions) == Enum.to_list(0..(count - 1))
   end
 
   defp unique_nonnegative_positions?(nodes) do
@@ -403,6 +530,135 @@ defmodule Easy.Nutrition.Programming do
     attached
   end
 
+  defp persist_menu_patterns(plan, menu) do
+    with :ok <- stage_retained_patterns(plan, menu) do
+      persist_pattern_inputs(plan, menu)
+    end
+  end
+
+  defp persist_pattern_inputs(plan, menu) do
+    Enum.reduce_while(menu.day_patterns, {:ok, %{}}, fn input, {:ok, ids} ->
+      case persist_pattern(plan, input, menu.existing) do
+        {:ok, pattern} -> {:cont, {:ok, merge_identity(ids, input, pattern.id)}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp persist_pattern(plan, input, existing) do
+    case node_id(input) do
+      nil ->
+        DayPattern.insert_changeset(plan.business_id, plan.id, input) |> Repo.insert()
+
+      id ->
+        existing.patterns
+        |> Map.fetch!(id)
+        |> DayPattern.update_changeset(input)
+        |> force_requested_position(input)
+        |> Repo.update()
+    end
+  end
+
+  defp stage_retained_patterns(plan, menu) do
+    retained =
+      menu.day_patterns
+      |> Enum.map(&node_id/1)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.map(&Map.fetch!(menu.existing.patterns, &1))
+
+    current_positions = Enum.map(Map.values(menu.existing.patterns), & &1.position)
+    requested_positions = Enum.map(menu.day_patterns, &node_position/1)
+
+    stage_positions(plan, retained, current_positions ++ requested_positions, fn pattern, position ->
+      DayPattern
+      |> DayPattern.for_business(plan.business_id)
+      |> DayPattern.for_plan(plan.id)
+      |> where([row], row.id == ^pattern.id)
+      |> Repo.update_all(set: [position: position])
+    end)
+  end
+
+  defp persist_menu_options(plan, menu, meal_ids, pattern_ids) do
+    MealOption
+    |> MealOption.for_business(plan.business_id)
+    |> MealOption.for_plan(plan.id)
+    |> Repo.delete_all()
+
+    menu.day_patterns
+    |> Enum.flat_map(&option_rows(&1, pattern_ids, meal_ids))
+    |> persist_option_rows(plan)
+  end
+
+  defp option_rows(pattern, pattern_ids, meal_ids) do
+    pattern_id = Map.fetch!(pattern_ids, node_id(pattern) || node_ref(pattern))
+
+    Enum.flat_map(pattern_slots(pattern), fn slot ->
+      meal_slot = slot_name(slot)
+
+      Enum.map(slot_options(slot), fn option ->
+        %{
+          id: node_id(option),
+          meal_slot: meal_slot,
+          position: node_position(option),
+          nutrition_day_pattern_id: pattern_id,
+          nutrition_meal_id: Map.fetch!(meal_ids, option_meal_key(option))
+        }
+      end)
+    end)
+  end
+
+  defp option_meal_key(option), do: Map.get(option, :nutrition_meal_id) || Map.get(option, :meal_local_ref)
+
+  defp persist_option_rows(inputs, plan) do
+    Enum.reduce_while(inputs, :ok, fn input, :ok ->
+      case persist_option_row(plan, input) do
+        {:ok, _option} -> {:cont, :ok}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp persist_option_row(plan, input) do
+    changeset =
+      MealOption.insert_changeset(
+        plan.business_id,
+        plan.id,
+        input.nutrition_day_pattern_id,
+        input.nutrition_meal_id,
+        %{meal_slot: input.meal_slot, position: input.position}
+      )
+
+    changeset = if input.id, do: put_change(changeset, :id, input.id), else: changeset
+    Repo.insert(changeset)
+  end
+
+  defp persist_menu_schedule(plan, menu, pattern_ids) do
+    WeekSchedule
+    |> WeekSchedule.for_business(plan.business_id)
+    |> WeekSchedule.for_plan(plan.id)
+    |> Repo.delete_all()
+
+    Enum.reduce_while(WeekSchedule.weekdays(), :ok, fn weekday, :ok ->
+      pattern_id = Map.fetch!(pattern_ids, schedule_pattern(menu.schedule, weekday))
+
+      case WeekSchedule.insert_changeset(plan.business_id, plan.id, pattern_id, %{weekday: weekday})
+           |> Repo.insert() do
+        {:ok, _row} -> {:cont, :ok}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp delete_omitted_patterns(plan, kept_ids) do
+    DayPattern
+    |> DayPattern.for_business(plan.business_id)
+    |> DayPattern.for_plan(plan.id)
+    |> where([pattern], pattern.id not in ^kept_ids)
+    |> Repo.delete_all()
+
+    :ok
+  end
+
   defp persist_menu_meals(plan, menu) do
     with :ok <- stage_retained_meals(plan, menu),
          :ok <- delete_omitted_meals(plan, menu.meals) do
@@ -411,9 +667,9 @@ defmodule Easy.Nutrition.Programming do
   end
 
   defp persist_meal_inputs(plan, menu) do
-    Enum.reduce_while(menu.meals, {:ok, []}, fn input, {:ok, saved} ->
+    Enum.reduce_while(menu.meals, {:ok, %{}}, fn input, {:ok, ids} ->
       case persist_meal(plan, input, menu.existing) do
-        {:ok, meal} -> {:cont, {:ok, [meal | saved]}}
+        {:ok, meal} -> {:cont, {:ok, merge_identity(ids, input, meal.id)}}
         {:error, reason} -> {:halt, {:error, reason}}
       end
     end)
@@ -598,6 +854,37 @@ defmodule Easy.Nutrition.Programming do
   end
 
   defp meal_items(meal), do: Map.get(meal, :meal_items) || []
+
+  defp pattern_slots(pattern) when is_map(pattern) do
+    case Map.get(pattern, :slots) do
+      slots when is_list(slots) -> slots
+      _other -> []
+    end
+  end
+
+  defp pattern_slots(_pattern), do: []
+  defp slot_options(slot) when is_map(slot), do: Map.get(slot, :options) || []
+  defp slot_options(_slot), do: []
+  defp all_options(patterns), do: Enum.flat_map(patterns, fn pattern -> Enum.flat_map(pattern_slots(pattern), &slot_options/1) end)
+
+  defp slot_name(slot) when is_map(slot) do
+    case MealSlot.cast(Map.get(slot, :meal_slot)) do
+      {:ok, name} -> name
+      :error -> nil
+    end
+  end
+
+  defp slot_name(_slot), do: nil
+
+  defp merge_identity(ids, input, saved_id) do
+    ids
+    |> put_identity(node_id(input), saved_id)
+    |> put_identity(node_ref(input), saved_id)
+  end
+
+  defp put_identity(ids, nil, _saved_id), do: ids
+  defp put_identity(ids, key, saved_id), do: Map.put(ids, key, saved_id)
+
   defp node_id(node), do: Map.get(node, :id)
   defp node_ref(node), do: Map.get(node, :local_ref)
   defp node_position(node), do: Map.get(node, :position)
@@ -725,8 +1012,9 @@ defmodule Easy.Nutrition.Programming do
 
     with {:ok, copy} <- Plan.insert_changeset(ctx.business_id, ctx.user_id, attrs) |> Repo.insert(),
          {:ok, pattern_ids} <- duplicate_day_pattern_rows(template.day_patterns, copy),
-         :ok <- duplicate_schedule_rows(template.week_schedule, copy, pattern_ids),
-         :ok <- duplicate_meal_rows(template.meals, copy) do
+         {:ok, meal_ids} <- duplicate_meal_rows(template.meals, copy),
+         :ok <- duplicate_meal_option_rows(template.day_patterns, copy, pattern_ids, meal_ids),
+         :ok <- duplicate_schedule_rows(template.week_schedule, copy, pattern_ids) do
       {:ok, copy}
     end
   end
@@ -755,20 +1043,46 @@ defmodule Easy.Nutrition.Programming do
   end
 
   defp duplicate_meal_rows(meals, copy) do
-    Enum.reduce_while(meals, :ok, fn meal, :ok -> copy_meal_row(meal, copy) end)
+    Enum.reduce_while(meals, {:ok, %{}}, fn meal, {:ok, ids} ->
+      case copy_meal_row(meal, copy) do
+        {:ok, copied} -> {:cont, {:ok, Map.put(ids, meal.id, copied.id)}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
   end
 
   defp copy_meal_row(meal, copy) do
     attrs = %{name: meal.name, notes: meal.notes, position: meal.position}
 
     case Meal.insert_changeset(copy.business_id, copy.id, attrs) |> Repo.insert() do
-      {:ok, copied} -> continue_or_halt(duplicate_meal_item_rows(meal.meal_items, copy, copied))
-      {:error, reason} -> {:halt, {:error, reason}}
+      {:ok, copied} ->
+        case duplicate_meal_item_rows(meal.meal_items, copy, copied) do
+          :ok -> {:ok, copied}
+          {:error, reason} -> {:error, reason}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
-  defp continue_or_halt(:ok), do: {:cont, :ok}
-  defp continue_or_halt({:error, reason}), do: {:halt, {:error, reason}}
+  defp duplicate_meal_option_rows(patterns, copy, pattern_ids, meal_ids) do
+    patterns
+    |> Enum.flat_map(&meal_options_for/1)
+    |> Enum.reduce_while(:ok, fn option, :ok ->
+      attrs = %{meal_slot: option.meal_slot, position: option.position}
+      pattern_id = Map.fetch!(pattern_ids, option.nutrition_day_pattern_id)
+      meal_id = Map.fetch!(meal_ids, option.nutrition_meal_id)
+
+      case MealOption.insert_changeset(copy.business_id, copy.id, pattern_id, meal_id, attrs) |> Repo.insert() do
+        {:ok, _copied} -> {:cont, :ok}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp meal_options_for(%{meal_options: options}) when is_list(options), do: options
+  defp meal_options_for(_pattern), do: []
 
   defp duplicate_meal_item_rows(items, copy, copied_meal) do
     Enum.reduce_while(items, :ok, fn item, :ok ->

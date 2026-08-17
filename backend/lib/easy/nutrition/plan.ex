@@ -297,6 +297,7 @@ defmodule Easy.Nutrition.Plan do
     pattern_query =
       DayPattern
       |> DayPattern.for_business(business_id)
+      |> DayPattern.include_options(business_id)
       |> DayPattern.by_position()
 
     schedule_query =

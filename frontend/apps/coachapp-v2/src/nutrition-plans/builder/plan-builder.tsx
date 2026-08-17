@@ -151,6 +151,15 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
             addDay().catch(() => undefined);
           },
           isAdding: commands.isAddingDay,
+          isFirst: days[0]?.id === activeDay.id,
+          isLast: days[days.length - 1]?.id === activeDay.id,
+          onMove:
+            days.length > 1
+              ? (direction) => {
+                  const from = days.findIndex((day) => day.id === activeDay.id);
+                  commands.moveDay(from, from + direction).catch(() => undefined);
+                }
+              : undefined,
         }}
       />
 

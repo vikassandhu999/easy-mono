@@ -5,19 +5,18 @@
  * closes over the plan id only; every payload is built from the CACHE at press
  * time — the current truth, never the props a component last rendered.
  *
- * Meal and Menu Item saves send the whole authoritative Menu through one
- * revisioned replacement. Day Pattern / slot placement still wait on a later
- * ticket, so those commands stay stubbed.
+ * Meal, Day Pattern, Meal Option, and Week Schedule saves send the whole
+ * authoritative Menu through one revisioned replacement.
  *
  * Nutrient snapshots are SERVER-COMPUTED, so a successful Menu write replaces
  * the cached plan with the response rather than trusting the optimistic patch.
  */
 import {toast} from '@heroui/react';
 
-import {getErrorCode, toastMutationError} from '@/@components/mutation-toast';
+import {toastMutationError} from '@/@components/mutation-toast';
 import {createLocalNodeId, emptyNutrients, mealItemFromDraft, nextPosition, reorderNodes} from '@/api/nutrition-menu';
 import type {
-  NutritionDayMealCreateRequest,
+  NutritionDayPatternSlot,
   NutritionMeal,
   NutritionPlan,
   NutritionPlanDay,
@@ -29,10 +28,18 @@ import {handleStaleNutritionPlanConflict} from '@/nutrition-plans/lib/stale-nutr
 
 import type {MealItemDraft} from './amount-draft';
 
-import {findDay, findItem, findMeal, getDays, getWeekdayAssignments} from './plan-tree';
+import {
+  dropEmptySlots,
+  findItem,
+  findMeal,
+  findPattern,
+  getDays,
+  getWeekdayAssignments,
+  reindexSlotOptions,
+  removeMealFromPatterns,
+} from './plan-tree';
 import {assignWeekday, reassignWeekdays} from './schedule';
-
-type MealSlot = NutritionDayMealCreateRequest['meal_slot'];
+import type {BuilderMealSlot} from './slots';
 
 /** Long enough that a typed amount isn't sent per keystroke. */
 export const ITEM_EDIT_DEBOUNCE_MS = 600;
@@ -125,189 +132,233 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
   const addDay = async (): Promise<NutritionPlanDay | undefined> => {
     notifyBusy('addDay', true);
     try {
-      const day = await api.createDay(planId);
-      patch((plan) => {
-        const {day_meals: _dayMeals, ...pattern} = day;
-        plan.day_patterns = [...plan.day_patterns, pattern];
-      });
-      refetch();
-      return day;
-    } catch (error) {
-      toastMutationError(error, "Couldn't add day");
-      return undefined;
+      const result = await saveMenu(
+        (plan) => {
+          const position = nextPosition(plan.day_patterns);
+          const timestamp = new Date().toISOString();
+          plan.day_patterns.push({
+            id: createLocalNodeId('pattern'),
+            name: 'New day',
+            position,
+            weekdays: [],
+            slots: [],
+            nutrition_plan_id: plan.id,
+            inserted_at: timestamp,
+            updated_at: timestamp,
+          });
+          return position;
+        },
+        (saved, position) => {
+          const pattern = saved.day_patterns.find((candidate) => candidate.position === position);
+          return pattern ? {...pattern, day_meals: []} : undefined;
+        },
+        "Couldn't add day",
+      );
+      return result;
     } finally {
       notifyBusy('addDay', false);
     }
   };
 
   const renameDay = (dayId: string, name: string) =>
-    commitStub(
+    saveMenu(
       (plan) => {
-        const pattern = plan.day_patterns.find((candidate) => candidate.id === dayId);
+        const pattern = findPattern(plan, dayId);
         if (pattern) {
           pattern.name = name;
         }
+        return dayId;
       },
-      () => api.updateDay(dayId, {name}),
+      () => undefined,
       "Couldn't rename day",
     );
 
+  const moveDay = (from: number, to: number) =>
+    saveMenu(
+      (plan) => {
+        plan.day_patterns = reorderNodes(
+          [...plan.day_patterns].sort((a, b) => a.position - b.position),
+          from,
+          to,
+        );
+        return to;
+      },
+      () => undefined,
+      "Couldn't reorder days",
+    );
+
   /**
-   * Request-first, not optimistic: the server enforces the last-day rule, and
-   * showing a deleted day snapping back would be worse than a short wait.
-   * Resolves to the fallback day (the one inheriting the deleted day's
-   * weekdays, mirroring the server) so the caller can select it; undefined
-   * when the delete didn't stick.
+   * Request-first for the last-day rule: the server also rejects it, but a
+   * deleted day snapping back is worse than checking first. Resolves to the
+   * fallback day (the one inheriting the deleted day's weekdays) so the
+   * caller can select it.
    */
   const removeDay = async (dayId: string): Promise<NutritionPlanDay | undefined> => {
     const plan = read();
     if (!plan) {
       return undefined;
     }
-    const fallback = getDays(plan).filter((day) => day.id !== dayId)[0];
+    const fallback = plan.day_patterns.filter((day) => day.id !== dayId)[0];
+    if (!fallback) {
+      toast.danger("Can't delete the only day.");
+      return undefined;
+    }
     notifyBusy('removeDay', true);
     try {
-      await api.deleteDay(dayId);
-    } catch (error) {
-      if (getErrorCode(error) === 'last_day') {
-        toast.danger("Can't delete the only day.");
-      } else {
-        toastMutationError(error, "Couldn't delete day");
-      }
-      return undefined;
+      const result = await saveMenu(
+        (draft) => {
+          const nextFallback = draft.day_patterns.find((day) => day.id !== dayId);
+          if (!nextFallback || !draft.schedule) {
+            return undefined;
+          }
+          draft.schedule = reassignWeekdays(draft.schedule, dayId, nextFallback.id);
+          draft.day_patterns = draft.day_patterns.filter((day) => day.id !== dayId);
+          return nextFallback.id;
+        },
+        (saved, fallbackId) => {
+          const pattern = saved.day_patterns.find((candidate) => candidate.id === fallbackId) ?? saved.day_patterns[0];
+          return pattern ? {...pattern, day_meals: []} : undefined;
+        },
+        "Couldn't delete day",
+      );
+      return result;
     } finally {
       notifyBusy('removeDay', false);
-    }
-    patch((draft) => {
-      draft.day_patterns = draft.day_patterns.filter((day) => day.id !== dayId);
-      if (draft.schedule && fallback) {
-        draft.schedule = reassignWeekdays(draft.schedule, dayId, fallback.id);
-      }
-    });
-    refetch();
-    return fallback;
-  };
-
-  const commitStub = async (
-    recipe: (plan: NutritionPlan) => void,
-    run: () => Promise<unknown>,
-    failMessage: string,
-  ): Promise<boolean> => {
-    const patched = patch(recipe);
-    try {
-      await run();
-      refetch();
-      return true;
-    } catch (error) {
-      patched.undo();
-      toastMutationError(error, failMessage);
-      return false;
     }
   };
 
   // -------------------------------------------------------------------------
   // Weekday assignment — a weekday belongs to exactly one day, so assigning it
-  // here implicitly takes it off whichever day held it (INTERACTIONS.md § NB).
-  // The endpoint takes the FULL Mon..Sun map, so one toggle sends all seven —
-  // and whole-map writes go through the channel so two quick chip presses
-  // can't overwrite each other.
+  // here implicitly takes it off whichever day held it. The Menu write takes
+  // the full Mon..Sun map.
   // -------------------------------------------------------------------------
 
-  const pending = new Map<string, () => Promise<void>>();
-  const queue = createCoalescingQueue(async (key) => {
-    const send = pending.get(key);
-    pending.delete(key);
-    await send?.();
-  });
-  const enqueue = (key: string, send: () => Promise<void>, delayMs = 0) => {
-    pending.set(key, send);
-    queue.mark(key, delayMs);
-  };
-
   const scheduleWeekday = (weekday: string, dayId: string) => {
-    const plan = read();
-    if (!plan) {
-      return;
-    }
-    const body = assignWeekday(getWeekdayAssignments(plan), getDays(plan), weekday, dayId);
-    patch((draft) => {
-      if (draft.schedule) {
-        draft.schedule[weekday as keyof typeof draft.schedule] = dayId;
-      }
-    });
-    enqueue('schedule', async () => {
-      try {
-        await api.replaceSchedule(planId, body);
-        if (!pending.has('schedule')) {
-          refetch();
+    saveMenu(
+      (plan) => {
+        if (!plan.schedule) {
+          return weekday;
         }
-      } catch (error) {
-        toastMutationError(error, "Couldn't assign day");
-        refetch();
-      }
-    });
+        plan.schedule = assignWeekday(getWeekdayAssignments(plan), getDays(plan), weekday, dayId);
+        return weekday;
+      },
+      () => undefined,
+      "Couldn't assign day",
+    ).catch(() => undefined);
   };
 
   // -------------------------------------------------------------------------
   // Slot options: add / remove / re-slot
   // -------------------------------------------------------------------------
 
-  const addDayMeal = async (
-    dayId: string,
-    body: NutritionDayMealCreateRequest,
-    failMessage: string,
-  ): Promise<NutritionMeal | null> => {
-    try {
-      const option = await api.addDayMeal(dayId, body);
-      patch((draft) => {
-        findDay(draft, dayId)?.day_meals.push(option);
-      });
-      refetch();
-      return null;
-    } catch (error) {
-      if (getErrorCode(error) === 'max_options') {
-        toast.danger('Only 3 options are allowed per slot.');
-      } else {
-        toastMutationError(error, failMessage);
-      }
-      return null;
-    }
-  };
-
-  /** Places an existing plan meal on a day — the "reuse" and "add a swap" write. */
   const addOption = (dayId: string, slot: string, mealId: string) =>
-    addDayMeal(dayId, {meal_slot: slot as MealSlot, nutrition_meal_id: mealId}, "Couldn't add meal to this day");
+    saveMenu(
+      (plan) => {
+        const pattern = findPattern(plan, dayId);
+        if (!pattern) {
+          return mealId;
+        }
+        const mealSlot = slot as NutritionDayPatternSlot['meal_slot'];
+        const existing = pattern.slots.find((candidate) => candidate.meal_slot === mealSlot) ?? {
+          meal_slot: mealSlot,
+          options: [],
+        };
+        if (!pattern.slots.includes(existing)) {
+          pattern.slots.push(existing);
+        }
+        if (existing.options.some((option) => option.nutrition_meal_id === mealId)) {
+          return mealId;
+        }
+        const timestamp = new Date().toISOString();
+        existing.options.push({
+          id: createLocalNodeId('option'),
+          position: existing.options.length,
+          nutrition_meal_id: mealId,
+          inserted_at: timestamp,
+          updated_at: timestamp,
+        });
+        return mealId;
+      },
+      () => undefined,
+      "Couldn't add meal to this day",
+    );
 
   const removeOption = (dayId: string, optionId: string) =>
-    commitStub(
+    saveMenu(
       (plan) => {
-        const day = findDay(plan, dayId);
-        if (day) {
-          day.day_meals = day.day_meals.filter((dm) => dm.id !== optionId);
+        const pattern = findPattern(plan, dayId);
+        if (!pattern) {
+          return optionId;
         }
+        for (const slot of pattern.slots) {
+          slot.options = slot.options.filter((option) => option.id !== optionId);
+          reindexSlotOptions(pattern, slot.meal_slot);
+        }
+        dropEmptySlots(pattern);
+        return optionId;
       },
-      () => api.removeSlotOption(optionId),
+      () => undefined,
       "Couldn't remove meal from this day",
     );
 
-  const changeSlot = async (dayId: string, optionId: string, nextSlot: string) => {
-    try {
-      const moved = await api.moveSlotOption(optionId, {meal_slot: nextSlot as MealSlot});
-      patch((draft) => {
-        const dm = findDay(draft, dayId)?.day_meals.find((x) => x.id === optionId);
-        if (dm) {
-          dm.meal_slot = moved.meal_slot;
-          dm.position = moved.position;
+  const moveOption = (dayId: string, slot: string, from: number, to: number) =>
+    saveMenu(
+      (plan) => {
+        const pattern = findPattern(plan, dayId);
+        if (!pattern) {
+          return slot;
         }
-      });
-      refetch();
-    } catch (error) {
-      if (getErrorCode(error) === 'max_options') {
-        toast.danger('Only 3 options are allowed per slot.');
-      } else {
-        toastMutationError(error, "Couldn't move this meal");
-      }
-    }
+        const mealSlot = slot as NutritionDayPatternSlot['meal_slot'];
+        const existing = pattern.slots.find((candidate) => candidate.meal_slot === mealSlot);
+        if (existing) {
+          existing.options = reorderNodes(
+            [...existing.options].sort((a, b) => a.position - b.position),
+            from,
+            to,
+          );
+        }
+        return slot;
+      },
+      () => undefined,
+      "Couldn't reorder meal options",
+    );
+
+  const changeSlot = async (dayId: string, optionId: string, nextSlot: string) => {
+    await saveMenu(
+      (plan) => {
+        const pattern = findPattern(plan, dayId);
+        if (!pattern) {
+          return optionId;
+        }
+        const mealSlot = nextSlot as BuilderMealSlot;
+        let moved: (typeof pattern.slots)[number]['options'][number] | undefined;
+        let fromSlot: string | undefined;
+        for (const slot of pattern.slots) {
+          const option = slot.options.find((candidate) => candidate.id === optionId);
+          if (option) {
+            moved = option;
+            fromSlot = slot.meal_slot;
+            slot.options = slot.options.filter((candidate) => candidate.id !== optionId);
+            reindexSlotOptions(pattern, slot.meal_slot);
+          }
+        }
+        if (!moved || fromSlot === mealSlot) {
+          return optionId;
+        }
+        const target = pattern.slots.find((candidate) => candidate.meal_slot === mealSlot) ?? {
+          meal_slot: mealSlot,
+          options: [],
+        };
+        if (!pattern.slots.includes(target)) {
+          pattern.slots.push(target);
+        }
+        target.options.push({...moved, position: target.options.length});
+        dropEmptySlots(pattern);
+        return optionId;
+      },
+      () => undefined,
+      "Couldn't move this meal",
+    );
   };
 
   // -------------------------------------------------------------------------
@@ -355,6 +406,7 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
     saveMenu(
       (plan) => {
         plan.meals = plan.meals.filter((meal) => meal.id !== mealId);
+        removeMealFromPatterns(plan, mealId);
         return mealId;
       },
       () => undefined,
@@ -426,6 +478,17 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
       "Couldn't reorder items",
     );
 
+  const pending = new Map<string, () => Promise<void>>();
+  const queue = createCoalescingQueue(async (key) => {
+    const send = pending.get(key);
+    pending.delete(key);
+    await send?.();
+  });
+  const enqueue = (key: string, send: () => Promise<void>, delayMs = 0) => {
+    pending.set(key, send);
+    queue.mark(key, delayMs);
+  };
+
   const writeItem = (itemId: string, values: ItemAmountPatch) => {
     patch((plan) => {
       const found = findItem(plan, itemId);
@@ -486,8 +549,10 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
       await queue.flushPending();
       await writes;
     },
+    moveDay,
     moveItem,
     moveMeal,
+    moveOption,
     removeDay,
     removeItem,
     removeMeal,

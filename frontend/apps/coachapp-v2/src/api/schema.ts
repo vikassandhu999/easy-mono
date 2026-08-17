@@ -603,6 +603,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/coach/clients/{client_id}/nutrition-plans/{id}/assign': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Assign a Nutrition Template
+     * @description Copies an unarchived Nutrition Template's complete Menu to an independent Client Nutrition Plan and advances onboarding atomically.
+     */
+    post: operations['assignNutritionPlan'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/auth/accept-invite': {
     parameters: {
       query?: never;
@@ -4717,6 +4737,22 @@ export interface components {
     TrainingMuscleListResponse: {
       data: components['schemas']['TrainingMuscle'][];
     };
+    /**
+     * NutritionPlanAssignRequest
+     * @description Assigns an unarchived Nutrition Template to a visible client at the expected source revision.
+     * @example {
+     *       "end_date": null,
+     *       "expected_revision": 3,
+     *       "start_date": "2026-09-01"
+     *     }
+     */
+    NutritionPlanAssignRequest: {
+      /** Format: date */
+      end_date?: string | null;
+      expected_revision: number;
+      /** Format: date */
+      start_date?: string | null;
+    };
     /** TrainingSessionSnapshotExercise */
     TrainingSessionSnapshotExercise: {
       /** Format: uuid */
@@ -7391,6 +7427,72 @@ export interface operations {
       };
       /** @description Not found */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  assignNutritionPlan: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Visible client id */
+        client_id: string;
+        /** @description Nutrition Template id */
+        id: string;
+      };
+      cookie?: never;
+    };
+    /** @description Nutrition Template Assignment request */
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['NutritionPlanAssignRequest'];
+      };
+    };
+    responses: {
+      /** @description Client Nutrition Plan created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NutritionPlanResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Stale revision */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StaleRevisionError'];
+        };
+      };
+      /** @description Validation error */
+      422: {
         headers: {
           [name: string]: unknown;
         };

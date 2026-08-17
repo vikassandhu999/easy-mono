@@ -43,7 +43,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       assert %{"data" => [], "count" => 0} = json_response(conn, 200)
     end
 
-    test "filters by status", ctx do
+    test "omits archived Client Plans unless status is archived", ctx do
       insert(:plan,
         creator: ctx.coach,
         business: ctx.business,
@@ -55,12 +55,18 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
         creator: ctx.coach,
         business: ctx.business,
         client_id: ctx.client.id,
-        status: :archived
+        status: :archived,
+        start_date: ~D[2026-07-01],
+        end_date: ~D[2026-07-31]
       )
 
-      conn = get(ctx.conn, "/v1/client/nutrition-plans", %{"status" => "active"})
+      conn = get(ctx.conn, "/v1/client/nutrition-plans")
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
-      assert length(data) == 1
+      assert hd(data)["status"] == "active"
+
+      archived_conn = get(ctx.conn, "/v1/client/nutrition-plans", %{"status" => "archived"})
+      assert %{"data" => archived, "count" => 1} = json_response(archived_conn, 200)
+      assert hd(archived)["status"] == "archived"
     end
 
     test "returns 403 without auth" do
@@ -95,6 +101,20 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
           creator: ctx.coach,
           business: ctx.business,
           client_id: other_client.id
+        )
+
+      conn = get(ctx.conn, "/v1/client/nutrition-plans/#{plan.id}")
+      assert json_response(conn, 404)
+    end
+
+    test "returns 404 for an archived Client Plan", ctx do
+      plan =
+        insert(:plan,
+          creator: ctx.coach,
+          business: ctx.business,
+          client_id: ctx.client.id,
+          status: :archived,
+          start_date: ~D[2026-07-01]
         )
 
       conn = get(ctx.conn, "/v1/client/nutrition-plans/#{plan.id}")

@@ -85,6 +85,29 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlanRevisionRequest do
   )
 end
 
+defmodule EasyWeb.OpenApi.Schemas.NutritionPlanAssignRequest do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "NutritionPlanAssignRequest",
+      description: "Assigns an unarchived Nutrition Template to a visible client at the expected source revision.",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        expected_revision: %Schema{type: :integer, minimum: 1},
+        start_date: %Schema{type: :string, format: :date, nullable: true},
+        end_date: %Schema{type: :string, format: :date, nullable: true}
+      },
+      required: [:expected_revision],
+      example: %{"expected_revision" => 3, "start_date" => "2026-09-01", "end_date" => nil}
+    },
+    struct?: false
+  )
+end
+
 defmodule EasyWeb.OpenApi.Schemas.NutritionPlanClient do
   require OpenApiSpex
 

@@ -80,7 +80,12 @@ defmodule Easy.Nutrition.Programming do
   def list_client_plans(%Ctx{} = ctx, opts \\ []) do
     offset = max(Keyword.get(opts, :offset, 0), 0)
     limit = opts |> Keyword.get(:limit, 20) |> max(1) |> min(100)
-    archived = Keyword.get(opts, :archived)
+
+    archived =
+      case Keyword.get(opts, :archived) do
+        nil -> false
+        archived -> archived
+      end
 
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
       query =
@@ -104,6 +109,7 @@ defmodule Easy.Nutrition.Programming do
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
       ctx
       |> client_plan_query(client_id)
+      |> Plan.for_archived(false)
       |> Plan.include_menu(ctx.business_id)
       |> Repo.get(plan_id)
       |> ok_or_not_found()
@@ -197,6 +203,19 @@ defmodule Easy.Nutrition.Programming do
         end)
 
       finalize_template_mutation(result, ctx, true)
+    end
+  end
+
+  @spec assign_template_to_client(Ctx.t(), String.t(), String.t(), pos_integer(), map()) ::
+          {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def assign_template_to_client(%Ctx{} = ctx, client_id, template_id, expected_revision, attrs) do
+    with :ok <- ensure_coach(ctx) do
+      result =
+        Repo.transaction(fn ->
+          assign_visible_template(ctx, client_id, template_id, expected_revision, attrs)
+        end)
+
+      finalize_plan_mutation(result, ctx, true)
     end
   end
 
@@ -977,19 +996,38 @@ defmodule Easy.Nutrition.Programming do
   end
 
   defp duplicate_locked_template(ctx, template_id, expected_revision) do
-    template =
-      ctx
-      |> template_query()
-      |> Plan.for_archived(false)
-      |> lock("FOR UPDATE")
-      |> Repo.get(template_id)
-
-    template
+    ctx
+    |> get_locked_active_template(template_id)
     |> mutate_revisioned(expected_revision, fn locked ->
       locked
       |> preload_duplicate_source()
       |> then(&duplicate_template_rows(ctx, &1))
     end)
+  end
+
+  defp assign_visible_template(ctx, client_id, template_id, expected_revision, attrs) do
+    case Clients.authorize_client(ctx, client_id) do
+      {:ok, _client} -> assign_locked_template(ctx, client_id, template_id, expected_revision, attrs)
+      {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
+  defp assign_locked_template(ctx, client_id, template_id, expected_revision, attrs) do
+    ctx
+    |> get_locked_active_template(template_id)
+    |> mutate_revisioned(expected_revision, fn locked ->
+      locked
+      |> preload_duplicate_source()
+      |> then(&assign_template_rows(ctx, client_id, &1, attrs))
+    end)
+  end
+
+  defp get_locked_active_template(ctx, template_id) do
+    ctx
+    |> template_query()
+    |> Plan.for_archived(false)
+    |> lock("FOR UPDATE")
+    |> Repo.get(template_id)
   end
 
   defp preload_duplicate_source(template) do
@@ -1011,11 +1049,25 @@ defmodule Easy.Nutrition.Programming do
     }
 
     with {:ok, copy} <- Plan.insert_changeset(ctx.business_id, ctx.user_id, attrs) |> Repo.insert(),
-         {:ok, pattern_ids} <- duplicate_day_pattern_rows(template.day_patterns, copy),
-         {:ok, meal_ids} <- duplicate_meal_rows(template.meals, copy),
-         :ok <- duplicate_meal_option_rows(template.day_patterns, copy, pattern_ids, meal_ids),
-         :ok <- duplicate_schedule_rows(template.week_schedule, copy, pattern_ids) do
+         :ok <- copy_menu(template, copy) do
       {:ok, copy}
+    end
+  end
+
+  defp assign_template_rows(ctx, client_id, template, attrs) do
+    with {:ok, copy} <-
+           Plan.insert_changeset(ctx.business_id, ctx.user_id, client_id, template, attrs) |> Repo.insert(),
+         :ok <- copy_menu(template, copy),
+         :ok <- Clients.advance_stage_to_coaching(ctx, client_id) do
+      {:ok, copy}
+    end
+  end
+
+  defp copy_menu(source, copy) do
+    with {:ok, pattern_ids} <- duplicate_day_pattern_rows(source.day_patterns, copy),
+         {:ok, meal_ids} <- duplicate_meal_rows(source.meals, copy),
+         :ok <- duplicate_meal_option_rows(source.day_patterns, copy, pattern_ids, meal_ids) do
+      duplicate_schedule_rows(source.week_schedule, copy, pattern_ids)
     end
   end
 

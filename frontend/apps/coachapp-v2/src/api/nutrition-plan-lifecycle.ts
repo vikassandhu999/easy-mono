@@ -27,6 +27,21 @@ export function nutritionPlanDeleteRequest(plan: RevisionedNutritionPlan) {
   return {id: plan.id, expectedRevision: plan.revision};
 }
 
+type NutritionPlanAssignRequest = components['schemas']['NutritionPlanAssignRequest'];
+
+type Assignment = {
+  body: NutritionPlanAssignRequest;
+  clientId: string;
+  id: string;
+};
+
+export function nutritionPlanAssignmentRequest({body, clientId, id}: Assignment) {
+  return {
+    params: {path: {client_id: clientId, id}},
+    body,
+  } as const;
+}
+
 export function getStaleNutritionPlanRevision(error: unknown): null | number {
   if (!error || typeof error !== 'object' || !('data' in error)) {
     return null;

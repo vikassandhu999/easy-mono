@@ -7,6 +7,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
     NutritionMenuReplaceRequest,
+    NutritionPlanAssignRequest,
     NutritionPlanCreateRequest,
     NutritionPlanListResponse,
     NutritionPlanResponse,
@@ -19,7 +20,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
 
   plug OpenApiSpex.Plug.CastAndValidate,
        [json_render_error_v2: true]
-       when action in [:create, :update, :delete, :archive, :restore, :duplicate, :replace_menu]
+       when action in [:create, :update, :delete, :archive, :restore, :duplicate, :replace_menu, :assign]
 
   tags ["coach nutrition plans"]
 
@@ -167,6 +168,24 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
+  operation :assign,
+    summary: "Assign a Nutrition Template",
+    description: "Copies an unarchived Nutrition Template's complete Menu to an independent Client Nutrition Plan and advances onboarding atomically.",
+    operation_id: "assignNutritionPlan",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:client_id, :path, :string, "Visible client id"),
+      Operation.parameter(:id, :path, :string, "Nutrition Template id")
+    ],
+    request_body: {"Nutrition Template Assignment request", "application/json", NutritionPlanAssignRequest, required: true},
+    responses: [
+      created: {"Client Nutrition Plan created", "application/json", NutritionPlanResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Stale revision", "application/json", StaleRevisionError},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
     with {:ok, plan} <- Programming.create_template(conn.assigns.ctx, conn.body_params) do
@@ -260,6 +279,25 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
       conn
       |> put_status(:created)
       |> render(:show, plan: duplicated)
+    end
+  end
+
+  @spec assign(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def assign(conn, _params) do
+    expected_revision = conn.body_params[:expected_revision]
+    attrs = Map.delete(conn.body_params, :expected_revision)
+
+    with {:ok, assigned} <-
+           Programming.assign_template_to_client(
+             conn.assigns.ctx,
+             conn.path_params["client_id"],
+             conn.path_params["id"],
+             expected_revision,
+             attrs
+           ) do
+      conn
+      |> put_status(:created)
+      |> render(:show, plan: assigned)
     end
   end
 

@@ -313,4 +313,127 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       end
     end
   end
+
+  describe "Nutrition Template Assignment" do
+    test "assigns a complete independent Client Plan and advances onboarding", %{conn: conn} do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach, stage: :onboarding)
+      conn = authenticate_coach(conn, coach)
+
+      created =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/coach/nutrition-plans", %{"name" => "HTTP Assignment"})
+        |> json_response(201)
+        |> Map.fetch!("data")
+
+      pattern_id = hd(created["day_patterns"])["id"]
+
+      response =
+        conn
+        |> post("/v1/coach/clients/#{client.id}/nutrition-plans/#{created["id"]}/assign", %{
+          "expected_revision" => created["revision"],
+          "start_date" => nil,
+          "end_date" => nil
+        })
+        |> json_response(201)
+
+      assert %{
+               "data" =>
+                 %{
+                   "id" => assigned_id,
+                   "kind" => "client_plan",
+                   "lifecycle" => "incomplete",
+                   "revision" => 1,
+                   "client_id" => client_id,
+                   "source_template_id" => source_id,
+                   "day_patterns" => [%{"id" => copied_pattern_id, "name" => "Everyday"}],
+                   "schedule" => copied_schedule
+                 } = data
+             } = response
+
+      assert assigned_id != created["id"]
+      assert client_id == client.id
+      assert source_id == created["id"]
+      assert copied_pattern_id != pattern_id
+      assert copied_schedule["monday"] == copied_pattern_id
+      assert Repo.get!(Easy.Clients.Client, client.id).stage == :coaching
+      assert_schema(data, "NutritionPlan", EasyWeb.ApiSpec.spec())
+
+      assert %{"data" => [listed], "count" => 1} =
+               conn
+               |> get("/v1/coach/nutrition-plans")
+               |> json_response(200)
+
+      assert listed["id"] == created["id"]
+      assert listed["assigned_client_count"] == 1
+    end
+
+    test "returns conflict for a stale source revision and conceals invalid Assignment inputs", %{conn: conn} do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      other = insert(:coach)
+      hidden_client = insert(:client, business: other.business, creator: other, assigned_coach: other)
+      conn = authenticate_coach(conn, coach)
+
+      created =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/coach/nutrition-plans", %{"name" => "Fresh"})
+        |> json_response(201)
+        |> Map.fetch!("data")
+
+      stale =
+        conn
+        |> post("/v1/coach/clients/#{client.id}/nutrition-plans/#{created["id"]}/assign", %{
+          "expected_revision" => 9
+        })
+        |> json_response(409)
+
+      assert %{"error_code" => "stale_revision", "error_detail" => %{"current_revision" => 1}} = stale
+      assert_schema(stale, "StaleRevisionError", EasyWeb.ApiSpec.spec())
+
+      archived =
+        insert(:plan,
+          business: coach.business,
+          creator: coach.user,
+          archived_at: ~U[2026-08-15 12:00:00Z]
+        )
+
+      client_plan =
+        insert(:plan,
+          business: coach.business,
+          creator: coach.user,
+          client: client,
+          kind: :client_plan,
+          start_date: ~D[2026-10-01]
+        )
+
+      for {target, source} <- [
+            {client.id, archived.id},
+            {client.id, client_plan.id},
+            {hidden_client.id, created["id"]}
+          ] do
+        response =
+          conn
+          |> post("/v1/coach/clients/#{target}/nutrition-plans/#{source}/assign", %{
+            "expected_revision" => 1
+          })
+          |> json_response(404)
+
+        assert %{"error_code" => "not_found"} = response
+      end
+    end
+
+    test "generated OpenAPI includes the Assignment route" do
+      assignment = EasyWeb.ApiSpec.spec().paths["/v1/coach/clients/{client_id}/nutrition-plans/{id}/assign"].post
+
+      assert assignment.operationId == "assignNutritionPlan"
+      assert assignment.requestBody.required == true
+      assert assignment.responses[201]
+      assert assignment.responses[404]
+      assert assignment.responses[409]
+      assert assignment.responses[422]
+    end
+  end
 end

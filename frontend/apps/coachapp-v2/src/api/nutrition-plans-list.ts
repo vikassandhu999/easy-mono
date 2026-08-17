@@ -15,6 +15,7 @@ import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack
 
 import {call, client} from '@/api/client';
 import {clientKeys, mealLogKeys, nutritionDayKeys, nutritionPlanKeys} from '@/api/keys';
+import {nutritionPlanAssignmentRequest} from '@/api/nutrition-plan-lifecycle';
 import type {components, paths} from '@/api/schema';
 import {workbenchMutationTargets} from '@/api/workbench-targets';
 
@@ -24,6 +25,7 @@ export type NutritionPlan = components['schemas']['NutritionPlan'];
 export type NutritionPlanCreateRequest = components['schemas']['NutritionPlanCreateRequest'];
 export type NutritionPlanUpdateRequest = components['schemas']['NutritionPlanUpdateRequest'];
 export type NutritionPlanRevisionRequest = components['schemas']['NutritionPlanRevisionRequest'];
+export type NutritionPlanAssignRequest = components['schemas']['NutritionPlanAssignRequest'];
 export type MealLog = components['schemas']['MealLog'];
 export type MealLogDiaryRow = components['schemas']['MealLogDiaryRow'];
 export type NutritionDay = components['schemas']['NutritionDay'];
@@ -224,6 +226,34 @@ export function useDuplicateNutritionPlanMutation() {
       ) as Promise<NutritionPlanResponse>,
     onSuccess: () => {
       qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
+    },
+  });
+}
+
+/**
+ * Copies a Template to a client. The request names the exact client, so only
+ * that client's list needs invalidating rather than every client's.
+ */
+export function useAssignNutritionPlanMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({body, clientId, id}: {body: NutritionPlanAssignRequest; clientId: string; id: string}) =>
+      call(
+        client.POST(
+          '/v1/coach/clients/{client_id}/nutrition-plans/{id}/assign',
+          nutritionPlanAssignmentRequest({body, clientId, id}),
+        ),
+      ) as Promise<NutritionPlanResponse>,
+    onSuccess: (_data, {clientId, id}) => {
+      qc.invalidateQueries({queryKey: nutritionPlanKeys.detail(id)});
+      qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
+      qc.invalidateQueries({queryKey: nutritionPlanKeys.forClient(clientId)});
+      qc.invalidateQueries({queryKey: nutritionDayKeys.all});
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+      qc.invalidateQueries({queryKey: clientKeys.detail(clientId)});
+      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
+        qc.invalidateQueries({queryKey: [...queryKey]});
+      }
     },
   });
 }

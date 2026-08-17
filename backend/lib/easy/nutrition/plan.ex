@@ -282,13 +282,13 @@ defmodule Easy.Nutrition.Plan do
           copy.business_id == ^business_id and copy.kind == :client_plan and
             not is_nil(copy.source_template_id) and is_nil(copy.archived_at),
         group_by: copy.source_template_id,
-        select: %{template_id: copy.source_template_id, clients: count(copy.client_id, :distinct)}
+        select: %{template_id: copy.source_template_id, plans: count(copy.id)}
       )
 
     from(p in query,
       left_join: c in subquery(counts),
       on: c.template_id == p.id,
-      select: %{p | assigned_client_count: coalesce(c.clients, 0)}
+      select: %{p | assigned_client_count: coalesce(c.plans, 0)}
     )
   end
 

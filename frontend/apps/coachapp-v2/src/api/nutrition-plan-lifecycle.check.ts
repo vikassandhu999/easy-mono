@@ -1,6 +1,7 @@
 import {
   clientPlanLifecycleLabel,
   getStaleNutritionPlanRevision,
+  nutritionPlanAssignmentRequest,
   nutritionPlanDeleteRequest,
   nutritionPlanRevisionRequest,
 } from './nutrition-plan-lifecycle.ts';
@@ -27,6 +28,22 @@ if (JSON.stringify(nutritionPlanRevisionRequest(plan)) !== JSON.stringify({expec
 
 if (JSON.stringify(nutritionPlanDeleteRequest(plan)) !== JSON.stringify({id: 'plan-1', expectedRevision: 7})) {
   throw new Error('delete commands must send the plan id and observed revision');
+}
+
+if (
+  JSON.stringify(
+    nutritionPlanAssignmentRequest({
+      body: {expected_revision: 7, end_date: '2026-09-30', start_date: '2026-09-01'},
+      clientId: 'client-1',
+      id: 'template-1',
+    }),
+  ) !==
+  JSON.stringify({
+    params: {path: {client_id: 'client-1', id: 'template-1'}},
+    body: {expected_revision: 7, end_date: '2026-09-30', start_date: '2026-09-01'},
+  })
+) {
+  throw new Error('assignment must map the visible client, template, dates, and observed source revision');
 }
 
 if (

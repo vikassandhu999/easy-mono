@@ -15,7 +15,7 @@ defmodule EasyWeb.Clients.NutritionPlanController do
 
   operation :index,
     summary: "List client nutrition plans",
-    description: "Lists nutrition plans assigned to the authenticated client.",
+    description: "Lists the authenticated client's unarchived Client Nutrition Plans. Pass status=archived to list archived Client Plans instead.",
     operation_id: "listClientNutritionPlans",
     security: [%{"bearerAuth" => []}],
     parameters: [
@@ -37,7 +37,7 @@ defmodule EasyWeb.Clients.NutritionPlanController do
 
   operation :show,
     summary: "Get client nutrition plan",
-    description: "Loads one nutrition plan assigned to the authenticated client.",
+    description: "Loads one unarchived Client Nutrition Plan assigned to the authenticated client.",
     operation_id: "getClientNutritionPlan",
     security: [%{"bearerAuth" => []}],
     parameters: [Operation.parameter(:id, :path, :string, "Nutrition plan id")],

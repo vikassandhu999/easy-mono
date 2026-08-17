@@ -29,6 +29,7 @@ type FoodListQuery = paths['/v1/client/nutrition-foods']['get']['parameters']['q
 type RecipeListQuery = paths['/v1/client/nutrition-recipes']['get']['parameters']['query'];
 
 type PlanListResponse = components['schemas']['NutritionPlanListResponse'];
+type NutritionPlanResponse = components['schemas']['NutritionPlanResponse'];
 type NutritionDayListResponse = components['schemas']['NutritionDayListResponse'];
 type FoodListResponse = components['schemas']['FoodListResponse'];
 type RecipeListResponse = components['schemas']['RecipeListResponse'];
@@ -42,6 +43,15 @@ export function useListClientNutritionPlansQuery(query: PlanListQuery = {}) {
   return useQuery({
     queryKey: nutritionPlanKeys.list(query),
     queryFn: () => call(client.GET('/v1/client/nutrition-plans', {params: {query}})) as Promise<PlanListResponse>,
+  });
+}
+
+export function useGetClientNutritionPlanQuery(id: string, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: nutritionPlanKeys.detail(id),
+    queryFn: () =>
+      call(client.GET('/v1/client/nutrition-plans/{id}', {params: {path: {id}}})) as Promise<NutritionPlanResponse>,
+    enabled: options?.enabled ?? true,
   });
 }
 

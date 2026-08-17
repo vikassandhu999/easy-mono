@@ -211,28 +211,6 @@ defmodule EasyWeb.OpenApi.Schemas.RecipeImpactResponse do
   })
 end
 
-defmodule EasyWeb.OpenApi.Schemas.NutritionPlanAssignRequest do
-  require OpenApiSpex
-
-  alias OpenApiSpex.Schema
-
-  OpenApiSpex.schema(
-    %{
-      title: "NutritionPlanAssignRequest",
-      type: :object,
-      additionalProperties: false,
-      properties: %{
-        client_id: %Schema{type: :string, format: :uuid},
-        start_date: %Schema{type: :string, format: :date, nullable: true},
-        end_date: %Schema{type: :string, format: :date, nullable: true}
-      },
-      required: [:client_id],
-      example: %{"client_id" => "0ac4b3bc-e0b6-44ea-ae7a-f48deac42912"}
-    },
-    struct?: false
-  )
-end
-
 defmodule EasyWeb.OpenApi.Schemas.NutritionDayMeal do
   require OpenApiSpex
 

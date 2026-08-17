@@ -10506,6 +10506,44 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingMuscleListResponse",
         "x-validate": null
       },
+      "NutritionPlanAssignRequest": {
+        "additionalProperties": false,
+        "description": "Assigns an unarchived Nutrition Template to a visible client at the expected source revision.",
+        "example": {
+          "end_date": null,
+          "expected_revision": 3,
+          "start_date": "2026-09-01"
+        },
+        "properties": {
+          "end_date": {
+            "format": "date",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "start_date": {
+            "format": "date",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "expected_revision"
+        ],
+        "title": "NutritionPlanAssignRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "TrainingSessionSnapshotExercise": {
         "additionalProperties": false,
         "properties": {
@@ -16186,7 +16224,7 @@
     "/v1/client/nutrition-plans": {
       "get": {
         "callbacks": {},
-        "description": "Lists nutrition plans assigned to the authenticated client.",
+        "description": "Lists the authenticated client's unarchived Client Nutrition Plans. Pass status=archived to list archived Client Plans instead.",
         "operationId": "listClientNutritionPlans",
         "parameters": [
           {
@@ -17461,6 +17499,109 @@
         "summary": "Create client upload",
         "tags": [
           "client uploads"
+        ]
+      }
+    },
+    "/v1/coach/clients/{client_id}/nutrition-plans/{id}/assign": {
+      "post": {
+        "callbacks": {},
+        "description": "Copies an unarchived Nutrition Template's complete Menu to an independent Client Nutrition Plan and advances onboarding atomically.",
+        "operationId": "assignNutritionPlan",
+        "parameters": [
+          {
+            "description": "Visible client id",
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Nutrition Template id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NutritionPlanAssignRequest"
+              }
+            }
+          },
+          "description": "Nutrition Template Assignment request",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutritionPlanResponse"
+                }
+              }
+            },
+            "description": "Client Nutrition Plan created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaleRevisionError"
+                }
+              }
+            },
+            "description": "Stale revision"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Assign a Nutrition Template",
+        "tags": [
+          "coach nutrition plans"
         ]
       }
     },
@@ -20211,7 +20352,7 @@
     "/v1/client/nutrition-plans/{id}": {
       "get": {
         "callbacks": {},
-        "description": "Loads one nutrition plan assigned to the authenticated client.",
+        "description": "Loads one unarchived Client Nutrition Plan assigned to the authenticated client.",
         "operationId": "getClientNutritionPlan",
         "parameters": [
           {

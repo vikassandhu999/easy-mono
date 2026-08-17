@@ -20,7 +20,11 @@ import {
 } from '@/@components/plan-assignment-dates';
 import PlanScheduleStep from '@/@components/plan-schedule-step';
 import {ROUTES} from '@/@config/routes';
-import {type NutritionPlan, useCoachNutritionPlansInfiniteQuery} from '@/api/nutrition-plans-list';
+import {
+  type NutritionPlan,
+  useAssignNutritionPlanMutation,
+  useCoachNutritionPlansInfiniteQuery,
+} from '@/api/nutrition-plans-list';
 import type {TrainingPlan} from '@/api/training-plan-builder';
 import {useAssignTrainingPlanMutation, useCoachTrainingPlansInfiniteQuery} from '@/api/training-plans-list';
 
@@ -70,7 +74,8 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
     : (trainingQuery.data?.pages.flatMap((page) => page.data) ?? []);
 
   const assignTrainingMutation = useAssignTrainingPlanMutation();
-  const assigning = isNutrition ? false : assignTrainingMutation.isPending;
+  const assignNutritionMutation = useAssignNutritionPlanMutation();
+  const assigning = isNutrition ? assignNutritionMutation.isPending : assignTrainingMutation.isPending;
 
   const Icon = isNutrition ? Utensils : Dumbbell;
   const iconWrap = isNutrition ? 'bg-success-soft text-success' : 'bg-accent-soft text-accent';
@@ -89,14 +94,22 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
     setError(null);
     try {
       if (isNutrition) {
-        setError('Nutrition assignment returns in a later update.');
-        return;
+        await assignNutritionMutation.mutateAsync({
+          clientId,
+          id: selected.id,
+          body: {
+            end_date: endDate,
+            expected_revision: selected.revision,
+            start_date: startDate,
+          },
+        });
+      } else {
+        await assignTrainingMutation.mutateAsync({
+          clientId,
+          id: selected.id,
+          body: {start_date: startDate, end_date: endDate},
+        });
       }
-      await assignTrainingMutation.mutateAsync({
-        clientId,
-        id: selected.id,
-        body: {start_date: startDate, end_date: endDate},
-      });
       toast.success(`"${selected.name}" assigned to ${clientName}`);
       onClose();
     } catch (e) {

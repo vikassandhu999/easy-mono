@@ -163,7 +163,7 @@ export interface paths {
     };
     /**
      * List client nutrition plans
-     * @description Lists nutrition plans assigned to the authenticated client.
+     * @description Lists the authenticated client's unarchived Client Nutrition Plans. Pass status=archived to list archived Client Plans instead.
      */
     get: operations['listClientNutritionPlans'];
     put?: never;
@@ -624,7 +624,7 @@ export interface paths {
     };
     /**
      * Get client nutrition plan
-     * @description Loads one nutrition plan assigned to the authenticated client.
+     * @description Loads one unarchived Client Nutrition Plan assigned to the authenticated client.
      */
     get: operations['getClientNutritionPlan'];
     put?: never;
@@ -3703,6 +3703,22 @@ export interface components {
     /** TrainingMuscleListResponse */
     TrainingMuscleListResponse: {
       data: components['schemas']['TrainingMuscle'][];
+    };
+    /**
+     * NutritionPlanAssignRequest
+     * @description Assigns an unarchived Nutrition Template to a visible client at the expected source revision.
+     * @example {
+     *       "end_date": null,
+     *       "expected_revision": 3,
+     *       "start_date": "2026-09-01"
+     *     }
+     */
+    NutritionPlanAssignRequest: {
+      /** Format: date */
+      end_date?: string | null;
+      expected_revision: number;
+      /** Format: date */
+      start_date?: string | null;
     };
     /** TrainingSessionSnapshotExercise */
     TrainingSessionSnapshotExercise: {

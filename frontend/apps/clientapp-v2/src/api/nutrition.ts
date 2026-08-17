@@ -20,7 +20,7 @@ export type NutritionDaySlot = components['schemas']['NutritionDaySlot'];
 export type DiaryMealSlot = NutritionDaySlot['meal_slot'];
 export type NutritionPlan = components['schemas']['NutritionPlan'];
 export type Recipe = components['schemas']['Recipe'];
-export type SwitchOptionRequest = components['schemas']['NutritionSwitchOptionRequest'];
+export type SwitchOptionRequest = components['schemas']['DiarySwitchOptionRequest'];
 
 /** @deprecated Prefer NutritionDayOptionItem — kept as alias for amount sheet. */
 export type TodayPlanItem = NutritionDayOptionItem;
@@ -38,7 +38,6 @@ type NutritionDayListResponse = components['schemas']['NutritionDayListResponse'
 type FoodListResponse = components['schemas']['FoodListResponse'];
 type RecipeListResponse = components['schemas']['RecipeListResponse'];
 type FoodLogEntryResponse = components['schemas']['FoodLogEntryResponse'];
-type NutritionMealLogResponse = components['schemas']['NutritionMealLogResponse'];
 
 // ── Queries ──────────────────────────────────────────────────
 
@@ -101,11 +100,7 @@ type UpdatePortionRequest = components['schemas']['UpdatePortionRequest'];
 export function useLogPlannedItemMutation() {
   const invalidate = useInvalidateNutritionDays();
   return useMutation({
-    mutationFn: ({
-      date,
-      idempotencyKey,
-      ...body
-    }: LogPlannedItemRequest & {date: string; idempotencyKey: string}) =>
+    mutationFn: ({date, idempotencyKey, ...body}: LogPlannedItemRequest & {date: string; idempotencyKey: string}) =>
       call(
         client.POST('/v1/client/nutrition-days/{date}/planned-items', {
           params: {path: {date}, header: {'Idempotency-Key': idempotencyKey}},
@@ -133,11 +128,7 @@ export function useAddExtraMutation() {
 export function useLogPlannedOptionMutation() {
   const invalidate = useInvalidateNutritionDays();
   return useMutation({
-    mutationFn: ({
-      date,
-      idempotencyKey,
-      ...body
-    }: LogPlannedOptionRequest & {date: string; idempotencyKey: string}) =>
+    mutationFn: ({date, idempotencyKey, ...body}: LogPlannedOptionRequest & {date: string; idempotencyKey: string}) =>
       call(
         client.POST('/v1/client/nutrition-days/{date}/planned-options', {
           params: {path: {date}, header: {'Idempotency-Key': idempotencyKey}},
@@ -193,10 +184,13 @@ export function useDeleteFoodLogEntryMutation() {
 export function useSwitchNutritionMealOptionMutation() {
   const invalidate = useInvalidateNutritionDays();
   return useMutation({
-    mutationFn: (body: SwitchOptionRequest) =>
+    mutationFn: ({date, idempotencyKey, ...body}: SwitchOptionRequest & {date: string; idempotencyKey: string}) =>
       call(
-        client.POST('/v1/client/nutrition-food-log-entries/switch-option', {body}),
-      ) as Promise<NutritionMealLogResponse>,
+        client.POST('/v1/client/nutrition-days/{date}/active-option', {
+          params: {path: {date}, header: {'Idempotency-Key': idempotencyKey}},
+          body,
+        }),
+      ) as Promise<NutritionDayResponse>,
     onSuccess: invalidate,
   });
 }

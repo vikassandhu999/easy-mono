@@ -25,6 +25,7 @@ defmodule EasyWeb.NutritionDayJSON do
     %{
       meal_slot: slot.meal_slot,
       meal_id: slot.meal_id,
+      revision: slot.revision,
       planned_calories: round_one(slot.planned_calories),
       logged_calories: round_one(slot.logged_calories),
       options: Enum.map(slot.options, &option_data/1),

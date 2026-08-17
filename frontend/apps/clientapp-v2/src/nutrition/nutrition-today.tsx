@@ -35,6 +35,7 @@ import {
   plannedDayIntentFingerprint,
   plannedItemIntentFingerprint,
   plannedOptionIntentFingerprint,
+  switchOptionIntentFingerprint,
 } from '@/nutrition/diary-command-key';
 import {
   ADHERENCE_TEXT,
@@ -107,14 +108,12 @@ export default function NutritionToday() {
   const [sheet, setSheet] = useState<null | SheetTarget>(null);
   const [pickerMode, setPickerMode] = useState<'add' | 'replace' | null>(null);
   const [replaceTarget, setReplaceTarget] = useState<null | SheetTarget>(null);
-  // local, unsaved option picks (slot → meal_id) — cleared once the server confirms a switch
-  const [selections, setSelections] = useState<Record<string, string>>({});
   const [optionSheetSlot, setOptionSheetSlot] = useState<null | string>(null);
   const [confirmSwitch, setConfirmSwitch] = useState<null | {option: NutritionDayOption; slot: SlotView}>(null);
 
   const day = dayResp?.data[0] ?? null;
   const isEditable = day?.write_eligible === true;
-  const slots = slotsFromDay(day, selections, isPast);
+  const slots = slotsFromDay(day, isPast);
   const consumed = dayConsumed(day);
   const targets = dayTargets(day);
   const loadingPlan = loadingDay;
@@ -126,11 +125,8 @@ export default function NutritionToday() {
 
   const setDate = (d: string) => setParams(d === today ? {} : {date: d}, {replace: true});
 
-  // A plan's meal_id recurs weekly, so an unsaved option pick must not survive a date change
-  // (it would silently apply to the same slot on a different day).
   // biome-ignore lint/correctness/useExhaustiveDependencies: date is the reset trigger, not read in the body
   useEffect(() => {
-    setSelections({});
     commandIntent.current = null;
   }, [date]);
 
@@ -206,7 +202,7 @@ export default function NutritionToday() {
           date,
           food_id: picked.kind === 'food' ? picked.id : undefined,
           meal_id: replacing.mealId ?? undefined,
-          meal_slot: replacing.slot as SwitchOptionRequest['meal_slot'],
+          meal_slot: replacing.slot as Parameters<typeof replaceItem>[0]['meal_slot'],
           planned_item_id: replacing.mealItemId,
           recipe_id: picked.kind === 'recipe' ? picked.id : undefined,
           ...portion,
@@ -244,42 +240,52 @@ export default function NutritionToday() {
     }
   };
 
-  const selectOption = (slot: SlotView, option: NutritionDayOption) => {
+  const postSwitch = async (slot: SlotView, option: NutritionDayOption) => {
+    if (!option.meal_id) {
+      return;
+    }
+    try {
+      commandIntent.current = diaryCommandKey(
+        commandIntent.current,
+        switchOptionIntentFingerprint({
+          date,
+          expectedRevision: slot.revision,
+          mealId: option.meal_id,
+          slot: slot.slot,
+        }),
+      );
+      await switchOption.mutateAsync({
+        date,
+        expected_revision: slot.revision,
+        idempotencyKey: commandIntent.current.key,
+        meal_id: option.meal_id,
+        meal_slot: slot.slot as SwitchOptionRequest['meal_slot'],
+      });
+      commandIntent.current = null;
+      setConfirmSwitch(null);
+    } catch {
+      toast.danger("Couldn't switch options. Try again.");
+    }
+  };
+
+  const selectOption = async (slot: SlotView, option: NutritionDayOption) => {
     setOptionSheetSlot(null);
     const mealId = option.meal_id;
     if (!mealId || mealId === slot.activeMealId) {
       return;
     }
-    if (!slot.hasPlannedLog) {
-      setSelections((prev) => ({...prev, [slot.slot]: mealId}));
+    if (slot.hasPlannedLog) {
+      setConfirmSwitch({option, slot});
       return;
     }
-    setConfirmSwitch({option, slot});
+    await postSwitch(slot, option);
   };
 
   const confirmSwitchOption = async () => {
     if (!confirmSwitch) {
       return;
     }
-    const {option, slot} = confirmSwitch;
-    if (!option.meal_id) {
-      return;
-    }
-    try {
-      await switchOption.mutateAsync({
-        date,
-        meal_id: option.meal_id,
-        meal_slot: slot.slot as SwitchOptionRequest['meal_slot'],
-      });
-      setSelections((prev) => {
-        const next = {...prev};
-        delete next[slot.slot];
-        return next;
-      });
-      setConfirmSwitch(null);
-    } catch {
-      toast.danger("Couldn't switch options. Try again.");
-    }
+    await postSwitch(confirmSwitch.slot, confirmSwitch.option);
   };
 
   const anyUnlogged = slots.some((s) => s.rows.some((r) => r.status === 'checklist' || r.status === 'skipped'));
@@ -540,7 +546,7 @@ export default function NutritionToday() {
             role="alertdialog"
           >
             <p className="mb-1 text-sm font-semibold">Switch option?</p>
-            <p className="mb-4 text-xs text-muted">Switching clears what you've logged for this meal</p>
+            <p className="mb-4 text-xs text-muted">Logged items stay on the day. The other option becomes extras.</p>
             <div className="flex gap-2">
               <button
                 className="flex-1 rounded-lg border border-border py-2 text-xs font-semibold text-muted active:bg-surface-secondary disabled:opacity-50"

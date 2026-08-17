@@ -36,7 +36,7 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
       cleanup(business.id, user_ids)
     end)
 
-    %{ctx: ctx, food: food, business: business, client: client}
+    %{ctx: ctx, food: food, business: business, client: client, coach: coach}
   end
 
   test "simultaneous extras with the same key create one Diary Entry", ctx do
@@ -88,6 +88,48 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
              from(entry in DiaryEntry, where: entry.business_id == ^ctx.business.id),
              :count
            ) == 1
+  end
+
+  test "simultaneous switches with the same revision keep one winner", ctx do
+    today = Date.utc_today()
+    parent = self()
+    {_slot, option_b_id} = seed_two_frozen_options!(ctx.client, ctx.food, ctx.coach, today)
+    attrs = %{meal_slot: :breakfast, meal_id: option_b_id, expected_revision: 1}
+
+    run = fn ->
+      Task.async(fn ->
+        Sandbox.checkout(Repo, sandbox: false)
+        send(parent, {:ready, self()})
+
+        receive do
+          :go -> :ok
+        end
+
+        Diary.switch_client_option(ctx.ctx, today, attrs, Ecto.UUID.generate())
+      end)
+    end
+
+    tasks = [run.(), run.()]
+
+    ready =
+      for _ <- tasks,
+          do:
+            (receive do
+               {:ready, pid} -> pid
+             end)
+
+    Enum.each(ready, &send(&1, :go))
+    results = Enum.map(tasks, &Task.await(&1, 5_000))
+
+    oks = Enum.filter(results, &match?({:ok, _}, &1))
+    stales = Enum.filter(results, &match?({:error, %Ecto.Changeset{action: :stale_revision}}, &1))
+
+    assert length(oks) == 1
+    assert length(stales) == 1
+
+    {:ok, day} = hd(oks)
+    assert hd(day.slots).meal_id == option_b_id
+    assert hd(day.slots).revision == 2
   end
 
   test "simultaneous planned-option taps fulfil each active item once", ctx do
@@ -175,6 +217,64 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
     :ok
   end
 
+  defp seed_two_frozen_options!(client, food, coach, date) do
+    plan = insert(:plan, business: client.business, creator: coach, kind: :template)
+    meal_a = insert(:meal, business: client.business, plan: plan, name: "Breakfast A", position: 0)
+    meal_b = insert(:meal, business: client.business, plan: plan, name: "Breakfast B", position: 1)
+
+    {:ok, slot} =
+      Repo.insert(
+        DiarySlot.insert_changeset(client.business_id, client.id, %{
+          local_date: date,
+          meal_slot: :breakfast,
+          applied_timezone: "Asia/Kolkata",
+          has_coverage: true,
+          revision: 1
+        })
+      )
+
+    {:ok, option_a} =
+      Repo.insert(
+        DiaryFrozenOption.insert_changeset(client.business_id, slot.id, %{
+          position: 0,
+          meal_name: "Breakfast A",
+          nutrition_meal_id: meal_a.id
+        })
+      )
+
+    {:ok, _option_b} =
+      Repo.insert(
+        DiaryFrozenOption.insert_changeset(client.business_id, slot.id, %{
+          position: 1,
+          meal_name: "Breakfast B",
+          nutrition_meal_id: meal_b.id
+        })
+      )
+
+    for {option, grams} <- [{option_a, 50.0}] do
+      {:ok, _item} =
+        Repo.insert(
+          DiaryFrozenPlannedItem.insert_changeset(client.business_id, slot.id, option.id, %{
+            kind: :food,
+            display_name: food.name,
+            portion_kind: :gram,
+            weight_g: grams,
+            calories: grams * 2,
+            protein: 1.0,
+            carbohydrates: 1.0,
+            fat: 1.0,
+            fiber: 0.0,
+            complete: true,
+            position: 0,
+            food_id: food.id
+          })
+        )
+    end
+
+    {:ok, _} = Repo.update(DiarySlot.update_changeset(slot, %{active_frozen_option_id: option_a.id}))
+    {slot, meal_b.id}
+  end
+
   defp cleanup(business_id, user_ids) do
     Repo.update_all(from(slot in DiarySlot, where: slot.business_id == ^business_id),
       set: [active_frozen_option_id: nil]
@@ -186,6 +286,8 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
           DiaryFrozenOption,
           Easy.Nutrition.DiaryCommandLedger,
           DiarySlot,
+          Easy.Nutrition.Meal,
+          Easy.Nutrition.Plan,
           Food,
           Client,
           Coach

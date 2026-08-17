@@ -36,3 +36,18 @@ export function plannedOptionIntentFingerprint(input: {date: string; slot: strin
 export function plannedDayIntentFingerprint(input: {date: string}): string {
   return JSON.stringify({date: input.date, scope: 'planned-day'});
 }
+
+export function switchOptionIntentFingerprint(input: {
+  date: string;
+  expectedRevision: number;
+  mealId: string;
+  slot: string;
+}): string {
+  return JSON.stringify({
+    date: input.date,
+    expectedRevision: input.expectedRevision,
+    mealId: input.mealId,
+    scope: 'switch-option',
+    slot: input.slot,
+  });
+}

@@ -4,6 +4,7 @@ import {
   plannedDayIntentFingerprint,
   plannedItemIntentFingerprint,
   plannedOptionIntentFingerprint,
+  switchOptionIntentFingerprint,
 } from './diary-command-key.ts';
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -65,13 +66,27 @@ assert(
   'changing the Nutrition Day date rotates the extra fingerprint',
 );
 
+const plannedItem = plannedItemIntentFingerprint({date: '2026-08-17', mealItemId: 'item-1', slot: 'breakfast'});
 assert(
-  plannedItemIntentFingerprint({date: '2026-08-17', mealItemId: 'item-1', slot: 'breakfast'}) ===
-    plannedItemIntentFingerprint({date: '2026-08-17', mealItemId: 'item-1', slot: 'breakfast'}),
+  plannedItem === plannedItemIntentFingerprint({date: '2026-08-17', mealItemId: 'item-1', slot: 'breakfast'}),
   'planned-item fingerprints are stable',
 );
 assert(
   plannedOptionIntentFingerprint({date: '2026-08-17', slot: 'breakfast'}) !==
     plannedDayIntentFingerprint({date: '2026-08-17'}),
   'option and day intents stay distinct',
+);
+
+const switchSame = {date: '2026-08-17', expectedRevision: 1, mealId: 'meal-b', slot: 'breakfast'};
+const switchFingerprint = switchOptionIntentFingerprint(switchSame);
+assert(switchFingerprint === switchOptionIntentFingerprint(switchSame), 'switch-option fingerprints are stable');
+assert(
+  switchFingerprint !==
+    switchOptionIntentFingerprint({
+      date: '2026-08-17',
+      expectedRevision: 2,
+      mealId: 'meal-b',
+      slot: 'breakfast',
+    }),
+  'a stale revision rotates the switch-option fingerprint',
 );

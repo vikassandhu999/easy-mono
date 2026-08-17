@@ -834,6 +834,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/client/nutrition-days/{date}/active-option': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Switch the active frozen Meal Option for a Nutrition Day slot */
+    post: operations['switchClientNutritionDayOption'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/auth/accept-invite/verify': {
     parameters: {
       query?: never;
@@ -1393,6 +1410,32 @@ export interface components {
     /** TrainingPlanResponse */
     TrainingPlanResponse: {
       data: components['schemas']['TrainingPlan'];
+    };
+    /**
+     * DiarySwitchOptionRequest
+     * @example {
+     *       "expected_revision": 1,
+     *       "meal_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+     *       "meal_slot": "breakfast"
+     *     }
+     */
+    DiarySwitchOptionRequest: {
+      expected_revision: number;
+      /** Format: uuid */
+      meal_id: string;
+      /** @enum {string} */
+      meal_slot:
+        | 'early_morning'
+        | 'breakfast'
+        | 'mid_morning'
+        | 'lunch'
+        | 'afternoon'
+        | 'evening'
+        | 'dinner'
+        | 'pre_sleep'
+        | 'pre_workout'
+        | 'during_workout'
+        | 'post_workout';
     };
     /**
      * FoodUpdateRequest
@@ -2271,6 +2314,7 @@ export interface components {
         | 'post_workout';
       options: components['schemas']['NutritionDayOption'][];
       planned_calories?: number | null;
+      revision?: number | null;
       rows: components['schemas']['NutritionDayRow'][];
     };
     /** WorkbenchRepliesQueueItem */
@@ -7110,6 +7154,64 @@ export interface operations {
       };
       /** @description Unauthorized */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  switchClientNutritionDayOption: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description UUID identifying this client intent */
+        'Idempotency-Key': string;
+      };
+      path: {
+        /** @description Client-local date */
+        date: string;
+      };
+      cookie?: never;
+    };
+    /** @description Switch option request */
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DiarySwitchOptionRequest'];
+      };
+    };
+    responses: {
+      /** @description Nutrition day */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NutritionDayResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Stale revision or idempotency key reused with a different payload */
+      409: {
         headers: {
           [name: string]: unknown;
         };

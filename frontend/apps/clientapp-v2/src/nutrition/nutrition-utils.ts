@@ -1,7 +1,7 @@
 /**
  * Nutrition day view helpers. Slots come from the server nutrition-day payload.
- * A thin overlay handles an unsaved local option pick before the first
- * fulfilment. Consumed macros sum from diary row entries; targets from the day.
+ * Frozen option order and the active choice are Diary-owned; this module does
+ * not overlay a local pick. Consumed macros sum from diary row entries; targets from the day.
  */
 import {type MacroTotals, MEAL_SLOT_LABELS} from '@easy/utils';
 
@@ -47,17 +47,12 @@ export type SlotView = {
   mealId: null | string;
   options: NutritionDayOption[];
   plannedCalories: number;
+  revision: number;
   rows: SlotRow[];
   slot: string;
 };
 
-function activeOption(slot: NutritionDaySlot, selection: string | undefined): NutritionDayOption | null {
-  if (selection) {
-    const picked = slot.options.find((o) => o.meal_id === selection);
-    if (picked) {
-      return picked;
-    }
-  }
+function activeOption(slot: NutritionDaySlot): NutritionDayOption | null {
   if (slot.meal_id) {
     const chosen = slot.options.find((o) => o.meal_id === slot.meal_id);
     if (chosen) {
@@ -111,10 +106,6 @@ function diaryRow(row: NutritionDayRow): SlotRow {
   };
 }
 
-function extrasFromDiary(rows: NutritionDayRow[]): SlotRow[] {
-  return rows.filter((r) => r.status === 'added' || r.status === 'recorded').map(diaryRow);
-}
-
 function slotShell(
   slot: string,
   daySlot: NutritionDaySlot,
@@ -139,6 +130,7 @@ function slotShell(
     mealId: option?.meal_id ?? daySlot.meal_id ?? null,
     options: daySlot.options,
     plannedCalories,
+    revision: daySlot.revision ?? 1,
     rows,
     slot,
   };
@@ -146,21 +138,16 @@ function slotShell(
 
 /**
  * Render slots from the nutrition-day payload. Unlogged → checklist from the
- * active option. Logged → diary rows. Past days never rebuild rows from the
- * live plan. A local option pick with no fulfilments yet shows the new checklist
- * plus diary extras until switch/first write pins.
+ * active frozen or live option. Logged → Diary rows, including extras from
+ * inactive options. Past days never rebuild rows from live Programming.
  */
-export function slotsFromDay(
-  day: null | NutritionDay,
-  selections: Record<string, string> = {},
-  history = false,
-): SlotView[] {
+export function slotsFromDay(day: null | NutritionDay, history = false): SlotView[] {
   if (!day) {
     return [];
   }
 
   return day.slots.map((daySlot) => {
-    const option = activeOption(daySlot, selections[daySlot.meal_slot]);
+    const option = activeOption(daySlot);
     const rows = daySlot.rows ?? [];
     const logged = rows.length > 0;
     const loggedCalories = daySlot.logged_calories ?? 0;
@@ -170,16 +157,6 @@ export function slotsFromDay(
       const plannedCalories =
         daySlot.planned_calories ?? (option?.items ?? []).reduce((s, it) => s + (plannedItemCalories(it) ?? 0), 0);
       return slotShell(daySlot.meal_slot, daySlot, option, checklist, loggedCalories, plannedCalories, false, false);
-    }
-
-    const pinnedId = daySlot.meal_id ?? null;
-    const selectedId = selections[daySlot.meal_slot] ?? pinnedId;
-    const pendingSwitch = Boolean(selectedId) && selectedId !== pinnedId && !plannedFulfilments(rows) && option != null;
-
-    if (pendingSwitch && option) {
-      const overlay = [...option.items.map(checklistRow), ...extrasFromDiary(rows)];
-      const plannedCalories = option.items.reduce((s, it) => s + (plannedItemCalories(it) ?? 0), 0);
-      return slotShell(daySlot.meal_slot, daySlot, option, overlay, loggedCalories, plannedCalories, true, false);
     }
 
     return slotShell(

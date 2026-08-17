@@ -146,6 +146,27 @@ defmodule Easy.Nutrition.Diary do
 
   def log_client_planned_day(%Ctx{}, %Date{}, _key), do: {:error, :invalid_idempotency_key}
 
+  @spec switch_client_option(Ctx.t(), Date.t(), map(), String.t()) ::
+          {:ok, map()}
+          | {:error,
+             :not_found
+             | :client_inactive
+             | :invalid_idempotency_key
+             | :future_date
+             | :cannot_switch_past_slot
+             | :conflict
+             | Ecto.Changeset.t()}
+  def switch_client_option(%Ctx{} = ctx, %Date{} = date, attrs, key) when is_binary(key) do
+    with {:ok, uuid} <- cast_uuid(key),
+         {:ok, client} <- load_active_client(ctx),
+         {:ok, command} <- cast_switch_command(attrs) do
+      fingerprint = switch_fingerprint(date, command)
+      replay_or_run(client, uuid, fingerprint, fn -> record_switch(ctx, client, date, command) end)
+    end
+  end
+
+  def switch_client_option(%Ctx{}, %Date{}, _attrs, _key), do: {:error, :invalid_idempotency_key}
+
   @spec purge_expired_command_ledger(DateTime.t()) :: {:ok, non_neg_integer()}
   def purge_expired_command_ledger(now \\ DateTime.utc_now(:second)) do
     ids =
@@ -250,6 +271,7 @@ defmodule Easy.Nutrition.Diary do
     %{
       meal_slot: slot,
       meal_id: default.nutrition_meal_id,
+      revision: nil,
       planned_calories: planned_calories(items),
       logged_calories: 0.0,
       options: Enum.map(ordered, &option_data(&1, meals)),
@@ -265,6 +287,7 @@ defmodule Easy.Nutrition.Diary do
     %{
       meal_slot: slot.meal_slot,
       meal_id: active && active.nutrition_meal_id,
+      revision: slot.revision,
       planned_calories: planned_calories(items),
       logged_calories: logged_calories(slot.entries),
       options: Enum.map(ordered, &frozen_option_data/1),
@@ -511,6 +534,17 @@ defmodule Easy.Nutrition.Diary do
     end
   end
 
+  defp cast_switch_command(attrs) do
+    with {:ok, meal_slot} <- MealSlot.cast(attrs[:meal_slot]),
+         {:ok, meal_id} <- cast_id(attrs[:meal_id]),
+         {:ok, revision} <- cast_revision(attrs[:expected_revision]) do
+      {:ok, %{meal_slot: meal_slot, meal_id: meal_id, expected_revision: revision}}
+    end
+  end
+
+  defp cast_revision(revision) when is_integer(revision) and revision > 0, do: {:ok, revision}
+  defp cast_revision(_revision), do: {:error, :not_found}
+
   defp cast_id(id) do
     case Ecto.UUID.cast(id) do
       {:ok, uuid} -> {:ok, uuid}
@@ -572,6 +606,15 @@ defmodule Easy.Nutrition.Diary do
   defp planned_item_path(date), do: "/v1/client/nutrition-days/#{Date.to_iso8601(date)}/planned-items"
   defp planned_option_path(date), do: "/v1/client/nutrition-days/#{Date.to_iso8601(date)}/planned-options"
   defp planned_day_path(date), do: "/v1/client/nutrition-days/#{Date.to_iso8601(date)}/planned-day"
+  defp switch_path(date), do: "/v1/client/nutrition-days/#{Date.to_iso8601(date)}/active-option"
+
+  defp switch_fingerprint(date, command) do
+    DiaryCommandLedger.fingerprint("POST", switch_path(date), %{
+      meal_slot: command.meal_slot,
+      meal_id: command.meal_id,
+      expected_revision: command.expected_revision
+    })
+  end
 
   defp replay_or_run(client, key, fingerprint, fun) do
     result =
@@ -709,7 +752,7 @@ defmodule Easy.Nutrition.Diary do
     |> Repo.one()
   end
 
-  defp insert_slot!(ctx, client, date, timezone, today, meal_slot) do
+  defp insert_slot!(ctx, client, date, timezone, today, meal_slot, active_meal_id \\ nil) do
     {has_coverage, guidance} = freeze_source(ctx, date, today)
 
     attrs = %{
@@ -721,7 +764,7 @@ defmodule Easy.Nutrition.Diary do
     }
 
     case Repo.transaction(fn -> insert_slot_row!(client, attrs) end) do
-      {:ok, slot} -> freeze_slot!(slot, meal_slot, guidance)
+      {:ok, slot} -> freeze_slot!(slot, meal_slot, guidance, active_meal_id)
       {:error, changeset} -> recover_slot(changeset, client, date, meal_slot)
     end
   end
@@ -759,9 +802,9 @@ defmodule Easy.Nutrition.Diary do
     end
   end
 
-  defp freeze_slot!(slot, _meal_slot, nil), do: slot
+  defp freeze_slot!(slot, _meal_slot, nil, _active_meal_id), do: slot
 
-  defp freeze_slot!(slot, meal_slot, %{plan: plan, day_pattern: pattern}) do
+  defp freeze_slot!(slot, meal_slot, %{plan: plan, day_pattern: pattern}, active_meal_id) do
     meals = Map.new(List.wrap(plan.meals), &{&1.id, &1})
 
     options =
@@ -771,7 +814,7 @@ defmodule Easy.Nutrition.Diary do
       |> Enum.sort_by(&{&1.position, &1.id})
 
     frozen = Enum.map(options, &insert_frozen_option!(slot, &1, meals))
-    active = List.first(frozen)
+    active = Enum.find(frozen, &(&1.nutrition_meal_id == active_meal_id)) || List.first(frozen)
 
     case Repo.update(DiarySlot.update_changeset(slot, %{active_frozen_option_id: active && active.id})) do
       {:ok, updated} ->
@@ -851,6 +894,91 @@ defmodule Easy.Nutrition.Diary do
           recipe_id: if(resolved.kind == :recipe, do: resolved.item.id)
         })
       )
+  end
+
+  defp record_switch(ctx, client, date, command) do
+    timezone = applied_timezone(client)
+    today = LocalCalendar.to_local_date(DateTime.utc_now(), timezone)
+
+    with :ok <- ensure_switchable(date, existing_timezone(client, date, command.meal_slot, timezone)),
+         {:ok, slot} <- ensure_switch_slot(ctx, client, date, timezone, today, command),
+         :ok <- ensure_revision(slot, command.expected_revision),
+         {:ok, option} <- find_frozen_option(slot, command.meal_id) do
+      activate_option!(slot, option)
+      {:ok, assemble_day(ctx, client, date, :client)}
+    end
+  end
+
+  defp ensure_switchable(date, timezone) do
+    today = LocalCalendar.to_local_date(DateTime.utc_now(), timezone)
+
+    cond do
+      Date.compare(date, today) == :gt -> {:error, :future_date}
+      Date.compare(date, today) == :lt -> {:error, :cannot_switch_past_slot}
+      true -> :ok
+    end
+  end
+
+  defp ensure_switch_slot(ctx, client, date, timezone, today, command) do
+    case locked_slot(client, date, command.meal_slot) do
+      %DiarySlot{has_coverage: true, frozen_options: [_ | _]} = slot -> {:ok, slot}
+      %DiarySlot{} -> {:error, :not_found}
+      nil -> start_switch_slot(ctx, client, date, timezone, today, command)
+    end
+  end
+
+  defp start_switch_slot(ctx, client, date, timezone, today, command) do
+    if command.expected_revision != 1 do
+      {:error, stale_revision_changeset(%DiarySlot{revision: 1})}
+    else
+      freeze_switch_slot(ctx, client, date, timezone, today, command)
+    end
+  end
+
+  defp freeze_switch_slot(ctx, client, date, timezone, today, command) do
+    with {true, guidance} <- coverage_guidance(ctx, date),
+         true <- live_option?(guidance, command.meal_slot, command.meal_id) do
+      {:ok, insert_slot!(ctx, client, date, timezone, today, command.meal_slot, command.meal_id)}
+    else
+      _missing -> {:error, :not_found}
+    end
+  end
+
+  defp live_option?(guidance, meal_slot, meal_id) do
+    guidance.day_pattern
+    |> pattern_options()
+    |> Enum.any?(&(&1.meal_slot == meal_slot and &1.nutrition_meal_id == meal_id))
+  end
+
+  defp ensure_revision(%DiarySlot{revision: revision}, revision), do: :ok
+  defp ensure_revision(slot, _expected), do: {:error, stale_revision_changeset(slot)}
+
+  defp stale_revision_changeset(slot) do
+    slot
+    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.add_error(:revision, "is stale")
+    |> Map.put(:action, :stale_revision)
+  end
+
+  defp find_frozen_option(slot, meal_id) do
+    case Enum.find(slot.frozen_options, &(&1.nutrition_meal_id == meal_id)) do
+      nil -> {:error, :not_found}
+      option -> {:ok, option}
+    end
+  end
+
+  defp activate_option!(%DiarySlot{active_frozen_option_id: id} = slot, %{id: id}), do: slot
+
+  defp activate_option!(slot, option) do
+    case Repo.update(
+           DiarySlot.update_changeset(slot, %{
+             active_frozen_option_id: option.id,
+             revision: slot.revision + 1
+           })
+         ) do
+      {:ok, updated} -> updated
+      {:error, changeset} -> Repo.rollback(changeset)
+    end
   end
 
   defp record_planned_item(ctx, client, date, command) do

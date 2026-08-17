@@ -2360,6 +2360,32 @@ export interface components {
       data: components['schemas']['TrainingPlan'];
     };
     /**
+     * DiarySwitchOptionRequest
+     * @example {
+     *       "expected_revision": 1,
+     *       "meal_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+     *       "meal_slot": "breakfast"
+     *     }
+     */
+    DiarySwitchOptionRequest: {
+      expected_revision: number;
+      /** Format: uuid */
+      meal_id: string;
+      /** @enum {string} */
+      meal_slot:
+        | 'early_morning'
+        | 'breakfast'
+        | 'mid_morning'
+        | 'lunch'
+        | 'afternoon'
+        | 'evening'
+        | 'dinner'
+        | 'pre_sleep'
+        | 'pre_workout'
+        | 'during_workout'
+        | 'post_workout';
+    };
+    /**
      * FoodUpdateRequest
      * @description Request body for updating a coach-owned food. `source` is server-owned and immutable.
      * @example {
@@ -3236,6 +3262,7 @@ export interface components {
         | 'post_workout';
       options: components['schemas']['NutritionDayOption'][];
       planned_calories?: number | null;
+      revision?: number | null;
       rows: components['schemas']['NutritionDayRow'][];
     };
     /** WorkbenchRepliesQueueItem */

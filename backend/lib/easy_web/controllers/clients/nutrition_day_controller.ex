@@ -10,6 +10,7 @@ defmodule EasyWeb.Clients.NutritionDayController do
     DiaryAddExtraRequest,
     DiaryLogPlannedItemRequest,
     DiaryLogPlannedOptionRequest,
+    DiarySwitchOptionRequest,
     ErrorResponse,
     NutritionDayListResponse,
     NutritionDayResponse
@@ -17,7 +18,7 @@ defmodule EasyWeb.Clients.NutritionDayController do
 
   plug OpenApiSpex.Plug.CastAndValidate,
        [json_render_error_v2: true]
-       when action in [:add_extra, :log_planned_item, :log_planned_option, :log_planned_day]
+       when action in [:add_extra, :log_planned_item, :log_planned_option, :log_planned_day, :switch_option]
 
   tags ["client nutrition days"]
 
@@ -124,6 +125,28 @@ defmodule EasyWeb.Clients.NutritionDayController do
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
+  operation :switch_option,
+    summary: "Switch the active frozen Meal Option for a Nutrition Day slot",
+    operation_id: "switchClientNutritionDayOption",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:date, :path, %Schema{type: :string, format: :date}, "Client-local date", required: true),
+      Operation.parameter(
+        :"Idempotency-Key",
+        :header,
+        %Schema{type: :string, format: :uuid},
+        "UUID identifying this client intent",
+        required: true
+      )
+    ],
+    request_body: {"Switch option request", "application/json", DiarySwitchOptionRequest, required: true},
+    responses: [
+      ok: {"Nutrition day", "application/json", NutritionDayResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      conflict: {"Stale revision or idempotency key reused with a different payload", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     with {:ok, date} <- Utils.parse_optional_date(params["date"]),
@@ -184,6 +207,17 @@ defmodule EasyWeb.Clients.NutritionDayController do
       conn
       |> put_status(:created)
       |> render(:show, day: day)
+    end
+  end
+
+  @spec switch_option(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def switch_option(conn, _params) do
+    date = conn.path_params["date"]
+    key = conn |> get_req_header("idempotency-key") |> List.first()
+
+    with {:ok, date} <- parse_date(date),
+         {:ok, day} <- Diary.switch_client_option(conn.assigns.ctx, date, conn.body_params, key) do
+      render(conn, :show, day: day)
     end
   end
 

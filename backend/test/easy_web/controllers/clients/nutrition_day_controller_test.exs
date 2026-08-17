@@ -299,10 +299,126 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
     end
   end
 
+  describe "POST /v1/client/nutrition-days/:date/active-option" do
+    test "switches the frozen active option and replays an identical key", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Oats")
+      assign_covering_plan(ctx, food, menu: :two_options)
+      today = Date.to_iso8601(local_today(ctx.client))
+      [option_a, option_b] = live_options(ctx)
+      key = Ecto.UUID.generate()
+
+      ctx.conn
+      |> put_req_header("idempotency-key", Ecto.UUID.generate())
+      |> post("/v1/client/nutrition-days/#{today}/planned-items", %{
+        "meal_slot" => "breakfast",
+        "meal_item_id" => hd(option_a["items"])["meal_item_id"]
+      })
+      |> json_response(201)
+
+      body = %{
+        "meal_slot" => "breakfast",
+        "meal_id" => option_b["meal_id"],
+        "expected_revision" => 1
+      }
+
+      conn =
+        ctx.conn
+        |> put_req_header("idempotency-key", key)
+        |> post("/v1/client/nutrition-days/#{today}/active-option", body)
+
+      assert %{"data" => data} = json_response(conn, 200)
+      [slot] = data["slots"]
+      assert slot["meal_id"] == option_b["meal_id"]
+      assert slot["revision"] == 2
+      assert Enum.any?(slot["rows"], &(&1["status"] == "added"))
+      assert Enum.any?(slot["rows"], &(&1["status"] == "pending"))
+      assert_schema(data, "NutritionDay", EasyWeb.ApiSpec.spec())
+
+      replay =
+        ctx.conn
+        |> put_req_header("idempotency-key", key)
+        |> post("/v1/client/nutrition-days/#{today}/active-option", body)
+
+      assert %{"data" => replayed} = json_response(replay, 200)
+      assert replayed["slots"] == data["slots"]
+    end
+
+    test "returns conflict for a stale revision", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Oats")
+      assign_covering_plan(ctx, food, menu: :two_options)
+      today = Date.to_iso8601(local_today(ctx.client))
+      [option_a, option_b] = live_options(ctx)
+
+      ctx.conn
+      |> put_req_header("idempotency-key", Ecto.UUID.generate())
+      |> post("/v1/client/nutrition-days/#{today}/active-option", %{
+        "meal_slot" => "breakfast",
+        "meal_id" => option_b["meal_id"],
+        "expected_revision" => 1
+      })
+      |> json_response(200)
+
+      conn =
+        ctx.conn
+        |> put_req_header("idempotency-key", Ecto.UUID.generate())
+        |> post("/v1/client/nutrition-days/#{today}/active-option", %{
+          "meal_slot" => "breakfast",
+          "meal_id" => option_a["meal_id"],
+          "expected_revision" => 9
+        })
+
+      assert %{"error_code" => "stale_revision", "error_detail" => %{"current_revision" => 1}} =
+               json_response(conn, 409)
+    end
+
+    test "rejects a missing idempotency key", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Oats")
+      assign_covering_plan(ctx, food, menu: :two_options)
+      today = Date.to_iso8601(local_today(ctx.client))
+      [_option_a, option_b] = live_options(ctx)
+
+      conn =
+        post(ctx.conn, "/v1/client/nutrition-days/#{today}/active-option", %{
+          "meal_slot" => "breakfast",
+          "meal_id" => option_b["meal_id"],
+          "expected_revision" => 1
+        })
+
+      assert json_response(conn, 422)
+    end
+
+    test "is not available to coaches", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Oats")
+      assign_covering_plan(ctx, food, menu: :two_options)
+      today = Date.to_iso8601(local_today(ctx.client))
+      [_option_a, option_b] = live_options(ctx)
+
+      conn =
+        build_conn()
+        |> authenticate_coach(ctx.coach)
+        |> put_req_header("content-type", "application/json")
+        |> put_req_header("idempotency-key", Ecto.UUID.generate())
+        |> post("/v1/client/nutrition-days/#{today}/active-option", %{
+          "meal_slot" => "breakfast",
+          "meal_id" => option_b["meal_id"],
+          "expected_revision" => 1
+        })
+
+      assert conn.status in [401, 403, 404]
+    end
+  end
+
   defp assign_covering_plan(ctx, food, opts \\ []) do
     coach_ctx = trainer_ctx(ctx.coach)
     {:ok, template} = Programming.create_template(coach_ctx, %{"name" => "Cut", "target_calories" => 2000.0})
-    {:ok, source} = Programming.replace_menu(coach_ctx, template.id, 1, breakfast_menu(template, food))
+
+    menu =
+      case Keyword.get(opts, :menu) do
+        :two_options -> two_option_menu(template, food)
+        _ -> breakfast_menu(template, food)
+      end
+
+    {:ok, source} = Programming.replace_menu(coach_ctx, template.id, 1, menu)
     today = local_today(ctx.client)
     start_date = Date.add(today, Keyword.get(opts, :start_offset, 0))
 
@@ -320,10 +436,14 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
   end
 
   defp live_meal_item_ids(ctx) do
+    hd(live_options(ctx))["items"] |> Enum.map(& &1["meal_item_id"])
+  end
+
+  defp live_options(ctx) do
     today = Date.to_iso8601(local_today(ctx.client))
     conn = get(ctx.conn, "/v1/client/nutrition-days", %{"date" => today})
     assert %{"data" => [data]} = json_response(conn, 200)
-    hd(hd(data["slots"])["options"])["items"] |> Enum.map(& &1["meal_item_id"])
+    hd(data["slots"])["options"]
   end
 
   defp breakfast_menu(plan, food) do
@@ -346,6 +466,48 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
           name: pattern.name,
           position: 0,
           slots: [%{meal_slot: :breakfast, options: [%{local_ref: "opt", meal_local_ref: "breakfast", position: 0}]}]
+        }
+      ],
+      schedule: Map.new(WeekSchedule.weekdays(), &{&1, pattern.id})
+    }
+  end
+
+  defp two_option_menu(plan, food) do
+    pattern = hd(plan.day_patterns)
+
+    %{
+      meals: [
+        %{
+          local_ref: "a",
+          name: "Breakfast A",
+          position: 0,
+          meal_items: [
+            %{local_ref: "a-item", kind: :food, food_id: food.id, position: 0, portion: %{kind: :gram, grams: 50}}
+          ]
+        },
+        %{
+          local_ref: "b",
+          name: "Breakfast B",
+          position: 1,
+          meal_items: [
+            %{local_ref: "b-item", kind: :food, food_id: food.id, position: 0, portion: %{kind: :gram, grams: 40}}
+          ]
+        }
+      ],
+      day_patterns: [
+        %{
+          id: pattern.id,
+          name: pattern.name,
+          position: 0,
+          slots: [
+            %{
+              meal_slot: :breakfast,
+              options: [
+                %{local_ref: "opt-a", meal_local_ref: "a", position: 0},
+                %{local_ref: "opt-b", meal_local_ref: "b", position: 1}
+              ]
+            }
+          ]
         }
       ],
       schedule: Map.new(WeekSchedule.weekdays(), &{&1, pattern.id})

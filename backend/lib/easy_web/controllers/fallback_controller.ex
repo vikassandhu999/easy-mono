@@ -362,6 +362,13 @@ defmodule EasyWeb.FallbackController do
     )
   end
 
+  def call(conn, {:error, :cannot_switch_past_slot}) do
+    call(
+      conn,
+      {:error, Error.unprocessable(%{fields: %{date: ["option switching is limited to the current local date"]}})}
+    )
+  end
+
   def call(conn, {:error, :invalid_idempotency_key}) do
     call(
       conn,

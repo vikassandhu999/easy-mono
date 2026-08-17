@@ -658,6 +658,32 @@ defmodule EasyWeb.OpenApi.Schemas.DiaryLogPlannedOptionRequest do
   )
 end
 
+defmodule EasyWeb.OpenApi.Schemas.DiarySwitchOptionRequest do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "DiarySwitchOptionRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        meal_slot: %Schema{type: :string, enum: Easy.Nutrition.MealSlot.names()},
+        meal_id: %Schema{type: :string, format: :uuid},
+        expected_revision: %Schema{type: :integer, minimum: 1}
+      },
+      required: [:meal_slot, :meal_id, :expected_revision],
+      example: %{
+        "meal_slot" => "breakfast",
+        "meal_id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+        "expected_revision" => 1
+      }
+    },
+    struct?: false
+  )
+end
+
 defmodule EasyWeb.OpenApi.Schemas.NutritionDaySlot do
   require OpenApiSpex
 
@@ -671,6 +697,7 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionDaySlot do
     properties: %{
       meal_slot: %Schema{type: :string, enum: Easy.Nutrition.MealSlot.names()},
       meal_id: %Schema{type: :string, format: :uuid, nullable: true},
+      revision: %Schema{type: :integer, minimum: 1, nullable: true},
       planned_calories: %Schema{type: :number, nullable: true},
       logged_calories: %Schema{type: :number, nullable: true},
       options: %Schema{type: :array, items: NutritionDayOption},

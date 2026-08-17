@@ -469,6 +469,25 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
         Repo.insert_all("nutrition_diary_command_ledger", [ledger_row(client, key)])
       end
     end
+
+    test "the database rejects an active option that belongs to another Diary Slot" do
+      client = insert(:client)
+      today = Date.utc_today()
+      slot_a = diary_slot_row(client, today)
+      slot_b = diary_slot_row(client, today, meal_slot: "lunch")
+      option_b = frozen_option_row(client, slot_b.id)
+
+      Repo.insert_all("nutrition_diary_slots", [slot_a, slot_b])
+      Repo.insert_all("nutrition_diary_frozen_options", [option_b])
+      Repo.query!("SET CONSTRAINTS nutrition_diary_slots_active_option_fkey IMMEDIATE")
+
+      assert_raise Postgrex.Error, fn ->
+        Repo.query!(
+          "UPDATE nutrition_diary_slots SET active_frozen_option_id = $1 WHERE id = $2",
+          [option_b.id, slot_a.id]
+        )
+      end
+    end
   end
 
   defp plan_row(coach, overrides) do
@@ -577,16 +596,31 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
     Map.merge(%{inserted_at: now, updated_at: now}, attrs)
   end
 
-  defp diary_slot_row(client, date) do
+  defp diary_slot_row(client, date, overrides \\ []) do
+    timestamps(
+      Map.merge(
+        %{
+          id: dump_uuid(),
+          local_date: date,
+          meal_slot: "breakfast",
+          applied_timezone: "Asia/Kolkata",
+          has_coverage: false,
+          revision: 1,
+          business_id: dump_uuid(client.business_id),
+          client_id: dump_uuid(client.id)
+        },
+        Map.new(overrides)
+      )
+    )
+  end
+
+  defp frozen_option_row(client, slot_id) do
     timestamps(%{
       id: dump_uuid(),
-      local_date: date,
-      meal_slot: "breakfast",
-      applied_timezone: "Asia/Kolkata",
-      has_coverage: false,
-      revision: 1,
+      position: 0,
+      meal_name: "Lunch",
       business_id: dump_uuid(client.business_id),
-      client_id: dump_uuid(client.id)
+      nutrition_diary_slot_id: slot_id
     })
   end
 

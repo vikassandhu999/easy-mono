@@ -1400,6 +1400,55 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingPlanResponse",
         "x-validate": null
       },
+      "DiarySwitchOptionRequest": {
+        "additionalProperties": false,
+        "example": {
+          "expected_revision": 1,
+          "meal_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+          "meal_slot": "breakfast"
+        },
+        "properties": {
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_slot": {
+            "enum": [
+              "early_morning",
+              "breakfast",
+              "mid_morning",
+              "lunch",
+              "afternoon",
+              "evening",
+              "dinner",
+              "pre_sleep",
+              "pre_workout",
+              "during_workout",
+              "post_workout"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "meal_slot",
+          "meal_id",
+          "expected_revision"
+        ],
+        "title": "DiarySwitchOptionRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "FoodUpdateRequest": {
         "additionalProperties": false,
         "description": "Request body for updating a coach-owned food. `source` is server-owned and immutable.",
@@ -4676,6 +4725,13 @@
           "planned_calories": {
             "nullable": true,
             "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "revision": {
+            "minimum": 1,
+            "nullable": true,
+            "type": "integer",
             "x-struct": null,
             "x-validate": null
           },
@@ -23178,6 +23234,100 @@
         "summary": "Copy exercise",
         "tags": [
           "coach exercises"
+        ]
+      }
+    },
+    "/v1/client/nutrition-days/{date}/active-option": {
+      "post": {
+        "callbacks": {},
+        "operationId": "switchClientNutritionDayOption",
+        "parameters": [
+          {
+            "description": "Client-local date",
+            "in": "path",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "UUID identifying this client intent",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiarySwitchOptionRequest"
+              }
+            }
+          },
+          "description": "Switch option request",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutritionDayResponse"
+                }
+              }
+            },
+            "description": "Nutrition day"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Stale revision or idempotency key reused with a different payload"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Switch the active frozen Meal Option for a Nutrition Day slot",
+        "tags": [
+          "client nutrition days"
         ]
       }
     },

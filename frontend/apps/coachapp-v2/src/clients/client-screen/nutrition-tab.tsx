@@ -6,7 +6,7 @@ import {Link, useNavigate, useSearchParams} from 'react-router-dom';
 import {toastMutationError} from '@/@components/mutation-toast';
 import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
-import {nutritionPlanRevisionRequest} from '@/api/nutrition-plan-lifecycle';
+import {clientPlanLifecycleLabel, nutritionPlanRevisionRequest} from '@/api/nutrition-plan-lifecycle';
 import {
   type NutritionPlan,
   useArchiveNutritionPlanMutation,
@@ -16,7 +16,7 @@ import {
 import {PlanPanel} from '@/clients/client-screen/plan-panel';
 import PlanAssignControl from '@/clients/components/plan-assign-control';
 import {SectionCard} from '@/clients/components/section-card';
-import {formatKcal, formatRowDate, lastNDays} from '@/clients/lib/client-detail-data';
+import {formatDayMonth, formatKcal, formatRowDate, lastNDays} from '@/clients/lib/client-detail-data';
 import {handleStaleNutritionPlanConflict} from '@/nutrition-plans/lib/stale-nutrition-plan-conflict';
 
 /** CD-NU: the active plan, then 14 days of adherence. */
@@ -103,6 +103,8 @@ export function NutritionTab({client}: {client: Client}) {
         meta={
           plan
             ? [
+                plan.lifecycle ? clientPlanLifecycleLabel(plan.lifecycle) : null,
+                plan.start_date ? `Started ${formatDayMonth(plan.start_date)}` : null,
                 plan.target_calories ? `${formatKcal(plan.target_calories)} kcal` : null,
                 plan.target_protein_g ? `P ${plan.target_protein_g} g` : null,
                 plan.target_carbs_g ? `C ${plan.target_carbs_g} g` : null,

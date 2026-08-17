@@ -34,6 +34,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
       assert length(data) == 1
       assert hd(data)["id"] != nil
+      assert hd(data)["lifecycle"] == "incomplete"
       assert hd(data)["meals"] == []
       assert Map.has_key?(hd(data), "day_patterns")
     end
@@ -89,6 +90,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       assert %{"data" => data} = json_response(conn, 200)
       assert data["id"] == plan.id
       assert data["kind"] == "client_plan"
+      assert data["lifecycle"] == "incomplete"
       assert data["day_patterns"] == []
       assert data["meals"] == []
     end

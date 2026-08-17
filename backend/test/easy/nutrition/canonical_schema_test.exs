@@ -296,6 +296,80 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
              ) == 4
     end
 
+    test "an active client has at most one incomplete Client Plan" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+
+      insert(:plan,
+        business: coach.business,
+        creator: coach.user,
+        client: client,
+        kind: :client_plan,
+        start_date: nil,
+        end_date: nil
+      )
+
+      assert_raise Postgrex.Error, fn ->
+        Repo.insert_all("nutrition_plans", [
+          plan_row(coach,
+            kind: "client_plan",
+            client_id: dump_uuid(client.id),
+            start_date: nil,
+            end_date: nil
+          )
+        ])
+      end
+    end
+
+    test "unarchived Client Plan Coverage cannot overlap, including an open-ended range" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+
+      insert(:plan,
+        business: coach.business,
+        creator: coach.user,
+        client: client,
+        kind: :client_plan,
+        start_date: ~D[2026-08-01],
+        end_date: ~D[2026-08-31]
+      )
+
+      assert_raise Postgrex.Error, fn ->
+        Repo.insert_all("nutrition_plans", [
+          plan_row(coach,
+            kind: "client_plan",
+            client_id: dump_uuid(client.id),
+            start_date: ~D[2026-08-15],
+            end_date: nil
+          )
+        ])
+      end
+    end
+
+    test "adjacent non-overlapping Coverage is accepted" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+
+      insert(:plan,
+        business: coach.business,
+        creator: coach.user,
+        client: client,
+        kind: :client_plan,
+        start_date: ~D[2026-08-01],
+        end_date: ~D[2026-08-31]
+      )
+
+      {1, _} =
+        Repo.insert_all("nutrition_plans", [
+          plan_row(coach,
+            kind: "client_plan",
+            client_id: dump_uuid(client.id),
+            start_date: ~D[2026-09-01],
+            end_date: nil
+          )
+        ])
+    end
+
     test "retained Library rows survive the Programming reset" do
       coach = insert(:coach)
       food = insert(:food, business: coach.business, creator: coach, name: "Kept Food")

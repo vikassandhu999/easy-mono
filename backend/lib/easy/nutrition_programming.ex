@@ -1,7 +1,9 @@
 defmodule Easy.Nutrition.Programming do
   alias Easy.Clients
+  alias Easy.Clients.Client
   alias Easy.CopyName
   alias Easy.Ctx
+  alias Easy.LocalCalendar
   alias Easy.Nutrition.{DayPattern, Library, Meal, MealItem, MealOption, MealSlot, Plan, WeekSchedule}
   alias Easy.Orgs.Business
   alias Easy.Repo
@@ -44,7 +46,7 @@ defmodule Easy.Nutrition.Programming do
         |> Plan.include_menu(ctx.business_id)
         |> Repo.all()
 
-      {:ok, %{count: Repo.aggregate(query, :count, :id), templates: templates}}
+      {:ok, %{count: Repo.aggregate(query, :count, :id), templates: stamp_lifecycle(templates)}}
     end
   end
 
@@ -71,7 +73,7 @@ defmodule Easy.Nutrition.Programming do
         |> Plan.include_client(ctx.business_id)
         |> Repo.all()
 
-      {:ok, %{count: Repo.aggregate(query, :count, :id), plans: plans}}
+      {:ok, %{count: Repo.aggregate(query, :count, :id), plans: stamp_lifecycle(plans)}}
     end
   end
 
@@ -98,9 +100,10 @@ defmodule Easy.Nutrition.Programming do
         |> Plan.newest()
         |> Utils.paginate(offset, limit)
         |> Plan.include_menu(ctx.business_id)
+        |> Plan.include_client(ctx.business_id)
         |> Repo.all()
 
-      {:ok, %{count: Repo.aggregate(query, :count, :id), plans: plans}}
+      {:ok, %{count: Repo.aggregate(query, :count, :id), plans: stamp_lifecycle(plans)}}
     end
   end
 
@@ -111,9 +114,48 @@ defmodule Easy.Nutrition.Programming do
       |> client_plan_query(client_id)
       |> Plan.for_archived(false)
       |> Plan.include_menu(ctx.business_id)
+      |> Plan.include_client(ctx.business_id)
       |> Repo.get(plan_id)
       |> ok_or_not_found()
     end
+  end
+
+  @spec resolve_client_coverage(Ctx.t(), Date.t()) ::
+          {:ok, nil | %{plan: Plan.t(), day_pattern: DayPattern.t() | nil, date: Date.t(), weekday: atom()}}
+          | {:error, :not_found}
+  def resolve_client_coverage(%Ctx{} = ctx, %Date{} = date) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+      ctx
+      |> covering_plan_query(client_id, date)
+      |> Repo.one()
+      |> resolve_covering_plan(date)
+    end
+  end
+
+  @spec resolve_coverage_for_client(Ctx.t(), String.t(), Date.t()) ::
+          {:ok, nil | %{plan: Plan.t(), day_pattern: DayPattern.t() | nil, date: Date.t(), weekday: atom()}}
+          | {:error, :not_found}
+  def resolve_coverage_for_client(%Ctx{} = ctx, client_id, %Date{} = date) do
+    with :ok <- ensure_coach(ctx),
+         {:ok, _client} <- Clients.authorize_client(ctx, client_id) do
+      ctx
+      |> covering_plan_query(client_id, date)
+      |> Repo.one()
+      |> resolve_covering_plan(date)
+    end
+  end
+
+  @spec covering_plans_for_clients(Ctx.t(), [String.t()], Date.t()) :: {:ok, %{String.t() => Plan.t()}}
+  def covering_plans_for_clients(%Ctx{} = ctx, client_ids, %Date{} = date) when is_list(client_ids) do
+    plans =
+      Plan
+      |> Plan.active_for_clients(ctx.business_id, client_ids, date)
+      |> Plan.include_client(ctx.business_id)
+      |> Plan.newest()
+      |> Repo.all()
+      |> stamp_lifecycle()
+
+    {:ok, Enum.reduce(plans, %{}, fn plan, acc -> Map.put_new(acc, plan.client_id, plan) end)}
   end
 
   @spec get_template(Ctx.t(), String.t()) :: {:ok, Plan.t()} | {:error, :not_found}
@@ -1208,7 +1250,8 @@ defmodule Easy.Nutrition.Programming do
      |> Plan.for_business(business_id)
      |> Plan.join_assigned_client_count(business_id)
      |> Plan.include_menu(business_id)
-     |> Repo.get(plan.id)}
+     |> Repo.get(plan.id)
+     |> stamp_lifecycle()}
   end
 
   defp preload_created(error, _business_id), do: error
@@ -1249,6 +1292,41 @@ defmodule Easy.Nutrition.Programming do
   defp ensure_coach(%Ctx{coach_id: coach_id}) when not is_nil(coach_id), do: :ok
   defp ensure_coach(%Ctx{}), do: {:error, :not_found}
 
+  defp covering_plan_query(%Ctx{} = ctx, client_id, date) do
+    ctx
+    |> client_plan_query(client_id)
+    |> Plan.covering(client_id, date)
+    |> Plan.include_menu(ctx.business_id)
+    |> Plan.include_client(ctx.business_id)
+  end
+
+  defp resolve_covering_plan(nil, _date), do: {:ok, nil}
+
+  defp resolve_covering_plan(plan, date) do
+    weekday = Enum.at(WeekSchedule.weekdays(), Date.day_of_week(date) - 1)
+    scheduled = Enum.find(List.wrap(plan.week_schedule), &(&1.weekday == weekday))
+
+    pattern =
+      scheduled && Enum.find(List.wrap(plan.day_patterns), &(&1.id == scheduled.nutrition_day_pattern_id))
+
+    {:ok, %{plan: stamp_lifecycle(plan), day_pattern: pattern, date: date, weekday: weekday}}
+  end
+
+  defp stamp_lifecycle(plans) when is_list(plans), do: Enum.map(plans, &stamp_lifecycle/1)
+
+  defp stamp_lifecycle(%Plan{} = plan) do
+    %{plan | lifecycle: Plan.lifecycle(plan, local_today_for(plan))}
+  end
+
+  defp local_today_for(%Plan{client: %Client{timezone: timezone}}) do
+    LocalCalendar.to_local_date(DateTime.utc_now(), LocalCalendar.applied_timezone(timezone, nil))
+  end
+
+  defp local_today_for(_plan) do
+    LocalCalendar.to_local_date(DateTime.utc_now(), LocalCalendar.default_timezone())
+  end
+
   defp ok_or_not_found(nil), do: {:error, :not_found}
+  defp ok_or_not_found(%Plan{} = plan), do: {:ok, stamp_lifecycle(plan)}
   defp ok_or_not_found(value), do: {:ok, value}
 end

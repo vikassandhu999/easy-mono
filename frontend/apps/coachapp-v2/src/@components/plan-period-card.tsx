@@ -1,16 +1,14 @@
 /**
- * Start and end dates for an ASSIGNED training plan.
+ * Start and end dates for an assigned Client Plan.
  *
- * Kept beyond the TB reference: the plan edit screen (badge TE) only edits name
- * and description, so this is the one place a coach sets the assignment period.
- * Library templates have no period, so a template renders nothing.
+ * Template edit screens only change metadata, so this is the one place a coach
+ * sets Coverage. Templates have no period and render nothing.
  */
 import {Button} from '@heroui/react';
 import {useState} from 'react';
 
 import DateInput from '@/@components/date-input';
-
-import {periodError} from '../period';
+import {periodError} from '@/@components/plan-period';
 
 interface PlanPeriodCardProps {
   startDate: string | null;
@@ -18,9 +16,6 @@ interface PlanPeriodCardProps {
   onSave: (startDate: string | null, endDate: string | null) => Promise<void>;
 }
 
-// No prop→draft sync: this card is the only writer of the period, so after a
-// successful save the props simply catch up to the drafts, and after a failed
-// one keeping the coach's drafts (dirty, retryable) is exactly what we want.
 export function PlanPeriodCard({startDate, endDate, onSave}: PlanPeriodCardProps) {
   const [draftStart, setDraftStart] = useState(startDate);
   const [draftEnd, setDraftEnd] = useState(endDate);

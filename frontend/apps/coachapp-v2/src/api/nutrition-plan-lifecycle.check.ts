@@ -3,6 +3,7 @@ import {
   getStaleNutritionPlanRevision,
   nutritionPlanAssignmentRequest,
   nutritionPlanDeleteRequest,
+  nutritionPlanPeriodRequest,
   nutritionPlanRevisionRequest,
 } from './nutrition-plan-lifecycle.ts';
 
@@ -44,6 +45,13 @@ if (
   })
 ) {
   throw new Error('assignment must map the visible client, template, dates, and observed source revision');
+}
+
+if (
+  JSON.stringify(nutritionPlanPeriodRequest(plan, {end_date: null, start_date: '2026-10-01'})) !==
+  JSON.stringify({end_date: null, start_date: '2026-10-01', expected_revision: 7})
+) {
+  throw new Error('Client Plan Coverage edits must include the observed revision');
 }
 
 if (

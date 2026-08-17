@@ -23,10 +23,12 @@
 import {useQuery} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
-import {nutritionDayKeys, nutritionPlanKeys} from '@/api/keys';
+import {clientKeys, nutritionDayKeys, nutritionPlanKeys} from '@/api/keys';
 import {planToMenuRequest} from '@/api/nutrition-menu';
+import {nutritionPlanPeriodRequest} from '@/api/nutrition-plan-lifecycle';
 import {patchQueryData, queryClient} from '@/api/query-client';
 import type {components} from '@/api/schema';
+import {workbenchMutationTargets} from '@/api/workbench-targets';
 
 export type NutritionPlan = components['schemas']['NutritionPlan'];
 export type NutritionDayPattern = components['schemas']['NutritionDayPattern'];
@@ -114,5 +116,38 @@ export async function replaceMenu(planId: string, plan: NutritionPlan): Promise<
       body: planToMenuRequest(plan),
     }),
   )) as NutritionPlanResponse;
+  return response.data;
+}
+
+/**
+ * The one builder write with cache effects beyond the detail entry: assigned
+ * plans' dates show on list rows, client cards, and Workbench, so this mirrors
+ * `useUpdateNutritionPlanMutation`'s invalidations (detail included — the
+ * refetch confirms the optimistic patch).
+ */
+export async function updatePlanPeriod(
+  planId: string,
+  body: Pick<components['schemas']['NutritionPlanUpdateRequest'], 'end_date' | 'start_date'>,
+): Promise<NutritionPlan> {
+  const plan = readPlan(planId);
+  if (!plan) {
+    throw new Error('Cannot update Client Plan Coverage before the plan is loaded');
+  }
+
+  const response = (await call(
+    client.PATCH('/v1/coach/nutrition-plans/{id}', {
+      params: {path: {id: planId}},
+      body: nutritionPlanPeriodRequest(plan, body),
+    }),
+  )) as NutritionPlanResponse;
+  queryClient.invalidateQueries({queryKey: nutritionPlanKeys.detail(planId)});
+  queryClient.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
+  queryClient.invalidateQueries({queryKey: nutritionPlanKeys.forClients()});
+  queryClient.invalidateQueries({queryKey: nutritionDayKeys.all});
+  queryClient.invalidateQueries({queryKey: clientKeys.lists()});
+  queryClient.invalidateQueries({queryKey: clientKeys.details()});
+  for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
+    queryClient.invalidateQueries({queryKey: [...queryKey]});
+  }
   return response.data;
 }

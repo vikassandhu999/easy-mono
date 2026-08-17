@@ -269,10 +269,7 @@ defmodule Easy.WorkbenchProgrammingQueue do
   end
 
   defp active_nutrition_plans(business_id) do
-    from(plan in Plan,
-      where:
-        plan.business_id == ^business_id and plan.kind == :client_plan and is_nil(plan.archived_at) and
-          not is_nil(plan.start_date),
+    from(plan in Plan.covering_intervals(business_id),
       select: %{
         business_id: plan.business_id,
         client_id: plan.client_id,

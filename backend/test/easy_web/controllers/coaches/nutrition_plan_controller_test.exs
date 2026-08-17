@@ -203,6 +203,8 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
     test "preserves Client Plan detail and Coverage updates", %{conn: conn} do
       coach = insert(:coach)
       client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      start_date = Date.add(Date.utc_today(), 7)
+      end_date = Date.add(start_date, 30)
 
       client_plan =
         insert(:plan,
@@ -210,7 +212,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
           creator: coach.user,
           client: client,
           kind: :client_plan,
-          start_date: ~D[2026-09-01]
+          start_date: Date.add(start_date, -7)
         )
 
       conn = authenticate_coach(conn, coach)
@@ -223,19 +225,121 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       assert client_id == client.id
 
       assert %{
-               "data" => %{
-                 "start_date" => "2026-09-08",
-                 "end_date" => "2026-10-08",
-                 "revision" => 2
-               }
+               "data" =>
+                 %{
+                   "start_date" => start_iso,
+                   "end_date" => end_iso,
+                   "lifecycle" => "upcoming",
+                   "revision" => 2
+                 } = data
              } =
                conn
                |> patch("/v1/coach/nutrition-plans/#{client_plan.id}", %{
                  "expected_revision" => 1,
-                 "start_date" => "2026-09-08",
-                 "end_date" => "2026-10-08"
+                 "start_date" => Date.to_iso8601(start_date),
+                 "end_date" => Date.to_iso8601(end_date)
                })
                |> json_response(200)
+
+      assert start_iso == Date.to_iso8601(start_date)
+      assert end_iso == Date.to_iso8601(end_date)
+      assert_schema(data, "NutritionPlan", EasyWeb.ApiSpec.spec())
+    end
+
+    test "reports incomplete, overlap, stale-revision, and archived Coverage errors", %{conn: conn} do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+
+      first =
+        insert(:plan,
+          business: coach.business,
+          creator: coach.user,
+          client: client,
+          kind: :client_plan,
+          start_date: ~D[2026-09-01],
+          end_date: ~D[2026-09-30]
+        )
+
+      second =
+        insert(:plan,
+          business: coach.business,
+          creator: coach.user,
+          client: client,
+          kind: :client_plan,
+          start_date: ~D[2026-10-01],
+          end_date: ~D[2026-10-31]
+        )
+
+      conn = authenticate_coach(conn, coach)
+
+      overlap =
+        conn
+        |> patch("/v1/coach/nutrition-plans/#{second.id}", %{
+          "expected_revision" => 1,
+          "start_date" => "2026-09-15",
+          "end_date" => nil
+        })
+        |> json_response(422)
+
+      assert %{
+               "error_code" => "invalid_input",
+               "error_detail" => %{"fields" => %{"start_date" => ["overlaps another Client Plan's Coverage"]}}
+             } = overlap
+
+      stale =
+        conn
+        |> patch("/v1/coach/nutrition-plans/#{first.id}", %{
+          "expected_revision" => 9,
+          "start_date" => "2026-08-01"
+        })
+        |> json_response(409)
+
+      assert %{"error_code" => "stale_revision", "error_detail" => %{"current_revision" => 1}} = stale
+
+      archived =
+        conn
+        |> post("/v1/coach/nutrition-plans/#{first.id}/archive", %{"expected_revision" => 1})
+        |> json_response(200)
+        |> Map.fetch!("data")
+
+      archived_edit =
+        conn
+        |> patch("/v1/coach/nutrition-plans/#{archived["id"]}", %{
+          "expected_revision" => archived["revision"],
+          "start_date" => "2026-08-01"
+        })
+        |> json_response(422)
+
+      assert %{
+               "error_code" => "invalid_input",
+               "error_detail" => %{"fields" => %{"archived_at" => ["is read-only"]}}
+             } = archived_edit
+
+      incomplete =
+        insert(:plan,
+          business: coach.business,
+          creator: coach.user,
+          client: client,
+          kind: :client_plan
+        )
+
+      other_template =
+        insert(:plan, business: coach.business, creator: coach.user, name: "Second Draft")
+
+      second_incomplete =
+        conn
+        |> post("/v1/coach/clients/#{client.id}/nutrition-plans/#{other_template.id}/assign", %{
+          "expected_revision" => 1,
+          "start_date" => nil
+        })
+        |> json_response(422)
+
+      assert %{
+               "error_code" => "invalid_input",
+               "error_detail" => %{"fields" => %{"client_id" => ["already has an incomplete Client Plan"]}}
+             } = second_incomplete
+
+      assert incomplete.id
     end
   end
 

@@ -21,6 +21,7 @@ Rewrite Nutrition around Library, Programming, and Diary. The effort ends when t
 * [Author Meals through atomic Menu replacement](./issues/05-atomic-menu-meals.md) — `Programming.replace_menu/4` and `PUT /v1/coach/nutrition-plans/:id/menu` replace the complete Meal tree at the expected revision; Library resolves Food/Recipe Portions; the coach builder saves add/edit/reorder/remove through that one write.
 * [Author Day Patterns, Meal Slots, and Week Schedules](./issues/06-day-patterns-slots-schedule.md) — the same Menu write now carries Day Patterns, ordered Meal Options in the closed 11-slot vocabulary, and a complete Mon–Sun Week Schedule; Postgres rejects incomplete schedules and cross-tenant parentage; the coach builder saves day, slot, and weekday edits through that one PUT.
 * [Assign Templates and manage Client Plans](./issues/07-assignment-client-plans.md) — `Programming.assign_template_to_client/5` copies a Template Menu into a Client Plan at the expected revision and advances onboarding in one transaction; owners mutate every Client Plan, coaches only while assigned; client-self reads are unarchived by default.
+* [Resolve Coverage and Programming queues](./issues/08-coverage-workbench.md) — Programming rejects overlapping unarchived Coverage and more than one incomplete Client Plan; live guidance is one covering plan or successful absence; lifecycle is timezone-derived; Workbench and client-list share one bounded batch projection; coaches edit Coverage in the builder.
 
 ## Not yet specified
 

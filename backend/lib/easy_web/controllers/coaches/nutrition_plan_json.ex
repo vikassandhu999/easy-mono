@@ -33,7 +33,7 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
       revision: plan.revision,
       archived_at: plan.archived_at,
       status: if(plan.archived_at, do: :archived, else: :active),
-      lifecycle: Plan.lifecycle(plan),
+      lifecycle: plan.lifecycle,
       assigned_client_count: plan.assigned_client_count || 0,
       target_calories: plan.target_calories,
       target_protein_g: plan.target_protein_g,

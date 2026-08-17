@@ -38,7 +38,7 @@ function EditNutritionPlanHeader({goBack, kind}: {goBack: () => void; kind?: Nut
         </div>
         <Page.Description>
           {kind === 'client_plan'
-            ? 'Update Client Plan metadata and targets.'
+            ? 'Update Client Plan metadata and targets. Coverage dates live in the builder.'
             : kind === 'template'
               ? 'Update Template metadata and targets. Its Menu remains in the builder.'
               : "Update the plan's goals. Meals & days live in the builder."}

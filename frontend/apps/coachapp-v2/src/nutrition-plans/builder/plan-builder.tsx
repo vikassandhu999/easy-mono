@@ -18,6 +18,7 @@
 import {Typography, useOverlayState} from '@heroui/react';
 import {useMemo, useRef, useState} from 'react';
 
+import {PlanPeriodCard} from '@/@components/plan-period-card';
 import type {NutritionMeal, NutritionPlan} from '@/api/nutrition-plan-builder';
 
 import {AddItemsFlow} from './components/add-items-flow';
@@ -93,14 +94,26 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
     };
   }, [activeDay, days, mealById, meals]);
 
+  const periodCard =
+    plan.client_id != null ? (
+      <PlanPeriodCard
+        endDate={plan.end_date}
+        onSave={commands.setPlanPeriod}
+        startDate={plan.start_date}
+      />
+    ) : null;
+
   if (!activeDay || !derived) {
     return (
-      <Typography
-        color="muted"
-        type="body-sm"
-      >
-        No days yet.
-      </Typography>
+      <div className="flex flex-col gap-4">
+        {periodCard}
+        <Typography
+          color="muted"
+          type="body-sm"
+        >
+          No days yet.
+        </Typography>
+      </div>
     );
   }
 
@@ -132,6 +145,7 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
     // gap-4, no pb: the same stack rhythm as the training builder (its
     // plan-builder is also `flex flex-col gap-4`; Page.Content owns the pb-10).
     <div className="flex flex-col gap-4">
+      {periodCard}
       {/* Day switcher, weekday chips, rename/delete — the shared header shape */}
       <DayHeader
         assignedDays={assignedWeekdays(weekdayAssignments, activeDay.id)}

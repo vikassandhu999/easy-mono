@@ -14,6 +14,7 @@
 import {toast} from '@heroui/react';
 
 import {toastMutationError} from '@/@components/mutation-toast';
+import {periodError} from '@/@components/plan-period';
 import {createLocalNodeId, emptyNutrients, mealItemFromDraft, nextPosition, reorderNodes} from '@/api/nutrition-menu';
 import type {
   NutritionDayPatternSlot,
@@ -24,6 +25,7 @@ import type {
 } from '@/api/nutrition-plan-builder';
 import * as api from '@/api/nutrition-plan-builder';
 import {createCoalescingQueue} from '@/builder-kit/coalescing-queue';
+import {coverageErrorMessage} from '@/nutrition-plans/lib/coverage-error';
 import {handleStaleNutritionPlanConflict} from '@/nutrition-plans/lib/stale-nutrition-plan-conflict';
 
 import type {MealItemDraft} from './amount-draft';
@@ -538,6 +540,40 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
     );
   };
 
+  const setPlanPeriod = (startDate: string | null, endDate: string | null): Promise<void> => {
+    const requestedEpoch = writeEpoch;
+
+    return serialize(async () => {
+      if (requestedEpoch !== writeEpoch) {
+        return;
+      }
+
+      const error = periodError(startDate, endDate);
+      if (error) {
+        toast.danger(error);
+        return;
+      }
+
+      const patched = patch((plan) => {
+        plan.start_date = startDate;
+        plan.end_date = endDate;
+      });
+
+      try {
+        const saved = await api.updatePlanPeriod(planId, {start_date: startDate, end_date: endDate});
+        patch((draft) => {
+          Object.assign(draft, saved);
+        });
+      } catch (error) {
+        patched.undo();
+        if (await handleStaleConflict(error)) {
+          return;
+        }
+        toast.danger(coverageErrorMessage(error, "Couldn't save dates"));
+      }
+    });
+  };
+
   return {
     addDay,
     addItems,
@@ -561,5 +597,6 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
     renameMeal,
     scheduleWeekday,
     writeItem,
+    setPlanPeriod,
   };
 }

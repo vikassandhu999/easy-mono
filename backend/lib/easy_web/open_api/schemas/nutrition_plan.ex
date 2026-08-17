@@ -38,7 +38,7 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlanUpdateRequest do
   OpenApiSpex.schema(
     %{
       title: "NutritionPlanUpdateRequest",
-      description: "Revisioned metadata and nutrient targets for a Nutrition Template or Client Nutrition Plan.",
+      description: "Revisioned metadata and nutrient targets. Client Nutrition Plans also accept Coverage dates.",
       type: :object,
       additionalProperties: false,
       properties: %{

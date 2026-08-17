@@ -6,7 +6,8 @@ defmodule Easy.Clients do
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Identity.User
-  alias Easy.Nutrition.Plan
+  alias Easy.LocalCalendar
+  alias Easy.Nutrition.Programming
   alias Easy.Orgs
   alias Easy.Repo
   alias Easy.Training.TrainingPlan
@@ -114,7 +115,7 @@ defmodule Easy.Clients do
          |> Client.include_preloads(ctx.business_id)
          |> Repo.all()
          |> Enum.map(&put_expiring_flag/1)
-         |> put_plan_names_for_clients(ctx.business_id, include_plans?)
+         |> put_plan_names_for_clients(ctx, include_plans?)
      }}
   end
 
@@ -279,15 +280,16 @@ defmodule Easy.Clients do
   # Opt-in (`include_plans: true`): the clients list wants each row's in-force plan
   # names for its chips. Two extra queries per PAGE, not per row, and skipped
   # entirely for every caller that doesn't ask.
-  defp put_plan_names_for_clients(clients, _business_id, false), do: clients
-  defp put_plan_names_for_clients([], _business_id, true), do: []
+  defp put_plan_names_for_clients(clients, _ctx, false), do: clients
+  defp put_plan_names_for_clients([], _ctx, true), do: []
 
-  defp put_plan_names_for_clients(clients, business_id, true) do
+  defp put_plan_names_for_clients(clients, %Ctx{} = ctx, true) do
     ids = Enum.map(clients, & &1.id)
-    today = Date.utc_today()
+    today = LocalCalendar.to_local_date(DateTime.utc_now(), LocalCalendar.default_timezone())
 
-    training = plan_names_by_client(TrainingPlan.active_for_clients(business_id, ids, today))
-    nutrition = plan_names_by_client(Plan.active_for_clients(business_id, ids, today))
+    training = plan_names_by_client(TrainingPlan.active_for_clients(ctx.business_id, ids, today))
+    {:ok, nutrition_plans} = Programming.covering_plans_for_clients(ctx, ids, today)
+    nutrition = Map.new(nutrition_plans, fn {client_id, plan} -> {client_id, plan.name} end)
 
     Enum.map(clients, fn client ->
       %{

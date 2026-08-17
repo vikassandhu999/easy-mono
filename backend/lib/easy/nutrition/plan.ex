@@ -27,6 +27,7 @@ defmodule Easy.Nutrition.Plan do
     field :revision, :integer, default: 1
     field :archived_at, :utc_datetime
     field :status, Ecto.Enum, values: [:active, :archived], virtual: true, default: :active
+    field :lifecycle, Ecto.Enum, values: @lifecycles, virtual: true
     field :assigned_client_count, :integer, virtual: true, default: 0
     field :target_calories, :float
     field :target_protein_g, :float
@@ -188,8 +189,14 @@ defmodule Easy.Nutrition.Plan do
     |> check_constraint(:revision, name: :nutrition_plans_revision_check)
     |> check_constraint(:start_date, name: :nutrition_plans_period_check)
     |> check_constraint(:target_calories, name: :nutrition_plans_targets_check)
-    |> unique_constraint(:client_id, name: :nutrition_plans_one_incomplete_client_plan_index)
-    |> exclusion_constraint(:start_date, name: :nutrition_plans_no_overlapping_coverage)
+    |> unique_constraint(:client_id,
+      name: :nutrition_plans_one_incomplete_client_plan_index,
+      message: "already has an incomplete Client Plan"
+    )
+    |> exclusion_constraint(:start_date,
+      name: :nutrition_plans_no_overlapping_coverage,
+      message: "overlaps another Client Plan's Coverage"
+    )
   end
 
   @spec validate_date_range(Ecto.Changeset.t()) :: Ecto.Changeset.t()
@@ -260,13 +267,19 @@ defmodule Easy.Nutrition.Plan do
 
   @spec active_for_clients(Ecto.Queryable.t(), String.t(), [String.t()], Date.t()) :: Ecto.Query.t()
   def active_for_clients(query \\ __MODULE__, business_id, client_ids, date) do
+    query
+    |> covering_intervals(business_id)
+    |> where([plan], plan.client_id in ^client_ids)
+    |> where([plan], plan.start_date <= ^date)
+    |> where([plan], is_nil(plan.end_date) or plan.end_date >= ^date)
+  end
+
+  @spec covering_intervals(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def covering_intervals(query \\ __MODULE__, business_id) do
     from(plan in query,
-      where: plan.business_id == ^business_id,
-      where: plan.kind == :client_plan,
-      where: plan.client_id in ^client_ids,
-      where: is_nil(plan.archived_at),
-      where: not is_nil(plan.start_date) and plan.start_date <= ^date,
-      where: is_nil(plan.end_date) or plan.end_date >= ^date
+      where:
+        plan.business_id == ^business_id and plan.kind == :client_plan and is_nil(plan.archived_at) and
+          not is_nil(plan.start_date)
     )
   end
 

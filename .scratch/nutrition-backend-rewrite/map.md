@@ -23,6 +23,7 @@ Rewrite Nutrition around Library, Programming, and Diary. The effort ends when t
 * [Assign Templates and manage Client Plans](./issues/07-assignment-client-plans.md) — `Programming.assign_template_to_client/5` copies a Template Menu into a Client Plan at the expected revision and advances onboarding in one transaction; owners mutate every Client Plan, coaches only while assigned; client-self reads are unarchived by default.
 * [Resolve Coverage and Programming queues](./issues/08-coverage-workbench.md) — Programming rejects overlapping unarchived Coverage and more than one incomplete Client Plan; live guidance is one covering plan or successful absence; lifecycle is timezone-derived; Workbench and client-list share one bounded batch projection; coaches edit Coverage in the builder.
 * [Protect Library content used by Menus](./issues/09-library-menu-protection.md) — Library blocks Food/Recipe deletion and cooked-weight removal that would break Recipe Ingredients or Menus, including archived plans; usage impact is tenant-scoped; structural FKs restrict and Diary references nullify.
+* [Reset Diary and serve live Nutrition Days](./issues/10-live-nutrition-days.md) — Diary assembles one Nutrition Day per client-local date; today/future join nullable Coverage as live options with empty rows; past dates skip Programming; meal-log rows are deleted; client Today and coach Nutrition Day consume that read.
 
 ## Not yet specified
 

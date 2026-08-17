@@ -46,34 +46,30 @@ export default function AmountSheet({
   const busy = logPlanned.isPending || updateEntry.isPending || deleteEntry.isPending;
 
   const {loggedEntry, plannedItem} = target;
-  // Servings mode: recipe items the plan sizes by servings (no weight) — the sheet
-  // then edits the serving count and logs {amount, unit}, never a fabricated weight.
+  const portion = plannedItem?.portion;
+  // Servings mode: recipe items the plan sizes by servings (no grams).
   const servings = loggedEntry
     ? loggedEntry.weight_g == null && loggedEntry.amount != null
-    : plannedItem != null && plannedItem.weight_g == null && plannedItem.amount != null;
-  const unitLabel = servings ? (loggedEntry?.unit ?? plannedItem?.unit) || 'serving' : 'g';
+    : portion?.kind === 'serving';
+  const unitLabel = servings ? (loggedEntry?.unit ?? portion?.unit) || 'serving' : 'g';
   const plannedPortion = servings
-    ? (loggedEntry?.amount ?? plannedItem?.amount ?? 1)
-    : (loggedEntry?.weight_g ?? plannedItem?.weight_g ?? 100);
+    ? (loggedEntry?.amount ?? portion?.amount ?? 1)
+    : (loggedEntry?.weight_g ?? portion?.grams ?? 100);
   // raw string so decimals (0.5) and a cleared field stay typeable; parse on use.
   const [raw, setRaw] = useState<string>(String(plannedPortion));
   const [free, setFree] = useState(false);
   const weight = Math.max(0, Number(raw) || 0);
 
-  // Use the planned food's per-100g only for an unlogged item; once an entry exists
-  // (incl. a replacement, whose food differs from the plan) scale its frozen macros.
-  const per100 =
-    !loggedEntry && plannedItem?.food_id
-      ? (plannedItem.nutrition as null | Record<string, null | number> | undefined)
-      : null;
-
+  // Scale the planned item's resolved nutrients, or an existing entry's frozen macros.
   const liveMacros = (w: number): Macros | null => {
-    if (per100) {
+    const plannedBase = servings ? (portion?.amount ?? 0) : (portion?.grams ?? 0);
+    if (!loggedEntry && plannedItem && plannedBase > 0) {
+      const k = w / plannedBase;
       return {
-        c: ((per100.carbs_g_per_100g ?? 0) * w) / 100,
-        cal: ((per100.calories_per_100g ?? 0) * w) / 100,
-        f: ((per100.fat_g_per_100g ?? 0) * w) / 100,
-        p: ((per100.protein_g_per_100g ?? 0) * w) / 100,
+        c: (plannedItem.nutrients.carbohydrates ?? 0) * k,
+        cal: (plannedItem.nutrients.calories ?? 0) * k,
+        f: (plannedItem.nutrients.fat ?? 0) * k,
+        p: (plannedItem.nutrients.protein ?? 0) * k,
       };
     }
     const base = servings ? loggedEntry?.amount : loggedEntry?.weight_g;

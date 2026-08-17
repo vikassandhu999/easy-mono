@@ -493,6 +493,7 @@ end
 defmodule EasyWeb.OpenApi.Schemas.NutritionDayOptionItem do
   require OpenApiSpex
 
+  alias EasyWeb.OpenApi.Schemas.{NutrientTotals, NutritionPortion}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -501,16 +502,15 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionDayOptionItem do
     additionalProperties: false,
     properties: %{
       meal_item_id: %Schema{type: :string, format: :uuid},
-      position: %Schema{type: :integer},
+      kind: %Schema{type: :string, enum: ["food", "recipe"]},
+      name: %Schema{type: :string, nullable: true},
       food_id: %Schema{type: :string, format: :uuid, nullable: true},
       recipe_id: %Schema{type: :string, format: :uuid, nullable: true},
-      food_name: %Schema{type: :string, nullable: true},
-      amount: %Schema{type: :number, nullable: true},
-      unit: %Schema{type: :string, nullable: true},
-      weight_g: %Schema{type: :number, nullable: true},
-      nutrition: %Schema{type: :object, additionalProperties: true, nullable: true}
+      position: %Schema{type: :integer},
+      portion: NutritionPortion,
+      nutrients: NutrientTotals
     },
-    required: [:meal_item_id]
+    required: [:meal_item_id, :kind, :name, :position, :portion, :nutrients]
   })
 end
 
@@ -545,7 +545,7 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionDaySlot do
     type: :object,
     additionalProperties: false,
     properties: %{
-      meal_slot: %Schema{type: :string, enum: Easy.MealSlot.names()},
+      meal_slot: %Schema{type: :string, enum: Easy.Nutrition.MealSlot.names()},
       meal_id: %Schema{type: :string, format: :uuid, nullable: true},
       planned_calories: %Schema{type: :number, nullable: true},
       logged_calories: %Schema{type: :number, nullable: true},
@@ -569,10 +569,11 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionDay do
     properties: %{
       date: %Schema{type: :string, format: :date},
       plan_id: %Schema{type: :string, format: :uuid, nullable: true},
+      write_eligible: %Schema{type: :boolean},
       targets: NutritionDayTargets,
       slots: %Schema{type: :array, items: NutritionDaySlot}
     },
-    required: [:date, :targets, :slots]
+    required: [:date, :write_eligible, :targets, :slots]
   })
 end
 

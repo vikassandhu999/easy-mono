@@ -442,7 +442,7 @@ export interface paths {
     };
     /**
      * List nutrition days
-     * @description Reconciled nutrition-day payload: targets, live options, and diary rows.
+     * @description Nutrition Day payload: targets, live guidance for unstarted slots, and diary rows.
      */
     get: operations['listClientNutritionDays'];
     put?: never;
@@ -1091,20 +1091,18 @@ export interface components {
     };
     /** NutritionDayOptionItem */
     NutritionDayOptionItem: {
-      amount?: number | null;
       /** Format: uuid */
       food_id?: string | null;
-      food_name?: string | null;
+      /** @enum {string} */
+      kind: 'food' | 'recipe';
       /** Format: uuid */
       meal_item_id: string;
-      nutrition?: {
-        [key: string]: unknown;
-      } | null;
-      position?: number;
+      name: string | null;
+      nutrients: components['schemas']['NutrientTotals'];
+      portion: components['schemas']['NutritionPortion'];
+      position: number;
       /** Format: uuid */
       recipe_id?: string | null;
-      unit?: string | null;
-      weight_g?: number | null;
     };
     /** TrainingExerciseResponse */
     TrainingExerciseResponse: {
@@ -2187,7 +2185,18 @@ export interface components {
       /** Format: uuid */
       meal_id?: string | null;
       /** @enum {string} */
-      meal_slot: 'breakfast' | 'morning_snack' | 'lunch' | 'afternoon_snack' | 'dinner' | 'evening_snack';
+      meal_slot:
+        | 'early_morning'
+        | 'breakfast'
+        | 'mid_morning'
+        | 'lunch'
+        | 'afternoon'
+        | 'evening'
+        | 'dinner'
+        | 'pre_sleep'
+        | 'pre_workout'
+        | 'during_workout'
+        | 'post_workout';
       options: components['schemas']['NutritionDayOption'][];
       planned_calories?: number | null;
       rows: components['schemas']['MealLogDiaryRow'][];
@@ -2225,6 +2234,7 @@ export interface components {
       plan_id?: string | null;
       slots: components['schemas']['NutritionDaySlot'][];
       targets: components['schemas']['NutritionDayTargets'];
+      write_eligible: boolean;
     };
     /** BillingCheckoutRequest */
     BillingCheckoutRequest: {
@@ -5763,7 +5773,7 @@ export interface operations {
   listClientNutritionDays: {
     parameters: {
       query?: {
-        /** @description Exact date (YYYY-MM-DD); overrides from/to */
+        /** @description Exact local date (YYYY-MM-DD); overrides from/to */
         date?: string;
         /** @description Inclusive start date; required with to */
         from?: string;

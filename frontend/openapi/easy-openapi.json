@@ -499,12 +499,6 @@
       "NutritionDayOptionItem": {
         "additionalProperties": false,
         "properties": {
-          "amount": {
-            "nullable": true,
-            "type": "number",
-            "x-struct": null,
-            "x-validate": null
-          },
           "food_id": {
             "format": "uuid",
             "nullable": true,
@@ -512,8 +506,11 @@
             "x-struct": null,
             "x-validate": null
           },
-          "food_name": {
-            "nullable": true,
+          "kind": {
+            "enum": [
+              "food",
+              "recipe"
+            ],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -524,12 +521,17 @@
             "x-struct": null,
             "x-validate": null
           },
-          "nutrition": {
-            "additionalProperties": true,
+          "name": {
             "nullable": true,
-            "type": "object",
+            "type": "string",
             "x-struct": null,
             "x-validate": null
+          },
+          "nutrients": {
+            "$ref": "#/components/schemas/NutrientTotals"
+          },
+          "portion": {
+            "$ref": "#/components/schemas/NutritionPortion"
           },
           "position": {
             "type": "integer",
@@ -542,22 +544,15 @@
             "type": "string",
             "x-struct": null,
             "x-validate": null
-          },
-          "unit": {
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "weight_g": {
-            "nullable": true,
-            "type": "number",
-            "x-struct": null,
-            "x-validate": null
           }
         },
         "required": [
-          "meal_item_id"
+          "meal_item_id",
+          "kind",
+          "name",
+          "position",
+          "portion",
+          "nutrients"
         ],
         "title": "NutritionDayOptionItem",
         "type": "object",
@@ -4638,12 +4633,17 @@
           },
           "meal_slot": {
             "enum": [
+              "early_morning",
               "breakfast",
-              "morning_snack",
+              "mid_morning",
               "lunch",
-              "afternoon_snack",
+              "afternoon",
+              "evening",
               "dinner",
-              "evening_snack"
+              "pre_sleep",
+              "pre_workout",
+              "during_workout",
+              "post_workout"
             ],
             "type": "string",
             "x-struct": null,
@@ -4809,10 +4809,16 @@
           },
           "targets": {
             "$ref": "#/components/schemas/NutritionDayTargets"
+          },
+          "write_eligible": {
+            "type": "boolean",
+            "x-struct": null,
+            "x-validate": null
           }
         },
         "required": [
           "date",
+          "write_eligible",
           "targets",
           "slots"
         ],
@@ -15124,7 +15130,7 @@
     "/v1/coach/clients/{client_id}/nutrition-days": {
       "get": {
         "callbacks": {},
-        "description": "Reconciled nutrition-day payload for a client: targets, options, diary rows.",
+        "description": "Nutrition Day payload for a client: the same row and Meal Slot vocabulary as the client read.",
         "operationId": "listCoachNutritionDays",
         "parameters": [
           {
@@ -15139,7 +15145,7 @@
             }
           },
           {
-            "description": "Exact date (YYYY-MM-DD); overrides from/to",
+            "description": "Exact local date (YYYY-MM-DD); overrides from/to",
             "in": "query",
             "name": "date",
             "required": false,
@@ -18608,11 +18614,11 @@
     "/v1/client/nutrition-days": {
       "get": {
         "callbacks": {},
-        "description": "Reconciled nutrition-day payload: targets, live options, and diary rows.",
+        "description": "Nutrition Day payload: targets, live guidance for unstarted slots, and diary rows.",
         "operationId": "listClientNutritionDays",
         "parameters": [
           {
-            "description": "Exact date (YYYY-MM-DD); overrides from/to",
+            "description": "Exact local date (YYYY-MM-DD); overrides from/to",
             "in": "query",
             "name": "date",
             "required": false,

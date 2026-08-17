@@ -30,6 +30,7 @@ export type MealLog = components['schemas']['MealLog'];
 export type MealLogDiaryRow = components['schemas']['MealLogDiaryRow'];
 export type NutritionDay = components['schemas']['NutritionDay'];
 export type NutritionDaySlot = components['schemas']['NutritionDaySlot'];
+export type NutritionDayOptionItem = components['schemas']['NutritionDayOptionItem'];
 
 type NutritionPlanListResponse = components['schemas']['NutritionPlanListResponse'];
 type NutritionPlanResponse = components['schemas']['NutritionPlanResponse'];

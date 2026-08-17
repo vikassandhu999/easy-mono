@@ -1,3 +1,4 @@
+import {MEAL_SLOT_LABELS} from '@easy/utils';
 import {Chip, ProgressBar, Typography} from '@heroui/react';
 import {Utensils} from 'lucide-react';
 import {useParams} from 'react-router-dom';
@@ -9,7 +10,7 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import type {MealLogDiaryRow} from '@/api/nutrition-plans-list';
+import type {MealLogDiaryRow, NutritionDayOptionItem, NutritionDaySlot} from '@/api/nutrition-plans-list';
 import {useListCoachNutritionDaysQuery} from '@/api/nutrition-plans-list';
 import {SectionCard} from '@/clients/components/section-card';
 import {formatKcal, formatRowDate} from '@/clients/lib/client-detail-data';
@@ -81,10 +82,7 @@ export default function NutritionDay() {
 
   const day = data.data[0];
   const targets = day?.targets;
-  // Meal-time order. Slots without diary rows are omitted for coach history.
-  const slots = [...(day?.slots ?? [])]
-    .filter((s) => (s.rows ?? []).length > 0)
-    .sort((a, b) => mealSlotRank(a.meal_slot) - mealSlotRank(b.meal_slot));
+  const slots = day?.slots ?? [];
   const totals = slots.reduce(
     (acc, slot) => {
       acc.kcal += slot.logged_calories ?? 0;
@@ -142,6 +140,7 @@ export default function NutritionDay() {
 
           {slots.map((slot) => {
             const rows = slot.rows ?? [];
+            const liveItems = rows.length === 0 ? liveOptionItems(slot) : [];
             return (
               <SectionCard
                 divided
@@ -156,13 +155,19 @@ export default function NutritionDay() {
                     </Typography>
                   ) : null
                 }
-                title={titleCase(slot.meal_slot)}
+                title={slotLabel(slot.meal_slot)}
                 titleAs="heading"
               >
                 {rows.map((row, index) => (
                   <DiaryRow
                     key={row.entry?.id ?? row.planned?.id ?? `row-${index}`}
                     row={row}
+                  />
+                ))}
+                {liveItems.map((item) => (
+                  <LiveItem
+                    item={item}
+                    key={item.meal_item_id}
                   />
                 ))}
               </SectionCard>
@@ -172,9 +177,9 @@ export default function NutritionDay() {
           {slots.length === 0 && (
             <SectionCard>
               <EmptyState
-                body="No meals were logged on this day."
+                body="No live guidance or logged meals on this day."
                 icon={Utensils}
-                title="Nothing logged"
+                title="Nothing to show"
               />
             </SectionCard>
           )}
@@ -292,34 +297,65 @@ function Total({label, target, unit, value}: {label: string; target: null | numb
   );
 }
 
-/**
- * Meal-time order. `meal_slot` is free-form, so this ranks the slots the app
- * actually creates and sends anything unknown to the end — a slot we have never
- * seen should appear, just not jump the queue.
- */
-const MEAL_ORDER = [
-  'breakfast',
-  'morning_snack',
-  'brunch',
-  'lunch',
-  'afternoon_snack',
-  'pre_workout',
-  'post_workout',
-  'dinner',
-  'evening_snack',
-  'supper',
-];
-
-function mealSlotRank(slot: string): number {
-  const i = MEAL_ORDER.indexOf(slot.toLowerCase().replace(/\s+/g, '_'));
-  return i === -1 ? MEAL_ORDER.length : i;
+function liveOptionItems(slot: NutritionDaySlot): NutritionDayOptionItem[] {
+  const active = slot.options.find((option) => option.meal_id === slot.meal_id) ?? slot.options[0];
+  return active?.items ?? [];
 }
 
-/** `meal_slot` is a free-form string from the API ("breakfast", "post_workout"). */
-function titleCase(slot: string): string {
-  return slot
-    .split(/[_\s]+/)
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+function slotLabel(slot: string): string {
+  return MEAL_SLOT_LABELS[slot as keyof typeof MEAL_SLOT_LABELS] ?? slot;
+}
+
+function LiveItem({item}: {item: NutritionDayOptionItem}) {
+  const grams = item.portion.grams;
+  const amount = item.portion.amount;
+  const unit = item.portion.unit;
+  const calories = item.nutrients.calories;
+  const protein = item.nutrients.protein;
+  const carbs = item.nutrients.carbohydrates;
+  const fat = item.nutrients.fat;
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-3">
+      <div className="min-w-0 flex-1">
+        <Typography
+          truncate
+          type="body-sm"
+          weight="semibold"
+        >
+          {item.name ?? 'Food'}
+        </Typography>
+        {(protein != null || carbs != null || fat != null) && (
+          <Typography
+            color="muted"
+            type="body-xs"
+          >
+            {[
+              protein != null ? `P ${Math.round(protein)} g` : null,
+              carbs != null ? `C ${Math.round(carbs)} g` : null,
+              fat != null ? `F ${Math.round(fat)} g` : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </Typography>
+        )}
+      </div>
+      {(grams != null || amount != null) && (
+        <Typography
+          className="shrink-0"
+          color="muted"
+          type="body-xs"
+        >
+          {grams != null ? `${Math.round(grams)} g` : `${amount} ${unit ?? 'serving'}`}
+        </Typography>
+      )}
+      <Typography
+        className={KCAL_COL}
+        type="body-sm"
+        weight="semibold"
+      >
+        {calories != null ? `${formatKcal(calories)} kcal` : '—'}
+      </Typography>
+    </div>
+  );
 }

@@ -79,8 +79,6 @@ export default function NutritionToday() {
   const date = params.get('date') ?? today;
   const tomorrow = shiftDate(today, 1);
   const isPast = date < today;
-  const isFuture = date > today;
-  const isEditable = date === today;
 
   const {
     data: dayResp,
@@ -108,6 +106,7 @@ export default function NutritionToday() {
   const [confirmSwitch, setConfirmSwitch] = useState<null | {option: NutritionDayOption; slot: SlotView}>(null);
 
   const day = dayResp?.data[0] ?? null;
+  const isEditable = day?.write_eligible === true;
   const slots = slotsFromDay(day, selections, isPast);
   const consumed = dayConsumed(day);
   const targets = dayTargets(day);
@@ -133,13 +132,13 @@ export default function NutritionToday() {
     }
     try {
       await logPlannedItem({
-        amount: row.plannedItem.amount ?? undefined,
+        amount: row.plannedItem.portion.amount ?? undefined,
         date,
         meal_id: slot.mealId ?? undefined,
         meal_slot: slot.slot as SwitchOptionRequest['meal_slot'],
         planned_item_id: row.mealItemId,
-        unit: row.plannedItem.unit ?? undefined,
-        weight_g: row.plannedItem.weight_g ?? undefined,
+        unit: row.plannedItem.portion.unit ?? undefined,
+        weight_g: row.plannedItem.portion.grams ?? undefined,
       });
     } catch {
       toast.danger("Couldn't log it. Try again.");
@@ -278,8 +277,6 @@ export default function NutritionToday() {
   };
 
   const anyUnlogged = slots.some((s) => s.rows.some((r) => r.status === 'checklist' || r.status === 'skipped'));
-  // Past-day adherence verdict (the today plan endpoint 404s with no plan, which is the
-  // empty state — only the meal-logs query erroring is a real failure to surface).
   const adh = adherence(consumed.calories, targets.calories);
   const verdict =
     isPast && consumed.calories > 0 && targets.calories != null && adh !== 'none' ? (
@@ -289,7 +286,7 @@ export default function NutritionToday() {
       >
         {VERDICT_LABEL[adh]}
       </p>
-    ) : isFuture ? (
+    ) : day && !day.write_eligible ? (
       <p className="mt-1.5 text-[11px] font-semibold text-white/50">Planned — read-only until the day starts</p>
     ) : undefined;
 

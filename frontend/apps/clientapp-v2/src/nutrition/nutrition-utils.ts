@@ -5,13 +5,12 @@
  */
 import {type MacroTotals, MEAL_SLOT_LABELS} from '@easy/utils';
 
-import {
-  type FoodLogEntry,
-  type NutritionDay,
-  type NutritionDayOption,
-  type NutritionDayOptionItem,
-  type NutritionDaySlot,
-  plannedItemCalories,
+import type {
+  FoodLogEntry,
+  NutritionDay,
+  NutritionDayOption,
+  NutritionDayOptionItem,
+  NutritionDaySlot,
 } from '@/api/nutrition';
 import type {components} from '@/api/schema';
 
@@ -71,6 +70,10 @@ function activeOption(slot: NutritionDaySlot, selection: string | undefined): Nu
   return slot.options[0] ?? null;
 }
 
+function plannedItemCalories(item: NutritionDayOptionItem): null | number {
+  return item.nutrients.calories;
+}
+
 function plannedFulfilments(rows: MealLogDiaryRow[]): boolean {
   return rows.some((r) => r.status === 'as_planned' || r.status === 'swapped');
 }
@@ -80,7 +83,7 @@ function checklistRow(item: NutritionDayOptionItem): SlotRow {
     calories: plannedItemCalories(item),
     entry: null,
     mealItemId: item.meal_item_id,
-    name: item.food_name ?? 'Food',
+    name: item.name ?? 'Food',
     plannedItem: item,
     status: 'checklist',
   };
@@ -91,15 +94,27 @@ function freezeAsOptionItem(planned: MealLogPlannedItem): null | NutritionDayOpt
     return null;
   }
   return {
-    amount: planned.amount ?? null,
     food_id: planned.food_id ?? null,
-    food_name: planned.food_name ?? null,
+    kind: planned.recipe_id ? 'recipe' : 'food',
     meal_item_id: planned.id,
-    nutrition: planned.calories != null ? {calories: planned.calories} : null,
+    name: planned.food_name ?? null,
+    nutrients: {
+      calories: planned.calories ?? null,
+      carbohydrates: planned.carbs_g ?? null,
+      complete: false,
+      fat: planned.fat_g ?? null,
+      fiber: planned.fiber_g ?? null,
+      protein: planned.protein_g ?? null,
+    },
+    portion: {
+      amount: planned.amount ?? null,
+      grams: planned.weight_g ?? null,
+      kind: planned.weight_g != null ? 'gram' : 'serving',
+      label: null,
+      unit: planned.unit ?? null,
+    },
     position: 0,
     recipe_id: planned.recipe_id ?? null,
-    unit: planned.unit ?? null,
-    weight_g: planned.weight_g ?? null,
   };
 }
 

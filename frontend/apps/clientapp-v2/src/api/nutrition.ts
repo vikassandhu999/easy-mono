@@ -173,16 +173,7 @@ export function useSwitchNutritionMealOptionMutation() {
   });
 }
 
-// Display calories for a live option item. Foods scale per-100g by weight_g;
-// recipes use the whole-recipe total the option payload provides.
+// Display calories for a live option item — the day payload ships resolved totals.
 export function plannedItemCalories(item: NutritionDayOptionItem): null | number {
-  const n = item.nutrition as null | Record<string, null | number> | undefined;
-  if (!n) {
-    return null;
-  }
-  if (item.recipe_id) {
-    return n.calories ?? null;
-  }
-  const per100 = n.calories_per_100g;
-  return per100 != null && item.weight_g != null ? (per100 * item.weight_g) / 100 : null;
+  return item.nutrients.calories;
 }

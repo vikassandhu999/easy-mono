@@ -12,23 +12,33 @@ export type MacroTotals = {
 // ── Meal slot constants ──────────────────────────────────────
 
 export const MEAL_SLOTS = [
+  'early_morning',
   'breakfast',
-  'morning_snack',
+  'mid_morning',
   'lunch',
-  'afternoon_snack',
+  'afternoon',
+  'evening',
   'dinner',
-  'evening_snack',
+  'pre_sleep',
+  'pre_workout',
+  'during_workout',
+  'post_workout',
 ] as const;
 
 export type MealSlot = (typeof MEAL_SLOTS)[number];
 
-export const MEAL_SLOT_LABELS: Record<string, string> = {
-  afternoon_snack: 'Afternoon Snack',
+export const MEAL_SLOT_LABELS: Record<MealSlot, string> = {
+  afternoon: 'After lunch',
   breakfast: 'Breakfast',
   dinner: 'Dinner',
-  evening_snack: 'Evening Snack',
+  during_workout: 'During workout',
+  early_morning: 'Early morning',
+  evening: 'Evening',
   lunch: 'Lunch',
-  morning_snack: 'Morning Snack',
+  mid_morning: 'After breakfast',
+  post_workout: 'After workout',
+  pre_sleep: 'Before sleep',
+  pre_workout: 'Before workout',
 };
 
 // ── Weekday helpers ──────────────────────────────────────────

@@ -84,26 +84,23 @@ export default function NutritionDay() {
   const day = data.data[0];
   const targets = day?.targets;
   const slots = day?.slots ?? [];
-  const totals = slots.reduce(
-    (acc, slot) => {
-      acc.kcal += slot.logged_calories ?? 0;
-      acc.target += slot.planned_calories ?? 0;
-      for (const row of slot.rows ?? []) {
-        acc.protein += row.entry?.nutrients.protein ?? 0;
-        acc.carbs += row.entry?.nutrients.carbohydrates ?? 0;
-        acc.fat += row.entry?.nutrients.fat ?? 0;
-      }
-      return acc;
-    },
-    {carbs: 0, fat: 0, kcal: 0, protein: 0, target: 0},
-  );
+  const logged = day?.summary.logged;
+  const totals = {
+    carbs: logged?.carbohydrates ?? null,
+    fat: logged?.fat ?? null,
+    kcal: logged?.calories ?? null,
+    protein: logged?.protein ?? null,
+    target: targets?.calories ?? null,
+  };
 
   return (
     <Page>
       {header(
-        totals.target > 0
+        totals.target != null && totals.kcal != null
           ? `${formatKcal(totals.kcal)} / ${formatKcal(totals.target)} kcal`
-          : `${formatKcal(totals.kcal)} kcal`,
+          : totals.kcal != null
+            ? `${formatKcal(totals.kcal)} kcal`
+            : undefined,
       )}
       <Page.Content bare>
         <Page.Frame
@@ -114,7 +111,7 @@ export default function NutritionDay() {
             <div className="flex flex-col gap-4 px-4 pb-4">
               <Total
                 label="Calories"
-                target={totals.target || targets?.calories || null}
+                target={targets?.calories ?? null}
                 unit="kcal"
                 value={totals.kcal}
               />
@@ -147,7 +144,7 @@ export default function NutritionDay() {
                 divided
                 key={slot.meal_slot}
                 action={
-                  slot.logged_calories ? (
+                  slot.logged_calories != null ? (
                     <Typography
                       color="muted"
                       type="body-xs"
@@ -263,9 +260,19 @@ function DiaryRow({row}: {row: NutritionDayRow}) {
  * total against its target, which four big numbers side by side cannot do. The
  * bar is `ProgressBar` (GAPS #5) and needs its compound children to render.
  */
-function Total({label, target, unit, value}: {label: string; target: null | number; unit: string; value: number}) {
-  const rounded = Math.round(value);
-  const pct = target ? Math.round((value / target) * 100) : null;
+function Total({
+  label,
+  target,
+  unit,
+  value,
+}: {
+  label: string;
+  target: null | number;
+  unit: string;
+  value: null | number;
+}) {
+  const rounded = value == null ? null : Math.round(Number(value));
+  const pct = value != null && target ? Math.round((Number(value) / Number(target)) * 100) : null;
   const band = pct == null ? 'accent' : pct > 110 ? 'danger' : pct < 90 ? 'warning' : 'success';
 
   return (
@@ -281,12 +288,14 @@ function Total({label, target, unit, value}: {label: string; target: null | numb
           color="muted"
           type="body-xs"
         >
-          <span className="font-semibold text-foreground">{unit === 'kcal' ? formatKcal(rounded) : rounded}</span>
+          <span className="font-semibold text-foreground">
+            {rounded == null ? '—' : unit === 'kcal' ? formatKcal(rounded) : rounded}
+          </span>
           {target ? ` / ${unit === 'kcal' ? formatKcal(target) : target} ${unit}` : ` ${unit}`}
         </Typography>
       </div>
       <ProgressBar
-        aria-label={`${label}: ${rounded}${target ? ` of ${target}` : ''} ${unit}`}
+        aria-label={`${label}: ${rounded ?? 'unknown'}${target ? ` of ${target}` : ''} ${unit}`}
         color={band}
         value={pct == null ? 0 : Math.min(pct, 100)}
       >

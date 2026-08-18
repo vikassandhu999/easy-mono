@@ -16,7 +16,7 @@ import {
 import {clientTrainingPlanFromCoverage} from '@/api/training-coverage';
 import CheckinNudgeCard from '@/checkins/checkin-nudge-card';
 import IntakeCard from '@/checkins/intake-card';
-import {dayConsumed, dayTargets} from '@/nutrition/nutrition-utils';
+import {kcalText, nutrientNumber} from '@/nutrition/nutrition-utils';
 import {estimatedMinutes, totalSets, workoutPreviewPath} from '@/training/training-utils';
 
 export default function TodayHome() {
@@ -52,9 +52,12 @@ export default function TodayHome() {
   };
 
   const day = nutritionDays?.data[0] ?? null;
-  const consumed = dayConsumed(day);
-  const targets = dayTargets(day);
-  const kcalLeft = targets.calories == null ? null : Math.max(0, targets.calories - consumed.calories);
+  const logged = day?.summary.logged;
+  const targets = day?.targets;
+  const loggedCalories = nutrientNumber(logged?.calories);
+  const targetCalories = nutrientNumber(targets?.calories);
+  const kcalLeft =
+    loggedCalories == null || targetCalories == null ? null : Math.max(0, targetCalories - loggedCalories);
   const weekStart = new Date();
   weekStart.setHours(0, 0, 0, 0);
   weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
@@ -158,8 +161,8 @@ export default function TodayHome() {
               Food · {kcalLeft == null ? 'today' : `${Math.round(kcalLeft)} kcal left`}
             </span>
             <span className="mt-0.5 block text-[17px] font-extrabold tracking-[-0.02em]">
-              {Math.round(consumed.calories)}{' '}
-              <span className="text-xs font-semibold text-muted">/ {targets.calories ?? '—'} kcal</span>
+              {kcalText(logged?.calories)}{' '}
+              <span className="text-xs font-semibold text-muted">/ {targets?.calories ?? '—'} kcal</span>
             </span>
           </span>
           <span className="rounded-[11px] bg-accent px-3.5 py-2.5 text-[13px] font-extrabold text-white">Log</span>
@@ -169,24 +172,26 @@ export default function TodayHome() {
         ) : (
           <div className="mt-3.5 space-y-2.5">
             {[
-              ['Protein', consumed.protein, targets.protein],
-              ['Carbs', consumed.carbs, targets.carbs],
-              ['Fat', consumed.fat, targets.fat],
+              ['Protein', logged?.protein, targets?.protein_g],
+              ['Carbs', logged?.carbohydrates, targets?.carbs_g],
+              ['Fat', logged?.fat, targets?.fat_g],
             ].map(([label, value, target]) => {
-              const numericValue = Number(value);
-              const numericTarget = target == null ? null : Number(target);
+              const numericValue = nutrientNumber(value);
+              const numericTarget = nutrientNumber(target);
+              const width =
+                numericValue == null || numericTarget == null ? 0 : Math.min(100, (numericValue / numericTarget) * 100);
               return (
                 <div key={String(label)}>
                   <div className="mb-1 flex justify-between text-[10px] font-semibold text-muted">
                     <span>{label}</span>
                     <span className="text-foreground">
-                      {Math.round(numericValue)} / {numericTarget == null ? '—' : Math.round(numericTarget)}g
+                      {kcalText(numericValue)} / {numericTarget == null ? '—' : Math.round(numericTarget)}g
                     </span>
                   </div>
                   <div className="h-1 overflow-hidden rounded-full bg-[var(--border)]">
                     <div
                       className="h-full rounded-full bg-[#9aa3b2]"
-                      style={{width: `${numericTarget ? Math.min(100, (numericValue / numericTarget) * 100) : 0}%`}}
+                      style={{width: `${width}%`}}
                     />
                   </div>
                 </div>
@@ -210,8 +215,14 @@ export default function TodayHome() {
           <div className="h-8 w-px bg-separator" />
           <div className="flex-1 pl-4">
             <b className="text-[22px] font-extrabold">
-              {targets.calories ? Math.round((consumed.calories / targets.calories) * 100) : 0}
-              <span className="text-[13px] text-muted">%</span>
+              {logged?.calories != null && targets?.calories ? (
+                <>
+                  {Math.round((logged.calories / targets.calories) * 100)}
+                  <span className="text-[13px] text-muted">%</span>
+                </>
+              ) : (
+                '—'
+              )}
             </b>
             <span className="mt-1 block text-[10px] font-semibold text-muted">Nutrition today</span>
           </div>

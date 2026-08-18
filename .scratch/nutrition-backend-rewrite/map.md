@@ -28,6 +28,7 @@ Rewrite Nutrition around Library, Programming, and Diary. The effort ends when t
 * [Log planned intake and derive statuses](./issues/12-planned-logging-statuses.md) — planned-item, planned-option, and planned-day commands fulfil from frozen rows; statuses are Diary-derived; Today uses the generated planned-logging contract with idempotency keys.
 * [Switch frozen Meal Options safely](./issues/13-option-switching.md) — same-day `POST .../active-option` changes the frozen active option at the expected Diary Slot revision without deleting intake; inactive-option entries become `added` extras and switching back restores the original fulfilment; Today uses the generated switch contract.
 * [Correct and substitute Diary Entries](./issues/14-diary-corrections.md) — replacements keep the frozen planned-item association; portion updates scale frozen nutrients at the entry revision; deletes leave the slot; Today/History use the generated correction contract with idempotency keys.
+* [Serve durable history and coach summaries](./issues/15-history-summaries.md) — list endpoints paginate a 31-day window and attach one Diary-derived `summary` and `applied_timezone`; past dates skip Programming; calorie adherence stays unavailable when calories or a positive target are unknown; client History and coach Nutrition read those fields instead of walking rows.
 
 ## Not yet specified
 

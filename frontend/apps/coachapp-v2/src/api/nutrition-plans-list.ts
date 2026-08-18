@@ -282,7 +282,10 @@ export function useListCoachMealLogsQuery(
   });
 }
 
-export type ListCoachNutritionDaysParams = Pick<ListCoachNutritionDaysQuery, 'date' | 'from' | 'to'>;
+export type ListCoachNutritionDaysParams = Pick<
+  ListCoachNutritionDaysQuery,
+  'date' | 'from' | 'to' | 'offset' | 'limit'
+>;
 
 export function useListCoachNutritionDaysQuery(
   clientId: string,

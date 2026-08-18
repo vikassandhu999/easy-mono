@@ -2,8 +2,8 @@ defmodule EasyWeb.NutritionDayJSON do
   alias Easy.Nutrition.NutrientTotals
 
   @spec index(map()) :: map()
-  def index(%{days: days}) do
-    %{data: Enum.map(days, &day_data/1)}
+  def index(%{days: days, count: count}) do
+    %{data: Enum.map(days, &day_data/1), count: count}
   end
 
   @spec show(map()) :: map()
@@ -16,8 +16,20 @@ defmodule EasyWeb.NutritionDayJSON do
       date: day.date,
       plan_id: day.plan_id,
       write_eligible: day.write_eligible,
+      applied_timezone: day.applied_timezone,
       targets: round_targets(day.targets),
+      summary: summary_data(day.summary),
       slots: Enum.map(day.slots, &slot_data/1)
+    }
+  end
+
+  defp summary_data(summary) do
+    %{
+      logged: NutrientTotals.round(summary.logged),
+      planned: NutrientTotals.round(summary.planned),
+      counts: summary.counts,
+      has_intake: summary.has_intake,
+      adherence: summary.adherence
     }
   end
 
@@ -26,6 +38,7 @@ defmodule EasyWeb.NutritionDayJSON do
       meal_slot: slot.meal_slot,
       meal_id: slot.meal_id,
       revision: slot.revision,
+      applied_timezone: slot.applied_timezone,
       planned_calories: round_one(slot.planned_calories),
       logged_calories: round_one(slot.logged_calories),
       options: Enum.map(slot.options, &option_data/1),

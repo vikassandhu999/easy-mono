@@ -81,8 +81,40 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
           "to" => "2026-08-12"
         })
 
-      assert %{"data" => days} = json_response(conn, 200)
+      assert %{"data" => days, "count" => 3} = json_response(conn, 200)
+      assert_schema(json_response(conn, 200), "NutritionDayListResponse", EasyWeb.ApiSpec.spec())
       assert Enum.map(days, & &1["date"]) == ["2026-08-10", "2026-08-11", "2026-08-12"]
+      assert hd(days)["applied_timezone"]
+      assert hd(days)["summary"]["adherence"] == "none"
+      refute hd(days)["summary"]["has_intake"]
+    end
+
+    test "paginates a local-date range", ctx do
+      conn =
+        get(ctx.conn, "/v1/client/nutrition-days", %{
+          "from" => "2026-08-10",
+          "to" => "2026-08-14",
+          "offset" => "1",
+          "limit" => "2"
+        })
+
+      assert %{"data" => days, "count" => 5} = json_response(conn, 200)
+      assert Enum.map(days, & &1["date"]) == ["2026-08-11", "2026-08-12"]
+    end
+
+    test "rejects reversed, incomplete, and oversized ranges", ctx do
+      reversed =
+        get(ctx.conn, "/v1/client/nutrition-days", %{"from" => "2026-08-12", "to" => "2026-08-10"})
+
+      assert json_response(reversed, 422)
+
+      incomplete = get(ctx.conn, "/v1/client/nutrition-days", %{"from" => "2026-08-10"})
+      assert json_response(incomplete, 422)
+
+      wide =
+        get(ctx.conn, "/v1/client/nutrition-days", %{"from" => "2026-08-01", "to" => "2026-09-01"})
+
+      assert json_response(wide, 422)
     end
 
     test "rejects a malformed exact date", ctx do
@@ -99,6 +131,27 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
         })
 
       assert %{"error_detail" => %{"fields" => %{"date" => ["is invalid"]}}} = json_response(conn, 422)
+    end
+  end
+
+  describe "inactive client access" do
+    test "follows account lifecycle and forbids Diary reads", ctx do
+      inactive =
+        insert(:client,
+          creator: ctx.coach,
+          business: ctx.business,
+          assigned_coach: ctx.coach,
+          status: :inactive,
+          inactive_reason: :manual
+        )
+
+      conn =
+        build_conn()
+        |> authenticate_client(inactive)
+        |> put_req_header("content-type", "application/json")
+        |> get("/v1/client/nutrition-days")
+
+      assert json_response(conn, 403)
     end
   end
 

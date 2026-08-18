@@ -69,28 +69,20 @@ export function NutritionTab({client}: {client: Client}) {
 
   // One row per day, newest first — including days with nothing logged, which the
   // design shows as "Not logged" rather than omitting.
-  const byDay = new Map<string, {added: number; logged: number; planned: number; skipped: number; swapped: number}>();
+  const byDay = new Map<string, DayTotals>();
   for (const day of nutritionDays.data?.data ?? []) {
-    const hasLog = day.slots.some((s) => (s.rows?.length ?? 0) > 0 || (s.logged_calories ?? 0) > 0);
-    if (!hasLog) {
+    if (day.slots.length === 0) {
       continue;
     }
-    const key = day.date.slice(0, 10);
-    const acc = byDay.get(key) ?? {added: 0, logged: 0, planned: 0, skipped: 0, swapped: 0};
-    for (const slot of day.slots) {
-      acc.logged += slot.logged_calories ?? 0;
-      acc.planned += slot.planned_calories ?? 0;
-      for (const row of slot.rows ?? []) {
-        if (row.status === 'added') {
-          acc.added += 1;
-        } else if (row.status === 'swapped') {
-          acc.swapped += 1;
-        } else if (row.status === 'skipped') {
-          acc.skipped += 1;
-        }
-      }
-    }
-    byDay.set(key, acc);
+    byDay.set(day.date.slice(0, 10), {
+      added: day.summary.counts.added,
+      adherence: day.summary.adherence ?? null,
+      hasIntake: day.summary.has_intake,
+      logged: day.summary.logged.calories,
+      skipped: day.summary.counts.skipped,
+      swapped: day.summary.counts.swapped,
+      target: day.targets.calories,
+    });
   }
 
   return (
@@ -135,7 +127,7 @@ export function NutritionTab({client}: {client: Client}) {
       >
         {[...days].reverse().map((day) => {
           const totals = byDay.get(day);
-          const pct = totals && totals.planned > 0 ? Math.round((totals.logged / totals.planned) * 100) : null;
+          const pct = caloriePct(totals);
           return (
             <div
               className="px-2"
@@ -155,75 +147,123 @@ export function NutritionTab({client}: {client: Client}) {
   );
 }
 
-type DayTotals = {added: number; logged: number; planned: number; skipped: number; swapped: number};
+type DayTotals = {
+  added: number;
+  adherence: 'none' | 'on' | 'over' | 'under' | null;
+  hasIntake: boolean;
+  logged: null | number;
+  skipped: number;
+  swapped: number;
+  target: null | number | undefined;
+};
+
+function caloriePct(totals: DayTotals | undefined): null | number {
+  if (!totals || totals.adherence == null || totals.adherence === 'none') {
+    return null;
+  }
+  const logged = Number(totals.logged);
+  const target = Number(totals.target);
+  if (!Number.isFinite(logged) || !Number.isFinite(target) || target <= 0) {
+    return null;
+  }
+  return Math.round((logged / target) * 100);
+}
+
+function adherenceBand(totals: DayTotals | undefined): 'danger' | 'success' | 'warning' | null {
+  if (totals?.adherence === 'on') {
+    return 'success';
+  }
+  if (totals?.adherence === 'under') {
+    return 'warning';
+  }
+  if (totals?.adherence === 'over') {
+    return 'danger';
+  }
+  return null;
+}
 
 /**
- * One adherence day, as the design draws it: the date, a bar banded by how close
- * the day landed, the percentage in the band's colour, what the client changed,
- * and the kcal pair on the right. The bar is the point — a coach scans the column
- * of bars, not the numbers.
+ * One adherence day, as the design draws it: the date, a bar banded by backend
+ * calorie adherence, the percentage in the band's colour, what the client changed,
+ * and the kcal pair on the right. Unknown calories keep counts visible and skip
+ * the verdict. The bar is the point — a coach scans the column of bars, not the
+ * numbers.
  *
  * `ProgressBar` (GAPS #5) rather than a hand-styled div, and it needs its compound
  * children or it renders nothing at all.
  */
 function AdherenceRow({date, pct, to, totals}: {date: string; pct: null | number; to?: string; totals?: DayTotals}) {
   const shape = 'flex w-full items-center gap-3 rounded-panel px-2 py-3 text-left';
-  const band = pct == null ? null : pct > 110 ? 'danger' : pct < 90 ? 'warning' : 'success';
+  const band = adherenceBand(totals);
   const PCT_COLOR = {
     danger: 'text-danger-soft-foreground',
     success: 'text-success-soft-foreground',
     warning: 'text-warning-soft-foreground',
   } as const;
 
+  const chips = totals ? (
+    <>
+      {totals.swapped ? (
+        <Chip
+          className="chip--outline shrink-0"
+          size="sm"
+        >
+          Swapped {totals.swapped}
+        </Chip>
+      ) : null}
+      {totals.added ? (
+        <Chip
+          className="chip--outline shrink-0"
+          size="sm"
+        >
+          Added {totals.added}
+        </Chip>
+      ) : null}
+      {totals.skipped ? (
+        <Chip
+          className="chip--outline shrink-0"
+          size="sm"
+        >
+          Skipped {totals.skipped}
+        </Chip>
+      ) : null}
+    </>
+  ) : null;
+
+  const kcalPair = totals ? (
+    <span className="shrink-0 type-eyebrow font-semibold">
+      {totals.logged == null ? '—' : formatKcal(Number(totals.logged))} /{' '}
+      {totals.target == null ? '—' : formatKcal(Number(totals.target))}
+    </span>
+  ) : null;
+
   const body = (
     <>
       <span className="w-19 shrink-0 type-eyebrow font-semibold text-muted">{date}</span>
       {pct == null || band == null ? (
-        <span className="type-body font-semibold text-muted">{totals ? 'Logged' : 'Not logged'}</span>
-      ) : (
-        <>
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <ProgressBar
-              aria-label={`${pct}% of target`}
-              className="min-w-0 max-w-58 flex-1"
-              color={band}
-              value={Math.min(pct, 100)}
-            >
-              <ProgressBar.Track className="h-1.75 rounded-pill bg-surface-tertiary">
-                <ProgressBar.Fill className="rounded-pill" />
-              </ProgressBar.Track>
-            </ProgressBar>
-            <span className={`shrink-0 type-eyebrow font-bold ${PCT_COLOR[band]}`}>{pct}%</span>
-            {totals?.swapped ? (
-              <Chip
-                className="chip--outline shrink-0"
-                size="sm"
-              >
-                Swapped {totals.swapped}
-              </Chip>
-            ) : null}
-            {totals?.added ? (
-              <Chip
-                className="chip--outline shrink-0"
-                size="sm"
-              >
-                Added {totals.added}
-              </Chip>
-            ) : null}
-            {totals?.skipped ? (
-              <Chip
-                className="chip--outline shrink-0"
-                size="sm"
-              >
-                Skipped {totals.skipped}
-              </Chip>
-            ) : null}
-          </div>
-          <span className="shrink-0 type-eyebrow font-semibold">
-            {formatKcal(totals?.logged ?? 0)} / {formatKcal(totals?.planned ?? 0)}
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <span className="type-body font-semibold text-muted">
+            {totals ? (totals.hasIntake ? 'Logged' : 'Not logged') : 'Not logged'}
           </span>
-        </>
+          {chips}
+        </div>
+      ) : (
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <ProgressBar
+            aria-label={`${pct}% of target`}
+            className="min-w-0 max-w-58 flex-1"
+            color={band}
+            value={Math.min(pct, 100)}
+          >
+            <ProgressBar.Track className="h-1.75 rounded-pill bg-surface-tertiary">
+              <ProgressBar.Fill className="rounded-pill" />
+            </ProgressBar.Track>
+          </ProgressBar>
+          <span className={`shrink-0 type-eyebrow font-bold ${PCT_COLOR[band]}`}>{pct}%</span>
+          {chips}
+        </div>
       )}
+      {kcalPair}
     </>
   );
 

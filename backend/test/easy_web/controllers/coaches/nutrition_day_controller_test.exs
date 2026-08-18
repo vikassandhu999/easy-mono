@@ -32,7 +32,31 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
       assert data["write_eligible"] == true
       assert hd(data["slots"])["meal_slot"] == "breakfast"
       assert hd(data["slots"])["rows"] == []
+      assert data["applied_timezone"]
+      assert data["summary"]["adherence"] == "none"
+      refute data["summary"]["has_intake"]
       assert_schema(data, "NutritionDay", EasyWeb.ApiSpec.spec())
+    end
+
+    test "rejects reversed ranges and paginates history", ctx do
+      reversed =
+        get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/nutrition-days", %{
+          "from" => "2026-08-12",
+          "to" => "2026-08-10"
+        })
+
+      assert json_response(reversed, 422)
+
+      conn =
+        get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/nutrition-days", %{
+          "from" => "2026-08-10",
+          "to" => "2026-08-14",
+          "offset" => "1",
+          "limit" => "2"
+        })
+
+      assert %{"data" => days, "count" => 5} = json_response(conn, 200)
+      assert Enum.map(days, & &1["date"]) == ["2026-08-11", "2026-08-12"]
     end
 
     test "conceals a client from another business", ctx do

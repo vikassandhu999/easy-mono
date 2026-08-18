@@ -29,7 +29,7 @@ defmodule Easy.Nutrition.Diary do
 
   @spec get_client_nutrition_day(Ctx.t(), Date.t()) :: {:ok, map()} | {:error, :not_found}
   def get_client_nutrition_day(%Ctx{} = ctx, %Date{} = date) do
-    with {:ok, [day]} <- list_client_nutrition_days(ctx, date: date) do
+    with {:ok, %{nutrition_days: [day]}} <- list_client_nutrition_days(ctx, date: date) do
       {:ok, day}
     end
   end
@@ -37,13 +37,13 @@ defmodule Easy.Nutrition.Diary do
   @spec get_nutrition_day_for_client(Ctx.t(), String.t(), Date.t()) ::
           {:ok, map()} | {:error, :not_found}
   def get_nutrition_day_for_client(%Ctx{} = ctx, client_id, %Date{} = date) do
-    with {:ok, [day]} <- list_nutrition_days_for_client(ctx, client_id, date: date) do
+    with {:ok, %{nutrition_days: [day]}} <- list_nutrition_days_for_client(ctx, client_id, date: date) do
       {:ok, day}
     end
   end
 
   @spec list_client_nutrition_days(Ctx.t(), keyword()) ::
-          {:ok, [map()]}
+          {:ok, %{count: non_neg_integer(), nutrition_days: [map()]}}
           | {:error, :not_found | :invalid_date_range | :date_range_too_wide | :incomplete_date_range}
   def list_client_nutrition_days(%Ctx{} = ctx, opts \\ []) do
     with {:ok, client} <- Clients.get_client_account(ctx) do
@@ -52,7 +52,7 @@ defmodule Easy.Nutrition.Diary do
   end
 
   @spec list_nutrition_days_for_client(Ctx.t(), String.t(), keyword()) ::
-          {:ok, [map()]}
+          {:ok, %{count: non_neg_integer(), nutrition_days: [map()]}}
           | {:error, :not_found | :invalid_date_range | :date_range_too_wide | :incomplete_date_range}
   def list_nutrition_days_for_client(%Ctx{} = ctx, client_id, opts \\ []) do
     with {:ok, client} <- Clients.authorize_client(ctx, client_id) do
@@ -255,36 +255,45 @@ defmodule Easy.Nutrition.Diary do
 
   defp list_days(ctx, client, opts, actor) do
     client = Repo.preload(client, :business)
+    offset = max(Keyword.get(opts, :offset, 0), 0)
+    limit = opts |> Keyword.get(:limit, 20) |> max(1) |> min(100)
 
     with {:ok, dates} <- resolve_dates(opts, local_today(client)) do
-      {:ok, Enum.map(dates, &assemble_day(ctx, client, &1, actor))}
+      page = dates |> Enum.drop(offset) |> Enum.take(limit)
+      {:ok, %{count: length(dates), nutrition_days: Enum.map(page, &assemble_day(ctx, client, &1, actor))}}
     end
   end
 
   defp assemble_day(ctx, client, date, actor) do
     today = local_today(client)
+    timezone = applied_timezone(client)
     frozen = frozen_by_slot(client, date)
 
     case live_guidance(ctx, client.id, date, today, actor) do
-      {:ok, nil} -> merge_day(date, today, nil, frozen)
-      {:ok, guidance} -> merge_day(date, today, guidance, frozen)
+      {:ok, nil} -> merge_day(date, today, timezone, nil, frozen)
+      {:ok, guidance} -> merge_day(date, today, timezone, guidance, frozen)
     end
   end
 
-  defp merge_day(date, today, guidance, frozen) do
-    live = if guidance, do: live_slot_map(guidance), else: %{}
+  defp merge_day(date, today, timezone, guidance, frozen) do
+    live = if guidance, do: live_slot_map(guidance, timezone), else: %{}
 
     slots =
       MealSlot.values()
       |> Enum.map(&merged_slot(&1, frozen, live, today))
       |> Enum.reject(&is_nil/1)
 
+    targets = if(guidance, do: targets(guidance.plan), else: empty_targets())
+    applied = day_timezone(slots, timezone)
+
     %{
       date: date,
       plan_id: guidance && guidance.plan.id,
       write_eligible: Date.diff(today, date) in 0..@correction_days,
-      targets: if(guidance, do: targets(guidance.plan), else: empty_targets()),
-      slots: slots
+      applied_timezone: applied,
+      targets: targets,
+      slots: slots,
+      summary: day_summary(slots, targets)
     }
   end
 
@@ -307,8 +316,8 @@ defmodule Easy.Nutrition.Diary do
   defp resolve_guidance(ctx, _client_id, date, :client), do: Programming.resolve_client_coverage(ctx, date)
   defp resolve_guidance(ctx, client_id, date, :coach), do: Programming.resolve_coverage_for_client(ctx, client_id, date)
 
-  defp live_slot_map(%{plan: plan, day_pattern: pattern}) do
-    Map.new(live_slots(pattern, plan), &{&1.meal_slot, &1})
+  defp live_slot_map(%{plan: plan, day_pattern: pattern}, timezone) do
+    Map.new(live_slots(pattern, plan, timezone), &{&1.meal_slot, &1})
   end
 
   defp frozen_by_slot(client, date) do
@@ -320,18 +329,18 @@ defmodule Easy.Nutrition.Diary do
     |> Map.new(&{&1.meal_slot, &1})
   end
 
-  defp live_slots(nil, _plan), do: []
+  defp live_slots(nil, _plan, _timezone), do: []
 
-  defp live_slots(pattern, plan) do
+  defp live_slots(pattern, plan, timezone) do
     meals = Map.new(List.wrap(plan.meals), &{&1.id, &1})
     grouped = Enum.group_by(List.wrap(pattern.meal_options), & &1.meal_slot)
 
     MealSlot.values()
     |> Enum.filter(&Map.has_key?(grouped, &1))
-    |> Enum.map(&slot_from_options(&1, Map.fetch!(grouped, &1), meals))
+    |> Enum.map(&slot_from_options(&1, Map.fetch!(grouped, &1), meals, timezone))
   end
 
-  defp slot_from_options(slot, options, meals) do
+  defp slot_from_options(slot, options, meals, timezone) do
     ordered = Enum.sort_by(options, &{&1.position, &1.id})
     default = hd(ordered)
     items = meal_items(meals[default.nutrition_meal_id])
@@ -340,8 +349,9 @@ defmodule Easy.Nutrition.Diary do
       meal_slot: slot,
       meal_id: default.nutrition_meal_id,
       revision: nil,
-      planned_calories: planned_calories(items),
-      logged_calories: 0.0,
+      applied_timezone: timezone,
+      planned_calories: NutrientTotals.sum(items).calories,
+      logged_calories: nil,
       options: Enum.map(ordered, &option_data(&1, meals)),
       rows: []
     }
@@ -356,8 +366,9 @@ defmodule Easy.Nutrition.Diary do
       meal_slot: slot.meal_slot,
       meal_id: active && active.nutrition_meal_id,
       revision: slot.revision,
-      planned_calories: planned_calories(items),
-      logged_calories: logged_calories(slot.entries),
+      applied_timezone: slot.applied_timezone,
+      planned_calories: NutrientTotals.sum(items).calories,
+      logged_calories: NutrientTotals.sum(slot.entries).calories,
       options: Enum.map(ordered, &frozen_option_data/1),
       rows: frozen_rows(slot, active, today)
     }
@@ -489,16 +500,51 @@ defmodule Easy.Nutrition.Diary do
   defp meal_items(%Meal{meal_items: items}) when is_list(items), do: items
   defp meal_items(_meal), do: []
 
-  defp planned_calories(items) do
-    NutrientTotals.sum(items).calories
+  defp day_timezone(slots, fallback) do
+    case Enum.find(slots, &is_binary(&1.applied_timezone)) do
+      %{applied_timezone: timezone} -> timezone
+      _missing -> fallback
+    end
   end
 
-  defp logged_calories(entries) do
-    entries
-    |> Enum.map(& &1.calories)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.sum()
+  defp day_summary(slots, targets) do
+    rows = Enum.flat_map(slots, & &1.rows)
+    entries = for %{entry: entry} when not is_nil(entry) <- rows, do: entry
+    logged = NutrientTotals.combine(Enum.map(entries, & &1.nutrients))
+    planned = NutrientTotals.combine(Enum.map(Enum.flat_map(slots, &active_option_items/1), & &1.nutrients))
+
+    %{
+      logged: logged,
+      planned: planned,
+      counts: status_counts(rows),
+      has_intake: entries != [],
+      adherence: calorie_adherence(entries, logged.calories, targets.calories)
+    }
   end
+
+  defp active_option_items(slot) do
+    option = Enum.find(slot.options, &(&1.meal_id == slot.meal_id)) || List.first(slot.options)
+    (option && option.items) || []
+  end
+
+  defp status_counts(rows) do
+    Map.merge(
+      %{as_planned: 0, swapped: 0, added: 0, recorded: 0, pending: 0, skipped: 0},
+      Enum.frequencies_by(rows, & &1.status)
+    )
+  end
+
+  defp calorie_adherence([], _logged, _target), do: :none
+
+  defp calorie_adherence(_entries, logged, target)
+       when is_number(logged) and is_number(target) and target > 0,
+       do: calorie_band(logged / target)
+
+  defp calorie_adherence(_entries, _logged, _target), do: nil
+
+  defp calorie_band(pct) when pct < 0.9, do: :under
+  defp calorie_band(pct) when pct > 1.1, do: :over
+  defp calorie_band(_pct), do: :on
 
   defp targets(plan) do
     %{
@@ -1153,7 +1199,7 @@ defmodule Easy.Nutrition.Diary do
   defp live_guidance_meal_slots(ctx, date) do
     case Programming.resolve_client_coverage(ctx, date) do
       {:ok, nil} -> []
-      {:ok, guidance} -> Enum.map(live_slots(guidance.day_pattern, guidance.plan), & &1.meal_slot)
+      {:ok, guidance} -> Enum.map(live_slots(guidance.day_pattern, guidance.plan, nil), & &1.meal_slot)
       {:error, reason} -> Repo.rollback(reason)
     end
   end

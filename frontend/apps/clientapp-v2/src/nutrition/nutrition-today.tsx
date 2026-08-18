@@ -4,7 +4,7 @@
  * A past date renders the same screen; future dates are read-only. Dark + periwinkle.
  */
 
-import {formatDateISO, formatMacroValue, type MealSlot} from '@easy/utils';
+import {formatDateISO, type MealSlot} from '@easy/utils';
 import {Spinner, toast} from '@heroui/react';
 import {Check, ChevronDown, ChevronLeft, ChevronRight, Plus} from 'lucide-react';
 import {useEffect, useRef, useState} from 'react';
@@ -41,9 +41,9 @@ import {
 import {diaryWriteError} from '@/nutrition/diary-write-error';
 import {
   ADHERENCE_TEXT,
-  adherence,
-  dayConsumed,
+  adherenceDisplay,
   dayTargets,
+  kcalText,
   type SlotRow,
   type SlotView,
   slotsFromDay,
@@ -116,7 +116,7 @@ export default function NutritionToday() {
   const day = dayResp?.data[0] ?? null;
   const isEditable = day?.write_eligible === true;
   const slots = slotsFromDay(day, isPast);
-  const consumed = dayConsumed(day);
+  const logged = day?.summary.logged;
   const targets = dayTargets(day);
   const loadingPlan = loadingDay;
   const loadingLogs = loadingDay;
@@ -302,9 +302,9 @@ export default function NutritionToday() {
   };
 
   const anyUnlogged = slots.some((s) => s.rows.some((r) => r.status === 'checklist' || r.status === 'skipped'));
-  const adh = adherence(consumed.calories, targets.calories);
+  const adh = adherenceDisplay(day);
   const verdict =
-    isPast && consumed.calories > 0 && targets.calories != null && adh !== 'none' ? (
+    isPast && adh !== 'none' && adh !== 'unknown' ? (
       <p
         className="mt-1.5 text-[11px] font-semibold"
         style={{color: ADHERENCE_TEXT[adh]}}
@@ -360,7 +360,7 @@ export default function NutritionToday() {
       </div>
 
       <MacroHero
-        consumed={consumed}
+        consumed={logged ?? {}}
         statusLine={verdict}
         targets={targets}
       />
@@ -400,7 +400,7 @@ export default function NutritionToday() {
                 ) : null}
               </div>
               {slot.allPlannedLogged ? (
-                <span className="text-[11px] text-accent">{Math.round(slot.loggedCalories)} · ✓ logged</span>
+                <span className="text-[11px] text-accent">{kcalText(slot.loggedCalories)} · ✓ logged</span>
               ) : slot.mealId && isEditable ? (
                 <button
                   className="text-[10px] font-medium text-accent active:opacity-70 disabled:opacity-50"
@@ -412,7 +412,7 @@ export default function NutritionToday() {
                 </button>
               ) : (
                 <span className="text-[11px] text-muted">
-                  {Math.round(slot.hasLog ? slot.loggedCalories : slot.plannedCalories)}
+                  {kcalText(slot.hasLog ? slot.loggedCalories : slot.plannedCalories)}
                 </span>
               )}
             </div>
@@ -504,8 +504,10 @@ export default function NutritionToday() {
 
       {/* macro footnote */}
       <p className="mt-3 text-center text-[10px] text-muted">
-        {formatMacroValue(consumed.calories, '')} kcal logged
-        {targets.calories ? ` · ${Math.max(0, Math.round(targets.calories - consumed.calories))} left` : ''}
+        {kcalText(logged?.calories)} kcal logged
+        {targets.calories != null && logged?.calories != null
+          ? ` · ${Math.max(0, Math.round(targets.calories - logged.calories))} left`
+          : ''}
       </p>
 
       {pickerMode ? (

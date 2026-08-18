@@ -77,6 +77,10 @@ defmodule Easy.Nutrition.NutrientTotals do
     Enum.reduce(rest, from_fields(first), fn item, totals -> add(totals, from_fields(item)) end)
   end
 
+  @spec combine([t()]) :: t()
+  def combine([]), do: @empty
+  def combine([first | rest]), do: Enum.reduce(rest, first, &add(&2, &1))
+
   defp from_ingredient(%RecipeIngredient{food: %Food{} = food, weight_g: weight})
        when is_number(weight) and weight > 0 do
     scale(from_food(food), weight / 100)

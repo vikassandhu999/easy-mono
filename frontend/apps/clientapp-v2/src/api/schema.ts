@@ -1442,6 +1442,15 @@ export interface components {
       template: 'proof_first' | 'problem_fit' | 'coach_story';
       whatsapp_number?: string | null;
     };
+    /** NutritionDaySummary */
+    NutritionDaySummary: {
+      /** @enum {string|null} */
+      adherence?: 'on' | 'under' | 'over' | 'none' | null;
+      counts: components['schemas']['NutritionDaySummaryCounts'];
+      has_intake: boolean;
+      logged: components['schemas']['NutrientTotals'];
+      planned: components['schemas']['NutrientTotals'];
+    };
     /** TrainingPlanResponse */
     TrainingPlanResponse: {
       data: components['schemas']['TrainingPlan'];
@@ -1778,6 +1787,7 @@ export interface components {
     };
     /** NutritionDayListResponse */
     NutritionDayListResponse: {
+      count: number;
       data: components['schemas']['NutritionDay'][];
     };
     /** MealLog */
@@ -2331,6 +2341,7 @@ export interface components {
     };
     /** NutritionDaySlot */
     NutritionDaySlot: {
+      applied_timezone?: string | null;
       logged_calories?: number | null;
       /** Format: uuid */
       meal_id?: string | null;
@@ -2416,11 +2427,13 @@ export interface components {
     };
     /** NutritionDay */
     NutritionDay: {
+      applied_timezone: string;
       /** Format: date */
       date: string;
       /** Format: uuid */
       plan_id?: string | null;
       slots: components['schemas']['NutritionDaySlot'][];
+      summary: components['schemas']['NutritionDaySummary'];
       targets: components['schemas']['NutritionDayTargets'];
       write_eligible: boolean;
     };
@@ -3722,6 +3735,15 @@ export interface components {
       data?: {
         [key: string]: unknown;
       };
+    };
+    /** NutritionDaySummaryCounts */
+    NutritionDaySummaryCounts: {
+      added: number;
+      as_planned: number;
+      pending: number;
+      recorded: number;
+      skipped: number;
+      swapped: number;
     };
     /** LandingProgram */
     LandingProgram: {
@@ -6212,6 +6234,10 @@ export interface operations {
         from?: string;
         /** @description Inclusive end date; required with from; range max 31 days */
         to?: string;
+        /** @description Number of local dates to skip */
+        offset?: number;
+        /** @description Page size (default 20, max 100) */
+        limit?: number;
       };
       header?: never;
       path?: never;

@@ -5,7 +5,7 @@
 import {Check} from 'lucide-react';
 
 import type {TodayPlanOption} from '@/api/nutrition';
-import {optionCalories} from '@/nutrition/nutrition-utils';
+import {kcalText, optionCalories} from '@/nutrition/nutrition-utils';
 
 export default function OptionSheet({
   activeMealId,
@@ -62,7 +62,7 @@ export default function OptionSheet({
                   ) : null}
                   <span className="truncate font-medium">{option.meal_name ?? 'Option'}</span>
                 </span>
-                <span className="shrink-0 text-xs text-muted">{Math.round(optionCalories(option))} kcal</span>
+                <span className="shrink-0 text-xs text-muted">{kcalText(optionCalories(option))} kcal</span>
               </button>
             );
           })}

@@ -42,7 +42,9 @@ defmodule EasyWeb.Clients.NutritionDayController do
     parameters: [
       Operation.parameter(:date, :query, :string, "Exact local date (YYYY-MM-DD); overrides from/to", required: false),
       Operation.parameter(:from, :query, :string, "Inclusive start date; required with to", required: false),
-      Operation.parameter(:to, :query, :string, "Inclusive end date; required with from; range max 31 days", required: false)
+      Operation.parameter(:to, :query, :string, "Inclusive end date; required with from; range max 31 days", required: false),
+      Operation.parameter(:offset, :query, :integer, "Number of local dates to skip", required: false),
+      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 100)", required: false)
     ],
     responses: [
       ok: {"Nutrition days", "application/json", NutritionDayListResponse},
@@ -232,9 +234,15 @@ defmodule EasyWeb.Clients.NutritionDayController do
     with {:ok, date} <- Utils.parse_optional_date(params["date"]),
          {:ok, from_date} <- Utils.parse_optional_date(params["from"]),
          {:ok, to_date} <- Utils.parse_optional_date(params["to"]),
-         {:ok, days} <-
-           Diary.list_client_nutrition_days(conn.assigns.ctx, date: date, from: from_date, to: to_date) do
-      render(conn, :index, days: days)
+         {:ok, %{nutrition_days: days, count: count}} <-
+           Diary.list_client_nutrition_days(conn.assigns.ctx,
+             date: date,
+             from: from_date,
+             to: to_date,
+             offset: parse_integer(params, "offset", 0),
+             limit: parse_integer(params, "limit", 20)
+           ) do
+      render(conn, :index, days: days, count: count)
     end
   end
 

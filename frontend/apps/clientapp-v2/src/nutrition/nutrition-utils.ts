@@ -1,9 +1,8 @@
 /**
- * Nutrition day view helpers. Slots come from the server nutrition-day payload.
- * Frozen option order and the active choice are Diary-owned; this module does
- * not overlay a local pick. Consumed macros sum from diary row entries; targets from the day.
+ * Nutrition day view helpers. Slots, statuses, totals, and adherence come from
+ * the Nutrition Day contract; this module only maps them for display.
  */
-import {type MacroTotals, MEAL_SLOT_LABELS} from '@easy/utils';
+import {MEAL_SLOT_LABELS} from '@easy/utils';
 
 import type {
   NutritionDay,
@@ -14,16 +13,17 @@ import type {
   NutritionDaySlot,
 } from '@/api/nutrition';
 
-function macroSum(entries: NutritionDayEntry[]): MacroTotals {
-  const t: MacroTotals = {calories: 0, carbs: 0, fat: 0, protein: 0};
-  for (const e of entries) {
-    t.calories += e.nutrients.calories ?? 0;
-    t.protein += e.nutrients.protein ?? 0;
-    t.carbs += e.nutrients.carbohydrates ?? 0;
-    t.fat += e.nutrients.fat ?? 0;
-  }
-  return t;
-}
+import {nutrientNumber} from './nutrition-summary';
+
+export {
+  ADHERENCE_RING,
+  ADHERENCE_TEXT,
+  type Adherence,
+  adherenceDisplay,
+  calorieShare,
+  kcalText,
+  nutrientNumber,
+} from './nutrition-summary';
 
 /** One row on Today: either a live checklist item or a server diary row. */
 export type SlotRow = {
@@ -43,10 +43,10 @@ export type SlotView = {
   /** True when a fulfilment exists — switching options needs the confirm dialog. */
   hasPlannedLog: boolean;
   label: string;
-  loggedCalories: number;
+  loggedCalories: null | number;
   mealId: null | string;
   options: NutritionDayOption[];
-  plannedCalories: number;
+  plannedCalories: null | number;
   revision: number;
   rows: SlotRow[];
   slot: string;
@@ -111,8 +111,8 @@ function slotShell(
   daySlot: NutritionDaySlot,
   option: NutritionDayOption | null,
   rows: SlotRow[],
-  loggedCalories: number,
-  plannedCalories: number,
+  loggedCalories: null | number,
+  plannedCalories: null | number,
   hasLog: boolean,
   hasPlannedLog: boolean,
 ): SlotView {
@@ -150,13 +150,20 @@ export function slotsFromDay(day: null | NutritionDay, history = false): SlotVie
     const option = activeOption(daySlot);
     const rows = daySlot.rows ?? [];
     const logged = rows.length > 0;
-    const loggedCalories = daySlot.logged_calories ?? 0;
+    const loggedCalories = daySlot.logged_calories ?? null;
 
     if (!logged) {
       const checklist = history ? [] : (option?.items ?? []).map(checklistRow);
-      const plannedCalories =
-        daySlot.planned_calories ?? (option?.items ?? []).reduce((s, it) => s + (plannedItemCalories(it) ?? 0), 0);
-      return slotShell(daySlot.meal_slot, daySlot, option, checklist, loggedCalories, plannedCalories, false, false);
+      return slotShell(
+        daySlot.meal_slot,
+        daySlot,
+        option,
+        checklist,
+        loggedCalories,
+        daySlot.planned_calories ?? null,
+        false,
+        false,
+      );
     }
 
     return slotShell(
@@ -165,25 +172,23 @@ export function slotsFromDay(day: null | NutritionDay, history = false): SlotVie
       option,
       rows.map(diaryRow),
       loggedCalories,
-      daySlot.planned_calories ?? 0,
+      daySlot.planned_calories ?? null,
       true,
       plannedFulfilments(rows),
     );
   });
 }
 
-export function optionCalories(option: NutritionDayOption): number {
-  return option.items.reduce((s, it) => s + (plannedItemCalories(it) ?? 0), 0);
-}
-
-export function dayConsumed(day: null | NutritionDay): MacroTotals {
-  if (!day) {
-    return {calories: 0, carbs: 0, fat: 0, protein: 0};
+export function optionCalories(option: NutritionDayOption): null | number {
+  let total = 0;
+  for (const item of option.items) {
+    const calories = nutrientNumber(item.nutrients.calories);
+    if (calories == null) {
+      return null;
+    }
+    total += calories;
   }
-  const entries = day.slots.flatMap((s) =>
-    (s.rows ?? []).map((r) => r.entry).filter((e): e is NutritionDayEntry => e != null),
-  );
-  return macroSum(entries);
+  return total;
 }
 
 export type Targets = {calories: null | number; carbs: null | number; fat: null | number; protein: null | number};
@@ -196,31 +201,4 @@ export function dayTargets(day: null | NutritionDay | undefined): Targets {
     fat: t?.fat_g ?? null,
     protein: t?.protein_g ?? null,
   };
-}
-
-export type Adherence = 'none' | 'on' | 'over' | 'under';
-
-export const ADHERENCE_RING: Record<Adherence, string> = {
-  none: '#d6d8dc',
-  on: 'var(--success)',
-  over: 'var(--danger)',
-  under: '#e2a33c',
-};
-
-export const ADHERENCE_TEXT: Record<Adherence, string> = {
-  none: 'var(--field-placeholder)',
-  on: 'var(--success-secondary)',
-  over: 'var(--danger)',
-  under: 'var(--warning)',
-};
-
-export function adherence(consumedCalories: number, targetCalories: null | number): Adherence {
-  if (consumedCalories <= 0) {
-    return 'none';
-  }
-  if (!targetCalories) {
-    return 'on';
-  }
-  const pct = consumedCalories / targetCalories;
-  return pct < 0.9 ? 'under' : pct > 1.1 ? 'over' : 'on';
 }

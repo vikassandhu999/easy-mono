@@ -1385,6 +1385,47 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.PublicLandingPage",
         "x-validate": null
       },
+      "NutritionDaySummary": {
+        "additionalProperties": false,
+        "properties": {
+          "adherence": {
+            "enum": [
+              "on",
+              "under",
+              "over",
+              "none"
+            ],
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "counts": {
+            "$ref": "#/components/schemas/NutritionDaySummaryCounts"
+          },
+          "has_intake": {
+            "type": "boolean",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "logged": {
+            "$ref": "#/components/schemas/NutrientTotals"
+          },
+          "planned": {
+            "$ref": "#/components/schemas/NutrientTotals"
+          }
+        },
+        "required": [
+          "logged",
+          "planned",
+          "counts",
+          "has_intake"
+        ],
+        "title": "NutritionDaySummary",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDaySummary",
+        "x-validate": null
+      },
       "TrainingPlanResponse": {
         "additionalProperties": false,
         "properties": {
@@ -2651,6 +2692,12 @@
       "NutritionDayListResponse": {
         "additionalProperties": false,
         "properties": {
+          "count": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
           "data": {
             "items": {
               "$ref": "#/components/schemas/NutritionDay"
@@ -2661,7 +2708,8 @@
           }
         },
         "required": [
-          "data"
+          "data",
+          "count"
         ],
         "title": "NutritionDayListResponse",
         "type": "object",
@@ -4683,6 +4731,12 @@
       "NutritionDaySlot": {
         "additionalProperties": false,
         "properties": {
+          "applied_timezone": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "logged_calories": {
             "nullable": true,
             "type": "number",
@@ -4936,6 +4990,11 @@
       "NutritionDay": {
         "additionalProperties": false,
         "properties": {
+          "applied_timezone": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "date": {
             "format": "date",
             "type": "string",
@@ -4957,6 +5016,9 @@
             "x-struct": null,
             "x-validate": null
           },
+          "summary": {
+            "$ref": "#/components/schemas/NutritionDaySummary"
+          },
           "targets": {
             "$ref": "#/components/schemas/NutritionDayTargets"
           },
@@ -4969,7 +5031,9 @@
         "required": [
           "date",
           "write_eligible",
+          "applied_timezone",
           "targets",
+          "summary",
           "slots"
         ],
         "title": "NutritionDay",
@@ -9828,6 +9892,59 @@
         "title": "NutritionMealLogResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionMealLogResponse",
+        "x-validate": null
+      },
+      "NutritionDaySummaryCounts": {
+        "additionalProperties": false,
+        "properties": {
+          "added": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "as_planned": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "pending": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "recorded": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "skipped": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "swapped": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "as_planned",
+          "swapped",
+          "added",
+          "recorded",
+          "pending",
+          "skipped"
+        ],
+        "title": "NutritionDaySummaryCounts",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDaySummaryCounts",
         "x-validate": null
       },
       "LandingProgram": {
@@ -15740,6 +15857,28 @@
               "x-struct": null,
               "x-validate": null
             }
+          },
+          {
+            "description": "Number of local dates to skip",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Page size (default 20, max 100)",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
           }
         ],
         "responses": {
@@ -19304,6 +19443,28 @@
             "required": false,
             "schema": {
               "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Number of local dates to skip",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Page size (default 20, max 100)",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
               "x-struct": null,
               "x-validate": null
             }

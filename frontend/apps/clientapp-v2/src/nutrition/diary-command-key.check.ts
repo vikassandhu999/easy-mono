@@ -1,10 +1,13 @@
 import {
+  deleteEntryIntentFingerprint,
   diaryCommandKey,
   extraIntentFingerprint,
   plannedDayIntentFingerprint,
   plannedItemIntentFingerprint,
   plannedOptionIntentFingerprint,
+  replaceIntentFingerprint,
   switchOptionIntentFingerprint,
+  updateEntryIntentFingerprint,
 } from './diary-command-key.ts';
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -90,3 +93,39 @@ assert(
     }),
   'a stale revision rotates the switch-option fingerprint',
 );
+
+const replaceSame = {
+  date: '2026-08-17',
+  expectedRevision: 1,
+  id: 'food-eggs',
+  kind: 'food',
+  mealItemId: 'item-1',
+  slot: 'breakfast',
+  weight: 80,
+};
+const replaceFingerprint = replaceIntentFingerprint(replaceSame);
+assert(replaceFingerprint === replaceIntentFingerprint(replaceSame), 'replace fingerprints are stable');
+assert(
+  replaceFingerprint !== replaceIntentFingerprint({...replaceSame, weight: 90}),
+  'changing the replacement portion rotates the fingerprint',
+);
+assert(
+  updateEntryIntentFingerprint({
+    date: '2026-08-17',
+    entryId: 'entry-1',
+    expectedRevision: 1,
+    notes: 'half',
+    weight: 25,
+  }) !==
+    updateEntryIntentFingerprint({
+      date: '2026-08-17',
+      entryId: 'entry-1',
+      expectedRevision: 2,
+      notes: 'half',
+      weight: 25,
+    }),
+  'a stale revision rotates the update fingerprint',
+);
+const deleteSame = {date: '2026-08-17', entryId: 'entry-1', expectedRevision: 1};
+const deleteFingerprint = deleteEntryIntentFingerprint(deleteSame);
+assert(deleteFingerprint === deleteEntryIntentFingerprint(deleteSame), 'delete fingerprints are stable');

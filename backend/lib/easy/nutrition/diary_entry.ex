@@ -91,7 +91,25 @@ defmodule Easy.Nutrition.DiaryEntry do
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(entry, attrs) do
     entry
-    |> cast(attrs, [:weight_g, :amount, :unit, :serving_label, :notes, :revision])
+    |> cast(attrs, [
+      :kind,
+      :display_name,
+      :portion_kind,
+      :weight_g,
+      :amount,
+      :unit,
+      :serving_label,
+      :calories,
+      :protein,
+      :carbohydrates,
+      :fat,
+      :fiber,
+      :complete,
+      :notes,
+      :revision,
+      :food_id,
+      :recipe_id
+    ])
     |> validate_required([:revision])
     |> validate_number(:revision, greater_than: 0)
   end
@@ -100,7 +118,15 @@ defmodule Easy.Nutrition.DiaryEntry do
   def for_business(query \\ __MODULE__, business_id),
     do: from(entry in query, where: entry.business_id == ^business_id)
 
+  @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
+  def for_client(query \\ __MODULE__, business_id, client_id) do
+    from(entry in query, where: entry.business_id == ^business_id and entry.client_id == ^client_id)
+  end
+
   @spec for_slot(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_slot(query \\ __MODULE__, slot_id),
     do: from(entry in query, where: entry.nutrition_diary_slot_id == ^slot_id)
+
+  @spec lock_id(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def lock_id(query \\ __MODULE__, id), do: from(entry in query, where: entry.id == ^id, lock: "FOR UPDATE")
 end

@@ -684,6 +684,86 @@ defmodule EasyWeb.OpenApi.Schemas.DiarySwitchOptionRequest do
   )
 end
 
+defmodule EasyWeb.OpenApi.Schemas.DiaryReplacePlannedItemRequest do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.NutritionPortionInput
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "DiaryReplacePlannedItemRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        meal_slot: %Schema{type: :string, enum: Easy.Nutrition.MealSlot.names()},
+        meal_item_id: %Schema{type: :string, format: :uuid},
+        food_id: %Schema{type: :string, format: :uuid, nullable: true},
+        recipe_id: %Schema{type: :string, format: :uuid, nullable: true},
+        portion: NutritionPortionInput,
+        notes: %Schema{type: :string, nullable: true},
+        expected_revision: %Schema{type: :integer, minimum: 1}
+      },
+      required: [:meal_slot, :meal_item_id, :portion, :expected_revision],
+      example: %{
+        "meal_slot" => "breakfast",
+        "meal_item_id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+        "food_id" => "a1b2c3d4-74a4-4f9f-b1e9-a9bb07ab4a7c",
+        "portion" => %{"kind" => "gram", "grams" => 80},
+        "expected_revision" => 1
+      }
+    },
+    struct?: false
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.DiaryUpdateEntryRequest do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.NutritionPortionInput
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "DiaryUpdateEntryRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        expected_revision: %Schema{type: :integer, minimum: 1},
+        portion: NutritionPortionInput,
+        notes: %Schema{type: :string, nullable: true}
+      },
+      required: [:expected_revision],
+      example: %{
+        "expected_revision" => 1,
+        "portion" => %{"kind" => "gram", "grams" => 25},
+        "notes" => "half"
+      }
+    },
+    struct?: false
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.DiaryDeleteEntryRequest do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "DiaryDeleteEntryRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        expected_revision: %Schema{type: :integer, minimum: 1}
+      },
+      required: [:expected_revision],
+      example: %{"expected_revision" => 1}
+    },
+    struct?: false
+  )
+end
+
 defmodule EasyWeb.OpenApi.Schemas.NutritionDaySlot do
   require OpenApiSpex
 

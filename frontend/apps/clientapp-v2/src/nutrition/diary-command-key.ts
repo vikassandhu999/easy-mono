@@ -51,3 +51,50 @@ export function switchOptionIntentFingerprint(input: {
     slot: input.slot,
   });
 }
+
+export function replaceIntentFingerprint(input: {
+  date: string;
+  expectedRevision: number;
+  id: string;
+  kind: string;
+  mealItemId: string;
+  slot: string;
+  weight: null | number;
+}): string {
+  return JSON.stringify({
+    date: input.date,
+    expectedRevision: input.expectedRevision,
+    id: input.id,
+    kind: input.kind,
+    mealItemId: input.mealItemId,
+    scope: 'replace',
+    slot: input.slot,
+    weight: input.weight,
+  });
+}
+
+export function updateEntryIntentFingerprint(input: {
+  date: string;
+  entryId: string;
+  expectedRevision: number;
+  notes: null | string;
+  weight: number;
+}): string {
+  return JSON.stringify({
+    date: input.date,
+    entryId: input.entryId,
+    expectedRevision: input.expectedRevision,
+    notes: input.notes,
+    scope: 'update-entry',
+    weight: input.weight,
+  });
+}
+
+export function deleteEntryIntentFingerprint(input: {date: string; entryId: string; expectedRevision: number}): string {
+  return JSON.stringify({
+    date: input.date,
+    entryId: input.entryId,
+    expectedRevision: input.expectedRevision,
+    scope: 'delete-entry',
+  });
+}

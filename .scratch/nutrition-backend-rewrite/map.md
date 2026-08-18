@@ -27,6 +27,7 @@ Rewrite Nutrition around Library, Programming, and Diary. The effort ends when t
 * [Record extras with freezing and idempotency](./issues/11-extras-freezing-idempotency.md) — client extras freeze same-day Coverage into a Diary Slot; no Coverage and unstarted past dates in the window are `recorded`; a 30-day idempotency ledger protects retries; Today posts `Idempotency-Key` through the generated extras contract.
 * [Log planned intake and derive statuses](./issues/12-planned-logging-statuses.md) — planned-item, planned-option, and planned-day commands fulfil from frozen rows; statuses are Diary-derived; Today uses the generated planned-logging contract with idempotency keys.
 * [Switch frozen Meal Options safely](./issues/13-option-switching.md) — same-day `POST .../active-option` changes the frozen active option at the expected Diary Slot revision without deleting intake; inactive-option entries become `added` extras and switching back restores the original fulfilment; Today uses the generated switch contract.
+* [Correct and substitute Diary Entries](./issues/14-diary-corrections.md) — replacements keep the frozen planned-item association; portion updates scale frozen nutrients at the entry revision; deletes leave the slot; Today/History use the generated correction contract with idempotency keys.
 
 ## Not yet specified
 

@@ -3265,6 +3265,43 @@ export interface components {
       revision?: number | null;
       rows: components['schemas']['NutritionDayRow'][];
     };
+    /**
+     * DiaryReplacePlannedItemRequest
+     * @example {
+     *       "expected_revision": 1,
+     *       "food_id": "a1b2c3d4-74a4-4f9f-b1e9-a9bb07ab4a7c",
+     *       "meal_item_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+     *       "meal_slot": "breakfast",
+     *       "portion": {
+     *         "grams": 80,
+     *         "kind": "gram"
+     *       }
+     *     }
+     */
+    DiaryReplacePlannedItemRequest: {
+      expected_revision: number;
+      /** Format: uuid */
+      food_id?: string | null;
+      /** Format: uuid */
+      meal_item_id: string;
+      /** @enum {string} */
+      meal_slot:
+        | 'early_morning'
+        | 'breakfast'
+        | 'mid_morning'
+        | 'lunch'
+        | 'afternoon'
+        | 'evening'
+        | 'dinner'
+        | 'pre_sleep'
+        | 'pre_workout'
+        | 'during_workout'
+        | 'post_workout';
+      notes?: string | null;
+      portion: components['schemas']['NutritionPortionInput'];
+      /** Format: uuid */
+      recipe_id?: string | null;
+    };
     /** WorkbenchRepliesQueueItem */
     WorkbenchRepliesQueueItem: {
       /**
@@ -3756,6 +3793,15 @@ export interface components {
      */
     TrainingExerciseCopyRequest: {
       name: string;
+    };
+    /**
+     * DiaryDeleteEntryRequest
+     * @example {
+     *       "expected_revision": 1
+     *     }
+     */
+    DiaryDeleteEntryRequest: {
+      expected_revision: number;
     };
     /**
      * DiaryLogPlannedOptionRequest
@@ -4265,6 +4311,22 @@ export interface components {
       timestamp: string;
       /** @example 1.0.0 */
       version: string;
+    };
+    /**
+     * DiaryUpdateEntryRequest
+     * @example {
+     *       "expected_revision": 1,
+     *       "notes": "half",
+     *       "portion": {
+     *         "grams": 25,
+     *         "kind": "gram"
+     *       }
+     *     }
+     */
+    DiaryUpdateEntryRequest: {
+      expected_revision: number;
+      notes?: string | null;
+      portion?: components['schemas']['NutritionPortionInput'];
     };
     /**
      * RecipeUpdateRequest

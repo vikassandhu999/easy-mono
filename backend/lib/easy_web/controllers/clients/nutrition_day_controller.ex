@@ -8,9 +8,12 @@ defmodule EasyWeb.Clients.NutritionDayController do
 
   alias EasyWeb.OpenApi.Schemas.{
     DiaryAddExtraRequest,
+    DiaryDeleteEntryRequest,
     DiaryLogPlannedItemRequest,
     DiaryLogPlannedOptionRequest,
+    DiaryReplacePlannedItemRequest,
     DiarySwitchOptionRequest,
+    DiaryUpdateEntryRequest,
     ErrorResponse,
     NutritionDayListResponse,
     NutritionDayResponse
@@ -18,7 +21,16 @@ defmodule EasyWeb.Clients.NutritionDayController do
 
   plug OpenApiSpex.Plug.CastAndValidate,
        [json_render_error_v2: true]
-       when action in [:add_extra, :log_planned_item, :log_planned_option, :log_planned_day, :switch_option]
+       when action in [
+              :add_extra,
+              :log_planned_item,
+              :log_planned_option,
+              :log_planned_day,
+              :switch_option,
+              :replace_planned_item,
+              :update_entry,
+              :delete_entry
+            ]
 
   tags ["client nutrition days"]
 
@@ -147,6 +159,74 @@ defmodule EasyWeb.Clients.NutritionDayController do
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
+  operation :replace_planned_item,
+    summary: "Replace a planned fulfilment with another visible Food or Recipe",
+    operation_id: "replaceClientNutritionDayPlannedItem",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:date, :path, %Schema{type: :string, format: :date}, "Client-local date", required: true),
+      Operation.parameter(
+        :"Idempotency-Key",
+        :header,
+        %Schema{type: :string, format: :uuid},
+        "UUID identifying this client intent",
+        required: true
+      )
+    ],
+    request_body: {"Replace planned item request", "application/json", DiaryReplacePlannedItemRequest, required: true},
+    responses: [
+      ok: {"Nutrition day", "application/json", NutritionDayResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      conflict: {"Stale revision or idempotency key reused with a different payload", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :update_entry,
+    summary: "Update a Diary Entry Portion and notes",
+    operation_id: "updateClientNutritionDayEntry",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:date, :path, %Schema{type: :string, format: :date}, "Client-local date", required: true),
+      Operation.parameter(:id, :path, %Schema{type: :string, format: :uuid}, "Diary Entry id", required: true),
+      Operation.parameter(
+        :"Idempotency-Key",
+        :header,
+        %Schema{type: :string, format: :uuid},
+        "UUID identifying this client intent",
+        required: true
+      )
+    ],
+    request_body: {"Update entry request", "application/json", DiaryUpdateEntryRequest, required: true},
+    responses: [
+      ok: {"Nutrition day", "application/json", NutritionDayResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      conflict: {"Stale revision or idempotency key reused with a different payload", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :delete_entry,
+    summary: "Delete a Diary Entry",
+    operation_id: "deleteClientNutritionDayEntry",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:date, :path, %Schema{type: :string, format: :date}, "Client-local date", required: true),
+      Operation.parameter(:id, :path, %Schema{type: :string, format: :uuid}, "Diary Entry id", required: true),
+      Operation.parameter(
+        :"Idempotency-Key",
+        :header,
+        %Schema{type: :string, format: :uuid},
+        "UUID identifying this client intent",
+        required: true
+      )
+    ],
+    request_body: {"Delete entry request", "application/json", DiaryDeleteEntryRequest, required: true},
+    responses: [
+      ok: {"Nutrition day", "application/json", NutritionDayResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      conflict: {"Stale revision or idempotency key reused with a different payload", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     with {:ok, date} <- Utils.parse_optional_date(params["date"]),
@@ -217,6 +297,41 @@ defmodule EasyWeb.Clients.NutritionDayController do
 
     with {:ok, date} <- parse_date(date),
          {:ok, day} <- Diary.switch_client_option(conn.assigns.ctx, date, conn.body_params, key) do
+      render(conn, :show, day: day)
+    end
+  end
+
+  @spec replace_planned_item(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def replace_planned_item(conn, _params) do
+    date = conn.path_params["date"]
+    key = conn |> get_req_header("idempotency-key") |> List.first()
+
+    with {:ok, date} <- parse_date(date),
+         {:ok, day} <- Diary.replace_client_planned_item(conn.assigns.ctx, date, conn.body_params, key) do
+      render(conn, :show, day: day)
+    end
+  end
+
+  @spec update_entry(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def update_entry(conn, _params) do
+    date = conn.path_params["date"]
+    id = conn.path_params["id"]
+    key = conn |> get_req_header("idempotency-key") |> List.first()
+
+    with {:ok, date} <- parse_date(date),
+         {:ok, day} <- Diary.update_client_entry(conn.assigns.ctx, date, id, conn.body_params, key) do
+      render(conn, :show, day: day)
+    end
+  end
+
+  @spec delete_entry(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def delete_entry(conn, _params) do
+    date = conn.path_params["date"]
+    id = conn.path_params["id"]
+    key = conn |> get_req_header("idempotency-key") |> List.first()
+
+    with {:ok, date} <- parse_date(date),
+         {:ok, day} <- Diary.delete_client_entry(conn.assigns.ctx, date, id, conn.body_params, key) do
       render(conn, :show, day: day)
     end
   end

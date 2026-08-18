@@ -167,6 +167,74 @@ defmodule Easy.Nutrition.Diary do
 
   def switch_client_option(%Ctx{}, %Date{}, _attrs, _key), do: {:error, :invalid_idempotency_key}
 
+  @spec replace_client_planned_item(Ctx.t(), Date.t(), map(), String.t()) ::
+          {:ok, map()}
+          | {:error,
+             :not_found
+             | :client_inactive
+             | :invalid_idempotency_key
+             | :invalid_portion
+             | :future_date
+             | :outside_correction_window
+             | :cannot_start_past_slot
+             | :conflict
+             | Ecto.Changeset.t()}
+  def replace_client_planned_item(%Ctx{} = ctx, %Date{} = date, attrs, key) when is_binary(key) do
+    with {:ok, uuid} <- cast_uuid(key),
+         {:ok, client} <- load_active_client(ctx),
+         {:ok, command} <- cast_replace_command(attrs) do
+      fingerprint = replace_fingerprint(date, command)
+      replay_or_run(client, uuid, fingerprint, fn -> record_replacement(ctx, client, date, command) end)
+    end
+  end
+
+  def replace_client_planned_item(%Ctx{}, %Date{}, _attrs, _key), do: {:error, :invalid_idempotency_key}
+
+  @spec update_client_entry(Ctx.t(), Date.t(), String.t(), map(), String.t()) ::
+          {:ok, map()}
+          | {:error,
+             :not_found
+             | :client_inactive
+             | :invalid_idempotency_key
+             | :invalid_portion
+             | :future_date
+             | :outside_correction_window
+             | :conflict
+             | Ecto.Changeset.t()}
+  def update_client_entry(%Ctx{} = ctx, %Date{} = date, entry_id, attrs, key)
+      when is_binary(entry_id) and is_binary(key) do
+    with {:ok, uuid} <- cast_uuid(key),
+         {:ok, client} <- load_active_client(ctx),
+         {:ok, command} <- cast_update_command(attrs) do
+      fingerprint = update_fingerprint(date, entry_id, command)
+      replay_or_run(client, uuid, fingerprint, fn -> record_update(ctx, client, date, entry_id, command) end)
+    end
+  end
+
+  def update_client_entry(%Ctx{}, %Date{}, _entry_id, _attrs, _key), do: {:error, :invalid_idempotency_key}
+
+  @spec delete_client_entry(Ctx.t(), Date.t(), String.t(), map(), String.t()) ::
+          {:ok, map()}
+          | {:error,
+             :not_found
+             | :client_inactive
+             | :invalid_idempotency_key
+             | :future_date
+             | :outside_correction_window
+             | :conflict
+             | Ecto.Changeset.t()}
+  def delete_client_entry(%Ctx{} = ctx, %Date{} = date, entry_id, attrs, key)
+      when is_binary(entry_id) and is_binary(key) do
+    with {:ok, uuid} <- cast_uuid(key),
+         {:ok, client} <- load_active_client(ctx),
+         {:ok, command} <- cast_delete_command(attrs) do
+      fingerprint = delete_fingerprint(date, entry_id, command)
+      replay_or_run(client, uuid, fingerprint, fn -> record_delete(ctx, client, date, entry_id, command) end)
+    end
+  end
+
+  def delete_client_entry(%Ctx{}, %Date{}, _entry_id, _attrs, _key), do: {:error, :invalid_idempotency_key}
+
   @spec purge_expired_command_ledger(DateTime.t()) :: {:ok, non_neg_integer()}
   def purge_expired_command_ledger(now \\ DateTime.utc_now(:second)) do
     ids =
@@ -542,6 +610,30 @@ defmodule Easy.Nutrition.Diary do
     end
   end
 
+  defp cast_replace_command(attrs) do
+    with {:ok, extra} <- cast_extra_command(attrs),
+         {:ok, meal_item_id} <- cast_id(attrs[:meal_item_id]),
+         {:ok, revision} <- cast_revision(attrs[:expected_revision]) do
+      {:ok, Map.merge(extra, %{meal_item_id: meal_item_id, expected_revision: revision})}
+    end
+  end
+
+  defp cast_update_command(attrs) do
+    with {:ok, revision} <- cast_revision(attrs[:expected_revision]),
+         {:ok, portion} <- optional_portion(attrs[:portion]) do
+      {:ok, %{expected_revision: revision, portion: portion, notes: Map.get(attrs, :notes)}}
+    end
+  end
+
+  defp cast_delete_command(attrs) do
+    with {:ok, revision} <- cast_revision(attrs[:expected_revision]) do
+      {:ok, %{expected_revision: revision}}
+    end
+  end
+
+  defp optional_portion(nil), do: {:ok, nil}
+  defp optional_portion(portion), do: cast_portion(portion)
+
   defp cast_revision(revision) when is_integer(revision) and revision > 0, do: {:ok, revision}
   defp cast_revision(_revision), do: {:error, :not_found}
 
@@ -615,6 +707,35 @@ defmodule Easy.Nutrition.Diary do
       expected_revision: command.expected_revision
     })
   end
+
+  defp replace_fingerprint(date, command) do
+    DiaryCommandLedger.fingerprint("POST", replace_path(date), %{
+      meal_slot: command.meal_slot,
+      meal_item_id: command.meal_item_id,
+      food_id: command.food_id,
+      recipe_id: command.recipe_id,
+      portion: command.portion,
+      notes: command.notes,
+      expected_revision: command.expected_revision
+    })
+  end
+
+  defp update_fingerprint(date, entry_id, command) do
+    DiaryCommandLedger.fingerprint("PATCH", entry_path(date, entry_id), %{
+      expected_revision: command.expected_revision,
+      portion: command.portion,
+      notes: command.notes
+    })
+  end
+
+  defp delete_fingerprint(date, entry_id, command) do
+    DiaryCommandLedger.fingerprint("DELETE", entry_path(date, entry_id), %{
+      expected_revision: command.expected_revision
+    })
+  end
+
+  defp replace_path(date), do: "/v1/client/nutrition-days/#{Date.to_iso8601(date)}/replacements"
+  defp entry_path(date, entry_id), do: "/v1/client/nutrition-days/#{Date.to_iso8601(date)}/entries/#{entry_id}"
 
   defp replay_or_run(client, key, fingerprint, fun) do
     result =
@@ -1140,4 +1261,173 @@ defmodule Easy.Nutrition.Diary do
 
   defp unique_fulfilment_error?(changeset),
     do: Keyword.has_key?(changeset.errors, :frozen_planned_item_id)
+
+  defp record_replacement(ctx, client, date, command) do
+    timezone = applied_timezone(client)
+    today = LocalCalendar.to_local_date(DateTime.utc_now(), timezone)
+
+    with :ok <- ensure_writable(date, existing_timezone(client, date, command.meal_slot, timezone)),
+         {:ok, slot} <- ensure_planned_slot(ctx, client, date, timezone, today, command.meal_slot),
+         {:ok, item} <- find_any_frozen_item(slot, command.meal_item_id),
+         {:ok, [resolved]} <-
+           Library.resolve_items(ctx, [%{kind: command.kind, id: command.id, portion: command.portion}]) do
+      replace_fulfilment!(client, slot, item, resolved, command)
+      {:ok, assemble_day(ctx, client, date, :client)}
+    end
+  end
+
+  defp record_update(ctx, client, date, entry_id, command) do
+    with {:ok, entry} <- lock_entry(client, date, entry_id),
+         :ok <- ensure_writable(date, entry.diary_slot.applied_timezone),
+         :ok <- ensure_entry_revision(entry, command.expected_revision),
+         {:ok, attrs} <- update_attrs(entry, command) do
+      persist_entry!(entry, attrs)
+      {:ok, assemble_day(ctx, client, date, :client)}
+    end
+  end
+
+  defp record_delete(ctx, client, date, entry_id, command) do
+    with {:ok, entry} <- lock_entry(client, date, entry_id),
+         :ok <- ensure_writable(date, entry.diary_slot.applied_timezone),
+         :ok <- ensure_entry_revision(entry, command.expected_revision) do
+      delete_entry!(entry)
+      {:ok, assemble_day(ctx, client, date, :client)}
+    end
+  end
+
+  defp find_any_frozen_item(slot, meal_item_id) do
+    items = Enum.flat_map(slot.frozen_options, &planned_items_for_option/1)
+
+    case Enum.find(items, &(&1.id == meal_item_id or &1.source_meal_item_id == meal_item_id)) do
+      nil -> {:error, :not_found}
+      item -> {:ok, item}
+    end
+  end
+
+  defp replace_fulfilment!(client, slot, item, resolved, command) do
+    case Enum.find(slot.entries, &(&1.frozen_planned_item_id == item.id)) do
+      nil -> insert_replacement!(client, slot, item, resolved, command)
+      entry -> update_replacement!(entry, resolved, command)
+    end
+  end
+
+  defp insert_replacement!(client, slot, item, resolved, command) do
+    if command.expected_revision != 1 do
+      Repo.rollback(stale_revision_changeset(%DiaryEntry{revision: 1}))
+    else
+      insert_frozen_copy_from_resolved!(client, slot, item, resolved, command)
+    end
+  end
+
+  defp insert_frozen_copy_from_resolved!(client, slot, item, resolved, command) do
+    attrs =
+      resolved
+      |> resolved_entry_attrs(command)
+      |> Map.merge(%{
+        frozen_planned_item_id: item.id,
+        frozen_option_id: item.nutrition_diary_frozen_option_id
+      })
+
+    case Repo.insert(DiaryEntry.insert_changeset(client.business_id, client.id, slot.id, attrs)) do
+      {:ok, entry} -> entry
+      {:error, changeset} -> Repo.rollback(changeset)
+    end
+  end
+
+  defp update_replacement!(entry, resolved, command) do
+    case ensure_entry_revision(entry, command.expected_revision) do
+      :ok -> persist_entry!(entry, Map.put(resolved_entry_attrs(resolved, command), :revision, entry.revision + 1))
+      {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
+  defp resolved_entry_attrs(resolved, command) do
+    nutrients = resolved.nutrients
+    portion = resolved.portion
+
+    %{
+      kind: resolved.kind,
+      display_name: resolved.item.name,
+      portion_kind: command.portion.kind,
+      weight_g: portion.grams,
+      amount: Map.get(portion, :amount),
+      unit: Map.get(portion, :unit),
+      serving_label: Map.get(portion, :label),
+      calories: nutrients.calories,
+      protein: nutrients.protein,
+      carbohydrates: nutrients.carbohydrates,
+      fat: nutrients.fat,
+      fiber: nutrients.fiber,
+      complete: nutrients.complete,
+      notes: command.notes,
+      food_id: if(resolved.kind == :food, do: resolved.item.id),
+      recipe_id: if(resolved.kind == :recipe, do: resolved.item.id)
+    }
+  end
+
+  defp lock_entry(client, date, entry_id) do
+    entry =
+      DiaryEntry
+      |> DiaryEntry.for_client(client.business_id, client.id)
+      |> DiaryEntry.lock_id(entry_id)
+      |> Repo.one()
+      |> Repo.preload(:diary_slot)
+
+    matching_entry(entry, date)
+  end
+
+  defp matching_entry(%DiaryEntry{diary_slot: %DiarySlot{local_date: date}} = entry, date), do: {:ok, entry}
+  defp matching_entry(_entry, _date), do: {:error, :not_found}
+
+  defp ensure_entry_revision(%DiaryEntry{revision: revision}, revision), do: :ok
+  defp ensure_entry_revision(entry, _expected), do: {:error, stale_revision_changeset(entry)}
+
+  defp update_attrs(entry, %{portion: nil, notes: notes}) do
+    {:ok, %{notes: notes, revision: entry.revision + 1}}
+  end
+
+  defp update_attrs(entry, command) do
+    with {:ok, nutrients, grams} <- scaled_nutrients(entry, command.portion) do
+      {:ok,
+       %{
+         portion_kind: command.portion.kind,
+         weight_g: grams,
+         amount: Map.get(command.portion, :amount),
+         unit: Map.get(command.portion, :unit),
+         serving_label: Map.get(command.portion, :label),
+         calories: nutrients.calories,
+         protein: nutrients.protein,
+         carbohydrates: nutrients.carbohydrates,
+         fat: nutrients.fat,
+         fiber: nutrients.fiber,
+         complete: nutrients.complete,
+         notes: command.notes,
+         revision: entry.revision + 1
+       }}
+    end
+  end
+
+  defp scaled_nutrients(entry, portion) do
+    grams = Map.get(portion, :grams) || Map.get(portion, :weight_g)
+
+    if is_number(entry.weight_g) and entry.weight_g > 0 and is_number(grams) and grams > 0 do
+      {:ok, NutrientTotals.scale(NutrientTotals.from_fields(entry), grams / entry.weight_g), grams}
+    else
+      {:error, :invalid_portion}
+    end
+  end
+
+  defp persist_entry!(entry, attrs) do
+    case Repo.update(DiaryEntry.update_changeset(entry, attrs)) do
+      {:ok, updated} -> updated
+      {:error, changeset} -> Repo.rollback(changeset)
+    end
+  end
+
+  defp delete_entry!(entry) do
+    case Repo.delete(entry) do
+      {:ok, deleted} -> deleted
+      {:error, changeset} -> Repo.rollback(changeset)
+    end
+  end
 end

@@ -408,6 +408,190 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
     end
   end
 
+  describe "POST /v1/client/nutrition-days/:date/replacements" do
+    test "replaces a fulfilment and replays an identical idempotency key", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Oats")
+      eggs = insert(:food, creator: ctx.coach, business: ctx.business, name: "Eggs", calories_per_100g: 140.0)
+      assign_covering_plan(ctx, food)
+      today = Date.to_iso8601(local_today(ctx.client))
+      meal_item_id = live_meal_item_id(ctx)
+
+      ctx.conn
+      |> put_req_header("idempotency-key", Ecto.UUID.generate())
+      |> post("/v1/client/nutrition-days/#{today}/planned-items", %{
+        "meal_slot" => "breakfast",
+        "meal_item_id" => meal_item_id
+      })
+      |> json_response(201)
+
+      key = Ecto.UUID.generate()
+
+      body = %{
+        "meal_slot" => "breakfast",
+        "meal_item_id" => meal_item_id,
+        "food_id" => eggs.id,
+        "portion" => %{"kind" => "gram", "grams" => 80},
+        "expected_revision" => 1
+      }
+
+      conn =
+        ctx.conn
+        |> put_req_header("idempotency-key", key)
+        |> post("/v1/client/nutrition-days/#{today}/replacements", body)
+
+      assert %{"data" => data} = json_response(conn, 200)
+      swapped = Enum.find(hd(data["slots"])["rows"], &(&1["status"] == "swapped"))
+      assert swapped["entry"]["name"] == "Eggs"
+      assert swapped["entry"]["portion"]["grams"] == 80.0
+      assert swapped["entry"]["nutrients"]["calories"] == 112.0
+      assert swapped["entry"]["revision"] == 2
+      assert_schema(data, "NutritionDay", EasyWeb.ApiSpec.spec())
+
+      replay =
+        ctx.conn
+        |> put_req_header("idempotency-key", key)
+        |> post("/v1/client/nutrition-days/#{today}/replacements", body)
+
+      assert %{"data" => replayed} = json_response(replay, 200)
+      assert replayed["slots"] == data["slots"]
+    end
+
+    test "returns conflict when the same key is reused with a different payload", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Oats")
+      eggs = insert(:food, creator: ctx.coach, business: ctx.business, name: "Eggs")
+      assign_covering_plan(ctx, food)
+      today = Date.to_iso8601(local_today(ctx.client))
+      meal_item_id = live_meal_item_id(ctx)
+      key = Ecto.UUID.generate()
+
+      ctx.conn
+      |> put_req_header("idempotency-key", Ecto.UUID.generate())
+      |> post("/v1/client/nutrition-days/#{today}/planned-items", %{
+        "meal_slot" => "breakfast",
+        "meal_item_id" => meal_item_id
+      })
+      |> json_response(201)
+
+      ctx.conn
+      |> put_req_header("idempotency-key", key)
+      |> post("/v1/client/nutrition-days/#{today}/replacements", %{
+        "meal_slot" => "breakfast",
+        "meal_item_id" => meal_item_id,
+        "food_id" => eggs.id,
+        "portion" => %{"kind" => "gram", "grams" => 80},
+        "expected_revision" => 1
+      })
+      |> json_response(200)
+
+      conn =
+        ctx.conn
+        |> put_req_header("idempotency-key", key)
+        |> post("/v1/client/nutrition-days/#{today}/replacements", %{
+          "meal_slot" => "breakfast",
+          "meal_item_id" => meal_item_id,
+          "food_id" => eggs.id,
+          "portion" => %{"kind" => "gram", "grams" => 90},
+          "expected_revision" => 1
+        })
+
+      assert json_response(conn, 409)
+    end
+  end
+
+  describe "PATCH /v1/client/nutrition-days/:date/entries/:id" do
+    test "updates portion and notes at the expected revision", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Banana")
+      today = Date.to_iso8601(local_today(ctx.client))
+
+      created =
+        ctx.conn
+        |> put_req_header("idempotency-key", Ecto.UUID.generate())
+        |> post("/v1/client/nutrition-days/#{today}/extras", %{
+          "meal_slot" => "breakfast",
+          "food_id" => food.id,
+          "portion" => %{"kind" => "gram", "grams" => 80}
+        })
+
+      assert %{"data" => data} = json_response(created, 201)
+      entry = hd(hd(data["slots"])["rows"])["entry"]
+
+      conn =
+        ctx.conn
+        |> put_req_header("idempotency-key", Ecto.UUID.generate())
+        |> patch("/v1/client/nutrition-days/#{today}/entries/#{entry["id"]}", %{
+          "expected_revision" => entry["revision"],
+          "portion" => %{"kind" => "gram", "grams" => 40},
+          "notes" => "half"
+        })
+
+      assert %{"data" => updated} = json_response(conn, 200)
+      corrected = hd(hd(updated["slots"])["rows"])["entry"]
+      assert corrected["portion"]["grams"] == 40.0
+      assert corrected["notes"] == "half"
+      assert corrected["revision"] == entry["revision"] + 1
+      assert_schema(updated, "NutritionDay", EasyWeb.ApiSpec.spec())
+    end
+
+    test "returns conflict for a stale entry revision", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business)
+      today = Date.to_iso8601(local_today(ctx.client))
+
+      created =
+        ctx.conn
+        |> put_req_header("idempotency-key", Ecto.UUID.generate())
+        |> post("/v1/client/nutrition-days/#{today}/extras", %{
+          "meal_slot" => "breakfast",
+          "food_id" => food.id,
+          "portion" => %{"kind" => "gram", "grams" => 50}
+        })
+
+      entry = json_response(created, 201)["data"]["slots"] |> hd() |> Map.fetch!("rows") |> hd() |> Map.fetch!("entry")
+
+      conn =
+        ctx.conn
+        |> put_req_header("idempotency-key", Ecto.UUID.generate())
+        |> patch("/v1/client/nutrition-days/#{today}/entries/#{entry["id"]}", %{
+          "expected_revision" => 9,
+          "portion" => %{"kind" => "gram", "grams" => 10}
+        })
+
+      assert %{"error_code" => "stale_revision", "error_detail" => %{"current_revision" => 1}} =
+               json_response(conn, 409)
+    end
+  end
+
+  describe "DELETE /v1/client/nutrition-days/:date/entries/:id" do
+    test "deletes the entry and keeps frozen guidance", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Oats")
+      assign_covering_plan(ctx, food)
+      today = Date.to_iso8601(local_today(ctx.client))
+      meal_item_id = live_meal_item_id(ctx)
+
+      logged =
+        ctx.conn
+        |> put_req_header("idempotency-key", Ecto.UUID.generate())
+        |> post("/v1/client/nutrition-days/#{today}/planned-items", %{
+          "meal_slot" => "breakfast",
+          "meal_item_id" => meal_item_id
+        })
+
+      assert %{"data" => data} = json_response(logged, 201)
+      entry_id = hd(hd(data["slots"])["rows"])["entry"]["id"]
+
+      conn =
+        ctx.conn
+        |> put_req_header("idempotency-key", Ecto.UUID.generate())
+        |> delete("/v1/client/nutrition-days/#{today}/entries/#{entry_id}", %{"expected_revision" => 1})
+
+      assert %{"data" => remaining} = json_response(conn, 200)
+      [slot] = remaining["slots"]
+      assert slot["options"] != []
+      refute Enum.any?(slot["rows"], &(&1["entry"] && &1["entry"]["id"] == entry_id))
+      assert Enum.any?(slot["rows"], &(&1["status"] == "pending"))
+      assert_schema(remaining, "NutritionDay", EasyWeb.ApiSpec.spec())
+    end
+  end
+
   defp assign_covering_plan(ctx, food, opts \\ []) do
     coach_ctx = trainer_ctx(ctx.coach)
     {:ok, template} = Programming.create_template(coach_ctx, %{"name" => "Cut", "target_calories" => 2000.0})

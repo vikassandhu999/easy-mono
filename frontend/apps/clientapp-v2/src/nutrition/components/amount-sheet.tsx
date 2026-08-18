@@ -8,20 +8,26 @@
  */
 import {Trash2} from 'lucide-react';
 import {useRef, useState} from 'react';
-
 import {
   type DiaryMealSlot,
-  type FoodLogEntry,
+  type NutritionDayEntry,
   type TodayPlanItem,
-  useDeleteFoodLogEntryMutation,
+  useDeleteDiaryEntryMutation,
   useLogPlannedItemMutation,
-  useUpdateFoodLogEntryMutation,
+  useUpdateDiaryEntryMutation,
 } from '@/api/nutrition';
-import {type DiaryCommandIntent, diaryCommandKey, plannedItemIntentFingerprint} from '@/nutrition/diary-command-key';
+import {
+  type DiaryCommandIntent,
+  deleteEntryIntentFingerprint,
+  diaryCommandKey,
+  plannedItemIntentFingerprint,
+  updateEntryIntentFingerprint,
+} from '@/nutrition/diary-command-key';
+import {diaryWriteError} from '@/nutrition/diary-write-error';
 
 export type SheetTarget = {
   date: string;
-  loggedEntry: FoodLogEntry | null;
+  loggedEntry: NutritionDayEntry | null;
   mealId: null | string;
   name: string;
   mealItemId: null | string;
@@ -42,27 +48,23 @@ export default function AmountSheet({
   target: SheetTarget;
 }) {
   const logPlanned = useLogPlannedItemMutation();
-  const updateEntry = useUpdateFoodLogEntryMutation();
-  const deleteEntry = useDeleteFoodLogEntryMutation();
+  const updateEntry = useUpdateDiaryEntryMutation();
+  const deleteEntry = useDeleteDiaryEntryMutation();
   const busy = logPlanned.isPending || updateEntry.isPending || deleteEntry.isPending;
-  const plannedIntent = useRef<DiaryCommandIntent | null>(null);
+  const commandIntent = useRef<DiaryCommandIntent | null>(null);
 
   const {loggedEntry, plannedItem} = target;
   const portion = plannedItem?.portion;
-  // Servings mode: recipe items the plan sizes by servings (no grams).
-  const servings = loggedEntry
-    ? loggedEntry.weight_g == null && loggedEntry.amount != null
-    : portion?.kind === 'serving';
-  const unitLabel = servings ? (loggedEntry?.unit ?? portion?.unit) || 'serving' : 'g';
+  const servings = loggedEntry ? loggedEntry.portion.kind === 'serving' : portion?.kind === 'serving';
+  const unitLabel = servings ? (loggedEntry?.portion.unit ?? portion?.unit) || 'serving' : 'g';
   const plannedPortion = servings
-    ? (loggedEntry?.amount ?? portion?.amount ?? 1)
-    : (loggedEntry?.weight_g ?? portion?.grams ?? 100);
-  // raw string so decimals (0.5) and a cleared field stay typeable; parse on use.
+    ? (loggedEntry?.portion.amount ?? portion?.amount ?? 1)
+    : (loggedEntry?.portion.grams ?? portion?.grams ?? 100);
   const [raw, setRaw] = useState<string>(String(plannedPortion));
   const [free, setFree] = useState(false);
+  const [error, setError] = useState<null | string>(null);
   const weight = Math.max(0, Number(raw) || 0);
 
-  // Scale the planned item's resolved nutrients, or an existing entry's frozen macros.
   const liveMacros = (w: number): Macros | null => {
     const plannedBase = servings ? (portion?.amount ?? 0) : (portion?.grams ?? 0);
     if (!loggedEntry && plannedItem && plannedBase > 0) {
@@ -74,14 +76,14 @@ export default function AmountSheet({
         p: (plannedItem.nutrients.protein ?? 0) * k,
       };
     }
-    const base = servings ? loggedEntry?.amount : loggedEntry?.weight_g;
+    const base = servings ? loggedEntry?.portion.amount : loggedEntry?.portion.grams;
     if (loggedEntry && base) {
       const k = w / base;
       return {
-        c: (loggedEntry.carbs_g ?? 0) * k,
-        cal: (loggedEntry.calories ?? 0) * k,
-        f: (loggedEntry.fat_g ?? 0) * k,
-        p: (loggedEntry.protein_g ?? 0) * k,
+        c: (loggedEntry.nutrients.carbohydrates ?? 0) * k,
+        cal: (loggedEntry.nutrients.calories ?? 0) * k,
+        f: (loggedEntry.nutrients.fat ?? 0) * k,
+        p: (loggedEntry.nutrients.protein ?? 0) * k,
       };
     }
     return null;
@@ -90,13 +92,29 @@ export default function AmountSheet({
 
   const logIt = async () => {
     try {
-      const portion = servings ? {amount: weight, unit: unitLabel} : {unit: 'g', weight_g: weight};
+      setError(null);
       if (loggedEntry) {
-        await updateEntry.mutateAsync({...portion, id: loggedEntry.id});
+        commandIntent.current = diaryCommandKey(
+          commandIntent.current,
+          updateEntryIntentFingerprint({
+            date: target.date,
+            entryId: loggedEntry.id,
+            expectedRevision: loggedEntry.revision,
+            notes: loggedEntry.notes ?? null,
+            weight,
+          }),
+        );
+        await updateEntry.mutateAsync({
+          date: target.date,
+          expected_revision: loggedEntry.revision,
+          id: loggedEntry.id,
+          idempotencyKey: commandIntent.current.key,
+          portion: servings ? {amount: weight, kind: 'serving', unit: unitLabel} : {grams: weight, kind: 'gram'},
+        });
+        commandIntent.current = null;
       } else if (plannedItem && target.mealItemId) {
-        // Planned logging freezes the planned Portion; amount edits land in ticket 14.
-        plannedIntent.current = diaryCommandKey(
-          plannedIntent.current,
+        commandIntent.current = diaryCommandKey(
+          commandIntent.current,
           plannedItemIntentFingerprint({
             date: target.date,
             mealItemId: target.mealItemId,
@@ -105,15 +123,15 @@ export default function AmountSheet({
         );
         await logPlanned.mutateAsync({
           date: target.date,
-          idempotencyKey: plannedIntent.current.key,
+          idempotencyKey: commandIntent.current.key,
           meal_item_id: target.mealItemId,
           meal_slot: target.slot as DiaryMealSlot,
         });
-        plannedIntent.current = null;
+        commandIntent.current = null;
       }
       onClose();
-    } catch {
-      // the mutation's error state surfaces the failure
+    } catch (caught) {
+      setError(diaryWriteError(caught, "Couldn't save it. Try again."));
     }
   };
 
@@ -123,10 +141,25 @@ export default function AmountSheet({
       return;
     }
     try {
-      await deleteEntry.mutateAsync(loggedEntry.id);
+      setError(null);
+      commandIntent.current = diaryCommandKey(
+        commandIntent.current,
+        deleteEntryIntentFingerprint({
+          date: target.date,
+          entryId: loggedEntry.id,
+          expectedRevision: loggedEntry.revision,
+        }),
+      );
+      await deleteEntry.mutateAsync({
+        date: target.date,
+        expected_revision: loggedEntry.revision,
+        id: loggedEntry.id,
+        idempotencyKey: commandIntent.current.key,
+      });
+      commandIntent.current = null;
       onClose();
-    } catch {
-      // the mutation's error state surfaces the failure
+    } catch (caught) {
+      setError(diaryWriteError(caught, "Couldn't remove it. Try again."));
     }
   };
 
@@ -203,6 +236,8 @@ export default function AmountSheet({
             </span>
           </div>
         ) : null}
+
+        {error ? <p className="mb-2 text-center text-[11px] text-danger">{error}</p> : null}
 
         <button
           className="mb-2 flex min-h-12 w-full items-center justify-center gap-2 rounded-[13px] bg-accent py-3 text-[15px] font-extrabold text-white disabled:opacity-50"

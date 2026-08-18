@@ -812,6 +812,402 @@ defmodule Easy.Nutrition.DiaryTest do
     end
   end
 
+  describe "replace_client_planned_item/4" do
+    test "replaces a fulfilment atomically, keeps the frozen planned item, and derives swapped" do
+      %{client: client, coach: coach, food: food} = covering_setup()
+      substitute = insert(:food, business: coach.business, creator: coach, name: "Eggs", calories_per_100g: 140.0)
+      today = local_today(client)
+      ctx = client_ctx(client)
+      meal_item_id = live_meal_item_id(client, today)
+
+      assert {:ok, logged} =
+               Diary.log_client_planned_item(
+                 ctx,
+                 today,
+                 %{meal_slot: :breakfast, meal_item_id: meal_item_id},
+                 Ecto.UUID.generate()
+               )
+
+      [row] = hd(logged.slots).rows
+      entry_id = row.entry.id
+      frozen_id = row.planned.meal_item_id
+      assert row.status == :as_planned
+      assert row.entry.food_id == food.id
+
+      assert {:ok, day} =
+               Diary.replace_client_planned_item(
+                 ctx,
+                 today,
+                 %{
+                   meal_slot: :breakfast,
+                   meal_item_id: meal_item_id,
+                   food_id: substitute.id,
+                   portion: %{kind: :gram, grams: 80.0},
+                   expected_revision: row.entry.revision
+                 },
+                 Ecto.UUID.generate()
+               )
+
+      [replaced] = Enum.filter(hd(day.slots).rows, & &1.entry)
+      assert replaced.status == :swapped
+      assert replaced.entry.id == entry_id
+      assert replaced.entry.name == "Eggs"
+      assert replaced.entry.food_id == substitute.id
+      assert replaced.entry.portion.grams == 80.0
+      assert replaced.entry.nutrients.calories == 112.0
+      assert replaced.planned.meal_item_id == frozen_id
+      assert replaced.planned.food_id == food.id
+      assert Repo.aggregate(Easy.Nutrition.DiaryEntry, :count) == 1
+    end
+
+    test "a same-source replacement with a different Portion stays as_planned" do
+      %{client: client, food: food} = covering_setup()
+      today = local_today(client)
+      ctx = client_ctx(client)
+      meal_item_id = live_meal_item_id(client, today)
+
+      assert {:ok, logged} =
+               Diary.log_client_planned_item(
+                 ctx,
+                 today,
+                 %{meal_slot: :breakfast, meal_item_id: meal_item_id},
+                 Ecto.UUID.generate()
+               )
+
+      revision = hd(logged.slots).rows |> hd() |> Map.fetch!(:entry) |> Map.fetch!(:revision)
+
+      assert {:ok, day} =
+               Diary.replace_client_planned_item(
+                 ctx,
+                 today,
+                 %{
+                   meal_slot: :breakfast,
+                   meal_item_id: meal_item_id,
+                   food_id: food.id,
+                   portion: %{kind: :gram, grams: 100.0},
+                   expected_revision: revision
+                 },
+                 Ecto.UUID.generate()
+               )
+
+      [row] = Enum.filter(hd(day.slots).rows, & &1.entry)
+      assert row.status == :as_planned
+      assert row.entry.food_id == food.id
+      assert row.entry.portion.grams == 100.0
+      assert row.entry.nutrients.calories == 200.0
+    end
+
+    test "an existing frozen past slot accepts replacement while an unstarted past slot does not" do
+      %{client: client, coach: coach} = covering_setup()
+      substitute = insert(:food, business: coach.business, creator: coach, name: "Eggs")
+      today = local_today(client)
+      ctx = client_ctx(client)
+      past = Date.add(today, -1)
+      meal_item_id = live_meal_item_id(client, today)
+
+      assert {:ok, logged} =
+               Diary.log_client_planned_item(
+                 ctx,
+                 today,
+                 %{meal_slot: :breakfast, meal_item_id: meal_item_id},
+                 Ecto.UUID.generate()
+               )
+
+      revision = hd(logged.slots).rows |> hd() |> Map.fetch!(:entry) |> Map.fetch!(:revision)
+      slot = Repo.get_by!(DiarySlot, client_id: client.id, meal_slot: :breakfast)
+      slot |> Ecto.Changeset.change(local_date: past) |> Repo.update!()
+
+      frozen_id =
+        DiaryFrozenPlannedItem
+        |> DiaryFrozenPlannedItem.for_business(client.business_id)
+        |> where([item], item.nutrition_diary_slot_id == ^slot.id)
+        |> Repo.one!()
+        |> Map.fetch!(:id)
+
+      assert {:ok, day} =
+               Diary.replace_client_planned_item(
+                 ctx,
+                 past,
+                 %{
+                   meal_slot: :breakfast,
+                   meal_item_id: frozen_id,
+                   food_id: substitute.id,
+                   portion: %{kind: :gram, grams: 80.0},
+                   expected_revision: revision
+                 },
+                 Ecto.UUID.generate()
+               )
+
+      assert Enum.any?(hd(day.slots).rows, &(&1.status == :swapped))
+
+      assert {:error, :cannot_start_past_slot} =
+               Diary.replace_client_planned_item(
+                 ctx,
+                 Date.add(today, -2),
+                 %{
+                   meal_slot: :breakfast,
+                   meal_item_id: frozen_id,
+                   food_id: substitute.id,
+                   portion: %{kind: :gram, grams: 80.0},
+                   expected_revision: 1
+                 },
+                 Ecto.UUID.generate()
+               )
+    end
+
+    test "rejects a future date and a changed idempotency payload" do
+      %{client: client, coach: coach} = covering_setup()
+      substitute = insert(:food, business: coach.business, creator: coach, name: "Eggs")
+      today = local_today(client)
+      ctx = client_ctx(client)
+      meal_item_id = live_meal_item_id(client, today)
+      key = Ecto.UUID.generate()
+
+      assert {:ok, logged} =
+               Diary.log_client_planned_item(
+                 ctx,
+                 today,
+                 %{meal_slot: :breakfast, meal_item_id: meal_item_id},
+                 Ecto.UUID.generate()
+               )
+
+      revision = hd(logged.slots).rows |> hd() |> Map.fetch!(:entry) |> Map.fetch!(:revision)
+
+      attrs = %{
+        meal_slot: :breakfast,
+        meal_item_id: meal_item_id,
+        food_id: substitute.id,
+        portion: %{kind: :gram, grams: 80.0},
+        expected_revision: revision
+      }
+
+      assert {:error, :future_date} =
+               Diary.replace_client_planned_item(ctx, Date.add(today, 1), attrs, Ecto.UUID.generate())
+
+      assert {:ok, first} = Diary.replace_client_planned_item(ctx, today, attrs, key)
+      assert {:ok, replay} = Diary.replace_client_planned_item(ctx, today, attrs, key)
+      assert hd(replay.slots).rows == hd(first.slots).rows
+
+      assert {:error, :conflict} =
+               Diary.replace_client_planned_item(
+                 ctx,
+                 today,
+                 Map.put(attrs, :portion, %{kind: :gram, grams: 90.0}),
+                 key
+               )
+    end
+  end
+
+  describe "update_client_entry/5" do
+    test "scales frozen nutrients from the stored basis without consulting Library" do
+      %{client: client, food: food} = covering_setup()
+      today = local_today(client)
+      ctx = client_ctx(client)
+      meal_item_id = live_meal_item_id(client, today)
+
+      assert {:ok, logged} =
+               Diary.log_client_planned_item(
+                 ctx,
+                 today,
+                 %{meal_slot: :breakfast, meal_item_id: meal_item_id},
+                 Ecto.UUID.generate()
+               )
+
+      entry = hd(logged.slots).rows |> hd() |> Map.fetch!(:entry)
+      assert entry.nutrients.calories == 100.0
+
+      Repo.update_all(from(f in Easy.Nutrition.Food, where: f.id == ^food.id), set: [calories_per_100g: 9_000.0])
+
+      assert {:ok, day} =
+               Diary.update_client_entry(
+                 ctx,
+                 today,
+                 entry.id,
+                 %{
+                   expected_revision: entry.revision,
+                   portion: %{kind: :gram, grams: 25.0},
+                   notes: "half"
+                 },
+                 Ecto.UUID.generate()
+               )
+
+      [row] = Enum.filter(hd(day.slots).rows, & &1.entry)
+      assert row.status == :as_planned
+      assert row.entry.id == entry.id
+      assert row.entry.revision == entry.revision + 1
+      assert row.entry.portion.grams == 25.0
+      assert row.entry.nutrients.calories == 50.0
+      assert row.entry.notes == "half"
+    end
+
+    test "rejects a stale entry revision and leaves the row unchanged" do
+      client = insert(:client)
+      food = insert(:food, business: client.business)
+      today = local_today(client)
+      ctx = client_ctx(client)
+
+      assert {:ok, logged} = Diary.add_client_extra(ctx, today, extra_attrs(food), Ecto.UUID.generate())
+      entry = hd(logged.slots).rows |> hd() |> Map.fetch!(:entry)
+
+      assert {:error, %Ecto.Changeset{action: :stale_revision, data: %Easy.Nutrition.DiaryEntry{revision: 1}}} =
+               Diary.update_client_entry(
+                 ctx,
+                 today,
+                 entry.id,
+                 %{expected_revision: 9, portion: %{kind: :gram, grams: 10.0}},
+                 Ecto.UUID.generate()
+               )
+
+      assert {:ok, day} = Diary.get_client_nutrition_day(ctx, today)
+      assert hd(day.slots).rows |> hd() |> Map.fetch!(:entry) |> Map.fetch!(:portion) |> Map.fetch!(:grams) == 50.0
+    end
+
+    test "an existing slot uses applied_timezone for the correction deadline" do
+      client = insert(:client, timezone: "UTC")
+      food = insert(:food, business: client.business)
+      ctx = client_ctx(client)
+      utc_today = LocalCalendar.to_local_date(DateTime.utc_now(), "UTC")
+
+      assert {:ok, logged} = Diary.add_client_extra(ctx, utc_today, extra_attrs(food), Ecto.UUID.generate())
+      entry = hd(logged.slots).rows |> hd() |> Map.fetch!(:entry)
+      date = Date.add(utc_today, -7)
+
+      slot = Repo.get_by!(DiarySlot, client_id: client.id, meal_slot: :breakfast)
+
+      slot
+      |> Ecto.Changeset.change(local_date: date, applied_timezone: "UTC")
+      |> Repo.update!()
+
+      Repo.update_all(from(c in Easy.Clients.Client, where: c.id == ^client.id), set: [timezone: "Pacific/Kiritimati"])
+
+      assert {:ok, day} =
+               Diary.update_client_entry(
+                 ctx,
+                 date,
+                 entry.id,
+                 %{expected_revision: entry.revision, notes: "kept"},
+                 Ecto.UUID.generate()
+               )
+
+      assert hd(day.slots).rows |> hd() |> Map.fetch!(:entry) |> Map.fetch!(:notes) == "kept"
+    end
+
+    test "replays an identical update after the correction window closes" do
+      client = insert(:client)
+      food = insert(:food, business: client.business)
+      today = local_today(client)
+      ctx = client_ctx(client)
+      key = Ecto.UUID.generate()
+
+      assert {:ok, logged} = Diary.add_client_extra(ctx, today, extra_attrs(food), Ecto.UUID.generate())
+      entry = hd(logged.slots).rows |> hd() |> Map.fetch!(:entry)
+      attrs = %{expected_revision: entry.revision, notes: "retry"}
+
+      assert {:ok, first} = Diary.update_client_entry(ctx, today, entry.id, attrs, key)
+
+      stale = Date.add(today, -8)
+      ledger = Repo.get_by!(Easy.Nutrition.DiaryCommandLedger, idempotency_key: key)
+
+      ledger
+      |> Ecto.Changeset.change(
+        fingerprint:
+          Easy.Nutrition.DiaryCommandLedger.fingerprint(
+            "PATCH",
+            "/v1/client/nutrition-days/#{Date.to_iso8601(stale)}/entries/#{entry.id}",
+            %{expected_revision: entry.revision, portion: nil, notes: "retry"}
+          )
+      )
+      |> Repo.update!()
+
+      assert {:ok, replay} = Diary.update_client_entry(ctx, stale, entry.id, attrs, key)
+
+      assert hd(replay.slots).rows |> hd() |> Map.fetch!(:entry) |> Map.fetch!(:id) ==
+               hd(first.slots).rows |> hd() |> Map.fetch!(:entry) |> Map.fetch!(:id)
+    end
+  end
+
+  describe "delete_client_entry/5" do
+    test "deletes at the expected revision and leaves the slot and frozen guidance" do
+      %{client: client, food: food} = covering_setup()
+      today = local_today(client)
+      ctx = client_ctx(client)
+      meal_item_id = live_meal_item_id(client, today)
+
+      assert {:ok, logged} =
+               Diary.log_client_planned_item(
+                 ctx,
+                 today,
+                 %{meal_slot: :breakfast, meal_item_id: meal_item_id},
+                 Ecto.UUID.generate()
+               )
+
+      [slot] = logged.slots
+      entry_id = hd(slot.rows).entry.id
+      option_names = Enum.map(slot.options, & &1.meal_name)
+
+      assert {:ok, day} =
+               Diary.delete_client_entry(
+                 ctx,
+                 today,
+                 entry_id,
+                 %{expected_revision: 1},
+                 Ecto.UUID.generate()
+               )
+
+      [remaining] = day.slots
+      assert remaining.revision == slot.revision
+      assert Enum.map(remaining.options, & &1.meal_name) == option_names
+      assert Enum.any?(remaining.rows, &(&1.status == :pending && &1.planned.name == food.name))
+      refute Enum.any?(remaining.rows, &(&1.entry && &1.entry.id == entry_id))
+      assert Repo.get(Easy.Nutrition.DiaryEntry, entry_id) == nil
+      assert Repo.get_by!(DiarySlot, client_id: client.id, meal_slot: :breakfast)
+    end
+
+    test "accepts today and the previous seven dates and rejects the eighth and the future" do
+      client = insert(:client)
+      food = insert(:food, business: client.business)
+      today = local_today(client)
+      ctx = client_ctx(client)
+
+      Enum.each(0..7, fn offset ->
+        date = Date.add(today, -offset)
+
+        assert {:ok, logged} =
+                 Diary.add_client_extra(ctx, date, extra_attrs(food, slot: :lunch), Ecto.UUID.generate())
+
+        entry = hd(logged.slots).rows |> hd() |> Map.fetch!(:entry)
+
+        assert {:ok, day} =
+                 Diary.delete_client_entry(
+                   ctx,
+                   date,
+                   entry.id,
+                   %{expected_revision: entry.revision},
+                   Ecto.UUID.generate()
+                 )
+
+        assert day.date == date
+        assert day.write_eligible == true
+      end)
+
+      eighth = Date.add(today, -8)
+
+      assert {:ok, logged} = Diary.add_client_extra(ctx, today, extra_attrs(food), Ecto.UUID.generate())
+      entry = hd(logged.slots).rows |> hd() |> Map.fetch!(:entry)
+      slot = Repo.get_by!(DiarySlot, client_id: client.id, meal_slot: :breakfast)
+      slot |> Ecto.Changeset.change(local_date: eighth) |> Repo.update!()
+
+      assert {:error, :outside_correction_window} =
+               Diary.delete_client_entry(
+                 ctx,
+                 eighth,
+                 entry.id,
+                 %{expected_revision: entry.revision},
+                 Ecto.UUID.generate()
+               )
+    end
+  end
+
   describe "coach and owner reads" do
     test "return the same Nutrition Day as the client" do
       %{client: client, coach: coach, plan: plan} = covering_setup()

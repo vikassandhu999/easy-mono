@@ -35,8 +35,10 @@ import {
   plannedDayIntentFingerprint,
   plannedItemIntentFingerprint,
   plannedOptionIntentFingerprint,
+  replaceIntentFingerprint,
   switchOptionIntentFingerprint,
 } from '@/nutrition/diary-command-key';
+import {diaryWriteError} from '@/nutrition/diary-write-error';
 import {
   ADHERENCE_TEXT,
   adherence,
@@ -146,8 +148,8 @@ export default function NutritionToday() {
         meal_slot: slot.slot as DiaryMealSlot,
       });
       commandIntent.current = null;
-    } catch {
-      toast.danger("Couldn't log it. Try again.");
+    } catch (caught) {
+      toast.danger(diaryWriteError(caught, "Couldn't log it. Try again."));
     }
   };
 
@@ -163,15 +165,15 @@ export default function NutritionToday() {
         meal_slot: slot.slot as DiaryMealSlot,
       });
       commandIntent.current = null;
-    } catch {
-      toast.danger("Couldn't log the meal. Try again.");
+    } catch (caught) {
+      toast.danger(diaryWriteError(caught, "Couldn't log the meal. Try again."));
     }
   };
 
   const openSheet = (slot: SlotView, row: SlotRow) =>
     setSheet({
       date,
-      loggedEntry: null,
+      loggedEntry: row.entry,
       mealId: slot.mealId,
       name: row.name,
       mealItemId: row.mealItemId,
@@ -190,40 +192,51 @@ export default function NutritionToday() {
     const replacing = pickerMode === 'replace' ? replaceTarget : null;
     setPickerMode(null);
     setReplaceTarget(null);
-    // A servings-sized recipe carries no grams; the server rejects weight_g for one.
     const portion =
       picked.defaultWeightG != null
-        ? {weight_g: picked.defaultWeightG}
-        : {amount: picked.defaultAmount ?? 1, unit: 'serving'};
+        ? {grams: picked.defaultWeightG, kind: 'gram' as const}
+        : {amount: picked.defaultAmount ?? 1, kind: 'serving' as const, unit: 'serving'};
 
     try {
       if (replacing?.mealItemId) {
+        const expectedRevision = replacing.loggedEntry?.revision ?? 1;
+        commandIntent.current = diaryCommandKey(
+          commandIntent.current,
+          replaceIntentFingerprint({
+            date,
+            expectedRevision,
+            id: picked.id,
+            kind: picked.kind,
+            mealItemId: replacing.mealItemId,
+            slot: replacing.slot,
+            weight: picked.defaultWeightG,
+          }),
+        );
         await replaceItem({
           date,
+          expected_revision: expectedRevision,
           food_id: picked.kind === 'food' ? picked.id : undefined,
-          meal_id: replacing.mealId ?? undefined,
-          meal_slot: replacing.slot as Parameters<typeof replaceItem>[0]['meal_slot'],
-          planned_item_id: replacing.mealItemId,
+          idempotencyKey: commandIntent.current.key,
+          meal_item_id: replacing.mealItemId,
+          meal_slot: replacing.slot as DiaryMealSlot,
+          portion,
           recipe_id: picked.kind === 'recipe' ? picked.id : undefined,
-          ...portion,
         });
+        commandIntent.current = null;
       } else {
         commandIntent.current = diaryCommandKey(commandIntent.current, extraIntentFingerprint({...picked, date}));
         await addExtra({
           date,
           food_id: picked.kind === 'food' ? picked.id : undefined,
           meal_slot: picked.slot as MealSlot,
-          portion:
-            picked.defaultWeightG != null
-              ? {grams: picked.defaultWeightG, kind: 'gram'}
-              : {amount: picked.defaultAmount ?? 1, kind: 'serving', unit: 'serving'},
+          portion,
           recipe_id: picked.kind === 'recipe' ? picked.id : undefined,
           idempotencyKey: commandIntent.current.key,
         });
         commandIntent.current = null;
       }
-    } catch {
-      toast.danger("Couldn't save it. Try again.");
+    } catch (caught) {
+      toast.danger(diaryWriteError(caught, "Couldn't save it. Try again."));
     }
   };
 
@@ -235,8 +248,8 @@ export default function NutritionToday() {
       commandIntent.current = diaryCommandKey(commandIntent.current, plannedDayIntentFingerprint({date}));
       await logDay.mutateAsync({date, idempotencyKey: commandIntent.current.key});
       commandIntent.current = null;
-    } catch {
-      toast.danger("Couldn't log the day. Try again.");
+    } catch (caught) {
+      toast.danger(diaryWriteError(caught, "Couldn't log the day. Try again."));
     }
   };
 
@@ -263,8 +276,8 @@ export default function NutritionToday() {
       });
       commandIntent.current = null;
       setConfirmSwitch(null);
-    } catch {
-      toast.danger("Couldn't switch options. Try again.");
+    } catch (caught) {
+      toast.danger(diaryWriteError(caught, "Couldn't switch options. Try again."));
     }
   };
 
@@ -424,7 +437,7 @@ export default function NutritionToday() {
                   />
                   <button
                     className="flex min-w-0 flex-1 items-center justify-between gap-2 text-left"
-                    disabled={!isEditable || extra || row.entry != null}
+                    disabled={!isEditable}
                     onClick={() => openSheet(slot, row)}
                     type="button"
                   >

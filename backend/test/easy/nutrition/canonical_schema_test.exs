@@ -488,6 +488,57 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
         )
       end
     end
+
+    test "the database rejects two fulfilments of one frozen planned item" do
+      client = insert(:client)
+      food = insert(:food, business: client.business)
+      today = Date.utc_today()
+      slot = diary_slot_row(client, today)
+      option = frozen_option_row(client, slot.id)
+      item_id = dump_uuid()
+
+      Repo.insert_all("nutrition_diary_slots", [slot])
+      Repo.insert_all("nutrition_diary_frozen_options", [option])
+
+      Repo.insert_all("nutrition_diary_frozen_planned_items", [
+        timestamps(%{
+          id: item_id,
+          kind: "food",
+          display_name: "Oats",
+          portion_kind: "gram",
+          weight_g: 50.0,
+          complete: false,
+          position: 0,
+          business_id: dump_uuid(client.business_id),
+          nutrition_diary_slot_id: slot.id,
+          nutrition_diary_frozen_option_id: option.id,
+          food_id: dump_uuid(food.id)
+        })
+      ])
+
+      entry = fn ->
+        timestamps(%{
+          id: dump_uuid(),
+          kind: "food",
+          display_name: "Oats",
+          portion_kind: "gram",
+          weight_g: 50.0,
+          complete: false,
+          revision: 1,
+          business_id: dump_uuid(client.business_id),
+          client_id: dump_uuid(client.id),
+          nutrition_diary_slot_id: slot.id,
+          frozen_planned_item_id: item_id,
+          food_id: dump_uuid(food.id)
+        })
+      end
+
+      Repo.insert_all("nutrition_diary_entries", [entry.()])
+
+      assert_raise Postgrex.Error, fn ->
+        Repo.insert_all("nutrition_diary_entries", [entry.()])
+      end
+    end
   end
 
   defp plan_row(coach, overrides) do

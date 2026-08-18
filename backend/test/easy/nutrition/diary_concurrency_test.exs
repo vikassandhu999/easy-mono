@@ -173,6 +173,55 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
            ) == 2
   end
 
+  test "simultaneous entry updates with the same revision keep one winner", ctx do
+    today = Date.utc_today()
+    parent = self()
+
+    {:ok, logged} =
+      Diary.add_client_extra(
+        ctx.ctx,
+        today,
+        %{meal_slot: :breakfast, food_id: ctx.food.id, portion: %{kind: :gram, grams: 50.0}},
+        Ecto.UUID.generate()
+      )
+
+    entry = hd(hd(logged.slots).rows).entry
+    attrs = %{expected_revision: entry.revision, notes: "winner"}
+
+    run = fn ->
+      Task.async(fn ->
+        Sandbox.checkout(Repo, sandbox: false)
+        send(parent, {:ready, self()})
+
+        receive do
+          :go -> :ok
+        end
+
+        Diary.update_client_entry(ctx.ctx, today, entry.id, attrs, Ecto.UUID.generate())
+      end)
+    end
+
+    tasks = [run.(), run.()]
+
+    ready =
+      for _ <- tasks,
+          do:
+            (receive do
+               {:ready, pid} -> pid
+             end)
+
+    Enum.each(ready, &send(&1, :go))
+    results = Enum.map(tasks, &Task.await(&1, 5_000))
+
+    oks = Enum.filter(results, &match?({:ok, _}, &1))
+    stales = Enum.filter(results, &match?({:error, %Ecto.Changeset{action: :stale_revision}}, &1))
+
+    assert length(oks) == 1
+    assert length(stales) == 1
+    {:ok, day} = hd(oks)
+    assert hd(hd(day.slots).rows).entry.revision == 2
+  end
+
   defp seed_frozen_option!(client, food, date) do
     {:ok, slot} =
       Repo.insert(

@@ -1,7 +1,6 @@
 /**
  * Client nutrition. Day view is GET /nutrition-days (targets + options + diary
  * rows). Diary writes go through /nutrition-days/{date}/* with an Idempotency-Key.
- * Corrections still use /nutrition-food-log-entries/* until later tickets.
  */
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
@@ -21,6 +20,9 @@ export type DiaryMealSlot = NutritionDaySlot['meal_slot'];
 export type NutritionPlan = components['schemas']['NutritionPlan'];
 export type Recipe = components['schemas']['Recipe'];
 export type SwitchOptionRequest = components['schemas']['DiarySwitchOptionRequest'];
+export type ReplacePlannedItemRequest = components['schemas']['DiaryReplacePlannedItemRequest'];
+export type UpdateDiaryEntryRequest = components['schemas']['DiaryUpdateEntryRequest'];
+export type DeleteDiaryEntryRequest = components['schemas']['DiaryDeleteEntryRequest'];
 
 /** @deprecated Prefer NutritionDayOptionItem — kept as alias for amount sheet. */
 export type TodayPlanItem = NutritionDayOptionItem;
@@ -37,7 +39,7 @@ type NutritionPlanResponse = components['schemas']['NutritionPlanResponse'];
 type NutritionDayListResponse = components['schemas']['NutritionDayListResponse'];
 type FoodListResponse = components['schemas']['FoodListResponse'];
 type RecipeListResponse = components['schemas']['RecipeListResponse'];
-type FoodLogEntryResponse = components['schemas']['FoodLogEntryResponse'];
+type NutritionDayResponse = components['schemas']['NutritionDayResponse'];
 
 // ── Queries ──────────────────────────────────────────────────
 
@@ -93,9 +95,6 @@ function useInvalidateNutritionDays() {
 type AddExtraRequest = components['schemas']['DiaryAddExtraRequest'];
 type LogPlannedItemRequest = components['schemas']['DiaryLogPlannedItemRequest'];
 type LogPlannedOptionRequest = components['schemas']['DiaryLogPlannedOptionRequest'];
-type NutritionDayResponse = components['schemas']['NutritionDayResponse'];
-type ReplaceItemRequest = components['schemas']['ReplaceItemRequest'];
-type UpdatePortionRequest = components['schemas']['UpdatePortionRequest'];
 
 export function useLogPlannedItemMutation() {
   const invalidate = useInvalidateNutritionDays();
@@ -155,28 +154,51 @@ export function useLogPlannedDayMutation() {
 export function useReplaceItemMutation() {
   const invalidate = useInvalidateNutritionDays();
   return useMutation({
-    mutationFn: (body: ReplaceItemRequest) =>
-      call(client.POST('/v1/client/nutrition-food-log-entries/replace-item', {body})) as Promise<FoodLogEntryResponse>,
-    onSuccess: invalidate,
-  });
-}
-
-export function useUpdateFoodLogEntryMutation() {
-  const invalidate = useInvalidateNutritionDays();
-  return useMutation({
-    mutationFn: ({id, ...body}: UpdatePortionRequest & {id: string}) =>
+    mutationFn: ({date, idempotencyKey, ...body}: ReplacePlannedItemRequest & {date: string; idempotencyKey: string}) =>
       call(
-        client.PATCH('/v1/client/nutrition-food-log-entries/{id}', {params: {path: {id}}, body}),
-      ) as Promise<FoodLogEntryResponse>,
+        client.POST('/v1/client/nutrition-days/{date}/replacements', {
+          params: {path: {date}, header: {'Idempotency-Key': idempotencyKey}},
+          body,
+        }),
+      ) as Promise<NutritionDayResponse>,
     onSuccess: invalidate,
   });
 }
 
-export function useDeleteFoodLogEntryMutation() {
+export function useUpdateDiaryEntryMutation() {
   const invalidate = useInvalidateNutritionDays();
   return useMutation({
-    mutationFn: (id: string) =>
-      call(client.DELETE('/v1/client/nutrition-food-log-entries/{id}', {params: {path: {id}}})),
+    mutationFn: ({
+      date,
+      id,
+      idempotencyKey,
+      ...body
+    }: UpdateDiaryEntryRequest & {date: string; id: string; idempotencyKey: string}) =>
+      call(
+        client.PATCH('/v1/client/nutrition-days/{date}/entries/{id}', {
+          params: {path: {date, id}, header: {'Idempotency-Key': idempotencyKey}},
+          body,
+        }),
+      ) as Promise<NutritionDayResponse>,
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteDiaryEntryMutation() {
+  const invalidate = useInvalidateNutritionDays();
+  return useMutation({
+    mutationFn: ({
+      date,
+      id,
+      idempotencyKey,
+      ...body
+    }: DeleteDiaryEntryRequest & {date: string; id: string; idempotencyKey: string}) =>
+      call(
+        client.DELETE('/v1/client/nutrition-days/{date}/entries/{id}', {
+          params: {path: {date, id}, header: {'Idempotency-Key': idempotencyKey}},
+          body,
+        }),
+      ) as Promise<NutritionDayResponse>,
     onSuccess: invalidate,
   });
 }

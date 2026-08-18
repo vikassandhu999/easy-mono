@@ -276,6 +276,9 @@ defmodule EasyWeb.Router do
     post "/nutrition-days/:date/planned-options", NutritionDayController, :log_planned_option
     post "/nutrition-days/:date/planned-day", NutritionDayController, :log_planned_day
     post "/nutrition-days/:date/active-option", NutritionDayController, :switch_option
+    post "/nutrition-days/:date/replacements", NutritionDayController, :replace_planned_item
+    patch "/nutrition-days/:date/entries/:id", NutritionDayController, :update_entry
+    delete "/nutrition-days/:date/entries/:id", NutritionDayController, :delete_entry
 
     # Food log entries
     post "/nutrition-food-log-entries/log-planned-item", FoodLogEntryController, :log_planned_item

@@ -4754,6 +4754,84 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDaySlot",
         "x-validate": null
       },
+      "DiaryReplacePlannedItemRequest": {
+        "additionalProperties": false,
+        "example": {
+          "expected_revision": 1,
+          "food_id": "a1b2c3d4-74a4-4f9f-b1e9-a9bb07ab4a7c",
+          "meal_item_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+          "meal_slot": "breakfast",
+          "portion": {
+            "grams": 80,
+            "kind": "gram"
+          }
+        },
+        "properties": {
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "food_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_item_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_slot": {
+            "enum": [
+              "early_morning",
+              "breakfast",
+              "mid_morning",
+              "lunch",
+              "afternoon",
+              "evening",
+              "dinner",
+              "pre_sleep",
+              "pre_workout",
+              "during_workout",
+              "post_workout"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "notes": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "portion": {
+            "$ref": "#/components/schemas/NutritionPortionInput"
+          },
+          "recipe_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "meal_slot",
+          "meal_item_id",
+          "portion",
+          "expected_revision"
+        ],
+        "title": "DiaryReplacePlannedItemRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "WorkbenchRepliesQueueItem": {
         "additionalProperties": false,
         "properties": {
@@ -6524,6 +6602,27 @@
           "name"
         ],
         "title": "TrainingExerciseCopyRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
+      "DiaryDeleteEntryRequest": {
+        "additionalProperties": false,
+        "example": {
+          "expected_revision": 1
+        },
+        "properties": {
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "expected_revision"
+        ],
+        "title": "DiaryDeleteEntryRequest",
         "type": "object",
         "x-struct": null,
         "x-validate": null
@@ -8421,6 +8520,41 @@
         "title": "HealthResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.HealthResponse",
+        "x-validate": null
+      },
+      "DiaryUpdateEntryRequest": {
+        "additionalProperties": false,
+        "example": {
+          "expected_revision": 1,
+          "notes": "half",
+          "portion": {
+            "grams": 25,
+            "kind": "gram"
+          }
+        },
+        "properties": {
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "notes": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "portion": {
+            "$ref": "#/components/schemas/NutritionPortionInput"
+          }
+        },
+        "required": [
+          "expected_revision"
+        ],
+        "title": "DiaryUpdateEntryRequest",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "RecipeUpdateRequest": {
@@ -14149,6 +14283,100 @@
         "summary": "Create a Training Template",
         "tags": [
           "coach training plans"
+        ]
+      }
+    },
+    "/v1/client/nutrition-days/{date}/replacements": {
+      "post": {
+        "callbacks": {},
+        "operationId": "replaceClientNutritionDayPlannedItem",
+        "parameters": [
+          {
+            "description": "Client-local date",
+            "in": "path",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "UUID identifying this client intent",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiaryReplacePlannedItemRequest"
+              }
+            }
+          },
+          "description": "Replace planned item request",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutritionDayResponse"
+                }
+              }
+            },
+            "description": "Nutrition day"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Stale revision or idempotency key reused with a different payload"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Replace a planned fulfilment with another visible Food or Recipe",
+        "tags": [
+          "client nutrition days"
         ]
       }
     },
@@ -24145,6 +24373,216 @@
         "summary": "Duplicate a Nutrition Template",
         "tags": [
           "coach nutrition plans"
+        ]
+      }
+    },
+    "/v1/client/nutrition-days/{date}/entries/{id}": {
+      "delete": {
+        "callbacks": {},
+        "operationId": "deleteClientNutritionDayEntry",
+        "parameters": [
+          {
+            "description": "Client-local date",
+            "in": "path",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Diary Entry id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "UUID identifying this client intent",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiaryDeleteEntryRequest"
+              }
+            }
+          },
+          "description": "Delete entry request",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutritionDayResponse"
+                }
+              }
+            },
+            "description": "Nutrition day"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Stale revision or idempotency key reused with a different payload"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete a Diary Entry",
+        "tags": [
+          "client nutrition days"
+        ]
+      },
+      "patch": {
+        "callbacks": {},
+        "operationId": "updateClientNutritionDayEntry",
+        "parameters": [
+          {
+            "description": "Client-local date",
+            "in": "path",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Diary Entry id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "UUID identifying this client intent",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiaryUpdateEntryRequest"
+              }
+            }
+          },
+          "description": "Update entry request",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutritionDayResponse"
+                }
+              }
+            },
+            "description": "Nutrition day"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Stale revision or idempotency key reused with a different payload"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update a Diary Entry Portion and notes",
+        "tags": [
+          "client nutrition days"
         ]
       }
     },

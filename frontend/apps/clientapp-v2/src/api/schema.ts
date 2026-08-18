@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+  '/v1/client/nutrition-days/{date}/replacements': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Replace a planned fulfilment with another visible Food or Recipe */
+    post: operations['replaceClientNutritionDayPlannedItem'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/client/nutrition-food-log-entries/log-meal': {
     parameters: {
       query?: never;
@@ -869,6 +886,24 @@ export interface paths {
     options?: never;
     head?: never;
     patch?: never;
+    trace?: never;
+  };
+  '/v1/client/nutrition-days/{date}/entries/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete a Diary Entry */
+    delete: operations['deleteClientNutritionDayEntry'];
+    options?: never;
+    head?: never;
+    /** Update a Diary Entry Portion and notes */
+    patch: operations['updateClientNutritionDayEntry'];
     trace?: never;
   };
   '/v1/client/training-sessions/active': {
@@ -2317,6 +2352,43 @@ export interface components {
       revision?: number | null;
       rows: components['schemas']['NutritionDayRow'][];
     };
+    /**
+     * DiaryReplacePlannedItemRequest
+     * @example {
+     *       "expected_revision": 1,
+     *       "food_id": "a1b2c3d4-74a4-4f9f-b1e9-a9bb07ab4a7c",
+     *       "meal_item_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+     *       "meal_slot": "breakfast",
+     *       "portion": {
+     *         "grams": 80,
+     *         "kind": "gram"
+     *       }
+     *     }
+     */
+    DiaryReplacePlannedItemRequest: {
+      expected_revision: number;
+      /** Format: uuid */
+      food_id?: string | null;
+      /** Format: uuid */
+      meal_item_id: string;
+      /** @enum {string} */
+      meal_slot:
+        | 'early_morning'
+        | 'breakfast'
+        | 'mid_morning'
+        | 'lunch'
+        | 'afternoon'
+        | 'evening'
+        | 'dinner'
+        | 'pre_sleep'
+        | 'pre_workout'
+        | 'during_workout'
+        | 'post_workout';
+      notes?: string | null;
+      portion: components['schemas']['NutritionPortionInput'];
+      /** Format: uuid */
+      recipe_id?: string | null;
+    };
     /** WorkbenchRepliesQueueItem */
     WorkbenchRepliesQueueItem: {
       /**
@@ -2808,6 +2880,15 @@ export interface components {
      */
     TrainingExerciseCopyRequest: {
       name: string;
+    };
+    /**
+     * DiaryDeleteEntryRequest
+     * @example {
+     *       "expected_revision": 1
+     *     }
+     */
+    DiaryDeleteEntryRequest: {
+      expected_revision: number;
     };
     /**
      * DiaryLogPlannedOptionRequest
@@ -3317,6 +3398,22 @@ export interface components {
       timestamp: string;
       /** @example 1.0.0 */
       version: string;
+    };
+    /**
+     * DiaryUpdateEntryRequest
+     * @example {
+     *       "expected_revision": 1,
+     *       "notes": "half",
+     *       "portion": {
+     *         "grams": 25,
+     *         "kind": "gram"
+     *       }
+     *     }
+     */
+    DiaryUpdateEntryRequest: {
+      expected_revision: number;
+      notes?: string | null;
+      portion?: components['schemas']['NutritionPortionInput'];
     };
     /**
      * RecipeUpdateRequest
@@ -4835,6 +4932,64 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  replaceClientNutritionDayPlannedItem: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description UUID identifying this client intent */
+        'Idempotency-Key': string;
+      };
+      path: {
+        /** @description Client-local date */
+        date: string;
+      };
+      cookie?: never;
+    };
+    /** @description Replace planned item request */
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DiaryReplacePlannedItemRequest'];
+      };
+    };
+    responses: {
+      /** @description Nutrition day */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NutritionDayResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Stale revision or idempotency key reused with a different payload */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
   logMeal: {
     parameters: {
       query?: never;
@@ -7282,6 +7437,126 @@ export interface operations {
       };
       /** @description Invitation or OTP expired */
       410: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  deleteClientNutritionDayEntry: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description UUID identifying this client intent */
+        'Idempotency-Key': string;
+      };
+      path: {
+        /** @description Client-local date */
+        date: string;
+        /** @description Diary Entry id */
+        id: string;
+      };
+      cookie?: never;
+    };
+    /** @description Delete entry request */
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DiaryDeleteEntryRequest'];
+      };
+    };
+    responses: {
+      /** @description Nutrition day */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NutritionDayResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Stale revision or idempotency key reused with a different payload */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  updateClientNutritionDayEntry: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description UUID identifying this client intent */
+        'Idempotency-Key': string;
+      };
+      path: {
+        /** @description Client-local date */
+        date: string;
+        /** @description Diary Entry id */
+        id: string;
+      };
+      cookie?: never;
+    };
+    /** @description Update entry request */
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DiaryUpdateEntryRequest'];
+      };
+    };
+    responses: {
+      /** @description Nutrition day */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NutritionDayResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Stale revision or idempotency key reused with a different payload */
+      409: {
         headers: {
           [name: string]: unknown;
         };

@@ -2,9 +2,9 @@ defmodule Easy.Nutrition.LibraryDeleteTest do
   use Easy.SchemaCase, async: false
 
   alias Easy.Ctx
+  alias Easy.Nutrition.Diary
+  alias Easy.Nutrition.DiaryEntry
   alias Easy.Nutrition.Library
-  alias Easy.MealLogs
-  alias Easy.Nutrition.FoodLogEntry
   alias Easy.Repo
 
   # Deleting library rows used to raise Ecto.ConstraintError (a 500): `food_id` and
@@ -25,21 +25,23 @@ defmodule Easy.Nutrition.LibraryDeleteTest do
     test "succeeds when only a logged entry references the food, and the log survives" do
       %{ctx: ctx, business: business, coach: coach, client_ctx: client_ctx} = scenario()
       food = insert(:food, business: business, creator: coach, name: "Banana", calories_per_100g: 90.0)
+      today = Date.utc_today()
 
-      assert {:ok, entry} =
-               MealLogs.add_client_extra(client_ctx, %{
-                 date: ~D[2026-07-06],
-                 meal_slot: "breakfast",
-                 food_id: food.id,
-                 weight_g: 100.0
-               })
+      assert {:ok, day} =
+               Diary.add_client_extra(
+                 client_ctx,
+                 today,
+                 %{meal_slot: :breakfast, food_id: food.id, portion: %{kind: :gram, grams: 100.0}},
+                 Ecto.UUID.generate()
+               )
+
+      entry = hd(day.slots).rows |> Enum.find(& &1.entry) |> Map.fetch!(:entry)
 
       assert {:ok, _deleted} = Library.delete_food(ctx, food.id, food.revision)
 
-      # History is denormalised: name and frozen macros outlive the food row.
-      kept = Repo.get(FoodLogEntry, entry.id)
+      kept = Repo.get!(DiaryEntry, entry.id)
       assert kept.food_id == nil
-      assert kept.food_name == "Banana"
+      assert kept.display_name == "Banana"
       assert kept.calories == 90.0
     end
   end

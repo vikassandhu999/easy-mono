@@ -1,8 +1,7 @@
 defmodule Easy.Nutrition.CanonicalSchemaTest do
   use Easy.DataCase, async: true
 
-  alias Easy.MealLogs
-  alias Easy.Nutrition.{Food, FoodLogEntry, Programming, Recipe}
+  alias Easy.Nutrition.{Diary, DiaryEntry, Food, Programming, Recipe}
 
   describe "canonical Nutrition Programming constraints" do
     test "the database rejects client-plan fields on a template" do
@@ -429,21 +428,23 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       coach = insert(:coach)
       client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
       food = insert(:food, business: coach.business, creator: coach, name: "Banana", calories_per_100g: 90.0)
+      today = Date.utc_today()
 
       client_ctx = %Easy.Ctx{business_id: client.business_id, user_id: client.user_id, client_id: client.id}
 
-      assert {:ok, entry} =
-               MealLogs.add_client_extra(client_ctx, %{
-                 date: Date.utc_today(),
-                 meal_slot: "breakfast",
-                 food_id: food.id,
-                 weight_g: 100.0
-               })
+      assert {:ok, day} =
+               Diary.add_client_extra(
+                 client_ctx,
+                 today,
+                 %{meal_slot: :breakfast, food_id: food.id, portion: %{kind: :gram, grams: 100.0}},
+                 Ecto.UUID.generate()
+               )
 
+      entry = hd(day.slots).rows |> Enum.find(& &1.entry) |> Map.fetch!(:entry)
       Repo.delete!(Repo.get!(Food, food.id))
-      kept = Repo.get!(FoodLogEntry, entry.id)
+      kept = Repo.get!(DiaryEntry, entry.id)
       assert kept.food_id == nil
-      assert kept.food_name == "Banana"
+      assert kept.display_name == "Banana"
     end
   end
 

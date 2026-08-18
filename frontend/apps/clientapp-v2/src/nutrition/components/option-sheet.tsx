@@ -4,7 +4,7 @@
  */
 import {Check} from 'lucide-react';
 
-import type {TodayPlanOption} from '@/api/nutrition';
+import type {NutritionDayOption} from '@/api/nutrition';
 import {kcalText, optionCalories} from '@/nutrition/nutrition-utils';
 
 export default function OptionSheet({
@@ -16,8 +16,8 @@ export default function OptionSheet({
 }: {
   activeMealId: null | string;
   onClose: () => void;
-  onSelect: (option: TodayPlanOption) => void;
-  options: TodayPlanOption[];
+  onSelect: (option: NutritionDayOption) => void;
+  options: NutritionDayOption[];
   slotLabel: string;
 }) {
   return (

@@ -13,14 +13,12 @@ defmodule Easy.Factory do
   alias Easy.Identity.User
   alias Easy.Identity.UserSession
   alias Easy.LibraryMedia.Media, as: LibraryMedia
-  alias Easy.Nutrition.DayMeal
+  alias Easy.Nutrition.DayPattern
   alias Easy.Nutrition.Food
-  alias Easy.Nutrition.FoodLogEntry
   alias Easy.Nutrition.Meal
   alias Easy.Nutrition.MealItem
-  alias Easy.Nutrition.MealLog
+  alias Easy.Nutrition.MealOption
   alias Easy.Nutrition.Plan
-  alias Easy.Nutrition.PlanDay
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient
   alias Easy.Orgs.Business
@@ -391,27 +389,27 @@ defmodule Easy.Factory do
     |> merge_attributes(attrs)
   end
 
-  def plan_day_factory do
+  def day_pattern_factory do
     plan = build(:plan)
 
-    %PlanDay{
+    %DayPattern{
       name: "Everyday",
-      position: sequence(:plan_day_position, & &1),
-      weekdays: [],
+      position: sequence(:day_pattern_position, & &1),
       business: plan.business,
       plan: plan
     }
   end
 
-  def day_meal_factory do
+  def meal_option_factory do
     meal = build(:meal)
-    day = build(:plan_day, plan: meal.plan, business: meal.business)
+    pattern = build(:day_pattern, plan: meal.plan, business: meal.business)
 
-    %DayMeal{
-      meal_slot: "breakfast",
+    %MealOption{
+      meal_slot: :breakfast,
       position: 0,
       business: meal.business,
-      plan_day: day,
+      plan: meal.plan,
+      day_pattern: pattern,
       meal: meal
     }
   end
@@ -629,50 +627,6 @@ defmodule Easy.Factory do
       set_type: :working,
       session: session,
       business: session.business
-    }
-  end
-
-  def meal_log_factory do
-    coach = build(:coach)
-    client = build(:client, creator: coach, business: coach.business)
-
-    %MealLog{
-      date: Date.utc_today(),
-      meal_slot: "breakfast",
-      planned_snapshot: nil,
-      planned_calories: nil,
-      logged_calories: 0.0,
-      client: client,
-      business: coach.business
-    }
-  end
-
-  def food_log_entry_factory do
-    meal_log = build(:meal_log)
-    food = build(:food, creator: meal_log.client.creator, business: meal_log.business)
-
-    %FoodLogEntry{
-      food_name: "Oats",
-      amount: 100.0,
-      unit: "g",
-      weight_g: 100.0,
-      calories: 389.0,
-      protein_g: 16.9,
-      carbs_g: 66.3,
-      fat_g: 6.9,
-      meal_log: meal_log,
-      business: meal_log.business,
-      food: food
-    }
-  end
-
-  def food_log_entry_attrs_factory do
-    %{
-      "date" => Date.to_iso8601(Date.utc_today()),
-      "meal_slot" => "breakfast",
-      "amount" => 100.0,
-      "unit" => "g",
-      "weight_g" => 100.0
     }
   end
 

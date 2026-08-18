@@ -1,9 +1,9 @@
 /**
  * Macro arithmetic and formatting for the builder's figures. No React, no cache.
  */
-import type {NutritionMeal, NutritionPlanDay} from '@/api/nutrition-plan-builder';
+import type {NutritionMeal} from '@/api/nutrition-plan-builder';
 
-import {slotRows} from './plan-tree';
+import {type NutritionPlanDay, slotRows} from './plan-tree';
 
 /**
  * Round to one decimal place and strip trailing ".0"; `—` for missing.

@@ -11,7 +11,7 @@ import {useRef, useState} from 'react';
 import {
   type DiaryMealSlot,
   type NutritionDayEntry,
-  type TodayPlanItem,
+  type NutritionDayOptionItem,
   useDeleteDiaryEntryMutation,
   useLogPlannedItemMutation,
   useUpdateDiaryEntryMutation,
@@ -31,7 +31,7 @@ export type SheetTarget = {
   mealId: null | string;
   name: string;
   mealItemId: null | string;
-  plannedItem: null | TodayPlanItem;
+  plannedItem: null | NutritionDayOptionItem;
   slot: string;
   slotLabel: string;
 };

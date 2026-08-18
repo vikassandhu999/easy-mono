@@ -4,17 +4,21 @@
 
 **Blocked by:** 15 — Serve durable history and coach summaries
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Legacy Programming and Diary schemas, data tables, contexts, child mutation routes, raw meal-log routes, response branches, and tests are removed.
-- [ ] The final route surface retains recognizable Food, Recipe, and plan families while Menu writes and Diary commands use aggregate-oriented contracts.
-- [ ] No dual writes, compatibility contexts, feature flags, or parallel read models remain.
-- [ ] OpenAPI contains the final plan-kind, Portion, nutrient-completeness, Meal Slot, Nutrition Day, status, revision, and idempotency contracts.
-- [ ] Generated coach and client types contain no replaced child-resource or raw-log shapes.
-- [ ] Coach and client callers contain no legacy route calls, handwritten replacement types, status reconciliation, nutrient reconciliation, or stale query keys.
-- [ ] Representative factories and development seeds rebuild Foods, Recipes, Templates, Client Plans, Menus, frozen options, planned fulfilments, extras, and no-Coverage entries without discarded IDs.
-- [ ] Reset verification proves that retained Library, Business, Client, and media data survive while legacy Programming and Diary data do not.
-- [ ] Route-coverage, schema/view parity, database-constraint, domain, controller, concurrency, reset, and end-to-end tests pass.
-- [ ] The coach app builds and its touched flows are verified at phone and desktop widths.
-- [ ] The client app builds and its Today and History flows are verified at phone width.
-- [ ] Backend precommit, frontend checks, generated OpenAPI checks, recurring-mistake checks, and searches for every replaced symbol and route pass on the integrated rewrite.
+- [x] Legacy Programming and Diary schemas, data tables, contexts, child mutation routes, raw meal-log routes, response branches, and tests are removed.
+- [x] The final route surface retains recognizable Food, Recipe, and plan families while Menu writes and Diary commands use aggregate-oriented contracts.
+- [x] No dual writes, compatibility contexts, feature flags, or parallel read models remain.
+- [x] OpenAPI contains the final plan-kind, Portion, nutrient-completeness, Meal Slot, Nutrition Day, status, revision, and idempotency contracts.
+- [x] Generated coach and client types contain no replaced child-resource or raw-log shapes.
+- [x] Coach and client callers contain no legacy route calls, handwritten replacement types, status reconciliation, nutrient reconciliation, or stale query keys.
+- [x] Representative factories and development seeds rebuild Foods, Recipes, Templates, Client Plans, Menus, frozen options, planned fulfilments, extras, and no-Coverage entries without discarded IDs.
+- [x] Reset verification proves that retained Library, Business, Client, and media data survive while legacy Programming and Diary data do not.
+- [x] Route-coverage, schema/view parity, database-constraint, domain, controller, concurrency, reset, and end-to-end tests pass.
+- [x] The coach app builds and its touched flows are verified at phone and desktop widths.
+- [x] The client app builds and its Today and History flows are verified at phone width.
+- [x] Backend precommit, frontend checks, generated OpenAPI checks, recurring-mistake checks, and searches for every replaced symbol and route pass on the integrated rewrite.
+
+## Answer
+
+Leftover MealLogs, 6-slot MealSlot, PlanDay, DayMeal, child Menu routes, and raw meal-log HTTP are gone. OpenAPI and both generated `schema.ts` files keep Food, Recipe, plan, Menu, and Diary Nutrition Day contracts (plan kind, Portion, completeness, 11 Meal Slots, revision, `Idempotency-Key`). WeightEntry schemas moved out of the deleted logging file. Coach overview/stat-strip read `NutritionDay.summary`; client Today/History already used Nutrition Days. Factories, `cutover_test`, and dev seeds rebuild Library/Programming/Diary without discarded IDs; Diary writes stamp `last_active_at`. Coach and client apps build. Live 375/1280 walkthrough was not run in this session.

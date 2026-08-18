@@ -65,9 +65,6 @@ export const nutritionPlanKeys = domain('nutrition-plans');
 /** Reconciled nutrition-day read (targets + options + diary rows). */
 export const nutritionDayKeys = domain('nutrition-days');
 
-/** Old tag: MealLog/LIST — kept for any remaining raw meal-log reads. */
-export const mealLogKeys = domain('nutrition-meal-logs');
-
 export const foodKeys = domain('nutrition-foods');
 export const recipeKeys = domain('nutrition-recipes');
 

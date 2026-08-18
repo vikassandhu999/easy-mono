@@ -20,7 +20,6 @@ import type {
   NutritionDayPatternSlot,
   NutritionMeal,
   NutritionPlan,
-  NutritionPlanDay,
   NutritionPortionInput,
 } from '@/api/nutrition-plan-builder';
 import * as api from '@/api/nutrition-plan-builder';
@@ -37,6 +36,7 @@ import {
   findPattern,
   getDays,
   getWeekdayAssignments,
+  type NutritionPlanDay,
   reindexSlotOptions,
   removeMealFromPatterns,
 } from './plan-tree';

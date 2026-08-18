@@ -197,15 +197,14 @@ assert.deepEqual(
 );
 assert.equal(completedSessionDates(undefined).size, 0);
 
-const logs = [
-  {date: '2026-07-21', food_log_entries: [{}], logged_calories: 900},
-  {date: '2026-07-21', food_log_entries: [{}], logged_calories: 820},
-  {date: '2026-07-20', food_log_entries: [], logged_calories: null},
-  {date: '2026-07-19', food_log_entries: [{}], logged_calories: 1820},
+const days = [
+  {date: '2026-07-21', summary: {has_intake: true, logged: {calories: 1720}}},
+  {date: '2026-07-20', summary: {has_intake: false, logged: {calories: null}}},
+  {date: '2026-07-19', summary: {has_intake: true, logged: {calories: 1820}}},
 ] as any;
-assert.deepEqual([...loggedMealDates(logs)].sort(), ['2026-07-19', '2026-07-21'], 'an empty log day is not logged');
-// 21 Jul sums two meals to 1720 (the design's figure), 19 Jul is 1820 -> mean 1770.
-assert.equal(averageLoggedCalories(logs), 1770, 'per-DAY totals are averaged, not per-meal rows');
+assert.deepEqual([...loggedMealDates(days)].sort(), ['2026-07-19', '2026-07-21'], 'an empty log day is not logged');
+// 21 Jul is 1720 (the design's figure), 19 Jul is 1820 -> mean 1770.
+assert.equal(averageLoggedCalories(days), 1770, 'per-DAY totals are averaged, not per-meal rows');
 assert.equal(averageLoggedCalories([]), null);
 
 assert.equal(completedCheckIns([{status: 'completed'}, {status: 'assigned'}, {status: 'completed'}]), 2);

@@ -798,8 +798,22 @@ defmodule Easy.Nutrition.Diary do
 
   defp run_and_store(ledger, fun) do
     case fun.() do
-      {:ok, day} -> store_outcome!(ledger, day)
-      {:error, reason} -> Repo.rollback(reason)
+      {:ok, day} ->
+        stamp_client_activity!(ledger.business_id, ledger.client_id)
+        store_outcome!(ledger, day)
+
+      {:error, reason} ->
+        Repo.rollback(reason)
+    end
+  end
+
+  defp stamp_client_activity!(business_id, client_id) do
+    Client
+    |> Client.last_active_stamp(business_id, client_id, DateTime.utc_now(:second))
+    |> Repo.update_all([])
+    |> case do
+      {1, nil} -> :ok
+      {0, nil} -> Repo.rollback(:not_found)
     end
   end
 

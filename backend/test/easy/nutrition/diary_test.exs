@@ -107,24 +107,9 @@ defmodule Easy.Nutrition.DiaryTest do
       assert fallback.date == kiritimati_today
     end
 
-    test "does not read leftover meal-log rows as Nutrition Day intake" do
-      %{client: client, coach: coach, food: food} = covering_setup()
+    test "does not reconstruct Nutrition Days from discarded Programming rows" do
+      %{client: client} = covering_setup()
       today = local_today(client)
-
-      log =
-        insert(:meal_log,
-          client: client,
-          business: coach.business,
-          date: today,
-          meal_slot: "breakfast"
-        )
-
-      insert(:food_log_entry,
-        meal_log: log,
-        business: coach.business,
-        food: food,
-        food_name: "Leftover oats"
-      )
 
       assert {:ok, day} = Diary.get_client_nutrition_day(client_ctx(client), today)
       assert [%{rows: []}] = day.slots

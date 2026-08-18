@@ -21,7 +21,7 @@ alias Easy.Training.{
   WorkoutSchedule
 }
 
-alias Easy.Nutrition.{Plan, MealLog, FoodLogEntry, Food}
+alias Easy.Nutrition.{Diary, DiaryEntry, DiarySlot, Food, Plan, Programming}
 alias Easy.Fitness.WeightEntry
 alias Easy.Forms.{FormTemplate, FormAssignment, FormSubmission, CheckInSchedule}
 
@@ -296,192 +296,122 @@ else
 end
 
 # ------------------------------------------------------------------
-# 3 + 4. Nutrition plan + meal logs
+# 3 + 4. Nutrition Template, Client Plan, and Diary extras
 # ------------------------------------------------------------------
 nutri_name = "Cutting Phase"
 
 seeded_entries? =
-  Repo.aggregate(
-    from(e in FoodLogEntry, join: m in MealLog, on: e.nutrition_meal_log_id == m.id, where: m.client_id == ^client_id),
-    :count
-  ) > 0
+  Repo.aggregate(from(e in DiaryEntry, where: e.client_id == ^client_id), :count) > 0
 
 if seeded_entries? do
-  IO.puts("nutrition: meal logs already seeded — skipping")
+  IO.puts("nutrition: diary already seeded — skipping")
 else
-  # drop any partial rows left by an earlier failed run, then recreate cleanly
-  Repo.delete_all(from m in MealLog, where: m.client_id == ^client_id)
-  Repo.delete_all(from p in Plan, where: p.client_id == ^client_id and p.name == ^nutri_name)
+  Repo.delete_all(from e in DiaryEntry, where: e.client_id == ^client_id)
+  Repo.delete_all(from s in DiarySlot, where: s.client_id == ^client_id)
+  Repo.delete_all(from p in Plan, where: p.business_id == ^bid and p.name == ^nutri_name)
 
-  _plan =
-    Repo.insert!(%Plan{
-      name: nutri_name,
-      description: "Moderate deficit, high protein. 4 meals per day.",
-      status: :active,
-      target_calories: 1900.0,
-      target_protein_g: 165.0,
-      target_carbs_g: 175.0,
-      target_fat_g: 60.0,
-      target_fiber_g: 30.0,
-      start_date: Date.add(today, -28),
-      end_date: nil,
-      business_id: bid,
-      creator_id: coach_id,
-      client_id: client_id
-    })
+  ctx = %Easy.Ctx{business_id: bid, user_id: coach_user_id, coach_id: coach_id, owner?: true}
+  client_ctx = %Easy.Ctx{business_id: bid, user_id: client.user_id, client_id: client_id}
 
   food_pool =
     Repo.all(
       from f in Food,
         where: (f.source == :system or f.business_id == ^bid) and f.calories_per_100g > 30.0 and f.calories_per_100g < 600.0,
         order_by: [asc: f.name],
-        limit: 25,
-        select: %{id: f.id, name: f.name, kcal: f.calories_per_100g, p: f.protein_g_per_100g, c: f.carbs_g_per_100g, fat: f.fat_g_per_100g, fiber: f.fiber_g_per_100g}
+        limit: 8
     )
 
-  if food_pool == [], do: raise("no foods in library to build meal logs")
+  if food_pool == [], do: raise("no foods in library to build Diary extras")
 
-  fp = fn i -> Enum.at(food_pool, rem(i, length(food_pool))) end
-  r1 = fn x -> Float.round(x * 1.0, 1) end
+  {:ok, template} =
+    Programming.create_template(ctx, %{
+      "name" => nutri_name,
+      "description" => "Moderate deficit, high protein.",
+      "target_calories" => 1900.0,
+      "target_protein_g" => 165.0,
+      "target_carbs_g" => 175.0,
+      "target_fat_g" => 60.0,
+      "target_fiber_g" => 30.0
+    })
 
-  # build an entry from a food and its frozen planned-item identity
-  entry = fn meal_log_id, food, grams, source, planned_item_id ->
-    factor = grams / 100.0
-
-    %FoodLogEntry{
-      food_name: food.name,
-      amount: grams * 1.0,
-      unit: "g",
-      weight_g: grams * 1.0,
-      calories: r1.((food.kcal || 0.0) * factor),
-      protein_g: r1.((food.p || 0.0) * factor),
-      carbs_g: r1.((food.c || 0.0) * factor),
-      fat_g: r1.((food.fat || 0.0) * factor),
-      fiber_g: r1.((food.fiber || 0.0) * factor),
-      planned_item_id: if(source == :unplanned, do: nil, else: planned_item_id),
-      nutrition_meal_log_id: meal_log_id,
-      food_id: food.id
-    }
+  pattern = hd(template.day_patterns)
+  gram = fn grams -> %{kind: :gram, grams: grams * 1.0} end
+  item = fn ref, food, grams, position ->
+    %{local_ref: ref, kind: :food, food_id: food.id, position: position, portion: gram.(grams)}
   end
 
-  # snapshot item map matching the shape build_planned_snapshot/2 produces
-  snap_item = fn food, grams ->
-    factor = grams / 100.0
+  [b0, b1, l0, l1, d0, d1 | _] = food_pool ++ food_pool
 
-    %{
-      "id" => Ecto.UUID.generate(),
-      "food_name" => food.name,
-      "amount" => grams,
-      "unit" => "g",
-      "weight_g" => grams * 1.0,
-      "calories" => r1.((food.kcal || 0.0) * factor),
-      "protein_g" => r1.((food.p || 0.0) * factor),
-      "carbs_g" => r1.((food.c || 0.0) * factor),
-      "fat_g" => r1.((food.fat || 0.0) * factor),
-      "fiber_g" => r1.((food.fiber || 0.0) * factor)
-    }
-  end
+  {:ok, source} =
+    Programming.replace_menu(ctx, template.id, 1, %{
+      meals: [
+        %{local_ref: "breakfast", name: "Breakfast", position: 0, meal_items: [item.("b0", b0, 80, 0), item.("b1", b1, 200, 1)]},
+        %{local_ref: "lunch", name: "Lunch", position: 1, meal_items: [item.("l0", l0, 150, 0), item.("l1", l1, 120, 1)]},
+        %{local_ref: "dinner", name: "Dinner", position: 2, meal_items: [item.("d0", d0, 180, 0), item.("d1", d1, 150, 1)]}
+      ],
+      day_patterns: [
+        %{
+          id: pattern.id,
+          name: pattern.name,
+          position: 0,
+          slots: [
+            %{meal_slot: :breakfast, options: [%{local_ref: "ob", meal_local_ref: "breakfast", position: 0}]},
+            %{meal_slot: :lunch, options: [%{local_ref: "ol", meal_local_ref: "lunch", position: 0}]},
+            %{meal_slot: :dinner, options: [%{local_ref: "od", meal_local_ref: "dinner", position: 0}]}
+          ]
+        }
+      ],
+      schedule: Map.new(Easy.Nutrition.WeekSchedule.weekdays(), &{&1, pattern.id})
+    })
 
-  # meal blueprint: slot => {planned_calories, [{food_index, grams}, ...]}
-  meal_blueprint = [
-    {:breakfast, 450, [{0, 80}, {1, 200}]},
-    {:lunch, 600, [{2, 150}, {3, 120}]},
-    {:dinner, 650, [{4, 180}, {5, 150}]},
-    {:afternoon_snack, 200, [{6, 100}]}
-  ]
+  {:ok, plan} =
+    Programming.assign_template_to_client(ctx, client_id, source.id, 2, %{
+      "start_date" => Date.to_iso8601(Date.add(today, -5)),
+      "end_date" => nil
+    })
 
-  # 14-day window; skip 3 days entirely (no logs); vary adherence
-  # adherence map by day offset
-  skip_days = MapSet.new([3, 8, 11])
+  skip_days = MapSet.new([3])
+  extra_food = hd(food_pool)
+  item_id = hd(hd(plan.meals).meal_items).id
 
-  {logged_days, total_logs, total_entries} =
-    Enum.reduce(1..14, {0, 0, 0}, fn offset, {days, logs, entries_acc} ->
+  {:ok, _} =
+    Diary.log_client_planned_item(
+      client_ctx,
+      Date.add(today, -1),
+      %{meal_slot: :breakfast, meal_item_id: item_id},
+      Ecto.UUID.generate()
+    )
+
+  extras =
+    Enum.reduce(1..4, 0, fn offset, count ->
       if MapSet.member?(skip_days, offset) do
-        {days, logs, entries_acc}
+        count
       else
         date = Date.add(today, -offset)
 
-        adherence =
-          cond do
-            offset == 5 -> 0.70
-            offset == 9 -> 1.20
-            true -> 0.90 + :rand.uniform() * 0.1
-          end
+        {:ok, _} =
+          Diary.add_client_extra(
+            client_ctx,
+            date,
+            %{meal_slot: :lunch, food_id: extra_food.id, portion: gram.(80)},
+            Ecto.UUID.generate()
+          )
 
-        # on one day (offset 6) drop the last slot's last planned item -> "Skipped" row
-        skip_planned_day? = offset == 6
-
-        {day_logs, day_entries} =
-          Enum.reduce(meal_blueprint, {0, 0}, fn {slot, planned_cals, items}, {lc, ec} ->
-            {ml_logs, entry_structs, snap_items} =
-              items
-              |> Enum.with_index()
-              |> Enum.reduce({[], [], []}, fn {{fidx, grams}, pos}, {mls, es, ss} ->
-                food = fp.(fidx + offset)
-                logged_grams = round(grams * adherence)
-                snap = snap_item.(food, grams)
-
-                # decide source: mostly planned, occasional replacement/unplanned
-                {source, this_food} =
-                  cond do
-                    rem(offset + pos, 7) == 0 -> {:replacement, fp.(fidx + offset + 1)}
-                    rem(offset + pos, 11) == 0 -> {:unplanned, food}
-                    true -> {:planned, food}
-                  end
-
-                {mls, [{this_food, logged_grams, source, snap["id"]} | es], [snap | ss]}
-              end)
-
-            snap_items_ordered = Enum.reverse(snap_items)
-            entry_specs = Enum.reverse(entry_structs)
-
-            # planned_snapshot for this meal log
-            snapshot = %{
-              "meal_name" => Atom.to_string(slot) |> String.replace("_", " ") |> String.capitalize(),
-              "items" => snap_items_ordered,
-              "total_calories" => Enum.reduce(snap_items_ordered, 0.0, &(&1["calories"] + &2)),
-              "total_protein_g" => Enum.reduce(snap_items_ordered, 0.0, &(&1["protein_g"] + &2)),
-              "total_carbs_g" => Enum.reduce(snap_items_ordered, 0.0, &(&1["carbs_g"] + &2)),
-              "total_fat_g" => Enum.reduce(snap_items_ordered, 0.0, &(&1["fat_g"] + &2)),
-              "total_fiber_g" => Enum.reduce(snap_items_ordered, 0.0, &(&1["fiber_g"] + &2))
-            }
-
-            # on the skip-planned day, drop the last planned item of the last slot
-            drop_last? = skip_planned_day? and slot == :afternoon_snack
-
-            entry_specs =
-              if drop_last?, do: Enum.drop(entry_specs, -1), else: entry_specs
-
-            meal_log =
-              Repo.insert!(%MealLog{
-                date: date,
-                meal_slot: slot,
-                planned_snapshot: snapshot,
-                planned_calories: planned_cals * 1.0,
-                logged_calories: 0.0,
-                business_id: bid,
-                client_id: client_id
-              })
-
-            inserted =
-              Enum.reduce(entry_specs, 0.0, fn {food, grams, source, planned_item_id}, kcal_acc ->
-                e = entry.(meal_log.id, food, grams, source, planned_item_id)
-                Repo.insert!(e)
-                kcal_acc + e.calories
-              end)
-
-            Repo.update!(Ecto.Changeset.change(meal_log, logged_calories: r1.(inserted)))
-
-            _ = ml_logs
-            {lc + 1, ec + length(entry_specs)}
-          end)
-
-        {days + 1, logs + day_logs, entries_acc + day_entries}
+        count + 1
       end
     end)
 
-  IO.puts("nutrition: plan + #{total_logs} meal logs across #{logged_days} days, #{total_entries} food-log entries (3 days skipped, 1 planned-item skipped)")
+  {:ok, _} =
+    Diary.add_client_extra(
+      client_ctx,
+      Date.add(today, -7),
+      %{meal_slot: :dinner, food_id: extra_food.id, portion: gram.(40)},
+      Ecto.UUID.generate()
+    )
+
+  IO.puts("nutrition: assigned Client Plan + planned fulfilment + #{extras} extras + 1 no-Coverage entry")
 end
+
 
 # ------------------------------------------------------------------
 # 5. Weight entries + goal weight
@@ -660,8 +590,8 @@ IO.puts("  completed:           #{count.(from s in TrainingSession, where: s.cli
 IO.puts("  active:              #{count.(from s in TrainingSession, where: s.client_id == ^client_id and s.state == :active)}")
 IO.puts("performed sets:        #{count.(from ps in TrainingPerformedSet, join: s in TrainingSession, on: ps.training_session_id == s.id, where: s.client_id == ^client_id)}")
 IO.puts("nutrition plans:       #{count.(from p in Plan, where: p.client_id == ^client_id)}")
-IO.puts("meal logs:             #{count.(from m in MealLog, where: m.client_id == ^client_id)}")
-IO.puts("food log entries:      #{count.(from(e in FoodLogEntry, join: m in MealLog, on: e.nutrition_meal_log_id == m.id, where: m.client_id == ^client_id))}")
+IO.puts("diary slots:           #{count.(from s in DiarySlot, where: s.client_id == ^client_id)}")
+IO.puts("diary entries:         #{count.(from e in DiaryEntry, where: e.client_id == ^client_id)}")
 IO.puts("weight entries:        #{count.(from w in WeightEntry, where: w.client_id == ^client_id)}")
 IO.puts("check-in schedules:    #{count.(from s in CheckInSchedule, where: s.client_id == ^client_id)}")
 IO.puts("form assignments:      #{count.(from a in FormAssignment, where: a.client_id == ^client_id)}")

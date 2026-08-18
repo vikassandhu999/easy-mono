@@ -3,7 +3,7 @@ defmodule Easy.Nutrition.Plan do
 
   alias Easy.Clients.Client
   alias Easy.Identity.User
-  alias Easy.Nutrition.{DayPattern, Meal, PlanDay, WeekSchedule}
+  alias Easy.Nutrition.{DayPattern, Meal, WeekSchedule}
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -43,7 +43,6 @@ defmodule Easy.Nutrition.Plan do
     belongs_to :source_template, __MODULE__, foreign_key: :source_template_id
     has_many :day_patterns, DayPattern, foreign_key: :nutrition_plan_id
     has_many :week_schedule, WeekSchedule, foreign_key: :nutrition_plan_id
-    has_many :days, PlanDay, foreign_key: :nutrition_plan_id
     has_many :meals, Meal, foreign_key: :nutrition_plan_id
 
     timestamps(type: :utc_datetime)

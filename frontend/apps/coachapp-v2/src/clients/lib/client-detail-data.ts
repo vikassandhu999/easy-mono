@@ -16,7 +16,7 @@
  * "today" into "yesterday" in every adherence strip on the screen.
  */
 import type {WeightEntry} from '@/api/clients';
-import type {MealLog} from '@/api/nutrition-plans-list';
+import type {NutritionDay} from '@/api/nutrition-plans-list';
 import type {TrainingSession} from '@/api/training-plans-list';
 
 const MS_PER_DAY = 86_400_000;
@@ -138,34 +138,33 @@ export function completedSessionDates(sessions: TrainingSession[] | undefined): 
 }
 
 /** Day-strings on which any food was logged — drives the CD-OV meal dots. */
-export function loggedMealDates(logs: MealLog[] | undefined): Set<string> {
+export function loggedMealDates(days: NutritionDay[] | undefined): Set<string> {
   const dates = new Set<string>();
-  for (const log of logs ?? []) {
-    if (log.food_log_entries.length > 0) {
-      dates.add(log.date.slice(0, 10));
+  for (const day of days ?? []) {
+    if (day.summary.has_intake) {
+      dates.add(day.date.slice(0, 10));
     }
   }
   return dates;
 }
 
 /** Mean logged kcal across days that were logged at all; null when none were. */
-export function averageLoggedCalories(logs: MealLog[] | undefined): null | number {
-  const perDay = new Map<string, number>();
-  for (const log of logs ?? []) {
-    if (log.logged_calories == null) {
+export function averageLoggedCalories(days: NutritionDay[] | undefined): null | number {
+  const values: number[] = [];
+  for (const day of days ?? []) {
+    if (!day.summary.has_intake) {
       continue;
     }
-    const day = log.date.slice(0, 10);
-    perDay.set(day, (perDay.get(day) ?? 0) + log.logged_calories);
+    const kcal = day.summary.logged.calories;
+    if (kcal == null) {
+      continue;
+    }
+    values.push(kcal);
   }
-  if (perDay.size === 0) {
+  if (values.length === 0) {
     return null;
   }
-  let total = 0;
-  for (const kcal of perDay.values()) {
-    total += kcal;
-  }
-  return Math.round(total / perDay.size);
+  return Math.round(values.reduce((total, kcal) => total + kcal, 0) / values.length);
 }
 
 export type WeightTrend = {

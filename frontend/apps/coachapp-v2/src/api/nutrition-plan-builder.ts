@@ -42,9 +42,6 @@ export type NutritionPortion = components['schemas']['NutritionPortion'];
 export type NutritionMealItemInput = components['schemas']['NutritionMealItemInput'];
 export type NutritionPortionInput = components['schemas']['NutritionPortionInput'];
 
-export type NutritionDayMeal = NutritionMealOption & {meal_slot: NutritionDayPatternSlot['meal_slot']};
-export type NutritionPlanDay = NutritionDayPattern & {day_meals: NutritionDayMeal[]};
-
 type NutritionPlanResponse = components['schemas']['NutritionPlanResponse'];
 
 /**

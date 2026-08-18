@@ -33,7 +33,9 @@ defmodule Easy.Repo.Migrations.AddNutritionRecipeLibraryInvariants do
 
     create constraint(
              :nutrition_recipe_ingredients,
-             :nutrition_recipe_ingredients_position_nonnegative, check: "position >= 0")
+             :nutrition_recipe_ingredients_position_nonnegative,
+             check: "position >= 0"
+           )
 
     create unique_index(:nutrition_recipe_ingredients, [:recipe_id, :position],
              name: :nutrition_recipe_ingredients_recipe_id_position_index

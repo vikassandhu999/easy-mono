@@ -97,11 +97,6 @@ export const nutritionPlanKeys = {
   forClient: (clientId: string) => [...nutritionPlanKeys.forClients(), clientId] as const,
 };
 
-export const mealLogKeys = {
-  all: ['nutrition-meal-logs'] as const,
-  forClient: (clientId: string, filters?: Filters) => ['nutrition-meal-logs', clientId, filters ?? {}] as const,
-};
-
 export const nutritionDayKeys = {
   ...domain('nutrition-days'),
   forClient: (clientId: string, filters?: Filters) =>

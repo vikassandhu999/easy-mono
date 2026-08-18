@@ -79,7 +79,9 @@ defmodule Easy.Repo.Migrations.CreateNutritionDiary do
 
     create constraint(
              :nutrition_diary_frozen_options,
-             :nutrition_diary_frozen_options_position_check, check: "position >= 0")
+             :nutrition_diary_frozen_options_position_check,
+             check: "position >= 0"
+           )
 
     execute(
       """
@@ -150,7 +152,9 @@ defmodule Easy.Repo.Migrations.CreateNutritionDiary do
 
     create constraint(
              :nutrition_diary_frozen_planned_items,
-             :nutrition_diary_frozen_items_kind_check, check: "kind in ('food','recipe')")
+             :nutrition_diary_frozen_items_kind_check,
+             check: "kind in ('food','recipe')"
+           )
 
     create constraint(
              :nutrition_diary_frozen_planned_items,
@@ -160,7 +164,9 @@ defmodule Easy.Repo.Migrations.CreateNutritionDiary do
 
     create constraint(
              :nutrition_diary_frozen_planned_items,
-             :nutrition_diary_frozen_items_position_check, check: "position >= 0")
+             :nutrition_diary_frozen_items_position_check,
+             check: "position >= 0"
+           )
 
     create constraint(
              :nutrition_diary_frozen_planned_items,

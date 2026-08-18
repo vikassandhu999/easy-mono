@@ -7,7 +7,7 @@
 import {Button, ToggleButton, ToggleButtonGroup} from '@heroui/react';
 import {ChevronLeft, ChevronRight, Plus} from 'lucide-react';
 import {AS_ICON_BUTTON} from '@/@components/ua-defaults';
-import type {NutritionPlanDay} from '@/api/nutrition-plan-builder';
+import type {NutritionPlanDay} from '../plan-tree';
 
 interface DayTabsProps {
   days: NutritionPlanDay[];

@@ -14,7 +14,9 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
     DiaryFrozenOption,
     DiaryFrozenPlannedItem,
     DiarySlot,
-    Food
+    Food,
+    Meal,
+    Plan
   }
 
   alias Easy.Orgs.{Business, Coach}
@@ -267,9 +269,14 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
   end
 
   defp seed_two_frozen_options!(client, food, coach, date) do
-    plan = insert(:plan, business: client.business, creator: coach, kind: :template)
-    meal_a = insert(:meal, business: client.business, plan: plan, name: "Breakfast A", position: 0)
-    meal_b = insert(:meal, business: client.business, plan: plan, name: "Breakfast B", position: 1)
+    {:ok, plan} =
+      Repo.insert(Plan.insert_changeset(client.business_id, coach.user_id, %{"name" => "Concurrency template"}))
+
+    {:ok, meal_a} =
+      Repo.insert(Meal.insert_changeset(client.business_id, plan.id, %{name: "Breakfast A", position: 0}))
+
+    {:ok, meal_b} =
+      Repo.insert(Meal.insert_changeset(client.business_id, plan.id, %{name: "Breakfast B", position: 1}))
 
     {:ok, slot} =
       Repo.insert(

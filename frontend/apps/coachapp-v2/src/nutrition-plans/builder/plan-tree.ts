@@ -10,17 +10,21 @@
 import {WEEKDAY_SHORT_LABELS, WEEKDAYS} from '@easy/utils';
 
 import type {
-  NutritionDayMeal,
   NutritionDayPattern,
+  NutritionDayPatternSlot,
   NutritionMeal,
   NutritionMealItem,
+  NutritionMealOption,
   NutritionPlan,
-  NutritionPlanDay,
 } from '@/api/nutrition-plan-builder';
 
 import {flattenSlots, MEAL_SLOTS, slotLabel} from './slots';
 
 export {flattenSlots};
+
+/** Internal builder view of a Day Pattern: slot options flattened with their Meal Slot. */
+export type NutritionDayMeal = NutritionMealOption & {meal_slot: NutritionDayPatternSlot['meal_slot']};
+export type NutritionPlanDay = NutritionDayPattern & {day_meals: NutritionDayMeal[]};
 
 /** Mon..Sun map of Day Pattern ids — `plan.schedule` with its null guard. */
 export type WeekdayAssignments = Record<string, string | null | undefined>;

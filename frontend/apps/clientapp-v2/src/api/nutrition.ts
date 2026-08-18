@@ -9,7 +9,6 @@ import {foodKeys, nutritionDayKeys, nutritionPlanKeys, recipeKeys} from '@/api/k
 import type {components, paths} from '@/api/schema';
 
 export type Food = components['schemas']['Food'];
-export type FoodLogEntry = components['schemas']['FoodLogEntry'];
 export type NutritionDay = components['schemas']['NutritionDay'];
 export type NutritionDayEntry = components['schemas']['NutritionDayEntry'];
 export type NutritionDayOption = components['schemas']['NutritionDayOption'];
@@ -23,11 +22,6 @@ export type SwitchOptionRequest = components['schemas']['DiarySwitchOptionReques
 export type ReplacePlannedItemRequest = components['schemas']['DiaryReplacePlannedItemRequest'];
 export type UpdateDiaryEntryRequest = components['schemas']['DiaryUpdateEntryRequest'];
 export type DeleteDiaryEntryRequest = components['schemas']['DiaryDeleteEntryRequest'];
-
-/** @deprecated Prefer NutritionDayOptionItem — kept as alias for amount sheet. */
-export type TodayPlanItem = NutritionDayOptionItem;
-/** @deprecated Prefer NutritionDayOption. */
-export type TodayPlanOption = NutritionDayOption;
 
 type PlanListQuery = paths['/v1/client/nutrition-plans']['get']['parameters']['query'];
 type NutritionDayQuery = paths['/v1/client/nutrition-days']['get']['parameters']['query'];

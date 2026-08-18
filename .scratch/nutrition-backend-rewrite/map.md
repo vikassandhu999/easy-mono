@@ -1,7 +1,7 @@
 # Nutrition backend rewrite
 
 Label: wayfinder:map
-Status: ready-for-agent
+Status: resolved
 
 ## Destination
 
@@ -29,10 +29,11 @@ Rewrite Nutrition around Library, Programming, and Diary. The effort ends when t
 * [Switch frozen Meal Options safely](./issues/13-option-switching.md) — same-day `POST .../active-option` changes the frozen active option at the expected Diary Slot revision without deleting intake; inactive-option entries become `added` extras and switching back restores the original fulfilment; Today uses the generated switch contract.
 * [Correct and substitute Diary Entries](./issues/14-diary-corrections.md) — replacements keep the frozen planned-item association; portion updates scale frozen nutrients at the entry revision; deletes leave the slot; Today/History use the generated correction contract with idempotency keys.
 * [Serve durable history and coach summaries](./issues/15-history-summaries.md) — list endpoints paginate a 31-day window and attach one Diary-derived `summary` and `applied_timezone`; past dates skip Programming; calorie adherence stays unavailable when calories or a positive target are unknown; client History and coach Nutrition read those fields instead of walking rows.
+* [Complete the contract cutover](./issues/16-contract-cutover.md) — leftover MealLogs, PlanDay, DayMeal, child Menu routes, and raw meal-log HTTP are gone; generated types and both apps use Library, Programming, and Diary only; WeightEntry OpenAPI moved out of the deleted logging file; Diary writes stamp `last_active_at`.
 
 ## Not yet specified
 
-* Later tickets still own Programming, Diary, contract cutover, and reset.
+* None — the rewrite is complete.
 
 ## Out of scope
 

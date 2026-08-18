@@ -1,6 +1,6 @@
 /**
  * Nutrition plans: the flat/infinite plan lists, plan-level CRUD and the
- * client meal logs. All of it invalidates normally.
+ * client Nutrition Days. All of it invalidates normally.
  *
  * The plan DETAIL query (`getNutritionPlan`) and everything the builder writes
  * through optimistically — days, schedule, slot options, meals, meal items —
@@ -14,7 +14,7 @@
 import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
-import {clientKeys, mealLogKeys, nutritionDayKeys, nutritionPlanKeys} from '@/api/keys';
+import {clientKeys, nutritionDayKeys, nutritionPlanKeys} from '@/api/keys';
 import {nutritionPlanAssignmentRequest} from '@/api/nutrition-plan-lifecycle';
 import type {components, paths} from '@/api/schema';
 import {workbenchMutationTargets} from '@/api/workbench-targets';
@@ -26,7 +26,6 @@ export type NutritionPlanCreateRequest = components['schemas']['NutritionPlanCre
 export type NutritionPlanUpdateRequest = components['schemas']['NutritionPlanUpdateRequest'];
 export type NutritionPlanRevisionRequest = components['schemas']['NutritionPlanRevisionRequest'];
 export type NutritionPlanAssignRequest = components['schemas']['NutritionPlanAssignRequest'];
-export type MealLog = components['schemas']['MealLog'];
 export type NutritionDay = components['schemas']['NutritionDay'];
 export type NutritionDayRow = components['schemas']['NutritionDayRow'];
 export type NutritionDaySlot = components['schemas']['NutritionDaySlot'];
@@ -38,9 +37,6 @@ type NutritionPlanResponse = components['schemas']['NutritionPlanResponse'];
 type ListNutritionPlansQuery = NonNullable<paths['/v1/coach/nutrition-plans']['get']['parameters']['query']>;
 type ListCoachClientNutritionPlansQuery = NonNullable<
   paths['/v1/coach/clients/{client_id}/nutrition-plans']['get']['parameters']['query']
->;
-type ListCoachMealLogsQuery = NonNullable<
-  paths['/v1/coach/clients/{client_id}/nutrition-meal-logs']['get']['parameters']['query']
 >;
 type ListCoachNutritionDaysQuery = NonNullable<
   paths['/v1/coach/clients/{client_id}/nutrition-days']['get']['parameters']['query']
@@ -256,29 +252,6 @@ export function useAssignNutritionPlanMutation() {
         qc.invalidateQueries({queryKey: [...queryKey]});
       }
     },
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Client meal logs (legacy raw list — prefer nutrition days for day views).
-// ---------------------------------------------------------------------------
-
-export type ListCoachMealLogsParams = Pick<ListCoachMealLogsQuery, 'date' | 'from' | 'to'>;
-
-export function useListCoachMealLogsQuery(
-  clientId: string,
-  params?: ListCoachMealLogsParams,
-  options?: {enabled?: boolean},
-) {
-  return useQuery({
-    queryKey: mealLogKeys.forClient(clientId, params),
-    queryFn: () =>
-      call(
-        client.GET('/v1/coach/clients/{client_id}/nutrition-meal-logs', {
-          params: {path: {client_id: clientId}, query: params ?? undefined},
-        }),
-      ),
-    enabled: options?.enabled ?? true,
   });
 }
 

@@ -30,3 +30,25 @@ Dev login OTP is `123456`.
 ## Quality Rules
 
 Keep the implementation small, sharp, easy to understand. Try to write elegant code in a state of grace. Don't settle for the first thing that comes to mind, try to find the most minimal and better working design. Don't introduce slop: very fragile code that just patches specific cases, dead code, useless code and code ways more complicated of how it should be.
+
+## Hierarchical agent orchestration
+
+When delegating a complex task to a coordinator agent:
+
+- The root agent delegates orchestration to exactly one coordinator agent.
+- The coordinator exclusively owns all descendant agents and may spawn worker agents as needed.
+- The root agent must not spawn, inspect, wait on, or communicate with descendant workers directly.
+- Do not poll agents for status and do not send progress-check messages.
+- Agents should only message their parent when:
+  1. they have completed their task, or
+  2. they are blocked and require parent intervention.
+- After delegation, perform any useful non-overlapping root work once.
+- When the coordinator result becomes necessary, use `collaboration.wait_agent`.
+- Never use generic `functions.wait` to wait for an agent.
+- Never perform repeated short waits. Prefer one long blocking `wait_agent`.
+- Do not repeatedly re-enter `wait_agent` after timeouts unless the coordinator is still on the critical path.
+- The coordinator should return one compact final report containing:
+  - work completed,
+  - files changed,
+  - tests/checks performed,
+  - unresolved issues or risks.

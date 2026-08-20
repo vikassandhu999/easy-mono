@@ -395,15 +395,135 @@ Standards (Claude subagent):
 
 ### 08 — Coverage and workbench
 
-Reviewed:
+Reviewed: 2026-08-20
+
+Spec (Codex subagent):
+
+- P1 — Client-list Coverage uses the default timezone's date for every client
+  Path: backend/lib/easy/clients.ex
+  Quote: "Start and end dates are inclusive client-local dates" and "lifecycle labels are derived from dates, archive state, and the client's applied timezone."
+  Why: `put_plan_names_for_clients/3` computes one `today` in `LocalCalendar.default_timezone()` and passes it to `covering_plans_for_clients/3` for the whole page. A client in another timezone can therefore gain or lose the nutrition-plan chip one local day early or late. The lifecycle stamper uses each plan client's applied timezone, so the same response can pair a correctly derived lifecycle with Coverage selected for the wrong day. No boundary test covers the batch caller. Persists on the tip.
+  Disposition: open
+
+Standards (Codex subagent):
+
+- P2 — Pure Coverage helper lives in the shared component directory
+  Path: frontend/apps/coachapp-v2/src/@components/plan-period.ts
+  Quote: "export function periodError(startDate: string | null, endDate: string | null): string | undefined"
+  Why: frontend/AGENTS.md says every shared concept has an owning feature, and coachapp-v2/AGENTS.md puts pure helpers in the owning feature's `lib` or API/form file. The shared `PlanPeriodCard` UI belongs in `@components`; its pure validation helper does not. Persists on the tip.
+  Disposition: open
+
+- P2 — Coverage API function invalidates caches outside a mutation hook
+  Path: frontend/apps/coachapp-v2/src/api/nutrition-plan-builder.ts
+  Quote: "export async function updatePlanPeriod(...)" followed by direct `queryClient.invalidateQueries(...)` calls
+  Why: frontend/AGENTS.md requires invalidation to live in mutation hooks. The module's own boundary says plan-level CRUD belongs in `nutrition-plans-list.ts` because it invalidates, but this change adds a plain plan-level PATCH function with seven invalidation paths to the builder data module. Persists on the tip.
+  Disposition: open
+
+- P2 — Coverage error helper uses a relative cross-boundary import
+  Path: frontend/apps/coachapp-v2/src/nutrition-plans/lib/coverage-error.ts
+  Quote: "import {getValidationErrors} from '../../api/shared.ts';"
+  Why: coachapp-v2/AGENTS.md requires direct `@/...` imports. This should import `@/api/shared`. Persists on the tip.
+  Disposition: open
+
+- P2 — Duplicated Coverage resolver pipeline
+  Path: backend/lib/easy/nutrition_programming.ex
+  Quote: "|> covering_plan_query(client_id, date) |> Repo.one() |> resolve_covering_plan(date)"
+  Why: Possible Duplicated Code. `resolve_client_coverage/2` and `resolve_coverage_for_client/3` repeat the same query-and-resolution pipeline after their distinct actor authorization steps. A private resolver could own the shared operation. Persists on the tip.
+  Disposition: open
 
 ### 09 — Library menu protection
 
-Reviewed:
+Reviewed: 2026-08-20
+
+Spec (Codex subagent):
+
+- P1 — String-key cooked-weight removal bypasses the Menu guard
+  Path: backend/lib/easy/nutrition_library.ex
+  Quote: "A Library edit that would invalidate a Menu Portion is rejected."
+  Why: `removing_cooked_weight?/2` only checks `:cooked_weight_g`, while `Recipe.update_changeset/2` also accepts string-key maps. Calling `update_recipe/4` with `%{"cooked_weight_g" => nil}` therefore clears the value without checking whether a Menu uses a gram Portion, leaving that Menu invalid. Persists on the tip.
+  Disposition: open
+
+- P1 — Cooked-weight protection races a concurrent Menu replacement
+  Path: backend/lib/easy/nutrition_library.ex; backend/lib/easy/nutrition_programming.ex
+  Quote: "A Library edit that would invalidate a Menu Portion is rejected; removing Recipe cooked weight while a Menu uses a gram Portion is covered explicitly."
+  Why: `mutate_recipe/4` locks the Recipe and then checks existing Menu Items, but a concurrent `replace_menu/4` can resolve a gram Portion using the old cooked weight before that lock. Its Meal Item insert waits on the Recipe FK, then succeeds after the Recipe update commits. The FK checks only that the Recipe still exists; no database invariant couples `cooked_weight_g` to gram Menu Items. The result is a gram Menu Item referencing a Recipe with no cooked weight. Persists on the tip.
+  Disposition: open
+
+- P2 — Structural migration silently deletes Recipe Ingredients
+  Path: backend/priv/repo/migrations/20260817120000_restrict_library_structural_references.exs
+  Quote: "Structural references use restrictive foreign keys and exact-one item constraints; historical reference behavior remains reserved for Diary."
+  Why: `DELETE FROM nutrition_recipe_ingredients WHERE food_id IS NULL` irreversibly removes ingredients, changing Recipe contents and nutrients, so the new constraint can be installed. The ticket asks for structural protection but does not authorize silent Library data loss; the migration should either repair known legacy rows or stop with an actionable error. Persists on the tip.
+  Disposition: open
+
+Standards (Codex subagent):
+
+- P2 — update_recipe/4 omits its new :in_use return from @spec
+  Path: backend/lib/easy/nutrition_library.ex
+  Quote: "@spec update_recipe(...) :: {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}"
+  Why: `ensure_recipe_edit_valid/3` now returns `{:error, :in_use}`, but the public function's declared return contract omits that atom. This violates backend/AGENTS.md's public `@spec` rule. Persists on the tip.
+  Disposition: open
+
+- P2 — New impact hooks and normalizer use unchecked TypeScript casts
+  Path: frontend/apps/coachapp-v2/src/api/nutrition-foods.ts; frontend/apps/coachapp-v2/src/foods/lib/library-impact.ts
+  Quote: "as Promise<FoodImpactResponse>" / "as Promise<RecipeImpactResponse>" / "data as FoodImpact"
+  Why: The TypeScript rules forbid `as` casts without validation. These casts hide the generated client's actual result type instead of narrowing it or correcting the contract typing. Persists on the tip.
+  Disposition: open
+
+- P2 — Library impact helper uses cross-boundary relative imports
+  Path: frontend/apps/coachapp-v2/src/foods/lib/library-impact.ts
+  Quote: "import type {components} from '../../api/schema.ts';"
+  Why: coachapp-v2/AGENTS.md requires direct `@/...` imports. Both the schema and shared-error imports cross the feature boundary relatively. Persists on the tip.
+  Disposition: open
+
+- P2 — Library impact helper redeclares generated reference shapes
+  Path: frontend/apps/coachapp-v2/src/foods/lib/library-impact.ts
+  Quote: "export type LibraryUsageItem = {id: string; name: string};"
+  Why: frontend/AGENTS.md requires API-facing shapes to derive from `schema.ts`. `LibraryUsageItem` and `namedRefs` independently redeclare the generated `{id, name}` reference instead of deriving the normalized required form from the contract. Persists on the tip.
+  Disposition: open
+
+- P2 — Food impact contract marks an always-present field optional
+  Path: backend/lib/easy_web/open_api/schemas/nutrition_food.ex
+  Quote: "recipes: %Schema{type: :array, items: @recipe_ref}"
+  Why: `FoodJSON.impact/1` always emits `data.recipes`, defaulting to `[]`, but `FoodImpactResponse` does not include `recipes` in a `required` list. Both generated `schema.ts` files therefore type it as optional. This breaks backend/AGENTS.md's rule that the JSON view, generated spec, and frontend contract agree. Persists on the tip.
+  Disposition: open
+
+- P2 — Food and Recipe deletion protection is duplicated
+  Path: frontend/apps/coachapp-v2/src/foods/food-detail.tsx; frontend/apps/coachapp-v2/src/recipes/recipe-detail.tsx
+  Quote: the new in-use delete dialog, conditional body/footer, and error handling have the same structure in both detail screens
+  Why: Possible Duplicated Code. A shared Library deletion-protection component or helper could own the common behavior while each detail screen supplies its noun and mutation. Persists on the tip.
+  Disposition: open
 
 ### 10 — Live nutrition days
 
-Reviewed:
+Reviewed: 2026-08-20
+
+Spec (Codex subagent):
+
+- P1 — Client Today requests the browser's date instead of the client's applied local date
+  Path: frontend/apps/clientapp-v2/src/nutrition/nutrition-today.tsx
+  Quote: "A Nutrition Day request identifies intake by local calendar date and resolves the Client timezone with Business fallback."
+  Why: The screen computes `today` with `formatDateISO(new Date())`, always sends that date, and derives its past and navigation boundaries from the same browser-local value. When the browser timezone differs from the Client or Business timezone, Today can request and display the wrong calendar day around midnight. The backend's timezone resolution cannot correct an explicit wrong date. Persists on the tip.
+  Disposition: open
+
+Standards (Codex subagent):
+
+- P2 — Coach Nutrition Day uses an unchecked Meal Slot cast
+  Path: frontend/apps/coachapp-v2/src/clients/client-screen/nutrition-day.tsx
+  Quote: "MEAL_SLOT_LABELS[slot as keyof typeof MEAL_SLOT_LABELS]"
+  Why: The TypeScript rules forbid unchecked `as` casts. The API value is a runtime string, so the cast claims membership without validating it. Use a typed boundary or a string-keyed lookup. Persists on the tip.
+  Disposition: open
+
+- P2 — Nutrition Day mapping helpers lack sibling checks
+  Path: frontend/apps/clientapp-v2/src/nutrition/nutrition-utils.ts; frontend/apps/coachapp-v2/src/clients/client-screen/nutrition-day.tsx
+  Quote: "A new mapper, predicate, or lifecycle helper ships with a sibling `.check.ts` in the same change." (frontend/AGENTS.md)
+  Why: The changed `plannedItemCalories` and `freezeAsOptionItem` mapping logic, plus the new `liveOptionItems` and `slotLabel` helpers, ship without focused sibling checks. No later ticket adds them. Persists on the tip.
+  Disposition: open
+
+- P2 — Nutrition Day fixtures are duplicated across three test modules
+  Path: backend/test/easy/nutrition/diary_test.exs; backend/test/easy_web/controllers/clients/nutrition_day_controller_test.exs; backend/test/easy_web/controllers/coaches/nutrition_day_controller_test.exs
+  Quote: repeated `breakfast_menu`, `assign_covering_plan`, and `local_today` helpers
+  Why: Possible Duplicated Code. The same Menu, Coverage, and timezone setup is copied across all three modules. A shared test helper could keep the Nutrition Day fixture shape consistent. Persists on the tip.
+  Disposition: open
 
 ### 11 — Extras, freezing, idempotency
 

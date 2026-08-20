@@ -1,0 +1,15 @@
+[mcp_servers.easy-client-ui]
+command = "node"
+args = [
+    "/Users/vikassandhu/Desktop/10x/easy-mono/frontend/scripts/ai-ui-inspector-mcp.mjs",
+    "--vite-url",
+    "http://locahost:1314",
+]
+
+[mcp_servers.easy-coach-ui]
+command = "node"
+args = [
+    "/Users/vikassandhu/Desktop/10x/easy-mono/frontend/scripts/ai-ui-inspector-mcp.mjs",
+    "--vite-url",
+    "http://localhost:2021",
+]

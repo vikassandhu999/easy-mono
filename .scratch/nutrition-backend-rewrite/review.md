@@ -527,15 +527,285 @@ Standards (Codex subagent):
 
 ### 11 — Extras, freezing, idempotency
 
-Reviewed:
+Reviewed: 2026-08-20
+
+Spec (Codex subagent):
+
+- P1 — Concurrent first extras with distinct keys race on Diary Slot creation
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "Ledger reservation, command execution, and outcome storage are atomic under simultaneous requests."
+  Why: Two first extras with different idempotency keys can both observe no slot. The loser hits the slot identity constraint inside a nested `Repo.transaction`; `Repo.rollback/1` aborts the outer ledger transaction, so `recover_slot/4` cannot re-query and one valid occurrence fails. The concurrency test covers only the same key, which serializes before this race. Persists on the tip.
+  Disposition: open
+
+- P1 — Overlapping add intents share one mutable retry key
+  Path: frontend/apps/clientapp-v2/src/nutrition/nutrition-today.tsx
+  Quote: "The client add-item flow creates one key per user intent, reuses it for retries, and refreshes Nutrition Day through the generated contract."
+  Why: Every add intent writes the same ref, while "Add food off-plan" remains enabled during the request. Intent B can overwrite intent A's key, and either completion clears the shared ref. If A committed but its response was lost, retrying A mints a new key and records a duplicate. Persists on the tip.
+  Disposition: open
+
+Standards (Codex subagent):
+
+- P2 — Nutrition Day contract marks always-present nullable fields optional
+  Path: backend/lib/easy_web/open_api/schemas/nutrition.ex
+  Quote: "Schema and JSON view change together."
+  Why: `NutritionDayEntry.required` omits `food_id`, `recipe_id`, and `notes`, and `NutritionDayRow.required` omits `planned` and `entry`, although the JSON view always emits every key. Generated clients therefore treat present nullable fields as optional. Persists on the tip.
+  Disposition: open
+
+- P2 — Diary Entry slot index is not tenant-leading
+  Path: backend/priv/repo/migrations/20260817110000_create_nutrition_diary.exs
+  Quote: "Invariants that matter belong in Postgres too (unique, FK, check, non-null, tenant-leading indexes)."
+  Why: The entry preload filters by `business_id` and `nutrition_diary_slot_id`, but the supporting index contains only `nutrition_diary_slot_id`. Persists on the tip.
+  Disposition: open
+
+- P2 — Meal Slot uses an unchecked TypeScript cast
+  Path: frontend/apps/clientapp-v2/src/nutrition/nutrition-today.tsx
+  Quote: "No `as` casts | Every `as` is a runtime crash waiting. Cast only after validation."
+  Why: `meal_slot: picked.slot as MealSlot` claims that the picker's runtime string is a valid Meal Slot. Type `Picked.slot` at its source instead. Persists on the tip.
+  Disposition: open
+
+- P2 — Idempotency key and fingerprint remain interchangeable strings
+  Path: frontend/apps/clientapp-v2/src/nutrition/diary-command-key.ts
+  Quote: "Branded types | Brand primitives" and "Object args | Pass objects, not positional."
+  Why: `DiaryCommandIntent` stores both domain values as plain strings, and `diaryCommandKey(previous, fingerprint)` takes positional arguments. The type system cannot prevent the values or arguments from being mixed up. Persists on the tip.
+  Disposition: open
+
+- P2 — `unwrap_transaction/1` is a Middle Man
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "defp unwrap_transaction({:ok, day}), do: {:ok, day}"
+  Why: Possible Middle Man. Both clauses return their inputs unchanged, so `replay_or_run/4` can return `Repo.transaction/1` directly. Persists on the tip.
+  Disposition: open
+
+- P2 — Portion serialization is duplicated
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "defp portion_data(%MealItem{} = item)" and "defp frozen_portion(item)"
+  Why: Possible Duplicated Code. Both functions build the same `kind`, `grams`, `amount`, `unit`, and `label` map. One mapper is enough. Persists on the tip.
+  Disposition: open
+
+- P2 — Slot creation threads a Data Clump through private helpers
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "fetch_or_create_slot!(ctx, client, date, timezone, today, meal_slot)"
+  Why: Possible Data Clump. The same slot-creation identity travels through the lock, insert, and recovery helpers. A command or slot-identity value could carry it once. Persists on the tip.
+  Disposition: open
+
+Security (Codex subagent):
+
+- P1 — Concurrent first extras can abort one valid command
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "Ledger reservation, command execution, and outcome storage are atomic under simultaneous requests."
+  Why: The distinct-key slot creation race described by the Spec pass aborts the losing outer transaction and can return a 500 instead of recording the second occurrence. Persists on the tip.
+  Disposition: open
+
+- P2 — Expired ledger rows have no production cleanup caller
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "Ledger lookup occurs before correction-window validation, entries are retained for 30 days, and bounded cleanup removes expired rows."
+  Why: Only `purge_expired_command_ledger/1` reads `expires_at`, and no production job, task, or configuration calls it. Stored Nutrition Day outcomes, including notes, remain replayable indefinitely and the ledger keeps growing. Persists on the tip.
+  Disposition: open
+
+- P2 — Oversized Diary notes raise an unhandled database error
+  Path: backend/lib/easy_web/open_api/schemas/nutrition.ex; backend/lib/easy/nutrition/diary_entry.ex
+  Quote: "Cover the rule: valid and invalid input."
+  Why: `notes` has no OpenAPI maximum and no changeset length validation, while the database column is `varchar(255)`. A client can submit more than 255 characters, pass request validation, and trigger an unhandled PostgreSQL truncation error. Persists on the tip.
+  Disposition: open
+
+- P2 — Database constraints do not bind a Diary Entry's client to its slot's client
+  Path: backend/priv/repo/migrations/20260817110000_create_nutrition_diary.exs
+  Quote: "Invariants that matter belong in Postgres too (unique, FK, check, non-null, tenant-leading indexes)."
+  Why: Separate `(client_id, business_id)` and `(nutrition_diary_slot_id, business_id)` foreign keys allow an entry labeled as client A to belong to client B's slot in the same business; `frozen_option_id` also has no foreign key. Slot reads would expose the mismatched entry to B. Persists on the tip.
+  Disposition: open
+
+Summary: Spec 2 findings, worst P1 concurrent slot creation and shared retry keys; Standards 7 findings, all P2; Security 4 findings, worst P1 concurrent slot creation.
 
 ### 12 — Planned logging statuses
 
-Reviewed:
+Reviewed: 2026-08-20
+
+Spec (Codex subagent):
+
+- P1 — Concurrent first planned commands can abort
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "Whole-option and whole-day commands insert only unfulfilled planned items and remain safe under retries and concurrent taps."
+  Why: Distinct-key commands can both observe that no Diary Slot exists. The loser rolls back from the nested slot insert inside the outer ledger transaction, so `recover_slot/4` cannot re-query and one valid command fails. The concurrency test pre-seeds the slot and misses the first-slot race. Persists on the tip.
+  Disposition: open
+
+- P1 — Overlapping Today commands share one mutable retry key
+  Path: frontend/apps/clientapp-v2/src/nutrition/nutrition-today.tsx
+  Quote: "The client Today flow supports item, option, and day logging and renders backend-derived statuses without local reconciliation."
+  Why: Item, option, day, and extra commands overwrite and clear the same `commandIntent` ref. If intent A completes while B is pending, A clears B's retry state. Retrying B after a lost response mints a new key; for a planned item, the backend records the repeated occurrence as an `added` extra. Persists on the tip.
+  Disposition: open
+
+- P1 — Whole-day logging is unavailable for supported frozen states
+  Path: frontend/apps/clientapp-v2/src/nutrition/nutrition-today.tsx
+  Quote: "A planned command may create and freeze a slot only on the client's local day; an already frozen slot may accept corrections within the correction window."
+  Why: Today's frozen `pending` rows do not satisfy `anyUnlogged`, so the screen hides "Log rest of day." Recent past `skipped` rows show the button, but `logWholeDay` returns without a request because historical Nutrition Days have `plan_id: nil`. Persists on the tip.
+  Disposition: open
+
+- P2 — Client tests cover fingerprints, not the planned logging flow
+  Path: frontend/apps/clientapp-v2/src/nutrition/diary-command-key.check.ts
+  Quote: "Diary, database, controller, contract, concurrency, status, nutrient, and client-app tests cover each command scope and fulfilment invariant."
+  Why: The client check only proves fingerprint equality. No client test exercises item, option, or day mutations, pending/skipped rendering, retry-key ownership, or the whole-day controls. No later ticket adds that coverage.
+  Disposition: open
+
+Standards (Codex subagent):
+
+- P2 — Planned mutation hooks cast their response instead of checking inference
+  Path: frontend/apps/clientapp-v2/src/api/nutrition.ts
+  Quote: "No `as` casts | Every `as` is a runtime crash waiting. Cast only after validation."
+  Why: Each new hook ends with `as Promise<NutritionDayResponse>`. That assertion can keep compiling after the generated endpoint response changes. The return type should be inferred or checked through an annotation. Persists on the tip.
+  Disposition: open
+
+- P2 — Meal Slot types widen to string and are cast back at the request
+  Path: frontend/apps/clientapp-v2/src/nutrition/nutrition-today.tsx; frontend/apps/clientapp-v2/src/nutrition/components/amount-sheet.tsx
+  Quote: "No `as` casts | Every `as` is a runtime crash waiting. Cast only after validation."
+  Why: `SlotView`, `SheetTarget`, and fingerprint inputs widen the schema-derived Meal Slot enum to `string`, so the new writes use `slot.slot as DiaryMealSlot` and `target.slot as DiaryMealSlot`. Preserve `NutritionDaySlot['meal_slot']` through those types instead. Persists on the tip.
+  Disposition: open
+
+- P2 — Planned option and day endpoints lack negative-path tests
+  Path: backend/test/easy/nutrition/diary_test.exs; backend/test/easy_web/controllers/clients/nutrition_day_controller_test.exs
+  Quote: "Cover the rule: valid and invalid input, trusted ids not cast, tenant scope, cross-tenant denial, `{:error, reason}` for expected failures, controller status and rendered shape."
+  Why: The planned-option and planned-day suites cover successful logging and repeats only. Their public functions declare not-found, inactive-client, future-date, closed-window, and invalid-key errors, but no controller negative case exercises either endpoint. Tickets 13–16 do not add them.
+  Disposition: open
+
+Security (Codex subagent):
+
+- P1 — Whole-day correction checks the current timezone instead of each frozen slot
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "A planned command may create and freeze a slot only on the client's local day; an already frozen slot may accept corrections within the correction window."
+  Why: `record_planned_day/3` calls `ensure_writable/2` once with the client's current applied timezone. After a timezone change, it can fulfil an already-frozen slot after that slot's correction window or reject a correction that remains valid under the slot's frozen `applied_timezone`. Persists on the tip.
+  Disposition: open
+
+- P1 — Frozen source Menu Item identity is attached to a live foreign key
+  Path: backend/priv/repo/migrations/20260817110000_create_nutrition_diary.exs
+  Quote: "Frozen planned items retain source Menu Item identity, display values, Portion, nutrient basis, nutrients, completeness, and order without live structural foreign keys."
+  Why: `source_meal_item_id` references `nutrition_meal_items` with `ON DELETE SET NULL`. Menu replacement can erase the promised frozen identity, after which a stale client holding the original Menu Item id receives not-found even though its frozen item still exists. Persists on the tip.
+  Disposition: open
+
+- P2 — Planned status ignores a frozen slot's applied timezone
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "An unfulfilled active planned item is `pending` during its client-local date and `skipped` only after that date ends."
+  Why: `assemble_day/4` calculates `today` from the client's current timezone and passes it to every frozen slot. After a timezone change, a row can become `skipped` before its frozen local day ends or remain `pending` afterward. Persists on the tip.
+  Disposition: open
+
+- P2 — Planned-option logging accepts an unscheduled Meal Slot
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "A client can log one frozen planned item, every remaining item in the active option, or every scheduled active option for the day."
+  Why: `start_planned_slot/6` checks that some Coverage exists, not that the requested Meal Slot has an option. A stale or crafted valid Meal Slot creates an empty `has_coverage: true` frozen slot and returns success. The slot can then mask later live guidance for the same date and Meal Slot. Persists on the tip.
+  Disposition: open
+
+Summary: Spec 4 findings, worst P1 concurrent commands, shared retry state, and unavailable whole-day logging; Standards 3 findings, all P2; Security 4 findings, worst P1 whole-day timezone handling and lossy frozen source identity.
 
 ### 13 — Option switching
 
-Reviewed:
+Reviewed: 2026-08-21
+
+Spec (Codex subagent):
+
+- P1 — Frozen options lose their switch identifier
+  Path: backend/lib/easy/nutrition_diary.ex; backend/priv/repo/migrations/20260817110000_create_nutrition_diary.exs
+  Quote: "A client may switch only among options frozen in the Diary Slot" and "it does not reload Programming."
+  Why: The response and command identify a frozen option by nullable `nutrition_meal_id`. Menu replacement or Client Plan deletion nullifies that live FK, after which the frontend has no ID to submit and `find_frozen_option/2` cannot select the surviving frozen option. Tickets 14–16 leave this unchanged.
+  Disposition: open
+
+- P1 — Concurrent first switches bypass revision arbitration
+  Path: backend/lib/easy/nutrition_diary.ex; backend/test/easy/nutrition/diary_concurrency_test.exs
+  Quote: "The switch command uses the shared idempotency wrapper and resolves simultaneous switch attempts through the slot revision."
+  Why: Two distinct-key switches for an unstarted slot can both see no row and race through nested slot creation. The identity-constraint loser aborts the outer idempotency transaction instead of returning a stale-revision result. The concurrency test pre-seeds a slot, so it misses this path. Tickets 14–16 do not fix it.
+  Disposition: open
+
+- P1 — Failed switch outcomes are not idempotent
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "The ledger lookup occurs before correction-window validation. An identical retry returns the original outcome even when the local date has since left the correction window."
+  Why: `run_and_store/2` stores only successful days; every error rolls back the ledger reservation. An identical retry can therefore produce a different result, and the same key can later be reused with another payload. The new switch command inherits this behavior from the shared wrapper. Unchanged through ticket 16.
+  Disposition: open
+
+- P1 — Recent past days still offer an option switch the server rejects
+  Path: frontend/apps/clientapp-v2/src/nutrition/nutrition-today.tsx
+  Quote: "A client may switch only among options frozen in the Diary Slot and only during that slot's local date."
+  Why: The option-picker button uses `day.write_eligible`, which remains true throughout the seven-day correction window. A recent past day therefore opens the picker and posts a switch, but the backend always returns `cannot_switch_past_slot`. The button needs today's stricter eligibility, separate from entry correction eligibility. Persists on the tip.
+  Disposition: open
+
+- P1 — First selection validates one Menu snapshot and freezes another
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "First same-day selection freezes offered options with the chosen one active."
+  Why: `freeze_switch_slot/6` resolves Coverage to validate the requested Meal, then `insert_slot!/6` calls `freeze_source/3` and resolves mutable Programming again. A concurrent Menu replacement between those reads can remove the validated Meal; the command then succeeds while `freeze_slot!/4` silently falls back to the new default option. Tickets 14–16 retain both reads.
+  Disposition: open
+
+- P2 — Client behavior is untested
+  Path: frontend/apps/clientapp-v2/src/nutrition/diary-command-key.check.ts
+  Quote: "Diary, database, controller, contract, concurrency, and client-app tests cover same-day limits, stale revisions, preserved associations, switch-back behavior, and totals."
+  Why: The client check proves fingerprint stability only. No client test exercises canonical choices, server-owned selection, recent-past eligibility, preserved rows, switch-back, stale revisions, or totals. No later ticket adds that coverage.
+  Disposition: open
+
+Standards (Codex subagent):
+
+- P2 — Switch responses omit reachable HTTP statuses
+  Path: backend/lib/easy_web/controllers/clients/nutrition_day_controller.ex
+  Quote: "A public JSON endpoint is unfinished until implementation, generated spec, and Swagger UI agree."
+  Why: The operation documents only 200, 401, 409, and 422, while `switch_client_option/4` also returns `:client_inactive` as 403 and several `:not_found` paths as 404. The mismatch remains through ticket 16.
+  Disposition: open
+
+- P2 — The public switch update lacks a cross-tenant denial test
+  Path: backend/test/easy/nutrition/diary_test.exs
+  Quote: "Test isolation on every public read, list, update, and delete."
+  Why: The new public update has same-client, inactive-client, and coach-route coverage, but no context-level test proves that a forged or other-tenant client context cannot switch another tenant's frozen slot. Still absent at ticket 16.
+  Disposition: open
+
+- P2 — Coach denial test accepts three different statuses
+  Path: backend/test/easy_web/controllers/clients/nutrition_day_controller_test.exs
+  Quote: "Cover the rule: valid and invalid input, trusted ids not cast, tenant scope, cross-tenant denial, `{:error, reason}` for expected failures, controller status and rendered shape."
+  Why: `assert conn.status in [401, 403, 404]` does not pin the controller status or rendered error shape, so several routing or authorization regressions would pass. Unchanged through ticket 16.
+  Disposition: open
+
+- P2 — Switch mutation asserts its response type
+  Path: frontend/apps/clientapp-v2/src/api/nutrition.ts
+  Quote: "No `as` casts | Every `as` is a runtime crash waiting. Cast only after validation."
+  Why: `as Promise<NutritionDayResponse>` trusts the response instead of letting the generated client infer it or checking it through an annotation. Remains through ticket 16.
+  Disposition: open
+
+- P2 — Switch intent widens domain values to interchangeable strings
+  Path: frontend/apps/clientapp-v2/src/nutrition/diary-command-key.ts
+  Quote: "Branded types | Brand primitives so they can't be mixed up" and "Schema-derived types | Reach for `Pick`/`Omit`/... before declaring a new interface."
+  Why: Date, Meal ID, and Meal Slot are plain strings. At minimum, the slot should retain the generated `NutritionDaySlot['meal_slot']` type instead of widening and casting it at the request. Remains through ticket 16.
+  Disposition: open
+
+- P2 — Single-element insertion loop is speculative generality
+  Path: backend/test/easy/nutrition/diary_concurrency_test.exs
+  Quote: "for {option, grams} <- [{option_a, 50.0}] do"
+  Why: Possible Speculative Generality. The loop generalizes one fixture insertion and obscures what the setup creates. Inline the insert. Remains through ticket 16.
+  Disposition: open
+
+- P2 — Switch tests use repeated message chains
+  Path: backend/test/easy/nutrition/diary_test.exs
+  Quote: "logged.slots |> hd() |> Map.fetch!(:rows) |> hd() |> Map.fetch!(:entry) |> Map.fetch!(:id)"
+  Why: Possible Message Chains. The same long traversal appears more than once; pattern-matching the response once would state the expected shape and shorten the assertions. Remains through ticket 16.
+  Disposition: open
+
+Defects (Codex subagent):
+
+- P1 — Frozen option identity depends on mutable Programming
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "Original frozen-item associations survive so switching back restores their meaning."
+  Why: Same runtime defect as the first Spec finding. A frozen choice whose live `nutrition_meal_id` was nullified still exists in Diary but can no longer be named by the client or found by the switch command.
+  Disposition: open
+
+- P1 — Concurrent first-switch loser can return 500
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "resolves simultaneous switch attempts through the slot revision."
+  Why: Same runtime defect as the concurrency Spec finding. The nested rollback aborts the already-open idempotency transaction, so the recovery query cannot turn the losing insert into a stale-revision outcome.
+  Disposition: open
+
+- P1 — Switches share mutable retry state with every Diary command
+  Path: frontend/apps/clientapp-v2/src/nutrition/nutrition-today.tsx
+  Quote: "The switch command uses the shared idempotency wrapper."
+  Why: Switches and every other Diary write overwrite and clear one `commandIntent` ref while other controls remain enabled. Overlapping intents can lose the key needed to replay a committed command after a lost response. This extends the ticket 11/12 retry-state defect to option switching and persists on the tip.
+  Disposition: open
+
+- P2 — A stale switch leaves the client stuck on the stale revision
+  Path: frontend/apps/clientapp-v2/src/api/nutrition.ts; frontend/apps/clientapp-v2/src/nutrition/nutrition-today.tsx
+  Quote: "Switching requires the expected Diary Slot revision."
+  Why: The mutation invalidates Nutrition Days only on success, and the switch catch does not refetch after a stale-revision response. The screen retains the old active option and revision, so an immediate retry sends the same stale command until an unrelated refetch occurs. Persists on the tip.
+  Disposition: open
+
+Summary: Spec 6 findings, worst P1 frozen-option identity and first-switch concurrency; Standards 7 findings, all P2; Defects 4 findings, worst P1 frozen-option identity, first-switch concurrency, and shared retry state.
 
 ### 14 — Diary corrections
 

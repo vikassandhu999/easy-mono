@@ -809,11 +809,141 @@ Summary: Spec 6 findings, worst P1 frozen-option identity and first-switch concu
 
 ### 14 — Diary corrections
 
-Reviewed:
+Reviewed: 2026-08-21
+
+Spec (Codex subagent):
+
+- P1 — Serving Portion corrections always fail
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "Updating a Diary Entry accepts Portion and notes only, requires the expected entry revision, and scales the frozen nutrient basis without consulting Library."
+  Why: `scaled_nutrients/2` accepts only `grams` or `weight_g`, while the contract and client submit a serving correction as `{kind: "serving", amount, unit}`. Every serving-based correction therefore returns `:invalid_portion` instead of scaling from the entry's frozen amount and weight basis. Tickets 15 and 16 leave this unchanged.
+  Disposition: open
+
+- P1 — The client cannot edit notes, and a Portion edit clears the existing note
+  Path: frontend/apps/clientapp-v2/src/nutrition/components/amount-sheet.tsx; backend/lib/easy/nutrition_diary.ex
+  Quote: "Substitution, Portion updates, note updates, and deletion use explicit commands" and "The client Today and History flows expose the allowed correction actions."
+  Why: The amount sheet has no notes input and omits `notes` from its PATCH body. `cast_update_command/1` converts that omission to `nil`, and `update_attrs/2` writes the nil value, so changing only a Portion silently erases an existing note. Tickets 15 and 16 add no note control and leave this write path unchanged.
+  Disposition: open
+
+- P1 — Replacement revision checks are not concurrency-safe
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "Substitution, Portion updates, note updates, and deletion use explicit commands, optimistic revisions, the applied timezone, and the shared idempotency wrapper."
+  Why: Replacement reads the existing entry through the slot preload, checks that stale struct's revision, then updates by id without locking the entry or putting the expected revision in the update predicate. A concurrent PATCH can commit first and then be overwritten by the replacement while both commands succeed; a concurrent delete can raise instead of returning a stale-revision result. Tickets 15 and 16 do not change the replacement path.
+  Disposition: open
+
+Standards (Codex subagent):
+
+- P2 — Entry update and delete lack client cross-tenant tests
+  Path: backend/test/easy/nutrition/diary_test.exs
+  Quote: "Test isolation on every public read, list, update, and delete." (backend/AGENTS.md)
+  Why: The new public `update_client_entry/5` and `delete_client_entry/5` tests cover successful writes, revisions, and date boundaries, but never attempt to mutate another client's entry. Ticket 16 adds coach-actor denial, not a forged or other-tenant client context case.
+  Disposition: open
+
+- P2 — Diary error mapper has no sibling check
+  Path: frontend/apps/clientapp-v2/src/nutrition/diary-write-error.ts
+  Quote: "A new mapper, predicate, or lifecycle helper ships with a sibling `.check.ts` in the same change." (frontend/AGENTS.md)
+  Why: The new exported `diaryWriteError/2` mapper has no `diary-write-error.check.ts`. Tickets 15 and 16 do not add one.
+  Disposition: open
+
+- P2 — Diary error mapping depends on backend message text
+  Path: frontend/apps/clientapp-v2/src/nutrition/diary-write-error.ts
+  Quote: "Don't introduce slop: very fragile code that just patches specific cases." (root AGENTS.md)
+  Why: The helper branches on whether the server's human-readable date error contains `"previous 7"` or `"future"`. Copy edits can silently select the wrong client message; a structured error code should drive the behavior. Tickets 15 and 16 leave this unchanged.
+  Disposition: open
+
+- P2 — Diary error parsing uses an unchecked TypeScript cast
+  Path: frontend/apps/clientapp-v2/src/nutrition/diary-write-error.ts
+  Quote: "No `as` casts | Every `as` is a runtime crash waiting. Cast only after validation." (TypeScript rules)
+  Why: `error as {data?: ...}` asserts the nested API error shape after checking only that `error` is an object with a `data` property. It does not validate `data`, `error_detail`, or `fields` before dereferencing them. Tickets 15 and 16 leave this unchanged.
+  Disposition: open
+
+Security (Codex subagent):
+
+- P1 — Replacement races bypass optimistic revision arbitration
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "Replacing a planned fulfilment with another visible Food or Recipe commits atomically" and "requires the expected entry revision."
+  Why: Replacement does not lock the existing Diary Entry. A concurrent PATCH can advance the entry while replacement still holds its stale preloaded struct; both writes succeed and replacement overwrites the PATCH without a stale-revision loser. A concurrent delete can instead turn the stale update into an exception.
+  Disposition: open
+
+- P1 — Valid serving corrections are rejected
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "Updating a Diary Entry accepts Portion and notes only, requires the expected entry revision, and scales the frozen nutrient basis without consulting Library."
+  Why: Serving requests carry `amount` and `unit`, but the frozen scaling function requires request grams. A client cannot correct any serving-based Food or Recipe entry even though the public contract accepts the request shape.
+  Disposition: open
+
+- P2 — An omitted notes field is a destructive update
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "Updating a Diary Entry accepts Portion and notes only."
+  Why: Missing `notes` becomes `nil` and is always included in update attrs. A Portion-only PATCH erases stored notes, and an otherwise empty PATCH clears notes while incrementing the revision.
+  Disposition: open
+
+Summary: Spec 3 findings, all P1; Standards 4 findings, all P2; Security 3 findings, worst P1 replacement races and rejected serving corrections.
 
 ### 15 — History summaries
 
-Reviewed:
+Reviewed: 2026-08-21
+
+Spec (Codex subagent):
+
+- P1 — Historical adherence loses its frozen target
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "Serve bounded client history and coach summaries from frozen Diary rows only" and "Deleting a Client Plan leaves Diary history unchanged and may null optional plan provenance without changing frozen values."
+  Why: Past dates intentionally skip Programming, so `merge_day/5` replaces the plan targets with `empty_targets/0`. `day_summary/2` then computes adherence from a nil calorie target, making adherence unknown for every past day with intake. Deleting a Client Plan can likewise change today's targets and adherence even though the frozen Diary rows are unchanged. Ticket 16 leaves this logic unchanged.
+  Disposition: open
+
+Standards (Codex subagent):
+
+- P2 — Coach summary helpers lack a sibling check and make the component deep
+  Path: frontend/apps/coachapp-v2/src/clients/client-screen/nutrition-tab.tsx
+  Quote: "A new mapper, predicate, or lifecycle helper ships with its `.check.ts` in the same change" and "If helpers or constants grow, move them to the owning `lib`, `domain`, or mapper file." (coachapp-v2/AGENTS.md)
+  Why: The new `caloriePct/1` and `adherenceBand/1` helpers have no sibling check and live below the screen component instead of in the owning clients helper module. Ticket 16 leaves both helpers unchanged.
+  Disposition: open
+
+- P2 — Client summary types redeclare generated API shapes
+  Path: frontend/apps/clientapp-v2/src/nutrition/nutrition-summary.ts
+  Quote: "Types come from `schema.ts`" and "Derive with `Pick` / `Omit` / indexed access; do not redeclare the shape." (frontend/AGENTS.md)
+  Why: `NutritionSummaryAdherence` and the handwritten `SummaryDay.summary` repeat concepts already available through `NutritionDay['summary']`. The duplicate adherence vocabulary can drift from the generated contract. Ticket 16 leaves the declarations unchanged.
+  Disposition: open
+
+- P2 — Coach summary type repeats the generated adherence union
+  Path: frontend/apps/coachapp-v2/src/clients/client-screen/nutrition-tab.tsx
+  Quote: "Do not duplicate existing shapes. Derive types from API/domain types with `Pick`, `Omit`, `Partial`, indexed access, or local zod inference when the meaning is the same." (coachapp-v2/AGENTS.md)
+  Why: `DayTotals.adherence` manually repeats `'none' | 'on' | 'over' | 'under' | null` instead of deriving it from the re-exported Nutrition Day API type. Ticket 16 leaves it unchanged.
+  Disposition: open
+
+Defects (Codex subagent):
+
+- P1 — Historical adherence is always unavailable
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "Coach summaries derive counts and totals from the same stored relationships and status rules as Nutrition Day detail."
+  Why: After the day ends, `live_guidance/5` returns nil, `merge_day/5` discards the calorie target, and `calorie_adherence/3` returns nil. Client and coach history therefore show unknown adherence for every historical day with intake, even when the day was frozen under a positive plan target.
+  Disposition: open
+
+- P1 — Plan deletion can change the active option's planned summary
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "Deleting a Client Plan leaves Diary history unchanged and may null optional plan provenance without changing frozen values."
+  Why: Plan deletion nulls every frozen option's `nutrition_meal_id`. `frozen_slot_view/2` still selects the active option by `active_frozen_option_id`, but serializes its `meal_id` as nil. `active_option_items/1` then matches the first option whose `meal_id` is also nil, so a slot switched to a later option reports the first option's planned nutrients after plan deletion.
+  Disposition: open
+
+- P1 — Library deletion can turn a swapped row into as-planned
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "After structural blockers are removed, deleting a Food or Recipe may null its optional Diary reference while names, Portions, nutrients, completeness, and statuses remain readable."
+  Why: `same_source?/2` compares the optional live `food_id` and `recipe_id` fields. After both the planned source and its substituted source are deleted, both sides contain nil IDs, so the row changes from `swapped` to `as_planned` and corrupts historical status counts.
+  Disposition: open
+
+- P1 — Read eligibility and statuses use a different timezone than the response reports
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "Client history and authorized coach/owner history return the same slots, entries, statuses, totals, timestamps, and applied timezone vocabulary."
+  Why: `assemble_day/4` computes `today`, `write_eligible`, and pending/skipped statuses from the client's current timezone, while the response reports an existing slot's frozen `applied_timezone`. After a timezone change across a date boundary, read eligibility and statuses can disagree with the write boundary, which correctly uses the frozen slot timezone.
+  Disposition: open
+
+- P2 — Exact-date filtering does not override malformed range fields
+  Path: backend/lib/easy_web/controllers/clients/nutrition_day_controller.ex; backend/lib/easy_web/controllers/coaches/nutrition_day_controller.ex
+  Quote: "Exact local date (YYYY-MM-DD); overrides from/to."
+  Why: Both controllers parse `from` and `to` before passing the exact `date` to the context. A request such as `?date=2026-08-10&from=bad` returns 422 instead of ignoring the malformed range and returning the exact day. Ticket 16 leaves both controllers unchanged.
+  Disposition: open
+
+Summary: Spec 1 finding, P1 historical adherence; Standards 3 findings, all P2; Defects 5 findings, worst P1 frozen-history changes after plan, Library, or timezone changes.
 
 ### 16 — Contract cutover
 

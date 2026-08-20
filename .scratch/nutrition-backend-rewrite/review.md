@@ -947,4 +947,54 @@ Summary: Spec 1 finding, P1 historical adherence; Standards 3 findings, all P2; 
 
 ### 16 — Contract cutover
 
-Reviewed:
+Reviewed: 2026-08-21
+
+Spec (Codex subagent):
+
+- P1 — Rich-client development seed cannot create its first planned fulfilment
+  Path: backend/priv/repo/dev_rich_client.exs; backend/lib/easy/nutrition_diary.ex
+  Quote: "Representative factories and development seeds rebuild Foods, Recipes, Templates, Client Plans, Menus, frozen options, planned fulfilments, extras, and no-Coverage entries without discarded IDs."
+  Why: The seed deletes every Diary Slot for the client, then calls `log_client_planned_item/4` for yesterday. `start_planned_slot/6` rejects every non-today first freeze with `:cannot_start_past_slot`, so the asserted `{:ok, _}` raises before any of the extras or the no-Coverage entry are created.
+  Disposition: open
+
+- P2 — Cutover test does not prove retained rows survive the destructive reset
+  Path: backend/test/easy/nutrition/cutover_test.exs
+  Quote: "Reset verification proves that retained Library, Business, Client, and media data survive while legacy Programming and Diary data do not."
+  Why: The test inserts retained rows after the test database has already run every migration, then proves only that those current tables accept and return new rows. It never places retained rows before the reset migrations, so it cannot catch a destructive reset that accidentally deletes retained data.
+  Disposition: open
+
+- P2 — Required live-width verification is checked off but was not run
+  Path: .scratch/nutrition-backend-rewrite/issues/16-contract-cutover.md
+  Quote: "The coach app builds and its touched flows are verified at phone and desktop widths." / "The client app builds and its Today and History flows are verified at phone width."
+  Why: The ticket Answer says, "Live 375/1280 walkthrough was not run in this session," while both verification requirements remain checked.
+  Disposition: open
+
+- P2 — Replaced `MacroCalc` symbol remains in a live builder comment
+  Path: frontend/apps/coachapp-v2/src/nutrition-plans/builder/components/amount-sheet.tsx
+  Quote: "Backend precommit, frontend checks, generated OpenAPI checks, recurring-mistake checks, and searches for every replaced symbol and route pass on the integrated rewrite."
+  Why: The amount-sheet header still says its preview "mirrors the backend's MacroCalc" after this ticket deletes that module. The surviving reference makes the claimed replaced-symbol search false and documents an implementation that no longer exists.
+  Disposition: open
+
+Standards (Codex subagent):
+
+- P2 — Rewritten Nutrition Day fixture bypasses generated-contract type checking
+  Path: frontend/apps/coachapp-v2/src/clients/lib/client-detail-data.check.ts
+  Quote: "const days = [...] as any;"
+  Why: `.agents/skills/typescript-best-practices/SKILL.md` requires `unknown` over `any` and forbids unchecked `as` casts. The ticket rewrites this fixture from raw logs to Nutrition Days but keeps `as any`, so generated Nutrition Day contract changes cannot invalidate the check at compile time.
+  Disposition: open
+
+Defects (Codex subagent):
+
+- P1 — Builder seed deletes the plan ID its fixed verification route uses
+  Path: backend/priv/repo/dev_nutrition_builder.exs; design-handoff/manifests/NB.json
+  Quote: "Representative factories and development seeds rebuild Foods, Recipes, Templates, Client Plans, Menus, frozen options, planned fulfilments, extras, and no-Coverage entries without discarded IDs."
+  Why: The seed deletes `49584e72-1edd-41d5-a648-f339a1b57149`, then creates the replacement through `Programming.create_template/2`, whose changeset does not accept that ID and generates a new one. `NB.json` still routes to the deleted fixed ID, so the seed's own verification flow reaches a 404 after every run.
+  Disposition: open
+
+- P1 — Rich-client seed deletes other clients' and Templates' same-name plans
+  Path: backend/priv/repo/dev_rich_client.exs
+  Quote: "Representative factories and development seeds rebuild Foods, Recipes, Templates, Client Plans, Menus, frozen options, planned fulfilments, extras, and no-Coverage entries without discarded IDs."
+  Why: The cleanup query deletes every `nutrition_plans` row in the business named `Cutting Phase`, without filtering by `kind`, `client_id`, or seed provenance. Re-running this client-specific seed can therefore delete another client's Client Plan or an unrelated coach Template. The pre-cutover query was limited to this client.
+  Disposition: open
+
+Summary: Spec 4 findings, worst P1 broken rich-client seed; Standards 1 finding, P2 unchecked fixture cast; Defects 2 findings, both P1 destructive or broken development seeds.

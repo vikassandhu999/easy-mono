@@ -52,9 +52,7 @@ function CompactRow({
   const Icon = entry.icon;
   const merged = cn(
     'button--row h-8 w-full justify-start gap-2 rounded-control px-2 type-body',
-    isActive
-      ? 'bg-accent-soft font-semibold text-accent'
-      : 'font-medium text-foreground hover:bg-surface-secondary',
+    isActive ? 'bg-accent-soft font-semibold text-accent' : 'font-medium text-foreground hover:bg-surface-secondary',
   );
 
   return (

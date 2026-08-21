@@ -76,8 +76,7 @@ export function useCoachTrainingPlansInfiniteQuery(filters?: CoachTrainingPlansF
 export function useListTrainingPlansQuery(params?: ListTrainingPlansApiArg, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: trainingPlanKeys.list(params),
-    queryFn: () =>
-      call(client.GET('/v1/coach/training-plans', params ? {params: {query: omitUndefined(params)}} : {})),
+    queryFn: () => call(client.GET('/v1/coach/training-plans', params ? {params: {query: omitUndefined(params)}} : {})),
     enabled: options?.enabled ?? true,
   });
 }
@@ -91,7 +90,12 @@ export function useListCoachClientTrainingPlansQuery(
     queryKey: trainingPlanKeys.forClient(clientId, params),
     queryFn: () =>
       call(
-        client.GET('/v1/coach/clients/{client_id}/training-plans', params ? {params: {path: {client_id: clientId}, query: omitUndefined(params)}} : {params: {path: {client_id: clientId}}}),
+        client.GET(
+          '/v1/coach/clients/{client_id}/training-plans',
+          params
+            ? {params: {path: {client_id: clientId}, query: omitUndefined(params)}}
+            : {params: {path: {client_id: clientId}}},
+        ),
       ),
     enabled: options?.enabled ?? true,
   });

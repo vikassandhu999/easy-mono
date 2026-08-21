@@ -291,9 +291,7 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
                   .map((m) => ({
                     id: m.id,
                     name: m.name,
-                    ...(m.nutrients.calories != null
-                      ? {sub: `${Math.round(m.nutrients.calories)} kcal`}
-                      : {}),
+                    ...(m.nutrients.calories != null ? {sub: `${Math.round(m.nutrients.calories)} kcal`} : {}),
                   }))}
                 swaps={swaps}
               />
@@ -326,9 +324,7 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
                 .map((meal) => ({
                   id: meal.id,
                   name: meal.name,
-                  ...(meal.nutrients.calories != null
-                    ? {sub: `${Math.round(meal.nutrients.calories)} kcal`}
-                    : {}),
+                  ...(meal.nutrients.calories != null ? {sub: `${Math.round(meal.nutrients.calories)} kcal`} : {}),
                 }))
         }
       />

@@ -23,17 +23,17 @@ export function ListSkeleton({avatar = false, rows = 6}: ListSkeletonProps) {
         const avatarClassName = cn('size-10 shrink-0', avatar ? 'rounded-pill' : 'rounded-chip');
 
         return (
-        <div
-          className="flex items-center gap-3 px-4 py-3 sm:px-8"
-          key={key}
-        >
-          <Skeleton {...(avatarClassName ? {className: avatarClassName} : {})} />
-          <div className="flex min-w-0 flex-1 flex-col gap-2">
-            <Skeleton className="h-3.5 w-2/5 rounded" />
-            <Skeleton className="h-3 w-3/5 rounded" />
+          <div
+            className="flex items-center gap-3 px-4 py-3 sm:px-8"
+            key={key}
+          >
+            <Skeleton {...(avatarClassName ? {className: avatarClassName} : {})} />
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <Skeleton className="h-3.5 w-2/5 rounded" />
+              <Skeleton className="h-3 w-3/5 rounded" />
+            </div>
+            <Skeleton className="hidden h-5 w-14 shrink-0 rounded-pill sm:block" />
           </div>
-          <Skeleton className="hidden h-5 w-14 shrink-0 rounded-pill sm:block" />
-        </div>
         );
       })}
     </div>

@@ -97,7 +97,12 @@ export function useListCoachClientNutritionPlansQuery(
     queryKey: nutritionPlanKeys.forClient(clientId),
     queryFn: () =>
       call(
-        client.GET('/v1/coach/clients/{client_id}/nutrition-plans', params ? {params: {path: {client_id: clientId}, query: omitUndefined(params)}} : {params: {path: {client_id: clientId}}}),
+        client.GET(
+          '/v1/coach/clients/{client_id}/nutrition-plans',
+          params
+            ? {params: {path: {client_id: clientId}, query: omitUndefined(params)}}
+            : {params: {path: {client_id: clientId}}},
+        ),
       ),
     enabled: options?.enabled ?? true,
   });
@@ -225,7 +230,12 @@ export function useListCoachNutritionDaysQuery(
     queryKey: nutritionDayKeys.forClient(clientId, params),
     queryFn: () =>
       call(
-        client.GET('/v1/coach/clients/{client_id}/nutrition-days', params ? {params: {path: {client_id: clientId}, query: omitUndefined(params)}} : {params: {path: {client_id: clientId}}}),
+        client.GET(
+          '/v1/coach/clients/{client_id}/nutrition-days',
+          params
+            ? {params: {path: {client_id: clientId}, query: omitUndefined(params)}}
+            : {params: {path: {client_id: clientId}}},
+        ),
       ),
     enabled: options?.enabled ?? true,
   });

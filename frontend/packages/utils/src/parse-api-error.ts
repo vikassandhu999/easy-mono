@@ -37,9 +37,7 @@ export function parseApiErrorBody(data: unknown): ApiErrorBody | null {
 
   const record = data as Record<string, unknown>;
   const errors =
-    record.errors && typeof record.errors === 'object'
-      ? (record.errors as Record<string, unknown>)
-      : undefined;
+    record.errors && typeof record.errors === 'object' ? (record.errors as Record<string, unknown>) : undefined;
   const error_code = typeof record.error_code === 'string' ? record.error_code : undefined;
   const error_message = typeof record.error_message === 'string' ? record.error_message : undefined;
   const error_detail =

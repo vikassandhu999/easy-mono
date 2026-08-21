@@ -14,9 +14,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "TeamResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TeamResponse",
@@ -40,10 +38,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data",
-          "count"
-        ],
+        "required": ["data", "count"],
         "title": "TrainingExerciseListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingExerciseListResponse",
@@ -54,17 +49,7 @@
         "properties": {
           "allergens": {
             "items": {
-              "enum": [
-                "dairy",
-                "egg",
-                "fish",
-                "shellfish",
-                "tree_nuts",
-                "peanuts",
-                "wheat",
-                "soy",
-                "sesame"
-              ],
+              "enum": ["dairy", "egg", "fish", "shellfish", "tree_nuts", "peanuts", "wheat", "soy", "sesame"],
               "type": "string",
               "x-struct": null,
               "x-validate": null
@@ -238,10 +223,7 @@
             "x-validate": null
           },
           "sender_type": {
-            "enum": [
-              "coach",
-              "client"
-            ],
+            "enum": ["coach", "client"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -284,11 +266,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "download_url",
-          "download_url_expires_at"
-        ],
+        "required": ["id", "download_url", "download_url_expires_at"],
         "title": "AttachmentDownload",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.AttachmentDownload",
@@ -302,30 +280,19 @@
           {
             "properties": {
               "kind": {
-                "enum": [
-                  "client_plan"
-                ],
+                "enum": ["client_plan"],
                 "type": "string",
                 "x-struct": null,
                 "x-validate": null
               },
               "lifecycle": {
-                "enum": [
-                  "incomplete",
-                  "upcoming",
-                  "current",
-                  "ended",
-                  "archived"
-                ],
+                "enum": ["incomplete", "upcoming", "current", "ended", "archived"],
                 "type": "string",
                 "x-struct": null,
                 "x-validate": null
               }
             },
-            "required": [
-              "kind",
-              "lifecycle"
-            ],
+            "required": ["kind", "lifecycle"],
             "type": "object",
             "x-struct": null,
             "x-validate": null
@@ -339,11 +306,7 @@
         "additionalProperties": false,
         "properties": {
           "force": {
-            "enum": [
-              "push",
-              "pull",
-              "static"
-            ],
+            "enum": ["push", "pull", "static"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -366,11 +329,7 @@
             "x-validate": null
           },
           "mechanics": {
-            "enum": [
-              "compound",
-              "isolation",
-              "isometric"
-            ],
+            "enum": ["compound", "isolation", "isometric"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -399,14 +358,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "name",
-          "mechanics",
-          "force",
-          "tracking_type",
-          "images"
-        ],
+        "required": ["id", "name", "mechanics", "force", "tracking_type", "images"],
         "title": "TrainingPlanExercise",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingPlanExercise",
@@ -423,10 +375,7 @@
             "x-validate": null
           },
           "kind": {
-            "enum": [
-              "food",
-              "recipe"
-            ],
+            "enum": ["food", "recipe"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -462,14 +411,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "meal_item_id",
-          "kind",
-          "name",
-          "position",
-          "portion",
-          "nutrients"
-        ],
+        "required": ["meal_item_id", "kind", "name", "position", "portion", "nutrients"],
         "title": "NutritionDayOptionItem",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayOptionItem",
@@ -482,9 +424,7 @@
             "$ref": "#/components/schemas/TrainingExercise"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "TrainingExerciseResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingExerciseResponse",
@@ -525,10 +465,7 @@
             "x-validate": null
           },
           "unit": {
-            "enum": [
-              "kg",
-              "lbs"
-            ],
+            "enum": ["kg", "lbs"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -539,15 +476,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "date",
-          "value",
-          "unit",
-          "note",
-          "form_submission_id",
-          "inserted_at"
-        ],
+        "required": ["id", "date", "value", "unit", "note", "form_submission_id", "inserted_at"],
         "title": "WeightEntry",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WeightEntry",
@@ -574,11 +503,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "name",
-          "revision"
-        ],
+        "required": ["id", "name", "revision"],
         "title": "TrainingSessionSnapshotPlan",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingSessionSnapshotPlan",
@@ -594,12 +519,7 @@
             "x-validate": null
           },
           "frequency": {
-            "enum": [
-              "once",
-              "weekly",
-              "biweekly",
-              "monthly"
-            ],
+            "enum": ["once", "weekly", "biweekly", "monthly"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -611,11 +531,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "form_template_id",
-          "frequency",
-          "next_due_on"
-        ],
+        "required": ["form_template_id", "frequency", "next_due_on"],
         "title": "ClientProfileCheckInScheduleRequest",
         "type": "object",
         "x-struct": null,
@@ -628,9 +544,7 @@
             "$ref": "#/components/schemas/TeamMember"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "TeamMemberResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TeamMemberResponse",
@@ -664,11 +578,7 @@
                   "x-validate": null
                 },
                 "type": {
-                  "enum": [
-                    "short_text",
-                    "long_text",
-                    "single_select"
-                  ],
+                  "enum": ["short_text", "long_text", "single_select"],
                   "type": "string",
                   "x-struct": null,
                   "x-validate": null
@@ -764,10 +674,7 @@
             "x-validate": null
           },
           "status": {
-            "enum": [
-              "draft",
-              "published"
-            ],
+            "enum": ["draft", "published"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -779,11 +686,7 @@
             "x-validate": null
           },
           "template": {
-            "enum": [
-              "proof_first",
-              "problem_fit",
-              "coach_story"
-            ],
+            "enum": ["proof_first", "problem_fit", "coach_story"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -795,14 +698,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "slug",
-          "template",
-          "headline",
-          "status",
-          "programs"
-        ],
+        "required": ["id", "slug", "template", "headline", "status", "programs"],
         "title": "LandingPage",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.LandingPage",
@@ -815,9 +711,7 @@
             "$ref": "#/components/schemas/BillingCheckoutResult"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "BillingCheckoutResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.BillingCheckoutResponse",
@@ -847,11 +741,7 @@
                       "x-validate": null
                     }
                   },
-                  "required": [
-                    "id",
-                    "name",
-                    "client_id"
-                  ],
+                  "required": ["id", "name", "client_id"],
                   "type": "object",
                   "x-struct": null,
                   "x-validate": null
@@ -874,10 +764,7 @@
                       "x-validate": null
                     }
                   },
-                  "required": [
-                    "id",
-                    "name"
-                  ],
+                  "required": ["id", "name"],
                   "type": "object",
                   "x-struct": null,
                   "x-validate": null
@@ -906,11 +793,7 @@
                       "x-validate": null
                     }
                   },
-                  "required": [
-                    "id",
-                    "name",
-                    "client_id"
-                  ],
+                  "required": ["id", "name", "client_id"],
                   "type": "object",
                   "x-struct": null,
                   "x-validate": null
@@ -920,19 +803,13 @@
                 "x-validate": null
               }
             },
-            "required": [
-              "recipes",
-              "templates",
-              "active_client_plans"
-            ],
+            "required": ["recipes", "templates", "active_client_plans"],
             "type": "object",
             "x-struct": null,
             "x-validate": null
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "FoodImpactResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.FoodImpactResponse",
@@ -1019,12 +896,7 @@
             "$ref": "#/components/schemas/NutritionWeekScheduleInput"
           }
         },
-        "required": [
-          "expected_revision",
-          "meals",
-          "day_patterns",
-          "schedule"
-        ],
+        "required": ["expected_revision", "meals", "day_patterns", "schedule"],
         "title": "NutritionMenuReplaceRequest",
         "type": "object",
         "x-struct": null,
@@ -1044,10 +916,7 @@
             "x-validate": null
           },
           "default_weight_unit": {
-            "enum": [
-              "kg",
-              "lbs"
-            ],
+            "enum": ["kg", "lbs"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -1099,11 +968,7 @@
             "x-validate": null
           },
           "force": {
-            "enum": [
-              "push",
-              "pull",
-              "static"
-            ],
+            "enum": ["push", "pull", "static"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -1127,11 +992,7 @@
             "x-validate": null
           },
           "mechanics": {
-            "enum": [
-              "compound",
-              "isolation",
-              "isometric"
-            ],
+            "enum": ["compound", "isolation", "isometric"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -1195,11 +1056,7 @@
                   "x-validate": null
                 },
                 "type": {
-                  "enum": [
-                    "short_text",
-                    "long_text",
-                    "single_select"
-                  ],
+                  "enum": ["short_text", "long_text", "single_select"],
                   "type": "string",
                   "x-struct": null,
                   "x-validate": null
@@ -1294,11 +1151,7 @@
             "x-validate": null
           },
           "template": {
-            "enum": [
-              "proof_first",
-              "problem_fit",
-              "coach_story"
-            ],
+            "enum": ["proof_first", "problem_fit", "coach_story"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -1310,14 +1163,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "slug",
-          "template",
-          "headline",
-          "programs",
-          "application_questions",
-          "business_name"
-        ],
+        "required": ["slug", "template", "headline", "programs", "application_questions", "business_name"],
         "title": "PublicLandingPage",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.PublicLandingPage",
@@ -1327,12 +1173,7 @@
         "additionalProperties": false,
         "properties": {
           "adherence": {
-            "enum": [
-              "on",
-              "under",
-              "over",
-              "none"
-            ],
+            "enum": ["on", "under", "over", "none"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -1353,12 +1194,7 @@
             "$ref": "#/components/schemas/NutrientTotals"
           }
         },
-        "required": [
-          "logged",
-          "planned",
-          "counts",
-          "has_intake"
-        ],
+        "required": ["logged", "planned", "counts", "has_intake"],
         "title": "NutritionDaySummary",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDaySummary",
@@ -1371,9 +1207,7 @@
             "$ref": "#/components/schemas/TrainingPlan"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "TrainingPlanResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingPlanResponse",
@@ -1418,11 +1252,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "meal_slot",
-          "meal_id",
-          "expected_revision"
-        ],
+        "required": ["meal_slot", "meal_id", "expected_revision"],
         "title": "DiarySwitchOptionRequest",
         "type": "object",
         "x-struct": null,
@@ -1432,26 +1262,14 @@
         "additionalProperties": false,
         "description": "Request body for updating a coach-owned food. `source` is server-owned and immutable.",
         "example": {
-          "dietary_tags": [
-            "high_protein"
-          ],
+          "dietary_tags": ["high_protein"],
           "expected_revision": 1,
           "name": "Plain Greek Yogurt"
         },
         "properties": {
           "allergens": {
             "items": {
-              "enum": [
-                "dairy",
-                "egg",
-                "fish",
-                "shellfish",
-                "tree_nuts",
-                "peanuts",
-                "wheat",
-                "soy",
-                "sesame"
-              ],
+              "enum": ["dairy", "egg", "fish", "shellfish", "tree_nuts", "peanuts", "wheat", "soy", "sesame"],
               "type": "string",
               "x-struct": null,
               "x-validate": null
@@ -1575,9 +1393,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "expected_revision"
-        ],
+        "required": ["expected_revision"],
         "title": "FoodUpdateRequest",
         "type": "object",
         "x-struct": null,
@@ -1587,9 +1403,7 @@
         "additionalProperties": false,
         "properties": {
           "code": {
-            "enum": [
-              "reply_needed"
-            ],
+            "enum": ["reply_needed"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -1601,10 +1415,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "code",
-          "waiting_since"
-        ],
+        "required": ["code", "waiting_since"],
         "title": "ReplyNeededReason",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ReplyNeededReason",
@@ -1617,9 +1428,7 @@
             "$ref": "#/components/schemas/NutritionDay"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "NutritionDayResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayResponse",
@@ -1637,9 +1446,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "TrainingEquipmentListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingEquipmentListResponse",
@@ -1674,34 +1481,19 @@
             "x-validate": null
           },
           "purpose": {
-            "enum": [
-              "check_in"
-            ],
+            "enum": ["check_in"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           },
           "status": {
-            "enum": [
-              "assigned",
-              "in_progress",
-              "completed",
-              "dismissed",
-              "missed"
-            ],
+            "enum": ["assigned", "in_progress", "completed", "dismissed", "missed"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "client_id",
-          "form_template_id",
-          "purpose",
-          "status",
-          "due_date"
-        ],
+        "required": ["id", "client_id", "form_template_id", "purpose", "status", "due_date"],
         "title": "WorkbenchCheckInAssignment",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchCheckInAssignment",
@@ -1753,10 +1545,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data",
-          "count"
-        ],
+        "required": ["data", "count"],
         "title": "WorkbenchRepliesQueueResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchRepliesQueueResponse",
@@ -1769,9 +1558,7 @@
             "$ref": "#/components/schemas/ClientProfileFormAssignment"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "ClientProfileFormAssignmentResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileFormAssignmentResponse",
@@ -1804,9 +1591,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "email"
-        ],
+        "required": ["email"],
         "title": "SignupRequest",
         "type": "object",
         "x-struct": null,
@@ -1850,9 +1635,7 @@
                 "x-validate": null
               }
             },
-            "required": [
-              "body"
-            ],
+            "required": ["body"],
             "type": "object",
             "x-struct": null,
             "x-validate": null
@@ -1893,9 +1676,7 @@
                 "x-validate": null
               }
             },
-            "required": [
-              "attachment_ids"
-            ],
+            "required": ["attachment_ids"],
             "type": "object",
             "x-struct": null,
             "x-validate": null
@@ -1935,9 +1716,7 @@
                 "x-validate": null
               }
             },
-            "required": [
-              "embed"
-            ],
+            "required": ["embed"],
             "type": "object",
             "x-struct": null,
             "x-validate": null
@@ -1966,9 +1745,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "expected_last_message_at"
-        ],
+        "required": ["expected_last_message_at"],
         "title": "MarkHandledRequest",
         "type": "object",
         "x-struct": null,
@@ -1981,9 +1758,7 @@
             "$ref": "#/components/schemas/TrainingSession"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "TrainingSessionResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingSessionResponse",
@@ -1993,9 +1768,7 @@
         "additionalProperties": false,
         "properties": {
           "code": {
-            "enum": [
-              "engagement_ending_soon"
-            ],
+            "enum": ["engagement_ending_soon"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -2007,10 +1780,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "code",
-          "ends_on"
-        ],
+        "required": ["code", "ends_on"],
         "title": "EngagementEndingSoonReason",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.EngagementEndingSoonReason",
@@ -2045,10 +1815,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "food_id",
-          "weight_g"
-        ],
+        "required": ["food_id", "weight_g"],
         "title": "RecipeIngredientRequest",
         "type": "object",
         "x-struct": null,
@@ -2072,10 +1839,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data",
-          "count"
-        ],
+        "required": ["data", "count"],
         "title": "ClientTrainingPlanListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientTrainingPlanListResponse",
@@ -2119,10 +1883,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data",
-          "count"
-        ],
+        "required": ["data", "count"],
         "title": "TrainingPlanListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingPlanListResponse",
@@ -2169,25 +1930,13 @@
             "x-validate": null
           },
           "status": {
-            "enum": [
-              "invited",
-              "active",
-              "inactive"
-            ],
+            "enum": ["invited", "active", "inactive"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "first_name",
-          "last_name",
-          "email",
-          "status",
-          "is_owner",
-          "invitation_sent_at"
-        ],
+        "required": ["id", "first_name", "last_name", "email", "status", "is_owner", "invitation_sent_at"],
         "title": "TeamMember",
         "type": "object",
         "x-struct": null,
@@ -2278,9 +2027,7 @@
           ],
           "force": "push",
           "id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-          "images": [
-            "https://cdn.example.com/exercises/back-squat.png"
-          ],
+          "images": ["https://cdn.example.com/exercises/back-squat.png"],
           "inserted_at": "2026-05-30T12:00:00Z",
           "instructions": "Brace, descend to depth, drive up.",
           "mechanics": "compound",
@@ -2310,11 +2057,7 @@
             "x-validate": null
           },
           "force": {
-            "enum": [
-              "push",
-              "pull",
-              "static"
-            ],
+            "enum": ["push", "pull", "static"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -2349,11 +2092,7 @@
             "x-validate": null
           },
           "mechanics": {
-            "enum": [
-              "compound",
-              "isolation",
-              "isometric"
-            ],
+            "enum": ["compound", "isolation", "isometric"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -2450,9 +2189,7 @@
                 "x-validate": null
               }
             },
-            "required": [
-              "body"
-            ],
+            "required": ["body"],
             "type": "object",
             "x-struct": null,
             "x-validate": null
@@ -2483,9 +2220,7 @@
                 "x-validate": null
               }
             },
-            "required": [
-              "attachment_ids"
-            ],
+            "required": ["attachment_ids"],
             "type": "object",
             "x-struct": null,
             "x-validate": null
@@ -2504,9 +2239,7 @@
         "additionalProperties": false,
         "properties": {
           "code": {
-            "enum": [
-              "check_in_awaiting_review"
-            ],
+            "enum": ["check_in_awaiting_review"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -2524,11 +2257,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "code",
-          "submission_id",
-          "submitted_at"
-        ],
+        "required": ["code", "submission_id", "submitted_at"],
         "title": "CheckInAwaitingReviewReason",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.CheckInAwaitingReviewReason",
@@ -2587,15 +2316,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "monday",
-          "tuesday",
-          "wednesday",
-          "thursday",
-          "friday",
-          "saturday",
-          "sunday"
-        ],
+        "required": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
         "title": "NutritionWeekSchedule",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionWeekSchedule",
@@ -2619,10 +2340,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data",
-          "count"
-        ],
+        "required": ["data", "count"],
         "title": "NutritionDayListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayListResponse",
@@ -2667,11 +2385,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "exercise_id",
-          "position",
-          "prescribed_sets"
-        ],
+        "required": ["exercise_id", "position", "prescribed_sets"],
         "title": "TrainingPrescriptionExerciseInput",
         "type": "object",
         "x-struct": null,
@@ -2689,9 +2403,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "ClientProfileCheckInScheduleListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileCheckInScheduleListResponse",
@@ -2735,9 +2447,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "position"
-        ],
+        "required": ["position"],
         "title": "NutritionMealOptionInput",
         "type": "object",
         "x-struct": null,
@@ -2750,9 +2460,7 @@
             "$ref": "#/components/schemas/NutritionPlan"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "NutritionPlanResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionPlanResponse",
@@ -2765,9 +2473,7 @@
             "$ref": "#/components/schemas/Business"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "BusinessResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.BusinessResponse",
@@ -2818,11 +2524,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "name",
-          "position",
-          "meal_items"
-        ],
+        "required": ["name", "position", "meal_items"],
         "title": "NutritionMealInput",
         "type": "object",
         "x-struct": null,
@@ -2856,12 +2558,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "email",
-          "first_name",
-          "last_name"
-        ],
+        "required": ["id", "email", "first_name", "last_name"],
         "title": "ClientProfileReviewClient",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileReviewClient",
@@ -2872,17 +2569,7 @@
         "properties": {
           "allergens": {
             "items": {
-              "enum": [
-                "dairy",
-                "egg",
-                "fish",
-                "shellfish",
-                "tree_nuts",
-                "peanuts",
-                "wheat",
-                "soy",
-                "sesame"
-              ],
+              "enum": ["dairy", "egg", "fish", "shellfish", "tree_nuts", "peanuts", "wheat", "soy", "sesame"],
               "type": "string",
               "x-struct": null,
               "x-validate": null
@@ -3024,11 +2711,7 @@
             "x-validate": null
           },
           "source": {
-            "enum": [
-              "system",
-              "imported",
-              "custom"
-            ],
+            "enum": ["system", "imported", "custom"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -3118,11 +2801,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "kind",
-          "occurred_at"
-        ],
+        "required": ["id", "kind", "occurred_at"],
         "title": "BillingEvent",
         "type": "object",
         "x-struct": null,
@@ -3146,10 +2825,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data",
-          "count"
-        ],
+        "required": ["data", "count"],
         "title": "FoodListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.FoodListResponse",
@@ -3165,18 +2841,13 @@
             "x-validate": null
           },
           "type": {
-            "enum": [
-              "form_submission"
-            ],
+            "enum": ["form_submission"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           }
         },
-        "required": [
-          "type",
-          "id"
-        ],
+        "required": ["type", "id"],
         "title": "ChatMessageEmbedRequest",
         "type": "object",
         "x-struct": null,
@@ -3198,10 +2869,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "client",
-          "reasons"
-        ],
+        "required": ["client", "reasons"],
         "title": "WorkbenchProgrammingQueueItem",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchProgrammingQueueItem",
@@ -3214,9 +2882,7 @@
             "$ref": "#/components/schemas/TrainingSessionSnapshotPlan"
           },
           "version": {
-            "enum": [
-              1
-            ],
+            "enum": [1],
             "type": "integer",
             "x-struct": null,
             "x-validate": null
@@ -3225,11 +2891,7 @@
             "$ref": "#/components/schemas/TrainingSessionSnapshotWorkout"
           }
         },
-        "required": [
-          "version",
-          "plan",
-          "workout"
-        ],
+        "required": ["version", "plan", "workout"],
         "title": "TrainingSessionPrescriptionSnapshot",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingSessionPrescriptionSnapshot",
@@ -3295,20 +2957,13 @@
             "x-validate": null
           },
           "kind": {
-            "enum": [
-              "client_plan"
-            ],
+            "enum": ["client_plan"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           },
           "lifecycle": {
-            "enum": [
-              "incomplete",
-              "upcoming",
-              "current",
-              "ended"
-            ],
+            "enum": ["incomplete", "upcoming", "current", "ended"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -3335,10 +2990,7 @@
             "x-validate": null
           },
           "status": {
-            "enum": [
-              "active",
-              "archived"
-            ],
+            "enum": ["active", "archived"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -3412,13 +3064,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "label",
-          "amount",
-          "unit",
-          "weight_g",
-          "is_default"
-        ],
+        "required": ["label", "amount", "unit", "weight_g", "is_default"],
         "title": "FoodServingSize",
         "type": "object",
         "x-struct": null,
@@ -3446,9 +3092,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "title": "TrainingPlanCreateRequest",
         "type": "object",
         "x-struct": null,
@@ -3496,38 +3140,16 @@
             "x-validate": null
           }
         },
-        "required": [
-          "check_ins",
-          "replies",
-          "onboarding",
-          "programming",
-          "expiring",
-          "quiet"
-        ],
+        "required": ["check_ins", "replies", "onboarding", "programming", "expiring", "quiet"],
         "title": "WorkbenchCounts",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchCounts",
         "x-validate": null
       },
       "RequiredServices": {
-        "enum": [
-          [],
-          [
-            "training"
-          ],
-          [
-            "nutrition"
-          ],
-          [
-            "training",
-            "nutrition"
-          ]
-        ],
+        "enum": [[], ["training"], ["nutrition"], ["training", "nutrition"]],
         "items": {
-          "enum": [
-            "training",
-            "nutrition"
-          ],
+          "enum": ["training", "nutrition"],
           "type": "string",
           "x-struct": null,
           "x-validate": null
@@ -3543,9 +3165,7 @@
         "additionalProperties": false,
         "properties": {
           "code": {
-            "enum": [
-              "invitation_follow_up_due"
-            ],
+            "enum": ["invitation_follow_up_due"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -3569,12 +3189,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "code",
-          "invitation_id",
-          "sent_at",
-          "follow_up_due_at"
-        ],
+        "required": ["code", "invitation_id", "sent_at", "follow_up_due_at"],
         "title": "InvitationFollowUpDueReason",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.InvitationFollowUpDueReason",
@@ -3644,11 +3259,7 @@
                             "x-validate": null
                           }
                         },
-                        "required": [
-                          "id",
-                          "label",
-                          "type"
-                        ],
+                        "required": ["id", "label", "type"],
                         "type": "object",
                         "x-struct": null,
                         "x-validate": null
@@ -3672,19 +3283,13 @@
                             "x-validate": null
                           },
                           "type": {
-                            "enum": [
-                              "service_type"
-                            ],
+                            "enum": ["service_type"],
                             "type": "string",
                             "x-struct": null,
                             "x-validate": null
                           }
                         },
-                        "required": [
-                          "id",
-                          "label",
-                          "type"
-                        ],
+                        "required": ["id", "label", "type"],
                         "type": "object",
                         "x-struct": null,
                         "x-validate": null
@@ -3703,9 +3308,7 @@
                   "x-validate": null
                 }
               },
-              "required": [
-                "questions"
-              ],
+              "required": ["questions"],
               "type": "object",
               "x-struct": null,
               "x-validate": null
@@ -3715,10 +3318,7 @@
             "x-validate": null
           },
           "status": {
-            "enum": [
-              "active",
-              "archived"
-            ],
+            "enum": ["active", "archived"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -3822,11 +3422,7 @@
                             "x-validate": null
                           }
                         },
-                        "required": [
-                          "id",
-                          "label",
-                          "type"
-                        ],
+                        "required": ["id", "label", "type"],
                         "type": "object",
                         "x-struct": null,
                         "x-validate": null
@@ -3850,19 +3446,13 @@
                             "x-validate": null
                           },
                           "type": {
-                            "enum": [
-                              "service_type"
-                            ],
+                            "enum": ["service_type"],
                             "type": "string",
                             "x-struct": null,
                             "x-validate": null
                           }
                         },
-                        "required": [
-                          "id",
-                          "label",
-                          "type"
-                        ],
+                        "required": ["id", "label", "type"],
                         "type": "object",
                         "x-struct": null,
                         "x-validate": null
@@ -3881,9 +3471,7 @@
                   "x-validate": null
                 }
               },
-              "required": [
-                "questions"
-              ],
+              "required": ["questions"],
               "type": "object",
               "x-struct": null,
               "x-validate": null
@@ -3913,11 +3501,7 @@
             "x-validate": null
           },
           "submitted_by_type": {
-            "enum": [
-              "coach",
-              "client",
-              "system"
-            ],
+            "enum": ["coach", "client", "system"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -3972,10 +3556,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "meal_id",
-          "items"
-        ],
+        "required": ["meal_id", "items"],
         "title": "NutritionDayOption",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayOption",
@@ -4029,9 +3610,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "title": "PublicApplicationRequest",
         "type": "object",
         "x-struct": null,
@@ -4054,20 +3633,14 @@
             "x-validate": null
           },
           "dashboard_setup_hidden_reason": {
-            "enum": [
-              "dismissed",
-              "completed"
-            ],
+            "enum": ["dismissed", "completed"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null
           },
           "default_weight_unit": {
-            "enum": [
-              "kg",
-              "lbs"
-            ],
+            "enum": ["kg", "lbs"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -4141,12 +3714,7 @@
             "x-validate": null
           },
           "frequency": {
-            "enum": [
-              "once",
-              "weekly",
-              "biweekly",
-              "monthly"
-            ],
+            "enum": ["once", "weekly", "biweekly", "monthly"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -4207,10 +3775,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "name"
-        ],
+        "required": ["id", "name"],
         "title": "ProspectProgram",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ProspectProgram",
@@ -4243,9 +3808,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "email"
-        ],
+        "required": ["email"],
         "title": "TrainerInviteRequest",
         "type": "object",
         "x-struct": null,
@@ -4289,12 +3852,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "content_type",
-          "byte_size",
-          "duration_ms"
-        ],
+        "required": ["id", "content_type", "byte_size", "duration_ms"],
         "title": "Attachment",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.Attachment",
@@ -4348,15 +3906,11 @@
         "additionalProperties": false,
         "description": "Request body for creating or updating a food. `source` is stamped by the server, never accepted.",
         "example": {
-          "allergens": [
-            "dairy"
-          ],
+          "allergens": ["dairy"],
           "calories_per_100g": 97,
           "carbs_g_per_100g": 4,
           "category": "Dairy",
-          "dietary_tags": [
-            "high_protein"
-          ],
+          "dietary_tags": ["high_protein"],
           "fat_g_per_100g": 5,
           "fiber_g_per_100g": 0,
           "name": "Greek Yogurt",
@@ -4376,17 +3930,7 @@
         "properties": {
           "allergens": {
             "items": {
-              "enum": [
-                "dairy",
-                "egg",
-                "fish",
-                "shellfish",
-                "tree_nuts",
-                "peanuts",
-                "wheat",
-                "soy",
-                "sesame"
-              ],
+              "enum": ["dairy", "egg", "fish", "shellfish", "tree_nuts", "peanuts", "wheat", "soy", "sesame"],
               "type": "string",
               "x-struct": null,
               "x-validate": null
@@ -4504,9 +4048,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "title": "FoodRequest",
         "type": "object",
         "x-struct": null,
@@ -4587,12 +4129,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "meal_slot",
-          "write_eligible",
-          "options",
-          "rows"
-        ],
+        "required": ["meal_slot", "write_eligible", "options", "rows"],
         "title": "NutritionDaySlot",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDaySlot",
@@ -4666,12 +4203,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "meal_slot",
-          "meal_item_id",
-          "portion",
-          "expected_revision"
-        ],
+        "required": ["meal_slot", "meal_item_id", "portion", "expected_revision"],
         "title": "DiaryReplacePlannedItemRequest",
         "type": "object",
         "x-struct": null,
@@ -4682,11 +4214,7 @@
         "properties": {
           "client_status": {
             "description": "Client lifecycle status; inactive clients remain actionable in Replies",
-            "enum": [
-              "active",
-              "pending",
-              "inactive"
-            ],
+            "enum": ["active", "pending", "inactive"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -4711,12 +4239,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "conversation",
-          "waiting_message_count",
-          "client_status",
-          "reasons"
-        ],
+        "required": ["conversation", "waiting_message_count", "client_status", "reasons"],
         "title": "WorkbenchRepliesQueueItem",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchRepliesQueueItem",
@@ -4747,17 +4270,13 @@
                 "x-validate": null
               }
             },
-            "required": [
-              "business_name"
-            ],
+            "required": ["business_name"],
             "type": "object",
             "x-struct": null,
             "x-validate": null
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "TrainerInvitationPreviewResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainerInvitationPreviewResponse",
@@ -4770,9 +4289,7 @@
             "$ref": "#/components/schemas/ClientProfileFormSubmission"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "ClientProfileFormSubmissionResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileFormSubmissionResponse",
@@ -4819,14 +4336,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "date",
-          "write_eligible",
-          "applied_timezone",
-          "targets",
-          "summary",
-          "slots"
-        ],
+        "required": ["date", "write_eligible", "applied_timezone", "targets", "summary", "slots"],
         "title": "NutritionDay",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDay",
@@ -4844,9 +4354,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "seats_to_add"
-        ],
+        "required": ["seats_to_add"],
         "title": "BillingCheckoutRequest",
         "type": "object",
         "x-struct": null,
@@ -4859,9 +4367,7 @@
             "$ref": "#/components/schemas/WorkbenchCounts"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "WorkbenchCountsResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchCountsResponse",
@@ -4879,9 +4385,7 @@
             "additionalProperties": false,
             "properties": {
               "grant_type": {
-                "enum": [
-                  "refresh_token"
-                ],
+                "enum": ["refresh_token"],
                 "type": "string",
                 "x-struct": null,
                 "x-validate": null
@@ -4892,21 +4396,13 @@
                 "x-validate": null
               },
               "role": {
-                "enum": [
-                  "owner",
-                  "coach",
-                  "client",
-                  "guest"
-                ],
+                "enum": ["owner", "coach", "client", "guest"],
                 "type": "string",
                 "x-struct": null,
                 "x-validate": null
               }
             },
-            "required": [
-              "grant_type",
-              "refresh_token"
-            ],
+            "required": ["grant_type", "refresh_token"],
             "type": "object",
             "x-struct": null,
             "x-validate": null
@@ -4921,9 +4417,7 @@
                 "x-validate": null
               },
               "grant_type": {
-                "enum": [
-                  "otp"
-                ],
+                "enum": ["otp"],
                 "type": "string",
                 "x-struct": null,
                 "x-validate": null
@@ -4934,23 +4428,13 @@
                 "x-validate": null
               },
               "role": {
-                "enum": [
-                  "owner",
-                  "coach",
-                  "client",
-                  "guest"
-                ],
+                "enum": ["owner", "coach", "client", "guest"],
                 "type": "string",
                 "x-struct": null,
                 "x-validate": null
               }
             },
-            "required": [
-              "grant_type",
-              "email",
-              "otp",
-              "role"
-            ],
+            "required": ["grant_type", "email", "otp", "role"],
             "type": "object",
             "x-struct": null,
             "x-validate": null
@@ -4968,9 +4452,7 @@
             "$ref": "#/components/schemas/ChatMessage"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "ChatMessageResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ChatMessageResponse",
@@ -4999,10 +4481,7 @@
             "x-validate": null
           },
           "goal_weight_unit": {
-            "enum": [
-              "kg",
-              "lbs"
-            ],
+            "enum": ["kg", "lbs"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -5036,20 +4515,14 @@
             "$ref": "#/components/schemas/RequiredServicesNonEmpty"
           },
           "stage": {
-            "enum": [
-              "onboarding",
-              "coaching"
-            ],
+            "enum": ["onboarding", "coaching"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null
           },
           "status": {
-            "enum": [
-              "active",
-              "inactive"
-            ],
+            "enum": ["active", "inactive"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -5081,9 +4554,7 @@
             "$ref": "#/components/schemas/CoachClientTrainingPlan"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "CoachClientTrainingPlanResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.CoachClientTrainingPlanResponse",
@@ -5116,12 +4587,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "first_name",
-          "last_name",
-          "phone",
-          "business_name"
-        ],
+        "required": ["first_name", "last_name", "phone", "business_name"],
         "title": "ClientProfileCoach",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileCoach",
@@ -5141,10 +4607,7 @@
             "x-validate": null
           },
           "default_weight_unit": {
-            "enum": [
-              "kg",
-              "lbs"
-            ],
+            "enum": ["kg", "lbs"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -5238,9 +4701,7 @@
             "$ref": "#/components/schemas/Prospect"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "ProspectResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ProspectResponse",
@@ -5268,11 +4729,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "active",
-          "pending",
-          "inactive"
-        ],
+        "required": ["active", "pending", "inactive"],
         "title": "ClientSummary",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientSummary",
@@ -5303,10 +4760,7 @@
             "x-validate": null
           },
           "purpose": {
-            "enum": [
-              "intake",
-              "check_in"
-            ],
+            "enum": ["intake", "check_in"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -5363,11 +4817,7 @@
                             "x-validate": null
                           }
                         },
-                        "required": [
-                          "id",
-                          "label",
-                          "type"
-                        ],
+                        "required": ["id", "label", "type"],
                         "type": "object",
                         "x-struct": null,
                         "x-validate": null
@@ -5391,19 +4841,13 @@
                             "x-validate": null
                           },
                           "type": {
-                            "enum": [
-                              "service_type"
-                            ],
+                            "enum": ["service_type"],
                             "type": "string",
                             "x-struct": null,
                             "x-validate": null
                           }
                         },
-                        "required": [
-                          "id",
-                          "label",
-                          "type"
-                        ],
+                        "required": ["id", "label", "type"],
                         "type": "object",
                         "x-struct": null,
                         "x-validate": null
@@ -5422,9 +4866,7 @@
                   "x-validate": null
                 }
               },
-              "required": [
-                "questions"
-              ],
+              "required": ["questions"],
               "type": "object",
               "x-struct": null,
               "x-validate": null
@@ -5434,20 +4876,13 @@
             "x-validate": null
           },
           "status": {
-            "enum": [
-              "active",
-              "archived"
-            ],
+            "enum": ["active", "archived"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           }
         },
-        "required": [
-          "name",
-          "purpose",
-          "sections"
-        ],
+        "required": ["name", "purpose", "sections"],
         "title": "ClientProfileFormTemplateRequest",
         "type": "object",
         "x-struct": null,
@@ -5474,10 +4909,7 @@
             "x-validate": null
           },
           "unit": {
-            "enum": [
-              "kg",
-              "lbs"
-            ],
+            "enum": ["kg", "lbs"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -5488,11 +4920,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "date",
-          "value",
-          "unit"
-        ],
+        "required": ["date", "value", "unit"],
         "title": "WeightEntryRequest",
         "type": "object",
         "x-struct": null,
@@ -5513,18 +4941,13 @@
                 "$ref": "#/components/schemas/Prospect"
               }
             },
-            "required": [
-              "prospect",
-              "already_enrolled"
-            ],
+            "required": ["prospect", "already_enrolled"],
             "type": "object",
             "x-struct": null,
             "x-validate": null
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "ProspectEnrollResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ProspectEnrollResponse",
@@ -5585,11 +5008,7 @@
                   "x-validate": null
                 },
                 "type": {
-                  "enum": [
-                    "short_text",
-                    "long_text",
-                    "single_select"
-                  ],
+                  "enum": ["short_text", "long_text", "single_select"],
                   "type": "string",
                   "x-struct": null,
                   "x-validate": null
@@ -5675,10 +5094,7 @@
             "x-validate": null
           },
           "status": {
-            "enum": [
-              "draft",
-              "published"
-            ],
+            "enum": ["draft", "published"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -5690,22 +5106,13 @@
             "x-validate": null
           },
           "template": {
-            "enum": [
-              "proof_first",
-              "problem_fit",
-              "coach_story"
-            ],
+            "enum": ["proof_first", "problem_fit", "coach_story"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           }
         },
-        "required": [
-          "slug",
-          "template",
-          "headline",
-          "status"
-        ],
+        "required": ["slug", "template", "headline", "status"],
         "title": "LandingPageUpsertRequest",
         "type": "object",
         "x-struct": null,
@@ -5759,9 +5166,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "answers"
-        ],
+        "required": ["answers"],
         "title": "ClientProfileFormSubmissionRequest",
         "type": "object",
         "x-struct": null,
@@ -5777,12 +5182,7 @@
         },
         "properties": {
           "distance_unit": {
-            "enum": [
-              "meters",
-              "km",
-              "miles",
-              "none"
-            ],
+            "enum": ["meters", "km", "miles", "none"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -5802,12 +5202,7 @@
             "x-validate": null
           },
           "load_unit": {
-            "enum": [
-              "kg",
-              "lbs",
-              "bodyweight",
-              "none"
-            ],
+            "enum": ["kg", "lbs", "bodyweight", "none"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -5841,11 +5236,7 @@
             "x-validate": null
           },
           "set_type": {
-            "enum": [
-              "working",
-              "warmup",
-              "dropset"
-            ],
+            "enum": ["working", "warmup", "dropset"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -5897,9 +5288,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "ActiveTrainingSessionResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ActiveTrainingSessionResponse",
@@ -5931,11 +5320,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "name",
-          "description"
-        ],
+        "required": ["id", "name", "description"],
         "title": "TrainingEquipment",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingEquipment",
@@ -5953,9 +5338,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "ClientProfileFormSubmissionListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileFormSubmissionListResponse",
@@ -5966,18 +5349,12 @@
         "description": "Request body for creating a coach exercise.",
         "example": {
           "description": "Main lower-body strength movement.",
-          "equipment_ids": [
-            "7d72f2c3-8ed7-4b78-bf1f-c883df192772"
-          ],
+          "equipment_ids": ["7d72f2c3-8ed7-4b78-bf1f-c883df192772"],
           "force": "push",
-          "images": [
-            "https://cdn.example.com/exercises/back-squat.png"
-          ],
+          "images": ["https://cdn.example.com/exercises/back-squat.png"],
           "instructions": "Brace, descend to depth, drive up.",
           "mechanics": "compound",
-          "muscle_ids": [
-            "8f5db7e0-9b18-4d5f-9c2a-1f5d8f1131f0"
-          ],
+          "muscle_ids": ["8f5db7e0-9b18-4d5f-9c2a-1f5d8f1131f0"],
           "name": "Barbell Back Squat"
         },
         "properties": {
@@ -6000,11 +5377,7 @@
             "x-validate": null
           },
           "force": {
-            "enum": [
-              "push",
-              "pull",
-              "static"
-            ],
+            "enum": ["push", "pull", "static"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -6028,11 +5401,7 @@
             "x-validate": null
           },
           "mechanics": {
-            "enum": [
-              "compound",
-              "isolation",
-              "isometric"
-            ],
+            "enum": ["compound", "isolation", "isometric"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -6063,9 +5432,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "title": "TrainingExerciseCreateRequest",
         "type": "object",
         "x-struct": null,
@@ -6083,9 +5450,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "ClientProfileFormAssignmentListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileFormAssignmentListResponse",
@@ -6120,11 +5485,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "expected_revision",
-          "workouts",
-          "schedule"
-        ],
+        "required": ["expected_revision", "workouts", "schedule"],
         "title": "TrainingPrescriptionReplaceRequest",
         "type": "object",
         "x-struct": null,
@@ -6248,19 +5609,13 @@
                 "x-validate": null
               }
             },
-            "required": [
-              "id",
-              "name",
-              "business_name"
-            ],
+            "required": ["id", "name", "business_name"],
             "type": "object",
             "x-struct": null,
             "x-validate": null
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "PublicApplicationResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.PublicApplicationResponse",
@@ -6275,12 +5630,7 @@
             "x-validate": null
           },
           "frequency": {
-            "enum": [
-              "once",
-              "weekly",
-              "biweekly",
-              "monthly"
-            ],
+            "enum": ["once", "weekly", "biweekly", "monthly"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -6304,9 +5654,7 @@
             "$ref": "#/components/schemas/ClientProfileCheckInSchedule"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "ClientProfileCheckInScheduleResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileCheckInScheduleResponse",
@@ -6326,9 +5674,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "title": "TrainingExerciseCopyRequest",
         "type": "object",
         "x-struct": null,
@@ -6347,9 +5693,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "expected_revision"
-        ],
+        "required": ["expected_revision"],
         "title": "DiaryDeleteEntryRequest",
         "type": "object",
         "x-struct": null,
@@ -6380,9 +5724,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "meal_slot"
-        ],
+        "required": ["meal_slot"],
         "title": "DiaryLogPlannedOptionRequest",
         "type": "object",
         "x-struct": null,
@@ -6402,9 +5744,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "expected_revision"
-        ],
+        "required": ["expected_revision"],
         "title": "TrainingPlanRevisionRequest",
         "type": "object",
         "x-struct": null,
@@ -6414,9 +5754,7 @@
         "additionalProperties": false,
         "properties": {
           "code": {
-            "enum": [
-              "service_coverage_missing"
-            ],
+            "enum": ["service_coverage_missing"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -6428,20 +5766,13 @@
             "x-validate": null
           },
           "service": {
-            "enum": [
-              "training",
-              "nutrition"
-            ],
+            "enum": ["training", "nutrition"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           }
         },
-        "required": [
-          "code",
-          "service",
-          "first_uncovered_on"
-        ],
+        "required": ["code", "service", "first_uncovered_on"],
         "title": "ServiceCoverageMissingReason",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ServiceCoverageMissingReason",
@@ -6508,13 +5839,7 @@
             "x-validate": null
           },
           "status": {
-            "enum": [
-              "free",
-              "active",
-              "past_due",
-              "cancel_at_period_end",
-              "cancelled"
-            ],
+            "enum": ["free", "active", "past_due", "cancel_at_period_end", "cancelled"],
             "example": "free",
             "type": "string",
             "x-struct": null,
@@ -6587,10 +5912,7 @@
           },
           "last_message_role": {
             "description": "Who spoke last in conversation history. Replies membership uses waiting_since.",
-            "enum": [
-              "coach",
-              "client"
-            ],
+            "enum": ["coach", "client"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -6615,14 +5937,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "client_id",
-          "waiting_since",
-          "unread_count",
-          "inserted_at",
-          "updated_at"
-        ],
+        "required": ["id", "client_id", "waiting_since", "unread_count", "inserted_at", "updated_at"],
         "title": "Conversation",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.Conversation",
@@ -6641,15 +5956,7 @@
             "$ref": "#/components/schemas/ClientTrainingPlan"
           },
           "weekday": {
-            "enum": [
-              "monday",
-              "tuesday",
-              "wednesday",
-              "thursday",
-              "friday",
-              "saturday",
-              "sunday"
-            ],
+            "enum": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -6665,12 +5972,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "date",
-          "weekday",
-          "plan",
-          "workout"
-        ],
+        "required": ["date", "weekday", "plan", "workout"],
         "title": "ClientTrainingCoverage",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientTrainingCoverage",
@@ -6697,11 +5999,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "name",
-          "description"
-        ],
+        "required": ["id", "name", "description"],
         "title": "TrainingExerciseRelation",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingExerciseRelation",
@@ -6724,17 +6022,7 @@
         "properties": {
           "allergens": {
             "items": {
-              "enum": [
-                "dairy",
-                "egg",
-                "fish",
-                "shellfish",
-                "tree_nuts",
-                "peanuts",
-                "wheat",
-                "soy",
-                "sesame"
-              ],
+              "enum": ["dairy", "egg", "fish", "shellfish", "tree_nuts", "peanuts", "wheat", "soy", "sesame"],
               "type": "string",
               "x-struct": null,
               "x-validate": null
@@ -6805,10 +6093,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "name",
-          "servings_count"
-        ],
+        "required": ["name", "servings_count"],
         "title": "RecipeRequest",
         "type": "object",
         "x-struct": null,
@@ -6860,11 +6145,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data",
-          "count",
-          "summary"
-        ],
+        "required": ["data", "count", "summary"],
         "title": "ProspectListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ProspectListResponse",
@@ -6930,15 +6211,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "monday",
-          "tuesday",
-          "wednesday",
-          "thursday",
-          "friday",
-          "saturday",
-          "sunday"
-        ],
+        "required": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
         "title": "NutritionWeekScheduleInput",
         "type": "object",
         "x-struct": null,
@@ -6951,9 +6224,7 @@
             "$ref": "#/components/schemas/Food"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "FoodResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.FoodResponse",
@@ -6973,19 +6244,13 @@
             "x-validate": null
           },
           "type": {
-            "enum": [
-              "email_confirmation",
-              "authentication"
-            ],
+            "enum": ["email_confirmation", "authentication"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           }
         },
-        "required": [
-          "email",
-          "type"
-        ],
+        "required": ["email", "type"],
         "title": "OtpRequest",
         "type": "object",
         "x-struct": null,
@@ -7012,10 +6277,7 @@
             "x-validate": null
           },
           "kind": {
-            "enum": [
-              "gram",
-              "serving"
-            ],
+            "enum": ["gram", "serving"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -7033,13 +6295,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "kind",
-          "grams",
-          "amount",
-          "unit",
-          "label"
-        ],
+        "required": ["kind", "grams", "amount", "unit", "label"],
         "title": "NutritionPortion",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionPortion",
@@ -7060,22 +6316,13 @@
             "x-validate": null
           },
           "priority": {
-            "enum": [
-              "high",
-              "normal"
-            ],
+            "enum": ["high", "normal"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           },
           "status": {
-            "enum": [
-              "assigned",
-              "in_progress",
-              "completed",
-              "dismissed",
-              "missed"
-            ],
+            "enum": ["assigned", "in_progress", "completed", "dismissed", "missed"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -7126,15 +6373,7 @@
           },
           "weekdays": {
             "items": {
-              "enum": [
-                "monday",
-                "tuesday",
-                "wednesday",
-                "thursday",
-                "friday",
-                "saturday",
-                "sunday"
-              ],
+              "enum": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
               "type": "string",
               "x-struct": null,
               "x-validate": null
@@ -7187,10 +6426,7 @@
             "x-validate": null
           },
           "kind": {
-            "enum": [
-              "gram",
-              "serving"
-            ],
+            "enum": ["gram", "serving"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -7208,9 +6444,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "kind"
-        ],
+        "required": ["kind"],
         "title": "NutritionPortionInput",
         "type": "object",
         "x-struct": null,
@@ -7238,11 +6472,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "first_name",
-          "last_name"
-        ],
+        "required": ["id", "first_name", "last_name"],
         "title": "NutritionPlanClient",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionPlanClient",
@@ -7277,10 +6507,7 @@
             "x-validate": null
           },
           "goal_weight_unit": {
-            "enum": [
-              "kg",
-              "lbs"
-            ],
+            "enum": ["kg", "lbs"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -7299,11 +6526,7 @@
             "x-validate": null
           },
           "inactive_reason": {
-            "enum": [
-              "manual",
-              "subscription_expired",
-              "awaiting_seat"
-            ],
+            "enum": ["manual", "subscription_expired", "awaiting_seat"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -7379,20 +6602,13 @@
             "$ref": "#/components/schemas/RequiredServices"
           },
           "stage": {
-            "enum": [
-              "onboarding",
-              "coaching"
-            ],
+            "enum": ["onboarding", "coaching"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           },
           "status": {
-            "enum": [
-              "active",
-              "pending",
-              "inactive"
-            ],
+            "enum": ["active", "pending", "inactive"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -7464,9 +6680,7 @@
             "x-validate": null
           },
           "code": {
-            "enum": [
-              "missed_check_in"
-            ],
+            "enum": ["missed_check_in"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -7478,11 +6692,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "code",
-          "assignment_id",
-          "due_on"
-        ],
+        "required": ["code", "assignment_id", "due_on"],
         "title": "MissedCheckInReason",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.MissedCheckInReason",
@@ -7506,10 +6716,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data",
-          "count"
-        ],
+        "required": ["data", "count"],
         "title": "RecipeListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.RecipeListResponse",
@@ -7540,11 +6747,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "invitation_token",
-          "email",
-          "otp"
-        ],
+        "required": ["invitation_token", "email", "otp"],
         "title": "TrainerAcceptInviteVerifyRequest",
         "type": "object",
         "x-struct": null,
@@ -7570,11 +6773,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "first_name",
-          "last_name"
-        ],
+        "required": ["id", "first_name", "last_name"],
         "title": "TrainingPlanClient",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingPlanClient",
@@ -7598,10 +6797,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data",
-          "count"
-        ],
+        "required": ["data", "count"],
         "title": "WorkbenchCheckInQueueResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchCheckInQueueResponse",
@@ -7625,10 +6821,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data",
-          "count"
-        ],
+        "required": ["data", "count"],
         "title": "WorkbenchExpiringQueueResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchExpiringQueueResponse",
@@ -7652,10 +6845,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data",
-          "count"
-        ],
+        "required": ["data", "count"],
         "title": "WorkbenchProgrammingQueueResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchProgrammingQueueResponse",
@@ -7674,9 +6864,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "form_template_id"
-        ],
+        "required": ["form_template_id"],
         "title": "ClientProfileFormAssignmentRequest",
         "type": "object",
         "x-struct": null,
@@ -7689,9 +6877,7 @@
             "$ref": "#/components/schemas/RequiredServicesNonEmpty"
           }
         },
-        "required": [
-          "services"
-        ],
+        "required": ["services"],
         "title": "ClientProfileServiceTypeAnswer",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileServiceTypeAnswer",
@@ -7751,10 +6937,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "meal_slot",
-          "portion"
-        ],
+        "required": ["meal_slot", "portion"],
         "title": "DiaryAddExtraRequest",
         "type": "object",
         "x-struct": null,
@@ -7769,13 +6952,7 @@
             "x-validate": null
           },
           "content_type": {
-            "enum": [
-              "image/jpeg",
-              "image/png",
-              "image/webp",
-              "video/mp4",
-              "video/webm"
-            ],
+            "enum": ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -7787,10 +6964,7 @@
             "x-validate": null
           },
           "kind": {
-            "enum": [
-              "image",
-              "video"
-            ],
+            "enum": ["image", "video"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -7856,12 +7030,7 @@
         },
         "properties": {
           "distance_unit": {
-            "enum": [
-              "meters",
-              "km",
-              "miles",
-              "none"
-            ],
+            "enum": ["meters", "km", "miles", "none"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -7881,12 +7050,7 @@
             "x-validate": null
           },
           "load_unit": {
-            "enum": [
-              "kg",
-              "lbs",
-              "bodyweight",
-              "none"
-            ],
+            "enum": ["kg", "lbs", "bodyweight", "none"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -7926,11 +7090,7 @@
             "x-validate": null
           },
           "set_type": {
-            "enum": [
-              "working",
-              "warmup",
-              "dropset"
-            ],
+            "enum": ["working", "warmup", "dropset"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -7960,10 +7120,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data",
-          "count"
-        ],
+        "required": ["data", "count"],
         "title": "WorkbenchOnboardingQueueResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchOnboardingQueueResponse",
@@ -7973,12 +7130,7 @@
         "additionalProperties": false,
         "properties": {
           "distance_unit": {
-            "enum": [
-              "meters",
-              "km",
-              "miles",
-              "none"
-            ],
+            "enum": ["meters", "km", "miles", "none"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -7998,12 +7150,7 @@
             "x-validate": null
           },
           "load_unit": {
-            "enum": [
-              "kg",
-              "lbs",
-              "bodyweight",
-              "none"
-            ],
+            "enum": ["kg", "lbs", "bodyweight", "none"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -8043,11 +7190,7 @@
             "x-validate": null
           },
           "set_type": {
-            "enum": [
-              "working",
-              "warmup",
-              "dropset"
-            ],
+            "enum": ["working", "warmup", "dropset"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -8085,22 +7228,13 @@
             "x-validate": null
           },
           "content_type": {
-            "enum": [
-              "image/jpeg",
-              "image/png",
-              "image/webp",
-              "video/mp4",
-              "video/webm"
-            ],
+            "enum": ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           }
         },
-        "required": [
-          "content_type",
-          "byte_size"
-        ],
+        "required": ["content_type", "byte_size"],
         "title": "LibraryMediaUploadRequest",
         "type": "object",
         "x-struct": null,
@@ -8132,11 +7266,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "name",
-          "description"
-        ],
+        "required": ["id", "name", "description"],
         "title": "TrainingMuscle",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingMuscle",
@@ -8160,10 +7290,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data",
-          "count"
-        ],
+        "required": ["data", "count"],
         "title": "TrainingSessionListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingSessionListResponse",
@@ -8200,13 +7327,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "access_token",
-          "token_type",
-          "expires_in",
-          "refresh_token",
-          "scope"
-        ],
+        "required": ["access_token", "token_type", "expires_in", "refresh_token", "scope"],
         "title": "AuthTokenResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.AuthTokenResponse",
@@ -8240,12 +7361,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "status",
-          "service",
-          "timestamp",
-          "version"
-        ],
+        "required": ["status", "service", "timestamp", "version"],
         "title": "HealthResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.HealthResponse",
@@ -8279,9 +7395,7 @@
             "$ref": "#/components/schemas/NutritionPortionInput"
           }
         },
-        "required": [
-          "expected_revision"
-        ],
+        "required": ["expected_revision"],
         "title": "DiaryUpdateEntryRequest",
         "type": "object",
         "x-struct": null,
@@ -8297,17 +7411,7 @@
         "properties": {
           "allergens": {
             "items": {
-              "enum": [
-                "dairy",
-                "egg",
-                "fish",
-                "shellfish",
-                "tree_nuts",
-                "peanuts",
-                "wheat",
-                "soy",
-                "sesame"
-              ],
+              "enum": ["dairy", "egg", "fish", "shellfish", "tree_nuts", "peanuts", "wheat", "soy", "sesame"],
               "type": "string",
               "x-struct": null,
               "x-validate": null
@@ -8384,9 +7488,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "expected_revision"
-        ],
+        "required": ["expected_revision"],
         "title": "RecipeUpdateRequest",
         "type": "object",
         "x-struct": null,
@@ -8399,9 +7501,7 @@
             "$ref": "#/components/schemas/Client"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "ClientResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientResponse",
@@ -8436,12 +7536,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "form_assignment_id",
-          "submitted_at",
-          "reviewed_at"
-        ],
+        "required": ["id", "form_assignment_id", "submitted_at", "reviewed_at"],
         "title": "WorkbenchCheckInSubmission",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchCheckInSubmission",
@@ -8465,10 +7560,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data",
-          "count"
-        ],
+        "required": ["data", "count"],
         "title": "CoachClientTrainingPlanListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.CoachClientTrainingPlanListResponse",
@@ -8513,11 +7605,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "name",
-          "position",
-          "slots"
-        ],
+        "required": ["name", "position", "slots"],
         "title": "NutritionDayPatternInput",
         "type": "object",
         "x-struct": null,
@@ -8541,10 +7629,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data",
-          "count"
-        ],
+        "required": ["data", "count"],
         "title": "NutritionPlanListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionPlanListResponse",
@@ -8561,10 +7646,7 @@
             "x-validate": null
           },
           "dashboard_setup_hidden_reason": {
-            "enum": [
-              "dismissed",
-              "completed"
-            ],
+            "enum": ["dismissed", "completed"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -8627,11 +7709,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "form_assignment_id",
-          "title",
-          "submitted_at"
-        ],
+        "required": ["form_assignment_id", "title", "submitted_at"],
         "title": "FormSubmissionEmbedSnapshot",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.FormSubmissionEmbedSnapshot",
@@ -8670,9 +7748,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "title": "LandingProgramInput",
         "type": "object",
         "x-struct": null,
@@ -8701,10 +7777,7 @@
             "x-validate": null
           },
           "kind": {
-            "enum": [
-              "food",
-              "recipe"
-            ],
+            "enum": ["food", "recipe"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -8856,11 +7929,7 @@
             "x-validate": null
           },
           "set_type": {
-            "enum": [
-              "working",
-              "warmup",
-              "dropset"
-            ],
+            "enum": ["working", "warmup", "dropset"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -8925,11 +7994,7 @@
             "$ref": "#/components/schemas/ClientSummary"
           }
         },
-        "required": [
-          "data",
-          "count",
-          "summary"
-        ],
+        "required": ["data", "count", "summary"],
         "title": "ClientListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientListResponse",
@@ -8960,11 +8025,7 @@
             "$ref": "#/components/schemas/BillingSummary"
           }
         },
-        "required": [
-          "error_code",
-          "error_message",
-          "seat_summary"
-        ],
+        "required": ["error_code", "error_message", "seat_summary"],
         "title": "SeatLimitError",
         "type": "object",
         "x-struct": null,
@@ -8977,9 +8038,7 @@
             "$ref": "#/components/schemas/TrainingPerformedSet"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "TrainingPerformedSetResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingPerformedSetResponse",
@@ -8998,19 +8057,13 @@
             "$ref": "#/components/schemas/FormSubmissionEmbedSnapshot"
           },
           "type": {
-            "enum": [
-              "form_submission"
-            ],
+            "enum": ["form_submission"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           }
         },
-        "required": [
-          "type",
-          "id",
-          "snapshot"
-        ],
+        "required": ["type", "id", "snapshot"],
         "title": "ChatMessageEmbed",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ChatMessageEmbed",
@@ -9125,9 +8178,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "title": "NutritionPlanCreateRequest",
         "type": "object",
         "x-struct": null,
@@ -9220,15 +8271,7 @@
           },
           "weekdays": {
             "items": {
-              "enum": [
-                "monday",
-                "tuesday",
-                "wednesday",
-                "thursday",
-                "friday",
-                "saturday",
-                "sunday"
-              ],
+              "enum": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
               "type": "string",
               "x-struct": null,
               "x-validate": null
@@ -9238,16 +8281,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "name",
-          "position",
-          "weekdays",
-          "slots",
-          "nutrition_plan_id",
-          "inserted_at",
-          "updated_at"
-        ],
+        "required": ["id", "name", "position", "weekdays", "slots", "nutrition_plan_id", "inserted_at", "updated_at"],
         "title": "NutritionDayPattern",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayPattern",
@@ -9306,15 +8340,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "monday",
-          "tuesday",
-          "wednesday",
-          "thursday",
-          "friday",
-          "saturday",
-          "sunday"
-        ],
+        "required": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
         "title": "TrainingSchedule",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingSchedule",
@@ -9338,10 +8364,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data",
-          "count"
-        ],
+        "required": ["data", "count"],
         "title": "ConversationListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ConversationListResponse",
@@ -9351,9 +8374,7 @@
         "additionalProperties": false,
         "properties": {
           "error_code": {
-            "enum": [
-              "stale_revision"
-            ],
+            "enum": ["stale_revision"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -9368,9 +8389,7 @@
                 "x-validate": null
               }
             },
-            "required": [
-              "current_revision"
-            ],
+            "required": ["current_revision"],
             "type": "object",
             "x-struct": null,
             "x-validate": null
@@ -9381,11 +8400,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "error_code",
-          "error_message",
-          "error_detail"
-        ],
+        "required": ["error_code", "error_message", "error_detail"],
         "title": "StaleRevisionError",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.StaleRevisionError",
@@ -9398,9 +8413,7 @@
             "$ref": "#/components/schemas/ClientTrainingPlan"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "ClientTrainingPlanResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientTrainingPlanResponse",
@@ -9414,10 +8427,7 @@
         },
         "properties": {
           "queue": {
-            "enum": [
-              "quiet",
-              "expiring"
-            ],
+            "enum": ["quiet", "expiring"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -9429,10 +8439,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "queue",
-          "snoozed_until"
-        ],
+        "required": ["queue", "snoozed_until"],
         "title": "QueueSnoozeRequest",
         "type": "object",
         "x-struct": null,
@@ -9456,10 +8463,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data",
-          "count"
-        ],
+        "required": ["data", "count"],
         "title": "ClientProfileReviewQueueListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileReviewQueueListResponse",
@@ -9479,9 +8483,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "ClientTrainingCoverageResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientTrainingCoverageResponse",
@@ -9527,14 +8529,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "as_planned",
-          "swapped",
-          "added",
-          "recorded",
-          "pending",
-          "skipped"
-        ],
+        "required": ["as_planned", "swapped", "added", "recorded", "pending", "skipped"],
         "title": "NutritionDaySummaryCounts",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDaySummaryCounts",
@@ -9584,11 +8579,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "name",
-          "position"
-        ],
+        "required": ["id", "name", "position"],
         "title": "LandingProgram",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.LandingProgram",
@@ -9639,12 +8630,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "food_id",
-          "food",
-          "weight_g",
-          "position"
-        ],
+        "required": ["food_id", "food", "weight_g", "position"],
         "title": "RecipeIngredient",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.RecipeIngredient",
@@ -9675,11 +8661,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "invitation_token",
-          "email",
-          "otp"
-        ],
+        "required": ["invitation_token", "email", "otp"],
         "title": "AcceptInviteVerifyRequest",
         "type": "object",
         "x-struct": null,
@@ -9703,10 +8685,7 @@
             "x-validate": null
           },
           "kind": {
-            "enum": [
-              "food",
-              "recipe"
-            ],
+            "enum": ["food", "recipe"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -9736,11 +8715,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "kind",
-          "position",
-          "portion"
-        ],
+        "required": ["kind", "position", "portion"],
         "title": "NutritionMealItemInput",
         "type": "object",
         "x-struct": null,
@@ -9829,31 +8804,19 @@
             "x-validate": null
           },
           "priority": {
-            "enum": [
-              "high",
-              "normal"
-            ],
+            "enum": ["high", "normal"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           },
           "purpose": {
-            "enum": [
-              "intake",
-              "check_in"
-            ],
+            "enum": ["intake", "check_in"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           },
           "status": {
-            "enum": [
-              "assigned",
-              "in_progress",
-              "completed",
-              "dismissed",
-              "missed"
-            ],
+            "enum": ["assigned", "in_progress", "completed", "dismissed", "missed"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -9893,15 +8856,7 @@
         "description": "One weekday in the complete schedule. Omit both workout fields for rest; otherwise use exactly one persisted workout_id or request-local workout_ref.",
         "properties": {
           "weekday": {
-            "enum": [
-              "monday",
-              "tuesday",
-              "wednesday",
-              "thursday",
-              "friday",
-              "saturday",
-              "sunday"
-            ],
+            "enum": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -9920,9 +8875,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "weekday"
-        ],
+        "required": ["weekday"],
         "title": "TrainingPrescriptionScheduleEntry",
         "type": "object",
         "x-struct": null,
@@ -9935,9 +8888,7 @@
             "$ref": "#/components/schemas/ClientProfileFormTemplate"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "ClientProfileFormTemplateResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateResponse",
@@ -9950,9 +8901,7 @@
             "$ref": "#/components/schemas/Conversation"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "ConversationResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ConversationResponse",
@@ -9980,12 +8929,7 @@
             "$ref": "#/components/schemas/WorkbenchCheckInSubmission"
           }
         },
-        "required": [
-          "submission",
-          "client",
-          "assignment",
-          "reasons"
-        ],
+        "required": ["submission", "client", "assignment", "reasons"],
         "title": "WorkbenchCheckInQueueItem",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchCheckInQueueItem",
@@ -10005,43 +8949,22 @@
             "x-validate": null
           },
           "status": {
-            "enum": [
-              "new",
-              "reviewing",
-              "won",
-              "lost"
-            ],
+            "enum": ["new", "reviewing", "won", "lost"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           }
         },
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "ProspectUpdateRequest",
         "type": "object",
         "x-struct": null,
         "x-validate": null
       },
       "RequiredServicesNonEmpty": {
-        "enum": [
-          [
-            "training"
-          ],
-          [
-            "nutrition"
-          ],
-          [
-            "training",
-            "nutrition"
-          ]
-        ],
+        "enum": [["training"], ["nutrition"], ["training", "nutrition"]],
         "items": {
-          "enum": [
-            "training",
-            "nutrition"
-          ],
+          "enum": ["training", "nutrition"],
           "type": "string",
           "x-struct": null,
           "x-validate": null
@@ -10072,10 +8995,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data",
-          "count"
-        ],
+        "required": ["data", "count"],
         "title": "WorkbenchQuietQueueResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchQuietQueueResponse",
@@ -10159,9 +9079,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "expected_revision"
-        ],
+        "required": ["expected_revision"],
         "title": "NutritionPlanUpdateRequest",
         "type": "object",
         "x-struct": null,
@@ -10202,12 +9120,7 @@
         },
         "properties": {
           "distance_unit": {
-            "enum": [
-              "meters",
-              "km",
-              "miles",
-              "none"
-            ],
+            "enum": ["meters", "km", "miles", "none"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -10241,12 +9154,7 @@
             "x-validate": null
           },
           "load_unit": {
-            "enum": [
-              "kg",
-              "lbs",
-              "bodyweight",
-              "none"
-            ],
+            "enum": ["kg", "lbs", "bodyweight", "none"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -10280,11 +9188,7 @@
             "x-validate": null
           },
           "set_type": {
-            "enum": [
-              "working",
-              "warmup",
-              "dropset"
-            ],
+            "enum": ["working", "warmup", "dropset"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -10320,10 +9224,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "client",
-          "reasons"
-        ],
+        "required": ["client", "reasons"],
         "title": "WorkbenchQuietQueueItem",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchQuietQueueItem",
@@ -10343,9 +9244,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "expected_revision"
-        ],
+        "required": ["expected_revision"],
         "title": "NutritionPlanRevisionRequest",
         "type": "object",
         "x-struct": null,
@@ -10374,11 +9273,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "name",
-          "exercises"
-        ],
+        "required": ["id", "name", "exercises"],
         "title": "TrainingSessionSnapshotWorkout",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingSessionSnapshotWorkout",
@@ -10391,9 +9286,7 @@
             "$ref": "#/components/schemas/AttachmentUpload"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "AttachmentUploadResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.AttachmentUploadResponse",
@@ -10409,9 +9302,7 @@
             "x-validate": null
           },
           "code": {
-            "enum": [
-              "intake_overdue"
-            ],
+            "enum": ["intake_overdue"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -10429,12 +9320,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "code",
-          "assignment_id",
-          "due_on",
-          "form_title"
-        ],
+        "required": ["code", "assignment_id", "due_on", "form_title"],
         "title": "IntakeOverdueReason",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.IntakeOverdueReason",
@@ -10452,9 +9338,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "TrainingMuscleListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingMuscleListResponse",
@@ -10490,9 +9374,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "expected_revision"
-        ],
+        "required": ["expected_revision"],
         "title": "NutritionPlanAssignRequest",
         "type": "object",
         "x-struct": null,
@@ -10549,14 +9431,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "ref",
-          "position",
-          "exercise_id",
-          "exercise_name",
-          "tracking_type",
-          "sets"
-        ],
+        "required": ["ref", "position", "exercise_id", "exercise_name", "tracking_type", "sets"],
         "title": "TrainingSessionSnapshotExercise",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingSessionSnapshotExercise",
@@ -10608,9 +9483,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "AttachmentDownloadsResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.AttachmentDownloadsResponse",
@@ -10708,10 +9581,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data",
-          "has_more"
-        ],
+        "required": ["data", "has_more"],
         "title": "ChatMessagesResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ChatMessagesResponse",
@@ -10732,10 +9602,7 @@
             "x-validate": null
           },
           "default_weight_unit": {
-            "enum": [
-              "kg",
-              "lbs"
-            ],
+            "enum": ["kg", "lbs"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -10753,10 +9620,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "name",
-          "handle"
-        ],
+        "required": ["name", "handle"],
         "title": "BusinessRequest",
         "type": "object",
         "x-struct": null,
@@ -10766,9 +9630,7 @@
         "additionalProperties": false,
         "properties": {
           "code": {
-            "enum": [
-              "service_coverage_ending_soon"
-            ],
+            "enum": ["service_coverage_ending_soon"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -10786,21 +9648,13 @@
             "x-validate": null
           },
           "service": {
-            "enum": [
-              "training",
-              "nutrition"
-            ],
+            "enum": ["training", "nutrition"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           }
         },
-        "required": [
-          "code",
-          "service",
-          "coverage_ends_on",
-          "first_uncovered_on"
-        ],
+        "required": ["code", "service", "coverage_ends_on", "first_uncovered_on"],
         "title": "ServiceCoverageEndingSoonReason",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ServiceCoverageEndingSoonReason",
@@ -10810,27 +9664,19 @@
         "additionalProperties": false,
         "properties": {
           "code": {
-            "enum": [
-              "service_never_programmed"
-            ],
+            "enum": ["service_never_programmed"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           },
           "service": {
-            "enum": [
-              "training",
-              "nutrition"
-            ],
+            "enum": ["training", "nutrition"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           }
         },
-        "required": [
-          "code",
-          "service"
-        ],
+        "required": ["code", "service"],
         "title": "ServiceNeverProgrammedReason",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ServiceNeverProgrammedReason",
@@ -10860,24 +9706,13 @@
             "x-validate": null
           },
           "status": {
-            "enum": [
-              "as_planned",
-              "swapped",
-              "pending",
-              "skipped",
-              "added",
-              "recorded"
-            ],
+            "enum": ["as_planned", "swapped", "pending", "skipped", "added", "recorded"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           }
         },
-        "required": [
-          "status",
-          "planned",
-          "entry"
-        ],
+        "required": ["status", "planned", "entry"],
         "title": "NutritionDayRow",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayRow",
@@ -10922,11 +9757,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "name",
-          "position",
-          "prescribed_exercises"
-        ],
+        "required": ["name", "position", "prescribed_exercises"],
         "title": "TrainingPrescriptionWorkoutInput",
         "type": "object",
         "x-struct": null,
@@ -10934,12 +9765,7 @@
       },
       "FoodCategoryListResponse": {
         "example": {
-          "data": [
-            "Dairy",
-            "Fruit",
-            "Grains",
-            "Poultry"
-          ]
+          "data": ["Dairy", "Fruit", "Grains", "Poultry"]
         },
         "properties": {
           "data": {
@@ -10953,9 +9779,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "FoodCategoryListResponse",
         "type": "object",
         "x-struct": null,
@@ -10976,9 +9800,7 @@
                 "x-validate": null
               }
             },
-            "required": [
-              "token"
-            ],
+            "required": ["token"],
             "type": "object",
             "x-struct": null,
             "x-validate": null
@@ -10998,10 +9820,7 @@
                 "x-validate": null
               }
             },
-            "required": [
-              "email",
-              "otp"
-            ],
+            "required": ["email", "otp"],
             "type": "object",
             "x-struct": null,
             "x-validate": null
@@ -11073,13 +9892,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "email",
-          "confirmation_sent_at",
-          "inserted_at",
-          "updated_at"
-        ],
+        "required": ["id", "email", "confirmation_sent_at", "inserted_at", "updated_at"],
         "title": "SignupResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.SignupResponse",
@@ -11172,22 +9985,13 @@
             "x-validate": null
           },
           "kind": {
-            "enum": [
-              "template",
-              "client_plan"
-            ],
+            "enum": ["template", "client_plan"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           },
           "lifecycle": {
-            "enum": [
-              "incomplete",
-              "upcoming",
-              "current",
-              "ended",
-              "archived"
-            ],
+            "enum": ["incomplete", "upcoming", "current", "ended", "archived"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -11222,10 +10026,7 @@
             "x-validate": null
           },
           "status": {
-            "enum": [
-              "active",
-              "archived"
-            ],
+            "enum": ["active", "archived"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -11286,10 +10087,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "key_id",
-          "subscription_id"
-        ],
+        "required": ["key_id", "subscription_id"],
         "title": "BillingCheckoutPayload",
         "type": "object",
         "x-struct": null,
@@ -11326,10 +10124,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "meal_slot",
-          "options"
-        ],
+        "required": ["meal_slot", "options"],
         "title": "NutritionDayPatternSlotInput",
         "type": "object",
         "x-struct": null,
@@ -11342,9 +10137,7 @@
             "$ref": "#/components/schemas/PublicLandingPage"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "PublicLandingPageResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.PublicLandingPageResponse",
@@ -11389,14 +10182,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "calories",
-          "protein",
-          "carbohydrates",
-          "fat",
-          "fiber",
-          "complete"
-        ],
+        "required": ["calories", "protein", "carbohydrates", "fat", "fiber", "complete"],
         "title": "NutrientTotals",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutrientTotals",
@@ -11436,13 +10222,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "position",
-          "nutrition_meal_id",
-          "inserted_at",
-          "updated_at"
-        ],
+        "required": ["id", "position", "nutrition_meal_id", "inserted_at", "updated_at"],
         "title": "NutritionMealOption",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionMealOption",
@@ -11464,10 +10244,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "client",
-          "reasons"
-        ],
+        "required": ["client", "reasons"],
         "title": "WorkbenchOnboardingQueueItem",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchOnboardingQueueItem",
@@ -11505,11 +10282,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "entries",
-          "goal",
-          "summary"
-        ],
+        "required": ["entries", "goal", "summary"],
         "title": "WeightEntryListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WeightEntryListResponse",
@@ -11522,9 +10295,7 @@
             "$ref": "#/components/schemas/ClientProfile"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "ClientProfileResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileResponse",
@@ -11557,10 +10328,7 @@
             "x-validate": null
           },
           "purpose": {
-            "enum": [
-              "intake",
-              "check_in"
-            ],
+            "enum": ["intake", "check_in"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -11623,11 +10391,7 @@
                             "x-validate": null
                           }
                         },
-                        "required": [
-                          "id",
-                          "label",
-                          "type"
-                        ],
+                        "required": ["id", "label", "type"],
                         "type": "object",
                         "x-struct": null,
                         "x-validate": null
@@ -11651,19 +10415,13 @@
                             "x-validate": null
                           },
                           "type": {
-                            "enum": [
-                              "service_type"
-                            ],
+                            "enum": ["service_type"],
                             "type": "string",
                             "x-struct": null,
                             "x-validate": null
                           }
                         },
-                        "required": [
-                          "id",
-                          "label",
-                          "type"
-                        ],
+                        "required": ["id", "label", "type"],
                         "type": "object",
                         "x-struct": null,
                         "x-validate": null
@@ -11682,9 +10440,7 @@
                   "x-validate": null
                 }
               },
-              "required": [
-                "questions"
-              ],
+              "required": ["questions"],
               "type": "object",
               "x-struct": null,
               "x-validate": null
@@ -11694,10 +10450,7 @@
             "x-validate": null
           },
           "status": {
-            "enum": [
-              "active",
-              "archived"
-            ],
+            "enum": ["active", "archived"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -11709,16 +10462,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "name",
-          "purpose",
-          "sections",
-          "status",
-          "is_default_intake",
-          "inserted_at",
-          "updated_at"
-        ],
+        "required": ["id", "name", "purpose", "sections", "status", "is_default_intake", "inserted_at", "updated_at"],
         "title": "ClientProfileFormTemplate",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileFormTemplate",
@@ -11767,9 +10511,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "expected_revision"
-        ],
+        "required": ["expected_revision"],
         "title": "TrainingPlanUpdateRequest",
         "type": "object",
         "x-struct": null,
@@ -11796,10 +10538,7 @@
             "x-validate": null
           },
           "kind": {
-            "enum": [
-              "image",
-              "video"
-            ],
+            "enum": ["image", "video"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -11812,13 +10551,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "kind",
-          "content_type",
-          "byte_size",
-          "url"
-        ],
+        "required": ["id", "kind", "content_type", "byte_size", "url"],
         "title": "LibraryMedia",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.LibraryMedia",
@@ -11847,10 +10580,7 @@
             "x-validate": null
           },
           "kind": {
-            "enum": [
-              "food",
-              "recipe"
-            ],
+            "enum": ["food", "recipe"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -11943,10 +10673,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "meal_slot",
-          "meal_item_id"
-        ],
+        "required": ["meal_slot", "meal_item_id"],
         "title": "DiaryLogPlannedItemRequest",
         "type": "object",
         "x-struct": null,
@@ -11961,9 +10688,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "message"
-        ],
+        "required": ["message"],
         "title": "MessageResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.MessageResponse",
@@ -11976,9 +10701,7 @@
             "$ref": "#/components/schemas/LibraryMediaUpload"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "LibraryMediaUploadResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.LibraryMediaUploadResponse",
@@ -12097,10 +10820,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "content_type",
-          "byte_size"
-        ],
+        "required": ["content_type", "byte_size"],
         "title": "AttachmentUploadRequest",
         "type": "object",
         "x-struct": null,
@@ -12142,10 +10862,7 @@
             "x-validate": null
           },
           "kind": {
-            "enum": [
-              "planned",
-              "freestyle"
-            ],
+            "enum": ["planned", "freestyle"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -12210,11 +10927,7 @@
             "x-validate": null
           },
           "state": {
-            "enum": [
-              "active",
-              "completed",
-              "discarded"
-            ],
+            "enum": ["active", "completed", "discarded"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -12250,9 +10963,7 @@
         "additionalProperties": false,
         "properties": {
           "error_code": {
-            "enum": [
-              "stale_revision"
-            ],
+            "enum": ["stale_revision"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -12267,9 +10978,7 @@
                 "x-validate": null
               }
             },
-            "required": [
-              "current_revision"
-            ],
+            "required": ["current_revision"],
             "type": "object",
             "x-struct": null,
             "x-validate": null
@@ -12280,11 +10989,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "error_code",
-          "error_message",
-          "error_detail"
-        ],
+        "required": ["error_code", "error_message", "error_detail"],
         "title": "TrainingPlanStaleRevisionError",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingPlanStaleRevisionError",
@@ -12297,9 +11002,7 @@
             "$ref": "#/components/schemas/BillingSummary"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "BillingResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.BillingResponse",
@@ -12392,10 +11095,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "client",
-          "reasons"
-        ],
+        "required": ["client", "reasons"],
         "title": "WorkbenchExpiringQueueItem",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchExpiringQueueItem",
@@ -12478,12 +11178,7 @@
             "x-validate": null
           },
           "status": {
-            "enum": [
-              "new",
-              "reviewing",
-              "won",
-              "lost"
-            ],
+            "enum": ["new", "reviewing", "won", "lost"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -12495,12 +11190,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "name",
-          "status",
-          "answers"
-        ],
+        "required": ["id", "name", "status", "answers"],
         "title": "Prospect",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.Prospect",
@@ -12533,10 +11223,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "status"
-        ],
+        "required": ["id", "status"],
         "title": "ProspectClient",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ProspectClient",
@@ -12559,15 +11246,7 @@
               "position": 0,
               "slots": [],
               "updated_at": "2026-05-30T12:00:00Z",
-              "weekdays": [
-                "monday",
-                "tuesday",
-                "wednesday",
-                "thursday",
-                "friday",
-                "saturday",
-                "sunday"
-              ]
+              "weekdays": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
             }
           ],
           "description": "Reusable cutting Template.",
@@ -12670,22 +11349,13 @@
             "x-validate": null
           },
           "kind": {
-            "enum": [
-              "template",
-              "client_plan"
-            ],
+            "enum": ["template", "client_plan"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
           },
           "lifecycle": {
-            "enum": [
-              "incomplete",
-              "upcoming",
-              "current",
-              "ended",
-              "archived"
-            ],
+            "enum": ["incomplete", "upcoming", "current", "ended", "archived"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -12728,10 +11398,7 @@
             "x-validate": null
           },
           "status": {
-            "enum": [
-              "active",
-              "archived"
-            ],
+            "enum": ["active", "archived"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -12812,19 +11479,14 @@
         },
         "properties": {
           "dashboard_setup_hidden_reason": {
-            "enum": [
-              "dismissed",
-              "completed"
-            ],
+            "enum": ["dismissed", "completed"],
             "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null
           }
         },
-        "required": [
-          "dashboard_setup_hidden_reason"
-        ],
+        "required": ["dashboard_setup_hidden_reason"],
         "title": "DashboardSetupUpdateRequest",
         "type": "object",
         "x-struct": null,
@@ -12834,10 +11496,7 @@
         "additionalProperties": false,
         "properties": {
           "action": {
-            "enum": [
-              "checkout",
-              "updated"
-            ],
+            "enum": ["checkout", "updated"],
             "example": "checkout",
             "type": "string",
             "x-struct": null,
@@ -12857,11 +11516,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "action",
-          "checkout",
-          "billing"
-        ],
+        "required": ["action", "checkout", "billing"],
         "title": "BillingCheckoutResult",
         "type": "object",
         "x-struct": null,
@@ -12874,9 +11529,7 @@
             "$ref": "#/components/schemas/CoachProfile"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "CoachProfileResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.CoachProfileResponse",
@@ -12889,9 +11542,7 @@
             "$ref": "#/components/schemas/WeightEntry"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "WeightEntryResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WeightEntryResponse",
@@ -12904,9 +11555,7 @@
             "$ref": "#/components/schemas/Recipe"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "RecipeResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.RecipeResponse",
@@ -12931,10 +11580,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "invitation_token",
-          "email"
-        ],
+        "required": ["invitation_token", "email"],
         "title": "TrainerAcceptInviteRequest",
         "type": "object",
         "x-struct": null,
@@ -12971,10 +11617,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "meal_slot",
-          "options"
-        ],
+        "required": ["meal_slot", "options"],
         "title": "NutritionDayPatternSlot",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayPatternSlot",
@@ -13013,28 +11656,19 @@
                 "x-validate": null
               },
               "state": {
-                "enum": [
-                  "pending",
-                  "used",
-                  "expired",
-                  "invalid"
-                ],
+                "enum": ["pending", "used", "expired", "invalid"],
                 "type": "string",
                 "x-struct": null,
                 "x-validate": null
               }
             },
-            "required": [
-              "state"
-            ],
+            "required": ["state"],
             "type": "object",
             "x-struct": null,
             "x-validate": null
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "InvitationPreviewResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.InvitationPreviewResponse",
@@ -13062,11 +11696,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "all",
-          "training",
-          "nutrition"
-        ],
+        "required": ["all", "training", "nutrition"],
         "title": "WorkbenchProgrammingCounts",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WorkbenchProgrammingCounts",
@@ -13114,15 +11744,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "id",
-          "first_name",
-          "last_name",
-          "email",
-          "phone",
-          "is_owner",
-          "business"
-        ],
+        "required": ["id", "first_name", "last_name", "email", "phone", "is_owner", "business"],
         "title": "CoachProfile",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.CoachProfile",
@@ -13141,9 +11763,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "coach_id"
-        ],
+        "required": ["coach_id"],
         "title": "ReassignClientRequest",
         "type": "object",
         "x-struct": null,
@@ -13161,9 +11781,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "ClientProfileFormTemplateListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateListResponse",
@@ -13289,11 +11907,7 @@
                             "x-validate": null
                           }
                         },
-                        "required": [
-                          "id",
-                          "label",
-                          "type"
-                        ],
+                        "required": ["id", "label", "type"],
                         "type": "object",
                         "x-struct": null,
                         "x-validate": null
@@ -13317,19 +11931,13 @@
                             "x-validate": null
                           },
                           "type": {
-                            "enum": [
-                              "service_type"
-                            ],
+                            "enum": ["service_type"],
                             "type": "string",
                             "x-struct": null,
                             "x-validate": null
                           }
                         },
-                        "required": [
-                          "id",
-                          "label",
-                          "type"
-                        ],
+                        "required": ["id", "label", "type"],
                         "type": "object",
                         "x-struct": null,
                         "x-validate": null
@@ -13348,9 +11956,7 @@
                   "x-validate": null
                 }
               },
-              "required": [
-                "questions"
-              ],
+              "required": ["questions"],
               "type": "object",
               "x-struct": null,
               "x-validate": null
@@ -13380,11 +11986,7 @@
             "x-validate": null
           },
           "submitted_by_type": {
-            "enum": [
-              "coach",
-              "client",
-              "system"
-            ],
+            "enum": ["coach", "client", "system"],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -13421,9 +12023,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "title": "LandingPageResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.LandingPageResponse",
@@ -13447,9 +12047,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "attachment_ids"
-        ],
+        "required": ["attachment_ids"],
         "title": "AttachmentDownloadRequest",
         "type": "object",
         "x-struct": null,
@@ -13474,10 +12072,7 @@
             "x-validate": null
           }
         },
-        "required": [
-          "invitation_token",
-          "email"
-        ],
+        "required": ["invitation_token", "email"],
         "title": "AcceptInviteRequest",
         "type": "object",
         "x-struct": null,
@@ -13576,9 +12171,7 @@
           }
         ],
         "summary": "List Training Templates",
-        "tags": [
-          "coach training plans"
-        ]
+        "tags": ["coach training plans"]
       },
       "post": {
         "callbacks": {},
@@ -13634,9 +12227,7 @@
           }
         ],
         "summary": "Create a Training Template",
-        "tags": [
-          "coach training plans"
-        ]
+        "tags": ["coach training plans"]
       }
     },
     "/v1/client/nutrition-days/{date}/replacements": {
@@ -13728,9 +12319,7 @@
           }
         ],
         "summary": "Replace a planned fulfilment with another visible Food or Recipe",
-        "tags": [
-          "client nutrition days"
-        ]
+        "tags": ["client nutrition days"]
       }
     },
     "/v1/coach/check-in-schedules/{id}": {
@@ -13781,9 +12370,7 @@
           }
         ],
         "summary": "Delete unused check-in schedule",
-        "tags": [
-          "coach check-in schedules"
-        ]
+        "tags": ["coach check-in schedules"]
       },
       "patch": {
         "callbacks": {},
@@ -13850,9 +12437,7 @@
           }
         ],
         "summary": "Update check-in schedule",
-        "tags": [
-          "coach check-in schedules"
-        ]
+        "tags": ["coach check-in schedules"]
       }
     },
     "/v1/coach/clients/{id}": {
@@ -13914,9 +12499,7 @@
           }
         ],
         "summary": "Revoke client invitation",
-        "tags": [
-          "coach clients"
-        ]
+        "tags": ["coach clients"]
       },
       "get": {
         "callbacks": {},
@@ -13973,9 +12556,7 @@
           }
         ],
         "summary": "Get client",
-        "tags": [
-          "coach clients"
-        ]
+        "tags": ["coach clients"]
       },
       "patch": {
         "callbacks": {},
@@ -14063,9 +12644,7 @@
           }
         ],
         "summary": "Update client",
-        "tags": [
-          "coach clients"
-        ]
+        "tags": ["coach clients"]
       }
     },
     "/v1/coach/training-plans/{id}/restore": {
@@ -14155,9 +12734,7 @@
           }
         ],
         "summary": "Restore a Training Template or visible Client Plan",
-        "tags": [
-          "coach training plans"
-        ]
+        "tags": ["coach training plans"]
       }
     },
     "/v1/coach/conversations/{id}/mark-handled": {
@@ -14240,9 +12817,7 @@
           }
         ],
         "summary": "Mark the observed client-message sequence handled",
-        "tags": [
-          "coach conversations"
-        ]
+        "tags": ["coach conversations"]
       }
     },
     "/v1/client/form-assignments/{id}/submit": {
@@ -14322,9 +12897,7 @@
           }
         ],
         "summary": "Submit form assignment",
-        "tags": [
-          "client form assignments"
-        ]
+        "tags": ["client form assignments"]
       }
     },
     "/v1/coach/prospects/{id}/enroll": {
@@ -14404,9 +12977,7 @@
           }
         ],
         "summary": "Enroll prospect",
-        "tags": [
-          "coach prospects"
-        ]
+        "tags": ["coach prospects"]
       }
     },
     "/v1/client/training-sessions/{id}/discard": {
@@ -14474,9 +13045,7 @@
           }
         ],
         "summary": "Discard a Training Session",
-        "tags": [
-          "client training sessions"
-        ]
+        "tags": ["client training sessions"]
       }
     },
     "/v1/coach/me": {
@@ -14523,9 +13092,7 @@
           }
         ],
         "summary": "Get coach profile",
-        "tags": [
-          "coach profile"
-        ]
+        "tags": ["coach profile"]
       },
       "patch": {
         "callbacks": {},
@@ -14591,9 +13158,7 @@
           }
         ],
         "summary": "Update coach profile",
-        "tags": [
-          "coach profile"
-        ]
+        "tags": ["coach profile"]
       }
     },
     "/v1/coach/clients/{id}/resend-invite": {
@@ -14662,9 +13227,7 @@
           }
         ],
         "summary": "Resend client invitation",
-        "tags": [
-          "coach clients"
-        ]
+        "tags": ["coach clients"]
       }
     },
     "/v1/coach/team/invite": {
@@ -14732,9 +13295,7 @@
           }
         ],
         "summary": "Invite trainer",
-        "tags": [
-          "coach team"
-        ]
+        "tags": ["coach team"]
       }
     },
     "/v1/coach/clients/{client_id}/training-sessions": {
@@ -14848,9 +13409,7 @@
           }
         ],
         "summary": "List client training sessions",
-        "tags": [
-          "coach training sessions"
-        ]
+        "tags": ["coach training sessions"]
       }
     },
     "/v1/coach/clients/{client_id}/nutrition-days": {
@@ -14974,9 +13533,7 @@
           }
         ],
         "summary": "List client nutrition days",
-        "tags": [
-          "coach nutrition days"
-        ]
+        "tags": ["coach nutrition days"]
       }
     },
     "/v1/client/training-sessions": {
@@ -15069,9 +13626,7 @@
           }
         ],
         "summary": "List client training sessions",
-        "tags": [
-          "client training sessions"
-        ]
+        "tags": ["client training sessions"]
       },
       "post": {
         "callbacks": {},
@@ -15136,9 +13691,7 @@
           }
         ],
         "summary": "Start a training session",
-        "tags": [
-          "client training sessions"
-        ]
+        "tags": ["client training sessions"]
       }
     },
     "/v1/public/landing-pages/{slug}/applications": {
@@ -15203,9 +13756,7 @@
           }
         },
         "summary": "Submit application",
-        "tags": [
-          "public landing page"
-        ]
+        "tags": ["public landing page"]
       }
     },
     "/v1/coach/clients/{client_id}/training-sessions/{id}": {
@@ -15274,9 +13825,7 @@
           }
         ],
         "summary": "Get client training session",
-        "tags": [
-          "coach training sessions"
-        ]
+        "tags": ["coach training sessions"]
       }
     },
     "/v1/coach/team/{id}/deactivate": {
@@ -15355,9 +13904,7 @@
           }
         ],
         "summary": "Deactivate trainer",
-        "tags": [
-          "coach team"
-        ]
+        "tags": ["coach team"]
       }
     },
     "/v1/coach/clients/{client_id}/training-plans": {
@@ -15404,10 +13951,7 @@
             "name": "status",
             "required": false,
             "schema": {
-              "enum": [
-                "active",
-                "archived"
-              ],
+              "enum": ["active", "archived"],
               "type": "string",
               "x-struct": null,
               "x-validate": null
@@ -15452,9 +13996,7 @@
           }
         ],
         "summary": "List client training plans",
-        "tags": [
-          "coach client plans"
-        ]
+        "tags": ["coach client plans"]
       }
     },
     "/v1/coach/clients/{client_id}/form-assignments": {
@@ -15513,9 +14055,7 @@
           }
         ],
         "summary": "List client form assignments",
-        "tags": [
-          "coach form assignments"
-        ]
+        "tags": ["coach form assignments"]
       },
       "post": {
         "callbacks": {},
@@ -15593,9 +14133,7 @@
           }
         ],
         "summary": "Assign a form template to a client",
-        "tags": [
-          "coach form assignments"
-        ]
+        "tags": ["coach form assignments"]
       }
     },
     "/v1/coach/library-media/uploads": {
@@ -15672,9 +14210,7 @@
           }
         ],
         "summary": "Create a library media upload",
-        "tags": [
-          "coach library media"
-        ]
+        "tags": ["coach library media"]
       }
     },
     "/v1/coach/team/{id}/resend-invite": {
@@ -15753,9 +14289,7 @@
           }
         ],
         "summary": "Resend trainer invitation",
-        "tags": [
-          "coach team"
-        ]
+        "tags": ["coach team"]
       }
     },
     "/v1/auth/invitations/{token}": {
@@ -15789,9 +14323,7 @@
           }
         },
         "summary": "Preview invitation",
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     },
     "/v1/client/training-exercises/{id}": {
@@ -15850,9 +14382,7 @@
           }
         ],
         "summary": "Get client exercise",
-        "tags": [
-          "client exercises"
-        ]
+        "tags": ["client exercises"]
       }
     },
     "/v1/coach/nutrition-plans": {
@@ -15934,9 +14464,7 @@
           }
         ],
         "summary": "List Nutrition Templates",
-        "tags": [
-          "coach nutrition plans"
-        ]
+        "tags": ["coach nutrition plans"]
       },
       "post": {
         "callbacks": {},
@@ -15992,9 +14520,7 @@
           }
         ],
         "summary": "Create a Nutrition Template",
-        "tags": [
-          "coach nutrition plans"
-        ]
+        "tags": ["coach nutrition plans"]
       }
     },
     "/v1/client/nutrition-plans": {
@@ -16031,10 +14557,7 @@
             "name": "status",
             "required": false,
             "schema": {
-              "enum": [
-                "active",
-                "archived"
-              ],
+              "enum": ["active", "archived"],
               "type": "string",
               "x-struct": null,
               "x-validate": null
@@ -16079,9 +14602,7 @@
           }
         ],
         "summary": "List client nutrition plans",
-        "tags": [
-          "client nutrition plans"
-        ]
+        "tags": ["client nutrition plans"]
       }
     },
     "/v1/coach/workbench/queues/onboarding": {
@@ -16140,9 +14661,7 @@
           }
         ],
         "summary": "List onboarding work",
-        "tags": [
-          "coach workbench"
-        ]
+        "tags": ["coach workbench"]
       }
     },
     "/v1/businesses/me": {
@@ -16189,9 +14708,7 @@
           }
         ],
         "summary": "Get current business",
-        "tags": [
-          "businesses"
-        ]
+        "tags": ["businesses"]
       },
       "patch": {
         "callbacks": {},
@@ -16257,9 +14774,7 @@
           }
         ],
         "summary": "Update current business",
-        "tags": [
-          "businesses"
-        ]
+        "tags": ["businesses"]
       }
     },
     "/v1/public/landing-pages/{slug}": {
@@ -16303,9 +14818,7 @@
           }
         },
         "summary": "Get public landing page",
-        "tags": [
-          "public landing page"
-        ]
+        "tags": ["public landing page"]
       }
     },
     "/v1/coach/conversations": {
@@ -16375,9 +14888,7 @@
           }
         ],
         "summary": "List conversations (inbox)",
-        "tags": [
-          "coach conversations"
-        ]
+        "tags": ["coach conversations"]
       }
     },
     "/v1/coach/attachments/download-urls": {
@@ -16454,9 +14965,7 @@
           }
         ],
         "summary": "Create attachment download URLs",
-        "tags": [
-          "coach attachments"
-        ]
+        "tags": ["coach attachments"]
       }
     },
     "/v1/auth/token": {
@@ -16509,9 +15018,7 @@
           }
         },
         "summary": "Create auth token",
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     },
     "/v1/client/nutrition-recipes": {
@@ -16582,9 +15089,7 @@
           }
         ],
         "summary": "List client recipes",
-        "tags": [
-          "client recipes"
-        ]
+        "tags": ["client recipes"]
       }
     },
     "/v1/coach/nutrition-plans/{id}/restore": {
@@ -16674,9 +15179,7 @@
           }
         ],
         "summary": "Restore a Nutrition Template or visible Client Plan",
-        "tags": [
-          "coach nutrition plans"
-        ]
+        "tags": ["coach nutrition plans"]
       }
     },
     "/v1/coach/prospects": {
@@ -16747,9 +15250,7 @@
           }
         ],
         "summary": "List prospects",
-        "tags": [
-          "coach prospects"
-        ]
+        "tags": ["coach prospects"]
       }
     },
     "/v1/client/conversation/read": {
@@ -16795,9 +15296,7 @@
           }
         ],
         "summary": "Mark my conversation read",
-        "tags": [
-          "client conversation"
-        ]
+        "tags": ["client conversation"]
       }
     },
     "/v1/coach/conversations/{id}": {
@@ -16855,9 +15354,7 @@
           }
         ],
         "summary": "Get a conversation",
-        "tags": [
-          "coach conversations"
-        ]
+        "tags": ["coach conversations"]
       }
     },
     "/v1/client/nutrition-days/{date}/extras": {
@@ -16949,9 +15446,7 @@
           }
         ],
         "summary": "Record an extra Food or Recipe on a Nutrition Day slot",
-        "tags": [
-          "client nutrition days"
-        ]
+        "tags": ["client nutrition days"]
       }
     },
     "/v1/client/training-sessions/{id}/complete": {
@@ -17040,9 +15535,7 @@
           }
         ],
         "summary": "Complete a Training Session",
-        "tags": [
-          "client training sessions"
-        ]
+        "tags": ["client training sessions"]
       }
     },
     "/v1/coach/clients/{client_id}/conversation": {
@@ -17100,9 +15593,7 @@
           }
         ],
         "summary": "Get (or create) a client's conversation",
-        "tags": [
-          "coach conversations"
-        ]
+        "tags": ["coach conversations"]
       }
     },
     "/v1/client/uploads": {
@@ -17170,9 +15661,7 @@
           }
         ],
         "summary": "Create client upload",
-        "tags": [
-          "client uploads"
-        ]
+        "tags": ["client uploads"]
       }
     },
     "/v1/coach/clients/{client_id}/nutrition-plans/{id}/assign": {
@@ -17273,9 +15762,7 @@
           }
         ],
         "summary": "Assign a Nutrition Template",
-        "tags": [
-          "coach nutrition plans"
-        ]
+        "tags": ["coach nutrition plans"]
       }
     },
     "/v1/auth/accept-invite": {
@@ -17338,9 +15825,7 @@
           }
         },
         "summary": "Accept invitation",
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     },
     "/v1/coach/billing/cancel": {
@@ -17407,9 +15892,7 @@
           }
         ],
         "summary": "Schedule cancellation",
-        "tags": [
-          "coach billing"
-        ]
+        "tags": ["coach billing"]
       }
     },
     "/v1/coach/workbench/queues/quiet": {
@@ -17468,9 +15951,7 @@
           }
         ],
         "summary": "List missed check-in follow-up work",
-        "tags": [
-          "coach workbench"
-        ]
+        "tags": ["coach workbench"]
       }
     },
     "/v1/client/form-assignments": {
@@ -17517,9 +15998,7 @@
           }
         ],
         "summary": "List form assignments",
-        "tags": [
-          "client form assignments"
-        ]
+        "tags": ["client form assignments"]
       }
     },
     "/v1/client/attachments/download-urls": {
@@ -17596,9 +16075,7 @@
           }
         ],
         "summary": "Create attachment download URLs",
-        "tags": [
-          "client uploads"
-        ]
+        "tags": ["client uploads"]
       }
     },
     "/v1/coach/nutrition-foods/{id}/copy": {
@@ -17646,9 +16123,7 @@
           }
         ],
         "summary": "Copy a food into the coach's business",
-        "tags": [
-          "coach foods"
-        ]
+        "tags": ["coach foods"]
       }
     },
     "/v1/coach/form-templates/{id}/default-intake": {
@@ -17707,9 +16182,7 @@
           }
         ],
         "summary": "Clear default intake template",
-        "tags": [
-          "coach form templates"
-        ]
+        "tags": ["coach form templates"]
       },
       "put": {
         "callbacks": {},
@@ -17776,9 +16249,7 @@
           }
         ],
         "summary": "Set default intake template",
-        "tags": [
-          "coach form templates"
-        ]
+        "tags": ["coach form templates"]
       }
     },
     "/v1/coach/form-assignments/{id}": {
@@ -17858,9 +16329,7 @@
           }
         ],
         "summary": "Update form assignment",
-        "tags": [
-          "coach form assignments"
-        ]
+        "tags": ["coach form assignments"]
       }
     },
     "/v1/client/training-sessions/{session_id}/performed-sets": {
@@ -17939,9 +16408,7 @@
           }
         ],
         "summary": "Log a performed set",
-        "tags": [
-          "client performed sets"
-        ]
+        "tags": ["client performed sets"]
       }
     },
     "/v1/coach/training-plans/{id}/duplicate": {
@@ -18010,9 +16477,7 @@
           }
         ],
         "summary": "Duplicate a Training Template",
-        "tags": [
-          "coach training plans"
-        ]
+        "tags": ["coach training plans"]
       }
     },
     "/v1/coach/clients/{id}/reassign": {
@@ -18102,9 +16567,7 @@
           }
         ],
         "summary": "Reassign client",
-        "tags": [
-          "coach clients"
-        ]
+        "tags": ["coach clients"]
       }
     },
     "/v1/client/nutrition-recipes/{id}": {
@@ -18163,9 +16626,7 @@
           }
         ],
         "summary": "Get client recipe",
-        "tags": [
-          "client recipes"
-        ]
+        "tags": ["client recipes"]
       }
     },
     "/v1/coach/workbench/queues/programming": {
@@ -18202,11 +16663,7 @@
             "required": false,
             "schema": {
               "default": "all",
-              "enum": [
-                "all",
-                "training",
-                "nutrition"
-              ],
+              "enum": ["all", "training", "nutrition"],
               "type": "string",
               "x-struct": null,
               "x-validate": null
@@ -18251,9 +16708,7 @@
           }
         ],
         "summary": "List programming work",
-        "tags": [
-          "coach workbench"
-        ]
+        "tags": ["coach workbench"]
       }
     },
     "/v1/client/nutrition-days": {
@@ -18356,9 +16811,7 @@
           }
         ],
         "summary": "List nutrition days",
-        "tags": [
-          "client nutrition days"
-        ]
+        "tags": ["client nutrition days"]
       }
     },
     "/v1/coach/nutrition-foods/{id}/impact": {
@@ -18406,9 +16859,7 @@
           }
         ],
         "summary": "Show plans/templates affected by a food",
-        "tags": [
-          "coach foods"
-        ]
+        "tags": ["coach foods"]
       }
     },
     "/v1/coach/conversations/{id}/messages": {
@@ -18488,9 +16939,7 @@
           }
         ],
         "summary": "List messages (cursor-paginated, ascending)",
-        "tags": [
-          "coach conversations"
-        ]
+        "tags": ["coach conversations"]
       },
       "post": {
         "callbacks": {},
@@ -18567,9 +17016,7 @@
           }
         ],
         "summary": "Send a message",
-        "tags": [
-          "coach conversations"
-        ]
+        "tags": ["coach conversations"]
       }
     },
     "/v1/auth/trainer-accept-invite": {
@@ -18632,9 +17079,7 @@
           }
         },
         "summary": "Accept trainer invitation",
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     },
     "/v1/client/training-plans": {
@@ -18704,9 +17149,7 @@
           }
         ],
         "summary": "List client training plans",
-        "tags": [
-          "client training plans"
-        ]
+        "tags": ["client training plans"]
       }
     },
     "/v1/client/nutrition-foods": {
@@ -18777,9 +17220,7 @@
           }
         ],
         "summary": "List client foods",
-        "tags": [
-          "client foods"
-        ]
+        "tags": ["client foods"]
       }
     },
     "/v1/coach/billing/sync": {
@@ -18846,9 +17287,7 @@
           }
         ],
         "summary": "Reconcile billing with Razorpay",
-        "tags": [
-          "coach billing"
-        ]
+        "tags": ["coach billing"]
       }
     },
     "/v1/coach/conversations/{id}/read": {
@@ -18906,9 +17345,7 @@
           }
         ],
         "summary": "Mark the conversation read (coach side)",
-        "tags": [
-          "coach conversations"
-        ]
+        "tags": ["coach conversations"]
       }
     },
     "/v1/coach/billing": {
@@ -18945,9 +17382,7 @@
           }
         ],
         "summary": "Get billing and seat summary",
-        "tags": [
-          "coach billing"
-        ]
+        "tags": ["coach billing"]
       }
     },
     "/v1/client/form-assignments/{id}": {
@@ -19006,9 +17441,7 @@
           }
         ],
         "summary": "Get form assignment",
-        "tags": [
-          "client form assignments"
-        ]
+        "tags": ["client form assignments"]
       }
     },
     "/v1/coach/workbench/queues/expiring": {
@@ -19067,9 +17500,7 @@
           }
         ],
         "summary": "List expiring engagement work",
-        "tags": [
-          "coach workbench"
-        ]
+        "tags": ["coach workbench"]
       }
     },
     "/v1/coach/clients/invite": {
@@ -19137,9 +17568,7 @@
           }
         ],
         "summary": "Invite client",
-        "tags": [
-          "coach clients"
-        ]
+        "tags": ["coach clients"]
       }
     },
     "/v1/auth/verify": {
@@ -19202,9 +17631,7 @@
           }
         },
         "summary": "Verify email or OTP",
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     },
     "/v1/client/me": {
@@ -19251,9 +17678,7 @@
           }
         ],
         "summary": "Get client profile",
-        "tags": [
-          "client profile"
-        ]
+        "tags": ["client profile"]
       },
       "patch": {
         "callbacks": {},
@@ -19319,9 +17744,7 @@
           }
         ],
         "summary": "Update client profile",
-        "tags": [
-          "client profile"
-        ]
+        "tags": ["client profile"]
       }
     },
     "/v1/client/training-performed-sets/{id}": {
@@ -19372,9 +17795,7 @@
           }
         ],
         "summary": "Delete a performed set",
-        "tags": [
-          "client performed sets"
-        ]
+        "tags": ["client performed sets"]
       },
       "patch": {
         "callbacks": {},
@@ -19451,9 +17872,7 @@
           }
         ],
         "summary": "Update a performed set",
-        "tags": [
-          "client performed sets"
-        ]
+        "tags": ["client performed sets"]
       }
     },
     "/v1/coach/form-assignments/{id}/remind": {
@@ -19515,9 +17934,7 @@
           }
         ],
         "summary": "Send an Intake reminder",
-        "tags": [
-          "coach form assignments"
-        ]
+        "tags": ["coach form assignments"]
       }
     },
     "/v1/coach/nutrition-plans/{id}": {
@@ -19591,9 +18008,7 @@
           }
         ],
         "summary": "Delete a Nutrition Template or visible Client Plan",
-        "tags": [
-          "coach nutrition plans"
-        ]
+        "tags": ["coach nutrition plans"]
       },
       "get": {
         "callbacks": {},
@@ -19650,9 +18065,7 @@
           }
         ],
         "summary": "Get a Nutrition Template or visible Client Plan",
-        "tags": [
-          "coach nutrition plans"
-        ]
+        "tags": ["coach nutrition plans"]
       },
       "patch": {
         "callbacks": {},
@@ -19740,9 +18153,7 @@
           }
         ],
         "summary": "Update a Nutrition Template or visible Client Plan",
-        "tags": [
-          "coach nutrition plans"
-        ]
+        "tags": ["coach nutrition plans"]
       }
     },
     "/v1/client/training-plans/coverage": {
@@ -19802,9 +18213,7 @@
           }
         ],
         "summary": "Resolve client training Coverage",
-        "tags": [
-          "client training plans"
-        ]
+        "tags": ["client training plans"]
       }
     },
     "/v1/coach/clients/{client_id}/nutrition-plans": {
@@ -19851,10 +18260,7 @@
             "name": "status",
             "required": false,
             "schema": {
-              "enum": [
-                "active",
-                "archived"
-              ],
+              "enum": ["active", "archived"],
               "type": "string",
               "x-struct": null,
               "x-validate": null
@@ -19899,9 +18305,7 @@
           }
         ],
         "summary": "List client nutrition plans",
-        "tags": [
-          "coach client plans"
-        ]
+        "tags": ["coach client plans"]
       }
     },
     "/v1/coach/prospects/{id}": {
@@ -19959,9 +18363,7 @@
           }
         ],
         "summary": "Get prospect",
-        "tags": [
-          "coach prospects"
-        ]
+        "tags": ["coach prospects"]
       },
       "patch": {
         "callbacks": {},
@@ -20039,9 +18441,7 @@
           }
         ],
         "summary": "Update prospect",
-        "tags": [
-          "coach prospects"
-        ]
+        "tags": ["coach prospects"]
       }
     },
     "/v1/client/nutrition-plans/{id}": {
@@ -20100,9 +18500,7 @@
           }
         ],
         "summary": "Get client nutrition plan",
-        "tags": [
-          "client nutrition plans"
-        ]
+        "tags": ["client nutrition plans"]
       }
     },
     "/v1/coach/nutrition-plans/{id}/archive": {
@@ -20192,9 +18590,7 @@
           }
         ],
         "summary": "Archive a Nutrition Template or visible Client Plan",
-        "tags": [
-          "coach nutrition plans"
-        ]
+        "tags": ["coach nutrition plans"]
       }
     },
     "/v1/businesses": {
@@ -20252,9 +18648,7 @@
           }
         ],
         "summary": "Create business",
-        "tags": [
-          "businesses"
-        ]
+        "tags": ["businesses"]
       }
     },
     "/v1/client/training-sessions/{id}": {
@@ -20312,9 +18706,7 @@
           }
         ],
         "summary": "Get a training session",
-        "tags": [
-          "client training sessions"
-        ]
+        "tags": ["client training sessions"]
       },
       "patch": {
         "callbacks": {},
@@ -20401,9 +18793,7 @@
           }
         ],
         "summary": "Update notes and soreness on an active Training Session",
-        "tags": [
-          "client training sessions"
-        ]
+        "tags": ["client training sessions"]
       }
     },
     "/v1/coach/form-submissions/{id}/review": {
@@ -20461,9 +18851,7 @@
           }
         ],
         "summary": "Mark a form submission reviewed",
-        "tags": [
-          "coach check-in reviews"
-        ]
+        "tags": ["coach check-in reviews"]
       }
     },
     "/v1/coach/workbench": {
@@ -20500,9 +18888,7 @@
           }
         ],
         "summary": "Workbench queue counts",
-        "tags": [
-          "coach workbench"
-        ]
+        "tags": ["coach workbench"]
       }
     },
     "/v1/coach/clients/{id}/queue-snooze": {
@@ -20575,9 +18961,7 @@
           }
         ],
         "summary": "Snooze a workbench queue for a client",
-        "tags": [
-          "coach workbench"
-        ]
+        "tags": ["coach workbench"]
       }
     },
     "/v1/coach/training-muscles": {
@@ -20626,9 +19010,7 @@
           }
         ],
         "summary": "List muscles",
-        "tags": [
-          "coach muscles"
-        ]
+        "tags": ["coach muscles"]
       }
     },
     "/v1/client/conversation/messages": {
@@ -20697,9 +19079,7 @@
           }
         ],
         "summary": "List my messages (cursor-paginated, ascending)",
-        "tags": [
-          "client conversation"
-        ]
+        "tags": ["client conversation"]
       },
       "post": {
         "callbacks": {},
@@ -20764,9 +19144,7 @@
           }
         ],
         "summary": "Send a message to my coach team",
-        "tags": [
-          "client conversation"
-        ]
+        "tags": ["client conversation"]
       }
     },
     "/v1/client/nutrition-days/{date}/planned-options": {
@@ -20858,9 +19236,7 @@
           }
         ],
         "summary": "Log every remaining item in the active option for a slot",
-        "tags": [
-          "client nutrition days"
-        ]
+        "tags": ["client nutrition days"]
       }
     },
     "/v1/coach/team/{id}": {
@@ -20939,9 +19315,7 @@
           }
         ],
         "summary": "Revoke trainer invitation",
-        "tags": [
-          "coach team"
-        ]
+        "tags": ["coach team"]
       }
     },
     "/v1/client/training-plans/{id}": {
@@ -21000,9 +19374,7 @@
           }
         ],
         "summary": "Get client training plan",
-        "tags": [
-          "client training plans"
-        ]
+        "tags": ["client training plans"]
       }
     },
     "/v1/coach/clients/{client_id}/weight_entries": {
@@ -21071,9 +19443,7 @@
           }
         ],
         "summary": "List client weight entries",
-        "tags": [
-          "coach client weight entries"
-        ]
+        "tags": ["coach client weight entries"]
       }
     },
     "/v1/client/conversation": {
@@ -21119,9 +19489,7 @@
           }
         ],
         "summary": "Get (or create) my conversation",
-        "tags": [
-          "client conversation"
-        ]
+        "tags": ["client conversation"]
       }
     },
     "/v1/client/nutrition-foods/{id}": {
@@ -21180,9 +19548,7 @@
           }
         ],
         "summary": "Get client food",
-        "tags": [
-          "client foods"
-        ]
+        "tags": ["client foods"]
       }
     },
     "/v1/coach/team": {
@@ -21239,9 +19605,7 @@
           }
         ],
         "summary": "List team",
-        "tags": [
-          "coach team"
-        ]
+        "tags": ["coach team"]
       }
     },
     "/v1/coach/training-plans/{id}/archive": {
@@ -21331,9 +19695,7 @@
           }
         ],
         "summary": "Archive a Training Template or visible Client Plan",
-        "tags": [
-          "coach training plans"
-        ]
+        "tags": ["coach training plans"]
       }
     },
     "/v1/coach/training-plans/{id}/prescription": {
@@ -21423,9 +19785,7 @@
           }
         ],
         "summary": "Replace a complete Prescription",
-        "tags": [
-          "coach training plans"
-        ]
+        "tags": ["coach training plans"]
       }
     },
     "/v1/coach/nutrition-plans/{id}/menu": {
@@ -21515,9 +19875,7 @@
           }
         ],
         "summary": "Replace a complete Menu",
-        "tags": [
-          "coach nutrition plans"
-        ]
+        "tags": ["coach nutrition plans"]
       }
     },
     "/v1/auth/trainer-invitations/{token}": {
@@ -21571,9 +19929,7 @@
           }
         },
         "summary": "Preview trainer invitation",
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     },
     "/v1/coach/clients/{client_id}/check-in-schedules": {
@@ -21621,9 +19977,7 @@
           }
         ],
         "summary": "List client check-in schedules",
-        "tags": [
-          "coach check-in schedules"
-        ]
+        "tags": ["coach check-in schedules"]
       },
       "post": {
         "callbacks": {},
@@ -21690,9 +20044,7 @@
           }
         ],
         "summary": "Create client check-in schedule",
-        "tags": [
-          "coach check-in schedules"
-        ]
+        "tags": ["coach check-in schedules"]
       }
     },
     "/v1/coach/form-templates": {
@@ -21729,9 +20081,7 @@
           }
         ],
         "summary": "List form templates",
-        "tags": [
-          "coach form templates"
-        ]
+        "tags": ["coach form templates"]
       },
       "post": {
         "callbacks": {},
@@ -21787,9 +20137,7 @@
           }
         ],
         "summary": "Create form template",
-        "tags": [
-          "coach form templates"
-        ]
+        "tags": ["coach form templates"]
       }
     },
     "/v1/client/weight_entries": {
@@ -21837,9 +20185,7 @@
           }
         ],
         "summary": "List weight entries",
-        "tags": [
-          "client weight entries"
-        ]
+        "tags": ["client weight entries"]
       },
       "post": {
         "callbacks": {},
@@ -21894,9 +20240,7 @@
           }
         ],
         "summary": "Create weight entry",
-        "tags": [
-          "client weight entries"
-        ]
+        "tags": ["client weight entries"]
       }
     },
     "/v1/coach/clients": {
@@ -21944,11 +20288,7 @@
             "name": "status",
             "required": false,
             "schema": {
-              "enum": [
-                "active",
-                "pending",
-                "inactive"
-              ],
+              "enum": ["active", "pending", "inactive"],
               "type": "string",
               "x-struct": null,
               "x-validate": null
@@ -21960,10 +20300,7 @@
             "name": "stage",
             "required": false,
             "schema": {
-              "enum": [
-                "onboarding",
-                "coaching"
-              ],
+              "enum": ["onboarding", "coaching"],
               "type": "string",
               "x-struct": null,
               "x-validate": null
@@ -21975,10 +20312,7 @@
             "name": "sort",
             "required": false,
             "schema": {
-              "enum": [
-                "newest",
-                "last_active"
-              ],
+              "enum": ["newest", "last_active"],
               "type": "string",
               "x-struct": null,
               "x-validate": null
@@ -22034,9 +20368,7 @@
           }
         ],
         "summary": "List clients",
-        "tags": [
-          "coach clients"
-        ]
+        "tags": ["coach clients"]
       }
     },
     "/v1/coach/training-plans/{id}": {
@@ -22110,9 +20442,7 @@
           }
         ],
         "summary": "Delete a Training Template or visible Client Plan",
-        "tags": [
-          "coach training plans"
-        ]
+        "tags": ["coach training plans"]
       },
       "get": {
         "callbacks": {},
@@ -22169,9 +20499,7 @@
           }
         ],
         "summary": "Get a Training Template or visible Client Plan",
-        "tags": [
-          "coach training plans"
-        ]
+        "tags": ["coach training plans"]
       },
       "patch": {
         "callbacks": {},
@@ -22259,9 +20587,7 @@
           }
         ],
         "summary": "Update a Training Template or visible Client Plan",
-        "tags": [
-          "coach training plans"
-        ]
+        "tags": ["coach training plans"]
       }
     },
     "/v1/coach/training-exercises/{id}/copy": {
@@ -22341,9 +20667,7 @@
           }
         ],
         "summary": "Copy exercise",
-        "tags": [
-          "coach exercises"
-        ]
+        "tags": ["coach exercises"]
       }
     },
     "/v1/client/nutrition-days/{date}/active-option": {
@@ -22455,9 +20779,7 @@
           }
         ],
         "summary": "Switch the active frozen Meal Option for a Nutrition Day slot",
-        "tags": [
-          "client nutrition days"
-        ]
+        "tags": ["client nutrition days"]
       }
     },
     "/v1/coach/training-exercises": {
@@ -22562,9 +20884,7 @@
           }
         ],
         "summary": "List exercises",
-        "tags": [
-          "coach exercises"
-        ]
+        "tags": ["coach exercises"]
       },
       "post": {
         "callbacks": {},
@@ -22620,9 +20940,7 @@
           }
         ],
         "summary": "Create exercise",
-        "tags": [
-          "coach exercises"
-        ]
+        "tags": ["coach exercises"]
       }
     },
     "/v1/auth/accept-invite/verify": {
@@ -22705,9 +21023,7 @@
           }
         },
         "summary": "Verify invitation OTP",
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     },
     "/v1/coach/team/{id}/reactivate": {
@@ -22786,9 +21102,7 @@
           }
         ],
         "summary": "Reactivate trainer",
-        "tags": [
-          "coach team"
-        ]
+        "tags": ["coach team"]
       }
     },
     "/v1/coach/training-exercises/{id}": {
@@ -22850,9 +21164,7 @@
           }
         ],
         "summary": "Delete exercise",
-        "tags": [
-          "coach exercises"
-        ]
+        "tags": ["coach exercises"]
       },
       "get": {
         "callbacks": {},
@@ -22909,9 +21221,7 @@
           }
         ],
         "summary": "Get exercise",
-        "tags": [
-          "coach exercises"
-        ]
+        "tags": ["coach exercises"]
       },
       "patch": {
         "callbacks": {},
@@ -22989,9 +21299,7 @@
           }
         ],
         "summary": "Update exercise",
-        "tags": [
-          "coach exercises"
-        ]
+        "tags": ["coach exercises"]
       }
     },
     "/v1/businesses/me/dashboard-setup": {
@@ -23069,9 +21377,7 @@
           }
         ],
         "summary": "Update dashboard setup state",
-        "tags": [
-          "businesses"
-        ]
+        "tags": ["businesses"]
       }
     },
     "/v1/coach/check-ins/review-queue": {
@@ -23130,9 +21436,7 @@
           }
         ],
         "summary": "List check-ins awaiting review",
-        "tags": [
-          "coach check-in reviews"
-        ]
+        "tags": ["coach check-in reviews"]
       }
     },
     "/v1/coach/nutrition-recipes/{id}/impact": {
@@ -23180,9 +21484,7 @@
           }
         ],
         "summary": "Show plans/templates affected by a recipe",
-        "tags": [
-          "coach recipes"
-        ]
+        "tags": ["coach recipes"]
       }
     },
     "/v1/coach/nutrition-plans/{id}/duplicate": {
@@ -23272,9 +21574,7 @@
           }
         ],
         "summary": "Duplicate a Nutrition Template",
-        "tags": [
-          "coach nutrition plans"
-        ]
+        "tags": ["coach nutrition plans"]
       }
     },
     "/v1/client/nutrition-days/{date}/entries/{id}": {
@@ -23378,9 +21678,7 @@
           }
         ],
         "summary": "Delete a Diary Entry",
-        "tags": [
-          "client nutrition days"
-        ]
+        "tags": ["client nutrition days"]
       },
       "patch": {
         "callbacks": {},
@@ -23482,9 +21780,7 @@
           }
         ],
         "summary": "Update a Diary Entry Portion and notes",
-        "tags": [
-          "client nutrition days"
-        ]
+        "tags": ["client nutrition days"]
       }
     },
     "/v1/coach/nutrition-recipes/{id}/copy": {
@@ -23532,9 +21828,7 @@
           }
         ],
         "summary": "Copy a recipe into the coach's business",
-        "tags": [
-          "coach recipes"
-        ]
+        "tags": ["coach recipes"]
       }
     },
     "/v1/coach/landing-page": {
@@ -23571,9 +21865,7 @@
           }
         ],
         "summary": "Get landing page",
-        "tags": [
-          "coach landing page"
-        ]
+        "tags": ["coach landing page"]
       },
       "put": {
         "callbacks": {},
@@ -23629,9 +21921,7 @@
           }
         ],
         "summary": "Save landing page",
-        "tags": [
-          "coach landing page"
-        ]
+        "tags": ["coach landing page"]
       }
     },
     "/v1/coach/workbench/queues/check-ins": {
@@ -23690,9 +21980,7 @@
           }
         ],
         "summary": "List check-in submissions awaiting review",
-        "tags": [
-          "coach workbench"
-        ]
+        "tags": ["coach workbench"]
       }
     },
     "/v1/client/training-sessions/active": {
@@ -23728,9 +22016,7 @@
           }
         ],
         "summary": "Get the active client Training Session",
-        "tags": [
-          "client training sessions"
-        ]
+        "tags": ["client training sessions"]
       }
     },
     "/v1/coach/billing/checkout": {
@@ -23808,9 +22094,7 @@
           }
         ],
         "summary": "Buy seats",
-        "tags": [
-          "coach billing"
-        ]
+        "tags": ["coach billing"]
       }
     },
     "/v1/coach/form-assignments/{id}/submissions": {
@@ -23869,9 +22153,7 @@
           }
         ],
         "summary": "List form submissions",
-        "tags": [
-          "coach form assignments"
-        ]
+        "tags": ["coach form assignments"]
       }
     },
     "/v1/client/nutrition-days/{date}/planned-items": {
@@ -23963,9 +22245,7 @@
           }
         ],
         "summary": "Log one planned item on a Nutrition Day slot",
-        "tags": [
-          "client nutrition days"
-        ]
+        "tags": ["client nutrition days"]
       }
     },
     "/v1/coach/nutrition-foods/categories": {
@@ -24002,9 +22282,7 @@
           }
         ],
         "summary": "List food categories",
-        "tags": [
-          "coach foods"
-        ]
+        "tags": ["coach foods"]
       }
     },
     "/v1/coach/form-templates/{id}": {
@@ -24066,9 +22344,7 @@
           }
         ],
         "summary": "Delete form template",
-        "tags": [
-          "coach form templates"
-        ]
+        "tags": ["coach form templates"]
       },
       "get": {
         "callbacks": {},
@@ -24125,9 +22401,7 @@
           }
         ],
         "summary": "Get form template",
-        "tags": [
-          "coach form templates"
-        ]
+        "tags": ["coach form templates"]
       },
       "patch": {
         "callbacks": {},
@@ -24205,9 +22479,7 @@
           }
         ],
         "summary": "Update form template",
-        "tags": [
-          "coach form templates"
-        ]
+        "tags": ["coach form templates"]
       }
     },
     "/v1/coach/clients/{client_id}/uploads": {
@@ -24296,9 +22568,7 @@
           }
         ],
         "summary": "Create an upload for a client",
-        "tags": [
-          "coach attachments"
-        ]
+        "tags": ["coach attachments"]
       }
     },
     "/v1/auth/trainer-accept-invite/verify": {
@@ -24381,9 +22651,7 @@
           }
         },
         "summary": "Verify trainer invitation OTP",
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     },
     "/v1/coach/clients/{client_id}/training-plans/{id}/assign": {
@@ -24474,9 +22742,7 @@
           }
         ],
         "summary": "Assign a Training Template",
-        "tags": [
-          "coach training plans"
-        ]
+        "tags": ["coach training plans"]
       }
     },
     "/v1/auth/signup": {
@@ -24529,9 +22795,7 @@
           }
         },
         "summary": "Sign up",
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     },
     "/v1/client/weight_entries/{id}": {
@@ -24582,9 +22846,7 @@
           }
         ],
         "summary": "Delete weight entry",
-        "tags": [
-          "client weight entries"
-        ]
+        "tags": ["client weight entries"]
       }
     },
     "/v1/client/training-exercises": {
@@ -24689,9 +22951,7 @@
           }
         ],
         "summary": "List client exercises",
-        "tags": [
-          "client exercises"
-        ]
+        "tags": ["client exercises"]
       }
     },
     "/v1/coach/nutrition-recipes": {
@@ -24762,9 +23022,7 @@
           }
         ],
         "summary": "List recipes",
-        "tags": [
-          "coach recipes"
-        ]
+        "tags": ["coach recipes"]
       },
       "post": {
         "callbacks": {},
@@ -24820,9 +23078,7 @@
           }
         ],
         "summary": "Create recipe",
-        "tags": [
-          "coach recipes"
-        ]
+        "tags": ["coach recipes"]
       }
     },
     "/v1/client/nutrition-days/{date}/planned-day": {
@@ -24903,9 +23159,7 @@
           }
         ],
         "summary": "Log every scheduled active option for the day",
-        "tags": [
-          "client nutrition days"
-        ]
+        "tags": ["client nutrition days"]
       }
     },
     "/v1/webhooks/razorpay": {
@@ -24953,9 +23207,7 @@
           }
         },
         "summary": "Razorpay webhook",
-        "tags": [
-          "billing"
-        ]
+        "tags": ["billing"]
       }
     },
     "/v1/coach/workbench/queues/replies": {
@@ -25014,9 +23266,7 @@
           }
         ],
         "summary": "List conversations awaiting a coach response",
-        "tags": [
-          "coach workbench"
-        ]
+        "tags": ["coach workbench"]
       }
     },
     "/v1/coach/nutrition-foods/{id}": {
@@ -25090,9 +23340,7 @@
           }
         ],
         "summary": "Delete food",
-        "tags": [
-          "coach foods"
-        ]
+        "tags": ["coach foods"]
       },
       "get": {
         "callbacks": {},
@@ -25149,9 +23397,7 @@
           }
         ],
         "summary": "Get food",
-        "tags": [
-          "coach foods"
-        ]
+        "tags": ["coach foods"]
       },
       "patch": {
         "callbacks": {},
@@ -25239,9 +23485,7 @@
           }
         ],
         "summary": "Update food",
-        "tags": [
-          "coach foods"
-        ]
+        "tags": ["coach foods"]
       }
     },
     "/v1/auth/otp": {
@@ -25294,9 +23538,7 @@
           }
         },
         "summary": "Send OTP",
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     },
     "/v1/coach/nutrition-foods": {
@@ -25384,9 +23626,7 @@
           }
         ],
         "summary": "List foods",
-        "tags": [
-          "coach foods"
-        ]
+        "tags": ["coach foods"]
       },
       "post": {
         "callbacks": {},
@@ -25442,9 +23682,7 @@
           }
         ],
         "summary": "Create food",
-        "tags": [
-          "coach foods"
-        ]
+        "tags": ["coach foods"]
       }
     },
     "/v1/coach/training-equipment": {
@@ -25493,9 +23731,7 @@
           }
         ],
         "summary": "List equipment",
-        "tags": [
-          "coach equipment"
-        ]
+        "tags": ["coach equipment"]
       }
     },
     "/v1/coach/nutrition-recipes/{id}": {
@@ -25569,9 +23805,7 @@
           }
         ],
         "summary": "Delete recipe",
-        "tags": [
-          "coach recipes"
-        ]
+        "tags": ["coach recipes"]
       },
       "get": {
         "callbacks": {},
@@ -25628,9 +23862,7 @@
           }
         ],
         "summary": "Get recipe",
-        "tags": [
-          "coach recipes"
-        ]
+        "tags": ["coach recipes"]
       },
       "patch": {
         "callbacks": {},
@@ -25718,9 +23950,7 @@
           }
         ],
         "summary": "Update recipe",
-        "tags": [
-          "coach recipes"
-        ]
+        "tags": ["coach recipes"]
       }
     },
     "/api/health": {
@@ -25742,9 +23972,7 @@
           }
         },
         "summary": "Health check",
-        "tags": [
-          "health"
-        ]
+        "tags": ["health"]
       }
     }
   },

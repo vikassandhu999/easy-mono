@@ -108,7 +108,15 @@ export function BrowseRow({icon, iconClassName, id, meta, testId, textValue, tit
 }
 
 /** The image-or-fallback contents of a `BrowseRow` icon tile. */
-export function BrowseRowThumb({alt, fallback, src}: {alt: string; fallback: ReactNode; src?: string | null | undefined}) {
+export function BrowseRowThumb({
+  alt,
+  fallback,
+  src,
+}: {
+  alt: string;
+  fallback: ReactNode;
+  src?: string | null | undefined;
+}) {
   if (!src) {
     return fallback;
   }

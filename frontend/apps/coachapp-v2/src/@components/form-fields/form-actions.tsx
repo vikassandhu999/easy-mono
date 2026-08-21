@@ -42,9 +42,7 @@ export function FormActions({
   );
 
   return (
-    <Fieldset.Actions
-      {...(merged ? {className: merged} : {})}
-    >
+    <Fieldset.Actions {...(merged ? {className: merged} : {})}>
       <Button
         className="border-0 text-muted shadow-none sm:border sm:text-foreground"
         onPress={onCancel}

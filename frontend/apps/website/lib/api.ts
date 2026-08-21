@@ -81,7 +81,12 @@ function parseLandingPage(value: unknown): LandingPage {
 }
 
 function parseApplicationResult(value: unknown): ApplicationResult {
-  if (!isRecord(value) || typeof value.id !== 'string' || typeof value.name !== 'string' || typeof value.business_name !== 'string') {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== 'string' ||
+    typeof value.name !== 'string' ||
+    typeof value.business_name !== 'string'
+  ) {
     throw new Error('Invalid application payload');
   }
   return value as ApplicationResult;
@@ -138,7 +143,8 @@ export async function submitApplication(slug: string, input: ApplicationInput): 
     : {};
   return {
     fieldErrors,
-    message: typeof record?.error_message === 'string' ? record.error_message : 'Something went wrong. Please try again.',
+    message:
+      typeof record?.error_message === 'string' ? record.error_message : 'Something went wrong. Please try again.',
     ok: false,
   };
 }

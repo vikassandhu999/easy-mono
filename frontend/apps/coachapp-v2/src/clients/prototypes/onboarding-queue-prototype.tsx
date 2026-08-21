@@ -258,84 +258,84 @@ function VariantA({clients, onCall, onClientOpen, onIntakeOpen, onReasonAction}:
         );
 
         return (
-        <GridListItem
-          {...(merged ? {className: merged} : {})}
-          id={client.id}
-          key={client.id}
-          onAction={() => onClientOpen(client)}
-          textValue={client.name}
-        >
-          <span
-            aria-hidden
-            className="absolute inset-y-3 start-1 w-0.75 rounded-pill bg-transparent group-hover:bg-accent group-focus-visible:bg-accent"
-          />
-          <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-            <ClientIdentity client={client} />
-            <span className="flex items-center gap-2">
-              <CallButton
-                client={client}
-                onCall={onCall}
-              />
-              <Typography
-                color="muted"
-                type="body-xs"
-                weight="semibold"
-              >
-                {client.reasons.length} {client.reasons.length === 1 ? 'action' : 'actions'}
-              </Typography>
-            </span>
-          </div>
-
-          <Surface className="w-full overflow-hidden rounded-control border border-border bg-surface">
-            {client.reasons.map((reason, index) => (
-              <Fragment key={reason.code === 'intake_overdue' ? reason.assignmentId : reason.invitationId}>
-                {index > 0 ? <Separator /> : null}
-                <div
-                  className={cn(
-                    'flex flex-col gap-3 p-3 sm:grid sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center',
-                    index === 0 && 'bg-surface-secondary',
-                  )}
+          <GridListItem
+            {...(merged ? {className: merged} : {})}
+            id={client.id}
+            key={client.id}
+            onAction={() => onClientOpen(client)}
+            textValue={client.name}
+          >
+            <span
+              aria-hidden
+              className="absolute inset-y-3 start-1 w-0.75 rounded-pill bg-transparent group-hover:bg-accent group-focus-visible:bg-accent"
+            />
+            <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+              <ClientIdentity client={client} />
+              <span className="flex items-center gap-2">
+                <CallButton
+                  client={client}
+                  onCall={onCall}
+                />
+                <Typography
+                  color="muted"
+                  type="body-xs"
+                  weight="semibold"
                 >
-                  <div className="flex min-w-0 flex-col gap-1.5">
-                    <Typography
-                      className={index === 0 ? 'text-accent' : 'text-muted'}
-                      type="body-xs"
-                      weight="semibold"
-                    >
-                      {index === 0 ? 'Next action' : 'Also due'}
-                    </Typography>
-                    <ReasonChip reason={reason} />
-                    <Typography
-                      color="muted"
-                      type="body-xs"
-                    >
-                      {reasonDescription(reason)}
-                    </Typography>
-                  </div>
-                  <div className="flex shrink-0 flex-wrap justify-end gap-2">
-                    {reason.code === 'intake_overdue' ? (
-                      <Button
-                        onPress={() => onIntakeOpen(client, reason)}
-                        size="sm"
-                        variant="ghost"
+                  {client.reasons.length} {client.reasons.length === 1 ? 'action' : 'actions'}
+                </Typography>
+              </span>
+            </div>
+
+            <Surface className="w-full overflow-hidden rounded-control border border-border bg-surface">
+              {client.reasons.map((reason, index) => (
+                <Fragment key={reason.code === 'intake_overdue' ? reason.assignmentId : reason.invitationId}>
+                  {index > 0 ? <Separator /> : null}
+                  <div
+                    className={cn(
+                      'flex flex-col gap-3 p-3 sm:grid sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center',
+                      index === 0 && 'bg-surface-secondary',
+                    )}
+                  >
+                    <div className="flex min-w-0 flex-col gap-1.5">
+                      <Typography
+                        className={index === 0 ? 'text-accent' : 'text-muted'}
+                        type="body-xs"
+                        weight="semibold"
                       >
-                        View intake
+                        {index === 0 ? 'Next action' : 'Also due'}
+                      </Typography>
+                      <ReasonChip reason={reason} />
+                      <Typography
+                        color="muted"
+                        type="body-xs"
+                      >
+                        {reasonDescription(reason)}
+                      </Typography>
+                    </div>
+                    <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                      {reason.code === 'intake_overdue' ? (
+                        <Button
+                          onPress={() => onIntakeOpen(client, reason)}
+                          size="sm"
+                          variant="ghost"
+                        >
+                          View intake
+                        </Button>
+                      ) : null}
+                      <Button
+                        onPress={() => onReasonAction(client, reason)}
+                        size="sm"
+                        variant={index === 0 ? 'primary' : 'outline'}
+                      >
+                        {reason.code === 'intake_overdue' ? <MessageCircle /> : <Mail />}
+                        {reasonAction(reason)}
                       </Button>
-                    ) : null}
-                    <Button
-                      onPress={() => onReasonAction(client, reason)}
-                      size="sm"
-                      variant={index === 0 ? 'primary' : 'outline'}
-                    >
-                      {reason.code === 'intake_overdue' ? <MessageCircle /> : <Mail />}
-                      {reasonAction(reason)}
-                    </Button>
+                    </div>
                   </div>
-                </div>
-              </Fragment>
-            ))}
-          </Surface>
-        </GridListItem>
+                </Fragment>
+              ))}
+            </Surface>
+          </GridListItem>
         );
       }}
     />
@@ -431,28 +431,28 @@ function VariantC({clients, onCall, onClientOpen, onIntakeOpen, onReasonAction}:
           );
 
           return (
-          <GridListItem
-            {...(client.isSelected ? {'aria-current': 'true' as const} : {})}
-            {...(merged ? {className: merged} : {})}
-            id={client.id}
-            key={client.id}
-            onAction={() => setSelectedId(client.id)}
-            textValue={client.name}
-          >
-            <Avatar
-              className="size-9 shrink-0"
-              size="md"
+            <GridListItem
+              {...(client.isSelected ? {'aria-current': 'true' as const} : {})}
+              {...(merged ? {className: merged} : {})}
+              id={client.id}
+              key={client.id}
+              onAction={() => setSelectedId(client.id)}
+              textValue={client.name}
             >
-              <Avatar.Fallback>{getInitials(...client.name.split(' '))}</Avatar.Fallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <Label className="block truncate type-body font-semibold text-foreground">{client.name}</Label>
-              <Description className="truncate type-eyebrow text-muted">
-                {client.reasons.length} {client.reasons.length === 1 ? 'action' : 'actions'} · oldest{' '}
-                {formatDate(dueAt(requirePrimaryReason(client.reasons)))}
-              </Description>
-            </div>
-          </GridListItem>
+              <Avatar
+                className="size-9 shrink-0"
+                size="md"
+              >
+                <Avatar.Fallback>{getInitials(...client.name.split(' '))}</Avatar.Fallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <Label className="block truncate type-body font-semibold text-foreground">{client.name}</Label>
+                <Description className="truncate type-eyebrow text-muted">
+                  {client.reasons.length} {client.reasons.length === 1 ? 'action' : 'actions'} · oldest{' '}
+                  {formatDate(dueAt(requirePrimaryReason(client.reasons)))}
+                </Description>
+              </div>
+            </GridListItem>
           );
         }}
       />
@@ -483,45 +483,45 @@ function VariantC({clients, onCall, onClientOpen, onIntakeOpen, onReasonAction}:
             );
 
             return (
-            <Surface
-              {...(surfaceClassName ? {className: surfaceClassName} : {})}
-              key={reason.code === 'intake_overdue' ? reason.assignmentId : reason.invitationId}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <ReasonChip reason={reason} />
+              <Surface
+                {...(surfaceClassName ? {className: surfaceClassName} : {})}
+                key={reason.code === 'intake_overdue' ? reason.assignmentId : reason.invitationId}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <ReasonChip reason={reason} />
+                  <Typography
+                    color="muted"
+                    type="body-xs"
+                    weight="semibold"
+                  >
+                    {index === 0 ? 'Do next' : `Then ${index + 1}`}
+                  </Typography>
+                </div>
                 <Typography
                   color="muted"
-                  type="body-xs"
-                  weight="semibold"
+                  type="body-sm"
                 >
-                  {index === 0 ? 'Do next' : `Then ${index + 1}`}
+                  {reasonDescription(reason)}
                 </Typography>
-              </div>
-              <Typography
-                color="muted"
-                type="body-sm"
-              >
-                {reasonDescription(reason)}
-              </Typography>
-              <div className="flex flex-wrap justify-end gap-2">
-                {reason.code === 'intake_overdue' ? (
+                <div className="flex flex-wrap justify-end gap-2">
+                  {reason.code === 'intake_overdue' ? (
+                    <Button
+                      onPress={() => onIntakeOpen(selected, reason)}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      View intake
+                    </Button>
+                  ) : null}
                   <Button
-                    onPress={() => onIntakeOpen(selected, reason)}
+                    onPress={() => onReasonAction(selected, reason)}
                     size="sm"
-                    variant="ghost"
+                    variant={index === 0 ? 'primary' : 'outline'}
                   >
-                    View intake
+                    {reasonAction(reason)}
                   </Button>
-                ) : null}
-                <Button
-                  onPress={() => onReasonAction(selected, reason)}
-                  size="sm"
-                  variant={index === 0 ? 'primary' : 'outline'}
-                >
-                  {reasonAction(reason)}
-                </Button>
-              </div>
-            </Surface>
+                </div>
+              </Surface>
             );
           })}
         </div>

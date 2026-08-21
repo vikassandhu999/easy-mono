@@ -66,12 +66,14 @@ export type SessionState = (typeof SESSION_STATES)[number];
 
 // ── Session state chip config ────────────────────────────────
 
-export const SESSION_STATE_CHIP: Record<SessionState, {color: 'danger' | 'default' | 'success' | 'warning'; label: string}> =
-  {
-    active: {color: 'warning', label: 'In Progress'},
-    completed: {color: 'success', label: 'Completed'},
-    discarded: {color: 'default', label: 'Discarded'},
-  };
+export const SESSION_STATE_CHIP: Record<
+  SessionState,
+  {color: 'danger' | 'default' | 'success' | 'warning'; label: string}
+> = {
+  active: {color: 'warning', label: 'In Progress'},
+  completed: {color: 'success', label: 'Completed'},
+  discarded: {color: 'default', label: 'Discarded'},
+};
 
 // ── Duration formatting ──────────────────────────────────────
 

@@ -28,25 +28,25 @@ export function FormTextAreaField<T extends FieldValues>({
         const merged = cn('border border-border bg-surface shadow-none', textAreaClassName);
 
         return (
-        <TextField
-          {...props}
-          isInvalid={!!fieldState.error}
-          name={field.name}
-          onBlur={field.onBlur}
-          onChange={(value) => {
-            field.onChange(value);
-            onValueChange?.(value);
-          }}
-          value={field.value ?? ''}
-        >
-          <Label>{label}</Label>
-          {description ? <Description>{description}</Description> : null}
-          {fieldState.error ? <FieldError>{fieldState.error.message}</FieldError> : null}
-          <TextArea
-            {...restTextAreaProps}
-            {...(merged ? {className: merged} : {})}
-          />
-        </TextField>
+          <TextField
+            {...props}
+            isInvalid={!!fieldState.error}
+            name={field.name}
+            onBlur={field.onBlur}
+            onChange={(value) => {
+              field.onChange(value);
+              onValueChange?.(value);
+            }}
+            value={field.value ?? ''}
+          >
+            <Label>{label}</Label>
+            {description ? <Description>{description}</Description> : null}
+            {fieldState.error ? <FieldError>{fieldState.error.message}</FieldError> : null}
+            <TextArea
+              {...restTextAreaProps}
+              {...(merged ? {className: merged} : {})}
+            />
+          </TextField>
         );
       }}
     />

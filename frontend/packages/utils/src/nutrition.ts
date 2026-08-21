@@ -12,10 +12,10 @@ export type MacroTotals = {
 // ── Meal slot constants ──────────────────────────────────────
 
 export {
-  MEAL_SLOTS,
   MEAL_SLOT_LABELS,
-  ORDINARY_MEAL_SLOTS,
+  MEAL_SLOTS,
   type MealSlot,
+  ORDINARY_MEAL_SLOTS,
   WORKOUT_MEAL_SLOTS,
 } from './meal-slots.ts';
 

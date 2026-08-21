@@ -51,7 +51,9 @@ export function useListClientsQuery(params?: ListClientsParams, options?: {enabl
   return useQuery({
     queryKey: clientKeys.list(params),
     queryFn: () =>
-      call(client.GET('/v1/coach/clients', params ? {params: {query: omitUndefined(params)}} : {})) as Promise<ClientListResponse>,
+      call(
+        client.GET('/v1/coach/clients', params ? {params: {query: omitUndefined(params)}} : {}),
+      ) as Promise<ClientListResponse>,
     enabled: options?.enabled ?? true,
   });
 }

@@ -10,8 +10,7 @@ export type ChatMessage = components['schemas']['ChatMessage'];
 export type ChatMessageEmbed = components['schemas']['ChatMessageEmbed'];
 export type ChatMessageEmbedRequest = components['schemas']['ChatMessageEmbedRequest'];
 export type Conversation = components['schemas']['Conversation'];
-
-type MessagesPage = {data: ChatMessage[]; has_more: boolean};
+export type ChatMessagesResponse = components['schemas']['ChatMessagesResponse'];
 
 const PAGE_SIZE = 20;
 
@@ -128,12 +127,12 @@ export function useMarkConversationHandledMutation() {
 
 /** Append a message to the cached history (no-op if already present, e.g. own send echoed back over the channel). */
 export function appendMessage(conversationId: string, message: ChatMessage) {
-  const cached = queryClient.getQueryData<InfiniteData<MessagesPage>>(conversationKeys.messages(conversationId));
+  const cached = queryClient.getQueryData<InfiniteData<ChatMessagesResponse>>(conversationKeys.messages(conversationId));
   if (!cached) {
     // Nothing cached to append to — a later mount will fetch fresh history.
     return;
   }
-  patchQueryData<InfiniteData<MessagesPage>>(conversationKeys.messages(conversationId), (draft) => {
+  patchQueryData<InfiniteData<ChatMessagesResponse>>(conversationKeys.messages(conversationId), (draft) => {
     const exists = draft.pages.some((page) => page.data.some((m) => m.id === message.id));
     if (!exists) {
       draft.pages[0]?.data.push(message);

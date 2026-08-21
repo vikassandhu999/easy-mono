@@ -3,7 +3,6 @@ import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack
 import {call, client} from '@/api/client';
 import {billingKeys, clientKeys} from '@/api/keys';
 import type {components, paths} from '@/api/schema';
-import {ApiResponse} from '@/api/shared';
 import {workbenchMutationTargets} from '@/api/workbench-targets';
 
 const PAGE_SIZE = 20;
@@ -29,17 +28,9 @@ export type ClientUpdateRequest = Omit<components['schemas']['ClientUpdateReques
   status?: AllowedUpdateStatus;
 };
 
-export type ClientSummary = {
-  active: number;
-  inactive: number;
-  pending: number;
-};
-
-export type ClientListResponse = {
-  count: number;
-  data: Client[];
-  summary: ClientSummary;
-};
+export type ClientSummary = components['schemas']['ClientSummary'];
+export type ClientListResponse = components['schemas']['ClientListResponse'];
+export type ClientResponse = components['schemas']['ClientResponse'];
 
 type ListClientsQuery = NonNullable<paths['/v1/coach/clients']['get']['parameters']['query']>;
 
@@ -51,7 +42,7 @@ export function useGetClientQuery(id: string, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: clientKeys.detail(id),
     queryFn: () =>
-      call(client.GET('/v1/coach/clients/{id}', {params: {path: {id}}})) as Promise<ApiResponse<Client>>, // bridges RequiredServices tuple vs openapi-fetch array widening; ticket 04
+      call(client.GET('/v1/coach/clients/{id}', {params: {path: {id}}})) as Promise<ClientResponse>, // openapi-fetch widens RequiredServices tuples to arrays
     enabled: options?.enabled ?? true,
   });
 }
@@ -99,7 +90,7 @@ export function useInviteClientMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: ClientInviteRequest) =>
-      call(client.POST('/v1/coach/clients/invite', {body})) as Promise<ApiResponse<Client>>,
+      call(client.POST('/v1/coach/clients/invite', {body})) as Promise<ClientResponse>,
     onSuccess: () => {
       qc.invalidateQueries({queryKey: clientKeys.lists()});
       for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
@@ -114,9 +105,7 @@ export function useResendClientInviteMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      call(client.POST('/v1/coach/clients/{id}/resend-invite', {params: {path: {id}}})) as Promise<
-        ApiResponse<Client>
-      >,
+      call(client.POST('/v1/coach/clients/{id}/resend-invite', {params: {path: {id}}})) as Promise<ClientResponse>,
     onSuccess: (_data, id) => {
       qc.invalidateQueries({queryKey: clientKeys.detail(id)});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
@@ -146,7 +135,7 @@ export function useUpdateClientMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({body, id}: {body: ClientUpdateRequest; id: string}) =>
-      call(client.PATCH('/v1/coach/clients/{id}', {params: {path: {id}}, body})) as Promise<ApiResponse<Client>>,
+      call(client.PATCH('/v1/coach/clients/{id}', {params: {path: {id}}, body})) as Promise<ClientResponse>,
     onSuccess: (_data, {id}) => {
       qc.invalidateQueries({queryKey: clientKeys.detail(id)});
       qc.invalidateQueries({queryKey: clientKeys.lists()});

@@ -35,27 +35,12 @@ defmodule Easy.Nutrition.DiaryCommandLedger do
     |> Base.encode16(case: :lower)
   end
 
-  @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(business_id, client_id, attrs) do
-    %__MODULE__{}
-    |> cast(attrs, [:idempotency_key, :fingerprint, :outcome, :expires_at])
-    |> put_change(:business_id, business_id)
-    |> put_change(:client_id, client_id)
-    |> validate_required([:idempotency_key, :fingerprint, :expires_at, :business_id, :client_id])
-    |> unique_constraint(:idempotency_key, name: :nutrition_diary_command_ledger_client_key_index)
-    |> foreign_key_constraint(:client_id, name: :nutrition_diary_command_ledger_client_business_id_fkey)
-  end
-
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(ledger, attrs) do
     ledger
     |> cast(attrs, [:outcome])
     |> validate_required([:outcome])
   end
-
-  @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_business(query \\ __MODULE__, business_id),
-    do: from(row in query, where: row.business_id == ^business_id)
 
   @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
   def for_client(query \\ __MODULE__, business_id, client_id) do

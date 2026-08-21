@@ -124,18 +124,10 @@ defmodule Easy.Nutrition.DiaryEntry do
     |> check_constraint(:source_food_id, name: :nutrition_diary_entries_source_identity_check)
   end
 
-  @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_business(query \\ __MODULE__, business_id),
-    do: from(entry in query, where: entry.business_id == ^business_id)
-
   @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
   def for_client(query \\ __MODULE__, business_id, client_id) do
     from(entry in query, where: entry.business_id == ^business_id and entry.client_id == ^client_id)
   end
-
-  @spec for_slot(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_slot(query \\ __MODULE__, slot_id),
-    do: from(entry in query, where: entry.nutrition_diary_slot_id == ^slot_id)
 
   @spec lock_id(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def lock_id(query \\ __MODULE__, id), do: from(entry in query, where: entry.id == ^id, lock: "FOR UPDATE")

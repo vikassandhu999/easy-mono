@@ -32,10 +32,7 @@ defmodule Easy.Nutrition.NutrientTotals do
 
   @spec from_recipe(Recipe.t()) :: t()
   def from_recipe(%Recipe{recipe_ingredients: ingredients}) when is_list(ingredients) do
-    case Enum.map(ingredients, &from_ingredient/1) do
-      [] -> @empty
-      [first | rest] -> Enum.reduce(rest, first, &add(&2, &1))
-    end
+    combine(Enum.map(ingredients, &from_ingredient/1))
   end
 
   def from_recipe(%Recipe{}), do: @empty
@@ -71,11 +68,7 @@ defmodule Easy.Nutrition.NutrientTotals do
   end
 
   @spec sum([map()]) :: t()
-  def sum([]), do: @empty
-
-  def sum([first | rest]) do
-    Enum.reduce(rest, from_fields(first), fn item, totals -> add(totals, from_fields(item)) end)
-  end
+  def sum(items), do: combine(Enum.map(items, &from_fields/1))
 
   @spec combine([t()]) :: t()
   def combine([]), do: @empty

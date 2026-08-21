@@ -60,10 +60,6 @@ defmodule Easy.Nutrition.Meal do
   def for_business(query \\ __MODULE__, business_id),
     do: from(meal in query, where: meal.business_id == ^business_id)
 
-  @spec by_position(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def by_position(query \\ __MODULE__),
-    do: from(meal in query, order_by: [asc: meal.position, asc: meal.id])
-
   @spec include_items(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def include_items(query \\ __MODULE__, business_id) do
     item_query =
@@ -75,20 +71,6 @@ defmodule Easy.Nutrition.Meal do
       where: meal.business_id == ^business_id,
       order_by: [asc: meal.position, asc: meal.id],
       preload: [meal_items: ^item_query]
-    )
-  end
-
-  @spec include_logging_items(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def include_logging_items(query \\ __MODULE__) do
-    from(meal in query,
-      left_join: item in assoc(meal, :meal_items),
-      on: item.business_id == meal.business_id,
-      left_join: food in assoc(item, :food),
-      on: is_nil(food.business_id) or food.business_id == meal.business_id,
-      left_join: recipe in assoc(item, :recipe),
-      on: recipe.business_id == meal.business_id,
-      order_by: [asc: meal.position, asc: meal.id, asc: item.position, asc: item.id],
-      preload: [meal_items: {item, food: food, recipe: recipe}]
     )
   end
 end

@@ -66,10 +66,6 @@ defmodule Easy.Nutrition.DiarySlot do
     |> validate_number(:revision, greater_than: 0)
   end
 
-  @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_business(query \\ __MODULE__, business_id),
-    do: from(slot in query, where: slot.business_id == ^business_id)
-
   @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
   def for_client(query \\ __MODULE__, business_id, client_id) do
     from(slot in query, where: slot.business_id == ^business_id and slot.client_id == ^client_id)

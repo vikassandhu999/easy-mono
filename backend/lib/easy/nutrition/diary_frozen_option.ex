@@ -5,7 +5,6 @@ defmodule Easy.Nutrition.DiaryFrozenOption do
   alias Easy.Orgs
 
   import Ecto.Changeset
-  import Ecto.Query
 
   @type t() :: %__MODULE__{}
 
@@ -36,8 +35,4 @@ defmodule Easy.Nutrition.DiaryFrozenOption do
     |> unique_constraint(:position, name: :nutrition_diary_frozen_options_slot_position_index)
     |> foreign_key_constraint(:nutrition_diary_slot_id, name: :nutrition_diary_frozen_options_slot_business_id_fkey)
   end
-
-  @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_business(query \\ __MODULE__, business_id),
-    do: from(option in query, where: option.business_id == ^business_id)
 end

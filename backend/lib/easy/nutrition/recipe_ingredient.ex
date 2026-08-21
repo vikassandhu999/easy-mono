@@ -27,21 +27,6 @@ defmodule Easy.Nutrition.RecipeIngredient do
     from(ri in query, where: ri.business_id == ^business_id)
   end
 
-  @spec for_recipes(Ecto.Queryable.t(), [String.t()]) :: Ecto.Query.t()
-  def for_recipes(query \\ __MODULE__, recipe_ids) do
-    from(ri in query, where: ri.recipe_id in ^recipe_ids)
-  end
-
-  @spec include_food(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def include_food(query \\ __MODULE__) do
-    from(ri in query,
-      join: food in assoc(ri, :food),
-      on: is_nil(food.business_id) or food.business_id == ri.business_id,
-      order_by: [asc: ri.recipe_id, asc: ri.position, asc: ri.id],
-      preload: [food: food]
-    )
-  end
-
   @spec insert_changeset(String.t(), String.t(), non_neg_integer(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, recipe_id, position, attrs) do
     %__MODULE__{}

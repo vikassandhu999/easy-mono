@@ -140,7 +140,6 @@ defmodule Easy.Nutrition.Food do
     from(f in query, where: f.business_id == ^business_id or is_nil(f.business_id))
   end
 
-  @spec search(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   @spec for_categories(Ecto.Queryable.t(), [String.t()] | nil) :: Ecto.Query.t()
   def for_categories(query \\ __MODULE__, categories)
   def for_categories(query, nil), do: query
@@ -163,6 +162,7 @@ defmodule Easy.Nutrition.Food do
     )
   end
 
+  @spec search(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def search(query \\ __MODULE__, term)
   def search(query, nil), do: query
   def search(query, ""), do: query

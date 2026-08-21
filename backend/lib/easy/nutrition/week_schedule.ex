@@ -12,6 +12,7 @@ defmodule Easy.Nutrition.WeekSchedule do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   @weekdays [:monday, :tuesday, :wednesday, :thursday, :friday, :saturday, :sunday]
+  @weekday_order Enum.map(@weekdays, &Atom.to_string/1)
 
   schema "nutrition_week_schedule" do
     field :weekday, Ecto.Enum, values: @weekdays
@@ -54,11 +55,7 @@ defmodule Easy.Nutrition.WeekSchedule do
   def by_weekday(query \\ __MODULE__) do
     from(row in query,
       order_by: [
-        asc:
-          fragment(
-            "array_position(ARRAY['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], ?)",
-            row.weekday
-          ),
+        asc: fragment("array_position(?::text[], ?)", ^@weekday_order, row.weekday),
         asc: row.id
       ]
     )

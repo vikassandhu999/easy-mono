@@ -61,9 +61,6 @@ defmodule Easy.Nutrition.Plan do
     timestamps(type: :utc_datetime)
   end
 
-  @spec kinds() :: [atom()]
-  def kinds, do: @kinds
-
   @spec lifecycles() :: [atom()]
   def lifecycles, do: @lifecycles
 
@@ -86,15 +83,13 @@ defmodule Easy.Nutrition.Plan do
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, creator_id, attrs) do
-    supplied_fields = attrs |> Map.keys() |> Enum.map(&to_string/1) |> MapSet.new()
-
     %__MODULE__{}
     |> cast(attrs, @template_fields)
     |> put_change(:kind, :template)
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, creator_id)
     |> put_change(:revision, 1)
-    |> reject_template_relationship_fields(supplied_fields)
+    |> reject_fields_invalid_for_kind(:template, supplied_field_names(attrs))
     |> validate_common_fields()
     |> validate_required([:kind, :business_id, :creator_id, :revision])
     |> apply_constraints()
@@ -130,11 +125,9 @@ defmodule Easy.Nutrition.Plan do
         do: @template_fields,
         else: @template_fields ++ [:start_date, :end_date]
 
-    supplied_fields = attrs |> Map.keys() |> Enum.map(&to_string/1) |> MapSet.new()
-
     plan
     |> cast(attrs, fields)
-    |> reject_fields_invalid_for_kind(plan.kind, supplied_fields)
+    |> reject_fields_invalid_for_kind(plan.kind, supplied_field_names(attrs))
     |> validate_common_fields()
     |> validate_date_range()
     |> apply_constraints()
@@ -165,13 +158,8 @@ defmodule Easy.Nutrition.Plan do
     )
   end
 
-  defp reject_template_relationship_fields(changeset, supplied_fields) do
-    reject_fields(
-      changeset,
-      @client_plan_fields,
-      supplied_fields,
-      "is not valid for a Nutrition Template"
-    )
+  defp supplied_field_names(attrs) do
+    attrs |> Map.keys() |> Enum.map(&to_string/1) |> MapSet.new()
   end
 
   defp reject_fields(changeset, fields, supplied_fields, message) do
@@ -199,6 +187,17 @@ defmodule Easy.Nutrition.Plan do
     end)
   end
 
+  defp validate_date_range(changeset) do
+    start_date = get_field(changeset, :start_date)
+    end_date = get_field(changeset, :end_date)
+
+    if start_date && end_date && Date.compare(end_date, start_date) == :lt do
+      add_error(changeset, :end_date, "must be after or equal to start date")
+    else
+      changeset
+    end
+  end
+
   defp apply_constraints(changeset) do
     changeset
     |> foreign_key_constraint(:business_id)
@@ -220,18 +219,6 @@ defmodule Easy.Nutrition.Plan do
       name: :nutrition_plans_no_overlapping_coverage,
       message: "overlaps another Client Plan's Coverage"
     )
-  end
-
-  @spec validate_date_range(Ecto.Changeset.t()) :: Ecto.Changeset.t()
-  def validate_date_range(changeset) do
-    start_date = get_field(changeset, :start_date)
-    end_date = get_field(changeset, :end_date)
-
-    if start_date && end_date && Date.compare(end_date, start_date) == :lt do
-      add_error(changeset, :end_date, "must be after or equal to start date")
-    else
-      changeset
-    end
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
@@ -279,20 +266,6 @@ defmodule Easy.Nutrition.Plan do
       where: not is_nil(plan.start_date) and plan.start_date <= ^date,
       where: is_nil(plan.end_date) or plan.end_date >= ^date
     )
-  end
-
-  @spec active_for_client(Ecto.Queryable.t(), String.t(), Date.t()) :: Ecto.Query.t()
-  def active_for_client(query \\ __MODULE__, client_id, date),
-    do: covering(query, client_id, date)
-
-  @spec active_for_clients(Ecto.Queryable.t(), String.t(), [String.t()], Date.t()) ::
-          Ecto.Query.t()
-  def active_for_clients(query \\ __MODULE__, business_id, client_ids, date) do
-    query
-    |> covering_intervals(business_id)
-    |> where([plan], plan.client_id in ^client_ids)
-    |> where([plan], plan.start_date <= ^date)
-    |> where([plan], is_nil(plan.end_date) or plan.end_date >= ^date)
   end
 
   @spec covering_intervals(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

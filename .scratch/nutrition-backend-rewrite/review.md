@@ -967,7 +967,7 @@ Spec (Codex subagent):
   Path: .scratch/nutrition-backend-rewrite/issues/16-contract-cutover.md
   Quote: "The coach app builds and its touched flows are verified at phone and desktop widths." / "The client app builds and its Today and History flows are verified at phone width."
   Why: The ticket Answer says, "Live 375/1280 walkthrough was not run in this session," while both verification requirements remain checked.
-  Disposition: open
+  Disposition: fixed in 73df7a42
 
 - P2 — Replaced `MacroCalc` symbol remains in a live builder comment
   Path: frontend/apps/coachapp-v2/src/nutrition-plans/builder/components/amount-sheet.tsx

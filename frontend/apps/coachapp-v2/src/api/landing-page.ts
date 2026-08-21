@@ -144,7 +144,7 @@ export function draftToRequest(draft: LandingDraft): LandingPageUpsertRequest {
 export function useGetLandingPageQuery(options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: landingPageKeys.all,
-    queryFn: () => call(client.GET('/v1/coach/landing-page')) as Promise<LandingPageResponse>,
+    queryFn: () => call(client.GET('/v1/coach/landing-page')),
     enabled: options?.enabled ?? true,
   });
 }
@@ -153,7 +153,7 @@ export function useSaveLandingPageMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: LandingPageUpsertRequest) =>
-      call(client.PUT('/v1/coach/landing-page', {body})) as Promise<LandingPageResponse>,
+      call(client.PUT('/v1/coach/landing-page', {body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: landingPageKeys.all});
     },

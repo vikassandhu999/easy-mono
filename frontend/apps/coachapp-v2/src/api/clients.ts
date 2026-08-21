@@ -50,7 +50,8 @@ export type ListClientsFilters = Pick<ListClientsQuery, 'search' | 'sort' | 'sta
 export function useGetClientQuery(id: string, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: clientKeys.detail(id),
-    queryFn: () => call(client.GET('/v1/coach/clients/{id}', {params: {path: {id}}})) as Promise<ApiResponse<Client>>,
+    queryFn: () =>
+      call(client.GET('/v1/coach/clients/{id}', {params: {path: {id}}})) as Promise<ApiResponse<Client>>, // bridges RequiredServices tuple vs openapi-fetch array widening; ticket 04
     enabled: options?.enabled ?? true,
   });
 }
@@ -113,7 +114,9 @@ export function useResendClientInviteMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      call(client.POST('/v1/coach/clients/{id}/resend-invite', {params: {path: {id}}})) as Promise<ApiResponse<Client>>,
+      call(client.POST('/v1/coach/clients/{id}/resend-invite', {params: {path: {id}}})) as Promise<
+        ApiResponse<Client>
+      >,
     onSuccess: (_data, id) => {
       qc.invalidateQueries({queryKey: clientKeys.detail(id)});
       qc.invalidateQueries({queryKey: clientKeys.lists()});

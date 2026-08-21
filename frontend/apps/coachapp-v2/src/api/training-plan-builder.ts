@@ -54,7 +54,7 @@ export function useGetTrainingPlanQuery(planId: string, options?: {enabled?: boo
     queryFn: () =>
       call(
         client.GET('/v1/coach/training-plans/{id}', {params: {path: {id: planId}}}),
-      ) as Promise<TrainingPlanResponse>,
+      ),
     enabled: options?.enabled ?? true,
   });
 }

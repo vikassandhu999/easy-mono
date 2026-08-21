@@ -27,7 +27,7 @@ export type BusinessResponse = components['schemas']['BusinessResponse'];
 
 export function useVerifyOtpMutation() {
   return useMutation({
-    mutationFn: (body: VerifyOtpRequest) => call(client.POST('/v1/auth/verify', {body})) as Promise<AuthTokenResponse>,
+    mutationFn: (body: VerifyOtpRequest) => call(client.POST('/v1/auth/verify', {body})),
   });
 }
 
@@ -58,7 +58,7 @@ export function useTrainerAcceptInviteMutation() {
 export function useTrainerAcceptInviteVerifyMutation() {
   return useMutation({
     mutationFn: (body: TrainerAcceptInviteVerifyRequest) =>
-      call(client.POST('/v1/auth/trainer-accept-invite/verify', {body})) as Promise<AuthTokenResponse>,
+      call(client.POST('/v1/auth/trainer-accept-invite/verify', {body})),
   });
 }
 
@@ -74,7 +74,7 @@ export function useShowTrainerInvitationQuery(token: string, options?: {enabled?
     queryFn: () =>
       call(
         client.GET('/v1/auth/trainer-invitations/{token}', {params: {path: {token}}}),
-      ) as Promise<TrainerInvitationPreviewResponse>,
+      ),
     enabled: options?.enabled ?? true,
     staleTime: 0,
     refetchOnMount: 'always',
@@ -84,7 +84,7 @@ export function useShowTrainerInvitationQuery(token: string, options?: {enabled?
 export function useCreateBusinessMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: BusinessRequest) => call(client.POST('/v1/businesses', {body})) as Promise<BusinessResponse>,
+    mutationFn: (body: BusinessRequest) => call(client.POST('/v1/businesses', {body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: businessKeys.all});
     },
@@ -94,7 +94,7 @@ export function useCreateBusinessMutation() {
 export function useGetCurrentBusinessQuery(options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: businessKeys.all,
-    queryFn: () => call(client.GET('/v1/businesses/me')) as Promise<BusinessResponse>,
+    queryFn: () => call(client.GET('/v1/businesses/me')),
     enabled: options?.enabled ?? true,
   });
 }

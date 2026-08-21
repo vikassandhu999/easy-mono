@@ -70,7 +70,7 @@ export function useActivationSync() {
 export function useGetBillingQuery(options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: billingKeys.all,
-    queryFn: () => call(client.GET('/v1/coach/billing')) as Promise<BillingResponse>,
+    queryFn: () => call(client.GET('/v1/coach/billing')),
     enabled: options?.enabled ?? true,
   });
 }
@@ -79,7 +79,7 @@ export function useCheckoutSeatsMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: BillingCheckoutRequest) =>
-      call(client.POST('/v1/coach/billing/checkout', {body})) as Promise<BillingCheckoutResponse>,
+      call(client.POST('/v1/coach/billing/checkout', {body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: billingKeys.all});
       qc.invalidateQueries({queryKey: clientKeys.details()});
@@ -91,7 +91,7 @@ export function useCheckoutSeatsMutation() {
 export function useCancelBillingMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => call(client.POST('/v1/coach/billing/cancel')) as Promise<BillingResponse>,
+    mutationFn: () => call(client.POST('/v1/coach/billing/cancel')),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: billingKeys.all});
     },
@@ -101,7 +101,7 @@ export function useCancelBillingMutation() {
 export function useSyncBillingMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => call(client.POST('/v1/coach/billing/sync')) as Promise<BillingResponse>,
+    mutationFn: () => call(client.POST('/v1/coach/billing/sync')),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: billingKeys.all});
       qc.invalidateQueries({queryKey: clientKeys.details()});

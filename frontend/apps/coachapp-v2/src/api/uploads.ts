@@ -24,7 +24,7 @@ export type LibraryMediaUploadResponse = components['schemas']['LibraryMediaUplo
 export function useGetCoachAttachmentDownloadUrlsMutation() {
   return useMutation({
     mutationFn: (body: AttachmentDownloadRequest) =>
-      call(client.POST('/v1/coach/attachments/download-urls', {body})) as Promise<AttachmentDownloadsResponse>,
+      call(client.POST('/v1/coach/attachments/download-urls', {body})),
   });
 }
 
@@ -33,13 +33,13 @@ export function useCreateCoachClientUploadMutation() {
     mutationFn: ({body, clientId}: {body: AttachmentUploadRequest; clientId: string}) =>
       call(
         client.POST('/v1/coach/clients/{client_id}/uploads', {params: {path: {client_id: clientId}}, body}),
-      ) as Promise<AttachmentUploadResponse>,
+      ),
   });
 }
 
 export function useCreateCoachLibraryMediaUploadMutation() {
   return useMutation({
     mutationFn: (body: LibraryMediaUploadRequest) =>
-      call(client.POST('/v1/coach/library-media/uploads', {body})) as Promise<LibraryMediaUploadResponse>,
+      call(client.POST('/v1/coach/library-media/uploads', {body})),
   });
 }

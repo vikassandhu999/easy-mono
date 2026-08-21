@@ -9,14 +9,11 @@ type AttachmentDownloadRequest = components['schemas']['AttachmentDownloadReques
 export type AttachmentUploadRequest = components['schemas']['AttachmentUploadRequest'];
 export type ChatMessageEmbed = components['schemas']['ChatMessageEmbed'];
 
-type UploadResponse = components['schemas']['AttachmentUploadResponse'];
-type DownloadsResponse = components['schemas']['AttachmentDownloadsResponse'];
-
 /** Mints a presigned PUT for a new attachment. Nothing is cached — no invalidation. */
 export function useCreateClientUploadMutation() {
   return useMutation({
     mutationFn: (body: AttachmentUploadRequest) =>
-      call(client.POST('/v1/client/uploads', {body})) as Promise<UploadResponse>,
+      call(client.POST('/v1/client/uploads', {body})),
   });
 }
 
@@ -24,6 +21,6 @@ export function useCreateClientUploadMutation() {
 export function useGetClientAttachmentDownloadUrlsMutation() {
   return useMutation({
     mutationFn: (body: AttachmentDownloadRequest) =>
-      call(client.POST('/v1/client/attachments/download-urls', {body})) as Promise<DownloadsResponse>,
+      call(client.POST('/v1/client/attachments/download-urls', {body})),
   });
 }

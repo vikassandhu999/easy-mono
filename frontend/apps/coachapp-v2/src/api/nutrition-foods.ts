@@ -27,8 +27,6 @@ export type RecipeRequest = components['schemas']['RecipeRequest'];
 export type RecipeUpdateRequest = components['schemas']['RecipeUpdateRequest'];
 export type RecipeIngredient = components['schemas']['RecipeIngredient'];
 export type RecipeIngredientRequest = components['schemas']['RecipeIngredientRequest'];
-type FoodListResponse = components['schemas']['FoodListResponse'];
-type RecipeListResponse = components['schemas']['RecipeListResponse'];
 
 type ListFoodsQuery = NonNullable<paths['/v1/coach/nutrition-foods']['get']['parameters']['query']>;
 type ListRecipesQuery = NonNullable<paths['/v1/coach/nutrition-recipes']['get']['parameters']['query']>;
@@ -54,7 +52,7 @@ export function useCoachFoodsInfiniteQuery(filters?: CoachFoodsFilters) {
             },
           },
         }),
-      ) as Promise<FoodListResponse>,
+      ),
     initialPageParam: 0,
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
       const nextOffset = lastPageParam + PAGE_SIZE;
@@ -77,7 +75,7 @@ export function useCoachRecipesInfiniteQuery(filters?: CoachRecipesFilters) {
             },
           },
         }),
-      ) as Promise<RecipeListResponse>,
+      ),
     initialPageParam: 0,
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
       const nextOffset = lastPageParam + PAGE_SIZE;
@@ -161,7 +159,7 @@ export function useListFoodsQuery(params?: ListFoodsParams, options?: {enabled?:
     queryFn: () =>
       call(
         client.GET('/v1/coach/nutrition-foods', {params: {query: params ?? undefined}}),
-      ) as Promise<FoodListResponse>,
+      ),
     enabled: options?.enabled ?? true,
   });
 }

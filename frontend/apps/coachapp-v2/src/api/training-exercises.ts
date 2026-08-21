@@ -54,7 +54,7 @@ export function useCoachTrainingExercisesInfiniteQuery(filters?: CoachTrainingEx
             } as ListCoachExercisesQuery,
           },
         }),
-      ) as Promise<TrainingExerciseListResponse>,
+      ),
     initialPageParam: 0,
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
       const nextOffset = lastPageParam + PAGE_SIZE;

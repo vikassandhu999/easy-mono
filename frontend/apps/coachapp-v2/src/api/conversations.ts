@@ -12,7 +12,6 @@ export type ChatMessageEmbedRequest = components['schemas']['ChatMessageEmbedReq
 export type Conversation = components['schemas']['Conversation'];
 
 type MessagesPage = {data: ChatMessage[]; has_more: boolean};
-type ConversationListResponse = components['schemas']['ConversationListResponse'];
 
 const PAGE_SIZE = 20;
 
@@ -27,7 +26,7 @@ export function useCoachConversationsInfiniteQuery(search?: string) {
         client.GET('/v1/coach/conversations', {
           params: {query: {limit: PAGE_SIZE, offset: pageParam, search: normalizedSearch}},
         }),
-      ) as Promise<ConversationListResponse>,
+      ),
     initialPageParam: 0,
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
       const nextOffset = lastPageParam + PAGE_SIZE;
@@ -58,7 +57,7 @@ export function useConversationMessagesInfiniteQuery(conversationId: string) {
             query: {limit: PAGE_SIZE, ...(pageParam && {before: pageParam})},
           },
         }),
-      ) as Promise<MessagesPage>,
+      ),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => (lastPage.has_more ? lastPage.data[0]?.id : undefined),
   });

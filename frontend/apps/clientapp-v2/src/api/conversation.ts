@@ -11,15 +11,13 @@ export type CreateMessageBody =
   paths['/v1/client/conversation/messages']['post']['requestBody']['content']['application/json'];
 
 type MessagesPage = {data: ChatMessage[]; has_more: boolean};
-type ConversationResponse = components['schemas']['ConversationResponse'];
-type ChatMessageResponse = components['schemas']['ChatMessageResponse'];
 
 const PAGE_SIZE = 20;
 
 export function useGetClientConversationQuery(options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: conversationKeys.detail(),
-    queryFn: () => call(client.GET('/v1/client/conversation')) as Promise<ConversationResponse>,
+    queryFn: () => call(client.GET('/v1/client/conversation')),
     enabled: options?.enabled ?? true,
   });
 }
@@ -34,7 +32,7 @@ export function useClientMessagesInfiniteQuery() {
         client.GET('/v1/client/conversation/messages', {
           params: {query: {limit: PAGE_SIZE, ...(pageParam && {before: pageParam})}},
         }),
-      ) as Promise<MessagesPage>,
+      ),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => (lastPage.has_more ? lastPage.data[0]?.id : undefined),
   });
@@ -44,7 +42,7 @@ export function useCreateClientConversationMessageMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: CreateMessageBody) =>
-      call(client.POST('/v1/client/conversation/messages', {body})) as Promise<ChatMessageResponse>,
+      call(client.POST('/v1/client/conversation/messages', {body})),
     // Only the header — the sent message is appended optimistically by the caller.
     onSuccess: () => {
       qc.invalidateQueries({queryKey: conversationKeys.detail()});
@@ -55,7 +53,7 @@ export function useCreateClientConversationMessageMutation() {
 export function useMarkClientConversationReadMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => call(client.POST('/v1/client/conversation/read')) as Promise<ConversationResponse>,
+    mutationFn: () => call(client.POST('/v1/client/conversation/read')),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: conversationKeys.detail()});
     },

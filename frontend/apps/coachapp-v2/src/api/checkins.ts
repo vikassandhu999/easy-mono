@@ -182,7 +182,7 @@ export function sectionsToRequest(drafts: SectionDraft[], purpose: FormPurpose):
 export function useListFormTemplatesQuery(options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: formTemplateKeys.list(),
-    queryFn: () => call(client.GET('/v1/coach/form-templates')) as Promise<ClientProfileFormTemplateListResponse>,
+    queryFn: () => call(client.GET('/v1/coach/form-templates')),
     enabled: options?.enabled ?? true,
   });
 }
@@ -193,7 +193,7 @@ export function useGetFormTemplateQuery(id: string, options?: {enabled?: boolean
     queryFn: () =>
       call(
         client.GET('/v1/coach/form-templates/{id}', {params: {path: {id}}}),
-      ) as Promise<ClientProfileFormTemplateResponse>,
+      ),
     enabled: options?.enabled ?? true,
   });
 }
@@ -202,7 +202,7 @@ export function useCreateFormTemplateMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: ClientProfileFormTemplateRequest) =>
-      call(client.POST('/v1/coach/form-templates', {body})) as Promise<ClientProfileFormTemplateResponse>,
+      call(client.POST('/v1/coach/form-templates', {body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: formTemplateKeys.lists()});
     },
@@ -215,7 +215,7 @@ export function useUpdateFormTemplateMutation() {
     mutationFn: ({body, id}: {body: ClientProfileFormTemplateUpdateRequest; id: string}) =>
       call(
         client.PATCH('/v1/coach/form-templates/{id}', {params: {path: {id}}, body}),
-      ) as Promise<ClientProfileFormTemplateResponse>,
+      ),
     onSuccess: (_data, {id}) => {
       qc.invalidateQueries({queryKey: formTemplateKeys.detail(id)});
       qc.invalidateQueries({queryKey: formTemplateKeys.lists()});
@@ -243,7 +243,7 @@ export function useSetDefaultIntakeTemplateMutation() {
     mutationFn: (id: string) =>
       call(
         client.PUT('/v1/coach/form-templates/{id}/default-intake', {params: {path: {id}}}),
-      ) as Promise<ClientProfileFormTemplateResponse>,
+      ),
     onSettled: () => {
       qc.invalidateQueries({queryKey: formTemplateKeys.all});
     },
@@ -260,7 +260,7 @@ export function useListCheckInSchedulesForClientQuery(clientId: string, options?
     queryFn: () =>
       call(
         client.GET('/v1/coach/clients/{client_id}/check-in-schedules', {params: {path: {client_id: clientId}}}),
-      ) as Promise<ClientProfileCheckInScheduleListResponse>,
+      ),
     enabled: options?.enabled ?? true,
   });
 }
@@ -275,7 +275,7 @@ export function useCreateCheckInScheduleMutation() {
           body,
           params: {path: {client_id: clientId}},
         }),
-      ) as Promise<ClientProfileCheckInScheduleResponse>,
+      ),
     onSuccess: (_data, {clientId}) => {
       qc.invalidateQueries({queryKey: checkInKeys.schedules(clientId)});
       qc.invalidateQueries({queryKey: formAssignmentKeys.forClient(clientId)});
@@ -296,7 +296,7 @@ export function useUpdateCheckInScheduleMutation() {
     mutationFn: ({body, id}: {body: ClientProfileCheckInScheduleUpdateRequest; id: string}) =>
       call(
         client.PATCH('/v1/coach/check-in-schedules/{id}', {params: {path: {id}}, body}),
-      ) as Promise<ClientProfileCheckInScheduleResponse>,
+      ),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: checkInKeys.all});
       qc.invalidateQueries({queryKey: formAssignmentKeys.all});
@@ -340,7 +340,7 @@ export function useCreateClientFormAssignmentMutation() {
           body,
           params: {path: {client_id: clientId}},
         }),
-      ) as Promise<ClientProfileFormAssignmentResponse>,
+      ),
     onSuccess: (_data, {clientId}) => {
       qc.invalidateQueries({queryKey: formAssignmentKeys.forClient(clientId)});
       qc.invalidateQueries({queryKey: clientKeys.detail(clientId)});

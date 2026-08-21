@@ -33,10 +33,6 @@ export type TrainingSession = components['schemas']['TrainingSession'];
 export type TrainingPerformedSet = components['schemas']['TrainingPerformedSet'];
 export type TrainingSessionListResponse = components['schemas']['TrainingSessionListResponse'];
 
-type TrainingPlanResponse = components['schemas']['TrainingPlanResponse'];
-type ClientTrainingPlanResponse = components['schemas']['CoachClientTrainingPlanResponse'];
-type TrainingSessionResponse = components['schemas']['TrainingSessionResponse'];
-
 type ListTrainingPlansQuery = NonNullable<paths['/v1/coach/training-plans']['get']['parameters']['query']>;
 type ListCoachClientTrainingPlansQuery = NonNullable<
   paths['/v1/coach/clients/{client_id}/training-plans']['get']['parameters']['query']
@@ -67,7 +63,7 @@ export function useCoachTrainingPlansInfiniteQuery(filters?: CoachTrainingPlansF
             },
           },
         }),
-      ) as Promise<TrainingPlanListResponse>,
+      ),
     initialPageParam: 0,
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
       const nextOffset = lastPageParam + PAGE_SIZE;
@@ -82,7 +78,7 @@ export function useListTrainingPlansQuery(params?: ListTrainingPlansApiArg, opti
     queryFn: () =>
       call(
         client.GET('/v1/coach/training-plans', {params: {query: params ?? undefined}}),
-      ) as Promise<TrainingPlanListResponse>,
+      ),
     enabled: options?.enabled ?? true,
   });
 }
@@ -99,7 +95,7 @@ export function useListCoachClientTrainingPlansQuery(
         client.GET('/v1/coach/clients/{client_id}/training-plans', {
           params: {path: {client_id: clientId}, query: params ?? undefined},
         }),
-      ) as Promise<ClientTrainingPlanListResponse>,
+      ),
     enabled: options?.enabled ?? true,
   });
 }
@@ -120,7 +116,7 @@ export function useCoachClientTrainingPlansInfiniteQuery(
             query: {...filters, limit: PAGE_SIZE, offset: pageParam},
           },
         }),
-      ) as Promise<ClientTrainingPlanListResponse>,
+      ),
     initialPageParam: 0,
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
       const nextOffset = lastPageParam + PAGE_SIZE;
@@ -133,7 +129,7 @@ export function useCreateTrainingPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: TrainingPlanCreateRequest) =>
-      call(client.POST('/v1/coach/training-plans', {body})) as Promise<TrainingPlanResponse>,
+      call(client.POST('/v1/coach/training-plans', {body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: trainingPlanKeys.lists()});
     },
@@ -146,7 +142,7 @@ export function useUpdateTrainingPlanMutation() {
     mutationFn: ({id, body}: {id: string; body: TrainingPlanUpdateRequest}) =>
       call(
         client.PATCH('/v1/coach/training-plans/{id}', {params: {path: {id}}, body}),
-      ) as Promise<TrainingPlanResponse>,
+      ),
     onSuccess: (_data, {id}) => {
       // The mutation owns every cache effect (see the nutrition twin for the
       // full rationale): the plan's own entries, client plan-name columns,
@@ -192,7 +188,7 @@ export function useArchiveTrainingPlanMutation() {
     mutationFn: ({id, body}: {id: string; body: TrainingPlanRevisionRequest}) =>
       call(
         client.POST('/v1/coach/training-plans/{id}/archive', {params: {path: {id}}, body}),
-      ) as Promise<TrainingPlanResponse>,
+      ),
     onSuccess: (_data, {id}) => {
       qc.invalidateQueries({queryKey: trainingPlanKeys.detail(id)});
       qc.invalidateQueries({queryKey: trainingPlanKeys.lists()});
@@ -212,7 +208,7 @@ export function useRestoreTrainingPlanMutation() {
     mutationFn: ({id, body}: {id: string; body: TrainingPlanRevisionRequest}) =>
       call(
         client.POST('/v1/coach/training-plans/{id}/restore', {params: {path: {id}}, body}),
-      ) as Promise<TrainingPlanResponse>,
+      ),
     onSuccess: (_data, {id}) => {
       qc.invalidateQueries({queryKey: trainingPlanKeys.detail(id)});
       qc.invalidateQueries({queryKey: trainingPlanKeys.lists()});
@@ -232,7 +228,7 @@ export function useDuplicateTrainingPlanMutation() {
     mutationFn: (id: string) =>
       call(
         client.POST('/v1/coach/training-plans/{id}/duplicate', {params: {path: {id}}}),
-      ) as Promise<TrainingPlanResponse>,
+      ),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: trainingPlanKeys.lists()});
     },
@@ -253,7 +249,7 @@ export function useAssignTrainingPlanMutation() {
           '/v1/coach/clients/{client_id}/training-plans/{id}/assign',
           trainingPlanAssignmentRequest({body, clientId, id}),
         ),
-      ) as Promise<ClientTrainingPlanResponse>,
+      ),
     onSuccess: (_data, {clientId}) => {
       qc.invalidateQueries({queryKey: trainingPlanKeys.forClientLists(clientId)});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
@@ -284,7 +280,7 @@ export function useCoachClientTrainingSessionsInfiniteQuery(
           '/v1/coach/clients/{client_id}/training-sessions',
           coachClientTrainingSessionHistoryRequest(clientId, {...filters, limit: PAGE_SIZE, offset: pageParam}),
         ),
-      ) as Promise<TrainingSessionListResponse>,
+      ),
     initialPageParam: 0,
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
       const nextOffset = lastPageParam + PAGE_SIZE;
@@ -306,7 +302,7 @@ export function useListCoachClientTrainingSessionsQuery(
           '/v1/coach/clients/{client_id}/training-sessions',
           coachClientTrainingSessionHistoryRequest(clientId, filters),
         ),
-      ) as Promise<TrainingSessionListResponse>,
+      ),
     enabled: options?.enabled ?? true,
   });
 }
@@ -319,7 +315,7 @@ export function useGetCoachClientTrainingSessionQuery(clientId: string, id: stri
         client.GET('/v1/coach/clients/{client_id}/training-sessions/{id}', {
           params: {path: {client_id: clientId, id}},
         }),
-      ) as Promise<TrainingSessionResponse>,
+      ),
     enabled: options?.enabled ?? true,
   });
 }

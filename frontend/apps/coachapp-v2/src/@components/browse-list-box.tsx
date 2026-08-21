@@ -39,17 +39,17 @@ type BrowseRowProps = {
   /** Tile contents: a lucide glyph, or `BrowseRowThumb` for image-backed rows. */
   icon: ReactNode;
   /** Extra classes for the icon tile — only for a domain that tints it (e.g. `bg-warning-soft`). */
-  iconClassName?: string;
+  iconClassName?: string | undefined;
   id: Key;
   /** Secondary line under the title. Truncates. */
-  meta?: ReactNode;
+  meta?: ReactNode | undefined;
   /** Typeahead/accessible text for the row. */
   textValue: string;
   title: string;
   /** Style-diff anchor prefix; the row's parts derive their ids from it. */
-  testId?: string;
+  testId?: string | undefined;
   /** Chips shown before the chevron. The chevron is always rendered. */
-  trailing?: ReactNode;
+  trailing?: ReactNode | undefined;
 };
 
 /**
@@ -108,7 +108,7 @@ export function BrowseRow({icon, iconClassName, id, meta, testId, textValue, tit
 }
 
 /** The image-or-fallback contents of a `BrowseRow` icon tile. */
-export function BrowseRowThumb({alt, fallback, src}: {alt: string; fallback: ReactNode; src?: string | null}) {
+export function BrowseRowThumb({alt, fallback, src}: {alt: string; fallback: ReactNode; src?: string | null | undefined}) {
   if (!src) {
     return fallback;
   }
@@ -123,7 +123,7 @@ export function BrowseRowThumb({alt, fallback, src}: {alt: string; fallback: Rea
 
 type Props<T extends object> = {
   ariaLabel: string;
-  className?: string;
+  className?: string | undefined;
   emptyState: ReactNode;
   fetchNextPage: () => void;
   /**
@@ -140,15 +140,15 @@ type Props<T extends object> = {
    * Grid rows own their own press: `onAction` is a listbox-level prop and is
    * ignored here, so the row component passes `onAction` to its `GridListItem`.
    */
-  grid?: boolean;
-  isError?: boolean;
+  grid?: boolean | undefined;
+  isError?: boolean | undefined;
   isLoading: boolean;
   items: T[];
-  onAction?: (key: Key) => void;
-  onRetry?: () => void;
+  onAction?: ((key: Key) => void) | undefined;
+  onRetry?: (() => void) | undefined;
   renderItem: (item: T) => ReactNode;
   /** Render round leading blocks in the loading skeleton (client-style rows). */
-  skeletonAvatar?: boolean;
+  skeletonAvatar?: boolean | undefined;
 };
 
 export default function BrowseListBox<T extends object>({
@@ -213,7 +213,7 @@ export default function BrowseListBox<T extends object>({
     return (
       <GridList
         aria-label={ariaLabel}
-        className={listClassName}
+        {...(listClassName ? {className: listClassName} : {})}
         renderEmptyState={renderEmptyState}
         selectionMode="none"
       >
@@ -233,8 +233,8 @@ export default function BrowseListBox<T extends object>({
   return (
     <ListBox
       aria-label={ariaLabel}
-      className={listClassName}
-      onAction={onAction}
+      {...(listClassName ? {className: listClassName} : {})}
+      {...(onAction ? {onAction} : {})}
       renderEmptyState={renderEmptyState}
       selectionMode="none"
     >

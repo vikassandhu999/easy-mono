@@ -18,9 +18,9 @@ export function ViewShell({
   toolbar,
 }: {
   children: ReactNode;
-  meta?: string;
+  meta?: string | undefined;
   title: string;
-  toolbar?: ReactNode;
+  toolbar?: ReactNode | undefined;
 }) {
   return (
     <section className="flex min-w-0 flex-col gap-3">

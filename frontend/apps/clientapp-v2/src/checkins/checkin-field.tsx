@@ -37,7 +37,7 @@ function serviceAnswer(keys: Set<React.Key>): components['schemas']['ClientProfi
   return {services: ['nutrition']};
 }
 
-function FieldLabel({children, required}: {children: string; required?: boolean}) {
+function FieldLabel({children, required}: {children: string; required?: boolean | undefined}) {
   return (
     <Label className="mb-1.5 block text-sm font-medium">
       {children}
@@ -128,7 +128,7 @@ export default function CheckinField({
       return (
         <NumberField
           onChange={(v) => onChange(Number.isNaN(v) ? null : v)}
-          value={typeof value === 'number' ? value : undefined}
+          {...(typeof value === 'number' ? {value} : {})}
           variant="secondary"
         >
           <FieldLabel required={question.required}>{question.label}</FieldLabel>
@@ -174,7 +174,7 @@ export default function CheckinField({
           label={question.label}
           onChange={onChange}
           onUploadStateChange={onUploadStateChange ?? (() => undefined)}
-          required={question.required}
+          {...(question.required !== undefined ? {required: question.required} : {})}
           value={Array.isArray(value) ? value : []}
         />
       );
@@ -185,7 +185,7 @@ export default function CheckinField({
           maxValue={999.99}
           minValue={0.01}
           onChange={(v) => onChange(Number.isNaN(v) ? null : v)}
-          value={typeof value === 'number' ? value : undefined}
+          {...(typeof value === 'number' ? {value} : {})}
           variant="secondary"
         >
           <FieldLabel required={question.required}>{question.label}</FieldLabel>

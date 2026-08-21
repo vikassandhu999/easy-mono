@@ -5,7 +5,7 @@ import {Button, Typography} from '@heroui/react';
 // Pass `onRetry` for fetch failures — it owns the Retry affordance so call sites
 // don't each pair the card with their own button (and drift on whether to).
 
-export function ErrorState({message, onRetry}: {message: string; onRetry?: () => void}) {
+export function ErrorState({message, onRetry}: {message: string; onRetry?: (() => void) | undefined}) {
   return (
     <div className="rounded-panel border border-danger/20 bg-danger/5 p-4 text-center">
       <Typography

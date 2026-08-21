@@ -14,7 +14,8 @@ import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack
 
 import {call, client} from '@/api/client';
 import {equipmentKeys, exerciseKeys, muscleKeys} from '@/api/keys';
-import type {components, paths} from '@/api/schema';
+import type {components} from '@/api/schema';
+import {omitUndefined} from '@/api/shared';
 
 const PAGE_SIZE = 20;
 
@@ -24,8 +25,6 @@ export type TrainingExerciseCreateRequest = components['schemas']['TrainingExerc
 export type TrainingExerciseUpdateRequest = components['schemas']['TrainingExerciseUpdateRequest'];
 export type TrainingExerciseCopyRequest = components['schemas']['TrainingExerciseCopyRequest'];
 export type TrainingExerciseListResponse = components['schemas']['TrainingExerciseListResponse'];
-
-type ListCoachExercisesQuery = NonNullable<paths['/v1/coach/training-exercises']['get']['parameters']['query']>;
 
 /** Filter params — offset/limit are handled by the infinite query machinery. */
 export type CoachTrainingExercisesFilters = {
@@ -43,15 +42,11 @@ export function useCoachTrainingExercisesInfiniteQuery(filters?: CoachTrainingEx
           params: {
             query: {
               ...(filters?.search ? {search: filters.search} : {}),
-              // The backend takes one comma-joined id list per filter, not a
-              // repeated query key — openapi-fetch's default array serializer
-              // repeats the key, so join by hand (mirrors the old RTK query,
-              // which did the same before handing params to fetchBaseQuery).
-              ...(filters?.muscleIds?.length ? {muscle_ids: filters.muscleIds.join(',')} : {}),
-              ...(filters?.equipmentIds?.length ? {equipment_ids: filters.equipmentIds.join(',')} : {}),
+              ...(filters?.muscleIds?.length ? {muscle_ids: filters.muscleIds} : {}),
+              ...(filters?.equipmentIds?.length ? {equipment_ids: filters.equipmentIds} : {}),
               offset: pageParam,
               limit: PAGE_SIZE,
-            } as ListCoachExercisesQuery,
+            },
           },
         }),
       ),
@@ -124,14 +119,16 @@ export function useCopyExerciseMutation() {
 export function useListMusclesQuery(params?: {search?: string}) {
   return useQuery({
     queryKey: muscleKeys.all,
-    queryFn: () => call(client.GET('/v1/coach/training-muscles', {params: {query: params ?? undefined}})),
+    queryFn: () =>
+      call(client.GET('/v1/coach/training-muscles', params ? {params: {query: omitUndefined(params)}} : {})),
   });
 }
 
 export function useListEquipmentQuery(params?: {search?: string}) {
   return useQuery({
     queryKey: equipmentKeys.all,
-    queryFn: () => call(client.GET('/v1/coach/training-equipment', {params: {query: params ?? undefined}})),
+    queryFn: () =>
+      call(client.GET('/v1/coach/training-equipment', params ? {params: {query: omitUndefined(params)}} : {})),
   });
 }
 

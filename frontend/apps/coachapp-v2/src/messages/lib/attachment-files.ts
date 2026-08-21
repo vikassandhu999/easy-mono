@@ -20,9 +20,9 @@ export const MAX_BYTES: Record<AttachmentUploadRequest['content_type'], number> 
 };
 
 export type UploadItem = {
-  attachmentId?: string;
-  durationMs?: number;
-  errorMessage?: string;
+  attachmentId?: string | undefined;
+  durationMs?: number | undefined;
+  errorMessage?: string | undefined;
   file: File;
   localId: string;
   previewUrl: string;

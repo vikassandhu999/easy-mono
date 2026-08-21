@@ -36,10 +36,12 @@ function ConversationListItem({conversation}: {conversation: Conversation}) {
   const initial = name[0]?.toUpperCase() ?? '';
   const unread = conversation.unread_count > 0;
 
+  const merged = cn(LIST_ITEM_CLASS, unread && 'bg-accent-soft hover:bg-accent-soft');
+
   return (
     <ListBox.Item
       // Shared row gutters, hairlines, and no press-scale.
-      className={cn(LIST_ITEM_CLASS, unread && 'bg-accent-soft hover:bg-accent-soft')}
+      {...(merged ? {className: merged} : {})}
       id={conversation.client_id}
       textValue={name}
     >

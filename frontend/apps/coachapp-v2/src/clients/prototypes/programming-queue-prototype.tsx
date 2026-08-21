@@ -166,9 +166,11 @@ function ServiceName({service}: {service: Service}) {
 }
 
 function ReasonChip({code}: {code: ReasonCode}) {
+  const merged = cn('shrink-0', REASON_TONE[code]);
+
   return (
     <Chip
-      className={cn('shrink-0', REASON_TONE[code])}
+      {...(merged ? {className: merged} : {})}
       size="sm"
       variant="soft"
     >
@@ -318,13 +320,15 @@ function CompactPriorityRow({
     return null;
   }
 
+  const merged = cn(
+    'list-box-item',
+    LIST_ITEM_CLASS,
+    'mt-0 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center',
+  );
+
   return (
     <GridListItem
-      className={cn(
-        'list-box-item',
-        LIST_ITEM_CLASS,
-        'mt-0 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center',
-      )}
+      {...(merged ? {className: merged} : {})}
       id={client.id}
       textValue={client.name}
     >

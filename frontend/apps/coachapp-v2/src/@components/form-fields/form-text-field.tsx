@@ -24,7 +24,10 @@ export function FormTextField<T extends FieldValues>({
     <Controller
       control={control}
       name={name}
-      render={({field, fieldState}) => (
+      render={({field, fieldState}) => {
+        const {className: inputClassName, ...restInputProps} = inputProps ?? {};
+
+        return (
         <TextField
           {...props}
           isInvalid={!!fieldState.error}
@@ -43,11 +46,12 @@ export function FormTextField<T extends FieldValues>({
           {description ? <Description>{description}</Description> : null}
           {fieldState.error ? <FieldError>{fieldState.error.message}</FieldError> : null}
           <Input
-            {...inputProps}
-            className={inputProps?.className}
+            {...restInputProps}
+            {...(inputClassName ? {className: inputClassName} : {})}
           />
         </TextField>
-      )}
+        );
+      }}
     />
   );
 }

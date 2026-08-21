@@ -9,8 +9,8 @@ import {cn} from '@heroui/styles';
 const ROW_KEYS = ['r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8'] as const;
 
 type ListSkeletonProps = {
-  avatar?: boolean;
-  rows?: number;
+  avatar?: boolean | undefined;
+  rows?: number | undefined;
 };
 
 export function ListSkeleton({avatar = false, rows = 6}: ListSkeletonProps) {
@@ -19,19 +19,23 @@ export function ListSkeleton({avatar = false, rows = 6}: ListSkeletonProps) {
       aria-hidden
       className="flex flex-col"
     >
-      {ROW_KEYS.slice(0, rows).map((key) => (
+      {ROW_KEYS.slice(0, rows).map((key) => {
+        const avatarClassName = cn('size-10 shrink-0', avatar ? 'rounded-pill' : 'rounded-chip');
+
+        return (
         <div
           className="flex items-center gap-3 px-4 py-3 sm:px-8"
           key={key}
         >
-          <Skeleton className={cn('size-10 shrink-0', avatar ? 'rounded-pill' : 'rounded-chip')} />
+          <Skeleton {...(avatarClassName ? {className: avatarClassName} : {})} />
           <div className="flex min-w-0 flex-1 flex-col gap-2">
             <Skeleton className="h-3.5 w-2/5 rounded" />
             <Skeleton className="h-3 w-3/5 rounded" />
           </div>
           <Skeleton className="hidden h-5 w-14 shrink-0 rounded-pill sm:block" />
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

@@ -16,6 +16,7 @@ import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack
 import {call, client} from '@/api/client';
 import {clientKeys, trainingPlanKeys, trainingSessionKeys} from '@/api/keys';
 import type {components, paths} from '@/api/schema';
+import {omitUndefined} from '@/api/shared';
 import {trainingPlanAssignmentRequest} from '@/api/training-plan-requests';
 import {coachClientTrainingSessionHistoryRequest} from '@/api/training-session-history';
 import {workbenchMutationTargets} from '@/api/workbench-targets';
@@ -75,7 +76,8 @@ export function useCoachTrainingPlansInfiniteQuery(filters?: CoachTrainingPlansF
 export function useListTrainingPlansQuery(params?: ListTrainingPlansApiArg, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: trainingPlanKeys.list(params),
-    queryFn: () => call(client.GET('/v1/coach/training-plans', {params: {query: params ?? undefined}})),
+    queryFn: () =>
+      call(client.GET('/v1/coach/training-plans', params ? {params: {query: omitUndefined(params)}} : {})),
     enabled: options?.enabled ?? true,
   });
 }
@@ -89,9 +91,7 @@ export function useListCoachClientTrainingPlansQuery(
     queryKey: trainingPlanKeys.forClient(clientId, params),
     queryFn: () =>
       call(
-        client.GET('/v1/coach/clients/{client_id}/training-plans', {
-          params: {path: {client_id: clientId}, query: params ?? undefined},
-        }),
+        client.GET('/v1/coach/clients/{client_id}/training-plans', params ? {params: {path: {client_id: clientId}, query: omitUndefined(params)}} : {params: {path: {client_id: clientId}}}),
       ),
     enabled: options?.enabled ?? true,
   });
@@ -110,7 +110,7 @@ export function useCoachClientTrainingPlansInfiniteQuery(
         client.GET('/v1/coach/clients/{client_id}/training-plans', {
           params: {
             path: {client_id: clientId},
-            query: {...filters, limit: PAGE_SIZE, offset: pageParam},
+            query: {...omitUndefined(filters ?? {}), limit: PAGE_SIZE, offset: pageParam},
           },
         }),
       ),

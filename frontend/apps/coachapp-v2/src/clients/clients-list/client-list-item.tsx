@@ -121,15 +121,17 @@ export default function ClientListItem({client}: {client: Client}) {
 
   // Not a BrowseRow: this row's anatomy is a 5-track grid (avatar · identity ·
   // chips · status · chevron), so it owns its ListBox.Item on LIST_ITEM_CLASS.
+  const merged = cn(
+    LIST_ITEM_CLASS,
+    'mt-0',
+    // RECIPES.md R4 — row grid. Chips sit in their own LEFT-aligned track.
+    'grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3',
+    'sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,2fr)_auto_auto] sm:gap-4 sm:px-4',
+  );
+
   return (
     <ListBox.Item
-      className={cn(
-        LIST_ITEM_CLASS,
-        'mt-0',
-        // RECIPES.md R4 — row grid. Chips sit in their own LEFT-aligned track.
-        'grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3',
-        'sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,2fr)_auto_auto] sm:gap-4 sm:px-4',
-      )}
+      {...(merged ? {className: merged} : {})}
       id={client.id}
       textValue={name}
     >

@@ -52,6 +52,11 @@ export function KeyboardSheet({
   className,
 }: KeyboardSheetProps) {
   const {bottomInset, maxHeight} = useVisualViewport();
+  const panelClassName = cn(
+    'keyboard-sheet__panel fixed right-0 left-0 z-50 flex flex-col overflow-hidden rounded-t-panel border border-border bg-surface shadow-overlay',
+    'md:right-auto md:left-1/2 md:w-full md:max-w-lg md:-translate-x-1/2',
+    className,
+  );
 
   return (
     <ModalOverlay
@@ -66,11 +71,7 @@ export function KeyboardSheet({
     >
       <AppScrollLock />
       <Modal
-        className={cn(
-          'keyboard-sheet__panel fixed right-0 left-0 z-50 flex flex-col overflow-hidden rounded-t-panel border border-border bg-surface shadow-overlay',
-          'md:right-auto md:left-1/2 md:w-full md:max-w-lg md:-translate-x-1/2',
-          className,
-        )}
+        {...(panelClassName ? {className: panelClassName} : {})}
         style={() => ({
           /* ui-contract-allow -- live visual-viewport geometry */
           bottom: bottomInset,
@@ -78,7 +79,7 @@ export function KeyboardSheet({
         })}
       >
         <Dialog
-          aria-label={title === undefined ? ariaLabel : undefined}
+          {...(title === undefined && ariaLabel ? {'aria-label': ariaLabel} : {})}
           className="flex min-h-0 flex-1 flex-col outline-none"
         >
           <div

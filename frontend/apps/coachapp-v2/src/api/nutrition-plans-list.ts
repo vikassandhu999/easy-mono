@@ -17,6 +17,7 @@ import {call, client} from '@/api/client';
 import {clientKeys, nutritionDayKeys, nutritionPlanKeys} from '@/api/keys';
 import {nutritionPlanAssignmentRequest} from '@/api/nutrition-plan-lifecycle';
 import type {components, paths} from '@/api/schema';
+import {omitUndefined} from '@/api/shared';
 import {workbenchMutationTargets} from '@/api/workbench-targets';
 
 const PAGE_SIZE = 20;
@@ -76,7 +77,8 @@ export function useCoachNutritionPlansInfiniteQuery(
 export function useListNutritionPlansQuery(params?: ListNutritionPlansParams, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: nutritionPlanKeys.list(params),
-    queryFn: () => call(client.GET('/v1/coach/nutrition-plans', {params: {query: params ?? undefined}})),
+    queryFn: () =>
+      call(client.GET('/v1/coach/nutrition-plans', params ? {params: {query: omitUndefined(params)}} : {})),
     enabled: options?.enabled ?? true,
   });
 }
@@ -95,9 +97,7 @@ export function useListCoachClientNutritionPlansQuery(
     queryKey: nutritionPlanKeys.forClient(clientId),
     queryFn: () =>
       call(
-        client.GET('/v1/coach/clients/{client_id}/nutrition-plans', {
-          params: {path: {client_id: clientId}, query: params ?? undefined},
-        }),
+        client.GET('/v1/coach/clients/{client_id}/nutrition-plans', params ? {params: {path: {client_id: clientId}, query: omitUndefined(params)}} : {params: {path: {client_id: clientId}}}),
       ),
     enabled: options?.enabled ?? true,
   });
@@ -225,9 +225,7 @@ export function useListCoachNutritionDaysQuery(
     queryKey: nutritionDayKeys.forClient(clientId, params),
     queryFn: () =>
       call(
-        client.GET('/v1/coach/clients/{client_id}/nutrition-days', {
-          params: {path: {client_id: clientId}, query: params ?? undefined},
-        }),
+        client.GET('/v1/coach/clients/{client_id}/nutrition-days', params ? {params: {path: {client_id: clientId}, query: omitUndefined(params)}} : {params: {path: {client_id: clientId}}}),
       ),
     enabled: options?.enabled ?? true,
   });

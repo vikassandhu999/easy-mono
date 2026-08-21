@@ -62,14 +62,16 @@ export type QueueRowItem = {
  * due date), so it wraps below `sm` and truncates only when the row has room.
  */
 export function QueueRow({item}: {item: QueueRowItem}) {
+  const merged = cn(
+    'list-box-item',
+    LIST_ITEM_CLASS,
+    'mt-0 grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 py-3',
+    'hover:bg-surface-secondary sm:gap-4 sm:px-4',
+  );
+
   return (
     <GridListItem
-      className={cn(
-        'list-box-item',
-        LIST_ITEM_CLASS,
-        'mt-0 grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 py-3',
-        'hover:bg-surface-secondary sm:gap-4 sm:px-4',
-      )}
+      {...(merged ? {className: merged} : {})}
       id={item.id}
       onAction={item.onOpen}
       textValue={item.name}

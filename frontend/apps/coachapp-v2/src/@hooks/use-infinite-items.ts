@@ -1,13 +1,13 @@
 import {useMemo} from 'react';
 
 type InfiniteItemsQuery<T> = {
-  data?: {pages: Array<{data: T[]}>} | null;
+  data: {pages: Array<{data: T[]}>} | null | undefined;
   fetchNextPage: () => void;
   hasNextPage: boolean;
   isLoading: boolean;
   isFetchingNextPage: boolean;
-  isError?: boolean;
-  refetch?: () => unknown;
+  isError?: boolean | undefined;
+  refetch?: (() => unknown) | undefined;
 };
 
 /** Flattens an infinite-query's pages into a single item array. */

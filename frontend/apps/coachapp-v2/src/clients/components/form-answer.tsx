@@ -15,7 +15,7 @@ export function FormAnswer({
   weightUnit,
 }: {
   label: string;
-  photoUrls?: (string | undefined)[];
+  photoUrls?: (string | undefined)[] | undefined;
   type: AnswerType;
   value: unknown;
   weightUnit: string;

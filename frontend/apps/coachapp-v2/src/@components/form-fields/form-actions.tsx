@@ -36,12 +36,14 @@ export function FormActions({
   submitLabel,
   submittingLabel,
 }: FormActionsProps) {
+  const merged = cn(
+    'sticky bottom-0 z-10 -mx-4 -mb-6 mt-auto flex items-center gap-3 bg-background px-4 py-3 sm:static sm:mx-0 sm:mt-0 sm:mb-0 sm:justify-end sm:bg-transparent sm:px-0 sm:py-0',
+    mobileOnly && 'sm:hidden',
+  );
+
   return (
     <Fieldset.Actions
-      className={cn(
-        'sticky bottom-0 z-10 -mx-4 -mb-6 mt-auto flex items-center gap-3 bg-background px-4 py-3 sm:static sm:mx-0 sm:mt-0 sm:mb-0 sm:justify-end sm:bg-transparent sm:px-0 sm:py-0',
-        mobileOnly && 'sm:hidden',
-      )}
+      {...(merged ? {className: merged} : {})}
     >
       <Button
         className="border-0 text-muted shadow-none sm:border sm:text-foreground"
@@ -52,7 +54,7 @@ export function FormActions({
       </Button>
       <Button
         className="relative flex-1 sm:flex-none"
-        isPending={isSubmitting}
+        {...(isSubmitting != null ? {isPending: isSubmitting} : {})}
         type="submit"
       >
         <span className={`flex items-center gap-2 ${isSubmitting ? 'invisible' : ''}`}>

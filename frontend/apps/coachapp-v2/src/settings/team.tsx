@@ -32,7 +32,7 @@ import {ErrorState} from '@/@components/error-state';
 import {FieldRow} from '@/@components/form-fields/field-row';
 import {FormTextField} from '@/@components/form-fields/form-text-field';
 import {useGetBillingQuery} from '@/api/billing';
-import {applyFormErrors, getApiErrorMessage} from '@/api/shared';
+import {applyFormErrors, getApiErrorMessage, omitUndefined} from '@/api/shared';
 import {
   type TeamMember,
   useDeactivateTrainerMutation,
@@ -182,11 +182,13 @@ function InviteTrainerControl() {
   };
 
   const sendInvite = async (values: InviteTrainerFormValues) => {
-    await inviteTrainerMutation.mutateAsync({
-      email: values.email,
-      first_name: values.first_name || undefined,
-      last_name: values.last_name || undefined,
-    });
+    await inviteTrainerMutation.mutateAsync(
+      omitUndefined({
+        email: values.email,
+        first_name: values.first_name || undefined,
+        last_name: values.last_name || undefined,
+      }),
+    );
     toast.success('Invite sent');
   };
 

@@ -120,7 +120,7 @@ type Props<T extends object, Id extends string> = {
    * all spelled it that way, so the noun comes from the title rather than a
    * second prop.
    */
-  total?: number;
+  total?: number | undefined;
   /**
    * ONE caller: the muscle multi-select on the exercises list. It is a genuinely
    * different control, not a variant of `filters`, and a seam with one adapter
@@ -180,7 +180,15 @@ const SURFACE =
   'overflow-hidden border-y border-border bg-background leading-[normal] text-foreground sm:rounded-card sm:border sm:bg-surface';
 
 /** The count beside a pill label. Mobile carries it on the selected pill only. */
-function FilterCount({count, countTestId, isSelected}: {count: number; countTestId?: string; isSelected: boolean}) {
+function FilterCount({
+  count,
+  countTestId,
+  isSelected,
+}: {
+  count: number;
+  countTestId?: string | undefined;
+  isSelected: boolean;
+}) {
   return (
     <span
       className={cn('ml-1 type-body font-light opacity-70 sm:ml-0', isSelected ? undefined : 'hidden sm:inline')}

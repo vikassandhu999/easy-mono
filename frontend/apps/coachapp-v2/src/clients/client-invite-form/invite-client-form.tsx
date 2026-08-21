@@ -13,7 +13,7 @@ import {FormTextField} from '@/@components/form-fields/form-text-field';
 import {useGetBillingQuery} from '@/api/billing';
 import type {ClientInviteRequest} from '@/api/clients';
 import {useGetCoachProfileQuery} from '@/api/profile';
-import {toOptionalText} from '@/api/shared';
+import {omitUndefined, toOptionalText} from '@/api/shared';
 import {type TeamMember, useGetTeamQuery} from '@/api/team';
 import RequiredServicesField, {
   canonicalRequiredServices,
@@ -52,14 +52,14 @@ function memberName(member: TeamMember): string {
 
 export function inviteClientToRequest(values: InviteClientFormValues): ClientInviteRequest {
   const {firstName, lastName} = splitName(values.name);
-  return {
+  return omitUndefined({
     email: toOptionalText(values.email),
     first_name: firstName,
     last_name: lastName,
     notes: toOptionalText(values.notes),
     phone: toOptionalText(values.phone),
     required_services: canonicalRequiredServices(values.required_services),
-  };
+  });
 }
 
 export function useInviteClientForm() {

@@ -20,16 +20,17 @@ function initials(name: string): string {
 function ConversationRow({conversation}: {conversation: Conversation}) {
   const name = conversation.client_name || 'Client';
   const unread = conversation.unread_count > 0;
+  const merged = cn(
+    LIST_ITEM_CLASS,
+    'grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-none py-3',
+    'sm:px-4',
+    // The unread row is the accent-tinted one in the reference.
+    unread ? 'bg-accent-soft' : 'hover:bg-surface-secondary',
+  );
 
   return (
     <ListBox.Item
-      className={cn(
-        LIST_ITEM_CLASS,
-        'grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-none py-3',
-        'sm:px-4',
-        // The unread row is the accent-tinted one in the reference.
-        unread ? 'bg-accent-soft' : 'hover:bg-surface-secondary',
-      )}
+      {...(merged ? {className: merged} : {})}
       id={conversation.client_id}
       textValue={name}
     >

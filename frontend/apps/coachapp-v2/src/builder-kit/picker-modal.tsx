@@ -69,7 +69,7 @@ export function PickerModal({
           {/* p-0: the bands own their insets (SearchPickerBody's sticky search
               assumes the px-4 gutter). */}
           <Modal.Dialog
-            aria-label={title ?? ariaLabel}
+            {...((title ?? ariaLabel) ? {'aria-label': title ?? ariaLabel} : {})}
             className="overflow-hidden p-0"
           >
             {open ? (
@@ -100,12 +100,12 @@ export function PickerModal({
 
   return (
     <KeyboardSheet
-      ariaLabel={ariaLabel}
-      footer={open ? footer : undefined}
+      {...(ariaLabel ? {ariaLabel} : {})}
+      {...(open && footer !== undefined ? {footer} : {})}
       isDismissable={isDismissable}
       onClose={onClose}
       open={open}
-      title={title}
+      {...(title !== undefined ? {title} : {})}
     >
       {open ? children : null}
     </KeyboardSheet>

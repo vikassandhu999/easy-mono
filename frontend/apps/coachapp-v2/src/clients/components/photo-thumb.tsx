@@ -26,8 +26,8 @@ export function PhotoThumb({
   /** Fill the grid cell squarely (CD-PH) instead of the fixed 64px thumbnail. */
   fill?: boolean;
   onPress?: () => void;
-  src?: null | string;
-  testId?: string;
+  src?: null | string | undefined;
+  testId?: string | undefined;
 }) {
   // A signed URL that has expired, or an attachment whose blob was never stored,
   // otherwise renders as the browser's broken-image icon with the alt text spilling

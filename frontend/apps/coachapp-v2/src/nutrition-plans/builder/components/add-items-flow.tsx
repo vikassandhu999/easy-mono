@@ -153,13 +153,13 @@ export function AddItemsFlow({mealName, open, onClose, onAdd}: AddItemsFlowProps
       items={items}
       error={activeQuery.isError}
       loading={loading}
-      onCreateNoMatch={
-        activeTab === 'foods'
-          ? (query) => {
+      {...(activeTab === 'foods'
+        ? {
+            onCreateNoMatch: (query: string) => {
               createFromSearch(query).catch(() => undefined);
-            }
-          : undefined
-      }
+            },
+          }
+        : {})}
       onLoadMore={activeQuery.fetchNextPage}
       onRetry={activeQuery.refetch}
       onSearchChange={setSearch}
@@ -207,7 +207,7 @@ export function AddItemsFlow({mealName, open, onClose, onAdd}: AddItemsFlowProps
     <PickerModal
       // The amount step is content-sized; the pick step is the standard
       // fixed-height scroll body (PickerModal's default).
-      bodyClassName={current ? 'px-4 pb-3' : undefined}
+      {...(current ? {bodyClassName: 'px-4 pb-3'} : {})}
       footer={dock}
       onClose={close}
       open={open}

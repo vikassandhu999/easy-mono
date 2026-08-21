@@ -72,7 +72,7 @@ export default function FoodPicker({
   }, [q]);
 
   // Only the visible tab fetches; switching tabs re-uses whatever is cached for it.
-  const query = {limit: 20, search: search || undefined};
+  const query = {limit: 20, ...(search ? {search} : {})};
   const foods = useListClientFoodsQuery(query, {enabled: tab === 'foods'});
   const recipes = useListClientRecipesQuery(query, {enabled: tab === 'recipes'});
 

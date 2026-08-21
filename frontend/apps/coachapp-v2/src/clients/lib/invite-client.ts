@@ -1,4 +1,6 @@
-export function splitName(name: string): {firstName: string; lastName?: string} {
+import {omitUndefined} from '@/api/shared';
+
+export function splitName(name: string): {firstName: string; lastName?: string | undefined} {
   const trimmed = name.trim();
   const spaceIndex = trimmed.indexOf(' ');
 
@@ -6,10 +8,10 @@ export function splitName(name: string): {firstName: string; lastName?: string} 
     return {firstName: trimmed};
   }
 
-  return {
+  return omitUndefined({
     firstName: trimmed.slice(0, spaceIndex),
     lastName: trimmed.slice(spaceIndex + 1).trim() || undefined,
-  };
+  });
 }
 
 export function getWhatsAppUrl(phone: string | undefined, name: string, inviteUrl: string): string {

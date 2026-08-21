@@ -37,12 +37,12 @@ export function FormNumberField<T extends FieldValues>({
       render={({field, fieldState}) => (
         <NumberInput
           description={description}
-          error={fieldState.error?.message}
-          fullWidth={fullWidth}
-          inputProps={inputProps}
-          isRequired={isRequired}
+          {...(fieldState.error?.message ? {error: fieldState.error.message} : {})}
+          {...(fullWidth != null ? {fullWidth} : {})}
+          {...(inputProps ? {inputProps} : {})}
+          {...(isRequired != null ? {isRequired} : {})}
           label={label}
-          minValue={minValue}
+          {...(minValue != null ? {minValue} : {})}
           name={field.name}
           onBlur={() => {
             field.onBlur();

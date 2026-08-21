@@ -8,6 +8,7 @@ import {
   UserPlus,
 } from 'lucide-react';
 
+import {omitUndefined} from '@/api/shared';
 import type {TodayEntry} from '@/@components/today-card';
 import type {WorkbenchCounts} from '@/api/workbench';
 
@@ -102,14 +103,16 @@ export function queueMeta(queue: QueueDef, count: number): string {
 
 /** Today-card entries for the current counts; count-less (and meta-less) while counts load. */
 export function queueEntries(counts: undefined | WorkbenchCounts): TodayEntry[] {
-  return TODAY_QUEUES.map((queue) => ({
-    count: counts ? workbenchCount(counts, queue.countKey) : undefined,
-    icon: queue.icon,
-    id: queue.id,
-    label: queue.label,
-    meta: counts ? queueMeta(queue, workbenchCount(counts, queue.countKey)) : undefined,
-    muted: queue.muted,
-  }));
+  return TODAY_QUEUES.map((queue) =>
+    omitUndefined({
+      count: counts ? workbenchCount(counts, queue.countKey) : undefined,
+      icon: queue.icon,
+      id: queue.id,
+      label: queue.label,
+      meta: counts ? queueMeta(queue, workbenchCount(counts, queue.countKey)) : undefined,
+      muted: queue.muted,
+    }),
+  );
 }
 
 /** Whether any non-muted queue needs attention; Onboarding remains deliberately excluded. */

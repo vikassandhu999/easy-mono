@@ -32,7 +32,7 @@ export default function FoodPickerControl({onSelect, excludeIds = [], triggerCla
   const selectedKeys = useMemo(() => new Set(selected.keys()), [selected]);
 
   const {data, isError, isFetching, refetch} = useListFoodsQuery(
-    {search: debouncedSearch || undefined, limit: 20},
+    {limit: 20, ...(debouncedSearch ? {search: debouncedSearch} : {})},
     {enabled: open},
   );
   const foods = useMemo(() => (data?.data ?? []).filter((f) => !excludeIds.includes(f.id)), [data, excludeIds]);
@@ -43,12 +43,14 @@ export default function FoodPickerControl({onSelect, excludeIds = [], triggerCla
     setSelected(new Map());
   };
 
+  const merged = cn(' ', triggerClassName);
+
   return (
     <>
       <Button
         aria-expanded={open}
         aria-haspopup="dialog"
-        className={cn(' ', triggerClassName)}
+        {...(merged ? {className: merged} : {})}
         onPress={() => setOpen(true)}
         variant={triggerVariant ?? 'secondary'}
       >

@@ -48,14 +48,16 @@ export default function DateInput({
   onChange,
   value,
 }: DateInputProps) {
+  const minValue = toDateValue(min ?? null) ?? undefined;
+
   return (
     <DatePicker
-      aria-label={label ? undefined : ariaLabel}
-      isDisabled={isDisabled}
+      {...(label ? {} : ariaLabel ? {'aria-label': ariaLabel} : {})}
+      {...(isDisabled != null ? {isDisabled} : {})}
       isInvalid={Boolean(errorMessage)}
-      isRequired={isRequired}
-      minValue={toDateValue(min ?? null) ?? undefined}
-      onBlur={onBlur}
+      {...(isRequired != null ? {isRequired} : {})}
+      {...(minValue !== undefined ? {minValue} : {})}
+      {...(onBlur ? {onBlur} : {})}
       onChange={(date: DateValue | null) => onChange(date ? date.toString() : null)}
       value={toDateValue(value)}
     >

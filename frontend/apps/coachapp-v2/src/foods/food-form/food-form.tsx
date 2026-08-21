@@ -111,7 +111,7 @@ export default function FoodForm({
           <Description className="hidden sm:block">Name the food and where it came from.</Description>
           <Fieldset.Group>
             <LibraryMediaField
-              initialMedia={initialMedia}
+              {...(initialMedia !== undefined ? {initialMedia} : {})}
               onBusyChange={setMediaBusy}
               onChange={(mediaId) => setValue('media_id', mediaId, {shouldDirty: true})}
             />

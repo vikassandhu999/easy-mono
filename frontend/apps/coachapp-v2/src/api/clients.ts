@@ -3,6 +3,7 @@ import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack
 import {call, client} from '@/api/client';
 import {billingKeys, clientKeys} from '@/api/keys';
 import type {components, paths} from '@/api/schema';
+import {omitUndefined} from '@/api/shared';
 import {workbenchMutationTargets} from '@/api/workbench-targets';
 
 const PAGE_SIZE = 20;
@@ -50,7 +51,7 @@ export function useListClientsQuery(params?: ListClientsParams, options?: {enabl
   return useQuery({
     queryKey: clientKeys.list(params),
     queryFn: () =>
-      call(client.GET('/v1/coach/clients', {params: {query: params ?? undefined}})) as Promise<ClientListResponse>,
+      call(client.GET('/v1/coach/clients', params ? {params: {query: omitUndefined(params)}} : {})) as Promise<ClientListResponse>,
     enabled: options?.enabled ?? true,
   });
 }

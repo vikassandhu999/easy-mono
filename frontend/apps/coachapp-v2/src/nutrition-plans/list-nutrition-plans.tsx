@@ -19,8 +19,8 @@ export default function ListNutritionPlans() {
 
   const deferredSearch = useDeferredValue(search);
   const list = useCoachNutritionPlansInfiniteQuery({
-    search: deferredSearch,
-    archived: status === 'all' ? undefined : status === 'archived',
+    ...(deferredSearch ? {search: deferredSearch} : {}),
+    ...(status !== 'all' ? {archived: status === 'archived'} : {}),
   });
   const {fetchNextPage, isError, isLoading, items, refetch} = useInfiniteItems(list);
 

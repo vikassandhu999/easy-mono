@@ -23,8 +23,8 @@ interface Props {
    * Controlled mode: drive the surface from elsewhere (e.g. a ⋯ menu item) and
    * render no trigger of its own.
    */
-  isOpen?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  isOpen?: boolean | undefined;
+  onOpenChange?: ((open: boolean) => void) | undefined;
   children: (close: () => void) => ReactNode;
 }
 

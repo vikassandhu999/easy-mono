@@ -21,10 +21,12 @@ type FormLayoutProps = {
 };
 
 export function FormLayout({children, className, onSubmit, validationBehavior = 'aria'}: FormLayoutProps) {
+  const merged = cn('flex w-full flex-col gap-8', className);
+
   return (
     <Form
-      className={cn('flex w-full flex-col gap-8', className)}
-      onSubmit={onSubmit}
+      {...(merged ? {className: merged} : {})}
+      {...(onSubmit ? {onSubmit} : {})}
       validationBehavior={validationBehavior}
     >
       {children}

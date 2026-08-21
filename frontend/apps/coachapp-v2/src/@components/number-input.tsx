@@ -75,13 +75,15 @@ export function NumberInput({
     }
   };
 
+  const {className: inputClassName, ...restInputProps} = inputProps ?? {};
+
   return (
     <TextField
-      fullWidth={fullWidth}
+      {...(fullWidth != null ? {fullWidth} : {})}
       isInvalid={!!error}
-      isRequired={isRequired}
-      name={name}
-      onBlur={onBlur}
+      {...(isRequired != null ? {isRequired} : {})}
+      {...(name ? {name} : {})}
+      {...(onBlur ? {onBlur} : {})}
       onChange={handleChange}
       value={text}
     >
@@ -90,8 +92,8 @@ export function NumberInput({
       {error ? <FieldError>{error}</FieldError> : null}
       <Input
         inputMode="decimal"
-        {...inputProps}
-        className={inputProps?.className}
+        {...restInputProps}
+        {...(inputClassName ? {className: inputClassName} : {})}
       />
     </TextField>
   );

@@ -209,7 +209,7 @@ export default function LibraryMediaField({disabled, initialMedia, onBusyChange,
               />
             </div>
             <Button
-              isDisabled={disabled}
+              {...(disabled != null ? {isDisabled: disabled} : {})}
               onPress={() => inputRef.current?.click()}
               size="sm"
               variant="ghost"
@@ -257,7 +257,7 @@ export default function LibraryMediaField({disabled, initialMedia, onBusyChange,
               </Typography>
               <div className="mt-2 flex gap-2">
                 <Button
-                  isDisabled={disabled}
+                  {...(disabled != null ? {isDisabled: disabled} : {})}
                   onPress={() => upload(state.file)}
                   size="sm"
                 >
@@ -278,7 +278,7 @@ export default function LibraryMediaField({disabled, initialMedia, onBusyChange,
         {state.status === 'empty' && (
           <Button
             className="w-full rounded-panel border border-dashed border-border text-muted"
-            isDisabled={disabled}
+            {...(disabled != null ? {isDisabled: disabled} : {})}
             onPress={() => inputRef.current?.click()}
             variant="ghost"
           >

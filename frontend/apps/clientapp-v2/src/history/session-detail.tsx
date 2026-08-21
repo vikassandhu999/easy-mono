@@ -135,7 +135,11 @@ function Detail({session}: {session: TrainingSession}) {
         const tt = swap?.trackingType ?? ex.tracking_type;
         return (
           <ExerciseCard
-            badge={swap ? {swappedFrom: ex.exercise_name} : done.length === 0 ? 'skipped' : undefined}
+            {...(swap
+              ? {badge: {swappedFrom: ex.exercise_name} as const}
+              : done.length === 0
+                ? {badge: 'skipped' as const}
+                : {})}
             key={`${ex.exercise_id}-${ex.position}`}
             name={swap?.name ?? ex.exercise_name}
             rows={done.map((p, si) => {

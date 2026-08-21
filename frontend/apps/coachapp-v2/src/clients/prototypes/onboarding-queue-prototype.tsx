@@ -251,12 +251,15 @@ function VariantA({clients, onCall, onClientOpen, onIntakeOpen, onReasonAction}:
       grid
       isLoading={false}
       items={clients}
-      renderItem={(client) => (
+      renderItem={(client) => {
+        const merged = cn(
+          LIST_ITEM_CLASS,
+          'group list-box-item mt-0 flex flex-col gap-3 rounded-card border border-border p-4 hover:border-accent/50 hover:bg-surface',
+        );
+
+        return (
         <GridListItem
-          className={cn(
-            LIST_ITEM_CLASS,
-            'group list-box-item mt-0 flex flex-col gap-3 rounded-card border border-border p-4 hover:border-accent/50 hover:bg-surface',
-          )}
+          {...(merged ? {className: merged} : {})}
           id={client.id}
           key={client.id}
           onAction={() => onClientOpen(client)}
@@ -333,7 +336,8 @@ function VariantA({clients, onCall, onClientOpen, onIntakeOpen, onReasonAction}:
             ))}
           </Surface>
         </GridListItem>
-      )}
+        );
+      }}
     />
   );
 }
@@ -350,12 +354,14 @@ function VariantB({clients, onCall, onClientOpen, onReasonAction}: VariantProps)
       items={clients}
       renderItem={(client) => {
         const primary = requirePrimaryReason(client.reasons);
+        const merged = cn(
+          LIST_ITEM_CLASS,
+          'list-box-item mt-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 py-3 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center sm:px-4',
+        );
+
         return (
           <GridListItem
-            className={cn(
-              LIST_ITEM_CLASS,
-              'list-box-item mt-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 py-3 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center sm:px-4',
-            )}
+            {...(merged ? {className: merged} : {})}
             id={client.id}
             key={client.id}
             onAction={() => onClientOpen(client)}
@@ -417,14 +423,17 @@ function VariantC({clients, onCall, onClientOpen, onIntakeOpen, onReasonAction}:
         grid
         isLoading={false}
         items={items}
-        renderItem={(client) => (
+        renderItem={(client) => {
+          const merged = cn(
+            LIST_ITEM_CLASS,
+            'list-box-item mt-0 flex items-center gap-3 py-3 sm:px-4',
+            client.isSelected && 'bg-accent-soft',
+          );
+
+          return (
           <GridListItem
-            aria-current={client.isSelected ? 'true' : undefined}
-            className={cn(
-              LIST_ITEM_CLASS,
-              'list-box-item mt-0 flex items-center gap-3 py-3 sm:px-4',
-              client.isSelected && 'bg-accent-soft',
-            )}
+            {...(client.isSelected ? {'aria-current': 'true' as const} : {})}
+            {...(merged ? {className: merged} : {})}
             id={client.id}
             key={client.id}
             onAction={() => setSelectedId(client.id)}
@@ -444,7 +453,8 @@ function VariantC({clients, onCall, onClientOpen, onIntakeOpen, onReasonAction}:
               </Description>
             </div>
           </GridListItem>
-        )}
+          );
+        }}
       />
 
       <Surface className="flex flex-col gap-4 rounded-card border border-border p-4 lg:col-span-3">
@@ -466,12 +476,15 @@ function VariantC({clients, onCall, onClientOpen, onIntakeOpen, onReasonAction}:
         </div>
 
         <div className="flex flex-col gap-2">
-          {selected.reasons.map((reason, index) => (
+          {selected.reasons.map((reason, index) => {
+            const surfaceClassName = cn(
+              'flex flex-col gap-3 rounded-control border p-3',
+              index === 0 ? 'border-accent bg-accent-soft' : 'border-border bg-surface-secondary',
+            );
+
+            return (
             <Surface
-              className={cn(
-                'flex flex-col gap-3 rounded-control border p-3',
-                index === 0 ? 'border-accent bg-accent-soft' : 'border-border bg-surface-secondary',
-              )}
+              {...(surfaceClassName ? {className: surfaceClassName} : {})}
               key={reason.code === 'intake_overdue' ? reason.assignmentId : reason.invitationId}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -509,7 +522,8 @@ function VariantC({clients, onCall, onClientOpen, onIntakeOpen, onReasonAction}:
                 </Button>
               </div>
             </Surface>
-          ))}
+            );
+          })}
         </div>
       </Surface>
     </div>

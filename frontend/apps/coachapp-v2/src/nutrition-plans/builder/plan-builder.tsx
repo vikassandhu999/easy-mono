@@ -167,13 +167,14 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
           isAdding: commands.isAddingDay,
           isFirst: days[0]?.id === activeDay.id,
           isLast: days[days.length - 1]?.id === activeDay.id,
-          onMove:
-            days.length > 1
-              ? (direction) => {
+          ...(days.length > 1
+            ? {
+                onMove: (direction: -1 | 1) => {
                   const from = days.findIndex((day) => day.id === activeDay.id);
                   commands.moveDay(from, from + direction).catch(() => undefined);
-                }
-              : undefined,
+                },
+              }
+            : {}),
         }}
       />
 
@@ -211,7 +212,7 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
                 <MealCard
                   assignmentCount={counts.get(meal.id) ?? 0}
                   autoRename={autoRenameMealId === meal.id}
-                  cardTestId={rowIndex === 0 ? 'nb-card' : undefined}
+                  {...(rowIndex === 0 ? {cardTestId: 'nb-card'} : {})}
                   commands={commands}
                   dayId={activeDay.id}
                   isFirst={rowIndex === 0}
@@ -233,7 +234,7 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
                   open={openMealId === meal.id}
                   optionId={meal.id}
                   slot={firstFreeSlot(activeDay)}
-                  triggerTestId={rowIndex === 0 ? 'nb-card-open-trigger' : undefined}
+                  {...(rowIndex === 0 ? {triggerTestId: 'nb-card-open-trigger'} : {})}
                   swapCandidates={[]}
                   swaps={[]}
                 />
@@ -257,12 +258,17 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
                 return alternate ? {optionId: option.id, meal: alternate} : null;
               })
               .filter((s): s is MealSwap => s !== null);
+            const rowTriggerTestId = triggerTestId(rowIndex);
 
             return (
               <MealCard
                 assignmentCount={counts.get(meal.id) ?? 0}
                 autoRename={autoRenameMealId === meal.id}
-                cardTestId={rowIndex === plainRow ? 'nb-card' : rowIndex === sharedRow ? 'nb-card-shared' : undefined}
+                {...(rowIndex === plainRow
+                  ? {cardTestId: 'nb-card'}
+                  : rowIndex === sharedRow
+                    ? {cardTestId: 'nb-card-shared'}
+                    : {})}
                 commands={commands}
                 dayId={activeDay.id}
                 key={primary.id}
@@ -279,13 +285,15 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
                 open={openMealId === meal.id}
                 optionId={primary.id}
                 slot={slot}
-                triggerTestId={triggerTestId(rowIndex)}
+                {...(rowTriggerTestId ? {triggerTestId: rowTriggerTestId} : {})}
                 swapCandidates={meals
                   .filter((m) => !slotMealIds.has(m.id))
                   .map((m) => ({
                     id: m.id,
                     name: m.name,
-                    sub: m.nutrients.calories != null ? `${Math.round(m.nutrients.calories)} kcal` : undefined,
+                    ...(m.nutrients.calories != null
+                      ? {sub: `${Math.round(m.nutrients.calories)} kcal`}
+                      : {}),
                   }))}
                 swaps={swaps}
               />
@@ -318,7 +326,9 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
                 .map((meal) => ({
                   id: meal.id,
                   name: meal.name,
-                  sub: meal.nutrients.calories != null ? `${Math.round(meal.nutrients.calories)} kcal` : undefined,
+                  ...(meal.nutrients.calories != null
+                    ? {sub: `${Math.round(meal.nutrients.calories)} kcal`}
+                    : {}),
                 }))
         }
       />
@@ -351,7 +361,7 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
       {/* Amount sheet — edit mode */}
       <AmountSheet
         anchorEl={editorAnchor.current}
-        existingItem={editingItem ?? undefined}
+        {...(editingItem ? {existingItem: editingItem} : {})}
         onClose={() => setEditingItem(null)}
         onEditAmount={(patch) => {
           if (editingItem) {

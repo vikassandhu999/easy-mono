@@ -5,7 +5,7 @@ import {useState} from 'react';
 
 interface PageProps {
   children: ReactNode;
-  className?: string;
+  className?: string | undefined;
 }
 
 type PageSize = 'builder' | 'content' | 'thread' | 'wide';
@@ -40,14 +40,14 @@ const PAGE_GUTTER_CLASS = 'w-full px-4 md:px-6 lg:px-8';
 
 interface PageTitleProps {
   children: ReactNode;
-  className?: string;
-  testId?: string;
+  className?: string | undefined;
+  testId?: string | undefined;
 }
 
 interface PageDescriptionProps {
   children: ReactNode;
-  className?: string;
-  testId?: string;
+  className?: string | undefined;
+  testId?: string | undefined;
 }
 
 function PageRoot({children, className}: PageProps) {
@@ -57,9 +57,11 @@ function PageRoot({children, className}: PageProps) {
     setIsScrolled(event.currentTarget.scrollTop > 0);
   }
 
+  const merged = cn('easy_page relative z-0 mr-0 ml-0 block flex-1 bg-background', className);
+
   return (
     <Surface
-      className={cn('easy_page relative z-0 mr-0 ml-0 block flex-1 bg-background', className)}
+      {...(merged ? {className: merged} : {})}
       data-scrollbar="thin"
     >
       <div

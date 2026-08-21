@@ -266,7 +266,7 @@ function EditableSetTable({
           exercise={card.exercise}
           index={index}
           key={card.done[index]?.id ?? `${card.id}-${index}`}
-          logged={card.done[index]}
+          {...(card.done[index] ? {logged: card.done[index]} : {})}
           onComplete={(values, restSeconds) => onComplete(index, values, restSeconds)}
           onDelete={onDelete}
           onUpdate={onUpdate}
@@ -306,7 +306,7 @@ function ExercisePicker({
     const id = setTimeout(() => setSearch(q.trim()), 250);
     return () => clearTimeout(id);
   }, [q]);
-  const {data, isFetching} = useListClientExercisesQuery({limit: 20, search: search || undefined});
+  const {data, isFetching} = useListClientExercisesQuery({limit: 20, ...(search ? {search} : {})});
   const items = data?.data ?? [];
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -463,13 +463,13 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
             : ((plannedSet?.distance_unit as 'km' | 'meters' | 'miles' | null) ?? 'meters'),
         distance_value: values.distance_value,
         duration_seconds: values.duration_seconds,
-        exercise_id: card.exercise.exercise_id ?? undefined,
+        ...(card.exercise.exercise_id ? {exercise_id: card.exercise.exercise_id} : {}),
         exercise_name: card.name,
         load_unit: values.load_value == null ? 'none' : ((plannedSet?.load_unit as 'kg' | 'lbs' | null) ?? 'kg'),
         load_value: values.load_value,
-        reps: values.reps ?? undefined,
+        reps: values.reps,
         set_type: (plannedSet?.set_type as 'dropset' | 'warmup' | 'working' | null) ?? 'working',
-        snapshot_exercise_ref: card.logSnapshotRef ?? undefined,
+        ...(card.logSnapshotRef ? {snapshot_exercise_ref: card.logSnapshotRef} : {}),
       });
       setRest({left: restSeconds, total: restSeconds});
     } catch {

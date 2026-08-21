@@ -23,7 +23,11 @@ export function FormTextAreaField<T extends FieldValues>({
     <Controller
       control={control}
       name={name}
-      render={({field, fieldState}) => (
+      render={({field, fieldState}) => {
+        const {className: textAreaClassName, ...restTextAreaProps} = textAreaProps ?? {};
+        const merged = cn('border border-border bg-surface shadow-none', textAreaClassName);
+
+        return (
         <TextField
           {...props}
           isInvalid={!!fieldState.error}
@@ -39,11 +43,12 @@ export function FormTextAreaField<T extends FieldValues>({
           {description ? <Description>{description}</Description> : null}
           {fieldState.error ? <FieldError>{fieldState.error.message}</FieldError> : null}
           <TextArea
-            {...textAreaProps}
-            className={cn('border border-border bg-surface shadow-none', textAreaProps?.className)}
+            {...restTextAreaProps}
+            {...(merged ? {className: merged} : {})}
           />
         </TextField>
-      )}
+        );
+      }}
     />
   );
 }

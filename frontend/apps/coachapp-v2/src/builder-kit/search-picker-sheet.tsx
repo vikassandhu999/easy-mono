@@ -195,7 +195,7 @@ export function SearchPickerBody<T>({
         <div className="py-4">
           <ErrorState
             message="Couldn't load results."
-            onRetry={onRetry}
+            {...(onRetry ? {onRetry} : {})}
           />
         </div>
       ) : items.length > 0 ? (

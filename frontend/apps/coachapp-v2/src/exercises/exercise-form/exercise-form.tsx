@@ -11,7 +11,7 @@ import {FormTextAreaField} from '@/@components/form-fields/form-text-area-field'
 import {FormTextField} from '@/@components/form-fields/form-text-field';
 import LibraryMediaField, {type LibraryMediaValue} from '@/@components/library-media-field';
 import MultiSelectAutocomplete from '@/@components/multi-select-autocomplete';
-import {omitUndefined, toOptionalText} from '@/api/shared';
+import {omitUndefined, toNullableText, toOptionalText} from '@/api/shared';
 import type {
   TrainingExercise,
   TrainingExerciseCreateRequest,
@@ -41,9 +41,8 @@ const FORCE_OPTIONS: {label: string; value: ExerciseForce}[] = [
 
 export function useExerciseForm(options?: {values?: ExerciseFormValues}) {
   return useForm<ExerciseFormValues>({
-    defaultValues: options?.values ? undefined : EXERCISE_FORM_DEFAULTS,
+    ...(options?.values ? {values: options.values} : {defaultValues: EXERCISE_FORM_DEFAULTS}),
     resolver: zodResolver(exerciseFormSchema),
-    values: options?.values,
   });
 }
 
@@ -85,10 +84,10 @@ export function exerciseToCreateRequest(values: ExerciseFormValues): TrainingExe
 export function exerciseToUpdateRequest(values: ExerciseFormValues): TrainingExerciseUpdateRequest {
   return {
     name: values.name,
-    description: toOptionalText(values.description),
-    instructions: toOptionalText(values.instructions),
-    mechanics: values.mechanics || undefined,
-    force: values.force || undefined,
+    description: toNullableText(values.description),
+    instructions: toNullableText(values.instructions),
+    mechanics: values.mechanics || null,
+    force: values.force || null,
     muscle_ids: values.muscle_ids ?? [],
     equipment_ids: values.equipment_ids ?? [],
     images: values.images ?? [],
@@ -136,7 +135,7 @@ export default function ExerciseForm({
           <Description className="hidden sm:block">Name the movement and describe how it's performed.</Description>
           <Fieldset.Group>
             <LibraryMediaField
-              initialMedia={initialMedia}
+              {...(initialMedia !== undefined ? {initialMedia} : {})}
               onBusyChange={setMediaBusy}
               onChange={(mediaId) => setValue('media_id', mediaId, {shouldDirty: true})}
             />
@@ -225,7 +224,7 @@ export default function ExerciseForm({
                 render={({field, fieldState}) => (
                   <MultiSelectAutocomplete
                     emptyMessage="No muscles found"
-                    errorMessage={fieldState.error?.message}
+                    {...(fieldState.error?.message ? {errorMessage: fieldState.error.message} : {})}
                     isInvalid={!!fieldState.error}
                     items={muscles}
                     label="Muscles"
@@ -246,7 +245,7 @@ export default function ExerciseForm({
                 render={({field, fieldState}) => (
                   <MultiSelectAutocomplete
                     emptyMessage="No equipment found"
-                    errorMessage={fieldState.error?.message}
+                    {...(fieldState.error?.message ? {errorMessage: fieldState.error.message} : {})}
                     isInvalid={!!fieldState.error}
                     items={equipment}
                     label="Equipment"

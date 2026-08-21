@@ -31,7 +31,7 @@ export function EmptyState({
 }: {
   action?: ReactNode;
   body?: string;
-  icon?: LucideIcon;
+  icon?: LucideIcon | undefined;
   title: string;
 }) {
   return (

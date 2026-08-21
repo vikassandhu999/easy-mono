@@ -150,7 +150,7 @@ export function ClientAccessStrip({client}: {client: Client}) {
             <Typography
               className="mt-1"
               type="body-sm"
-              weight={broken ? 'semibold' : undefined}
+              {...(broken ? {weight: 'semibold' as const} : {})}
             >
               {detail}
             </Typography>
@@ -158,9 +158,9 @@ export function ClientAccessStrip({client}: {client: Client}) {
           <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
             {recoveryAction}
             <Button
-              className={recoveryAction ? undefined : 'bg-ink text-ink-foreground'}
+              {...(recoveryAction ? {} : {className: 'bg-ink text-ink-foreground'})}
               onPress={() => setManageOpen(true)}
-              variant={recoveryAction ? 'outline' : undefined}
+              {...(recoveryAction ? {variant: 'outline' as const} : {})}
             >
               Manage
             </Button>
@@ -216,7 +216,7 @@ function periodSummary(client: Client): string {
 }
 
 type PendingPeriodChange = {
-  extendLabel?: string;
+  extendLabel?: string | undefined;
   kind: 'end' | 'extend' | 'start';
   nextEnd: string;
   nextStart: string;
@@ -405,10 +405,10 @@ function ClientAccessSheet({
 
           <FieldRow>
             <DateInput
-              errorMessage={errorField === 'start' ? (error ?? undefined) : undefined}
+              {...(errorField === 'start' && error ? {errorMessage: error} : {})}
               isDisabled={updateClient.isPending}
               label="Starts"
-              min={startMin}
+              {...(startMin ? {min: startMin} : {})}
               onBlur={saveStartOnBlur}
               onChange={(value) => {
                 setError(null);
@@ -418,7 +418,7 @@ function ClientAccessSheet({
               value={start || null}
             />
             <DateInput
-              errorMessage={errorField === 'end' ? (error ?? undefined) : undefined}
+              {...(errorField === 'end' && error ? {errorMessage: error} : {})}
               isDisabled={updateClient.isPending}
               label="Ends"
               min={today}

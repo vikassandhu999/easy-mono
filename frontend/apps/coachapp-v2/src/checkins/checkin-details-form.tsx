@@ -82,7 +82,7 @@ export default function CheckinDetailsForm({
                     aria-label="Form type"
                     className="segmented"
                     isDetached
-                    isDisabled={isPurposeLocked}
+                    {...(isPurposeLocked != null ? {isDisabled: isPurposeLocked} : {})}
                     onSelectionChange={(keys) => {
                       const next = [...keys][0];
                       if (next) {

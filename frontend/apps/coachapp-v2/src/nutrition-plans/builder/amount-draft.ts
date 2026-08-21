@@ -47,8 +47,6 @@ export function buildMealItemDraft({
   return {
     ...item,
     portion:
-      resolvedWeightG != null
-        ? toPortionInput({grams: resolvedWeightG, kind: 'gram'})
-        : {kind: 'gram', grams: undefined},
+      resolvedWeightG != null ? toPortionInput({grams: resolvedWeightG, kind: 'gram'}) : {kind: 'gram'},
   };
 }

@@ -26,7 +26,10 @@ export function FormSelectField<T extends FieldValues>({
     <Controller
       control={control}
       name={name}
-      render={({field, fieldState}) => (
+      render={({field, fieldState}) => {
+        const {className: triggerClassName, ...restTriggerProps} = triggerProps ?? {};
+
+        return (
         // `selectedKey`/`onSelectionChange`, not `value`/`onChange`: HeroUI's Select
         // wraps react-aria's, which has no `value` prop at all — it was being
         // dropped, so a pre-selected value never displayed and every edit form with
@@ -48,8 +51,8 @@ export function FormSelectField<T extends FieldValues>({
           {description ? <Description className={descriptionClassName}>{description}</Description> : null}
           {fieldState.error ? <FieldError>{fieldState.error.message}</FieldError> : null}
           <Select.Trigger
-            {...triggerProps}
-            className={triggerProps?.className}
+            {...restTriggerProps}
+            {...(triggerClassName ? {className: triggerClassName} : {})}
           >
             <Select.Value />
             <Select.Indicator />
@@ -58,7 +61,8 @@ export function FormSelectField<T extends FieldValues>({
             <ListBox {...listBoxProps}>{children}</ListBox>
           </Select.Popover>
         </Select>
-      )}
+        );
+      }}
     />
   );
 }

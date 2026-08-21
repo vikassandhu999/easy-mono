@@ -70,7 +70,10 @@ export default function FoodListItem({food}: {food: Food}) {
             }
             return (
               <Chip
-                className={cn(OUTLINE_CHIP_CLASS, 'hidden sm:inline-flex')}
+                {...(() => {
+                  const merged = cn(OUTLINE_CHIP_CLASS, 'hidden sm:inline-flex');
+                  return merged ? {className: merged} : {};
+                })()}
                 key={macro.key}
                 size="sm"
                 variant="secondary"

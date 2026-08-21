@@ -73,9 +73,9 @@ export function ExercisePicker({isOpen, onClose, onAdd}: ExercisePickerProps) {
     isError: exercisesError,
     refetch: refetchExercises,
   } = useCoachTrainingExercisesInfiniteQuery({
-    search: debouncedSearch || undefined,
-    muscleIds: muscles.ids.size > 0 ? [...muscles.ids] : undefined,
-    equipmentIds: equipment.ids.size > 0 ? [...equipment.ids] : undefined,
+    ...(debouncedSearch ? {search: debouncedSearch} : {}),
+    ...(muscles.ids.size > 0 ? {muscleIds: [...muscles.ids]} : {}),
+    ...(equipment.ids.size > 0 ? {equipmentIds: [...equipment.ids]} : {}),
   });
   const createExerciseMutation = useCreateCoachTrainingExerciseMutation();
 

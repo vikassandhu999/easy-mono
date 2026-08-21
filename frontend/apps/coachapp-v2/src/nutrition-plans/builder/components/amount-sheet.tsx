@@ -346,7 +346,12 @@ export function AmountSheetContent({
       if (isRecipeMode) {
         const perServing = recipeServingWeightG(recipe);
         const wg = perServing == null ? null : perServing * count;
-        onEditAmount?.({kind: 'serving', grams: wg ?? undefined, amount: count, unit: 'serving'});
+        onEditAmount?.({
+          kind: 'serving',
+          amount: count,
+          unit: 'serving',
+          ...(wg != null ? {grams: wg} : {}),
+        });
       } else if (activeServingIdx !== null && food) {
         const serving = food.serving_sizes[activeServingIdx];
         if (serving) {
@@ -570,7 +575,7 @@ export function AmountSheet({open, onClose, existingItem, onEditAmount, anchorEl
       ) : (
         <AmountSheetContent
           key={existingItem?.id ?? 'item'}
-          existingItem={existingItem}
+          {...(existingItem ? {existingItem} : {})}
           food={food}
           onEditAmount={onEditAmount}
           recipe={recipe}

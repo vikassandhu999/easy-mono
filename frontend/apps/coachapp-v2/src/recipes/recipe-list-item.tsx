@@ -29,7 +29,10 @@ export default function RecipeListItem({recipe}: {recipe: Recipe}) {
           )}
           {ingredientCount > 0 && (
             <Chip
-              className={cn(OUTLINE_CHIP_CLASS, 'hidden sm:inline-flex')}
+              {...(() => {
+                const merged = cn(OUTLINE_CHIP_CLASS, 'hidden sm:inline-flex');
+                return merged ? {className: merged} : {};
+              })()}
               size="sm"
               variant="secondary"
             >

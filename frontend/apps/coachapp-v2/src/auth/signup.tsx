@@ -8,7 +8,7 @@ import {FormTextField} from '@/@components/form-fields/form-text-field';
 
 import {ROUTES} from '@/@config/routes';
 import {useSignupMutation} from '@/api/auth';
-import {applyFormErrors} from '@/api/shared';
+import {applyFormErrors, omitUndefined} from '@/api/shared';
 import {AuthFooter} from '@/auth/components/auth-footer';
 import AuthLayout from '@/auth/components/auth-layout';
 
@@ -31,11 +31,13 @@ export default function Signup() {
 
   const onSubmit = async (data: SignupFormValues) => {
     try {
-      await signupMutation.mutateAsync({
-        email: data.email,
-        first_name: data.first_name || undefined,
-        last_name: data.last_name || undefined,
-      });
+      await signupMutation.mutateAsync(
+        omitUndefined({
+          email: data.email,
+          first_name: data.first_name || undefined,
+          last_name: data.last_name || undefined,
+        }),
+      );
       navigate(ROUTES.VERIFY_SIGNUP_OTP, {
         state: {email: data.email},
       });

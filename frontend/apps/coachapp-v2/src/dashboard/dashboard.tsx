@@ -54,9 +54,10 @@ function StatBar({
     {label: 'Active clients', value: isError ? null : active},
     {label: 'Pending invites', value: isError ? null : pending},
   ];
+  const merged = cn('flex items-stretch overflow-hidden rounded-card border border-border', className);
 
   return (
-    <Surface className={cn('flex items-stretch overflow-hidden rounded-card border border-border', className)}>
+    <Surface {...(merged ? {className: merged} : {})}>
       {cells.map((cell, index) => (
         <Fragment key={cell.label}>
           {index > 0 ? (

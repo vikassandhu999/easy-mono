@@ -57,7 +57,7 @@ export function DayTabs({days, activeDayId, onSelect, onAdd, isAdding, onMove, i
             aria-label="Move day left"
             className={`shrink-0 rounded-chip bg-transparent text-muted sm:size-7 ${AS_ICON_BUTTON}`}
             data-testid="nb-move-day-left"
-            isDisabled={isFirst}
+            {...(isFirst != null ? {isDisabled: isFirst} : {})}
             isIconOnly
             onPress={() => onMove(-1)}
             size="sm"
@@ -69,7 +69,7 @@ export function DayTabs({days, activeDayId, onSelect, onAdd, isAdding, onMove, i
             aria-label="Move day right"
             className={`shrink-0 rounded-chip bg-transparent text-muted sm:size-7 ${AS_ICON_BUTTON}`}
             data-testid="nb-move-day-right"
-            isDisabled={isLast}
+            {...(isLast != null ? {isDisabled: isLast} : {})}
             isIconOnly
             onPress={() => onMove(1)}
             size="sm"

@@ -32,13 +32,16 @@ export function QuickActionsRow() {
         onAction={(key: Key) => navigate(String(key))}
         selectionMode="none"
       >
-        {ACTIONS.map((action) => (
+        {ACTIONS.map((action) => {
+          const merged = cn(
+            LIST_ITEM_CLASS,
+            'grid min-h-11 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-none',
+            'py-3 hover:bg-surface-secondary sm:px-4',
+          );
+
+          return (
           <ListBox.Item
-            className={cn(
-              LIST_ITEM_CLASS,
-              'grid min-h-11 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-none',
-              'py-3 hover:bg-surface-secondary sm:px-4',
-            )}
+            {...(merged ? {className: merged} : {})}
             id={action.route}
             key={action.route}
             textValue={action.label}
@@ -49,7 +52,8 @@ export function QuickActionsRow() {
             <Label className="min-w-0 truncate type-body font-medium text-foreground">{action.label}</Label>
             <ChevronRight className="shrink-0 text-muted-2" />
           </ListBox.Item>
-        ))}
+          );
+        })}
       </ListBox>
     </div>
   );

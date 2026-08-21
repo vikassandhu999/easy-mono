@@ -193,10 +193,10 @@ export default function NutritionDay() {
 
 type ItemRowProps = {
   calories: null | number | undefined;
-  chip?: string;
+  chip?: string | undefined;
   name: string;
-  nutrients?: Pick<NutrientTotals, 'carbohydrates' | 'fat' | 'protein'>;
-  portion?: Pick<NutritionPortion, 'amount' | 'grams' | 'unit'>;
+  nutrients?: Pick<NutrientTotals, 'carbohydrates' | 'fat' | 'protein'> | undefined;
+  portion?: Pick<NutritionPortion, 'amount' | 'grams' | 'unit'> | undefined;
   skipped?: boolean;
 };
 
@@ -214,7 +214,7 @@ function ItemRow({calories, chip, name, nutrients, portion, skipped}: ItemRowPro
     <div className={`flex items-center gap-3 px-4 py-3${skipped ? ' opacity-55' : ''}`}>
       <div className="min-w-0 flex-1">
         <Typography
-          className={skipped ? 'line-through' : undefined}
+          {...(skipped ? {className: 'line-through'} : {})}
           truncate
           type="body-sm"
           weight="semibold"

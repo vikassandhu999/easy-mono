@@ -422,9 +422,7 @@ function SectionCard({
           {/* Inline title (INTERACTIONS.md § FM/FB) — reads as a heading, not a
               boxed field, until focused. */}
           <Input
-            className={cn(
-              'border-transparent bg-transparent px-0 font-semibold focus:border-border focus:bg-surface focus:px-3',
-            )}
+            className="border-transparent bg-transparent px-0 font-semibold focus:border-border focus:bg-surface focus:px-3"
             placeholder="Section title"
           />
         </TextField>

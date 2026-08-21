@@ -52,9 +52,11 @@ function ServiceIcon({service}: {service: ProgrammingReason['service']}) {
 }
 
 function ReasonChip({reason}: {reason: ProgrammingReason}) {
+  const merged = cn('shrink-0', REASON_TONE[reason.code]);
+
   return (
     <Chip
-      className={cn('shrink-0', REASON_TONE[reason.code])}
+      {...(merged ? {className: merged} : {})}
       size="sm"
       variant="soft"
     >
@@ -180,13 +182,15 @@ export default function ProgrammingView() {
                 const lead = primaryReason(item.reasons);
                 const primary = presentProgrammingReason(lead);
                 const name = clientName(item);
+                const merged = cn(
+                  'list-box-item',
+                  LIST_ITEM_CLASS,
+                  'mt-0 flex flex-col items-stretch gap-3 py-3 hover:bg-surface-secondary sm:flex-row sm:items-center sm:px-4',
+                );
+
                 return (
                   <GridListItem
-                    className={cn(
-                      'list-box-item',
-                      LIST_ITEM_CLASS,
-                      'mt-0 flex flex-col items-stretch gap-3 py-3 hover:bg-surface-secondary sm:flex-row sm:items-center sm:px-4',
-                    )}
+                    {...(merged ? {className: merged} : {})}
                     id={item.client.id}
                     key={item.client.id}
                     onAction={() => navigate(ROUTES.CLIENT_DETAIL.replace(':id', item.client.id))}

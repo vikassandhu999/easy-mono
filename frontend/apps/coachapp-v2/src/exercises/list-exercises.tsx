@@ -48,7 +48,7 @@ export default function ListExercises() {
       row={(exercise) => <ExerciseListItem exercise={exercise} />}
       search={{onChange: setSearch, placeholder: 'Search exercises\u2026', value: search}}
       title="Exercises"
-      total={total ?? undefined}
+      {...(total !== undefined ? {total} : {})}
       toolbarExtra={
         options.isError ? (
           <Button

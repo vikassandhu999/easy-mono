@@ -45,11 +45,11 @@ export function DetailRow({
   /** Second line under the title. */
   meta?: ReactNode;
   /** For rows that act rather than navigate. Ignored when `to` is set. */
-  onPress?: () => void;
+  onPress?: (() => void) | undefined;
   testId?: string;
   title: ReactNode;
   /** Route to navigate to. Makes the row a real link — middle-click, focus, the lot. */
-  to?: string;
+  to?: string | undefined;
   /** Status chip, value, or similar. A chevron is added automatically when the row leads somewhere. */
   trailing?: ReactNode;
   /**

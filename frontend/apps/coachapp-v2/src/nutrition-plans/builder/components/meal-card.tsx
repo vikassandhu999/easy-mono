@@ -165,17 +165,19 @@ export function MealCard({
   // Render
   // ---------------------------------------------------------------------------
 
+  const disclosureClassName = cn(
+    // Surface is the `disclosure--builder` theme rule, shared with the
+    // training builder's exercise card. Only the border COLOUR is this
+    // screen's: open wins over shared, because the prototype tints the
+    // border amber only while the card is collapsed.
+    'disclosure--builder',
+    open ? 'border-meal-open' : isShared ? 'border-shared-foreground' : 'border-border',
+  );
+
   return (
     <Disclosure
-      className={cn(
-        // Surface is the `disclosure--builder` theme rule, shared with the
-        // training builder's exercise card. Only the border COLOUR is this
-        // screen's: open wins over shared, because the prototype tints the
-        // border amber only while the card is collapsed.
-        'disclosure--builder',
-        open ? 'border-meal-open' : isShared ? 'border-shared-foreground' : 'border-border',
-      )}
-      data-testid={cardTestId}
+      {...(disclosureClassName ? {className: disclosureClassName} : {})}
+      {...(cardTestId ? {'data-testid': cardTestId} : {})}
       isExpanded={open}
       onExpandedChange={onToggle}
     >
@@ -259,7 +261,7 @@ export function MealCard({
             <Button
               aria-label={`Move ${meal.name} up`}
               className={ICON_BUTTON}
-              isDisabled={isFirst}
+              {...(isFirst != null ? {isDisabled: isFirst} : {})}
               isIconOnly
               onPress={() => onMove(-1)}
               size="sm"
@@ -270,7 +272,7 @@ export function MealCard({
             <Button
               aria-label={`Move ${meal.name} down`}
               className={ICON_BUTTON}
-              isDisabled={isLast}
+              {...(isLast != null ? {isDisabled: isLast} : {})}
               isIconOnly
               onPress={() => onMove(1)}
               size="sm"
@@ -488,7 +490,7 @@ export function MealCard({
                   commands.addOption(dayId, slot, mealId).catch(() => undefined);
                 }}
                 options={swapCandidates}
-                testId={openId('nb-add-swap')}
+                {...(open ? {testId: 'nb-add-swap'} : {})}
               />
             </div>
           </div>

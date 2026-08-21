@@ -46,8 +46,8 @@ function TextRow({
   onChange: (v: string) => void;
   placeholder?: string;
   textarea?: boolean;
-  description?: string;
-  error?: string;
+  description?: string | undefined;
+  error?: string | undefined;
 }) {
   const id = useId();
   return (

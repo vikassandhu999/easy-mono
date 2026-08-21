@@ -51,7 +51,7 @@ export default function RequiredServicesField({
   services,
 }: {
   description: string;
-  error?: string;
+  error?: string | undefined;
   onChange: (services: RequiredService[]) => void;
   services: readonly RequiredService[];
 }) {

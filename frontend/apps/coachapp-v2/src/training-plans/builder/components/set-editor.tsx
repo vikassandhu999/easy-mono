@@ -354,8 +354,8 @@ function PlainField({field, set, onChange}: FieldProps) {
         />
       ) : (
         <Input
-          inputMode={field.mode}
-          placeholder={field.placeholder}
+          {...(field.mode ? {inputMode: field.mode} : {})}
+          {...(field.placeholder ? {placeholder: field.placeholder} : {})}
         />
       )}
       {isInvalid ? <ErrorMessage>{field.invalidMessage ?? 'Enter a valid number'}</ErrorMessage> : null}
@@ -401,7 +401,7 @@ function SingleToggle<T extends string>({
     >
       {options.map((option) => (
         <ToggleButton
-          className={buttonClassName}
+          {...(buttonClassName ? {className: buttonClassName} : {})}
           id={option.value}
           key={option.value}
         >

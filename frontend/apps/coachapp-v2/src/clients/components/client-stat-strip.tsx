@@ -125,7 +125,7 @@ function StatCell({
 }: {
   label: string;
   note?: ReactNode;
-  suffix?: string;
+  suffix?: string | undefined;
   /** Makes the cell `.statcell.tap` — a link with a chevron, as CD-OV's Weight cell is. */
   to?: string;
   value: ReactNode;

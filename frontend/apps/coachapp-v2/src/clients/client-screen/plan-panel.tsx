@@ -51,8 +51,8 @@ export function PlanPanel({
   icon?: LucideIcon;
   meta?: null | string;
   name?: null | string;
-  onEnd?: () => void;
-  onOpen?: () => void;
+  onEnd?: (() => void) | undefined;
+  onOpen?: (() => void) | undefined;
 }) {
   const endState = useOverlayState();
   const [assignOpen, setAssignOpen] = useState(defaultAssignOpen);

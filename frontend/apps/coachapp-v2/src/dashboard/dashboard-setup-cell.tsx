@@ -173,15 +173,17 @@ const STEP_STATE_LABEL: Record<StepState, string> = {
  * outline, upcoming = muted.
  */
 function StepChip({index, state, step}: {index: number; state: StepState; step: SetupStep}) {
+  const merged = cn(
+    // Done and upcoming sit on the same neutral fill in the reference — only
+    // the current step is called out, with an accent hairline on white.
+    'h-auto min-w-0 shrink gap-2 rounded-control px-3 py-1.5',
+    state === 'current' ? 'border border-accent bg-surface' : 'border border-transparent bg-surface-secondary',
+    state === 'upcoming' ? 'opacity-70' : '',
+  );
+
   return (
     <Chip
-      className={cn(
-        // Done and upcoming sit on the same neutral fill in the reference — only
-        // the current step is called out, with an accent hairline on white.
-        'h-auto min-w-0 shrink gap-2 rounded-control px-3 py-1.5',
-        state === 'current' ? 'border border-accent bg-surface' : 'border border-transparent bg-surface-secondary',
-        state === 'upcoming' ? 'opacity-70' : '',
-      )}
+      {...(merged ? {className: merged} : {})}
       color="default"
       variant="secondary"
     >

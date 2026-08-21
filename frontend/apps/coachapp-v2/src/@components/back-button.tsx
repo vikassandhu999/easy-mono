@@ -24,20 +24,22 @@ export function BackButton({
   onPress: () => void;
   testId?: string;
 }) {
+  const merged = cn(
+    // The title gap lives here, not as `gap` on 36 header rows: the button is
+    // always followed by a title, and margin travels with it (and disappears
+    // with `lg:hidden`). Containers must NOT also set `gap` — they stack.
+    'me-3 rounded-control border border-border bg-surface p-0 text-foreground',
+    AS_TEXT,
+    NO_GAP,
+    'sm:size-9.5   sm:p-0',
+    className,
+  );
+
   return (
     <Button
       aria-label={label}
-      className={cn(
-        // The title gap lives here, not as `gap` on 36 header rows: the button is
-        // always followed by a title, and margin travels with it (and disappears
-        // with `lg:hidden`). Containers must NOT also set `gap` — they stack.
-        'me-3 rounded-control border border-border bg-surface p-0 text-foreground',
-        AS_TEXT,
-        NO_GAP,
-        'sm:size-9.5   sm:p-0',
-        className,
-      )}
-      data-testid={testId}
+      {...(merged ? {className: merged} : {})}
+      {...(testId ? {'data-testid': testId} : {})}
       isIconOnly
       onPress={onPress}
       size="md"

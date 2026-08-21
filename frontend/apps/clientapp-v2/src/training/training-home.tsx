@@ -208,7 +208,7 @@ export default function TrainingHome() {
           <PlanCard plan={plan} />
           <p className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted">This week</p>
           <WeekList
-            active={active ?? undefined}
+            {...(active ? {active} : {})}
             onStart={start}
             plan={plan}
             starting={starting}

@@ -109,7 +109,7 @@ export function NutritionTab({client}: {client: Client}) {
         )}
         assignLabel="Assign plan"
         isEnding={isEnding}
-        name={plan?.name}
+        name={plan?.name ?? null}
         onEnd={plan ? () => endPlan(plan) : undefined}
         onOpen={plan ? () => navigate(ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', plan.id)) : undefined}
       />
@@ -150,7 +150,17 @@ export function NutritionTab({client}: {client: Client}) {
  * `ProgressBar` (GAPS #5) rather than a hand-styled div, and it needs its compound
  * children or it renders nothing at all.
  */
-function AdherenceRow({date, pct, to, totals}: {date: string; pct: null | number; to?: string; totals?: DayTotals}) {
+function AdherenceRow({
+  date,
+  pct,
+  to,
+  totals,
+}: {
+  date: string;
+  pct: null | number;
+  to?: string | undefined;
+  totals?: DayTotals | undefined;
+}) {
   const shape = 'flex w-full items-center gap-3 rounded-panel px-2 py-3 text-left';
   const band = adherenceBand(totals);
   const PCT_COLOR = {

@@ -32,8 +32,8 @@ const MAX_BYTES: Record<AttachmentUploadRequest['content_type'], number> = {
 
 type UploadItem = {
   attachmentId?: string;
-  durationMs?: number;
-  errorMessage?: string;
+  durationMs?: number | undefined;
+  errorMessage?: string | undefined;
   file: File;
   localId: string;
   previewUrl: string;
@@ -135,7 +135,7 @@ export default function AttachmentComposer({disabled, onChange}: AttachmentCompo
       setItems((current) => [
         ...current,
         {
-          durationMs,
+          ...(durationMs !== undefined ? {durationMs} : {}),
           file,
           localId,
           previewUrl: URL.createObjectURL(file),

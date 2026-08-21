@@ -13,8 +13,15 @@ import {ApiError} from './api-error.ts';
 
 export type {ApiErrorBody, FormSetError};
 
-export function omitUndefined<T extends Record<string, unknown>>(value: T): T {
-  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as T;
+/** Drop keys whose value is `undefined` so the result satisfies exactOptionalPropertyTypes. */
+export type WithoutUndefined<T> = {
+  [K in keyof T as undefined extends T[K] ? (T[K] extends undefined ? never : K) : K]?: Exclude<T[K], undefined>;
+} & {
+  [K in keyof T as undefined extends T[K] ? never : K]: T[K];
+};
+
+export function omitUndefined<T extends Record<string, unknown>>(value: T): WithoutUndefined<T> {
+  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as WithoutUndefined<T>;
 }
 
 export function toOptionalText(value: string | undefined): string | undefined {

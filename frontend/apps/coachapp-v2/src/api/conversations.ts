@@ -23,7 +23,13 @@ export function useCoachConversationsInfiniteQuery(search?: string) {
     queryFn: ({pageParam}) =>
       call(
         client.GET('/v1/coach/conversations', {
-          params: {query: {limit: PAGE_SIZE, offset: pageParam, search: normalizedSearch}},
+          params: {
+            query: {
+              limit: PAGE_SIZE,
+              offset: pageParam,
+              ...(normalizedSearch ? {search: normalizedSearch} : {}),
+            },
+          },
         }),
       ),
     initialPageParam: 0,

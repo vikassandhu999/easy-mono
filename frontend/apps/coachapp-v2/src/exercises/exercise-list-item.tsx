@@ -58,7 +58,10 @@ export default function ExerciseListItem({exercise}: {exercise: TrainingExercise
           )}
           {force && (
             <Chip
-              className={cn(OUTLINE_CHIP_CLASS, 'hidden sm:inline-flex')}
+              {...(() => {
+                const merged = cn(OUTLINE_CHIP_CLASS, 'hidden sm:inline-flex');
+                return merged ? {className: merged} : {};
+              })()}
               size="sm"
               variant="secondary"
             >

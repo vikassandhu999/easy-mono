@@ -186,7 +186,7 @@ export default function ProgressHome() {
       {sheet ? (
         <LogWeightSheet
           defaultUnit={unit}
-          defaultValue={latest?.value}
+          {...(latest?.value !== undefined ? {defaultValue: latest.value} : {})}
           onClose={() => setSheet(false)}
         />
       ) : null}

@@ -331,26 +331,29 @@ function SelectableQueue({
       }))}
       renderItem={(conversation) => {
         const selected = conversation.selected;
+        const rowClassName = cn(
+          'list-box-item',
+          LIST_ITEM_CLASS,
+          'mt-0 flex flex-col items-stretch gap-0 p-0',
+          selected && inlineDetails && 'hover:bg-surface',
+        );
+        const buttonClassName = cn(
+          'button--row grid w-full grid-cols-[auto_auto_minmax(0,1fr)] items-center justify-stretch gap-3 rounded-none px-3 py-3 text-start',
+          'active:transform-none! data-[pressed=true]:transform-none!',
+          selected ? 'bg-accent-soft hover:bg-accent-soft' : 'hover:bg-surface-secondary',
+        );
+
         return (
           <GridListItem
-            aria-current={selected ? 'true' : undefined}
-            className={cn(
-              'list-box-item',
-              LIST_ITEM_CLASS,
-              'mt-0 flex flex-col items-stretch gap-0 p-0',
-              selected && inlineDetails && 'hover:bg-surface',
-            )}
+            {...(selected ? {'aria-current': 'true' as const} : {})}
+            {...(rowClassName ? {className: rowClassName} : {})}
             id={conversation.id}
             key={conversation.id}
             textValue={conversation.name}
           >
             <Button
               aria-pressed={selected}
-              className={cn(
-                'button--row grid w-full grid-cols-[auto_auto_minmax(0,1fr)] items-center justify-stretch gap-3 rounded-none px-3 py-3 text-start',
-                'active:transform-none! data-[pressed=true]:transform-none!',
-                selected ? 'bg-accent-soft hover:bg-accent-soft' : 'hover:bg-surface-secondary',
-              )}
+              {...(buttonClassName ? {className: buttonClassName} : {})}
               onPress={() => onSelect(conversation)}
               variant="ghost"
             >
@@ -400,7 +403,7 @@ function DirectQueueVariant({
   conversations: Conversation[];
   onHandle: (conversation: Conversation) => void;
   onSelect: (conversation: Conversation) => void;
-  selected?: Conversation;
+  selected?: Conversation | undefined;
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -436,7 +439,7 @@ function FocusPaneVariant({
   conversations: Conversation[];
   onHandle: (conversation: Conversation) => void;
   onSelect: (conversation: Conversation) => void;
-  selected?: Conversation;
+  selected?: Conversation | undefined;
 }) {
   return (
     <>
@@ -481,7 +484,7 @@ function StatusBannerVariant({
   conversations: Conversation[];
   onHandle: (conversation: Conversation) => void;
   onSelect: (conversation: Conversation) => void;
-  selected?: Conversation;
+  selected?: Conversation | undefined;
 }) {
   if (!selected) {
     return (

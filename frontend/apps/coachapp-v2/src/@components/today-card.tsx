@@ -15,12 +15,12 @@ import {useCoachConversationsInfiniteQuery} from '@/api/conversations';
  * figure while there's work, the queue's definition when drained.
  */
 export type TodayEntry = {
-  count?: number;
-  icon?: LucideIcon;
+  count?: number | undefined;
+  icon?: LucideIcon | undefined;
   id: string;
   label: string;
-  meta?: string;
-  muted?: boolean;
+  meta?: string | undefined;
+  muted?: boolean | undefined;
 };
 
 function EntryCount({detailed, entry}: {detailed: boolean; entry: TodayEntry}) {
@@ -50,14 +50,16 @@ function CompactRow({
   onSelect: (id: string) => void;
 }) {
   const Icon = entry.icon;
+  const merged = cn(
+    'button--row h-8 w-full justify-start gap-2 rounded-control px-2 type-body',
+    isActive
+      ? 'bg-accent-soft font-semibold text-accent'
+      : 'font-medium text-foreground hover:bg-surface-secondary',
+  );
+
   return (
     <Button
-      className={cn(
-        'button--row h-8 w-full justify-start gap-2 rounded-control px-2 type-body',
-        isActive
-          ? 'bg-accent-soft font-semibold text-accent'
-          : 'font-medium text-foreground hover:bg-surface-secondary',
-      )}
+      {...(merged ? {className: merged} : {})}
       onPress={() => onSelect(entry.id)}
       variant="ghost"
     >
@@ -164,7 +166,7 @@ export function TodayCard({
   entries,
   onSelect,
 }: {
-  active?: string;
+  active?: string | undefined;
   detailed?: boolean;
   entries: TodayEntry[];
   onSelect: (id: string) => void;

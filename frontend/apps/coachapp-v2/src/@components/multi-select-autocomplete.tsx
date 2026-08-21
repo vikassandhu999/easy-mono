@@ -78,7 +78,7 @@ export default function MultiSelectAutocomplete({
 
   return (
     <Autocomplete
-      aria-label={label ? undefined : `${placeholder} filter`}
+      {...(label ? {} : {'aria-label': `${placeholder} filter`})}
       // `autocomplete--filter` pins the trigger to the control height (theme
       // rule) and sizes it to its label; the form flavour fills its field row
       // and grows with its tag rows.

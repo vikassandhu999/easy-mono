@@ -41,7 +41,9 @@ export default function AllClientsView() {
 
   const activeStatus = FILTER_OPTIONS.find((option) => option.id === statusFilter)?.status;
 
-  const list = useInfiniteItems(useClientsInfiniteQuery({sort, status: activeStatus}));
+  const list = useInfiniteItems(
+    useClientsInfiniteQuery({sort, ...(activeStatus ? {status: activeStatus} : {})}),
+  );
   const {data: summaryData} = useListClientsQuery({limit: 0});
 
   const hasFilter = statusFilter !== 'all';

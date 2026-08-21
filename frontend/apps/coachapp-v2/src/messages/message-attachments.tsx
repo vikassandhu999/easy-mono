@@ -13,7 +13,7 @@ function MessageAttachment({
   attachment: Attachment;
   failed: boolean;
   refresh: (ids: string[]) => Promise<void>;
-  url?: string;
+  url?: string | undefined;
 }) {
   const [failedUrl, setFailedUrl] = useState<string>();
   const [refreshing, setRefreshing] = useState(false);

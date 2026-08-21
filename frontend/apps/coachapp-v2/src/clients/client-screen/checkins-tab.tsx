@@ -387,7 +387,17 @@ function ScheduleCard({hasAssignments, schedule}: {hasAssignments: boolean; sche
 }
 
 /** Title, then the date and the state on the same line — the design's history row. */
-function HistoryRow({date, status, title, to}: {date?: string; status: React.ReactNode; title: string; to?: string}) {
+function HistoryRow({
+  date,
+  status,
+  title,
+  to,
+}: {
+  date?: string | undefined;
+  status: React.ReactNode;
+  title: string;
+  to?: string | undefined;
+}) {
   const shape = 'flex w-full items-center gap-3 rounded-panel px-2 py-3 text-left';
   const body = (
     <>

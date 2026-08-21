@@ -112,7 +112,7 @@ export function AddSeatsDialog({
   onActivating,
   isTriggerDisabled,
 }: {
-  onDone?: () => void;
+  onDone?: (() => void) | undefined;
   /**
    * Called instead of the default toast/refetch when checkout requires
    * payment confirmation (the modal path) — receives the pre-checkout
@@ -173,7 +173,7 @@ export function AddSeatsDialog({
 
   const trigger = (
     <Button
-      isDisabled={isTriggerDisabled}
+      {...(isTriggerDisabled != null ? {isDisabled: isTriggerDisabled} : {})}
       onPress={() => {
         setSeats(1);
         setOpen(true);

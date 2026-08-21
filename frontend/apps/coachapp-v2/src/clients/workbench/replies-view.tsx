@@ -258,21 +258,24 @@ export default function RepliesView() {
           unreadCount: item.conversation.unread_count,
           waitingMessageCount: item.waiting_message_count,
         });
+        const rowClassName = cn('list-box-item', LIST_ITEM_CLASS, 'mt-0 flex flex-col items-stretch gap-0 p-0');
+        const buttonClassName = cn(
+          'button--row grid w-full grid-cols-[auto_auto_minmax(0,1fr)] items-center justify-stretch gap-3 rounded-none px-3 py-3 text-start',
+          'active:transform-none! data-[pressed=true]:transform-none!',
+          selectedRow ? 'bg-accent-soft hover:bg-accent-soft' : 'hover:bg-surface-secondary',
+        );
+
         return (
           <GridListItem
-            aria-current={selectedRow ? 'true' : undefined}
-            className={cn('list-box-item', LIST_ITEM_CLASS, 'mt-0 flex flex-col items-stretch gap-0 p-0')}
+            {...(selectedRow ? {'aria-current': 'true' as const} : {})}
+            {...(rowClassName ? {className: rowClassName} : {})}
             id={item.conversation.id}
             key={item.conversation.id}
             textValue={name}
           >
             <Button
               aria-pressed={selectedRow}
-              className={cn(
-                'button--row grid w-full grid-cols-[auto_auto_minmax(0,1fr)] items-center justify-stretch gap-3 rounded-none px-3 py-3 text-start',
-                'active:transform-none! data-[pressed=true]:transform-none!',
-                selectedRow ? 'bg-accent-soft hover:bg-accent-soft' : 'hover:bg-surface-secondary',
-              )}
+              {...(buttonClassName ? {className: buttonClassName} : {})}
               onPress={() => select(item)}
               variant="ghost"
             >

@@ -1,7 +1,7 @@
 import {putFileToSignedUrl, startVoiceRecording} from '@easy/utils';
 import {type ChangeEvent, useEffect, useId, useRef, useState} from 'react';
 
-import {getApiErrorMessage} from '@/api/shared';
+import {getApiErrorMessage, omitUndefined} from '@/api/shared';
 import {useCreateCoachClientUploadMutation} from '@/api/uploads';
 import {
   attachmentSizeLimit,
@@ -89,17 +89,25 @@ export default function useAttachmentComposer({clientId, disabled, onChange}: Op
     if (!existingLocalId) {
       setItems((current) => [
         ...current,
-        {
+        omitUndefined({
           durationMs,
           file,
           localId,
           previewUrl: URL.createObjectURL(file),
           progress: 0,
-          status: 'uploading',
-        },
+          status: 'uploading' as const,
+        }),
       ]);
     } else {
-      updateItem(localId, {errorMessage: undefined, progress: 0, status: 'uploading'});
+      setItems((current) =>
+        current.map((item) => {
+          if (item.localId !== localId) {
+            return item;
+          }
+          const {errorMessage: _errorMessage, ...rest} = item;
+          return {...rest, progress: 0, status: 'uploading' as const};
+        }),
+      );
     }
 
     if (!isAcceptedAttachmentType(file.type)) {

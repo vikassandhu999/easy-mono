@@ -1,6 +1,6 @@
 ---
 name: design-pro
-description: Use for ANY visual/design work on the React apps - porting a design-handoff *.dc.html screen, fixing a screen that looks off, changing the theme, adding a component variant, or hunting visual inconsistency. Triggers - /port-screen, "port this screen", "match the design", "the design looks off", "make X consistent", theme/index.css changes.
+description: Use for ANY visual/design work on the React apps - a screen that looks off, theme/index.css changes, a component variant, or app-wide inconsistency ("make X consistent").
 ---
 
 # design-pro — consistency by design, not by discipline
@@ -21,18 +21,24 @@ written*, in this order of strength:
 
 If your fix relies on future agents *remembering* something, it is not done.
 
-**The theme wins.** Where a design file disagrees with the theme, the THEME
-value is the target and the prototype's px is an input (UI-CONTRACT §3). The
-theme is the system, not a transcription of any prototype. It covers the scale
-*and* the rules built on it — one control height, the field height, the
-selection registers, `--tracking-eyebrow`, the radius steps.
+**The theme wins.** The theme (`frontend/apps/coachapp-v2/src/index.css`) is
+the system every screen is measured against — UI-CONTRACT §3 is the
+authoritative statement. If the theme is genuinely wrong, change the theme, in
+its own commit; a divergent value at a call site hides the disagreement, it
+never settles it.
 
-The design still decides structure, layout, copy, iconography, and which
-register a screen uses. A register the theme has no rule for is a STOP-and-ask.
+## Read first
 
-Never resolve a conflict at a call site. Writing the design's value into a
-className does not remove the disagreement, it hides it across N call sites. If
-the theme is genuinely wrong, change the theme, in its own commit.
+1. `frontend/apps/coachapp-v2/UI-CONTRACT.md` — the component fence (§2),
+   tokens (§3), prohibitions (§1), DoD (§5).
+2. `frontend/apps/coachapp-v2/AGENTS.md` (Canonical Components, Page Anatomy,
+   Choosing Containers — wins over the contract on overlap).
+3. `field-notes.md` (this skill dir) — HeroUI/theme gotchas that override docs.
+4. The scale: `grep -E '^\s*--(type|radius)-' frontend/apps/coachapp-v2/src/index.css`.
+   These are the ONLY sizes and radii you may use — a fence, not a starting point.
+
+The app itself is the primary reference for every pattern: before styling
+anything, find the screen that already renders that object and match it.
 
 ## Where a design decision lives — the ladder
 
@@ -61,15 +67,10 @@ Every visual decision has exactly one home. Top rung that fits:
 A register is stated **once**: "selected is ink" is one theme block that every
 selection variant shares — if a second place restates it, the two will drift.
 
-## Two modes
+## The seam loop — "make X consistent" / "fix the theme"
 
-**Port mode** (§0–§6 below): a dc.html screen → React, converging to zero
-drift. The prototype is a **spec, not source** — never copy its markup,
-classes, or `var(--*)`. Even the prototype duplicates its own objects
-(`.pill` vs `.daytab`, byte-identical); the port defines the object once.
+Close one axis of inconsistency app-wide:
 
-**Seam mode** (when the ask is "make X consistent" / "fix the theme"): close
-one axis of inconsistency app-wide.
 1. **Pick ONE seam** — type size, radius, control height, a selection register,
    colour usage, an eyebrow/label treatment. One per pass.
 2. **Census mechanically, not by memory** — a small script/grep over `src/`
@@ -87,7 +88,9 @@ one axis of inconsistency app-wide.
 ## Verification — the edit landing is not the edit working
 
 Theme rules fail **silently**; nothing builds red. Every theme change is
-verified against a live node, both halves:
+verified against a live node (app on `http://localhost:2021`, via
+`chrome-devtools-axi`; reuse the authenticated tab, never clear storage),
+both halves:
 
 - **Selector half**: does it match anything?
   `document.querySelectorAll(sel).length` — HeroUI names are BEM-ish
@@ -105,58 +108,6 @@ verified against a live node, both halves:
 `check-theme-selectors.sh` gates both halves mechanically; the live read is
 still required because it also catches the *wrong-but-existing* selector.
 
-## 0. Preconditions — fail fast, in order
-
-1. App running on `http://localhost:2021`; `chrome-devtools-axi pages` responds;
-   reuse the authenticated tab, never clear storage.
-
-## 1. Read — in this order
-
-0. **The scale — your closed vocabulary.** `grep -E '^\s*--(type|radius)-'
-   frontend/apps/coachapp-v2/src/index.css`. These are the ONLY sizes and radii
-   you may use. It is a fence, not a starting point (ladder rung 4). Know the
-   list before you map, so the manifest targets real tokens instead of
-   prototype pixel values.
-1. `design-handoff/UI-CONTRACT.md` — the component fence (§2), tokens (§3),
-   prohibitions (§1), DoD (§6).
-2. The screen's handoff doc: badge row in UI-CONTRACT §8 (Dashboard file) or
-   `design-handoff/CLIENT-DETAIL.md` (Client Detail file) — names the exact
-   codebase files and the `data-ref`/flag index.
-3. `frontend/apps/coachapp-v2/AGENTS.md` (Canonical Components, Page Anatomy,
-   Choosing Containers — wins over the contract on overlap).
-4. `design-handoff/RECIPES.md`, `COPY.md` § screen (verbatim strings),
-   `INTERACTIONS.md` § screen.
-5. `field-notes.md` (this skill dir) — gotchas that override the docs.
-
-## 2. State inventory — counters missed states
-
-Follow `find-state.md` (this skill dir): enumerate every state × breakpoint from
-the file's logic class, `sc-if` flags, and preview switcher; open the dc.html
-live and record the click recipe that reaches each state. Output: a state
-checklist. A state you can't reach or that the handoff doc doesn't mention →
-ask the user; never silently drop it.
-
-## 3. Mapping manifest — counters premature coding & improvisation
-
-Write `design-handoff/manifests/<ID>.json` (shape documented at the top of
-`style-diff.mjs`) plus a short mapping table in the ticket: for every visual
-node — design selector → UI-CONTRACT §2 component/wrapper → copy → interaction.
-
-- No §2 mapping for a node → check `design-handoff/GAPS.md`; not listed → STOP
-  and ask. Never improvise a component or hand-style a div.
-- **HARD GATE: no implementation code until the manifest covers every node of
-  every state on the checklist.** "I'll map as I build" is the failure mode
-  that produces designs that are *just different* — it is not allowed.
-
-## 4. Implement — from the manifest only
-
-§2 components, app wrappers before raw HeroUI. Zero `style={{}}`, hex, px/rem
-literals, numbered scales. `onPress` not `onClick`; `aria-label` on icon-only
-buttons; responsive overlays (`Popover` desktop / `KeyboardSheet` mobile,
-`AlertDialog` confirms). All loading (`ListSkeleton`/`PageSkeleton`), empty,
-error states — the prototype never shows these; UI-CONTRACT §6 defines them.
-Data through existing React Query hooks; never `useEffect` fetching.
-
 Watch for these fossils in your own diff before finishing:
 - a responsive pair with the same token both sides (`type-x … sm:type-x`) is a
   missing step or a leftover, never a style (RM-138; gated);
@@ -166,61 +117,21 @@ Watch for these fossils in your own diff before finishing:
 - an arbitrary colour property — colour is a `text-*` token, always (RM-137;
   gated).
 
-## 5. Convergence loop — the verdict
-
-The verdict on fidelity is **`design-handoff/scripts/style-diff.mjs`** — a
-deterministic computed-style comparison between the live-rendered dc.html and
-the running app, per mapped node, per state. Eyeballing screenshots explores;
-it never decides pass/fail.
-
-```
-cd frontend/apps/coachapp-v2   # playwright resolves from here
-APP_TOKEN=$(npx -y chrome-devtools-axi eval "localStorage.getItem('coachapp.accessToken')" \
-  | sed -n 's/^result: "\(.*\)"$/\1/p' | sed 's/\\"//g' | tr -d '\n') \
-node ../../../design-handoff/scripts/style-diff.mjs \
-  ../../../design-handoff/manifests/<ID>.json          # [--state x] [--width y] [--json]
-```
-
-Access tokens live ~5 min — grab a fresh APP_TOKEN right before every run
-(reload the app tab first if it's been idle).
-
-For EVERY reported diff, place the fix with the ladder (§Where a design
-decision lives). Additionally:
-
-- **Design wrong/impossible** → flag the conflict in the ticket (key format
-  `` `ID:state:pair:prop` ``). The theme wins on conflict; the user decides,
-  never you.
-
-Re-run until the script prints PASS for every state at both widths. `MISSING
-NODE` findings are structure drift — fix the DOM or the manifest selector,
-whichever is wrong. Then ONE screenshot-vs-ref pass (both widths, viewport
-emulation per field-notes) for what computed styles can't see: layout structure,
-layering, iconography, hover/focus states. Fixed-point: a fresh comparison names
-zero differences.
-
-## 6. Gates — all must pass
+## Gates — all must pass
 
 ```
 ./scripts/check-ui-contract.sh && (cd frontend && pnpm lint) && ./scripts/check-rm.sh
 ```
 
-(`pnpm lint` runs `check-theme-selectors.sh`.) Then UI-CONTRACT §6 DoD
-line-by-line, copy verbatim vs COPY.md. PR/commit body carries: the state
-checklist (each row PASS), final screenshots, and any flagged design conflicts.
+(`pnpm lint` runs `check-theme-selectors.sh`.)
 
 ## Red flags — STOP, you are rationalizing
 
 | Thought | Reality |
 |---|---|
-| "Close enough, the diff is tiny" | The script decides, not you. Fix it or flag the conflict in the ticket. |
-| "I'll raise EPS / trim the allowlist" | Forbidden. That's deleting the test because it fails. |
 | "I'll register an `@theme` token for this exact value" | The scale is closed. Snap to the nearest token, or STOP and propose it. Per-screen tokens are what grew the theme 81 → 164. |
 | "It's not a px literal, so it's fine" | The ban is on per-screen pixel values, not on the characters `[14px]`. A one-off token is the same value wearing a name. |
-| "I'll accept the deviation myself" | Design↔theme conflicts are user decisions. Flag in the ticket. |
-| "I'll start coding, mapping as I go" | Phase-3 gate exists because this produced different designs. |
-| "This state is unreachable/edge-case" | Ask the user. Silent drops are missed states. |
-| "No §2 component fits, I'll style a div" | GAPS.md or stop-and-ask. The fence is the point. |
-| "The design says 42px, so I'll write 42px here" | The theme wins. Snap to it. A call-site value hides the conflict, it does not settle it. |
+| "No §2 component fits, I'll style a div" | Stop and ask. The fence is the point. |
 | "This row needs `h-auto` to escape the control height" | Then it is not a control. Use the theme's release modifier — never neutralise the theme at a call site. |
 | "The other four call sites already write it this way" | Then you found a seam, not a precedent. Name the variant once; delete the copies. |
 | "The edit is in the file, done" | A theme rule fails silently on either half. Verify the computed value on a live node. |

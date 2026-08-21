@@ -12,7 +12,7 @@ screenshots of static states.
 
 ## 1. Setup
 
-1. Read the root, frontend, and target-app `AGENTS.md`, `design-handoff/UI-CONTRACT.md`, and the frontend entries in `docs/agents/recurring-mistakes.md`.
+1. Read the root, frontend, and target-app `AGENTS.md`, `frontend/apps/coachapp-v2/UI-CONTRACT.md`, and the frontend entries in `docs/agents/recurring-mistakes.md`.
 2. Required sub-skills: `design-pro` for CoachApp visual/design work; `chrome-devtools-axi` for live browser work.
 3. Dev servers are the user's — coachapp :2021, clientapp :1314, backend already up. Verify with one request; if one is down, report and stop rather than starting it. Reuse the authenticated AXI session; when a login is needed, use the standing seed accounts coach: `admin@example.com` and client: `gina.lanetti@example.com` with dev OTP `123456`.
 4. Record `git status --short --branch`. Every existing change is user-owned.
@@ -64,8 +64,7 @@ Applied to this loop:
   consumers). Scripts log themselves in with the seed account.
 - AXI exploration starts with `chrome-devtools-axi pages`; judge only after
   spinners/"Loading more…" settle; leave browser state as found.
-- Prefer deterministic checks the repo already owns: approved baselines,
-  `design-handoff/scripts/style-diff.mjs`, stable scripted flows.
+- Prefer deterministic checks the repo already owns: approved baselines, stable scripted flows.
 
 ### Field notes (hard-won; apply in one-shot scripts AND the rare AXI fallback)
 

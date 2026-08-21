@@ -471,8 +471,7 @@ verification loops, review passes, or anything that switches branches.
 A per-screen `@theme` token is a px literal wearing a name (nine ports grew the theme
 81 → 164 tokens). Snap to the nearest existing step or STOP and propose one — adding a
 step is a user decision in its own commit. **Enforced by:** `scripts/check-ui-contract.sh`
-theme freeze (`UI_CONTRACT_SKIP_THEME=1` for deliberate changes); `style-diff.mjs` snaps
-design values onto the scale.
+theme freeze (`UI_CONTRACT_SKIP_THEME=1` for deliberate changes).
 
 ### RM-133 — After writing a theme rule for a vendor class, verify the EFFECT, not the edit
 A wrong vendor class name fails silently (HeroUI is BEM-ish: you want `block__element`,

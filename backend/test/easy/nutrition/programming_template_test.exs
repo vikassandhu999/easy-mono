@@ -152,9 +152,20 @@ defmodule Easy.Nutrition.ProgrammingTemplateTest do
           client: client,
           source_template: template,
           kind: :client_plan,
-          start_date: ~D[2026-09-01]
+          start_date: ~D[2026-09-01],
+          end_date: ~D[2026-09-30]
         )
       end
+
+      insert(:plan,
+        business: coach.business,
+        creator: coach.user,
+        client: one,
+        source_template: template,
+        kind: :client_plan,
+        start_date: ~D[2026-10-01],
+        end_date: ~D[2026-10-31]
+      )
 
       insert(:plan,
         business: coach.business,

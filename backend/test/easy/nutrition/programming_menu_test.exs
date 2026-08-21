@@ -1,7 +1,17 @@
 defmodule Easy.Nutrition.ProgrammingMenuTest do
   use Easy.DataCase, async: true
 
-  alias Easy.Nutrition.{DayPattern, Library, Meal, MealItem, MealOption, Plan, Programming, WeekSchedule}
+  alias Easy.Nutrition.{
+    DayPattern,
+    Library,
+    Meal,
+    MealItem,
+    MealOption,
+    Plan,
+    Programming,
+    WeekSchedule
+  }
+
   alias Easy.Repo
 
   describe "replace_menu/4" do
@@ -86,7 +96,15 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
       assert cup.serving_label == "1 cup"
       assert cup.calories == 160.0
 
-      assert [%{recipe_id: recipe_id, portion_kind: :serving, amount: 1.0, weight_g: 200.0, calories: 200.0}] =
+      assert [
+               %{
+                 recipe_id: recipe_id,
+                 portion_kind: :serving,
+                 amount: 1.0,
+                 weight_g: 200.0,
+                 calories: 200.0
+               }
+             ] =
                dinner.meal_items
 
       assert recipe_id == recipe.id
@@ -114,13 +132,19 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
                  menu(template,
                    meals: [
                      meal_input("breakfast", "Breakfast", 0, [
-                       food_item("cup", food.id, 0, %{kind: :serving, amount: 1, unit: "cup", label: "1 cup"})
+                       food_item("cup", food.id, 0, %{
+                         kind: :serving,
+                         amount: 1,
+                         unit: "cup",
+                         label: "1 cup"
+                       })
                      ])
                    ]
                  )
                )
 
-      assert [%{unit: "cup", serving_label: "1 cup", weight_g: 80.0}] = hd(replaced.meals).meal_items
+      assert [%{unit: "cup", serving_label: "1 cup", weight_g: 80.0}] =
+               hd(replaced.meals).meal_items
 
       assert {:ok, _} =
                Library.update_food(ctx, food.id, food.revision, %{
@@ -130,7 +154,9 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
                })
 
       assert {:ok, current} = Programming.get_template(ctx, template.id)
-      assert [%{unit: "cup", serving_label: "1 cup", weight_g: 80.0}] = hd(current.meals).meal_items
+
+      assert [%{unit: "cup", serving_label: "1 cup", weight_g: 80.0}] =
+               hd(current.meals).meal_items
     end
 
     test "retains persisted identities, reorders nodes, and deletes omitted Meals and Menu Items" do
@@ -225,7 +251,11 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
 
       requests = [
         menu(template,
-          meals: [meal_input("one", "One", 0, [food_item("hidden", hidden_food.id, 0, %{kind: :gram, grams: 50})])]
+          meals: [
+            meal_input("one", "One", 0, [
+              food_item("hidden", hidden_food.id, 0, %{kind: :gram, grams: 50})
+            ])
+          ]
         ),
         menu(template,
           meals: [
@@ -237,7 +267,12 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
         menu(template,
           meals: [
             meal_input("one", "One", 0, [
-              food_item("serving", food.id, 0, %{kind: :serving, amount: 1, unit: "cup", label: "1 cup"})
+              food_item("serving", food.id, 0, %{
+                kind: :serving,
+                amount: 1,
+                unit: "cup",
+                label: "1 cup"
+              })
             ])
           ]
         )
@@ -301,7 +336,12 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
           servings_count: 2,
           cooked_weight_g: 400.0,
           recipe_ingredients: [
-            build(:recipe_ingredient, business: coach.business, food: food, weight_g: 200.0, position: 0)
+            build(:recipe_ingredient,
+              business: coach.business,
+              food: food,
+              weight_g: 200.0,
+              position: 0
+            )
           ]
         )
 
@@ -312,7 +352,12 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
           servings_count: 2,
           cooked_weight_g: nil,
           recipe_ingredients: [
-            build(:recipe_ingredient, business: coach.business, food: food, weight_g: 200.0, position: 0)
+            build(:recipe_ingredient,
+              business: coach.business,
+              food: food,
+              weight_g: 200.0,
+              position: 0
+            )
           ]
         )
 
@@ -361,7 +406,9 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
                  ctx,
                  template.id,
                  1,
-                 menu(template, meals: [meal_input("same", "One", 0, []), meal_input("same", "Two", 1, [])])
+                 menu(template,
+                   meals: [meal_input("same", "One", 0, []), meal_input("same", "Two", 1, [])]
+                 )
                )
 
       assert {:ok, archived} = Programming.archive_template(ctx, template.id, 1)
@@ -402,7 +449,10 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
                  }
                )
 
-      assert [%{name: "Rest", position: 0, id: rest_id}, %{id: training_id, name: "Training", position: 1}] =
+      assert [
+               %{name: "Rest", position: 0, id: rest_id},
+               %{id: training_id, name: "Training", position: 1}
+             ] =
                replaced.day_patterns
 
       assert training_id == everyday.id
@@ -433,6 +483,36 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
       assert [%{id: ^rest_id, name: "Rest"}] = trimmed.day_patterns
       assert Repo.get(DayPattern, everyday.id) == nil
       assert Enum.all?(trimmed.week_schedule, &(&1.nutrition_day_pattern_id == rest_id))
+    end
+
+    test "deletes omitted Day Patterns before reusing their positions" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      assert {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})
+      everyday = hd(template.day_patterns)
+
+      assert {:ok, created} =
+               Programming.replace_menu(ctx, template.id, 1, %{
+                 meals: [],
+                 day_patterns: [
+                   %{id: everyday.id, name: "Everyday", position: 0, slots: []},
+                   %{local_ref: "rest", name: "Rest", position: 1, slots: []}
+                 ],
+                 schedule: schedule_for(everyday.id)
+               })
+
+      rest = Enum.find(created.day_patterns, &(&1.name == "Rest"))
+
+      assert {:ok, replaced} =
+               Programming.replace_menu(ctx, template.id, 2, %{
+                 meals: [],
+                 day_patterns: [%{id: rest.id, name: "Rest", position: 0, slots: []}],
+                 schedule: schedule_for(rest.id)
+               })
+
+      assert [%{id: rest_id, position: 0}] = replaced.day_patterns
+      assert rest_id == rest.id
+      assert Repo.get(DayPattern, everyday.id) == nil
     end
 
     test "allows empty Day Pattern slots and rejects a Menu without a Day Pattern or complete schedule" do
@@ -506,7 +586,10 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
                        name: pattern.name,
                        position: 0,
                        slots: [
-                         %{meal_slot: :post_workout, options: [%{List.last(options) | position: 0}]},
+                         %{
+                           meal_slot: :post_workout,
+                           options: [%{List.last(options) | position: 0}]
+                         },
                          %{meal_slot: :breakfast, options: Enum.take(options, 3)}
                        ]
                      }
@@ -519,12 +602,13 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
       post_meal_id = List.last(created.meals).id
       [pattern] = created.day_patterns
 
-      assert Enum.map(pattern.meal_options, &{&1.meal_slot, &1.position, &1.nutrition_meal_id}) == [
-               {:breakfast, 0, Enum.at(breakfast_meal_ids, 0)},
-               {:breakfast, 1, Enum.at(breakfast_meal_ids, 1)},
-               {:breakfast, 2, Enum.at(breakfast_meal_ids, 2)},
-               {:post_workout, 0, post_meal_id}
-             ]
+      assert Enum.map(pattern.meal_options, &{&1.meal_slot, &1.position, &1.nutrition_meal_id}) ==
+               [
+                 {:breakfast, 0, Enum.at(breakfast_meal_ids, 0)},
+                 {:breakfast, 1, Enum.at(breakfast_meal_ids, 1)},
+                 {:breakfast, 2, Enum.at(breakfast_meal_ids, 2)},
+                 {:post_workout, 0, post_meal_id}
+               ]
 
       [default | _rest] = Enum.filter(pattern.meal_options, &(&1.meal_slot == :breakfast))
       assert default.position == 0
@@ -548,7 +632,11 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
                          %{
                            meal_slot: :breakfast,
                            options: [
-                             %{id: kept_option.id, nutrition_meal_id: kept_option.nutrition_meal_id, position: 0}
+                             %{
+                               id: kept_option.id,
+                               nutrition_meal_id: kept_option.nutrition_meal_id,
+                               position: 0
+                             }
                            ]
                          }
                        ]
@@ -558,7 +646,9 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
                  }
                )
 
-      assert [%{id: kept_id, meal_slot: :breakfast, position: 0}] = hd(replaced.day_patterns).meal_options
+      assert [%{id: kept_id, meal_slot: :breakfast, position: 0}] =
+               hd(replaced.day_patterns).meal_options
+
       assert kept_id == kept_option.id
       assert Repo.aggregate(MealOption, :count, :id) == 1
     end
@@ -582,7 +672,8 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
       foreign_meal_id = hd(other_menu.meals).id
       hidden = insert(:coach)
 
-      assert {:ok, hidden_template} = Programming.create_template(trainer_ctx(hidden), %{"name" => "Hidden"})
+      assert {:ok, hidden_template} =
+               Programming.create_template(trainer_ctx(hidden), %{"name" => "Hidden"})
 
       assert {:ok, hidden_menu} =
                Programming.replace_menu(
@@ -596,7 +687,11 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
 
       invalid = [
         %{
-          meals: [meal_input("breakfast", "Breakfast", 0, [food_item("item", food.id, 0, %{kind: :gram, grams: 50})])],
+          meals: [
+            meal_input("breakfast", "Breakfast", 0, [
+              food_item("item", food.id, 0, %{kind: :gram, grams: 50})
+            ])
+          ],
           day_patterns: [
             %{
               id: pattern.id,
@@ -622,7 +717,12 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
               id: pattern.id,
               name: pattern.name,
               position: 0,
-              slots: [%{meal_slot: :brunch, options: [%{local_ref: "a", meal_local_ref: "breakfast", position: 0}]}]
+              slots: [
+                %{
+                  meal_slot: :brunch,
+                  options: [%{local_ref: "a", meal_local_ref: "breakfast", position: 0}]
+                }
+              ]
             }
           ],
           schedule: schedule_for(pattern.id)
@@ -687,7 +787,9 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
       ]
 
       for attrs <- invalid do
-        assert {:error, %Ecto.Changeset{valid?: false}} = Programming.replace_menu(ctx, template.id, 1, attrs)
+        assert {:error, %Ecto.Changeset{valid?: false}} =
+                 Programming.replace_menu(ctx, template.id, 1, attrs)
+
         assert Repo.aggregate(MealOption, :count, :id) == 0
         assert Repo.get!(Plan, template.id).revision == 1
       end
@@ -721,7 +823,9 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
                        slots: [
                          %{
                            meal_slot: :breakfast,
-                           options: [%{local_ref: "opt", meal_local_ref: "breakfast", position: 0}]
+                           options: [
+                             %{local_ref: "opt", meal_local_ref: "breakfast", position: 0}
+                           ]
                          }
                        ]
                      }

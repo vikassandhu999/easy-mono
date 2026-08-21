@@ -7,9 +7,10 @@
 # and Rest day (shared meal + empty meal). Prints the plan id for the manifest.
 
 import Ecto.Query
+import Ecto.Changeset
 
 alias Easy.Ctx
-alias Easy.Nutrition.{Food, Plan, Programming}
+alias Easy.Nutrition.{DayPattern, Food, Plan, Programming, WeekSchedule}
 alias Easy.Repo
 
 plan_name = "NB fixture — Lean Bulk"
@@ -17,25 +18,27 @@ plan_id = "49584e72-1edd-41d5-a648-f339a1b57149"
 
 business_id =
   Repo.one(
-    from p in Plan,
+    from(p in Plan,
       group_by: p.business_id,
       order_by: [desc: count(p.id)],
       select: p.business_id,
       limit: 1
-  ) || Repo.one!(from b in Easy.Orgs.Business, select: b.id, limit: 1)
+    )
+  ) || Repo.one!(from(b in Easy.Orgs.Business, select: b.id, limit: 1))
 
 business = Repo.get!(Easy.Orgs.Business, business_id)
-Repo.delete_all(from p in Plan, where: p.name == ^plan_name or p.id == ^plan_id)
-coach = Repo.one!(from c in Easy.Orgs.Coach, where: c.business_id == ^business.id, limit: 1)
+Repo.delete_all(from(p in Plan, where: p.name == ^plan_name or p.id == ^plan_id))
+coach = Repo.one!(from(c in Easy.Orgs.Coach, where: c.business_id == ^business.id, limit: 1))
 ctx = %Ctx{business_id: business.id, user_id: coach.user_id, coach_id: coach.id, owner?: true}
 
 foods =
   Repo.all(
-    from f in Food,
+    from(f in Food,
       where: is_nil(f.business_id) or f.business_id == ^business.id,
       where: f.calories_per_100g > 20.0 and f.calories_per_100g < 200.0,
       order_by: f.name,
       limit: 6
+    )
   )
 
 if foods == [] do
@@ -45,13 +48,33 @@ end
 [f1, f2, f3, f4, f5, f6] = foods
 
 {:ok, template} =
-  Programming.create_template(ctx, %{
-    "name" => plan_name,
-    "target_calories" => 2100.0,
-    "target_protein_g" => 180.0,
-    "target_carbs_g" => 200.0,
-    "target_fat_g" => 60.0
-  })
+  Repo.transaction(fn ->
+    template =
+      business.id
+      |> Plan.insert_changeset(coach.user_id, %{
+        "name" => plan_name,
+        "target_calories" => 2100.0,
+        "target_protein_g" => 180.0,
+        "target_carbs_g" => 200.0,
+        "target_fat_g" => 60.0
+      })
+      |> put_change(:id, plan_id)
+      |> Repo.insert!()
+
+    pattern =
+      business.id
+      |> DayPattern.insert_changeset(template.id, %{name: "Everyday", position: 0})
+      |> Repo.insert!()
+
+    Enum.each(WeekSchedule.weekdays(), fn weekday ->
+      business.id
+      |> WeekSchedule.insert_changeset(template.id, pattern.id, %{weekday: weekday})
+      |> Repo.insert!()
+    end)
+
+    {:ok, seeded} = Programming.get_template(ctx, template.id)
+    seeded
+  end)
 
 everyday = hd(template.day_patterns)
 gram = fn grams -> %{kind: :gram, grams: grams * 1.0} end
@@ -99,8 +122,14 @@ end
         name: "Training day",
         position: 0,
         slots: [
-          %{meal_slot: :breakfast, options: [%{local_ref: "t-b", meal_local_ref: "oats", position: 0}]},
-          %{meal_slot: :mid_morning, options: [%{local_ref: "t-m", meal_local_ref: "yogurt", position: 0}]},
+          %{
+            meal_slot: :breakfast,
+            options: [%{local_ref: "t-b", meal_local_ref: "oats", position: 0}]
+          },
+          %{
+            meal_slot: :mid_morning,
+            options: [%{local_ref: "t-m", meal_local_ref: "yogurt", position: 0}]
+          },
           %{
             meal_slot: :dinner,
             options: [
@@ -115,21 +144,26 @@ end
         name: "Rest day",
         position: 1,
         slots: [
-          %{meal_slot: :breakfast, options: [%{local_ref: "r-b", meal_local_ref: "yogurt", position: 0}]},
-          %{meal_slot: :lunch, options: [%{local_ref: "r-l", meal_local_ref: "empty", position: 0}]}
+          %{
+            meal_slot: :breakfast,
+            options: [%{local_ref: "r-b", meal_local_ref: "yogurt", position: 0}]
+          },
+          %{
+            meal_slot: :lunch,
+            options: [%{local_ref: "r-l", meal_local_ref: "empty", position: 0}]
+          }
         ]
       }
     ],
-    schedule:
-      %{
-        monday: everyday.id,
-        tuesday: everyday.id,
-        wednesday: everyday.id,
-        thursday: everyday.id,
-        friday: everyday.id,
-        saturday: "rest",
-        sunday: "rest"
-      }
+    schedule: %{
+      monday: everyday.id,
+      tuesday: everyday.id,
+      wednesday: everyday.id,
+      thursday: everyday.id,
+      friday: everyday.id,
+      saturday: "rest",
+      sunday: "rest"
+    }
   })
 
 IO.puts("NB fixture ready — /library/nutrition-plans/#{plan.id}")

@@ -4,7 +4,18 @@ defmodule Easy.Nutrition.Programming do
   alias Easy.CopyName
   alias Easy.Ctx
   alias Easy.LocalCalendar
-  alias Easy.Nutrition.{DayPattern, Library, Meal, MealItem, MealOption, MealSlot, Plan, WeekSchedule}
+
+  alias Easy.Nutrition.{
+    DayPattern,
+    Library,
+    Meal,
+    MealItem,
+    MealOption,
+    MealSlot,
+    Plan,
+    WeekSchedule
+  }
+
   alias Easy.Orgs.Business
   alias Easy.Repo
   alias Easy.Utils
@@ -15,7 +26,8 @@ defmodule Easy.Nutrition.Programming do
   @everyday "Everyday"
   @max_position 2_147_483_647
 
-  @spec create_template(Ctx.t(), map()) :: {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  @spec create_template(Ctx.t(), map()) ::
+          {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_template(%Ctx{} = ctx, attrs) do
     with :ok <- ensure_coach(ctx) do
       result = Repo.transaction(fn -> insert_everyday_template(ctx, attrs) end)
@@ -121,7 +133,9 @@ defmodule Easy.Nutrition.Programming do
   end
 
   @spec resolve_client_coverage(Ctx.t(), Date.t()) ::
-          {:ok, nil | %{plan: Plan.t(), day_pattern: DayPattern.t() | nil, date: Date.t(), weekday: atom()}}
+          {:ok,
+           nil
+           | %{plan: Plan.t(), day_pattern: DayPattern.t() | nil, date: Date.t(), weekday: atom()}}
           | {:error, :not_found}
   def resolve_client_coverage(%Ctx{} = ctx, %Date{} = date) do
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
@@ -133,7 +147,9 @@ defmodule Easy.Nutrition.Programming do
   end
 
   @spec resolve_coverage_for_client(Ctx.t(), String.t(), Date.t()) ::
-          {:ok, nil | %{plan: Plan.t(), day_pattern: DayPattern.t() | nil, date: Date.t(), weekday: atom()}}
+          {:ok,
+           nil
+           | %{plan: Plan.t(), day_pattern: DayPattern.t() | nil, date: Date.t(), weekday: atom()}}
           | {:error, :not_found}
   def resolve_coverage_for_client(%Ctx{} = ctx, client_id, %Date{} = date) do
     with :ok <- ensure_coach(ctx),
@@ -145,17 +161,34 @@ defmodule Easy.Nutrition.Programming do
     end
   end
 
-  @spec covering_plans_for_clients(Ctx.t(), [String.t()], Date.t()) :: {:ok, %{String.t() => Plan.t()}}
-  def covering_plans_for_clients(%Ctx{} = ctx, client_ids, %Date{} = date) when is_list(client_ids) do
+  @spec covering_plans_for_clients(Ctx.t(), %{String.t() => Date.t()}) ::
+          {:ok, %{String.t() => Plan.t()}}
+  def covering_plans_for_clients(%Ctx{} = ctx, client_dates) when is_map(client_dates) do
+    dates = Map.values(client_dates)
+    client_ids = Map.keys(client_dates)
+
     plans =
       Plan
-      |> Plan.active_for_clients(ctx.business_id, client_ids, date)
+      |> Plan.covering_intervals(ctx.business_id)
+      |> where([plan], plan.client_id in ^client_ids)
+      |> where([plan], plan.start_date <= ^Enum.max(dates, Date))
+      |> where([plan], is_nil(plan.end_date) or plan.end_date >= ^Enum.min(dates, Date))
       |> Plan.include_client(ctx.business_id)
       |> Plan.newest()
       |> Repo.all()
+      |> Enum.filter(fn plan ->
+        Plan.lifecycle(plan, Map.fetch!(client_dates, plan.client_id)) == :current
+      end)
       |> stamp_lifecycle()
 
     {:ok, Enum.reduce(plans, %{}, fn plan, acc -> Map.put_new(acc, plan.client_id, plan) end)}
+  end
+
+  @spec covering_plans_for_clients(Ctx.t(), [String.t()], Date.t()) ::
+          {:ok, %{String.t() => Plan.t()}}
+  def covering_plans_for_clients(%Ctx{} = ctx, client_ids, %Date{} = date)
+      when is_list(client_ids) do
+    covering_plans_for_clients(ctx, Map.new(client_ids, &{&1, date}))
   end
 
   @spec get_template(Ctx.t(), String.t()) :: {:ok, Plan.t()} | {:error, :not_found}
@@ -269,7 +302,8 @@ defmodule Easy.Nutrition.Programming do
     end)
   end
 
-  defp replace_locked_menu(_ctx, %Plan{archived_at: archived_at} = plan, _attrs) when not is_nil(archived_at) do
+  defp replace_locked_menu(_ctx, %Plan{archived_at: archived_at} = plan, _attrs)
+       when not is_nil(archived_at) do
     {:error, archived_changeset(plan)}
   end
 
@@ -278,8 +312,7 @@ defmodule Easy.Nutrition.Programming do
          {:ok, meal_ids} <- persist_menu_meals(plan, menu),
          {:ok, pattern_ids} <- persist_menu_patterns(plan, menu),
          :ok <- persist_menu_options(plan, menu, meal_ids, pattern_ids),
-         :ok <- persist_menu_schedule(plan, menu, pattern_ids),
-         :ok <- delete_omitted_patterns(plan, Map.values(pattern_ids)) do
+         :ok <- persist_menu_schedule(plan, menu, pattern_ids) do
       plan
       |> Plan.lifecycle_changeset(%{revision: plan.revision + 1})
       |> Repo.update()
@@ -344,8 +377,10 @@ defmodule Easy.Nutrition.Programming do
     %{
       meals: load_menu_rows(Meal.for_plan(Meal.for_business(plan.business_id), plan.id)),
       items: load_menu_rows(MealItem.for_plan(MealItem.for_business(plan.business_id), plan.id)),
-      patterns: load_menu_rows(DayPattern.for_plan(DayPattern.for_business(plan.business_id), plan.id)),
-      options: load_menu_rows(MealOption.for_plan(MealOption.for_business(plan.business_id), plan.id))
+      patterns:
+        load_menu_rows(DayPattern.for_plan(DayPattern.for_business(plan.business_id), plan.id)),
+      options:
+        load_menu_rows(MealOption.for_plan(MealOption.for_business(plan.business_id), plan.id))
     }
   end
 
@@ -353,7 +388,9 @@ defmodule Easy.Nutrition.Programming do
 
   defp persisted_meals_valid?(meals, existing) do
     meal_ids = meals |> Enum.map(&node_id/1) |> Enum.reject(&is_nil/1)
-    item_ids = meals |> Enum.flat_map(&meal_items/1) |> Enum.map(&node_id/1) |> Enum.reject(&is_nil/1)
+
+    item_ids =
+      meals |> Enum.flat_map(&meal_items/1) |> Enum.map(&node_id/1) |> Enum.reject(&is_nil/1)
 
     unique?(meal_ids) and unique?(item_ids) and
       Enum.all?(meal_ids, &(valid_uuid?(&1) and Map.has_key?(existing.meals, &1))) and
@@ -378,7 +415,9 @@ defmodule Easy.Nutrition.Programming do
     end)
   end
 
-  defp persisted_item_belongs?(%MealItem{nutrition_meal_id: meal_id}, meal), do: meal_id == node_id(meal)
+  defp persisted_item_belongs?(%MealItem{nutrition_meal_id: meal_id}, meal),
+    do: meal_id == node_id(meal)
+
   defp persisted_item_belongs?(_item, _meal), do: false
 
   defp validate_menu_local_references(plan, meals, patterns) do
@@ -429,8 +468,11 @@ defmodule Easy.Nutrition.Programming do
 
   defp valid_pattern_slots?(pattern, meal_ids) do
     case Map.get(pattern, :slots, []) do
-      slots when is_list(slots) -> unique_slots?(slots) and Enum.all?(slots, &valid_slot?(&1, meal_ids))
-      _other -> false
+      slots when is_list(slots) ->
+        unique_slots?(slots) and Enum.all?(slots, &valid_slot?(&1, meal_ids))
+
+      _other ->
+        false
     end
   end
 
@@ -442,7 +484,8 @@ defmodule Easy.Nutrition.Programming do
   defp valid_slot?(slot, meal_ids) when is_map(slot) do
     options = slot_options(slot)
 
-    is_list(options) and options != [] and contiguous_from_zero?(options) and unique_option_meals?(options) and
+    is_list(options) and options != [] and contiguous_from_zero?(options) and
+      unique_option_meals?(options) and
       Enum.all?(options, &valid_option_meal?(&1, meal_ids))
   end
 
@@ -474,7 +517,8 @@ defmodule Easy.Nutrition.Programming do
     if valid_schedule?(schedule, submitted_identities(patterns)) do
       :ok
     else
-      {:error, menu_error(plan, :schedule, "must map every weekday to a Day Pattern in this Menu")}
+      {:error,
+       menu_error(plan, :schedule, "must map every weekday to a Day Pattern in this Menu")}
     end
   end
 
@@ -502,7 +546,9 @@ defmodule Easy.Nutrition.Programming do
   defp contiguous_from_zero?(nodes) do
     count = length(nodes)
     positions = Enum.map(nodes, &node_position/1)
-    Enum.all?(positions, &valid_position?/1) and Enum.sort(positions) == Enum.to_list(0..(count - 1))
+
+    Enum.all?(positions, &valid_position?/1) and
+      Enum.sort(positions) == Enum.to_list(0..(count - 1))
   end
 
   defp unique_nonnegative_positions?(nodes) do
@@ -510,7 +556,8 @@ defmodule Easy.Nutrition.Programming do
     Enum.all?(positions, &valid_position?/1) and unique?(positions)
   end
 
-  defp valid_position?(position), do: is_integer(position) and position >= 0 and position <= @max_position
+  defp valid_position?(position),
+    do: is_integer(position) and position >= 0 and position <= @max_position
 
   defp resolve_menu_items(ctx, plan, meals) do
     specs = meals |> Enum.flat_map(&meal_items/1) |> Enum.map(&library_item/1)
@@ -529,9 +576,14 @@ defmodule Easy.Nutrition.Programming do
 
   defp resolve_library_items(ctx, plan, specs) do
     case Library.resolve_items(ctx, specs) do
-      {:ok, resolved} -> {:ok, resolved}
-      {:error, :not_found} -> {:error, :not_found}
-      {:error, :invalid_portion} -> {:error, menu_error(plan, :meals, "contains an invalid Portion")}
+      {:ok, resolved} ->
+        {:ok, resolved}
+
+      {:error, :not_found} ->
+        {:error, :not_found}
+
+      {:error, :invalid_portion} ->
+        {:error, menu_error(plan, :meals, "contains an invalid Portion")}
     end
   end
 
@@ -592,7 +644,10 @@ defmodule Easy.Nutrition.Programming do
   end
 
   defp persist_menu_patterns(plan, menu) do
-    with :ok <- stage_retained_patterns(plan, menu) do
+    kept_ids = menu.day_patterns |> Enum.map(&node_id/1) |> Enum.reject(&is_nil/1)
+
+    with :ok <- stage_retained_patterns(plan, menu),
+         :ok <- delete_omitted_patterns(plan, kept_ids) do
       persist_pattern_inputs(plan, menu)
     end
   end
@@ -630,7 +685,8 @@ defmodule Easy.Nutrition.Programming do
     current_positions = Enum.map(Map.values(menu.existing.patterns), & &1.position)
     requested_positions = Enum.map(menu.day_patterns, &node_position/1)
 
-    stage_positions(plan, retained, current_positions ++ requested_positions, fn pattern, position ->
+    stage_positions(plan, retained, current_positions ++ requested_positions, fn pattern,
+                                                                                 position ->
       DayPattern
       |> DayPattern.for_business(plan.business_id)
       |> DayPattern.for_plan(plan.id)
@@ -668,7 +724,8 @@ defmodule Easy.Nutrition.Programming do
     end)
   end
 
-  defp option_meal_key(option), do: Map.get(option, :nutrition_meal_id) || Map.get(option, :meal_local_ref)
+  defp option_meal_key(option),
+    do: Map.get(option, :nutrition_meal_id) || Map.get(option, :meal_local_ref)
 
   defp persist_option_rows(inputs, plan) do
     Enum.reduce_while(inputs, :ok, fn input, :ok ->
@@ -702,7 +759,9 @@ defmodule Easy.Nutrition.Programming do
     Enum.reduce_while(WeekSchedule.weekdays(), :ok, fn weekday, :ok ->
       pattern_id = Map.fetch!(pattern_ids, schedule_pattern(menu.schedule, weekday))
 
-      case WeekSchedule.insert_changeset(plan.business_id, plan.id, pattern_id, %{weekday: weekday})
+      case WeekSchedule.insert_changeset(plan.business_id, plan.id, pattern_id, %{
+             weekday: weekday
+           })
            |> Repo.insert() do
         {:ok, _row} -> {:cont, :ok}
         {:error, reason} -> {:halt, {:error, reason}}
@@ -926,7 +985,12 @@ defmodule Easy.Nutrition.Programming do
   defp pattern_slots(_pattern), do: []
   defp slot_options(slot) when is_map(slot), do: Map.get(slot, :options) || []
   defp slot_options(_slot), do: []
-  defp all_options(patterns), do: Enum.flat_map(patterns, fn pattern -> Enum.flat_map(pattern_slots(pattern), &slot_options/1) end)
+
+  defp all_options(patterns),
+    do:
+      Enum.flat_map(patterns, fn pattern ->
+        Enum.flat_map(pattern_slots(pattern), &slot_options/1)
+      end)
 
   defp slot_name(slot) when is_map(slot) do
     case MealSlot.cast(Map.get(slot, :meal_slot)) do
@@ -953,12 +1017,14 @@ defmodule Easy.Nutrition.Programming do
   defp valid_uuid?(value), do: match?({:ok, _uuid}, Ecto.UUID.cast(value))
 
   defp valid_local_ref?(value),
-    do: is_binary(value) and value == String.trim(value) and value != "" and byte_size(value) <= 100
+    do:
+      is_binary(value) and value == String.trim(value) and value != "" and byte_size(value) <= 100
 
   defp menu_error(plan, field, message), do: plan |> change() |> add_error(field, message)
 
   defp insert_everyday_template(ctx, attrs) do
-    with {:ok, plan} <- ctx.business_id |> Plan.insert_changeset(ctx.user_id, attrs) |> Repo.insert(),
+    with {:ok, plan} <-
+           ctx.business_id |> Plan.insert_changeset(ctx.user_id, attrs) |> Repo.insert(),
          {:ok, pattern} <- insert_everyday_pattern(plan),
          :ok <- assign_everyday_week(plan, pattern) do
       plan
@@ -974,7 +1040,9 @@ defmodule Easy.Nutrition.Programming do
 
   defp assign_everyday_week(plan, pattern) do
     Enum.reduce_while(WeekSchedule.weekdays(), :ok, fn weekday, :ok ->
-      case WeekSchedule.insert_changeset(plan.business_id, plan.id, pattern.id, %{weekday: weekday})
+      case WeekSchedule.insert_changeset(plan.business_id, plan.id, pattern.id, %{
+             weekday: weekday
+           })
            |> Repo.insert() do
         {:ok, _row} -> {:cont, :ok}
         {:error, reason} -> {:halt, {:error, reason}}
@@ -982,7 +1050,8 @@ defmodule Easy.Nutrition.Programming do
     end)
   end
 
-  defp update_active(%Plan{archived_at: archived_at} = plan, _attrs) when not is_nil(archived_at) do
+  defp update_active(%Plan{archived_at: archived_at} = plan, _attrs)
+       when not is_nil(archived_at) do
     {:error, archived_changeset(plan)}
   end
 
@@ -993,11 +1062,15 @@ defmodule Easy.Nutrition.Programming do
     |> Repo.update()
   end
 
-  defp archive(%Plan{archived_at: archived_at} = plan) when not is_nil(archived_at), do: {:ok, plan}
+  defp archive(%Plan{archived_at: archived_at} = plan) when not is_nil(archived_at),
+    do: {:ok, plan}
 
   defp archive(plan) do
     plan
-    |> Plan.lifecycle_changeset(%{archived_at: DateTime.utc_now(:second), revision: plan.revision + 1})
+    |> Plan.lifecycle_changeset(%{
+      archived_at: DateTime.utc_now(:second),
+      revision: plan.revision + 1
+    })
     |> Repo.update()
   end
 
@@ -1011,14 +1084,20 @@ defmodule Easy.Nutrition.Programming do
 
   defp mutate_template(ctx, template_id, expected_revision, mutation, opts \\ []) do
     with :ok <- ensure_coach(ctx) do
-      result = Repo.transaction(fn -> mutate_locked_template(ctx, template_id, expected_revision, mutation) end)
+      result =
+        Repo.transaction(fn ->
+          mutate_locked_template(ctx, template_id, expected_revision, mutation)
+        end)
+
       finalize_template_mutation(result, ctx, Keyword.get(opts, :reload?, true))
     end
   end
 
   defp mutate_plan(ctx, plan_id, expected_revision, mutation, opts \\ []) do
     with :ok <- ensure_coach(ctx) do
-      result = Repo.transaction(fn -> mutate_locked_plan(ctx, plan_id, expected_revision, mutation) end)
+      result =
+        Repo.transaction(fn -> mutate_locked_plan(ctx, plan_id, expected_revision, mutation) end)
+
       finalize_plan_mutation(result, ctx, Keyword.get(opts, :reload?, true))
     end
   end
@@ -1049,8 +1128,11 @@ defmodule Easy.Nutrition.Programming do
 
   defp assign_visible_template(ctx, client_id, template_id, expected_revision, attrs) do
     case Clients.authorize_client(ctx, client_id) do
-      {:ok, _client} -> assign_locked_template(ctx, client_id, template_id, expected_revision, attrs)
-      {:error, reason} -> Repo.rollback(reason)
+      {:ok, _client} ->
+        assign_locked_template(ctx, client_id, template_id, expected_revision, attrs)
+
+      {:error, reason} ->
+        Repo.rollback(reason)
     end
   end
 
@@ -1090,7 +1172,8 @@ defmodule Easy.Nutrition.Programming do
       target_fiber_g: template.target_fiber_g
     }
 
-    with {:ok, copy} <- Plan.insert_changeset(ctx.business_id, ctx.user_id, attrs) |> Repo.insert(),
+    with {:ok, copy} <-
+           Plan.insert_changeset(ctx.business_id, ctx.user_id, attrs) |> Repo.insert(),
          :ok <- copy_menu(template, copy) do
       {:ok, copy}
     end
@@ -1098,7 +1181,8 @@ defmodule Easy.Nutrition.Programming do
 
   defp assign_template_rows(ctx, client_id, template, attrs) do
     with {:ok, copy} <-
-           Plan.insert_changeset(ctx.business_id, ctx.user_id, client_id, template, attrs) |> Repo.insert(),
+           Plan.insert_changeset(ctx.business_id, ctx.user_id, client_id, template, attrs)
+           |> Repo.insert(),
          :ok <- copy_menu(template, copy),
          :ok <- Clients.advance_stage_to_coaching(ctx, client_id) do
       {:ok, copy}
@@ -1128,7 +1212,9 @@ defmodule Easy.Nutrition.Programming do
     Enum.reduce_while(schedule, :ok, fn row, :ok ->
       copied_pattern_id = Map.fetch!(pattern_ids, row.nutrition_day_pattern_id)
 
-      case WeekSchedule.insert_changeset(copy.business_id, copy.id, copied_pattern_id, %{weekday: row.weekday})
+      case WeekSchedule.insert_changeset(copy.business_id, copy.id, copied_pattern_id, %{
+             weekday: row.weekday
+           })
            |> Repo.insert() do
         {:ok, _row} -> {:cont, :ok}
         {:error, reason} -> {:halt, {:error, reason}}
@@ -1168,7 +1254,8 @@ defmodule Easy.Nutrition.Programming do
       pattern_id = Map.fetch!(pattern_ids, option.nutrition_day_pattern_id)
       meal_id = Map.fetch!(meal_ids, option.nutrition_meal_id)
 
-      case MealOption.insert_changeset(copy.business_id, copy.id, pattern_id, meal_id, attrs) |> Repo.insert() do
+      case MealOption.insert_changeset(copy.business_id, copy.id, pattern_id, meal_id, attrs)
+           |> Repo.insert() do
         {:ok, _copied} -> {:cont, :ok}
         {:error, reason} -> {:halt, {:error, reason}}
       end
@@ -1197,7 +1284,8 @@ defmodule Easy.Nutrition.Programming do
         complete: item.complete
       }
 
-      case MealItem.insert_changeset(copy.business_id, copy.id, copied_meal.id, attrs) |> Repo.insert() do
+      case MealItem.insert_changeset(copy.business_id, copy.id, copied_meal.id, attrs)
+           |> Repo.insert() do
         {:ok, _row} -> {:cont, :ok}
         {:error, reason} -> {:halt, {:error, reason}}
       end
@@ -1257,10 +1345,14 @@ defmodule Easy.Nutrition.Programming do
   defp preload_created(error, _business_id), do: error
 
   defp authorize_locked_plan(_ctx, nil), do: :error
-  defp authorize_locked_plan(ctx, plan), do: if(authorize_plan(ctx, plan) == :ok, do: :ok, else: :error)
+
+  defp authorize_locked_plan(ctx, plan),
+    do: if(authorize_plan(ctx, plan) == :ok, do: :ok, else: :error)
 
   defp authorize_plan(_ctx, %Plan{kind: :template}), do: :ok
-  defp authorize_plan(ctx, %Plan{kind: :client_plan, client_id: client_id}), do: Clients.authorize_client_id(ctx, client_id)
+
+  defp authorize_plan(ctx, %Plan{kind: :client_plan, client_id: client_id}),
+    do: Clients.authorize_client_id(ctx, client_id)
 
   defp stale_revision_changeset(plan) do
     plan
@@ -1307,7 +1399,8 @@ defmodule Easy.Nutrition.Programming do
     scheduled = Enum.find(List.wrap(plan.week_schedule), &(&1.weekday == weekday))
 
     pattern =
-      scheduled && Enum.find(List.wrap(plan.day_patterns), &(&1.id == scheduled.nutrition_day_pattern_id))
+      scheduled &&
+        Enum.find(List.wrap(plan.day_patterns), &(&1.id == scheduled.nutrition_day_pattern_id))
 
     {:ok, %{plan: stamp_lifecycle(plan), day_pattern: pattern, date: date, weekday: weekday}}
   end

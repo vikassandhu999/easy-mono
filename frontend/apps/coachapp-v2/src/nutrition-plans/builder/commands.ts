@@ -28,6 +28,7 @@ import {coverageErrorMessage} from '@/nutrition-plans/lib/coverage-error';
 import {handleStaleNutritionPlanConflict} from '@/nutrition-plans/lib/stale-nutrition-plan-conflict';
 
 import type {MealItemDraft} from './amount-draft';
+import {changeOptionSlot, copyWithItemPortion} from './commands-state';
 
 import {
   dropEmptySlots,
@@ -328,34 +329,8 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
   const changeSlot = async (dayId: string, optionId: string, nextSlot: string) => {
     await saveMenu(
       (plan) => {
-        const pattern = findPattern(plan, dayId);
-        if (!pattern) {
-          return optionId;
-        }
         const mealSlot = nextSlot as BuilderMealSlot;
-        let moved: (typeof pattern.slots)[number]['options'][number] | undefined;
-        let fromSlot: string | undefined;
-        for (const slot of pattern.slots) {
-          const option = slot.options.find((candidate) => candidate.id === optionId);
-          if (option) {
-            moved = option;
-            fromSlot = slot.meal_slot;
-            slot.options = slot.options.filter((candidate) => candidate.id !== optionId);
-            reindexSlotOptions(pattern, slot.meal_slot);
-          }
-        }
-        if (!moved || fromSlot === mealSlot) {
-          return optionId;
-        }
-        const target = pattern.slots.find((candidate) => candidate.meal_slot === mealSlot) ?? {
-          meal_slot: mealSlot,
-          options: [],
-        };
-        if (!pattern.slots.includes(target)) {
-          pattern.slots.push(target);
-        }
-        target.options.push({...moved, position: target.options.length});
-        dropEmptySlots(pattern);
+        changeOptionSlot(plan, dayId, optionId, mealSlot);
         return optionId;
       },
       () => undefined,
@@ -510,19 +485,15 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
       () =>
         serialize(async () => {
           const current = read();
-          const found = current ? findItem(current, itemId) : undefined;
-          if (!current || !found) {
+          if (!current) {
             return;
           }
-          found.item.portion = {
-            kind: values.kind,
-            grams: values.grams ?? null,
-            amount: values.amount ?? null,
-            unit: values.unit ?? null,
-            label: values.label ?? null,
-          };
+          const payload = copyWithItemPortion(current, itemId, values);
+          if (!payload) {
+            return;
+          }
           try {
-            const saved = await api.replaceMenu(planId, current);
+            const saved = await api.replaceMenu(planId, payload);
             if (!pending.has(key)) {
               patch((draft) => {
                 Object.assign(draft, saved);

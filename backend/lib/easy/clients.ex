@@ -162,7 +162,9 @@ defmodule Easy.Clients do
     if reactivation?(client, attrs), do: Billing.reserve_seat(ctx, update), else: update.()
   end
 
-  defp reactivation?(%Client{status: :inactive}, attrs), do: to_string(attrs[:status] || "") == "active"
+  defp reactivation?(%Client{status: :inactive}, attrs),
+    do: to_string(attrs[:status] || "") == "active"
+
   defp reactivation?(_client, _attrs), do: false
 
   # System-driven half of the stage lifecycle: the first assigned plan is the
@@ -285,10 +287,16 @@ defmodule Easy.Clients do
 
   defp put_plan_names_for_clients(clients, %Ctx{} = ctx, true) do
     ids = Enum.map(clients, & &1.id)
-    today = LocalCalendar.to_local_date(DateTime.utc_now(), LocalCalendar.default_timezone())
+    now = DateTime.utc_now()
 
-    training = plan_names_by_client(TrainingPlan.active_for_clients(ctx.business_id, ids, today))
-    {:ok, nutrition_plans} = Programming.covering_plans_for_clients(ctx, ids, today)
+    local_dates =
+      Map.new(clients, fn client ->
+        timezone = LocalCalendar.applied_timezone(client.timezone, client.business.timezone)
+        {client.id, LocalCalendar.to_local_date(now, timezone)}
+      end)
+
+    training = training_plan_names_by_client(ctx.business_id, ids, local_dates)
+    {:ok, nutrition_plans} = Programming.covering_plans_for_clients(ctx, local_dates)
     nutrition = Map.new(nutrition_plans, fn {client_id, plan} -> {client_id, plan.name} end)
 
     Enum.map(clients, fn client ->
@@ -300,15 +308,22 @@ defmodule Easy.Clients do
     end)
   end
 
-  # A client can hold more than one in-force plan of a kind; the row shows one
-  # chip, so take the newest and be deterministic about it rather than letting
-  # row order decide.
-  defp plan_names_by_client(query) do
-    query
-    |> order_by([p], desc: p.inserted_at, desc: p.id)
-    |> select([p], {p.client_id, p.name})
+  defp training_plan_names_by_client(business_id, client_ids, local_dates) do
+    dates = Map.values(local_dates)
+
+    TrainingPlan
+    |> TrainingPlan.for_business(business_id)
+    |> TrainingPlan.for_kind(:client_plan)
+    |> TrainingPlan.for_archived(false)
+    |> where([plan], plan.client_id in ^client_ids)
+    |> where([plan], not is_nil(plan.start_date) and plan.start_date <= ^Enum.max(dates, Date))
+    |> where([plan], is_nil(plan.end_date) or plan.end_date >= ^Enum.min(dates, Date))
+    |> TrainingPlan.newest()
     |> Repo.all()
-    |> Enum.reduce(%{}, fn {client_id, name}, acc -> Map.put_new(acc, client_id, name) end)
+    |> Enum.filter(fn plan ->
+      TrainingPlan.lifecycle(plan, Map.fetch!(local_dates, plan.client_id)) == :current
+    end)
+    |> Enum.reduce(%{}, fn plan, acc -> Map.put_new(acc, plan.client_id, plan.name) end)
   end
 
   defp put_expiring_flag(%Client{} = client) do

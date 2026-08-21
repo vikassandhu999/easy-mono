@@ -5,7 +5,11 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
 
   setup do
     coach = insert(:coach)
-    conn = build_conn() |> authenticate_coach(coach) |> put_req_header("content-type", "application/json")
+
+    conn =
+      build_conn()
+      |> authenticate_coach(coach)
+      |> put_req_header("content-type", "application/json")
 
     %{conn: conn, coach: coach, business: coach.business}
   end
@@ -93,7 +97,9 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert json_response(conn, 422)
     end
 
-    test "allows invite when email belongs to an awaiting-seat inactive client elsewhere", %{conn: conn} do
+    test "allows invite when email belongs to an awaiting-seat inactive client elsewhere", %{
+      conn: conn
+    } do
       other_coach = insert(:coach)
       existing_user = insert(:user, email: "awaiting-seat@email.com")
 
@@ -147,7 +153,11 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
     test "rejects coach inviting their own email" do
       user = insert(:user, email: "rajat@coach.com")
       coach = insert(:coach, user: user)
-      conn = build_conn() |> authenticate_coach(coach) |> put_req_header("content-type", "application/json")
+
+      conn =
+        build_conn()
+        |> authenticate_coach(coach)
+        |> put_req_header("content-type", "application/json")
 
       attrs = %{"email" => "rajat@coach.com", "first_name" => "Rajat"}
       conn = post(conn, "/v1/coach/clients/invite", attrs)
@@ -539,7 +549,11 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert reloaded.goal_weight_unit == nil
     end
 
-    test "deactivating stamps inactive reason manual", %{conn: conn, coach: coach, business: business} do
+    test "deactivating stamps inactive reason manual", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
       client = insert(:client, creator: coach, business: business, status: :active)
 
       conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "inactive"})
@@ -739,6 +753,41 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert %{"data" => [listed]} = json_response(conn, 200)
       assert listed["training_plan_name"] == "Strength base"
       assert_schema(listed, "Client", EasyWeb.ApiSpec.spec())
+    end
+
+    test "selects Nutrition Coverage on each client's applied local date", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      now = DateTime.utc_now()
+      default_date = Easy.LocalCalendar.to_local_date(now, Easy.LocalCalendar.default_timezone())
+
+      timezone =
+        Enum.find(["Pacific/Kiritimati", "Pacific/Honolulu"], fn timezone ->
+          Easy.LocalCalendar.to_local_date(now, timezone) != default_date
+        end)
+
+      local_date = Easy.LocalCalendar.to_local_date(now, timezone)
+
+      client =
+        insert(:client, creator: coach, business: business, status: :active, timezone: timezone)
+
+      insert(:plan,
+        business: business,
+        creator: coach.user,
+        client: client,
+        kind: :client_plan,
+        name: "Local nutrition",
+        start_date: local_date,
+        end_date: local_date
+      )
+
+      conn = get(conn, "/v1/coach/clients?include_plans=true")
+      assert %{"data" => clients} = json_response(conn, 200)
+
+      assert Enum.find(clients, &(&1["id"] == client.id))["nutrition_plan_name"] ==
+               "Local nutrition"
     end
 
     test "treats any other value as off", %{conn: conn} do
@@ -1026,7 +1075,9 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       owner_coach = insert(:coach, user: owner_user, business: business)
 
       owner_conn =
-        build_conn() |> authenticate_coach(owner_coach) |> put_req_header("content-type", "application/json")
+        build_conn()
+        |> authenticate_coach(owner_coach)
+        |> put_req_header("content-type", "application/json")
 
       %{owner_conn: owner_conn, owner_coach: owner_coach, reassign_business: business}
     end
@@ -1039,7 +1090,11 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       other_trainer = insert(:coach, business: business, status: :active)
       client = insert(:client, business: business, assigned_coach: owner_coach)
 
-      conn = post(owner_conn, "/v1/coach/clients/#{client.id}/reassign", %{"coach_id" => other_trainer.id})
+      conn =
+        post(owner_conn, "/v1/coach/clients/#{client.id}/reassign", %{
+          "coach_id" => other_trainer.id
+        })
+
       assert %{"data" => data} = json_response(conn, 200)
       assert data["id"] == client.id
       assert data["assigned_coach_id"] == other_trainer.id
@@ -1052,7 +1107,9 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       other_trainer = insert(:coach, business: business, status: :active)
       client = insert(:client, business: business)
 
-      conn = post(conn, "/v1/coach/clients/#{client.id}/reassign", %{"coach_id" => other_trainer.id})
+      conn =
+        post(conn, "/v1/coach/clients/#{client.id}/reassign", %{"coach_id" => other_trainer.id})
+
       assert json_response(conn, 403)
     end
 
@@ -1065,7 +1122,9 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       client = insert(:client, business: business, assigned_coach: owner_coach)
 
       conn =
-        post(owner_conn, "/v1/coach/clients/#{client.id}/reassign", %{"coach_id" => inactive_trainer.id})
+        post(owner_conn, "/v1/coach/clients/#{client.id}/reassign", %{
+          "coach_id" => inactive_trainer.id
+        })
 
       assert json_response(conn, 422)
     end

@@ -129,6 +129,8 @@ defmodule Easy.Nutrition.ProgrammingTemplateLifecycleTest do
       assert {:ok, deleted} = Programming.delete_template(ctx, template.id, 1)
       assert deleted.id == template.id
       assert Repo.get(Plan, template.id) == nil
+
+      Repo.query!("SET CONSTRAINTS ALL IMMEDIATE")
     end
   end
 end

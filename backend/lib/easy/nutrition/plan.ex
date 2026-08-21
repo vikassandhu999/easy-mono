@@ -16,34 +16,48 @@ defmodule Easy.Nutrition.Plan do
 
   @kinds [:template, :client_plan]
   @lifecycles [:incomplete, :upcoming, :current, :ended, :archived]
-  @template_fields [:name, :description, :target_calories, :target_protein_g, :target_carbs_g, :target_fat_g, :target_fiber_g]
+  @template_fields [
+    :name,
+    :description,
+    :target_calories,
+    :target_protein_g,
+    :target_carbs_g,
+    :target_fat_g,
+    :target_fiber_g
+  ]
   @client_plan_fields [:client_id, :source_template_id, :start_date, :end_date]
-  @target_fields [:target_calories, :target_protein_g, :target_carbs_g, :target_fat_g, :target_fiber_g]
+  @target_fields [
+    :target_calories,
+    :target_protein_g,
+    :target_carbs_g,
+    :target_fat_g,
+    :target_fiber_g
+  ]
 
   schema "nutrition_plans" do
-    field :kind, Ecto.Enum, values: @kinds
-    field :name, :string
-    field :description, :string
-    field :revision, :integer, default: 1
-    field :archived_at, :utc_datetime
-    field :status, Ecto.Enum, values: [:active, :archived], virtual: true, default: :active
-    field :lifecycle, Ecto.Enum, values: @lifecycles, virtual: true
-    field :assigned_client_count, :integer, virtual: true, default: 0
-    field :target_calories, :float
-    field :target_protein_g, :float
-    field :target_carbs_g, :float
-    field :target_fat_g, :float
-    field :target_fiber_g, :float
-    field :start_date, :date
-    field :end_date, :date
+    field(:kind, Ecto.Enum, values: @kinds)
+    field(:name, :string)
+    field(:description, :string)
+    field(:revision, :integer, default: 1)
+    field(:archived_at, :utc_datetime)
+    field(:status, Ecto.Enum, values: [:active, :archived], virtual: true, default: :active)
+    field(:lifecycle, Ecto.Enum, values: @lifecycles, virtual: true)
+    field(:assigned_client_count, :integer, virtual: true, default: 0)
+    field(:target_calories, :float)
+    field(:target_protein_g, :float)
+    field(:target_carbs_g, :float)
+    field(:target_fat_g, :float)
+    field(:target_fiber_g, :float)
+    field(:start_date, :date)
+    field(:end_date, :date)
 
-    belongs_to :creator, User, foreign_key: :creator_id
-    belongs_to :business, Orgs.Business
-    belongs_to :client, Client
-    belongs_to :source_template, __MODULE__, foreign_key: :source_template_id
-    has_many :day_patterns, DayPattern, foreign_key: :nutrition_plan_id
-    has_many :week_schedule, WeekSchedule, foreign_key: :nutrition_plan_id
-    has_many :meals, Meal, foreign_key: :nutrition_plan_id
+    belongs_to(:creator, User, foreign_key: :creator_id)
+    belongs_to(:business, Orgs.Business)
+    belongs_to(:client, Client)
+    belongs_to(:source_template, __MODULE__, foreign_key: :source_template_id)
+    has_many(:day_patterns, DayPattern, foreign_key: :nutrition_plan_id)
+    has_many(:week_schedule, WeekSchedule, foreign_key: :nutrition_plan_id)
+    has_many(:meals, Meal, foreign_key: :nutrition_plan_id)
 
     timestamps(type: :utc_datetime)
   end
@@ -60,7 +74,10 @@ defmodule Easy.Nutrition.Plan do
   @spec lifecycle(t(), Date.t()) :: :incomplete | :upcoming | :current | :ended | :archived | nil
   def lifecycle(plan, date \\ Date.utc_today())
   def lifecycle(%__MODULE__{kind: :template}, _date), do: nil
-  def lifecycle(%__MODULE__{archived_at: archived_at}, _date) when not is_nil(archived_at), do: :archived
+
+  def lifecycle(%__MODULE__{archived_at: archived_at}, _date) when not is_nil(archived_at),
+    do: :archived
+
   def lifecycle(%__MODULE__{start_date: nil}, _date), do: :incomplete
 
   def lifecycle(%__MODULE__{start_date: start_date, end_date: end_date}, date) do
@@ -112,7 +129,11 @@ defmodule Easy.Nutrition.Plan do
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(plan, attrs) do
-    fields = if plan.kind == :template, do: @template_fields, else: @template_fields ++ [:start_date, :end_date]
+    fields =
+      if plan.kind == :template,
+        do: @template_fields,
+        else: @template_fields ++ [:start_date, :end_date]
+
     supplied_fields = attrs |> Map.keys() |> Enum.map(&to_string/1) |> MapSet.new()
 
     plan
@@ -131,7 +152,12 @@ defmodule Easy.Nutrition.Plan do
   end
 
   defp reject_fields_invalid_for_kind(changeset, :template, supplied_fields) do
-    reject_fields(changeset, @client_plan_fields, supplied_fields, "is not valid for a Nutrition Template")
+    reject_fields(
+      changeset,
+      @client_plan_fields,
+      supplied_fields,
+      "is not valid for a Nutrition Template"
+    )
   end
 
   defp reject_fields_invalid_for_kind(changeset, :client_plan, supplied_fields) do
@@ -182,7 +208,9 @@ defmodule Easy.Nutrition.Plan do
     |> foreign_key_constraint(:business_id)
     |> foreign_key_constraint(:creator_id)
     |> foreign_key_constraint(:client_id)
-    |> foreign_key_constraint(:source_template_id, name: :nutrition_plans_source_template_business_id_fkey)
+    |> foreign_key_constraint(:source_template_id,
+      name: :nutrition_plans_source_template_business_id_fkey
+    )
     |> check_constraint(:kind, name: :nutrition_plans_kind_check)
     |> check_constraint(:kind, name: :nutrition_plans_kind_fields_check)
     |> check_constraint(:revision, name: :nutrition_plans_revision_check)
@@ -227,7 +255,10 @@ defmodule Easy.Nutrition.Plan do
   def for_client(query, _business_id, nil), do: query
 
   def for_client(query, business_id, client_id),
-    do: from(plan in query, where: plan.business_id == ^business_id and plan.client_id == ^client_id)
+    do:
+      from(plan in query,
+        where: plan.business_id == ^business_id and plan.client_id == ^client_id
+      )
 
   @spec for_archived(Ecto.Queryable.t(), boolean() | nil) :: Ecto.Query.t()
   def for_archived(query \\ __MODULE__, archived)
@@ -262,9 +293,11 @@ defmodule Easy.Nutrition.Plan do
   end
 
   @spec active_for_client(Ecto.Queryable.t(), String.t(), Date.t()) :: Ecto.Query.t()
-  def active_for_client(query \\ __MODULE__, client_id, date), do: covering(query, client_id, date)
+  def active_for_client(query \\ __MODULE__, client_id, date),
+    do: covering(query, client_id, date)
 
-  @spec active_for_clients(Ecto.Queryable.t(), String.t(), [String.t()], Date.t()) :: Ecto.Query.t()
+  @spec active_for_clients(Ecto.Queryable.t(), String.t(), [String.t()], Date.t()) ::
+          Ecto.Query.t()
   def active_for_clients(query \\ __MODULE__, business_id, client_ids, date) do
     query
     |> covering_intervals(business_id)
@@ -277,7 +310,8 @@ defmodule Easy.Nutrition.Plan do
   def covering_intervals(query \\ __MODULE__, business_id) do
     from(plan in query,
       where:
-        plan.business_id == ^business_id and plan.kind == :client_plan and is_nil(plan.archived_at) and
+        plan.business_id == ^business_id and plan.kind == :client_plan and
+          is_nil(plan.archived_at) and
           not is_nil(plan.start_date)
     )
   end
@@ -294,7 +328,7 @@ defmodule Easy.Nutrition.Plan do
           copy.business_id == ^business_id and copy.kind == :client_plan and
             not is_nil(copy.source_template_id) and is_nil(copy.archived_at),
         group_by: copy.source_template_id,
-        select: %{template_id: copy.source_template_id, plans: count(copy.id)}
+        select: %{template_id: copy.source_template_id, plans: count(copy.client_id, :distinct)}
       )
 
     from(p in query,

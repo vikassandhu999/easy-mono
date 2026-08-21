@@ -27,6 +27,7 @@ import {useSearchParams} from 'react-router-dom';
 
 import BrowseListBox, {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 import {EmptyState} from '@/@components/empty-state';
+import {requirePrimaryReason} from '@/clients/lib/workbench-programming';
 import {ViewShell} from '@/clients/workbench/view-shell';
 
 import {PrototypeSwitcher} from './prototype-switcher';
@@ -173,7 +174,7 @@ function orderedClients(clients: OnboardingClient[]): OnboardingClient[] {
         .sort((a, b) => dueAt(a).localeCompare(dueAt(b))),
     }))
     .filter((client) => client.reasons.length > 0)
-    .sort((a, b) => dueAt(a.reasons[0]!).localeCompare(dueAt(b.reasons[0]!)));
+    .sort((a, b) => dueAt(requirePrimaryReason(a.reasons)).localeCompare(dueAt(requirePrimaryReason(b.reasons))));
 }
 
 function ReasonChip({reason}: {reason: OnboardingReason}) {
@@ -348,7 +349,7 @@ function VariantB({clients, onCall, onClientOpen, onReasonAction}: VariantProps)
       isLoading={false}
       items={clients}
       renderItem={(client) => {
-        const primary = client.reasons[0]!;
+        const primary = requirePrimaryReason(client.reasons);
         return (
           <GridListItem
             className={cn(
@@ -439,7 +440,7 @@ function VariantC({clients, onCall, onClientOpen, onIntakeOpen, onReasonAction}:
               <Label className="block truncate type-body font-semibold text-foreground">{client.name}</Label>
               <Description className="truncate type-eyebrow text-muted">
                 {client.reasons.length} {client.reasons.length === 1 ? 'action' : 'actions'} · oldest{' '}
-                {formatDate(dueAt(client.reasons[0]!))}
+                {formatDate(dueAt(requirePrimaryReason(client.reasons)))}
               </Description>
             </div>
           </GridListItem>

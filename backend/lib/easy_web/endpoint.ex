@@ -35,6 +35,7 @@ defmodule EasyWeb.Endpoint do
     headers: [
       "Authorization",
       "Content-Type",
+      "Idempotency-Key",
       "Accept",
       "Origin",
       "User-Agent",

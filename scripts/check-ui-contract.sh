@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# UI-CONTRACT §5 grep gate (design-handoff/UI-CONTRACT.md).
+# UI-CONTRACT §4 grep gate (frontend/apps/coachapp-v2/UI-CONTRACT.md).
 # Checks .tsx files for forbidden patterns: style={{}}, onClick, hex colors,
 # px/rem arbitrary values, numbered color scales, HeroUI v2 imports, NumberField.
 # Also enforces the theme freeze: index.css may not gain new scale tokens.
@@ -93,7 +93,7 @@ OUT=$(echo "$FILES" | xargs rg -n --no-messages \
 if [ -n "$OUT" ]; then
   echo "$OUT"
   echo ""
-  echo "UI-CONTRACT violation — see design-handoff/UI-CONTRACT.md §1/§5. Use tokens/components, not raw styles."
+  echo "UI-CONTRACT violation — see frontend/apps/coachapp-v2/UI-CONTRACT.md §1/§4. Use tokens/components, not raw styles."
   exit 1
 fi
 exit 0

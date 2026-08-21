@@ -11,7 +11,7 @@
  * `build.infiniteQuery` (mirrors `nutrition-foods.ts`: offset pagination, page
  * size 20).
  */
-import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {type QueryClient, useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
 import {clientKeys, nutritionDayKeys, nutritionPlanKeys} from '@/api/keys';
@@ -120,14 +120,31 @@ export function useCreateNutritionPlanMutation() {
 }
 
 /**
- * The mutation owns every cache effect of a plan update — call sites never
- * invalidate. Screens that patch `detail(id)` optimistically (builder/edit)
- * keep doing so for instant UI; the invalidation here reconciles them.
- * Client keys are included because a plan rename changes the plan-name columns
- * on client rows. Workbench keys reconcile Programming membership when coverage
- * or status changes. The mutation doesn't know the assigned client, so both
- * client and workbench caches are invalidated by prefix.
+ * Every cache a plan lifecycle change can touch — the mutation owns all of it,
+ * call sites never invalidate. Screens that patch `detail(id)` optimistically
+ * (builder/edit) keep doing so for instant UI; the invalidation here reconciles
+ * them. Client keys are included because a plan rename changes the plan-name
+ * columns on client rows. Workbench keys reconcile Programming membership when
+ * coverage or status changes. When the mutation knows the assigned client, it
+ * passes `clientId` to target that client; otherwise both client and workbench
+ * caches are invalidated by prefix.
  */
+export function invalidatePlanCaches(qc: QueryClient, {clientId, id}: {clientId?: string; id?: string} = {}) {
+  if (id) {
+    qc.invalidateQueries({queryKey: nutritionPlanKeys.detail(id)});
+  }
+  qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
+  qc.invalidateQueries({
+    queryKey: clientId ? nutritionPlanKeys.forClient(clientId) : nutritionPlanKeys.forClients(),
+  });
+  qc.invalidateQueries({queryKey: nutritionDayKeys.all});
+  qc.invalidateQueries({queryKey: clientKeys.lists()});
+  qc.invalidateQueries({queryKey: clientId ? clientKeys.detail(clientId) : clientKeys.details()});
+  for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
+    qc.invalidateQueries({queryKey: [...queryKey]});
+  }
+}
+
 export function useUpdateNutritionPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
@@ -135,17 +152,7 @@ export function useUpdateNutritionPlanMutation() {
       call(
         client.PATCH('/v1/coach/nutrition-plans/{id}', {params: {path: {id}}, body}),
       ) as Promise<NutritionPlanResponse>,
-    onSuccess: (_data, {id}) => {
-      qc.invalidateQueries({queryKey: nutritionPlanKeys.detail(id)});
-      qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
-      qc.invalidateQueries({queryKey: nutritionPlanKeys.forClients()});
-      qc.invalidateQueries({queryKey: nutritionDayKeys.all});
-      qc.invalidateQueries({queryKey: clientKeys.lists()});
-      qc.invalidateQueries({queryKey: clientKeys.details()});
-      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
-        qc.invalidateQueries({queryKey: [...queryKey]});
-      }
-    },
+    onSuccess: (_data, {id}) => invalidatePlanCaches(qc, {id}),
   });
 }
 
@@ -160,14 +167,7 @@ export function useDeleteNutritionPlanMutation() {
       ),
     onSuccess: (_data, {id}) => {
       qc.removeQueries({queryKey: nutritionPlanKeys.detail(id)});
-      qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
-      qc.invalidateQueries({queryKey: nutritionPlanKeys.forClients()});
-      qc.invalidateQueries({queryKey: nutritionDayKeys.all});
-      qc.invalidateQueries({queryKey: clientKeys.lists()});
-      qc.invalidateQueries({queryKey: clientKeys.details()});
-      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
-        qc.invalidateQueries({queryKey: [...queryKey]});
-      }
+      invalidatePlanCaches(qc);
     },
   });
 }
@@ -179,17 +179,7 @@ export function useArchiveNutritionPlanMutation() {
       call(
         client.POST('/v1/coach/nutrition-plans/{id}/archive', {params: {path: {id}}, body}),
       ) as Promise<NutritionPlanResponse>,
-    onSuccess: (_data, {id}) => {
-      qc.invalidateQueries({queryKey: nutritionPlanKeys.detail(id)});
-      qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
-      qc.invalidateQueries({queryKey: nutritionPlanKeys.forClients()});
-      qc.invalidateQueries({queryKey: nutritionDayKeys.all});
-      qc.invalidateQueries({queryKey: clientKeys.lists()});
-      qc.invalidateQueries({queryKey: clientKeys.details()});
-      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
-        qc.invalidateQueries({queryKey: [...queryKey]});
-      }
-    },
+    onSuccess: (_data, {id}) => invalidatePlanCaches(qc, {id}),
   });
 }
 
@@ -200,17 +190,7 @@ export function useRestoreNutritionPlanMutation() {
       call(
         client.POST('/v1/coach/nutrition-plans/{id}/restore', {params: {path: {id}}, body}),
       ) as Promise<NutritionPlanResponse>,
-    onSuccess: (_data, {id}) => {
-      qc.invalidateQueries({queryKey: nutritionPlanKeys.detail(id)});
-      qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
-      qc.invalidateQueries({queryKey: nutritionPlanKeys.forClients()});
-      qc.invalidateQueries({queryKey: nutritionDayKeys.all});
-      qc.invalidateQueries({queryKey: clientKeys.lists()});
-      qc.invalidateQueries({queryKey: clientKeys.details()});
-      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
-        qc.invalidateQueries({queryKey: [...queryKey]});
-      }
-    },
+    onSuccess: (_data, {id}) => invalidatePlanCaches(qc, {id}),
   });
 }
 
@@ -241,17 +221,7 @@ export function useAssignNutritionPlanMutation() {
           nutritionPlanAssignmentRequest({body, clientId, id}),
         ),
       ) as Promise<NutritionPlanResponse>,
-    onSuccess: (_data, {clientId, id}) => {
-      qc.invalidateQueries({queryKey: nutritionPlanKeys.detail(id)});
-      qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
-      qc.invalidateQueries({queryKey: nutritionPlanKeys.forClient(clientId)});
-      qc.invalidateQueries({queryKey: nutritionDayKeys.all});
-      qc.invalidateQueries({queryKey: clientKeys.lists()});
-      qc.invalidateQueries({queryKey: clientKeys.detail(clientId)});
-      for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
-        qc.invalidateQueries({queryKey: [...queryKey]});
-      }
-    },
+    onSuccess: (_data, {clientId, id}) => invalidatePlanCaches(qc, {clientId, id}),
   });
 }
 

@@ -59,9 +59,6 @@ export const sessionKeys = {
 
 export const exerciseKeys = domain('training-exercises');
 
-/** Old tags: NutritionPlan/{LIST}. */
-export const nutritionPlanKeys = domain('nutrition-plans');
-
 /** Reconciled nutrition-day read (targets + options + diary rows). */
 export const nutritionDayKeys = domain('nutrition-days');
 

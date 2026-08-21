@@ -5,7 +5,7 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
-import {foodKeys, nutritionDayKeys, nutritionPlanKeys, recipeKeys} from '@/api/keys';
+import {foodKeys, nutritionDayKeys, recipeKeys} from '@/api/keys';
 import type {components, paths} from '@/api/schema';
 import {getApiErrorCode} from '@/api/shared';
 
@@ -17,31 +17,21 @@ export type NutritionDayOptionItem = components['schemas']['NutritionDayOptionIt
 export type NutritionDayRow = components['schemas']['NutritionDayRow'];
 export type NutritionDaySlot = components['schemas']['NutritionDaySlot'];
 export type DiaryMealSlot = NutritionDaySlot['meal_slot'];
-export type NutritionPlan = components['schemas']['NutritionPlan'];
 export type Recipe = components['schemas']['Recipe'];
 export type SwitchOptionRequest = components['schemas']['DiarySwitchOptionRequest'];
 export type ReplacePlannedItemRequest = components['schemas']['DiaryReplacePlannedItemRequest'];
 export type UpdateDiaryEntryRequest = components['schemas']['DiaryUpdateEntryRequest'];
 export type DeleteDiaryEntryRequest = components['schemas']['DiaryDeleteEntryRequest'];
 
-type PlanListQuery = paths['/v1/client/nutrition-plans']['get']['parameters']['query'];
 type NutritionDayQuery = paths['/v1/client/nutrition-days']['get']['parameters']['query'];
 type FoodListQuery = paths['/v1/client/nutrition-foods']['get']['parameters']['query'];
 type RecipeListQuery = paths['/v1/client/nutrition-recipes']['get']['parameters']['query'];
 
-type PlanListResponse = components['schemas']['NutritionPlanListResponse'];
 type NutritionDayListResponse = components['schemas']['NutritionDayListResponse'];
 type FoodListResponse = components['schemas']['FoodListResponse'];
 type RecipeListResponse = components['schemas']['RecipeListResponse'];
 
 // ── Queries ──────────────────────────────────────────────────
-
-export function useListClientNutritionPlansQuery(query: PlanListQuery = {}) {
-  return useQuery({
-    queryKey: nutritionPlanKeys.list(query),
-    queryFn: () => call(client.GET('/v1/client/nutrition-plans', {params: {query}})) as Promise<PlanListResponse>,
-  });
-}
 
 export function useListClientNutritionDaysQuery(query: NutritionDayQuery = {}, options?: {enabled?: boolean}) {
   return useQuery({
@@ -205,9 +195,4 @@ export function useSwitchNutritionMealOptionMutation() {
       }
     },
   });
-}
-
-// Display calories for a live option item — the day payload ships resolved totals.
-export function plannedItemCalories(item: NutritionDayOptionItem): null | number {
-  return item.nutrients.calories;
 }

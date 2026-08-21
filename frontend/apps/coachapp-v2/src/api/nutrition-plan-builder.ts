@@ -23,12 +23,12 @@
 import {useQuery} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
-import {clientKeys, nutritionDayKeys, nutritionPlanKeys} from '@/api/keys';
+import {nutritionDayKeys, nutritionPlanKeys} from '@/api/keys';
 import {planToMenuRequest} from '@/api/nutrition-menu';
 import {nutritionPlanPeriodRequest} from '@/api/nutrition-plan-lifecycle';
+import {invalidatePlanCaches} from '@/api/nutrition-plans-list';
 import {patchQueryData, queryClient} from '@/api/query-client';
 import type {components} from '@/api/schema';
-import {workbenchMutationTargets} from '@/api/workbench-targets';
 
 export type NutritionPlan = components['schemas']['NutritionPlan'];
 export type NutritionDayPattern = components['schemas']['NutritionDayPattern'];
@@ -118,8 +118,8 @@ export async function replaceMenu(planId: string, plan: NutritionPlan): Promise<
 
 /**
  * The one builder write with cache effects beyond the detail entry: assigned
- * plans' dates show on list rows, client cards, and Workbench, so this mirrors
- * `useUpdateNutritionPlanMutation`'s invalidations (detail included — the
+ * plans' dates show on list rows, client cards, and Workbench, so it shares
+ * `invalidatePlanCaches` with the lifecycle mutations (detail included — the
  * refetch confirms the optimistic patch).
  */
 export async function updatePlanPeriod(
@@ -137,14 +137,6 @@ export async function updatePlanPeriod(
       body: nutritionPlanPeriodRequest(plan, body),
     }),
   )) as NutritionPlanResponse;
-  queryClient.invalidateQueries({queryKey: nutritionPlanKeys.detail(planId)});
-  queryClient.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
-  queryClient.invalidateQueries({queryKey: nutritionPlanKeys.forClients()});
-  queryClient.invalidateQueries({queryKey: nutritionDayKeys.all});
-  queryClient.invalidateQueries({queryKey: clientKeys.lists()});
-  queryClient.invalidateQueries({queryKey: clientKeys.details()});
-  for (const queryKey of workbenchMutationTargets().afterMembershipChange) {
-    queryClient.invalidateQueries({queryKey: [...queryKey]});
-  }
+  invalidatePlanCaches(queryClient, {id: planId});
   return response.data;
 }

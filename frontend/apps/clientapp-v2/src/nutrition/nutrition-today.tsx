@@ -119,12 +119,6 @@ export default function NutritionToday() {
   const slots = slotsFromDay(day, isPast);
   const logged = day?.summary.logged;
   const targets = dayTargets(day);
-  const loadingPlan = loadingDay;
-  const loadingLogs = loadingDay;
-  const logsError = dayError;
-  const refetchPlan = refetchDay;
-  const refetchLogs = refetchDay;
-  const plan = day;
 
   const setDate = (d: string) => setParams(d === today ? {} : {date: d}, {replace: true});
 
@@ -315,7 +309,7 @@ export default function NutritionToday() {
       <p className="mt-1.5 text-[11px] font-semibold text-white/50">Planned — read-only until the day starts</p>
     ) : undefined;
 
-  if (loadingPlan || loadingLogs) {
+  if (loadingDay) {
     return (
       <div className="flex items-center justify-center py-20">
         <Spinner />
@@ -323,14 +317,11 @@ export default function NutritionToday() {
     );
   }
 
-  if (logsError) {
+  if (dayError) {
     return (
       <ErrorState
         message="Couldn't load your day."
-        onRetry={() => {
-          refetchLogs();
-          refetchPlan();
-        }}
+        onRetry={refetchDay}
       />
     );
   }
@@ -367,9 +358,9 @@ export default function NutritionToday() {
 
       {slots.length === 0 ? (
         <div className="rounded-2xl border border-border bg-surface p-6 text-center">
-          <p className="text-sm font-medium">{plan ? 'Nothing planned for this day' : 'Your plan is on the way'}</p>
+          <p className="text-sm font-medium">{day ? 'Nothing planned for this day' : 'Your plan is on the way'}</p>
           <p className="mt-1.5 text-xs text-muted">
-            {plan ? 'Log anything you ate off-plan below.' : 'Your coach is setting up your nutrition plan.'}
+            {day ? 'Log anything you ate off-plan below.' : 'Your coach is setting up your nutrition plan.'}
           </p>
         </div>
       ) : (
@@ -480,7 +471,7 @@ export default function NutritionToday() {
             <Plus size={14} />
             Add food off-plan
           </button>
-          {plan && anyUnlogged && slots.every((slot) => slot.writeEligible) ? (
+          {day && anyUnlogged && slots.every((slot) => slot.writeEligible) ? (
             <button
               className="text-xs font-medium text-muted active:opacity-70 disabled:opacity-50"
               disabled={loggingDay}

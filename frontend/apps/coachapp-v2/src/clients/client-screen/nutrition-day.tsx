@@ -188,17 +188,24 @@ export default function NutritionDay() {
   );
 }
 
-function DiaryRow({row}: {row: NutritionDayRow}) {
-  const skipped = row.status === 'skipped';
-  const name = skipped ? (row.planned?.name ?? 'Planned item') : (row.entry?.name ?? 'Food');
-  const protein = skipped ? null : row.entry?.nutrients.protein;
-  const carbs = skipped ? null : row.entry?.nutrients.carbohydrates;
-  const fat = skipped ? null : row.entry?.nutrients.fat;
-  const grams = skipped ? null : row.entry?.portion.grams;
-  const amount = skipped ? null : row.entry?.portion.amount;
-  const unit = skipped ? null : row.entry?.portion.unit;
-  const calories = skipped ? row.planned?.nutrients.calories : row.entry?.nutrients.calories;
-  const chip = STATUS_CHIP[row.status];
+type ItemRowProps = {
+  calories: null | number | undefined;
+  chip?: string;
+  name: string;
+  nutrients: {carbohydrates?: null | number; fat?: null | number; protein?: null | number};
+  portion: {amount?: null | number; grams?: null | number; unit?: null | string};
+  skipped?: boolean;
+};
+
+/** One diary or live-guidance row: name + macro line, optional status chip, portion, kcal column. */
+function ItemRow({calories, chip, name, nutrients, portion, skipped}: ItemRowProps) {
+  const macros = [
+    nutrients.protein != null ? `P ${Math.round(nutrients.protein)} g` : null,
+    nutrients.carbohydrates != null ? `C ${Math.round(nutrients.carbohydrates)} g` : null,
+    nutrients.fat != null ? `F ${Math.round(nutrients.fat)} g` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <div className={`flex items-center gap-3 px-4 py-3${skipped ? ' opacity-55' : ''}`}>
@@ -211,18 +218,12 @@ function DiaryRow({row}: {row: NutritionDayRow}) {
         >
           {name}
         </Typography>
-        {!skipped && (protein != null || carbs != null || fat != null) && (
+        {macros && (
           <Typography
             color="muted"
             type="body-xs"
           >
-            {[
-              protein != null ? `P ${Math.round(protein)} g` : null,
-              carbs != null ? `C ${Math.round(carbs)} g` : null,
-              fat != null ? `F ${Math.round(fat)} g` : null,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
+            {macros}
           </Typography>
         )}
       </div>
@@ -234,25 +235,38 @@ function DiaryRow({row}: {row: NutritionDayRow}) {
           {chip}
         </Chip>
       )}
-      {!skipped && (grams != null || amount != null) && (
+      {(portion.grams != null || portion.amount != null) && (
         <Typography
           className="shrink-0"
           color="muted"
           type="body-xs"
         >
-          {grams != null ? `${Math.round(grams)} g` : `${amount} ${unit ?? 'serving'}`}
+          {portion.grams != null ? `${Math.round(portion.grams)} g` : `${portion.amount} ${portion.unit ?? 'serving'}`}
         </Typography>
       )}
-      {calories != null && (
-        <Typography
-          className={`${KCAL_COL}${skipped ? ' text-muted' : ''}`}
-          type="body-sm"
-          weight="semibold"
-        >
-          {formatKcal(calories)} kcal
-        </Typography>
-      )}
+      <Typography
+        className={`${KCAL_COL}${skipped ? ' text-muted' : ''}`}
+        type="body-sm"
+        weight="semibold"
+      >
+        {calories != null ? `${formatKcal(calories)} kcal` : '—'}
+      </Typography>
     </div>
+  );
+}
+
+function DiaryRow({row}: {row: NutritionDayRow}) {
+  const skipped = row.status === 'skipped';
+  const entry = skipped ? null : row.entry;
+  return (
+    <ItemRow
+      calories={skipped ? row.planned?.nutrients.calories : row.entry?.nutrients.calories}
+      chip={STATUS_CHIP[row.status]}
+      name={skipped ? (row.planned?.name ?? 'Planned item') : (row.entry?.name ?? 'Food')}
+      nutrients={entry?.nutrients ?? {}}
+      portion={entry?.portion ?? {}}
+      skipped={skipped}
+    />
   );
 }
 
@@ -309,55 +323,12 @@ function Total({
 }
 
 function LiveItem({item}: {item: NutritionDayOptionItem}) {
-  const grams = item.portion.grams;
-  const amount = item.portion.amount;
-  const unit = item.portion.unit;
-  const calories = item.nutrients.calories;
-  const protein = item.nutrients.protein;
-  const carbs = item.nutrients.carbohydrates;
-  const fat = item.nutrients.fat;
-
   return (
-    <div className="flex items-center gap-3 px-4 py-3">
-      <div className="min-w-0 flex-1">
-        <Typography
-          truncate
-          type="body-sm"
-          weight="semibold"
-        >
-          {item.name ?? 'Food'}
-        </Typography>
-        {(protein != null || carbs != null || fat != null) && (
-          <Typography
-            color="muted"
-            type="body-xs"
-          >
-            {[
-              protein != null ? `P ${Math.round(protein)} g` : null,
-              carbs != null ? `C ${Math.round(carbs)} g` : null,
-              fat != null ? `F ${Math.round(fat)} g` : null,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-          </Typography>
-        )}
-      </div>
-      {(grams != null || amount != null) && (
-        <Typography
-          className="shrink-0"
-          color="muted"
-          type="body-xs"
-        >
-          {grams != null ? `${Math.round(grams)} g` : `${amount} ${unit ?? 'serving'}`}
-        </Typography>
-      )}
-      <Typography
-        className={KCAL_COL}
-        type="body-sm"
-        weight="semibold"
-      >
-        {calories != null ? `${formatKcal(calories)} kcal` : '—'}
-      </Typography>
-    </div>
+    <ItemRow
+      calories={item.nutrients.calories}
+      name={item.name ?? 'Food'}
+      nutrients={item.nutrients}
+      portion={item.portion}
+    />
   );
 }

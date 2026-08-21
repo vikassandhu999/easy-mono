@@ -884,10 +884,7 @@ defmodule Easy.Nutrition.Diary do
 
   defp compare_reserved(%DiaryCommandLedger{fingerprint: fingerprint} = ledger, fingerprint) do
     if ledger.outcome do
-      case :erlang.binary_to_term(ledger.outcome) do
-        {status, _value} = outcome when status in [:ok, :error] -> {:replay, outcome}
-        legacy_day -> {:replay, {:ok, legacy_day}}
-      end
+      {:replay, :erlang.binary_to_term(ledger.outcome)}
     else
       {:run, ledger}
     end
@@ -1116,32 +1113,8 @@ defmodule Easy.Nutrition.Diary do
   end
 
   defp insert_entry!(client, slot, resolved, command) do
-    nutrients = resolved.nutrients
-    portion = resolved.portion
-
     {:ok, _entry} =
-      Repo.insert(
-        DiaryEntry.insert_changeset(client.business_id, client.id, slot.id, %{
-          kind: resolved.kind,
-          display_name: resolved.item.name,
-          portion_kind: command.portion.kind,
-          weight_g: portion.grams,
-          amount: Map.get(portion, :amount),
-          unit: Map.get(portion, :unit),
-          serving_label: Map.get(portion, :label),
-          calories: nutrients.calories,
-          protein: nutrients.protein,
-          carbohydrates: nutrients.carbohydrates,
-          fat: nutrients.fat,
-          fiber: nutrients.fiber,
-          complete: nutrients.complete,
-          notes: command.notes,
-          source_food_id: if(resolved.kind == :food, do: resolved.item.id),
-          source_recipe_id: if(resolved.kind == :recipe, do: resolved.item.id),
-          food_id: if(resolved.kind == :food, do: resolved.item.id),
-          recipe_id: if(resolved.kind == :recipe, do: resolved.item.id)
-        })
-      )
+      Repo.insert(DiaryEntry.insert_changeset(client.business_id, client.id, slot.id, resolved_entry_attrs(resolved, command)))
   end
 
   defp record_switch(ctx, client, date, command) do

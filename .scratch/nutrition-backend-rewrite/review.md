@@ -998,3 +998,33 @@ Defects (Codex subagent):
   Disposition: fixed in ca664762
 
 Summary: Spec 4 findings, worst P1 broken rich-client seed; Standards 1 finding, P2 unchecked fixture cast; Defects 2 findings, both P1 destructive or broken development seeds.
+
+## Integration pass
+
+Reviewed: 2026-08-21
+
+Spec (Codex subagent):
+
+- P1 — A multi-slot day is interpreted in an arbitrary slot's timezone
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "Each Diary Slot snapshots `applied_timezone`. An existing slot's date meaning and correction deadline use that snapshot even if the Client timezone changes later."
+  Why: The day assembler selected one timezone from the frozen-slot map and used its local date for every slot. If a client changed timezone between first writes to different meal slots, one slot's pending or skipped status and correction eligibility could be evaluated under the other slot's snapshot.
+  Disposition: fixed in b8b1a315
+
+- P1 — Rolled-back command failures lose their idempotency reservation
+  Path: backend/lib/easy/nutrition_diary.ex
+  Quote: "Ledger reservation, Diary mutation, and stored outcome commit atomically."
+  Why: Stale replacement and replacement changeset failures called `Repo.rollback/1`, which also removed the new ledger reservation. The same idempotency key could then be reused with a different fingerprint instead of replaying the original failure or returning a conflict.
+  Disposition: fixed in b8b1a315
+
+- P1 — Frozen source identity is not fully protected by Postgres
+  Path: backend/priv/repo/migrations/20260818130000_freeze_diary_option_identity.exs; backend/priv/repo/migrations/20260818150000_freeze_diary_library_identity.exs
+  Quote: "Postgres constraints protect required frozen historical values."
+  Why: Frozen options allowed a null source Meal, while frozen planned items and entries allowed neither or both source kinds. Invalid direct writes could therefore erase stable option identity or corrupt `as_planned` and `swapped` history after live references disappeared.
+  Disposition: fixed in b8b1a315
+
+Standards (Codex subagent):
+
+- No new P0 or P1 findings. The bounded Food and Recipe list behavior remains recorded as an open P2 above.
+
+Summary: Integration review found 3 new P1 spec defects; all are fixed in b8b1a315. It found no new P0 or P1 standards defects.

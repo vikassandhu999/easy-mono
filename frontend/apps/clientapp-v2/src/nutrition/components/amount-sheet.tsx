@@ -61,6 +61,7 @@ export default function AmountSheet({
     ? (loggedEntry?.portion.amount ?? portion?.amount ?? 1)
     : (loggedEntry?.portion.grams ?? portion?.grams ?? 100);
   const [raw, setRaw] = useState<string>(String(plannedPortion));
+  const [notes, setNotes] = useState(loggedEntry?.notes ?? '');
   const [free, setFree] = useState(false);
   const [error, setError] = useState<null | string>(null);
   const weight = Math.max(0, Number(raw) || 0);
@@ -94,13 +95,14 @@ export default function AmountSheet({
     try {
       setError(null);
       if (loggedEntry) {
+        const normalizedNotes = notes.trim() || null;
         commandIntent.current = diaryCommandKey(
           commandIntent.current,
           updateEntryIntentFingerprint({
             date: target.date,
             entryId: loggedEntry.id,
             expectedRevision: loggedEntry.revision,
-            notes: loggedEntry.notes ?? null,
+            notes: normalizedNotes,
             weight,
           }),
         );
@@ -109,6 +111,7 @@ export default function AmountSheet({
           expected_revision: loggedEntry.revision,
           id: loggedEntry.id,
           idempotencyKey: commandIntent.current.key,
+          notes: normalizedNotes,
           portion: servings ? {amount: weight, kind: 'serving', unit: unitLabel} : {grams: weight, kind: 'gram'},
         });
         commandIntent.current = null;
@@ -235,6 +238,15 @@ export default function AmountSheet({
               {Math.round(m.p)}P · {Math.round(m.c)}C · {Math.round(m.f)}F
             </span>
           </div>
+        ) : null}
+
+        {loggedEntry ? (
+          <textarea
+            className="mb-3 min-h-16 w-full resize-none rounded-xl border border-field-border bg-surface-secondary p-3 text-sm outline-none focus:border-accent"
+            onChange={(event) => setNotes(event.target.value)}
+            placeholder="Add a note for your coach (optional)"
+            value={notes}
+          />
         ) : null}
 
         {error ? <p className="mb-2 text-center text-[11px] text-danger">{error}</p> : null}

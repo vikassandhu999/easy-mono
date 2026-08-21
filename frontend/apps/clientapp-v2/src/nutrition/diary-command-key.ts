@@ -1,4 +1,22 @@
 export type DiaryCommandIntent = {fingerprint: string; key: string};
+export type DiaryCommandIntents = Map<string, DiaryCommandIntent>;
+
+export function beginDiaryCommand(intents: DiaryCommandIntents, fingerprint: string): DiaryCommandIntent {
+  const existing = intents.get(fingerprint);
+  if (existing) {
+    return existing;
+  }
+
+  const intent = diaryCommandKey(null, fingerprint);
+  intents.set(fingerprint, intent);
+  return intent;
+}
+
+export function completeDiaryCommand(intents: DiaryCommandIntents, intent: DiaryCommandIntent): void {
+  if (intents.get(intent.fingerprint)?.key === intent.key) {
+    intents.delete(intent.fingerprint);
+  }
+}
 
 export function diaryCommandKey(previous: DiaryCommandIntent | null, fingerprint: string): DiaryCommandIntent {
   if (previous?.fingerprint === fingerprint) {

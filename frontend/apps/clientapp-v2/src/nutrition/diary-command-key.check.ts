@@ -1,4 +1,6 @@
 import {
+  beginDiaryCommand,
+  completeDiaryCommand,
   deleteEntryIntentFingerprint,
   diaryCommandKey,
   extraIntentFingerprint,
@@ -23,6 +25,19 @@ const rotated = diaryCommandKey(reused, 'other');
 assert(reused.key === retry.key, 'retries of the same extra intent reuse the idempotency key');
 assert(reused.fingerprint === 'same', 'the stored fingerprint matches the intent');
 assert(rotated.key !== reused.key, 'a different extra intent gets a new idempotency key');
+
+const overlapping = new Map();
+const firstIntent = beginDiaryCommand(overlapping, 'first');
+const secondIntent = beginDiaryCommand(overlapping, 'second');
+completeDiaryCommand(overlapping, firstIntent);
+assert(
+  beginDiaryCommand(overlapping, 'second').key === secondIntent.key,
+  'completing one intent does not clear an overlapping intent',
+);
+assert(
+  beginDiaryCommand(overlapping, 'first').key !== firstIntent.key,
+  'a completed intent gets a new key when the user starts it again',
+);
 
 const fingerprint = extraIntentFingerprint({
   date: '2026-08-17',

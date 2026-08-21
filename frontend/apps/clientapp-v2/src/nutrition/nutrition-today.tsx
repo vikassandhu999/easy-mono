@@ -29,8 +29,9 @@ import FoodPicker, {type Picked} from '@/nutrition/components/food-picker';
 import MacroHero from '@/nutrition/components/macro-hero';
 import OptionSheet from '@/nutrition/components/option-sheet';
 import {
-  type DiaryCommandIntent,
-  diaryCommandKey,
+  beginDiaryCommand,
+  completeDiaryCommand,
+  type DiaryCommandIntents,
   extraIntentFingerprint,
   plannedDayIntentFingerprint,
   plannedItemIntentFingerprint,
@@ -85,17 +86,19 @@ function Checkbox({on, disabled, onPress}: {disabled?: boolean; on: boolean; onP
 export default function NutritionToday() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const today = formatDateISO(new Date());
-  const date = params.get('date') ?? today;
+  const selectedDate = params.get('date');
+  const todayQuery = useListClientNutritionDaysQuery();
+  const selectedDayQuery = useListClientNutritionDaysQuery(
+    selectedDate ? {date: selectedDate} : {},
+    {enabled: selectedDate != null},
+  );
+  const today = todayQuery.data?.data[0]?.date ?? formatDateISO(new Date());
+  const date = selectedDate ?? today;
   const tomorrow = shiftDate(today, 1);
   const isPast = date < today;
 
-  const {
-    data: dayResp,
-    isLoading: loadingDay,
-    isError: dayError,
-    refetch: refetchDay,
-  } = useListClientNutritionDaysQuery({date});
+  const dayQuery = selectedDate ? selectedDayQuery : todayQuery;
+  const {data: dayResp, isLoading: loadingDay, isError: dayError, refetch: refetchDay} = dayQuery;
 
   const logOption = useLogPlannedOptionMutation();
   const logDay = useLogPlannedDayMutation();
@@ -103,7 +106,7 @@ export default function NutritionToday() {
   const {mutateAsync: logPlannedItem} = useLogPlannedItemMutation();
   const {mutateAsync: addExtra} = useAddExtraMutation();
   const {mutateAsync: replaceItem} = useReplaceItemMutation();
-  const commandIntent = useRef<DiaryCommandIntent | null>(null);
+  const commandIntents = useRef<DiaryCommandIntents>(new Map());
   const loggingMeal = logOption.isPending;
   const loggingDay = logDay.isPending;
   const switchingOption = switchOption.isPending;
@@ -129,7 +132,7 @@ export default function NutritionToday() {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: date is the reset trigger, not read in the body
   useEffect(() => {
-    commandIntent.current = null;
+    commandIntents.current.clear();
   }, [date]);
 
   const logPlanned = async (slot: SlotView, row: SlotRow) => {
@@ -137,17 +140,17 @@ export default function NutritionToday() {
       return;
     }
     try {
-      commandIntent.current = diaryCommandKey(
-        commandIntent.current,
+      const intent = beginDiaryCommand(
+        commandIntents.current,
         plannedItemIntentFingerprint({date, mealItemId: row.mealItemId, slot: slot.slot}),
       );
       await logPlannedItem({
         date,
-        idempotencyKey: commandIntent.current.key,
+        idempotencyKey: intent.key,
         meal_item_id: row.mealItemId,
         meal_slot: slot.slot as DiaryMealSlot,
       });
-      commandIntent.current = null;
+      completeDiaryCommand(commandIntents.current, intent);
     } catch (caught) {
       toast.danger(diaryWriteError(caught, "Couldn't log it. Try again."));
     }
@@ -155,16 +158,16 @@ export default function NutritionToday() {
 
   const logWholeMeal = async (slot: SlotView) => {
     try {
-      commandIntent.current = diaryCommandKey(
-        commandIntent.current,
+      const intent = beginDiaryCommand(
+        commandIntents.current,
         plannedOptionIntentFingerprint({date, slot: slot.slot}),
       );
       await logOption.mutateAsync({
         date,
-        idempotencyKey: commandIntent.current.key,
+        idempotencyKey: intent.key,
         meal_slot: slot.slot as DiaryMealSlot,
       });
-      commandIntent.current = null;
+      completeDiaryCommand(commandIntents.current, intent);
     } catch (caught) {
       toast.danger(diaryWriteError(caught, "Couldn't log the meal. Try again."));
     }
@@ -200,8 +203,8 @@ export default function NutritionToday() {
     try {
       if (replacing?.mealItemId) {
         const expectedRevision = replacing.loggedEntry?.revision ?? 1;
-        commandIntent.current = diaryCommandKey(
-          commandIntent.current,
+        const intent = beginDiaryCommand(
+          commandIntents.current,
           replaceIntentFingerprint({
             date,
             expectedRevision,
@@ -216,24 +219,24 @@ export default function NutritionToday() {
           date,
           expected_revision: expectedRevision,
           food_id: picked.kind === 'food' ? picked.id : undefined,
-          idempotencyKey: commandIntent.current.key,
+          idempotencyKey: intent.key,
           meal_item_id: replacing.mealItemId,
           meal_slot: replacing.slot as DiaryMealSlot,
           portion,
           recipe_id: picked.kind === 'recipe' ? picked.id : undefined,
         });
-        commandIntent.current = null;
+        completeDiaryCommand(commandIntents.current, intent);
       } else {
-        commandIntent.current = diaryCommandKey(commandIntent.current, extraIntentFingerprint({...picked, date}));
+        const intent = beginDiaryCommand(commandIntents.current, extraIntentFingerprint({...picked, date}));
         await addExtra({
           date,
           food_id: picked.kind === 'food' ? picked.id : undefined,
           meal_slot: picked.slot as MealSlot,
           portion,
           recipe_id: picked.kind === 'recipe' ? picked.id : undefined,
-          idempotencyKey: commandIntent.current.key,
+          idempotencyKey: intent.key,
         });
-        commandIntent.current = null;
+        completeDiaryCommand(commandIntents.current, intent);
       }
     } catch (caught) {
       toast.danger(diaryWriteError(caught, "Couldn't save it. Try again."));
@@ -241,13 +244,10 @@ export default function NutritionToday() {
   };
 
   const logWholeDay = async () => {
-    if (!plan?.plan_id) {
-      return;
-    }
     try {
-      commandIntent.current = diaryCommandKey(commandIntent.current, plannedDayIntentFingerprint({date}));
-      await logDay.mutateAsync({date, idempotencyKey: commandIntent.current.key});
-      commandIntent.current = null;
+      const intent = beginDiaryCommand(commandIntents.current, plannedDayIntentFingerprint({date}));
+      await logDay.mutateAsync({date, idempotencyKey: intent.key});
+      completeDiaryCommand(commandIntents.current, intent);
     } catch (caught) {
       toast.danger(diaryWriteError(caught, "Couldn't log the day. Try again."));
     }
@@ -258,8 +258,8 @@ export default function NutritionToday() {
       return;
     }
     try {
-      commandIntent.current = diaryCommandKey(
-        commandIntent.current,
+      const intent = beginDiaryCommand(
+        commandIntents.current,
         switchOptionIntentFingerprint({
           date,
           expectedRevision: slot.revision,
@@ -270,11 +270,11 @@ export default function NutritionToday() {
       await switchOption.mutateAsync({
         date,
         expected_revision: slot.revision,
-        idempotencyKey: commandIntent.current.key,
+        idempotencyKey: intent.key,
         meal_id: option.meal_id,
         meal_slot: slot.slot as SwitchOptionRequest['meal_slot'],
       });
-      commandIntent.current = null;
+      completeDiaryCommand(commandIntents.current, intent);
       setConfirmSwitch(null);
     } catch (caught) {
       toast.danger(diaryWriteError(caught, "Couldn't switch options. Try again."));
@@ -301,7 +301,9 @@ export default function NutritionToday() {
     await postSwitch(confirmSwitch.slot, confirmSwitch.option);
   };
 
-  const anyUnlogged = slots.some((s) => s.rows.some((r) => r.status === 'checklist' || r.status === 'skipped'));
+  const anyUnlogged = slots.some((s) =>
+    s.rows.some((r) => r.status === 'checklist' || r.status === 'pending' || r.status === 'skipped'),
+  );
   const adh = adherenceDisplay(day);
   const verdict =
     isPast && adh !== 'none' && adh !== 'unknown' ? (
@@ -384,7 +386,7 @@ export default function NutritionToday() {
                 {slot.options.length > 1 ? (
                   <button
                     className="flex min-w-0 items-center gap-0.5 rounded-md px-1 py-0.5 text-[10px] font-medium text-accent active:opacity-70 disabled:opacity-50"
-                    disabled={!isEditable}
+                    disabled={!isEditable || date !== today}
                     onClick={() => setOptionSheetSlot(slot.slot)}
                     type="button"
                   >

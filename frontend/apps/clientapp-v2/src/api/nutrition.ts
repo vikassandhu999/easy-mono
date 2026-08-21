@@ -53,11 +53,12 @@ export function useGetClientNutritionPlanQuery(id: string, options?: {enabled?: 
   });
 }
 
-export function useListClientNutritionDaysQuery(query: NutritionDayQuery = {}) {
+export function useListClientNutritionDaysQuery(query: NutritionDayQuery = {}, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: nutritionDayKeys.list(query),
     queryFn: () =>
       call(client.GET('/v1/client/nutrition-days', {params: {query}})) as Promise<NutritionDayListResponse>,
+    enabled: options?.enabled ?? true,
   });
 }
 

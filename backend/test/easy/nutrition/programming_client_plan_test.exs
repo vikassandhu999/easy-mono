@@ -221,7 +221,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
   end
 
   describe "Client-self reads" do
-    test "lists and inspects only unarchived Client Plans owned by the authenticated client" do
+    test "lists active plans by default and inspects any Client Plan owned by the authenticated client" do
       coach = insert(:coach)
       client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
       other_client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
@@ -240,10 +240,11 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
       assert {:ok, inspected} = Programming.get_client_plan(ctx, visible.id)
       assert inspected.id == visible.id
       assert inspected.kind == :client_plan
+      assert {:ok, archived_plan} = Programming.get_client_plan(ctx, archived.id)
+      assert archived_plan.id == archived.id
+      assert archived_plan.archived_at
 
-      for hidden_id <- [archived.id, template.id] do
-        assert {:error, :not_found} = Programming.get_client_plan(ctx, hidden_id)
-      end
+      assert {:error, :not_found} = Programming.get_client_plan(ctx, template.id)
     end
 
     test "client-self reads require the trusted client id from Ctx" do

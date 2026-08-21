@@ -2,7 +2,25 @@ defmodule Easy.Repo.Migrations.RestrictLibraryStructuralReferences do
   use Ecto.Migration
 
   def up do
-    execute("DELETE FROM nutrition_recipe_ingredients WHERE food_id IS NULL")
+    execute("""
+    DO $$
+    DECLARE
+      invalid_ids uuid[];
+    BEGIN
+      SELECT array_agg(id ORDER BY id)
+      INTO invalid_ids
+      FROM nutrition_recipe_ingredients
+      WHERE food_id IS NULL;
+
+      IF invalid_ids IS NOT NULL THEN
+        RAISE EXCEPTION
+          'Cannot restrict Recipe Ingredient food references. Rows with null food_id: %',
+          invalid_ids
+          USING ERRCODE = 'not_null_violation';
+      END IF;
+    END;
+    $$
+    """)
 
     drop_if_exists constraint(
                      :nutrition_recipe_ingredients,

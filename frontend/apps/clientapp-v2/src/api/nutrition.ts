@@ -7,6 +7,7 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {call, client} from '@/api/client';
 import {foodKeys, nutritionDayKeys, nutritionPlanKeys, recipeKeys} from '@/api/keys';
 import type {components, paths} from '@/api/schema';
+import {getApiErrorCode} from '@/api/shared';
 
 export type Food = components['schemas']['Food'];
 export type NutritionDay = components['schemas']['NutritionDay'];
@@ -29,11 +30,9 @@ type FoodListQuery = paths['/v1/client/nutrition-foods']['get']['parameters']['q
 type RecipeListQuery = paths['/v1/client/nutrition-recipes']['get']['parameters']['query'];
 
 type PlanListResponse = components['schemas']['NutritionPlanListResponse'];
-type NutritionPlanResponse = components['schemas']['NutritionPlanResponse'];
 type NutritionDayListResponse = components['schemas']['NutritionDayListResponse'];
 type FoodListResponse = components['schemas']['FoodListResponse'];
 type RecipeListResponse = components['schemas']['RecipeListResponse'];
-type NutritionDayResponse = components['schemas']['NutritionDayResponse'];
 
 // ── Queries ──────────────────────────────────────────────────
 
@@ -41,15 +40,6 @@ export function useListClientNutritionPlansQuery(query: PlanListQuery = {}) {
   return useQuery({
     queryKey: nutritionPlanKeys.list(query),
     queryFn: () => call(client.GET('/v1/client/nutrition-plans', {params: {query}})) as Promise<PlanListResponse>,
-  });
-}
-
-export function useGetClientNutritionPlanQuery(id: string, options?: {enabled?: boolean}) {
-  return useQuery({
-    queryKey: nutritionPlanKeys.detail(id),
-    queryFn: () =>
-      call(client.GET('/v1/client/nutrition-plans/{id}', {params: {path: {id}}})) as Promise<NutritionPlanResponse>,
-    enabled: options?.enabled ?? true,
   });
 }
 
@@ -100,7 +90,7 @@ export function useLogPlannedItemMutation() {
           params: {path: {date}, header: {'Idempotency-Key': idempotencyKey}},
           body,
         }),
-      ) as Promise<NutritionDayResponse>,
+      ),
     onSuccess: invalidate,
   });
 }
@@ -114,7 +104,7 @@ export function useAddExtraMutation() {
           params: {path: {date}, header: {'Idempotency-Key': idempotencyKey}},
           body,
         }),
-      ) as Promise<NutritionDayResponse>,
+      ),
     onSuccess: invalidate,
   });
 }
@@ -128,7 +118,7 @@ export function useLogPlannedOptionMutation() {
           params: {path: {date}, header: {'Idempotency-Key': idempotencyKey}},
           body,
         }),
-      ) as Promise<NutritionDayResponse>,
+      ),
     onSuccess: invalidate,
   });
 }
@@ -141,7 +131,7 @@ export function useLogPlannedDayMutation() {
         client.POST('/v1/client/nutrition-days/{date}/planned-day', {
           params: {path: {date}, header: {'Idempotency-Key': idempotencyKey}},
         }),
-      ) as Promise<NutritionDayResponse>,
+      ),
     onSuccess: invalidate,
   });
 }
@@ -155,7 +145,7 @@ export function useReplaceItemMutation() {
           params: {path: {date}, header: {'Idempotency-Key': idempotencyKey}},
           body,
         }),
-      ) as Promise<NutritionDayResponse>,
+      ),
     onSuccess: invalidate,
   });
 }
@@ -174,7 +164,7 @@ export function useUpdateDiaryEntryMutation() {
           params: {path: {date, id}, header: {'Idempotency-Key': idempotencyKey}},
           body,
         }),
-      ) as Promise<NutritionDayResponse>,
+      ),
     onSuccess: invalidate,
   });
 }
@@ -193,7 +183,7 @@ export function useDeleteDiaryEntryMutation() {
           params: {path: {date, id}, header: {'Idempotency-Key': idempotencyKey}},
           body,
         }),
-      ) as Promise<NutritionDayResponse>,
+      ),
     onSuccess: invalidate,
   });
 }
@@ -207,8 +197,13 @@ export function useSwitchNutritionMealOptionMutation() {
           params: {path: {date}, header: {'Idempotency-Key': idempotencyKey}},
           body,
         }),
-      ) as Promise<NutritionDayResponse>,
+      ),
     onSuccess: invalidate,
+    onError: (error) => {
+      if (getApiErrorCode(error) === 'stale_revision') {
+        invalidate();
+      }
+    },
   });
 }
 

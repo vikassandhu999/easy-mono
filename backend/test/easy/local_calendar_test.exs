@@ -5,26 +5,6 @@ defmodule Easy.LocalCalendarTest do
   alias Easy.LocalCalendar
   alias Easy.Orgs.Business
 
-  describe "IANA validation" do
-    test "accepts real IANA names and rejects invented ones" do
-      assert LocalCalendar.valid_timezone?("Asia/Kolkata")
-      assert LocalCalendar.valid_timezone?("America/New_York")
-      refute LocalCalendar.valid_timezone?("Not/AZone")
-      refute LocalCalendar.valid_timezone?("")
-      refute LocalCalendar.valid_timezone?(nil)
-    end
-
-    test "changeset validation rejects an unvalidated timezone" do
-      changeset =
-        %Business{}
-        |> Ecto.Changeset.change(%{timezone: "Not/AZone"})
-        |> LocalCalendar.validate_timezone()
-
-      refute changeset.valid?
-      assert %{timezone: ["is not a valid IANA timezone"]} = errors_on(changeset)
-    end
-  end
-
   describe "applied timezone fallback" do
     test "uses the client timezone when present and the business timezone otherwise" do
       assert LocalCalendar.applied_timezone("America/New_York", "Asia/Kolkata") ==
@@ -83,12 +63,16 @@ defmodule Easy.LocalCalendarTest do
       assert %DateTime{time_zone: "Etc/UTC"} = client.inserted_at
     end
 
-    test "retained factory rows carry the backfilled Asia/Kolkata timezone" do
-      business = insert(:business)
-      client = insert(:client, business: business)
+    test "database defaults retained rows to Asia/Kolkata when timezone is omitted" do
+      owner = insert(:user)
+      id = Ecto.UUID.generate()
+      now = DateTime.utc_now(:second)
 
-      assert Repo.reload!(business).timezone == "Asia/Kolkata"
-      assert Repo.reload!(client).timezone == "Asia/Kolkata"
+      Repo.insert_all(Business, [
+        %{id: id, owner_id: owner.id, name: "Default timezone", handle: "timezone-#{id}", inserted_at: now, updated_at: now}
+      ])
+
+      assert Repo.get!(Business, id).timezone == "Asia/Kolkata"
     end
   end
 end

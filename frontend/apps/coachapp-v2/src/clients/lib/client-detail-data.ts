@@ -127,7 +127,9 @@ export function formatWeight(value: number | string, unit: string, {decimals = 1
 }
 
 /** Day-strings on which a session was completed — drives the CD-OV workout dots. */
-export function completedSessionDates(sessions: TrainingSession[] | undefined): Set<string> {
+export type CompletedSession = Pick<TrainingSession, 'date' | 'state'>;
+
+export function completedSessionDates(sessions: CompletedSession[] | undefined): Set<string> {
   const dates = new Set<string>();
   for (const s of sessions ?? []) {
     if (s.state === 'completed' && s.date) {
@@ -138,7 +140,13 @@ export function completedSessionDates(sessions: TrainingSession[] | undefined): 
 }
 
 /** Day-strings on which any food was logged — drives the CD-OV meal dots. */
-export function loggedMealDates(days: NutritionDay[] | undefined): Set<string> {
+export type NutritionDayLog = Pick<NutritionDay, 'date'> & {
+  summary: Pick<NutritionDay['summary'], 'has_intake'> & {
+    logged: Pick<NutritionDay['summary']['logged'], 'calories'>;
+  };
+};
+
+export function loggedMealDates(days: NutritionDayLog[] | undefined): Set<string> {
   const dates = new Set<string>();
   for (const day of days ?? []) {
     if (day.summary.has_intake) {
@@ -149,7 +157,7 @@ export function loggedMealDates(days: NutritionDay[] | undefined): Set<string> {
 }
 
 /** Mean logged kcal across days that were logged at all; null when none were. */
-export function averageLoggedCalories(days: NutritionDay[] | undefined): null | number {
+export function averageLoggedCalories(days: NutritionDayLog[] | undefined): null | number {
   const values: number[] = [];
   for (const day of days ?? []) {
     if (!day.summary.has_intake) {
@@ -167,11 +175,13 @@ export function averageLoggedCalories(days: NutritionDay[] | undefined): null | 
   return Math.round(values.reduce((total, kcal) => total + kcal, 0) / values.length);
 }
 
+export type WeightTrendEntry = Pick<WeightEntry, 'date' | 'id' | 'unit' | 'value'>;
+
 export type WeightTrend = {
   /** 'down' | 'up' | 'flat' — the design draws ▼ / ▲ / — from this. */
   direction: 'down' | 'flat' | 'up';
   goal: null | number;
-  latest: WeightEntry;
+  latest: WeightTrendEntry;
   /** Absolute change, already rounded to the displayed precision. */
   magnitude: number;
   /** Every logged value, oldest first — the CD-OV chart's polyline. */
@@ -185,7 +195,7 @@ export type WeightTrend = {
  * Entries arrive newest-first from the API; this does not assume that and sorts.
  * Null when there is nothing to compare — one entry is not a trend.
  */
-export function weightTrend(entries: WeightEntry[] | undefined, goal: null | number = null): null | WeightTrend {
+export function weightTrend(entries: WeightTrendEntry[] | undefined, goal: null | number = null): null | WeightTrend {
   if (!entries || entries.length === 0) {
     return null;
   }

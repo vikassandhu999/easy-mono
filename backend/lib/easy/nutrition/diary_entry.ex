@@ -87,6 +87,7 @@ defmodule Easy.Nutrition.DiaryEntry do
       :nutrition_diary_slot_id
     ])
     |> validate_number(:revision, greater_than: 0)
+    |> validate_length(:notes, max: 255)
     |> unique_constraint(:frozen_planned_item_id, name: :nutrition_diary_entries_one_fulfilment_index)
     |> check_constraint(:source_food_id, name: :nutrition_diary_entries_source_identity_check)
     |> foreign_key_constraint(:nutrition_diary_slot_id, name: :nutrition_diary_entries_slot_business_id_fkey)
@@ -119,6 +120,7 @@ defmodule Easy.Nutrition.DiaryEntry do
     ])
     |> validate_required([:revision])
     |> validate_number(:revision, greater_than: 0)
+    |> validate_length(:notes, max: 255)
     |> check_constraint(:source_food_id, name: :nutrition_diary_entries_source_identity_check)
   end
 

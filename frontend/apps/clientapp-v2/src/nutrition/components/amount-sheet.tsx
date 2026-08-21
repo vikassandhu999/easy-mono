@@ -32,7 +32,7 @@ export type SheetTarget = {
   name: string;
   mealItemId: null | string;
   plannedItem: null | NutritionDayOptionItem;
-  slot: string;
+  slot: DiaryMealSlot;
   slotLabel: string;
 };
 
@@ -128,7 +128,7 @@ export default function AmountSheet({
           date: target.date,
           idempotencyKey: commandIntent.current.key,
           meal_item_id: target.mealItemId,
-          meal_slot: target.slot as DiaryMealSlot,
+          meal_slot: target.slot,
         });
         commandIntent.current = null;
       }

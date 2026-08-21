@@ -27,9 +27,6 @@ export type RecipeRequest = components['schemas']['RecipeRequest'];
 export type RecipeUpdateRequest = components['schemas']['RecipeUpdateRequest'];
 export type RecipeIngredient = components['schemas']['RecipeIngredient'];
 export type RecipeIngredientRequest = components['schemas']['RecipeIngredientRequest'];
-export type FoodImpactResponse = components['schemas']['FoodImpactResponse'];
-export type RecipeImpactResponse = components['schemas']['RecipeImpactResponse'];
-
 type FoodListResponse = components['schemas']['FoodListResponse'];
 type RecipeListResponse = components['schemas']['RecipeListResponse'];
 
@@ -111,8 +108,7 @@ export function useGetFoodQuery(id: string, options?: {enabled?: boolean}) {
 export function useGetFoodImpactQuery(id: string, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: foodKeys.impact(id),
-    queryFn: () =>
-      call(client.GET('/v1/coach/nutrition-foods/{id}/impact', {params: {path: {id}}})) as Promise<FoodImpactResponse>,
+    queryFn: () => call(client.GET('/v1/coach/nutrition-foods/{id}/impact', {params: {path: {id}}})),
     enabled: options?.enabled ?? true,
   });
 }
@@ -189,10 +185,7 @@ export function useGetRecipeQuery(id: string, options?: {enabled?: boolean}) {
 export function useGetRecipeImpactQuery(id: string, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: recipeKeys.impact(id),
-    queryFn: () =>
-      call(
-        client.GET('/v1/coach/nutrition-recipes/{id}/impact', {params: {path: {id}}}),
-      ) as Promise<RecipeImpactResponse>,
+    queryFn: () => call(client.GET('/v1/coach/nutrition-recipes/{id}/impact', {params: {path: {id}}})),
     enabled: options?.enabled ?? true,
   });
 }

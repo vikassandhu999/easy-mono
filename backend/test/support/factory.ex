@@ -375,14 +375,12 @@ defmodule Easy.Factory do
     {creator, attrs} = Map.pop(attrs, :creator)
 
     business = business || (plan && plan.business) || insert(:business)
-    creator = creator || insert(:coach, business: business)
-    plan = plan || build(:plan, business: business, creator: creator)
+    plan = plan || build(:plan, business: business, creator: creator || insert(:coach, business: business))
 
     %Meal{
       name: sequence(:meal_name, &"Meal #{&1}"),
       notes: nil,
       position: sequence(:meal_position, & &1),
-      creator: creator,
       business: business,
       plan: plan
     }
@@ -426,7 +424,7 @@ defmodule Easy.Factory do
     meal = meal || build(:meal)
     plan = plan || meal.plan
     business = business || meal.business
-    food = food || unless(recipe, do: build(:food, business: business, creator: meal.creator))
+    food = food || unless(recipe, do: build(:food, business: business))
 
     %MealItem{
       portion_kind: portion.kind,

@@ -15,7 +15,6 @@ defmodule Easy.Nutrition.DayPattern do
   schema "nutrition_day_patterns" do
     field :name, :string
     field :position, :integer
-    field :weekdays, {:array, :string}, virtual: true, default: []
 
     belongs_to :business, Orgs.Business
     belongs_to :plan, Plan, foreign_key: :nutrition_plan_id
@@ -70,10 +69,7 @@ defmodule Easy.Nutrition.DayPattern do
       |> MealOption.for_business(business_id)
       |> MealOption.by_slot_position()
 
-    from(pattern in query,
-      where: pattern.business_id == ^business_id,
-      preload: [meal_options: ^option_query]
-    )
+    from(pattern in query, preload: [meal_options: ^option_query])
   end
 
   @spec weekdays_for(t(), [WeekSchedule.t()]) :: [String.t()]

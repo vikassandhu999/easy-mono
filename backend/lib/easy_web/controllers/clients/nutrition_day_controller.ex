@@ -157,6 +157,8 @@ defmodule EasyWeb.Clients.NutritionDayController do
     responses: [
       ok: {"Nutrition day", "application/json", NutritionDayResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      forbidden: {"Client inactive", "application/json", ErrorResponse},
+      not_found: {"Nutrition Day slot or option not found", "application/json", ErrorResponse},
       conflict: {"Stale revision or idempotency key reused with a different payload", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
@@ -232,8 +234,7 @@ defmodule EasyWeb.Clients.NutritionDayController do
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     with {:ok, date} <- Utils.parse_optional_date(params["date"]),
-         {:ok, from_date} <- Utils.parse_optional_date(params["from"]),
-         {:ok, to_date} <- Utils.parse_optional_date(params["to"]),
+         {:ok, from_date, to_date} <- parse_range_unless_exact(params, date),
          {:ok, %{nutrition_days: days, count: count}} <-
            Diary.list_client_nutrition_days(conn.assigns.ctx,
              date: date,
@@ -243,6 +244,15 @@ defmodule EasyWeb.Clients.NutritionDayController do
              limit: parse_integer(params, "limit", 20)
            ) do
       render(conn, :index, days: days, count: count)
+    end
+  end
+
+  defp parse_range_unless_exact(_params, %Date{}), do: {:ok, nil, nil}
+
+  defp parse_range_unless_exact(params, nil) do
+    with {:ok, from_date} <- Utils.parse_optional_date(params["from"]),
+         {:ok, to_date} <- Utils.parse_optional_date(params["to"]) do
+      {:ok, from_date, to_date}
     end
   end
 

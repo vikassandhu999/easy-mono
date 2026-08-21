@@ -125,7 +125,6 @@ defmodule Easy.Nutrition.Programming do
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
       ctx
       |> client_plan_query(client_id)
-      |> Plan.for_archived(false)
       |> Plan.include_menu(ctx.business_id)
       |> Plan.include_client(ctx.business_id)
       |> Repo.get(plan_id)
@@ -296,7 +295,7 @@ defmodule Easy.Nutrition.Programming do
   end
 
   @spec replace_menu(Ctx.t(), String.t(), pos_integer(), map()) ::
-          {:ok, Plan.t()} | {:error, :not_found | :invalid_portion | Ecto.Changeset.t()}
+          {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def replace_menu(%Ctx{} = ctx, plan_id, expected_revision, attrs) do
     mutate_plan(ctx, plan_id, expected_revision, fn plan ->
       replace_locked_menu(ctx, plan, attrs)
@@ -532,7 +531,7 @@ defmodule Easy.Nutrition.Programming do
   defp valid_schedule?(_schedule, _pattern_ids), do: false
 
   defp schedule_pattern(schedule, weekday) do
-    Map.get(schedule, weekday) || Map.get(schedule, Atom.to_string(weekday))
+    Map.get(schedule, weekday)
   end
 
   defp submitted_identities(nodes) do

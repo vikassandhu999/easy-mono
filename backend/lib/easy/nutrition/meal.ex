@@ -18,7 +18,6 @@ defmodule Easy.Nutrition.Meal do
     field :notes, :string
     field :position, :integer
 
-    belongs_to :creator, Orgs.Coach, foreign_key: :creator_id
     belongs_to :business, Orgs.Business
     belongs_to :plan, Plan, foreign_key: :nutrition_plan_id
     has_many :meal_items, MealItem, foreign_key: :nutrition_meal_id

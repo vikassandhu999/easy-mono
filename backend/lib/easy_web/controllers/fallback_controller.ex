@@ -342,13 +342,22 @@ defmodule EasyWeb.FallbackController do
   end
 
   def call(conn, {:error, :future_date}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{date: ["cannot be in the future"]}})})
+    call(
+      conn,
+      {:error, Error.new(:future_date, "The data provided was invalid.", %{fields: %{date: ["cannot be in the future"]}}, :unprocessable_entity)}
+    )
   end
 
   def call(conn, {:error, :outside_correction_window}) do
     call(
       conn,
-      {:error, Error.unprocessable(%{fields: %{date: ["must be today or within the previous 7 local dates"]}})}
+      {:error,
+       Error.new(
+         :outside_correction_window,
+         "The data provided was invalid.",
+         %{fields: %{date: ["must be today or within the previous 7 local dates"]}},
+         :unprocessable_entity
+       )}
     )
   end
 

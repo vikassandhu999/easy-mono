@@ -1,20 +1,20 @@
 import {formatIsoDateOnly} from '@easy/utils';
-import {AlertDialog, Button, Chip, Typography, toast} from '@heroui/react';
+import {Button, Chip, Typography, toast} from '@heroui/react';
 import {Copy, HandPlatter, Pencil, Trash2, Video} from 'lucide-react';
-import type {ReactNode} from 'react';
 import {generatePath, useNavigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
 import {DETAIL_SECTION_CLASS, DetailSectionHeading} from '@/@components/detail-section-heading';
 import {ErrorState} from '@/@components/error-state';
+import {LibraryDeleteDialog} from '@/@components/library-delete-dialog';
 import {LibraryUsageSection} from '@/@components/library-usage';
 import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import type {Food, NutrientTotals} from '@/api/nutrition-foods';
+import type {NutrientTotals} from '@/api/nutrition-foods';
 import {
   useCopyNutritionFoodMutation,
   useDeleteFoodMutation,
@@ -53,51 +53,6 @@ export default function FoodDetail() {
       toast.danger(libraryInUseMessage(error, "Couldn't delete food"));
     }
   };
-
-  const renderDeleteDialog = (trigger: ReactNode, food: Food) => (
-    <AlertDialog>
-      {trigger}
-      <AlertDialog.Backdrop variant="transparent">
-        <AlertDialog.Container>
-          <AlertDialog.Dialog>
-            <AlertDialog.CloseTrigger />
-            <AlertDialog.Header>
-              <AlertDialog.Icon status="danger" />
-              <AlertDialog.Heading>{inUse ? 'Food is in use' : 'Delete food?'}</AlertDialog.Heading>
-            </AlertDialog.Header>
-            <AlertDialog.Body>
-              {inUse ? (
-                <Typography>
-                  <strong>{food.name}</strong> is used by a recipe or plan. Remove it there before deleting.
-                </Typography>
-              ) : (
-                <Typography>
-                  This will permanently delete <strong>{food.name}</strong>. This action cannot be undone.
-                </Typography>
-              )}
-            </AlertDialog.Body>
-            <AlertDialog.Footer>
-              <Button
-                slot="close"
-                variant="tertiary"
-              >
-                {inUse ? 'Close' : 'Cancel'}
-              </Button>
-              {!inUse && (
-                <Button
-                  isPending={deleteFoodMutation.isPending}
-                  onPress={() => handleDelete({id: food.id, expectedRevision: food.revision})}
-                  variant="danger"
-                >
-                  {deleteFoodMutation.isPending ? 'Deleting' : 'Delete'}
-                </Button>
-              )}
-            </AlertDialog.Footer>
-          </AlertDialog.Dialog>
-        </AlertDialog.Container>
-      </AlertDialog.Backdrop>
-    </AlertDialog>
-  );
 
   if (isLoading) {
     return (
@@ -185,17 +140,24 @@ export default function FoodDetail() {
             <Copy />
             Duplicate
           </Button>
-          {editable &&
-            renderDeleteDialog(
-              <Button
-                aria-label="Delete food"
-                className="text-danger"
-                variant="outline"
-              >
-                <Trash2 />
-              </Button>,
-              food,
-            )}
+          {editable && (
+            <LibraryDeleteDialog
+              inUse={inUse}
+              isPending={deleteFoodMutation.isPending}
+              itemName={food.name}
+              label="Food"
+              onDelete={() => handleDelete({id: food.id, expectedRevision: food.revision})}
+              trigger={
+                <Button
+                  aria-label="Delete food"
+                  className="text-danger"
+                  variant="outline"
+                >
+                  <Trash2 />
+                </Button>
+              }
+            />
+          )}
         </Page.Actions>
       </Page.Header>
 
@@ -343,18 +305,25 @@ export default function FoodDetail() {
           >
             <Copy />
           </Button>
-          {editable &&
-            renderDeleteDialog(
-              <Button
-                isIconOnly
-                aria-label="Delete food"
-                className="text-danger"
-                variant="outline"
-              >
-                <Trash2 />
-              </Button>,
-              food,
-            )}
+          {editable && (
+            <LibraryDeleteDialog
+              inUse={inUse}
+              isPending={deleteFoodMutation.isPending}
+              itemName={food.name}
+              label="Food"
+              onDelete={() => handleDelete({id: food.id, expectedRevision: food.revision})}
+              trigger={
+                <Button
+                  isIconOnly
+                  aria-label="Delete food"
+                  className="text-danger"
+                  variant="outline"
+                >
+                  <Trash2 />
+                </Button>
+              }
+            />
+          )}
         </div>
       </Page.Content>
     </Page>

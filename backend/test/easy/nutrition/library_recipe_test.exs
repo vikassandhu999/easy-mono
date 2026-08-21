@@ -22,6 +22,16 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
       assert recipe.cooked_weight_g == nil
     end
 
+    test "trusts the coach identity carried by Ctx" do
+      coach = insert(:coach)
+      ctx = %{trainer_ctx(coach) | user_id: Ecto.UUID.generate()}
+
+      assert {:ok, recipe} =
+               Library.create_recipe(ctx, %{name: "Dal tadka", servings_count: 4})
+
+      assert recipe.creator_id == coach.id
+    end
+
     test "rejects a non-positive servings count" do
       coach = insert(:coach)
 
@@ -199,6 +209,38 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
                  servings_count: 1
                })
     end
+
+    test "rolls metadata and ingredients back when replacement fails" do
+      coach = insert(:coach)
+      other = insert(:coach)
+      original_food = insert(:food, business: coach.business, creator: coach)
+      hidden_food = insert(:food, business: other.business, creator: other)
+      recipe = insert(:recipe, business: coach.business, creator: coach, name: "Original", servings_count: 2)
+
+      original_ingredient =
+        insert(:recipe_ingredient,
+          business: coach.business,
+          recipe: recipe,
+          food: original_food,
+          weight_g: 80.0,
+          position: 0
+        )
+
+      assert {:error, %Ecto.Changeset{valid?: false}} =
+               Library.update_recipe(trainer_ctx(coach), recipe.id, recipe.revision, %{
+                 name: "Should roll back",
+                 servings_count: 3,
+                 recipe_ingredients: [%{food_id: hidden_food.id, weight_g: 100.0}]
+               })
+
+      persisted = Repo.get!(Recipe, recipe.id) |> Repo.preload(:recipe_ingredients)
+      assert persisted.name == "Original"
+      assert persisted.servings_count == 2
+      assert persisted.revision == recipe.revision
+      assert [%{id: ingredient_id, food_id: food_id, weight_g: 80.0}] = persisted.recipe_ingredients
+      assert ingredient_id == original_ingredient.id
+      assert food_id == original_food.id
+    end
   end
 
   describe "delete_recipe/3" do
@@ -263,6 +305,16 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
 
       assert {:ok, %{count: 1, recipes: [recipe]}} = Library.list_recipes(trainer_ctx(coach))
       assert recipe.name == "Ours"
+    end
+
+    test "honors requested page sizes through the shared maximum" do
+      coach = insert(:coach)
+      insert_list(21, :recipe, business: coach.business, creator: coach)
+
+      assert {:ok, %{count: 21, recipes: recipes}} =
+               Library.list_recipes(trainer_ctx(coach), limit: 100)
+
+      assert length(recipes) == 21
     end
   end
 

@@ -33,8 +33,7 @@ defmodule EasyWeb.Coaches.NutritionDayController do
     client_id = conn.path_params["client_id"]
 
     with {:ok, date} <- Easy.Utils.parse_optional_date(params["date"]),
-         {:ok, from_date} <- Easy.Utils.parse_optional_date(params["from"]),
-         {:ok, to_date} <- Easy.Utils.parse_optional_date(params["to"]),
+         {:ok, from_date, to_date} <- parse_range_unless_exact(params, date),
          {:ok, %{nutrition_days: days, count: count}} <-
            Diary.list_nutrition_days_for_client(conn.assigns.ctx, client_id,
              date: date,
@@ -44,6 +43,15 @@ defmodule EasyWeb.Coaches.NutritionDayController do
              limit: parse_integer(params, "limit", 20)
            ) do
       render(conn, :index, days: days, count: count)
+    end
+  end
+
+  defp parse_range_unless_exact(_params, %Date{}), do: {:ok, nil, nil}
+
+  defp parse_range_unless_exact(params, nil) do
+    with {:ok, from_date} <- Easy.Utils.parse_optional_date(params["from"]),
+         {:ok, to_date} <- Easy.Utils.parse_optional_date(params["to"]) do
+      {:ok, from_date, to_date}
     end
   end
 end

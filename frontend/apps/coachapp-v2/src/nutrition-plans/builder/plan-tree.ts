@@ -116,23 +116,3 @@ export function mealPlacementSummary(mealId: string, days: NutritionPlanDay[], w
   }
   return parts.join(' · ');
 }
-
-export function dropEmptySlots(pattern: NutritionDayPattern) {
-  pattern.slots = pattern.slots.filter((slot) => slot.options.length > 0);
-}
-
-export function reindexSlotOptions(pattern: NutritionDayPattern, mealSlot: string) {
-  const slot = pattern.slots.find((candidate) => candidate.meal_slot === mealSlot);
-  slot?.options.forEach((option, position) => {
-    option.position = position;
-  });
-}
-
-export function removeMealFromPatterns(plan: NutritionPlan, mealId: string) {
-  for (const pattern of plan.day_patterns) {
-    for (const slot of pattern.slots) {
-      slot.options = slot.options.filter((option) => option.nutrition_meal_id !== mealId);
-    }
-    dropEmptySlots(pattern);
-  }
-}

@@ -3,7 +3,6 @@ defmodule Easy.Nutrition.Library do
   alias Easy.Ctx
   alias Easy.LibraryMedia
   alias Easy.Nutrition.{Food, MealItem, NutrientTotals, Plan, Recipe, RecipeIngredient}
-  alias Easy.Orgs.Coach
   alias Easy.Repo
   alias Easy.Utils
 
@@ -24,7 +23,7 @@ defmodule Easy.Nutrition.Library do
     search = String.trim(Keyword.get(opts, :search, "") || "")
     categories = Keyword.get(opts, :categories)
     offset = Keyword.get(opts, :offset, 0)
-    limit = min(Keyword.get(opts, :limit, 20), 20)
+    limit = min(Keyword.get(opts, :limit, 20), 100)
 
     base =
       Food
@@ -52,9 +51,9 @@ defmodule Easy.Nutrition.Library do
 
   @spec create_food(Ctx.t(), map()) :: {:ok, Food.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_food(%Ctx{} = ctx, attrs) do
-    with {:ok, coach} <- get_coach(ctx),
+    with :ok <- ensure_coach(ctx),
          :ok <- LibraryMedia.authorize_attach(ctx, attrs[:media_id]),
-         {:ok, food} <- ctx.business_id |> Food.insert_changeset(coach.id, attrs) |> Repo.insert() do
+         {:ok, food} <- ctx.business_id |> Food.insert_changeset(ctx.coach_id, attrs) |> Repo.insert() do
       {:ok, Repo.preload(food, :media)}
     end
   end
@@ -155,9 +154,6 @@ defmodule Easy.Nutrition.Library do
 
   def resolve_food_portion(_food, _portion), do: {:error, :invalid_portion}
 
-  @spec food_nutrients(Food.t()) :: NutrientTotals.t()
-  def food_nutrients(%Food{} = food), do: NutrientTotals.from_food(food)
-
   @spec get_recipe(Ctx.t(), String.t()) :: {:ok, Recipe.t()} | {:error, :not_found}
   def get_recipe(%Ctx{} = ctx, recipe_id) do
     Recipe
@@ -172,7 +168,7 @@ defmodule Easy.Nutrition.Library do
   def list_recipes(%Ctx{} = ctx, opts \\ []) do
     search = String.trim(Keyword.get(opts, :search, "") || "")
     offset = Keyword.get(opts, :offset, 0)
-    limit = min(Keyword.get(opts, :limit, 20), 20)
+    limit = min(Keyword.get(opts, :limit, 20), 100)
 
     base = Recipe |> Recipe.for_business(ctx.business_id) |> Recipe.search(search)
     ordered = Recipe.newest(base)
@@ -193,11 +189,11 @@ defmodule Easy.Nutrition.Library do
   def create_recipe(%Ctx{} = ctx, attrs) do
     {ingredients, scalar_attrs} = pop_ingredients(attrs)
 
-    with {:ok, coach} <- get_coach(ctx) do
+    with :ok <- ensure_coach(ctx) do
       persist_recipe(
         ctx,
         fn ->
-          ctx.business_id |> Recipe.insert_changeset(coach.id, scalar_attrs) |> Repo.insert()
+          ctx.business_id |> Recipe.insert_changeset(ctx.coach_id, scalar_attrs) |> Repo.insert()
         end,
         ingredients
       )
@@ -673,14 +669,6 @@ defmodule Easy.Nutrition.Library do
 
   defp ensure_coach(%Ctx{coach_id: coach_id}) when not is_nil(coach_id), do: :ok
   defp ensure_coach(%Ctx{}), do: {:error, :not_found}
-
-  defp get_coach(%Ctx{} = ctx) do
-    Coach
-    |> Coach.for_business(ctx.business_id)
-    |> Coach.for_user(ctx.user_id)
-    |> Repo.one()
-    |> ok_or_not_found()
-  end
 
   defp ok_or_not_found(nil), do: {:error, :not_found}
   defp ok_or_not_found(record), do: {:ok, record}

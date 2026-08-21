@@ -74,6 +74,18 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
 
       assert %{"error_detail" => %{"fields" => %{"date" => ["is invalid"]}}} = json_response(conn, 422)
     end
+
+    test "an exact date ignores malformed range fields", ctx do
+      today = Date.to_iso8601(local_today(ctx.client))
+
+      conn =
+        get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/nutrition-days", %{
+          "date" => today,
+          "to" => "not-a-date"
+        })
+
+      assert %{"data" => [%{"date" => ^today}], "count" => 1} = json_response(conn, 200)
+    end
   end
 
   defp assign_covering_plan(ctx, food) do

@@ -1,10 +1,15 @@
-import type {components} from '../../api/schema.ts';
-import {getApiErrorCode, getApiErrorMessage} from '../../api/shared.ts';
+import type {components} from '@/api/schema';
 
 export type FoodImpact = NonNullable<components['schemas']['FoodImpactResponse']['data']>;
 export type RecipeImpact = NonNullable<components['schemas']['RecipeImpactResponse']['data']>;
 
-export type LibraryUsageItem = {id: string; name: string};
+type FoodRecipeReference = NonNullable<FoodImpact['recipes']>[number];
+type LibraryReference =
+  | FoodRecipeReference
+  | NonNullable<FoodImpact['templates']>[number]
+  | NonNullable<RecipeImpact['templates']>[number];
+
+export type LibraryUsageItem = Required<Pick<FoodRecipeReference, 'id' | 'name'>>;
 
 export type LibraryImpact = {
   recipes: LibraryUsageItem[];
@@ -14,7 +19,7 @@ export type LibraryImpact = {
 
 export function normalizeLibraryImpact(data: FoodImpact | RecipeImpact | undefined): LibraryImpact {
   return {
-    recipes: namedRefs('recipes' in (data ?? {}) ? (data as FoodImpact).recipes : []),
+    recipes: namedRefs(data && 'recipes' in data ? data.recipes : undefined),
     templates: namedRefs(data?.templates),
     active_client_plans: namedRefs(data?.active_client_plans),
   };
@@ -25,12 +30,21 @@ export function hasLibraryUsage(impact: LibraryImpact): boolean {
 }
 
 export function libraryInUseMessage(error: unknown, fallback: string): string {
-  if (getApiErrorCode(error) === 'in_use') {
-    return getApiErrorMessage(error, fallback);
+  const data = objectProperty(error, 'data');
+  if (objectProperty(data, 'error_code') === 'in_use') {
+    const message = objectProperty(data, 'error_message');
+    return typeof message === 'string' ? message : fallback;
   }
   return fallback;
 }
 
-function namedRefs(items: {id?: string; name?: string}[] | undefined): LibraryUsageItem[] {
+function namedRefs(items: LibraryReference[] | undefined): LibraryUsageItem[] {
   return (items ?? []).flatMap((item) => (item.id && item.name ? [{id: item.id, name: item.name}] : []));
+}
+
+function objectProperty(value: unknown, key: string): unknown {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+  return Object.entries(value).find(([name]) => name === key)?.[1];
 }

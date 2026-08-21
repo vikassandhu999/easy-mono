@@ -109,7 +109,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       assert json_response(conn, 404)
     end
 
-    test "returns 404 for an archived Client Plan", ctx do
+    test "returns an archived Client Plan listed by the archived filter", ctx do
       plan =
         insert(:plan,
           creator: ctx.coach,
@@ -120,7 +120,8 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
         )
 
       conn = get(ctx.conn, "/v1/client/nutrition-plans/#{plan.id}")
-      assert json_response(conn, 404)
+      assert %{"data" => %{"id" => id, "status" => "archived"}} = json_response(conn, 200)
+      assert id == plan.id
     end
 
     test "returns 404 for template plan", ctx do

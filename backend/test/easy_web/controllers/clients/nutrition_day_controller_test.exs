@@ -124,6 +124,13 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       assert %{"error_detail" => %{"fields" => %{"date" => ["is invalid"]}}} = json_response(conn, 422)
     end
 
+    test "an exact date ignores malformed range fields", ctx do
+      today = Date.to_iso8601(local_today(ctx.client))
+      conn = get(ctx.conn, "/v1/client/nutrition-days", %{"date" => today, "from" => "not-a-date"})
+
+      assert %{"data" => [%{"date" => ^today}], "count" => 1} = json_response(conn, 200)
+    end
+
     test "rejects a range whose dates are malformed", ctx do
       conn =
         get(ctx.conn, "/v1/client/nutrition-days", %{
@@ -248,7 +255,7 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
           "portion" => %{"kind" => "gram", "grams" => 50}
         })
 
-      assert conn.status in [401, 403, 404]
+      assert %{"error_code" => "unauthorized"} = json_response(conn, 403)
     end
   end
 
@@ -333,6 +340,17 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       assert Enum.map(hd(replayed["slots"])["rows"], & &1["entry"]["id"]) ==
                Enum.map(hd(data["slots"])["rows"], & &1["entry"]["id"])
     end
+
+    test "rejects a future Nutrition Day", ctx do
+      future = ctx.client |> local_today() |> Date.add(1) |> Date.to_iso8601()
+
+      conn =
+        ctx.conn
+        |> put_req_header("idempotency-key", Ecto.UUID.generate())
+        |> post("/v1/client/nutrition-days/#{future}/planned-options", %{"meal_slot" => "breakfast"})
+
+      assert %{"error_code" => "future_date"} = json_response(conn, 422)
+    end
   end
 
   describe "POST /v1/client/nutrition-days/:date/planned-day" do
@@ -350,6 +368,17 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       assert Enum.any?(data["slots"], &(&1["meal_slot"] == "breakfast"))
       assert Enum.all?(hd(data["slots"])["rows"], &(&1["status"] == "as_planned"))
       assert_schema(data, "NutritionDay", EasyWeb.ApiSpec.spec())
+    end
+
+    test "rejects a future Nutrition Day", ctx do
+      future = ctx.client |> local_today() |> Date.add(1) |> Date.to_iso8601()
+
+      conn =
+        ctx.conn
+        |> put_req_header("idempotency-key", Ecto.UUID.generate())
+        |> post("/v1/client/nutrition-days/#{future}/planned-day")
+
+      assert %{"error_code" => "future_date"} = json_response(conn, 422)
     end
   end
 
@@ -611,6 +640,23 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
 
       assert %{"error_code" => "stale_revision", "error_detail" => %{"current_revision" => 1}} =
                json_response(conn, 409)
+    end
+
+    test "rejects notes longer than the database column", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business)
+      today = Date.to_iso8601(local_today(ctx.client))
+
+      conn =
+        ctx.conn
+        |> put_req_header("idempotency-key", Ecto.UUID.generate())
+        |> post("/v1/client/nutrition-days/#{today}/extras", %{
+          "meal_slot" => "breakfast",
+          "food_id" => food.id,
+          "portion" => %{"kind" => "gram", "grams" => 50},
+          "notes" => String.duplicate("x", 256)
+        })
+
+      assert json_response(conn, 422)
     end
   end
 

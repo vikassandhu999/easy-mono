@@ -1,20 +1,20 @@
 import {formatIsoDateOnly} from '@easy/utils';
-import {AlertDialog, Button, Chip, Typography, toast} from '@heroui/react';
+import {Button, Chip, Typography, toast} from '@heroui/react';
 import {ChefHat, Copy, Pencil, Trash2} from 'lucide-react';
-import type {ReactNode} from 'react';
 import {generatePath, useNavigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
 import {DETAIL_SECTION_CLASS, DetailSectionHeading} from '@/@components/detail-section-heading';
 import {ErrorState} from '@/@components/error-state';
+import {LibraryDeleteDialog} from '@/@components/library-delete-dialog';
 import {LibraryUsageSection} from '@/@components/library-usage';
 import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import type {NutrientTotals, Recipe} from '@/api/nutrition-foods';
+import type {NutrientTotals} from '@/api/nutrition-foods';
 import {
   useCopyNutritionRecipeMutation,
   useDeleteRecipeMutation,
@@ -64,51 +64,6 @@ export default function RecipeDetail() {
       toast.danger(libraryInUseMessage(error, "Couldn't delete recipe"));
     }
   };
-
-  const renderDeleteDialog = (trigger: ReactNode, recipe: Recipe) => (
-    <AlertDialog>
-      {trigger}
-      <AlertDialog.Backdrop variant="transparent">
-        <AlertDialog.Container>
-          <AlertDialog.Dialog>
-            <AlertDialog.CloseTrigger />
-            <AlertDialog.Header>
-              <AlertDialog.Icon status="danger" />
-              <AlertDialog.Heading>{inUse ? 'Recipe is in use' : 'Delete recipe?'}</AlertDialog.Heading>
-            </AlertDialog.Header>
-            <AlertDialog.Body>
-              {inUse ? (
-                <Typography>
-                  <strong>{recipe.name}</strong> is used by a plan. Remove it there before deleting.
-                </Typography>
-              ) : (
-                <Typography>
-                  This will permanently delete <strong>{recipe.name}</strong>. This action cannot be undone.
-                </Typography>
-              )}
-            </AlertDialog.Body>
-            <AlertDialog.Footer>
-              <Button
-                slot="close"
-                variant="tertiary"
-              >
-                {inUse ? 'Close' : 'Cancel'}
-              </Button>
-              {!inUse && (
-                <Button
-                  isPending={isDeleting}
-                  onPress={() => handleDelete({expectedRevision: recipe.revision, id: recipe.id})}
-                  variant="danger"
-                >
-                  {isDeleting ? 'Deleting' : 'Delete'}
-                </Button>
-              )}
-            </AlertDialog.Footer>
-          </AlertDialog.Dialog>
-        </AlertDialog.Container>
-      </AlertDialog.Backdrop>
-    </AlertDialog>
-  );
 
   if (isLoading) {
     return (
@@ -187,16 +142,22 @@ export default function RecipeDetail() {
             <Copy />
             Duplicate
           </Button>
-          {renderDeleteDialog(
-            <Button
-              aria-label="Delete recipe"
-              className="text-danger"
-              variant="outline"
-            >
-              <Trash2 />
-            </Button>,
-            recipe,
-          )}
+          <LibraryDeleteDialog
+            inUse={inUse}
+            isPending={isDeleting}
+            itemName={recipe.name}
+            label="Recipe"
+            onDelete={() => handleDelete({expectedRevision: recipe.revision, id: recipe.id})}
+            trigger={
+              <Button
+                aria-label="Delete recipe"
+                className="text-danger"
+                variant="outline"
+              >
+                <Trash2 />
+              </Button>
+            }
+          />
         </Page.Actions>
       </Page.Header>
 
@@ -349,17 +310,23 @@ export default function RecipeDetail() {
           >
             <Copy />
           </Button>
-          {renderDeleteDialog(
-            <Button
-              isIconOnly
-              aria-label="Delete recipe"
-              className="text-danger"
-              variant="outline"
-            >
-              <Trash2 />
-            </Button>,
-            recipe,
-          )}
+          <LibraryDeleteDialog
+            inUse={inUse}
+            isPending={isDeleting}
+            itemName={recipe.name}
+            label="Recipe"
+            onDelete={() => handleDelete({expectedRevision: recipe.revision, id: recipe.id})}
+            trigger={
+              <Button
+                isIconOnly
+                aria-label="Delete recipe"
+                className="text-danger"
+                variant="outline"
+              >
+                <Trash2 />
+              </Button>
+            }
+          />
         </div>
       </Page.Content>
     </Page>

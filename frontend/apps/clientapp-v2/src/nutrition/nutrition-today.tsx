@@ -4,7 +4,7 @@
  * A past date renders the same screen; future dates are read-only. Dark + periwinkle.
  */
 
-import {formatDateISO, type MealSlot} from '@easy/utils';
+import {formatDateISO} from '@easy/utils';
 import {Spinner, toast} from '@heroui/react';
 import {Check, ChevronDown, ChevronLeft, ChevronRight, Plus} from 'lucide-react';
 import {useEffect, useRef, useState} from 'react';
@@ -13,9 +13,7 @@ import ErrorState from '@/@components/error-state';
 
 import {ROUTES} from '@/@config/routes';
 import {
-  type DiaryMealSlot,
   type NutritionDayOption,
-  type SwitchOptionRequest,
   useAddExtraMutation,
   useListClientNutritionDaysQuery,
   useLogPlannedDayMutation,
@@ -113,7 +111,7 @@ export default function NutritionToday() {
   const [sheet, setSheet] = useState<null | SheetTarget>(null);
   const [pickerMode, setPickerMode] = useState<'add' | 'replace' | null>(null);
   const [replaceTarget, setReplaceTarget] = useState<null | SheetTarget>(null);
-  const [optionSheetSlot, setOptionSheetSlot] = useState<null | string>(null);
+  const [optionSheetSlot, setOptionSheetSlot] = useState<null | SlotView['slot']>(null);
   const [confirmSwitch, setConfirmSwitch] = useState<null | {option: NutritionDayOption; slot: SlotView}>(null);
 
   const day = dayResp?.data[0] ?? null;
@@ -148,7 +146,7 @@ export default function NutritionToday() {
         date,
         idempotencyKey: intent.key,
         meal_item_id: row.mealItemId,
-        meal_slot: slot.slot as DiaryMealSlot,
+        meal_slot: slot.slot,
       });
       completeDiaryCommand(commandIntents.current, intent);
     } catch (caught) {
@@ -165,7 +163,7 @@ export default function NutritionToday() {
       await logOption.mutateAsync({
         date,
         idempotencyKey: intent.key,
-        meal_slot: slot.slot as DiaryMealSlot,
+        meal_slot: slot.slot,
       });
       completeDiaryCommand(commandIntents.current, intent);
     } catch (caught) {
@@ -221,7 +219,7 @@ export default function NutritionToday() {
           food_id: picked.kind === 'food' ? picked.id : undefined,
           idempotencyKey: intent.key,
           meal_item_id: replacing.mealItemId,
-          meal_slot: replacing.slot as DiaryMealSlot,
+          meal_slot: replacing.slot,
           portion,
           recipe_id: picked.kind === 'recipe' ? picked.id : undefined,
         });
@@ -231,7 +229,7 @@ export default function NutritionToday() {
         await addExtra({
           date,
           food_id: picked.kind === 'food' ? picked.id : undefined,
-          meal_slot: picked.slot as MealSlot,
+          meal_slot: picked.slot,
           portion,
           recipe_id: picked.kind === 'recipe' ? picked.id : undefined,
           idempotencyKey: intent.key,
@@ -272,7 +270,7 @@ export default function NutritionToday() {
         expected_revision: slot.revision,
         idempotencyKey: intent.key,
         meal_id: option.meal_id,
-        meal_slot: slot.slot as SwitchOptionRequest['meal_slot'],
+        meal_slot: slot.slot,
       });
       completeDiaryCommand(commandIntents.current, intent);
       setConfirmSwitch(null);

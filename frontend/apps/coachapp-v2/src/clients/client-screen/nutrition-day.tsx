@@ -10,10 +10,11 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import type {NutritionDayOptionItem, NutritionDayRow, NutritionDaySlot} from '@/api/nutrition-plans-list';
+import type {NutritionDayOptionItem, NutritionDayRow} from '@/api/nutrition-plans-list';
 import {useListCoachNutritionDaysQuery} from '@/api/nutrition-plans-list';
 import {SectionCard} from '@/clients/components/section-card';
 import {formatKcal, formatRowDate} from '@/clients/lib/client-detail-data';
+import {liveOptionItems, slotLabel} from '@/clients/lib/nutrition-day';
 
 /**
  * The design's 64px right column for a row's kcal, so the numbers line up — as a
@@ -153,7 +154,7 @@ export default function NutritionDay() {
                     </Typography>
                   ) : null
                 }
-                title={slotLabel(slot.meal_slot)}
+                title={slotLabel(slot.meal_slot, MEAL_SLOT_LABELS)}
                 titleAs="heading"
               >
                 {rows.map((row, index) => (
@@ -305,15 +306,6 @@ function Total({
       </ProgressBar>
     </div>
   );
-}
-
-function liveOptionItems(slot: NutritionDaySlot): NutritionDayOptionItem[] {
-  const active = slot.options.find((option) => option.meal_id === slot.meal_id) ?? slot.options[0];
-  return active?.items ?? [];
-}
-
-function slotLabel(slot: string): string {
-  return MEAL_SLOT_LABELS[slot as keyof typeof MEAL_SLOT_LABELS] ?? slot;
 }
 
 function LiveItem({item}: {item: NutritionDayOptionItem}) {

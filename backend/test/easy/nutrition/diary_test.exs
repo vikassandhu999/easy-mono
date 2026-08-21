@@ -307,6 +307,21 @@ defmodule Easy.Nutrition.DiaryTest do
   end
 
   describe "log_client_planned_item/4" do
+    test "rejects a valid Meal Slot that is not scheduled in the covering Menu" do
+      %{client: client} = covering_setup()
+      today = local_today(client)
+
+      assert {:error, :not_found} =
+               Diary.log_client_planned_item(
+                 client_ctx(client),
+                 today,
+                 %{meal_slot: :lunch, meal_item_id: Ecto.UUID.generate()},
+                 Ecto.UUID.generate()
+               )
+
+      refute Repo.get_by(DiarySlot, client_id: client.id, local_date: today, meal_slot: :lunch)
+    end
+
     test "logs one planned item as as_planned and freezes the slot on the local day" do
       %{client: client, food: food} = covering_setup()
       today = local_today(client)
@@ -714,7 +729,7 @@ defmodule Easy.Nutrition.DiaryTest do
                  Ecto.UUID.generate()
                )
 
-      entry_id = logged.slots |> hd() |> Map.fetch!(:rows) |> hd() |> Map.fetch!(:entry) |> Map.fetch!(:id)
+      assert [%{rows: [%{entry: %{id: entry_id}}]}] = logged.slots
 
       assert {:ok, away} =
                Diary.switch_client_option(
@@ -816,7 +831,7 @@ defmodule Easy.Nutrition.DiaryTest do
                  Ecto.UUID.generate()
                )
 
-      fulfilment_id = logged.slots |> hd() |> Map.fetch!(:rows) |> hd() |> Map.fetch!(:entry) |> Map.fetch!(:id)
+      assert [%{rows: [%{entry: %{id: fulfilment_id}}]}] = logged.slots
 
       assert {:ok, with_extra} =
                Diary.add_client_extra(ctx, today, extra_attrs(extra, grams: 80.0), Ecto.UUID.generate())
@@ -1423,6 +1438,53 @@ defmodule Easy.Nutrition.DiaryTest do
   end
 
   describe "coach and owner reads" do
+    test "a client context cannot update, delete, or switch another client's Diary rows" do
+      %{client: client, coach: coach} = covering_setup(menu: :two_options)
+      today = local_today(client)
+      ctx = client_ctx(client)
+      meal_item_id = live_meal_item_id(client, today)
+
+      assert {:ok, day} =
+               Diary.log_client_planned_item(
+                 ctx,
+                 today,
+                 %{meal_slot: :breakfast, meal_item_id: meal_item_id},
+                 Ecto.UUID.generate()
+               )
+
+      [slot] = day.slots
+      entry = slot.rows |> Enum.find(& &1.entry) |> Map.fetch!(:entry)
+      other_option = Enum.find(slot.options, &(&1.meal_id != slot.meal_id))
+      peer = insert(:client, business: client.business, creator: coach, assigned_coach: coach)
+      peer_ctx = client_ctx(peer)
+
+      assert {:error, :not_found} =
+               Diary.update_client_entry(
+                 peer_ctx,
+                 today,
+                 entry.id,
+                 %{expected_revision: entry.revision, notes: "forged"},
+                 Ecto.UUID.generate()
+               )
+
+      assert {:error, :not_found} =
+               Diary.delete_client_entry(
+                 peer_ctx,
+                 today,
+                 entry.id,
+                 %{expected_revision: entry.revision},
+                 Ecto.UUID.generate()
+               )
+
+      assert {:error, :not_found} =
+               Diary.switch_client_option(
+                 peer_ctx,
+                 today,
+                 %{meal_slot: :breakfast, meal_id: other_option.meal_id, expected_revision: slot.revision},
+                 Ecto.UUID.generate()
+               )
+    end
+
     test "return the same Nutrition Day as the client" do
       %{client: client, coach: coach, plan: plan} = covering_setup()
       today = local_today(client)

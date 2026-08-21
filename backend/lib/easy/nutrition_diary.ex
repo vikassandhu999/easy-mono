@@ -446,7 +446,7 @@ defmodule Easy.Nutrition.Diary do
       food_id: item.food_id,
       recipe_id: item.recipe_id,
       position: item.position,
-      portion: portion_data(item),
+      portion: frozen_portion(item),
       nutrients: NutrientTotals.from_fields(item)
     }
   end
@@ -486,10 +486,6 @@ defmodule Easy.Nutrition.Diary do
   defp item_name(%MealItem{food: %Food{name: name}}), do: name
   defp item_name(%MealItem{recipe: %Recipe{name: name}}), do: name
   defp item_name(_item), do: nil
-
-  defp portion_data(%MealItem{} = item) do
-    %{kind: item.portion_kind, grams: item.weight_g, amount: item.amount, unit: item.unit, label: item.serving_label}
-  end
 
   defp frozen_portion(item) do
     %{
@@ -1325,11 +1321,18 @@ defmodule Easy.Nutrition.Diary do
       Date.compare(date, today) != :eq ->
         {:error, :cannot_start_past_slot}
 
-      match?({false, _}, coverage_guidance(ctx, date)) ->
+      not scheduled_meal_slot?(ctx, date, meal_slot) ->
         {:error, :not_found}
 
       true ->
         {:ok, insert_slot!(ctx, client, date, timezone, today, meal_slot)}
+    end
+  end
+
+  defp scheduled_meal_slot?(ctx, date, meal_slot) do
+    case coverage_guidance(ctx, date) do
+      {false, nil} -> false
+      {true, guidance} -> Enum.any?(live_slots(guidance.day_pattern, guidance.plan, nil, true), &(&1.meal_slot == meal_slot))
     end
   end
 

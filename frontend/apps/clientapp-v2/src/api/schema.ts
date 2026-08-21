@@ -572,7 +572,7 @@ export interface paths {
     };
     /**
      * Get client nutrition plan
-     * @description Loads one unarchived Client Nutrition Plan assigned to the authenticated client.
+     * @description Loads one Client Nutrition Plan assigned to the authenticated client, including an archived plan.
      */
     get: operations['getClientNutritionPlan'];
     put?: never;
@@ -1146,20 +1146,20 @@ export interface components {
     };
     /** FoodImpactResponse */
     FoodImpactResponse: {
-      data?: {
-        active_client_plans?: {
-          client_id?: string | null;
-          id?: string;
-          name?: string;
+      data: {
+        active_client_plans: {
+          client_id: string | null;
+          id: string;
+          name: string;
         }[];
-        recipes?: {
-          id?: string;
-          name?: string;
+        recipes: {
+          id: string;
+          name: string;
         }[];
-        templates?: {
-          client_id?: string | null;
-          id?: string;
-          name?: string;
+        templates: {
+          client_id: string | null;
+          id: string;
+          name: string;
         }[];
       };
     };
@@ -1484,7 +1484,6 @@ export interface components {
       amount?: number | null;
       /** Format: uuid */
       food_id: string;
-      position?: number;
       unit?: string | null;
       weight_g: number;
     };
@@ -3296,7 +3295,7 @@ export interface components {
     /** NutritionDayEntry */
     NutritionDayEntry: {
       /** Format: uuid */
-      food_id?: string | null;
+      food_id: string | null;
       /** Format: uuid */
       id: string;
       /** Format: date-time */
@@ -3304,11 +3303,11 @@ export interface components {
       /** @enum {string} */
       kind: 'food' | 'recipe';
       name: string;
-      notes?: string | null;
+      notes: string | null;
       nutrients: components['schemas']['NutrientTotals'];
       portion: components['schemas']['NutritionPortion'];
       /** Format: uuid */
-      recipe_id?: string | null;
+      recipe_id: string | null;
       revision: number;
       /** Format: date-time */
       updated_at: string;
@@ -3862,8 +3861,8 @@ export interface components {
     };
     /** NutritionDayRow */
     NutritionDayRow: {
-      entry?: components['schemas']['NutritionDayEntry'] | null;
-      planned?: components['schemas']['NutritionDayOptionItem'] | null;
+      entry: components['schemas']['NutritionDayEntry'] | null;
+      planned: components['schemas']['NutritionDayOptionItem'] | null;
       /** @enum {string} */
       status: 'as_planned' | 'swapped' | 'pending' | 'skipped' | 'added' | 'recorded';
     };
@@ -6654,6 +6653,24 @@ export interface operations {
       };
       /** @description Unauthorized */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Client inactive */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Nutrition Day slot or option not found */
+      404: {
         headers: {
           [name: string]: unknown;
         };

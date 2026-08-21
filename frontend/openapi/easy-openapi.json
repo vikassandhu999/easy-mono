@@ -847,6 +847,11 @@
                       "x-validate": null
                     }
                   },
+                  "required": [
+                    "id",
+                    "name",
+                    "client_id"
+                  ],
                   "type": "object",
                   "x-struct": null,
                   "x-validate": null
@@ -869,6 +874,10 @@
                       "x-validate": null
                     }
                   },
+                  "required": [
+                    "id",
+                    "name"
+                  ],
                   "type": "object",
                   "x-struct": null,
                   "x-validate": null
@@ -897,6 +906,11 @@
                       "x-validate": null
                     }
                   },
+                  "required": [
+                    "id",
+                    "name",
+                    "client_id"
+                  ],
                   "type": "object",
                   "x-struct": null,
                   "x-validate": null
@@ -906,11 +920,19 @@
                 "x-validate": null
               }
             },
+            "required": [
+              "recipes",
+              "templates",
+              "active_client_plans"
+            ],
             "type": "object",
             "x-struct": null,
             "x-validate": null
           }
         },
+        "required": [
+          "data"
+        ],
         "title": "FoodImpactResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.FoodImpactResponse",
@@ -2006,12 +2028,6 @@
           "food_id": {
             "format": "uuid",
             "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "position": {
-            "minimum": 0,
-            "type": "integer",
             "x-struct": null,
             "x-validate": null
           },
@@ -4633,6 +4649,7 @@
             "x-validate": null
           },
           "notes": {
+            "maxLength": 255,
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -7717,6 +7734,7 @@
             "x-validate": null
           },
           "notes": {
+            "maxLength": 255,
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -8251,6 +8269,7 @@
             "x-validate": null
           },
           "notes": {
+            "maxLength": 255,
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -8696,6 +8715,7 @@
             "x-validate": null
           },
           "notes": {
+            "maxLength": 255,
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -8731,8 +8751,11 @@
           "id",
           "kind",
           "name",
+          "food_id",
+          "recipe_id",
           "portion",
           "nutrients",
+          "notes",
           "revision",
           "inserted_at",
           "updated_at"
@@ -10851,7 +10874,9 @@
           }
         },
         "required": [
-          "status"
+          "status",
+          "planned",
+          "entry"
         ],
         "title": "NutritionDayRow",
         "type": "object",
@@ -20022,7 +20047,7 @@
     "/v1/client/nutrition-plans/{id}": {
       "get": {
         "callbacks": {},
-        "description": "Loads one unarchived Client Nutrition Plan assigned to the authenticated client.",
+        "description": "Loads one Client Nutrition Plan assigned to the authenticated client, including an archived plan.",
         "operationId": "getClientNutritionPlan",
         "parameters": [
           {
@@ -22382,6 +22407,26 @@
               }
             },
             "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Client inactive"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Nutrition Day slot or option not found"
           },
           "409": {
             "content": {

@@ -8,7 +8,7 @@ import {Button} from '@heroui/react';
 import {useState} from 'react';
 
 import DateInput from '@/@components/date-input';
-import {periodError} from '@/@components/plan-period';
+import {periodError} from '@/clients/lib/plan-coverage';
 
 interface PlanPeriodCardProps {
   startDate: string | null;

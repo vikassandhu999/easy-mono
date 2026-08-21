@@ -1,12 +1,12 @@
 import {toast} from '@heroui/react';
 
 import {toastMutationError} from '@/@components/mutation-toast';
-import {periodError} from '@/@components/plan-period';
 import type {TrainingExercise} from '@/api/training-exercises';
 import type {TrainingPlan, TrainingPlanWorkout, TrainingPlanWorkoutExercise} from '@/api/training-plan-builder';
 import * as api from '@/api/training-plan-builder';
 import {createLocalNodeId} from '@/api/training-prescription';
 import {createCoalescingQueue} from '@/builder-kit/coalescing-queue';
+import {periodError} from '@/clients/lib/plan-coverage';
 import {handleStaleTrainingPlanConflict} from '@/training-plans/lib/stale-training-plan-conflict';
 import {findElement, findWorkout, moveId} from './plan-tree';
 import {clearWorkoutFromSchedule, type Day, setScheduleDay} from './schedule';

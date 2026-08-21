@@ -43,10 +43,9 @@ export function recipeIngredientsToDrafts(ingredients: RecipeIngredient[]): Ingr
     }));
 }
 
-function recipeIngredientDraftToApi(item: IngredientItem, index: number): RecipeIngredientRequest {
+function recipeIngredientDraftToApi(item: IngredientItem): RecipeIngredientRequest {
   return omitUndefined({
     food_id: item.food_id,
-    position: index,
     unit: toOptionalText(item.unit),
     amount: toOptionalNumber(item.amount),
     weight_g: toOptionalNumber(item.weight_g),

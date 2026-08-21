@@ -222,5 +222,18 @@ defmodule Easy.Repo.Migrations.RebuildNutritionProgramming do
     ADD CONSTRAINT nutrition_plans_source_template_id_fkey
     FOREIGN KEY (source_template_id) REFERENCES nutrition_plans(id) ON DELETE SET NULL
     """)
+
+    execute(
+      """
+      ALTER TABLE nutrition_plans
+      ADD CONSTRAINT nutrition_plans_no_overlapping_active
+      EXCLUDE USING gist (
+        client_id WITH =,
+        daterange(start_date, end_date, '[]') WITH &&
+      )
+      WHERE (client_id IS NOT NULL AND status = 'active')
+      """,
+      "ALTER TABLE nutrition_plans DROP CONSTRAINT nutrition_plans_no_overlapping_active"
+    )
   end
 end

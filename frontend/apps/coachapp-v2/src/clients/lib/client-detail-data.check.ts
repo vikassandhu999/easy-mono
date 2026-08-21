@@ -24,6 +24,7 @@ import {
 } from './client.ts';
 import {
   averageLoggedCalories,
+  type CompletedSession,
   completedCheckIns,
   completedSessionDates,
   formatCompactDuration,
@@ -33,11 +34,13 @@ import {
   formatWeight,
   lastNDays,
   loggedMealDates,
+  type NutritionDayLog,
   parseDay,
   relativeDay,
   sparklinePoints,
   startOfWeek,
   toDayIso,
+  type WeightTrendEntry,
   weekdayInitial,
   weekGroupLabel,
   weightTrend,
@@ -184,12 +187,11 @@ assert.equal(formatWeight(73, 'kg'), '73.0 kg', 'CD-WH keeps the trailing zero')
 assert.equal(formatWeight(68, 'kg', {decimals: 0}), '68 kg', 'the goal has no decimal');
 
 // — adherence derivation ———————————————————————————————————————————————
-const sessions = [
+const sessions: CompletedSession[] = [
   {date: '2026-07-21', state: 'completed'},
   {date: '2026-07-20', state: 'discarded'},
   {date: '2026-07-17', state: 'completed'},
-  {date: null, state: 'completed'},
-] as any;
+];
 assert.deepEqual(
   [...completedSessionDates(sessions)].sort(),
   ['2026-07-17', '2026-07-21'],
@@ -197,11 +199,11 @@ assert.deepEqual(
 );
 assert.equal(completedSessionDates(undefined).size, 0);
 
-const days = [
+const days: NutritionDayLog[] = [
   {date: '2026-07-21', summary: {has_intake: true, logged: {calories: 1720}}},
   {date: '2026-07-20', summary: {has_intake: false, logged: {calories: null}}},
   {date: '2026-07-19', summary: {has_intake: true, logged: {calories: 1820}}},
-] as any;
+];
 assert.deepEqual([...loggedMealDates(days)].sort(), ['2026-07-19', '2026-07-21'], 'an empty log day is not logged');
 // 21 Jul is 1720 (the design's figure), 19 Jul is 1820 -> mean 1770.
 assert.equal(averageLoggedCalories(days), 1770, 'per-DAY totals are averaged, not per-meal rows');
@@ -211,10 +213,10 @@ assert.equal(completedCheckIns([{status: 'completed'}, {status: 'assigned'}, {st
 assert.equal(completedCheckIns(undefined), 0);
 
 // — the weight trend: CD-OV shows ▼ 1.2 kg in 4 weeks ——————————————————————
-const entries = [
+const entries: WeightTrendEntry[] = [
   {date: '2026-07-21', id: 'd', unit: 'kg', value: 72.4},
   {date: '2026-06-23', id: 'a', unit: 'kg', value: 73.6},
-] as any;
+];
 const trend = weightTrend(entries, 68);
 assert.equal(trend?.direction, 'down');
 assert.equal(trend?.magnitude, 1.2, '73.6 -> 72.4 is 1.2, not 1.2000000000000028');
@@ -228,7 +230,7 @@ assert.equal(
     [
       {date: '2026-07-01', value: 70, unit: 'kg', id: 'x'},
       {date: '2026-07-21', value: 70, unit: 'kg', id: 'y'},
-    ] as never,
+    ],
     null,
   )?.direction,
   'flat',

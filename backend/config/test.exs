@@ -25,6 +25,7 @@ config :easy, Easy.Mailer, adapter: Swoosh.Adapters.Test
 
 config :easy, start_client_subscription_sweeper: false
 config :easy, start_check_in_sweeper: false
+config :easy, start_nutrition_diary_ledger_sweeper: false
 
 config :easy, Easy.Storage,
   endpoint: "https://storage.example.test",

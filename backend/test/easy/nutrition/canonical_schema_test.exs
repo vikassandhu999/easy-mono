@@ -449,6 +449,27 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
   end
 
   describe "canonical Nutrition Diary constraints" do
+    test "cascade and Diary lookup indexes cover their leading foreign-key filters" do
+      rows =
+        Repo.query!("""
+        SELECT indexname
+        FROM pg_indexes
+        WHERE schemaname = current_schema()
+          AND indexname IN (
+            'nutrition_week_schedule_pattern_index',
+            'nutrition_meal_options_meal_index',
+            'nutrition_diary_entries_business_slot_index'
+          )
+        """).rows
+
+      assert MapSet.new(rows, fn [name] -> name end) ==
+               MapSet.new([
+                 "nutrition_week_schedule_pattern_index",
+                 "nutrition_meal_options_meal_index",
+                 "nutrition_diary_entries_business_slot_index"
+               ])
+    end
+
     test "the database rejects a duplicate Diary Slot identity" do
       client = insert(:client)
       today = Date.utc_today()
@@ -540,6 +561,38 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
 
       assert_raise Postgrex.Error, fn ->
         Repo.insert_all("nutrition_diary_entries", [entry.()])
+      end
+    end
+
+    test "a Diary Entry cannot carry a different client from its Diary Slot" do
+      business = insert(:business)
+      slot_client = insert(:client, business: business)
+      other_client = insert(:client, business: business)
+      slot = diary_slot_row(slot_client, Date.utc_today())
+
+      Repo.insert_all("nutrition_diary_slots", [slot])
+
+      assert_raise Postgrex.Error, fn ->
+        Repo.insert_all("nutrition_diary_entries", [
+          diary_entry_row(other_client, slot.id)
+        ])
+      end
+    end
+
+    test "a Diary Entry's frozen option must belong to its Diary Slot" do
+      client = insert(:client)
+      today = Date.utc_today()
+      entry_slot = diary_slot_row(client, today)
+      other_slot = diary_slot_row(client, today, meal_slot: "lunch")
+      other_option = frozen_option_row(client, other_slot.id)
+
+      Repo.insert_all("nutrition_diary_slots", [entry_slot, other_slot])
+      Repo.insert_all("nutrition_diary_frozen_options", [other_option])
+
+      assert_raise Postgrex.Error, fn ->
+        Repo.insert_all("nutrition_diary_entries", [
+          diary_entry_row(client, entry_slot.id, frozen_option_id: other_option.id)
+        ])
       end
     end
   end
@@ -677,6 +730,27 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       business_id: dump_uuid(client.business_id),
       nutrition_diary_slot_id: slot_id
     })
+  end
+
+  defp diary_entry_row(client, slot_id, overrides \\ []) do
+    timestamps(
+      Map.merge(
+        %{
+          id: dump_uuid(),
+          kind: "food",
+          display_name: "Oats",
+          portion_kind: "gram",
+          weight_g: 50.0,
+          complete: false,
+          revision: 1,
+          business_id: dump_uuid(client.business_id),
+          client_id: dump_uuid(client.id),
+          nutrition_diary_slot_id: slot_id,
+          source_food_id: dump_uuid()
+        },
+        Map.new(overrides)
+      )
+    )
   end
 
   defp ledger_row(client, key) do

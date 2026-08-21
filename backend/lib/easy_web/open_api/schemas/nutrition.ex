@@ -12,8 +12,7 @@ defmodule EasyWeb.OpenApi.Schemas.RecipeIngredientRequest do
         food_id: %Schema{type: :string, format: :uuid},
         unit: %Schema{type: :string, nullable: true},
         amount: %Schema{type: :number, nullable: true},
-        weight_g: %Schema{type: :number, exclusiveMinimum: true, minimum: 0},
-        position: %Schema{type: :integer, minimum: 0}
+        weight_g: %Schema{type: :number, exclusiveMinimum: true, minimum: 0}
       },
       required: [:food_id, :weight_g]
     },
@@ -294,12 +293,24 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionDayEntry do
           recipe_id: %Schema{type: :string, format: :uuid, nullable: true},
           portion: NutritionPortion,
           nutrients: NutrientTotals,
-          notes: %Schema{type: :string, nullable: true},
+          notes: %Schema{type: :string, maxLength: 255, nullable: true},
           revision: %Schema{type: :integer, minimum: 1}
         },
         Shared.timestamps()
       ),
-    required: [:id, :kind, :name, :portion, :nutrients, :revision, :inserted_at, :updated_at]
+    required: [
+      :id,
+      :kind,
+      :name,
+      :food_id,
+      :recipe_id,
+      :portion,
+      :nutrients,
+      :notes,
+      :revision,
+      :inserted_at,
+      :updated_at
+    ]
   })
 end
 
@@ -321,7 +332,7 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionDayRow do
       planned: %Schema{allOf: [NutritionDayOptionItem], nullable: true},
       entry: %Schema{allOf: [NutritionDayEntry], nullable: true}
     },
-    required: [:status]
+    required: [:status, :planned, :entry]
   })
 end
 
@@ -341,7 +352,7 @@ defmodule EasyWeb.OpenApi.Schemas.DiaryAddExtraRequest do
         food_id: %Schema{type: :string, format: :uuid, nullable: true},
         recipe_id: %Schema{type: :string, format: :uuid, nullable: true},
         portion: NutritionPortionInput,
-        notes: %Schema{type: :string, nullable: true}
+        notes: %Schema{type: :string, maxLength: 255, nullable: true}
       },
       required: [:meal_slot, :portion],
       example: %{
@@ -441,7 +452,7 @@ defmodule EasyWeb.OpenApi.Schemas.DiaryReplacePlannedItemRequest do
         food_id: %Schema{type: :string, format: :uuid, nullable: true},
         recipe_id: %Schema{type: :string, format: :uuid, nullable: true},
         portion: NutritionPortionInput,
-        notes: %Schema{type: :string, nullable: true},
+        notes: %Schema{type: :string, maxLength: 255, nullable: true},
         expected_revision: %Schema{type: :integer, minimum: 1}
       },
       required: [:meal_slot, :meal_item_id, :portion, :expected_revision],
@@ -471,7 +482,7 @@ defmodule EasyWeb.OpenApi.Schemas.DiaryUpdateEntryRequest do
       properties: %{
         expected_revision: %Schema{type: :integer, minimum: 1},
         portion: NutritionPortionInput,
-        notes: %Schema{type: :string, nullable: true}
+        notes: %Schema{type: :string, maxLength: 255, nullable: true}
       },
       required: [:expected_revision],
       example: %{

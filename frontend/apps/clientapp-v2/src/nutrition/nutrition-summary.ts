@@ -3,16 +3,13 @@
  * backend-derived; this module only formats them.
  */
 
-export type NutritionSummaryAdherence = 'none' | 'on' | 'over' | 'under';
+import type {NutritionDay} from '@/api/nutrition';
+
+export type NutritionSummaryAdherence = NonNullable<NutritionDay['summary']['adherence']>;
 
 export type Adherence = NutritionSummaryAdherence | 'unknown';
 
-type SummaryDay = {
-  summary: {
-    adherence?: NutritionSummaryAdherence | null;
-    has_intake: boolean;
-  };
-};
+type SummaryDay = {summary: Pick<NutritionDay['summary'], 'adherence' | 'has_intake'>};
 
 export const ADHERENCE_RING: Record<Adherence, string> = {
   none: '#d6d8dc',

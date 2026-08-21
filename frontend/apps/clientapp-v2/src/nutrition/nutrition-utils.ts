@@ -49,7 +49,7 @@ export type SlotView = {
   plannedCalories: null | number;
   revision: number;
   rows: SlotRow[];
-  slot: string;
+  slot: NutritionDaySlot['meal_slot'];
   writeEligible: boolean;
 };
 
@@ -108,7 +108,7 @@ function diaryRow(row: NutritionDayRow): SlotRow {
 }
 
 function slotShell(
-  slot: string,
+  slot: NutritionDaySlot['meal_slot'],
   daySlot: NutritionDaySlot,
   option: NutritionDayOption | null,
   rows: SlotRow[],
@@ -126,7 +126,7 @@ function slotShell(
     allPlannedLogged,
     hasLog,
     hasPlannedLog,
-    label: MEAL_SLOT_LABELS[slot as keyof typeof MEAL_SLOT_LABELS] ?? slot,
+    label: MEAL_SLOT_LABELS[slot] ?? slot,
     loggedCalories,
     mealId: option?.meal_id ?? daySlot.meal_id ?? null,
     options: daySlot.options,

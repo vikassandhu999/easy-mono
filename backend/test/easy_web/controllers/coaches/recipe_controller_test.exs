@@ -136,7 +136,8 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
       coach: coach,
       business: business
     } do
-      food = insert(:food, creator: coach, business: business)
+      media = insert(:library_media, business: business, uploaded_by_id: coach.id)
+      food = insert(:food, creator: coach, business: business, media: media)
       recipe = insert(:recipe, creator: coach, business: business)
       insert(:recipe_ingredient, business: business, recipe: recipe, food: food)
 
@@ -146,6 +147,7 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
       assert [ingredient] = data["recipe_ingredients"]
       assert ingredient["food_id"] == food.id
       assert ingredient["food"]["id"] == food.id
+      assert ingredient["food"]["media"]["id"] == media.id
     end
 
     test "returns 404 for non-existent recipe", %{conn: conn} do

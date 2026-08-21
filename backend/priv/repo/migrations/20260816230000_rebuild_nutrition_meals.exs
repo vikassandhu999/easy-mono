@@ -13,6 +13,7 @@ defmodule Easy.Repo.Migrations.RebuildNutritionMeals do
 
     alter table(:nutrition_meals) do
       add :position, :integer, null: false, default: 0
+      remove :creator_id
     end
 
     create unique_index(:nutrition_meals, [:id, :nutrition_plan_id, :business_id])
@@ -114,6 +115,10 @@ defmodule Easy.Repo.Migrations.RebuildNutritionMeals do
   end
 
   def down do
+    alter table(:nutrition_meals) do
+      add :creator_id, references(:coaches, type: :binary_id, on_delete: :nilify_all)
+    end
+
     drop_if_exists constraint(:nutrition_meal_items, :nutrition_meal_items_recipe_id_fkey)
     drop_if_exists constraint(:nutrition_meal_items, :nutrition_meal_items_food_id_fkey)
 

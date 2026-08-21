@@ -8,7 +8,13 @@ import {Spinner} from '@heroui/react';
 import {X} from 'lucide-react';
 import {useEffect, useRef, useState} from 'react';
 
-import {type Food, type Recipe, useListClientFoodsQuery, useListClientRecipesQuery} from '@/api/nutrition';
+import {
+  type DiaryMealSlot,
+  type Food,
+  type Recipe,
+  useListClientFoodsQuery,
+  useListClientRecipesQuery,
+} from '@/api/nutrition';
 
 function recipeCaloriesLabel(recipe: Recipe): string {
   const kcal = recipe.nutrients.calories;
@@ -24,7 +30,7 @@ export type Picked = {
   kind: 'food' | 'recipe';
   name: string;
   perUnit: string;
-  slot: string;
+  slot: DiaryMealSlot;
 };
 
 // A recipe's portion comes from its yield: cooked_weight_g / servings_count.
@@ -49,7 +55,7 @@ export default function FoodPicker({
   onClose,
   onPick,
 }: {
-  defaultSlot?: string;
+  defaultSlot?: DiaryMealSlot;
   onClose: () => void;
   onPick: (picked: Picked) => void;
   showSlotPicker?: boolean;
@@ -58,7 +64,7 @@ export default function FoodPicker({
   const [q, setQ] = useState('');
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<'foods' | 'recipes'>('foods');
-  const [slot, setSlot] = useState(defaultSlot ?? 'lunch');
+  const [slot, setSlot] = useState<DiaryMealSlot>(defaultSlot ?? 'lunch');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => inputRef.current?.focus(), []);
@@ -73,8 +79,8 @@ export default function FoodPicker({
   const recipes = useListClientRecipesQuery(query, {enabled: tab === 'recipes'});
 
   const loading = tab === 'foods' ? foods.isFetching : recipes.isFetching;
-  const foodItems = (foods.data?.data ?? []) as Food[];
-  const recipeItems = (recipes.data?.data ?? []) as Recipe[];
+  const foodItems = foods.data?.data ?? [];
+  const recipeItems = recipes.data?.data ?? [];
 
   const pickFood = (f: Food) =>
     onPick({

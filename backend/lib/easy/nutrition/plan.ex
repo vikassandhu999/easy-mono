@@ -40,7 +40,6 @@ defmodule Easy.Nutrition.Plan do
     field(:description, :string)
     field(:revision, :integer, default: 1)
     field(:archived_at, :utc_datetime)
-    field(:status, Ecto.Enum, values: [:active, :archived], virtual: true, default: :active)
     field(:lifecycle, Ecto.Enum, values: @lifecycles, virtual: true)
     field(:assigned_client_count, :integer, virtual: true, default: 0)
     field(:target_calories, :float)
@@ -64,9 +63,6 @@ defmodule Easy.Nutrition.Plan do
 
   @spec kinds() :: [atom()]
   def kinds, do: @kinds
-
-  @spec statuses() :: [atom()]
-  def statuses, do: [:active, :archived]
 
   @spec lifecycles() :: [atom()]
   def lifecycles, do: @lifecycles
@@ -265,13 +261,6 @@ defmodule Easy.Nutrition.Plan do
   def for_archived(query, nil), do: query
   def for_archived(query, true), do: from(plan in query, where: not is_nil(plan.archived_at))
   def for_archived(query, false), do: from(plan in query, where: is_nil(plan.archived_at))
-
-  @spec for_status(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
-  def for_status(query \\ __MODULE__, status)
-  def for_status(query, nil), do: query
-  def for_status(query, ""), do: query
-  def for_status(query, :active), do: for_archived(query, false)
-  def for_status(query, :archived), do: for_archived(query, true)
 
   @spec for_search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
   def for_search(query \\ __MODULE__, term)

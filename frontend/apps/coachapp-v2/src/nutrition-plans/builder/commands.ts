@@ -14,7 +14,6 @@
 import {toast} from '@heroui/react';
 
 import {toastMutationError} from '@/@components/mutation-toast';
-import {periodError} from '@/@components/plan-period';
 import {createLocalNodeId, emptyNutrients, mealItemFromDraft, nextPosition, reorderNodes} from '@/api/nutrition-menu';
 import type {
   NutritionDayPatternSlot,
@@ -24,23 +23,15 @@ import type {
 } from '@/api/nutrition-plan-builder';
 import * as api from '@/api/nutrition-plan-builder';
 import {createCoalescingQueue} from '@/builder-kit/coalescing-queue';
+import {periodError} from '@/clients/lib/plan-coverage';
 import {coverageErrorMessage} from '@/nutrition-plans/lib/coverage-error';
 import {handleStaleNutritionPlanConflict} from '@/nutrition-plans/lib/stale-nutrition-plan-conflict';
 
 import type {MealItemDraft} from './amount-draft';
 import {changeOptionSlot, copyWithItemPortion} from './commands-state';
 
-import {
-  dropEmptySlots,
-  findItem,
-  findMeal,
-  findPattern,
-  getDays,
-  getWeekdayAssignments,
-  type NutritionPlanDay,
-  reindexSlotOptions,
-  removeMealFromPatterns,
-} from './plan-tree';
+import {findItem, findMeal, findPattern, getDays, getWeekdayAssignments, type NutritionPlanDay} from './plan-tree';
+import {dropEmptySlots, reindexSlotOptions, removeMealFromPatterns} from './plan-tree-mutations';
 import {assignWeekday, reassignWeekdays} from './schedule';
 import type {BuilderMealSlot} from './slots';
 

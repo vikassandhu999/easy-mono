@@ -18,9 +18,8 @@
  *
  * Foods resolve `weight_g` from a serving-size tap (weight × count) or typed
  * grams; recipes resolve via serving count or typed grams. The macro preview
- * is live and mirrors the backend's MacroCalc, falling back to linear scaling
- * of the stored nutrition snapshot when the source record can't price a
- * weighed amount.
+ * is live and falls back to linear scaling of the stored nutrition snapshot
+ * when the source record can't price a weighed amount.
  */
 
 import {computeMacrosFromSnapshot} from '@easy/utils';

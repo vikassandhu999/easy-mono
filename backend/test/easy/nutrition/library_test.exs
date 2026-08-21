@@ -1,8 +1,7 @@
 defmodule Easy.Nutrition.LibraryTest do
   use Easy.SchemaCase
 
-  alias Easy.Nutrition.Food
-  alias Easy.Nutrition.Library
+  alias Easy.Nutrition.{Food, Library, NutrientTotals}
   alias Easy.Repo
 
   describe "create_food/2" do
@@ -15,6 +14,14 @@ defmodule Easy.Nutrition.LibraryTest do
       assert food.business_id == coach.business_id
       assert food.creator_id == coach.id
       assert food.revision == 1
+    end
+
+    test "trusts the coach identity carried by Ctx" do
+      coach = insert(:coach)
+      ctx = %{trainer_ctx(coach) | user_id: Ecto.UUID.generate()}
+
+      assert {:ok, food} = Library.create_food(ctx, atomize(params_for(:food_attrs)))
+      assert food.creator_id == coach.id
     end
 
     test "allows a food with no serving sizes" do
@@ -70,7 +77,7 @@ defmodule Easy.Nutrition.LibraryTest do
       assert food.carbs_g_per_100g == nil
       assert food.fat_g_per_100g == nil
       assert food.fiber_g_per_100g == nil
-      refute Library.food_nutrients(food).complete
+      refute NutrientTotals.from_food(food).complete
     end
   end
 
@@ -200,6 +207,16 @@ defmodule Easy.Nutrition.LibraryTest do
       assert {:ok, %{count: 1, foods: [food]}} = Library.list_foods(trainer_ctx(coach))
       assert food.name == "Ours"
     end
+
+    test "honors requested page sizes through the shared maximum" do
+      coach = insert(:coach)
+      insert_list(21, :food, business: coach.business, creator: coach)
+
+      assert {:ok, %{count: 21, foods: foods}} =
+               Library.list_foods(trainer_ctx(coach), limit: 100)
+
+      assert length(foods) == 21
+    end
   end
 
   describe "resolve_food_portion/2" do
@@ -239,26 +256,6 @@ defmodule Easy.Nutrition.LibraryTest do
       food = insert(:food)
 
       assert {:error, :invalid_portion} = Library.resolve_food_portion(food, %{kind: :gram, grams: 0})
-    end
-  end
-
-  describe "food_nutrients/1" do
-    test "exposes completeness from the five canonical fields" do
-      complete = %Food{
-        calories_per_100g: 10.16,
-        protein_g_per_100g: 1.0,
-        carbs_g_per_100g: 2.0,
-        fat_g_per_100g: 3.0,
-        fiber_g_per_100g: 4.0
-      }
-
-      nutrients = Library.food_nutrients(complete)
-      assert nutrients.calories == 10.16
-      assert nutrients.complete
-
-      incomplete = Library.food_nutrients(%Food{calories_per_100g: 10.16})
-      refute incomplete.complete
-      assert incomplete.protein == nil
     end
   end
 

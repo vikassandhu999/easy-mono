@@ -17,6 +17,7 @@ import {PlanPanel} from '@/clients/client-screen/plan-panel';
 import PlanAssignControl from '@/clients/components/plan-assign-control';
 import {SectionCard} from '@/clients/components/section-card';
 import {formatDayMonth, formatKcal, formatRowDate, lastNDays} from '@/clients/lib/client-detail-data';
+import {adherenceBand, caloriePct, type DayTotals, nutritionDayTotals} from '@/clients/lib/nutrition-summary';
 import {handleStaleNutritionPlanConflict} from '@/nutrition-plans/lib/stale-nutrition-plan-conflict';
 
 /** CD-NU: the active plan, then 14 days of adherence. */
@@ -74,15 +75,7 @@ export function NutritionTab({client}: {client: Client}) {
     if (day.slots.length === 0) {
       continue;
     }
-    byDay.set(day.date.slice(0, 10), {
-      added: day.summary.counts.added,
-      adherence: day.summary.adherence ?? null,
-      hasIntake: day.summary.has_intake,
-      logged: day.summary.logged.calories,
-      skipped: day.summary.counts.skipped,
-      swapped: day.summary.counts.swapped,
-      target: day.targets.calories,
-    });
+    byDay.set(day.date.slice(0, 10), nutritionDayTotals(day));
   }
 
   return (
@@ -145,41 +138,6 @@ export function NutritionTab({client}: {client: Client}) {
       </SectionCard>
     </div>
   );
-}
-
-type DayTotals = {
-  added: number;
-  adherence: 'none' | 'on' | 'over' | 'under' | null;
-  hasIntake: boolean;
-  logged: null | number;
-  skipped: number;
-  swapped: number;
-  target: null | number | undefined;
-};
-
-function caloriePct(totals: DayTotals | undefined): null | number {
-  if (!totals || totals.adherence == null || totals.adherence === 'none') {
-    return null;
-  }
-  const logged = Number(totals.logged);
-  const target = Number(totals.target);
-  if (!Number.isFinite(logged) || !Number.isFinite(target) || target <= 0) {
-    return null;
-  }
-  return Math.round((logged / target) * 100);
-}
-
-function adherenceBand(totals: DayTotals | undefined): 'danger' | 'success' | 'warning' | null {
-  if (totals?.adherence === 'on') {
-    return 'success';
-  }
-  if (totals?.adherence === 'under') {
-    return 'warning';
-  }
-  if (totals?.adherence === 'over') {
-    return 'danger';
-  }
-  return null;
 }
 
 /**

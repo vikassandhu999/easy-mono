@@ -45,7 +45,8 @@ defmodule Easy.Repo.Migrations.AddNutritionRecipeLibraryInvariants do
   def down do
     drop index(
            :nutrition_recipe_ingredients,
-           :nutrition_recipe_ingredients_recipe_id_position_index
+           [:recipe_id, :position],
+           name: :nutrition_recipe_ingredients_recipe_id_position_index
          )
 
     drop constraint(

@@ -237,7 +237,8 @@ defmodule EasyWeb.OpenApi.Schemas.FoodImpactResponse do
       id: %Schema{type: :string},
       name: %Schema{type: :string},
       client_id: %Schema{type: :string, nullable: true}
-    }
+    },
+    required: [:id, :name, :client_id]
   }
 
   @recipe_ref %Schema{
@@ -245,7 +246,8 @@ defmodule EasyWeb.OpenApi.Schemas.FoodImpactResponse do
     properties: %{
       id: %Schema{type: :string},
       name: %Schema{type: :string}
-    }
+    },
+    required: [:id, :name]
   }
 
   OpenApiSpex.schema(%{
@@ -258,9 +260,11 @@ defmodule EasyWeb.OpenApi.Schemas.FoodImpactResponse do
           recipes: %Schema{type: :array, items: @recipe_ref},
           templates: %Schema{type: :array, items: @plan_ref},
           active_client_plans: %Schema{type: :array, items: @plan_ref}
-        }
+        },
+        required: [:recipes, :templates, :active_client_plans]
       }
-    }
+    },
+    required: [:data]
   })
 end
 

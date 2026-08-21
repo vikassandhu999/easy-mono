@@ -1,7 +1,7 @@
 defmodule Easy.Nutrition.Recipe do
   use Ecto.Schema
 
-  alias Easy.Nutrition.RecipeIngredient
+  alias Easy.Nutrition.{Food, RecipeIngredient}
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -96,13 +96,11 @@ defmodule Easy.Nutrition.Recipe do
     from(r in query, preload: [recipe_ingredients: ^ingredient_food_query(business_id)])
   end
 
-  @spec include_ingredient_foods(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def include_ingredient_foods(query \\ __MODULE__, business_id) do
-    from(r in query, preload: [recipe_ingredients: ^ingredient_food_query(business_id)])
-  end
-
   defp ingredient_food_query(business_id) do
-    food_query = Easy.Nutrition.Food.for_business_or_system(Easy.Nutrition.Food, business_id)
+    food_query =
+      Food
+      |> Food.for_business_or_system(business_id)
+      |> Food.include_media()
 
     from(ri in RecipeIngredient,
       order_by: [asc: ri.position, asc: ri.id],

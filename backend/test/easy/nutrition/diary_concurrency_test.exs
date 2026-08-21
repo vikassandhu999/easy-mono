@@ -441,26 +441,24 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
         })
       )
 
-    for {option, grams} <- [{option_a, 50.0}] do
-      {:ok, _item} =
-        Repo.insert(
-          DiaryFrozenPlannedItem.insert_changeset(client.business_id, slot.id, option.id, %{
-            kind: :food,
-            display_name: food.name,
-            portion_kind: :gram,
-            weight_g: grams,
-            calories: grams * 2,
-            protein: 1.0,
-            carbohydrates: 1.0,
-            fat: 1.0,
-            fiber: 0.0,
-            complete: true,
-            position: 0,
-            source_food_id: food.id,
-            food_id: food.id
-          })
-        )
-    end
+    {:ok, _item} =
+      Repo.insert(
+        DiaryFrozenPlannedItem.insert_changeset(client.business_id, slot.id, option_a.id, %{
+          kind: :food,
+          display_name: food.name,
+          portion_kind: :gram,
+          weight_g: 50.0,
+          calories: 100.0,
+          protein: 1.0,
+          carbohydrates: 1.0,
+          fat: 1.0,
+          fiber: 0.0,
+          complete: true,
+          position: 0,
+          source_food_id: food.id,
+          food_id: food.id
+        })
+      )
 
     {:ok, _} = Repo.update(DiarySlot.update_changeset(slot, %{active_frozen_option_id: option_a.id}))
     {slot, meal_b.id}

@@ -268,9 +268,7 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
           kind={kind}
           onBack={() => setStep('pick')}
           onConfirm={handleConfirm}
-          planMeta={
-            selected.kind === 'nutrition' ? nutritionMeta(selected.plan) : trainingMeta(selected.plan)
-          }
+          planMeta={selected.kind === 'nutrition' ? nutritionMeta(selected.plan) : trainingMeta(selected.plan)}
           planName={selected.plan.name}
         />
       ) : null}

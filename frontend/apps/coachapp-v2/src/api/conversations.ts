@@ -127,7 +127,9 @@ export function useMarkConversationHandledMutation() {
 
 /** Append a message to the cached history (no-op if already present, e.g. own send echoed back over the channel). */
 export function appendMessage(conversationId: string, message: ChatMessage) {
-  const cached = queryClient.getQueryData<InfiniteData<ChatMessagesResponse>>(conversationKeys.messages(conversationId));
+  const cached = queryClient.getQueryData<InfiniteData<ChatMessagesResponse>>(
+    conversationKeys.messages(conversationId),
+  );
   if (!cached) {
     // Nothing cached to append to — a later mount will fetch fresh history.
     return;

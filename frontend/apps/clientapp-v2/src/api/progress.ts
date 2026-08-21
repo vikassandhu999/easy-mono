@@ -30,8 +30,7 @@ export function useListWeightEntriesQuery(query: ListQuery = {}) {
 export function useCreateWeightEntryMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: WeightEntryRequest) =>
-      call(client.POST('/v1/client/weight_entries', {body})),
+    mutationFn: (body: WeightEntryRequest) => call(client.POST('/v1/client/weight_entries', {body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: weightEntryKeys.lists()});
     },

@@ -1,8 +1,5 @@
-import {
-  clientTrainingCoverageRequest,
-  clientTrainingPlanFromCoverage,
-} from '../src/api/training-coverage.ts';
 import type {components} from '../src/api/schema.ts';
+import {clientTrainingCoverageRequest, clientTrainingPlanFromCoverage} from '../src/api/training-coverage.ts';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {

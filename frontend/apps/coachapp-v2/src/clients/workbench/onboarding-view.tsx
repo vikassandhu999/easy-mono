@@ -13,6 +13,7 @@ import {useInfiniteItems} from '@/@hooks/use-infinite-items';
 import {useRemindFormAssignmentMutation} from '@/api/checkins';
 import {useResendClientInviteMutation} from '@/api/clients';
 import {useOnboardingQueueInfiniteQuery, type WorkbenchOnboardingQueueItem} from '@/api/workbench';
+import {requirePrimaryReason} from '@/clients/lib/workbench-programming';
 import {
   formatWorkbenchDate,
   presentOnboardingReason,
@@ -86,7 +87,7 @@ export default function OnboardingView() {
         items={list.items}
         onRetry={list.refetch}
         renderItem={(item) => {
-          const reason = item.reasons[0]!;
+          const reason = requirePrimaryReason(item.reasons);
           const presented = presentOnboardingReason(reason);
           const name = clientName(item);
           const phone = item.client.phone;

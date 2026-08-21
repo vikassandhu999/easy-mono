@@ -5,15 +5,17 @@
  */
 
 import {formatDateISO} from '@easy/utils';
+import {toPortionInput} from '@easy/utils/nutrition-portion';
 import {Spinner, toast} from '@heroui/react';
 import {Check, ChevronDown, ChevronLeft, ChevronRight, Plus} from 'lucide-react';
 import {useEffect, useRef, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 import ErrorState from '@/@components/error-state';
-
 import {ROUTES} from '@/@config/routes';
 import {
   type NutritionDayOption,
+  pickedToItemRef,
+  toItemInput,
   useAddExtraMutation,
   useListClientNutritionDaysQuery,
   useLogPlannedDayMutation,
@@ -26,8 +28,6 @@ import AmountSheet from '@/nutrition/components/amount-sheet';
 import FoodPicker, {type Picked} from '@/nutrition/components/food-picker';
 import MacroHero from '@/nutrition/components/macro-hero';
 import OptionSheet from '@/nutrition/components/option-sheet';
-import {pickedToItemRef, toItemInput} from '@/api/nutrition';
-import {toPortionInput} from '@easy/utils/nutrition-portion';
 import {
   beginDiaryCommand,
   completeDiaryCommand,
@@ -45,9 +45,9 @@ import {
   adherenceDisplay,
   dayTargets,
   kcalText,
+  type SheetTarget,
   type SlotRow,
   type SlotView,
-  type SheetTarget,
   sheetTargetFromRow,
   slotsFromDay,
 } from '@/nutrition/nutrition-utils';
@@ -90,10 +90,9 @@ export default function NutritionToday() {
   const [params, setParams] = useSearchParams();
   const selectedDate = params.get('date');
   const todayQuery = useListClientNutritionDaysQuery();
-  const selectedDayQuery = useListClientNutritionDaysQuery(
-    selectedDate ? {date: selectedDate} : {},
-    {enabled: selectedDate != null},
-  );
+  const selectedDayQuery = useListClientNutritionDaysQuery(selectedDate ? {date: selectedDate} : {}, {
+    enabled: selectedDate != null,
+  });
   const today = todayQuery.data?.data[0]?.date ?? formatDateISO(new Date());
   const date = selectedDate ?? today;
   const tomorrow = shiftDate(today, 1);
@@ -154,10 +153,7 @@ export default function NutritionToday() {
 
   const logWholeMeal = async (slot: SlotView) => {
     try {
-      const intent = beginDiaryCommand(
-        commandIntents.current,
-        plannedOptionIntentFingerprint({date, slot: slot.slot}),
-      );
+      const intent = beginDiaryCommand(commandIntents.current, plannedOptionIntentFingerprint({date, slot: slot.slot}));
       await logOption.mutateAsync({
         date,
         idempotencyKey: intent.key,
@@ -408,7 +404,11 @@ export default function NutritionToday() {
               const key =
                 row.status === 'added' || row.status === 'recorded'
                   ? row.entry.id
-                  : row.status === 'checklist' || row.status === 'skipped' || row.status === 'pending' || row.status === 'as_planned' || row.status === 'swapped'
+                  : row.status === 'checklist' ||
+                      row.status === 'skipped' ||
+                      row.status === 'pending' ||
+                      row.status === 'as_planned' ||
+                      row.status === 'swapped'
                     ? row.mealItemId
                     : `row-${index}`;
               return (

@@ -22,8 +22,7 @@ export function useGetCoachProfileQuery(options?: {enabled?: boolean}) {
 export function useUpdateCoachProfileMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: UpdateProfileRequest) =>
-      call(client.PATCH('/v1/coach/me', {body})),
+    mutationFn: (body: UpdateProfileRequest) => call(client.PATCH('/v1/coach/me', {body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: profileKeys.all});
     },
@@ -33,8 +32,7 @@ export function useUpdateCoachProfileMutation() {
 export function useUpdateDashboardSetupMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: DashboardSetupUpdateRequest) =>
-      call(client.PATCH('/v1/businesses/me/dashboard-setup', {body})),
+    mutationFn: (body: DashboardSetupUpdateRequest) => call(client.PATCH('/v1/businesses/me/dashboard-setup', {body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: profileKeys.all});
     },

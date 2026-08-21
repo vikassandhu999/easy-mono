@@ -83,8 +83,7 @@ export function buildExerciseGroups(session: TrainingSession): ExerciseGroup[] {
   const groups: ExerciseGroup[] = [];
 
   for (const exercise of planned) {
-    const matchKey =
-      exercise.ref && groupOrder.find((key) => key === exercise.ref && !matchedKeys.has(key));
+    const matchKey = exercise.ref && groupOrder.find((key) => key === exercise.ref && !matchedKeys.has(key));
     const setsForExercise = matchKey ? (groupMap.get(matchKey) ?? []) : [];
     if (matchKey) {
       matchedKeys.add(matchKey);

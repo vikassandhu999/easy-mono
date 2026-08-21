@@ -369,9 +369,7 @@ export function AmountSheetContent({
     onCollect?.(
       buildMealItemDraft({
         activeServing,
-        itemRef: recipe
-          ? {kind: 'recipe', recipe_id: recipe.id}
-          : {food_id: food?.id ?? '', kind: 'food'},
+        itemRef: recipe ? {kind: 'recipe', recipe_id: recipe.id} : {food_id: food?.id ?? '', kind: 'food'},
         resolvedWeightG,
         servingCount,
       }),

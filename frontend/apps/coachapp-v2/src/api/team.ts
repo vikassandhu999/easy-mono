@@ -21,8 +21,7 @@ export function useGetTeamQuery(options?: {enabled?: boolean}) {
 export function useInviteTrainerMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: TrainerInviteRequest) =>
-      call(client.POST('/v1/coach/team/invite', {body})),
+    mutationFn: (body: TrainerInviteRequest) => call(client.POST('/v1/coach/team/invite', {body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: teamKeys.all});
     },
@@ -32,8 +31,7 @@ export function useInviteTrainerMutation() {
 export function useResendTrainerInviteMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
-      call(client.POST('/v1/coach/team/{id}/resend-invite', {params: {path: {id}}})),
+    mutationFn: (id: string) => call(client.POST('/v1/coach/team/{id}/resend-invite', {params: {path: {id}}})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: teamKeys.all});
     },
@@ -43,8 +41,7 @@ export function useResendTrainerInviteMutation() {
 export function useRevokeTrainerInviteMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
-      call(client.DELETE('/v1/coach/team/{id}', {params: {path: {id}}})),
+    mutationFn: (id: string) => call(client.DELETE('/v1/coach/team/{id}', {params: {path: {id}}})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: teamKeys.all});
     },
@@ -54,8 +51,7 @@ export function useRevokeTrainerInviteMutation() {
 export function useDeactivateTrainerMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
-      call(client.POST('/v1/coach/team/{id}/deactivate', {params: {path: {id}}})),
+    mutationFn: (id: string) => call(client.POST('/v1/coach/team/{id}/deactivate', {params: {path: {id}}})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: teamKeys.all});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
@@ -66,8 +62,7 @@ export function useDeactivateTrainerMutation() {
 export function useReactivateTrainerMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
-      call(client.POST('/v1/coach/team/{id}/reactivate', {params: {path: {id}}})),
+    mutationFn: (id: string) => call(client.POST('/v1/coach/team/{id}/reactivate', {params: {path: {id}}})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: teamKeys.all});
     },

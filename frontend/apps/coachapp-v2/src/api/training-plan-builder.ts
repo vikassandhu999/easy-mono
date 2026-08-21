@@ -51,10 +51,7 @@ type TrainingPlanUpdateRequest = components['schemas']['TrainingPlanUpdateReques
 export function useGetTrainingPlanQuery(planId: string, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: trainingPlanKeys.detail(planId),
-    queryFn: () =>
-      call(
-        client.GET('/v1/coach/training-plans/{id}', {params: {path: {id: planId}}}),
-      ),
+    queryFn: () => call(client.GET('/v1/coach/training-plans/{id}', {params: {path: {id: planId}}})),
     enabled: options?.enabled ?? true,
   });
 }

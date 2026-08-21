@@ -76,10 +76,7 @@ export function useCoachNutritionPlansInfiniteQuery(
 export function useListNutritionPlansQuery(params?: ListNutritionPlansParams, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: nutritionPlanKeys.list(params),
-    queryFn: () =>
-      call(
-        client.GET('/v1/coach/nutrition-plans', {params: {query: params ?? undefined}}),
-      ),
+    queryFn: () => call(client.GET('/v1/coach/nutrition-plans', {params: {query: params ?? undefined}})),
     enabled: options?.enabled ?? true,
   });
 }
@@ -109,8 +106,7 @@ export function useListCoachClientNutritionPlansQuery(
 export function useCreateNutritionPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: NutritionPlanCreateRequest) =>
-      call(client.POST('/v1/coach/nutrition-plans', {body})),
+    mutationFn: (body: NutritionPlanCreateRequest) => call(client.POST('/v1/coach/nutrition-plans', {body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
     },
@@ -147,9 +143,7 @@ export function useUpdateNutritionPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({body, id}: {body: NutritionPlanUpdateRequest; id: string}) =>
-      call(
-        client.PATCH('/v1/coach/nutrition-plans/{id}', {params: {path: {id}}, body}),
-      ),
+      call(client.PATCH('/v1/coach/nutrition-plans/{id}', {params: {path: {id}}, body})),
     onSuccess: (_data, {id}) => invalidatePlanCaches(qc, {id}),
   });
 }
@@ -174,9 +168,7 @@ export function useArchiveNutritionPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({id, body}: {id: string; body: NutritionPlanRevisionRequest}) =>
-      call(
-        client.POST('/v1/coach/nutrition-plans/{id}/archive', {params: {path: {id}}, body}),
-      ),
+      call(client.POST('/v1/coach/nutrition-plans/{id}/archive', {params: {path: {id}}, body})),
     onSuccess: (_data, {id}) => invalidatePlanCaches(qc, {id}),
   });
 }
@@ -185,9 +177,7 @@ export function useRestoreNutritionPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({id, body}: {id: string; body: NutritionPlanRevisionRequest}) =>
-      call(
-        client.POST('/v1/coach/nutrition-plans/{id}/restore', {params: {path: {id}}, body}),
-      ),
+      call(client.POST('/v1/coach/nutrition-plans/{id}/restore', {params: {path: {id}}, body})),
     onSuccess: (_data, {id}) => invalidatePlanCaches(qc, {id}),
   });
 }
@@ -196,9 +186,7 @@ export function useDuplicateNutritionPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({id, body}: {id: string; body: NutritionPlanRevisionRequest}) =>
-      call(
-        client.POST('/v1/coach/nutrition-plans/{id}/duplicate', {params: {path: {id}}, body}),
-      ),
+      call(client.POST('/v1/coach/nutrition-plans/{id}/duplicate', {params: {path: {id}}, body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
     },

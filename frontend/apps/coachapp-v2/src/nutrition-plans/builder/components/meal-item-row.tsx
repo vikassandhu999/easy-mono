@@ -7,12 +7,12 @@
  * Rows are separated by hairlines rather than an accent rule.
  */
 
+import {formatParsedPortion, parseNutritionPortion} from '@easy/utils/nutrition-portion';
 import {Button} from '@heroui/react';
 import {ChevronDown, ChevronUp, X} from 'lucide-react';
 import {AS_TEXT, NO_GAP} from '@/@components/ua-defaults';
 import type {Food, Recipe} from '@/api/nutrition-foods';
 import type {NutritionMealItem} from '@/api/nutrition-plan-builder';
-import {formatParsedPortion, parseNutritionPortion} from '@easy/utils/nutrition-portion';
 
 // ---------------------------------------------------------------------------
 // Types

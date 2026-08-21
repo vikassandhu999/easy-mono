@@ -12,7 +12,7 @@ import {ChevronDown} from 'lucide-react';
 import {useRef, useState} from 'react';
 import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
 import {TAG} from '@/builder-kit/ui';
-import {MEAL_SLOTS, slotLabel, type BuilderMealSlot} from '../slots';
+import {type BuilderMealSlot, MEAL_SLOTS, slotLabel} from '../slots';
 
 function isBuilderMealSlot(value: string): value is BuilderMealSlot {
   return (MEAL_SLOTS as readonly string[]).includes(value);

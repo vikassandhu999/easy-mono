@@ -1,5 +1,5 @@
-import type {components} from '@/api/schema';
 import {parseNutritionPortion, portionWireFromInput, toPortionInput} from '@easy/utils/nutrition-portion';
+import type {components} from '@/api/schema';
 
 export type NutritionMenuReplaceRequest = components['schemas']['NutritionMenuReplaceRequest'];
 export type NutritionMealItemInput = components['schemas']['NutritionMealItemInput'];

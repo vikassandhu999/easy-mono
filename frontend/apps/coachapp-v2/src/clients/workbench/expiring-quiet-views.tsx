@@ -12,6 +12,7 @@ import {
   type WorkbenchExpiringQueueItem,
   type WorkbenchQuietQueueItem,
 } from '@/api/workbench';
+import {requirePrimaryReason} from '@/clients/lib/workbench-programming';
 import {presentExpiringReason, presentQuietReason} from '@/clients/lib/workbench-reason-presentation';
 
 import {QueueRow} from './queue-row';
@@ -26,7 +27,7 @@ export function ExpiringView() {
   const list = useInfiniteItems(useExpiringQueueInfiniteQuery());
 
   const toRow = (item: WorkbenchExpiringQueueItem) => {
-    const reason = item.reasons[0]!;
+    const reason = requirePrimaryReason(item.reasons);
     const presented = presentExpiringReason(reason);
     return {
       action: presented.action,
@@ -79,7 +80,7 @@ export function QuietView() {
   const list = useInfiniteItems(useQuietQueueInfiniteQuery());
 
   const toRow = (item: WorkbenchQuietQueueItem) => {
-    const reason = item.reasons[0]!;
+    const reason = requirePrimaryReason(item.reasons);
     const presented = presentQuietReason(reason);
     return {
       action: presented.action,

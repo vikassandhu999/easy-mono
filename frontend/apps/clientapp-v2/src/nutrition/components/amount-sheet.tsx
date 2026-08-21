@@ -9,11 +9,7 @@
 import {parseNutritionPortion, toPortionInput} from '@easy/utils/nutrition-portion';
 import {Trash2} from 'lucide-react';
 import {useRef, useState} from 'react';
-import {
-  useDeleteDiaryEntryMutation,
-  useLogPlannedItemMutation,
-  useUpdateDiaryEntryMutation,
-} from '@/api/nutrition';
+import {useDeleteDiaryEntryMutation, useLogPlannedItemMutation, useUpdateDiaryEntryMutation} from '@/api/nutrition';
 import {
   type DiaryCommandIntent,
   deleteEntryIntentFingerprint,
@@ -63,9 +59,17 @@ export default function AmountSheet({
         ? parsedPlanned.unit
         : 'g';
   const plannedPortionValue =
-    parsedPlanned?.kind === 'serving' ? parsedPlanned.amount : parsedPlanned?.kind === 'gram' ? parsedPlanned.grams : 100;
+    parsedPlanned?.kind === 'serving'
+      ? parsedPlanned.amount
+      : parsedPlanned?.kind === 'gram'
+        ? parsedPlanned.grams
+        : 100;
   const loggedPortionValue =
-    loggedParsed?.kind === 'serving' ? loggedParsed.amount : loggedParsed?.kind === 'gram' ? loggedParsed.grams : plannedPortionValue;
+    loggedParsed?.kind === 'serving'
+      ? loggedParsed.amount
+      : loggedParsed?.kind === 'gram'
+        ? loggedParsed.grams
+        : plannedPortionValue;
   const [raw, setRaw] = useState<string>(String(target.mode === 'logged' ? loggedPortionValue : plannedPortionValue));
   const [notes, setNotes] = useState(target.mode === 'logged' ? (target.loggedEntry.notes ?? '') : '');
   const [free, setFree] = useState(false);

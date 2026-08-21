@@ -1,8 +1,8 @@
 import {
   type ApiErrorBody,
-  applyParsedFormErrors,
   apiErrorCodeFromBody,
   apiErrorMessageFromBody,
+  applyParsedFormErrors,
   type FormSetError,
   parseApiErrorBody,
   validationErrorsFromBody,
@@ -57,9 +57,14 @@ export const applyFormErrors = <TFieldValues extends FieldValues>(
   setError: UseFormSetError<TFieldValues>,
   knownFields?: readonly Path<TFieldValues>[],
 ) =>
-  applyParsedFormErrors(parseApiError(error), fallbackMessage, (name, fieldError) => {
-    setError(name as Path<TFieldValues>, fieldError);
-  }, knownFields);
+  applyParsedFormErrors(
+    parseApiError(error),
+    fallbackMessage,
+    (name, fieldError) => {
+      setError(name as Path<TFieldValues>, fieldError);
+    },
+    knownFields,
+  );
 
 // Re-export shared nutrition utilities from @easy/utils
 

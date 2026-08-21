@@ -19,8 +19,7 @@ export function useGetClientProfileQuery(options?: {enabled?: boolean}) {
 export function useUpdateClientProfileMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: UpdateClientProfileRequest) =>
-      call(client.PATCH('/v1/client/me', {body})),
+    mutationFn: (body: UpdateClientProfileRequest) => call(client.PATCH('/v1/client/me', {body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: profileKeys.all});
     },

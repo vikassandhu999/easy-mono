@@ -19,6 +19,7 @@ import {
   assignPlanHref,
   groupProgrammingItems,
   type ProgrammingServiceFilter,
+  primaryReason,
   programmingGroupDescription,
 } from '@/clients/lib/workbench-programming';
 import {presentProgrammingReason} from '@/clients/lib/workbench-reason-presentation';
@@ -176,7 +177,8 @@ export default function ProgrammingView() {
               items={group.items}
               onRetry={list.refetch}
               renderItem={(item) => {
-                const primary = presentProgrammingReason(item.reasons[0]!);
+                const lead = primaryReason(item.reasons);
+                const primary = presentProgrammingReason(lead);
                 const name = clientName(item);
                 return (
                   <GridListItem
@@ -202,11 +204,11 @@ export default function ProgrammingView() {
                       <div className="min-w-0 flex-1">
                         <Label className="block truncate type-body font-semibold text-foreground">{name}</Label>
                         <Description className="mt-1 flex min-w-0 items-start gap-2 type-eyebrow text-muted">
-                          <ServiceIcon service={item.reasons[0]!.service} />
+                          <ServiceIcon service={lead.service} />
                           <span className="min-w-0 flex-1 whitespace-normal sm:truncate">{primary.detail}</span>
                         </Description>
                       </div>
-                      <ReasonChip reason={item.reasons[0]!} />
+                      <ReasonChip reason={lead} />
                     </div>
                     <div className="flex flex-wrap gap-2 sm:justify-end">
                       {item.reasons.map((reason) => {

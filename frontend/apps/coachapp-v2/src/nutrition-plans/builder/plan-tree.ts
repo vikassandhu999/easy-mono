@@ -18,7 +18,7 @@ import type {
   NutritionPlan,
 } from '@/api/nutrition-plan-builder';
 
-import {flattenSlots, MEAL_SLOTS, slotLabel, type BuilderMealSlot} from './slots';
+import {type BuilderMealSlot, flattenSlots, MEAL_SLOTS, slotLabel} from './slots';
 
 export {flattenSlots};
 

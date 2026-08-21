@@ -78,8 +78,7 @@ export function useGetBillingQuery(options?: {enabled?: boolean}) {
 export function useCheckoutSeatsMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: BillingCheckoutRequest) =>
-      call(client.POST('/v1/coach/billing/checkout', {body})),
+    mutationFn: (body: BillingCheckoutRequest) => call(client.POST('/v1/coach/billing/checkout', {body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: billingKeys.all});
       qc.invalidateQueries({queryKey: clientKeys.details()});

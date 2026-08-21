@@ -14,8 +14,5 @@ assertEqual(
   diaryWriteMessageForCode('outside_correction_window') ?? 'fallback',
   'This day is no longer open to corrections.',
 );
-assertEqual(
-  diaryWriteMessageForCode('future_date') ?? 'fallback',
-  'You can only log today or the past week.',
-);
+assertEqual(diaryWriteMessageForCode('future_date') ?? 'fallback', 'You can only log today or the past week.');
 assertEqual(diaryWriteMessageForCode('invalid_input') ?? 'fallback', 'fallback');

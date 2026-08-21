@@ -7,9 +7,9 @@ export function toItemInput(ref: NutritionItemRef): {
 } {
   switch (ref.kind) {
     case 'food':
-      return {food_id: ref.food_id, kind: 'food', recipe_id: undefined};
+      return {food_id: ref.food_id, kind: 'food'};
     case 'recipe':
-      return {food_id: undefined, kind: 'recipe', recipe_id: ref.recipe_id};
+      return {kind: 'recipe', recipe_id: ref.recipe_id};
     default: {
       const _exhaustive: never = ref;
       return _exhaustive;

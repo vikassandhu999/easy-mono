@@ -71,10 +71,7 @@ export function useTrainerAcceptInviteVerifyMutation() {
 export function useShowTrainerInvitationQuery(token: string, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: authKeys.trainerInvitation(token),
-    queryFn: () =>
-      call(
-        client.GET('/v1/auth/trainer-invitations/{token}', {params: {path: {token}}}),
-      ),
+    queryFn: () => call(client.GET('/v1/auth/trainer-invitations/{token}', {params: {path: {token}}})),
     enabled: options?.enabled ?? true,
     staleTime: 0,
     refetchOnMount: 'always',

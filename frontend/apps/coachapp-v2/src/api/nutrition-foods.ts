@@ -156,10 +156,7 @@ export type ListFoodsParams = Pick<ListFoodsQuery, 'categories' | 'limit' | 'off
 export function useListFoodsQuery(params?: ListFoodsParams, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: foodKeys.list(params),
-    queryFn: () =>
-      call(
-        client.GET('/v1/coach/nutrition-foods', {params: {query: params ?? undefined}}),
-      ),
+    queryFn: () => call(client.GET('/v1/coach/nutrition-foods', {params: {query: params ?? undefined}})),
     enabled: options?.enabled ?? true,
   });
 }

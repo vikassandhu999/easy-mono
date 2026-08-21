@@ -118,9 +118,7 @@ export function swapOf(
   const swapped = sets.find(
     (performed) =>
       performed.exercise_name !== exercise.exercise_name ||
-      (performed.exercise_id != null &&
-        exercise.exercise_id != null &&
-        performed.exercise_id !== exercise.exercise_id),
+      (performed.exercise_id != null && exercise.exercise_id != null && performed.exercise_id !== exercise.exercise_id),
   );
   return swapped
     ? {

@@ -10,6 +10,13 @@ type ProgrammingItem = {
   reasons: ProgrammingReason[];
 };
 
+export type NonEmpty<T> = [T, ...T[]];
+export type ProgrammingReasonList = NonEmpty<ProgrammingReason>;
+
+export type FilteredProgrammingItem<T extends ProgrammingItem = ProgrammingItem> = T & {
+  reasons: ProgrammingReasonList;
+};
+
 const PRIORITY: Record<ProgrammingReason['code'], ProgrammingPriorityId> = {
   service_coverage_ending_soon: 'ending_soon',
   service_coverage_missing: 'coverage_lapsed',
@@ -54,17 +61,41 @@ export function assignPlanHref(clientId: string, service: 'nutrition' | 'trainin
   return `${ROUTES.CLIENT_DETAIL.replace(':id', clientId)}?tab=${service}&assign=plan`;
 }
 
+export function primaryReason<T>(reasons: NonEmpty<T>): T {
+  return reasons[0];
+}
+
+export function requirePrimaryReason<T>(reasons: readonly T[]): T {
+  const first = reasons[0];
+  if (first === undefined) {
+    throw new Error('Workbench queue item is missing a reason');
+  }
+  return first;
+}
+
+function filterItemReasons<T extends ProgrammingItem>(
+  item: T,
+  filter: ProgrammingServiceFilter,
+): FilteredProgrammingItem<T> | null {
+  const reasons = filterProgrammingReasons(item.reasons, filter);
+  const [first, ...rest] = reasons;
+  if (first === undefined) {
+    return null;
+  }
+  return {...item, reasons: [first, ...rest]};
+}
+
 export function groupProgrammingItems<T extends ProgrammingItem>(
   items: T[],
   filter: ProgrammingServiceFilter,
-): {id: ProgrammingPriorityId; items: Array<T & {reasons: ProgrammingReason[]}>; label: string}[] {
+): {id: ProgrammingPriorityId; items: FilteredProgrammingItem<T>[]; label: string}[] {
   const filtered = items.flatMap((item) => {
-    const reasons = filterProgrammingReasons(item.reasons, filter);
-    return reasons.length > 0 ? [{...item, reasons}] : [];
+    const withReasons = filterItemReasons(item, filter);
+    return withReasons ? [withReasons] : [];
   });
 
   return PRIORITY_ORDER.flatMap((id) => {
-    const groupItems = filtered.filter((item) => programmingPriorityId(item.reasons[0]!) === id);
+    const groupItems = filtered.filter((item) => programmingPriorityId(primaryReason(item.reasons)) === id);
     return groupItems.length > 0 ? [{id, items: groupItems, label: PRIORITY_LABEL[id]}] : [];
   });
 }

@@ -196,35 +196,47 @@ function diaryRow(row: NutritionDayRow): SlotRow {
 
   switch (row.status) {
     case 'added':
-    case 'recorded':
+    case 'recorded': {
+      if (!entry) {
+        throw new Error(`Diary row ${row.status} is missing an entry`);
+      }
       return {
-        calories: entry!.nutrients.calories ?? null,
-        entry: entry!,
+        calories: entry.nutrients.calories ?? null,
+        entry,
         mealItemId: null,
-        name: entry!.name ?? 'Food',
+        name: entry.name ?? 'Food',
         plannedItem: null,
         status: row.status,
       };
-    case 'skipped':
+    }
+    case 'skipped': {
+      if (!planned) {
+        throw new Error('Skipped diary row is missing planned item metadata');
+      }
       return {
-        calories: planned ? plannedItemCalories(planned) : null,
+        calories: plannedItemCalories(planned),
         entry: null,
-        mealItemId: planned!.meal_item_id,
-        name: planned?.name ?? 'Planned item',
-        plannedItem: planned!,
+        mealItemId: planned.meal_item_id,
+        name: planned.name ?? 'Planned item',
+        plannedItem: planned,
         status: 'skipped',
       };
+    }
     case 'as_planned':
     case 'swapped':
-    case 'pending':
+    case 'pending': {
+      if (!planned) {
+        throw new Error(`Diary row ${row.status} is missing planned item metadata`);
+      }
       return {
-        calories: entry?.nutrients.calories ?? (planned ? plannedItemCalories(planned) : null),
+        calories: entry?.nutrients.calories ?? plannedItemCalories(planned),
         entry,
-        mealItemId: planned!.meal_item_id,
-        name: entry?.name ?? planned!.name ?? 'Food',
-        plannedItem: planned!,
+        mealItemId: planned.meal_item_id,
+        name: entry?.name ?? planned.name ?? 'Food',
+        plannedItem: planned,
         status: row.status,
       };
+    }
     default: {
       const _exhaustive: never = row.status;
       return _exhaustive;

@@ -152,8 +152,7 @@ export function useGetLandingPageQuery(options?: {enabled?: boolean}) {
 export function useSaveLandingPageMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: LandingPageUpsertRequest) =>
-      call(client.PUT('/v1/coach/landing-page', {body})),
+    mutationFn: (body: LandingPageUpsertRequest) => call(client.PUT('/v1/coach/landing-page', {body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: landingPageKeys.all});
     },

@@ -29,8 +29,8 @@ import type {NutritionMeal} from '@/api/nutrition-plan-builder';
 import {INLINE_LINK, TAG} from '@/builder-kit/ui';
 
 import {kcalLabel} from '../macros';
-import type {PlanBuilderCommands} from '../use-plan-builder';
 import type {BuilderMealSlot} from '../slots';
+import type {PlanBuilderCommands} from '../use-plan-builder';
 import type {HydratedMealItem} from './meal-item-row';
 import {MealItemRow} from './meal-item-row';
 import type {MealPaletteOption} from './meal-palette';

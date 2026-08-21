@@ -75,10 +75,7 @@ export function useCoachTrainingPlansInfiniteQuery(filters?: CoachTrainingPlansF
 export function useListTrainingPlansQuery(params?: ListTrainingPlansApiArg, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: trainingPlanKeys.list(params),
-    queryFn: () =>
-      call(
-        client.GET('/v1/coach/training-plans', {params: {query: params ?? undefined}}),
-      ),
+    queryFn: () => call(client.GET('/v1/coach/training-plans', {params: {query: params ?? undefined}})),
     enabled: options?.enabled ?? true,
   });
 }
@@ -128,8 +125,7 @@ export function useCoachClientTrainingPlansInfiniteQuery(
 export function useCreateTrainingPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: TrainingPlanCreateRequest) =>
-      call(client.POST('/v1/coach/training-plans', {body})),
+    mutationFn: (body: TrainingPlanCreateRequest) => call(client.POST('/v1/coach/training-plans', {body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: trainingPlanKeys.lists()});
     },
@@ -140,9 +136,7 @@ export function useUpdateTrainingPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({id, body}: {id: string; body: TrainingPlanUpdateRequest}) =>
-      call(
-        client.PATCH('/v1/coach/training-plans/{id}', {params: {path: {id}}, body}),
-      ),
+      call(client.PATCH('/v1/coach/training-plans/{id}', {params: {path: {id}}, body})),
     onSuccess: (_data, {id}) => {
       // The mutation owns every cache effect (see the nutrition twin for the
       // full rationale): the plan's own entries, client plan-name columns,
@@ -186,9 +180,7 @@ export function useArchiveTrainingPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({id, body}: {id: string; body: TrainingPlanRevisionRequest}) =>
-      call(
-        client.POST('/v1/coach/training-plans/{id}/archive', {params: {path: {id}}, body}),
-      ),
+      call(client.POST('/v1/coach/training-plans/{id}/archive', {params: {path: {id}}, body})),
     onSuccess: (_data, {id}) => {
       qc.invalidateQueries({queryKey: trainingPlanKeys.detail(id)});
       qc.invalidateQueries({queryKey: trainingPlanKeys.lists()});
@@ -206,9 +198,7 @@ export function useRestoreTrainingPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({id, body}: {id: string; body: TrainingPlanRevisionRequest}) =>
-      call(
-        client.POST('/v1/coach/training-plans/{id}/restore', {params: {path: {id}}, body}),
-      ),
+      call(client.POST('/v1/coach/training-plans/{id}/restore', {params: {path: {id}}, body})),
     onSuccess: (_data, {id}) => {
       qc.invalidateQueries({queryKey: trainingPlanKeys.detail(id)});
       qc.invalidateQueries({queryKey: trainingPlanKeys.lists()});
@@ -225,10 +215,7 @@ export function useRestoreTrainingPlanMutation() {
 export function useDuplicateTrainingPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
-      call(
-        client.POST('/v1/coach/training-plans/{id}/duplicate', {params: {path: {id}}}),
-      ),
+    mutationFn: (id: string) => call(client.POST('/v1/coach/training-plans/{id}/duplicate', {params: {path: {id}}})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: trainingPlanKeys.lists()});
     },

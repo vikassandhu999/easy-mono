@@ -1,6 +1,6 @@
-import type {components} from '../../api/schema.ts';
-import {toItemInput, type NutritionItemRef} from '../../../../../packages/utils/src/nutrition-item-ref.ts';
+import {type NutritionItemRef, toItemInput} from '../../../../../packages/utils/src/nutrition-item-ref.ts';
 import {toPortionInput} from '../../../../../packages/utils/src/nutrition-portion.ts';
+import type {components} from '../../api/schema.ts';
 
 type NutritionMealItemInput = components['schemas']['NutritionMealItemInput'];
 type NutritionPortionInput = components['schemas']['NutritionPortionInput'];
@@ -46,6 +46,9 @@ export function buildMealItemDraft({
 
   return {
     ...item,
-    portion: resolvedWeightG != null ? toPortionInput({grams: resolvedWeightG, kind: 'gram'}) : {kind: 'gram', grams: undefined},
+    portion:
+      resolvedWeightG != null
+        ? toPortionInput({grams: resolvedWeightG, kind: 'gram'})
+        : {kind: 'gram', grams: undefined},
   };
 }

@@ -42,8 +42,7 @@ export function useClientMessagesInfiniteQuery() {
 export function useCreateClientConversationMessageMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreateMessageBody) =>
-      call(client.POST('/v1/client/conversation/messages', {body})),
+    mutationFn: (body: CreateMessageBody) => call(client.POST('/v1/client/conversation/messages', {body})),
     // Only the header — the sent message is appended optimistically by the caller.
     onSuccess: () => {
       qc.invalidateQueries({queryKey: conversationKeys.detail()});
@@ -60,7 +59,6 @@ export function useMarkClientConversationReadMutation() {
     },
   });
 }
-
 
 /** Append a message to the cached history (no-op if already present, e.g. own send echoed back over the channel). */
 export function appendClientMessage(message: ChatMessage) {

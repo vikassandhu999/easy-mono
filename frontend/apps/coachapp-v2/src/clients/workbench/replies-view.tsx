@@ -26,6 +26,7 @@ import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {ApiError} from '@/api/client';
 import {useMarkCoachConversationReadMutation, useMarkConversationHandledMutation} from '@/api/conversations';
 import {useRepliesQueueInfiniteQuery, type WorkbenchRepliesQueueItem} from '@/api/workbench';
+import {requirePrimaryReason} from '@/clients/lib/workbench-programming';
 import {presentReplyReason, presentReplySequenceFacts} from '@/clients/lib/workbench-reason-presentation';
 
 function conversationName(item: WorkbenchRepliesQueueItem): string {
@@ -104,7 +105,7 @@ function SelectedTaskContent({
   item: WorkbenchRepliesQueueItem;
   onHandle: (item: WorkbenchRepliesQueueItem) => void;
 }) {
-  const waiting = presentReplyReason(item.reasons[0]!).description;
+  const waiting = presentReplyReason(requirePrimaryReason(item.reasons)).description;
   const read = item.conversation.unread_count === 0;
   const inactive = item.client_status === 'inactive';
   const facts = presentReplySequenceFacts({
@@ -249,7 +250,7 @@ export default function RepliesView() {
       items={items}
       onRetry={list.refetch}
       renderItem={(item) => {
-        const waiting = presentReplyReason(item.reasons[0]!).description;
+        const waiting = presentReplyReason(requirePrimaryReason(item.reasons)).description;
         const name = conversationName(item);
         const selectedRow = item.conversation.id === selected?.conversation.id;
         const facts = presentReplySequenceFacts({

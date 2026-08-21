@@ -31,6 +31,7 @@ export type ParsedNutritionPortion =
 
 export type NutritionItemRef = {food_id: string; kind: 'food'} | {kind: 'recipe'; recipe_id: string};
 
+export {pickedToItemRef, toItemInput} from '@easy/utils/nutrition-item-ref';
 export {
   formatParsedPortion,
   parseNutritionPortion,
@@ -38,7 +39,6 @@ export {
   toPortionInput,
   toPortionWire,
 } from '@easy/utils/nutrition-portion';
-export {pickedToItemRef, toItemInput} from '@easy/utils/nutrition-item-ref';
 
 type NutritionDayQuery = paths['/v1/client/nutrition-days']['get']['parameters']['query'];
 type FoodListQuery = paths['/v1/client/nutrition-foods']['get']['parameters']['query'];

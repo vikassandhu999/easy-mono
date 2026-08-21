@@ -1,9 +1,9 @@
 import {
-  MEAL_SLOTS,
   MEAL_SLOT_LABELS,
+  MEAL_SLOTS,
+  type MealSlot,
   ORDINARY_MEAL_SLOTS,
   WORKOUT_MEAL_SLOTS,
-  type MealSlot,
 } from '../../../../../packages/utils/src/meal-slots.ts';
 
 export {MEAL_SLOTS, ORDINARY_MEAL_SLOTS, WORKOUT_MEAL_SLOTS};

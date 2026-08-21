@@ -690,9 +690,7 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
                   key={card.id}
                 >
                   <span className="text-sm font-bold">{card.name}</span>
-                  <span className="text-[11px] text-muted">
-                    {card.kind === 'planned' ? card.total : 'open'} sets
-                  </span>
+                  <span className="text-[11px] text-muted">{card.kind === 'planned' ? card.total : 'open'} sets</span>
                 </div>
               ))}
             </div>

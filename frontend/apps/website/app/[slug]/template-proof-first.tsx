@@ -22,8 +22,8 @@ const condensed = "'Roboto Condensed', sans-serif";
 
 export function ProofFirstTemplate({page}: {page: LandingPage}) {
   const [selectedId, setSelectedId] = useState<string | null>(page.programs[0]?.id ?? null);
-  const applyRef = useRef<HTMLDivElement>(null);
-  const showSticky = useStickyBar(applyRef as React.RefObject<HTMLElement | null>);
+  const applyRef = useRef<HTMLElement>(null);
+  const showSticky = useStickyBar(applyRef);
   const scrollToApply = () => applyRef.current?.scrollIntoView({behavior: 'smooth', block: 'start'});
 
   return (

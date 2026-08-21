@@ -1,5 +1,5 @@
 import type {TrainingSession} from '../api/training.ts';
-import {activeExerciseCards, type ActiveExerciseCard} from './session-utils.ts';
+import {type ActiveExerciseCard, activeExerciseCards} from './session-utils.ts';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
@@ -7,11 +7,15 @@ function assert(condition: unknown, message: string): asserts condition {
   }
 }
 
-function assertPlanned(card: ActiveExerciseCard | undefined): asserts card is Extract<ActiveExerciseCard, {kind: 'planned'}> {
+function assertPlanned(
+  card: ActiveExerciseCard | undefined,
+): asserts card is Extract<ActiveExerciseCard, {kind: 'planned'}> {
   assert(card?.kind === 'planned', 'expected a planned exercise card');
 }
 
-function assertAdded(card: ActiveExerciseCard | undefined): asserts card is Extract<ActiveExerciseCard, {kind: 'added'}> {
+function assertAdded(
+  card: ActiveExerciseCard | undefined,
+): asserts card is Extract<ActiveExerciseCard, {kind: 'added'}> {
   assert(card?.kind === 'added', 'expected an added exercise card');
 }
 

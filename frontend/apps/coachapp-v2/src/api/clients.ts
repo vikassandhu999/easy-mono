@@ -41,8 +41,7 @@ export type ListClientsFilters = Pick<ListClientsQuery, 'search' | 'sort' | 'sta
 export function useGetClientQuery(id: string, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: clientKeys.detail(id),
-    queryFn: () =>
-      call(client.GET('/v1/coach/clients/{id}', {params: {path: {id}}})) as Promise<ClientResponse>, // openapi-fetch widens RequiredServices tuples to arrays
+    queryFn: () => call(client.GET('/v1/coach/clients/{id}', {params: {path: {id}}})) as Promise<ClientResponse>, // openapi-fetch widens RequiredServices tuples to arrays
     enabled: options?.enabled ?? true,
   });
 }

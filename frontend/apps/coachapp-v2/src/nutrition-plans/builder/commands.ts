@@ -11,17 +11,13 @@
  * Nutrient snapshots are SERVER-COMPUTED, so a successful Menu write replaces
  * the cached plan with the response rather than trusting the optimistic patch.
  */
-import {toast} from '@heroui/react';
 
+import {portionWireFromInput} from '@easy/utils/nutrition-portion';
+import {toast} from '@heroui/react';
 import {toastMutationError} from '@/@components/mutation-toast';
 import {createLocalNodeId, emptyNutrients, mealItemFromDraft, nextPosition, reorderNodes} from '@/api/nutrition-menu';
-import type {
-  NutritionMeal,
-  NutritionPlan,
-  NutritionPortionInput,
-} from '@/api/nutrition-plan-builder';
+import type {NutritionMeal, NutritionPlan, NutritionPortionInput} from '@/api/nutrition-plan-builder';
 import * as api from '@/api/nutrition-plan-builder';
-import {portionWireFromInput} from '@easy/utils/nutrition-portion';
 import {createCoalescingQueue} from '@/builder-kit/coalescing-queue';
 import {periodError} from '@/clients/lib/plan-coverage';
 import {coverageErrorMessage} from '@/nutrition-plans/lib/coverage-error';

@@ -72,8 +72,7 @@ export function useAcceptInviteMutation() {
  */
 export function useAcceptInviteVerifyMutation() {
   return useMutation({
-    mutationFn: (body: AcceptInviteVerifyRequest) =>
-      call(client.POST('/v1/auth/accept-invite/verify', {body})),
+    mutationFn: (body: AcceptInviteVerifyRequest) => call(client.POST('/v1/auth/accept-invite/verify', {body})),
   });
 }
 
@@ -85,7 +84,6 @@ export function useSendOtpMutation() {
 
 export function useExchangeTokenMutation() {
   return useMutation({
-    mutationFn: (body: TokenOtpRequest | TokenRefreshRequest) =>
-      call(client.POST('/v1/auth/token', {body})),
+    mutationFn: (body: TokenOtpRequest | TokenRefreshRequest) => call(client.POST('/v1/auth/token', {body})),
   });
 }

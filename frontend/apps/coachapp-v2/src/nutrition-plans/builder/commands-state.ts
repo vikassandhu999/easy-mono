@@ -1,5 +1,5 @@
-import type {NutritionDayPatternSlot, NutritionPlan, NutritionPortionInput} from '../../api/nutrition-plan-builder.ts';
 import {portionWireFromInput} from '@easy/utils/nutrition-portion';
+import type {NutritionDayPatternSlot, NutritionPlan, NutritionPortionInput} from '../../api/nutrition-plan-builder.ts';
 
 type DayPattern = NutritionPlan['day_patterns'][number];
 type Slot = NutritionDayPatternSlot;
@@ -46,7 +46,11 @@ export function changeOptionSlot(
   pattern.slots = pattern.slots.filter((slot) => slot.options.length > 0);
 }
 
-export function copyWithItemPortion<T extends PlanMeals>(plan: T, itemId: string, portion: NutritionPortionInput): T | undefined {
+export function copyWithItemPortion<T extends PlanMeals>(
+  plan: T,
+  itemId: string,
+  portion: NutritionPortionInput,
+): T | undefined {
   const copied = structuredClone(plan);
 
   for (const meal of copied.meals) {

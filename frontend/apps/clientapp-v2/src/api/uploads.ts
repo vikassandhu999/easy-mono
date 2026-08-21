@@ -12,15 +12,13 @@ export type ChatMessageEmbed = components['schemas']['ChatMessageEmbed'];
 /** Mints a presigned PUT for a new attachment. Nothing is cached — no invalidation. */
 export function useCreateClientUploadMutation() {
   return useMutation({
-    mutationFn: (body: AttachmentUploadRequest) =>
-      call(client.POST('/v1/client/uploads', {body})),
+    mutationFn: (body: AttachmentUploadRequest) => call(client.POST('/v1/client/uploads', {body})),
   });
 }
 
 /** Batch-mints presigned GETs. A mutation (not a query) because it POSTs a body of ids. */
 export function useGetClientAttachmentDownloadUrlsMutation() {
   return useMutation({
-    mutationFn: (body: AttachmentDownloadRequest) =>
-      call(client.POST('/v1/client/attachments/download-urls', {body})),
+    mutationFn: (body: AttachmentDownloadRequest) => call(client.POST('/v1/client/attachments/download-urls', {body})),
   });
 }

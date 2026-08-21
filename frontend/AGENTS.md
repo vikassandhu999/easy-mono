@@ -35,4 +35,6 @@ A public JSON field or endpoint: root `AGENTS.md` **API** pointer.
 
 `pnpm -C apps/<app> lint` is Biome `--write` — review its edits.
 
+Biome enforces `suspicious/noExplicitAny`, `suspicious/noConsole` (`.check.ts` files are exempt), and `style/noNonNullAssertion` as `warn`. Prefer discriminated unions and `requirePrimaryReason`/`primaryReason` over `reasons[0]!`.
+
 UI or routing: exercise the touched flow in a browser (root **Browser** pointer). Coach: 375px and 1280px. Client: 375px.

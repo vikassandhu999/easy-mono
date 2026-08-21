@@ -7,6 +7,7 @@ import {EmptyState} from '@/@components/empty-state';
 import {ROUTES} from '@/@config/routes';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
 import {useCheckInsQueueInfiniteQuery, type WorkbenchCheckInQueueItem} from '@/api/workbench';
+import {requirePrimaryReason} from '@/clients/lib/workbench-programming';
 import {presentCheckInReason} from '@/clients/lib/workbench-reason-presentation';
 
 import {QueueRow} from './queue-row';
@@ -19,7 +20,7 @@ export default function CheckInsView() {
     navigate(ROUTES.CHECKIN_REVIEW.replace(':id', item.submission.id));
 
   const toRow = (item: WorkbenchCheckInQueueItem) => {
-    const reason = item.reasons[0]!;
+    const reason = requirePrimaryReason(item.reasons);
     const presented = presentCheckInReason(reason);
     return {
       action: presented.action,

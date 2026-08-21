@@ -1,3 +1,4 @@
+import {ApiError} from './api-error.ts';
 import {
   clientPlanLifecycleLabel,
   getStaleTrainingPlanRevision,
@@ -54,24 +55,27 @@ if (
 }
 
 if (
-  getStaleTrainingPlanRevision({
-    data: {
+  getStaleTrainingPlanRevision(
+    new ApiError(409, {
       error_code: 'stale_revision',
       error_detail: {current_revision: 8},
-    },
-  }) !== 8
+    }),
+  ) !== 8
 ) {
   throw new Error('stale revision responses must expose the current server revision');
 }
 
-if (getStaleTrainingPlanRevision({data: {error_code: 'invalid_input'}}) !== null) {
+if (getStaleTrainingPlanRevision(new ApiError(400, {error_code: 'invalid_input'})) !== null) {
   throw new Error('non-stale API errors must not be treated as revision conflicts');
 }
 
 if (
-  getStaleTrainingPlanRevision({
-    data: {error_code: 'stale_revision', error_detail: {current_revision: '8'}},
-  }) !== null
+  getStaleTrainingPlanRevision(
+    new ApiError(409, {
+      error_code: 'stale_revision',
+      error_detail: {current_revision: '8'},
+    }),
+  ) !== null
 ) {
   throw new Error('malformed revision conflict details must be rejected');
 }

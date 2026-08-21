@@ -1,3 +1,6 @@
+import {parseApiErrorBody} from '@easy/utils/parse-api-error';
+
+import {ApiError} from './api-error.ts';
 import type {components} from './schema.ts';
 
 export type ClientPlanLifecycle = components['schemas']['CoachClientTrainingPlan']['lifecycle'];
@@ -28,16 +31,16 @@ export function trainingPlanDeleteRequest(plan: RevisionedTrainingPlan) {
 }
 
 export function getStaleTrainingPlanRevision(error: unknown): null | number {
-  if (!error || typeof error !== 'object' || !('data' in error)) {
+  if (!(error instanceof ApiError)) {
     return null;
   }
 
-  const data = (error as {data?: unknown}).data;
-  if (!data || typeof data !== 'object' || !('error_code' in data) || data.error_code !== 'stale_revision') {
+  const body = parseApiErrorBody(error.data);
+  if (!body || body.error_code !== 'stale_revision') {
     return null;
   }
 
-  const detail = 'error_detail' in data ? data.error_detail : null;
+  const detail = body.error_detail;
   if (!detail || typeof detail !== 'object' || !('current_revision' in detail)) {
     return null;
   }

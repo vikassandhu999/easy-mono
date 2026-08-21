@@ -1,6 +1,7 @@
 import createClient, {type Middleware} from 'openapi-fetch';
 
 import {clearTokens, getAccessToken} from '@/api/authStorage';
+import {ApiError} from '@/api/api-error';
 import type {paths} from '@/api/schema';
 import {refreshTokenIfNeeded} from '@/api/token-refresh';
 
@@ -54,27 +55,6 @@ if (!import.meta.env.VITE_API_BASE_URL && !/^(localhost|127\.0\.0\.1|192\.168\.)
   );
 }
 
-/**
- * Thrown by every query/mutation on a non-2xx response. Carries the parsed
- * error body under `data` — the shape `@/api/shared` helpers
- * (applyFormErrors, getApiErrorMessage, getApiErrorCode) read.
- */
-export class ApiError extends Error {
-  status: number;
-  data: unknown;
-
-  constructor(status: number, data: unknown) {
-    const message =
-      data && typeof data === 'object' && 'error_message' in data && typeof data.error_message === 'string'
-        ? data.error_message
-        : `Request failed with status ${status}`;
-    super(message);
-    this.name = 'ApiError';
-    this.status = status;
-    this.data = data;
-  }
-}
-
 const REFRESH_THRESHOLD_MS = 60_000;
 
 const forceLogout = () => {
@@ -120,6 +100,7 @@ client.use(authMiddleware);
  * Unwrap an openapi-fetch result for use as a React Query queryFn/mutationFn:
  * returns `data` on success, throws `ApiError` on a non-2xx response.
  */
+export {ApiError} from '@/api/api-error';
 export async function call<T, E>(promise: Promise<{data?: T; error?: E; response: Response}>): Promise<T> {
   const {data, error, response} = await promise;
   if (error !== undefined) {

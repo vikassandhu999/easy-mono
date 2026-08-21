@@ -1,3 +1,4 @@
+import {ApiError} from './api-error.ts';
 import {getSeatLimitError} from './seat-limit-error.ts';
 
 const summary = {
@@ -13,41 +14,51 @@ const summary = {
   used_seats: 2,
 };
 
-const hit = getSeatLimitError({
-  data: {
+const hit = getSeatLimitError(
+  new ApiError(409, {
     error_code: 'seat_limit_reached',
     error_message: 'No seats available',
     seat_summary: summary,
-  },
-  status: 409,
-});
+  }),
+);
 if (!hit || hit.seatSummary.seat_limit !== 2 || hit.seatSummary.is_owner !== true) {
   throw new Error('409 seat_limit_reached must expose a validated seat summary');
 }
 
-if (getSeatLimitError({data: {error_code: 'seat_limit_reached'}, status: 409}) !== null) {
+if (getSeatLimitError(new ApiError(409, {error_code: 'seat_limit_reached'})) !== null) {
   throw new Error('seat_limit_reached without a summary must be rejected');
 }
 
 if (
-  getSeatLimitError({
-    data: {error_code: 'seat_limit_reached', seat_summary: {is_owner: true, seat_limit: 2, used_seats: 2}},
-    status: 409,
-  }) !== null
+  getSeatLimitError(
+    new ApiError(409, {
+      error_code: 'seat_limit_reached',
+      seat_summary: {is_owner: true, seat_limit: 2, used_seats: 2},
+    }),
+  ) !== null
 ) {
   throw new Error('a partial seat_summary must be rejected');
 }
 
 if (
-  getSeatLimitError({
-    data: {error_code: 'seat_limit_reached', seat_summary: summary},
-    status: 400,
-  }) !== null
+  getSeatLimitError(
+    new ApiError(400, {
+      error_code: 'seat_limit_reached',
+      seat_summary: summary,
+    }),
+  ) !== null
 ) {
   throw new Error('non-409 seat_limit_reached must be rejected');
 }
 
-if (getSeatLimitError({data: {error_code: 'invalid_input', seat_summary: summary}, status: 409}) !== null) {
+if (
+  getSeatLimitError(
+    new ApiError(409, {
+      error_code: 'invalid_input',
+      seat_summary: summary,
+    }),
+  ) !== null
+) {
   throw new Error('other 409 bodies must not be treated as a seat limit');
 }
 

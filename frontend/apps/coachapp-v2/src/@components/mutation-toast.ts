@@ -8,20 +8,10 @@
  */
 import {toast} from '@heroui/react';
 
-/** Pull `error_code` off an RTK Query error, or undefined if the shape doesn't match. */
-export function getErrorCode(error: unknown): string | undefined {
-  if (typeof error !== 'object' || error === null || !('data' in error)) {
-    return undefined;
-  }
-  const data = (error as {data?: unknown}).data;
-  if (typeof data !== 'object' || data === null) {
-    return undefined;
-  }
-  return (data as {error_code?: string}).error_code;
-}
+import {getApiErrorCode} from '@/api/shared';
 
 function isNotFound(error: unknown): boolean {
-  return getErrorCode(error) === 'not_found';
+  return getApiErrorCode(error) === 'not_found';
 }
 
 export function toastMutationError(error: unknown, fallback: string): void {

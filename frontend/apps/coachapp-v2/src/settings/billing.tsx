@@ -72,7 +72,7 @@ const STATUS_COLOR: Record<BillingSummary['status'], 'default' | 'success' | 'wa
   cancelled: 'default',
 };
 
-const EVENT_ICON: Record<string, LucideIcon> = {
+const EVENT_ICON: Record<BillingEvent['kind'], LucideIcon> = {
   seats_added: UserPlus,
   seats_removed: UserMinus,
   payment_succeeded: CircleCheck,
@@ -80,6 +80,10 @@ const EVENT_ICON: Record<string, LucideIcon> = {
   cancellation_scheduled: CalendarX,
   subscription_cancelled: XCircle,
 };
+
+function unknownActivityLabel(_kind: never): string {
+  return 'Billing update';
+}
 
 function activityLabel(event: BillingEvent): string {
   switch (event.kind) {
@@ -96,7 +100,7 @@ function activityLabel(event: BillingEvent): string {
     case 'subscription_cancelled':
       return 'Subscription cancelled';
     default:
-      return event.kind;
+      return unknownActivityLabel(event.kind);
   }
 }
 
@@ -289,7 +293,7 @@ function ActivityFeed({events}: {events: BillingEvent[]}) {
             selectionMode="none"
           >
             {events.map((event) => {
-              const Icon = EVENT_ICON[event.kind] ?? CircleCheck;
+              const Icon = EVENT_ICON[event.kind];
               return (
                 <ListBox.Item
                   className="gap-3 rounded-none border-b border-separator px-4 py-3 last:border-b-0"

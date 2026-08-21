@@ -10,6 +10,7 @@ export type BillingSummary = components['schemas']['BillingSummary'];
 export type BillingResponse = components['schemas']['BillingResponse'];
 export type BillingCheckoutRequest = components['schemas']['BillingCheckoutRequest'];
 export type BillingCheckoutResponse = components['schemas']['BillingCheckoutResponse'];
+export {getSeatLimitError} from './seat-limit-error';
 
 const SYNC_POLL_INTERVAL_MS = 5_000;
 const SYNC_POLL_BUDGET_MS = 30_000;
@@ -107,13 +108,4 @@ export function useSyncBillingMutation() {
       qc.invalidateQueries({queryKey: clientKeys.lists()});
     },
   });
-}
-
-/** Extract the seat summary from a 409 seat_limit_reached error, or null. */
-export function getSeatLimitError(err: unknown): {seatSummary: BillingSummary} | null {
-  const e = err as {status?: number; data?: {error_code?: string; seat_summary?: BillingSummary}};
-  if (e?.status === 409 && e?.data?.error_code === 'seat_limit_reached' && e.data.seat_summary) {
-    return {seatSummary: e.data.seat_summary};
-  }
-  return null;
 }

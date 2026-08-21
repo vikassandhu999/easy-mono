@@ -34,6 +34,14 @@ export function isAcceptedAttachmentType(type: string): type is AttachmentUpload
   return (ACCEPTED_TYPES as readonly string[]).includes(type);
 }
 
+/** Byte cap for an accepted mime, or undefined if the composer must not upload it. */
+export function attachmentSizeLimit(type: string): number | undefined {
+  if (!isAcceptedAttachmentType(type)) {
+    return undefined;
+  }
+  return MAX_BYTES[type];
+}
+
 export function validateAttachmentFiles(files: File[], available: number): string | undefined {
   if (files.length > available) {
     return `You can add up to ${MAX_ATTACHMENTS} attachments.`;

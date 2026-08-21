@@ -2,7 +2,7 @@ import {buildMealItemDraft} from './amount-draft.ts';
 
 const recipe = buildMealItemDraft({
   activeServing: null,
-  recipeId: 'recipe-id',
+  itemRef: {kind: 'recipe', recipe_id: 'recipe-id'},
   resolvedWeightG: 230,
   servingCount: '0.5',
 });
@@ -13,7 +13,7 @@ if (recipe.kind !== 'recipe' || recipe.portion.kind !== 'gram' || recipe.portion
 
 const recipeServing = buildMealItemDraft({
   activeServing: null,
-  recipeId: 'recipe-id',
+  itemRef: {kind: 'recipe', recipe_id: 'recipe-id'},
   resolvedWeightG: null,
   servingCount: '0.5',
 });
@@ -28,7 +28,7 @@ if (
 
 const foodServing = buildMealItemDraft({
   activeServing: {label: '1 cup', unit: 'cup'},
-  foodId: 'food-id',
+  itemRef: {food_id: 'food-id', kind: 'food'},
   resolvedWeightG: 80,
   servingCount: '1',
 });
@@ -45,7 +45,7 @@ if (
 
 const foodGrams = buildMealItemDraft({
   activeServing: null,
-  foodId: 'food-id',
+  itemRef: {food_id: 'food-id', kind: 'food'},
   resolvedWeightG: 50,
   servingCount: '1',
 });

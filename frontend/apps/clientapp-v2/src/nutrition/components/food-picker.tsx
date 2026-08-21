@@ -22,8 +22,6 @@ function recipeCaloriesLabel(recipe: Recipe): string {
 }
 
 export type Picked = {
-  // A recipe with no cooked weight has no gram equivalent, so it is sized in
-  // servings instead: exactly one of these two is set.
   defaultAmount: null | number;
   defaultWeightG: null | number;
   id: string;

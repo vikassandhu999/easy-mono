@@ -42,6 +42,22 @@ export type NutritionPortion = components['schemas']['NutritionPortion'];
 export type NutritionMealItemInput = components['schemas']['NutritionMealItemInput'];
 export type NutritionPortionInput = components['schemas']['NutritionPortionInput'];
 
+/** Parsed portion — impossible sibling-null states removed at the boundary. */
+export type ParsedNutritionPortion =
+  | {grams: number; kind: 'gram'}
+  | {amount: number; kind: 'serving'; label: null | string; unit: string};
+
+export type NutritionItemRef = {food_id: string; kind: 'food'} | {kind: 'recipe'; recipe_id: string};
+
+export {
+  formatParsedPortion,
+  parseNutritionPortion,
+  portionWireFromInput,
+  toPortionInput,
+  toPortionWire,
+} from '@easy/utils/nutrition-portion';
+export {pickedToItemRef, toItemInput} from '@easy/utils/nutrition-item-ref';
+
 type NutritionPlanResponse = components['schemas']['NutritionPlanResponse'];
 
 /**

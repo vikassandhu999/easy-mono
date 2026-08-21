@@ -21,6 +21,7 @@ import type {
   NutritionPortionInput,
 } from '@/api/nutrition-plan-builder';
 import * as api from '@/api/nutrition-plan-builder';
+import {portionWireFromInput} from '@easy/utils/nutrition-portion';
 import {createCoalescingQueue} from '@/builder-kit/coalescing-queue';
 import {periodError} from '@/clients/lib/plan-coverage';
 import {coverageErrorMessage} from '@/nutrition-plans/lib/coverage-error';
@@ -457,13 +458,7 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
     patch((plan) => {
       const found = findItem(plan, itemId);
       if (found) {
-        found.item.portion = {
-          kind: values.kind,
-          grams: values.grams ?? null,
-          amount: values.amount ?? null,
-          unit: values.unit ?? null,
-          label: values.label ?? null,
-        };
+        found.item.portion = portionWireFromInput(values);
       }
     });
     const key = `item:${itemId}`;

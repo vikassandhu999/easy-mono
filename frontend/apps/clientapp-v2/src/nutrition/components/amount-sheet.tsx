@@ -6,12 +6,10 @@
  * ponytail: native numeric input instead of a custom keypad — the OS keypad is the
  * platform feature, and macros still update live on change.
  */
+import {parseNutritionPortion, toPortionInput} from '@easy/utils/nutrition-portion';
 import {Trash2} from 'lucide-react';
 import {useRef, useState} from 'react';
 import {
-  type DiaryMealSlot,
-  type NutritionDayEntry,
-  type NutritionDayOptionItem,
   useDeleteDiaryEntryMutation,
   useLogPlannedItemMutation,
   useUpdateDiaryEntryMutation,
@@ -24,19 +22,21 @@ import {
   updateEntryIntentFingerprint,
 } from '@/nutrition/diary-command-key';
 import {diaryWriteError} from '@/nutrition/diary-write-error';
+import {type SheetTarget} from '@/nutrition/nutrition-utils';
 
-export type SheetTarget = {
-  date: string;
-  loggedEntry: NutritionDayEntry | null;
-  mealId: null | string;
-  name: string;
-  mealItemId: null | string;
-  plannedItem: null | NutritionDayOptionItem;
-  slot: DiaryMealSlot;
-  slotLabel: string;
-};
+export type {SheetTarget};
 
 type Macros = {c: number; cal: number; f: number; p: number};
+
+function plannedPortion(target: SheetTarget) {
+  if (target.mode === 'logged') {
+    return (
+      parseNutritionPortion(target.loggedEntry.portion) ??
+      (target.plannedItem ? parseNutritionPortion(target.plannedItem.portion) : null)
+    );
+  }
+  return parseNutritionPortion(target.plannedItem.portion);
+}
 
 export default function AmountSheet({
   target,
@@ -53,38 +53,48 @@ export default function AmountSheet({
   const busy = logPlanned.isPending || updateEntry.isPending || deleteEntry.isPending;
   const commandIntent = useRef<DiaryCommandIntent | null>(null);
 
-  const {loggedEntry, plannedItem} = target;
-  const portion = plannedItem?.portion;
-  const servings = loggedEntry ? loggedEntry.portion.kind === 'serving' : portion?.kind === 'serving';
-  const unitLabel = servings ? (loggedEntry?.portion.unit ?? portion?.unit) || 'serving' : 'g';
-  const plannedPortion = servings
-    ? (loggedEntry?.portion.amount ?? portion?.amount ?? 1)
-    : (loggedEntry?.portion.grams ?? portion?.grams ?? 100);
-  const [raw, setRaw] = useState<string>(String(plannedPortion));
-  const [notes, setNotes] = useState(loggedEntry?.notes ?? '');
+  const parsedPlanned = plannedPortion(target);
+  const loggedParsed = target.mode === 'logged' ? parseNutritionPortion(target.loggedEntry.portion) : null;
+  const servings = loggedParsed?.kind === 'serving' || parsedPlanned?.kind === 'serving';
+  const unitLabel =
+    servings && loggedParsed?.kind === 'serving'
+      ? loggedParsed.unit
+      : servings && parsedPlanned?.kind === 'serving'
+        ? parsedPlanned.unit
+        : 'g';
+  const plannedPortionValue =
+    parsedPlanned?.kind === 'serving' ? parsedPlanned.amount : parsedPlanned?.kind === 'gram' ? parsedPlanned.grams : 100;
+  const loggedPortionValue =
+    loggedParsed?.kind === 'serving' ? loggedParsed.amount : loggedParsed?.kind === 'gram' ? loggedParsed.grams : plannedPortionValue;
+  const [raw, setRaw] = useState<string>(String(target.mode === 'logged' ? loggedPortionValue : plannedPortionValue));
+  const [notes, setNotes] = useState(target.mode === 'logged' ? (target.loggedEntry.notes ?? '') : '');
   const [free, setFree] = useState(false);
   const [error, setError] = useState<null | string>(null);
   const weight = Math.max(0, Number(raw) || 0);
 
   const liveMacros = (w: number): Macros | null => {
-    const plannedBase = servings ? (portion?.amount ?? 0) : (portion?.grams ?? 0);
-    if (!loggedEntry && plannedItem && plannedBase > 0) {
-      const k = w / plannedBase;
-      return {
-        c: (plannedItem.nutrients.carbohydrates ?? 0) * k,
-        cal: (plannedItem.nutrients.calories ?? 0) * k,
-        f: (plannedItem.nutrients.fat ?? 0) * k,
-        p: (plannedItem.nutrients.protein ?? 0) * k,
-      };
+    if (target.mode === 'planned') {
+      const base = parsedPlanned?.kind === 'serving' ? parsedPlanned.amount : parsedPlanned?.grams;
+      if (base && base > 0) {
+        const k = w / base;
+        return {
+          c: (target.plannedItem.nutrients.carbohydrates ?? 0) * k,
+          cal: (target.plannedItem.nutrients.calories ?? 0) * k,
+          f: (target.plannedItem.nutrients.fat ?? 0) * k,
+          p: (target.plannedItem.nutrients.protein ?? 0) * k,
+        };
+      }
+      return null;
     }
-    const base = servings ? loggedEntry?.portion.amount : loggedEntry?.portion.grams;
-    if (loggedEntry && base) {
+
+    const base = loggedParsed?.kind === 'serving' ? loggedParsed.amount : loggedParsed?.grams;
+    if (base) {
       const k = w / base;
       return {
-        c: (loggedEntry.nutrients.carbohydrates ?? 0) * k,
-        cal: (loggedEntry.nutrients.calories ?? 0) * k,
-        f: (loggedEntry.nutrients.fat ?? 0) * k,
-        p: (loggedEntry.nutrients.protein ?? 0) * k,
+        c: (target.loggedEntry.nutrients.carbohydrates ?? 0) * k,
+        cal: (target.loggedEntry.nutrients.calories ?? 0) * k,
+        f: (target.loggedEntry.nutrients.fat ?? 0) * k,
+        p: (target.loggedEntry.nutrients.protein ?? 0) * k,
       };
     }
     return null;
@@ -94,28 +104,35 @@ export default function AmountSheet({
   const logIt = async () => {
     try {
       setError(null);
-      if (loggedEntry) {
+      if (target.mode === 'logged') {
         const normalizedNotes = notes.trim() || null;
         commandIntent.current = diaryCommandKey(
           commandIntent.current,
           updateEntryIntentFingerprint({
             date: target.date,
-            entryId: loggedEntry.id,
-            expectedRevision: loggedEntry.revision,
+            entryId: target.loggedEntry.id,
+            expectedRevision: target.loggedEntry.revision,
             notes: normalizedNotes,
             weight,
           }),
         );
         await updateEntry.mutateAsync({
           date: target.date,
-          expected_revision: loggedEntry.revision,
-          id: loggedEntry.id,
+          expected_revision: target.loggedEntry.revision,
+          id: target.loggedEntry.id,
           idempotencyKey: commandIntent.current.key,
           notes: normalizedNotes,
-          portion: servings ? {amount: weight, kind: 'serving', unit: unitLabel} : {grams: weight, kind: 'gram'},
+          portion: servings
+            ? toPortionInput({
+                amount: weight,
+                kind: 'serving',
+                label: loggedParsed?.kind === 'serving' ? loggedParsed.label : null,
+                unit: unitLabel,
+              })
+            : toPortionInput({grams: weight, kind: 'gram'}),
         });
         commandIntent.current = null;
-      } else if (plannedItem && target.mealItemId) {
+      } else {
         commandIntent.current = diaryCommandKey(
           commandIntent.current,
           plannedItemIntentFingerprint({
@@ -139,7 +156,7 @@ export default function AmountSheet({
   };
 
   const notEaten = async () => {
-    if (!loggedEntry) {
+    if (target.mode !== 'logged') {
       onClose();
       return;
     }
@@ -149,14 +166,14 @@ export default function AmountSheet({
         commandIntent.current,
         deleteEntryIntentFingerprint({
           date: target.date,
-          entryId: loggedEntry.id,
-          expectedRevision: loggedEntry.revision,
+          entryId: target.loggedEntry.id,
+          expectedRevision: target.loggedEntry.revision,
         }),
       );
       await deleteEntry.mutateAsync({
         date: target.date,
-        expected_revision: loggedEntry.revision,
-        id: loggedEntry.id,
+        expected_revision: target.loggedEntry.revision,
+        id: target.loggedEntry.id,
         idempotencyKey: commandIntent.current.key,
       });
       commandIntent.current = null;
@@ -165,6 +182,8 @@ export default function AmountSheet({
       setError(diaryWriteError(caught, "Couldn't remove it. Try again."));
     }
   };
+
+  const canReplace = target.mode === 'planned' || target.mealItemId != null;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end bg-[rgba(8,8,11,0.5)]">
@@ -194,11 +213,11 @@ export default function AmountSheet({
             }`}
             onClick={() => {
               setFree(false);
-              setRaw(String(plannedPortion));
+              setRaw(String(target.mode === 'logged' ? loggedPortionValue : plannedPortionValue));
             }}
             type="button"
           >
-            as planned · {plannedPortion}
+            as planned · {target.mode === 'logged' ? loggedPortionValue : plannedPortionValue}
             {servings ? ` ${unitLabel}` : 'g'}
           </button>
           <button
@@ -240,7 +259,7 @@ export default function AmountSheet({
           </div>
         ) : null}
 
-        {loggedEntry ? (
+        {target.mode === 'logged' ? (
           <textarea
             className="mb-3 min-h-16 w-full resize-none rounded-xl border border-field-border bg-surface-secondary p-3 text-sm outline-none focus:border-accent"
             onChange={(event) => setNotes(event.target.value)}
@@ -257,10 +276,10 @@ export default function AmountSheet({
           onClick={logIt}
           type="button"
         >
-          ✓ {loggedEntry ? 'Save' : 'Log it'}
+          ✓ {target.mode === 'logged' ? 'Save' : 'Log it'}
         </button>
         <div className="flex gap-2">
-          {target.mealItemId ? (
+          {canReplace ? (
             <button
               className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-border py-2.5 text-xs font-semibold text-foreground active:bg-surface-secondary disabled:opacity-50"
               disabled={busy}
@@ -270,7 +289,7 @@ export default function AmountSheet({
               🔄 Replace
             </button>
           ) : null}
-          {loggedEntry ? (
+          {target.mode === 'logged' ? (
             <button
               className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-border py-2.5 text-xs font-semibold text-foreground active:bg-surface-secondary disabled:opacity-50"
               disabled={busy}

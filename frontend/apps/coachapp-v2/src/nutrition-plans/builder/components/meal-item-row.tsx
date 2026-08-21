@@ -12,6 +12,7 @@ import {ChevronDown, ChevronUp, X} from 'lucide-react';
 import {AS_TEXT, NO_GAP} from '@/@components/ua-defaults';
 import type {Food, Recipe} from '@/api/nutrition-foods';
 import type {NutritionMealItem} from '@/api/nutrition-plan-builder';
+import {formatParsedPortion, parseNutritionPortion} from '@easy/utils/nutrition-portion';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -29,17 +30,8 @@ export type HydratedMealItem = NutritionMealItem & {
 // ---------------------------------------------------------------------------
 
 function formatAmount(item: HydratedMealItem): string {
-  const portion = item.portion;
-  if (portion.kind === 'gram' && portion.grams != null) {
-    return `${portion.grams}g`;
-  }
-  if (portion.amount != null) {
-    const unit = portion.label ?? portion.unit;
-    const plural = unit && portion.amount !== 1 && !unit.endsWith('s') ? 's' : '';
-    const unitStr = unit ? ` ${unit}${plural}` : '';
-    return `${portion.amount}${unitStr}`;
-  }
-  return '';
+  const parsed = parseNutritionPortion(item.portion);
+  return parsed ? formatParsedPortion(parsed) : '';
 }
 
 function fmt(n: number | null | undefined): string {

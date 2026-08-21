@@ -1,4 +1,5 @@
 import type {NutritionDayPatternSlot, NutritionPlan, NutritionPortionInput} from '../../api/nutrition-plan-builder.ts';
+import {portionWireFromInput} from '@easy/utils/nutrition-portion';
 
 type DayPattern = NutritionPlan['day_patterns'][number];
 type Slot = NutritionDayPatternSlot;
@@ -51,13 +52,7 @@ export function copyWithItemPortion<T extends PlanMeals>(plan: T, itemId: string
   for (const meal of copied.meals) {
     const item = meal.meal_items.find((candidate) => candidate.id === itemId);
     if (item) {
-      item.portion = {
-        kind: portion.kind,
-        grams: portion.grams ?? null,
-        amount: portion.amount ?? null,
-        unit: portion.unit ?? null,
-        label: portion.label ?? null,
-      };
+      item.portion = portionWireFromInput(portion);
       return copied;
     }
   }

@@ -10,6 +10,8 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./nutrition-item-ref": "./src/nutrition-item-ref.ts",
+    "./nutrition-portion": "./src/nutrition-portion.ts",
     "./parse-api-error": "./src/parse-api-error.ts"
   },
   "scripts": {

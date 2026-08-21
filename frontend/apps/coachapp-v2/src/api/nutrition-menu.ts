@@ -1,4 +1,5 @@
 import type {components} from '@/api/schema';
+import {parseNutritionPortion, portionWireFromInput, toPortionInput} from '@easy/utils/nutrition-portion';
 
 export type NutritionMenuReplaceRequest = components['schemas']['NutritionMenuReplaceRequest'];
 export type NutritionMealItemInput = components['schemas']['NutritionMealItemInput'];
@@ -137,13 +138,7 @@ export function mealItemFromDraft(
     food_id: draft.food_id ?? null,
     recipe_id: draft.recipe_id ?? null,
     position,
-    portion: {
-      kind: draft.portion.kind,
-      grams: draft.portion.grams ?? null,
-      amount: draft.portion.amount ?? null,
-      unit: draft.portion.unit ?? null,
-      label: draft.portion.label ?? null,
-    },
+    portion: portionWireFromInput(draft.portion),
     nutrients: emptyNutrients,
     nutrition_meal_id: mealId,
     inserted_at: timestamp,
@@ -173,11 +168,15 @@ function scheduleDayRef(patternId: string | null): string {
 }
 
 function portionInput(portion: NutritionMealItem['portion']): NutritionPortionInput {
+  const parsed = parseNutritionPortion(portion);
+  if (parsed) {
+    return toPortionInput(parsed);
+  }
   return {
-    kind: portion.kind,
-    grams: portion.grams,
     amount: portion.amount,
-    unit: portion.unit,
+    grams: portion.grams,
+    kind: portion.kind,
     label: portion.label,
+    unit: portion.unit,
   };
 }

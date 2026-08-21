@@ -126,8 +126,7 @@ still required because it also catches the *wrong-but-existing* selector.
    Choosing Containers — wins over the contract on overlap).
 4. `design-handoff/RECIPES.md`, `COPY.md` § screen (verbatim strings),
    `INTERACTIONS.md` § screen.
-5. `design-handoff/refs/*.png` for the screen — actually look at them (Read tool).
-6. `field-notes.md` (this skill dir) — gotchas that override the docs.
+5. `field-notes.md` (this skill dir) — gotchas that override the docs.
 
 ## 2. State inventory — counters missed states
 

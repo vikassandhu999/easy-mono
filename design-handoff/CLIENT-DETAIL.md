@@ -15,7 +15,6 @@ Companion to `UI-CONTRACT.md` (read that first for the component fence) and `AGE
 ## Source of truth
 
 - **Prototype:** `Client Detail.dc.html` (project root). Inline-styled DC — a **spec, not source**. Translate its decisions into §2 components per `UI-CONTRACT.md`; never port its markup, helper classes, or `var(--*)`.
-- **Refs:** `handoff/refs/CD-*.png` — one PNG per screen/state, `-desktop` (1240px) and `-mobile` (375px) where both exist. Reference-only crops of the prototype frames.
 - **Live states:** the prototype has a **"Preview state" switcher** at the top of the canvas (prototype-only affordance — do NOT build it) that drives the seven lifecycle states. Click through it to see every state live; it maps to `client.status` + derived flags, not new UI.
 
 ## What this is
@@ -85,7 +84,7 @@ Empty states (reachable individually too): **no training plan** (`Dumbbell`, Ass
 
 ## Finding a screen's markup in `Client Detail.dc.html`
 
-The file is **one state-driven DC**, not linear sections — each screen is an `<sc-if value="{{ FLAG }}">…</sc-if>` block whose root `<div>` carries a **`data-ref="CD-XX-{desktop,mobile}"`** attribute (same convention as the rest of the kit / `visual-diff.mjs`). It renders twice: the **desktop** frame (`.vp`, ~1240px) first, the **mobile** frame after the `<!-- ============ MOBILE 375 ============ -->` marker (`.phone`).
+The file is **one state-driven DC**, not linear sections — each screen is an `<sc-if value="{{ FLAG }}">…</sc-if>` block whose root `<div>` carries a **`data-ref="CD-XX-{desktop,mobile}"`** attribute (same convention as the rest of the kit). It renders twice: the **desktop** frame (`.vp`, ~1240px) first, the **mobile** frame after the `<!-- ============ MOBILE 375 ============ -->` marker (`.phone`).
 
 **To locate a ref:** `grep -n 'data-ref="CD-SD-desktop"' 'Client Detail.dc.html'` → jumps to that exact screen's markup. Every `CD-*.png` ref has a matching `data-ref` (except the whole-frame *state* refs — see below). Behaviour/copy for a screen lives in the logic class at the bottom — grep the state flag (2nd column) in `renderVals()`.
 

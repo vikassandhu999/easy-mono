@@ -209,9 +209,10 @@ Trust these over the handoff docs. When you discover a new one, add it here
   computed-value time*, so the property falls back to its INITIAL value, **not to
   the helper class's value**: `background: color-mix(…var(--warning)…)` computes
   `transparent` (not `.ptag`'s `var(--background)`) and `border-color` computes
-  `currentColor`. When a node diffs on exactly these, check `refs/<ID>.png` — if
-  the ref shows the intended tint, the render is broken (flag it as a design
-  conflict); if the ref agrees with the render, match the render.
+  `currentColor`. When a node diffs on exactly these, treat it as a broken
+  render if a tint was clearly intended (flag it as a design conflict);
+  otherwise match the render. (Reference PNGs were pruned from the repo;
+  recover `refs/<ID>.png` from git history if you need visual arbitration.)
 - **`Disclosure.Body`'s `.disclosure__body` is unlayered** — its padding beats
   every utility. Put a plain `div` inside `Disclosure.Content` instead.
 - **Collapsed `Disclosure` bodies still render** — a static `data-testid` inside

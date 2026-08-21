@@ -7,7 +7,7 @@ Phoenix API and pnpm React apps in one tree. Commands: `just --list`.
 - `frontend/` — `frontend/AGENTS.md` (the contract), then the app's `AGENTS.md` when you are inside that app.
 - `backend/` — `backend/AGENTS.md` (the contract).
 - `.scratch/<slug>/` — specs and tickets. Loop: `docs/agents/issue-tracker.md`.
-- `docs/` — ledger and ADRs. Specs go in `.scratch/`. Cited older plans: `docs/archive/` (read; leave in place).
+- `docs/` — ledger and ADRs. Specs go in `.scratch/`.
 
 The FE↔BE **contract** is OpenApiSpex under `backend/lib/easy_web/open_api/`.
 

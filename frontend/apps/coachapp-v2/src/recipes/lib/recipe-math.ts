@@ -1,4 +1,4 @@
-import type {Food} from '@/api/nutrition-foods';
+import type {Food, NutrientTotals} from '@/api/nutrition-foods';
 
 /**
  * One row of a recipe's ingredient editor. `amount`/`weight_g` are `string`
@@ -29,8 +29,16 @@ function toPositiveNumber(value: null | number | string): null | number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
-function roundToSingleDecimal(value: number): number {
-  return Math.round(value * 10) / 10;
+function roundToSingleDecimal(value: number | null): number | null {
+  return value == null ? null : Math.round(value * 10) / 10;
+}
+
+function scaleField(value: number | null | undefined, factor: number): number | null {
+  return value == null ? null : value * factor;
+}
+
+function addField(left: number | null, right: number | null): number | null {
+  return left == null || right == null ? null : left + right;
 }
 
 export function createIngredientDraft(food: Food): IngredientItem {
@@ -44,72 +52,73 @@ export function createIngredientDraft(food: Food): IngredientItem {
 }
 
 export function canComputeRecipeNutrition(ingredients: IngredientLike[]): boolean {
-  return ingredients.some((ingredient) => toPositiveNumber(ingredient.weight_g) != null);
+  return ingredients.length > 0 && ingredients.every((ingredient) => toPositiveNumber(ingredient.weight_g) != null);
 }
 
-export type RecipeTotals = {
-  calories: number;
-  carbs_g: number;
-  fats_g: number;
-  fiber_g: number;
-  protein_g: number;
-};
+export type RecipeTotals = NutrientTotals;
 
 /**
  * Macros contributed by `weightG` grams of a food, scaled from its per-100g
- * values. Unrounded — every consumer rounds at its own display edge (the
- * ingredient preview to integers, the totals card to one decimal).
+ * values. Unknown fields stay unknown. Unrounded — every consumer rounds at
+ * its own display edge.
  */
 export function scaleFoodMacros(food: IngredientLike['food'], weightG: number): RecipeTotals {
   const factor = weightG / 100;
+  const calories = scaleField(food.calories_per_100g, factor);
+  const protein = scaleField(food.protein_g_per_100g, factor);
+  const carbohydrates = scaleField(food.carbs_g_per_100g, factor);
+  const fat = scaleField(food.fat_g_per_100g, factor);
+  const fiber = scaleField(food.fiber_g_per_100g, factor);
   return {
-    calories: (food.calories_per_100g ?? 0) * factor,
-    carbs_g: (food.carbs_g_per_100g ?? 0) * factor,
-    fats_g: (food.fat_g_per_100g ?? 0) * factor,
-    fiber_g: (food.fiber_g_per_100g ?? 0) * factor,
-    protein_g: (food.protein_g_per_100g ?? 0) * factor,
+    calories,
+    carbohydrates,
+    complete: calories != null && protein != null && carbohydrates != null && fat != null && fiber != null,
+    fat,
+    fiber,
+    protein,
   };
 }
 
-/**
- * How many servings `recipe.nutrition` covers. No (or zero) servings_count
- * means the recipe IS one serving — this is a division denominator, so the
- * zero case must map to 1, never 0.
- */
-export function recipeServings(recipe: {servings_count?: null | number}): number {
-  const count = recipe.servings_count ?? 0;
-  return count > 0 ? count : 1;
+export function recipeServings(recipe: {servings_count: number}): number {
+  return recipe.servings_count > 0 ? recipe.servings_count : 1;
 }
 
-// Raw recipe totals (sum across ingredients) for the form's live "recipe totals"
-// nutrition card. Cooked weight does not affect totals.
 export function computeRecipeTotalsFromIngredients(ingredients: IngredientLike[]): null | RecipeTotals {
-  const totals: RecipeTotals = {calories: 0, carbs_g: 0, fats_g: 0, fiber_g: 0, protein_g: 0};
-  let totalWeight = 0;
-
-  for (const ingredient of ingredients) {
-    const weightG = toPositiveNumber(ingredient.weight_g);
-    if (!weightG) {
-      continue;
-    }
-    totalWeight += weightG;
-    const scaled = scaleFoodMacros(ingredient.food, weightG);
-    totals.calories += scaled.calories;
-    totals.protein_g += scaled.protein_g;
-    totals.carbs_g += scaled.carbs_g;
-    totals.fats_g += scaled.fats_g;
-    totals.fiber_g += scaled.fiber_g;
-  }
-
-  if (totalWeight === 0) {
+  const weighed = ingredients.filter((ingredient) => toPositiveNumber(ingredient.weight_g) != null);
+  if (weighed.length === 0) {
     return null;
   }
 
-  return {
+  const totals = weighed.slice(1).reduce<RecipeTotals>(
+    (acc, ingredient) => {
+      const scaled = scaleFoodMacros(ingredient.food, toPositiveNumber(ingredient.weight_g)!);
+      return {
+        calories: addField(acc.calories, scaled.calories),
+        carbohydrates: addField(acc.carbohydrates, scaled.carbohydrates),
+        complete: false,
+        fat: addField(acc.fat, scaled.fat),
+        fiber: addField(acc.fiber, scaled.fiber),
+        protein: addField(acc.protein, scaled.protein),
+      };
+    },
+    scaleFoodMacros(weighed[0]!.food, toPositiveNumber(weighed[0]!.weight_g)!),
+  );
+
+  const rounded = {
     calories: roundToSingleDecimal(totals.calories),
-    carbs_g: roundToSingleDecimal(totals.carbs_g),
-    fats_g: roundToSingleDecimal(totals.fats_g),
-    fiber_g: roundToSingleDecimal(totals.fiber_g),
-    protein_g: roundToSingleDecimal(totals.protein_g),
+    carbohydrates: roundToSingleDecimal(totals.carbohydrates),
+    fat: roundToSingleDecimal(totals.fat),
+    fiber: roundToSingleDecimal(totals.fiber),
+    protein: roundToSingleDecimal(totals.protein),
+  };
+
+  return {
+    ...rounded,
+    complete:
+      rounded.calories != null &&
+      rounded.protein != null &&
+      rounded.carbohydrates != null &&
+      rounded.fat != null &&
+      rounded.fiber != null,
   };
 }

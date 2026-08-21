@@ -82,6 +82,7 @@ export default function NutritionPlanBuilderScreen() {
           <NutritionPlanActions
             onDeleted={() => goBack()}
             plan={plan}
+            refetchLatest={async () => (await refetch()).data?.data}
           />
         </Page.Actions>
       </Page.Header>

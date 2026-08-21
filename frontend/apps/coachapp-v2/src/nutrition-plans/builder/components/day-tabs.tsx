@@ -2,12 +2,12 @@
  * The day switcher: one tab per day, then `+ Day` — the mirror of the training
  * builder's WorkoutTabs. Rename and delete of the active day live in
  * DayHeader, which also swaps this row for the rename field; this component
- * only switches and adds.
+ * switches, reorders, and adds.
  */
 import {Button, ToggleButton, ToggleButtonGroup} from '@heroui/react';
-import {Plus} from 'lucide-react';
-
-import type {NutritionPlanDay} from '@/api/nutrition-plan-builder';
+import {ChevronLeft, ChevronRight, Plus} from 'lucide-react';
+import {AS_ICON_BUTTON} from '@/@components/ua-defaults';
+import type {NutritionPlanDay} from '../plan-tree';
 
 interface DayTabsProps {
   days: NutritionPlanDay[];
@@ -15,9 +15,12 @@ interface DayTabsProps {
   onSelect: (dayId: string) => void;
   onAdd: () => void;
   isAdding: boolean;
+  onMove?: (direction: -1 | 1) => void;
+  isFirst?: boolean;
+  isLast?: boolean;
 }
 
-export function DayTabs({days, activeDayId, onSelect, onAdd, isAdding}: DayTabsProps) {
+export function DayTabs({days, activeDayId, onSelect, onAdd, isAdding, onMove, isFirst, isLast}: DayTabsProps) {
   return (
     <div className="flex flex-wrap items-center gap-2 pb-0.5 sm:flex-nowrap sm:overflow-x-auto">
       {days.length > 0 ? (
@@ -46,6 +49,35 @@ export function DayTabs({days, activeDayId, onSelect, onAdd, isAdding}: DayTabsP
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
+      ) : null}
+
+      {onMove ? (
+        <div className="flex shrink-0 items-center">
+          <Button
+            aria-label="Move day left"
+            className={`shrink-0 rounded-chip bg-transparent text-muted sm:size-7 ${AS_ICON_BUTTON}`}
+            data-testid="nb-move-day-left"
+            isDisabled={isFirst}
+            isIconOnly
+            onPress={() => onMove(-1)}
+            size="sm"
+            variant="ghost"
+          >
+            <ChevronLeft className="size-3.5" />
+          </Button>
+          <Button
+            aria-label="Move day right"
+            className={`shrink-0 rounded-chip bg-transparent text-muted sm:size-7 ${AS_ICON_BUTTON}`}
+            data-testid="nb-move-day-right"
+            isDisabled={isLast}
+            isIconOnly
+            onPress={() => onMove(1)}
+            size="sm"
+            variant="ghost"
+          >
+            <ChevronRight className="size-3.5" />
+          </Button>
+        </div>
       ) : null}
 
       <Button

@@ -31,7 +31,7 @@ defmodule EasyWeb.FallbackController do
       {:error,
        Error.new(
          :stale_revision,
-         "The Training Template or Client Plan changed since it was observed.",
+         "The resource changed since it was observed.",
          %{current_revision: current_revision},
          :conflict
        )}
@@ -342,7 +342,51 @@ defmodule EasyWeb.FallbackController do
   end
 
   def call(conn, {:error, :future_date}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{date: ["cannot be in the future"]}})})
+    call(
+      conn,
+      {:error, Error.new(:future_date, "The data provided was invalid.", %{fields: %{date: ["cannot be in the future"]}}, :unprocessable_entity)}
+    )
+  end
+
+  def call(conn, {:error, :outside_correction_window}) do
+    call(
+      conn,
+      {:error,
+       Error.new(
+         :outside_correction_window,
+         "The data provided was invalid.",
+         %{fields: %{date: ["must be today or within the previous 7 local dates"]}},
+         :unprocessable_entity
+       )}
+    )
+  end
+
+  def call(conn, {:error, :cannot_start_past_slot}) do
+    call(
+      conn,
+      {:error,
+       Error.unprocessable(%{
+         fields: %{date: ["planned logging cannot start an unfrozen past Diary Slot"]}
+       })}
+    )
+  end
+
+  def call(conn, {:error, :cannot_switch_past_slot}) do
+    call(
+      conn,
+      {:error, Error.unprocessable(%{fields: %{date: ["option switching is limited to the current local date"]}})}
+    )
+  end
+
+  def call(conn, {:error, :invalid_idempotency_key}) do
+    call(
+      conn,
+      {:error, Error.unprocessable(%{fields: %{"Idempotency-Key" => ["must be a UUID"]}})}
+    )
+  end
+
+  def call(conn, {:error, :invalid_portion}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{portion: ["is invalid"]}})})
   end
 
   def call(conn, {:error, :invalid_date_range}) do

@@ -18,6 +18,7 @@
 import {Typography, useOverlayState} from '@heroui/react';
 import {useMemo, useRef, useState} from 'react';
 
+import {PlanPeriodCard} from '@/@components/plan-period-card';
 import type {NutritionMeal, NutritionPlan} from '@/api/nutrition-plan-builder';
 
 import {AddItemsFlow} from './components/add-items-flow';
@@ -27,16 +28,9 @@ import {DayHeader} from './components/day-header';
 import {DeleteDayDialog} from './components/delete-day-dialog';
 import {MealCard, type MealSwap} from './components/meal-card';
 import type {HydratedMealItem} from './components/meal-item-row';
-import {AddMealControl, type MealPaletteOption} from './components/meal-palette';
-import {computeDayTotals} from './macros';
-import {
-  assignmentCounts,
-  firstFreeSlot,
-  getDays,
-  getWeekdayAssignments,
-  mealPlacementSummary,
-  slotRows,
-} from './plan-tree';
+import {AddMealControl} from './components/meal-palette';
+import {computeDayTotals, computeMealListTotals} from './macros';
+import {assignmentCounts, firstFreeSlot, getDays, getWeekdayAssignments, slotRows} from './plan-tree';
 import {assignedWeekdays} from './schedule';
 import {useActiveDay, usePlanBuilder} from './use-plan-builder';
 
@@ -45,8 +39,8 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
 
   const days = useMemo(() => getDays(plan), [plan]);
   const weekdayAssignments = useMemo(() => getWeekdayAssignments(plan), [plan]);
-  const meals = plan.meals ?? [];
-  const mealById = useMemo(() => new Map((plan.meals ?? []).map((m) => [m.id, m])), [plan.meals]);
+  const meals = plan.meals;
+  const mealById = useMemo(() => new Map(meals.map((meal) => [meal.id, meal])), [meals]);
 
   const [activeDay, selectDay] = useActiveDay(days);
 
@@ -89,53 +83,41 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
     }
   };
 
-  const createMeal = async () => {
-    if (!activeDay) {
-      return;
-    }
-    const meal = await commands.createMeal(activeDay.id, firstFreeSlot(activeDay));
-    if (meal) {
-      setOpenMealId(meal.id);
-      setAutoRenameMealId(meal.id);
-    }
-  };
-
-  // Derived per-day views of the plan. Memoized because this component
-  // re-renders per keystroke (day rename, meal rename) and reusableMeals /
-  // counts are O(meals x days) placement scans over the whole plan.
   const derived = useMemo(() => {
     if (!activeDay) {
       return null;
     }
-    const dayMealIds = new Set(activeDay.day_meals.map((dm) => dm.nutrition_meal_id));
-    const reusable: MealPaletteOption[] = (plan.meals ?? [])
-      .filter((m) => !dayMealIds.has(m.id))
-      .map((m) => ({
-        id: m.id,
-        meta: m.nutrition?.calories != null ? `${Math.round(m.nutrition.calories)} kcal` : undefined,
-        name: m.name,
-        sub: mealPlacementSummary(m.id, days, weekdayAssignments),
-      }));
     return {
       counts: assignmentCounts(days),
-      reusableMeals: reusable,
       rows: slotRows(activeDay),
-      totals: computeDayTotals(activeDay, mealById),
+      totals: slotRows(activeDay).length === 0 ? computeMealListTotals(meals) : computeDayTotals(activeDay, mealById),
     };
-  }, [activeDay, days, mealById, plan.meals, weekdayAssignments]);
+  }, [activeDay, days, mealById, meals]);
+
+  const periodCard =
+    plan.client_id != null ? (
+      <PlanPeriodCard
+        endDate={plan.end_date}
+        onSave={commands.setPlanPeriod}
+        startDate={plan.start_date}
+      />
+    ) : null;
 
   if (!activeDay || !derived) {
     return (
-      <Typography
-        color="muted"
-        type="body-sm"
-      >
-        No days yet.
-      </Typography>
+      <div className="flex flex-col gap-4">
+        {periodCard}
+        <Typography
+          color="muted"
+          type="body-sm"
+        >
+          No days yet.
+        </Typography>
+      </div>
     );
   }
 
-  const {counts, reusableMeals, rows, totals} = derived;
+  const {counts, rows, totals} = derived;
 
   // Style-diff anchors (design-handoff/manifests/NB.json): one card per visual
   // variant carries the id the manifest pairs against. First match wins, so a
@@ -163,6 +145,7 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
     // gap-4, no pb: the same stack rhythm as the training builder (its
     // plan-builder is also `flex flex-col gap-4`; Page.Content owns the pb-10).
     <div className="flex flex-col gap-4">
+      {periodCard}
       {/* Day switcher, weekday chips, rename/delete — the shared header shape */}
       <DayHeader
         assignedDays={assignedWeekdays(weekdayAssignments, activeDay.id)}
@@ -182,6 +165,15 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
             addDay().catch(() => undefined);
           },
           isAdding: commands.isAddingDay,
+          isFirst: days[0]?.id === activeDay.id,
+          isLast: days[days.length - 1]?.id === activeDay.id,
+          onMove:
+            days.length > 1
+              ? (direction) => {
+                  const from = days.findIndex((day) => day.id === activeDay.id);
+                  commands.moveDay(from, from + direction).catch(() => undefined);
+                }
+              : undefined,
         }}
       />
 
@@ -198,14 +190,56 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
         totals={totals}
       />
 
-      {/* Meal cards */}
+      {/* Meal cards — scheduled slot rows when present; otherwise the plan Menu. */}
       {rows.length === 0 ? (
-        <div
-          className="rounded-panel border border-dashed border-border p-5 text-center type-eyebrow text-muted"
-          data-testid="nb-day-empty"
-        >
-          No meals on this day yet — add the first one below.
-        </div>
+        meals.length === 0 ? (
+          <div
+            className="rounded-panel border border-dashed border-border p-5 text-center type-eyebrow text-muted"
+            data-testid="nb-day-empty"
+          >
+            No meals on this day yet.
+          </div>
+        ) : (
+          <div
+            className="flex flex-col gap-2"
+            data-testid="nb-meals"
+          >
+            {meals
+              .slice()
+              .sort((a, b) => a.position - b.position)
+              .map((meal, rowIndex, ordered) => (
+                <MealCard
+                  assignmentCount={counts.get(meal.id) ?? 0}
+                  autoRename={autoRenameMealId === meal.id}
+                  cardTestId={rowIndex === 0 ? 'nb-card' : undefined}
+                  commands={commands}
+                  dayId={activeDay.id}
+                  isFirst={rowIndex === 0}
+                  isLast={rowIndex === ordered.length - 1}
+                  key={meal.id}
+                  meal={meal}
+                  onAddItems={() => setAddingItemsTo(meal)}
+                  onEditItem={(item, anchor) => {
+                    editorAnchor.current = anchor;
+                    setEditingItem(item);
+                  }}
+                  onMove={(direction) => {
+                    commands.moveMeal(rowIndex, rowIndex + direction).catch(() => undefined);
+                  }}
+                  onToggle={() => {
+                    setOpenMealId((current) => (current === meal.id ? null : meal.id));
+                    setAutoRenameMealId(null);
+                  }}
+                  open={openMealId === meal.id}
+                  optionId={meal.id}
+                  slot={firstFreeSlot(activeDay)}
+                  triggerTestId={rowIndex === 0 ? 'nb-card-open-trigger' : undefined}
+                  swapCandidates={[]}
+                  swaps={[]}
+                />
+              ))}
+          </div>
+        )
       ) : (
         <div
           className="flex flex-col gap-2"
@@ -251,7 +285,7 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
                   .map((m) => ({
                     id: m.id,
                     name: m.name,
-                    sub: m.nutrition?.calories != null ? `${Math.round(m.nutrition.calories)} kcal` : undefined,
+                    sub: m.nutrients.calories != null ? `${Math.round(m.nutrients.calories)} kcal` : undefined,
                   }))}
                 swaps={swaps}
               />
@@ -260,16 +294,33 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
         </div>
       )}
 
-      {/* Add meal */}
       <AddMealControl
         onCreate={() => {
-          createMeal().catch(() => undefined);
+          commands
+            .createMeal()
+            .then((meal) => {
+              if (meal) {
+                setOpenMealId(meal.id);
+                setAutoRenameMealId(meal.id);
+              }
+            })
+            .catch(() => undefined);
         }}
         onReuse={(mealId) => {
           commands.addOption(activeDay.id, firstFreeSlot(activeDay), mealId).catch(() => undefined);
         }}
         planMealCount={meals.length}
-        reusable={reusableMeals}
+        reusable={
+          rows.length === 0
+            ? []
+            : meals
+                .filter((meal) => !(counts.get(meal.id) ?? 0))
+                .map((meal) => ({
+                  id: meal.id,
+                  name: meal.name,
+                  sub: meal.nutrients.calories != null ? `${Math.round(meal.nutrients.calories)} kcal` : undefined,
+                }))
+        }
       />
 
       {/* Delete day confirm */}

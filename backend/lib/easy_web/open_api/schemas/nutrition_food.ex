@@ -10,9 +10,9 @@ defmodule EasyWeb.OpenApi.Schemas.FoodServingSize do
       additionalProperties: false,
       properties: %{
         label: %Schema{type: :string},
-        amount: %Schema{type: :number},
+        amount: %Schema{type: :number, exclusiveMinimum: true, minimum: 0},
         unit: %Schema{type: :string},
-        weight_g: %Schema{type: :number},
+        weight_g: %Schema{type: :number, exclusiveMinimum: true, minimum: 0},
         is_default: %Schema{type: :boolean}
       },
       required: [:label, :amount, :unit, :weight_g, :is_default]
@@ -99,9 +99,12 @@ defmodule EasyWeb.OpenApi.Schemas.FoodUpdateRequest do
         notes: %Schema{type: :string, nullable: true},
         image_url: %Schema{type: :string, nullable: true},
         media_id: %Schema{type: :string, format: :uuid, nullable: true},
+        expected_revision: %Schema{type: :integer, minimum: 1},
         serving_sizes: %Schema{type: :array, items: FoodServingSize}
       },
+      required: [:expected_revision],
       example: %{
+        "expected_revision" => 1,
         "name" => "Plain Greek Yogurt",
         "dietary_tags" => ["high_protein"]
       }
@@ -110,10 +113,54 @@ defmodule EasyWeb.OpenApi.Schemas.FoodUpdateRequest do
   )
 end
 
+defmodule EasyWeb.OpenApi.Schemas.NutrientTotals do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "NutrientTotals",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      calories: %Schema{type: :number, nullable: true},
+      protein: %Schema{type: :number, nullable: true},
+      carbohydrates: %Schema{type: :number, nullable: true},
+      fat: %Schema{type: :number, nullable: true},
+      fiber: %Schema{type: :number, nullable: true},
+      complete: %Schema{type: :boolean}
+    },
+    required: [:calories, :protein, :carbohydrates, :fat, :fiber, :complete]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.StaleRevisionError do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "StaleRevisionError",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      error_code: %Schema{type: :string, enum: ["stale_revision"]},
+      error_message: %Schema{type: :string},
+      error_detail: %Schema{
+        type: :object,
+        additionalProperties: false,
+        properties: %{current_revision: %Schema{type: :integer, minimum: 1}},
+        required: [:current_revision]
+      }
+    },
+    required: [:error_code, :error_message, :error_detail]
+  })
+end
+
 defmodule EasyWeb.OpenApi.Schemas.Food do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.{FoodServingSize, LibraryMedia, Shared}
+  alias EasyWeb.OpenApi.Schemas.{FoodServingSize, LibraryMedia, NutrientTotals, Shared}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -129,6 +176,8 @@ defmodule EasyWeb.OpenApi.Schemas.Food do
           barcode: %Schema{type: :string, nullable: true},
           source: %Schema{type: :string, enum: ["system", "imported", "custom"], nullable: true},
           category: %Schema{type: :string, nullable: true},
+          revision: %Schema{type: :integer, minimum: 1},
+          nutrients: NutrientTotals,
           calories_per_100g: %Schema{type: :number, nullable: true},
           protein_g_per_100g: %Schema{type: :number, nullable: true},
           carbs_g_per_100g: %Schema{type: :number, nullable: true},
@@ -149,6 +198,8 @@ defmodule EasyWeb.OpenApi.Schemas.Food do
       :id,
       :name,
       :source,
+      :revision,
+      :nutrients,
       :category,
       :notes,
       :image_url,
@@ -186,7 +237,17 @@ defmodule EasyWeb.OpenApi.Schemas.FoodImpactResponse do
       id: %Schema{type: :string},
       name: %Schema{type: :string},
       client_id: %Schema{type: :string, nullable: true}
-    }
+    },
+    required: [:id, :name, :client_id]
+  }
+
+  @recipe_ref %Schema{
+    type: :object,
+    properties: %{
+      id: %Schema{type: :string},
+      name: %Schema{type: :string}
+    },
+    required: [:id, :name]
   }
 
   OpenApiSpex.schema(%{
@@ -196,11 +257,14 @@ defmodule EasyWeb.OpenApi.Schemas.FoodImpactResponse do
       data: %Schema{
         type: :object,
         properties: %{
+          recipes: %Schema{type: :array, items: @recipe_ref},
           templates: %Schema{type: :array, items: @plan_ref},
           active_client_plans: %Schema{type: :array, items: @plan_ref}
-        }
+        },
+        required: [:recipes, :templates, :active_client_plans]
       }
-    }
+    },
+    required: [:data]
   })
 end
 

@@ -1,30 +1,36 @@
 import {formatIsoDateOnly} from '@easy/utils';
-import {AlertDialog, Button, Chip, Typography, toast} from '@heroui/react';
+import {Button, Chip, Typography, toast} from '@heroui/react';
 import {ChefHat, Copy, Pencil, Trash2} from 'lucide-react';
-import type {ReactNode} from 'react';
 import {generatePath, useNavigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
 import {DETAIL_SECTION_CLASS, DetailSectionHeading} from '@/@components/detail-section-heading';
 import {ErrorState} from '@/@components/error-state';
+import {LibraryDeleteDialog} from '@/@components/library-delete-dialog';
+import {LibraryUsageSection} from '@/@components/library-usage';
 import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import type {Recipe} from '@/api/nutrition-foods';
-import {useCopyNutritionRecipeMutation, useDeleteRecipeMutation, useGetRecipeQuery} from '@/api/nutrition-foods';
+import type {NutrientTotals} from '@/api/nutrition-foods';
+import {
+  useCopyNutritionRecipeMutation,
+  useDeleteRecipeMutation,
+  useGetRecipeImpactQuery,
+  useGetRecipeQuery,
+} from '@/api/nutrition-foods';
+import {hasLibraryUsage, libraryInUseMessage, normalizeLibraryImpact} from '@/foods/lib/library-impact';
 
-// recipe.nutrition holds the recipe's total computed macros (not per-100g).
-// The backend derives it from recipe_ingredients; it is null when no ingredient
-// carries weight data. We display it as recipe totals.
-type RecipeNutrition = NonNullable<Recipe['nutrition']>;
-
-const MACRO_SEGMENTS: {color: 'accent' | 'success' | 'warning'; key: keyof RecipeNutrition; label: string}[] = [
-  {color: 'accent', key: 'protein_g', label: 'Protein'},
-  {color: 'success', key: 'carbs_g', label: 'Carbs'},
-  {color: 'warning', key: 'fat_g', label: 'Fats'},
+const MACRO_SEGMENTS: {
+  color: 'accent' | 'success' | 'warning';
+  key: keyof Pick<NutrientTotals, 'carbohydrates' | 'fat' | 'protein'>;
+  label: string;
+}[] = [
+  {color: 'accent', key: 'protein', label: 'Protein'},
+  {color: 'success', key: 'carbohydrates', label: 'Carbs'},
+  {color: 'warning', key: 'fat', label: 'Fats'},
 ];
 
 export default function RecipeDetail() {
@@ -32,10 +38,13 @@ export default function RecipeDetail() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.RECIPES);
   const {data, isError, isLoading, refetch} = useGetRecipeQuery(id!);
+  const {data: impactData} = useGetRecipeImpactQuery(id!);
   const deleteRecipe = useDeleteRecipeMutation();
   const copyRecipe = useCopyNutritionRecipeMutation();
   const isDeleting = deleteRecipe.isPending;
   const isDuplicating = copyRecipe.isPending;
+  const impact = normalizeLibraryImpact(impactData?.data);
+  const inUse = hasLibraryUsage(impact);
 
   const handleDuplicate = async () => {
     try {
@@ -47,51 +56,14 @@ export default function RecipeDetail() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async ({expectedRevision, id}: {expectedRevision: number; id: string}) => {
     try {
-      await deleteRecipe.mutateAsync(id!);
+      await deleteRecipe.mutateAsync({expectedRevision, id});
       navigate(ROUTES.RECIPES, {replace: true});
-    } catch {
-      toast.danger("Couldn't delete recipe");
+    } catch (error) {
+      toast.danger(libraryInUseMessage(error, "Couldn't delete recipe"));
     }
   };
-
-  const renderDeleteDialog = (trigger: ReactNode, recipeName: string) => (
-    <AlertDialog>
-      {trigger}
-      <AlertDialog.Backdrop variant="transparent">
-        <AlertDialog.Container>
-          <AlertDialog.Dialog>
-            <AlertDialog.CloseTrigger />
-            <AlertDialog.Header>
-              <AlertDialog.Icon status="danger" />
-              <AlertDialog.Heading>Delete recipe?</AlertDialog.Heading>
-            </AlertDialog.Header>
-            <AlertDialog.Body>
-              <Typography>
-                This will permanently delete <strong>{recipeName}</strong>. This action cannot be undone.
-              </Typography>
-            </AlertDialog.Body>
-            <AlertDialog.Footer>
-              <Button
-                slot="close"
-                variant="tertiary"
-              >
-                Cancel
-              </Button>
-              <Button
-                isPending={isDeleting}
-                onPress={handleDelete}
-                variant="danger"
-              >
-                {isDeleting ? 'Deleting' : 'Delete'}
-              </Button>
-            </AlertDialog.Footer>
-          </AlertDialog.Dialog>
-        </AlertDialog.Container>
-      </AlertDialog.Backdrop>
-    </AlertDialog>
-  );
 
   if (isLoading) {
     return (
@@ -142,12 +114,11 @@ export default function RecipeDetail() {
   const ingredientCount = recipe.recipe_ingredients.length;
   // Render ingredients in their stored order (position is the source of truth).
   const orderedIngredients = [...recipe.recipe_ingredients].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-  const nutrition = recipe.nutrition;
-  const kcal = nutrition?.calories;
-  const segments = MACRO_SEGMENTS.map((s) => ({...s, value: (nutrition?.[s.key] as number | null) ?? 0})).filter(
-    (s) => s.value > 0,
+  const kcal = recipe.nutrients.calories;
+  const segments = MACRO_SEGMENTS.map((s) => ({...s, value: recipe.nutrients[s.key]})).filter(
+    (s): s is typeof s & {value: number} => s.value != null && s.value > 0,
   );
-  const fiber = nutrition?.fiber_g;
+  const fiber = recipe.nutrients.fiber;
 
   return (
     <Page>
@@ -171,16 +142,22 @@ export default function RecipeDetail() {
             <Copy />
             Duplicate
           </Button>
-          {renderDeleteDialog(
-            <Button
-              aria-label="Delete recipe"
-              className="text-danger"
-              variant="outline"
-            >
-              <Trash2 />
-            </Button>,
-            recipe.name,
-          )}
+          <LibraryDeleteDialog
+            inUse={inUse}
+            isPending={isDeleting}
+            itemName={recipe.name}
+            label="Recipe"
+            onDelete={() => handleDelete({expectedRevision: recipe.revision, id: recipe.id})}
+            trigger={
+              <Button
+                aria-label="Delete recipe"
+                className="text-danger"
+                variant="outline"
+              >
+                <Trash2 />
+              </Button>
+            }
+          />
         </Page.Actions>
       </Page.Header>
 
@@ -208,6 +185,14 @@ export default function RecipeDetail() {
                     variant="secondary"
                   >
                     {recipe.cooked_weight_g} g cooked
+                  </Chip>
+                )}
+                {!recipe.nutrients.complete && (
+                  <Chip
+                    className={OUTLINE_CHIP_CLASS}
+                    variant="secondary"
+                  >
+                    Incomplete
                   </Chip>
                 )}
               </div>
@@ -281,6 +266,8 @@ export default function RecipeDetail() {
             </section>
           )}
 
+          <LibraryUsageSection impact={impact} />
+
           <section className="mt-8 border-t border-separator pt-5">
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -323,17 +310,23 @@ export default function RecipeDetail() {
           >
             <Copy />
           </Button>
-          {renderDeleteDialog(
-            <Button
-              isIconOnly
-              aria-label="Delete recipe"
-              className="text-danger"
-              variant="outline"
-            >
-              <Trash2 />
-            </Button>,
-            recipe.name,
-          )}
+          <LibraryDeleteDialog
+            inUse={inUse}
+            isPending={isDeleting}
+            itemName={recipe.name}
+            label="Recipe"
+            onDelete={() => handleDelete({expectedRevision: recipe.revision, id: recipe.id})}
+            trigger={
+              <Button
+                isIconOnly
+                aria-label="Delete recipe"
+                className="text-danger"
+                variant="outline"
+              >
+                <Trash2 />
+              </Button>
+            }
+          />
         </div>
       </Page.Content>
     </Page>

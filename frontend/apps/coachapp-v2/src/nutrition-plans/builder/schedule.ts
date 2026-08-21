@@ -8,9 +8,9 @@
  */
 import {WEEKDAYS} from '@easy/utils';
 
-import type {NutritionPlanDay, NutritionScheduleRequest} from '@/api/nutrition-plan-builder';
+import type {NutritionScheduleRequest} from '@/api/nutrition-plan-builder';
 
-import type {WeekdayAssignments} from './plan-tree';
+import type {NutritionPlanDay, WeekdayAssignments} from './plan-tree';
 
 export function assignedWeekdays(assignments: WeekdayAssignments, dayId: string): string[] {
   return WEEKDAYS.filter((weekday) => assignments[weekday] === dayId);

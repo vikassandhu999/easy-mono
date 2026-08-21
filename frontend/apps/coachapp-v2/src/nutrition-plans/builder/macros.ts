@@ -1,9 +1,9 @@
 /**
  * Macro arithmetic and formatting for the builder's figures. No React, no cache.
  */
-import type {NutritionMeal, NutritionPlanDay} from '@/api/nutrition-plan-builder';
+import type {NutritionMeal} from '@/api/nutrition-plan-builder';
 
-import {slotRows} from './plan-tree';
+import {type NutritionPlanDay, slotRows} from './plan-tree';
 
 /**
  * Round to one decimal place and strip trailing ".0"; `—` for missing.
@@ -19,20 +19,27 @@ export function fmt(n: number | null | undefined): string {
 }
 
 /** "474 kcal", or null when the meal has no priced items. */
-export function kcalLabel(nutrition: NutritionMeal['nutrition']): string | null {
-  const kcal = nutrition?.calories;
+export function kcalLabel(nutrients: NutritionMeal['nutrients']): string | null {
+  const kcal = nutrients?.calories;
   return kcal == null ? null : `${Math.round(kcal)} kcal`;
+}
+
+export function computeMealListTotals(meals: NutritionMeal[]) {
+  const totals = {calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0};
+  for (const meal of meals) {
+    totals.calories += meal.nutrients.calories ?? 0;
+    totals.protein_g += meal.nutrients.protein ?? 0;
+    totals.carbs_g += meal.nutrients.carbohydrates ?? 0;
+    totals.fat_g += meal.nutrients.fat ?? 0;
+  }
+  return totals;
 }
 
 /** Macro totals of the day's default options — the numbers behind the energy line. */
 export function computeDayTotals(day: NutritionPlanDay, mealById: Map<string, NutritionMeal>) {
-  const totals = {calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0};
-  for (const row of slotRows(day)) {
-    const nutrition = mealById.get(row.primary.nutrition_meal_id)?.nutrition;
-    totals.calories += nutrition?.calories ?? 0;
-    totals.protein_g += nutrition?.protein_g ?? 0;
-    totals.carbs_g += nutrition?.carbs_g ?? 0;
-    totals.fat_g += nutrition?.fat_g ?? 0;
-  }
-  return totals;
+  return computeMealListTotals(
+    slotRows(day)
+      .map((row) => mealById.get(row.primary.nutrition_meal_id))
+      .filter((meal): meal is NutritionMeal => meal != null),
+  );
 }

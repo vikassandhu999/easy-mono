@@ -6,8 +6,8 @@ import type {TrainingPlan, TrainingPlanWorkout, TrainingPlanWorkoutExercise} fro
 import * as api from '@/api/training-plan-builder';
 import {createLocalNodeId} from '@/api/training-prescription';
 import {createCoalescingQueue} from '@/builder-kit/coalescing-queue';
+import {periodError} from '@/clients/lib/plan-coverage';
 import {handleStaleTrainingPlanConflict} from '@/training-plans/lib/stale-training-plan-conflict';
-import {periodError} from './period';
 import {findElement, findWorkout, moveId} from './plan-tree';
 import {clearWorkoutFromSchedule, type Day, setScheduleDay} from './schedule';
 import {appendSet, blankSet, type PlannedSet, patchSet, removeSet} from './sets';

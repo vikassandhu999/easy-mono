@@ -9,7 +9,7 @@ import {useCreateCoachFoodMutation} from '@/api/nutrition-foods';
 import type {ServingSize} from '@/api/shared';
 import {applyFormErrors} from '@/api/shared';
 import FoodForm, {foodToDuplicateFormValues, foodToMediaValue, useFoodForm} from '@/foods/food-form/food-form';
-import {type FoodFormValues, foodToCreateRequest} from '@/foods/food-form/food-form-data';
+import {editorServingSizesFromFood, type FoodFormValues, foodToCreateRequest} from '@/foods/food-form/food-form-data';
 
 export default function CreateFood() {
   const navigate = useNavigate();
@@ -26,11 +26,7 @@ export default function CreateFood() {
   );
 
   const [servingSizes, setServingSizes] = useState<ServingSize[]>(
-    (duplicateFrom?.serving_sizes ?? []).map((s) => ({
-      unit: s.unit,
-      amount: s.amount ?? null,
-      weight_g: s.weight_g ?? null,
-    })),
+    editorServingSizesFromFood(duplicateFrom?.serving_sizes ?? []),
   );
 
   const form = useFoodForm(duplicateFormValues ? {defaultValues: duplicateFormValues} : undefined);

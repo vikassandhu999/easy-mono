@@ -39,7 +39,15 @@ export function ServingSizesEditor({
       setServingError('Enter a serving unit');
       return;
     }
-    const serving: ServingSize = {unit, amount: newAmount ?? null, weight_g: newWeightG ?? null};
+    if (newAmount == null || newAmount <= 0) {
+      setServingError('Enter a positive amount');
+      return;
+    }
+    if (newWeightG == null || newWeightG <= 0) {
+      setServingError('Enter a positive gram weight');
+      return;
+    }
+    const serving: ServingSize = {unit, amount: newAmount, weight_g: newWeightG};
     onChange([...value, serving]);
     resetForm();
     setIsAdding(false);

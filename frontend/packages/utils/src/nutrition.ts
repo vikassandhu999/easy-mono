@@ -12,23 +12,33 @@ export type MacroTotals = {
 // ── Meal slot constants ──────────────────────────────────────
 
 export const MEAL_SLOTS = [
+  'early_morning',
   'breakfast',
-  'morning_snack',
+  'mid_morning',
   'lunch',
-  'afternoon_snack',
+  'afternoon',
+  'evening',
   'dinner',
-  'evening_snack',
+  'pre_sleep',
+  'pre_workout',
+  'during_workout',
+  'post_workout',
 ] as const;
 
 export type MealSlot = (typeof MEAL_SLOTS)[number];
 
-export const MEAL_SLOT_LABELS: Record<string, string> = {
-  afternoon_snack: 'Afternoon Snack',
+export const MEAL_SLOT_LABELS: Record<MealSlot, string> = {
+  afternoon: 'After lunch',
   breakfast: 'Breakfast',
   dinner: 'Dinner',
-  evening_snack: 'Evening Snack',
+  during_workout: 'During workout',
+  early_morning: 'Early morning',
+  evening: 'Evening',
   lunch: 'Lunch',
-  morning_snack: 'Morning Snack',
+  mid_morning: 'After breakfast',
+  post_workout: 'After workout',
+  pre_sleep: 'Before sleep',
+  pre_workout: 'Before workout',
 };
 
 // ── Weekday helpers ──────────────────────────────────────────
@@ -99,58 +109,6 @@ export function computeMacrosFromSnapshot(macrosSnapshot: Macros | null, weightG
     fat: (normalized.fats_g ?? 0) * factor,
     protein: (normalized.protein_g ?? 0) * factor,
   };
-}
-
-/**
- * Sum macros across an array of food log entries (old model — per-100g macros_snapshot + weight_g).
- * @deprecated Use sumMacrosFromEntries for the new FoodLogEntry model with server-computed macros.
- */
-export function sumMacros(logs: Array<{macros_snapshot: Macros | null; weight_g: null | number}>): MacroTotals {
-  const totals = {...ZERO_MACROS};
-  for (const log of logs) {
-    const itemMacros = computeMacrosFromSnapshot(log.macros_snapshot, log.weight_g);
-    totals.calories += itemMacros.calories;
-    totals.protein += itemMacros.protein;
-    totals.carbs += itemMacros.carbs;
-    totals.fat += itemMacros.fat;
-  }
-  return totals;
-}
-
-/**
- * Sum macros across FoodLogEntry items with server-computed macro fields.
- * Each entry already has final `calories`, `protein_g`, `carbs_g`, `fat_g` values.
- */
-export function sumMacrosFromEntries(
-  entries: Array<{calories: null | number; carbs_g: null | number; fat_g: null | number; protein_g: null | number}>,
-): MacroTotals {
-  const totals = {...ZERO_MACROS};
-  for (const entry of entries) {
-    totals.calories += entry.calories ?? 0;
-    totals.protein += entry.protein_g ?? 0;
-    totals.carbs += entry.carbs_g ?? 0;
-    totals.fat += entry.fat_g ?? 0;
-  }
-  return totals;
-}
-
-/**
- * Compute planned macro totals from meal items.
- */
-export function computePlannedMacros(
-  meals: Array<{items: Array<{macros: Macros | null; weight_g: null | number}>}>,
-): MacroTotals {
-  const totals = {...ZERO_MACROS};
-  for (const meal of meals) {
-    for (const item of meal.items) {
-      const itemMacros = computeMacrosFromSnapshot(item.macros, item.weight_g);
-      totals.calories += itemMacros.calories;
-      totals.protein += itemMacros.protein;
-      totals.carbs += itemMacros.carbs;
-      totals.fat += itemMacros.fat;
-    }
-  }
-  return totals;
 }
 
 /**

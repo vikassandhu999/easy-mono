@@ -11,7 +11,7 @@ import type {ClientProfileFormAssignment} from '@/api/checkins';
 import {useListClientFormAssignmentsForCoachQuery} from '@/api/checkins';
 import type {Client} from '@/api/clients';
 import {useListClientWeightEntriesQuery, useUpdateClientMutation} from '@/api/clients';
-import {useListCoachMealLogsQuery} from '@/api/nutrition-plans-list';
+import {useListCoachNutritionDaysQuery} from '@/api/nutrition-plans-list';
 import {useListCoachClientTrainingSessionsQuery} from '@/api/training-plans-list';
 import {type AnswerType, formatAnswer, isSummarisableAnswer, submissionPhotoIds} from '@/checkins/lib/form-answers';
 import {DetailRow} from '@/clients/components/detail-row';
@@ -45,7 +45,7 @@ export function OverviewTab({client}: {client: Client}) {
   const clientPath = (route: string) => route.replace(':id', client.id);
 
   const sessions = useListCoachClientTrainingSessionsQuery(client.id, {from, to});
-  const meals = useListCoachMealLogsQuery(client.id, {from, to});
+  const meals = useListCoachNutritionDaysQuery(client.id, {from, to});
   const weights = useListClientWeightEntriesQuery(client.id);
   const forms = useListClientFormAssignmentsForCoachQuery(client.id);
 

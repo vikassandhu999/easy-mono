@@ -1,7 +1,7 @@
 defmodule Easy.Nutrition.Recipe do
   use Ecto.Schema
 
-  alias Easy.Nutrition.RecipeIngredient
+  alias Easy.Nutrition.{Food, RecipeIngredient}
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -21,6 +21,7 @@ defmodule Easy.Nutrition.Recipe do
     field :instructions, :string
     field :servings_count, :integer
     field :cooked_weight_g, :float
+    field :revision, :integer, default: 1
 
     field :allergens, {:array, :string}, default: []
     field :dietary_tags, {:array, :string}, default: []
@@ -43,43 +44,35 @@ defmodule Easy.Nutrition.Recipe do
     :dietary_tags
   ]
 
-  @spec scalar_fields() :: [atom()]
-  def scalar_fields, do: @cast_fields
-
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, coach_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, coach_id)
-    |> update_change(:name, &Easy.Utils.trim/1)
-    |> validate_required([:name, :creator_id, :business_id, :servings_count])
-    |> validate_length(:name, max: 255)
-    |> validate_number(:servings_count, greater_than: 0)
-    |> validate_subset(:allergens, @allergens)
-    |> validate_subset(:dietary_tags, @dietary_tags)
-    |> cast_assoc(:recipe_ingredients,
-      with: fn ingredient, ingredient_attrs ->
-        RecipeIngredient.update_changeset(ingredient, business_id, ingredient_attrs)
-      end
-    )
+    |> put_change(:revision, 1)
+    |> validate_recipe()
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(recipe, attrs) do
     recipe
     |> cast(attrs, @cast_fields)
+    |> validate_recipe()
+  end
+
+  defp validate_recipe(changeset) do
+    changeset
     |> update_change(:name, &Easy.Utils.trim/1)
     |> validate_required([:name, :servings_count])
     |> validate_length(:name, max: 255)
     |> validate_number(:servings_count, greater_than: 0)
+    |> validate_number(:cooked_weight_g, greater_than: 0)
     |> validate_subset(:allergens, @allergens)
     |> validate_subset(:dietary_tags, @dietary_tags)
-    |> cast_assoc(:recipe_ingredients,
-      with: fn ingredient, ingredient_attrs ->
-        RecipeIngredient.update_changeset(ingredient, recipe.business_id, ingredient_attrs)
-      end
-    )
+    |> check_constraint(:revision, name: :nutrition_recipes_revision_positive)
+    |> check_constraint(:cooked_weight_g, name: :nutrition_recipes_cooked_weight_positive)
+    |> check_constraint(:servings_count, name: :nutrition_recipes_servings_count_positive)
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
@@ -100,17 +93,18 @@ defmodule Easy.Nutrition.Recipe do
 
   @spec include_ingredients(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def include_ingredients(query \\ __MODULE__, business_id) do
-    food_query = Easy.Nutrition.Food.for_business_or_system(Easy.Nutrition.Food, business_id)
-    ingredient_query = from(ri in RecipeIngredient, preload: [food: ^food_query])
-
-    from(r in query, preload: [foods: ^food_query, recipe_ingredients: ^ingredient_query])
+    from(r in query, preload: [recipe_ingredients: ^ingredient_food_query(business_id)])
   end
 
-  @spec include_ingredient_foods(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def include_ingredient_foods(query \\ __MODULE__, business_id) do
-    food_query = Easy.Nutrition.Food.for_business_or_system(Easy.Nutrition.Food, business_id)
-    ingredient_query = from(ri in RecipeIngredient, preload: [food: ^food_query])
+  defp ingredient_food_query(business_id) do
+    food_query =
+      Food
+      |> Food.for_business_or_system(business_id)
+      |> Food.include_media()
 
-    from(r in query, preload: [recipe_ingredients: ^ingredient_query])
+    from(ri in RecipeIngredient,
+      order_by: [asc: ri.position, asc: ri.id],
+      preload: [food: ^food_query]
+    )
   end
 end

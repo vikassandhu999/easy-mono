@@ -1,7 +1,9 @@
 import {
+  editorServingSizesFromFood,
   FOOD_FORM_DEFAULTS,
   type FoodFormValues,
   foodFormSchema,
+  foodToCreateRequest,
   foodToUpdateRequest,
   isFoodEditable,
 } from './food-form-data.ts';
@@ -26,6 +28,7 @@ if (!trimmed.success || trimmed.data.name !== 'Test Food') {
 }
 
 const cleared = foodToUpdateRequest({
+  expectedRevision: 1,
   servingSizes: [],
   values: {
     ...FOOD_FORM_DEFAULTS,
@@ -48,9 +51,40 @@ for (const field of [
     throw new Error(`clearing ${field} must send null`);
   }
 }
+if (cleared.expected_revision !== 1) {
+  throw new Error('update must send the observed revision');
+}
 if (!Array.isArray(cleared.serving_sizes) || cleared.serving_sizes.length !== 0) {
   throw new Error('clearing every serving size must send an empty array');
 }
+
+const withServings = foodToCreateRequest({
+  servingSizes: [
+    {amount: 1, unit: 'cup', weight_g: 100},
+    {amount: 2, unit: 'tbsp', weight_g: 30},
+  ],
+  values: {...FOOD_FORM_DEFAULTS, name: 'Test Food'},
+});
+if (withServings.serving_sizes?.[0]?.is_default !== true || withServings.serving_sizes?.[1]?.is_default !== false) {
+  throw new Error('a nonempty serving-size collection must mark exactly the first size as default');
+}
+
+const defaultSecond = editorServingSizesFromFood([
+  {amount: 1, is_default: false, label: 'cup', unit: 'cup', weight_g: 100},
+  {amount: 1, is_default: true, label: 'scoop', unit: 'scoop', weight_g: 30},
+]);
+if (defaultSecond[0]?.unit !== 'scoop') {
+  throw new Error('the editor must keep the default serving first');
+}
+const rewritten = foodToUpdateRequest({
+  expectedRevision: 1,
+  servingSizes: defaultSecond,
+  values: {...FOOD_FORM_DEFAULTS, name: 'Test Food'},
+});
+if (rewritten.serving_sizes?.[0]?.unit !== 'scoop' || rewritten.serving_sizes?.[0]?.is_default !== true) {
+  throw new Error('saving must keep the observed default serving');
+}
+
 if (!isFoodEditable('custom') || isFoodEditable('system') || isFoodEditable('imported')) {
   throw new Error('only custom foods may expose edit and delete actions');
 }

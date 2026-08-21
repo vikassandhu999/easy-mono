@@ -37,7 +37,7 @@ An Intake-only question asking whether the client requires Training, Nutrition, 
 An active client with no required service selected. An unclassified client does not enter Programming until Training or Nutrition is selected.
 
 **Coverage**:
-The dates for which a Client Plan supplies a required service. Coverage begins on its start date and is open-ended when it has no end date.
+The inclusive local-date range for which a client-owned plan supplies a required service. Coverage begins on its start date and is open-ended when it has no end date.
 
 **Training Template**:
 A reusable training prescription that can be copied for a client. It is never itself assigned to a client.
@@ -48,7 +48,7 @@ An independent training prescription owned by one client. It may originate from 
 _Avoid_: Assigned copy, assigned training plan
 
 **Assignment**:
-The act of creating a Client Plan from a Training Template for a client. It is not a persistent object separate from the resulting Client Plan.
+The act of creating a client-owned plan from a reusable template. It is not a persistent object separate from the resulting plan.
 _Avoid_: Assigned plan
 
 **Training Session**:
@@ -90,3 +90,47 @@ A coach decision that a waiting conversation needs no reply.
 
 **Quiet client**:
 An active client whose most recent due check-in was missed. Training inactivity is not part of this definition for v1.
+
+### Nutrition
+
+**Nutrition Template**:
+A reusable nutrition prescription that can be copied for a client. It is never itself assigned to a client.
+_Avoid_: Reusable nutrition plan, template plan
+
+**Client Nutrition Plan**:
+An independent nutrition prescription owned by one client. It may originate from a Nutrition Template, but later changes never affect its source or another Client Nutrition Plan.
+_Avoid_: Assigned nutrition plan
+
+**Menu**:
+The Meals, Menu Items, Day Patterns, Meal Options, and Week Schedule owned by one Nutrition Template or Client Nutrition Plan.
+_Avoid_: Plan structure
+
+**Day Pattern**:
+A named reusable arrangement of Meal Options across the closed Meal Slot vocabulary.
+
+**Week Schedule**:
+The mapping of Monday through Sunday to one Day Pattern per weekday.
+_Avoid_: Calendar, meal calendar
+
+**Live guidance**:
+The covering plan, targets, selected Day Pattern, and Meal Options resolved for a client-local date. Missing Coverage is a normal absence.
+
+**Meal Slot**:
+One of the closed timing anchors used by programming and Diary: ordinary day-period slots and a separate pre-, during-, and post-workout group.
+_Avoid_: Meal type, snack, occasion
+
+**Diary Slot**:
+One client's frozen guidance and actual intake for one local date and Meal Slot under one applied timezone.
+
+**Frozen offered option**:
+A snapshotted Meal Option available when a Diary Slot starts. It owns relational frozen planned items.
+
+**Frozen planned item**:
+A copy of one Menu Item's source identity, display details, Portion, nutrient basis, nutrients, and position.
+
+**Diary Entry**:
+One recorded occurrence of actual intake. It may retain an association with one frozen planned item or be independent.
+_Avoid_: Food log, meal log
+
+**Nutrition Day**:
+The shared client and coach read model combining live guidance for unstarted slots with frozen rows for started slots.

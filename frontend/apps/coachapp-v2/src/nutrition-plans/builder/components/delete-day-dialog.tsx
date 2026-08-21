@@ -7,9 +7,7 @@
 import {WEEKDAY_SHORT_LABELS, WEEKDAYS} from '@easy/utils';
 import {AlertDialog, Button, Spinner} from '@heroui/react';
 
-import type {NutritionPlanDay} from '@/api/nutrition-plan-builder';
-
-import type {WeekdayAssignments} from '../plan-tree';
+import type {NutritionPlanDay, WeekdayAssignments} from '../plan-tree';
 
 function confirmBody(day: NutritionPlanDay, days: NutritionPlanDay[], assignments: WeekdayAssignments): string {
   const assigned = WEEKDAYS.filter((w) => assignments[w] === day.id);

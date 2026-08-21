@@ -1,26 +1,37 @@
 import {formatIsoDateOnly} from '@easy/utils';
-import {AlertDialog, Button, Chip, Typography, toast} from '@heroui/react';
+import {Button, Chip, Typography, toast} from '@heroui/react';
 import {Copy, HandPlatter, Pencil, Trash2, Video} from 'lucide-react';
-import type {ReactNode} from 'react';
 import {generatePath, useNavigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
 import {DETAIL_SECTION_CLASS, DetailSectionHeading} from '@/@components/detail-section-heading';
 import {ErrorState} from '@/@components/error-state';
+import {LibraryDeleteDialog} from '@/@components/library-delete-dialog';
+import {LibraryUsageSection} from '@/@components/library-usage';
 import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import type {Food} from '@/api/nutrition-foods';
-import {useDeleteFoodMutation, useGetFoodQuery} from '@/api/nutrition-foods';
+import type {NutrientTotals} from '@/api/nutrition-foods';
+import {
+  useCopyNutritionFoodMutation,
+  useDeleteFoodMutation,
+  useGetFoodImpactQuery,
+  useGetFoodQuery,
+} from '@/api/nutrition-foods';
 import {isFoodEditable} from '@/foods/food-form/food-form-data';
+import {hasLibraryUsage, libraryInUseMessage, normalizeLibraryImpact} from '@/foods/lib/library-impact';
 
-const MACRO_SEGMENTS: {color: 'accent' | 'success' | 'warning'; key: keyof Food; label: string}[] = [
-  {color: 'accent', key: 'protein_g_per_100g', label: 'Protein'},
-  {color: 'success', key: 'carbs_g_per_100g', label: 'Carbs'},
-  {color: 'warning', key: 'fat_g_per_100g', label: 'Fats'},
+const MACRO_SEGMENTS: {
+  color: 'accent' | 'success' | 'warning';
+  key: keyof Pick<NutrientTotals, 'carbohydrates' | 'fat' | 'protein'>;
+  label: string;
+}[] = [
+  {color: 'accent', key: 'protein', label: 'Protein'},
+  {color: 'success', key: 'carbohydrates', label: 'Carbs'},
+  {color: 'warning', key: 'fat', label: 'Fats'},
 ];
 
 export default function FoodDetail() {
@@ -28,55 +39,20 @@ export default function FoodDetail() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.FOODS);
   const {data, isError, isLoading, refetch} = useGetFoodQuery(id!);
+  const {data: impactData} = useGetFoodImpactQuery(id!);
   const deleteFoodMutation = useDeleteFoodMutation();
+  const copyFood = useCopyNutritionFoodMutation();
+  const impact = normalizeLibraryImpact(impactData?.data);
+  const inUse = hasLibraryUsage(impact);
 
-  const handleDelete = async () => {
+  const handleDelete = async ({expectedRevision, id}: {expectedRevision: number; id: string}) => {
     try {
-      // useDeleteFoodMutation invalidates the list itself, so the deleted
-      // item doesn't linger when we land back on it.
-      await deleteFoodMutation.mutateAsync(id!);
+      await deleteFoodMutation.mutateAsync({id, expectedRevision});
       navigate(ROUTES.FOODS, {replace: true});
-    } catch {
-      toast.danger("Couldn't delete food");
+    } catch (error) {
+      toast.danger(libraryInUseMessage(error, "Couldn't delete food"));
     }
   };
-
-  const renderDeleteDialog = (trigger: ReactNode, foodName: string) => (
-    <AlertDialog>
-      {trigger}
-      <AlertDialog.Backdrop variant="transparent">
-        <AlertDialog.Container>
-          <AlertDialog.Dialog>
-            <AlertDialog.CloseTrigger />
-            <AlertDialog.Header>
-              <AlertDialog.Icon status="danger" />
-              <AlertDialog.Heading>Delete food?</AlertDialog.Heading>
-            </AlertDialog.Header>
-            <AlertDialog.Body>
-              <Typography>
-                This will permanently delete <strong>{foodName}</strong>. This action cannot be undone.
-              </Typography>
-            </AlertDialog.Body>
-            <AlertDialog.Footer>
-              <Button
-                slot="close"
-                variant="tertiary"
-              >
-                Cancel
-              </Button>
-              <Button
-                isPending={deleteFoodMutation.isPending}
-                onPress={handleDelete}
-                variant="danger"
-              >
-                {deleteFoodMutation.isPending ? 'Deleting' : 'Delete'}
-              </Button>
-            </AlertDialog.Footer>
-          </AlertDialog.Dialog>
-        </AlertDialog.Container>
-      </AlertDialog.Backdrop>
-    </AlertDialog>
-  );
 
   if (isLoading) {
     return (
@@ -124,11 +100,21 @@ export default function FoodDetail() {
 
   const food = data.data;
   const editable = isFoodEditable(food.source);
-  const kcal = food.calories_per_100g;
-  const segments = MACRO_SEGMENTS.map((s) => ({...s, value: (food[s.key] as number | null) ?? 0})).filter(
-    (s) => s.value > 0,
+  const kcal = food.nutrients.calories;
+  const segments = MACRO_SEGMENTS.map((s) => ({...s, value: food.nutrients[s.key]})).filter(
+    (s): s is typeof s & {value: number} => s.value != null && s.value > 0,
   );
-  const fiber = food.fiber_g_per_100g;
+  const fiber = food.nutrients.fiber;
+
+  const handleDuplicate = async () => {
+    try {
+      const result = await copyFood.mutateAsync(food.id);
+      toast.success('Food duplicated');
+      navigate(generatePath(ROUTES.FOOD_DETAIL, {id: result.data.id}));
+    } catch {
+      toast.danger("Food wasn't duplicated");
+    }
+  };
 
   return (
     <Page>
@@ -147,23 +133,31 @@ export default function FoodDetail() {
             </Button>
           )}
           <Button
-            onPress={() => navigate(ROUTES.CREATE_FOOD, {state: {duplicateFrom: food}})}
+            isPending={copyFood.isPending}
+            onPress={handleDuplicate}
             variant="outline"
           >
             <Copy />
             Duplicate
           </Button>
-          {editable &&
-            renderDeleteDialog(
-              <Button
-                aria-label="Delete food"
-                className="text-danger"
-                variant="outline"
-              >
-                <Trash2 />
-              </Button>,
-              food.name,
-            )}
+          {editable && (
+            <LibraryDeleteDialog
+              inUse={inUse}
+              isPending={deleteFoodMutation.isPending}
+              itemName={food.name}
+              label="Food"
+              onDelete={() => handleDelete({id: food.id, expectedRevision: food.revision})}
+              trigger={
+                <Button
+                  aria-label="Delete food"
+                  className="text-danger"
+                  variant="outline"
+                >
+                  <Trash2 />
+                </Button>
+              }
+            />
+          )}
         </Page.Actions>
       </Page.Header>
 
@@ -203,6 +197,14 @@ export default function FoodDetail() {
                 >
                   {food.source ?? 'custom'}
                 </Chip>
+                {!food.nutrients.complete && (
+                  <Chip
+                    className={OUTLINE_CHIP_CLASS}
+                    variant="secondary"
+                  >
+                    Incomplete
+                  </Chip>
+                )}
               </div>
             </div>
           </div>
@@ -257,6 +259,8 @@ export default function FoodDetail() {
             </section>
           )}
 
+          <LibraryUsageSection impact={impact} />
+
           <section className="mt-8 border-t border-separator pt-5">
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -295,23 +299,31 @@ export default function FoodDetail() {
           <Button
             isIconOnly
             aria-label="Duplicate food"
-            onPress={() => navigate(ROUTES.CREATE_FOOD, {state: {duplicateFrom: food}})}
+            isPending={copyFood.isPending}
+            onPress={handleDuplicate}
             variant="outline"
           >
             <Copy />
           </Button>
-          {editable &&
-            renderDeleteDialog(
-              <Button
-                isIconOnly
-                aria-label="Delete food"
-                className="text-danger"
-                variant="outline"
-              >
-                <Trash2 />
-              </Button>,
-              food.name,
-            )}
+          {editable && (
+            <LibraryDeleteDialog
+              inUse={inUse}
+              isPending={deleteFoodMutation.isPending}
+              itemName={food.name}
+              label="Food"
+              onDelete={() => handleDelete({id: food.id, expectedRevision: food.revision})}
+              trigger={
+                <Button
+                  isIconOnly
+                  aria-label="Delete food"
+                  className="text-danger"
+                  variant="outline"
+                >
+                  <Trash2 />
+                </Button>
+              }
+            />
+          )}
         </div>
       </Page.Content>
     </Page>

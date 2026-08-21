@@ -25,7 +25,7 @@ Both coach and client apps: TanStack React Query 5 + `openapi-typescript` types 
 - Optimistic writes: `patchQueryData(key, recipe)` from `src/api/query-client.ts`.
 - Logout: `queryClient.clear()`.
 
-A public JSON field or endpoint: OpenApiSpex schema and JSON view together, then `just gen-api`, then the hand-written hook and keys. Root `AGENTS.md` **API** pointer.
+A public JSON field or endpoint: root `AGENTS.md` **API** pointer.
 
 ## Verify
 

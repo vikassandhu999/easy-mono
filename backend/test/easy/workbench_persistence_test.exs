@@ -146,14 +146,7 @@ defmodule Easy.WorkbenchPersistenceTest do
             "training_plans_active_client_coverage_index"
           ] do
         columns = "(business_id, client_id, start_date, end_date)"
-
-        predicates =
-          if name == "training_plans_active_client_coverage_index" do
-            ["kind", "client_plan", "archived_at is null", "start_date is not null"]
-          else
-            ["status", "active", "client_id is not null"]
-          end
-
+        predicates = ["kind", "client_plan", "archived_at is null", "start_date is not null"]
         assert_index(definitions, name, columns, predicates)
       end
 

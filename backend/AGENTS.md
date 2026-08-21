@@ -105,7 +105,7 @@ Preload associations the JSON response includes. List endpoints that render chil
 
 ## OpenAPI
 
-A public JSON endpoint is unfinished until implementation, generated spec, and Swagger UI agree. Operation lives next to the action. Schema and JSON view change together (RM-002). Then `just gen-api`.
+A public JSON endpoint is unfinished until implementation, generated spec, and Swagger UI agree. Operation lives next to the action. Schema and JSON view change together (RM-002). The cutover sequence is the root **API** skill.
 
 Map user-controlled strings explicitly; never `String.to_atom/1` on input. Outbound HTTP is `Req`, behind a small module with normalized errors.
 

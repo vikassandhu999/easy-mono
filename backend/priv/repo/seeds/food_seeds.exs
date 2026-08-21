@@ -109,17 +109,24 @@ defmodule Easy.Repo.Seeds.Foods do
 
   defp build_serving_sizes(measures) do
     measures
-    |> Enum.reject(&(&1["measure_name"] == "grams"))
+    |> Enum.reject(fn m ->
+      m["measure_name"] == "grams" or round_macro(m["measure_weight"]) <= 0
+    end)
     |> Enum.sort_by(& &1["measure_rank"])
     |> Enum.map(fn m ->
       %ServingSize{
-        id: Ecto.UUID.generate(),
+        label: m["measure_name"],
         unit: m["measure_name"],
         weight_g: round_macro(m["measure_weight"]),
-        amount: 1.0
+        amount: 1.0,
+        is_default: false
       }
     end)
+    |> mark_first_default()
   end
+
+  defp mark_first_default([]), do: []
+  defp mark_first_default([first | rest]), do: [%{first | is_default: true} | rest]
 
   defp map_category("I"), do: "ingredient"
   defp map_category("PF"), do: "packaged"

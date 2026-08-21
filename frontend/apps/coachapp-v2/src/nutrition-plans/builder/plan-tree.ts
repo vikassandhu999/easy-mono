@@ -7,36 +7,59 @@
  * option of a slot is the meal card, and the remaining options are that meal's
  * `Client can swap with` alternates.
  */
-import {MEAL_SLOTS, WEEKDAY_SHORT_LABELS, WEEKDAYS} from '@easy/utils';
+import {WEEKDAY_SHORT_LABELS, WEEKDAYS} from '@easy/utils';
 
-import type {NutritionDayMeal, NutritionMeal, NutritionPlan, NutritionPlanDay} from '@/api/nutrition-plan-builder';
+import type {
+  NutritionDayPattern,
+  NutritionDayPatternSlot,
+  NutritionMeal,
+  NutritionMealItem,
+  NutritionMealOption,
+  NutritionPlan,
+} from '@/api/nutrition-plan-builder';
 
-import {slotLabel} from './slots';
+import {flattenSlots, MEAL_SLOTS, slotLabel} from './slots';
 
-/** Mon..Sun map of day ids — `plan.weekday_assignments` with its null guard. */
-export type WeekdayAssignments = Record<string, string | undefined>;
+export {flattenSlots};
+
+/** Internal builder view of a Day Pattern: slot options flattened with their Meal Slot. */
+export type NutritionDayMeal = NutritionMealOption & {meal_slot: NutritionDayPatternSlot['meal_slot']};
+export type NutritionPlanDay = NutritionDayPattern & {day_meals: NutritionDayMeal[]};
+
+/** Mon..Sun map of Day Pattern ids — `plan.schedule` with its null guard. */
+export type WeekdayAssignments = Record<string, string | null | undefined>;
 
 export function getDays(plan: NutritionPlan): NutritionPlanDay[] {
-  return (plan.days ?? []).slice().sort((a, b) => a.position - b.position);
+  return (plan.day_patterns ?? [])
+    .slice()
+    .sort((a, b) => a.position - b.position)
+    .map((pattern) => ({...pattern, day_meals: flattenSlots(pattern)}));
 }
 
 export function getWeekdayAssignments(plan: NutritionPlan): WeekdayAssignments {
-  return plan.weekday_assignments ?? {};
+  return plan.schedule ?? {};
+}
+
+export function findPattern(plan: NutritionPlan, dayId: string): NutritionDayPattern | undefined {
+  return plan.day_patterns.find((pattern) => pattern.id === dayId);
 }
 
 export function findDay(plan: NutritionPlan, dayId: string): NutritionPlanDay | undefined {
-  return plan.days?.find((day) => day.id === dayId);
+  return getDays(plan).find((day) => day.id === dayId);
 }
 
 export function findMeal(plan: NutritionPlan, mealId: string): NutritionMeal | undefined {
-  return plan.meals?.find((meal) => meal.id === mealId);
+  return plan.meals.find((meal) => meal.id === mealId);
 }
 
-export function findItem(plan: NutritionPlan, itemId: string) {
-  for (const meal of plan.meals ?? []) {
+export function findItem(
+  plan: NutritionPlan,
+  itemId: string,
+): {item: NutritionMealItem; meal: NutritionMeal} | undefined {
+  for (const meal of plan.meals) {
     const item = meal.meal_items.find((candidate) => candidate.id === itemId);
     if (item) {
-      return {meal, item};
+      return {item, meal};
     }
   }
   return undefined;

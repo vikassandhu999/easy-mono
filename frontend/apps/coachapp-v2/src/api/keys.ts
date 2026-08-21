@@ -81,20 +81,20 @@ export const equipmentKeys = {
 export const foodKeys = {
   ...domain('nutrition-foods'),
   categories: () => ['nutrition-foods', 'categories'] as const,
+  impact: (id: string) => [...foodKeys.detail(id), 'impact'] as const,
 };
 
-export const recipeKeys = domain('nutrition-recipes');
+const recipeDomain = domain('nutrition-recipes');
+export const recipeKeys = {
+  ...recipeDomain,
+  impact: (id: string) => [...recipeDomain.detail(id), 'impact'] as const,
+};
 
 export const nutritionPlanKeys = {
   ...domain('nutrition-plans'),
   /** Prefix over every client's assigned-plans list — for mutations that don't know which client. */
   forClients: () => ['nutrition-plans', 'for-client'] as const,
   forClient: (clientId: string) => [...nutritionPlanKeys.forClients(), clientId] as const,
-};
-
-export const mealLogKeys = {
-  all: ['nutrition-meal-logs'] as const,
-  forClient: (clientId: string, filters?: Filters) => ['nutrition-meal-logs', clientId, filters ?? {}] as const,
 };
 
 export const nutritionDayKeys = {

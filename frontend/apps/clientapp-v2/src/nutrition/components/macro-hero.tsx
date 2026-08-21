@@ -1,27 +1,37 @@
 /**
  * Macro hero (spec 01-today, option A): a calorie ring + three macro bars showing
- * consumed-vs-target. Updates live as entries are logged. `compact` is the smaller
+ * consumed-vs-target from the Nutrition Day summary. `compact` is the smaller
  * variant used on the logging sheet / past-day header.
  */
-import type {MacroTotals} from '@easy/utils';
-
-import type {Targets} from '@/nutrition/nutrition-utils';
+import {kcalText, nutrientNumber, type Targets} from '@/nutrition/nutrition-utils';
 
 const PROTEIN = 'var(--accent)';
 const CARBS = '#9aa3b2';
 const FAT = 'var(--success)';
 
-function pct(value: number, target: null | number): number {
-  return target ? Math.min(100, Math.round((value / target) * 100)) : 0;
+function pct(value: null | number | string | undefined, target: null | number | string | undefined): number {
+  const n = nutrientNumber(value);
+  const goal = nutrientNumber(target);
+  return n == null || !goal ? 0 : Math.min(100, Math.round((n / goal) * 100));
 }
 
-function Bar({label, value, target, color}: {color: string; label: string; target: null | number; value: number}) {
+function Bar({
+  label,
+  value,
+  target,
+  color,
+}: {
+  color: string;
+  label: string;
+  target: null | number;
+  value: null | number | undefined;
+}) {
   return (
     <div className="mb-1.5 last:mb-0">
       <div className="flex items-baseline justify-between text-[10px] text-muted">
         <span>{label}</span>
         <span>
-          {Math.round(value)}/{target ?? '—'}g
+          {kcalText(value)}/{target ?? '—'}g
         </span>
       </div>
       <div className="mt-1 h-[5px] overflow-hidden rounded-[3px] bg-[var(--border)]">
@@ -41,7 +51,7 @@ export default function MacroHero({
   statusLine,
 }: {
   compact?: boolean;
-  consumed: MacroTotals;
+  consumed: {calories?: null | number; carbohydrates?: null | number; fat?: null | number; protein?: null | number};
   statusLine?: React.ReactNode;
   targets: Targets;
 }) {
@@ -58,7 +68,7 @@ export default function MacroHero({
       >
         <div className={`grid ${inner} place-items-center rounded-full bg-[var(--ink-card)] text-center`}>
           <div className="leading-none">
-            <div className={`font-bold ${calText}`}>{Math.round(consumed.calories)}</div>
+            <div className={`font-bold ${calText}`}>{kcalText(consumed.calories)}</div>
             <div className="mt-0.5 text-[8px] text-muted">of {targets.calories ?? '—'}</div>
           </div>
         </div>
@@ -74,7 +84,7 @@ export default function MacroHero({
           color={CARBS}
           label="Carbs"
           target={targets.carbs}
-          value={consumed.carbs}
+          value={consumed.carbohydrates}
         />
         <Bar
           color={FAT}

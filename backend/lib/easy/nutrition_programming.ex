@@ -13,6 +13,7 @@ defmodule Easy.Nutrition.Programming do
     MealOption,
     MealSlot,
     Plan,
+    Recipe,
     WeekSchedule
   }
 
@@ -377,10 +378,8 @@ defmodule Easy.Nutrition.Programming do
     %{
       meals: load_menu_rows(Meal.for_plan(Meal.for_business(plan.business_id), plan.id)),
       items: load_menu_rows(MealItem.for_plan(MealItem.for_business(plan.business_id), plan.id)),
-      patterns:
-        load_menu_rows(DayPattern.for_plan(DayPattern.for_business(plan.business_id), plan.id)),
-      options:
-        load_menu_rows(MealOption.for_plan(MealOption.for_business(plan.business_id), plan.id))
+      patterns: load_menu_rows(DayPattern.for_plan(DayPattern.for_business(plan.business_id), plan.id)),
+      options: load_menu_rows(MealOption.for_plan(MealOption.for_business(plan.business_id), plan.id))
     }
   end
 
@@ -517,8 +516,7 @@ defmodule Easy.Nutrition.Programming do
     if valid_schedule?(schedule, submitted_identities(patterns)) do
       :ok
     else
-      {:error,
-       menu_error(plan, :schedule, "must map every weekday to a Day Pattern in this Menu")}
+      {:error, menu_error(plan, :schedule, "must map every weekday to a Day Pattern in this Menu")}
     end
   end
 
@@ -575,6 +573,8 @@ defmodule Easy.Nutrition.Programming do
   end
 
   defp resolve_library_items(ctx, plan, specs) do
+    lock_recipe_rows(ctx.business_id, specs)
+
     case Library.resolve_items(ctx, specs) do
       {:ok, resolved} ->
         {:ok, resolved}
@@ -585,6 +585,26 @@ defmodule Easy.Nutrition.Programming do
       {:error, :invalid_portion} ->
         {:error, menu_error(plan, :meals, "contains an invalid Portion")}
     end
+  end
+
+  defp lock_recipe_rows(business_id, specs) do
+    recipe_ids =
+      specs
+      |> Enum.flat_map(fn
+        %{kind: :recipe, id: id} -> [id]
+        _food -> []
+      end)
+      |> Enum.uniq()
+      |> Enum.sort()
+
+    Recipe
+    |> Recipe.for_business(business_id)
+    |> where([recipe], recipe.id in ^recipe_ids)
+    |> order_by([recipe], asc: recipe.id)
+    |> lock("FOR SHARE")
+    |> Repo.all()
+
+    :ok
   end
 
   defp library_item(input) do
@@ -685,8 +705,7 @@ defmodule Easy.Nutrition.Programming do
     current_positions = Enum.map(Map.values(menu.existing.patterns), & &1.position)
     requested_positions = Enum.map(menu.day_patterns, &node_position/1)
 
-    stage_positions(plan, retained, current_positions ++ requested_positions, fn pattern,
-                                                                                 position ->
+    stage_positions(plan, retained, current_positions ++ requested_positions, fn pattern, position ->
       DayPattern
       |> DayPattern.for_business(plan.business_id)
       |> DayPattern.for_plan(plan.id)
@@ -1017,8 +1036,7 @@ defmodule Easy.Nutrition.Programming do
   defp valid_uuid?(value), do: match?({:ok, _uuid}, Ecto.UUID.cast(value))
 
   defp valid_local_ref?(value),
-    do:
-      is_binary(value) and value == String.trim(value) and value != "" and byte_size(value) <= 100
+    do: is_binary(value) and value == String.trim(value) and value != "" and byte_size(value) <= 100
 
   defp menu_error(plan, field, message), do: plan |> change() |> add_error(field, message)
 

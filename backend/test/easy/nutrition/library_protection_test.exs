@@ -39,7 +39,15 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
     test "rejects removing cooked weight while a Menu uses a gram Portion of the Recipe" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
-      recipe = insert(:recipe, business: coach.business, creator: coach, cooked_weight_g: 400.0, servings_count: 2)
+
+      recipe =
+        insert(:recipe,
+          business: coach.business,
+          creator: coach,
+          cooked_weight_g: 400.0,
+          servings_count: 2
+        )
+
       put_recipe_on_menu(coach, recipe, portion: :gram)
 
       assert {:error, :in_use} =
@@ -50,10 +58,40 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
                })
     end
 
+    test "rejects string-key cooked weight removal while a Menu uses a gram Portion" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+
+      recipe =
+        insert(:recipe,
+          business: coach.business,
+          creator: coach,
+          cooked_weight_g: 400.0,
+          servings_count: 2
+        )
+
+      put_recipe_on_menu(coach, recipe, portion: :gram)
+
+      assert {:error, :in_use} =
+               Library.update_recipe(ctx, recipe.id, recipe.revision, %{
+                 "name" => recipe.name,
+                 "servings_count" => recipe.servings_count,
+                 "cooked_weight_g" => nil
+               })
+    end
+
     test "allows removing cooked weight when Menus only use serving Portions" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
-      recipe = insert(:recipe, business: coach.business, creator: coach, cooked_weight_g: 400.0, servings_count: 2)
+
+      recipe =
+        insert(:recipe,
+          business: coach.business,
+          creator: coach,
+          cooked_weight_g: 400.0,
+          servings_count: 2
+        )
+
       put_recipe_on_menu(coach, recipe, portion: :serving)
 
       assert {:ok, updated} =
@@ -114,10 +152,18 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
       client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
       food = insert(:food, business: coach.business, creator: coach, name: "Yogurt")
       recipe = insert(:recipe, business: coach.business, creator: coach, name: "Lassi")
-      insert(:recipe_ingredient, business: coach.business, recipe: recipe, food: food, weight_g: 100.0)
+
+      insert(:recipe_ingredient,
+        business: coach.business,
+        recipe: recipe,
+        food: food,
+        weight_g: 100.0
+      )
 
       template = put_food_on_menu(coach, food, name: "Cut Template")
-      archived = put_food_on_menu(coach, food, name: "Old Cut", archived_at: DateTime.utc_now(:second))
+
+      archived =
+        put_food_on_menu(coach, food, name: "Old Cut", archived_at: DateTime.utc_now(:second))
 
       client_plan =
         put_food_on_menu(coach, food,
@@ -130,7 +176,14 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
       other = insert(:coach)
       other_food = insert(:food, business: other.business, creator: other)
       other_recipe = insert(:recipe, business: other.business, creator: other, name: "Secret")
-      insert(:recipe_ingredient, business: other.business, recipe: other_recipe, food: other_food, weight_g: 50.0)
+
+      insert(:recipe_ingredient,
+        business: other.business,
+        recipe: other_recipe,
+        food: other_food,
+        weight_g: 50.0
+      )
+
       put_food_on_menu(other, other_food, name: "Other Cut")
 
       assert {:ok, impact} = Library.get_food_impact(ctx, food.id)
@@ -144,7 +197,9 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
       refute Enum.any?(impact.templates, &(&1.name == "Other Cut"))
       refute Enum.any?(impact.templates, &Map.has_key?(&1, :business_id))
 
-      assert [%{id: client_plan_id, name: "Client Cut", client_id: client_id}] = impact.active_client_plans
+      assert [%{id: client_plan_id, name: "Client Cut", client_id: client_id}] =
+               impact.active_client_plans
+
       assert client_plan_id == client_plan.id
       assert client_id == client.id
     end
@@ -166,7 +221,9 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
       recipe = insert(:recipe, business: coach.business, creator: coach, name: "Dal")
 
       template = put_recipe_on_menu(coach, recipe, name: "Cut Template")
-      archived = put_recipe_on_menu(coach, recipe, name: "Old Cut", archived_at: DateTime.utc_now(:second))
+
+      archived =
+        put_recipe_on_menu(coach, recipe, name: "Old Cut", archived_at: DateTime.utc_now(:second))
 
       client_plan =
         put_recipe_on_menu(coach, recipe,
@@ -186,7 +243,9 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
       assert archived.id in template_ids
       refute Enum.any?(impact.templates, &(&1.name == "Other Cut"))
 
-      assert [%{id: client_plan_id, name: "Client Cut", client_id: client_id}] = impact.active_client_plans
+      assert [%{id: client_plan_id, name: "Client Cut", client_id: client_id}] =
+               impact.active_client_plans
+
       assert client_plan_id == client_plan.id
       assert client_id == client.id
     end
@@ -226,7 +285,16 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
     {portion, attrs} = Keyword.pop(attrs, :portion, :gram)
     plan = insert_plan(coach, attrs)
     meal = insert(:meal, business: coach.business, plan: plan, creator: coach)
-    insert(:meal_item, business: coach.business, plan: plan, meal: meal, recipe: recipe, food: nil, portion_kind: portion)
+
+    insert(:meal_item,
+      business: coach.business,
+      plan: plan,
+      meal: meal,
+      recipe: recipe,
+      food: nil,
+      portion_kind: portion
+    )
+
     plan
   end
 

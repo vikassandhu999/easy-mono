@@ -68,7 +68,8 @@ defmodule Easy.Nutrition.Library do
   end
 
   @spec delete_food(Ctx.t(), String.t(), pos_integer()) ::
-          {:ok, Food.t()} | {:error, :not_found | :read_only_source | :in_use | Ecto.Changeset.t()}
+          {:ok, Food.t()}
+          | {:error, :not_found | :read_only_source | :in_use | Ecto.Changeset.t()}
   def delete_food(%Ctx{} = ctx, food_id, expected_revision) do
     with :ok <- ensure_coach(ctx) do
       mutate_food(ctx, food_id, expected_revision, &delete_locked_food(ctx, &1), reload?: false)
@@ -76,7 +77,8 @@ defmodule Easy.Nutrition.Library do
   end
 
   @spec get_food_impact(Ctx.t(), String.t()) ::
-          {:ok, %{recipes: [map()], templates: [map()], active_client_plans: [map()]}} | {:error, :not_found}
+          {:ok, %{recipes: [map()], templates: [map()], active_client_plans: [map()]}}
+          | {:error, :not_found}
   def get_food_impact(%Ctx{} = ctx, food_id) do
     with {:ok, food} <- get_food(ctx, food_id) do
       {:ok,
@@ -88,7 +90,8 @@ defmodule Easy.Nutrition.Library do
     end
   end
 
-  @spec copy_food(Ctx.t(), String.t()) :: {:ok, Food.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  @spec copy_food(Ctx.t(), String.t()) ::
+          {:ok, Food.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def copy_food(%Ctx{} = ctx, food_id) do
     with {:ok, food} <- get_food(ctx, food_id) do
       attrs = %{
@@ -115,13 +118,25 @@ defmodule Easy.Nutrition.Library do
   end
 
   @spec resolve_food_portion(Food.t(), map()) ::
-          {:ok, %{grams: float(), amount: float() | nil, unit: String.t() | nil, label: String.t() | nil}}
+          {:ok,
+           %{
+             grams: float(),
+             amount: float() | nil,
+             unit: String.t() | nil,
+             label: String.t() | nil
+           }}
           | {:error, :invalid_portion}
-  def resolve_food_portion(_food, %{kind: :gram, grams: grams}) when is_number(grams) and grams > 0 do
+  def resolve_food_portion(_food, %{kind: :gram, grams: grams})
+      when is_number(grams) and grams > 0 do
     {:ok, %{grams: grams / 1, amount: nil, unit: nil, label: nil}}
   end
 
-  def resolve_food_portion(%Food{serving_sizes: sizes}, %{kind: :serving, amount: amount, unit: unit, label: label})
+  def resolve_food_portion(%Food{serving_sizes: sizes}, %{
+        kind: :serving,
+        amount: amount,
+        unit: unit,
+        label: label
+      })
       when is_number(amount) and amount > 0 and is_binary(unit) do
     case Enum.find(sizes, &(&1.unit == unit and &1.label == label)) do
       %{amount: serving_amount, weight_g: weight_g} when serving_amount > 0 and weight_g > 0 ->
@@ -152,7 +167,8 @@ defmodule Easy.Nutrition.Library do
     |> ok_or_not_found()
   end
 
-  @spec list_recipes(Ctx.t(), keyword()) :: {:ok, %{count: non_neg_integer(), recipes: [Recipe.t()]}}
+  @spec list_recipes(Ctx.t(), keyword()) ::
+          {:ok, %{count: non_neg_integer(), recipes: [Recipe.t()]}}
   def list_recipes(%Ctx{} = ctx, opts \\ []) do
     search = String.trim(Keyword.get(opts, :search, "") || "")
     offset = Keyword.get(opts, :offset, 0)
@@ -164,11 +180,16 @@ defmodule Easy.Nutrition.Library do
     {:ok,
      %{
        count: Repo.aggregate(base, :count, :id),
-       recipes: ordered |> Utils.paginate(offset, limit) |> Recipe.include_ingredients(ctx.business_id) |> Repo.all()
+       recipes:
+         ordered
+         |> Utils.paginate(offset, limit)
+         |> Recipe.include_ingredients(ctx.business_id)
+         |> Repo.all()
      }}
   end
 
-  @spec create_recipe(Ctx.t(), map()) :: {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  @spec create_recipe(Ctx.t(), map()) ::
+          {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_recipe(%Ctx{} = ctx, attrs) do
     {ingredients, scalar_attrs} = pop_ingredients(attrs)
 
@@ -211,7 +232,8 @@ defmodule Easy.Nutrition.Library do
     end
   end
 
-  @spec copy_recipe(Ctx.t(), String.t()) :: {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  @spec copy_recipe(Ctx.t(), String.t()) ::
+          {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def copy_recipe(%Ctx{} = ctx, recipe_id) do
     with {:ok, recipe} <- get_recipe(ctx, recipe_id) do
       create_recipe(ctx, %{
@@ -290,10 +312,11 @@ defmodule Easy.Nutrition.Library do
   end
 
   defp persist_locked_recipe(ctx, recipe, scalar_attrs, ingredients) do
-    with :ok <- ensure_recipe_edit_valid(ctx.business_id, recipe, scalar_attrs),
+    changeset = Recipe.update_changeset(recipe, scalar_attrs)
+
+    with :ok <- ensure_recipe_edit_valid(ctx.business_id, recipe, changeset),
          {:ok, updated} <-
-           recipe
-           |> Recipe.update_changeset(scalar_attrs)
+           changeset
            |> put_change(:revision, recipe.revision + 1)
            |> Repo.update() do
       ingredients
@@ -302,16 +325,18 @@ defmodule Easy.Nutrition.Library do
     end
   end
 
-  defp ensure_recipe_edit_valid(business_id, recipe, attrs) do
-    if removing_cooked_weight?(recipe, attrs) and recipe_gram_portion_in_use?(business_id, recipe.id) do
+  defp ensure_recipe_edit_valid(business_id, recipe, changeset) do
+    if removing_cooked_weight?(recipe, changeset) and
+         recipe_gram_portion_in_use?(business_id, recipe.id) do
       {:error, :in_use}
     else
       :ok
     end
   end
 
-  defp removing_cooked_weight?(%{cooked_weight_g: cooked}, attrs) when is_number(cooked) and cooked > 0 do
-    Map.has_key?(attrs, :cooked_weight_g) and is_nil(attrs[:cooked_weight_g])
+  defp removing_cooked_weight?(%{cooked_weight_g: cooked}, changeset)
+       when is_number(cooked) and cooked > 0 do
+    fetch_change(changeset, :cooked_weight_g) == {:ok, nil}
   end
 
   defp removing_cooked_weight?(_recipe, _attrs), do: false
@@ -354,7 +379,12 @@ defmodule Easy.Nutrition.Library do
         {:error, add_error(change(recipe), :recipe_ingredients, "has invalid food")}
 
       true ->
-        Repo.delete_all(from(ri in RecipeIngredient.for_business(recipe.business_id), where: ri.recipe_id == ^recipe.id))
+        Repo.delete_all(
+          from(ri in RecipeIngredient.for_business(recipe.business_id),
+            where: ri.recipe_id == ^recipe.id
+          )
+        )
+
         insert_ingredient_changesets(changesets)
     end
   end
@@ -396,7 +426,8 @@ defmodule Easy.Nutrition.Library do
     Enum.reject(food_ids, &MapSet.member?(valid_ids, &1))
   end
 
-  defp pop_ingredients(attrs) when is_map(attrs), do: Map.pop(attrs, :recipe_ingredients, :unchanged)
+  defp pop_ingredients(attrs) when is_map(attrs),
+    do: Map.pop(attrs, :recipe_ingredients, :unchanged)
 
   defp mutate_recipe(ctx, recipe_id, expected_revision, mutation, opts \\ []) do
     result =

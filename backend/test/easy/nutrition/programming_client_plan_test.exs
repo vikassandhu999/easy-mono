@@ -129,8 +129,8 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
       persisted = Repo.get!(Plan, assigned.id)
       assert persisted.source_template_id == nil
       assert Repo.get(Meal, hd(reloaded.meals).id)
-      assert Repo.aggregate(MealItem, :count, :id) == 1
-      assert Repo.aggregate(MealOption, :count, :id) == 1
+      assert Repo.aggregate(MealItem.for_plan(assigned.id), :count, :id) == 1
+      assert Repo.aggregate(MealOption.for_plan(assigned.id), :count, :id) == 1
     end
   end
 

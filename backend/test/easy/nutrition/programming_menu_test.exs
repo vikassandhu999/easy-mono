@@ -237,7 +237,7 @@ defmodule Easy.Nutrition.ProgrammingMenuTest do
       assert {:ok, current} = Programming.get_template(ctx, template.id)
       assert current.revision == 2
       assert [%{name: "Breakfast", meal_items: []}] = current.meals
-      assert Repo.aggregate(MealItem, :count, :id) == 0
+      assert Repo.aggregate(MealItem.for_plan(template.id), :count, :id) == 0
     end
 
     test "rejects another tenant's Food or Recipe and an invalid Portion without partial writes" do

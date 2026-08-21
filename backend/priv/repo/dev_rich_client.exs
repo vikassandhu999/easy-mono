@@ -299,6 +299,7 @@ end
 # 3 + 4. Nutrition Template, Client Plan, and Diary extras
 # ------------------------------------------------------------------
 nutri_name = "Cutting Phase"
+nutri_description = "Moderate deficit, high protein."
 
 seeded_entries? =
   Repo.aggregate(from(e in DiaryEntry, where: e.client_id == ^client_id), :count) > 0
@@ -308,7 +309,29 @@ if seeded_entries? do
 else
   Repo.delete_all(from e in DiaryEntry, where: e.client_id == ^client_id)
   Repo.delete_all(from s in DiarySlot, where: s.client_id == ^client_id)
-  Repo.delete_all(from p in Plan, where: p.business_id == ^bid and p.name == ^nutri_name)
+
+  seeded_template_ids =
+    Repo.all(
+      from p in Plan,
+        where:
+          p.business_id == ^bid and p.kind == :client_plan and p.client_id == ^client_id and
+            p.name == ^nutri_name and p.description == ^nutri_description,
+        select: p.source_template_id
+    )
+
+  Repo.delete_all(
+    from p in Plan,
+      where:
+        p.business_id == ^bid and p.kind == :client_plan and p.client_id == ^client_id and
+          p.name == ^nutri_name and p.description == ^nutri_description
+  )
+
+  Repo.delete_all(
+    from p in Plan,
+      where:
+        p.business_id == ^bid and p.kind == :template and p.id in ^seeded_template_ids and
+          p.name == ^nutri_name and p.description == ^nutri_description
+  )
 
   ctx = %Easy.Ctx{business_id: bid, user_id: coach_user_id, coach_id: coach_id, owner?: true}
   client_ctx = %Easy.Ctx{business_id: bid, user_id: client.user_id, client_id: client_id}
@@ -326,7 +349,7 @@ else
   {:ok, template} =
     Programming.create_template(ctx, %{
       "name" => nutri_name,
-      "description" => "Moderate deficit, high protein.",
+      "description" => nutri_description,
       "target_calories" => 1900.0,
       "target_protein_g" => 165.0,
       "target_carbs_g" => 175.0,
@@ -336,6 +359,7 @@ else
 
   pattern = hd(template.day_patterns)
   gram = fn grams -> %{kind: :gram, grams: grams * 1.0} end
+
   item = fn ref, food, grams, position ->
     %{local_ref: ref, kind: :food, food_id: food.id, position: position, portion: gram.(grams)}
   end
@@ -377,7 +401,7 @@ else
   {:ok, _} =
     Diary.log_client_planned_item(
       client_ctx,
-      Date.add(today, -1),
+      today,
       %{meal_slot: :breakfast, meal_item_id: item_id},
       Ecto.UUID.generate()
     )
@@ -411,7 +435,6 @@ else
 
   IO.puts("nutrition: assigned Client Plan + planned fulfilment + #{extras} extras + 1 no-Coverage entry")
 end
-
 
 # ------------------------------------------------------------------
 # 5. Weight entries + goal weight

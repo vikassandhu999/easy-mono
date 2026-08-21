@@ -92,6 +92,56 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
            ) == 1
   end
 
+  test "simultaneous first extras with distinct keys share one Diary Slot", ctx do
+    parent = self()
+    today = Date.utc_today()
+
+    attrs = %{
+      meal_slot: :breakfast,
+      food_id: ctx.food.id,
+      portion: %{kind: :gram, grams: 50.0}
+    }
+
+    run = fn ->
+      Task.async(fn ->
+        Sandbox.checkout(Repo, sandbox: false)
+        send(parent, {:ready, self()})
+
+        receive do
+          :go -> :ok
+        end
+
+        Diary.add_client_extra(ctx.ctx, today, attrs, Ecto.UUID.generate())
+      end)
+    end
+
+    tasks = [run.(), run.()]
+
+    ready =
+      for _ <- tasks,
+          do:
+            (receive do
+               {:ready, pid} -> pid
+             end)
+
+    Enum.each(ready, &send(&1, :go))
+    results = Enum.map(tasks, &Task.await(&1, 5_000))
+
+    assert Enum.all?(results, &match?({:ok, _}, &1))
+
+    assert Repo.aggregate(
+             from(slot in DiarySlot,
+               where: slot.business_id == ^ctx.business.id and slot.client_id == ^ctx.client.id
+             ),
+             :count
+           ) == 1
+
+    assert Repo.aggregate(
+             from(entry in DiaryEntry, where: entry.business_id == ^ctx.business.id),
+             :count
+           ) == 2
+  end
+
   test "simultaneous switches with the same revision keep one winner", ctx do
     today = Date.utc_today()
     parent = self()
@@ -224,6 +274,86 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
     assert hd(hd(day.slots).rows).entry.revision == 2
   end
 
+  test "simultaneous replacement and entry update with the same revision keep one winner", ctx do
+    today = Date.utc_today()
+    parent = self()
+    substitute = insert(:food, business: ctx.business, creator: ctx.coach)
+    seed_frozen_option!(ctx.client, ctx.food, today)
+
+    planned_item =
+      Repo.one!(
+        from(item in DiaryFrozenPlannedItem,
+          where: item.business_id == ^ctx.business.id,
+          order_by: [asc: item.position],
+          limit: 1
+        )
+      )
+
+    {:ok, logged} =
+      Diary.log_client_planned_item(
+        ctx.ctx,
+        today,
+        %{meal_slot: :breakfast, meal_item_id: planned_item.id},
+        Ecto.UUID.generate()
+      )
+
+    row = logged.slots |> hd() |> Map.fetch!(:rows) |> hd()
+    entry = row.entry
+
+    commands = [
+      fn ->
+        Diary.update_client_entry(
+          ctx.ctx,
+          today,
+          entry.id,
+          %{expected_revision: entry.revision, notes: "updated"},
+          Ecto.UUID.generate()
+        )
+      end,
+      fn ->
+        Diary.replace_client_planned_item(
+          ctx.ctx,
+          today,
+          %{
+            meal_slot: :breakfast,
+            meal_item_id: row.planned.meal_item_id,
+            food_id: substitute.id,
+            portion: %{kind: :gram, grams: 50.0},
+            expected_revision: entry.revision
+          },
+          Ecto.UUID.generate()
+        )
+      end
+    ]
+
+    tasks =
+      Enum.map(commands, fn command ->
+        Task.async(fn ->
+          Sandbox.checkout(Repo, sandbox: false)
+          send(parent, {:ready, self()})
+
+          receive do
+            :go -> :ok
+          end
+
+          command.()
+        end)
+      end)
+
+    ready =
+      for _ <- tasks,
+          do:
+            (receive do
+               {:ready, pid} -> pid
+             end)
+
+    Enum.each(ready, &send(&1, :go))
+    results = Enum.map(tasks, &Task.await(&1, 5_000))
+
+    assert Enum.count(results, &match?({:ok, _}, &1)) == 1
+    assert Enum.count(results, &match?({:error, %Ecto.Changeset{action: :stale_revision}}, &1)) == 1
+  end
+
   defp seed_frozen_option!(client, food, date) do
     {:ok, slot} =
       Repo.insert(
@@ -294,6 +424,7 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
         DiaryFrozenOption.insert_changeset(client.business_id, slot.id, %{
           position: 0,
           meal_name: "Breakfast A",
+          source_meal_id: meal_a.id,
           nutrition_meal_id: meal_a.id
         })
       )
@@ -303,6 +434,7 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
         DiaryFrozenOption.insert_changeset(client.business_id, slot.id, %{
           position: 1,
           meal_name: "Breakfast B",
+          source_meal_id: meal_b.id,
           nutrition_meal_id: meal_b.id
         })
       )

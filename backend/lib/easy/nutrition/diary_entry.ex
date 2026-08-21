@@ -31,6 +31,8 @@ defmodule Easy.Nutrition.DiaryEntry do
     field :complete, :boolean, default: false
     field :notes, :string
     field :revision, :integer, default: 1
+    field :source_food_id, :binary_id
+    field :source_recipe_id, :binary_id
 
     belongs_to :business, Orgs.Business
     belongs_to :client, Client
@@ -59,6 +61,8 @@ defmodule Easy.Nutrition.DiaryEntry do
     :complete,
     :notes,
     :revision,
+    :source_food_id,
+    :source_recipe_id,
     :frozen_planned_item_id,
     :frozen_option_id,
     :food_id,
@@ -107,6 +111,8 @@ defmodule Easy.Nutrition.DiaryEntry do
       :complete,
       :notes,
       :revision,
+      :source_food_id,
+      :source_recipe_id,
       :food_id,
       :recipe_id
     ])

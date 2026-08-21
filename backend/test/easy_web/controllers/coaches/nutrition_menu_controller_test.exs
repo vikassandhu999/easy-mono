@@ -245,7 +245,7 @@ defmodule EasyWeb.Coaches.NutritionMenuControllerTest do
         |> json_response(404)
 
       assert %{"error_code" => "not_found"} = response
-      assert Repo.aggregate(MealItem, :count, :id) == 0
+      assert Repo.aggregate(MealItem.for_plan(hidden.id), :count, :id) == 0
     end
   end
 

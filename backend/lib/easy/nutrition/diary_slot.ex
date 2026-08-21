@@ -19,6 +19,11 @@ defmodule Easy.Nutrition.DiarySlot do
     field :applied_timezone, :string
     field :has_coverage, :boolean
     field :revision, :integer, default: 1
+    field :target_calories, :float
+    field :target_protein_g, :float
+    field :target_carbs_g, :float
+    field :target_fat_g, :float
+    field :target_fiber_g, :float
 
     belongs_to :business, Orgs.Business
     belongs_to :client, Client
@@ -32,7 +37,18 @@ defmodule Easy.Nutrition.DiarySlot do
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, client_id, attrs) do
     %__MODULE__{}
-    |> cast(attrs, [:local_date, :meal_slot, :applied_timezone, :has_coverage, :revision])
+    |> cast(attrs, [
+      :local_date,
+      :meal_slot,
+      :applied_timezone,
+      :has_coverage,
+      :revision,
+      :target_calories,
+      :target_protein_g,
+      :target_carbs_g,
+      :target_fat_g,
+      :target_fiber_g
+    ])
     |> put_change(:business_id, business_id)
     |> put_change(:client_id, client_id)
     |> validate_required([:local_date, :meal_slot, :applied_timezone, :has_coverage, :revision, :business_id, :client_id])

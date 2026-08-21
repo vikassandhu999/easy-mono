@@ -1,7 +1,7 @@
 defmodule Easy.Nutrition.DiaryFrozenPlannedItem do
   use Ecto.Schema
 
-  alias Easy.Nutrition.{DiaryFrozenOption, DiarySlot, Food, MealItem, Recipe}
+  alias Easy.Nutrition.{DiaryFrozenOption, DiarySlot, Food, Recipe}
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -29,11 +29,13 @@ defmodule Easy.Nutrition.DiaryFrozenPlannedItem do
     field :fiber, :float
     field :complete, :boolean, default: false
     field :position, :integer
+    field :source_meal_item_id, :binary_id
+    field :source_food_id, :binary_id
+    field :source_recipe_id, :binary_id
 
     belongs_to :business, Orgs.Business
     belongs_to :diary_slot, DiarySlot, foreign_key: :nutrition_diary_slot_id
     belongs_to :frozen_option, DiaryFrozenOption, foreign_key: :nutrition_diary_frozen_option_id
-    belongs_to :source_meal_item, MealItem, foreign_key: :source_meal_item_id
     belongs_to :food, Food
     belongs_to :recipe, Recipe
 
@@ -56,6 +58,8 @@ defmodule Easy.Nutrition.DiaryFrozenPlannedItem do
     :complete,
     :position,
     :source_meal_item_id,
+    :source_food_id,
+    :source_recipe_id,
     :food_id,
     :recipe_id
   ]

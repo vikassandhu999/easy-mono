@@ -88,6 +88,7 @@ defmodule Easy.Nutrition.DiaryEntry do
     ])
     |> validate_number(:revision, greater_than: 0)
     |> unique_constraint(:frozen_planned_item_id, name: :nutrition_diary_entries_one_fulfilment_index)
+    |> check_constraint(:source_food_id, name: :nutrition_diary_entries_source_identity_check)
     |> foreign_key_constraint(:nutrition_diary_slot_id, name: :nutrition_diary_entries_slot_business_id_fkey)
     |> foreign_key_constraint(:frozen_planned_item_id, name: :nutrition_diary_entries_fulfilment_slot_business_fkey)
   end
@@ -118,6 +119,7 @@ defmodule Easy.Nutrition.DiaryEntry do
     ])
     |> validate_required([:revision])
     |> validate_number(:revision, greater_than: 0)
+    |> check_constraint(:source_food_id, name: :nutrition_diary_entries_source_identity_check)
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

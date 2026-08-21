@@ -2173,6 +2173,7 @@ export interface components {
       planned_calories?: number | null;
       revision?: number | null;
       rows: components['schemas']['NutritionDayRow'][];
+      write_eligible: boolean;
     };
     /**
      * DiaryReplacePlannedItemRequest

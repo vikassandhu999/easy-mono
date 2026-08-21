@@ -83,6 +83,7 @@ defmodule Easy.Nutrition.DiaryFrozenPlannedItem do
     ])
     |> validate_number(:position, greater_than_or_equal_to: 0)
     |> unique_constraint(:position, name: :nutrition_diary_frozen_items_option_position_index)
+    |> check_constraint(:source_food_id, name: :nutrition_diary_frozen_planned_items_source_identity_check)
     |> foreign_key_constraint(:nutrition_diary_frozen_option_id,
       name: :nutrition_diary_frozen_items_option_slot_business_fkey
     )

@@ -31,7 +31,7 @@ defmodule Easy.Nutrition.DiaryFrozenOption do
     |> cast(attrs, [:position, :meal_name, :source_meal_id, :nutrition_meal_id])
     |> put_change(:business_id, business_id)
     |> put_change(:nutrition_diary_slot_id, slot_id)
-    |> validate_required([:position, :meal_name, :business_id, :nutrition_diary_slot_id])
+    |> validate_required([:position, :meal_name, :source_meal_id, :business_id, :nutrition_diary_slot_id])
     |> validate_number(:position, greater_than_or_equal_to: 0)
     |> unique_constraint(:position, name: :nutrition_diary_frozen_options_slot_position_index)
     |> foreign_key_constraint(:nutrition_diary_slot_id, name: :nutrition_diary_frozen_options_slot_business_id_fkey)

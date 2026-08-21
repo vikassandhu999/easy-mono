@@ -386,7 +386,7 @@ export default function NutritionToday() {
                 {slot.options.length > 1 ? (
                   <button
                     className="flex min-w-0 items-center gap-0.5 rounded-md px-1 py-0.5 text-[10px] font-medium text-accent active:opacity-70 disabled:opacity-50"
-                    disabled={!isEditable || date !== today}
+                    disabled={!slot.writeEligible || date !== today}
                     onClick={() => setOptionSheetSlot(slot.slot)}
                     type="button"
                   >
@@ -403,7 +403,7 @@ export default function NutritionToday() {
               </div>
               {slot.allPlannedLogged ? (
                 <span className="text-[11px] text-accent">{kcalText(slot.loggedCalories)} · ✓ logged</span>
-              ) : slot.mealId && isEditable ? (
+              ) : slot.mealId && slot.writeEligible ? (
                 <button
                   className="text-[10px] font-medium text-accent active:opacity-70 disabled:opacity-50"
                   disabled={loggingMeal}
@@ -429,7 +429,7 @@ export default function NutritionToday() {
                   key={key}
                 >
                   <Checkbox
-                    disabled={!isEditable || extra}
+                    disabled={!slot.writeEligible || extra}
                     on={checked}
                     onPress={() => {
                       if (!row.entry) {
@@ -439,7 +439,7 @@ export default function NutritionToday() {
                   />
                   <button
                     className="flex min-w-0 flex-1 items-center justify-between gap-2 text-left"
-                    disabled={!isEditable}
+                    disabled={!slot.writeEligible}
                     onClick={() => openSheet(slot, row)}
                     type="button"
                   >
@@ -482,7 +482,7 @@ export default function NutritionToday() {
             <Plus size={14} />
             Add food off-plan
           </button>
-          {plan && anyUnlogged ? (
+          {plan && anyUnlogged && slots.every((slot) => slot.writeEligible) ? (
             <button
               className="text-xs font-medium text-muted active:opacity-70 disabled:opacity-50"
               disabled={loggingDay}

@@ -39,6 +39,7 @@ defmodule EasyWeb.NutritionDayJSON do
       meal_id: slot.meal_id,
       revision: slot.revision,
       applied_timezone: slot.applied_timezone,
+      write_eligible: slot.write_eligible,
       planned_calories: round_one(slot.planned_calories),
       logged_calories: round_one(slot.logged_calories),
       options: Enum.map(slot.options, &option_data/1),

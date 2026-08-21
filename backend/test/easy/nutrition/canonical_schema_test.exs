@@ -513,7 +513,8 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
           business_id: dump_uuid(client.business_id),
           nutrition_diary_slot_id: slot.id,
           nutrition_diary_frozen_option_id: option.id,
-          food_id: dump_uuid(food.id)
+          food_id: dump_uuid(food.id),
+          source_food_id: dump_uuid(food.id)
         })
       ])
 
@@ -530,7 +531,8 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
           client_id: dump_uuid(client.id),
           nutrition_diary_slot_id: slot.id,
           frozen_planned_item_id: item_id,
-          food_id: dump_uuid(food.id)
+          food_id: dump_uuid(food.id),
+          source_food_id: dump_uuid(food.id)
         })
       end
 
@@ -671,6 +673,7 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       id: dump_uuid(),
       position: 0,
       meal_name: "Lunch",
+      source_meal_id: dump_uuid(),
       business_id: dump_uuid(client.business_id),
       nutrition_diary_slot_id: slot_id
     })

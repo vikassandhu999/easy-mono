@@ -370,7 +370,8 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
       Repo.insert(
         DiaryFrozenOption.insert_changeset(client.business_id, slot.id, %{
           position: 0,
-          meal_name: "Breakfast"
+          meal_name: "Breakfast",
+          source_meal_id: Ecto.UUID.generate()
         })
       )
 
@@ -389,6 +390,7 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
             fiber: 0.0,
             complete: true,
             position: position,
+            source_food_id: food.id,
             food_id: food.id
           })
         )
@@ -454,6 +456,7 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
             fiber: 0.0,
             complete: true,
             position: 0,
+            source_food_id: food.id,
             food_id: food.id
           })
         )

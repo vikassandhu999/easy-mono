@@ -559,6 +559,40 @@ defmodule Easy.Nutrition.DiaryTest do
 
       assert Enum.any?(hd(corrected.slots).rows, &(&1.status == :as_planned))
     end
+
+    test "reports correction eligibility from each frozen slot timezone" do
+      %{client: client, coach: coach} = covering_setup(menu: :ordered, timezone: "Pacific/Pago_Pago")
+      frozen_today = local_today(client)
+      extra = insert(:food, business: coach.business, creator: coach)
+      ctx = client_ctx(client)
+
+      for meal_slot <- [:breakfast, :post_workout] do
+        assert {:ok, _day} =
+                 Diary.add_client_extra(
+                   ctx,
+                   frozen_today,
+                   extra_attrs(extra, slot: meal_slot),
+                   Ecto.UUID.generate()
+                 )
+      end
+
+      date = Date.add(frozen_today, -7)
+
+      Repo.update_all(
+        from(slot in DiarySlot, where: slot.client_id == ^client.id and slot.meal_slot == :breakfast),
+        set: [local_date: date]
+      )
+
+      Repo.update_all(
+        from(slot in DiarySlot, where: slot.client_id == ^client.id and slot.meal_slot == :post_workout),
+        set: [local_date: date, applied_timezone: "Pacific/Kiritimati"]
+      )
+
+      assert {:ok, day} = Diary.get_client_nutrition_day(ctx, date)
+      slots = Map.new(day.slots, &{&1.meal_slot, &1})
+      assert slots.breakfast.write_eligible
+      refute slots.post_workout.write_eligible
+    end
   end
 
   describe "derived planned statuses" do
@@ -1063,6 +1097,34 @@ defmodule Easy.Nutrition.DiaryTest do
       assert {:ok, first} = Diary.replace_client_planned_item(ctx, today, attrs, key)
       assert {:ok, replay} = Diary.replace_client_planned_item(ctx, today, attrs, key)
       assert hd(replay.slots).rows == hd(first.slots).rows
+
+      assert {:error, :conflict} =
+               Diary.replace_client_planned_item(
+                 ctx,
+                 today,
+                 Map.put(attrs, :portion, %{kind: :gram, grams: 90.0}),
+                 key
+               )
+    end
+
+    test "a stale replacement reserves its idempotency key" do
+      %{client: client, coach: coach} = covering_setup()
+      substitute = insert(:food, business: coach.business, creator: coach, name: "Eggs")
+      today = local_today(client)
+      ctx = client_ctx(client)
+      meal_item_id = live_meal_item_id(client, today)
+      key = Ecto.UUID.generate()
+
+      attrs = %{
+        meal_slot: :breakfast,
+        meal_item_id: meal_item_id,
+        food_id: substitute.id,
+        portion: %{kind: :gram, grams: 80.0},
+        expected_revision: 2
+      }
+
+      assert {:error, %Ecto.Changeset{action: :stale_revision}} =
+               Diary.replace_client_planned_item(ctx, today, attrs, key)
 
       assert {:error, :conflict} =
                Diary.replace_client_planned_item(

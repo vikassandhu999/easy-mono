@@ -50,6 +50,7 @@ export type SlotView = {
   revision: number;
   rows: SlotRow[];
   slot: string;
+  writeEligible: boolean;
 };
 
 function activeOption(slot: NutritionDaySlot): NutritionDayOption | null {
@@ -133,6 +134,7 @@ function slotShell(
     revision: daySlot.revision ?? 1,
     rows,
     slot,
+    writeEligible: daySlot.write_eligible,
   };
 }
 

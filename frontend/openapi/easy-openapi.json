@@ -4564,10 +4564,16 @@
             "type": "array",
             "x-struct": null,
             "x-validate": null
+          },
+          "write_eligible": {
+            "type": "boolean",
+            "x-struct": null,
+            "x-validate": null
           }
         },
         "required": [
           "meal_slot",
+          "write_eligible",
           "options",
           "rows"
         ],

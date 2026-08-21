@@ -519,12 +519,13 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionDaySlot do
       meal_id: %Schema{type: :string, format: :uuid, nullable: true},
       revision: %Schema{type: :integer, minimum: 1, nullable: true},
       applied_timezone: %Schema{type: :string, nullable: true},
+      write_eligible: %Schema{type: :boolean},
       planned_calories: %Schema{type: :number, nullable: true},
       logged_calories: %Schema{type: :number, nullable: true},
       options: %Schema{type: :array, items: NutritionDayOption},
       rows: %Schema{type: :array, items: NutritionDayRow}
     },
-    required: [:meal_slot, :options, :rows]
+    required: [:meal_slot, :write_eligible, :options, :rows]
   })
 end
 

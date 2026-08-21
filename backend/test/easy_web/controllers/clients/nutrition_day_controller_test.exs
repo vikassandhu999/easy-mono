@@ -34,6 +34,7 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
 
       [slot] = data["slots"]
       assert slot["meal_slot"] == "breakfast"
+      assert slot["write_eligible"] == true
       assert slot["rows"] == []
       refute Enum.any?(slot["rows"], &(&1["status"] in ["pending", "skipped"]))
       assert hd(slot["options"])["meal_name"] == "Breakfast"

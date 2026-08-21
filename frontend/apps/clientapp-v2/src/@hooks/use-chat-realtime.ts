@@ -1,7 +1,7 @@
 import {useQueryClient} from '@tanstack/react-query';
 
 import {useChannelEvent} from '@/@hooks/use-channel-event';
-import {appendClientMessage, type ChatMessage, useGetClientConversationQuery} from '@/api/conversation';
+import {appendClientMessage, parseChatMessage, useGetClientConversationQuery} from '@/api/conversation';
 import {conversationKeys} from '@/api/keys';
 
 /** Mounted once in AppShell — the single join of the conversation topic. */
@@ -14,7 +14,10 @@ export function useChatRealtime() {
     conversationId ? `conversation:${conversationId}` : null,
     'message_new',
     (payload) => {
-      appendClientMessage(payload as ChatMessage);
+      const message = parseChatMessage(payload);
+      if (message) {
+        appendClientMessage(message);
+      }
       qc.invalidateQueries({queryKey: conversationKeys.detail()});
     },
     // Refetch anything missed while the socket was down (fires on every rejoin) —

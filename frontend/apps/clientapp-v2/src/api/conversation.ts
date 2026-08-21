@@ -6,6 +6,7 @@ import {patchQueryData, queryClient} from '@/api/query-client';
 import type {components, paths} from '@/api/schema';
 
 export type ChatMessage = components['schemas']['ChatMessage'];
+export {parseChatMessage} from '@/api/parse-chat-message';
 export type Conversation = components['schemas']['Conversation'];
 export type CreateMessageBody =
   paths['/v1/client/conversation/messages']['post']['requestBody']['content']['application/json'];
@@ -59,6 +60,7 @@ export function useMarkClientConversationReadMutation() {
     },
   });
 }
+
 
 /** Append a message to the cached history (no-op if already present, e.g. own send echoed back over the channel). */
 export function appendClientMessage(message: ChatMessage) {

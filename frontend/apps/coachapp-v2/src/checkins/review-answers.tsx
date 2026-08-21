@@ -87,13 +87,21 @@ export default function ReviewAnswers({item}: {item: ClientProfileReviewQueueIte
                       );
                     })}
                   </div>
-                ) : (
+                ) : question.type ? (
                   <Typography
                     className="mt-1 break-words"
                     type="body-sm"
                     weight="semibold"
                   >
                     {formatAnswer(question.id ? item.answers[question.id] : undefined, question.type)}
+                  </Typography>
+                ) : (
+                  <Typography
+                    className="mt-1 break-words"
+                    color="muted"
+                    type="body-sm"
+                  >
+                    —
                   </Typography>
                 )}
               </div>

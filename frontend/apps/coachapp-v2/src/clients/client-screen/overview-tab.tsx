@@ -490,6 +490,9 @@ function answerSummary(
   const rows: {answer: string; label: string; rating: null | number}[] = [];
   for (const section of submission.question_snapshot ?? []) {
     for (const question of section.questions ?? []) {
+      if (!question.type) {
+        continue;
+      }
       const value = answers[question.id];
       if (!isSummarisableAnswer(value, question.type)) {
         continue;

@@ -19,7 +19,7 @@ export type AnswerType = FormQuestionType;
  * photo answer is an attachment id, and rendering it as a string puts a raw UUID
  * on screen (it overflowed the CD-OV card). An id is never display text.
  */
-export function formatAnswer(value: unknown, type?: AnswerType): string {
+export function formatAnswer(value: unknown, type: AnswerType): string {
   if (type === 'photo') {
     const count = Array.isArray(value) ? value.length : value ? 1 : 0;
     return count === 0 ? '—' : count === 1 ? 'Photo attached' : `${count} photos attached`;
@@ -81,6 +81,6 @@ export function submissionPhotoIds(submission: {
 }
 
 /** True when an answer is worth putting in a one-line summary (CD-OV). */
-export function isSummarisableAnswer(value: unknown, type?: AnswerType): boolean {
+export function isSummarisableAnswer(value: unknown, type: AnswerType): boolean {
   return type !== 'photo' && value != null && value !== '' && !(Array.isArray(value) && value.length === 0);
 }

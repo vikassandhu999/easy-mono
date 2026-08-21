@@ -16,7 +16,7 @@ export function FormAnswer({
 }: {
   label: string;
   photoUrls?: (string | undefined)[];
-  type?: AnswerType;
+  type: AnswerType;
   value: unknown;
   weightUnit: string;
 }) {
@@ -82,8 +82,10 @@ export function FormAnswer({
             </Chip>
           ))}
         </div>
-      ) : (
+      ) : type ? (
         <Typography type="body-sm">{formatAnswer(value, type)}</Typography>
+      ) : (
+        <Typography type="body-sm">—</Typography>
       )}
     </div>
   );

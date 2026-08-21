@@ -30,6 +30,8 @@ import {useAssignTrainingPlanMutation, useCoachTrainingPlansInfiniteQuery} from 
 
 export type {PlanKind};
 
+type SelectedPlan = {kind: 'nutrition'; plan: NutritionPlan} | {kind: 'training'; plan: TrainingPlan};
+
 interface Props {
   kind: PlanKind;
   clientId: string;
@@ -60,7 +62,7 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
   const [step, setStep] = useState<'pick' | 'schedule'>('pick');
-  const [selected, setSelected] = useState<NutritionPlan | TrainingPlan | null>(null);
+  const [selected, setSelected] = useState<SelectedPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const nutritionQuery = useCoachNutritionPlansInfiniteQuery(
@@ -69,9 +71,8 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
   );
   const trainingQuery = useCoachTrainingPlansInfiniteQuery({search: deferredSearch}, {enabled: !isNutrition});
   const query = isNutrition ? nutritionQuery : trainingQuery;
-  const items: (NutritionPlan | TrainingPlan)[] = isNutrition
-    ? (nutritionQuery.data?.pages.flatMap((page) => page.data) ?? [])
-    : (trainingQuery.data?.pages.flatMap((page) => page.data) ?? []);
+  const nutritionItems = nutritionQuery.data?.pages.flatMap((page) => page.data) ?? [];
+  const trainingItems = trainingQuery.data?.pages.flatMap((page) => page.data) ?? [];
 
   const assignTrainingMutation = useAssignTrainingPlanMutation();
   const assignNutritionMutation = useAssignNutritionPlanMutation();
@@ -81,8 +82,14 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
   const iconWrap = isNutrition ? 'bg-success-soft text-success' : 'bg-accent-soft text-accent';
   const title = isNutrition ? 'Assign nutrition plan' : 'Assign training plan';
 
-  const handlePick = (plan: NutritionPlan | TrainingPlan) => {
-    setSelected(plan);
+  const handlePickNutrition = (plan: NutritionPlan) => {
+    setSelected({kind: 'nutrition', plan});
+    setError(null);
+    setStep('schedule');
+  };
+
+  const handlePickTraining = (plan: TrainingPlan) => {
+    setSelected({kind: 'training', plan});
     setError(null);
     setStep('schedule');
   };
@@ -93,24 +100,24 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
     }
     setError(null);
     try {
-      if (isNutrition) {
+      if (selected.kind === 'nutrition') {
         await assignNutritionMutation.mutateAsync({
           clientId,
-          id: selected.id,
+          id: selected.plan.id,
           body: {
             end_date: endDate,
-            expected_revision: selected.revision,
+            expected_revision: selected.plan.revision,
             start_date: startDate,
           },
         });
       } else {
         await assignTrainingMutation.mutateAsync({
           clientId,
-          id: selected.id,
+          id: selected.plan.id,
           body: {start_date: startDate, end_date: endDate},
         });
       }
-      toast.success(`"${selected.name}" assigned to ${clientName}`);
+      toast.success(`"${selected.plan.name}" assigned to ${clientName}`);
       onClose();
     } catch (e) {
       setError(
@@ -164,43 +171,83 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
             </SearchField>
           </div>
 
-          <BrowseListBox
-            ariaLabel={`${isNutrition ? 'Nutrition' : 'Training'} plans`}
-            className="max-h-72 gap-0 overflow-y-auto p-0"
-            emptyState={
-              <ListEmptyState
-                emptyDescription="Create a plan template before assigning it to a client."
-                hasFilter={deferredSearch.trim().length > 0}
-                nounPlural="plan templates"
-                onClearFilters={() => setSearch('')}
-              />
-            }
-            fetchNextPage={() => {
-              query.fetchNextPage().catch(() => undefined);
-            }}
-            isError={query.isError}
-            isLoading={query.isLoading || query.isFetchingNextPage}
-            items={items}
-            onAction={(key) => {
-              const plan = items.find((item) => item.id === String(key));
-              if (plan) {
-                handlePick(plan);
+          {isNutrition ? (
+            <BrowseListBox
+              ariaLabel="Nutrition plans"
+              className="max-h-72 gap-0 overflow-y-auto p-0"
+              emptyState={
+                <ListEmptyState
+                  emptyDescription="Create a plan template before assigning it to a client."
+                  hasFilter={deferredSearch.trim().length > 0}
+                  nounPlural="plan templates"
+                  onClearFilters={() => setSearch('')}
+                />
               }
-            }}
-            onRetry={() => {
-              query.refetch().catch(() => undefined);
-            }}
-            renderItem={(plan) => (
-              <BrowseRow
-                icon={<Icon size={16} />}
-                iconClassName={iconWrap}
-                id={plan.id}
-                meta={isNutrition ? nutritionMeta(plan as NutritionPlan) : trainingMeta(plan as TrainingPlan)}
-                textValue={plan.name}
-                title={plan.name}
-              />
-            )}
-          />
+              fetchNextPage={() => {
+                query.fetchNextPage().catch(() => undefined);
+              }}
+              isError={query.isError}
+              isLoading={query.isLoading || query.isFetchingNextPage}
+              items={nutritionItems}
+              onAction={(key) => {
+                const plan = nutritionItems.find((item) => item.id === String(key));
+                if (plan) {
+                  handlePickNutrition(plan);
+                }
+              }}
+              onRetry={() => {
+                query.refetch().catch(() => undefined);
+              }}
+              renderItem={(plan) => (
+                <BrowseRow
+                  icon={<Icon size={16} />}
+                  iconClassName={iconWrap}
+                  id={plan.id}
+                  meta={nutritionMeta(plan)}
+                  textValue={plan.name}
+                  title={plan.name}
+                />
+              )}
+            />
+          ) : (
+            <BrowseListBox
+              ariaLabel="Training plans"
+              className="max-h-72 gap-0 overflow-y-auto p-0"
+              emptyState={
+                <ListEmptyState
+                  emptyDescription="Create a plan template before assigning it to a client."
+                  hasFilter={deferredSearch.trim().length > 0}
+                  nounPlural="plan templates"
+                  onClearFilters={() => setSearch('')}
+                />
+              }
+              fetchNextPage={() => {
+                query.fetchNextPage().catch(() => undefined);
+              }}
+              isError={query.isError}
+              isLoading={query.isLoading || query.isFetchingNextPage}
+              items={trainingItems}
+              onAction={(key) => {
+                const plan = trainingItems.find((item) => item.id === String(key));
+                if (plan) {
+                  handlePickTraining(plan);
+                }
+              }}
+              onRetry={() => {
+                query.refetch().catch(() => undefined);
+              }}
+              renderItem={(plan) => (
+                <BrowseRow
+                  icon={<Icon size={16} />}
+                  iconClassName={iconWrap}
+                  id={plan.id}
+                  meta={trainingMeta(plan)}
+                  textValue={plan.name}
+                  title={plan.name}
+                />
+              )}
+            />
+          )}
 
           <Button
             className="h-auto w-full justify-start gap-2 p-2"
@@ -221,8 +268,10 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
           kind={kind}
           onBack={() => setStep('pick')}
           onConfirm={handleConfirm}
-          planMeta={isNutrition ? nutritionMeta(selected as NutritionPlan) : trainingMeta(selected as TrainingPlan)}
-          planName={selected.name}
+          planMeta={
+            selected.kind === 'nutrition' ? nutritionMeta(selected.plan) : trainingMeta(selected.plan)
+          }
+          planName={selected.plan.name}
         />
       ) : null}
     </div>

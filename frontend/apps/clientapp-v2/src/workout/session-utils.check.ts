@@ -1,10 +1,18 @@
 import type {TrainingSession} from '../api/training.ts';
-import {activeExerciseCards} from './session-utils.ts';
+import {activeExerciseCards, type ActiveExerciseCard} from './session-utils.ts';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
     throw new Error(message);
   }
+}
+
+function assertPlanned(card: ActiveExerciseCard | undefined): asserts card is Extract<ActiveExerciseCard, {kind: 'planned'}> {
+  assert(card?.kind === 'planned', 'expected a planned exercise card');
+}
+
+function assertAdded(card: ActiveExerciseCard | undefined): asserts card is Extract<ActiveExerciseCard, {kind: 'added'}> {
+  assert(card?.kind === 'added', 'expected an added exercise card');
 }
 
 const timestamp = '2026-08-02T10:00:00Z';
@@ -126,15 +134,26 @@ const ordinaryPlannedCard = cards[1];
 const addedCard = cards[2];
 const namedCard = cards[3];
 
-assert(plannedCard?.exercise.exercise_id === 'goblet-squat', 'reload must retain the swapped exercise');
+assertPlanned(plannedCard);
+assert(plannedCard.plannedIndex === 0, 'planned cards must carry their slot index');
+assert(plannedCard.total === 2, 'planned cards must carry the prescription set count');
+assert(plannedCard.swappedFrom === 'Back squat', 'swapped cards must name the original exercise');
+assert(plannedCard.exercise.exercise_id === 'goblet-squat', 'reload must retain the swapped exercise');
 assert(plannedCard.name === 'Goblet squat', 'reload must retain the swapped exercise name');
 assert(
   plannedCard.logSnapshotRef === 'prescribed-exercise',
   'future sets must retain the stable snapshot exercise identity',
 );
 assert(plannedCard.done[0]?.id === 'swapped-set', 'swapped performed sets must remain assigned to their slot');
-assert(ordinaryPlannedCard?.done[0]?.id === 'planned-set', 'planned work must map by its stable snapshot ref');
-assert(addedCard?.added && addedCard.exercise.exercise_id === 'plank', 'reload must retain an added exercise');
+
+assertPlanned(ordinaryPlannedCard);
+assert(ordinaryPlannedCard.swappedFrom === null, 'unswapped planned cards must not carry a swap label');
+assert(ordinaryPlannedCard.done[0]?.id === 'planned-set', 'planned work must map by its stable snapshot ref');
+
+assertAdded(addedCard);
+assert(addedCard.exercise.exercise_id === 'plank', 'reload must retain an added exercise');
 assert(addedCard.done[0]?.id === 'added-set', 'added performed sets must remain attached to their exercise');
-assert(namedCard?.added && namedCard.exercise.exercise_id == null, 'reload must retain explicitly named work');
+
+assertAdded(namedCard);
+assert(namedCard.exercise.exercise_id === '', 'reload must retain explicitly named work');
 assert(namedCard.name === 'Hill sprint', 'explicit work must retain its frozen exercise name');

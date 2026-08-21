@@ -168,7 +168,7 @@ function SetRow({
   onUpdate: (id: string, values: LoggedSet) => void;
 }) {
   const fields = fieldsFor(exercise.tracking_type);
-  const planned = (exercise.sets ?? [])[index];
+  const planned = exercise.sets[index];
   const initial = (kind: FieldKind) => {
     if (logged) {
       const value =
@@ -257,7 +257,7 @@ function EditableSetTable({
   onDelete: (id: string) => void;
   onUpdate: (id: string, values: LoggedSet) => void;
 }) {
-  const count = card.total ?? Math.max(card.done.length + 1, 1);
+  const count = card.kind === 'planned' ? card.total : Math.max(card.done.length + 1, 1);
   return (
     <div className="mt-4 space-y-1.5">
       {Array.from({length: count}, (_, index) => (
@@ -426,8 +426,8 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
 
   const currentId = (() => {
     for (const c of cards) {
-      if (c.plannedIndex != null) {
-        if (!skipped.has(c.plannedIndex) && (c.total ?? 0) > c.done.length) {
+      if (c.kind === 'planned') {
+        if (!skipped.has(c.plannedIndex) && c.total > c.done.length) {
           return c.id;
         }
       } else if (!doneAdded.has(c.id)) {
@@ -440,17 +440,20 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
   const currentPosition = currentCard ? cards.indexOf(currentCard) : -1;
   const completedCards = cards.filter(
     (card) =>
-      (card.total != null && card.done.length >= card.total) ||
-      (card.plannedIndex != null && skipped.has(card.plannedIndex)) ||
-      (card.added && doneAdded.has(card.id)),
+      (card.kind === 'planned' && card.done.length >= card.total) ||
+      (card.kind === 'planned' && skipped.has(card.plannedIndex)) ||
+      (card.kind === 'added' && doneAdded.has(card.id)),
   );
   const upNext =
     currentPosition < 0 ? [] : cards.slice(currentPosition + 1).filter((card) => !completedCards.includes(card));
-  const overallTotal = cards.reduce((total, card) => total + (card.total ?? card.done.length), 0);
+  const overallTotal = cards.reduce(
+    (total, card) => total + (card.kind === 'planned' ? card.total : card.done.length),
+    0,
+  );
   const overallDone = cards.reduce((total, card) => total + card.done.length, 0);
 
   const handleLog = async (card: ActiveExerciseCard, setIndex: number, values: LoggedSet, restSeconds: number) => {
-    const plannedSet = (card.exercise.sets ?? [])[setIndex];
+    const plannedSet = card.exercise.sets[setIndex];
     try {
       await createSet.mutateAsync({
         sessionId: session.id,
@@ -603,17 +606,20 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
                 Exercise {currentPosition + 1} of {cards.length}
               </span>
               <span className="text-xs font-bold text-muted">
-                {currentCard.exercise.tracking_type?.replaceAll('_', ' ')}
+                {currentCard.exercise.tracking_type.replaceAll('_', ' ')}
               </span>
             </div>
             <h2 className="text-[25px] font-extrabold leading-[1.05] tracking-[-0.025em]">{currentCard.name}</h2>
-            {currentCard.badge && currentCard.badge !== 'added' ? (
+            {currentCard.kind === 'planned' && currentCard.swappedFrom ? (
               <span className="mt-2 inline-block rounded-lg bg-accent-soft px-2 py-1 text-[10px] text-accent-soft-foreground">
-                Swapped from {currentCard.badge.from}
+                Swapped from {currentCard.swappedFrom}
               </span>
             ) : null}
             <p className="mt-4 text-xs font-extrabold">
-              {currentCard.done.length} <span className="text-muted">of {currentCard.total ?? 'open'} sets done</span>
+              {currentCard.done.length}{' '}
+              <span className="text-muted">
+                of {currentCard.kind === 'planned' ? currentCard.total : 'open'} sets done
+              </span>
             </p>
             <EditableSetTable
               busy={isLogging || isUpdating || isDeleting}
@@ -623,7 +629,7 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
               onUpdate={handleUpdate}
             />
             <div className="mt-3 flex gap-2">
-              {currentCard.added ? (
+              {currentCard.kind === 'added' ? (
                 <>
                   <ActionButton
                     label="Next"
@@ -650,13 +656,13 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
                 <>
                   <ActionButton
                     label="Swap"
-                    onPress={() => setPicker({index: currentCard.plannedIndex as number, mode: 'swap'})}
+                    onPress={() => setPicker({index: currentCard.plannedIndex, mode: 'swap'})}
                   >
                     <Repeat2 size={14} />
                   </ActionButton>
                   <ActionButton
                     label="Next"
-                    onPress={() => setSkipped((current) => new Set(current).add(currentCard.plannedIndex as number))}
+                    onPress={() => setSkipped((current) => new Set(current).add(currentCard.plannedIndex))}
                   >
                     <SkipForward size={14} />
                   </ActionButton>
@@ -684,7 +690,9 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
                   key={card.id}
                 >
                   <span className="text-sm font-bold">{card.name}</span>
-                  <span className="text-[11px] text-muted">{card.total ?? 'open'} sets</span>
+                  <span className="text-[11px] text-muted">
+                    {card.kind === 'planned' ? card.total : 'open'} sets
+                  </span>
                 </div>
               ))}
             </div>

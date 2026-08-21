@@ -17,6 +17,7 @@ export type NutritionDayOptionItem = components['schemas']['NutritionDayOptionIt
 export type NutritionDayRow = components['schemas']['NutritionDayRow'];
 export type NutritionDaySlot = components['schemas']['NutritionDaySlot'];
 export type DiaryMealSlot = NutritionDaySlot['meal_slot'];
+export type MealSlot = DiaryMealSlot;
 export type Recipe = components['schemas']['Recipe'];
 export type SwitchOptionRequest = components['schemas']['DiarySwitchOptionRequest'];
 export type ReplacePlannedItemRequest = components['schemas']['DiaryReplacePlannedItemRequest'];
@@ -27,17 +28,12 @@ type NutritionDayQuery = paths['/v1/client/nutrition-days']['get']['parameters']
 type FoodListQuery = paths['/v1/client/nutrition-foods']['get']['parameters']['query'];
 type RecipeListQuery = paths['/v1/client/nutrition-recipes']['get']['parameters']['query'];
 
-type NutritionDayListResponse = components['schemas']['NutritionDayListResponse'];
-type FoodListResponse = components['schemas']['FoodListResponse'];
-type RecipeListResponse = components['schemas']['RecipeListResponse'];
-
 // ── Queries ──────────────────────────────────────────────────
 
 export function useListClientNutritionDaysQuery(query: NutritionDayQuery = {}, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: nutritionDayKeys.list(query),
-    queryFn: () =>
-      call(client.GET('/v1/client/nutrition-days', {params: {query}})) as Promise<NutritionDayListResponse>,
+    queryFn: () => call(client.GET('/v1/client/nutrition-days', {params: {query}})),
     enabled: options?.enabled ?? true,
   });
 }
@@ -45,7 +41,7 @@ export function useListClientNutritionDaysQuery(query: NutritionDayQuery = {}, o
 export function useListClientFoodsQuery(query: FoodListQuery = {}, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: foodKeys.list(query),
-    queryFn: () => call(client.GET('/v1/client/nutrition-foods', {params: {query}})) as Promise<FoodListResponse>,
+    queryFn: () => call(client.GET('/v1/client/nutrition-foods', {params: {query}})),
     enabled: options?.enabled ?? true,
   });
 }
@@ -53,7 +49,7 @@ export function useListClientFoodsQuery(query: FoodListQuery = {}, options?: {en
 export function useListClientRecipesQuery(query: RecipeListQuery = {}, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: recipeKeys.list(query),
-    queryFn: () => call(client.GET('/v1/client/nutrition-recipes', {params: {query}})) as Promise<RecipeListResponse>,
+    queryFn: () => call(client.GET('/v1/client/nutrition-recipes', {params: {query}})),
     enabled: options?.enabled ?? true,
   });
 }

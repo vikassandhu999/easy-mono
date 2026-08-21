@@ -65,7 +65,7 @@ export function findItem(
   return undefined;
 }
 
-export function optionsForSlot(day: NutritionPlanDay, slot: string): NutritionDayMeal[] {
+export function optionsForSlot(day: NutritionPlanDay, slot: BuilderMealSlot): NutritionDayMeal[] {
   return day.day_meals.filter((dm) => dm.meal_slot === slot).sort((a, b) => a.position - b.position);
 }
 

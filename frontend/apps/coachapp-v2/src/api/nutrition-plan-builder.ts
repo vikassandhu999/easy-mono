@@ -107,12 +107,12 @@ export function refetchPlan(planId: string) {
 // ---------------------------------------------------------------------------
 
 export async function replaceMenu(planId: string, plan: NutritionPlan): Promise<NutritionPlan> {
-  const response = (await call(
+  const response = await call(
     client.PUT('/v1/coach/nutrition-plans/{id}/menu', {
       params: {path: {id: planId}},
       body: planToMenuRequest(plan),
     }),
-  )) as NutritionPlanResponse;
+  );
   return response.data;
 }
 
@@ -131,12 +131,12 @@ export async function updatePlanPeriod(
     throw new Error('Cannot update Client Plan Coverage before the plan is loaded');
   }
 
-  const response = (await call(
+  const response = await call(
     client.PATCH('/v1/coach/nutrition-plans/{id}', {
       params: {path: {id: planId}},
       body: nutritionPlanPeriodRequest(plan, body),
     }),
-  )) as NutritionPlanResponse;
+  );
   invalidatePlanCaches(queryClient, {id: planId});
   return response.data;
 }

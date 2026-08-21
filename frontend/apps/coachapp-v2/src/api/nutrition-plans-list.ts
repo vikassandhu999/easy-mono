@@ -29,10 +29,8 @@ export type NutritionPlanAssignRequest = components['schemas']['NutritionPlanAss
 export type NutritionDay = components['schemas']['NutritionDay'];
 export type NutritionDayRow = components['schemas']['NutritionDayRow'];
 export type NutritionDaySlot = components['schemas']['NutritionDaySlot'];
+export type MealSlot = NutritionDaySlot['meal_slot'];
 export type NutritionDayOptionItem = components['schemas']['NutritionDayOptionItem'];
-
-type NutritionPlanListResponse = components['schemas']['NutritionPlanListResponse'];
-type NutritionPlanResponse = components['schemas']['NutritionPlanResponse'];
 
 type ListNutritionPlansQuery = NonNullable<paths['/v1/coach/nutrition-plans']['get']['parameters']['query']>;
 type ListCoachClientNutritionPlansQuery = NonNullable<
@@ -66,7 +64,7 @@ export function useCoachNutritionPlansInfiniteQuery(
             },
           },
         }),
-      ) as Promise<NutritionPlanListResponse>,
+      ),
     initialPageParam: 0,
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
       const nextOffset = lastPageParam + PAGE_SIZE;
@@ -81,7 +79,7 @@ export function useListNutritionPlansQuery(params?: ListNutritionPlansParams, op
     queryFn: () =>
       call(
         client.GET('/v1/coach/nutrition-plans', {params: {query: params ?? undefined}}),
-      ) as Promise<NutritionPlanListResponse>,
+      ),
     enabled: options?.enabled ?? true,
   });
 }
@@ -103,7 +101,7 @@ export function useListCoachClientNutritionPlansQuery(
         client.GET('/v1/coach/clients/{client_id}/nutrition-plans', {
           params: {path: {client_id: clientId}, query: params ?? undefined},
         }),
-      ) as Promise<NutritionPlanListResponse>,
+      ),
     enabled: options?.enabled ?? true,
   });
 }
@@ -112,7 +110,7 @@ export function useCreateNutritionPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: NutritionPlanCreateRequest) =>
-      call(client.POST('/v1/coach/nutrition-plans', {body})) as Promise<NutritionPlanResponse>,
+      call(client.POST('/v1/coach/nutrition-plans', {body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
     },
@@ -151,7 +149,7 @@ export function useUpdateNutritionPlanMutation() {
     mutationFn: ({body, id}: {body: NutritionPlanUpdateRequest; id: string}) =>
       call(
         client.PATCH('/v1/coach/nutrition-plans/{id}', {params: {path: {id}}, body}),
-      ) as Promise<NutritionPlanResponse>,
+      ),
     onSuccess: (_data, {id}) => invalidatePlanCaches(qc, {id}),
   });
 }
@@ -178,7 +176,7 @@ export function useArchiveNutritionPlanMutation() {
     mutationFn: ({id, body}: {id: string; body: NutritionPlanRevisionRequest}) =>
       call(
         client.POST('/v1/coach/nutrition-plans/{id}/archive', {params: {path: {id}}, body}),
-      ) as Promise<NutritionPlanResponse>,
+      ),
     onSuccess: (_data, {id}) => invalidatePlanCaches(qc, {id}),
   });
 }
@@ -189,7 +187,7 @@ export function useRestoreNutritionPlanMutation() {
     mutationFn: ({id, body}: {id: string; body: NutritionPlanRevisionRequest}) =>
       call(
         client.POST('/v1/coach/nutrition-plans/{id}/restore', {params: {path: {id}}, body}),
-      ) as Promise<NutritionPlanResponse>,
+      ),
     onSuccess: (_data, {id}) => invalidatePlanCaches(qc, {id}),
   });
 }
@@ -200,7 +198,7 @@ export function useDuplicateNutritionPlanMutation() {
     mutationFn: ({id, body}: {id: string; body: NutritionPlanRevisionRequest}) =>
       call(
         client.POST('/v1/coach/nutrition-plans/{id}/duplicate', {params: {path: {id}}, body}),
-      ) as Promise<NutritionPlanResponse>,
+      ),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
     },
@@ -220,7 +218,7 @@ export function useAssignNutritionPlanMutation() {
           '/v1/coach/clients/{client_id}/nutrition-plans/{id}/assign',
           nutritionPlanAssignmentRequest({body, clientId, id}),
         ),
-      ) as Promise<NutritionPlanResponse>,
+      ),
     onSuccess: (_data, {clientId, id}) => invalidatePlanCaches(qc, {clientId, id}),
   });
 }

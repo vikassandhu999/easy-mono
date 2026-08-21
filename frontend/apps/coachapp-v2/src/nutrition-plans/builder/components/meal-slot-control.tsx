@@ -19,7 +19,7 @@ function isBuilderMealSlot(value: string): value is BuilderMealSlot {
 }
 
 interface MealSlotControlProps {
-  slot: string;
+  slot: BuilderMealSlot;
   onChange: (slot: BuilderMealSlot) => void;
 }
 

@@ -1,5 +1,9 @@
-export function slotLabel(slot: string, labels: Readonly<Record<string, string>>): string {
-  return Object.entries(labels).find(([value]) => value === slot)?.[1] ?? slot;
+import {MEAL_SLOT_LABELS, type MealSlot} from '../../../../../packages/utils/src/meal-slots.ts';
+
+export type {MealSlot};
+
+export function slotLabel(slot: MealSlot): string {
+  return MEAL_SLOT_LABELS[slot];
 }
 
 export function liveOptionItems<Item>(slot: {

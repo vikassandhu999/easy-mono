@@ -9,6 +9,32 @@ type NutritionMeal = components['schemas']['NutritionMeal'];
 type NutritionMealItem = components['schemas']['NutritionMealItem'];
 type NutritionWeekSchedule = components['schemas']['NutritionWeekSchedule'];
 
+type DayPattern = NutritionPlan['day_patterns'][number];
+type PatternSlot = DayPattern['slots'][number];
+type PatternOption = PatternSlot['options'][number];
+type Meal = NutritionPlan['meals'][number];
+type Item = Meal['meal_items'][number];
+
+/** The plan subtree `planToMenuRequest` reads — not the whole `NutritionPlan` surface. */
+export type PlanMenuSource = {
+  revision: NutritionPlan['revision'];
+  schedule: NutritionWeekSchedule;
+  day_patterns: Array<
+    Pick<DayPattern, 'id' | 'name' | 'position'> & {
+      slots: Array<
+        Pick<PatternSlot, 'meal_slot'> & {
+          options: Array<Pick<PatternOption, 'id' | 'position' | 'nutrition_meal_id'>>;
+        }
+      >;
+    }
+  >;
+  meals: Array<
+    Pick<Meal, 'id' | 'name' | 'notes' | 'position'> & {
+      meal_items: Array<Pick<Item, 'id' | 'kind' | 'food_id' | 'recipe_id' | 'position' | 'portion'>>;
+    }
+  >;
+};
+
 const WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 
 const LOCAL_ID_PREFIX = 'local:';
@@ -30,7 +56,7 @@ export const emptyNutrients: NutritionMeal['nutrients'] = {
   complete: false,
 };
 
-export function planToMenuRequest(plan: NutritionPlan): NutritionMenuReplaceRequest {
+export function planToMenuRequest(plan: PlanMenuSource): NutritionMenuReplaceRequest {
   return {
     expected_revision: plan.revision,
     meals: plan.meals.map((meal) => ({

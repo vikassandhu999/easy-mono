@@ -126,7 +126,7 @@ function slotShell(
     allPlannedLogged,
     hasLog,
     hasPlannedLog,
-    label: MEAL_SLOT_LABELS[slot] ?? slot,
+    label: MEAL_SLOT_LABELS[slot],
     loggedCalories,
     mealId: option?.meal_id ?? daySlot.meal_id ?? null,
     options: daySlot.options,

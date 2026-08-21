@@ -1,17 +1,18 @@
-import {MEAL_SLOT_LABELS} from '@easy/utils';
 import {Chip, ProgressBar, Typography} from '@heroui/react';
 import {Utensils} from 'lucide-react';
 import {useParams} from 'react-router-dom';
+
 import {BackButton} from '@/@components/back-button';
 import {EmptyState} from '@/@components/empty-state';
 import {ErrorState} from '@/@components/error-state';
-
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import type {NutrientTotals} from '@/api/nutrition-foods';
 import type {NutritionDayOptionItem, NutritionDayRow} from '@/api/nutrition-plans-list';
 import {useListCoachNutritionDaysQuery} from '@/api/nutrition-plans-list';
+import type {NutritionPortion} from '@/api/nutrition-plan-builder';
 import {SectionCard} from '@/clients/components/section-card';
 import {formatKcal, formatRowDate} from '@/clients/lib/client-detail-data';
 import {liveOptionItems, slotLabel} from '@/clients/lib/nutrition-day';
@@ -23,8 +24,10 @@ import {liveOptionItems, slotLabel} from '@/clients/lib/nutrition-day';
  */
 const KCAL_COL = 'min-w-16 shrink-0 whitespace-nowrap text-right';
 
-const STATUS_CHIP: Partial<Record<NutritionDayRow['status'], string>> = {
+const STATUS_CHIP: Record<NutritionDayRow['status'], string> = {
   added: 'Added',
+  as_planned: '',
+  pending: 'Pending',
   recorded: 'Recorded',
   skipped: 'Skipped',
   swapped: 'Swapped',
@@ -154,7 +157,7 @@ export default function NutritionDay() {
                     </Typography>
                   ) : null
                 }
-                title={slotLabel(slot.meal_slot, MEAL_SLOT_LABELS)}
+                title={slotLabel(slot.meal_slot)}
                 titleAs="heading"
               >
                 {rows.map((row, index) => (
@@ -192,17 +195,17 @@ type ItemRowProps = {
   calories: null | number | undefined;
   chip?: string;
   name: string;
-  nutrients: {carbohydrates?: null | number; fat?: null | number; protein?: null | number};
-  portion: {amount?: null | number; grams?: null | number; unit?: null | string};
+  nutrients?: Pick<NutrientTotals, 'carbohydrates' | 'fat' | 'protein'>;
+  portion?: Pick<NutritionPortion, 'amount' | 'grams' | 'unit'>;
   skipped?: boolean;
 };
 
 /** One diary or live-guidance row: name + macro line, optional status chip, portion, kcal column. */
 function ItemRow({calories, chip, name, nutrients, portion, skipped}: ItemRowProps) {
   const macros = [
-    nutrients.protein != null ? `P ${Math.round(nutrients.protein)} g` : null,
-    nutrients.carbohydrates != null ? `C ${Math.round(nutrients.carbohydrates)} g` : null,
-    nutrients.fat != null ? `F ${Math.round(nutrients.fat)} g` : null,
+    nutrients?.protein != null ? `P ${Math.round(nutrients.protein)} g` : null,
+    nutrients?.carbohydrates != null ? `C ${Math.round(nutrients.carbohydrates)} g` : null,
+    nutrients?.fat != null ? `F ${Math.round(nutrients.fat)} g` : null,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -235,7 +238,7 @@ function ItemRow({calories, chip, name, nutrients, portion, skipped}: ItemRowPro
           {chip}
         </Chip>
       )}
-      {(portion.grams != null || portion.amount != null) && (
+      {(portion?.grams != null || portion?.amount != null) && (
         <Typography
           className="shrink-0"
           color="muted"
@@ -261,10 +264,10 @@ function DiaryRow({row}: {row: NutritionDayRow}) {
   return (
     <ItemRow
       calories={skipped ? row.planned?.nutrients.calories : row.entry?.nutrients.calories}
-      chip={STATUS_CHIP[row.status]}
+      chip={STATUS_CHIP[row.status] || undefined}
       name={skipped ? (row.planned?.name ?? 'Planned item') : (row.entry?.name ?? 'Food')}
-      nutrients={entry?.nutrients ?? {}}
-      portion={entry?.portion ?? {}}
+      nutrients={entry?.nutrients}
+      portion={entry?.portion}
       skipped={skipped}
     />
   );

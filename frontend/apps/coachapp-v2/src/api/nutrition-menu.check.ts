@@ -1,4 +1,4 @@
-import {isLocalNodeId, moveId, planToMenuRequest, reorderNodes} from './nutrition-menu.ts';
+import {isLocalNodeId, moveId, type PlanMenuSource, planToMenuRequest, reorderNodes} from './nutrition-menu.ts';
 
 const plan = {
   revision: 4,
@@ -16,7 +16,6 @@ const plan = {
       id: 'pattern-id',
       name: 'Everyday',
       position: 0,
-      weekdays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
       slots: [
         {
           meal_slot: 'breakfast',
@@ -71,7 +70,7 @@ const plan = {
       ],
     },
   ],
-} as unknown as Parameters<typeof planToMenuRequest>[0];
+} satisfies PlanMenuSource;
 
 const request = planToMenuRequest(plan);
 
@@ -188,7 +187,7 @@ const omitted = {
   ...plan,
   meals: plan.meals.filter((meal) => meal.id === 'persisted-meal'),
 };
-const omittedRequest = planToMenuRequest(omitted as typeof plan);
+const omittedRequest = planToMenuRequest(omitted);
 if (omittedRequest.meals.length !== 1 || omittedRequest.meals[0]?.id !== 'persisted-meal') {
   throw new Error('omitted Meals must leave the replacement payload');
 }

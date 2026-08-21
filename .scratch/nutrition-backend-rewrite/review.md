@@ -297,7 +297,7 @@ Standards (Claude subagent):
   Path: frontend/apps/coachapp-v2/src/nutrition-plans/builder/commands.ts
   Quote: "found.item.portion = { kind: values.kind, grams: values.grams ?? null, ... }" (inside the serialized send, before the `try`)
   Why: frontend/AGENTS.md optimistic writes go through `patchQueryData` (immer `produce()` output, auto-frozen). `writeItem`'s optimistic `patch(...)` freezes the cached plan; 600ms later the debounced send reads that frozen tree via `read()` and the direct assignment throws `TypeError: Cannot assign to read only property 'portion'` before `api.replaceMenu` runs — and the rejection bypasses the `catch` (toast + refetch), so amount edits are silently never persisted. The re-apply must go through `patch(...)` like every other cache write in the file.
-  Disposition: open (identical code at lines 494–541 on the tip)
+  Disposition: fixed in d17c13bc
 
 - P2 — Meal keeps a dead `creator` association after this ticket removed its only writer
   Path: backend/lib/easy/nutrition/meal.ex
@@ -321,7 +321,7 @@ Spec (Claude subagent):
   Path: backend/priv/repo/migrations/20260817010000_add_nutrition_meal_options.exs
   Quote: "The database rejects incomplete schedules at transaction commit and rejects cross-plan or cross-business schedule references."
   Why: The deferred constraint trigger `nutrition_week_schedule_must_be_complete` raises whenever the plan's schedule row count is not exactly 7, with no exemption for the plan itself being deleted. `delete_plan/3` / `delete_template/3` are hard `Repo.delete` calls; the cascade removes all 7 schedule rows, the queued per-row DELETE events fire at commit, see count 0, and raise `check_violation` — aborting every plan/template/business deletion. Tests never catch it: the Ecto sandbox never commits, and the only trigger test forces `SET CONSTRAINTS ALL IMMEDIATE` on a partial delete, never a plan delete. Unchanged on the tip. Fix: allow count 0 / skip when the parent plan row is gone. (Reported P1 by the agent; verified by the reviewer against the trigger source and upgraded to P0 — both axes found this independently.)
-  Disposition: open
+  Disposition: fixed in d17c13bc
 
 Standards (Claude subagent):
 
@@ -329,19 +329,19 @@ Standards (Claude subagent):
   Path: backend/priv/repo/migrations/20260817010000_add_nutrition_meal_options.exs
   Quote: "IF weekday_count <> 7 THEN RAISE EXCEPTION 'nutrition_week_schedule must contain every weekday'"
   Why: Same defect as the Spec finding above.
-  Disposition: open
+  Disposition: fixed in d17c13bc
 
 - P1 — Omitted Day Patterns are deleted after inserts, colliding on the (plan, position) unique index
   Path: backend/lib/easy/nutrition_programming.ex
   Quote: ":ok <- delete_omitted_patterns(plan, Map.values(pattern_ids)) do" (last step of replace_locked_menu)
   Why: Meals go stage → delete → insert, but patterns insert/update while omitted patterns still hold their old positions (`stage_positions` only moves retained rows). Dropping pattern A (position 0) while submitting a new/repositioned pattern at position 0 hits `nutrition_day_patterns_nutrition_plan_id_position_index` — spurious "position has already been taken" 422 on a valid menu. No test covers omit-and-reuse-position; order unchanged on the tip.
-  Disposition: open
+  Disposition: fixed in d17c13bc
 
 - P1 — changeSlot deletes the option when the current slot is re-selected
   Path: frontend/apps/coachapp-v2/src/nutrition-plans/builder/commands.ts
   Quote: "if (!moved || fromSlot === mealSlot) { return optionId; }"
   Why: The recipe removes the option and reindexes *before* this guard, and returning a defined marker makes `saveMenu` send the mutated menu anyway — a same-slot "move" serializes the menu without the option and the server deletes it. Guard must run before the removal (or abort the save). Reachability currently depends on react-aria suppressing same-key selection events, which is library-internal behavior, not a contract. Still present on the tip.
-  Disposition: open
+  Disposition: fixed in d17c13bc
 
 - P2 — Weekday lookup probes both atom and string keys
   Path: backend/lib/easy/nutrition_programming.ex
@@ -379,7 +379,7 @@ Standards (Claude subagent):
   Path: backend/lib/easy/nutrition/plan.ex
   Quote: "select: %{template_id: copy.source_template_id, plans: count(copy.id)}"
   Why: The diff changed the aggregate from `count(copy.client_id, :distinct)` to `count(copy.id)`, but the contract field (`assigned_client_count`) and the ticket's Answer name a distinct client count. One client can hold several sequential unarchived plans from the same Template (DB only enforces one *incomplete* plan per client), so the field overstates assigned clients. Still `count(copy.id)` on the tip (plan.ex:297).
-  Disposition: open
+  Disposition: fixed in d17c13bc
 
 - P2 — Client list serves archived plans the show endpoint can never open
   Path: backend/lib/easy/nutrition_programming.ex
@@ -403,7 +403,7 @@ Spec (Codex subagent):
   Path: backend/lib/easy/clients.ex
   Quote: "Start and end dates are inclusive client-local dates" and "lifecycle labels are derived from dates, archive state, and the client's applied timezone."
   Why: `put_plan_names_for_clients/3` computes one `today` in `LocalCalendar.default_timezone()` and passes it to `covering_plans_for_clients/3` for the whole page. A client in another timezone can therefore gain or lose the nutrition-plan chip one local day early or late. The lifecycle stamper uses each plan client's applied timezone, so the same response can pair a correctly derived lifecycle with Coverage selected for the wrong day. No boundary test covers the batch caller. Persists on the tip.
-  Disposition: open
+  Disposition: fixed in d17c13bc
 
 Standards (Codex subagent):
 
@@ -441,13 +441,13 @@ Spec (Codex subagent):
   Path: backend/lib/easy/nutrition_library.ex
   Quote: "A Library edit that would invalidate a Menu Portion is rejected."
   Why: `removing_cooked_weight?/2` only checks `:cooked_weight_g`, while `Recipe.update_changeset/2` also accepts string-key maps. Calling `update_recipe/4` with `%{"cooked_weight_g" => nil}` therefore clears the value without checking whether a Menu uses a gram Portion, leaving that Menu invalid. Persists on the tip.
-  Disposition: open
+  Disposition: fixed in a5125350
 
 - P1 — Cooked-weight protection races a concurrent Menu replacement
   Path: backend/lib/easy/nutrition_library.ex; backend/lib/easy/nutrition_programming.ex
   Quote: "A Library edit that would invalidate a Menu Portion is rejected; removing Recipe cooked weight while a Menu uses a gram Portion is covered explicitly."
   Why: `mutate_recipe/4` locks the Recipe and then checks existing Menu Items, but a concurrent `replace_menu/4` can resolve a gram Portion using the old cooked weight before that lock. Its Meal Item insert waits on the Recipe FK, then succeeds after the Recipe update commits. The FK checks only that the Recipe still exists; no database invariant couples `cooked_weight_g` to gram Menu Items. The result is a gram Menu Item referencing a Recipe with no cooked weight. Persists on the tip.
-  Disposition: open
+  Disposition: fixed in a5125350
 
 - P2 — Structural migration silently deletes Recipe Ingredients
   Path: backend/priv/repo/migrations/20260817120000_restrict_library_structural_references.exs
@@ -503,7 +503,7 @@ Spec (Codex subagent):
   Path: frontend/apps/clientapp-v2/src/nutrition/nutrition-today.tsx
   Quote: "A Nutrition Day request identifies intake by local calendar date and resolves the Client timezone with Business fallback."
   Why: The screen computes `today` with `formatDateISO(new Date())`, always sends that date, and derives its past and navigation boundaries from the same browser-local value. When the browser timezone differs from the Client or Business timezone, Today can request and display the wrong calendar day around midnight. The backend's timezone resolution cannot correct an explicit wrong date. Persists on the tip.
-  Disposition: open
+  Disposition: fixed in 18afbd67
 
 Standards (Codex subagent):
 
@@ -535,13 +535,13 @@ Spec (Codex subagent):
   Path: backend/lib/easy/nutrition_diary.ex
   Quote: "Ledger reservation, command execution, and outcome storage are atomic under simultaneous requests."
   Why: Two first extras with different idempotency keys can both observe no slot. The loser hits the slot identity constraint inside a nested `Repo.transaction`; `Repo.rollback/1` aborts the outer ledger transaction, so `recover_slot/4` cannot re-query and one valid occurrence fails. The concurrency test covers only the same key, which serializes before this race. Persists on the tip.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 - P1 — Overlapping add intents share one mutable retry key
   Path: frontend/apps/clientapp-v2/src/nutrition/nutrition-today.tsx
   Quote: "The client add-item flow creates one key per user intent, reuses it for retries, and refreshes Nutrition Day through the generated contract."
   Why: Every add intent writes the same ref, while "Add food off-plan" remains enabled during the request. Intent B can overwrite intent A's key, and either completion clears the shared ref. If A committed but its response was lost, retrying A mints a new key and records a duplicate. Persists on the tip.
-  Disposition: open
+  Disposition: fixed in 18afbd67
 
 Standards (Codex subagent):
 
@@ -593,7 +593,7 @@ Security (Codex subagent):
   Path: backend/lib/easy/nutrition_diary.ex
   Quote: "Ledger reservation, command execution, and outcome storage are atomic under simultaneous requests."
   Why: The distinct-key slot creation race described by the Spec pass aborts the losing outer transaction and can return a 500 instead of recording the second occurrence. Persists on the tip.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 - P2 — Expired ledger rows have no production cleanup caller
   Path: backend/lib/easy/nutrition_diary.ex
@@ -625,19 +625,19 @@ Spec (Codex subagent):
   Path: backend/lib/easy/nutrition_diary.ex
   Quote: "Whole-option and whole-day commands insert only unfulfilled planned items and remain safe under retries and concurrent taps."
   Why: Distinct-key commands can both observe that no Diary Slot exists. The loser rolls back from the nested slot insert inside the outer ledger transaction, so `recover_slot/4` cannot re-query and one valid command fails. The concurrency test pre-seeds the slot and misses the first-slot race. Persists on the tip.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 - P1 — Overlapping Today commands share one mutable retry key
   Path: frontend/apps/clientapp-v2/src/nutrition/nutrition-today.tsx
   Quote: "The client Today flow supports item, option, and day logging and renders backend-derived statuses without local reconciliation."
   Why: Item, option, day, and extra commands overwrite and clear the same `commandIntent` ref. If intent A completes while B is pending, A clears B's retry state. Retrying B after a lost response mints a new key; for a planned item, the backend records the repeated occurrence as an `added` extra. Persists on the tip.
-  Disposition: open
+  Disposition: fixed in 18afbd67
 
 - P1 — Whole-day logging is unavailable for supported frozen states
   Path: frontend/apps/clientapp-v2/src/nutrition/nutrition-today.tsx
   Quote: "A planned command may create and freeze a slot only on the client's local day; an already frozen slot may accept corrections within the correction window."
   Why: Today's frozen `pending` rows do not satisfy `anyUnlogged`, so the screen hides "Log rest of day." Recent past `skipped` rows show the button, but `logWholeDay` returns without a request because historical Nutrition Days have `plan_id: nil`. Persists on the tip.
-  Disposition: open
+  Disposition: fixed in 18afbd67
 
 - P2 — Client tests cover fingerprints, not the planned logging flow
   Path: frontend/apps/clientapp-v2/src/nutrition/diary-command-key.check.ts
@@ -671,13 +671,13 @@ Security (Codex subagent):
   Path: backend/lib/easy/nutrition_diary.ex
   Quote: "A planned command may create and freeze a slot only on the client's local day; an already frozen slot may accept corrections within the correction window."
   Why: `record_planned_day/3` calls `ensure_writable/2` once with the client's current applied timezone. After a timezone change, it can fulfil an already-frozen slot after that slot's correction window or reject a correction that remains valid under the slot's frozen `applied_timezone`. Persists on the tip.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 - P1 — Frozen source Menu Item identity is attached to a live foreign key
   Path: backend/priv/repo/migrations/20260817110000_create_nutrition_diary.exs
   Quote: "Frozen planned items retain source Menu Item identity, display values, Portion, nutrient basis, nutrients, completeness, and order without live structural foreign keys."
   Why: `source_meal_item_id` references `nutrition_meal_items` with `ON DELETE SET NULL`. Menu replacement can erase the promised frozen identity, after which a stale client holding the original Menu Item id receives not-found even though its frozen item still exists. Persists on the tip.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 - P2 — Planned status ignores a frozen slot's applied timezone
   Path: backend/lib/easy/nutrition_diary.ex
@@ -703,31 +703,31 @@ Spec (Codex subagent):
   Path: backend/lib/easy/nutrition_diary.ex; backend/priv/repo/migrations/20260817110000_create_nutrition_diary.exs
   Quote: "A client may switch only among options frozen in the Diary Slot" and "it does not reload Programming."
   Why: The response and command identify a frozen option by nullable `nutrition_meal_id`. Menu replacement or Client Plan deletion nullifies that live FK, after which the frontend has no ID to submit and `find_frozen_option/2` cannot select the surviving frozen option. Tickets 14–16 leave this unchanged.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 - P1 — Concurrent first switches bypass revision arbitration
   Path: backend/lib/easy/nutrition_diary.ex; backend/test/easy/nutrition/diary_concurrency_test.exs
   Quote: "The switch command uses the shared idempotency wrapper and resolves simultaneous switch attempts through the slot revision."
   Why: Two distinct-key switches for an unstarted slot can both see no row and race through nested slot creation. The identity-constraint loser aborts the outer idempotency transaction instead of returning a stale-revision result. The concurrency test pre-seeds a slot, so it misses this path. Tickets 14–16 do not fix it.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 - P1 — Failed switch outcomes are not idempotent
   Path: backend/lib/easy/nutrition_diary.ex
   Quote: "The ledger lookup occurs before correction-window validation. An identical retry returns the original outcome even when the local date has since left the correction window."
   Why: `run_and_store/2` stores only successful days; every error rolls back the ledger reservation. An identical retry can therefore produce a different result, and the same key can later be reused with another payload. The new switch command inherits this behavior from the shared wrapper. Unchanged through ticket 16.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 - P1 — Recent past days still offer an option switch the server rejects
   Path: frontend/apps/clientapp-v2/src/nutrition/nutrition-today.tsx
   Quote: "A client may switch only among options frozen in the Diary Slot and only during that slot's local date."
   Why: The option-picker button uses `day.write_eligible`, which remains true throughout the seven-day correction window. A recent past day therefore opens the picker and posts a switch, but the backend always returns `cannot_switch_past_slot`. The button needs today's stricter eligibility, separate from entry correction eligibility. Persists on the tip.
-  Disposition: open
+  Disposition: fixed in 18afbd67
 
 - P1 — First selection validates one Menu snapshot and freezes another
   Path: backend/lib/easy/nutrition_diary.ex
   Quote: "First same-day selection freezes offered options with the chosen one active."
   Why: `freeze_switch_slot/6` resolves Coverage to validate the requested Meal, then `insert_slot!/6` calls `freeze_source/3` and resolves mutable Programming again. A concurrent Menu replacement between those reads can remove the validated Meal; the command then succeeds while `freeze_slot!/4` silently falls back to the new default option. Tickets 14–16 retain both reads.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 - P2 — Client behavior is untested
   Path: frontend/apps/clientapp-v2/src/nutrition/diary-command-key.check.ts
@@ -785,19 +785,19 @@ Defects (Codex subagent):
   Path: backend/lib/easy/nutrition_diary.ex
   Quote: "Original frozen-item associations survive so switching back restores their meaning."
   Why: Same runtime defect as the first Spec finding. A frozen choice whose live `nutrition_meal_id` was nullified still exists in Diary but can no longer be named by the client or found by the switch command.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 - P1 — Concurrent first-switch loser can return 500
   Path: backend/lib/easy/nutrition_diary.ex
   Quote: "resolves simultaneous switch attempts through the slot revision."
   Why: Same runtime defect as the concurrency Spec finding. The nested rollback aborts the already-open idempotency transaction, so the recovery query cannot turn the losing insert into a stale-revision outcome.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 - P1 — Switches share mutable retry state with every Diary command
   Path: frontend/apps/clientapp-v2/src/nutrition/nutrition-today.tsx
   Quote: "The switch command uses the shared idempotency wrapper."
   Why: Switches and every other Diary write overwrite and clear one `commandIntent` ref while other controls remain enabled. Overlapping intents can lose the key needed to replay a committed command after a lost response. This extends the ticket 11/12 retry-state defect to option switching and persists on the tip.
-  Disposition: open
+  Disposition: fixed in 18afbd67
 
 - P2 — A stale switch leaves the client stuck on the stale revision
   Path: frontend/apps/clientapp-v2/src/api/nutrition.ts; frontend/apps/clientapp-v2/src/nutrition/nutrition-today.tsx
@@ -817,19 +817,19 @@ Spec (Codex subagent):
   Path: backend/lib/easy/nutrition_diary.ex
   Quote: "Updating a Diary Entry accepts Portion and notes only, requires the expected entry revision, and scales the frozen nutrient basis without consulting Library."
   Why: `scaled_nutrients/2` accepts only `grams` or `weight_g`, while the contract and client submit a serving correction as `{kind: "serving", amount, unit}`. Every serving-based correction therefore returns `:invalid_portion` instead of scaling from the entry's frozen amount and weight basis. Tickets 15 and 16 leave this unchanged.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 - P1 — The client cannot edit notes, and a Portion edit clears the existing note
   Path: frontend/apps/clientapp-v2/src/nutrition/components/amount-sheet.tsx; backend/lib/easy/nutrition_diary.ex
   Quote: "Substitution, Portion updates, note updates, and deletion use explicit commands" and "The client Today and History flows expose the allowed correction actions."
   Why: The amount sheet has no notes input and omits `notes` from its PATCH body. `cast_update_command/1` converts that omission to `nil`, and `update_attrs/2` writes the nil value, so changing only a Portion silently erases an existing note. Tickets 15 and 16 add no note control and leave this write path unchanged.
-  Disposition: open
+  Disposition: fixed in ca664762 and 18afbd67
 
 - P1 — Replacement revision checks are not concurrency-safe
   Path: backend/lib/easy/nutrition_diary.ex
   Quote: "Substitution, Portion updates, note updates, and deletion use explicit commands, optimistic revisions, the applied timezone, and the shared idempotency wrapper."
   Why: Replacement reads the existing entry through the slot preload, checks that stale struct's revision, then updates by id without locking the entry or putting the expected revision in the update predicate. A concurrent PATCH can commit first and then be overwritten by the replacement while both commands succeed; a concurrent delete can raise instead of returning a stale-revision result. Tickets 15 and 16 do not change the replacement path.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 Standards (Codex subagent):
 
@@ -863,13 +863,13 @@ Security (Codex subagent):
   Path: backend/lib/easy/nutrition_diary.ex
   Quote: "Replacing a planned fulfilment with another visible Food or Recipe commits atomically" and "requires the expected entry revision."
   Why: Replacement does not lock the existing Diary Entry. A concurrent PATCH can advance the entry while replacement still holds its stale preloaded struct; both writes succeed and replacement overwrites the PATCH without a stale-revision loser. A concurrent delete can instead turn the stale update into an exception.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 - P1 — Valid serving corrections are rejected
   Path: backend/lib/easy/nutrition_diary.ex
   Quote: "Updating a Diary Entry accepts Portion and notes only, requires the expected entry revision, and scales the frozen nutrient basis without consulting Library."
   Why: Serving requests carry `amount` and `unit`, but the frozen scaling function requires request grams. A client cannot correct any serving-based Food or Recipe entry even though the public contract accepts the request shape.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 - P2 — An omitted notes field is a destructive update
   Path: backend/lib/easy/nutrition_diary.ex
@@ -889,7 +889,7 @@ Spec (Codex subagent):
   Path: backend/lib/easy/nutrition_diary.ex
   Quote: "Serve bounded client history and coach summaries from frozen Diary rows only" and "Deleting a Client Plan leaves Diary history unchanged and may null optional plan provenance without changing frozen values."
   Why: Past dates intentionally skip Programming, so `merge_day/5` replaces the plan targets with `empty_targets/0`. `day_summary/2` then computes adherence from a nil calorie target, making adherence unknown for every past day with intake. Deleting a Client Plan can likewise change today's targets and adherence even though the frozen Diary rows are unchanged. Ticket 16 leaves this logic unchanged.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 Standards (Codex subagent):
 
@@ -917,25 +917,25 @@ Defects (Codex subagent):
   Path: backend/lib/easy/nutrition_diary.ex
   Quote: "Coach summaries derive counts and totals from the same stored relationships and status rules as Nutrition Day detail."
   Why: After the day ends, `live_guidance/5` returns nil, `merge_day/5` discards the calorie target, and `calorie_adherence/3` returns nil. Client and coach history therefore show unknown adherence for every historical day with intake, even when the day was frozen under a positive plan target.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 - P1 — Plan deletion can change the active option's planned summary
   Path: backend/lib/easy/nutrition_diary.ex
   Quote: "Deleting a Client Plan leaves Diary history unchanged and may null optional plan provenance without changing frozen values."
   Why: Plan deletion nulls every frozen option's `nutrition_meal_id`. `frozen_slot_view/2` still selects the active option by `active_frozen_option_id`, but serializes its `meal_id` as nil. `active_option_items/1` then matches the first option whose `meal_id` is also nil, so a slot switched to a later option reports the first option's planned nutrients after plan deletion.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 - P1 — Library deletion can turn a swapped row into as-planned
   Path: backend/lib/easy/nutrition_diary.ex
   Quote: "After structural blockers are removed, deleting a Food or Recipe may null its optional Diary reference while names, Portions, nutrients, completeness, and statuses remain readable."
   Why: `same_source?/2` compares the optional live `food_id` and `recipe_id` fields. After both the planned source and its substituted source are deleted, both sides contain nil IDs, so the row changes from `swapped` to `as_planned` and corrupts historical status counts.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 - P1 — Read eligibility and statuses use a different timezone than the response reports
   Path: backend/lib/easy/nutrition_diary.ex
   Quote: "Client history and authorized coach/owner history return the same slots, entries, statuses, totals, timestamps, and applied timezone vocabulary."
   Why: `assemble_day/4` computes `today`, `write_eligible`, and pending/skipped statuses from the client's current timezone, while the response reports an existing slot's frozen `applied_timezone`. After a timezone change across a date boundary, read eligibility and statuses can disagree with the write boundary, which correctly uses the frozen slot timezone.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 - P2 — Exact-date filtering does not override malformed range fields
   Path: backend/lib/easy_web/controllers/clients/nutrition_day_controller.ex; backend/lib/easy_web/controllers/coaches/nutrition_day_controller.ex
@@ -955,7 +955,7 @@ Spec (Codex subagent):
   Path: backend/priv/repo/dev_rich_client.exs; backend/lib/easy/nutrition_diary.ex
   Quote: "Representative factories and development seeds rebuild Foods, Recipes, Templates, Client Plans, Menus, frozen options, planned fulfilments, extras, and no-Coverage entries without discarded IDs."
   Why: The seed deletes every Diary Slot for the client, then calls `log_client_planned_item/4` for yesterday. `start_planned_slot/6` rejects every non-today first freeze with `:cannot_start_past_slot`, so the asserted `{:ok, _}` raises before any of the extras or the no-Coverage entry are created.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 - P2 — Cutover test does not prove retained rows survive the destructive reset
   Path: backend/test/easy/nutrition/cutover_test.exs
@@ -989,12 +989,12 @@ Defects (Codex subagent):
   Path: backend/priv/repo/dev_nutrition_builder.exs; design-handoff/manifests/NB.json
   Quote: "Representative factories and development seeds rebuild Foods, Recipes, Templates, Client Plans, Menus, frozen options, planned fulfilments, extras, and no-Coverage entries without discarded IDs."
   Why: The seed deletes `49584e72-1edd-41d5-a648-f339a1b57149`, then creates the replacement through `Programming.create_template/2`, whose changeset does not accept that ID and generates a new one. `NB.json` still routes to the deleted fixed ID, so the seed's own verification flow reaches a 404 after every run.
-  Disposition: open
+  Disposition: fixed in d17c13bc
 
 - P1 — Rich-client seed deletes other clients' and Templates' same-name plans
   Path: backend/priv/repo/dev_rich_client.exs
   Quote: "Representative factories and development seeds rebuild Foods, Recipes, Templates, Client Plans, Menus, frozen options, planned fulfilments, extras, and no-Coverage entries without discarded IDs."
   Why: The cleanup query deletes every `nutrition_plans` row in the business named `Cutting Phase`, without filtering by `kind`, `client_id`, or seed provenance. Re-running this client-specific seed can therefore delete another client's Client Plan or an unrelated coach Template. The pre-cutover query was limited to this client.
-  Disposition: open
+  Disposition: fixed in ca664762
 
 Summary: Spec 4 findings, worst P1 broken rich-client seed; Standards 1 finding, P2 unchecked fixture cast; Defects 2 findings, both P1 destructive or broken development seeds.

@@ -16,7 +16,6 @@ import {toast} from '@heroui/react';
 import {toastMutationError} from '@/@components/mutation-toast';
 import {createLocalNodeId, emptyNutrients, mealItemFromDraft, nextPosition, reorderNodes} from '@/api/nutrition-menu';
 import type {
-  NutritionDayPatternSlot,
   NutritionMeal,
   NutritionPlan,
   NutritionPortionInput,
@@ -245,16 +244,15 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
   // Slot options: add / remove / re-slot
   // -------------------------------------------------------------------------
 
-  const addOption = (dayId: string, slot: string, mealId: string) =>
+  const addOption = (dayId: string, slot: BuilderMealSlot, mealId: string) =>
     saveMenu(
       (plan) => {
         const pattern = findPattern(plan, dayId);
         if (!pattern) {
           return mealId;
         }
-        const mealSlot = slot as NutritionDayPatternSlot['meal_slot'];
-        const existing = pattern.slots.find((candidate) => candidate.meal_slot === mealSlot) ?? {
-          meal_slot: mealSlot,
+        const existing = pattern.slots.find((candidate) => candidate.meal_slot === slot) ?? {
+          meal_slot: slot,
           options: [],
         };
         if (!pattern.slots.includes(existing)) {
@@ -295,15 +293,14 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
       "Couldn't remove meal from this day",
     );
 
-  const moveOption = (dayId: string, slot: string, from: number, to: number) =>
+  const moveOption = (dayId: string, slot: BuilderMealSlot, from: number, to: number) =>
     saveMenu(
       (plan) => {
         const pattern = findPattern(plan, dayId);
         if (!pattern) {
           return slot;
         }
-        const mealSlot = slot as NutritionDayPatternSlot['meal_slot'];
-        const existing = pattern.slots.find((candidate) => candidate.meal_slot === mealSlot);
+        const existing = pattern.slots.find((candidate) => candidate.meal_slot === slot);
         if (existing) {
           existing.options = reorderNodes(
             [...existing.options].sort((a, b) => a.position - b.position),
@@ -317,11 +314,10 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
       "Couldn't reorder meal options",
     );
 
-  const changeSlot = async (dayId: string, optionId: string, nextSlot: string) => {
+  const changeSlot = async (dayId: string, optionId: string, nextSlot: BuilderMealSlot) => {
     await saveMenu(
       (plan) => {
-        const mealSlot = nextSlot as BuilderMealSlot;
-        changeOptionSlot(plan, dayId, optionId, mealSlot);
+        changeOptionSlot(plan, dayId, optionId, nextSlot);
         return optionId;
       },
       () => undefined,

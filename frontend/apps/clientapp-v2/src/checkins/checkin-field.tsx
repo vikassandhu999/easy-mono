@@ -252,7 +252,7 @@ export default function CheckinField({
       );
     }
 
-    default:
+    case 'text':
       return (
         <TextField
           onChange={onChange}
@@ -263,5 +263,10 @@ export default function CheckinField({
           <Input />
         </TextField>
       );
+
+    default: {
+      const _exhaustive: never = question;
+      return _exhaustive;
+    }
   }
 }

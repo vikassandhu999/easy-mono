@@ -18,7 +18,7 @@ import type {
   NutritionPlan,
 } from '@/api/nutrition-plan-builder';
 
-import {flattenSlots, MEAL_SLOTS, slotLabel} from './slots';
+import {flattenSlots, MEAL_SLOTS, slotLabel, type BuilderMealSlot} from './slots';
 
 export {flattenSlots};
 
@@ -72,8 +72,8 @@ export function optionsForSlot(day: NutritionPlanDay, slot: string): NutritionDa
 /** Day rows in slot order: the position-0 option plus its alternates. */
 export function slotRows(
   day: NutritionPlanDay,
-): {slot: string; primary: NutritionDayMeal; alternates: NutritionDayMeal[]}[] {
-  const rows: {slot: string; primary: NutritionDayMeal; alternates: NutritionDayMeal[]}[] = [];
+): {slot: BuilderMealSlot; primary: NutritionDayMeal; alternates: NutritionDayMeal[]}[] {
+  const rows: {slot: BuilderMealSlot; primary: NutritionDayMeal; alternates: NutritionDayMeal[]}[] = [];
   for (const slot of MEAL_SLOTS) {
     const options = optionsForSlot(day, slot);
     const primary = options[0];
@@ -85,8 +85,8 @@ export function slotRows(
 }
 
 /** First slot with nothing on it — where a newly added meal lands. */
-export function firstFreeSlot(day: NutritionPlanDay): string {
-  return MEAL_SLOTS.find((slot) => optionsForSlot(day, slot).length === 0) ?? MEAL_SLOTS[0];
+export function firstFreeSlot(day: NutritionPlanDay): BuilderMealSlot {
+  return MEAL_SLOTS.find((slot) => optionsForSlot(day, slot).length === 0) ?? MEAL_SLOTS[0]!;
 }
 
 /** Every day-slot option across the plan that points at a meal — drives "Used in n places". */

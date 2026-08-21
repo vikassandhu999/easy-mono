@@ -30,6 +30,7 @@ import {INLINE_LINK, TAG} from '@/builder-kit/ui';
 
 import {kcalLabel} from '../macros';
 import type {PlanBuilderCommands} from '../use-plan-builder';
+import type {BuilderMealSlot} from '../slots';
 import type {HydratedMealItem} from './meal-item-row';
 import {MealItemRow} from './meal-item-row';
 import type {MealPaletteOption} from './meal-palette';
@@ -57,7 +58,7 @@ interface MealCardProps {
   open: boolean;
   onToggle: () => void;
   /** Meal slot this meal occupies on the active day. */
-  slot: string;
+  slot: BuilderMealSlot;
   /** How many day-slot options across the plan point at this meal. */
   assignmentCount: number;
   swaps: MealSwap[];

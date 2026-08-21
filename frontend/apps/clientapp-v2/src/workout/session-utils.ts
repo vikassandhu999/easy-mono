@@ -221,7 +221,21 @@ export function formatDayDate(iso: string): string {
 // Mirrors the backend tracking_type enum + the coach builder (spec 04-set-measurables).
 export type FieldKind = 'distance' | 'duration' | 'reps' | 'weight';
 
-const FIELDS: Record<string, FieldKind[]> = {
+export const TRACKING_TYPES = [
+  'weight_reps',
+  'bodyweight_reps',
+  'weighted_bodyweight',
+  'assisted_bodyweight',
+  'reps_only',
+  'duration',
+  'weight_duration',
+  'distance_duration',
+  'weight_distance',
+] as const;
+
+export type TrackingType = (typeof TRACKING_TYPES)[number];
+
+const FIELDS: Record<TrackingType, FieldKind[]> = {
   assisted_bodyweight: ['weight', 'reps'],
   bodyweight_reps: ['reps'],
   distance_duration: ['distance', 'duration'],
@@ -233,8 +247,15 @@ const FIELDS: Record<string, FieldKind[]> = {
   weighted_bodyweight: ['weight', 'reps'],
 };
 
+function parseTrackingType(value: null | string | undefined): TrackingType {
+  if (value && (TRACKING_TYPES as readonly string[]).includes(value)) {
+    return value as TrackingType;
+  }
+  return 'weight_reps';
+}
+
 export function fieldsFor(trackingType?: null | string): FieldKind[] {
-  return FIELDS[trackingType ?? 'weight_reps'] ?? ['weight', 'reps'];
+  return FIELDS[parseTrackingType(trackingType)];
 }
 
 export function unitLabel(unit?: null | string): string {

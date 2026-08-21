@@ -34,19 +34,24 @@ export function showCallUtility(phone: null | string | undefined): boolean {
 }
 
 export function presentOnboardingReason(reason: OnboardingReason): ReasonPresentation {
-  if (reason.code === 'intake_overdue') {
-    return {
-      action: 'Send reminder',
-      description: `${reason.form_title} · due ${formatWorkbenchDate(reason.due_on)}`,
-      title: 'Intake overdue',
-    };
+  switch (reason.code) {
+    case 'intake_overdue':
+      return {
+        action: 'Send reminder',
+        description: `${reason.form_title} · due ${formatWorkbenchDate(reason.due_on)}`,
+        title: 'Intake overdue',
+      };
+    case 'invitation_follow_up_due':
+      return {
+        action: 'Resend invitation',
+        description: `Sent ${formatWorkbenchDate(reason.sent_at)} · follow-up due ${formatWorkbenchDate(reason.follow_up_due_at)}`,
+        title: 'Invitation follow-up due',
+      };
+    default: {
+      const _exhaustive: never = reason;
+      return _exhaustive;
+    }
   }
-
-  return {
-    action: 'Resend invitation',
-    description: `Sent ${formatWorkbenchDate(reason.sent_at)} · follow-up due ${formatWorkbenchDate(reason.follow_up_due_at)}`,
-    title: 'Invitation follow-up due',
-  };
 }
 
 function serviceLabel(service: 'nutrition' | 'training'): string {
@@ -60,36 +65,39 @@ export function presentProgrammingReason(
   const service = reason.service;
   const action = `Plan ${serviceLabel(service)}`;
 
-  if (reason.code === 'service_never_programmed') {
-    return {
-      action,
-      detail: `No ${service} plan has ever been assigned`,
-      groupLabel: 'Never programmed',
-      service,
-      title: 'Never programmed',
-    };
+  switch (reason.code) {
+    case 'service_never_programmed':
+      return {
+        action,
+        detail: `No ${service} plan has ever been assigned`,
+        groupLabel: 'Never programmed',
+        service,
+        title: 'Never programmed',
+      };
+    case 'service_coverage_missing':
+      return {
+        action,
+        detail: `${serviceLabel(service)} uncovered since ${formatWorkbenchDate(reason.first_uncovered_on)}`,
+        groupLabel: 'Coverage lapsed',
+        service,
+        title: 'Coverage lapsed',
+      };
+    case 'service_coverage_ending_soon': {
+      const ends =
+        reason.coverage_ends_on === today ? 'ends today' : `ends ${formatWorkbenchDate(reason.coverage_ends_on)}`;
+      return {
+        action,
+        detail: `${serviceLabel(service)} ${ends} · uncovered ${formatWorkbenchDate(reason.first_uncovered_on)}`,
+        groupLabel: 'Ending soon',
+        service,
+        title: 'Ending soon',
+      };
+    }
+    default: {
+      const _exhaustive: never = reason;
+      return _exhaustive;
+    }
   }
-
-  if (reason.code === 'service_coverage_missing') {
-    return {
-      action,
-      detail: `${serviceLabel(service)} uncovered since ${formatWorkbenchDate(reason.first_uncovered_on)}`,
-      groupLabel: 'Coverage lapsed',
-      service,
-      title: 'Coverage lapsed',
-    };
-  }
-
-  const ends =
-    reason.coverage_ends_on === today ? 'ends today' : `ends ${formatWorkbenchDate(reason.coverage_ends_on)}`;
-
-  return {
-    action,
-    detail: `${serviceLabel(service)} ${ends} · uncovered ${formatWorkbenchDate(reason.first_uncovered_on)}`,
-    groupLabel: 'Ending soon',
-    service,
-    title: 'Ending soon',
-  };
 }
 
 export function presentExpiringReason(reason: ExpiringReason): ReasonPresentation {

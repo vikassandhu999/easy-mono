@@ -12,11 +12,15 @@ import {ChevronDown} from 'lucide-react';
 import {useRef, useState} from 'react';
 import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
 import {TAG} from '@/builder-kit/ui';
-import {MEAL_SLOTS, slotLabel} from '../slots';
+import {MEAL_SLOTS, slotLabel, type BuilderMealSlot} from '../slots';
+
+function isBuilderMealSlot(value: string): value is BuilderMealSlot {
+  return (MEAL_SLOTS as readonly string[]).includes(value);
+}
 
 interface MealSlotControlProps {
   slot: string;
-  onChange: (slot: string) => void;
+  onChange: (slot: BuilderMealSlot) => void;
 }
 
 export function MealSlotControl({slot, onChange}: MealSlotControlProps) {
@@ -52,8 +56,8 @@ export function MealSlotControl({slot, onChange}: MealSlotControlProps) {
           onSelectionChange={(keys) => {
             const next = [...keys][0];
             setOpen(false);
-            if (next) {
-              onChange(String(next));
+            if (typeof next === 'string' && isBuilderMealSlot(next)) {
+              onChange(next);
             }
           }}
           selectedKeys={[slot]}

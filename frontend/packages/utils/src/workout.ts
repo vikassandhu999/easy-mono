@@ -46,7 +46,11 @@ export function compareTrainingWeekdays(a: TrainingWeekday, b: TrainingWeekday):
   return (TRAINING_DAY_INDEX.get(a) ?? 0) - (TRAINING_DAY_INDEX.get(b) ?? 0);
 }
 
-export const DAY_NAMES: Record<number, string> = {
+export const ISO_WEEKDAY_NUMBERS = [1, 2, 3, 4, 5, 6, 7] as const;
+
+export type IsoWeekdayNumber = (typeof ISO_WEEKDAY_NUMBERS)[number];
+
+export const DAY_NAMES: Record<IsoWeekdayNumber, string> = {
   1: 'Monday',
   2: 'Tuesday',
   3: 'Wednesday',
@@ -56,9 +60,13 @@ export const DAY_NAMES: Record<number, string> = {
   7: 'Sunday',
 };
 
+export const SESSION_STATES = ['active', 'completed', 'discarded'] as const;
+
+export type SessionState = (typeof SESSION_STATES)[number];
+
 // ── Session state chip config ────────────────────────────────
 
-export const SESSION_STATE_CHIP: Record<string, {color: 'danger' | 'default' | 'success' | 'warning'; label: string}> =
+export const SESSION_STATE_CHIP: Record<SessionState, {color: 'danger' | 'default' | 'success' | 'warning'; label: string}> =
   {
     active: {color: 'warning', label: 'In Progress'},
     completed: {color: 'success', label: 'Completed'},

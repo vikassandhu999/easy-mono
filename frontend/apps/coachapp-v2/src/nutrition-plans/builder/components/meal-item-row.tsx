@@ -8,7 +8,7 @@
  */
 
 import {Button} from '@heroui/react';
-import {X} from 'lucide-react';
+import {ChevronDown, ChevronUp, X} from 'lucide-react';
 import {AS_TEXT, NO_GAP} from '@/@components/ua-defaults';
 import type {Food, Recipe} from '@/api/nutrition-foods';
 import type {NutritionMealItem} from '@/api/nutrition-plan-builder';
@@ -29,15 +29,15 @@ export type HydratedMealItem = NutritionMealItem & {
 // ---------------------------------------------------------------------------
 
 function formatAmount(item: HydratedMealItem): string {
-  if (item.weight_g != null) {
-    return `${item.weight_g}g`;
+  const portion = item.portion;
+  if (portion.kind === 'gram' && portion.grams != null) {
+    return `${portion.grams}g`;
   }
-  if (item.amount != null) {
-    // ponytail: naive "+s" pluralization — fine for serving/slice/piece-style
-    // units (skips ones already ending in s); revisit if an irregular plural ships
-    const plural = item.unit && item.amount !== 1 && !item.unit.endsWith('s') ? 's' : '';
-    const unitStr = item.unit ? ` ${item.unit}${plural}` : '';
-    return `${item.amount}${unitStr}`;
+  if (portion.amount != null) {
+    const unit = portion.label ?? portion.unit;
+    const plural = unit && portion.amount !== 1 && !unit.endsWith('s') ? 's' : '';
+    const unitStr = unit ? ` ${unit}${plural}` : '';
+    return `${portion.amount}${unitStr}`;
   }
   return '';
 }
@@ -50,16 +50,15 @@ function fmt(n: number | null | undefined): string {
 }
 
 function formatMacroContribution(
-  nutrition: HydratedMealItem['nutrition'],
+  nutrients: HydratedMealItem['nutrients'],
 ): {kcal: string; p: string; c: string; f: string} | null {
-  if (!nutrition) {
+  if (!nutrients) {
     return null;
   }
-  const kcal = fmt(nutrition.calories);
-  const p = fmt(nutrition.protein_g);
-  const c = fmt(nutrition.carbs_g);
-  const f = fmt(nutrition.fat_g);
-  // Only show if we have at least kcal
+  const kcal = fmt(nutrients.calories);
+  const p = fmt(nutrients.protein);
+  const c = fmt(nutrients.carbohydrates);
+  const f = fmt(nutrients.fat);
   if (kcal === '—') {
     return null;
   }
@@ -75,16 +74,19 @@ export interface MealItemRowProps {
   /** Tap opens the AmountSheet in edit mode. The pressed row IS the desktop
    *  popover's anchor, so it arrives with the event — no ref registry. */
   onTap: (anchor: HTMLElement) => void;
+  onMove: (direction: -1 | 1) => void;
+  isFirst: boolean;
+  isLast: boolean;
   /** `×` removes the item from the meal without opening the sheet. */
   onRemove: () => void;
   /** Collapsed meal bodies still render — only the open card carries the anchors. */
   showTestIds?: boolean;
 }
 
-export function MealItemRow({item, onTap, onRemove, showTestIds}: MealItemRowProps) {
+export function MealItemRow({item, onTap, onMove, isFirst, isLast, onRemove, showTestIds}: MealItemRowProps) {
   const name = item.name ?? item.food?.name ?? item.recipe?.name ?? (item.food_id ? 'Food' : 'Recipe');
   const amount = formatAmount(item);
-  const macro = formatMacroContribution(item.nutrition);
+  const macro = formatMacroContribution(item.nutrients);
 
   return (
     <div
@@ -116,6 +118,29 @@ export function MealItemRow({item, onTap, onRemove, showTestIds}: MealItemRowPro
           {macro.kcal} kcal
         </span>
       ) : null}
+
+      <Button
+        aria-label={`Move ${name} up`}
+        className={`shrink-0 rounded-chip bg-transparent p-0 text-muted sm:size-5.5 ${AS_TEXT} ${NO_GAP}`}
+        isDisabled={isFirst}
+        isIconOnly
+        onPress={() => onMove(-1)}
+        size="sm"
+        variant="ghost"
+      >
+        <ChevronUp className="size-3.5" />
+      </Button>
+      <Button
+        aria-label={`Move ${name} down`}
+        className={`shrink-0 rounded-chip bg-transparent p-0 text-muted sm:size-5.5 ${AS_TEXT} ${NO_GAP}`}
+        isDisabled={isLast}
+        isIconOnly
+        onPress={() => onMove(1)}
+        size="sm"
+        variant="ghost"
+      >
+        <ChevronDown className="size-3.5" />
+      </Button>
 
       <Button
         aria-label={`Remove ${name}`}

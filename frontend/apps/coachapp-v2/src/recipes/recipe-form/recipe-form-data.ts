@@ -1,17 +1,22 @@
 import {z} from 'zod';
 
 import {numberFieldSchema} from '../../@components/form-fields/number-field-value.ts';
-import type {RecipeIngredient, RecipeIngredientRequest, RecipeRequest} from '../../api/nutrition-foods';
+import type {
+  RecipeIngredient,
+  RecipeIngredientRequest,
+  RecipeRequest,
+  RecipeUpdateRequest,
+} from '../../api/nutrition-foods';
 import {omitUndefined, toNullableText, toOptionalNumber, toOptionalText} from '../../api/shared.ts';
 import type {IngredientItem} from '../lib/recipe-math.ts';
 
-const optionalNumber = numberFieldSchema(z.number().min(0, 'Use 0 or higher').optional());
+const optionalPositiveNumber = numberFieldSchema(z.number().gt(0, 'Use a positive amount').optional());
 
 export const recipeFormSchema = z.object({
   name: z.string().trim().min(1, 'Enter recipe name').max(255, 'Use 255 characters or fewer'),
   instructions: z.string().optional(),
   servings_count: numberFieldSchema(z.number().int().min(1, 'Enter at least 1 serving')),
-  cooked_weight_g: optionalNumber,
+  cooked_weight_g: optionalPositiveNumber,
 });
 
 export type RecipeFormValues = z.infer<typeof recipeFormSchema>;
@@ -38,10 +43,9 @@ export function recipeIngredientsToDrafts(ingredients: RecipeIngredient[]): Ingr
     }));
 }
 
-function recipeIngredientDraftToApi(item: IngredientItem, index: number): RecipeIngredientRequest {
+function recipeIngredientDraftToApi(item: IngredientItem): RecipeIngredientRequest {
   return omitUndefined({
     food_id: item.food_id,
-    position: index,
     unit: toOptionalText(item.unit),
     amount: toOptionalNumber(item.amount),
     weight_g: toOptionalNumber(item.weight_g),
@@ -51,13 +55,13 @@ function recipeIngredientDraftToApi(item: IngredientItem, index: number): Recipe
 export function recipeToFormValues(recipe: {
   name: string;
   instructions: string | null;
-  servings_count: number | null;
+  servings_count: number;
   cooked_weight_g: number | null;
 }): RecipeFormValues {
   return {
     name: recipe.name,
     instructions: recipe.instructions ?? '',
-    servings_count: recipe.servings_count ?? 1,
+    servings_count: recipe.servings_count,
     cooked_weight_g: recipe.cooked_weight_g ?? undefined,
   };
 }
@@ -77,8 +81,13 @@ export function recipeToCreateRequest({ingredients, values}: RecipeRequestArgs):
   }) as RecipeRequest;
 }
 
-export function recipeToUpdateRequest({ingredients, values}: RecipeRequestArgs): RecipeRequest {
+export function recipeToUpdateRequest({
+  expectedRevision,
+  ingredients,
+  values,
+}: RecipeRequestArgs & {expectedRevision: number}): RecipeUpdateRequest {
   return {
+    expected_revision: expectedRevision,
     name: values.name,
     instructions: toNullableText(values.instructions),
     servings_count: values.servings_count,

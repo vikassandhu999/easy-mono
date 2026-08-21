@@ -18,9 +18,8 @@
  *
  * Foods resolve `weight_g` from a serving-size tap (weight × count) or typed
  * grams; recipes resolve via serving count or typed grams. The macro preview
- * is live and mirrors the backend's MacroCalc, falling back to linear scaling
- * of the stored nutrition snapshot when the source record can't price a
- * weighed amount.
+ * is live and falls back to linear scaling of the stored nutrition snapshot
+ * when the source record can't price a weighed amount.
  */
 
 import {computeMacrosFromSnapshot} from '@easy/utils';
@@ -30,7 +29,6 @@ import SectionHeading from '@/@components/section-heading';
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import type {Food, Recipe} from '@/api/nutrition-foods';
 import {useGetFoodQuery, useGetRecipeQuery} from '@/api/nutrition-foods';
-import type {NutritionMealItemRequest} from '@/api/nutrition-plan-builder';
 import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
 import {UNIT_CHIP} from '@/builder-kit/ui';
 import {recipeServings} from '@/recipes/lib/recipe-math';
@@ -47,8 +45,8 @@ const AMOUNT_INPUT = 'w-full bg-transparent text-center type-heading font-semibo
 // Types
 // ---------------------------------------------------------------------------
 
-/** A createMealItem request body, built by collect mode. */
-export type MealItemDraft = NutritionMealItemRequest;
+/** A replace-menu item draft, built by collect mode. */
+export type MealItemDraft = ReturnType<typeof buildMealItemDraft>;
 
 export interface AmountSheetProps {
   existingItem?: HydratedMealItem;
@@ -145,20 +143,20 @@ export function AmountSheetContent({
   // a serving item preselects its serving chip and count, a weighed item
   // prefills grams. Prefilling both (the server stores both) made every
   // keystroke silently convert a "3 slices" item into raw grams.
-  const storedAsServing = existingItem != null && existingItem.amount != null;
+  const storedAsServing = existingItem != null && existingItem.portion.kind === 'serving';
 
   // Grams field — direct weight entry
   const [gramsInput, setGramsInput] = useState<string>(() => {
     if (existingItem) {
-      return !storedAsServing && existingItem.weight_g != null ? String(existingItem.weight_g) : '';
+      return !storedAsServing && existingItem.portion.grams != null ? String(existingItem.portion.grams) : '';
     }
     return '';
   });
 
   // Serving count (tap model — either food servings or recipe servings)
   const [servingCount, setServingCount] = useState<string>(() => {
-    if (existingItem?.amount != null) {
-      return String(existingItem.amount);
+    if (existingItem?.portion.amount != null) {
+      return String(existingItem.portion.amount);
     }
     return '1';
   });
@@ -170,7 +168,9 @@ export function AmountSheetContent({
       if (!storedAsServing) {
         return null; // weighed — the grams field is the active input
       }
-      const byUnit = sizes.findIndex((s) => s.unit === existingItem.unit);
+      const byUnit = sizes.findIndex(
+        (s) => s.unit === existingItem.portion.unit && s.label === existingItem.portion.label,
+      );
       return byUnit >= 0 ? byUnit : null;
     }
     // Create: pre-select the default (or first) serving if available.
@@ -236,20 +236,19 @@ export function AmountSheetContent({
       return formatMacroPreview(computed);
     }
 
-    if (recipe?.nutrition) {
-      // Recipe: recipe.nutrition holds the TOTAL macros for the whole recipe
-      // (summed from ingredients at their recorded weights). Mirrors the
-      // backend's MacroCalc: a weighed item scales by cooked_weight_g; a
-      // servings item scales totals by entered/servings_count (default 1).
-      const n = recipe.nutrition;
+    if (recipe) {
+      // Recipe: nutrients are TOTALS for the whole recipe (summed from
+      // ingredients at their recorded weights). A weighed item scales by
+      // cooked_weight_g; a servings item scales totals by entered/servings_count.
+      const n = recipe.nutrients;
 
       if (resolvedWeightG != null && recipe.cooked_weight_g != null && recipe.cooked_weight_g > 0) {
         // Weighed serving — per-100g basis over cooked weight.
         const perHundred = {
           calories_per_100g: ((n.calories ?? 0) / recipe.cooked_weight_g) * 100,
-          protein_g: ((n.protein_g ?? 0) / recipe.cooked_weight_g) * 100,
-          carbs_g: ((n.carbs_g ?? 0) / recipe.cooked_weight_g) * 100,
-          fats_g: ((n.fat_g ?? 0) / recipe.cooked_weight_g) * 100,
+          protein_g: ((n.protein ?? 0) / recipe.cooked_weight_g) * 100,
+          carbs_g: ((n.carbohydrates ?? 0) / recipe.cooked_weight_g) * 100,
+          fats_g: ((n.fat ?? 0) / recipe.cooked_weight_g) * 100,
         };
         const computed = computeMacrosFromSnapshot(perHundred, resolvedWeightG);
         return formatMacroPreview(computed);
@@ -263,9 +262,9 @@ export function AmountSheetContent({
         const scale = servingsEntered / recipeServings(recipe);
         const computed = {
           calories: (n.calories ?? 0) * scale,
-          protein: (n.protein_g ?? 0) * scale,
-          carbs: (n.carbs_g ?? 0) * scale,
-          fat: (n.fat_g ?? 0) * scale,
+          protein: (n.protein ?? 0) * scale,
+          carbs: (n.carbohydrates ?? 0) * scale,
+          fat: (n.fat ?? 0) * scale,
         };
         return formatMacroPreview(computed);
       }
@@ -273,20 +272,20 @@ export function AmountSheetContent({
       // to the stored-snapshot scaling below.
     }
 
-    // ── Fallback: linear scaling of the stored item.nutrition snapshot ──
+    // ── Fallback: linear scaling of the stored item.nutrients snapshot ──
     // The snapshot is the server-computed absolute value for the item's
     // current amount; macros are LINEAR in weight/servings.
-    if (isEditMode && existingItem?.nutrition) {
-      const itemNutrition = existingItem.nutrition;
+    if (isEditMode && existingItem?.nutrients) {
+      const itemNutrition = existingItem.nutrients;
       let scale: number | null = null;
-      if (existingItem.weight_g != null && existingItem.weight_g > 0) {
+      if (existingItem.portion.grams != null && existingItem.portion.grams > 0) {
         if (resolvedWeightG != null && resolvedWeightG > 0) {
-          scale = resolvedWeightG / existingItem.weight_g;
+          scale = resolvedWeightG / existingItem.portion.grams;
         }
-      } else if (existingItem.amount != null && existingItem.amount > 0) {
+      } else if (existingItem.portion.amount != null && existingItem.portion.amount > 0) {
         const count = Number.parseFloat(servingCount);
         if (!Number.isNaN(count) && count > 0) {
-          scale = count / existingItem.amount;
+          scale = count / existingItem.portion.amount;
         }
       }
       if (scale == null) {
@@ -294,9 +293,9 @@ export function AmountSheetContent({
       }
       const scaled = {
         calories: Math.round((itemNutrition.calories ?? 0) * scale),
-        protein: Math.round((itemNutrition.protein_g ?? 0) * scale * 10) / 10,
-        carbs: Math.round((itemNutrition.carbs_g ?? 0) * scale * 10) / 10,
-        fat: Math.round((itemNutrition.fat_g ?? 0) * scale * 10) / 10,
+        protein: Math.round((itemNutrition.protein ?? 0) * scale * 10) / 10,
+        carbs: Math.round((itemNutrition.carbohydrates ?? 0) * scale * 10) / 10,
+        fat: Math.round((itemNutrition.fat ?? 0) * scale * 10) / 10,
       };
       return {
         kcal: `${scaled.calories} kcal`,
@@ -315,7 +314,7 @@ export function AmountSheetContent({
     if (isEditMode) {
       const n = Number.parseFloat(value);
       const weight = Number.isNaN(n) || n <= 0 ? null : n;
-      onEditAmount?.({weight_g: weight, amount: null, unit: null});
+      onEditAmount?.({kind: 'gram', grams: weight, amount: null, unit: null, label: null});
     }
   };
 
@@ -330,7 +329,7 @@ export function AmountSheetContent({
       }
       const count = Number.parseFloat(servingCount) || 1;
       const wg = resolveServingWeight(serving.weight_g, serving.amount, count);
-      onEditAmount?.({weight_g: wg, amount: count, unit: serving.unit});
+      onEditAmount?.({kind: 'serving', grams: wg, amount: count, unit: serving.unit, label: serving.label});
     }
   };
 
@@ -347,12 +346,12 @@ export function AmountSheetContent({
       if (isRecipeMode) {
         const perServing = recipeServingWeightG(recipe);
         const wg = perServing == null ? null : perServing * count;
-        onEditAmount?.({weight_g: wg, amount: count, unit: 'serving'});
+        onEditAmount?.({kind: 'serving', grams: wg ?? undefined, amount: count, unit: 'serving'});
       } else if (activeServingIdx !== null && food) {
         const serving = food.serving_sizes[activeServingIdx];
         if (serving) {
           const wg = resolveServingWeight(serving.weight_g, serving.amount, count);
-          onEditAmount?.({weight_g: wg, amount: count, unit: serving.unit});
+          onEditAmount?.({kind: 'serving', grams: wg, amount: count, unit: serving.unit, label: serving.label});
         }
       }
     }

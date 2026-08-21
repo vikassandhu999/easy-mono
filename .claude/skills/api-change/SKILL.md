@@ -20,7 +20,7 @@ Do not write a field list. Do not summarise the diff. Launch one `generalPurpose
 | Harness | Model |
 | --- | --- |
 | Codex | `gpt-5.6-terra` |
-| Cursor | `composer-2.5-fast` |
+| Cursor | `composer-2.5` |
 | Claude | `sonnet 5` |
 
 Never `inherit`. If that harness's slug is not in the available list, use that harness's cheapest listed model. If the runtime cannot pick a subagent model, run **Layer** in this context — still from git, still with no field list.

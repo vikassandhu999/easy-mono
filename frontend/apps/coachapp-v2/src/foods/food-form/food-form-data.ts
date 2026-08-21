@@ -42,14 +42,26 @@ export function isFoodEditable(source: Food['source']): boolean {
   return source === 'custom';
 }
 
+export function editorServingSizesFromFood(sizes: Food['serving_sizes']): ServingSize[] {
+  return [...sizes]
+    .sort((left, right) => Number(right.is_default) - Number(left.is_default))
+    .map((size) => ({
+      amount: size.amount ?? null,
+      unit: size.unit,
+      weight_g: size.weight_g ?? null,
+    }));
+}
+
 function toFoodServingSizes(sizes: ServingSize[]): FoodServingSize[] {
-  return sizes.map((s) => ({
-    unit: s.unit,
-    amount: s.amount ?? 1,
-    weight_g: s.weight_g ?? 0,
-    is_default: false,
-    label: s.unit,
-  }));
+  return sizes
+    .filter((size) => size.unit.trim() !== '' && (size.amount ?? 0) > 0 && (size.weight_g ?? 0) > 0)
+    .map((size, index) => ({
+      amount: size.amount as number,
+      is_default: index === 0,
+      label: size.unit,
+      unit: size.unit,
+      weight_g: size.weight_g as number,
+    }));
 }
 
 export function foodToCreateRequest({
@@ -76,13 +88,16 @@ export function foodToCreateRequest({
 }
 
 export function foodToUpdateRequest({
+  expectedRevision,
   servingSizes,
   values,
 }: {
+  expectedRevision: number;
   servingSizes: ServingSize[];
   values: FoodFormValues;
 }): FoodUpdateRequest {
   return {
+    expected_revision: expectedRevision,
     name: values.name,
     category: toNullableText(values.category),
     notes: toNullableText(values.notes),

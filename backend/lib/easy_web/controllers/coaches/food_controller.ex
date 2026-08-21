@@ -2,7 +2,7 @@ defmodule EasyWeb.Coaches.FoodController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.Foods
+  alias Easy.Nutrition.Library
   alias OpenApiSpex.Operation
   alias OpenApiSpex.Schema
 
@@ -13,7 +13,8 @@ defmodule EasyWeb.Coaches.FoodController do
     FoodListResponse,
     FoodRequest,
     FoodResponse,
-    FoodUpdateRequest
+    FoodUpdateRequest,
+    StaleRevisionError
   }
 
   plug OpenApiSpex.Plug.CastAndValidate,
@@ -60,6 +61,7 @@ defmodule EasyWeb.Coaches.FoodController do
       ok: {"Food updated", "application/json", FoodResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Stale revision", "application/json", StaleRevisionError},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
@@ -69,13 +71,20 @@ defmodule EasyWeb.Coaches.FoodController do
     operation_id: "deleteFood",
     security: [%{"bearerAuth" => []}],
     parameters: [
-      Operation.parameter(:id, :path, :string, "Food id")
+      Operation.parameter(:id, :path, :string, "Food id"),
+      Operation.parameter(
+        :expected_revision,
+        :query,
+        %Schema{type: :integer, minimum: 1},
+        "Revision observed by the deleting client",
+        required: true
+      )
     ],
     responses: [
       no_content: "Food deleted",
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
-      conflict: {"Still in use — a food still used by a plan or recipe", "application/json", ErrorResponse}
+      conflict: {"Stale revision or still in use", "application/json", ErrorResponse}
     ]
 
   operation :index,
@@ -133,7 +142,7 @@ defmodule EasyWeb.Coaches.FoodController do
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
-    with {:ok, food} <- Foods.create_food(conn.assigns.ctx, conn.body_params) do
+    with {:ok, food} <- Library.create_food(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, food: food)
@@ -142,7 +151,7 @@ defmodule EasyWeb.Coaches.FoodController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => food_id}) do
-    with {:ok, food} <- Foods.get_visible_food(conn.assigns.ctx, food_id) do
+    with {:ok, food} <- Library.get_food(conn.assigns.ctx, food_id) do
       conn
       |> put_status(:ok)
       |> render(:show, food: food)
@@ -152,8 +161,10 @@ defmodule EasyWeb.Coaches.FoodController do
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, _params) do
     food_id = conn.path_params["id"]
+    expected_revision = conn.body_params[:expected_revision]
+    attrs = Map.delete(conn.body_params, :expected_revision)
 
-    with {:ok, updated_food} <- Foods.update_food(conn.assigns.ctx, food_id, conn.body_params) do
+    with {:ok, updated_food} <- Library.update_food(conn.assigns.ctx, food_id, expected_revision, attrs) do
       conn
       |> put_status(:ok)
       |> render(:show, food: updated_food)
@@ -163,8 +174,9 @@ defmodule EasyWeb.Coaches.FoodController do
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, _params) do
     food_id = conn.path_params["id"]
+    expected_revision = parse_integer(conn.query_params, "expected_revision", 0)
 
-    with {:ok, _deleted} <- Foods.delete_food(conn.assigns.ctx, food_id) do
+    with {:ok, _deleted} <- Library.delete_food(conn.assigns.ctx, food_id, expected_revision) do
       send_resp(conn, :no_content, "")
     end
   end
@@ -179,7 +191,7 @@ defmodule EasyWeb.Coaches.FoodController do
     ]
 
     with {:ok, %{count: count, foods: foods}} <-
-           Foods.list_visible_foods(conn.assigns.ctx, opts) do
+           Library.list_foods(conn.assigns.ctx, opts) do
       conn
       |> put_status(:ok)
       |> render(:index, count: count, foods: foods)
@@ -188,14 +200,14 @@ defmodule EasyWeb.Coaches.FoodController do
 
   @spec categories(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def categories(conn, _params) do
-    with {:ok, categories} <- Foods.list_food_categories(conn.assigns.ctx) do
+    with {:ok, categories} <- Library.list_food_categories(conn.assigns.ctx) do
       render(conn, :categories, categories: categories)
     end
   end
 
   @spec impact(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def impact(conn, %{"id" => id}) do
-    with {:ok, impact} <- Foods.get_food_impact(conn.assigns.ctx, id) do
+    with {:ok, impact} <- Library.get_food_impact(conn.assigns.ctx, id) do
       render(conn, :impact, impact)
     end
   end
@@ -204,7 +216,7 @@ defmodule EasyWeb.Coaches.FoodController do
   def copy(conn, _params) do
     id = conn.path_params["id"]
 
-    with {:ok, food} <- Foods.copy_food(conn.assigns.ctx, id) do
+    with {:ok, food} <- Library.copy_food(conn.assigns.ctx, id) do
       conn |> put_status(:created) |> render(:show, food: food)
     end
   end

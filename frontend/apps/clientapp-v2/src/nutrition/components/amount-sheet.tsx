@@ -7,25 +7,32 @@
  * platform feature, and macros still update live on change.
  */
 import {Trash2} from 'lucide-react';
-import {useState} from 'react';
-
+import {useRef, useState} from 'react';
 import {
-  type FoodLogEntry,
-  type SwitchOptionRequest,
-  type TodayPlanItem,
-  useDeleteFoodLogEntryMutation,
+  type DiaryMealSlot,
+  type NutritionDayEntry,
+  type NutritionDayOptionItem,
+  useDeleteDiaryEntryMutation,
   useLogPlannedItemMutation,
-  useUpdateFoodLogEntryMutation,
+  useUpdateDiaryEntryMutation,
 } from '@/api/nutrition';
+import {
+  type DiaryCommandIntent,
+  deleteEntryIntentFingerprint,
+  diaryCommandKey,
+  plannedItemIntentFingerprint,
+  updateEntryIntentFingerprint,
+} from '@/nutrition/diary-command-key';
+import {diaryWriteError} from '@/nutrition/diary-write-error';
 
 export type SheetTarget = {
   date: string;
-  loggedEntry: FoodLogEntry | null;
+  loggedEntry: NutritionDayEntry | null;
   mealId: null | string;
   name: string;
   mealItemId: null | string;
-  plannedItem: null | TodayPlanItem;
-  slot: string;
+  plannedItem: null | NutritionDayOptionItem;
+  slot: DiaryMealSlot;
   slotLabel: string;
 };
 
@@ -41,49 +48,43 @@ export default function AmountSheet({
   target: SheetTarget;
 }) {
   const logPlanned = useLogPlannedItemMutation();
-  const updateEntry = useUpdateFoodLogEntryMutation();
-  const deleteEntry = useDeleteFoodLogEntryMutation();
+  const updateEntry = useUpdateDiaryEntryMutation();
+  const deleteEntry = useDeleteDiaryEntryMutation();
   const busy = logPlanned.isPending || updateEntry.isPending || deleteEntry.isPending;
+  const commandIntent = useRef<DiaryCommandIntent | null>(null);
 
   const {loggedEntry, plannedItem} = target;
-  // Servings mode: recipe items the plan sizes by servings (no weight) — the sheet
-  // then edits the serving count and logs {amount, unit}, never a fabricated weight.
-  const servings = loggedEntry
-    ? loggedEntry.weight_g == null && loggedEntry.amount != null
-    : plannedItem != null && plannedItem.weight_g == null && plannedItem.amount != null;
-  const unitLabel = servings ? (loggedEntry?.unit ?? plannedItem?.unit) || 'serving' : 'g';
+  const portion = plannedItem?.portion;
+  const servings = loggedEntry ? loggedEntry.portion.kind === 'serving' : portion?.kind === 'serving';
+  const unitLabel = servings ? (loggedEntry?.portion.unit ?? portion?.unit) || 'serving' : 'g';
   const plannedPortion = servings
-    ? (loggedEntry?.amount ?? plannedItem?.amount ?? 1)
-    : (loggedEntry?.weight_g ?? plannedItem?.weight_g ?? 100);
-  // raw string so decimals (0.5) and a cleared field stay typeable; parse on use.
+    ? (loggedEntry?.portion.amount ?? portion?.amount ?? 1)
+    : (loggedEntry?.portion.grams ?? portion?.grams ?? 100);
   const [raw, setRaw] = useState<string>(String(plannedPortion));
+  const [notes, setNotes] = useState(loggedEntry?.notes ?? '');
   const [free, setFree] = useState(false);
+  const [error, setError] = useState<null | string>(null);
   const weight = Math.max(0, Number(raw) || 0);
 
-  // Use the planned food's per-100g only for an unlogged item; once an entry exists
-  // (incl. a replacement, whose food differs from the plan) scale its frozen macros.
-  const per100 =
-    !loggedEntry && plannedItem?.food_id
-      ? (plannedItem.nutrition as null | Record<string, null | number> | undefined)
-      : null;
-
   const liveMacros = (w: number): Macros | null => {
-    if (per100) {
+    const plannedBase = servings ? (portion?.amount ?? 0) : (portion?.grams ?? 0);
+    if (!loggedEntry && plannedItem && plannedBase > 0) {
+      const k = w / plannedBase;
       return {
-        c: ((per100.carbs_g_per_100g ?? 0) * w) / 100,
-        cal: ((per100.calories_per_100g ?? 0) * w) / 100,
-        f: ((per100.fat_g_per_100g ?? 0) * w) / 100,
-        p: ((per100.protein_g_per_100g ?? 0) * w) / 100,
+        c: (plannedItem.nutrients.carbohydrates ?? 0) * k,
+        cal: (plannedItem.nutrients.calories ?? 0) * k,
+        f: (plannedItem.nutrients.fat ?? 0) * k,
+        p: (plannedItem.nutrients.protein ?? 0) * k,
       };
     }
-    const base = servings ? loggedEntry?.amount : loggedEntry?.weight_g;
+    const base = servings ? loggedEntry?.portion.amount : loggedEntry?.portion.grams;
     if (loggedEntry && base) {
       const k = w / base;
       return {
-        c: (loggedEntry.carbs_g ?? 0) * k,
-        cal: (loggedEntry.calories ?? 0) * k,
-        f: (loggedEntry.fat_g ?? 0) * k,
-        p: (loggedEntry.protein_g ?? 0) * k,
+        c: (loggedEntry.nutrients.carbohydrates ?? 0) * k,
+        cal: (loggedEntry.nutrients.calories ?? 0) * k,
+        f: (loggedEntry.nutrients.fat ?? 0) * k,
+        p: (loggedEntry.nutrients.protein ?? 0) * k,
       };
     }
     return null;
@@ -92,21 +93,48 @@ export default function AmountSheet({
 
   const logIt = async () => {
     try {
-      const portion = servings ? {amount: weight, unit: unitLabel} : {unit: 'g', weight_g: weight};
+      setError(null);
       if (loggedEntry) {
-        await updateEntry.mutateAsync({...portion, id: loggedEntry.id});
+        const normalizedNotes = notes.trim() || null;
+        commandIntent.current = diaryCommandKey(
+          commandIntent.current,
+          updateEntryIntentFingerprint({
+            date: target.date,
+            entryId: loggedEntry.id,
+            expectedRevision: loggedEntry.revision,
+            notes: normalizedNotes,
+            weight,
+          }),
+        );
+        await updateEntry.mutateAsync({
+          date: target.date,
+          expected_revision: loggedEntry.revision,
+          id: loggedEntry.id,
+          idempotencyKey: commandIntent.current.key,
+          notes: normalizedNotes,
+          portion: servings ? {amount: weight, kind: 'serving', unit: unitLabel} : {grams: weight, kind: 'gram'},
+        });
+        commandIntent.current = null;
       } else if (plannedItem && target.mealItemId) {
+        commandIntent.current = diaryCommandKey(
+          commandIntent.current,
+          plannedItemIntentFingerprint({
+            date: target.date,
+            mealItemId: target.mealItemId,
+            slot: target.slot,
+          }),
+        );
         await logPlanned.mutateAsync({
           date: target.date,
-          meal_id: target.mealId ?? undefined,
-          meal_slot: target.slot as SwitchOptionRequest['meal_slot'],
-          planned_item_id: target.mealItemId,
-          ...portion,
+          idempotencyKey: commandIntent.current.key,
+          meal_item_id: target.mealItemId,
+          meal_slot: target.slot,
         });
+        commandIntent.current = null;
       }
       onClose();
-    } catch {
-      // the mutation's error state surfaces the failure
+    } catch (caught) {
+      setError(diaryWriteError(caught, "Couldn't save it. Try again."));
     }
   };
 
@@ -116,10 +144,25 @@ export default function AmountSheet({
       return;
     }
     try {
-      await deleteEntry.mutateAsync(loggedEntry.id);
+      setError(null);
+      commandIntent.current = diaryCommandKey(
+        commandIntent.current,
+        deleteEntryIntentFingerprint({
+          date: target.date,
+          entryId: loggedEntry.id,
+          expectedRevision: loggedEntry.revision,
+        }),
+      );
+      await deleteEntry.mutateAsync({
+        date: target.date,
+        expected_revision: loggedEntry.revision,
+        id: loggedEntry.id,
+        idempotencyKey: commandIntent.current.key,
+      });
+      commandIntent.current = null;
       onClose();
-    } catch {
-      // the mutation's error state surfaces the failure
+    } catch (caught) {
+      setError(diaryWriteError(caught, "Couldn't remove it. Try again."));
     }
   };
 
@@ -196,6 +239,17 @@ export default function AmountSheet({
             </span>
           </div>
         ) : null}
+
+        {loggedEntry ? (
+          <textarea
+            className="mb-3 min-h-16 w-full resize-none rounded-xl border border-field-border bg-surface-secondary p-3 text-sm outline-none focus:border-accent"
+            onChange={(event) => setNotes(event.target.value)}
+            placeholder="Add a note for your coach (optional)"
+            value={notes}
+          />
+        ) : null}
+
+        {error ? <p className="mb-2 text-center text-[11px] text-danger">{error}</p> : null}
 
         <button
           className="mb-2 flex min-h-12 w-full items-center justify-center gap-2 rounded-[13px] bg-accent py-3 text-[15px] font-extrabold text-white disabled:opacity-50"

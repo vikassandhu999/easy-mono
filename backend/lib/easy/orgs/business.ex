@@ -1,6 +1,7 @@
 defmodule Easy.Orgs.Business do
   use Ecto.Schema
   alias Easy.Identity.User
+  alias Easy.LocalCalendar
 
   import Ecto.Changeset
 
@@ -17,6 +18,7 @@ defmodule Easy.Orgs.Business do
     field :whatsapp_number, :string
     field :dashboard_setup_hidden_at, :utc_datetime
     field :default_weight_unit, Ecto.Enum, values: [:kg, :lbs], default: :kg
+    field :timezone, :string, default: LocalCalendar.default_timezone()
 
     field :dashboard_setup_hidden_reason, Ecto.Enum, values: @dashboard_setup_hidden_reasons
 
@@ -31,6 +33,7 @@ defmodule Easy.Orgs.Business do
     |> cast(attrs, [:name, :handle, :about, :default_weight_unit])
     |> validate_required([:name, :handle])
     |> unique_constraint(:handle)
+    |> LocalCalendar.stamp_timezone()
     |> put_assoc(:owner, user)
   end
 

@@ -35,6 +35,7 @@ defmodule Easy.Nutrition.Food do
     field :notes, :string
     field :image_url, :string
     field :import_id, :string
+    field :revision, :integer, default: 1
 
     embeds_many :serving_sizes, Nutrition.ServingSize, on_replace: :delete
 
@@ -70,12 +71,15 @@ defmodule Easy.Nutrition.Food do
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, coach_id)
     |> put_change(:source, :custom)
+    |> put_change(:revision, 1)
     |> validate_required([:name, :creator_id, :business_id])
     |> validate_macros()
     |> validate_enums()
     |> foreign_key_constraint(:media_id)
     |> check_constraint(:media_id, name: :nutrition_foods_business_media_check)
+    |> check_constraint(:revision, name: :nutrition_foods_revision_positive)
     |> cast_embed(:serving_sizes, with: &Nutrition.ServingSize.changeset/2)
+    |> validate_serving_sizes()
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
@@ -87,7 +91,9 @@ defmodule Easy.Nutrition.Food do
     |> validate_enums()
     |> foreign_key_constraint(:media_id)
     |> check_constraint(:media_id, name: :nutrition_foods_business_media_check)
+    |> check_constraint(:revision, name: :nutrition_foods_revision_positive)
     |> cast_embed(:serving_sizes, with: &Nutrition.ServingSize.changeset/2)
+    |> validate_serving_sizes()
   end
 
   defp validate_macros(changeset) do
@@ -111,6 +117,17 @@ defmodule Easy.Nutrition.Food do
     |> validate_subset(:dietary_tags, @dietary_tags)
   end
 
+  defp validate_serving_sizes(changeset) do
+    sizes = get_field(changeset, :serving_sizes) || []
+    defaults = Enum.count(sizes, & &1.is_default)
+
+    cond do
+      sizes == [] -> changeset
+      defaults == 1 -> changeset
+      true -> add_error(changeset, :serving_sizes, "must have exactly one default")
+    end
+  end
+
   # Queries
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
@@ -123,7 +140,6 @@ defmodule Easy.Nutrition.Food do
     from(f in query, where: f.business_id == ^business_id or is_nil(f.business_id))
   end
 
-  @spec search(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   @spec for_categories(Ecto.Queryable.t(), [String.t()] | nil) :: Ecto.Query.t()
   def for_categories(query \\ __MODULE__, categories)
   def for_categories(query, nil), do: query
@@ -146,6 +162,7 @@ defmodule Easy.Nutrition.Food do
     )
   end
 
+  @spec search(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def search(query \\ __MODULE__, term)
   def search(query, nil), do: query
   def search(query, ""), do: query

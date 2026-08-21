@@ -2,9 +2,8 @@ defmodule EasyWeb.Coaches.ClientPlanController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.Nutrition.Plan
-  alias Easy.NutritionPlans, as: NutritionPlans
-  alias Easy.Training.Programming
+  alias Easy.Nutrition.Programming, as: NutritionProgramming
+  alias Easy.Training.Programming, as: TrainingProgramming
 
   alias EasyWeb.Coaches.{NutritionPlanJSON, TrainingPlanJSON}
 
@@ -70,7 +69,7 @@ defmodule EasyWeb.Coaches.ClientPlanController do
     archived = if status, do: status == :archived, else: nil
 
     with {:ok, %{plans: plans, count: count}} <-
-           Programming.list_plans_for_client(
+           TrainingProgramming.list_plans_for_client(
              conn.assigns.ctx,
              client_id,
              archived: archived,
@@ -87,13 +86,14 @@ defmodule EasyWeb.Coaches.ClientPlanController do
   def nutrition_plans(conn, %{"client_id" => client_id} = params) do
     offset = parse_integer(params, "offset", 0)
     limit = parse_integer(params, "limit", 20)
-    status = parse_enum(params, "status", Plan.statuses())
+    status = parse_enum(params, "status", [:active, :archived])
+    archived = if status, do: status == :archived, else: nil
 
     with {:ok, %{plans: plans, count: count}} <-
-           NutritionPlans.list_plans_for_client(
+           NutritionProgramming.list_plans_for_client(
              conn.assigns.ctx,
              client_id,
-             status: status,
+             archived: archived,
              offset: offset,
              limit: limit
            ) do

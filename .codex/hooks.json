@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'/Users/vikassandhu/Desktop/10x/easy-mono/.codex/hooks/cbm-axi-session.sh'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -69,7 +69,7 @@ defmodule EasyWeb.Clients.TrainingPlanController do
 
   @spec coverage(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def coverage(conn, params) do
-    date = params["date"] || Date.utc_today()
+    date = Map.get(params, :date) || Date.utc_today()
 
     with {:ok, result} <- Programming.resolve_client_coverage(conn.assigns.ctx, date) do
       render(conn, :coverage, coverage: result)

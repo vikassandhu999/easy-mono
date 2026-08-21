@@ -65,7 +65,9 @@ function formatServingLabel(s: ServingSize): string {
 // Per-ingredient macro preview scaled from the food's per-100g values.
 function formatIngredientMacros(food: Food, weightG: number): string {
   const scaled = scaleFoodMacros(food, weightG);
-  const [cal, protein, carbs, fat] = [scaled.calories, scaled.protein_g, scaled.carbs_g, scaled.fats_g].map(Math.round);
+  const [cal, protein, carbs, fat] = [scaled.calories, scaled.protein, scaled.carbohydrates, scaled.fat].map((value) =>
+    value == null ? '—' : Math.round(value),
+  );
   return `${cal} kcal · ${protein}P · ${carbs}C · ${fat}F`;
 }
 

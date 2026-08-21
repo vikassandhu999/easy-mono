@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: resolved
 
 # Nutrition backend rewrite
 

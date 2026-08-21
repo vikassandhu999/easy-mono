@@ -21,7 +21,7 @@ if (!trimmed.success || trimmed.data.name !== 'Test Plan') {
   throw new Error('nutrition plan name must be normalized before submission');
 }
 
-const cleared = nutritionPlanToUpdateRequest({...NUTRITION_PLAN_FORM_DEFAULTS, name: 'Test Plan'});
+const cleared = nutritionPlanToUpdateRequest({...NUTRITION_PLAN_FORM_DEFAULTS, name: 'Test Plan'}, 3);
 for (const field of [
   'description',
   'target_calories',
@@ -33,6 +33,9 @@ for (const field of [
   if (cleared[field] !== null) {
     throw new Error(`clearing ${field} must send null`);
   }
+}
+if (cleared.expected_revision !== 3) {
+  throw new Error('Template metadata updates must send the observed revision');
 }
 
 console.log('nutrition-plan-form-data: all checks passed');

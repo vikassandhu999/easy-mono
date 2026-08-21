@@ -8,7 +8,18 @@ import {Spinner} from '@heroui/react';
 import {X} from 'lucide-react';
 import {useEffect, useRef, useState} from 'react';
 
-import {type Food, type Recipe, useListClientFoodsQuery, useListClientRecipesQuery} from '@/api/nutrition';
+import {
+  type DiaryMealSlot,
+  type Food,
+  type Recipe,
+  useListClientFoodsQuery,
+  useListClientRecipesQuery,
+} from '@/api/nutrition';
+
+function recipeCaloriesLabel(recipe: Recipe): string {
+  const kcal = recipe.nutrients.calories;
+  return kcal == null ? '—' : `${Math.round(kcal)} kcal total`;
+}
 
 export type Picked = {
   // A recipe with no cooked weight has no gram equivalent, so it is sized in
@@ -19,7 +30,7 @@ export type Picked = {
   kind: 'food' | 'recipe';
   name: string;
   perUnit: string;
-  slot: string;
+  slot: DiaryMealSlot;
 };
 
 // A recipe's portion comes from its yield: cooked_weight_g / servings_count.
@@ -44,7 +55,7 @@ export default function FoodPicker({
   onClose,
   onPick,
 }: {
-  defaultSlot?: string;
+  defaultSlot?: DiaryMealSlot;
   onClose: () => void;
   onPick: (picked: Picked) => void;
   showSlotPicker?: boolean;
@@ -53,7 +64,7 @@ export default function FoodPicker({
   const [q, setQ] = useState('');
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<'foods' | 'recipes'>('foods');
-  const [slot, setSlot] = useState(defaultSlot ?? 'lunch');
+  const [slot, setSlot] = useState<DiaryMealSlot>(defaultSlot ?? 'lunch');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => inputRef.current?.focus(), []);
@@ -68,8 +79,8 @@ export default function FoodPicker({
   const recipes = useListClientRecipesQuery(query, {enabled: tab === 'recipes'});
 
   const loading = tab === 'foods' ? foods.isFetching : recipes.isFetching;
-  const foodItems = (foods.data?.data ?? []) as Food[];
-  const recipeItems = (recipes.data?.data ?? []) as Recipe[];
+  const foodItems = foods.data?.data ?? [];
+  const recipeItems = recipes.data?.data ?? [];
 
   const pickFood = (f: Food) =>
     onPick({
@@ -89,7 +100,7 @@ export default function FoodPicker({
       id: r.id,
       kind: 'recipe',
       name: r.name,
-      perUnit: `${Math.round(r.nutrition?.calories ?? 0)} kcal total`,
+      perUnit: recipeCaloriesLabel(r),
       slot,
     });
 
@@ -178,7 +189,7 @@ export default function FoodPicker({
             >
               <span className="min-w-0">
                 <span className="block truncate text-sm font-medium">{r.name}</span>
-                <span className="text-[10px] text-muted">{Math.round(r.nutrition?.calories ?? 0)} kcal total</span>
+                <span className="text-[10px] text-muted">{recipeCaloriesLabel(r)}</span>
               </span>
               <span className="shrink-0 text-muted">›</span>
             </button>

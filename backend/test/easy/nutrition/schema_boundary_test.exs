@@ -3,10 +3,8 @@ defmodule Easy.Nutrition.SchemaBoundaryTest do
 
   @schema_paths [
     "lib/easy/nutrition/food.ex",
-    "lib/easy/nutrition/food_log_entry.ex",
     "lib/easy/nutrition/meal.ex",
     "lib/easy/nutrition/meal_item.ex",
-    "lib/easy/nutrition/meal_log.ex",
     "lib/easy/nutrition/plan.ex",
     "lib/easy/nutrition/recipe.ex",
     "lib/easy/nutrition/recipe_ingredient.ex",

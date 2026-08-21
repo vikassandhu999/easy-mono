@@ -2,6 +2,7 @@ defmodule Easy.Clients.Client do
   use Ecto.Schema
 
   alias Easy.Identity.User
+  alias Easy.LocalCalendar
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -37,6 +38,7 @@ defmodule Easy.Clients.Client do
     field :required_services, {:array, Ecto.Enum}, values: @required_services, default: []
     field :expiring_soon, :boolean, virtual: true, default: false
     field :last_active_at, :utc_datetime
+    field :timezone, :string, default: LocalCalendar.default_timezone()
     # The names of the plans in force for this client TODAY, for the clients-list
     # row chips. Only populated when the caller asks (`include_plans: true`) —
     # they cost two extra queries per page, and no other caller wants them.
@@ -96,6 +98,7 @@ defmodule Easy.Clients.Client do
     |> put_change(:status, :pending)
     |> put_change(:invitation_token, generate_token())
     |> put_change(:invitation_sent_at, DateTime.utc_now(:second))
+    |> LocalCalendar.stamp_timezone()
     |> unique_constraint(:email, name: :clients_business_id_email_index)
     |> check_constraint(:required_services, name: :clients_required_services_check)
     |> put_assoc(:creator, coach)

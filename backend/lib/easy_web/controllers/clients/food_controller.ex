@@ -2,7 +2,7 @@ defmodule EasyWeb.Clients.FoodController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.Foods
+  alias Easy.Nutrition.Library
   alias EasyWeb.OpenApi.Schemas.{ErrorResponse, FoodListResponse, FoodResponse}
   alias OpenApiSpex.Operation
 
@@ -46,14 +46,14 @@ defmodule EasyWeb.Clients.FoodController do
     ]
 
     with {:ok, %{foods: foods, count: count}} <-
-           Foods.list_visible_foods(conn.assigns.ctx, opts) do
+           Library.list_foods(conn.assigns.ctx, opts) do
       render(conn, :index, foods: foods, count: count)
     end
   end
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
-    with {:ok, food} <- Foods.get_visible_food(conn.assigns.ctx, id) do
+    with {:ok, food} <- Library.get_food(conn.assigns.ctx, id) do
       render(conn, :show, food: food)
     end
   end

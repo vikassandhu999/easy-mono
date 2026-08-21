@@ -1,85 +1,93 @@
 defmodule Easy.Nutrition.MealItem do
   use Ecto.Schema
 
-  alias Easy.Nutrition
-  alias Easy.Nutrition.Food
-  alias Easy.Nutrition.Recipe
-  alias Easy.Nutrition.RecipeIngredient
+  alias Easy.Nutrition.{Food, Meal, Plan, Recipe, RecipeIngredient}
   alias Easy.Orgs
 
   import Ecto.Changeset
   import Ecto.Query
 
   @type t() :: %__MODULE__{}
+  @max_position 2_147_483_647
+  @portion_kinds [:gram, :serving]
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
   schema "nutrition_meal_items" do
+    field :portion_kind, Ecto.Enum, values: @portion_kinds
     field :weight_g, :float
     field :amount, :float
     field :unit, :string
-    field :position, :integer, default: 0
+    field :serving_label, :string
+    field :position, :integer
+    field :calories, :float
+    field :protein, :float
+    field :carbohydrates, :float
+    field :fat, :float
+    field :fiber, :float
+    field :complete, :boolean, default: false
 
     belongs_to :business, Orgs.Business
-    belongs_to :recipe, Nutrition.Recipe
-    belongs_to :food, Nutrition.Food
-    belongs_to :meal, Nutrition.Meal, foreign_key: :nutrition_meal_id
+    belongs_to :plan, Plan, foreign_key: :nutrition_plan_id
+    belongs_to :recipe, Recipe
+    belongs_to :food, Food
+    belongs_to :meal, Meal, foreign_key: :nutrition_meal_id
 
     timestamps(type: :utc_datetime)
   end
 
-  @cast_fields [:weight_g, :amount, :unit, :position, :recipe_id, :food_id]
+  @cast_fields [
+    :portion_kind,
+    :weight_g,
+    :amount,
+    :unit,
+    :serving_label,
+    :position,
+    :recipe_id,
+    :food_id,
+    :calories,
+    :protein,
+    :carbohydrates,
+    :fat,
+    :fiber,
+    :complete
+  ]
 
-  @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(business_id, meal_id, attrs) do
+  @spec insert_changeset(String.t(), String.t(), String.t(), map()) :: Ecto.Changeset.t()
+  def insert_changeset(business_id, plan_id, meal_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
-    |> put_change(:nutrition_meal_id, meal_id)
     |> put_change(:business_id, business_id)
-    |> validate_required([:nutrition_meal_id, :business_id])
-    |> validate_number(:weight_g, greater_than: 0)
-    |> validate_number(:amount, greater_than: 0)
-    |> validate_food_or_recipe()
-    |> validate_sizing()
-    |> check_constraint(:weight_g,
-      name: :nutrition_meal_items_weight_positive,
-      message: "must be greater than 0"
-    )
-    |> check_constraint(:food_id,
-      name: :nutrition_meal_items_food_xor_recipe,
-      message: "exactly one of food_id or recipe_id must be set"
-    )
+    |> put_change(:nutrition_plan_id, plan_id)
+    |> put_change(:nutrition_meal_id, meal_id)
+    |> validate_fields()
   end
-
-  @update_fields [:weight_g, :amount, :unit, :position]
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(meal_item, attrs) do
     meal_item
-    |> cast(attrs, @update_fields)
-    |> validate_number(:weight_g, greater_than: 0)
-    |> validate_number(:amount, greater_than: 0)
-    |> validate_sizing()
+    |> cast(attrs, @cast_fields)
+    |> validate_fields()
   end
 
-  # Food items are always weighed. Recipe items may be weighed OR sized in
-  # servings (amount/unit) — a recipe without a recorded cooked weight has no
-  # gram equivalent, so servings is the only way to add it.
-  defp validate_sizing(changeset) do
-    weight_g = get_field(changeset, :weight_g)
-    amount = get_field(changeset, :amount)
-
-    cond do
-      not is_nil(get_field(changeset, :food_id)) and is_nil(weight_g) ->
-        add_error(changeset, :weight_g, "is required for food items")
-
-      not is_nil(get_field(changeset, :recipe_id)) and is_nil(weight_g) and is_nil(amount) ->
-        add_error(changeset, :weight_g, "either weight_g or amount is required for recipe items")
-
-      true ->
-        changeset
-    end
+  defp validate_fields(changeset) do
+    changeset
+    |> validate_required([:portion_kind, :position, :nutrition_meal_id, :nutrition_plan_id, :business_id])
+    |> validate_number(:position, greater_than_or_equal_to: 0, less_than_or_equal_to: @max_position)
+    |> validate_number(:weight_g, greater_than: 0)
+    |> validate_number(:amount, greater_than: 0)
+    |> validate_food_or_recipe()
+    |> check_constraint(:food_id,
+      name: :nutrition_meal_items_food_xor_recipe,
+      message: "exactly one of food_id or recipe_id must be set"
+    )
+    |> check_constraint(:portion_kind, name: :nutrition_meal_items_portion_check)
+    |> check_constraint(:position, name: :nutrition_meal_items_position_check)
+    |> unique_constraint(:position, name: :nutrition_meal_items_nutrition_meal_id_position_index)
+    |> foreign_key_constraint(:nutrition_meal_id, name: :nutrition_meal_items_meal_plan_business_id_fkey)
+    |> foreign_key_constraint(:food_id, name: :nutrition_meal_items_food_id_fkey)
+    |> foreign_key_constraint(:recipe_id, name: :nutrition_meal_items_recipe_id_fkey)
   end
 
   defp validate_food_or_recipe(changeset) do
@@ -99,33 +107,29 @@ defmodule Easy.Nutrition.MealItem do
   end
 
   @spec for_meal(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_meal(query \\ __MODULE__, meal_id) do
-    from(m in query, where: m.nutrition_meal_id == ^meal_id)
-  end
+  def for_meal(query \\ __MODULE__, meal_id),
+    do: from(item in query, where: item.nutrition_meal_id == ^meal_id)
+
+  @spec for_plan(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_plan(query \\ __MODULE__, plan_id),
+    do: from(item in query, where: item.nutrition_plan_id == ^plan_id)
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_business(query \\ __MODULE__, business_id) do
-    from(m in query, where: m.business_id == ^business_id)
-  end
+  def for_business(query \\ __MODULE__, business_id),
+    do: from(item in query, where: item.business_id == ^business_id)
 
   @spec include_food_and_recipe(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def include_food_and_recipe(query \\ __MODULE__, business_id) do
     food_query = Food.for_business_or_system(Food, business_id)
 
     recipe_query =
-      from(r in Recipe.for_business(Recipe, business_id),
-        preload: [recipe_ingredients: ^from(ri in RecipeIngredient, preload: [food: ^food_query])]
+      from(recipe in Recipe.for_business(Recipe, business_id),
+        preload: [recipe_ingredients: ^from(ingredient in RecipeIngredient, preload: [food: ^food_query])]
       )
 
-    include_food_and_recipe(query, business_id, food_query, recipe_query)
-  end
-
-  @spec include_food_and_recipe(Ecto.Queryable.t(), String.t(), Ecto.Query.t(), Ecto.Query.t()) ::
-          Ecto.Query.t()
-  def include_food_and_recipe(query, business_id, food_query, recipe_query) do
-    from(m in query,
-      where: m.business_id == ^business_id,
-      order_by: [asc: m.position, asc: m.inserted_at, asc: m.id],
+    from(item in query,
+      where: item.business_id == ^business_id,
+      order_by: [asc: item.position, asc: item.id],
       preload: [food: ^food_query, recipe: ^recipe_query]
     )
   end

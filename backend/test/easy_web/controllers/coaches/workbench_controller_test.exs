@@ -252,6 +252,64 @@ defmodule EasyWeb.Coaches.WorkbenchControllerTest do
       )
     end
 
+    test "renders nutrition Coverage reason variants", %{
+      conn: conn,
+      business: business,
+      coach: coach
+    } do
+      today = Date.utc_today()
+
+      missing =
+        insert(:client,
+          business: business,
+          creator: coach,
+          required_services: [:nutrition]
+        )
+
+      ending =
+        insert(:client,
+          business: business,
+          creator: coach,
+          required_services: [:nutrition]
+        )
+
+      insert(:plan,
+        business: business,
+        creator: coach,
+        client: missing,
+        kind: :client_plan,
+        start_date: Date.add(today, -7),
+        end_date: Date.add(today, -1)
+      )
+
+      insert(:plan,
+        business: business,
+        creator: coach,
+        client: ending,
+        kind: :client_plan,
+        start_date: Date.add(today, -7),
+        end_date: Date.add(today, 2)
+      )
+
+      conn = get(conn, "/v1/coach/workbench/queues/programming", %{service: "nutrition"})
+
+      assert %{"count" => 2, "data" => items} = json_response(conn, 200)
+
+      reasons_by_client =
+        Map.new(items, fn item ->
+          {item["client"]["id"], item["reasons"]}
+        end)
+
+      assert [%{"code" => "service_coverage_missing"}] = reasons_by_client[missing.id]
+      assert [%{"code" => "service_coverage_ending_soon"}] = reasons_by_client[ending.id]
+
+      assert_schema(
+        json_response(conn, 200),
+        "WorkbenchProgrammingQueueResponse",
+        EasyWeb.ApiSpec.spec()
+      )
+    end
+
     test "renders every explicit queue envelope and reason schema", %{
       conn: conn,
       business: business,

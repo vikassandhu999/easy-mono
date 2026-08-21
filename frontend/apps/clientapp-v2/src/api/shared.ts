@@ -40,7 +40,7 @@ function normalizeFieldMap(raw: Record<string, unknown>): null | Record<string, 
  *
  * The third shape is new in onboarding-v2 and was missed by the previous parser.
  */
-const getValidationErrors = (error: unknown): null | Record<string, string[]> => {
+export const getValidationErrors = (error: unknown): null | Record<string, string[]> => {
   if (!error || typeof error !== 'object' || !('data' in error)) {
     return null;
   }

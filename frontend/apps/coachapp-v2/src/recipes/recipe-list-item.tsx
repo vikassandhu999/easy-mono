@@ -7,7 +7,7 @@ import type {Recipe} from '@/api/nutrition-foods';
 
 export default function RecipeListItem({recipe}: {recipe: Recipe}) {
   const ingredientCount = recipe.recipe_ingredients.length;
-  const kcal = recipe.nutrition?.calories;
+  const kcal = recipe.nutrients.calories;
 
   return (
     <BrowseRow

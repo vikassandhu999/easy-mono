@@ -24,13 +24,6 @@ defmodule Easy.Clients.LastActiveTest do
         date: ~D[2026-07-01]
       )
 
-      insert(:meal_log,
-        business: business,
-        client: client,
-        date: ~D[2026-07-10],
-        logged_calories: 500.0
-      )
-
       assert {:ok, %{clients: [listed]}} = Clients.list_clients(owner_ctx(business))
       assert listed.last_active_at == stamped_at
     end
@@ -41,7 +34,6 @@ defmodule Easy.Clients.LastActiveTest do
       client = insert(:client, business: business, creator: coach, user: insert(:user))
 
       insert(:workout_session, business: business, client: client, state: :active, date: ~D[2026-07-20])
-      insert(:meal_log, business: business, client: client, date: ~D[2026-07-21], logged_calories: 0.0)
 
       assert {:ok, %{clients: [listed]}} = Clients.list_clients(owner_ctx(business))
       assert is_nil(listed.last_active_at)
@@ -150,7 +142,7 @@ defmodule Easy.Clients.LastActiveTest do
     refute Enum.any?(small_queries ++ large_queries, fn query ->
              String.contains?(query, [
                ~s(FROM "training_sessions"),
-               ~s(FROM "nutrition_meal_logs"),
+               ~s(FROM "nutrition_diary_entries"),
                ~s(FROM "form_submissions"),
                ~s(FROM "weight_entries")
              ])

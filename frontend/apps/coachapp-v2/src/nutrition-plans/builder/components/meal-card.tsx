@@ -22,7 +22,7 @@
  */
 import {Button, Chip, Disclosure, Dropdown, Label, Separator} from '@heroui/react';
 import {cn} from '@heroui/styles';
-import {ArrowLeftRight, Info, MoreHorizontal, TrashIcon, X} from 'lucide-react';
+import {ArrowLeftRight, ChevronDown, ChevronUp, Info, MoreHorizontal, TrashIcon, X} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {AS_ICON_BUTTON, AS_TEXT, NO_GAP} from '@/@components/ua-defaults';
 import type {NutritionMeal} from '@/api/nutrition-plan-builder';
@@ -35,6 +35,8 @@ import {MealItemRow} from './meal-item-row';
 import type {MealPaletteOption} from './meal-palette';
 import {AddSwapControl} from './meal-palette';
 import {MealSlotControl} from './meal-slot-control';
+
+const ICON_BUTTON = `shrink-0 rounded-chip bg-transparent text-muted sm:size-7 ${AS_ICON_BUTTON}`;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -64,6 +66,10 @@ interface MealCardProps {
   onAddItems: () => void;
   /** Opens the root-mounted amount sheet on this item, anchored to the tapped row. */
   onEditItem: (item: HydratedMealItem, anchor: HTMLElement) => void;
+  /** Menu-order ▲▼ — omitted while the card is bound to a Day Pattern slot. */
+  onMove?: (direction: -1 | 1) => void;
+  isFirst?: boolean;
+  isLast?: boolean;
   /** Newly created meals open straight into rename mode (INTERACTIONS.md § NB). */
   autoRename?: boolean;
   /** Style-diff anchors (manifests/NB.json) — one card per variant carries them. */
@@ -88,6 +94,9 @@ export function MealCard({
   swapCandidates,
   onAddItems,
   onEditItem,
+  onMove,
+  isFirst,
+  isLast,
   autoRename,
   cardTestId,
   triggerTestId,
@@ -147,8 +156,8 @@ export function MealCard({
   // (manifests/NB.json) are only tagged on the card that is actually open.
   const openId = (id: string) => (open ? id : undefined);
 
-  const items = meal.meal_items as HydratedMealItem[];
-  const kcal = kcalLabel(meal.nutrition);
+  const items = [...meal.meal_items].sort((a, b) => a.position - b.position) as HydratedMealItem[];
+  const kcal = kcalLabel(meal.nutrients);
   const isShared = assignmentCount >= 2;
 
   // ---------------------------------------------------------------------------
@@ -244,6 +253,33 @@ export function MealCard({
           </Disclosure.Heading>
         )}
 
+        {onMove ? (
+          <div className="flex shrink-0 items-center">
+            <Button
+              aria-label={`Move ${meal.name} up`}
+              className={ICON_BUTTON}
+              isDisabled={isFirst}
+              isIconOnly
+              onPress={() => onMove(-1)}
+              size="sm"
+              variant="ghost"
+            >
+              <ChevronUp />
+            </Button>
+            <Button
+              aria-label={`Move ${meal.name} down`}
+              className={ICON_BUTTON}
+              isDisabled={isLast}
+              isIconOnly
+              onPress={() => onMove(1)}
+              size="sm"
+              variant="ghost"
+            >
+              <ChevronDown />
+            </Button>
+          </div>
+        ) : null}
+
         <Dropdown>
           <Button
             aria-label={`Meal options for ${meal.name}`}
@@ -334,11 +370,16 @@ export function MealCard({
               No foods yet — add the first one below.
             </div>
           ) : (
-            items.map((item) => (
+            items.map((item, index) => (
               <MealItemRow
                 key={item.id}
+                isFirst={index === 0}
+                isLast={index === items.length - 1}
                 showTestIds={open}
                 item={item}
+                onMove={(direction) => {
+                  commands.moveItem(meal.id, index, index + direction).catch(() => undefined);
+                }}
                 onRemove={() => {
                   commands.removeItem(meal.id, item.id).catch(() => undefined);
                 }}
@@ -372,42 +413,72 @@ export function MealCard({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              {swaps.map((swap) => (
-                <div
-                  className="flex min-h-11 items-center gap-2 rounded-control border border-border px-3 py-2 sm:min-h-0"
-                  data-testid={openId('nb-swap-row')}
-                  key={swap.optionId}
-                >
-                  <ArrowLeftRight className="size-3.5 shrink-0 text-muted" />
-                  <span
-                    className="min-w-0 flex-1 truncate type-eyebrow text-foreground"
-                    data-testid={openId('nb-swap-name')}
+              {swaps.map((swap, index) => {
+                const optionIndex = index + 1;
+                return (
+                  <div
+                    className="flex min-h-11 items-center gap-2 rounded-control border border-border px-3 py-2 sm:min-h-0"
+                    data-testid={openId('nb-swap-row')}
+                    key={swap.optionId}
                   >
-                    {swap.meal.name}
-                  </span>
-                  {kcalLabel(swap.meal.nutrition) ? (
+                    <ArrowLeftRight className="size-3.5 shrink-0 text-muted" />
                     <span
-                      className="shrink-0 whitespace-nowrap type-eyebrow text-muted"
-                      data-testid={openId('nb-swap-kcal')}
+                      className="min-w-0 flex-1 truncate type-eyebrow text-foreground"
+                      data-testid={openId('nb-swap-name')}
                     >
-                      {kcalLabel(swap.meal.nutrition)}
+                      {swap.meal.name}
                     </span>
-                  ) : null}
-                  <Button
-                    aria-label={`Remove swap ${swap.meal.name}`}
-                    className={`  shrink-0 rounded-chip bg-transparent p-0 text-muted  sm:size-5.5   ${AS_TEXT} ${NO_GAP}`}
-                    data-testid={openId('nb-swap-remove')}
-                    isIconOnly
-                    onPress={() => {
-                      commands.removeOption(dayId, swap.optionId).catch(() => undefined);
-                    }}
-                    size="sm"
-                    variant="ghost"
-                  >
-                    <X className="size-3.5" />
-                  </Button>
-                </div>
-              ))}
+                    {kcalLabel(swap.meal.nutrients) ? (
+                      <span
+                        className="shrink-0 whitespace-nowrap type-eyebrow text-muted"
+                        data-testid={openId('nb-swap-kcal')}
+                      >
+                        {kcalLabel(swap.meal.nutrients)}
+                      </span>
+                    ) : null}
+                    <Button
+                      aria-label={`Move swap ${swap.meal.name} up`}
+                      className={`shrink-0 rounded-chip bg-transparent p-0 text-muted sm:size-5.5 ${AS_TEXT} ${NO_GAP}`}
+                      data-testid={openId('nb-swap-move-up')}
+                      isIconOnly
+                      onPress={() => {
+                        commands.moveOption(dayId, slot, optionIndex, optionIndex - 1).catch(() => undefined);
+                      }}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <ChevronUp className="size-3.5" />
+                    </Button>
+                    <Button
+                      aria-label={`Move swap ${swap.meal.name} down`}
+                      className={`shrink-0 rounded-chip bg-transparent p-0 text-muted sm:size-5.5 ${AS_TEXT} ${NO_GAP}`}
+                      data-testid={openId('nb-swap-move-down')}
+                      isDisabled={index === swaps.length - 1}
+                      isIconOnly
+                      onPress={() => {
+                        commands.moveOption(dayId, slot, optionIndex, optionIndex + 1).catch(() => undefined);
+                      }}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <ChevronDown className="size-3.5" />
+                    </Button>
+                    <Button
+                      aria-label={`Remove swap ${swap.meal.name}`}
+                      className={`  shrink-0 rounded-chip bg-transparent p-0 text-muted  sm:size-5.5   ${AS_TEXT} ${NO_GAP}`}
+                      data-testid={openId('nb-swap-remove')}
+                      isIconOnly
+                      onPress={() => {
+                        commands.removeOption(dayId, swap.optionId).catch(() => undefined);
+                      }}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <X className="size-3.5" />
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="mt-2">

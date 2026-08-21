@@ -7,9 +7,8 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {useSearchParams} from 'react-router-dom';
 
-import type {NutritionPlanDay} from '@/api/nutrition-plan-builder';
-
 import {createPlanCommands} from './commands';
+import type {NutritionPlanDay} from './plan-tree';
 
 export function usePlanBuilder(planId: string) {
   const [isAddingDay, setAddingDay] = useState(false);
@@ -24,7 +23,12 @@ export function usePlanBuilder(planId: string) {
   );
 
   // Leaving the screen must not drop a debounced edit.
-  useEffect(() => () => flush(), [flush]);
+  useEffect(
+    () => () => {
+      flush().catch(() => undefined);
+    },
+    [flush],
+  );
 
   return {...commands, isAddingDay, isRemovingDay};
 }

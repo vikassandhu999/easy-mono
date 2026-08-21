@@ -1,3 +1,4 @@
+import {MEAL_SLOT_LABELS} from '@easy/utils';
 import {Chip, ProgressBar, Typography} from '@heroui/react';
 import {Utensils} from 'lucide-react';
 import {useParams} from 'react-router-dom';
@@ -9,10 +10,11 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import type {MealLogDiaryRow} from '@/api/nutrition-plans-list';
+import type {NutritionDayOptionItem, NutritionDayRow} from '@/api/nutrition-plans-list';
 import {useListCoachNutritionDaysQuery} from '@/api/nutrition-plans-list';
 import {SectionCard} from '@/clients/components/section-card';
 import {formatKcal, formatRowDate} from '@/clients/lib/client-detail-data';
+import {liveOptionItems, slotLabel} from '@/clients/lib/nutrition-day';
 
 /**
  * The design's 64px right column for a row's kcal, so the numbers line up — as a
@@ -21,8 +23,9 @@ import {formatKcal, formatRowDate} from '@/clients/lib/client-detail-data';
  */
 const KCAL_COL = 'min-w-16 shrink-0 whitespace-nowrap text-right';
 
-const STATUS_CHIP: Partial<Record<NonNullable<MealLogDiaryRow['status']>, string>> = {
+const STATUS_CHIP: Partial<Record<NutritionDayRow['status'], string>> = {
   added: 'Added',
+  recorded: 'Recorded',
   skipped: 'Skipped',
   swapped: 'Swapped',
 };
@@ -81,30 +84,24 @@ export default function NutritionDay() {
 
   const day = data.data[0];
   const targets = day?.targets;
-  // Meal-time order. Slots without diary rows are omitted for coach history.
-  const slots = [...(day?.slots ?? [])]
-    .filter((s) => (s.rows ?? []).length > 0)
-    .sort((a, b) => mealSlotRank(a.meal_slot) - mealSlotRank(b.meal_slot));
-  const totals = slots.reduce(
-    (acc, slot) => {
-      acc.kcal += slot.logged_calories ?? 0;
-      acc.target += slot.planned_calories ?? 0;
-      for (const row of slot.rows ?? []) {
-        acc.protein += row.entry?.protein_g ?? 0;
-        acc.carbs += row.entry?.carbs_g ?? 0;
-        acc.fat += row.entry?.fat_g ?? 0;
-      }
-      return acc;
-    },
-    {carbs: 0, fat: 0, kcal: 0, protein: 0, target: 0},
-  );
+  const slots = day?.slots ?? [];
+  const logged = day?.summary.logged;
+  const totals = {
+    carbs: logged?.carbohydrates ?? null,
+    fat: logged?.fat ?? null,
+    kcal: logged?.calories ?? null,
+    protein: logged?.protein ?? null,
+    target: targets?.calories ?? null,
+  };
 
   return (
     <Page>
       {header(
-        totals.target > 0
+        totals.target != null && totals.kcal != null
           ? `${formatKcal(totals.kcal)} / ${formatKcal(totals.target)} kcal`
-          : `${formatKcal(totals.kcal)} kcal`,
+          : totals.kcal != null
+            ? `${formatKcal(totals.kcal)} kcal`
+            : undefined,
       )}
       <Page.Content bare>
         <Page.Frame
@@ -115,7 +112,7 @@ export default function NutritionDay() {
             <div className="flex flex-col gap-4 px-4 pb-4">
               <Total
                 label="Calories"
-                target={totals.target || targets?.calories || null}
+                target={targets?.calories ?? null}
                 unit="kcal"
                 value={totals.kcal}
               />
@@ -142,12 +139,13 @@ export default function NutritionDay() {
 
           {slots.map((slot) => {
             const rows = slot.rows ?? [];
+            const liveItems = rows.length === 0 ? liveOptionItems(slot) : [];
             return (
               <SectionCard
                 divided
                 key={slot.meal_slot}
                 action={
-                  slot.logged_calories ? (
+                  slot.logged_calories != null ? (
                     <Typography
                       color="muted"
                       type="body-xs"
@@ -156,13 +154,19 @@ export default function NutritionDay() {
                     </Typography>
                   ) : null
                 }
-                title={titleCase(slot.meal_slot)}
+                title={slotLabel(slot.meal_slot, MEAL_SLOT_LABELS)}
                 titleAs="heading"
               >
                 {rows.map((row, index) => (
                   <DiaryRow
-                    key={row.entry?.id ?? row.planned?.id ?? `row-${index}`}
+                    key={row.entry?.id ?? row.planned?.meal_item_id ?? `row-${index}`}
                     row={row}
+                  />
+                ))}
+                {liveItems.map((item) => (
+                  <LiveItem
+                    item={item}
+                    key={item.meal_item_id}
                   />
                 ))}
               </SectionCard>
@@ -172,9 +176,9 @@ export default function NutritionDay() {
           {slots.length === 0 && (
             <SectionCard>
               <EmptyState
-                body="No meals were logged on this day."
+                body="No live guidance or logged meals on this day."
                 icon={Utensils}
-                title="Nothing logged"
+                title="Nothing to show"
               />
             </SectionCard>
           )}
@@ -184,17 +188,24 @@ export default function NutritionDay() {
   );
 }
 
-function DiaryRow({row}: {row: MealLogDiaryRow}) {
-  const skipped = row.status === 'skipped';
-  const name = skipped ? (row.planned?.food_name ?? 'Planned item') : (row.entry?.food_name ?? 'Food');
-  const protein = skipped ? null : row.entry?.protein_g;
-  const carbs = skipped ? null : row.entry?.carbs_g;
-  const fat = skipped ? null : row.entry?.fat_g;
-  const weightG = skipped ? null : row.entry?.weight_g;
-  const amount = skipped ? null : row.entry?.amount;
-  const unit = skipped ? null : row.entry?.unit;
-  const calories = skipped ? row.planned?.calories : row.entry?.calories;
-  const chip = row.status ? STATUS_CHIP[row.status] : undefined;
+type ItemRowProps = {
+  calories: null | number | undefined;
+  chip?: string;
+  name: string;
+  nutrients: {carbohydrates?: null | number; fat?: null | number; protein?: null | number};
+  portion: {amount?: null | number; grams?: null | number; unit?: null | string};
+  skipped?: boolean;
+};
+
+/** One diary or live-guidance row: name + macro line, optional status chip, portion, kcal column. */
+function ItemRow({calories, chip, name, nutrients, portion, skipped}: ItemRowProps) {
+  const macros = [
+    nutrients.protein != null ? `P ${Math.round(nutrients.protein)} g` : null,
+    nutrients.carbohydrates != null ? `C ${Math.round(nutrients.carbohydrates)} g` : null,
+    nutrients.fat != null ? `F ${Math.round(nutrients.fat)} g` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <div className={`flex items-center gap-3 px-4 py-3${skipped ? ' opacity-55' : ''}`}>
@@ -207,18 +218,12 @@ function DiaryRow({row}: {row: MealLogDiaryRow}) {
         >
           {name}
         </Typography>
-        {!skipped && (protein != null || carbs != null || fat != null) && (
+        {macros && (
           <Typography
             color="muted"
             type="body-xs"
           >
-            {[
-              protein != null ? `P ${Math.round(protein)} g` : null,
-              carbs != null ? `C ${Math.round(carbs)} g` : null,
-              fat != null ? `F ${Math.round(fat)} g` : null,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
+            {macros}
           </Typography>
         )}
       </div>
@@ -230,25 +235,38 @@ function DiaryRow({row}: {row: MealLogDiaryRow}) {
           {chip}
         </Chip>
       )}
-      {!skipped && (weightG != null || amount != null) && (
+      {(portion.grams != null || portion.amount != null) && (
         <Typography
           className="shrink-0"
           color="muted"
           type="body-xs"
         >
-          {weightG != null ? `${Math.round(weightG)} g` : `${amount} ${unit ?? 'serving'}`}
+          {portion.grams != null ? `${Math.round(portion.grams)} g` : `${portion.amount} ${portion.unit ?? 'serving'}`}
         </Typography>
       )}
-      {calories != null && (
-        <Typography
-          className={`${KCAL_COL}${skipped ? ' text-muted' : ''}`}
-          type="body-sm"
-          weight="semibold"
-        >
-          {formatKcal(calories)} kcal
-        </Typography>
-      )}
+      <Typography
+        className={`${KCAL_COL}${skipped ? ' text-muted' : ''}`}
+        type="body-sm"
+        weight="semibold"
+      >
+        {calories != null ? `${formatKcal(calories)} kcal` : '—'}
+      </Typography>
     </div>
+  );
+}
+
+function DiaryRow({row}: {row: NutritionDayRow}) {
+  const skipped = row.status === 'skipped';
+  const entry = skipped ? null : row.entry;
+  return (
+    <ItemRow
+      calories={skipped ? row.planned?.nutrients.calories : row.entry?.nutrients.calories}
+      chip={STATUS_CHIP[row.status]}
+      name={skipped ? (row.planned?.name ?? 'Planned item') : (row.entry?.name ?? 'Food')}
+      nutrients={entry?.nutrients ?? {}}
+      portion={entry?.portion ?? {}}
+      skipped={skipped}
+    />
   );
 }
 
@@ -257,9 +275,19 @@ function DiaryRow({row}: {row: MealLogDiaryRow}) {
  * total against its target, which four big numbers side by side cannot do. The
  * bar is `ProgressBar` (GAPS #5) and needs its compound children to render.
  */
-function Total({label, target, unit, value}: {label: string; target: null | number; unit: string; value: number}) {
-  const rounded = Math.round(value);
-  const pct = target ? Math.round((value / target) * 100) : null;
+function Total({
+  label,
+  target,
+  unit,
+  value,
+}: {
+  label: string;
+  target: null | number;
+  unit: string;
+  value: null | number;
+}) {
+  const rounded = value == null ? null : Math.round(Number(value));
+  const pct = value != null && target ? Math.round((Number(value) / Number(target)) * 100) : null;
   const band = pct == null ? 'accent' : pct > 110 ? 'danger' : pct < 90 ? 'warning' : 'success';
 
   return (
@@ -275,12 +303,14 @@ function Total({label, target, unit, value}: {label: string; target: null | numb
           color="muted"
           type="body-xs"
         >
-          <span className="font-semibold text-foreground">{unit === 'kcal' ? formatKcal(rounded) : rounded}</span>
+          <span className="font-semibold text-foreground">
+            {rounded == null ? '—' : unit === 'kcal' ? formatKcal(rounded) : rounded}
+          </span>
           {target ? ` / ${unit === 'kcal' ? formatKcal(target) : target} ${unit}` : ` ${unit}`}
         </Typography>
       </div>
       <ProgressBar
-        aria-label={`${label}: ${rounded}${target ? ` of ${target}` : ''} ${unit}`}
+        aria-label={`${label}: ${rounded ?? 'unknown'}${target ? ` of ${target}` : ''} ${unit}`}
         color={band}
         value={pct == null ? 0 : Math.min(pct, 100)}
       >
@@ -292,34 +322,13 @@ function Total({label, target, unit, value}: {label: string; target: null | numb
   );
 }
 
-/**
- * Meal-time order. `meal_slot` is free-form, so this ranks the slots the app
- * actually creates and sends anything unknown to the end — a slot we have never
- * seen should appear, just not jump the queue.
- */
-const MEAL_ORDER = [
-  'breakfast',
-  'morning_snack',
-  'brunch',
-  'lunch',
-  'afternoon_snack',
-  'pre_workout',
-  'post_workout',
-  'dinner',
-  'evening_snack',
-  'supper',
-];
-
-function mealSlotRank(slot: string): number {
-  const i = MEAL_ORDER.indexOf(slot.toLowerCase().replace(/\s+/g, '_'));
-  return i === -1 ? MEAL_ORDER.length : i;
-}
-
-/** `meal_slot` is a free-form string from the API ("breakfast", "post_workout"). */
-function titleCase(slot: string): string {
-  return slot
-    .split(/[_\s]+/)
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+function LiveItem({item}: {item: NutritionDayOptionItem}) {
+  return (
+    <ItemRow
+      calories={item.nutrients.calories}
+      name={item.name ?? 'Food'}
+      nutrients={item.nutrients}
+      portion={item.portion}
+    />
+  );
 }

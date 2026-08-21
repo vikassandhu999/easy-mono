@@ -63,15 +63,18 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
   const [selected, setSelected] = useState<NutritionPlan | TrainingPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const nutritionQuery = useCoachNutritionPlansInfiniteQuery({search: deferredSearch}, {enabled: isNutrition});
+  const nutritionQuery = useCoachNutritionPlansInfiniteQuery(
+    {archived: false, search: deferredSearch},
+    {enabled: isNutrition},
+  );
   const trainingQuery = useCoachTrainingPlansInfiniteQuery({search: deferredSearch}, {enabled: !isNutrition});
   const query = isNutrition ? nutritionQuery : trainingQuery;
   const items: (NutritionPlan | TrainingPlan)[] = isNutrition
     ? (nutritionQuery.data?.pages.flatMap((page) => page.data) ?? [])
     : (trainingQuery.data?.pages.flatMap((page) => page.data) ?? []);
 
-  const assignNutritionMutation = useAssignNutritionPlanMutation();
   const assignTrainingMutation = useAssignTrainingPlanMutation();
+  const assignNutritionMutation = useAssignNutritionPlanMutation();
   const assigning = isNutrition ? assignNutritionMutation.isPending : assignTrainingMutation.isPending;
 
   const Icon = isNutrition ? Utensils : Dumbbell;
@@ -92,8 +95,13 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
     try {
       if (isNutrition) {
         await assignNutritionMutation.mutateAsync({
+          clientId,
           id: selected.id,
-          body: {client_id: clientId, start_date: startDate, end_date: endDate},
+          body: {
+            end_date: endDate,
+            expected_revision: selected.revision,
+            start_date: startDate,
+          },
         });
       } else {
         await assignTrainingMutation.mutateAsync({

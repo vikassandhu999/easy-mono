@@ -1,7 +1,11 @@
 import {z} from 'zod';
 
 import {numberFieldSchema} from '../../@components/form-fields/number-field-value.ts';
-import type {NutritionPlan, NutritionPlanRequest} from '../../api/nutrition-plans-list.ts';
+import type {
+  NutritionPlan,
+  NutritionPlanCreateRequest,
+  NutritionPlanUpdateRequest,
+} from '../../api/nutrition-plans-list.ts';
 import {omitUndefined, toNullableText, toOptionalText} from '../../api/shared.ts';
 
 const optionalNumber = numberFieldSchema(z.number().min(0, 'Use 0 or higher').optional());
@@ -40,7 +44,7 @@ export function nutritionPlanToFormValues(plan: NutritionPlan): NutritionPlanFor
   };
 }
 
-export function nutritionPlanToCreateRequest(values: NutritionPlanFormValues): NutritionPlanRequest {
+export function nutritionPlanToCreateRequest(values: NutritionPlanFormValues): NutritionPlanCreateRequest {
   return omitUndefined({
     name: values.name,
     description: toOptionalText(values.description),
@@ -52,8 +56,12 @@ export function nutritionPlanToCreateRequest(values: NutritionPlanFormValues): N
   });
 }
 
-export function nutritionPlanToUpdateRequest(values: NutritionPlanFormValues): NutritionPlanRequest {
+export function nutritionPlanToUpdateRequest(
+  values: NutritionPlanFormValues,
+  expectedRevision: number,
+): NutritionPlanUpdateRequest {
   return {
+    expected_revision: expectedRevision,
     name: values.name,
     description: toNullableText(values.description),
     target_calories: values.calories ?? null,

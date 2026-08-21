@@ -7,7 +7,7 @@ import {Link} from 'react-router-dom';
 import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
 import {useListClientWeightEntriesQuery} from '@/api/clients';
-import {useListCoachMealLogsQuery} from '@/api/nutrition-plans-list';
+import {useListCoachNutritionDaysQuery} from '@/api/nutrition-plans-list';
 import {useListCoachClientTrainingSessionsQuery} from '@/api/training-plans-list';
 import {
   averageLoggedCalories,
@@ -53,7 +53,7 @@ export function ClientStatStrip({client, weeklyTarget}: {client: Client; weeklyT
   const to = week[6]!;
 
   const sessions = useListCoachClientTrainingSessionsQuery(client.id, {from, to});
-  const meals = useListCoachMealLogsQuery(client.id, {from, to});
+  const meals = useListCoachNutritionDaysQuery(client.id, {from, to});
   const weights = useListClientWeightEntriesQuery(client.id);
 
   const isLoading = sessions.isLoading || meals.isLoading || weights.isLoading;

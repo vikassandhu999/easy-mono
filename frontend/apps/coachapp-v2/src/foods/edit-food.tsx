@@ -10,7 +10,12 @@ import {useGetFoodQuery, useUpdateFoodMutation} from '@/api/nutrition-foods';
 import type {ServingSize} from '@/api/shared';
 import {applyFormErrors} from '@/api/shared';
 import FoodForm, {foodToFormValues, foodToMediaValue, useFoodForm} from '@/foods/food-form/food-form';
-import {type FoodFormValues, foodToUpdateRequest, isFoodEditable} from '@/foods/food-form/food-form-data';
+import {
+  editorServingSizesFromFood,
+  type FoodFormValues,
+  foodToUpdateRequest,
+  isFoodEditable,
+} from '@/foods/food-form/food-form-data';
 
 // Rendered only when food data is available, avoiding useEffect to sync server state
 // into local state (which the React Compiler lint rule forbids).
@@ -21,9 +26,7 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
 
   const food = data!.data;
 
-  const [servingSizes, setServingSizes] = useState<ServingSize[]>(
-    food.serving_sizes.map((s) => ({unit: s.unit, amount: s.amount ?? null, weight_g: s.weight_g ?? null})),
-  );
+  const [servingSizes, setServingSizes] = useState<ServingSize[]>(editorServingSizesFromFood(food.serving_sizes));
 
   const form = useFoodForm({
     defaultValues: foodToFormValues(food),
@@ -31,7 +34,10 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
 
   const onSubmit = async (formData: FoodFormValues) => {
     try {
-      await updateFoodMutation.mutateAsync({id: foodId, body: foodToUpdateRequest({servingSizes, values: formData})});
+      await updateFoodMutation.mutateAsync({
+        id: foodId,
+        body: foodToUpdateRequest({expectedRevision: food.revision, servingSizes, values: formData}),
+      });
       goBack();
     } catch (err) {
       applyFormErrors(err, "Food wasn't updated. Check the details and try again", form.setError);

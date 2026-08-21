@@ -1,7 +1,7 @@
 /**
  * Nutrition history (spec 03-history). Weekly adherence overview (on/under/over/no-log
- * rings) + a recent-days list. Tapping a day opens Today at that date. Reads nutrition
- * days over the week range and buckets each day on consumed-vs-target calories.
+ * rings) + a recent-days list. Tapping a day opens Today at that date. Rings and
+ * recent-day totals come from the Nutrition Day summary, not from walking rows.
  */
 
 import {formatDateISO} from '@easy/utils';
@@ -18,9 +18,9 @@ import {
   ADHERENCE_RING,
   ADHERENCE_TEXT,
   type Adherence,
-  adherence,
-  dayConsumed,
-  dayTargets,
+  adherenceDisplay,
+  calorieShare,
+  kcalText,
 } from '@/nutrition/nutrition-utils';
 
 const SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -41,11 +41,11 @@ function shortDate(date: string): string {
 
 type DayStat = {
   adh: Adherence;
-  calories: number;
+  calories: null | number;
   date: string;
   isFuture: boolean;
   isToday: boolean;
-  protein: number;
+  protein: null | number;
   weekday: string;
 };
 
@@ -79,20 +79,20 @@ export default function NutritionHistory() {
     d.setDate(d.getDate() + i);
     const date = formatDateISO(d);
     const day = byDate.get(date) ?? null;
-    const totals = dayConsumed(day);
-    const target = dayTargets(day).calories;
     return {
-      adh: adherence(totals.calories, target),
-      calories: totals.calories,
+      adh: adherenceDisplay(day),
+      calories: day?.summary.logged.calories ?? null,
       date,
       isFuture: date > today,
       isToday: date === today,
-      protein: totals.protein,
+      protein: day?.summary.logged.protein ?? null,
       weekday: SHORT[i] ?? '',
     };
   });
 
-  const recent = days.filter((d) => d.calories > 0).sort((a, b) => b.date.localeCompare(a.date));
+  const recent = days
+    .filter((d) => byDate.get(d.date)?.summary.has_intake)
+    .sort((a, b) => b.date.localeCompare(a.date));
 
   return (
     <div className="px-4 pb-10 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
@@ -142,9 +142,9 @@ export default function NutritionHistory() {
           {/* week adherence strip */}
           <div className="mb-3.5 grid grid-cols-7 gap-1.5">
             {days.map((d) => {
-              const day = byDate.get(d.date) ?? null;
-              const target = dayTargets(day).calories;
-              const pct = target ? Math.round((d.calories / target) * 100) : 0;
+              const day = byDate.get(d.date);
+              const target = day?.targets.calories ?? null;
+              const pct = d.adh === 'unknown' ? null : calorieShare(d.calories, target);
               return (
                 <button
                   className="flex flex-col items-center gap-1"
@@ -157,13 +157,13 @@ export default function NutritionHistory() {
                   <span
                     className="grid size-[30px] place-items-center rounded-full text-[8px] font-bold"
                     style={{
-                      background: `conic-gradient(${ADHERENCE_RING[d.adh]} 0% ${Math.min(100, pct || (d.adh === 'over' ? 100 : 0))}%, var(--border) 0)`,
+                      background: `conic-gradient(${ADHERENCE_RING[d.adh]} 0% ${Math.min(100, pct ?? (d.adh === 'over' ? 100 : 0))}%, var(--border) 0)`,
                       color: ADHERENCE_TEXT[d.adh],
                       outline: d.isToday ? '2px solid var(--accent)' : undefined,
                       outlineOffset: d.isToday ? '1px' : undefined,
                     }}
                   >
-                    {d.adh === 'none' ? '·' : pct}
+                    {d.adh === 'none' || d.adh === 'unknown' ? '·' : (pct ?? '·')}
                   </span>
                 </button>
               );
@@ -177,6 +177,7 @@ export default function NutritionHistory() {
                 ['under', 'under'],
                 ['over', 'over'],
                 ['none', 'no log'],
+                ['unknown', 'unknown calories'],
               ] as const
             ).map(([key, label]) => (
               <span key={key}>
@@ -192,10 +193,18 @@ export default function NutritionHistory() {
             </p>
           ) : (
             recent.map((d) => {
-              const day = byDate.get(d.date) ?? null;
-              const target = dayTargets(day).calories;
-              const over = d.adh === 'over';
-              const on = d.adh === 'on';
+              const day = byDate.get(d.date);
+              const target = day?.targets.calories ?? null;
+              const label =
+                d.adh === 'on'
+                  ? 'on target'
+                  : d.adh === 'over'
+                    ? 'over'
+                    : d.adh === 'under'
+                      ? 'under'
+                      : d.adh === 'unknown'
+                        ? 'unknown'
+                        : 'logged';
               return (
                 <button
                   className="mb-2 flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-surface px-3 py-2.5 text-left active:bg-surface-secondary"
@@ -208,15 +217,19 @@ export default function NutritionHistory() {
                       {d.weekday} · {d.isToday ? 'Today' : shortDate(d.date)}
                     </p>
                     <p className="mt-0.5 text-[11px] text-muted">
-                      {Math.round(d.calories)} / {target ?? '—'} kcal · {Math.round(d.protein)}P
+                      {kcalText(d.calories)} / {target ?? '—'} kcal · {kcalText(d.protein)}P
                     </p>
                   </div>
                   <span
                     className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] ${
-                      on ? 'border-success text-success-secondary' : 'border-warning text-warning'
+                      d.adh === 'on'
+                        ? 'border-success text-success-secondary'
+                        : d.adh === 'over' || d.adh === 'under'
+                          ? 'border-warning text-warning'
+                          : 'border-border text-muted'
                     }`}
                   >
-                    {on ? 'on target' : over ? 'over' : 'under'}
+                    {label}
                   </span>
                 </button>
               );

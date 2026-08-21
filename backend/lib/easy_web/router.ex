@@ -177,22 +177,11 @@ defmodule EasyWeb.Router do
     get "/nutrition-plans/:id", NutritionPlanController, :show
     patch "/nutrition-plans/:id", NutritionPlanController, :update
     delete "/nutrition-plans/:id", NutritionPlanController, :delete
-    post "/nutrition-plans/:id/assign", NutritionPlanController, :assign
+    post "/nutrition-plans/:id/archive", NutritionPlanController, :archive
+    post "/nutrition-plans/:id/restore", NutritionPlanController, :restore
     post "/nutrition-plans/:id/duplicate", NutritionPlanController, :duplicate
-    patch "/nutrition-meals/:id", MealController, :update
-    delete "/nutrition-meals/:id", MealController, :delete
-
-    post "/nutrition-meals/:meal_id/items", MealItemController, :create
-    patch "/nutrition-meal-items/:id", MealItemController, :update
-    delete "/nutrition-meal-items/:id", MealItemController, :delete
-
-    post "/nutrition-plans/:plan_id/days", PlanDayController, :create
-    patch "/nutrition-days/:id", PlanDayController, :update
-    delete "/nutrition-days/:id", PlanDayController, :delete
-    put "/nutrition-plans/:plan_id/schedule", PlanDayController, :update_schedule
-    post "/nutrition-days/:day_id/meals", PlanDayController, :add_meal
-    patch "/nutrition-day-meals/:id", PlanDayController, :move_option
-    delete "/nutrition-day-meals/:id", PlanDayController, :remove_option
+    post "/clients/:client_id/nutrition-plans/:id/assign", NutritionPlanController, :assign
+    put "/nutrition-plans/:id/menu", NutritionPlanController, :replace_menu
 
     get "/training-exercises", ExerciseController, :index
     post "/training-exercises", ExerciseController, :create
@@ -219,8 +208,6 @@ defmodule EasyWeb.Router do
     get "/clients/:client_id/training-sessions", WorkoutSessionController, :index
     get "/clients/:client_id/training-sessions/:id", WorkoutSessionController, :show
 
-    # Meal logs (view client nutrition data — read-only)
-    get "/clients/:client_id/nutrition-meal-logs", MealLogController, :index
     get "/clients/:client_id/nutrition-days", NutritionDayController, :index
 
     # Chat
@@ -279,19 +266,15 @@ defmodule EasyWeb.Router do
     get "/nutrition-recipes", RecipeController, :index
     get "/nutrition-recipes/:id", RecipeController, :show
 
-    # Meal logs + reconciled nutrition days
-    get "/nutrition-meal-logs", MealLogController, :index
     get "/nutrition-days", NutritionDayController, :index
-
-    # Food log entries
-    post "/nutrition-food-log-entries/log-planned-item", FoodLogEntryController, :log_planned_item
-    post "/nutrition-food-log-entries/add-extra", FoodLogEntryController, :add_extra
-    post "/nutrition-food-log-entries/replace-item", FoodLogEntryController, :replace_item
-    post "/nutrition-food-log-entries/log-meal", FoodLogEntryController, :log_meal
-    post "/nutrition-food-log-entries/log-day", FoodLogEntryController, :log_day
-    post "/nutrition-food-log-entries/switch-option", FoodLogEntryController, :switch_option
-    patch "/nutrition-food-log-entries/:id", FoodLogEntryController, :update
-    delete "/nutrition-food-log-entries/:id", FoodLogEntryController, :delete
+    post "/nutrition-days/:date/extras", NutritionDayController, :add_extra
+    post "/nutrition-days/:date/planned-items", NutritionDayController, :log_planned_item
+    post "/nutrition-days/:date/planned-options", NutritionDayController, :log_planned_option
+    post "/nutrition-days/:date/planned-day", NutritionDayController, :log_planned_day
+    post "/nutrition-days/:date/active-option", NutritionDayController, :switch_option
+    post "/nutrition-days/:date/replacements", NutritionDayController, :replace_planned_item
+    patch "/nutrition-days/:date/entries/:id", NutritionDayController, :update_entry
+    delete "/nutrition-days/:date/entries/:id", NutritionDayController, :delete_entry
 
     # Weight entries
     get "/weight_entries", WeightEntryController, :index

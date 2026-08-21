@@ -9,6 +9,7 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/nutrition-foods';
 import {applyFormErrors} from '@/api/shared';
+import {libraryInUseMessage} from '@/foods/lib/library-impact';
 import type {IngredientItem} from '@/recipes/lib/recipe-math';
 import RecipeForm, {useRecipeForm} from '@/recipes/recipe-form/recipe-form';
 import {
@@ -35,7 +36,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
   const leaveConfirm = useOverlayState();
 
   const form = useRecipeForm({
-    defaultValues: recipeToFormValues({...recipe, servings_count: recipe.servings_count ?? null}),
+    defaultValues: recipeToFormValues(recipe),
   });
 
   const hasUnsavedChanges = form.formState.isDirty || contentChanged;
@@ -57,11 +58,15 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
     try {
       await updateRecipe.mutateAsync({
         id: recipeId,
-        body: recipeToUpdateRequest({ingredients, values: formData}),
+        body: recipeToUpdateRequest({expectedRevision: recipe.revision, ingredients, values: formData}),
       });
       goBack();
     } catch (err) {
-      applyFormErrors(err, "Recipe wasn't updated. Check the details and try again", form.setError);
+      applyFormErrors(
+        err,
+        libraryInUseMessage(err, "Recipe wasn't updated. Check the details and try again"),
+        form.setError,
+      );
     }
   };
 

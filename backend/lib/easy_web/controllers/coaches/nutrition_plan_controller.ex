@@ -2,167 +2,240 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.Nutrition.Plan
-  alias Easy.NutritionPlans, as: Plans
-  alias OpenApiSpex.{Operation, Schema}
+  alias Easy.Nutrition.Programming
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
+    NutritionMenuReplaceRequest,
     NutritionPlanAssignRequest,
+    NutritionPlanCreateRequest,
     NutritionPlanListResponse,
-    NutritionPlanRequest,
-    NutritionPlanResponse
+    NutritionPlanResponse,
+    NutritionPlanRevisionRequest,
+    NutritionPlanUpdateRequest,
+    StaleRevisionError
   }
+
+  alias OpenApiSpex.{Operation, Schema}
 
   plug OpenApiSpex.Plug.CastAndValidate,
        [json_render_error_v2: true]
-       when action in [:create, :update, :delete, :assign, :duplicate]
+       when action in [:create, :update, :delete, :archive, :restore, :duplicate, :replace_menu, :assign]
 
   tags ["coach nutrition plans"]
 
+  operation :index,
+    summary: "List Nutrition Templates",
+    description: "Lists reusable Nutrition Templates from the authenticated business.",
+    operation_id: "listNutritionPlans",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:offset, :query, :integer, "Number of nutrition plans to skip", required: false),
+      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 100)", required: false),
+      Operation.parameter(:search, :query, :string, "Case-insensitive nutrition plan name search", required: false),
+      Operation.parameter(
+        :archived,
+        :query,
+        %Schema{type: :boolean},
+        "Filter by whether the Nutrition Template is archived",
+        required: false
+      )
+    ],
+    responses: [
+      ok: {"Nutrition Templates", "application/json", NutritionPlanListResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
+    ]
+
   operation :create,
-    summary: "Create nutrition plan",
-    description: "Creates a nutrition plan template in the authenticated business.",
+    summary: "Create a Nutrition Template",
+    description: "Creates a reusable Nutrition Template with one empty Everyday Day Pattern assigned to every weekday.",
     operation_id: "createNutritionPlan",
     security: [%{"bearerAuth" => []}],
-    request_body: {"Nutrition plan request", "application/json", NutritionPlanRequest, required: true},
+    request_body: {"Nutrition Template create request", "application/json", NutritionPlanCreateRequest, required: true},
     responses: [
-      created: {"Nutrition plan created", "application/json", NutritionPlanResponse},
+      created: {"Nutrition Template created", "application/json", NutritionPlanResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
   operation :show,
-    summary: "Get nutrition plan",
-    description: "Loads one nutrition plan with meals and scheduled plan items.",
+    summary: "Get a Nutrition Template or visible Client Plan",
+    description: "Loads one Nutrition Template or authorized Client Nutrition Plan.",
     operation_id: "getNutritionPlan",
     security: [%{"bearerAuth" => []}],
     parameters: [Operation.parameter(:id, :path, :string, "Nutrition plan id")],
     responses: [
-      ok: {"Nutrition plan", "application/json", NutritionPlanResponse},
+      ok: {"Nutrition Template or Client Plan", "application/json", NutritionPlanResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse}
     ]
 
   operation :update,
-    summary: "Update nutrition plan",
-    description: "Updates a nutrition plan.",
+    summary: "Update a Nutrition Template or visible Client Plan",
+    description: "Updates revisioned metadata and nutrient targets. Relationship ids and tenant ownership are never accepted.",
     operation_id: "updateNutritionPlan",
     security: [%{"bearerAuth" => []}],
     parameters: [Operation.parameter(:id, :path, :string, "Nutrition plan id")],
-    request_body: {"Nutrition plan request", "application/json", NutritionPlanRequest, required: true},
+    request_body: {"Nutrition Template or Client Plan update request", "application/json", NutritionPlanUpdateRequest, required: true},
     responses: [
-      ok: {"Nutrition plan updated", "application/json", NutritionPlanResponse},
+      ok: {"Nutrition Template or Client Plan updated", "application/json", NutritionPlanResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Stale revision", "application/json", StaleRevisionError},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
   operation :delete,
-    summary: "Delete nutrition plan",
-    description: "Deletes a nutrition plan.",
+    summary: "Delete a Nutrition Template or visible Client Plan",
+    description: "Deletes one revisioned Nutrition Template or authorized Client Nutrition Plan.",
     operation_id: "deleteNutritionPlan",
     security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Nutrition plan id")],
-    responses: [
-      no_content: "Nutrition plan deleted",
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse}
-    ]
-
-  operation :index,
-    summary: "List nutrition plans",
-    description: "Lists nutrition plan templates in the authenticated business.",
-    operation_id: "listNutritionPlans",
-    security: [%{"bearerAuth" => []}],
     parameters: [
-      Operation.parameter(:offset, :query, :integer, "Number of nutrition plans to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 20)", required: false),
-      Operation.parameter(:search, :query, :string, "Case-insensitive nutrition plan name search", required: false),
+      Operation.parameter(:id, :path, :string, "Nutrition plan id"),
       Operation.parameter(
-        :status,
+        :expected_revision,
         :query,
-        %Schema{type: :string, enum: ["active", "archived"]},
-        "Only nutrition plans with this status",
-        required: false
+        %Schema{type: :integer, minimum: 1},
+        "Revision observed by the deleting client",
+        required: true
       )
     ],
     responses: [
-      ok: {"Nutrition plans", "application/json", NutritionPlanListResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
-    ]
-
-  operation :assign,
-    summary: "Assign nutrition plan",
-    description: "Copies a nutrition plan template to a client.",
-    operation_id: "assignNutritionPlan",
-    security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Nutrition plan id")],
-    request_body: {"Nutrition plan assign request", "application/json", NutritionPlanAssignRequest, required: true},
-    responses: [
-      created: {"Nutrition plan assigned", "application/json", NutritionPlanResponse},
+      no_content: "Nutrition Template or Client Plan deleted",
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Stale revision", "application/json", StaleRevisionError}
+    ]
+
+  operation :archive,
+    summary: "Archive a Nutrition Template or visible Client Plan",
+    description: "Archives a revisioned Nutrition Template or authorized Client Nutrition Plan without deleting it.",
+    operation_id: "archiveNutritionPlan",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Nutrition Template or Client Plan id")],
+    request_body: {"Expected revision", "application/json", NutritionPlanRevisionRequest, required: true},
+    responses: [
+      ok: {"Nutrition Template or Client Plan archived", "application/json", NutritionPlanResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Stale revision", "application/json", StaleRevisionError},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :restore,
+    summary: "Restore a Nutrition Template or visible Client Plan",
+    description: "Restores a revisioned Nutrition Template or authorized Client Nutrition Plan.",
+    operation_id: "restoreNutritionPlan",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Nutrition Template or Client Plan id")],
+    request_body: {"Expected revision", "application/json", NutritionPlanRevisionRequest, required: true},
+    responses: [
+      ok: {"Nutrition Template or Client Plan restored", "application/json", NutritionPlanResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Stale revision", "application/json", StaleRevisionError},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :replace_menu,
+    summary: "Replace a complete Menu",
+    description:
+      "Atomically replaces Meals, Day Patterns, Meal Options, and the Week Schedule for one authorized Nutrition Template or Client Plan. Every Menu Item is resolved through the Library.",
+    operation_id: "replaceNutritionMenu",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Nutrition Template or Client Plan id")],
+    request_body: {"Complete Menu", "application/json", NutritionMenuReplaceRequest, required: true},
+    responses: [
+      ok: {"Nutrition Template or Client Plan with replaced Menu", "application/json", NutritionPlanResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Stale revision", "application/json", StaleRevisionError},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
   operation :duplicate,
-    summary: "Duplicate nutrition plan",
-    description: "Copies a nutrition plan template.",
+    summary: "Duplicate a Nutrition Template",
+    description: "Copies an active Nutrition Template, including its empty Day Pattern and Week Schedule, using the expected source revision.",
     operation_id: "duplicateNutritionPlan",
     security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Nutrition plan id")],
+    parameters: [Operation.parameter(:id, :path, :string, "Nutrition Template id")],
+    request_body: {"Expected source revision", "application/json", NutritionPlanRevisionRequest, required: true},
     responses: [
-      created: {"Nutrition plan duplicated", "application/json", NutritionPlanResponse},
+      created: {"Nutrition Template duplicated", "application/json", NutritionPlanResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Stale revision", "application/json", StaleRevisionError},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :assign,
+    summary: "Assign a Nutrition Template",
+    description: "Copies an unarchived Nutrition Template's complete Menu to an independent Client Nutrition Plan and advances onboarding atomically.",
+    operation_id: "assignNutritionPlan",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:client_id, :path, :string, "Visible client id"),
+      Operation.parameter(:id, :path, :string, "Nutrition Template id")
+    ],
+    request_body: {"Nutrition Template Assignment request", "application/json", NutritionPlanAssignRequest, required: true},
+    responses: [
+      created: {"Client Nutrition Plan created", "application/json", NutritionPlanResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Stale revision", "application/json", StaleRevisionError},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
-    with {:ok, plan} <- Plans.create_plan(conn.assigns.ctx, conn.body_params) do
+    with {:ok, plan} <- Programming.create_template(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, plan: plan)
     end
   end
 
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def show(conn, _params) do
+    with {:ok, plan} <- Programming.get_plan(conn.assigns.ctx, conn.path_params["id"]) do
+      render(conn, :show, plan: plan)
+    end
+  end
+
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, _params) do
-    plan_id = conn.path_params["id"]
+    expected_revision = conn.body_params[:expected_revision]
+    attrs = Map.delete(conn.body_params, :expected_revision)
 
-    with {:ok, updated_plan} <- Plans.update_plan(conn.assigns.ctx, plan_id, conn.body_params) do
-      render(conn, :show, plan: updated_plan)
-    end
-  end
-
-  @spec assign(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def assign(conn, _params) do
-    plan_id = conn.path_params["id"]
-    client_id = conn.body_params[:client_id]
-
-    with {:ok, new_plan} <-
-           Plans.assign_plan_to_client(conn.assigns.ctx, client_id, plan_id, conn.body_params) do
-      conn
-      |> put_status(:created)
-      |> render(:show, plan: new_plan)
-    end
-  end
-
-  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def show(conn, %{"id" => plan_id}) do
-    with {:ok, plan} <- Plans.get_plan_full(conn.assigns.ctx, plan_id) do
-      render(conn, :show, plan: plan)
+    with {:ok, updated} <-
+           Programming.update_plan(conn.assigns.ctx, conn.path_params["id"], expected_revision, attrs) do
+      render(conn, :show, plan: updated)
     end
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, _params) do
-    plan_id = conn.path_params["id"]
+    expected_revision = parse_integer(conn.query_params, "expected_revision", 0)
 
-    with {:ok, _deleted} <- Plans.delete_plan(conn.assigns.ctx, plan_id) do
+    with {:ok, _plan} <-
+           Programming.delete_plan(conn.assigns.ctx, conn.path_params["id"], expected_revision) do
       send_resp(conn, :no_content, "")
+    end
+  end
+
+  @spec archive(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def archive(conn, _params) do
+    with {:ok, plan} <-
+           Programming.archive_plan(conn.assigns.ctx, conn.path_params["id"], conn.body_params[:expected_revision]) do
+      render(conn, :show, plan: plan)
+    end
+  end
+
+  @spec restore(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def restore(conn, _params) do
+    with {:ok, plan} <-
+           Programming.restore_plan(conn.assigns.ctx, conn.path_params["id"], conn.body_params[:expected_revision]) do
+      render(conn, :show, plan: plan)
     end
   end
 
@@ -171,29 +244,66 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     offset = parse_integer(params, "offset", 0)
     limit = parse_integer(params, "limit", 20)
     search = Map.get(params, "search", "")
-    status = parse_enum(params, "status", Plan.statuses())
+    archived = parse_optional_boolean(Map.get(params, "archived"))
 
-    with {:ok, %{count: count, plans: plans}} <-
-           Plans.list_template_plans(conn.assigns.ctx,
+    with {:ok, %{templates: plans, count: count}} <-
+           Programming.list_templates(conn.assigns.ctx,
              search: search,
-             status: status,
+             archived: archived,
              offset: offset,
              limit: limit
            ) do
-      conn
-      |> put_status(:ok)
-      |> render(:index, count: count, plans: plans)
+      render(conn, :index, plans: plans, count: count)
+    end
+  end
+
+  @spec replace_menu(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def replace_menu(conn, _params) do
+    expected_revision = conn.body_params[:expected_revision]
+    attrs = Map.delete(conn.body_params, :expected_revision)
+
+    with {:ok, plan} <-
+           Programming.replace_menu(conn.assigns.ctx, conn.path_params["id"], expected_revision, attrs) do
+      render(conn, :show, plan: plan)
     end
   end
 
   @spec duplicate(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def duplicate(conn, _params) do
-    plan_id = conn.path_params["id"]
-
-    with {:ok, new_plan} <- Plans.duplicate_plan(conn.assigns.ctx, plan_id) do
+    with {:ok, duplicated} <-
+           Programming.duplicate_template(
+             conn.assigns.ctx,
+             conn.path_params["id"],
+             conn.body_params[:expected_revision]
+           ) do
       conn
       |> put_status(:created)
-      |> render(:show, plan: new_plan)
+      |> render(:show, plan: duplicated)
     end
   end
+
+  @spec assign(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def assign(conn, _params) do
+    expected_revision = conn.body_params[:expected_revision]
+    attrs = Map.delete(conn.body_params, :expected_revision)
+
+    with {:ok, assigned} <-
+           Programming.assign_template_to_client(
+             conn.assigns.ctx,
+             conn.path_params["client_id"],
+             conn.path_params["id"],
+             expected_revision,
+             attrs
+           ) do
+      conn
+      |> put_status(:created)
+      |> render(:show, plan: assigned)
+    end
+  end
+
+  defp parse_optional_boolean(true), do: true
+  defp parse_optional_boolean("true"), do: true
+  defp parse_optional_boolean(false), do: false
+  defp parse_optional_boolean("false"), do: false
+  defp parse_optional_boolean(_value), do: nil
 end

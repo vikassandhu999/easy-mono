@@ -4,8 +4,8 @@
  */
 import {Check} from 'lucide-react';
 
-import type {TodayPlanOption} from '@/api/nutrition';
-import {optionCalories} from '@/nutrition/nutrition-utils';
+import type {NutritionDayOption} from '@/api/nutrition';
+import {kcalText, optionCalories} from '@/nutrition/nutrition-utils';
 
 export default function OptionSheet({
   activeMealId,
@@ -16,8 +16,8 @@ export default function OptionSheet({
 }: {
   activeMealId: null | string;
   onClose: () => void;
-  onSelect: (option: TodayPlanOption) => void;
-  options: TodayPlanOption[];
+  onSelect: (option: NutritionDayOption) => void;
+  options: NutritionDayOption[];
   slotLabel: string;
 }) {
   return (
@@ -49,7 +49,7 @@ export default function OptionSheet({
                 className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-sm ${
                   active ? 'border-accent bg-accent-soft' : 'border-border'
                 }`}
-                key={option.meal_id}
+                key={option.meal_id ?? `option-${option.position ?? 0}`}
                 onClick={() => onSelect(option)}
                 type="button"
               >
@@ -62,7 +62,7 @@ export default function OptionSheet({
                   ) : null}
                   <span className="truncate font-medium">{option.meal_name ?? 'Option'}</span>
                 </span>
-                <span className="shrink-0 text-xs text-muted">{Math.round(optionCalories(option))} kcal</span>
+                <span className="shrink-0 text-xs text-muted">{kcalText(optionCalories(option))} kcal</span>
               </button>
             );
           })}

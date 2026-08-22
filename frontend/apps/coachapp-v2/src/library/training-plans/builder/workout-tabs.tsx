@@ -51,7 +51,7 @@ export function WorkoutTabs({workouts, activeId, onSelect, onAdd, isAdding}: Wor
                     can see it. The tab is a flex container, so ordinary
                     whitespace between children collapses and "Upper A 3" would
                     read "Upper A3" (RM-140). Same trap, same fix as
-                    `FilterCount` in `@components/browse-screen.tsx`. */}
+                    `FilterCount` in `@/library/browse-screen`. */}
                 {'\u00a0'}
                 {workout.workout_elements.length}
               </span>

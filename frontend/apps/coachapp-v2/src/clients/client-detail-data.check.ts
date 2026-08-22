@@ -1,6 +1,6 @@
 /**
  * Self-check for client-detail-data.ts (and the formatAnswer it re-checks from
- * checkins/lib/form-answers.ts). Runs on every `pnpm build` via the `check` script:
+ * library/checkins/form-answers.ts). Runs on every `pnpm build` via the `check` script:
  *
  *   pnpm run check
  *

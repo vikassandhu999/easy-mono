@@ -5,7 +5,7 @@ import type {ReactNode} from 'react';
  * The dashboard's section caption: title-case Grotesk with an optional muted
  * count beside it and an optional trailing slot (`Sorted by priority`, `Inbox`).
  *
- * Deliberately not `@/@components/section-heading` — that one is the uppercase
+ * Deliberately not `@/ui/section-heading` — that one is the uppercase
  * builder/detail eyebrow, and the DB reference sets these headings title-case at
  * both widths.
  */

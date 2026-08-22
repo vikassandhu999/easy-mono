@@ -10,7 +10,7 @@ export const DETAIL_SECTION_CLASS = 'mt-8 border-t border-separator pt-8 sm:bord
 // The section caption on read surfaces (food/recipe/exercise detail): a normal
 // dark h6 with an optional muted "· qualifier" suffix, e.g. "Nutrition · per 100 g".
 //
-// Deliberately NOT `@components/section-heading`, which is the small muted
+// Deliberately NOT `@/ui/section-heading`, which is the small muted
 // uppercase eyebrow used in builder/summary chrome. Same job, different register —
 // they share a name by accident, not a treatment.
 

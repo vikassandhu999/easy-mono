@@ -2,11 +2,11 @@
  * Class recipes shared by the two plan builders (badges NB and TB).
  *
  * They started in `nutrition-plans/plan-builder/ui.ts` and the training builder
- * imported them across the feature boundary. Both builders are `builder-kit`
- * clients, so this is where they belong.
+ * imported them across the feature boundary. Both builders are `ui/` clients,
+ * so this is where they belong.
  *
  * The generic "put the browser default back" recipes live in
- * `@/@components/ua-defaults` — those aren't builder-specific.
+ * `@/ui/ua-defaults` — those aren't builder-specific.
  */
 
 /** `.ptag` — the slot tag and both meal chips start here and tint from there. */

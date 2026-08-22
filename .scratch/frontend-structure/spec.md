@@ -1,6 +1,6 @@
 # Frontend structure, from first principles
 
-Status: proposed
+Status: done
 
 ## What is actually wrong
 
@@ -217,3 +217,60 @@ three-directory rule and the arrow rule, and delete the superseded RM-144 prose.
 | 7 enforce | none | it stays fixed |
 
 Phases 1–3 are the ones that change how the tree reads. 7 is what keeps it that way.
+
+
+---
+
+## What actually shipped
+
+Seven commits, `9ebf007b..9aee0016`. Both apps build, all 44 check suites pass,
+`check-rm` / `check-ui-contract` / `check-color-utilities` / `check-theme-selectors`
+are clean, and both apps were loaded in a real browser with zero console errors
+(coachapp at 1280px across dashboard / clients / foods / nutrition-plans /
+settings; clientapp at 375px through splash → login).
+
+| | before | after |
+| --- | --- | --- |
+| coachapp directories | 50 | 18 |
+| coachapp files | 325 | 313 |
+| clientapp directories | 20 | 12 |
+| check suites | 39 | 44 |
+
+### Where the plan was wrong
+
+**Phase 4 assumed `api/` fragmentation was one-file-per-PR. It mostly was not.**
+`api/` splits along a real seam: hook modules import `client.ts` and React Query;
+request builders, mappers and lifecycle helpers are pure, and their `.check.ts`
+runs them under bare `node --experimental-strip-types`. Merging across that seam
+kills the suite on `import.meta.env`. The plan's "30 → 18" became nine files
+merged strictly within each kind. The seam is now written down rather than
+rediscovered.
+
+**Phase 6 was scoped down for a stated reason.** `ApiError` moved to `@easy/utils`,
+where the error-body parser already lived. `query-client.ts` and `use-go-back.ts`
+stayed: sharing 53 identical lines would give the helpers package peer
+dependencies on react-query, immer and react-router. The `authStorage` → 
+`token-refresh` → `socket` → `use-channel-event` chain stayed too — deduping it
+needs three levels of factory, or unifying the localStorage key prefix, which
+logs every existing user out once and is a product call.
+
+### Two constraints the plan did not know about
+
+Both were discovered by breaking them, and both are now in the app contracts:
+
+1. **Anything a `.check.ts` reaches must import relatively with a `.ts` extension.**
+   The suite runs under bare node, which resolves neither `@/` aliases nor
+   extensionless specifiers. This is also why four modules reached around
+   `@easy/utils` into `packages/utils/src` by relative path — the barrel
+   re-exported a `.tsx`. Deleting that file (`formatStartEnd`, which nothing
+   imported) made the barrel node-loadable and the escape hatches unnecessary.
+
+2. **A `.ts` may never share a basename with a `.tsx`.** Module resolution picks
+   the `.ts`, so the component silently vanishes from whatever route imported it.
+   This broke two routes mid-restructure; it is now `SHAPE-5` in the shape check.
+
+### Not done
+
+`conversationName` in `workbench/replies-view.tsx` stayed inline — it is
+`item.conversation.client_name || 'Client'`, and a file plus a suite for that is
+ceremony, not coverage.

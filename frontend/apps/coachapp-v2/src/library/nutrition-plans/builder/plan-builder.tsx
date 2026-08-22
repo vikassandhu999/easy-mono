@@ -17,7 +17,7 @@
  */
 import {Typography, useOverlayState} from '@heroui/react';
 import {useMemo, useRef, useState} from 'react';
-import type {NutritionMeal, NutritionPlan} from '@/api/nutrition-plan-builder';
+import type {NutritionMeal, NutritionPlan} from '@/api/nutrition-plans';
 import {AddItemsFlow} from '@/library/nutrition-plans/builder/add-items-flow';
 import {AmountSheet} from '@/library/nutrition-plans/builder/amount-sheet';
 import {DayEnergyHeader} from '@/library/nutrition-plans/builder/day-energy-header';

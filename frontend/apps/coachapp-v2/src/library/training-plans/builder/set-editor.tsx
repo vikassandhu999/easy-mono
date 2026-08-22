@@ -21,7 +21,7 @@ import {
 import {ChevronLeft, ChevronRight} from 'lucide-react';
 import {type ReactNode, type RefObject, useState} from 'react';
 
-import type {TrainingPlanWorkoutExercise} from '@/api/training-plan-builder';
+import type {TrainingPlanWorkoutExercise} from '@/api/training-plans';
 import {
   DISTANCE_UNIT_LABELS,
   LOAD_UNIT_LABELS,

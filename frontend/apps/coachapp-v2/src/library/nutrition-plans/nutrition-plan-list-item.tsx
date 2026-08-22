@@ -1,6 +1,6 @@
 import {Chip} from '@heroui/react';
 import {Salad} from 'lucide-react';
-import type {NutritionPlan} from '@/api/nutrition-plans-list';
+import type {NutritionPlan} from '@/api/nutrition-plans';
 import {BrowseRow} from '@/ui/browse-list-box';
 
 type NutritionPlanStatus = NutritionPlan['status'];

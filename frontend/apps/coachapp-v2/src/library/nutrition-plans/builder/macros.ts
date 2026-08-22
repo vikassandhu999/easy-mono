@@ -1,7 +1,7 @@
 /**
  * Macro arithmetic and formatting for the builder's figures. No React, no cache.
  */
-import type {NutritionMeal} from '@/api/nutrition-plan-builder';
+import type {NutritionMeal} from '@/api/nutrition-plans';
 
 import {type NutritionPlanDay, slotRows} from '@/library/nutrition-plans/builder/plan-tree';
 

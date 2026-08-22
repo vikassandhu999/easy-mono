@@ -9,7 +9,7 @@ import {
   useArchiveTrainingPlanMutation,
   useCoachClientTrainingPlansInfiniteQuery,
   useCoachClientTrainingSessionsInfiniteQuery,
-} from '@/api/training-plans-list';
+} from '@/api/training-plans';
 import {
   dayWindowRange,
   formatCompactDuration,

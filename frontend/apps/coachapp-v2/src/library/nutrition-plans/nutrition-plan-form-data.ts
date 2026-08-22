@@ -1,9 +1,5 @@
 import {z} from 'zod';
-import type {
-  NutritionPlan,
-  NutritionPlanCreateRequest,
-  NutritionPlanUpdateRequest,
-} from '../../api/nutrition-plans-list.ts';
+import type {NutritionPlan, NutritionPlanCreateRequest, NutritionPlanUpdateRequest} from '../../api/nutrition-plans.ts';
 import {omitUndefined, toNullableText, toOptionalText} from '../../api/shared.ts';
 import {numberFieldSchema} from '../../ui/number-field-value.ts';
 

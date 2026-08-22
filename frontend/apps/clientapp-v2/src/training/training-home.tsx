@@ -11,7 +11,7 @@ import {
   useListClientTrainingSessionsQuery,
   useResolveClientTrainingCoverageQuery,
 } from '@/api/training';
-import {clientTrainingPlanFromCoverage} from '@/api/training-coverage';
+import {clientTrainingPlanFromCoverage} from '@/api/training-requests';
 import {ROUTES} from '@/routes';
 import {
   currentPlanWeek,

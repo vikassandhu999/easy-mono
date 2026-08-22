@@ -1,6 +1,6 @@
 import {Chip} from '@heroui/react';
 import {Dumbbell} from 'lucide-react';
-import type {TrainingPlan} from '@/api/training-plan-builder';
+import type {TrainingPlan} from '@/api/training-plans';
 import {BrowseRow} from '@/ui/browse-list-box';
 
 function getTrainingPlanMeta(plan: TrainingPlan): string {

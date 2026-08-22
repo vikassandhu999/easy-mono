@@ -1,4 +1,4 @@
-import {formatIsoDateLong, formatIsoDateShort, parseIsoDateToDate} from './date';
+import {formatIsoDateLong, formatIsoDateShort, parseIsoDateToDate} from './date.ts';
 
 // ── Day helpers (weekday mapping for training plans) ────────
 

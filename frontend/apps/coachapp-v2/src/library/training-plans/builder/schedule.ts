@@ -7,7 +7,7 @@
  */
 import {TRAINING_WEEKDAYS as ORDERED_DAYS, type TrainingWeekday} from '@easy/utils';
 
-import type {TrainingSchedule} from '@/api/training-plan-builder';
+import type {TrainingSchedule} from '@/api/training-plans';
 
 export type Day = TrainingWeekday;
 export {ORDERED_DAYS};

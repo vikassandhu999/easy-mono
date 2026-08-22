@@ -10,7 +10,7 @@
  * from the ⋯ menu; the builder doesn't repeat that form (mirrors NB).
  */
 import type {ReactNode} from 'react';
-import {useGetTrainingPlanQuery} from '@/api/training-plan-builder';
+import {useGetTrainingPlanQuery} from '@/api/training-plans';
 import {PlanActions} from '@/library/training-plans/builder/plan-actions';
 import {PlanAddToClient} from '@/library/training-plans/builder/plan-add-to-client';
 import {PlanBuilder} from '@/library/training-plans/builder/plan-builder';

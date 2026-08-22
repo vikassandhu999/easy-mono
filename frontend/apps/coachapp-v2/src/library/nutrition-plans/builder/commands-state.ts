@@ -1,9 +1,5 @@
 import {portionWireFromInput} from '@easy/utils/nutrition-portion';
-import type {
-  NutritionDayPatternSlot,
-  NutritionPlan,
-  NutritionPortionInput,
-} from '../../../api/nutrition-plan-builder.ts';
+import type {NutritionDayPatternSlot, NutritionPlan, NutritionPortionInput} from '../../../api/nutrition-plans.ts';
 
 type DayPattern = NutritionPlan['day_patterns'][number];
 type Slot = NutritionDayPatternSlot;

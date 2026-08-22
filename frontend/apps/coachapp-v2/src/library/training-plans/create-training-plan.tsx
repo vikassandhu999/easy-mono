@@ -1,6 +1,6 @@
 import {generatePath, useNavigate} from 'react-router-dom';
 import {applyFormErrors} from '@/api/shared';
-import {useCreateTrainingPlanMutation} from '@/api/training-plans-list';
+import {useCreateTrainingPlanMutation} from '@/api/training-plans';
 import TrainingPlanForm, {useTrainingPlanForm} from '@/library/training-plans/training-plan-form';
 import {
   type TrainingPlanFormValues,

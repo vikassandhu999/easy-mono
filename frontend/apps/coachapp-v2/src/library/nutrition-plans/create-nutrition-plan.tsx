@@ -1,5 +1,5 @@
 import {generatePath, useNavigate} from 'react-router-dom';
-import {useCreateNutritionPlanMutation} from '@/api/nutrition-plans-list';
+import {useCreateNutritionPlanMutation} from '@/api/nutrition-plans';
 import {applyFormErrors} from '@/api/shared';
 import NutritionPlanForm, {useNutritionPlanForm} from '@/library/nutrition-plans/nutrition-plan-form';
 import {

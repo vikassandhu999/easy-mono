@@ -1,7 +1,7 @@
 import {Chip, Typography} from '@heroui/react';
 import {Check, Dumbbell, Quote} from 'lucide-react';
-import type {TrainingPerformedSet} from '@/api/training-plans-list';
-import {useGetCoachClientTrainingSessionQuery} from '@/api/training-plans-list';
+import type {TrainingPerformedSet} from '@/api/training-plans';
+import {useGetCoachClientTrainingSessionQuery} from '@/api/training-plans';
 import {formatCompactDuration, formatRowDate} from '@/clients/client-detail-data';
 import {SectionCard} from '@/clients/client-section-card';
 import {buildExerciseGroups, type ExerciseGroup, formatLoad, sessionWorkoutName} from '@/clients/client-session';

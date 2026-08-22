@@ -16,8 +16,8 @@
  * "today" into "yesterday" in every adherence strip on the screen.
  */
 import type {WeightEntry} from '../api/clients.ts';
-import type {NutritionDay} from '../api/nutrition-plans-list.ts';
-import type {TrainingSession} from '../api/training-plans-list.ts';
+import type {NutritionDay} from '../api/nutrition-plans.ts';
+import type {TrainingSession} from '../api/training-plans.ts';
 
 const MS_PER_DAY = 86_400_000;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

@@ -1,7 +1,8 @@
 import {parseApiErrorBody} from '@easy/utils/parse-api-error';
-
 import {ApiError} from './api-error.ts';
 import type {components} from './schema.ts';
+
+// --- training-plan-lifecycle ---
 
 export type ClientPlanLifecycle = components['schemas']['CoachClientTrainingPlan']['lifecycle'];
 
@@ -47,4 +48,33 @@ export function getStaleTrainingPlanRevision(error: unknown): null | number {
 
   const revision = detail.current_revision;
   return typeof revision === 'number' && Number.isInteger(revision) && revision > 0 ? revision : null;
+}
+
+// --- training-plan-requests ---
+
+type TrainingPlanAssignRequest = components['schemas']['TrainingPlanAssignRequest'];
+type TrainingPlanUpdateRequest = components['schemas']['TrainingPlanUpdateRequest'];
+
+type Assignment = {
+  body: TrainingPlanAssignRequest;
+  clientId: string;
+  id: string;
+};
+
+type RevisionedPlan = {
+  revision: number;
+};
+
+export function trainingPlanAssignmentRequest({body, clientId, id}: Assignment) {
+  return {
+    params: {path: {client_id: clientId, id}},
+    body,
+  } as const;
+}
+
+export function trainingPlanPeriodRequest(
+  plan: RevisionedPlan,
+  period: Pick<TrainingPlanUpdateRequest, 'end_date' | 'start_date'>,
+): TrainingPlanUpdateRequest {
+  return {...period, expected_revision: plan.revision};
 }

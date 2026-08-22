@@ -1,6 +1,10 @@
 import {generatePath} from 'react-router-dom';
-import {type NutritionPlan, patchPlan, useGetNutritionPlanQuery} from '@/api/nutrition-plan-builder';
-import {useUpdateNutritionPlanMutation} from '@/api/nutrition-plans-list';
+import {
+  type NutritionPlan,
+  patchPlan,
+  useGetNutritionPlanQuery,
+  useUpdateNutritionPlanMutation,
+} from '@/api/nutrition-plans';
 import {applyFormErrors} from '@/api/shared';
 import NutritionPlanForm, {useNutritionPlanForm} from '@/library/nutrition-plans/nutrition-plan-form';
 import {

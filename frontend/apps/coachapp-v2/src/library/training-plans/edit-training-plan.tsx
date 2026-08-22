@@ -1,7 +1,11 @@
 import {generatePath} from 'react-router-dom';
 import {applyFormErrors} from '@/api/shared';
-import {patchPlan, type TrainingPlan, useGetTrainingPlanQuery} from '@/api/training-plan-builder';
-import {useUpdateTrainingPlanMutation} from '@/api/training-plans-list';
+import {
+  patchPlan,
+  type TrainingPlan,
+  useGetTrainingPlanQuery,
+  useUpdateTrainingPlanMutation,
+} from '@/api/training-plans';
 import {handleStaleTrainingPlanConflict} from '@/library/training-plans/stale-training-plan-conflict';
 import TrainingPlanForm, {useTrainingPlanForm} from '@/library/training-plans/training-plan-form';
 import {

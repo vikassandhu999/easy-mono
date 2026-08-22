@@ -16,7 +16,7 @@ import {useNavigate, useSearchParams} from 'react-router-dom';
 import type {Client} from '@/api/clients';
 import {useGetClientQuery, useResendClientInviteMutation, useRevokeClientInviteMutation} from '@/api/clients';
 import {useGetCoachClientConversationQuery} from '@/api/conversations';
-import {useListCoachClientTrainingPlansQuery} from '@/api/training-plans-list';
+import {useListCoachClientTrainingPlansQuery} from '@/api/training-plans';
 import {ClientAccessStrip} from '@/clients/client-access-strip';
 import {CheckinsTab} from '@/clients/client-checkins-tab';
 import {getWhatsAppUrl} from '@/clients/client-invite';

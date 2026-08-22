@@ -6,10 +6,9 @@ export const getFullName = (firstName?: null | string, lastName?: null | string)
   [firstName, lastName].filter(Boolean).join(' ');
 
 export * from './closed-vocabulary.ts';
-export * from './date';
-export * from './format-start-end';
-export * from './media';
-export * from './nutrition';
+export * from './date.ts';
+export * from './media.ts';
+export * from './nutrition.ts';
 export * from './parse-api-error.ts';
-export * from './stick-to-bottom';
-export * from './workout';
+export * from './stick-to-bottom.ts';
+export * from './workout.ts';

@@ -15,8 +15,8 @@
 import {portionWireFromInput} from '@easy/utils/nutrition-portion';
 import {toast} from '@heroui/react';
 import {createLocalNodeId, emptyNutrients, mealItemFromDraft, nextPosition, reorderNodes} from '@/api/nutrition-menu';
-import type {NutritionMeal, NutritionPlan, NutritionPortionInput} from '@/api/nutrition-plan-builder';
-import * as api from '@/api/nutrition-plan-builder';
+import type {NutritionMeal, NutritionPlan, NutritionPortionInput} from '@/api/nutrition-plans';
+import * as api from '@/api/nutrition-plans';
 import type {MealItemDraft} from '@/library/nutrition-plans/builder/amount-draft';
 import {changeOptionSlot, copyWithItemPortion} from '@/library/nutrition-plans/builder/commands-state';
 import {

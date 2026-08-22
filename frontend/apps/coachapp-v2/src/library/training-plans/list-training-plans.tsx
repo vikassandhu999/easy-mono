@@ -1,7 +1,7 @@
 import {Plus} from 'lucide-react';
 import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {useCoachTrainingPlansInfiniteQuery, useListTrainingPlansQuery} from '@/api/training-plans-list';
+import {useCoachTrainingPlansInfiniteQuery, useListTrainingPlansQuery} from '@/api/training-plans';
 import BrowseScreen from '@/library/browse-screen';
 import TrainingPlanListItem from '@/library/training-plans/training-plan-list-item';
 import {ROUTES} from '@/routes';

@@ -17,7 +17,7 @@ import {Button} from '@heroui/react';
 import {Plus} from 'lucide-react';
 import {useState} from 'react';
 
-import type {TrainingPlanWorkout} from '@/api/training-plan-builder';
+import type {TrainingPlanWorkout} from '@/api/training-plans';
 import {ExerciseCard} from '@/library/training-plans/builder/exercise-card';
 import {ExercisePicker} from '@/library/training-plans/builder/exercise-picker';
 import type {PlanBuilderCommands} from '@/library/training-plans/builder/use-plan-builder';

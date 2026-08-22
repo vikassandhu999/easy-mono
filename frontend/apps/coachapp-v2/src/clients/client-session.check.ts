@@ -1,4 +1,4 @@
-import type {TrainingSession} from '../api/training-plans-list.ts';
+import type {TrainingSession} from '../api/training-plans.ts';
 import {buildExerciseGroups, sessionWorkoutName} from './client-session.ts';
 
 function assert(condition: unknown, message: string): asserts condition {

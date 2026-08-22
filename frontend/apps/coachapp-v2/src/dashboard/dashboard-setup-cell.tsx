@@ -5,9 +5,9 @@ import type {ReactNode} from 'react';
 import {Fragment, useEffect, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {useListClientsQuery} from '@/api/clients';
-import {useListNutritionPlansQuery} from '@/api/nutrition-plans-list';
+import {useListNutritionPlansQuery} from '@/api/nutrition-plans';
 import {useUpdateDashboardSetupMutation} from '@/api/profile';
-import {useListTrainingPlansQuery} from '@/api/training-plans-list';
+import {useListTrainingPlansQuery} from '@/api/training-plans';
 import {ROUTES} from '@/routes';
 
 type HiddenReason = 'completed' | 'dismissed' | null;

@@ -8,7 +8,7 @@
  */
 import {type TrainingWeekday, WEEKDAYS} from '@easy/utils';
 
-import type {NutritionScheduleRequest} from '@/api/nutrition-plan-builder';
+import type {NutritionScheduleRequest} from '@/api/nutrition-plans';
 
 import type {NutritionPlanDay, WeekdayAssignments} from '@/library/nutrition-plans/builder/plan-tree';
 

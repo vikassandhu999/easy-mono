@@ -2,10 +2,11 @@ import {ApiError} from './api-error.ts';
 import {
   clientPlanLifecycleLabel,
   getStaleTrainingPlanRevision,
+  trainingPlanAssignmentRequest,
   trainingPlanDeleteRequest,
+  trainingPlanPeriodRequest,
   trainingPlanRevisionRequest,
 } from './training-plan-lifecycle.ts';
-import {trainingPlanAssignmentRequest, trainingPlanPeriodRequest} from './training-plan-requests.ts';
 
 const lifecycleLabels = {
   incomplete: 'Incomplete',

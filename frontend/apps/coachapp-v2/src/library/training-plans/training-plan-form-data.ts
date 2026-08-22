@@ -1,7 +1,6 @@
 import {z} from 'zod';
 import {omitUndefined, toNullableText, toOptionalText} from '../../api/shared.ts';
-import type {TrainingPlan} from '../../api/training-plan-builder.ts';
-import type {TrainingPlanCreateRequest, TrainingPlanUpdateRequest} from '../../api/training-plans-list.ts';
+import type {TrainingPlan, TrainingPlanCreateRequest, TrainingPlanUpdateRequest} from '../../api/training-plans.ts';
 
 export const trainingPlanFormSchema = z.object({
   description: z.string().max(5000, 'Use 5000 characters or fewer').optional(),

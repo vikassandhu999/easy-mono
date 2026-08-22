@@ -24,7 +24,7 @@ import {Button, Chip, Disclosure, Dropdown, Label, Separator} from '@heroui/reac
 import {cn} from '@heroui/styles';
 import {ArrowLeftRight, ChevronDown, ChevronUp, Info, MoreHorizontal, TrashIcon, X} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import type {NutritionMeal} from '@/api/nutrition-plan-builder';
+import type {NutritionMeal} from '@/api/nutrition-plans';
 import {kcalLabel} from '@/library/nutrition-plans/builder/macros';
 import type {HydratedMealItem} from '@/library/nutrition-plans/builder/meal-item-row';
 import {MealItemRow} from '@/library/nutrition-plans/builder/meal-item-row';

@@ -32,7 +32,7 @@ export {
   TRAINING_DAY_LABELS as WEEKDAY_LABELS,
   TRAINING_DAY_SHORT_LABELS as WEEKDAY_SHORT_LABELS,
   TRAINING_WEEKDAYS as WEEKDAYS,
-} from './workout';
+} from './workout.ts';
 
 // ── Macro normalization ──────────────────────────────────────
 

@@ -7,7 +7,7 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {useSearchParams} from 'react-router-dom';
 
-import type {TrainingPlanWorkout} from '@/api/training-plan-builder';
+import type {TrainingPlanWorkout} from '@/api/training-plans';
 
 import {createPlanCommands} from '@/library/training-plans/builder/commands';
 

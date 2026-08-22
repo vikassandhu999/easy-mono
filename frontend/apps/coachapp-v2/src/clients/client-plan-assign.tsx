@@ -14,9 +14,9 @@ import {
   type NutritionPlan,
   useAssignNutritionPlanMutation,
   useCoachNutritionPlansInfiniteQuery,
-} from '@/api/nutrition-plans-list';
-import type {TrainingPlan} from '@/api/training-plan-builder';
-import {useAssignTrainingPlanMutation, useCoachTrainingPlansInfiniteQuery} from '@/api/training-plans-list';
+} from '@/api/nutrition-plans';
+import type {TrainingPlan} from '@/api/training-plans';
+import {useAssignTrainingPlanMutation, useCoachTrainingPlansInfiniteQuery} from '@/api/training-plans';
 import AssignSurface from '@/clients/client-assign-surface';
 import {ROUTES} from '@/routes';
 import BrowseListBox, {BrowseRow} from '@/ui/browse-list-box';

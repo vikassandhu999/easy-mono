@@ -1,9 +1,9 @@
 import {isOneOf} from '@easy/utils/closed-vocabulary';
 import {toast} from '@heroui/react';
 import type {TrainingExercise} from '@/api/training-exercises';
-import type {TrainingPlan, TrainingPlanWorkout, TrainingPlanWorkoutExercise} from '@/api/training-plan-builder';
-import * as api from '@/api/training-plan-builder';
-import {createLocalNodeId} from '@/api/training-prescription';
+import type {TrainingPlan, TrainingPlanWorkout, TrainingPlanWorkoutExercise} from '@/api/training-plans';
+import * as api from '@/api/training-plans';
+import {createLocalNodeId} from '@/api/training-sessions';
 import {periodError} from '@/library/plan-coverage';
 import {findElement, findWorkout, moveId} from '@/library/training-plans/builder/plan-tree';
 import {clearWorkoutFromSchedule, type Day, setScheduleDay} from '@/library/training-plans/builder/schedule';

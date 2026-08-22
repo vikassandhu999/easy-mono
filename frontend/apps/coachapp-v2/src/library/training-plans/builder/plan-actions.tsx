@@ -1,14 +1,14 @@
 import {toast} from '@heroui/react';
 import {useNavigate} from 'react-router-dom';
-import type {TrainingPlan} from '@/api/training-plan-builder';
-import {patchPlan} from '@/api/training-plan-builder';
 import {trainingPlanDeleteRequest, trainingPlanRevisionRequest} from '@/api/training-plan-lifecycle';
+import type {TrainingPlan} from '@/api/training-plans';
 import {
+  patchPlan,
   useArchiveTrainingPlanMutation,
   useDeleteTrainingPlanMutation,
   useDuplicateTrainingPlanMutation,
   useRestoreTrainingPlanMutation,
-} from '@/api/training-plans-list';
+} from '@/api/training-plans';
 import {type PlanActionOutcome, PlanActionsMenu} from '@/library/plan-actions-menu';
 import {handleStaleTrainingPlanConflict} from '@/library/training-plans/stale-training-plan-conflict';
 import {ROUTES} from '@/routes';

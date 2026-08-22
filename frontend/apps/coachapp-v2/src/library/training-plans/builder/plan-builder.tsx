@@ -6,7 +6,7 @@
  */
 import {AlertDialog, Button, Spinner, Typography, useOverlayState} from '@heroui/react';
 import {useRef, useState} from 'react';
-import type {TrainingPlan} from '@/api/training-plan-builder';
+import type {TrainingPlan} from '@/api/training-plans';
 import {PlanPeriodCard} from '@/library/plan-period-card';
 import {findElement} from '@/library/training-plans/builder/plan-tree';
 import {daysForWorkout} from '@/library/training-plans/builder/schedule';

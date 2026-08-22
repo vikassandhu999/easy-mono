@@ -1,4 +1,4 @@
-import {coachClientTrainingSessionHistoryRequest} from './training-session-history.ts';
+import {coachClientTrainingSessionHistoryRequest} from './training-sessions.ts';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {

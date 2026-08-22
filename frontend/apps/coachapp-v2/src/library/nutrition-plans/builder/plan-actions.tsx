@@ -1,14 +1,14 @@
 import {toast} from '@heroui/react';
 import {useNavigate} from 'react-router-dom';
-import type {NutritionPlan} from '@/api/nutrition-plan-builder';
-import {patchPlan} from '@/api/nutrition-plan-builder';
 import {nutritionPlanDeleteRequest, nutritionPlanRevisionRequest} from '@/api/nutrition-plan-lifecycle';
+import type {NutritionPlan} from '@/api/nutrition-plans';
 import {
+  patchPlan,
   useArchiveNutritionPlanMutation,
   useDeleteNutritionPlanMutation,
   useDuplicateNutritionPlanMutation,
   useRestoreNutritionPlanMutation,
-} from '@/api/nutrition-plans-list';
+} from '@/api/nutrition-plans';
 import {handleStaleNutritionPlanConflict} from '@/library/nutrition-plans/stale-nutrition-plan-conflict';
 import {type PlanActionOutcome, PlanActionsMenu} from '@/library/plan-actions-menu';
 import {ROUTES} from '@/routes';

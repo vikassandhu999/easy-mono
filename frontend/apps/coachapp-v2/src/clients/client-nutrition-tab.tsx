@@ -9,7 +9,7 @@ import {
   useArchiveNutritionPlanMutation,
   useListCoachClientNutritionPlansQuery,
   useListCoachNutritionDaysQuery,
-} from '@/api/nutrition-plans-list';
+} from '@/api/nutrition-plans';
 import {dayWindowRange, formatDayMonth, formatKcal, formatRowDate, lastNDays} from '@/clients/client-detail-data';
 import {adherenceBand, caloriePct, type DayTotals, nutritionDayTotals} from '@/clients/client-nutrition-summary';
 import PlanAssignControl from '@/clients/client-plan-assign';

@@ -11,7 +11,7 @@ import {formatParsedPortion, parseNutritionPortion} from '@easy/utils/nutrition-
 import {Button} from '@heroui/react';
 import {ChevronDown, ChevronUp, X} from 'lucide-react';
 import type {Food, Recipe} from '@/api/nutrition-foods';
-import type {NutritionMealItem} from '@/api/nutrition-plan-builder';
+import type {NutritionMealItem} from '@/api/nutrition-plans';
 import {AS_TEXT, NO_GAP} from '@/ui/ua-defaults';
 
 // ---------------------------------------------------------------------------

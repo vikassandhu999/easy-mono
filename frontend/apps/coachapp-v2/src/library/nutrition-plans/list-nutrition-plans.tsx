@@ -1,7 +1,7 @@
 import {Plus} from 'lucide-react';
 import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {useCoachNutritionPlansInfiniteQuery, useListNutritionPlansQuery} from '@/api/nutrition-plans-list';
+import {useCoachNutritionPlansInfiniteQuery, useListNutritionPlansQuery} from '@/api/nutrition-plans';
 import BrowseScreen from '@/library/browse-screen';
 import NutritionPlanListItem from '@/library/nutrition-plans/nutrition-plan-list-item';
 import {ROUTES} from '@/routes';

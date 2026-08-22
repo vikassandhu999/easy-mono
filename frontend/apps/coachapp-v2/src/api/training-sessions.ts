@@ -1,8 +1,34 @@
-import type {components} from './schema.ts';
+import {TRAINING_WEEKDAYS} from '@easy/utils';
+import type {components, paths} from './schema.ts';
+import {omitUndefined} from './shared.ts';
+
+// --- training-session-history ---
+
+type ListCoachClientTrainingSessionsQuery = NonNullable<
+  paths['/v1/coach/clients/{client_id}/training-sessions']['get']['parameters']['query']
+>;
+
+export function coachClientTrainingSessionHistoryRequest(
+  clientId: string,
+  query?: ListCoachClientTrainingSessionsQuery,
+) {
+  return query
+    ? {params: {path: {client_id: clientId}, query: omitUndefined(query)}}
+    : {params: {path: {client_id: clientId}}};
+}
+
+// --- training-prescription ---
+
+type TrainingPlan = components['schemas']['TrainingPlan'];
+
+export function planToPrescriptionRequest(plan: TrainingPlan): TrainingPrescriptionReplaceRequest {
+  return planToPrescriptionRequestForWeekdays(plan, TRAINING_WEEKDAYS);
+}
+
+// --- training-prescription-mapper ---
 
 export type TrainingPrescriptionReplaceRequest = components['schemas']['TrainingPrescriptionReplaceRequest'];
 
-type TrainingPlan = components['schemas']['TrainingPlan'];
 type TrainingWeekday = components['schemas']['TrainingPrescriptionScheduleEntry']['weekday'];
 
 const LOCAL_ID_PREFIX = 'local:';

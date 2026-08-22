@@ -5,8 +5,8 @@ import type {ReactNode} from 'react';
 import {Link} from 'react-router-dom';
 import type {Client} from '@/api/clients';
 import {goalWeightValue, useListClientWeightEntriesQuery} from '@/api/clients';
-import {useListCoachNutritionDaysQuery} from '@/api/nutrition-plans-list';
-import {useListCoachClientTrainingSessionsQuery} from '@/api/training-plans-list';
+import {useListCoachNutritionDaysQuery} from '@/api/nutrition-plans';
+import {useListCoachClientTrainingSessionsQuery} from '@/api/training-plans';
 import {
   averageLoggedCalories,
   completedSessionDates,

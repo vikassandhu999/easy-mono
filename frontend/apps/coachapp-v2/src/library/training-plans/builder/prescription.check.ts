@@ -1,4 +1,4 @@
-import {planToPrescriptionRequestForWeekdays} from '../../../api/training-prescription-mapper.ts';
+import {planToPrescriptionRequestForWeekdays} from '../../../api/training-sessions.ts';
 
 const plan = {
   revision: 4,

@@ -1,4 +1,4 @@
-import type {TrainingPerformedSet, TrainingSession} from '../api/training-plans-list.ts';
+import type {TrainingPerformedSet, TrainingSession} from '../api/training-plans.ts';
 
 type SnapshotExercise = NonNullable<
   NonNullable<TrainingSession['prescription_snapshot']>['workout']['exercises']

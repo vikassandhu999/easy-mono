@@ -1,4 +1,4 @@
-import type {NutritionDay} from '../api/nutrition-plans-list.ts';
+import type {NutritionDay} from '../api/nutrition-plans.ts';
 
 type NutritionDaySummary = NutritionDay['summary'];
 

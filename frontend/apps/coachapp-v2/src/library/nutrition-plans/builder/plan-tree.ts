@@ -16,7 +16,7 @@ import type {
   NutritionMealItem,
   NutritionMealOption,
   NutritionPlan,
-} from '@/api/nutrition-plan-builder';
+} from '@/api/nutrition-plans';
 
 import {type BuilderMealSlot, flattenSlots, MEAL_SLOTS, slotLabel} from '@/library/nutrition-plans/builder/slots';
 

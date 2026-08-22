@@ -11,7 +11,7 @@
  * line's denominators rather than repeating the form.
  */
 import {getFullName} from '@easy/utils';
-import {useGetNutritionPlanQuery} from '@/api/nutrition-plan-builder';
+import {useGetNutritionPlanQuery} from '@/api/nutrition-plans';
 import {NutritionPlanActions} from '@/library/nutrition-plans/builder/plan-actions';
 import {PlanAddToClient} from '@/library/nutrition-plans/builder/plan-add-to-client';
 import {PlanBuilder} from '@/library/nutrition-plans/builder/plan-builder';

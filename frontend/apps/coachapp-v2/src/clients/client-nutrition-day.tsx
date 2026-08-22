@@ -1,9 +1,8 @@
 import {Chip, ProgressBar, Typography} from '@heroui/react';
 import {Utensils} from 'lucide-react';
 import type {NutrientTotals} from '@/api/nutrition-foods';
-import type {NutritionPortion} from '@/api/nutrition-plan-builder';
-import type {NutritionDayOptionItem, NutritionDayRow} from '@/api/nutrition-plans-list';
-import {useListCoachNutritionDaysQuery} from '@/api/nutrition-plans-list';
+import type {NutritionDayOptionItem, NutritionDayRow, NutritionPortion} from '@/api/nutrition-plans';
+import {useListCoachNutritionDaysQuery} from '@/api/nutrition-plans';
 import {formatKcal, formatRowDate} from '@/clients/client-detail-data';
 import {liveOptionItems, slotLabel} from '@/clients/client-meal-slots';
 import {SectionCard} from '@/clients/client-section-card';

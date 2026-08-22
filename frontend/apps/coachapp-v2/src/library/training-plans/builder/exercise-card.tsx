@@ -24,7 +24,7 @@
 import {Button, Chip, Disclosure, Dropdown, Label} from '@heroui/react';
 import {ChevronDown, ChevronUp, MoreHorizontal} from 'lucide-react';
 import {useState} from 'react';
-import type {TrainingPlanWorkoutExercise} from '@/api/training-plan-builder';
+import type {TrainingPlanWorkoutExercise} from '@/api/training-plans';
 import {SetList} from '@/library/training-plans/builder/set-list';
 import {trackingTypeLabel} from '@/library/training-plans/builder/tracking';
 import {INLINE_LINK, TAG} from '@/ui/builder-tokens';

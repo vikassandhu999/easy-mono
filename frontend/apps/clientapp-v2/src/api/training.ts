@@ -8,12 +8,12 @@ import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack
 import {call, client} from './client.ts';
 import {exerciseKeys, sessionKeys, trainingPlanKeys} from './keys.ts';
 import type {components, paths} from './schema.ts';
-import {clientTrainingCoverageRequest} from './training-coverage.ts';
 import {
+  clientTrainingCoverageRequest,
   clientTrainingSessionCompleteRequest,
   clientTrainingSessionDiscardRequest,
   clientTrainingSessionHistoryRequest,
-} from './training-session-commands.ts';
+} from './training-requests.ts';
 
 export type ClientTrainingPlan = components['schemas']['ClientTrainingPlan'];
 export type TrainingPerformedSet = components['schemas']['TrainingPerformedSet'];

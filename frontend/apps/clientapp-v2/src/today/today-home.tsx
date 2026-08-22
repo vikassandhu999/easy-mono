@@ -11,7 +11,7 @@ import {
   useListClientTrainingSessionsQuery,
   useResolveClientTrainingCoverageQuery,
 } from '@/api/training';
-import {clientTrainingPlanFromCoverage} from '@/api/training-coverage';
+import {clientTrainingPlanFromCoverage} from '@/api/training-requests';
 import {kcalText, nutrientNumber} from '@/nutrition/nutrition-utils';
 import {ROUTES} from '@/routes';
 import CheckinNudgeCard from '@/today/checkin-nudge-card';

@@ -1,5 +1,5 @@
 import type {TrainingSession} from '../api/training.ts';
-import {type ActiveExerciseCard, activeExerciseCards} from './session-utils.ts';
+import {type ActiveExerciseCard, activeExerciseCards, plannedValue, type SnapshotSet} from './session-utils.ts';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
@@ -161,3 +161,23 @@ assert(addedCard.done[0]?.id === 'added-set', 'added performed sets must remain 
 assertAdded(namedCard);
 assert(namedCard.exercise.exercise_id === '', 'reload must retain explicitly named work');
 assert(namedCard.name === 'Hill sprint', 'explicit work must retain its frozen exercise name');
+
+// --- plannedValue: an unset target is null, never NaN or 0 ---
+const emptyPlan: SnapshotSet = {
+  distance_unit: null,
+  distance_value: null,
+  duration_seconds: null,
+  load_unit: null,
+  load_value: null,
+  notes: null,
+  reps: null,
+  rest_seconds: null,
+  rpe: null,
+  set_type: null,
+};
+assert(plannedValue(undefined, 'weight') === null, 'no planned set at all is null');
+assert(plannedValue(emptyPlan, 'weight') === null, 'a null field is null');
+assert(plannedValue({...emptyPlan, load_value: ''}, 'weight') === null, 'an empty string is null');
+assert(plannedValue({...emptyPlan, load_value: '62.5'}, 'weight') === 62.5, 'a decimal string parses');
+assert(plannedValue({...emptyPlan, reps: '8'}, 'reps') === 8, 'a reps string parses');
+assert(plannedValue({...emptyPlan, duration_seconds: 0}, 'duration') === 0, 'zero is a real target');

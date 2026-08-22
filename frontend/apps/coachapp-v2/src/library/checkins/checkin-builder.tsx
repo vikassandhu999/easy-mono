@@ -12,6 +12,7 @@
  * library.
  */
 
+import {moveItem} from '@easy/utils';
 import {isOneOf} from '@easy/utils/closed-vocabulary';
 import {
   Button,
@@ -43,6 +44,7 @@ import {
 } from 'lucide-react';
 import {type ReactNode, useRef, useState} from 'react';
 import {type FormPurpose, newQuestion, newSection, type QuestionDraft, type SectionDraft} from '@/api/checkins';
+import {summarize} from '@/library/checkins/checkin-draft';
 import AddQuestionControl from '@/library/checkins/question-palette';
 import {
   QUESTION_TYPE_ICONS,
@@ -57,32 +59,6 @@ import {Page} from '@/ui/page';
 
 const CARD_CLASS = 'rounded-card border border-border bg-surface p-4 sm:p-5';
 const DASHED_BUTTON_CLASS = 'w-full rounded-control border border-dashed border-border';
-
-function pluralize(count: number, noun: string): string {
-  return `${count} ${noun}${count === 1 ? '' : 's'}`;
-}
-
-function summarize(sections: SectionDraft[]): string {
-  const questions = sections.flatMap((section) => section.questions);
-  const required = questions.filter((question) => question.required).length;
-  return `${pluralize(questions.length, 'question')} · ${required} required · ${pluralize(sections.length, 'section')}`;
-}
-
-function moveInList<T>(items: T[], index: number, dir: -1 | 1): T[] {
-  const target = index + dir;
-  if (target < 0 || target >= items.length) {
-    return items;
-  }
-  const next = [...items];
-  const current = next[index];
-  const swap = next[target];
-  if (!current || !swap) {
-    return items;
-  }
-  next[index] = swap;
-  next[target] = current;
-  return next;
-}
 
 function MenuItemBody({icon, label}: {icon: ReactNode; label: string}) {
   return (
@@ -512,7 +488,7 @@ function SectionCard({
                 setQuestions(section.questions.map((q, i) => (i === position ? {...q, ...patch} : q)))
               }
               onDuplicate={() => duplicateQuestion(position)}
-              onMove={(dir) => setQuestions(moveInList(section.questions, position, dir))}
+              onMove={(dir) => setQuestions(moveItem(section.questions, position, position + dir))}
               onRemove={() => setQuestions(section.questions.filter((_, i) => i !== position))}
               onToggle={() => onToggleExpand(question.key)}
               purpose={purpose}
@@ -691,7 +667,7 @@ export default function CheckinBuilder({
                   key={section.key}
                   onChange={(next) => setSection(index, next)}
                   onExpand={expand}
-                  onMove={(dir) => commitSections((s) => moveInList(s, index, dir))}
+                  onMove={(dir) => commitSections((s) => moveItem(s, index, index + dir))}
                   onRemove={() => commitSections((s) => s.filter((_, i) => i !== index))}
                   onToggleExpand={toggleExpand}
                   purpose={purpose}

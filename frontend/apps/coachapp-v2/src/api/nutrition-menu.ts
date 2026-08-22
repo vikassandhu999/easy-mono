@@ -1,3 +1,4 @@
+import {moveItem} from '@easy/utils';
 import {parseNutritionPortion, portionWireFromInput, toPortionInput} from '@easy/utils/nutrition-portion';
 import type {components} from './schema.ts';
 
@@ -94,23 +95,12 @@ export function nextPosition(nodes: {position: number}[]): number {
 }
 
 /** Moves one id to another slot. An out-of-range move is a no-op. */
-export function moveId(ids: string[], from: number, to: number): string[] {
-  const moved = ids[from];
-  if (moved === undefined || to < 0 || to >= ids.length) {
-    return ids;
-  }
-  const next = [...ids];
-  next.splice(from, 1);
-  next.splice(to, 0, moved);
-  return next;
-}
-
 export function reorderNodes<Node extends {id: string; position: number}>(
   nodes: Node[],
   from: number,
   to: number,
 ): Node[] {
-  const order = moveId(
+  const order = moveItem(
     nodes.map((node) => node.id),
     from,
     to,

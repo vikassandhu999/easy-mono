@@ -17,15 +17,3 @@ export function findElement(plan: TrainingPlan, elementId: string) {
   }
   return undefined;
 }
-
-/** Moves one id to another slot. An out-of-range move is a no-op. */
-export function moveId(ids: string[], from: number, to: number): string[] {
-  const moved = ids[from];
-  if (moved === undefined || to < 0 || to >= ids.length) {
-    return ids;
-  }
-  const next = [...ids];
-  next.splice(from, 1);
-  next.splice(to, 0, moved);
-  return next;
-}

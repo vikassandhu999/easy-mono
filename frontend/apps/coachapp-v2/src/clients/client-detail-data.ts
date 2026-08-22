@@ -18,6 +18,7 @@
 import type {WeightEntry} from '../api/clients.ts';
 import type {NutritionDay} from '../api/nutrition-plans.ts';
 import type {TrainingSession} from '../api/training-plans.ts';
+import {type AnsweredSubmission, formatAnswer, isSummarisableAnswer} from '../library/checkins/form-answers.ts';
 
 const MS_PER_DAY = 86_400_000;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -288,4 +289,40 @@ export function weightChartGeometry(
 
 function round(n: number): number {
   return Math.round(n * 100) / 100;
+}
+
+/**
+ * The first three SUMMARISABLE answers of a submission, for the CD-OV card. Walks
+ * `question_snapshot` (an array of sections) so the order matches the form, and
+ * skips photo answers — those are attachment ids, not display text.
+ *
+ * `rating` answers carry their value through so the card can draw the design's
+ * five dots; everything else is already a string by the time it lands here.
+ */
+export function answerSummary(
+  submission: AnsweredSubmission,
+  unit: string,
+): {answer: string; label: string; rating: null | number}[] {
+  const rows: {answer: string; label: string; rating: null | number}[] = [];
+  for (const section of submission.question_snapshot) {
+    for (const question of section.questions) {
+      const value = submission.answers[question.id];
+      if (!isSummarisableAnswer(value, question.type)) {
+        continue;
+      }
+      const rating = question.type === 'rating' && typeof value === 'number' ? value : null;
+      // A weight ANSWER carries no unit — the design shows `72.4 kg`, so the
+      // client's logging unit is appended here rather than left off.
+      const answer = formatAnswer(value, question.type);
+      rows.push({
+        answer: question.type === 'weight' && answer !== '—' ? `${answer} ${unit}` : answer,
+        label: question.label,
+        rating,
+      });
+      if (rows.length === 3) {
+        return rows;
+      }
+    }
+  }
+  return rows;
 }

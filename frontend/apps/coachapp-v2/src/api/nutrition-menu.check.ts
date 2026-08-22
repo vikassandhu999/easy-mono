@@ -1,4 +1,6 @@
-import {isLocalNodeId, moveId, type PlanMenuSource, planToMenuRequest, reorderNodes} from './nutrition-menu.ts';
+import {moveItem} from '@easy/utils';
+
+import {isLocalNodeId, type PlanMenuSource, planToMenuRequest, reorderNodes} from './nutrition-menu.ts';
 
 const plan = {
   revision: 4,
@@ -192,7 +194,7 @@ if (omittedRequest.meals.length !== 1 || omittedRequest.meals[0]?.id !== 'persis
   throw new Error('omitted Meals must leave the replacement payload');
 }
 
-if (moveId(['a', 'b', 'c'], 2, 0).join(',') !== 'c,a,b' || moveId(['a', 'b'], 0, 5).join(',') !== 'a,b') {
+if (moveItem(['a', 'b', 'c'], 2, 0).join(',') !== 'c,a,b' || moveItem(['a', 'b'], 0, 5).join(',') !== 'a,b') {
   throw new Error('Menu reorder must move ids by explicit position without wrapping');
 }
 

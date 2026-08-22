@@ -11,9 +11,9 @@ import type {
   NutritionDayOptionItem,
   NutritionDayRow,
   NutritionDaySlot,
-} from '@/api/nutrition';
+} from '../api/nutrition.ts';
 
-import {nutrientNumber} from './nutrition-summary';
+import {nutrientNumber} from './nutrition-summary.ts';
 
 export {
   ADHERENCE_RING,
@@ -23,7 +23,7 @@ export {
   calorieShare,
   kcalText,
   nutrientNumber,
-} from './nutrition-summary';
+} from './nutrition-summary.ts';
 
 /** One row on Today: either a live checklist item or a server diary row. */
 type SlotRowBase = {
@@ -340,4 +340,17 @@ export function dayTargets(day: null | NutritionDay | undefined): Targets {
     fat: t?.fat_g ?? null,
     protein: t?.protein_g ?? null,
   };
+}
+
+/**
+ * The day strip's label for one date: today names itself, every other day is
+ * weekday plus day-and-month. Written against `en-US` so the two shapes stay
+ * stable regardless of the device locale.
+ */
+export function dateLabel(date: string, today: string): string {
+  const d = new Date(`${date}T00:00:00`);
+  const weekday = d.toLocaleDateString('en-US', {weekday: 'short'});
+  return date === today
+    ? `Today \u00b7 ${weekday}`
+    : `${weekday} \u00b7 ${d.toLocaleDateString('en-US', {day: 'numeric', month: 'short'})}`;
 }

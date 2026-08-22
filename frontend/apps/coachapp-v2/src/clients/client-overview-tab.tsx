@@ -9,6 +9,7 @@ import {goalWeightValue, useListClientWeightEntriesQuery, useUpdateClientMutatio
 import {useListCoachNutritionDaysQuery} from '@/api/nutrition-plans';
 import {useListCoachClientTrainingSessionsQuery} from '@/api/training-plans';
 import {
+  answerSummary,
   completedSessionDates,
   dayOfMonth,
   dayWindowRange,
@@ -25,12 +26,7 @@ import {DetailRow} from '@/clients/client-detail-row';
 import IntakeAssignControl from '@/clients/client-intake-assign';
 import {PhotoThumb} from '@/clients/client-photo-thumb';
 import {SectionCard} from '@/clients/client-section-card';
-import {
-  type AnsweredSubmission,
-  formatAnswer,
-  isSummarisableAnswer,
-  submissionPhotoIds,
-} from '@/library/checkins/form-answers';
+import {submissionPhotoIds} from '@/library/checkins/form-answers';
 import {ROUTES} from '@/routes';
 import {EmptyState} from '@/ui/empty-state';
 import {toastMutationError} from '@/ui/mutation-toast';
@@ -475,40 +471,4 @@ function Dot({isOn}: {isOn: boolean}) {
       className={`size-3 justify-self-center rounded-pill ${isOn ? 'bg-success' : 'border border-border'}`}
     />
   );
-}
-
-/**
- * The first three SUMMARISABLE answers of a submission, for the CD-OV card. Walks
- * `question_snapshot` (an array of sections) so the order matches the form, and
- * skips photo answers — those are attachment ids, not display text.
- *
- * `rating` answers carry their value through so the card can draw the design's
- * five dots; everything else is already a string by the time it lands here.
- */
-function answerSummary(
-  submission: AnsweredSubmission,
-  unit: string,
-): {answer: string; label: string; rating: null | number}[] {
-  const rows: {answer: string; label: string; rating: null | number}[] = [];
-  for (const section of submission.question_snapshot) {
-    for (const question of section.questions) {
-      const value = submission.answers[question.id];
-      if (!isSummarisableAnswer(value, question.type)) {
-        continue;
-      }
-      const rating = question.type === 'rating' && typeof value === 'number' ? value : null;
-      // A weight ANSWER carries no unit — the design shows `72.4 kg`, so the
-      // client's logging unit is appended here rather than left off.
-      const answer = formatAnswer(value, question.type);
-      rows.push({
-        answer: question.type === 'weight' && answer !== '—' ? `${answer} ${unit}` : answer,
-        label: question.label,
-        rating,
-      });
-      if (rows.length === 3) {
-        return rows;
-      }
-    }
-  }
-  return rows;
 }

@@ -7,12 +7,13 @@ import {useGetBillingQuery} from '@/api/billing';
 import type {ClientInviteRequest} from '@/api/clients';
 import {useGetCoachProfileQuery} from '@/api/profile';
 import {omitUndefined, toOptionalText} from '@/api/shared';
-import {type TeamMember, useGetTeamQuery} from '@/api/team';
+import {useGetTeamQuery} from '@/api/team';
 import {splitName} from '@/clients/client-invite';
 import RequiredServicesField, {
   canonicalRequiredServices,
   REQUIRED_SERVICE_VALUES,
 } from '@/clients/client-required-services-field';
+import {memberName} from '@/settings/team-presentation';
 import {FieldRow} from '@/ui/field-row';
 import {FormActions} from '@/ui/form-actions';
 import {FormLayout} from '@/ui/form-layout';
@@ -45,10 +46,6 @@ export const inviteClientFormSchema = z
 export type InviteClientFormValues = z.infer<typeof inviteClientFormSchema>;
 
 export const INVITE_CLIENT_FORM_FIELDS = ['email', 'name', 'notes', 'phone'] as const;
-
-function memberName(member: TeamMember): string {
-  return [member.first_name, member.last_name].filter(Boolean).join(' ') || member.email || 'Trainer';
-}
 
 export function inviteClientToRequest(values: InviteClientFormValues): ClientInviteRequest {
   const {firstName, lastName} = splitName(values.name);

@@ -1,4 +1,3 @@
-import {formatIsoDateShort} from '@easy/utils';
 import {AlertDialog, Button, Chip, Typography, useOverlayState} from '@heroui/react';
 import {AlertTriangle, CalendarRange, UserX} from 'lucide-react';
 import {useEffect, useState} from 'react';
@@ -9,7 +8,10 @@ import {useUpdateClientMutation} from '@/api/clients';
 import {
   coachingAccessState,
   coachingPeriodUpdate,
+  EXTEND_PRESETS,
   extendedSubscriptionEnd,
+  formatPeriodValue,
+  periodSummary,
   renewalEndDateIsValid,
   subscriptionDatesAreOrdered,
 } from '@/clients/client';
@@ -18,12 +20,6 @@ import DateInput from '@/ui/date-input';
 import {FieldRow} from '@/ui/field-row';
 import {toastMutationError} from '@/ui/mutation-toast';
 import {PickerModal} from '@/ui/picker-modal';
-
-const EXTEND_PRESETS = [
-  {label: '+2 weeks', amount: {days: 14} as const},
-  {label: '+1 month', amount: {months: 1} as const},
-  {label: '+3 months', amount: {months: 3} as const},
-] as const;
 
 /**
  * Always-on coaching access chrome for Client Detail. Healthy: status + period
@@ -197,21 +193,6 @@ export function ClientAccessStrip({client}: {client: Client}) {
       ) : null}
     </>
   );
-}
-
-function periodSummary(client: Client): string {
-  const start = client.subscription_started_on;
-  const end = client.subscription_ends_on;
-  if (start && end) {
-    return `${formatIsoDateShort(start)} → ${formatIsoDateShort(end)}`;
-  }
-  if (start) {
-    return `Started ${formatIsoDateShort(start)} · Ongoing`;
-  }
-  if (end) {
-    return `Ends ${formatIsoDateShort(end)}`;
-  }
-  return 'No coaching period set';
 }
 
 type PendingPeriodChange = {
@@ -632,8 +613,4 @@ function PeriodChangeSummary({
       ))}
     </div>
   );
-}
-
-function formatPeriodValue(iso: string): string {
-  return iso ? formatIsoDateShort(iso) : 'not set';
 }

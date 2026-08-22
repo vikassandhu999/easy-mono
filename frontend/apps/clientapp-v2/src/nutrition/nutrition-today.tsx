@@ -4,7 +4,7 @@
  * A past date renders the same screen; future dates are read-only. Dark + periwinkle.
  */
 
-import {formatDateISO} from '@easy/utils';
+import {addDays, formatDateISO} from '@easy/utils';
 import {toPortionInput} from '@easy/utils/nutrition-portion';
 import {Spinner, toast} from '@heroui/react';
 import {Check, ChevronDown, ChevronLeft, ChevronRight, Plus} from 'lucide-react';
@@ -40,6 +40,7 @@ import MacroHero from '@/nutrition/macro-hero';
 import {
   ADHERENCE_TEXT,
   adherenceDisplay,
+  dateLabel,
   dayTargets,
   kcalText,
   type SheetTarget,
@@ -53,21 +54,6 @@ import {ROUTES} from '@/routes';
 import ErrorState from '@/ui/error-state';
 
 const VERDICT_LABEL: Record<string, string> = {on: 'on target ✓', over: 'over target', under: 'under target'};
-
-function shiftDate(date: string, days: number): string {
-  const d = new Date(`${date}T00:00:00`);
-  d.setDate(d.getDate() + days);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function dateLabel(date: string, today: string): string {
-  const d = new Date(`${date}T00:00:00`);
-  const wd = d.toLocaleDateString('en-US', {weekday: 'short'});
-  if (date === today) {
-    return `Today · ${wd}`;
-  }
-  return `${wd} · ${d.toLocaleDateString('en-US', {day: 'numeric', month: 'short'})}`;
-}
 
 function Checkbox({on, disabled, onPress}: {disabled?: boolean; on: boolean; onPress: () => void}) {
   return (
@@ -95,7 +81,7 @@ export default function NutritionToday() {
   });
   const today = todayQuery.data?.data[0]?.date ?? formatDateISO(new Date());
   const date = selectedDate ?? today;
-  const tomorrow = shiftDate(today, 1);
+  const tomorrow = formatDateISO(addDays(today, 1));
   const isPast = date < today;
 
   const dayQuery = selectedDate ? selectedDayQuery : todayQuery;
@@ -322,7 +308,7 @@ export default function NutritionToday() {
         <button
           aria-label="Previous day"
           className="grid size-8 place-items-center rounded-lg text-muted active:bg-surface-secondary"
-          onClick={() => setDate(shiftDate(date, -1))}
+          onClick={() => setDate(formatDateISO(addDays(date, -1)))}
           type="button"
         >
           <ChevronLeft size={20} />
@@ -332,7 +318,7 @@ export default function NutritionToday() {
           aria-label="Next day"
           className="grid size-8 place-items-center rounded-lg text-muted active:bg-surface-secondary disabled:opacity-30"
           disabled={date >= tomorrow}
-          onClick={() => setDate(shiftDate(date, 1))}
+          onClick={() => setDate(formatDateISO(addDays(date, 1)))}
           type="button"
         >
           <ChevronRight size={20} />

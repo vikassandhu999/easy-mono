@@ -34,8 +34,8 @@ import {
   fieldsFor,
   formatSeconds,
   formatVolume,
+  plannedValue,
   type SnapshotExercise,
-  type SnapshotSet,
   sessionVolumeKg,
 } from '@/workout/session-utils';
 
@@ -133,21 +133,6 @@ function DurationField({value, onChange}: {onChange: (v: number) => void; value:
 }
 
 const LABEL: Record<FieldKind, string> = {distance: 'METERS', duration: 'TIME', reps: 'REPS', weight: 'KG'};
-function plannedValue(planned: SnapshotSet | undefined, kind: FieldKind): null | number {
-  if (!planned) {
-    return null;
-  }
-  const raw =
-    kind === 'weight'
-      ? planned.load_value
-      : kind === 'reps'
-        ? planned.reps
-        : kind === 'distance'
-          ? planned.distance_value
-          : planned.duration_seconds;
-  return raw == null || raw === '' ? null : Number(raw);
-}
-
 const FALLBACK: Record<FieldKind, number> = {distance: 0, duration: 30, reps: 10, weight: 0};
 
 function SetRow({

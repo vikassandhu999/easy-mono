@@ -330,3 +330,24 @@ export function describeSet(trackingType: null | string | undefined, f: SetField
     .filter(Boolean);
   return parts.join(' · ') || '—';
 }
+
+/**
+ * The planned number for one tracked field, or null when the plan left it
+ * blank. The API sends these as strings for the decimal fields and numbers for
+ * the integer ones, and an unset field can arrive as `null` or as `''` — both
+ * mean "no target", so both collapse to null here rather than to `NaN` or `0`.
+ */
+export function plannedValue(planned: SnapshotSet | undefined, kind: FieldKind): null | number {
+  if (!planned) {
+    return null;
+  }
+  const raw =
+    kind === 'weight'
+      ? planned.load_value
+      : kind === 'reps'
+        ? planned.reps
+        : kind === 'distance'
+          ? planned.distance_value
+          : planned.duration_seconds;
+  return raw == null || raw === '' ? null : Number(raw);
+}

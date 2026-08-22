@@ -8,6 +8,7 @@ export const getFullName = (firstName?: null | string, lastName?: null | string)
 export * from './closed-vocabulary.ts';
 export * from './date.ts';
 export * from './media.ts';
+export * from './move-item.ts';
 export * from './nutrition.ts';
 export * from './parse-api-error.ts';
 export * from './stick-to-bottom.ts';

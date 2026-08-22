@@ -1,3 +1,4 @@
+import {formatIsoDateShort} from '@easy/utils';
 import type {Client, ClientUpdateRequest} from '../api/clients.ts';
 
 /** Active with an empty required-services set. Distinct from missing a plan
@@ -83,4 +84,32 @@ export function extendedSubscriptionEnd(
     date.setUTCMonth(date.getUTCMonth() + amount.months);
   }
   return date.toISOString().slice(0, 10);
+}
+
+/** Quick-extend amounts offered in the Manage sheet. */
+export const EXTEND_PRESETS = [
+  {label: '+2 weeks', amount: {days: 14} as const},
+  {label: '+1 month', amount: {months: 1} as const},
+  {label: '+3 months', amount: {months: 3} as const},
+] as const;
+
+/** The access strip's one-line period, for each of the four ways it can be set. */
+export function periodSummary(client: Pick<Client, 'subscription_ends_on' | 'subscription_started_on'>): string {
+  const start = client.subscription_started_on;
+  const end = client.subscription_ends_on;
+  if (start && end) {
+    return `${formatIsoDateShort(start)} \u2192 ${formatIsoDateShort(end)}`;
+  }
+  if (start) {
+    return `Started ${formatIsoDateShort(start)} \u00b7 Ongoing`;
+  }
+  if (end) {
+    return `Ends ${formatIsoDateShort(end)}`;
+  }
+  return 'No coaching period set';
+}
+
+/** A date inside a confirmation sentence; an empty date reads as "not set". */
+export function formatPeriodValue(iso: string): string {
+  return iso ? formatIsoDateShort(iso) : 'not set';
 }

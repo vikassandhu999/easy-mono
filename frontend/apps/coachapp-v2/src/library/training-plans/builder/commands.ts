@@ -1,3 +1,4 @@
+import {moveItem} from '@easy/utils';
 import {isOneOf} from '@easy/utils/closed-vocabulary';
 import {toast} from '@heroui/react';
 import type {TrainingExercise} from '@/api/training-exercises';
@@ -5,7 +6,8 @@ import type {TrainingPlan, TrainingPlanWorkout, TrainingPlanWorkoutExercise} fro
 import * as api from '@/api/training-plans';
 import {createLocalNodeId} from '@/api/training-sessions';
 import {periodError} from '@/library/plan-coverage';
-import {findElement, findWorkout, moveId} from '@/library/training-plans/builder/plan-tree';
+
+import {findElement, findWorkout} from '@/library/training-plans/builder/plan-tree';
 import {clearWorkoutFromSchedule, type Day, setScheduleDay} from '@/library/training-plans/builder/schedule';
 import {appendSet, blankSet, type PlannedSet, patchSet, removeSet} from '@/library/training-plans/builder/sets';
 import {TRACKING_TYPES} from '@/library/training-plans/builder/tracking';
@@ -224,7 +226,7 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
         if (!workout) {
           return workoutId;
         }
-        const order = moveId(
+        const order = moveItem(
           workout.workout_elements.map((element) => element.id),
           from,
           to,

@@ -39,6 +39,7 @@ import {
   useRevokeTrainerInviteMutation,
 } from '@/api/team';
 import {SettingsSectionHeader} from '@/settings/settings-section-header';
+import {memberName, STATUS_COLOR, STATUS_LABEL} from '@/settings/team-presentation';
 import {ErrorState} from '@/ui/error-state';
 import {FieldRow} from '@/ui/field-row';
 import {FormTextField} from '@/ui/form-text-field';
@@ -46,18 +47,6 @@ import {PickerModal} from '@/ui/picker-modal';
 
 const INVITE_TITLE = 'Invite a trainer';
 const INVITE_BLURB = "They'll get an email invite and take a seat once they join.";
-
-const STATUS_LABEL: Record<TeamMember['status'], string> = {
-  invited: 'Invited',
-  active: 'Active',
-  inactive: 'Deactivated',
-};
-
-const STATUS_COLOR: Record<TeamMember['status'], 'default' | 'success' | 'warning'> = {
-  invited: 'warning',
-  active: 'success',
-  inactive: 'default',
-};
 
 const inviteTrainerSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Enter a valid email'),
@@ -345,10 +334,6 @@ function ReactivateTrainerDialog({
       </AlertDialog.Container>
     </AlertDialog.Backdrop>
   );
-}
-
-function memberName(member: TeamMember): string {
-  return [member.first_name, member.last_name].filter(Boolean).join(' ') || member.email || 'Trainer';
 }
 
 function TeamMemberRow({

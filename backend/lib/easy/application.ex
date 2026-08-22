@@ -1,4 +1,5 @@
 defmodule Easy.Application do
+  use Boundary, top_level?: true, deps: [Easy, EasyWeb]
   use Application
 
   @impl true

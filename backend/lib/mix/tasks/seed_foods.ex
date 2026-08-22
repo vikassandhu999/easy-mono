@@ -1,4 +1,5 @@
 defmodule Mix.Tasks.SeedFoods do
+  use Boundary, classify_to: Easy
   use Mix.Task
 
   @shortdoc "Seeds the foods database from priv/repo/foods_database.csv"

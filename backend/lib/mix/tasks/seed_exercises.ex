@@ -1,4 +1,5 @@
 defmodule Mix.Tasks.SeedExercises do
+  use Boundary, classify_to: Easy
   use Mix.Task
 
   @shortdoc "Seeds muscles, equipment, and exercises from priv/repo/exercises.json"

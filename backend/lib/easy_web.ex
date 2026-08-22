@@ -1,4 +1,6 @@
 defmodule EasyWeb do
+  use Boundary, deps: [Easy], exports: [Endpoint]
+
   def router do
     quote do
       use Phoenix.Router, helpers: false

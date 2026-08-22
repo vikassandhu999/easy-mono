@@ -1,5 +1,5 @@
+import {ApiError} from '@easy/utils/api-error';
 import {parseApiErrorBody} from '@easy/utils/parse-api-error';
-import {ApiError} from './api-error.ts';
 import type {components} from './schema.ts';
 
 // --- training-plan-lifecycle ---

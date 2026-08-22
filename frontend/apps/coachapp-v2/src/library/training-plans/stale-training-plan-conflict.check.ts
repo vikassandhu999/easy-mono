@@ -1,4 +1,4 @@
-import {ApiError} from '../../api/api-error.ts';
+import {ApiError} from '@easy/utils/api-error';
 import {handleStaleTrainingPlanConflict, staleTrainingPlanConflictMessage} from './stale-training-plan-conflict.ts';
 
 const staleError = new ApiError(409, {

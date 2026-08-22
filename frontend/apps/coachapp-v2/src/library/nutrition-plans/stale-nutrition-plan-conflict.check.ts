@@ -1,4 +1,4 @@
-import {ApiError} from '../../api/api-error.ts';
+import {ApiError} from '@easy/utils/api-error';
 import {handleStaleNutritionPlanConflict, staleNutritionPlanConflictMessage} from './stale-nutrition-plan-conflict.ts';
 
 const staleError = new ApiError(409, {error_code: 'stale_revision', error_detail: {current_revision: 12}});

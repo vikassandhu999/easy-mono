@@ -1,6 +1,6 @@
 /**
  * Thrown by every query/mutation on a non-2xx response. Carries the parsed
- * error body under `data` — the shape `@/api/shared` helpers read.
+ * error body under `data` — the shape the `parse-api-error` helpers beside this file read.
  */
 export class ApiError extends Error {
   status: number;

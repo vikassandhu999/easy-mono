@@ -1,4 +1,4 @@
-import {ApiError} from './api-error.ts';
+import {ApiError} from '@easy/utils/api-error';
 import {getSeatLimitError} from './seat-limit-error.ts';
 
 const summary = {

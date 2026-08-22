@@ -1,3 +1,4 @@
+import {ApiError} from '@easy/utils/api-error';
 import {
   type ApiErrorBody,
   apiErrorCodeFromBody,
@@ -8,8 +9,6 @@ import {
   validationErrorsFromBody,
 } from '@easy/utils/parse-api-error';
 import type {FieldValues, Path, UseFormSetError} from 'react-hook-form';
-
-import {ApiError} from './api-error.ts';
 
 export type {ApiErrorBody, FormSetError};
 

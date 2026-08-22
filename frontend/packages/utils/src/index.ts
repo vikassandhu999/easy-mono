@@ -5,6 +5,7 @@ export const getInitials = (firstName?: null | string, lastName?: null | string)
 export const getFullName = (firstName?: null | string, lastName?: null | string): string =>
   [firstName, lastName].filter(Boolean).join(' ');
 
+export * from './api-error.ts';
 export * from './closed-vocabulary.ts';
 export * from './date.ts';
 export * from './media.ts';

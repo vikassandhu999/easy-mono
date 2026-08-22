@@ -1,16 +1,16 @@
 import {putFileToSignedUrl, startVoiceRecording} from '@easy/utils';
 import {type ChangeEvent, useEffect, useId, useRef, useState} from 'react';
 
-import {getApiErrorMessage} from '@/api/shared';
-import {type AttachmentUploadRequest, useCreateCoachClientUploadMutation} from '@/api/uploads';
+import {getApiErrorMessage, omitUndefined} from '@/api/shared';
+import {useCreateCoachClientUploadMutation} from '@/api/uploads';
 import {
+  attachmentSizeLimit,
   isAcceptedAttachmentType,
   MAX_ATTACHMENTS,
-  MAX_BYTES,
   MAX_RECORDING_MS,
   type UploadItem,
   validateAttachmentFiles,
-} from '@/messages/lib/attachment-files';
+} from '@/messages/attachment-files';
 
 export type AttachmentComposerState = {
   attachmentIds: string[];
@@ -89,17 +89,25 @@ export default function useAttachmentComposer({clientId, disabled, onChange}: Op
     if (!existingLocalId) {
       setItems((current) => [
         ...current,
-        {
+        omitUndefined({
           durationMs,
           file,
           localId,
           previewUrl: URL.createObjectURL(file),
           progress: 0,
-          status: 'uploading',
-        },
+          status: 'uploading' as const,
+        }),
       ]);
     } else {
-      updateItem(localId, {errorMessage: undefined, progress: 0, status: 'uploading'});
+      setItems((current) =>
+        current.map((item) => {
+          if (item.localId !== localId) {
+            return item;
+          }
+          const {errorMessage: _errorMessage, ...rest} = item;
+          return {...rest, progress: 0, status: 'uploading' as const};
+        }),
+      );
     }
 
     if (!isAcceptedAttachmentType(file.type)) {
@@ -202,7 +210,8 @@ export default function useAttachmentComposer({clientId, disabled, onChange}: Op
       if (disposedRef.current || recordingAttemptRef.current !== attempt) {
         return;
       }
-      if (file.size > MAX_BYTES[file.type as AttachmentUploadRequest['content_type']]) {
+      const limit = attachmentSizeLimit(file.type);
+      if (limit === undefined || file.size > limit) {
         setFieldError('Voice recordings can be 10 MB at most.');
         return;
       }

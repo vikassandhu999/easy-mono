@@ -2,8 +2,6 @@ import {formatDateISO, getInitials} from '@easy/utils';
 import {Spinner} from '@heroui/react';
 import {ChevronRight, Dumbbell, MessageCircle, Play, TrendingUp, UtensilsCrossed} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
-
-import {ROUTES} from '@/@config/routes';
 import {useListClientFormAssignmentsQuery} from '@/api/checkins';
 import {useListClientNutritionDaysQuery} from '@/api/nutrition';
 import {useGetClientProfileQuery} from '@/api/profile';
@@ -13,10 +11,11 @@ import {
   useListClientTrainingSessionsQuery,
   useResolveClientTrainingCoverageQuery,
 } from '@/api/training';
-import {clientTrainingPlanFromCoverage} from '@/api/training-coverage';
-import CheckinNudgeCard from '@/checkins/checkin-nudge-card';
-import IntakeCard from '@/checkins/intake-card';
+import {clientTrainingPlanFromCoverage} from '@/api/training-requests';
 import {kcalText, nutrientNumber} from '@/nutrition/nutrition-utils';
+import {ROUTES} from '@/routes';
+import CheckinNudgeCard from '@/today/checkin-nudge-card';
+import IntakeCard from '@/today/intake-card';
 import {estimatedMinutes, totalSets, workoutPreviewPath} from '@/training/training-utils';
 
 export default function TodayHome() {

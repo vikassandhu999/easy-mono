@@ -1,20 +1,15 @@
 import {Button, ErrorMessage, Form, Link, Spinner, Typography, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm, useWatch} from 'react-hook-form';
-import {Navigate, useLocation, useNavigate} from 'react-router-dom';
+import {Navigate, useNavigate} from 'react-router-dom';
 import {z} from 'zod';
-import {FormOtpField} from '@/@components/form-fields/form-otp-field';
-
-import {ROUTES} from '@/@config/routes';
 import {useExchangeTokenMutation, useSendOtpMutation} from '@/api/auth';
 import {setTokens} from '@/api/authStorage';
 import {applyFormErrors} from '@/api/shared';
-import {AuthFooter} from '@/auth/components/auth-footer';
-import AuthLayout from '@/auth/components/auth-layout';
-
-interface VerifyLoginOtpLocationState {
-  email: string;
-}
+import AuthLayout, {AuthFooter} from '@/auth/auth-layout';
+import {ROUTES} from '@/routes';
+import {FormOtpField} from '@/ui/form-otp-field';
+import {useHistoryStateString} from '@/ui/use-history-state';
 
 const schema = z.object({
   otp: z.string().length(6, 'Enter all 6 digits'),
@@ -23,9 +18,8 @@ const schema = z.object({
 type VerifyLoginOtpFormValues = z.infer<typeof schema>;
 
 export default function VerifyLoginOtp() {
-  const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as null | VerifyLoginOtpLocationState;
+  const email = useHistoryStateString('email');
 
   const exchangeTokenMutation = useExchangeTokenMutation();
   const sendOtpMutation = useSendOtpMutation();
@@ -37,7 +31,7 @@ export default function VerifyLoginOtp() {
 
   const otpValue = useWatch({control: form.control, name: 'otp'});
 
-  if (!state?.email) {
+  if (!email) {
     return (
       <Navigate
         replace
@@ -46,12 +40,12 @@ export default function VerifyLoginOtp() {
     );
   }
 
-  const maskedEmail = state.email.replace(/(.{2})(.*)(@.*)/, '$1***$3');
+  const maskedEmail = email.replace(/(.{2})(.*)(@.*)/, '$1***$3');
 
   const onSubmit = async (data: VerifyLoginOtpFormValues) => {
     try {
       const result = await exchangeTokenMutation.mutateAsync({
-        email: state.email,
+        email,
         grant_type: 'otp',
         otp: data.otp,
         role: 'coach',
@@ -68,7 +62,7 @@ export default function VerifyLoginOtp() {
 
   const handleResend = async () => {
     try {
-      await sendOtpMutation.mutateAsync({email: state.email, type: 'authentication'});
+      await sendOtpMutation.mutateAsync({email, type: 'authentication'});
       toast.success('A new code is on its way');
     } catch (err) {
       applyFormErrors(err, "Code wasn't resent. Try again", form.setError);

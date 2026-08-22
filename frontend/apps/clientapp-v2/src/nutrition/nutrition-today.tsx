@@ -4,16 +4,16 @@
  * A past date renders the same screen; future dates are read-only. Dark + periwinkle.
  */
 
-import {formatDateISO} from '@easy/utils';
+import {addDays, formatDateISO} from '@easy/utils';
+import {toPortionInput} from '@easy/utils/nutrition-portion';
 import {Spinner, toast} from '@heroui/react';
 import {Check, ChevronDown, ChevronLeft, ChevronRight, Plus} from 'lucide-react';
 import {useEffect, useRef, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
-import ErrorState from '@/@components/error-state';
-
-import {ROUTES} from '@/@config/routes';
 import {
   type NutritionDayOption,
+  pickedToItemRef,
+  toItemInput,
   useAddExtraMutation,
   useListClientNutritionDaysQuery,
   useLogPlannedDayMutation,
@@ -22,10 +22,7 @@ import {
   useReplaceItemMutation,
   useSwitchNutritionMealOptionMutation,
 } from '@/api/nutrition';
-import AmountSheet, {type SheetTarget} from '@/nutrition/components/amount-sheet';
-import FoodPicker, {type Picked} from '@/nutrition/components/food-picker';
-import MacroHero from '@/nutrition/components/macro-hero';
-import OptionSheet from '@/nutrition/components/option-sheet';
+import AmountSheet from '@/nutrition/amount-sheet';
 import {
   beginDiaryCommand,
   completeDiaryCommand,
@@ -38,32 +35,25 @@ import {
   switchOptionIntentFingerprint,
 } from '@/nutrition/diary-command-key';
 import {diaryWriteError} from '@/nutrition/diary-write-error';
+import FoodPicker, {type Picked} from '@/nutrition/food-picker';
+import MacroHero from '@/nutrition/macro-hero';
 import {
   ADHERENCE_TEXT,
   adherenceDisplay,
+  dateLabel,
   dayTargets,
   kcalText,
+  type SheetTarget,
   type SlotRow,
   type SlotView,
+  sheetTargetFromRow,
   slotsFromDay,
 } from '@/nutrition/nutrition-utils';
+import OptionSheet from '@/nutrition/option-sheet';
+import {ROUTES} from '@/routes';
+import ErrorState from '@/ui/error-state';
 
 const VERDICT_LABEL: Record<string, string> = {on: 'on target ✓', over: 'over target', under: 'under target'};
-
-function shiftDate(date: string, days: number): string {
-  const d = new Date(`${date}T00:00:00`);
-  d.setDate(d.getDate() + days);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function dateLabel(date: string, today: string): string {
-  const d = new Date(`${date}T00:00:00`);
-  const wd = d.toLocaleDateString('en-US', {weekday: 'short'});
-  if (date === today) {
-    return `Today · ${wd}`;
-  }
-  return `${wd} · ${d.toLocaleDateString('en-US', {day: 'numeric', month: 'short'})}`;
-}
 
 function Checkbox({on, disabled, onPress}: {disabled?: boolean; on: boolean; onPress: () => void}) {
   return (
@@ -86,13 +76,12 @@ export default function NutritionToday() {
   const [params, setParams] = useSearchParams();
   const selectedDate = params.get('date');
   const todayQuery = useListClientNutritionDaysQuery();
-  const selectedDayQuery = useListClientNutritionDaysQuery(
-    selectedDate ? {date: selectedDate} : {},
-    {enabled: selectedDate != null},
-  );
+  const selectedDayQuery = useListClientNutritionDaysQuery(selectedDate ? {date: selectedDate} : {}, {
+    enabled: selectedDate != null,
+  });
   const today = todayQuery.data?.data[0]?.date ?? formatDateISO(new Date());
   const date = selectedDate ?? today;
-  const tomorrow = shiftDate(today, 1);
+  const tomorrow = formatDateISO(addDays(today, 1));
   const isPast = date < today;
 
   const dayQuery = selectedDate ? selectedDayQuery : todayQuery;
@@ -128,7 +117,7 @@ export default function NutritionToday() {
   }, [date]);
 
   const logPlanned = async (slot: SlotView, row: SlotRow) => {
-    if (!row.plannedItem || !row.mealItemId) {
+    if (row.status !== 'checklist') {
       return;
     }
     try {
@@ -150,10 +139,7 @@ export default function NutritionToday() {
 
   const logWholeMeal = async (slot: SlotView) => {
     try {
-      const intent = beginDiaryCommand(
-        commandIntents.current,
-        plannedOptionIntentFingerprint({date, slot: slot.slot}),
-      );
+      const intent = beginDiaryCommand(commandIntents.current, plannedOptionIntentFingerprint({date, slot: slot.slot}));
       await logOption.mutateAsync({
         date,
         idempotencyKey: intent.key,
@@ -165,17 +151,7 @@ export default function NutritionToday() {
     }
   };
 
-  const openSheet = (slot: SlotView, row: SlotRow) =>
-    setSheet({
-      date,
-      loggedEntry: row.entry,
-      mealId: slot.mealId,
-      name: row.name,
-      mealItemId: row.mealItemId,
-      plannedItem: row.plannedItem,
-      slot: slot.slot,
-      slotLabel: slot.label,
-    });
+  const openSheet = (slot: SlotView, row: SlotRow) => setSheet(sheetTargetFromRow(date, slot, row));
 
   const onReplace = (t: SheetTarget) => {
     setSheet(null);
@@ -187,14 +163,15 @@ export default function NutritionToday() {
     const replacing = pickerMode === 'replace' ? replaceTarget : null;
     setPickerMode(null);
     setReplaceTarget(null);
+    const item = toItemInput(pickedToItemRef(picked));
     const portion =
       picked.defaultWeightG != null
-        ? {grams: picked.defaultWeightG, kind: 'gram' as const}
-        : {amount: picked.defaultAmount ?? 1, kind: 'serving' as const, unit: 'serving'};
+        ? toPortionInput({grams: picked.defaultWeightG, kind: 'gram'})
+        : toPortionInput({amount: picked.defaultAmount ?? 1, kind: 'serving', label: null, unit: 'serving'});
 
     try {
       if (replacing?.mealItemId) {
-        const expectedRevision = replacing.loggedEntry?.revision ?? 1;
+        const expectedRevision = replacing.mode === 'logged' ? replacing.loggedEntry.revision : 1;
         const intent = beginDiaryCommand(
           commandIntents.current,
           replaceIntentFingerprint({
@@ -208,24 +185,22 @@ export default function NutritionToday() {
           }),
         );
         await replaceItem({
+          ...item,
           date,
           expected_revision: expectedRevision,
-          food_id: picked.kind === 'food' ? picked.id : undefined,
           idempotencyKey: intent.key,
           meal_item_id: replacing.mealItemId,
           meal_slot: replacing.slot,
           portion,
-          recipe_id: picked.kind === 'recipe' ? picked.id : undefined,
         });
         completeDiaryCommand(commandIntents.current, intent);
       } else {
         const intent = beginDiaryCommand(commandIntents.current, extraIntentFingerprint({...picked, date}));
         await addExtra({
+          ...item,
           date,
-          food_id: picked.kind === 'food' ? picked.id : undefined,
           meal_slot: picked.slot,
           portion,
-          recipe_id: picked.kind === 'recipe' ? picked.id : undefined,
           idempotencyKey: intent.key,
         });
         completeDiaryCommand(commandIntents.current, intent);
@@ -333,7 +308,7 @@ export default function NutritionToday() {
         <button
           aria-label="Previous day"
           className="grid size-8 place-items-center rounded-lg text-muted active:bg-surface-secondary"
-          onClick={() => setDate(shiftDate(date, -1))}
+          onClick={() => setDate(formatDateISO(addDays(date, -1)))}
           type="button"
         >
           <ChevronLeft size={20} />
@@ -343,7 +318,7 @@ export default function NutritionToday() {
           aria-label="Next day"
           className="grid size-8 place-items-center rounded-lg text-muted active:bg-surface-secondary disabled:opacity-30"
           disabled={date >= tomorrow}
-          onClick={() => setDate(shiftDate(date, 1))}
+          onClick={() => setDate(formatDateISO(addDays(date, 1)))}
           type="button"
         >
           <ChevronRight size={20} />
@@ -410,8 +385,18 @@ export default function NutritionToday() {
 
             {slot.rows.map((row, index) => {
               const extra = row.status === 'added' || row.status === 'recorded';
-              const checked = row.status === 'as_planned' || row.status === 'swapped' || extra;
-              const key = row.entry?.id ?? row.mealItemId ?? `row-${index}`;
+              const checked =
+                row.status === 'as_planned' || row.status === 'swapped' || row.status === 'recorded' || extra;
+              const key =
+                row.status === 'added' || row.status === 'recorded'
+                  ? row.entry.id
+                  : row.status === 'checklist' ||
+                      row.status === 'skipped' ||
+                      row.status === 'pending' ||
+                      row.status === 'as_planned' ||
+                      row.status === 'swapped'
+                    ? row.mealItemId
+                    : `row-${index}`;
               return (
                 <div
                   className="flex items-center gap-2.5 border-t border-border py-1.5 text-xs"
@@ -421,7 +406,7 @@ export default function NutritionToday() {
                     disabled={!slot.writeEligible || extra}
                     on={checked}
                     onPress={() => {
-                      if (!row.entry) {
+                      if (row.status === 'checklist') {
                         logPlanned(slot, row);
                       }
                     }}

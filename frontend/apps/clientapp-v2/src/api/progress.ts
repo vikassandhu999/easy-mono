@@ -13,8 +13,6 @@ export type WeightEntry = components['schemas']['WeightEntry'];
 type WeightEntryRequest = components['schemas']['WeightEntryRequest'];
 
 type ListQuery = paths['/v1/client/weight_entries']['get']['parameters']['query'];
-type ListResponse = components['schemas']['WeightEntryListResponse'];
-type EntryResponse = components['schemas']['WeightEntryResponse'];
 
 type WeightGoal = {unit?: null | string; value?: null | number};
 
@@ -25,15 +23,14 @@ export function asGoal(goal: unknown): null | WeightGoal {
 export function useListWeightEntriesQuery(query: ListQuery = {}) {
   return useQuery({
     queryKey: weightEntryKeys.list(query),
-    queryFn: () => call(client.GET('/v1/client/weight_entries', {params: {query}})) as Promise<ListResponse>,
+    queryFn: () => call(client.GET('/v1/client/weight_entries', {params: {query}})),
   });
 }
 
 export function useCreateWeightEntryMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: WeightEntryRequest) =>
-      call(client.POST('/v1/client/weight_entries', {body})) as Promise<EntryResponse>,
+    mutationFn: (body: WeightEntryRequest) => call(client.POST('/v1/client/weight_entries', {body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: weightEntryKeys.lists()});
     },

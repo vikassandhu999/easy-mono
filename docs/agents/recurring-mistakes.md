@@ -101,7 +101,7 @@ Severity of the rule isn't the point; recurrence is.
 | RM-142 | Colour utility needs a `--color-*` alias | Frontend | check-color-utilities |
 | RM-142 | `useMutation` result is a new object every render | Frontend | review |
 | RM-143 | List-shaped query keys nest under `lists()` | Frontend | review |
-| RM-144 | Every shared concept has an owning feature | Frontend | check-rm |
+| RM-144 | Three kinds of directory, and the arrows point one way | Frontend | check-rm |
 | RM-145 | Neutralise HeroUI press scale with `transform-none` | Frontend | review |
 | RM-146 | Committed overlay action visible in both shells | Frontend | review |
 | RM-147 | Action verb lands at the workflow it promises | Frontend | review |
@@ -165,6 +165,8 @@ Severity of the rule isn't the point; recurrence is.
 | RM-218 | Shared form completion copy follows assignment purpose | Frontend | check-rm |
 | RM-219 | Mobile queue rows keep the actionable absolute fact visible | Frontend | check-rm |
 | RM-220 | Queue identity text stays inside its grid track | Frontend | check-rm |
+| RM-221 | Filter-then-assert: parse while filtering instead | Frontend | review |
+| RM-222 | A UI key is narrowed into its vocabulary, never cast | Frontend | review |
 | RM-301 | Retiring an architecture artifact means grepping the docs | Docs | review |
 | RM-302 | Never vendor a plugin skill into `.claude/skills/` | Docs | check-rm |
 | RM-303 | The `superpowers` plugin is retired | Docs | check-rm |
@@ -796,17 +798,31 @@ test round-trips start-only, rejects a reversed pair, accepts a completed pair, 
 one side. **Verify by:** assign a Test plan, enter Start then End separately, reopen and
 assert both; attempt a reversed end and assert the stored pair is unchanged.
 
-### RM-144 — Every shared concept has an owning feature; never a neutral bucket
-A `domain/`/`utils/` layer-folder is a junk drawer: the name carries no meaning, nobody
-owns it, and it erases the dependency information that matters (history depends on
-workout; nutrition-plans depends on recipes). When 2+ features need a concept, the
-OWNING feature publishes it (`{feature}/lib/*` in coachapp, feature-root files in
-clientapp) and consumers import across — that arrow mirrors the product. Internals
-(`components/`, screens, form files) are never imported across features; shared UI goes
-to `@components/`, shared hooks to `@hooks/`, product-agnostic helpers to `@easy/utils`.
-Instance: a `src/domain/` bucket existed in coachapp and got dutifully replicated into
-clientapp before being recognized as the anti-pattern. **Enforced by:** `just check-rm`
-(bans `@/domain/` and cross-feature internals imports).
+### RM-144 — Three kinds of directory, and the arrows point one way
+A folder named for a layer (`domain/`, `utils/`, `components/`, `lib/`) is a junk drawer:
+the name carries no meaning, nobody owns it, and it erases the dependency information
+that matters. An app's `src/` holds exactly three kinds of directory — `api/` (the server
+contract), `ui/` (feature-agnostic components and hooks), and one folder per route group,
+nesting only when the child is itself a route group. Files are told apart by NAME.
+
+**Arrows point one way: feature → ui → api.** `ui/` imports `api/` and `@easy/utils`,
+never a feature. A feature imports `ui/`, `api/`, and other features' `.ts` files only —
+its `.tsx` is private. `router.tsx` and `app-shell.tsx` are the composition root and are
+exempt. Carrying the public surface on the file EXTENSION rather than on a folder is what
+makes it testable: anything another feature can reach is pure `.ts`, and pure `.ts` gets a
+sibling `.check.ts`.
+
+A `.ts` must never share a basename with a `.tsx` — module resolution picks the `.ts` and
+the component silently vanishes from the route that imported it.
+
+Instances: a `src/domain/` bucket existed in coachapp and got dutifully replicated into
+clientapp before being recognized as the anti-pattern. Its replacement — "a feature's
+`lib/` is its public surface" — described the right arrow but left three ways to nest the
+same thing, and coachapp grew to 50 directories for 325 files, six competing sub-idioms
+inside `clients/` alone, and a `@components/` that imported three different features.
+**Enforced by:** `scripts/check-frontend-shape.mjs` via `just check-rm` (bans bucket and
+`@`-prefixed directories, `ui/`→feature imports, cross-feature `.tsx` imports, and
+`.ts`/`.tsx` basename collisions).
 
 ### RM-143 — A list-shaped query key must nest under its domain's `lists()` prefix
 React Query invalidates by key prefix, so nesting is what lets existing
@@ -1135,6 +1151,46 @@ boundary on its label. **Verify by:** populate Expiring and Quiet with a long cl
 require an ellipsis before the action group with no overlapping pixels.
 
 ## Deploy / ops
+
+### RM-221 — Filter-then-assert: parse WHILE filtering, don't assert afterwards
+`xs.filter((x) => x.weight != null).map((x) => x.weight!)` type-checks only because of the
+assertion — `filter` does not narrow the elements it keeps, so the shape the compiler sees
+still carries the null. It hides real bugs: the recipe ingredient mapper ran every field
+through `omitUndefined` and cast the required-`weight_g` shape back, so a weightless row
+compiled into a request the server rejects with a generic 422. Use `flatMap` and return the
+parsed row (or nothing):
+
+```ts
+const weighed = ingredients.flatMap((row) => {
+  const weight = toPositiveNumber(row.weight_g);
+  return weight == null ? [] : [{food: row.food, weight}];
+});
+```
+
+The same shape covers `groups.filter((g) => g.date).sort(…)` and `sorted[0]!` after a
+length check. For a genuinely non-empty list, type it `[T, ...T[]]` — a Map built by
+insertion is already ordered and non-empty per key, so it needs no `groupOrder` array
+beside it.
+
+### RM-222 — A UI key is NARROWED into its vocabulary, never cast into it
+A `?tab=` search param, a react-aria selection `Key`, and a `<select>`'s `event.target.value`
+are all `string`. `raw as TabId` is a lie the moment the vocabulary changes or the URL is
+hand-edited. Use `isOneOf` from `@easy/utils/closed-vocabulary` against the same array the
+options render from:
+
+```tsx
+const TAB_IDS = TABS.map(({id}) => id);
+const tab: TabId = isOneOf(TAB_IDS, params.get('tab')) ? params.get('tab') : 'overview';
+```
+
+Its sibling: a lookup table keyed on `string` (`Record<string, FieldKey[]>`) silently accepts
+a member the backend added and falls through to the default. Key it on the generated union
+(`Record<TrackingType, …>`) so the build breaks instead, and list the members as
+`[…] as const satisfies readonly TrackingType[]` rather than `Object.keys(TABLE) as T[]`.
+
+Import `isOneOf` from the SUBPATH (`@easy/utils/closed-vocabulary`), not the `@easy/utils`
+barrel: the `.check.ts` runner is plain node and cannot resolve the barrel's extensionless
+re-exports, so a barrel import breaks every check that transitively reaches the module.
 
 ### RM-201 — Deployable frontends need documented + guarded build-time env
 Vite inlines `VITE_API_BASE_URL` at build time; unset on a deployed origin silently hits

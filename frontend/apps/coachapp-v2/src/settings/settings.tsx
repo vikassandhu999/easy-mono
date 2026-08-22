@@ -5,24 +5,24 @@
  * edit or invite in progress (INTERACTIONS.md § ST).
  */
 import {getInitials} from '@easy/utils';
+import {isOneOf} from '@easy/utils/closed-vocabulary';
 import {Avatar, Button, Tabs, Typography} from '@heroui/react';
 import {CreditCard, Shield, User, Users} from 'lucide-react';
 import {useCallback} from 'react';
 import {generatePath, useNavigate, useParams} from 'react-router-dom';
-
-import {ErrorState} from '@/@components/error-state';
-import {Page} from '@/@components/page';
-import {PageSkeleton} from '@/@components/page-skeleton';
-import {ROUTES} from '@/@config/routes';
-import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {clearTokens} from '@/api/authStorage';
 import {type CoachProfile, useGetCoachProfileQuery, useUpdateCoachProfileMutation} from '@/api/profile';
 import {queryClient} from '@/api/query-client';
 import {disconnectSocket} from '@/api/socket';
+import {ROUTES} from '@/routes';
 import BillingSection from '@/settings/billing';
-import EditableRow from '@/settings/components/editable-row';
-import {SettingsSectionHeader} from '@/settings/components/settings-section-header';
+import EditableRow from '@/settings/editable-row';
+import {SettingsSectionHeader} from '@/settings/settings-section-header';
 import TeamSection from '@/settings/team';
+import {ErrorState} from '@/ui/error-state';
+import {Page} from '@/ui/page';
+import {PageSkeleton} from '@/ui/page-skeleton';
+import {useIsDesktop} from '@/ui/use-is-desktop';
 
 const TABS = [
   {icon: User, id: 'profile', label: 'Profile'},
@@ -32,6 +32,7 @@ const TABS = [
 ] as const;
 
 type SettingsTab = (typeof TABS)[number]['id'];
+const TAB_IDS = TABS.map(({id}) => id);
 
 const CARD_CLASS = 'overflow-hidden rounded-card border border-border bg-surface';
 
@@ -211,7 +212,7 @@ function SettingsShell({
   return (
     <Tabs
       className="flex min-h-0 min-w-0 flex-1 flex-col md:flex-row md:items-stretch"
-      onSelectionChange={(key) => onTabChange(key as SettingsTab)}
+      onSelectionChange={(key) => isOneOf(TAB_IDS, key) && onTabChange(key)}
       orientation={isDesktop ? 'vertical' : 'horizontal'}
       selectedKey={tab}
     >
@@ -253,7 +254,7 @@ export default function Settings() {
   // The URL is the source of truth: /settings/billing opens (and survives a
   // refresh on) the Billing tab. Unknown tab segments fall back to Profile.
   const {tab: tabParam} = useParams();
-  const tab: SettingsTab = TABS.some(({id}) => id === tabParam) ? (tabParam as SettingsTab) : 'profile';
+  const tab: SettingsTab = isOneOf(TAB_IDS, tabParam) ? tabParam : 'profile';
   const setTab = useCallback(
     (next: SettingsTab) => {
       navigate(next === 'profile' ? ROUTES.SETTINGS : generatePath(ROUTES.SETTINGS_TAB, {tab: next}), {replace: true});

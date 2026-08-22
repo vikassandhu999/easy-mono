@@ -4,10 +4,10 @@
  */
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-import {call, client} from '@/api/client';
-import {foodKeys, nutritionDayKeys, recipeKeys} from '@/api/keys';
-import type {components, paths} from '@/api/schema';
-import {getApiErrorCode} from '@/api/shared';
+import {call, client} from './client.ts';
+import {foodKeys, nutritionDayKeys, recipeKeys} from './keys.ts';
+import type {components, paths} from './schema.ts';
+import {getApiErrorCode} from './shared.ts';
 
 export type Food = components['schemas']['Food'];
 export type NutritionDay = components['schemas']['NutritionDay'];
@@ -17,27 +17,39 @@ export type NutritionDayOptionItem = components['schemas']['NutritionDayOptionIt
 export type NutritionDayRow = components['schemas']['NutritionDayRow'];
 export type NutritionDaySlot = components['schemas']['NutritionDaySlot'];
 export type DiaryMealSlot = NutritionDaySlot['meal_slot'];
+export type MealSlot = DiaryMealSlot;
 export type Recipe = components['schemas']['Recipe'];
 export type SwitchOptionRequest = components['schemas']['DiarySwitchOptionRequest'];
 export type ReplacePlannedItemRequest = components['schemas']['DiaryReplacePlannedItemRequest'];
 export type UpdateDiaryEntryRequest = components['schemas']['DiaryUpdateEntryRequest'];
 export type DeleteDiaryEntryRequest = components['schemas']['DiaryDeleteEntryRequest'];
 
+/** Parsed portion — impossible sibling-null states removed at the boundary. */
+export type ParsedNutritionPortion =
+  | {grams: number; kind: 'gram'}
+  | {amount: number; kind: 'serving'; label: null | string; unit: string};
+
+export type NutritionItemRef = {food_id: string; kind: 'food'} | {kind: 'recipe'; recipe_id: string};
+
+export {pickedToItemRef, toItemInput} from '@easy/utils/nutrition-item-ref';
+export {
+  formatParsedPortion,
+  parseNutritionPortion,
+  portionWireFromInput,
+  toPortionInput,
+  toPortionWire,
+} from '@easy/utils/nutrition-portion';
+
 type NutritionDayQuery = paths['/v1/client/nutrition-days']['get']['parameters']['query'];
 type FoodListQuery = paths['/v1/client/nutrition-foods']['get']['parameters']['query'];
 type RecipeListQuery = paths['/v1/client/nutrition-recipes']['get']['parameters']['query'];
-
-type NutritionDayListResponse = components['schemas']['NutritionDayListResponse'];
-type FoodListResponse = components['schemas']['FoodListResponse'];
-type RecipeListResponse = components['schemas']['RecipeListResponse'];
 
 // ── Queries ──────────────────────────────────────────────────
 
 export function useListClientNutritionDaysQuery(query: NutritionDayQuery = {}, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: nutritionDayKeys.list(query),
-    queryFn: () =>
-      call(client.GET('/v1/client/nutrition-days', {params: {query}})) as Promise<NutritionDayListResponse>,
+    queryFn: () => call(client.GET('/v1/client/nutrition-days', {params: {query}})),
     enabled: options?.enabled ?? true,
   });
 }
@@ -45,7 +57,7 @@ export function useListClientNutritionDaysQuery(query: NutritionDayQuery = {}, o
 export function useListClientFoodsQuery(query: FoodListQuery = {}, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: foodKeys.list(query),
-    queryFn: () => call(client.GET('/v1/client/nutrition-foods', {params: {query}})) as Promise<FoodListResponse>,
+    queryFn: () => call(client.GET('/v1/client/nutrition-foods', {params: {query}})),
     enabled: options?.enabled ?? true,
   });
 }
@@ -53,7 +65,7 @@ export function useListClientFoodsQuery(query: FoodListQuery = {}, options?: {en
 export function useListClientRecipesQuery(query: RecipeListQuery = {}, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: recipeKeys.list(query),
-    queryFn: () => call(client.GET('/v1/client/nutrition-recipes', {params: {query}})) as Promise<RecipeListResponse>,
+    queryFn: () => call(client.GET('/v1/client/nutrition-recipes', {params: {query}})),
     enabled: options?.enabled ?? true,
   });
 }

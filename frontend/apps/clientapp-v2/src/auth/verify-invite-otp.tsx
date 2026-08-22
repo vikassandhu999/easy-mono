@@ -4,13 +4,12 @@ import {useEffect, useState} from 'react';
 import {useForm, useWatch} from 'react-hook-form';
 import {Navigate, useLocation, useNavigate, useParams} from 'react-router-dom';
 import {z} from 'zod';
-import {FormOtpField} from '@/@components/form-otp-field';
-
-import {ROUTES} from '@/@config/routes';
 import {useAcceptInviteMutation, useAcceptInviteVerifyMutation} from '@/api/auth';
 import {setTokens} from '@/api/authStorage';
 import {applyFormErrors, getApiErrorCode} from '@/api/shared';
-import AuthLayout from '@/auth/components/auth-layout';
+import AuthLayout from '@/auth/auth-layout';
+import {ROUTES} from '@/routes';
+import {FormOtpField} from '@/ui/form-otp-field';
 
 // ── Constants ────────────────────────────────────────────────
 

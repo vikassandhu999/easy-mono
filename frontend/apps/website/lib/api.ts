@@ -59,6 +59,39 @@ export type ApplicationInput = {
   answers: Record<string, string>;
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function parseLandingPage(value: unknown): LandingPage {
+  if (!isRecord(value)) {
+    throw new Error('Invalid landing page payload');
+  }
+  if (
+    typeof value.slug !== 'string' ||
+    typeof value.headline !== 'string' ||
+    typeof value.business_name !== 'string' ||
+    typeof value.template !== 'string' ||
+    !Array.isArray(value.application_questions) ||
+    !Array.isArray(value.programs)
+  ) {
+    throw new Error('Invalid landing page payload');
+  }
+  return value as LandingPage;
+}
+
+function parseApplicationResult(value: unknown): ApplicationResult {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== 'string' ||
+    typeof value.name !== 'string' ||
+    typeof value.business_name !== 'string'
+  ) {
+    throw new Error('Invalid application payload');
+  }
+  return value as ApplicationResult;
+}
+
 /** Server-side fetch of a published landing page. Returns null on 404. */
 export async function fetchLandingPage(slug: string): Promise<LandingPage | null> {
   const res = await fetch(`${API_BASE_URL}/v1/public/landing-pages/${encodeURIComponent(slug)}`, {
@@ -70,8 +103,11 @@ export async function fetchLandingPage(slug: string): Promise<LandingPage | null
   if (!res.ok) {
     throw new Error(`Failed to load landing page (${res.status})`);
   }
-  const body = (await res.json()) as {data: LandingPage};
-  return body.data;
+  const body: unknown = await res.json();
+  if (!isRecord(body) || !('data' in body)) {
+    throw new Error('Invalid landing page payload');
+  }
+  return parseLandingPage(body.data);
 }
 
 export type SubmitResult =
@@ -87,18 +123,29 @@ export async function submitApplication(slug: string, input: ApplicationInput): 
   });
 
   if (res.ok) {
-    const body = (await res.json()) as {data: ApplicationResult};
-    return {ok: true, data: body.data};
+    const body: unknown = await res.json();
+    if (!isRecord(body) || !('data' in body)) {
+      throw new Error('Invalid application payload');
+    }
+    return {ok: true, data: parseApplicationResult(body.data)};
   }
 
-  const body = (await res.json().catch(() => null)) as {
-    error_message?: string;
-    error_detail?: {fields?: Record<string, string[]>};
-  } | null;
+  const body: unknown = await res.json().catch(() => null);
+  const record = isRecord(body) ? body : null;
+  const detail = isRecord(record?.error_detail) ? record.error_detail : null;
+  const fields = isRecord(detail?.fields) ? detail.fields : null;
+  const fieldErrors = fields
+    ? Object.fromEntries(
+        Object.entries(fields).flatMap(([key, value]) =>
+          Array.isArray(value) && value.every((entry) => typeof entry === 'string') ? [[key, value]] : [],
+        ),
+      )
+    : {};
   return {
+    fieldErrors,
+    message:
+      typeof record?.error_message === 'string' ? record.error_message : 'Something went wrong. Please try again.',
     ok: false,
-    fieldErrors: body?.error_detail?.fields ?? {},
-    message: body?.error_message ?? 'Something went wrong. Please try again.',
   };
 }
 

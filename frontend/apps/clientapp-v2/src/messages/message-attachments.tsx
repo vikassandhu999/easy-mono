@@ -139,7 +139,7 @@ export default function MessageAttachments({
           failed={failedIds.has(attachment.id)}
           key={attachment.id}
           refresh={refresh}
-          url={urls[attachment.id]}
+          {...(urls[attachment.id] !== undefined ? {url: urls[attachment.id]} : {})}
         />
       ))}
     </div>

@@ -11,9 +11,9 @@ import type {
   NutritionDayOptionItem,
   NutritionDayRow,
   NutritionDaySlot,
-} from '@/api/nutrition';
+} from '../api/nutrition.ts';
 
-import {nutrientNumber} from './nutrition-summary';
+import {nutrientNumber} from './nutrition-summary.ts';
 
 export {
   ADHERENCE_RING,
@@ -23,18 +23,126 @@ export {
   calorieShare,
   kcalText,
   nutrientNumber,
-} from './nutrition-summary';
+} from './nutrition-summary.ts';
 
 /** One row on Today: either a live checklist item or a server diary row. */
-export type SlotRow = {
+type SlotRowBase = {
   calories: null | number;
-  entry: NutritionDayEntry | null;
-  mealItemId: null | string;
   name: string;
-  plannedItem: null | NutritionDayOptionItem;
-  /** as_planned / swapped / added / recorded are checked; checklist / skipped / pending are not. */
-  status: NutritionDayRow['status'] | 'checklist';
 };
+
+export type ChecklistSlotRow = SlotRowBase & {
+  entry: null;
+  mealItemId: string;
+  plannedItem: NutritionDayOptionItem;
+  status: 'checklist';
+};
+
+export type PlannedSlotRow = SlotRowBase & {
+  entry: NutritionDayEntry | null;
+  mealItemId: string;
+  plannedItem: NutritionDayOptionItem;
+  status: 'as_planned' | 'pending' | 'swapped';
+};
+
+export type ExtraSlotRow = SlotRowBase & {
+  entry: NutritionDayEntry;
+  mealItemId: null;
+  plannedItem: null;
+  status: 'added' | 'recorded';
+};
+
+export type SkippedSlotRow = SlotRowBase & {
+  entry: null;
+  mealItemId: string;
+  plannedItem: NutritionDayOptionItem;
+  status: 'skipped';
+};
+
+export type SlotRow = ChecklistSlotRow | ExtraSlotRow | PlannedSlotRow | SkippedSlotRow;
+
+export type SheetTarget =
+  | {
+      date: string;
+      mealId: null | string;
+      mealItemId: string;
+      mode: 'planned';
+      name: string;
+      plannedItem: NutritionDayOptionItem;
+      slot: NutritionDaySlot['meal_slot'];
+      slotLabel: string;
+    }
+  | {
+      date: string;
+      loggedEntry: NutritionDayEntry;
+      mealId: null | string;
+      mealItemId: null | string;
+      mode: 'logged';
+      name: string;
+      plannedItem: null | NutritionDayOptionItem;
+      slot: NutritionDaySlot['meal_slot'];
+      slotLabel: string;
+    };
+
+export function sheetTargetFromRow(date: string, slot: SlotView, row: SlotRow): SheetTarget {
+  switch (row.status) {
+    case 'checklist':
+      return {
+        date,
+        mealId: slot.mealId,
+        mealItemId: row.mealItemId,
+        mode: 'planned',
+        name: row.name,
+        plannedItem: row.plannedItem,
+        slot: slot.slot,
+        slotLabel: slot.label,
+      };
+    case 'added':
+    case 'recorded':
+      return {
+        date,
+        loggedEntry: row.entry,
+        mealId: slot.mealId,
+        mealItemId: null,
+        mode: 'logged',
+        name: row.name,
+        plannedItem: null,
+        slot: slot.slot,
+        slotLabel: slot.label,
+      };
+    case 'skipped':
+    case 'as_planned':
+    case 'swapped':
+    case 'pending':
+      if (row.entry) {
+        return {
+          date,
+          loggedEntry: row.entry,
+          mealId: slot.mealId,
+          mealItemId: row.mealItemId,
+          mode: 'logged',
+          name: row.name,
+          plannedItem: row.plannedItem,
+          slot: slot.slot,
+          slotLabel: slot.label,
+        };
+      }
+      return {
+        date,
+        mealId: slot.mealId,
+        mealItemId: row.mealItemId,
+        mode: 'planned',
+        name: row.name,
+        plannedItem: row.plannedItem,
+        slot: slot.slot,
+        slotLabel: slot.label,
+      };
+    default: {
+      const _exhaustive: never = row;
+      return _exhaustive;
+    }
+  }
+}
 
 export type SlotView = {
   activeMealId: null | string;
@@ -83,28 +191,57 @@ function checklistRow(item: NutritionDayOptionItem): SlotRow {
 }
 
 function diaryRow(row: NutritionDayRow): SlotRow {
-  const planned = row.planned ?? null;
+  const planned = row.planned;
   const entry = row.entry ?? null;
 
-  if (row.status === 'added' || row.status === 'recorded') {
-    return {
-      calories: entry?.nutrients.calories ?? null,
-      entry,
-      mealItemId: null,
-      name: entry?.name ?? 'Food',
-      plannedItem: null,
-      status: row.status,
-    };
+  switch (row.status) {
+    case 'added':
+    case 'recorded': {
+      if (!entry) {
+        throw new Error(`Diary row ${row.status} is missing an entry`);
+      }
+      return {
+        calories: entry.nutrients.calories ?? null,
+        entry,
+        mealItemId: null,
+        name: entry.name ?? 'Food',
+        plannedItem: null,
+        status: row.status,
+      };
+    }
+    case 'skipped': {
+      if (!planned) {
+        throw new Error('Skipped diary row is missing planned item metadata');
+      }
+      return {
+        calories: plannedItemCalories(planned),
+        entry: null,
+        mealItemId: planned.meal_item_id,
+        name: planned.name ?? 'Planned item',
+        plannedItem: planned,
+        status: 'skipped',
+      };
+    }
+    case 'as_planned':
+    case 'swapped':
+    case 'pending': {
+      if (!planned) {
+        throw new Error(`Diary row ${row.status} is missing planned item metadata`);
+      }
+      return {
+        calories: entry?.nutrients.calories ?? plannedItemCalories(planned),
+        entry,
+        mealItemId: planned.meal_item_id,
+        name: entry?.name ?? planned.name ?? 'Food',
+        plannedItem: planned,
+        status: row.status,
+      };
+    }
+    default: {
+      const _exhaustive: never = row.status;
+      return _exhaustive;
+    }
   }
-
-  return {
-    calories: entry?.nutrients.calories ?? (planned ? plannedItemCalories(planned) : null),
-    entry,
-    mealItemId: planned?.meal_item_id ?? null,
-    name: entry?.name ?? planned?.name ?? 'Food',
-    plannedItem: planned,
-    status: row.status,
-  };
 }
 
 function slotShell(
@@ -126,7 +263,7 @@ function slotShell(
     allPlannedLogged,
     hasLog,
     hasPlannedLog,
-    label: MEAL_SLOT_LABELS[slot] ?? slot,
+    label: MEAL_SLOT_LABELS[slot],
     loggedCalories,
     mealId: option?.meal_id ?? daySlot.meal_id ?? null,
     options: daySlot.options,
@@ -203,4 +340,17 @@ export function dayTargets(day: null | NutritionDay | undefined): Targets {
     fat: t?.fat_g ?? null,
     protein: t?.protein_g ?? null,
   };
+}
+
+/**
+ * The day strip's label for one date: today names itself, every other day is
+ * weekday plus day-and-month. Written against `en-US` so the two shapes stay
+ * stable regardless of the device locale.
+ */
+export function dateLabel(date: string, today: string): string {
+  const d = new Date(`${date}T00:00:00`);
+  const weekday = d.toLocaleDateString('en-US', {weekday: 'short'});
+  return date === today
+    ? `Today \u00b7 ${weekday}`
+    : `${weekday} \u00b7 ${d.toLocaleDateString('en-US', {day: 'numeric', month: 'short'})}`;
 }

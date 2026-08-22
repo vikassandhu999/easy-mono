@@ -1,13 +1,12 @@
 import {Spinner} from '@heroui/react';
 import {ArrowLeft, Play} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
-
-import {ROUTES} from '@/@config/routes';
 import {
   useCreateClientTrainingSessionMutation,
   useGetClientActiveTrainingSessionQuery,
   useResolveClientTrainingCoverageQuery,
 } from '@/api/training';
+import {ROUTES} from '@/routes';
 import {estimatedMinutes, totalSets} from '@/training/training-utils';
 
 export default function WorkoutPreview() {

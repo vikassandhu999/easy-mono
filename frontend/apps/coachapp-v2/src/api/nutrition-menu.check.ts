@@ -1,4 +1,6 @@
-import {isLocalNodeId, moveId, planToMenuRequest, reorderNodes} from './nutrition-menu.ts';
+import {moveItem} from '@easy/utils';
+
+import {isLocalNodeId, type PlanMenuSource, planToMenuRequest, reorderNodes} from './nutrition-menu.ts';
 
 const plan = {
   revision: 4,
@@ -16,7 +18,6 @@ const plan = {
       id: 'pattern-id',
       name: 'Everyday',
       position: 0,
-      weekdays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
       slots: [
         {
           meal_slot: 'breakfast',
@@ -71,7 +72,7 @@ const plan = {
       ],
     },
   ],
-} as unknown as Parameters<typeof planToMenuRequest>[0];
+} satisfies PlanMenuSource;
 
 const request = planToMenuRequest(plan);
 
@@ -188,12 +189,12 @@ const omitted = {
   ...plan,
   meals: plan.meals.filter((meal) => meal.id === 'persisted-meal'),
 };
-const omittedRequest = planToMenuRequest(omitted as typeof plan);
+const omittedRequest = planToMenuRequest(omitted);
 if (omittedRequest.meals.length !== 1 || omittedRequest.meals[0]?.id !== 'persisted-meal') {
   throw new Error('omitted Meals must leave the replacement payload');
 }
 
-if (moveId(['a', 'b', 'c'], 2, 0).join(',') !== 'c,a,b' || moveId(['a', 'b'], 0, 5).join(',') !== 'a,b') {
+if (moveItem(['a', 'b', 'c'], 2, 0).join(',') !== 'c,a,b' || moveItem(['a', 'b'], 0, 5).join(',') !== 'a,b') {
   throw new Error('Menu reorder must move ids by explicit position without wrapping');
 }
 

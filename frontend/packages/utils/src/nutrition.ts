@@ -11,35 +11,13 @@ export type MacroTotals = {
 
 // ── Meal slot constants ──────────────────────────────────────
 
-export const MEAL_SLOTS = [
-  'early_morning',
-  'breakfast',
-  'mid_morning',
-  'lunch',
-  'afternoon',
-  'evening',
-  'dinner',
-  'pre_sleep',
-  'pre_workout',
-  'during_workout',
-  'post_workout',
-] as const;
-
-export type MealSlot = (typeof MEAL_SLOTS)[number];
-
-export const MEAL_SLOT_LABELS: Record<MealSlot, string> = {
-  afternoon: 'After lunch',
-  breakfast: 'Breakfast',
-  dinner: 'Dinner',
-  during_workout: 'During workout',
-  early_morning: 'Early morning',
-  evening: 'Evening',
-  lunch: 'Lunch',
-  mid_morning: 'After breakfast',
-  post_workout: 'After workout',
-  pre_sleep: 'Before sleep',
-  pre_workout: 'Before workout',
-};
+export {
+  MEAL_SLOT_LABELS,
+  MEAL_SLOTS,
+  type MealSlot,
+  ORDINARY_MEAL_SLOTS,
+  WORKOUT_MEAL_SLOTS,
+} from './meal-slots.ts';
 
 // ── Weekday helpers ──────────────────────────────────────────
 
@@ -54,7 +32,7 @@ export {
   TRAINING_DAY_LABELS as WEEKDAY_LABELS,
   TRAINING_DAY_SHORT_LABELS as WEEKDAY_SHORT_LABELS,
   TRAINING_WEEKDAYS as WEEKDAYS,
-} from './workout';
+} from './workout.ts';
 
 // ── Macro normalization ──────────────────────────────────────
 

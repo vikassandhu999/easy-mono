@@ -23,22 +23,29 @@ model are different, and several coachapp rules deliberately do NOT apply here (
 
 ## Source Layout
 
-- Feature modules own their screens and one-feature UI: `src/today/`, `src/training/`,
-  `src/workout/`, `src/nutrition/`, `src/progress/`, `src/checkins/`, `src/messages/`,
-  `src/history/`, `src/settings/`, `src/auth/`.
-- Shared app folders: `src/api/`, `src/@components/`, `src/@hooks/`, `src/@hoc/`,
-  `src/@config/`. There is deliberately no neutral `domain/`/`utils/` bucket.
-- **Every shared concept has an owning feature.** Workout owns the session model
-  (`workout/session-utils.ts` — history and training import it); nutrition owns
-  adherence/targets (`nutrition/nutrition-utils.ts` — today imports it). A feature's
-  root-level `*.ts` files are its public surface, importable across features; its
-  `components/` and screens are internals — never imported across features (shared UI
-  moves to `@components/`, shared hooks to `@hooks/`). Aggregators (`today/`,
-  `@components/app-shell`) composing feature-owned cards is the same healthy arrow.
-  Enforced by `just check-rm` (RM-144).
-- Component used by one feature: `src/{feature}/components/name.tsx`. Used by two or
-  more: `src/@components/name.tsx`.
-- Files are kebab-case. Use direct `@/...` imports; no barrel files.
+Three kinds of directory, no fourth (workspace rule, `frontend/AGENTS.md` § Boundary):
+
+```
+src/
+  main.tsx  router.tsx  routes.ts  app-shell.tsx  with-auth.tsx  with-not-auth.tsx
+  pwa.ts  index.css
+  api/     the server contract — flat
+  ui/      feature-agnostic components and hooks — flat
+  today/  training/  workout/  nutrition/  progress/  checkins/  messages/
+  history/  settings/  auth/
+```
+
+- **Component one feature uses**: `src/{feature}/name.tsx`. **Two or more**: `src/ui/name.tsx`.
+- **Pure helpers**: a `.ts` beside the screen that owns them, with a sibling `.check.ts`. Product-agnostic ones go in `@easy/utils` — `formatDateISO`, `addDays`, `getInitials`, `formatDuration`, `formatMacroValue`, `moveItem`, `MEAL_SLOTS`, `TRAINING_WEEKDAYS` are already there.
+- **Never** a directory named `components`, `lib`, `utils`, `helpers`, `domain`, or one starting with `@`. **Never** a `.ts` sharing a basename with a `.tsx`.
+
+**Arrows point one way: feature → ui → api.** `ui/` never imports a feature; a feature never imports another feature's `.tsx`. A feature's root-level `.ts` files are its public surface — workout owns the session model (`workout/session-utils.ts`, which history and training import), nutrition owns adherence and targets (`nutrition/nutrition-utils.ts`, which today imports). `router.tsx` and `app-shell.tsx` are the composition root and are exempt.
+
+A screen that composes cards owns those cards: `today/` holds its own home-screen nudges rather than reaching into `checkins/` for them. Enforced by `scripts/check-frontend-shape.mjs` via `just check-rm` (RM-144).
+
+Anything a `.check.ts` reaches must use relative imports carrying the `.ts` extension, not `@/` aliases — the suite runs under bare `node --experimental-strip-types`, which resolves neither aliases nor extensionless specifiers. The same reason keeps `api/` split between hook modules (React Query, `client.ts`) and pure ones (request builders, mappers): merging the two kinds kills the pure module's suite on `import.meta.env`.
+
+Files are kebab-case. Use direct `@/...` imports; no barrel files.
 
 ## Data And API
 
@@ -81,9 +88,9 @@ contract. The parts that bite:
 
 One component per job — don't hand-roll these:
 
-- **Page shell**: `PageLayout` (`@/@components/page-layout`) for ordinary screens.
+- **Page shell**: `PageLayout` (`@/ui/page-layout`) for ordinary screens.
   Full-bleed screens (active workout, chat, auth, the sheets) legitimately opt out.
-- **Fetch errors**: `ErrorState` (`@/@components/error-state`). Copy is
+- **Fetch errors**: `ErrorState` (`@/ui/error-state`). Copy is
   "Couldn't load X", never "Failed to load X". Five screens each had their own version
   of this block before it was extracted — don't start a sixth.
 - **Dates and initials**: `@easy/utils` already exports `formatDateISO`, `getInitials`,

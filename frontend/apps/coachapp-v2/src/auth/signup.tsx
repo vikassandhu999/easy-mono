@@ -3,14 +3,12 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router-dom';
 import {z} from 'zod';
-import {FieldRow} from '@/@components/form-fields/field-row';
-import {FormTextField} from '@/@components/form-fields/form-text-field';
-
-import {ROUTES} from '@/@config/routes';
 import {useSignupMutation} from '@/api/auth';
-import {applyFormErrors} from '@/api/shared';
-import {AuthFooter} from '@/auth/components/auth-footer';
-import AuthLayout from '@/auth/components/auth-layout';
+import {applyFormErrors, omitUndefined} from '@/api/shared';
+import AuthLayout, {AuthFooter} from '@/auth/auth-layout';
+import {ROUTES} from '@/routes';
+import {FieldRow} from '@/ui/field-row';
+import {FormTextField} from '@/ui/form-text-field';
 
 const schema = z.object({
   email: z.string().min(1, 'Enter email').email('Enter a valid email'),
@@ -31,11 +29,13 @@ export default function Signup() {
 
   const onSubmit = async (data: SignupFormValues) => {
     try {
-      await signupMutation.mutateAsync({
-        email: data.email,
-        first_name: data.first_name || undefined,
-        last_name: data.last_name || undefined,
-      });
+      await signupMutation.mutateAsync(
+        omitUndefined({
+          email: data.email,
+          first_name: data.first_name || undefined,
+          last_name: data.last_name || undefined,
+        }),
+      );
       navigate(ROUTES.VERIFY_SIGNUP_OTP, {
         state: {email: data.email},
       });

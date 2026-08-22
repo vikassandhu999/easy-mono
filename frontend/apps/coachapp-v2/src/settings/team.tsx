@@ -27,12 +27,8 @@ import {UserPlus} from 'lucide-react';
 import {useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
-
-import {ErrorState} from '@/@components/error-state';
-import {FieldRow} from '@/@components/form-fields/field-row';
-import {FormTextField} from '@/@components/form-fields/form-text-field';
 import {useGetBillingQuery} from '@/api/billing';
-import {applyFormErrors, getApiErrorMessage} from '@/api/shared';
+import {applyFormErrors, getApiErrorMessage, omitUndefined} from '@/api/shared';
 import {
   type TeamMember,
   useDeactivateTrainerMutation,
@@ -42,23 +38,15 @@ import {
   useResendTrainerInviteMutation,
   useRevokeTrainerInviteMutation,
 } from '@/api/team';
-import {PickerModal} from '@/builder-kit/picker-modal';
-import {SettingsSectionHeader} from '@/settings/components/settings-section-header';
+import {SettingsSectionHeader} from '@/settings/settings-section-header';
+import {memberName, STATUS_COLOR, STATUS_LABEL} from '@/settings/team-presentation';
+import {ErrorState} from '@/ui/error-state';
+import {FieldRow} from '@/ui/field-row';
+import {FormTextField} from '@/ui/form-text-field';
+import {PickerModal} from '@/ui/picker-modal';
 
 const INVITE_TITLE = 'Invite a trainer';
 const INVITE_BLURB = "They'll get an email invite and take a seat once they join.";
-
-const STATUS_LABEL: Record<TeamMember['status'], string> = {
-  invited: 'Invited',
-  active: 'Active',
-  inactive: 'Deactivated',
-};
-
-const STATUS_COLOR: Record<TeamMember['status'], 'default' | 'success' | 'warning'> = {
-  invited: 'warning',
-  active: 'success',
-  inactive: 'default',
-};
 
 const inviteTrainerSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Enter a valid email'),
@@ -182,11 +170,13 @@ function InviteTrainerControl() {
   };
 
   const sendInvite = async (values: InviteTrainerFormValues) => {
-    await inviteTrainerMutation.mutateAsync({
-      email: values.email,
-      first_name: values.first_name || undefined,
-      last_name: values.last_name || undefined,
-    });
+    await inviteTrainerMutation.mutateAsync(
+      omitUndefined({
+        email: values.email,
+        first_name: values.first_name || undefined,
+        last_name: values.last_name || undefined,
+      }),
+    );
     toast.success('Invite sent');
   };
 
@@ -344,10 +334,6 @@ function ReactivateTrainerDialog({
       </AlertDialog.Container>
     </AlertDialog.Backdrop>
   );
-}
-
-function memberName(member: TeamMember): string {
-  return [member.first_name, member.last_name].filter(Boolean).join(' ') || member.email || 'Trainer';
 }
 
 function TeamMemberRow({

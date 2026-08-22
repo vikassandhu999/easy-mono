@@ -8,8 +8,9 @@ export type LandingPage = components['schemas']['LandingPage'];
 export type LandingPageResponse = components['schemas']['LandingPageResponse'];
 export type LandingPageUpsertRequest = components['schemas']['LandingPageUpsertRequest'];
 
-export type Template = 'proof_first' | 'problem_fit' | 'coach_story';
-export type QuestionType = 'short_text' | 'long_text' | 'single_select';
+export type Template = LandingPage['template'];
+type LandingQuestion = NonNullable<LandingPage['application_questions']>[number];
+export type QuestionType = NonNullable<LandingQuestion['type']>;
 
 export type ProofDraft = {key: string; label: string; value: string};
 export type FitDraft = {key: string; value: string};
@@ -92,7 +93,7 @@ export function landingToDraft(page: LandingPage): LandingDraft {
       key: key(),
       id: q.id ?? key(),
       label: q.label ?? '',
-      type: (q.type ?? 'short_text') as QuestionType,
+      type: q.type ?? 'short_text',
       options: q.options ?? [],
     })),
     programs: page.programs.map((p) => ({
@@ -144,7 +145,7 @@ export function draftToRequest(draft: LandingDraft): LandingPageUpsertRequest {
 export function useGetLandingPageQuery(options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: landingPageKeys.all,
-    queryFn: () => call(client.GET('/v1/coach/landing-page')) as Promise<LandingPageResponse>,
+    queryFn: () => call(client.GET('/v1/coach/landing-page')),
     enabled: options?.enabled ?? true,
   });
 }
@@ -152,8 +153,7 @@ export function useGetLandingPageQuery(options?: {enabled?: boolean}) {
 export function useSaveLandingPageMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: LandingPageUpsertRequest) =>
-      call(client.PUT('/v1/coach/landing-page', {body})) as Promise<LandingPageResponse>,
+    mutationFn: (body: LandingPageUpsertRequest) => call(client.PUT('/v1/coach/landing-page', {body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: landingPageKeys.all});
     },

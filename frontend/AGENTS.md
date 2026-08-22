@@ -8,7 +8,22 @@ Commands: the app's `package.json` `scripts`, or `just --list` from the repo roo
 
 Apps depend on `packages/*`. Packages do not depend on app internals. Package exports are public contracts.
 
-A shared concept has an owning feature (`lib/` or a feature-root file). Other features import that surface. Feature `components/`, screens, and form files stay inside the feature; UI used by two features moves to `@components/`. RM-144.
+Inside an app's `src/` there are three kinds of directory and no fourth:
+
+- `api/` — the server contract. Flat, one file per backend resource.
+- `ui/` — feature-agnostic components and hooks. Flat.
+- `<feature>/` — one per route group. Nests only when the child is itself a route group (`library/foods/`, `nutrition-plans/builder/`).
+
+No `components/`, no `lib/`, no `utils/`, no `@`-sigils. Files are told apart by **name**, not by a generic parent folder.
+
+**The arrows point one way: feature → ui → api.**
+
+- `ui/` imports `api/`, `@easy/utils`, and nothing else. Never a feature.
+- A feature imports `ui/`, `api/`, and other features' **`.ts` files only**.
+- A feature's `.tsx` is private, always. UI that two features need moves to `ui/`.
+- `router.tsx` and `app-shell.tsx` are the composition root and may import anything.
+
+The public surface rides on the file extension rather than on a folder, which is what keeps it testable: if another feature needs it, it is pure `.ts`, and pure `.ts` gets a sibling `.check.ts`. Enforced by `scripts/check-frontend-shape.mjs` through `just check-rm` (RM-144).
 
 `@easy/utils` is for product-agnostic helpers (dates, names, numbers). Check it before writing one.
 
@@ -34,5 +49,9 @@ A public JSON field or endpoint: root `AGENTS.md` **API** pointer.
 `*.check.ts` files are the frontend unit suite. `pnpm -C apps/<app> check` globs them (`src` plus `@easy/utils`; client also `scripts/`). A new file is live with no `package.json` edit. A new mapper, predicate, or lifecycle helper ships with a sibling `.check.ts` in the same change.
 
 `pnpm -C apps/<app> lint` is Biome `--write` — review its edits.
+
+Biome enforces `suspicious/noExplicitAny`, `suspicious/noConsole` (`.check.ts` files are exempt), and `style/noNonNullAssertion` as `warn`. Prefer discriminated unions and `requirePrimaryReason`/`primaryReason` over `reasons[0]!`.
+
+Both apps set `"exactOptionalPropertyTypes": true`. Optional props typed `foo?: T` cannot be passed `undefined` — omit the key, or widen to `foo?: T | undefined` when undefined is intentional. Use `omitUndefined` from `src/api/shared` for request objects.
 
 UI or routing: exercise the touched flow in a browser (root **Browser** pointer). Coach: 375px and 1280px. Client: 375px.

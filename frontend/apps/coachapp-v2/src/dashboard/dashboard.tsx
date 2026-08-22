@@ -3,18 +3,17 @@ import {Avatar, Button, Separator, Skeleton, Surface, Typography} from '@heroui/
 import {cn} from '@heroui/styles';
 import {Fragment} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
-
-import {Page} from '@/@components/page';
-import {ROUTES} from '@/@config/routes';
 import {useListClientsQuery} from '@/api/clients';
 import {useCoachConversationsInfiniteQuery} from '@/api/conversations';
 import {useGetCoachProfileQuery} from '@/api/profile';
-import {DashboardSectionHeading} from '@/dashboard/components/dashboard-section-heading';
-import {QuickActionsRow} from '@/dashboard/components/quick-actions-row';
-import {RecentActivityCell} from '@/dashboard/components/recent-activity-cell';
-import {TodayCell} from '@/dashboard/components/today-cell';
+import {DashboardSectionHeading} from '@/dashboard/dashboard-section-heading';
 import {DashboardSetupCell} from '@/dashboard/dashboard-setup-cell';
-import {formatDashboardDate} from '@/dashboard/lib/date-format';
+import {formatDashboardDate} from '@/dashboard/date-format';
+import {QuickActionsRow} from '@/dashboard/quick-actions-row';
+import {RecentActivityCell} from '@/dashboard/recent-activity-cell';
+import {TodayCell} from '@/dashboard/today-cell';
+import {ROUTES} from '@/routes';
+import {Page} from '@/ui/page';
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -54,9 +53,10 @@ function StatBar({
     {label: 'Active clients', value: isError ? null : active},
     {label: 'Pending invites', value: isError ? null : pending},
   ];
+  const merged = cn('flex items-stretch overflow-hidden rounded-card border border-border', className);
 
   return (
-    <Surface className={cn('flex items-stretch overflow-hidden rounded-card border border-border', className)}>
+    <Surface {...(merged ? {className: merged} : {})}>
       {cells.map((cell, index) => (
         <Fragment key={cell.label}>
           {index > 0 ? (

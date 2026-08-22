@@ -6,13 +6,13 @@ import {patchQueryData, queryClient} from '@/api/query-client';
 import type {components, paths} from '@/api/schema';
 import {workbenchMutationTargets} from '@/api/workbench-targets';
 
+export {parseChatMessage} from './chat-message.ts';
+
 export type ChatMessage = components['schemas']['ChatMessage'];
 export type ChatMessageEmbed = components['schemas']['ChatMessageEmbed'];
 export type ChatMessageEmbedRequest = components['schemas']['ChatMessageEmbedRequest'];
 export type Conversation = components['schemas']['Conversation'];
-
-type MessagesPage = {data: ChatMessage[]; has_more: boolean};
-type ConversationListResponse = components['schemas']['ConversationListResponse'];
+export type ChatMessagesResponse = components['schemas']['ChatMessagesResponse'];
 
 const PAGE_SIZE = 20;
 
@@ -25,9 +25,15 @@ export function useCoachConversationsInfiniteQuery(search?: string) {
     queryFn: ({pageParam}) =>
       call(
         client.GET('/v1/coach/conversations', {
-          params: {query: {limit: PAGE_SIZE, offset: pageParam, search: normalizedSearch}},
+          params: {
+            query: {
+              limit: PAGE_SIZE,
+              offset: pageParam,
+              ...(normalizedSearch ? {search: normalizedSearch} : {}),
+            },
+          },
         }),
-      ) as Promise<ConversationListResponse>,
+      ),
     initialPageParam: 0,
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
       const nextOffset = lastPageParam + PAGE_SIZE;
@@ -58,7 +64,7 @@ export function useConversationMessagesInfiniteQuery(conversationId: string) {
             query: {limit: PAGE_SIZE, ...(pageParam && {before: pageParam})},
           },
         }),
-      ) as Promise<MessagesPage>,
+      ),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => (lastPage.has_more ? lastPage.data[0]?.id : undefined),
   });
@@ -129,12 +135,14 @@ export function useMarkConversationHandledMutation() {
 
 /** Append a message to the cached history (no-op if already present, e.g. own send echoed back over the channel). */
 export function appendMessage(conversationId: string, message: ChatMessage) {
-  const cached = queryClient.getQueryData<InfiniteData<MessagesPage>>(conversationKeys.messages(conversationId));
+  const cached = queryClient.getQueryData<InfiniteData<ChatMessagesResponse>>(
+    conversationKeys.messages(conversationId),
+  );
   if (!cached) {
     // Nothing cached to append to — a later mount will fetch fresh history.
     return;
   }
-  patchQueryData<InfiniteData<MessagesPage>>(conversationKeys.messages(conversationId), (draft) => {
+  patchQueryData<InfiniteData<ChatMessagesResponse>>(conversationKeys.messages(conversationId), (draft) => {
     const exists = draft.pages.some((page) => page.data.some((m) => m.id === message.id));
     if (!exists) {
       draft.pages[0]?.data.push(message);

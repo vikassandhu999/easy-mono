@@ -69,7 +69,14 @@ export function useStickyBar(applyRef: React.RefObject<HTMLElement | null>) {
     if (!node) {
       return;
     }
-    const observer = new IntersectionObserver(([entry]) => setShow(!entry!.isIntersecting), {threshold: 0.15});
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry) {
+          setShow(!entry.isIntersecting);
+        }
+      },
+      {threshold: 0.15},
+    );
     observer.observe(node);
     return () => observer.disconnect();
   }, [applyRef]);

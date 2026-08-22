@@ -1,4 +1,6 @@
-import type {components} from '@/api/schema';
+import {moveItem} from '@easy/utils';
+import {parseNutritionPortion, portionWireFromInput, toPortionInput} from '@easy/utils/nutrition-portion';
+import type {components} from './schema.ts';
 
 export type NutritionMenuReplaceRequest = components['schemas']['NutritionMenuReplaceRequest'];
 export type NutritionMealItemInput = components['schemas']['NutritionMealItemInput'];
@@ -9,7 +11,31 @@ type NutritionMeal = components['schemas']['NutritionMeal'];
 type NutritionMealItem = components['schemas']['NutritionMealItem'];
 type NutritionWeekSchedule = components['schemas']['NutritionWeekSchedule'];
 
-const WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
+type DayPattern = NutritionPlan['day_patterns'][number];
+type PatternSlot = DayPattern['slots'][number];
+type PatternOption = PatternSlot['options'][number];
+type Meal = NutritionPlan['meals'][number];
+type Item = Meal['meal_items'][number];
+
+/** The plan subtree `planToMenuRequest` reads — not the whole `NutritionPlan` surface. */
+export type PlanMenuSource = {
+  revision: NutritionPlan['revision'];
+  schedule: NutritionWeekSchedule;
+  day_patterns: Array<
+    Pick<DayPattern, 'id' | 'name' | 'position'> & {
+      slots: Array<
+        Pick<PatternSlot, 'meal_slot'> & {
+          options: Array<Pick<PatternOption, 'id' | 'position' | 'nutrition_meal_id'>>;
+        }
+      >;
+    }
+  >;
+  meals: Array<
+    Pick<Meal, 'id' | 'name' | 'notes' | 'position'> & {
+      meal_items: Array<Pick<Item, 'id' | 'kind' | 'food_id' | 'recipe_id' | 'position' | 'portion'>>;
+    }
+  >;
+};
 
 const LOCAL_ID_PREFIX = 'local:';
 
@@ -30,7 +56,7 @@ export const emptyNutrients: NutritionMeal['nutrients'] = {
   complete: false,
 };
 
-export function planToMenuRequest(plan: NutritionPlan): NutritionMenuReplaceRequest {
+export function planToMenuRequest(plan: PlanMenuSource): NutritionMenuReplaceRequest {
   return {
     expected_revision: plan.revision,
     meals: plan.meals.map((meal) => ({
@@ -69,23 +95,12 @@ export function nextPosition(nodes: {position: number}[]): number {
 }
 
 /** Moves one id to another slot. An out-of-range move is a no-op. */
-export function moveId(ids: string[], from: number, to: number): string[] {
-  const moved = ids[from];
-  if (moved === undefined || to < 0 || to >= ids.length) {
-    return ids;
-  }
-  const next = [...ids];
-  next.splice(from, 1);
-  next.splice(to, 0, moved);
-  return next;
-}
-
 export function reorderNodes<Node extends {id: string; position: number}>(
   nodes: Node[],
   from: number,
   to: number,
 ): Node[] {
-  const order = moveId(
+  const order = moveItem(
     nodes.map((node) => node.id),
     from,
     to,
@@ -111,13 +126,7 @@ export function mealItemFromDraft(
     food_id: draft.food_id ?? null,
     recipe_id: draft.recipe_id ?? null,
     position,
-    portion: {
-      kind: draft.portion.kind,
-      grams: draft.portion.grams ?? null,
-      amount: draft.portion.amount ?? null,
-      unit: draft.portion.unit ?? null,
-      label: draft.portion.label ?? null,
-    },
+    portion: portionWireFromInput(draft.portion),
     nutrients: emptyNutrients,
     nutrition_meal_id: mealId,
     inserted_at: timestamp,
@@ -134,9 +143,15 @@ function mealIdentity(mealId: string): {nutrition_meal_id: string} | {meal_local
 }
 
 function scheduleInput(schedule: NutritionWeekSchedule): NutritionMenuReplaceRequest['schedule'] {
-  return Object.fromEntries(
-    WEEKDAYS.map((weekday) => [weekday, scheduleDayRef(schedule[weekday])]),
-  ) as NutritionMenuReplaceRequest['schedule'];
+  return {
+    monday: scheduleDayRef(schedule.monday),
+    tuesday: scheduleDayRef(schedule.tuesday),
+    wednesday: scheduleDayRef(schedule.wednesday),
+    thursday: scheduleDayRef(schedule.thursday),
+    friday: scheduleDayRef(schedule.friday),
+    saturday: scheduleDayRef(schedule.saturday),
+    sunday: scheduleDayRef(schedule.sunday),
+  };
 }
 
 function scheduleDayRef(patternId: string | null): string {
@@ -147,11 +162,15 @@ function scheduleDayRef(patternId: string | null): string {
 }
 
 function portionInput(portion: NutritionMealItem['portion']): NutritionPortionInput {
+  const parsed = parseNutritionPortion(portion);
+  if (parsed) {
+    return toPortionInput(parsed);
+  }
   return {
-    kind: portion.kind,
-    grams: portion.grams,
     amount: portion.amount,
-    unit: portion.unit,
+    grams: portion.grams,
+    kind: portion.kind,
     label: portion.label,
+    unit: portion.unit,
   };
 }

@@ -3,13 +3,12 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router-dom';
 import {z} from 'zod';
-import {FormTextField} from '@/@components/form-fields/form-text-field';
-
-import {ROUTES} from '@/@config/routes';
 import {useSendOtpMutation} from '@/api/auth';
+import {ApiError} from '@/api/client';
 import {applyFormErrors} from '@/api/shared';
-import {AuthFooter} from '@/auth/components/auth-footer';
-import AuthLayout from '@/auth/components/auth-layout';
+import AuthLayout, {AuthFooter} from '@/auth/auth-layout';
+import {ROUTES} from '@/routes';
+import {FormTextField} from '@/ui/form-text-field';
 
 const schema = z.object({
   email: z.string().min(1, 'Enter email').email('Enter a valid email'),
@@ -36,7 +35,7 @@ export default function Login() {
       // A 404 means no coach account for that email — show friendly copy instead of
       // the raw backend code ("user_not_found"). (Whether to avoid account
       // enumeration entirely is a separate product decision.)
-      if ((err as {status?: number})?.status === 404) {
+      if (err instanceof ApiError && err.status === 404) {
         form.setError('root', {message: "We couldn't find a coach account for that email."});
       } else {
         applyFormErrors(err, "Verification code wasn't sent. Try again", form.setError);

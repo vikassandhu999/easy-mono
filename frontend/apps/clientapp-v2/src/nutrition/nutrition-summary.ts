@@ -3,7 +3,7 @@
  * backend-derived; this module only formats them.
  */
 
-import type {NutritionDay} from '@/api/nutrition';
+import type {NutritionDay} from '../api/nutrition.ts';
 
 export type NutritionSummaryAdherence = NonNullable<NutritionDay['summary']['adherence']>;
 

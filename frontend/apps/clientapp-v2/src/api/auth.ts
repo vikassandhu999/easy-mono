@@ -30,7 +30,6 @@ export type InvitationLookup =
 type AcceptInviteRequest = components['schemas']['AcceptInviteRequest'];
 type AcceptInviteVerifyRequest = components['schemas']['AcceptInviteVerifyRequest'];
 type OtpRequest = components['schemas']['OtpRequest'];
-type AuthTokenResponse = components['schemas']['AuthTokenResponse'];
 
 // ── Returning-client login ───────────────────────────────────
 
@@ -73,8 +72,7 @@ export function useAcceptInviteMutation() {
  */
 export function useAcceptInviteVerifyMutation() {
   return useMutation({
-    mutationFn: (body: AcceptInviteVerifyRequest) =>
-      call(client.POST('/v1/auth/accept-invite/verify', {body})) as Promise<AuthTokenResponse>,
+    mutationFn: (body: AcceptInviteVerifyRequest) => call(client.POST('/v1/auth/accept-invite/verify', {body})),
   });
 }
 
@@ -86,7 +84,6 @@ export function useSendOtpMutation() {
 
 export function useExchangeTokenMutation() {
   return useMutation({
-    mutationFn: (body: TokenOtpRequest | TokenRefreshRequest) =>
-      call(client.POST('/v1/auth/token', {body})) as Promise<AuthTokenResponse>,
+    mutationFn: (body: TokenOtpRequest | TokenRefreshRequest) => call(client.POST('/v1/auth/token', {body})),
   });
 }

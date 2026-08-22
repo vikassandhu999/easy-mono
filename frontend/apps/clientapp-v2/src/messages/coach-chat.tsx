@@ -2,7 +2,6 @@ import {stickToBottom} from '@easy/utils';
 import {Button, Spinner, TextArea, toast} from '@heroui/react';
 import {Send} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {
   appendClientMessage,
   type ChatMessage,
@@ -16,6 +15,7 @@ import {getApiErrorMessage} from '@/api/shared';
 import AttachmentComposer from '@/messages/attachment-composer';
 import MessageAttachments from '@/messages/message-attachments';
 import MessageEmbed from '@/messages/message-embed';
+import useAttachmentDownloadUrls from '@/ui/use-attachment-download-urls';
 
 function formatDay(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, {day: 'numeric', month: 'short', year: 'numeric'});

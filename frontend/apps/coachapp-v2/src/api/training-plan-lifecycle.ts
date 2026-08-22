@@ -1,4 +1,8 @@
+import {ApiError} from '@easy/utils/api-error';
+import {parseApiErrorBody} from '@easy/utils/parse-api-error';
 import type {components} from './schema.ts';
+
+// --- training-plan-lifecycle ---
 
 export type ClientPlanLifecycle = components['schemas']['CoachClientTrainingPlan']['lifecycle'];
 
@@ -28,20 +32,49 @@ export function trainingPlanDeleteRequest(plan: RevisionedTrainingPlan) {
 }
 
 export function getStaleTrainingPlanRevision(error: unknown): null | number {
-  if (!error || typeof error !== 'object' || !('data' in error)) {
+  if (!(error instanceof ApiError)) {
     return null;
   }
 
-  const data = (error as {data?: unknown}).data;
-  if (!data || typeof data !== 'object' || !('error_code' in data) || data.error_code !== 'stale_revision') {
+  const body = parseApiErrorBody(error.data);
+  if (!body || body.error_code !== 'stale_revision') {
     return null;
   }
 
-  const detail = 'error_detail' in data ? data.error_detail : null;
+  const detail = body.error_detail;
   if (!detail || typeof detail !== 'object' || !('current_revision' in detail)) {
     return null;
   }
 
   const revision = detail.current_revision;
   return typeof revision === 'number' && Number.isInteger(revision) && revision > 0 ? revision : null;
+}
+
+// --- training-plan-requests ---
+
+type TrainingPlanAssignRequest = components['schemas']['TrainingPlanAssignRequest'];
+type TrainingPlanUpdateRequest = components['schemas']['TrainingPlanUpdateRequest'];
+
+type Assignment = {
+  body: TrainingPlanAssignRequest;
+  clientId: string;
+  id: string;
+};
+
+type RevisionedPlan = {
+  revision: number;
+};
+
+export function trainingPlanAssignmentRequest({body, clientId, id}: Assignment) {
+  return {
+    params: {path: {client_id: clientId, id}},
+    body,
+  } as const;
+}
+
+export function trainingPlanPeriodRequest(
+  plan: RevisionedPlan,
+  period: Pick<TrainingPlanUpdateRequest, 'end_date' | 'start_date'>,
+): TrainingPlanUpdateRequest {
+  return {...period, expected_revision: plan.revision};
 }

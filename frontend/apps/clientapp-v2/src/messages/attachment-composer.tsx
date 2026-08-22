@@ -32,8 +32,8 @@ const MAX_BYTES: Record<AttachmentUploadRequest['content_type'], number> = {
 
 type UploadItem = {
   attachmentId?: string;
-  durationMs?: number;
-  errorMessage?: string;
+  durationMs?: number | undefined;
+  errorMessage?: string | undefined;
   file: File;
   localId: string;
   previewUrl: string;
@@ -48,6 +48,13 @@ type AttachmentComposerProps = {
 
 function isAcceptedType(type: string): type is AttachmentUploadRequest['content_type'] {
   return (ACCEPTED_TYPES as readonly string[]).includes(type);
+}
+
+function attachmentSizeLimit(type: string): number | undefined {
+  if (!isAcceptedType(type)) {
+    return undefined;
+  }
+  return MAX_BYTES[type];
 }
 
 function validateFiles(files: File[], available: number): string | undefined {
@@ -128,7 +135,7 @@ export default function AttachmentComposer({disabled, onChange}: AttachmentCompo
       setItems((current) => [
         ...current,
         {
-          durationMs,
+          ...(durationMs !== undefined ? {durationMs} : {}),
           file,
           localId,
           previewUrl: URL.createObjectURL(file),
@@ -149,7 +156,7 @@ export default function AttachmentComposer({disabled, onChange}: AttachmentCompo
     try {
       response = await createUpload({
         byte_size: file.size,
-        content_type: file.type as AttachmentUploadRequest['content_type'],
+        content_type: file.type,
         ...(durationMs && {duration_ms: durationMs}),
       });
     } catch (error) {
@@ -239,7 +246,8 @@ export default function AttachmentComposer({disabled, onChange}: AttachmentCompo
       if (disposedRef.current || recordingAttemptRef.current !== attempt) {
         return;
       }
-      if (file.size > MAX_BYTES[file.type as AttachmentUploadRequest['content_type']]) {
+      const limit = attachmentSizeLimit(file.type);
+      if (limit === undefined || file.size > limit) {
         setFieldError('Voice recordings can be 10 MB at most.');
         return;
       }

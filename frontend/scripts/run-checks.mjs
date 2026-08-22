@@ -1,9 +1,9 @@
 #!/usr/bin/env node
+import {spawnSync} from 'node:child_process';
 // Glob-run *.check.ts with node --experimental-strip-types.
 // Zero matches is a failed run (RM-202): a silent empty suite is not a suite.
 import {readdirSync, statSync} from 'node:fs';
 import {join} from 'node:path';
-import {spawnSync} from 'node:child_process';
 
 const roots = process.argv.slice(2);
 if (roots.length === 0) {

@@ -10,9 +10,10 @@
  */
 import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-import {call, client} from '@/api/client';
-import {foodKeys, recipeKeys} from '@/api/keys';
-import type {components, paths} from '@/api/schema';
+import {call, client} from './client.ts';
+import {foodKeys, recipeKeys} from './keys.ts';
+import type {components, paths} from './schema.ts';
+import {omitUndefined} from './shared.ts';
 
 const PAGE_SIZE = 20;
 
@@ -27,8 +28,6 @@ export type RecipeRequest = components['schemas']['RecipeRequest'];
 export type RecipeUpdateRequest = components['schemas']['RecipeUpdateRequest'];
 export type RecipeIngredient = components['schemas']['RecipeIngredient'];
 export type RecipeIngredientRequest = components['schemas']['RecipeIngredientRequest'];
-type FoodListResponse = components['schemas']['FoodListResponse'];
-type RecipeListResponse = components['schemas']['RecipeListResponse'];
 
 type ListFoodsQuery = NonNullable<paths['/v1/coach/nutrition-foods']['get']['parameters']['query']>;
 type ListRecipesQuery = NonNullable<paths['/v1/coach/nutrition-recipes']['get']['parameters']['query']>;
@@ -54,7 +53,7 @@ export function useCoachFoodsInfiniteQuery(filters?: CoachFoodsFilters) {
             },
           },
         }),
-      ) as Promise<FoodListResponse>,
+      ),
     initialPageParam: 0,
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
       const nextOffset = lastPageParam + PAGE_SIZE;
@@ -77,7 +76,7 @@ export function useCoachRecipesInfiniteQuery(filters?: CoachRecipesFilters) {
             },
           },
         }),
-      ) as Promise<RecipeListResponse>,
+      ),
     initialPageParam: 0,
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
       const nextOffset = lastPageParam + PAGE_SIZE;
@@ -159,9 +158,7 @@ export function useListFoodsQuery(params?: ListFoodsParams, options?: {enabled?:
   return useQuery({
     queryKey: foodKeys.list(params),
     queryFn: () =>
-      call(
-        client.GET('/v1/coach/nutrition-foods', {params: {query: params ?? undefined}}),
-      ) as Promise<FoodListResponse>,
+      call(client.GET('/v1/coach/nutrition-foods', params ? {params: {query: omitUndefined(params)}} : {})),
     enabled: options?.enabled ?? true,
   });
 }

@@ -5,18 +5,17 @@
  */
 import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-import {call, client} from '@/api/client';
-import {exerciseKeys, sessionKeys, trainingPlanKeys} from '@/api/keys';
-import type {components, paths} from '@/api/schema';
-import {clientTrainingCoverageRequest} from '@/api/training-coverage';
+import {call, client} from './client.ts';
+import {exerciseKeys, sessionKeys, trainingPlanKeys} from './keys.ts';
+import type {components, paths} from './schema.ts';
 import {
+  clientTrainingCoverageRequest,
   clientTrainingSessionCompleteRequest,
   clientTrainingSessionDiscardRequest,
   clientTrainingSessionHistoryRequest,
-} from '@/api/training-session-commands';
+} from './training-requests.ts';
 
 export type ClientTrainingPlan = components['schemas']['ClientTrainingPlan'];
-type ClientTrainingCoverageResponse = components['schemas']['ClientTrainingCoverageResponse'];
 export type TrainingPerformedSet = components['schemas']['TrainingPerformedSet'];
 export type TrainingPlanWorkout = components['schemas']['TrainingPlanWorkout'];
 export type TrainingSession = components['schemas']['TrainingSession'];
@@ -29,28 +28,19 @@ type PlanListQuery = paths['/v1/client/training-plans']['get']['parameters']['qu
 type SessionListQuery = paths['/v1/client/training-sessions']['get']['parameters']['query'];
 type ExerciseListQuery = paths['/v1/client/training-exercises']['get']['parameters']['query'];
 
-type PlanListResponse = components['schemas']['ClientTrainingPlanListResponse'];
-type SessionListResponse = components['schemas']['TrainingSessionListResponse'];
-type SessionResponse = components['schemas']['TrainingSessionResponse'];
-type ActiveSessionResponse = components['schemas']['ActiveTrainingSessionResponse'];
-type ExerciseListResponse = components['schemas']['TrainingExerciseListResponse'];
-
 // ── Plans ────────────────────────────────────────────────────
 
 export function useListClientTrainingPlansQuery(query: PlanListQuery = {}) {
   return useQuery({
     queryKey: trainingPlanKeys.list(query),
-    queryFn: () => call(client.GET('/v1/client/training-plans', {params: {query}})) as Promise<PlanListResponse>,
+    queryFn: () => call(client.GET('/v1/client/training-plans', {params: {query}})),
   });
 }
 
 export function useResolveClientTrainingCoverageQuery(date?: string) {
   return useQuery({
     queryKey: trainingPlanKeys.coverage(date),
-    queryFn: () =>
-      call(
-        client.GET('/v1/client/training-plans/coverage', clientTrainingCoverageRequest(date)),
-      ) as Promise<ClientTrainingCoverageResponse>,
+    queryFn: () => call(client.GET('/v1/client/training-plans/coverage', clientTrainingCoverageRequest(date))),
   });
 }
 
@@ -59,10 +49,7 @@ export function useResolveClientTrainingCoverageQuery(date?: string) {
 export function useListClientTrainingSessionsQuery(query: SessionListQuery = {}) {
   return useQuery({
     queryKey: sessionKeys.list(query),
-    queryFn: () =>
-      call(
-        client.GET('/v1/client/training-sessions', clientTrainingSessionHistoryRequest(query)),
-      ) as Promise<SessionListResponse>,
+    queryFn: () => call(client.GET('/v1/client/training-sessions', clientTrainingSessionHistoryRequest(query))),
   });
 }
 
@@ -78,7 +65,7 @@ export function useClientTrainingSessionsInfiniteQuery() {
           '/v1/client/training-sessions',
           clientTrainingSessionHistoryRequest({limit: SESSION_PAGE_SIZE, offset: pageParam}),
         ),
-      ) as Promise<SessionListResponse>,
+      ),
     initialPageParam: 0,
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
       const nextOffset = lastPageParam + SESSION_PAGE_SIZE;
@@ -90,8 +77,7 @@ export function useClientTrainingSessionsInfiniteQuery() {
 export function useGetClientTrainingSessionQuery(id: string, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: sessionKeys.detail(id),
-    queryFn: () =>
-      call(client.GET('/v1/client/training-sessions/{id}', {params: {path: {id}}})) as Promise<SessionResponse>,
+    queryFn: () => call(client.GET('/v1/client/training-sessions/{id}', {params: {path: {id}}})),
     enabled: options?.enabled ?? true,
   });
 }
@@ -99,15 +85,14 @@ export function useGetClientTrainingSessionQuery(id: string, options?: {enabled?
 export function useGetClientActiveTrainingSessionQuery() {
   return useQuery({
     queryKey: sessionKeys.active(),
-    queryFn: () => call(client.GET('/v1/client/training-sessions/active')) as Promise<ActiveSessionResponse>,
+    queryFn: () => call(client.GET('/v1/client/training-sessions/active')),
   });
 }
 
 export function useCreateClientTrainingSessionMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: TrainingSessionRequest) =>
-      call(client.POST('/v1/client/training-sessions', {body})) as Promise<SessionResponse>,
+    mutationFn: (body: TrainingSessionRequest) => call(client.POST('/v1/client/training-sessions', {body})),
     onSuccess: (session) => {
       qc.setQueryData(sessionKeys.active(), session);
       qc.invalidateQueries({queryKey: sessionKeys.lists()});
@@ -119,7 +104,7 @@ export function useUpdateClientTrainingSessionMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({id, ...body}: TrainingSessionUpdateRequest & {id: string}) =>
-      call(client.PATCH('/v1/client/training-sessions/{id}', {params: {path: {id}}, body})) as Promise<SessionResponse>,
+      call(client.PATCH('/v1/client/training-sessions/{id}', {params: {path: {id}}, body})),
     onSuccess: (_data, {id}) => {
       qc.invalidateQueries({queryKey: sessionKeys.detail(id)});
       qc.invalidateQueries({queryKey: sessionKeys.lists()});
@@ -132,9 +117,7 @@ export function useCompleteClientTrainingSessionMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: TrainingSessionUpdateRequest & {id: string}) =>
-      call(
-        client.POST('/v1/client/training-sessions/{id}/complete', clientTrainingSessionCompleteRequest(input)),
-      ) as Promise<SessionResponse>,
+      call(client.POST('/v1/client/training-sessions/{id}/complete', clientTrainingSessionCompleteRequest(input))),
     onSuccess: (_data, {id}) => {
       qc.invalidateQueries({queryKey: sessionKeys.detail(id)});
       qc.invalidateQueries({queryKey: sessionKeys.lists()});
@@ -147,9 +130,7 @@ export function useDiscardClientTrainingSessionMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: {id: string}) =>
-      call(
-        client.POST('/v1/client/training-sessions/{id}/discard', clientTrainingSessionDiscardRequest(input)),
-      ) as Promise<SessionResponse>,
+      call(client.POST('/v1/client/training-sessions/{id}/discard', clientTrainingSessionDiscardRequest(input))),
     onSuccess: (_data, {id}) => {
       qc.invalidateQueries({queryKey: sessionKeys.detail(id)});
       qc.invalidateQueries({queryKey: sessionKeys.lists()});
@@ -222,7 +203,6 @@ export function useDeleteClientPerformedSetMutation() {
 export function useListClientExercisesQuery(query: ExerciseListQuery = {}) {
   return useQuery({
     queryKey: exerciseKeys.list(query),
-    queryFn: () =>
-      call(client.GET('/v1/client/training-exercises', {params: {query}})) as Promise<ExerciseListResponse>,
+    queryFn: () => call(client.GET('/v1/client/training-exercises', {params: {query}})),
   });
 }

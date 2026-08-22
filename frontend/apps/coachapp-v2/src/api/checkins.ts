@@ -4,11 +4,12 @@
  * (builder draft <-> API request) are shared across every screen.
  */
 
+import {isOneOf} from '@easy/utils/closed-vocabulary';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-import {call, client} from '@/api/client';
-import {checkInKeys, clientKeys, formAssignmentKeys, formTemplateKeys, workbenchKeys} from '@/api/keys';
-import type {components, operations} from '@/api/schema';
+import {call, client} from './client.ts';
+import {checkInKeys, clientKeys, formAssignmentKeys, formTemplateKeys, workbenchKeys} from './keys.ts';
+import type {components, operations} from './schema.ts';
 
 export type ClientProfileCheckInSchedule = components['schemas']['ClientProfileCheckInSchedule'];
 export type ClientProfileCheckInScheduleRequest = components['schemas']['ClientProfileCheckInScheduleRequest'];
@@ -35,9 +36,16 @@ export type ClientProfileReviewQueueItem = components['schemas']['ClientProfileR
 export type ClientProfileReviewQueueListResponse = components['schemas']['ClientProfileReviewQueueListResponse'];
 export type ListCheckInReviewQueueParams = NonNullable<operations['listCheckInReviewQueue']['parameters']['query']>;
 
-export type FormPurpose = 'check_in' | 'intake';
+export type FormPurpose = ClientProfileFormTemplate['purpose'];
 
 export type CheckInFrequency = NonNullable<ClientProfileCheckInSchedule['frequency']>;
+
+export const CHECK_IN_FREQUENCY_IDS = [
+  'once',
+  'weekly',
+  'biweekly',
+  'monthly',
+] as const satisfies readonly CheckInFrequency[];
 
 export const CHECK_IN_FREQUENCIES: {id: CheckInFrequency; label: string}[] = [
   {id: 'once', label: 'Once'},
@@ -51,12 +59,25 @@ export const PURPOSE_LABELS: Record<FormPurpose, string> = {
   intake: 'Intake',
 };
 
-export const PURPOSES = Object.keys(PURPOSE_LABELS) as FormPurpose[];
+export const PURPOSES = ['check_in', 'intake'] as const satisfies readonly FormPurpose[];
 
 type SectionRequest = ClientProfileFormTemplateRequest['sections'][number];
 type QuestionRequest = SectionRequest['questions'][number];
 
 export type FormQuestionType = QuestionRequest['type'];
+
+export const FORM_QUESTION_TYPES = [
+  'boolean',
+  'date',
+  'multi_select',
+  'number',
+  'photo',
+  'rating',
+  'select',
+  'service_type',
+  'text',
+  'weight',
+] as const satisfies readonly FormQuestionType[];
 
 export const FORM_QUESTION_TYPE_LABELS: Record<FormQuestionType, string> = {
   boolean: 'Yes / No',
@@ -137,9 +158,9 @@ export function templateToSections(sections: {[key: string]: unknown}[], purpose
         id: typeof q.id === 'string' ? q.id : '',
         key: uid(),
         label: typeof q.label === 'string' ? q.label : '',
-        options: Array.isArray(q.options) ? (q.options as string[]) : [],
+        options: Array.isArray(q.options) ? q.options.filter((option) => typeof option === 'string') : [],
         required: q.required === true,
-        type: (q.type as FormQuestionType) ?? 'text',
+        type: isOneOf(FORM_QUESTION_TYPES, q.type) ? q.type : 'text',
       })),
   }));
 }
@@ -182,7 +203,7 @@ export function sectionsToRequest(drafts: SectionDraft[], purpose: FormPurpose):
 export function useListFormTemplatesQuery(options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: formTemplateKeys.list(),
-    queryFn: () => call(client.GET('/v1/coach/form-templates')) as Promise<ClientProfileFormTemplateListResponse>,
+    queryFn: () => call(client.GET('/v1/coach/form-templates')),
     enabled: options?.enabled ?? true,
   });
 }
@@ -190,10 +211,7 @@ export function useListFormTemplatesQuery(options?: {enabled?: boolean}) {
 export function useGetFormTemplateQuery(id: string, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: formTemplateKeys.detail(id),
-    queryFn: () =>
-      call(
-        client.GET('/v1/coach/form-templates/{id}', {params: {path: {id}}}),
-      ) as Promise<ClientProfileFormTemplateResponse>,
+    queryFn: () => call(client.GET('/v1/coach/form-templates/{id}', {params: {path: {id}}})),
     enabled: options?.enabled ?? true,
   });
 }
@@ -201,8 +219,7 @@ export function useGetFormTemplateQuery(id: string, options?: {enabled?: boolean
 export function useCreateFormTemplateMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: ClientProfileFormTemplateRequest) =>
-      call(client.POST('/v1/coach/form-templates', {body})) as Promise<ClientProfileFormTemplateResponse>,
+    mutationFn: (body: ClientProfileFormTemplateRequest) => call(client.POST('/v1/coach/form-templates', {body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: formTemplateKeys.lists()});
     },
@@ -213,9 +230,7 @@ export function useUpdateFormTemplateMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({body, id}: {body: ClientProfileFormTemplateUpdateRequest; id: string}) =>
-      call(
-        client.PATCH('/v1/coach/form-templates/{id}', {params: {path: {id}}, body}),
-      ) as Promise<ClientProfileFormTemplateResponse>,
+      call(client.PATCH('/v1/coach/form-templates/{id}', {params: {path: {id}}, body})),
     onSuccess: (_data, {id}) => {
       qc.invalidateQueries({queryKey: formTemplateKeys.detail(id)});
       qc.invalidateQueries({queryKey: formTemplateKeys.lists()});
@@ -241,9 +256,7 @@ export function useSetDefaultIntakeTemplateMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      call(
-        client.PUT('/v1/coach/form-templates/{id}/default-intake', {params: {path: {id}}}),
-      ) as Promise<ClientProfileFormTemplateResponse>,
+      call(client.PUT('/v1/coach/form-templates/{id}/default-intake', {params: {path: {id}}})),
     onSettled: () => {
       qc.invalidateQueries({queryKey: formTemplateKeys.all});
     },
@@ -258,9 +271,7 @@ export function useListCheckInSchedulesForClientQuery(clientId: string, options?
   return useQuery({
     queryKey: checkInKeys.schedules(clientId),
     queryFn: () =>
-      call(
-        client.GET('/v1/coach/clients/{client_id}/check-in-schedules', {params: {path: {client_id: clientId}}}),
-      ) as Promise<ClientProfileCheckInScheduleListResponse>,
+      call(client.GET('/v1/coach/clients/{client_id}/check-in-schedules', {params: {path: {client_id: clientId}}})),
     enabled: options?.enabled ?? true,
   });
 }
@@ -275,7 +286,7 @@ export function useCreateCheckInScheduleMutation() {
           body,
           params: {path: {client_id: clientId}},
         }),
-      ) as Promise<ClientProfileCheckInScheduleResponse>,
+      ),
     onSuccess: (_data, {clientId}) => {
       qc.invalidateQueries({queryKey: checkInKeys.schedules(clientId)});
       qc.invalidateQueries({queryKey: formAssignmentKeys.forClient(clientId)});
@@ -294,9 +305,7 @@ export function useUpdateCheckInScheduleMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({body, id}: {body: ClientProfileCheckInScheduleUpdateRequest; id: string}) =>
-      call(
-        client.PATCH('/v1/coach/check-in-schedules/{id}', {params: {path: {id}}, body}),
-      ) as Promise<ClientProfileCheckInScheduleResponse>,
+      call(client.PATCH('/v1/coach/check-in-schedules/{id}', {params: {path: {id}}, body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: checkInKeys.all});
       qc.invalidateQueries({queryKey: formAssignmentKeys.all});
@@ -320,6 +329,13 @@ export function useDeleteCheckInScheduleMutation() {
 // Form assignments
 // ---------------------------------------------------------------------------
 
+/**
+ * The `as Promise<…>` casts on the three hooks below are LOAD-BEARING, not
+ * leftovers: openapi-fetch runs response types through `Readable<T>`, which
+ * widens tuple unions to plain arrays — so a `service_type` answer's `services`
+ * tuple no longer matches the generated schema every consumer is typed against.
+ * The cast restores the operation's own response type.
+ */
 export function useListClientFormAssignmentsForCoachQuery(clientId: string, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: formAssignmentKeys.forClient(clientId),
@@ -340,7 +356,7 @@ export function useCreateClientFormAssignmentMutation() {
           body,
           params: {path: {client_id: clientId}},
         }),
-      ) as Promise<ClientProfileFormAssignmentResponse>,
+      ),
     onSuccess: (_data, {clientId}) => {
       qc.invalidateQueries({queryKey: formAssignmentKeys.forClient(clientId)});
       qc.invalidateQueries({queryKey: clientKeys.detail(clientId)});

@@ -4,12 +4,11 @@ import {Check, ChevronRight, Rocket} from 'lucide-react';
 import type {ReactNode} from 'react';
 import {Fragment, useEffect, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-
-import {ROUTES} from '@/@config/routes';
 import {useListClientsQuery} from '@/api/clients';
-import {useListNutritionPlansQuery} from '@/api/nutrition-plans-list';
+import {useListNutritionPlansQuery} from '@/api/nutrition-plans';
 import {useUpdateDashboardSetupMutation} from '@/api/profile';
-import {useListTrainingPlansQuery} from '@/api/training-plans-list';
+import {useListTrainingPlansQuery} from '@/api/training-plans';
+import {ROUTES} from '@/routes';
 
 type HiddenReason = 'completed' | 'dismissed' | null;
 
@@ -173,15 +172,17 @@ const STEP_STATE_LABEL: Record<StepState, string> = {
  * outline, upcoming = muted.
  */
 function StepChip({index, state, step}: {index: number; state: StepState; step: SetupStep}) {
+  const merged = cn(
+    // Done and upcoming sit on the same neutral fill in the reference — only
+    // the current step is called out, with an accent hairline on white.
+    'h-auto min-w-0 shrink gap-2 rounded-control px-3 py-1.5',
+    state === 'current' ? 'border border-accent bg-surface' : 'border border-transparent bg-surface-secondary',
+    state === 'upcoming' ? 'opacity-70' : '',
+  );
+
   return (
     <Chip
-      className={cn(
-        // Done and upcoming sit on the same neutral fill in the reference — only
-        // the current step is called out, with an accent hairline on white.
-        'h-auto min-w-0 shrink gap-2 rounded-control px-3 py-1.5',
-        state === 'current' ? 'border border-accent bg-surface' : 'border border-transparent bg-surface-secondary',
-        state === 'upcoming' ? 'opacity-70' : '',
-      )}
+      {...(merged ? {className: merged} : {})}
       color="default"
       variant="secondary"
     >

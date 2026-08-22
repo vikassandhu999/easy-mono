@@ -1,19 +1,18 @@
 import {Chip, Typography} from '@heroui/react';
 import {Check, Dumbbell, Quote} from 'lucide-react';
-import {useParams} from 'react-router-dom';
-
-import {BackButton} from '@/@components/back-button';
-import {EmptyState} from '@/@components/empty-state';
-import {ErrorState} from '@/@components/error-state';
-import {Page} from '@/@components/page';
-import {PageSkeleton} from '@/@components/page-skeleton';
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
-import type {TrainingPerformedSet} from '@/api/training-plans-list';
-import {useGetCoachClientTrainingSessionQuery} from '@/api/training-plans-list';
-import {SectionCard} from '@/clients/components/section-card';
-import {formatCompactDuration, formatRowDate} from '@/clients/lib/client-detail-data';
-import {buildExerciseGroups, type ExerciseGroup, formatLoad, sessionWorkoutName} from '@/clients/lib/session';
+import type {TrainingPerformedSet} from '@/api/training-plans';
+import {useGetCoachClientTrainingSessionQuery} from '@/api/training-plans';
+import {formatCompactDuration, formatRowDate} from '@/clients/client-detail-data';
+import {SectionCard} from '@/clients/client-section-card';
+import {buildExerciseGroups, type ExerciseGroup, formatLoad, sessionWorkoutName} from '@/clients/client-session';
+import {ROUTES} from '@/routes';
+import {BackButton} from '@/ui/back-button';
+import {EmptyState} from '@/ui/empty-state';
+import {ErrorState} from '@/ui/error-state';
+import {Page} from '@/ui/page';
+import {PageSkeleton} from '@/ui/page-skeleton';
+import {useGoBack} from '@/ui/use-go-back';
+import {useRouteParam} from '@/ui/use-route-param';
 
 /**
  * CD-SD — one performed session: the client's note first (it is why a coach opens
@@ -24,7 +23,8 @@ import {buildExerciseGroups, type ExerciseGroup, formatLoad, sessionWorkoutName}
  * design's `.mtopbar` IS `Page.Header`.
  */
 export default function SessionDetail() {
-  const {clientId = '', sessionId = ''} = useParams<{clientId: string; sessionId: string}>();
+  const clientId = useRouteParam('clientId');
+  const sessionId = useRouteParam('sessionId');
   const goBack = useGoBack(`${ROUTES.CLIENT_DETAIL.replace(':id', clientId)}?tab=training`);
   const {data, isError, isLoading, refetch} = useGetCoachClientTrainingSessionQuery(clientId, sessionId);
 

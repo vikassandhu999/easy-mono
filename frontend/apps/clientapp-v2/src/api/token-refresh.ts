@@ -1,4 +1,4 @@
-import {getRefreshToken, getTokenExpiresAt, setTokens} from '@/api/authStorage';
+import {getRefreshToken, getTokenExpiresAt, setTokens} from './authStorage.ts';
 
 type RefreshFailure = {data: unknown; status: number};
 type RefreshResult = null | RefreshFailure;

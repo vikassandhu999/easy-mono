@@ -1,8 +1,8 @@
+import {ApiError} from '@easy/utils/api-error';
 import createClient, {type Middleware} from 'openapi-fetch';
-
-import {clearTokens, getAccessToken} from '@/api/authStorage';
-import type {paths} from '@/api/schema';
 import {refreshTokenIfNeeded} from '@/api/token-refresh';
+import {clearTokens, getAccessToken} from './authStorage.ts';
+import type {paths} from './schema.ts';
 
 /**
  * Auth-only paths that should never be preserved as a post-login redirect.
@@ -48,31 +48,11 @@ if (window.location.hostname.startsWith('192.168.')) {
 // A deployed (non-local) origin with no VITE_API_BASE_URL means every request silently
 // targets localhost and fails. Make that loud instead of a mysterious "spins then fails".
 if (!import.meta.env.VITE_API_BASE_URL && !/^(localhost|127\.0\.0\.1|192\.168\.)/.test(window.location.hostname)) {
+  // biome-ignore lint/suspicious/noConsole: misconfigured deploys must surface in DevTools
   console.error(
     '[config] VITE_API_BASE_URL is not set but the app is served from a non-local origin — ' +
       `API calls target ${baseURL} and will fail. Set VITE_API_BASE_URL at build time (see .env.example).`,
   );
-}
-
-/**
- * Thrown by every query/mutation on a non-2xx response. Carries the parsed
- * error body under `data` — the shape `@/api/shared` helpers
- * (applyFormErrors, getApiErrorMessage, getApiErrorCode) read.
- */
-export class ApiError extends Error {
-  status: number;
-  data: unknown;
-
-  constructor(status: number, data: unknown) {
-    const message =
-      data && typeof data === 'object' && 'error_message' in data && typeof data.error_message === 'string'
-        ? data.error_message
-        : `Request failed with status ${status}`;
-    super(message);
-    this.name = 'ApiError';
-    this.status = status;
-    this.data = data;
-  }
 }
 
 const REFRESH_THRESHOLD_MS = 60_000;
@@ -120,6 +100,7 @@ client.use(authMiddleware);
  * Unwrap an openapi-fetch result for use as a React Query queryFn/mutationFn:
  * returns `data` on success, throws `ApiError` on a non-2xx response.
  */
+export {ApiError} from '@easy/utils/api-error';
 export async function call<T, E>(promise: Promise<{data?: T; error?: E; response: Response}>): Promise<T> {
   const {data, error, response} = await promise;
   if (error !== undefined) {

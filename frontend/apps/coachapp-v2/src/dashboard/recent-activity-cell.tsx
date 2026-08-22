@@ -1,0 +1,124 @@
+import {getInitials} from '@easy/utils';
+import type {Key} from '@heroui/react';
+import {Avatar, Chip, Description, Label, ListBox, Typography} from '@heroui/react';
+import {cn} from '@heroui/styles';
+import {useNavigate} from 'react-router-dom';
+import type {Conversation} from '@/api/conversations';
+import {DashboardSectionHeading} from '@/dashboard/dashboard-section-heading';
+import {compareDateStrings, formatRelativeTime} from '@/dashboard/date-format';
+import {ROUTES} from '@/routes';
+import {LIST_ITEM_CLASS} from '@/ui/browse-list-box';
+
+/** Both refs show two-letter initials (`SL`, `PN`, `DW`) — the API sends one name string. */
+function initials(name: string): string {
+  const [first, last] = name.split(/\s+/);
+  return getInitials(first, last) || '?';
+}
+
+/** GAPS #15 — conversation rows are `ListBox` items, never a table. */
+function ConversationRow({conversation}: {conversation: Conversation}) {
+  const name = conversation.client_name || 'Client';
+  const unread = conversation.unread_count > 0;
+  const merged = cn(
+    LIST_ITEM_CLASS,
+    'grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-none py-3',
+    'sm:px-4',
+    // The unread row is the accent-tinted one in the reference.
+    unread ? 'bg-accent-soft' : 'hover:bg-surface-secondary',
+  );
+
+  return (
+    <ListBox.Item
+      {...(merged ? {className: merged} : {})}
+      id={conversation.client_id}
+      textValue={name}
+    >
+      <Avatar
+        className="size-9 shrink-0 bg-surface-secondary"
+        size="md"
+      >
+        <Avatar.Fallback className="type-eyebrow font-semibold text-foreground">{initials(name)}</Avatar.Fallback>
+      </Avatar>
+
+      <div className="flex min-w-0 flex-col">
+        <span className="flex min-w-0 items-center gap-2">
+          <Label className="min-w-0 truncate type-body font-semibold text-foreground">{name}</Label>
+          {unread ? (
+            // A `Badge` is absolutely positioned against its wrapper — it floated
+            // outside the row. The ref puts the count inline beside the name, so
+            // it's the same accent `Chip` the queue uses for `New lead`.
+            <Chip
+              className="shrink-0"
+              color="accent"
+              size="sm"
+              variant="primary"
+            >
+              {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
+            </Chip>
+          ) : null}
+        </span>
+        <Description className="max-w-full truncate type-eyebrow text-muted">
+          {conversation.last_message_preview ?? 'No messages yet'}
+        </Description>
+      </div>
+
+      <Typography
+        className="shrink-0 whitespace-nowrap text-muted-2"
+        type="body-xs"
+      >
+        {formatRelativeTime(conversation.last_message_at ?? conversation.inserted_at)}
+      </Typography>
+    </ListBox.Item>
+  );
+}
+
+export function RecentActivityCell({conversations, isError}: {conversations: Conversation[]; isError: boolean}) {
+  const navigate = useNavigate();
+  const visible = [...conversations]
+    .sort((a, b) => compareDateStrings(b.last_message_at ?? b.inserted_at, a.last_message_at ?? a.inserted_at))
+    .slice(0, 4);
+
+  return (
+    <section className="flex min-w-0 flex-col gap-3">
+      {/* No Inbox link: the full inbox opens from the Today card's Messages
+          footer, one cell over (nav demotion 2026-08-08). */}
+      <DashboardSectionHeading title="Recent conversations" />
+
+      {isError ? (
+        <div className="rounded-card border border-border bg-surface px-4 py-6 text-center">
+          <Typography
+            color="muted"
+            type="body-sm"
+          >
+            Couldn't load conversations.
+          </Typography>
+        </div>
+      ) : visible.length === 0 ? (
+        <div className="rounded-card border border-border bg-surface px-4 py-6 text-center">
+          <Typography
+            color="muted"
+            type="body-sm"
+          >
+            Conversations with your clients will show up here.
+          </Typography>
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-card border border-border bg-surface">
+          <ListBox
+            aria-label="Recent conversations"
+            className="gap-0 p-0"
+            onAction={(key: Key) => navigate(ROUTES.CLIENT_MESSAGES.replace(':id', String(key)))}
+            selectionMode="none"
+          >
+            {visible.map((conversation) => (
+              <ConversationRow
+                conversation={conversation}
+                key={conversation.id}
+              />
+            ))}
+          </ListBox>
+        </div>
+      )}
+    </section>
+  );
+}

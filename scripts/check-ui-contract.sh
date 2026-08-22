@@ -20,7 +20,7 @@ cd "$(dirname "$0")/.."
 APP=frontend/apps/coachapp-v2/src
 THEME=$APP/index.css
 # Wrappers that legitimately contain the banned identifiers internally:
-ALLOWLIST='@components/number-input|@components/form-fields/form-number-field|builder-kit/keyboard-sheet'
+ALLOWLIST='ui/number-input|ui/form-number-field|ui/keyboard-sheet'
 
 # Nearest branch point: prefer base-design's merge-base over main's when it is newer,
 # so a port branch is only checked on ITS changes, not all of base-design's.

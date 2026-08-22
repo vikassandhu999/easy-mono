@@ -8,10 +8,9 @@ import {formatDuration} from '@easy/utils';
 import {Button, Spinner} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useParams} from 'react-router-dom';
-
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
 import {type TrainingPerformedSet, type TrainingSession, useGetClientTrainingSessionQuery} from '@/api/training';
+import {ROUTES} from '@/routes';
+import {useGoBack} from '@/ui/use-go-back';
 import {
   addedExercises,
   assignPerformed,
@@ -135,11 +134,15 @@ function Detail({session}: {session: TrainingSession}) {
         const tt = swap?.trackingType ?? ex.tracking_type;
         return (
           <ExerciseCard
-            badge={swap ? {swappedFrom: ex.name ?? 'planned'} : done.length === 0 ? 'skipped' : undefined}
-            key={`${ex.exercise_id}-${ex.position ?? i}`}
-            name={swap?.name ?? ex.name ?? 'Exercise'}
+            {...(swap
+              ? {badge: {swappedFrom: ex.exercise_name} as const}
+              : done.length === 0
+                ? {badge: 'skipped' as const}
+                : {})}
+            key={`${ex.exercise_id}-${ex.position}`}
+            name={swap?.name ?? ex.exercise_name}
             rows={done.map((p, si) => {
-              const planned = swap ? undefined : ex.sets?.[si];
+              const planned = swap ? undefined : ex.sets[si];
               return {
                 actual: describeSet(tt, p),
                 id: p.id,

@@ -2,9 +2,6 @@ import {TRAINING_DAY_LABELS} from '@easy/utils';
 import {Spinner} from '@heroui/react';
 import {Activity, ChevronRight, Eye, Play} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
-
-import PageLayout from '@/@components/page-layout';
-import {ROUTES} from '@/@config/routes';
 import {
   type ClientTrainingPlan,
   type TrainingPlanWorkout,
@@ -14,7 +11,8 @@ import {
   useListClientTrainingSessionsQuery,
   useResolveClientTrainingCoverageQuery,
 } from '@/api/training';
-import {clientTrainingPlanFromCoverage} from '@/api/training-coverage';
+import {clientTrainingPlanFromCoverage} from '@/api/training-requests';
+import {ROUTES} from '@/routes';
 import {
   currentPlanWeek,
   currentWeekDates,
@@ -23,6 +21,7 @@ import {
   workoutForDay,
   workoutPreviewPath,
 } from '@/training/training-utils';
+import PageLayout from '@/ui/page-layout';
 import {formatDayDate, snapshotOf} from '@/workout/session-utils';
 
 function ResumeBanner({session, onResume}: {onResume: () => void; session: TrainingSession}) {
@@ -208,7 +207,7 @@ export default function TrainingHome() {
           <PlanCard plan={plan} />
           <p className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted">This week</p>
           <WeekList
-            active={active ?? undefined}
+            {...(active ? {active} : {})}
             onStart={start}
             plan={plan}
             starting={starting}

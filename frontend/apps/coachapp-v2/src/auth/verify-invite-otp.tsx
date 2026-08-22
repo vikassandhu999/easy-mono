@@ -2,15 +2,15 @@ import {Alert, Button, Link, Spinner, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useEffect, useState} from 'react';
 import {useForm, useWatch} from 'react-hook-form';
-import {Navigate, useLocation, useNavigate, useSearchParams} from 'react-router-dom';
+import {Navigate, useNavigate, useSearchParams} from 'react-router-dom';
 import {z} from 'zod';
-
-import {FormOtpField} from '@/@components/form-fields/form-otp-field';
-import {ROUTES} from '@/@config/routes';
 import {useTrainerAcceptInviteMutation, useTrainerAcceptInviteVerifyMutation} from '@/api/auth';
 import {setTokens} from '@/api/authStorage';
 import {applyFormErrors, getApiErrorCode} from '@/api/shared';
-import AuthLayout from '@/auth/components/auth-layout';
+import AuthLayout from '@/auth/auth-layout';
+import {ROUTES} from '@/routes';
+import {FormOtpField} from '@/ui/form-otp-field';
+import {useHistoryStateString} from '@/ui/use-history-state';
 
 // ── Constants ────────────────────────────────────────────────
 
@@ -30,10 +30,6 @@ const VERIFY_ERROR_MESSAGES: Record<string, string> = {
 
 // ── Types ────────────────────────────────────────────────────
 
-interface VerifyInviteOtpLocationState {
-  email: string;
-}
-
 const schema = z.object({
   otp: z.string().length(6, 'Enter all 6 digits'),
 });
@@ -47,9 +43,8 @@ const KNOWN_FIELDS = ['otp'] as const;
 export default function VerifyInviteOtp() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
-  const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as null | VerifyInviteOtpLocationState;
+  const email = useHistoryStateString('email');
 
   const verifyInviteMutation = useTrainerAcceptInviteVerifyMutation();
   const resendInviteMutation = useTrainerAcceptInviteMutation();
@@ -80,7 +75,7 @@ export default function VerifyInviteOtp() {
 
   // Guard: Screen 2 is only reachable via Screen 1's submit, which places the
   // email in route state. If missing or token is missing, bounce to Screen 1.
-  if (!token || !state?.email) {
+  if (!token || !email) {
     return (
       <Navigate
         replace
@@ -92,7 +87,7 @@ export default function VerifyInviteOtp() {
   const onSubmit = async (data: VerifyInviteOtpFormValues) => {
     try {
       const result = await verifyInviteMutation.mutateAsync({
-        email: state.email,
+        email,
         invitation_token: token,
         otp: data.otp,
       });
@@ -121,7 +116,7 @@ export default function VerifyInviteOtp() {
       return;
     }
     try {
-      await resendInviteMutation.mutateAsync({email: state.email, invitation_token: token});
+      await resendInviteMutation.mutateAsync({email, invitation_token: token});
       setCooldownRemaining(RESEND_COOLDOWN_SECONDS);
       reset({otp: ''});
       toast.success('A new code is on its way.');
@@ -145,7 +140,7 @@ export default function VerifyInviteOtp() {
     // replace so Back from Screen 1 doesn't loop us back here.
     navigate(`${ROUTES.ACCEPT_INVITE}?token=${encodeURIComponent(token)}`, {
       replace: true,
-      state: {email: state.email, focusEmail: true},
+      state: {email, focusEmail: true},
     });
   };
 
@@ -158,7 +153,7 @@ export default function VerifyInviteOtp() {
 
   return (
     <AuthLayout
-      description={`Enter the code sent to ${state.email}`}
+      description={`Enter the code sent to ${email}`}
       title="Check your email"
     >
       <form

@@ -117,6 +117,7 @@
       },
       "style": {
         "noNestedTernary": "off",
+        "noNonNullAssertion": "warn",
         "noYodaExpression": "error",
         "useArrayLiterals": "error",
         "useBlockStatements": "error",
@@ -145,12 +146,14 @@
         "noDuplicateObjectKeys": "error",
         "noDuplicateParameters": "error",
         "noEmptyBlockStatements": "error",
+        "noExplicitAny": "error",
         "noFallthroughSwitchClause": "error",
         "noFunctionAssign": "error",
         "noGlobalAssign": "error",
         "noImportAssign": "error",
         "noIrregularWhitespace": "error",
         "noMisleadingCharacterClass": "error",
+        "noConsole": "error",
         "noOctalEscape": "error",
         "noPrototypeBuiltins": "error",
         "noRedeclare": "error",
@@ -187,6 +190,16 @@
   "css": {"parser": {"tailwindDirectives": true}, "formatter": null, "linter": null, "assist": null},
   "html": {"formatter": {"indentScriptAndStyle": false, "selfCloseVoidElements": "always"}},
   "overrides": [
+    {
+      "includes": ["**/*.check.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    },
     {
       "includes": ["**/src/api/generated.ts"],
       "linter": {"rules": {"complexity": {"useLiteralKeys": "off"}}}

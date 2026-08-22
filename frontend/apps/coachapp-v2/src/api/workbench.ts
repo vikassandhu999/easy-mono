@@ -1,26 +1,27 @@
 import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-import {call, client} from '@/api/client';
-import {workbenchKeys} from '@/api/keys';
-import type {components} from '@/api/schema';
-import {workbenchMutationTargets} from '@/api/workbench-targets';
+import {call, client} from './client.ts';
+import {workbenchKeys} from './keys.ts';
+import type {components} from './schema.ts';
+import {workbenchMutationTargets} from './workbench-targets.ts';
 
 export type WorkbenchCounts = components['schemas']['WorkbenchCounts'];
-
-export type WorkbenchCountsResponse = {
-  data: WorkbenchCounts;
-};
+export type WorkbenchCountsResponse = components['schemas']['WorkbenchCountsResponse'];
 
 export type QueueSnoozeRequest = components['schemas']['QueueSnoozeRequest'];
 
 export type WorkbenchOnboardingQueueItem = components['schemas']['WorkbenchOnboardingQueueItem'];
+export type WorkbenchOnboardingQueueResponse = components['schemas']['WorkbenchOnboardingQueueResponse'];
 export type WorkbenchProgrammingQueueItem = components['schemas']['WorkbenchProgrammingQueueItem'];
+export type WorkbenchProgrammingQueueResponse = components['schemas']['WorkbenchProgrammingQueueResponse'];
 export type WorkbenchExpiringQueueItem = components['schemas']['WorkbenchExpiringQueueItem'];
+export type WorkbenchExpiringQueueResponse = components['schemas']['WorkbenchExpiringQueueResponse'];
 export type WorkbenchQuietQueueItem = components['schemas']['WorkbenchQuietQueueItem'];
+export type WorkbenchQuietQueueResponse = components['schemas']['WorkbenchQuietQueueResponse'];
 export type WorkbenchRepliesQueueItem = components['schemas']['WorkbenchRepliesQueueItem'];
+export type WorkbenchRepliesQueueResponse = components['schemas']['WorkbenchRepliesQueueResponse'];
 export type WorkbenchCheckInQueueItem = components['schemas']['WorkbenchCheckInQueueItem'];
-
-type QueuePage<T> = {count: number; data: T[]};
+export type WorkbenchCheckInQueueResponse = components['schemas']['WorkbenchCheckInQueueResponse'];
 
 const PAGE_SIZE = 20;
 
@@ -29,10 +30,18 @@ function nextOffset(count: number, lastPageParam: number): number | undefined {
   return next < count ? next : undefined;
 }
 
+/**
+ * The `as Promise<…>` casts below are LOAD-BEARING, not leftovers: openapi-fetch
+ * runs response types through `Readable<T>`, which widens tuple unions to plain
+ * arrays — so the `Client` each queue item embeds loses its
+ * `required_services` tuple and no longer matches the generated schema every
+ * consumer is typed against. The cast restores the operation's own
+ * response type. Delete one only after that widening is gone.
+ */
 export function useWorkbenchCountsQuery() {
   return useQuery({
     queryKey: workbenchKeys.counts(),
-    queryFn: () => call(client.GET('/v1/coach/workbench')) as Promise<WorkbenchCountsResponse>,
+    queryFn: () => call(client.GET('/v1/coach/workbench')),
   });
 }
 
@@ -44,7 +53,7 @@ export function useOnboardingQueueInfiniteQuery() {
         client.GET('/v1/coach/workbench/queues/onboarding', {
           params: {query: {limit: PAGE_SIZE, offset: pageParam}},
         }),
-      ) as Promise<QueuePage<WorkbenchOnboardingQueueItem>>,
+      ) as Promise<WorkbenchOnboardingQueueResponse>,
     initialPageParam: 0,
     getNextPageParam: (lastPage, _pages, lastPageParam) => nextOffset(lastPage.count, lastPageParam),
   });
@@ -58,7 +67,7 @@ export function useProgrammingQueueInfiniteQuery(service: 'all' | 'nutrition' | 
         client.GET('/v1/coach/workbench/queues/programming', {
           params: {query: {limit: PAGE_SIZE, offset: pageParam, service}},
         }),
-      ) as Promise<QueuePage<WorkbenchProgrammingQueueItem>>,
+      ) as Promise<WorkbenchProgrammingQueueResponse>,
     initialPageParam: 0,
     getNextPageParam: (lastPage, _pages, lastPageParam) => nextOffset(lastPage.count, lastPageParam),
   });
@@ -72,7 +81,7 @@ export function useExpiringQueueInfiniteQuery() {
         client.GET('/v1/coach/workbench/queues/expiring', {
           params: {query: {limit: PAGE_SIZE, offset: pageParam}},
         }),
-      ) as Promise<QueuePage<WorkbenchExpiringQueueItem>>,
+      ) as Promise<WorkbenchExpiringQueueResponse>,
     initialPageParam: 0,
     getNextPageParam: (lastPage, _pages, lastPageParam) => nextOffset(lastPage.count, lastPageParam),
   });
@@ -86,7 +95,7 @@ export function useQuietQueueInfiniteQuery() {
         client.GET('/v1/coach/workbench/queues/quiet', {
           params: {query: {limit: PAGE_SIZE, offset: pageParam}},
         }),
-      ) as Promise<QueuePage<WorkbenchQuietQueueItem>>,
+      ) as Promise<WorkbenchQuietQueueResponse>,
     initialPageParam: 0,
     getNextPageParam: (lastPage, _pages, lastPageParam) => nextOffset(lastPage.count, lastPageParam),
   });
@@ -100,7 +109,7 @@ export function useRepliesQueueInfiniteQuery() {
         client.GET('/v1/coach/workbench/queues/replies', {
           params: {query: {limit: PAGE_SIZE, offset: pageParam}},
         }),
-      ) as Promise<QueuePage<WorkbenchRepliesQueueItem>>,
+      ) as Promise<WorkbenchRepliesQueueResponse>,
     initialPageParam: 0,
     getNextPageParam: (lastPage, _pages, lastPageParam) => nextOffset(lastPage.count, lastPageParam),
   });
@@ -114,7 +123,7 @@ export function useCheckInsQueueInfiniteQuery() {
         client.GET('/v1/coach/workbench/queues/check-ins', {
           params: {query: {limit: PAGE_SIZE, offset: pageParam}},
         }),
-      ) as Promise<QueuePage<WorkbenchCheckInQueueItem>>,
+      ) as Promise<WorkbenchCheckInQueueResponse>,
     initialPageParam: 0,
     getNextPageParam: (lastPage, _pages, lastPageParam) => nextOffset(lastPage.count, lastPageParam),
   });

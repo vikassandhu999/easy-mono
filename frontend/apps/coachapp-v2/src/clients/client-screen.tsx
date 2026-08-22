@@ -1,4 +1,5 @@
 import {getFullName, getInitials} from '@easy/utils';
+import {isOneOf} from '@easy/utils/closed-vocabulary';
 import {AlertDialog, Avatar, Button, Dropdown, ToggleButton, ToggleButtonGroup, Typography, toast} from '@heroui/react';
 import {
   CalendarCheck,
@@ -11,26 +12,27 @@ import {
   Phone,
   Utensils,
 } from 'lucide-react';
-import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
-import {BackButton} from '@/@components/back-button';
-import {EmptyState} from '@/@components/empty-state';
-import {ErrorState} from '@/@components/error-state';
-import {Page} from '@/@components/page';
-import {PageSkeleton} from '@/@components/page-skeleton';
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
+import {useNavigate, useSearchParams} from 'react-router-dom';
 import type {Client} from '@/api/clients';
 import {useGetClientQuery, useResendClientInviteMutation, useRevokeClientInviteMutation} from '@/api/clients';
 import {useGetCoachClientConversationQuery} from '@/api/conversations';
-import {useListCoachClientTrainingPlansQuery} from '@/api/training-plans-list';
-import {CheckinsTab} from '@/clients/client-screen/checkins-tab';
-import {ClientAccessStrip} from '@/clients/client-screen/client-access-strip';
-import {NutritionTab} from '@/clients/client-screen/nutrition-tab';
-import {OverviewTab} from '@/clients/client-screen/overview-tab';
-import {TrainingTab} from '@/clients/client-screen/training-tab';
-import {ClientStatStrip} from '@/clients/components/client-stat-strip';
-import {ClientAttentionChips, ClientStatusChip} from '@/clients/components/client-status-chips';
-import {getWhatsAppUrl} from '@/clients/lib/invite-client';
+import {useListCoachClientTrainingPlansQuery} from '@/api/training-plans';
+import {ClientAccessStrip} from '@/clients/client-access-strip';
+import {CheckinsTab} from '@/clients/client-checkins-tab';
+import {getWhatsAppUrl} from '@/clients/client-invite';
+import {NutritionTab} from '@/clients/client-nutrition-tab';
+import {OverviewTab} from '@/clients/client-overview-tab';
+import {ClientStatStrip} from '@/clients/client-stat-strip';
+import {ClientAttentionChips, ClientStatusChip} from '@/clients/client-status-chips';
+import {TrainingTab} from '@/clients/client-training-tab';
+import {ROUTES} from '@/routes';
+import {BackButton} from '@/ui/back-button';
+import {EmptyState} from '@/ui/empty-state';
+import {ErrorState} from '@/ui/error-state';
+import {Page} from '@/ui/page';
+import {PageSkeleton} from '@/ui/page-skeleton';
+import {useGoBack} from '@/ui/use-go-back';
+import {useRouteParam} from '@/ui/use-route-param';
 
 /**
  * The single-client workspace: identity header, live stat bar, and pill tabs
@@ -65,9 +67,10 @@ const TABS = [
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
+const TAB_IDS = TABS.map(({id}) => id);
 
 export default function ClientScreen() {
-  const {id = ''} = useParams<{id: string}>();
+  const id = useRouteParam('id');
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.CLIENTS);
@@ -78,7 +81,7 @@ export default function ClientScreen() {
   const unread = conversation.data?.data?.unread_count ?? 0;
 
   const requested = params.get('tab');
-  const tab: TabId = TABS.some((t) => t.id === requested) ? (requested as TabId) : 'overview';
+  const tab: TabId = isOneOf(TAB_IDS, requested) ? requested : 'overview';
 
   // "3 of 4": the target is how many DISTINCT weekdays the active plan schedules,
   // which is what the design's "4 days a week" counts. There is no `days_per_week`

@@ -1,11 +1,7 @@
+import {ApiError} from '../../api/api-error.ts';
 import {handleStaleNutritionPlanConflict, staleNutritionPlanConflictMessage} from './stale-nutrition-plan-conflict.ts';
 
-const staleError = {
-  data: {
-    error_code: 'stale_revision',
-    error_detail: {current_revision: 12},
-  },
-};
+const staleError = new ApiError(409, {error_code: 'stale_revision', error_detail: {current_revision: 12}});
 
 const events: string[] = [];
 const handled = await handleStaleNutritionPlanConflict(staleError, {
@@ -37,18 +33,15 @@ if (!staleNutritionPlanConflictMessage(12).includes('reapply')) {
 }
 
 const nonStaleEvents: string[] = [];
-const nonStaleHandled = await handleStaleNutritionPlanConflict(
-  {data: {error_code: 'invalid_input'}},
-  {
-    refetchLatest: () => {
-      nonStaleEvents.push('refetch');
-      return undefined;
-    },
-    notify: () => {
-      nonStaleEvents.push('notify');
-    },
+const nonStaleHandled = await handleStaleNutritionPlanConflict(new ApiError(422, {error_code: 'invalid_input'}), {
+  refetchLatest: () => {
+    nonStaleEvents.push('refetch');
+    return undefined;
   },
-);
+  notify: () => {
+    nonStaleEvents.push('notify');
+  },
+});
 
 if (nonStaleHandled || nonStaleEvents.length > 0) {
   throw new Error('non-stale errors must stay on their existing error paths');

@@ -1,6 +1,6 @@
+import {isOneOf} from '@easy/utils/closed-vocabulary';
 import {ToggleButton, ToggleButtonGroup, Typography} from '@heroui/react';
 import {useState} from 'react';
-import {useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
@@ -8,7 +8,8 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useListClientWeightEntriesQuery} from '@/api/clients';
+import {useRouteParam} from '@/@hooks/use-route-param';
+import {goalWeightValue, useListClientWeightEntriesQuery} from '@/api/clients';
 import {SectionCard} from '@/clients/components/section-card';
 import {formatRowDate, formatWeight, toDayIso, weightChartGeometry} from '@/clients/lib/client-detail-data';
 
@@ -24,9 +25,10 @@ const RANGES = [
 ] as const;
 
 type RangeId = (typeof RANGES)[number]['id'];
+const RANGE_IDS = RANGES.map(({id}) => id);
 
 export default function WeightHistory() {
-  const {id = ''} = useParams<{id: string}>();
+  const id = useRouteParam('id');
   const goBack = useGoBack(ROUTES.CLIENT_DETAIL.replace(':id', id));
   const [range, setRange] = useState<RangeId>('3M');
   const {data, isError, isLoading, refetch} = useListClientWeightEntriesQuery(id);
@@ -83,7 +85,7 @@ export default function WeightHistory() {
 
   // `goal` is a loosely-typed index-signature object on the wire; narrow the
   // one field this screen reads.
-  const goal = (data.goal?.value as number | undefined) ?? null;
+  const goal = goalWeightValue(data);
   const unit = data.entries[0]?.unit ?? 'kg';
   const cutoffDays = RANGES.find((r) => r.id === range)?.days ?? null;
   const cutoff = cutoffDays == null ? null : toDayIso(new Date(Date.now() - cutoffDays * 86_400_000));
@@ -92,6 +94,8 @@ export default function WeightHistory() {
   const inRange = data.entries.filter((e) => (cutoff == null ? true : e.date >= cutoff));
   const newestFirst = [...inRange].sort((a, b) => b.date.localeCompare(a.date));
   const chronological = [...inRange].sort((a, b) => a.date.localeCompare(b.date));
+  const firstEntry = chronological[0];
+  const lastEntry = chronological[chronological.length - 1];
   const chart =
     chronological.length > 1
       ? weightChartGeometry(
@@ -119,8 +123,8 @@ export default function WeightHistory() {
                 disallowEmptySelection
                 onSelectionChange={(keys) => {
                   const next = [...keys][0];
-                  if (next) {
-                    setRange(next as RangeId);
+                  if (isOneOf(RANGE_IDS, next)) {
+                    setRange(next);
                   }
                 }}
                 selectedKeys={[range]}
@@ -198,10 +202,12 @@ export default function WeightHistory() {
                       goal {formatWeight(goal, unit, {decimals: 0})}
                     </span>
                   )}
-                  <span className="sr-only">
-                    {chronological.length} entries from {formatRowDate(chronological[0]!.date, {weekday: false})} to{' '}
-                    {formatRowDate(chronological[chronological.length - 1]!.date, {weekday: false})}
-                  </span>
+                  {firstEntry && lastEntry && (
+                    <span className="sr-only">
+                      {chronological.length} entries from {formatRowDate(firstEntry.date, {weekday: false})} to{' '}
+                      {formatRowDate(lastEntry.date, {weekday: false})}
+                    </span>
+                  )}
                 </>
               ) : (
                 <Typography

@@ -21,7 +21,7 @@ import type {TrainingSession} from '@/api/training-plans-list';
 
 const MS_PER_DAY = 86_400_000;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
 /** `YYYY-MM-DD` -> local midnight. See the header note on why this is not `new Date(iso)`. */
 export function parseDay(iso: string): Date {
@@ -37,14 +37,24 @@ export function toDayIso(date: Date): string {
 }
 
 /** The `n` day-strings ending at `from`, oldest first — the week/adherence strips. */
-export function lastNDays(n: number, from: Date = new Date()): string[] {
+export function lastNDays(n: number, from: Date = new Date()): [string, ...string[]] {
   const end = new Date(from.getFullYear(), from.getMonth(), from.getDate());
-  return Array.from({length: n}, (_, i) => toDayIso(new Date(end.getTime() - (n - 1 - i) * MS_PER_DAY)));
+  const day = (i: number) => toDayIso(new Date(end.getTime() - (n - 1 - i) * MS_PER_DAY));
+  return [day(0), ...Array.from({length: Math.max(0, n - 1)}, (_, i) => day(i + 1))];
+}
+
+/**
+ * The inclusive `{from, to}` a day window spans — the shape every window-scoped
+ * list query takes. Reading the ends off the array is where four screens each
+ * asserted `days[0]!`; a non-empty window has ends by construction.
+ */
+export function dayWindowRange(days: [string, ...string[]]): {from: string; to: string} {
+  return {from: days[0], to: days[days.length - 1] ?? days[0]};
 }
 
 /** `W`, `T`, `F` … — the week strip's single-letter column head (CD-OV). */
 export function weekdayInitial(iso: string): string {
-  return WEEKDAYS[parseDay(iso).getDay()]!.charAt(0);
+  return (WEEKDAYS[parseDay(iso).getDay()] ?? '').charAt(0);
 }
 
 /** `15` — the day number under the initial (CD-OV). */
@@ -196,12 +206,12 @@ export type WeightTrend = {
  * Null when there is nothing to compare — one entry is not a trend.
  */
 export function weightTrend(entries: WeightTrendEntry[] | undefined, goal: null | number = null): null | WeightTrend {
-  if (!entries || entries.length === 0) {
+  const sorted = [...(entries ?? [])].sort((a, b) => a.date.localeCompare(b.date));
+  const [first] = sorted;
+  if (!first) {
     return null;
   }
-  const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
-  const first = sorted[0]!;
-  const latest = sorted[sorted.length - 1]!;
+  const latest = sorted[sorted.length - 1] ?? first;
   const series = sorted.map((entry) => Number(entry.value));
   if (sorted.length === 1) {
     return {direction: 'flat', goal, latest, magnitude: 0, series, weeks: 0};

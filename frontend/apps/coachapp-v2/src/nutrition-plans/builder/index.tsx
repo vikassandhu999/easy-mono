@@ -11,7 +11,6 @@
  * line's denominators rather than repeating the form.
  */
 import {getFullName} from '@easy/utils';
-import {useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
@@ -19,16 +18,16 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useRouteParam} from '@/@hooks/use-route-param';
 import {useGetNutritionPlanQuery} from '@/api/nutrition-plan-builder';
-
 import {NutritionPlanActions} from './plan-actions';
 import {PlanAddToClient} from './plan-add-to-client';
 import {PlanBuilder} from './plan-builder';
 
 export default function NutritionPlanBuilderScreen() {
-  const {id} = useParams<{id: string}>();
+  const id = useRouteParam('id');
   const goBack = useGoBack(ROUTES.NUTRITION_PLANS);
-  const {data, isError, isLoading, refetch} = useGetNutritionPlanQuery(id!);
+  const {data, isError, isLoading, refetch} = useGetNutritionPlanQuery(id);
 
   if (isLoading) {
     return (

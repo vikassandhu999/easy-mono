@@ -52,8 +52,10 @@ function snapshotExercises(session: TrainingSession): SnapshotExercise[] {
  */
 export function buildExerciseGroups(session: TrainingSession): ExerciseGroup[] {
   const planned = snapshotExercises(session);
-  const groupMap = new Map<string, TrainingPerformedSet[]>();
-  const groupOrder: string[] = [];
+  // A Map keeps insertion order, so it IS the group order — and holding each
+  // group as a non-empty tuple means its first set (the one the row is named
+  // after) needs no assertion.
+  const groupMap = new Map<string, [TrainingPerformedSet, ...TrainingPerformedSet[]]>();
 
   for (const set of [...session.performed_sets].sort((a, b) => a.position - b.position)) {
     const key = performedSetKey(set);
@@ -62,28 +64,24 @@ export function buildExerciseGroups(session: TrainingSession): ExerciseGroup[] {
       existing.push(set);
     } else {
       groupMap.set(key, [set]);
-      groupOrder.push(key);
     }
   }
 
   if (planned.length === 0) {
-    return groupOrder.map((key) => {
-      const setsForGroup = groupMap.get(key) ?? [];
-      return {
-        exerciseId: key,
-        exerciseName: performedSetName(setsForGroup[0]!),
-        isAdded: false,
-        plannedSets: [],
-        sets: setsForGroup,
-      };
-    });
+    return [...groupMap].map(([key, sets]) => ({
+      exerciseId: key,
+      exerciseName: performedSetName(sets[0]),
+      isAdded: false,
+      plannedSets: [],
+      sets,
+    }));
   }
 
   const matchedKeys = new Set<string>();
   const groups: ExerciseGroup[] = [];
 
   for (const exercise of planned) {
-    const matchKey = exercise.ref && groupOrder.find((key) => key === exercise.ref && !matchedKeys.has(key));
+    const matchKey = exercise.ref && groupMap.has(exercise.ref) && !matchedKeys.has(exercise.ref) ? exercise.ref : null;
     const setsForExercise = matchKey ? (groupMap.get(matchKey) ?? []) : [];
     if (matchKey) {
       matchedKeys.add(matchKey);
@@ -98,17 +96,16 @@ export function buildExerciseGroups(session: TrainingSession): ExerciseGroup[] {
     });
   }
 
-  for (const key of groupOrder) {
+  for (const [key, sets] of groupMap) {
     if (matchedKeys.has(key)) {
       continue;
     }
-    const setsForGroup = groupMap.get(key) ?? [];
     groups.push({
       exerciseId: key,
-      exerciseName: performedSetName(setsForGroup[0]!),
+      exerciseName: performedSetName(sets[0]),
       isAdded: true,
       plannedSets: [],
-      sets: setsForGroup,
+      sets,
     });
   }
 

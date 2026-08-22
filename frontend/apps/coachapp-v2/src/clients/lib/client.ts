@@ -76,8 +76,7 @@ export function extendedSubscriptionEnd(
   amount: {days: number} | {months: number},
 ): string {
   const base = currentEnd && currentEnd >= today ? currentEnd : today;
-  const [y, m, d] = base.split('-').map(Number) as [number, number, number];
-  const date = new Date(Date.UTC(y, m - 1, d));
+  const date = new Date(`${base}T00:00:00Z`);
   if ('days' in amount) {
     date.setUTCDate(date.getUTCDate() + amount.days);
   } else {

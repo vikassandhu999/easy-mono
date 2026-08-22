@@ -53,15 +53,18 @@ export function editorServingSizesFromFood(sizes: Food['serving_sizes']): Servin
 }
 
 function toFoodServingSizes(sizes: ServingSize[]): FoodServingSize[] {
-  return sizes
-    .filter((size) => size.unit.trim() !== '' && (size.amount ?? 0) > 0 && (size.weight_g ?? 0) > 0)
-    .map((size, index) => ({
-      amount: size.amount as number,
-      is_default: index === 0,
-      label: size.unit,
-      unit: size.unit,
-      weight_g: size.weight_g as number,
-    }));
+  const complete = sizes.flatMap(({amount, unit, weight_g}) =>
+    unit.trim() !== '' && amount != null && amount > 0 && weight_g != null && weight_g > 0
+      ? [{amount, unit, weight_g}]
+      : [],
+  );
+  return complete.map(({amount, unit, weight_g}, index) => ({
+    amount,
+    is_default: index === 0,
+    label: unit,
+    unit,
+    weight_g,
+  }));
 }
 
 export function foodToCreateRequest({

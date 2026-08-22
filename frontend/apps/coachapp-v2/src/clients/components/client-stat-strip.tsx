@@ -6,12 +6,13 @@ import {Link} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
-import {useListClientWeightEntriesQuery} from '@/api/clients';
+import {goalWeightValue, useListClientWeightEntriesQuery} from '@/api/clients';
 import {useListCoachNutritionDaysQuery} from '@/api/nutrition-plans-list';
 import {useListCoachClientTrainingSessionsQuery} from '@/api/training-plans-list';
 import {
   averageLoggedCalories,
   completedSessionDates,
+  dayWindowRange,
   formatKcal,
   formatWeight,
   lastNDays,
@@ -49,8 +50,7 @@ const STRIP = 'grid grid-cols-2 gap-px bg-border sm:grid-cols-4';
 
 export function ClientStatStrip({client, weeklyTarget}: {client: Client; weeklyTarget: null | number}) {
   const week = lastNDays(7);
-  const from = week[0]!;
-  const to = week[6]!;
+  const {from, to} = dayWindowRange(week);
 
   const sessions = useListCoachClientTrainingSessionsQuery(client.id, {from, to});
   const meals = useListCoachNutritionDaysQuery(client.id, {from, to});
@@ -63,7 +63,7 @@ export function ClientStatStrip({client, weeklyTarget}: {client: Client; weeklyT
   const avgKcal = averageLoggedCalories(meals.data?.data);
   // `goal` is a loosely-typed index-signature object on the wire; narrow the
   // one field this screen reads.
-  const trend = weightTrend(weights.data?.entries, (weights.data?.goal?.value as number | undefined) ?? null);
+  const trend = weightTrend(weights.data?.entries, goalWeightValue(weights.data));
 
   if (isLoading) {
     return (

@@ -90,7 +90,7 @@ export function MealItemRow({item, onTap, onMove, isFirst, isLast, onRemove, sho
           size/weight/colour are restated here. */}
       <Button
         className="h-auto min-w-0 flex-1 justify-start p-0 text-left type-eyebrow font-normal leading-[normal] text-foreground"
-        onPress={(event) => onTap(event.target as HTMLElement)}
+        onPress={(event) => event.target instanceof HTMLElement && onTap(event.target)}
         variant="ghost"
       >
         <span

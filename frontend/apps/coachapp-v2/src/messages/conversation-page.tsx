@@ -1,15 +1,16 @@
 import {Spinner} from '@heroui/react';
 import {useCallback} from 'react';
-import {useParams, useSearchParams} from 'react-router-dom';
+import {useSearchParams} from 'react-router-dom';
 
 import {ErrorState} from '@/@components/error-state';
+import {useRouteParam} from '@/@hooks/use-route-param';
 import {useGetCoachClientConversationQuery} from '@/api/conversations';
 import ConversationView from '@/messages/conversation-view';
 
 export default function ConversationPage() {
-  const {id} = useParams<{id: string}>();
+  const id = useRouteParam('id');
   const [searchParams, setSearchParams] = useSearchParams();
-  const {data, isError, isLoading, refetch} = useGetCoachClientConversationQuery(id!, {enabled: Boolean(id)});
+  const {data, isError, isLoading, refetch} = useGetCoachClientConversationQuery(id);
   const embedId = searchParams.get('embed_id');
   const initialEmbed =
     searchParams.get('embed_type') === 'form_submission' && embedId
@@ -48,7 +49,7 @@ export default function ConversationPage() {
 
   return (
     <ConversationView
-      clientId={id!}
+      clientId={id}
       conversationId={data.data.id}
       initialEmbed={initialEmbed}
       onEmbedSent={clearEmbedParams}

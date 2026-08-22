@@ -157,7 +157,7 @@ export function MealCard({
   // (manifests/NB.json) are only tagged on the card that is actually open.
   const openId = (id: string) => (open ? id : undefined);
 
-  const items = [...meal.meal_items].sort((a, b) => a.position - b.position) as HydratedMealItem[];
+  const items: HydratedMealItem[] = [...meal.meal_items].sort((a, b) => a.position - b.position);
   const kcal = kcalLabel(meal.nutrients);
   const isShared = assignmentCount >= 2;
 

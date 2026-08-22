@@ -1,7 +1,7 @@
 import {formatIsoDateOnly} from '@easy/utils';
 import {Button, Chip, Typography, toast} from '@heroui/react';
 import {ChefHat, Copy, Pencil, Trash2} from 'lucide-react';
-import {generatePath, useNavigate, useParams} from 'react-router-dom';
+import {generatePath, useNavigate} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
@@ -14,6 +14,7 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useRouteParam} from '@/@hooks/use-route-param';
 import type {NutrientTotals} from '@/api/nutrition-foods';
 import {
   useCopyNutritionRecipeMutation,
@@ -34,11 +35,11 @@ const MACRO_SEGMENTS: {
 ];
 
 export default function RecipeDetail() {
-  const {id} = useParams<{id: string}>();
+  const id = useRouteParam('id');
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.RECIPES);
-  const {data, isError, isLoading, refetch} = useGetRecipeQuery(id!);
-  const {data: impactData} = useGetRecipeImpactQuery(id!);
+  const {data, isError, isLoading, refetch} = useGetRecipeQuery(id);
+  const {data: impactData} = useGetRecipeImpactQuery(id);
   const deleteRecipe = useDeleteRecipeMutation();
   const copyRecipe = useCopyNutritionRecipeMutation();
   const isDeleting = deleteRecipe.isPending;
@@ -48,7 +49,7 @@ export default function RecipeDetail() {
 
   const handleDuplicate = async () => {
     try {
-      const result = await copyRecipe.mutateAsync(id!);
+      const result = await copyRecipe.mutateAsync(id);
       toast.success('Recipe duplicated');
       navigate(generatePath(ROUTES.RECIPE_DETAIL, {id: result.data.id}));
     } catch {

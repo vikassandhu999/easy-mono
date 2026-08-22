@@ -1,5 +1,4 @@
 import {Button, Chip, Typography} from '@heroui/react';
-import {useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
@@ -9,6 +8,7 @@ import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useRouteParam} from '@/@hooks/use-route-param';
 import {useListClientFormAssignmentsForCoachQuery, useReviewFormSubmissionMutation} from '@/api/checkins';
 import {useListClientWeightEntriesQuery} from '@/api/clients';
 import {submissionPhotoIds} from '@/checkins/lib/form-answers';
@@ -24,7 +24,8 @@ const FOOTER = 'sticky bottom-0 z-10 -mx-4 mt-auto flex items-center border-t bo
 
 /** CD-CS — one submitted check-in, and the review action that clears it. */
 export default function CheckinSubmission() {
-  const {assignmentId = '', id = ''} = useParams<{assignmentId: string; id: string}>();
+  const assignmentId = useRouteParam('assignmentId');
+  const id = useRouteParam('id');
   const goBack = useGoBack(`${ROUTES.CLIENT_DETAIL.replace(':id', id)}?tab=checkins`);
   const {data, isError, isLoading, refetch} = useListClientFormAssignmentsForCoachQuery(id);
   const reviewMutation = useReviewFormSubmissionMutation();
@@ -82,7 +83,6 @@ export default function CheckinSubmission() {
   }
 
   const isReviewed = Boolean(assignment.latest_submission_reviewed_at);
-  const answers = (submission.answers ?? {}) as Record<string, unknown>;
 
   const markReviewed = async () => {
     try {
@@ -136,7 +136,7 @@ export default function CheckinSubmission() {
                   label={question.label}
                   photoUrls={question.type === 'photo' ? photoIds.map((photoId) => urls[photoId]) : undefined}
                   type={question.type}
-                  value={answers[question.id]}
+                  value={submission.answers[question.id]}
                   weightUnit={weightUnit}
                 />
               ))}

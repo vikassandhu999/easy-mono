@@ -1,5 +1,5 @@
 import {ClipboardList} from 'lucide-react';
-import {useParams} from 'react-router-dom';
+
 import {BackButton} from '@/@components/back-button';
 import {EmptyState} from '@/@components/empty-state';
 import {ErrorState} from '@/@components/error-state';
@@ -9,6 +9,7 @@ import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useRouteParam} from '@/@hooks/use-route-param';
 import {useListClientFormAssignmentsForCoachQuery} from '@/api/checkins';
 import {submissionPhotoIds} from '@/checkins/lib/form-answers';
 import {FormAnswer} from '@/clients/components/form-answer';
@@ -23,7 +24,7 @@ import {formatDayMonth} from '@/clients/lib/client-detail-data';
  * that were given against the old wording. The snapshot exists for exactly this.
  */
 export default function IntakeResponses() {
-  const {id = ''} = useParams<{id: string}>();
+  const id = useRouteParam('id');
   const goBack = useGoBack(ROUTES.CLIENT_DETAIL.replace(':id', id));
   const {data, isError, isLoading, refetch} = useListClientFormAssignmentsForCoachQuery(id);
 
@@ -83,7 +84,6 @@ export default function IntakeResponses() {
   // client actually filled them in.
   const sections = submission?.question_snapshot ?? [];
   const questionCount = sections.reduce((n, section) => n + (section.questions?.length ?? 0), 0);
-  const answers = (submission?.answers ?? {}) as Record<string, unknown>;
 
   return (
     <Page>
@@ -120,7 +120,7 @@ export default function IntakeResponses() {
                       label={question.label}
                       photoUrls={question.type === 'photo' ? photoIds.map((photoId) => urls[photoId]) : undefined}
                       type={question.type}
-                      value={answers[question.id]}
+                      value={submission?.answers[question.id]}
                       weightUnit="kg"
                     />
                   ))}

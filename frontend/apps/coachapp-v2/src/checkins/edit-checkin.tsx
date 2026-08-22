@@ -1,4 +1,4 @@
-import {generatePath, useParams} from 'react-router-dom';
+import {generatePath} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
@@ -6,12 +6,8 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {
-  type ClientProfileFormTemplate,
-  type FormPurpose,
-  useGetFormTemplateQuery,
-  useUpdateFormTemplateMutation,
-} from '@/api/checkins';
+import {useRouteParam} from '@/@hooks/use-route-param';
+import {type ClientProfileFormTemplate, useGetFormTemplateQuery, useUpdateFormTemplateMutation} from '@/api/checkins';
 import {applyFormErrors} from '@/api/shared';
 import CheckinDetailsForm, {type CheckinDetailsValues, useCheckinDetailsForm} from '@/checkins/checkin-details-form';
 
@@ -35,7 +31,7 @@ function EditCheckinForm({template}: {template: ClientProfileFormTemplate}) {
   const goBack = useGoBack(generatePath(ROUTES.CHECKIN_BUILDER, {id: template.id}));
   const updateTemplateMutation = useUpdateFormTemplateMutation();
   const form = useCheckinDetailsForm({
-    defaultValues: {name: template.name, purpose: template.purpose as FormPurpose},
+    defaultValues: {name: template.name, purpose: template.purpose},
   });
 
   const onSubmit = async (data: CheckinDetailsValues) => {
@@ -76,9 +72,9 @@ function EditCheckinForm({template}: {template: ClientProfileFormTemplate}) {
 }
 
 export default function EditCheckin() {
-  const {id} = useParams<{id: string}>();
-  const goBack = useGoBack(generatePath(ROUTES.CHECKIN_BUILDER, {id: id!}));
-  const {data, isError, isLoading, refetch} = useGetFormTemplateQuery(id!);
+  const id = useRouteParam('id');
+  const goBack = useGoBack(generatePath(ROUTES.CHECKIN_BUILDER, {id}));
+  const {data, isError, isLoading, refetch} = useGetFormTemplateQuery(id);
 
   if (isLoading) {
     return (

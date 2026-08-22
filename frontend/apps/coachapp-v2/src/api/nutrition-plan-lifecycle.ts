@@ -1,4 +1,5 @@
 import type {components} from './schema.ts';
+import {parseApiError} from './shared.ts';
 
 export type ClientPlanLifecycle = Exclude<components['schemas']['NutritionPlan']['lifecycle'], null>;
 
@@ -51,20 +52,11 @@ export function nutritionPlanPeriodRequest(
 }
 
 export function getStaleNutritionPlanRevision(error: unknown): null | number {
-  if (!error || typeof error !== 'object' || !('data' in error)) {
+  const body = parseApiError(error);
+  if (body?.error_code !== 'stale_revision') {
     return null;
   }
 
-  const data = (error as {data?: unknown}).data;
-  if (!data || typeof data !== 'object' || !('error_code' in data) || data.error_code !== 'stale_revision') {
-    return null;
-  }
-
-  const detail = 'error_detail' in data ? data.error_detail : null;
-  if (!detail || typeof detail !== 'object' || !('current_revision' in detail)) {
-    return null;
-  }
-
-  const revision = detail.current_revision;
+  const revision = body.error_detail?.current_revision;
   return typeof revision === 'number' && Number.isInteger(revision) && revision > 0 ? revision : null;
 }

@@ -6,6 +6,8 @@ import {patchQueryData, queryClient} from '@/api/query-client';
 import type {components, paths} from '@/api/schema';
 import {workbenchMutationTargets} from '@/api/workbench-targets';
 
+export {parseChatMessage} from './chat-message.ts';
+
 export type ChatMessage = components['schemas']['ChatMessage'];
 export type ChatMessageEmbed = components['schemas']['ChatMessageEmbed'];
 export type ChatMessageEmbedRequest = components['schemas']['ChatMessageEmbedRequest'];

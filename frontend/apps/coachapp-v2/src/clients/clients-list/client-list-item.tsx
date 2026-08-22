@@ -29,7 +29,7 @@ const MOBILE_SUBTITLE_ATTENTION_CLASS = 'block max-w-full truncate type-eyebrow 
 
 type StatusCell = {label: string; time: null | string; tone: keyof typeof DOT_CLASS};
 
-function isExpired(client: Client): boolean {
+function isExpired(client: Client): client is Client & {subscription_ends_on: string} {
   return (
     client.status === 'inactive' && client.inactive_reason === 'subscription_expired' && !!client.subscription_ends_on
   );
@@ -54,7 +54,7 @@ function getStatusCell(client: Client): StatusCell {
     };
   }
   if (isExpired(client)) {
-    return {label: `Expired ${formatIsoDateShort(client.subscription_ends_on as string)}`, time: null, tone: 'danger'};
+    return {label: `Expired ${formatIsoDateShort(client.subscription_ends_on)}`, time: null, tone: 'danger'};
   }
   return {label: 'Inactive', time: null, tone: 'muted'};
 }

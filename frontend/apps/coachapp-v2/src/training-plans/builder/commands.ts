@@ -1,3 +1,4 @@
+import {isOneOf} from '@easy/utils/closed-vocabulary';
 import {toast} from '@heroui/react';
 
 import {toastMutationError} from '@/@components/mutation-toast';
@@ -11,6 +12,7 @@ import {handleStaleTrainingPlanConflict} from '@/training-plans/lib/stale-traini
 import {findElement, findWorkout, moveId} from './plan-tree';
 import {clearWorkoutFromSchedule, type Day, setScheduleDay} from './schedule';
 import {appendSet, blankSet, type PlannedSet, patchSet, removeSet} from './sets';
+import {TRACKING_TYPES} from './tracking';
 
 export const SET_EDIT_DEBOUNCE_MS = 600;
 export type BusyKey = 'addWorkout' | 'removeWorkout';
@@ -187,9 +189,9 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
             name: exercise.name,
             force: exercise.force,
             mechanics: exercise.mechanics,
-            tracking_type: exercise.tracking_type as NonNullable<
-              TrainingPlanWorkoutExercise['exercise']
-            >['tracking_type'],
+            // The library exercise carries `tracking_type` as a bare string; the
+            // Prescription contract's is the closed vocabulary.
+            tracking_type: isOneOf(TRACKING_TYPES, exercise.tracking_type) ? exercise.tracking_type : 'weight_reps',
             images: exercise.images,
           },
           position: startPosition + offset,

@@ -1,7 +1,7 @@
 import {formatIsoDateOnly} from '@easy/utils';
 import {Button, Chip, Typography, toast} from '@heroui/react';
 import {Copy, HandPlatter, Pencil, Trash2, Video} from 'lucide-react';
-import {generatePath, useNavigate, useParams} from 'react-router-dom';
+import {generatePath, useNavigate} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
@@ -14,6 +14,7 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useRouteParam} from '@/@hooks/use-route-param';
 import type {NutrientTotals} from '@/api/nutrition-foods';
 import {
   useCopyNutritionFoodMutation,
@@ -35,11 +36,11 @@ const MACRO_SEGMENTS: {
 ];
 
 export default function FoodDetail() {
-  const {id} = useParams<{id: string}>();
+  const id = useRouteParam('id');
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.FOODS);
-  const {data, isError, isLoading, refetch} = useGetFoodQuery(id!);
-  const {data: impactData} = useGetFoodImpactQuery(id!);
+  const {data, isError, isLoading, refetch} = useGetFoodQuery(id);
+  const {data: impactData} = useGetFoodImpactQuery(id);
   const deleteFoodMutation = useDeleteFoodMutation();
   const copyFood = useCopyNutritionFoodMutation();
   const impact = normalizeLibraryImpact(impactData?.data);

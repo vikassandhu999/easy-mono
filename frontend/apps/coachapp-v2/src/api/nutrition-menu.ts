@@ -36,8 +36,6 @@ export type PlanMenuSource = {
   >;
 };
 
-const WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
-
 const LOCAL_ID_PREFIX = 'local:';
 
 export function createLocalNodeId(kind: 'meal' | 'item' | 'pattern' | 'option'): string {
@@ -155,9 +153,15 @@ function mealIdentity(mealId: string): {nutrition_meal_id: string} | {meal_local
 }
 
 function scheduleInput(schedule: NutritionWeekSchedule): NutritionMenuReplaceRequest['schedule'] {
-  return Object.fromEntries(
-    WEEKDAYS.map((weekday) => [weekday, scheduleDayRef(schedule[weekday])]),
-  ) as NutritionMenuReplaceRequest['schedule'];
+  return {
+    monday: scheduleDayRef(schedule.monday),
+    tuesday: scheduleDayRef(schedule.tuesday),
+    wednesday: scheduleDayRef(schedule.wednesday),
+    thursday: scheduleDayRef(schedule.thursday),
+    friday: scheduleDayRef(schedule.friday),
+    saturday: scheduleDayRef(schedule.saturday),
+    sunday: scheduleDayRef(schedule.sunday),
+  };
 }
 
 function scheduleDayRef(patternId: string | null): string {

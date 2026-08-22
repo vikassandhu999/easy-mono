@@ -2,7 +2,7 @@ import {formatIsoDateOnly} from '@easy/utils';
 import {AlertDialog, Button, Chip, Typography, toast} from '@heroui/react';
 import {Copy, Dumbbell, Image as ImageIcon, Pencil, Trash2} from 'lucide-react';
 import type {ReactNode} from 'react';
-import {generatePath, useNavigate, useParams} from 'react-router-dom';
+import {generatePath, useNavigate} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
@@ -12,6 +12,7 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useRouteParam} from '@/@hooks/use-route-param';
 import {useDeleteExerciseMutation, useGetExerciseQuery} from '@/api/training-exercises';
 
 const MECHANICS_LABEL: Record<string, string> = {
@@ -38,17 +39,17 @@ function toSteps(instructions: string): string[] {
 }
 
 export default function ExerciseDetail() {
-  const {id} = useParams<{id: string}>();
+  const id = useRouteParam('id');
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.EXERCISES);
-  const {data, isError, isLoading, refetch} = useGetExerciseQuery(id!);
+  const {data, isError, isLoading, refetch} = useGetExerciseQuery(id);
   const deleteExerciseMutation = useDeleteExerciseMutation();
 
   const handleDelete = async () => {
     try {
       // useDeleteExerciseMutation invalidates detail + list itself, so the
       // deleted item doesn't linger when we land back on it.
-      await deleteExerciseMutation.mutateAsync(id!);
+      await deleteExerciseMutation.mutateAsync(id);
       navigate(ROUTES.EXERCISES, {replace: true});
     } catch {
       toast.danger("Couldn't delete exercise");

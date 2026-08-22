@@ -174,7 +174,7 @@ export function AmountSheetContent({
       return byUnit >= 0 ? byUnit : null;
     }
     // Create: pre-select the default (or first) serving if available.
-    const defaultIdx = sizes.findIndex((s) => (s as {is_default?: boolean}).is_default);
+    const defaultIdx = sizes.findIndex((s) => s.is_default);
     return sizes.length > 0 ? (defaultIdx >= 0 ? defaultIdx : 0) : null;
   });
 

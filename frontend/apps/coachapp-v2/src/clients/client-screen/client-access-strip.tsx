@@ -203,16 +203,16 @@ export function ClientAccessStrip({client}: {client: Client}) {
 function periodSummary(client: Client): string {
   const start = client.subscription_started_on;
   const end = client.subscription_ends_on;
-  if (!start && !end) {
-    return 'No coaching period set';
-  }
   if (start && end) {
     return `${formatIsoDateShort(start)} → ${formatIsoDateShort(end)}`;
   }
   if (start) {
     return `Started ${formatIsoDateShort(start)} · Ongoing`;
   }
-  return `Ends ${formatIsoDateShort(end!)}`;
+  if (end) {
+    return `Ends ${formatIsoDateShort(end)}`;
+  }
+  return 'No coaching period set';
 }
 
 type PendingPeriodChange = {

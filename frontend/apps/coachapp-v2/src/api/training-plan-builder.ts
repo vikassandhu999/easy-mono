@@ -89,12 +89,12 @@ export async function refetchTrainingPlan(planId: string): Promise<TrainingPlan 
 // ---------------------------------------------------------------------------
 
 export async function replacePrescription(planId: string, plan: TrainingPlan): Promise<TrainingPlan> {
-  const response = (await call(
+  const response = await call(
     client.PUT('/v1/coach/training-plans/{id}/prescription', {
       params: {path: {id: planId}},
       body: planToPrescriptionRequest(plan),
     }),
-  )) as TrainingPlanResponse;
+  );
   return response.data;
 }
 
@@ -113,12 +113,12 @@ export async function updatePlanPeriod(
     throw new Error('Cannot update Client Plan Coverage before the plan is loaded');
   }
 
-  const response = (await call(
+  const response = await call(
     client.PATCH('/v1/coach/training-plans/{id}', {
       params: {path: {id: planId}},
       body: trainingPlanPeriodRequest(plan, body),
     }),
-  )) as TrainingPlanResponse;
+  );
   queryClient.invalidateQueries({queryKey: trainingPlanKeys.detail(planId)});
   queryClient.invalidateQueries({queryKey: trainingPlanKeys.lists()});
   queryClient.invalidateQueries({queryKey: trainingPlanKeys.forClients()});

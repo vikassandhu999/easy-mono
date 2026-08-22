@@ -15,6 +15,7 @@ import {
   appendMessage,
   type ChatMessage,
   type ChatMessageEmbedRequest,
+  parseChatMessage,
   useConversationMessagesInfiniteQuery,
   useCreateCoachConversationMessageMutation,
   useMarkCoachConversationReadMutation,
@@ -154,7 +155,11 @@ export default function ConversationView({
     `conversation:${conversationId}`,
     'message_new',
     (payload) => {
-      appendMessage(conversationId, payload as ChatMessage);
+      const message = parseChatMessage(payload);
+      if (!message) {
+        return;
+      }
+      appendMessage(conversationId, message);
       qc.invalidateQueries({queryKey: conversationKeys.lists()});
     },
     // Refetch anything missed while the socket was down (fires on every rejoin).

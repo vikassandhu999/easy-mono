@@ -179,7 +179,7 @@ export function ExerciseCard({
             <Button
               className={`${INLINE_LINK} mt-0.5 py-1 font-btn type-eyebrow`}
               data-testid="tb-add-set"
-              onPress={(event) => onAddSet(event.target as HTMLElement)}
+              onPress={(event) => event.target instanceof HTMLElement && onAddSet(event.target)}
               variant="ghost"
             >
               + Add set

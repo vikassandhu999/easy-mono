@@ -10,10 +10,15 @@ import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import type {ClientProfileFormAssignment} from '@/api/checkins';
 import {useListClientFormAssignmentsForCoachQuery} from '@/api/checkins';
 import type {Client} from '@/api/clients';
-import {useListClientWeightEntriesQuery, useUpdateClientMutation} from '@/api/clients';
+import {goalWeightValue, useListClientWeightEntriesQuery, useUpdateClientMutation} from '@/api/clients';
 import {useListCoachNutritionDaysQuery} from '@/api/nutrition-plans-list';
 import {useListCoachClientTrainingSessionsQuery} from '@/api/training-plans-list';
-import {type AnswerType, formatAnswer, isSummarisableAnswer, submissionPhotoIds} from '@/checkins/lib/form-answers';
+import {
+  type AnsweredSubmission,
+  formatAnswer,
+  isSummarisableAnswer,
+  submissionPhotoIds,
+} from '@/checkins/lib/form-answers';
 import {DetailRow} from '@/clients/components/detail-row';
 import IntakeAssignControl from '@/clients/components/intake-assign-control';
 import {PhotoThumb} from '@/clients/components/photo-thumb';
@@ -21,6 +26,7 @@ import {SectionCard} from '@/clients/components/section-card';
 import {
   completedSessionDates,
   dayOfMonth,
+  dayWindowRange,
   formatDayMonth,
   formatWeight,
   lastNDays,
@@ -38,8 +44,7 @@ import {
  */
 export function OverviewTab({client}: {client: Client}) {
   const week = lastNDays(7);
-  const from = week[0]!;
-  const to = week[6]!;
+  const {from, to} = dayWindowRange(week);
   const navigate = useNavigate();
   const [assignOpen, setAssignOpen] = useState(false);
   const clientPath = (route: string) => route.replace(':id', client.id);
@@ -53,7 +58,7 @@ export function OverviewTab({client}: {client: Client}) {
   const loggedDays = loggedMealDates(meals.data?.data);
   // `goal` is a loosely-typed index-signature object on the wire; narrow the
   // one field this screen reads.
-  const trend = weightTrend(weights.data?.entries, (weights.data?.goal?.value as number | undefined) ?? null);
+  const trend = weightTrend(weights.data?.entries, goalWeightValue(weights.data));
 
   const assignments = forms.data?.data ?? [];
   const submissions = assignments.filter((a) => a.latest_submission && a.purpose === 'check_in');
@@ -106,6 +111,7 @@ export function OverviewTab({client}: {client: Client}) {
             {latest?.latest_submission && (
               <LatestCheckInCard
                 assignment={latest}
+                submission={latest.latest_submission}
                 to={clientPath(ROUTES.CLIENT_CHECKIN_SUBMISSION).replace(':assignmentId', latest.id)}
                 unit={trend?.latest.unit ?? 'kg'}
               />
@@ -225,14 +231,15 @@ function WeekCard({doneDays, loggedDays, week}: {doneDays: Set<string>; loggedDa
  */
 function LatestCheckInCard({
   assignment,
+  submission,
   to,
   unit,
 }: {
   assignment: ClientProfileFormAssignment;
+  submission: NonNullable<ClientProfileFormAssignment['latest_submission']>;
   to: string;
   unit: string;
 }) {
-  const submission = assignment.latest_submission!;
   const photos = submissionPhotoIds(submission).slice(0, 3);
   const {urls} = useAttachmentDownloadUrls(photos);
   const reviewed = Boolean(assignment.latest_submission_reviewed_at);
@@ -480,20 +487,13 @@ function Dot({isOn}: {isOn: boolean}) {
  * five dots; everything else is already a string by the time it lands here.
  */
 function answerSummary(
-  submission: {
-    answers?: Record<string, unknown> | null;
-    question_snapshot?: {questions?: {id: string; label: string; type?: AnswerType}[]}[] | null;
-  },
+  submission: AnsweredSubmission,
   unit: string,
 ): {answer: string; label: string; rating: null | number}[] {
-  const answers = (submission.answers ?? {}) as Record<string, unknown>;
   const rows: {answer: string; label: string; rating: null | number}[] = [];
-  for (const section of submission.question_snapshot ?? []) {
-    for (const question of section.questions ?? []) {
-      if (!question.type) {
-        continue;
-      }
-      const value = answers[question.id];
+  for (const section of submission.question_snapshot) {
+    for (const question of section.questions) {
+      const value = submission.answers[question.id];
       if (!isSummarisableAnswer(value, question.type)) {
         continue;
       }

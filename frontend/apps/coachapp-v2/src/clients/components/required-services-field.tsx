@@ -1,3 +1,4 @@
+import {isOneOf} from '@easy/utils/closed-vocabulary';
 import {Description, ErrorMessage, Fieldset, ToggleButton, ToggleButtonGroup, Typography} from '@heroui/react';
 import {Dumbbell, Utensils} from 'lucide-react';
 
@@ -18,7 +19,12 @@ const SERVICE_CONTENT = {
   },
 } satisfies Record<RequiredService, {description: string; icon: typeof Dumbbell; label: string}>;
 
-export function canonicalRequiredServices(services: readonly RequiredService[]): RequiredServices {
+/**
+ * The canonical tuple for a selection, or undefined when nothing is selected.
+ * Built one branch at a time so the tuple is CONSTRUCTED rather than asserted —
+ * `RequiredServices` is a union of tuples and no length check narrows into it.
+ */
+export function nonEmptyRequiredServices(services: readonly RequiredService[]): RequiredServicesNonEmpty | undefined {
   const training = services.includes('training');
   const nutrition = services.includes('nutrition');
   if (training && nutrition) {
@@ -30,18 +36,15 @@ export function canonicalRequiredServices(services: readonly RequiredService[]):
   if (nutrition) {
     return ['nutrition'];
   }
-  return [];
+  return undefined;
 }
 
-export function nonEmptyRequiredServices(services: readonly RequiredService[]): RequiredServicesNonEmpty | undefined {
-  const canonical = canonicalRequiredServices(services);
-  return canonical.length === 0 ? undefined : (canonical as RequiredServicesNonEmpty);
+export function canonicalRequiredServices(services: readonly RequiredService[]): RequiredServices {
+  return nonEmptyRequiredServices(services) ?? [];
 }
 
 function selectedServices(keys: Set<React.Key>): RequiredService[] {
-  return [...keys]
-    .map(String)
-    .filter((value): value is RequiredService => REQUIRED_SERVICE_VALUES.includes(value as RequiredService));
+  return [...keys].filter((key): key is RequiredService => isOneOf(REQUIRED_SERVICE_VALUES, key));
 }
 
 export default function RequiredServicesField({

@@ -1,7 +1,7 @@
 import {formatIsoDateOnly} from '@easy/utils';
 import {Button, toast} from '@heroui/react';
 import {Check, MessageCircle} from 'lucide-react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {useNavigate} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
@@ -9,6 +9,7 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useRouteParam} from '@/@hooks/use-route-param';
 import {useListCheckInReviewQueueQuery, useReviewFormSubmissionMutation} from '@/api/checkins';
 import ReviewAnswers from '@/checkins/review-answers';
 
@@ -17,7 +18,7 @@ function clientName(item: {client: {first_name: null | string; last_name: null |
 }
 
 export default function ReviewCheckin() {
-  const {id} = useParams<{id: string}>();
+  const id = useRouteParam('id');
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.DASHBOARD);
   const {data, isError, isLoading} = useListCheckInReviewQueueQuery();

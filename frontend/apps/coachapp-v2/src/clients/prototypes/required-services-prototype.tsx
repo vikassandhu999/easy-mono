@@ -4,6 +4,8 @@
  * Switch with `?context=invite|intake|edit|unclassified`.
  * Nothing persists; submit only reveals proposed request payload.
  */
+
+import {isOneOf} from '@easy/utils/closed-vocabulary';
 import {
   Button,
   Chip,
@@ -32,7 +34,8 @@ import {ROUTES} from '@/@config/routes';
 
 const SERVICES = ['training', 'nutrition'] as const;
 type Service = (typeof SERVICES)[number];
-type PrototypeContext = 'edit' | 'intake' | 'invite' | 'unclassified';
+const CONTEXTS = ['edit', 'intake', 'invite', 'unclassified'] as const;
+type PrototypeContext = (typeof CONTEXTS)[number];
 
 const SERVICE_CONTENT: Record<Service, {description: string; icon: typeof Dumbbell; label: string}> = {
   training: {
@@ -82,7 +85,7 @@ function parseServices(keys: Set<React.Key> | 'all'): Service[] {
   if (keys === 'all') {
     return [...SERVICES];
   }
-  return [...keys].map(String).filter((value): value is Service => SERVICES.includes(value as Service));
+  return [...keys].filter((key): key is Service => isOneOf(SERVICES, key));
 }
 
 function serviceCopy(context: PrototypeContext) {
@@ -280,7 +283,7 @@ function PrototypeControls({
         >
           Prototype
         </Chip>
-        {(Object.keys(CONTEXT_LABELS) as PrototypeContext[]).map((item) => (
+        {CONTEXTS.map((item) => (
           <Button
             className="text-ink-foreground"
             key={item}

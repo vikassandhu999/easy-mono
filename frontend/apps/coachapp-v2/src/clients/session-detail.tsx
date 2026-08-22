@@ -1,6 +1,5 @@
 import {Chip, Typography} from '@heroui/react';
 import {Check, Dumbbell, Quote} from 'lucide-react';
-import {useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {EmptyState} from '@/@components/empty-state';
@@ -9,6 +8,7 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useRouteParam} from '@/@hooks/use-route-param';
 import type {TrainingPerformedSet} from '@/api/training-plans-list';
 import {useGetCoachClientTrainingSessionQuery} from '@/api/training-plans-list';
 import {SectionCard} from '@/clients/components/section-card';
@@ -24,7 +24,8 @@ import {buildExerciseGroups, type ExerciseGroup, formatLoad, sessionWorkoutName}
  * design's `.mtopbar` IS `Page.Header`.
  */
 export default function SessionDetail() {
-  const {clientId = '', sessionId = ''} = useParams<{clientId: string; sessionId: string}>();
+  const clientId = useRouteParam('clientId');
+  const sessionId = useRouteParam('sessionId');
   const goBack = useGoBack(`${ROUTES.CLIENT_DETAIL.replace(':id', clientId)}?tab=training`);
   const {data, isError, isLoading, refetch} = useGetCoachClientTrainingSessionQuery(clientId, sessionId);
 

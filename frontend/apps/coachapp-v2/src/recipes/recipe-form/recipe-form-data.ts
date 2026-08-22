@@ -43,13 +43,26 @@ export function recipeIngredientsToDrafts(ingredients: RecipeIngredient[]): Ingr
     }));
 }
 
-function recipeIngredientDraftToApi(item: IngredientItem): RecipeIngredientRequest {
-  return omitUndefined({
-    food_id: item.food_id,
-    unit: toOptionalText(item.unit),
-    amount: toOptionalNumber(item.amount),
-    weight_g: toOptionalNumber(item.weight_g),
-  }) as RecipeIngredientRequest;
+/**
+ * `weight_g` is REQUIRED by the contract, and the submit gate
+ * (`canComputeRecipeNutrition`) already blocks a recipe holding a weightless
+ * row. Returning 0-or-1 rows says that in the types: the previous version ran
+ * every field through `omitUndefined`, which made `weight_g` optional, and a
+ * cast put the required shape back — so a weightless row compiled into a
+ * request the server rejects with a generic 422.
+ */
+function recipeIngredientDraftToApi(item: IngredientItem): RecipeIngredientRequest[] {
+  const weight_g = toOptionalNumber(item.weight_g);
+  if (weight_g == null) {
+    return [];
+  }
+  return [
+    {
+      ...omitUndefined({unit: toOptionalText(item.unit), amount: toOptionalNumber(item.amount)}),
+      food_id: item.food_id,
+      weight_g,
+    },
+  ];
 }
 
 export function recipeToFormValues(recipe: {
@@ -77,8 +90,8 @@ export function recipeToCreateRequest({ingredients, values}: RecipeRequestArgs):
     instructions: toOptionalText(values.instructions),
     servings_count: values.servings_count,
     cooked_weight_g: values.cooked_weight_g,
-    recipe_ingredients: ingredients.map(recipeIngredientDraftToApi),
-  }) as RecipeRequest;
+    recipe_ingredients: ingredients.flatMap(recipeIngredientDraftToApi),
+  });
 }
 
 export function recipeToUpdateRequest({
@@ -92,6 +105,6 @@ export function recipeToUpdateRequest({
     instructions: toNullableText(values.instructions),
     servings_count: values.servings_count,
     cooked_weight_g: values.cooked_weight_g ?? null,
-    recipe_ingredients: ingredients.map(recipeIngredientDraftToApi),
+    recipe_ingredients: ingredients.flatMap(recipeIngredientDraftToApi),
   };
 }

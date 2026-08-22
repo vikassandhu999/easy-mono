@@ -39,10 +39,18 @@ export type ListClientsParams = Pick<ListClientsQuery, 'include_plans' | 'limit'
 
 export type ListClientsFilters = Pick<ListClientsQuery, 'search' | 'sort' | 'status'>;
 
+/**
+ * The `as Promise<…>` casts below are LOAD-BEARING, not leftovers: openapi-fetch
+ * runs response types through `Readable<T>`, which widens tuple unions to plain
+ * arrays — so `RequiredServices` (`['training'] | ['nutrition'] | …`) comes back
+ * as `('training' | 'nutrition')[]` and no longer matches the generated schema
+ * every consumer is typed against. The cast restores the operation's own
+ * response type. Delete one only after that widening is gone.
+ */
 export function useGetClientQuery(id: string, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: clientKeys.detail(id),
-    queryFn: () => call(client.GET('/v1/coach/clients/{id}', {params: {path: {id}}})) as Promise<ClientResponse>, // openapi-fetch widens RequiredServices tuples to arrays
+    queryFn: () => call(client.GET('/v1/coach/clients/{id}', {params: {path: {id}}})) as Promise<ClientResponse>,
     enabled: options?.enabled ?? true,
   });
 }
@@ -150,6 +158,18 @@ export function useUpdateClientMutation() {
 }
 
 export type WeightEntry = components['schemas']['WeightEntry'];
+
+/**
+ * The goal weight off a weight-entries response.
+ *
+ * The contract types `goal` as `{[key: string]: unknown} | null` — the backend
+ * does not spec its shape — so the value is CHECKED here rather than asserted
+ * `as number` at each of the three screens that draw the goal rule.
+ */
+export function goalWeightValue(response: {goal: null | {[key: string]: unknown}} | undefined): null | number {
+  const value = response?.goal?.value;
+  return typeof value === 'number' ? value : null;
+}
 
 export function useListClientWeightEntriesQuery(clientId: string, options?: {enabled?: boolean}) {
   return useQuery({

@@ -1,8 +1,8 @@
+import {isOneOf} from '@easy/utils/closed-vocabulary';
 import {Button, Typography, toast} from '@heroui/react';
 import {ArrowLeft, ExternalLink, Plus, Trash2} from 'lucide-react';
 import {type ReactNode, useEffect, useId, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import SectionHeading from '@/@components/section-heading';
@@ -586,6 +586,7 @@ const QUESTION_TYPES: {value: QuestionType; label: string}[] = [
   {value: 'long_text', label: 'Long text'},
   {value: 'single_select', label: 'Single select'},
 ];
+const QUESTION_TYPE_VALUES = QUESTION_TYPES.map(({value}) => value);
 
 function QuestionsEditor({questions, onChange}: {questions: QuestionDraft[]; onChange: (q: QuestionDraft[]) => void}) {
   const set = (index: number, patch: Partial<QuestionDraft>) =>
@@ -609,7 +610,9 @@ function QuestionsEditor({questions, onChange}: {questions: QuestionDraft[]; onC
                   <span className="mb-1 block type-body font-medium">Answer type</span>
                   <select
                     className={inputCls}
-                    onChange={(e) => set(index, {type: e.target.value as QuestionType})}
+                    onChange={(e) =>
+                      isOneOf(QUESTION_TYPE_VALUES, e.target.value) && set(index, {type: e.target.value})
+                    }
                     value={question.type}
                   >
                     {QUESTION_TYPES.map((t) => (

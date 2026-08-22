@@ -1,4 +1,5 @@
 import {getInitials} from '@easy/utils';
+import {isOneOf} from '@easy/utils/closed-vocabulary';
 import {Avatar, Button, Chip, Description, Label, ToggleButton, ToggleButtonGroup, Typography} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {Dumbbell, Utensils} from 'lucide-react';
@@ -29,6 +30,8 @@ const FILTERS: {id: ProgrammingServiceFilter; label: string}[] = [
   {id: 'training', label: 'Training'},
   {id: 'nutrition', label: 'Nutrition'},
 ];
+const FILTER_IDS = FILTERS.map(({id}) => id);
+const NO_ITEMS: WorkbenchProgrammingQueueItem[] = [];
 
 type ProgrammingReason = WorkbenchProgrammingQueueItem['reasons'][number];
 
@@ -39,7 +42,7 @@ const REASON_TONE: Record<ProgrammingReason['code'], string> = {
 };
 
 function parseFilter(raw: null | string): ProgrammingServiceFilter {
-  return raw === 'training' || raw === 'nutrition' ? raw : 'all';
+  return isOneOf(FILTER_IDS, raw) ? raw : 'all';
 }
 
 function clientName(item: WorkbenchProgrammingQueueItem): string {
@@ -85,7 +88,8 @@ export function ProgrammingToolbar() {
         disallowEmptySelection
         isDetached
         onSelectionChange={(keys) => {
-          const next = String([...keys][0] ?? 'all') as ProgrammingServiceFilter;
+          const key = [...keys][0];
+          const next = isOneOf(FILTER_IDS, key) ? key : 'all';
           const updated = new URLSearchParams(params);
           updated.set('view', 'programming');
           if (next === 'all') {
@@ -131,7 +135,7 @@ export default function ProgrammingView() {
         grid
         isError={list.isError}
         isLoading={list.isLoading}
-        items={[] as WorkbenchProgrammingQueueItem[]}
+        items={NO_ITEMS}
         onRetry={list.refetch}
         renderItem={() => null}
         skeletonAvatar

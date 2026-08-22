@@ -149,11 +149,6 @@ function AcceptInviteWithToken({token}: {token: string}) {
  * us preserve the email the user typed (overriding the prefill) and focus
  * the field so they can correct it without tapping in.
  */
-interface AcceptInviteLocationState {
-  email?: string;
-  focusEmail?: boolean;
-}
-
 function WelcomeForm({
   businessName,
   prefillEmail,
@@ -167,10 +162,13 @@ function WelcomeForm({
   const location = useLocation();
   const acceptInviteMutation = useTrainerAcceptInviteMutation();
 
-  // Priority: user-typed email (from Change-it) > coach prefill > empty.
-  const locationState = location.state as AcceptInviteLocationState | null;
-  const initialEmail = locationState?.email ?? prefillEmail ?? '';
-  const shouldFocusEmail = locationState?.focusEmail ?? !prefillEmail;
+  // Priority: user-typed email (from Change-it) > coach prefill > empty. History
+  // state is untyped and survives a reload, so read it field by field.
+  const state: unknown = location.state;
+  const typedEmail = state && typeof state === 'object' && 'email' in state ? state.email : undefined;
+  const focusEmail = state && typeof state === 'object' && 'focusEmail' in state ? state.focusEmail : undefined;
+  const initialEmail = typeof typedEmail === 'string' ? typedEmail : (prefillEmail ?? '');
+  const shouldFocusEmail = typeof focusEmail === 'boolean' ? focusEmail : !prefillEmail;
 
   const {
     formState: {errors},

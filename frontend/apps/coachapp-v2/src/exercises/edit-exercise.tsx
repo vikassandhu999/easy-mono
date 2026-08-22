@@ -1,4 +1,4 @@
-import {generatePath, Navigate, useParams} from 'react-router-dom';
+import {generatePath, Navigate} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
@@ -6,6 +6,7 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useRouteParam} from '@/@hooks/use-route-param';
 import {applyFormErrors} from '@/api/shared';
 import {
   type TrainingExercise,
@@ -99,11 +100,11 @@ function EditExerciseForm({
 }
 
 export default function EditExercise() {
-  const {id} = useParams<{id: string}>();
-  const {data, isError, isLoading: isFetching, refetch} = useGetExerciseQuery(id!);
+  const id = useRouteParam('id');
+  const {data, isError, isLoading: isFetching, refetch} = useGetExerciseQuery(id);
 
   const exercise = data?.data;
-  const backPath = generatePath(ROUTES.EXERCISE_DETAIL, {id: id!});
+  const backPath = generatePath(ROUTES.EXERCISE_DETAIL, {id});
   const goBack = useGoBack(backPath);
 
   if (isFetching) {
@@ -155,7 +156,7 @@ export default function EditExercise() {
     <EditExerciseForm
       backPath={backPath}
       exercise={exercise}
-      exerciseId={id!}
+      exerciseId={id}
     />
   );
 }

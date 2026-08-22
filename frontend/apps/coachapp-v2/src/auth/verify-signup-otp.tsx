@@ -1,20 +1,17 @@
 import {Button, ErrorMessage, Form, Link, Spinner, Typography, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm, useWatch} from 'react-hook-form';
-import {Navigate, useLocation, useNavigate} from 'react-router-dom';
+import {Navigate, useNavigate} from 'react-router-dom';
 import {z} from 'zod';
 import {FormOtpField} from '@/@components/form-fields/form-otp-field';
 
 import {ROUTES} from '@/@config/routes';
+import {useHistoryStateString} from '@/@hooks/use-history-state';
 import {useSendOtpMutation, useVerifyOtpMutation} from '@/api/auth';
 import {setTokens} from '@/api/authStorage';
 import {applyFormErrors} from '@/api/shared';
 import {AuthFooter} from '@/auth/components/auth-footer';
 import AuthLayout from '@/auth/components/auth-layout';
-
-interface VerifySignupOtpLocationState {
-  email: string;
-}
 
 const schema = z.object({
   otp: z.string().length(6, 'Enter all 6 digits'),
@@ -23,9 +20,8 @@ const schema = z.object({
 type VerifySignupOtpFormValues = z.infer<typeof schema>;
 
 export default function VerifySignupOtp() {
-  const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as null | VerifySignupOtpLocationState;
+  const email = useHistoryStateString('email');
 
   const verifyOtpMutation = useVerifyOtpMutation();
   const sendOtpMutation = useSendOtpMutation();
@@ -37,7 +33,7 @@ export default function VerifySignupOtp() {
 
   const otpValue = useWatch({control: form.control, name: 'otp'});
 
-  if (!state?.email) {
+  if (!email) {
     return (
       <Navigate
         replace
@@ -46,12 +42,12 @@ export default function VerifySignupOtp() {
     );
   }
 
-  const maskedEmail = state.email.replace(/(.{2})(.*)(@.*)/, '$1***$3');
+  const maskedEmail = email.replace(/(.{2})(.*)(@.*)/, '$1***$3');
 
   const onSubmit = async (data: VerifySignupOtpFormValues) => {
     try {
       const result = await verifyOtpMutation.mutateAsync({
-        email: state.email,
+        email,
         otp: data.otp,
       });
       setTokens(result);
@@ -66,7 +62,7 @@ export default function VerifySignupOtp() {
 
   const handleResend = async () => {
     try {
-      await sendOtpMutation.mutateAsync({email: state.email, type: 'email_confirmation'});
+      await sendOtpMutation.mutateAsync({email, type: 'email_confirmation'});
       toast.success('A new code is on its way');
     } catch (err) {
       applyFormErrors(err, "Code wasn't resent. Try again", form.setError);

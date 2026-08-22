@@ -6,9 +6,23 @@
  */
 
 import type {FormQuestionType} from '@/api/checkins';
+import type {components} from '@/api/schema';
 
 /** The question types a form can hold, from the generated `question_snapshot`. */
 export type AnswerType = FormQuestionType;
+
+type GeneratedSubmission = components['schemas']['ClientProfileFormSubmission'];
+
+/** One section of a submitted form's `question_snapshot`, as the API emits it. */
+export type FormSnapshotSection = GeneratedSubmission['question_snapshot'][number];
+/** One question inside a snapshot section — a union discriminated on `type`. */
+export type FormSnapshotQuestion = FormSnapshotSection['questions'][number];
+
+/**
+ * A submitted form, reduced to what rendering an answer needs. Derived from the
+ * generated submission so a snapshot or answer shape change breaks the build here.
+ */
+export type AnsweredSubmission = Pick<GeneratedSubmission, 'answers' | 'attachments' | 'question_snapshot'>;
 
 /**
  * One answer, rendered. Shared by CD-IR, CD-CS, the CD-OV summary and the
@@ -28,7 +42,7 @@ export function formatAnswer(value: unknown, type: AnswerType): string {
     return '—';
   }
   if (type === 'service_type' && typeof value === 'object' && 'services' in value) {
-    const services = (value as {services?: unknown}).services;
+    const {services} = value;
     if (Array.isArray(services)) {
       return services.map((service) => (service === 'training' ? 'Training' : 'Nutrition')).join(' · ') || '—';
     }
@@ -51,16 +65,12 @@ export function formatAnswer(value: unknown, type: AnswerType): string {
  * submitted three. `attachments` is still merged in, for a response that populates
  * it.
  */
-export function submissionPhotoIds(submission: {
-  answers?: null | Record<string, unknown>;
-  attachments?: null | {content_type: string; id: string}[];
-  question_snapshot?: null | {questions?: {id: string; type?: AnswerType}[]}[];
-}): string[] {
-  const answers = (submission.answers ?? {}) as Record<string, unknown>;
+export function submissionPhotoIds(submission: AnsweredSubmission): string[] {
+  const {answers} = submission;
   const ids: string[] = [];
 
-  for (const section of submission.question_snapshot ?? []) {
-    for (const question of section.questions ?? []) {
+  for (const section of submission.question_snapshot) {
+    for (const question of section.questions) {
       if (question.type !== 'photo') {
         continue;
       }
@@ -72,7 +82,7 @@ export function submissionPhotoIds(submission: {
       }
     }
   }
-  for (const attachment of submission.attachments ?? []) {
+  for (const attachment of submission.attachments) {
     if (attachment.content_type.startsWith('image/') && !ids.includes(attachment.id)) {
       ids.push(attachment.id);
     }

@@ -12,6 +12,7 @@
  * library.
  */
 
+import {isOneOf} from '@easy/utils/closed-vocabulary';
 import {
   Button,
   Chip,
@@ -171,6 +172,7 @@ function QuestionRow({
   const Icon = QUESTION_TYPE_ICONS[question.type];
   const locked = questionIdentityLocked(question.type);
   const showOptions = QUESTION_TYPES_WITH_OPTIONS.includes(question.type);
+  const answerTypes = questionTypeOrder(purpose, locked || !serviceTypeExists);
 
   return (
     <div className="rounded-control border border-border bg-surface">
@@ -301,10 +303,10 @@ function QuestionRow({
               className="min-w-0 flex-1"
               isDisabled={locked}
               onChange={(key) => {
-                if (!key) {
+                if (!isOneOf(answerTypes, key)) {
                   return;
                 }
-                const type = key as QuestionDraft['type'];
+                const type = key;
                 onChange({
                   options: QUESTION_TYPES_WITH_OPTIONS.includes(type) ? question.options : [],
                   required: questionIdentityLocked(type) ? true : question.required,
@@ -321,7 +323,7 @@ function QuestionRow({
               </Select.Trigger>
               <Select.Popover>
                 <ListBox>
-                  {questionTypeOrder(purpose, locked || !serviceTypeExists).map((type) => (
+                  {answerTypes.map((type) => (
                     <ListBox.Item
                       id={type}
                       key={type}

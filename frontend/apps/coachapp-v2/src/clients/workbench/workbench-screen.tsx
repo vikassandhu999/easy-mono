@@ -1,8 +1,8 @@
+import {isOneOf} from '@easy/utils/closed-vocabulary';
 import {Button, Skeleton} from '@heroui/react';
 import {CheckCircle2, ChevronLeft, UserPlus} from 'lucide-react';
 import type {ReactNode} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
-
 import {EmptyState} from '@/@components/empty-state';
 import {Page} from '@/@components/page';
 import {TodayCard} from '@/@components/today-card';
@@ -11,7 +11,6 @@ import {useListClientsQuery} from '@/api/clients';
 import {useWorkbenchCountsQuery} from '@/api/workbench';
 import {workbenchCount} from '@/clients/lib/workbench-counts';
 import {queueEntries, queueMeta, TODAY_QUEUES, type WorkbenchQueueId} from '@/clients/lib/workbench-queues';
-
 import AllClientsView from './all-clients-view';
 import CheckInsView from './check-ins-view';
 import {ExpiringView, QuietView} from './expiring-quiet-views';
@@ -43,7 +42,7 @@ type ViewId = 'all' | WorkbenchQueueId;
 const VIEW_IDS: ViewId[] = ['all', ...TODAY_QUEUES.map((queue) => queue.id)];
 
 function parseView(raw: null | string): undefined | ViewId {
-  return VIEW_IDS.includes(raw as ViewId) ? (raw as ViewId) : undefined;
+  return isOneOf(VIEW_IDS, raw) ? raw : undefined;
 }
 
 function ContentSkeleton() {

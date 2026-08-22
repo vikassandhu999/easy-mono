@@ -1,13 +1,14 @@
 import {AlertDialog, Button, useOverlayState} from '@heroui/react';
 import {useState} from 'react';
-import {generatePath, useParams} from 'react-router-dom';
+import {generatePath} from 'react-router-dom';
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/nutrition-foods';
+import {useRouteParam} from '@/@hooks/use-route-param';
+import {type Recipe, useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/nutrition-foods';
 import {applyFormErrors} from '@/api/shared';
 import {libraryInUseMessage} from '@/foods/lib/library-impact';
 import type {IngredientItem} from '@/recipes/lib/recipe-math';
@@ -21,12 +22,9 @@ import {
 
 // Rendered only when recipe data is available, avoiding useEffect to sync server state
 // into local state (which the React Compiler lint rule forbids).
-function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: string}) {
+function EditRecipeForm({backPath, recipe, recipeId}: {backPath: string; recipe: Recipe; recipeId: string}) {
   const goBack = useGoBack(backPath);
-  const {data} = useGetRecipeQuery(recipeId);
   const updateRecipe = useUpdateRecipeMutation();
-
-  const recipe = data!.data;
   const [ingredients, setIngredients] = useState<IngredientItem[]>(() =>
     recipeIngredientsToDrafts(recipe.recipe_ingredients),
   );
@@ -137,9 +135,9 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
 }
 
 export default function EditRecipe() {
-  const {id} = useParams<{id: string}>();
-  const {data, isError, isLoading: isFetching, refetch} = useGetRecipeQuery(id!);
-  const backPath = generatePath(ROUTES.RECIPE_DETAIL, {id: id!});
+  const id = useRouteParam('id');
+  const {data, isError, isLoading: isFetching, refetch} = useGetRecipeQuery(id);
+  const backPath = generatePath(ROUTES.RECIPE_DETAIL, {id});
   const goBackOuter = useGoBack(backPath);
 
   if (isError) {
@@ -194,7 +192,8 @@ export default function EditRecipe() {
   return (
     <EditRecipeForm
       backPath={backPath}
-      recipeId={id!}
+      recipe={data.data}
+      recipeId={id}
     />
   );
 }

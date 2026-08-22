@@ -3,6 +3,8 @@
  * `training-plan-form`. Used by the create screen and the edit-details screen;
  * questions are built on the builder screen, never here.
  */
+
+import {isOneOf} from '@easy/utils/closed-vocabulary';
 import {Description, ErrorMessage, Fieldset, Label, ToggleButton, ToggleButtonGroup} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Controller, useForm} from 'react-hook-form';
@@ -11,7 +13,7 @@ import {FormActions} from '@/@components/form-fields/form-actions';
 import {FormLayout} from '@/@components/form-fields/form-layout';
 import {FormPanel} from '@/@components/form-fields/form-panel';
 import {FormTextField} from '@/@components/form-fields/form-text-field';
-import {type FormPurpose, PURPOSE_LABELS, PURPOSES} from '@/api/checkins';
+import {PURPOSE_LABELS, PURPOSES} from '@/api/checkins';
 
 export const checkinDetailsSchema = z.object({
   name: z.string().trim().min(1, 'Name is required'),
@@ -85,8 +87,8 @@ export default function CheckinDetailsForm({
                     {...(isPurposeLocked != null ? {isDisabled: isPurposeLocked} : {})}
                     onSelectionChange={(keys) => {
                       const next = [...keys][0];
-                      if (next) {
-                        field.onChange(next as FormPurpose);
+                      if (isOneOf(PURPOSES, next)) {
+                        field.onChange(next);
                       }
                     }}
                     selectedKeys={[field.value]}

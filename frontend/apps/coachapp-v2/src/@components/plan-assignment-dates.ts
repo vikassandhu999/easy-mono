@@ -5,6 +5,8 @@
 import {parseDate} from '@internationalized/date';
 import {z} from 'zod';
 
+import {getValidationErrors} from '@/api/shared';
+
 export type PlanKind = 'nutrition' | 'training';
 
 export const PLAN_ASSIGNMENT_DURATIONS = [4, 8, 12] as const;
@@ -50,10 +52,8 @@ export function planAssignmentConflictMessage(
   planKind: PlanKind,
   clientName: string,
 ): string | undefined {
-  const detail = (error as {data?: {error_detail?: unknown}} | null)?.data?.error_detail;
-  const fields = (detail as {fields?: unknown} | null)?.fields ?? detail;
-  const messages = Object.values((fields as Record<string, unknown>) ?? {}).flat();
-  if (!messages.some((message) => typeof message === 'string' && message.includes('overlap'))) {
+  const messages = Object.values(getValidationErrors(error) ?? {}).flat();
+  if (!messages.some((message) => message.includes('overlap'))) {
     return undefined;
   }
   return `${clientName} already has an active ${planKind} plan during these dates. End or reschedule it before adding another.`;

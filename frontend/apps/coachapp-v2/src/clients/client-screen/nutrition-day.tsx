@@ -1,6 +1,5 @@
 import {Chip, ProgressBar, Typography} from '@heroui/react';
 import {Utensils} from 'lucide-react';
-import {useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {EmptyState} from '@/@components/empty-state';
@@ -9,6 +8,7 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useRouteParam} from '@/@hooks/use-route-param';
 import type {NutrientTotals} from '@/api/nutrition-foods';
 import type {NutritionPortion} from '@/api/nutrition-plan-builder';
 import type {NutritionDayOptionItem, NutritionDayRow} from '@/api/nutrition-plans-list';
@@ -35,7 +35,8 @@ const STATUS_CHIP: Record<NutritionDayRow['status'], string> = {
 
 /** CD-ND — one day's meal log: day totals against target, then a card per meal. */
 export default function NutritionDay() {
-  const {date = '', id = ''} = useParams<{date: string; id: string}>();
+  const date = useRouteParam('date');
+  const id = useRouteParam('id');
   const goBack = useGoBack(`${ROUTES.CLIENT_DETAIL.replace(':id', id)}?tab=nutrition`);
   const {data, isError, isLoading, refetch} = useListCoachNutritionDaysQuery(id, {date});
 

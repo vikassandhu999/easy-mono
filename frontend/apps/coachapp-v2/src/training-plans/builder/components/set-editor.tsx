@@ -41,6 +41,8 @@ type SetType = NonNullable<PlannedSet['set_type']>;
 
 // Options come from the vocabulary tables in sets.ts, so the editor's chips
 // can never drift from the summary line's labels.
+// `Object.entries` widens a Record's keys to `string`; the table is total over V,
+// so the entries really are `[V, string]`.
 const toOptions = <V extends string>(labels: Record<V, string>): Option<V>[] =>
   (Object.entries(labels) as [V, string][]).map(([value, label]) => ({label, value}));
 
@@ -392,8 +394,9 @@ function SingleToggle<T extends string>({
       className={className}
       onSelectionChange={(keys) => {
         const next = [...keys][0];
-        if (next !== undefined) {
-          onChange(next as T);
+        const match = options.find((option) => option.value === next);
+        if (match) {
+          onChange(match.value);
         }
       }}
       selectedKeys={[value]}

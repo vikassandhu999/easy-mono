@@ -1,7 +1,7 @@
 import {Button} from '@heroui/react';
 import {ImageIcon} from 'lucide-react';
 import {useState} from 'react';
-import {useParams} from 'react-router-dom';
+
 import {BackButton} from '@/@components/back-button';
 import {EmptyState} from '@/@components/empty-state';
 import {ErrorState} from '@/@components/error-state';
@@ -11,6 +11,7 @@ import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useRouteParam} from '@/@hooks/use-route-param';
 import {useListClientFormAssignmentsForCoachQuery} from '@/api/checkins';
 import {submissionPhotoIds} from '@/checkins/lib/form-answers';
 import {PhotoThumb} from '@/clients/components/photo-thumb';
@@ -27,7 +28,7 @@ import {formatDayMonth} from '@/clients/lib/client-detail-data';
  * and is the same resolver the message thread uses.
  */
 export default function ProgressPhotos() {
-  const {id = ''} = useParams<{id: string}>();
+  const id = useRouteParam('id');
   const goBack = useGoBack(ROUTES.CLIENT_DETAIL.replace(':id', id));
   const {data, isError, isLoading, refetch} = useListClientFormAssignmentsForCoachQuery(id);
   const [selected, setSelected] = useState<string[]>([]);
@@ -37,12 +38,13 @@ export default function ProgressPhotos() {
   const [comparing, setComparing] = useState(false);
 
   const groups = (data?.data ?? [])
-    .map((assignment) => ({
-      date: assignment.latest_submission?.submitted_at?.slice(0, 10) ?? null,
-      photos: assignment.latest_submission ? submissionPhotoIds(assignment.latest_submission) : [],
-    }))
-    .filter((group) => group.date && group.photos.length > 0)
-    .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
+    .flatMap((assignment) => {
+      const submission = assignment.latest_submission;
+      const date = submission?.submitted_at?.slice(0, 10);
+      const photos = submission ? submissionPhotoIds(submission) : [];
+      return date && photos.length > 0 ? [{date, photos}] : [];
+    })
+    .sort((a, b) => b.date.localeCompare(a.date));
 
   const {urls} = useAttachmentDownloadUrls(groups.flatMap((g) => g.photos));
 
@@ -94,7 +96,7 @@ export default function ProgressPhotos() {
     );
   }
 
-  const dateOf = (photoId: string) => groups.find((g) => g.photos.includes(photoId))?.date ?? null;
+  const dateOf = (photoId: string) => groups.find((g) => g.photos.includes(photoId))?.date;
   const canCompare = selected.length === 2;
 
   if (comparing && canCompare) {
@@ -124,21 +126,24 @@ export default function ProgressPhotos() {
           >
             {/* Two photos, one hairline between them — the design's compare pane. */}
             <div className="grid grid-cols-2 gap-px overflow-hidden rounded-card bg-border">
-              {selected.map((photoId) => (
-                <div
-                  className="flex flex-col items-center gap-2 bg-surface-tertiary p-3"
-                  key={photoId}
-                >
-                  <PhotoThumb
-                    alt={`Progress photo${dateOf(photoId) ? ` from ${formatDayMonth(dateOf(photoId)!)}` : ''}`}
-                    fill
-                    src={urls[photoId]}
-                  />
-                  {dateOf(photoId) && (
-                    <span className="type-eyebrow font-semibold text-muted">{formatDayMonth(dateOf(photoId)!)}</span>
-                  )}
-                </div>
-              ))}
+              {selected.map((photoId) => {
+                const photoDate = dateOf(photoId);
+                return (
+                  <div
+                    className="flex flex-col items-center gap-2 bg-surface-tertiary p-3"
+                    key={photoId}
+                  >
+                    <PhotoThumb
+                      alt={`Progress photo${photoDate ? ` from ${formatDayMonth(photoDate)}` : ''}`}
+                      fill
+                      src={urls[photoId]}
+                    />
+                    {photoDate && (
+                      <span className="type-eyebrow font-semibold text-muted">{formatDayMonth(photoDate)}</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </Page.Frame>
         </Page.Content>
@@ -167,7 +172,7 @@ export default function ProgressPhotos() {
               than a stack of boxes. */}
           {groups.map((group) => (
             <div key={group.date}>
-              <div className="mb-2 type-eyebrow font-bold text-muted">{formatDayMonth(group.date!)}</div>
+              <div className="mb-2 type-eyebrow font-bold text-muted">{formatDayMonth(group.date)}</div>
               <div className="grid grid-cols-3 gap-3">
                 {group.photos.map((photoId) => (
                   <div
@@ -177,7 +182,7 @@ export default function ProgressPhotos() {
                     key={photoId}
                   >
                     <PhotoThumb
-                      alt={`Progress photo from ${formatDayMonth(group.date!)}`}
+                      alt={`Progress photo from ${formatDayMonth(group.date)}`}
                       fill
                       onPress={() => toggle(photoId)}
                       src={urls[photoId]}

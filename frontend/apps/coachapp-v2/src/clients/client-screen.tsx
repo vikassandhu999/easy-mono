@@ -1,4 +1,5 @@
 import {getFullName, getInitials} from '@easy/utils';
+import {isOneOf} from '@easy/utils/closed-vocabulary';
 import {AlertDialog, Avatar, Button, Dropdown, ToggleButton, ToggleButtonGroup, Typography, toast} from '@heroui/react';
 import {
   CalendarCheck,
@@ -11,7 +12,7 @@ import {
   Phone,
   Utensils,
 } from 'lucide-react';
-import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
+import {useNavigate, useSearchParams} from 'react-router-dom';
 import {BackButton} from '@/@components/back-button';
 import {EmptyState} from '@/@components/empty-state';
 import {ErrorState} from '@/@components/error-state';
@@ -19,6 +20,7 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useRouteParam} from '@/@hooks/use-route-param';
 import type {Client} from '@/api/clients';
 import {useGetClientQuery, useResendClientInviteMutation, useRevokeClientInviteMutation} from '@/api/clients';
 import {useGetCoachClientConversationQuery} from '@/api/conversations';
@@ -65,9 +67,10 @@ const TABS = [
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
+const TAB_IDS = TABS.map(({id}) => id);
 
 export default function ClientScreen() {
-  const {id = ''} = useParams<{id: string}>();
+  const id = useRouteParam('id');
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.CLIENTS);
@@ -78,7 +81,7 @@ export default function ClientScreen() {
   const unread = conversation.data?.data?.unread_count ?? 0;
 
   const requested = params.get('tab');
-  const tab: TabId = TABS.some((t) => t.id === requested) ? (requested as TabId) : 'overview';
+  const tab: TabId = isOneOf(TAB_IDS, requested) ? requested : 'overview';
 
   // "3 of 4": the target is how many DISTINCT weekdays the active plan schedules,
   // which is what the design's "4 days a week" counts. There is no `days_per_week`

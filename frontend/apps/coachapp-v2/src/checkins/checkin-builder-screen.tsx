@@ -8,7 +8,7 @@
 import {AlertDialog, Button, Typography, toast, useOverlayState} from '@heroui/react';
 import {Pencil, Trash2} from 'lucide-react';
 import type {ReactNode} from 'react';
-import {generatePath, useNavigate, useParams} from 'react-router-dom';
+import {generatePath, useNavigate} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
@@ -16,9 +16,9 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useRouteParam} from '@/@hooks/use-route-param';
 import {
   type ClientProfileFormTemplate,
-  type FormPurpose,
   PURPOSE_LABELS,
   type SectionDraft,
   sectionsToRequest,
@@ -36,7 +36,7 @@ function LoadedBuilder({template}: {template: ClientProfileFormTemplate}) {
   const deleteTemplateMutation = useDeleteFormTemplateMutation();
   const isDeleting = deleteTemplateMutation.isPending;
   const deleteConfirm = useOverlayState();
-  const purpose = template.purpose as FormPurpose;
+  const purpose = template.purpose;
 
   const onSubmit = async (sections: SectionDraft[]) => {
     try {
@@ -155,9 +155,9 @@ function PlainShell({children, onBack}: {children: ReactNode; onBack: () => void
 }
 
 export default function CheckinBuilderScreen() {
-  const {id} = useParams<{id: string}>();
+  const id = useRouteParam('id');
   const goBack = useGoBack(ROUTES.CHECKINS);
-  const {data, isError, isLoading, refetch} = useGetFormTemplateQuery(id!);
+  const {data, isError, isLoading, refetch} = useGetFormTemplateQuery(id);
 
   if (isLoading) {
     return (

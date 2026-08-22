@@ -38,7 +38,7 @@ export function SetList({sets, trackingType, exerciseName, onOpenSet, onRemoveSe
             // The pressed row IS the desktop popover's anchor, so it arrives with
             // the event — no ref array, no registration callback, and nothing to
             // fall out of sync when a set is added or removed.
-            onPress={(event) => onOpenSet(index, event.target as HTMLElement)}
+            onPress={(event) => event.target instanceof HTMLElement && onOpenSet(index, event.target)}
             variant="ghost"
           >
             <span

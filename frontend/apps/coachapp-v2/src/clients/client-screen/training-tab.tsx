@@ -19,6 +19,7 @@ import {DetailRow} from '@/clients/components/detail-row';
 import PlanAssignControl from '@/clients/components/plan-assign-control';
 import {SectionCard} from '@/clients/components/section-card';
 import {
+  dayWindowRange,
   formatCompactDuration,
   formatDayMonth,
   formatRowDate,
@@ -55,10 +56,7 @@ export function TrainingTab({client}: {client: Client}) {
   );
   // An eight-week window can hold more than the server's 20-row page cap, so
   // this list paginates and "Show more" walks the rest of the window.
-  const sessions = useCoachClientTrainingSessionsInfiniteQuery(client.id, {
-    from: window[0]!,
-    to: window[window.length - 1]!,
-  });
+  const sessions = useCoachClientTrainingSessionsInfiniteQuery(client.id, dayWindowRange(window));
 
   const activePlans = plans.data?.pages.flatMap((page) => page.data) ?? [];
   const archivedPlanRows = archivedPlans.data?.pages.flatMap((page) => page.data) ?? [];
@@ -97,8 +95,8 @@ export function TrainingTab({client}: {client: Client}) {
 
   // Newest first, which is the order the design lists them in.
   const rows = (sessions.data?.pages.flatMap((page) => page.data) ?? [])
-    .filter((s) => s.date)
-    .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
+    .flatMap((session) => (session.date ? [{...session, date: session.date}] : []))
+    .sort((a, b) => b.date.localeCompare(a.date));
 
   // Group headers are "This week" / "Last week" / "Week of 7 Jul"; a header is
   // emitted only when the group changes, so the list stays flat.
@@ -196,7 +194,7 @@ export function TrainingTab({client}: {client: Client}) {
       {rows.length > 0 && (
         <SectionCard divided>
           {rows.map((session) => {
-            const group = weekGroupLabel(session.date!);
+            const group = weekGroupLabel(session.date);
             const isNewGroup = group !== lastGroup;
             lastGroup = group;
             const setCount = session.performed_sets.length;
@@ -214,7 +212,7 @@ export function TrainingTab({client}: {client: Client}) {
                 )}
                 <div className="px-2">
                   <DetailRow
-                    leading={formatRowDate(session.date!)}
+                    leading={formatRowDate(session.date)}
                     meta={
                       isDone
                         ? [

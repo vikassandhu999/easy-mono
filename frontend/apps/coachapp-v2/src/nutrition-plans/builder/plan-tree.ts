@@ -26,8 +26,8 @@ export {flattenSlots};
 export type NutritionDayMeal = NutritionMealOption & {meal_slot: NutritionDayPatternSlot['meal_slot']};
 export type NutritionPlanDay = NutritionDayPattern & {day_meals: NutritionDayMeal[]};
 
-/** Mon..Sun map of Day Pattern ids — `plan.schedule` with its null guard. */
-export type WeekdayAssignments = Record<string, string | null | undefined>;
+/** Mon..Sun map of Day Pattern ids — the generated `plan.schedule`, which the API always returns whole. */
+export type WeekdayAssignments = NutritionPlan['schedule'];
 
 export function getDays(plan: NutritionPlan): NutritionPlanDay[] {
   return (plan.day_patterns ?? [])
@@ -37,7 +37,7 @@ export function getDays(plan: NutritionPlan): NutritionPlanDay[] {
 }
 
 export function getWeekdayAssignments(plan: NutritionPlan): WeekdayAssignments {
-  return plan.schedule ?? {};
+  return plan.schedule;
 }
 
 export function findPattern(plan: NutritionPlan, dayId: string): NutritionDayPattern | undefined {
@@ -86,7 +86,7 @@ export function slotRows(
 
 /** First slot with nothing on it — where a newly added meal lands. */
 export function firstFreeSlot(day: NutritionPlanDay): BuilderMealSlot {
-  return MEAL_SLOTS.find((slot) => optionsForSlot(day, slot).length === 0) ?? MEAL_SLOTS[0]!;
+  return MEAL_SLOTS.find((slot) => optionsForSlot(day, slot).length === 0) ?? MEAL_SLOTS[0];
 }
 
 /** Every day-slot option across the plan that points at a meal — drives "Used in n places". */

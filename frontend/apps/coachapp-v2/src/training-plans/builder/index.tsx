@@ -10,7 +10,6 @@
  * from the ⋯ menu; the builder doesn't repeat that form (mirrors NB).
  */
 import type {ReactNode} from 'react';
-import {useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
@@ -18,16 +17,16 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useRouteParam} from '@/@hooks/use-route-param';
 import {useGetTrainingPlanQuery} from '@/api/training-plan-builder';
-
 import {PlanActions} from './plan-actions';
 import {PlanAddToClient} from './plan-add-to-client';
 import {PlanBuilder} from './plan-builder';
 
 export default function TrainingPlanBuilderScreen() {
-  const {id} = useParams<{id: string}>();
+  const id = useRouteParam('id');
   const goBack = useGoBack(ROUTES.TRAINING_PLANS);
-  const {data, isError, isLoading, refetch} = useGetTrainingPlanQuery(id ?? '');
+  const {data, isError, isLoading, refetch} = useGetTrainingPlanQuery(id);
 
   if (isLoading) {
     return (

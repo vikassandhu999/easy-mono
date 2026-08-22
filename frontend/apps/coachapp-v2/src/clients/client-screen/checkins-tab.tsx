@@ -1,3 +1,4 @@
+import {isOneOf} from '@easy/utils/closed-vocabulary';
 import {
   AlertDialog,
   Button,
@@ -12,7 +13,6 @@ import {
 } from '@heroui/react';
 import {CalendarCheck, ChevronRight, ClipboardList, Plus, Trash2} from 'lucide-react';
 import {generatePath, Link} from 'react-router-dom';
-
 import {EmptyState} from '@/@components/empty-state';
 import {toastMutationError} from '@/@components/mutation-toast';
 import {ROUTES} from '@/@config/routes';
@@ -20,6 +20,7 @@ import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import type {ClientProfileCheckInSchedule} from '@/api/checkins';
 import {
   CHECK_IN_FREQUENCIES,
+  CHECK_IN_FREQUENCY_IDS,
   type CheckInFrequency,
   useDeleteCheckInScheduleMutation,
   useListCheckInSchedulesForClientQuery,
@@ -272,7 +273,9 @@ function ScheduleCard({hasAssignments, schedule}: {hasAssignments: boolean; sche
           <Select
             aria-label="Check-in frequency"
             isDisabled={isLoading}
-            onSelectionChange={(key) => save({frequency: key as CheckInFrequency}, 'Schedule updated')}
+            onSelectionChange={(key) =>
+              isOneOf(CHECK_IN_FREQUENCY_IDS, key) && save({frequency: key}, 'Schedule updated')
+            }
             selectedKey={schedule.frequency}
           >
             <Select.Trigger className="w-auto">

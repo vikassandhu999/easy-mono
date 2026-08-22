@@ -1,10 +1,9 @@
+import {isOneOf} from '@easy/utils/closed-vocabulary';
 import type {Key} from '@heroui/react';
-
 import {Button, SearchField, Separator, ToggleButton, ToggleButtonGroup} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {type ReactNode, useSyncExternalStore} from 'react';
 import {useNavigate} from 'react-router-dom';
-
 import {BackButton} from '@/@components/back-button';
 import BrowseListBox from '@/@components/browse-list-box';
 import {Page} from '@/@components/page';
@@ -225,6 +224,7 @@ export default function BrowseScreen<T extends object, Id extends string>({
   // The search placeholder is an attribute, not a text node, so the short form
   // cannot be swapped with a CSS breakpoint the way the title and pills are.
   const isSm = useIsSm();
+  const filterIds = filters?.options.map(({id}) => id) ?? [];
 
   return (
     <Page>
@@ -338,8 +338,8 @@ export default function BrowseScreen<T extends object, Id extends string>({
                 isDetached
                 onSelectionChange={(keys: Set<Key>) => {
                   const next = [...keys][0];
-                  if (next) {
-                    filters.onSelect(next as Id);
+                  if (isOneOf(filterIds, next)) {
+                    filters.onSelect(next);
                   }
                 }}
                 selectedKeys={[filters.selected]}

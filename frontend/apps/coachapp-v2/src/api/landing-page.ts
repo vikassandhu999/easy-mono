@@ -8,8 +8,9 @@ export type LandingPage = components['schemas']['LandingPage'];
 export type LandingPageResponse = components['schemas']['LandingPageResponse'];
 export type LandingPageUpsertRequest = components['schemas']['LandingPageUpsertRequest'];
 
-export type Template = 'proof_first' | 'problem_fit' | 'coach_story';
-export type QuestionType = 'short_text' | 'long_text' | 'single_select';
+export type Template = LandingPage['template'];
+type LandingQuestion = NonNullable<LandingPage['application_questions']>[number];
+export type QuestionType = NonNullable<LandingQuestion['type']>;
 
 export type ProofDraft = {key: string; label: string; value: string};
 export type FitDraft = {key: string; value: string};
@@ -92,7 +93,7 @@ export function landingToDraft(page: LandingPage): LandingDraft {
       key: key(),
       id: q.id ?? key(),
       label: q.label ?? '',
-      type: (q.type ?? 'short_text') as QuestionType,
+      type: q.type ?? 'short_text',
       options: q.options ?? [],
     })),
     programs: page.programs.map((p) => ({

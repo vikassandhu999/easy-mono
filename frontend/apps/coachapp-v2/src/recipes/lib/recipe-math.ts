@@ -84,14 +84,19 @@ export function recipeServings(recipe: {servings_count: number}): number {
 }
 
 export function computeRecipeTotalsFromIngredients(ingredients: IngredientLike[]): null | RecipeTotals {
-  const weighed = ingredients.filter((ingredient) => toPositiveNumber(ingredient.weight_g) != null);
-  if (weighed.length === 0) {
+  // Parse the weight WHILE filtering, so the rows that survive carry a number
+  // rather than a string that has to be re-parsed and re-asserted three times.
+  const [first, ...rest] = ingredients.flatMap((ingredient) => {
+    const weight = toPositiveNumber(ingredient.weight_g);
+    return weight == null ? [] : [{food: ingredient.food, weight}];
+  });
+  if (!first) {
     return null;
   }
 
-  const totals = weighed.slice(1).reduce<RecipeTotals>(
+  const totals = rest.reduce<RecipeTotals>(
     (acc, ingredient) => {
-      const scaled = scaleFoodMacros(ingredient.food, toPositiveNumber(ingredient.weight_g)!);
+      const scaled = scaleFoodMacros(ingredient.food, ingredient.weight);
       return {
         calories: addField(acc.calories, scaled.calories),
         carbohydrates: addField(acc.carbohydrates, scaled.carbohydrates),
@@ -101,7 +106,7 @@ export function computeRecipeTotalsFromIngredients(ingredients: IngredientLike[]
         protein: addField(acc.protein, scaled.protein),
       };
     },
-    scaleFoodMacros(weighed[0]!.food, toPositiveNumber(weighed[0]!.weight_g)!),
+    scaleFoodMacros(first.food, first.weight),
   );
 
   const rounded = {

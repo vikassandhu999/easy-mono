@@ -16,7 +16,7 @@ import {
 import {PlanPanel} from '@/clients/client-screen/plan-panel';
 import PlanAssignControl from '@/clients/components/plan-assign-control';
 import {SectionCard} from '@/clients/components/section-card';
-import {formatDayMonth, formatKcal, formatRowDate, lastNDays} from '@/clients/lib/client-detail-data';
+import {dayWindowRange, formatDayMonth, formatKcal, formatRowDate, lastNDays} from '@/clients/lib/client-detail-data';
 import {adherenceBand, caloriePct, type DayTotals, nutritionDayTotals} from '@/clients/lib/nutrition-summary';
 import {handleStaleNutritionPlanConflict} from '@/nutrition-plans/lib/stale-nutrition-plan-conflict';
 
@@ -39,10 +39,7 @@ export function NutritionTab({client}: {client: Client}) {
 
   const days = lastNDays(14);
   const plans = useListCoachClientNutritionPlansQuery(client.id, {status: 'active'});
-  const nutritionDays = useListCoachNutritionDaysQuery(client.id, {
-    from: days[0]!,
-    to: days[days.length - 1]!,
-  });
+  const nutritionDays = useListCoachNutritionDaysQuery(client.id, dayWindowRange(days));
 
   const plan = plans.data?.data?.[0];
 

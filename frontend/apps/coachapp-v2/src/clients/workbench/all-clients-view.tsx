@@ -1,17 +1,15 @@
+import {isOneOf} from '@easy/utils/closed-vocabulary';
 import type {Key} from '@heroui/react';
-
 import {Button, ToggleButton, ToggleButtonGroup} from '@heroui/react';
 import {ArrowUpDown} from 'lucide-react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-
 import BrowseListBox from '@/@components/browse-list-box';
 import ListEmptyState from '@/@components/list-empty-state';
 import {ROUTES} from '@/@config/routes';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
 import {type ClientStatus, type ClientSummary, useClientsInfiniteQuery, useListClientsQuery} from '@/api/clients';
 import ClientListItem from '@/clients/clients-list/client-list-item';
-
 import {ViewShell} from './view-shell';
 
 type FilterId = 'active' | 'all' | 'inactive' | 'invited';
@@ -31,6 +29,7 @@ const FILTER_OPTIONS: FilterOption[] = [
   {id: 'invited', label: 'Invited', status: 'pending', summaryKey: 'pending'},
   {id: 'inactive', label: 'Inactive', status: 'inactive', summaryKey: 'inactive'},
 ];
+const FILTER_IDS = FILTER_OPTIONS.map(({id}) => id);
 
 // No search box here — the workbench's search field (in the rail / above the
 // chips) is the roster's front door and already searches all clients.
@@ -66,8 +65,8 @@ export default function AllClientsView() {
               isDetached
               onSelectionChange={(keys: Set<Key>) => {
                 const next = [...keys][0];
-                if (next) {
-                  setStatusFilter(next as FilterId);
+                if (isOneOf(FILTER_IDS, next)) {
+                  setStatusFilter(next);
                 }
               }}
               selectedKeys={[statusFilter]}

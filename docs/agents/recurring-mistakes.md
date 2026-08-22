@@ -165,6 +165,8 @@ Severity of the rule isn't the point; recurrence is.
 | RM-218 | Shared form completion copy follows assignment purpose | Frontend | check-rm |
 | RM-219 | Mobile queue rows keep the actionable absolute fact visible | Frontend | check-rm |
 | RM-220 | Queue identity text stays inside its grid track | Frontend | check-rm |
+| RM-221 | Filter-then-assert: parse while filtering instead | Frontend | review |
+| RM-222 | A UI key is narrowed into its vocabulary, never cast | Frontend | review |
 | RM-301 | Retiring an architecture artifact means grepping the docs | Docs | review |
 | RM-302 | Never vendor a plugin skill into `.claude/skills/` | Docs | check-rm |
 | RM-303 | The `superpowers` plugin is retired | Docs | check-rm |
@@ -1135,6 +1137,46 @@ boundary on its label. **Verify by:** populate Expiring and Quiet with a long cl
 require an ellipsis before the action group with no overlapping pixels.
 
 ## Deploy / ops
+
+### RM-221 — Filter-then-assert: parse WHILE filtering, don't assert afterwards
+`xs.filter((x) => x.weight != null).map((x) => x.weight!)` type-checks only because of the
+assertion — `filter` does not narrow the elements it keeps, so the shape the compiler sees
+still carries the null. It hides real bugs: the recipe ingredient mapper ran every field
+through `omitUndefined` and cast the required-`weight_g` shape back, so a weightless row
+compiled into a request the server rejects with a generic 422. Use `flatMap` and return the
+parsed row (or nothing):
+
+```ts
+const weighed = ingredients.flatMap((row) => {
+  const weight = toPositiveNumber(row.weight_g);
+  return weight == null ? [] : [{food: row.food, weight}];
+});
+```
+
+The same shape covers `groups.filter((g) => g.date).sort(…)` and `sorted[0]!` after a
+length check. For a genuinely non-empty list, type it `[T, ...T[]]` — a Map built by
+insertion is already ordered and non-empty per key, so it needs no `groupOrder` array
+beside it.
+
+### RM-222 — A UI key is NARROWED into its vocabulary, never cast into it
+A `?tab=` search param, a react-aria selection `Key`, and a `<select>`'s `event.target.value`
+are all `string`. `raw as TabId` is a lie the moment the vocabulary changes or the URL is
+hand-edited. Use `isOneOf` from `@easy/utils/closed-vocabulary` against the same array the
+options render from:
+
+```tsx
+const TAB_IDS = TABS.map(({id}) => id);
+const tab: TabId = isOneOf(TAB_IDS, params.get('tab')) ? params.get('tab') : 'overview';
+```
+
+Its sibling: a lookup table keyed on `string` (`Record<string, FieldKey[]>`) silently accepts
+a member the backend added and falls through to the default. Key it on the generated union
+(`Record<TrackingType, …>`) so the build breaks instead, and list the members as
+`[…] as const satisfies readonly TrackingType[]` rather than `Object.keys(TABLE) as T[]`.
+
+Import `isOneOf` from the SUBPATH (`@easy/utils/closed-vocabulary`), not the `@easy/utils`
+barrel: the `.check.ts` runner is plain node and cannot resolve the barrel's extensionless
+re-exports, so a barrel import breaks every check that transitively reaches the module.
 
 ### RM-201 — Deployable frontends need documented + guarded build-time env
 Vite inlines `VITE_API_BASE_URL` at build time; unset on a deployed origin silently hits

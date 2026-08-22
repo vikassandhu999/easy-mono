@@ -6,12 +6,35 @@
  * disagree.
  */
 
+import {isOneOf} from '@easy/utils/closed-vocabulary';
+
+import type {components} from '@/api/schema';
+
 /** The measures a set can carry. `load` and `distance` also own a unit. */
 export type FieldKey = 'distance' | 'duration' | 'load' | 'reps' | 'rpe';
 
+/**
+ * The tracking vocabulary, from the Prescription contract. The three tables
+ * below are keyed on it rather than on `string`, so a tracking type added
+ * backend-side fails the build here instead of falling through to the default.
+ */
+export type TrackingType = NonNullable<components['schemas']['TrainingPlanExercise']['tracking_type']>;
+
+export const TRACKING_TYPES = [
+  'weight_reps',
+  'bodyweight_reps',
+  'weighted_bodyweight',
+  'assisted_bodyweight',
+  'reps_only',
+  'duration',
+  'weight_duration',
+  'distance_duration',
+  'weight_distance',
+] as const satisfies readonly TrackingType[];
+
 const REPS_AND_LOAD: FieldKey[] = ['reps', 'load', 'rpe'];
 
-const TRACKED: Record<string, FieldKey[]> = {
+const TRACKED: Record<TrackingType, FieldKey[]> = {
   weight_reps: REPS_AND_LOAD,
   weighted_bodyweight: REPS_AND_LOAD,
   assisted_bodyweight: REPS_AND_LOAD,
@@ -24,8 +47,8 @@ const TRACKED: Record<string, FieldKey[]> = {
 };
 
 /** Unknown or absent tracking types fall back to the commonest shape. */
-export function fieldsFor(trackingType: string | null): FieldKey[] {
-  return TRACKED[trackingType ?? ''] ?? REPS_AND_LOAD;
+export function fieldsFor(trackingType: null | string): FieldKey[] {
+  return isOneOf(TRACKING_TYPES, trackingType) ? TRACKED[trackingType] : REPS_AND_LOAD;
 }
 
 export function tracks(trackingType: string | null, field: FieldKey): boolean {
@@ -33,7 +56,7 @@ export function tracks(trackingType: string | null, field: FieldKey): boolean {
 }
 
 /** COPY.md § TB (Tracking labels) — the chip on the exercise row. */
-const LABELS: Record<string, string> = {
+const LABELS: Record<TrackingType, string> = {
   weight_reps: 'Weight & reps',
   bodyweight_reps: 'Bodyweight reps',
   weighted_bodyweight: 'Weighted bodyweight',
@@ -45,12 +68,12 @@ const LABELS: Record<string, string> = {
   weight_distance: 'Weight & distance',
 };
 
-export function trackingTypeLabel(trackingType: string | null): string | null {
-  return LABELS[trackingType ?? ''] ?? null;
+export function trackingTypeLabel(trackingType: null | string): null | string {
+  return isOneOf(TRACKING_TYPES, trackingType) ? LABELS[trackingType] : null;
 }
 
 /** The compact form, for the picker's per-row badge. */
-const BADGES: Record<string, string> = {
+const BADGES: Record<TrackingType, string> = {
   weight_reps: 'wt+reps',
   reps_only: 'reps',
   duration: 'time',
@@ -62,6 +85,6 @@ const BADGES: Record<string, string> = {
   weight_distance: 'wt+dist',
 };
 
-export function trackingTypeBadge(trackingType: string | null): string {
-  return BADGES[trackingType ?? ''] ?? trackingType ?? '—';
+export function trackingTypeBadge(trackingType: null | string): string {
+  return isOneOf(TRACKING_TYPES, trackingType) ? BADGES[trackingType] : (trackingType ?? '—');
 }

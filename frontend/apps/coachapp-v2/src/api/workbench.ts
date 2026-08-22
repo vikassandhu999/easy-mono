@@ -30,6 +30,14 @@ function nextOffset(count: number, lastPageParam: number): number | undefined {
   return next < count ? next : undefined;
 }
 
+/**
+ * The `as Promise<…>` casts below are LOAD-BEARING, not leftovers: openapi-fetch
+ * runs response types through `Readable<T>`, which widens tuple unions to plain
+ * arrays — so the `Client` each queue item embeds loses its
+ * `required_services` tuple and no longer matches the generated schema every
+ * consumer is typed against. The cast restores the operation's own
+ * response type. Delete one only after that widening is gone.
+ */
 export function useWorkbenchCountsQuery() {
   return useQuery({
     queryKey: workbenchKeys.counts(),

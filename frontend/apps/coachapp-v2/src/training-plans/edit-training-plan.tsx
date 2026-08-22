@@ -1,4 +1,4 @@
-import {generatePath, useParams} from 'react-router-dom';
+import {generatePath} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
@@ -6,6 +6,7 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useRouteParam} from '@/@hooks/use-route-param';
 import {applyFormErrors} from '@/api/shared';
 import {patchPlan, type TrainingPlan, useGetTrainingPlanQuery} from '@/api/training-plan-builder';
 import {useUpdateTrainingPlanMutation} from '@/api/training-plans-list';
@@ -118,9 +119,9 @@ function EditTrainingPlanForm({
 }
 
 export default function EditTrainingPlan() {
-  const {id} = useParams<{id: string}>();
-  const {data, isError, isLoading: isFetching, refetch} = useGetTrainingPlanQuery(id ?? '');
-  const backPath = generatePath(ROUTES.TRAINING_PLAN_DETAIL, {id: id!});
+  const id = useRouteParam('id');
+  const {data, isError, isLoading: isFetching, refetch} = useGetTrainingPlanQuery(id);
+  const backPath = generatePath(ROUTES.TRAINING_PLAN_DETAIL, {id});
   const goBack = useGoBack(backPath);
 
   if (isFetching) {
@@ -162,7 +163,7 @@ export default function EditTrainingPlan() {
     <EditTrainingPlanForm
       backPath={backPath}
       plan={data.data}
-      planId={id!}
+      planId={id}
       refetchLatest={async () => (await refetch()).data?.data}
     />
   );

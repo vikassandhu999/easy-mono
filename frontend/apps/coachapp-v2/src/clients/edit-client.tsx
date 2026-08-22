@@ -13,7 +13,7 @@ import {
 import {zodResolver} from '@hookform/resolvers/zod';
 import {TriangleAlert} from 'lucide-react';
 import {Controller, useForm} from 'react-hook-form';
-import {useParams} from 'react-router-dom';
+
 import {z} from 'zod';
 
 import {BackButton} from '@/@components/back-button';
@@ -28,6 +28,7 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useRouteParam} from '@/@hooks/use-route-param';
 import type {Client} from '@/api/clients';
 import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
 import {applyFormErrors} from '@/api/shared';
@@ -60,7 +61,7 @@ const acceptedClientEditSchema = editClientSchema.extend({
 type EditClientValues = z.infer<typeof editClientSchema>;
 
 export default function EditClient() {
-  const {id = ''} = useParams<{id: string}>();
+  const id = useRouteParam('id');
   const backPath = ROUTES.CLIENT_DETAIL.replace(':id', id);
   const goBack = useGoBack(backPath);
   const {data, isError, isLoading, refetch} = useGetClientQuery(id);

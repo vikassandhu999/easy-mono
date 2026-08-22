@@ -182,7 +182,10 @@ export function AddItemsFlow({mealName, open, onClose, onAdd}: AddItemsFlowProps
       className="w-full font-semibold"
       isDisabled={!canConfirmAmount}
       onPress={() => {
-        (document.getElementById(AMOUNT_FORM_ID) as HTMLFormElement | null)?.requestSubmit();
+        const amountForm = document.getElementById(AMOUNT_FORM_ID);
+        if (amountForm instanceof HTMLFormElement) {
+          amountForm.requestSubmit();
+        }
       }}
       variant="primary"
     >

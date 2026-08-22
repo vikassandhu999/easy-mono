@@ -1,12 +1,13 @@
 import {useState} from 'react';
-import {generatePath, Navigate, useParams} from 'react-router-dom';
+import {generatePath, Navigate} from 'react-router-dom';
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useGetFoodQuery, useUpdateFoodMutation} from '@/api/nutrition-foods';
+import {useRouteParam} from '@/@hooks/use-route-param';
+import {type Food, useGetFoodQuery, useUpdateFoodMutation} from '@/api/nutrition-foods';
 import type {ServingSize} from '@/api/shared';
 import {applyFormErrors} from '@/api/shared';
 import FoodForm, {foodToFormValues, foodToMediaValue, useFoodForm} from '@/foods/food-form/food-form';
@@ -19,12 +20,9 @@ import {
 
 // Rendered only when food data is available, avoiding useEffect to sync server state
 // into local state (which the React Compiler lint rule forbids).
-function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
+function EditFoodForm({backPath, food, foodId}: {backPath: string; food: Food; foodId: string}) {
   const goBack = useGoBack(backPath);
-  const {data} = useGetFoodQuery(foodId);
   const updateFoodMutation = useUpdateFoodMutation();
-
-  const food = data!.data;
 
   const [servingSizes, setServingSizes] = useState<ServingSize[]>(editorServingSizesFromFood(food.serving_sizes));
 
@@ -78,9 +76,9 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
 }
 
 export default function EditFood() {
-  const {id} = useParams<{id: string}>();
-  const {data, isError, isLoading: isFetching, refetch} = useGetFoodQuery(id!);
-  const backPath = generatePath(ROUTES.FOOD_DETAIL, {id: id!});
+  const id = useRouteParam('id');
+  const {data, isError, isLoading: isFetching, refetch} = useGetFoodQuery(id);
+  const backPath = generatePath(ROUTES.FOOD_DETAIL, {id});
   const goBackOuter = useGoBack(backPath);
 
   if (isFetching) {
@@ -145,7 +143,8 @@ export default function EditFood() {
   return (
     <EditFoodForm
       backPath={backPath}
-      foodId={id!}
+      food={data.data}
+      foodId={id}
     />
   );
 }

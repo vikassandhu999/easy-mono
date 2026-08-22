@@ -5,6 +5,12 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{outcome: 'accepted' | 'dismissed'}>;
 }
 
+declare global {
+  interface WindowEventMap {
+    beforeinstallprompt: BeforeInstallPromptEvent;
+  }
+}
+
 const DISMISSED_KEY = 'pwa-install-dismissed';
 
 export function useInstallPrompt() {
@@ -12,9 +18,9 @@ export function useInstallPrompt() {
   const [isDismissed, setIsDismissed] = useState(() => sessionStorage.getItem(DISMISSED_KEY) === '1');
 
   useEffect(() => {
-    const handler = (e: Event) => {
+    const handler = (e: BeforeInstallPromptEvent) => {
       e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      setDeferredPrompt(e);
     };
 
     window.addEventListener('beforeinstallprompt', handler);

@@ -4,6 +4,7 @@
  * (builder draft <-> API request) are shared across every screen.
  */
 
+import {isOneOf} from '@easy/utils/closed-vocabulary';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
@@ -35,9 +36,16 @@ export type ClientProfileReviewQueueItem = components['schemas']['ClientProfileR
 export type ClientProfileReviewQueueListResponse = components['schemas']['ClientProfileReviewQueueListResponse'];
 export type ListCheckInReviewQueueParams = NonNullable<operations['listCheckInReviewQueue']['parameters']['query']>;
 
-export type FormPurpose = 'check_in' | 'intake';
+export type FormPurpose = ClientProfileFormTemplate['purpose'];
 
 export type CheckInFrequency = NonNullable<ClientProfileCheckInSchedule['frequency']>;
+
+export const CHECK_IN_FREQUENCY_IDS = [
+  'once',
+  'weekly',
+  'biweekly',
+  'monthly',
+] as const satisfies readonly CheckInFrequency[];
 
 export const CHECK_IN_FREQUENCIES: {id: CheckInFrequency; label: string}[] = [
   {id: 'once', label: 'Once'},
@@ -51,12 +59,25 @@ export const PURPOSE_LABELS: Record<FormPurpose, string> = {
   intake: 'Intake',
 };
 
-export const PURPOSES = Object.keys(PURPOSE_LABELS) as FormPurpose[];
+export const PURPOSES = ['check_in', 'intake'] as const satisfies readonly FormPurpose[];
 
 type SectionRequest = ClientProfileFormTemplateRequest['sections'][number];
 type QuestionRequest = SectionRequest['questions'][number];
 
 export type FormQuestionType = QuestionRequest['type'];
+
+export const FORM_QUESTION_TYPES = [
+  'boolean',
+  'date',
+  'multi_select',
+  'number',
+  'photo',
+  'rating',
+  'select',
+  'service_type',
+  'text',
+  'weight',
+] as const satisfies readonly FormQuestionType[];
 
 export const FORM_QUESTION_TYPE_LABELS: Record<FormQuestionType, string> = {
   boolean: 'Yes / No',
@@ -137,9 +158,9 @@ export function templateToSections(sections: {[key: string]: unknown}[], purpose
         id: typeof q.id === 'string' ? q.id : '',
         key: uid(),
         label: typeof q.label === 'string' ? q.label : '',
-        options: Array.isArray(q.options) ? (q.options as string[]) : [],
+        options: Array.isArray(q.options) ? q.options.filter((option) => typeof option === 'string') : [],
         required: q.required === true,
-        type: (q.type as FormQuestionType) ?? 'text',
+        type: isOneOf(FORM_QUESTION_TYPES, q.type) ? q.type : 'text',
       })),
   }));
 }
@@ -308,6 +329,13 @@ export function useDeleteCheckInScheduleMutation() {
 // Form assignments
 // ---------------------------------------------------------------------------
 
+/**
+ * The `as Promise<…>` casts on the three hooks below are LOAD-BEARING, not
+ * leftovers: openapi-fetch runs response types through `Readable<T>`, which
+ * widens tuple unions to plain arrays — so a `service_type` answer's `services`
+ * tuple no longer matches the generated schema every consumer is typed against.
+ * The cast restores the operation's own response type.
+ */
 export function useListClientFormAssignmentsForCoachQuery(clientId: string, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: formAssignmentKeys.forClient(clientId),

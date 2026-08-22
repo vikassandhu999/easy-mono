@@ -1,14 +1,13 @@
 import {isOneOf} from '@easy/utils/closed-vocabulary';
 import {toast} from '@heroui/react';
-
-import {toastMutationError} from '@/@components/mutation-toast';
 import type {TrainingExercise} from '@/api/training-exercises';
 import type {TrainingPlan, TrainingPlanWorkout, TrainingPlanWorkoutExercise} from '@/api/training-plan-builder';
 import * as api from '@/api/training-plan-builder';
 import {createLocalNodeId} from '@/api/training-prescription';
-import {createCoalescingQueue} from '@/builder-kit/coalescing-queue';
-import {periodError} from '@/clients/lib/plan-coverage';
-import {handleStaleTrainingPlanConflict} from '@/training-plans/lib/stale-training-plan-conflict';
+import {periodError} from '@/clients/plan-coverage';
+import {handleStaleTrainingPlanConflict} from '@/training-plans/stale-training-plan-conflict';
+import {createCoalescingQueue} from '@/ui/coalescing-queue';
+import {toastMutationError} from '@/ui/mutation-toast';
 import {findElement, findWorkout, moveId} from './plan-tree';
 import {clearWorkoutFromSchedule, type Day, setScheduleDay} from './schedule';
 import {appendSet, blankSet, type PlannedSet, patchSet, removeSet} from './sets';

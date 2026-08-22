@@ -15,30 +15,29 @@ import {TriangleAlert} from 'lucide-react';
 import {Controller, useForm} from 'react-hook-form';
 
 import {z} from 'zod';
-
-import {BackButton} from '@/@components/back-button';
-import {ErrorState} from '@/@components/error-state';
-import {FieldRow} from '@/@components/form-fields/field-row';
-import {FormActions} from '@/@components/form-fields/form-actions';
-import {FormLayout} from '@/@components/form-fields/form-layout';
-import {FormPanel} from '@/@components/form-fields/form-panel';
-import {FormSelectField} from '@/@components/form-fields/form-select-field';
-import {FormTextField} from '@/@components/form-fields/form-text-field';
-import {Page} from '@/@components/page';
-import {PageSkeleton} from '@/@components/page-skeleton';
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
-import {useRouteParam} from '@/@hooks/use-route-param';
 import type {Client} from '@/api/clients';
 import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
 import {applyFormErrors} from '@/api/shared';
 import type {TeamMember} from '@/api/team';
 import {useGetTeamQuery, useReassignClientMutation} from '@/api/team';
+import {isUnclassified} from '@/clients/client';
 import RequiredServicesField, {
   nonEmptyRequiredServices,
   REQUIRED_SERVICE_VALUES,
-} from '@/clients/components/required-services-field';
-import {isUnclassified} from '@/clients/lib/client';
+} from '@/clients/client-required-services-field';
+import {ROUTES} from '@/routes';
+import {BackButton} from '@/ui/back-button';
+import {ErrorState} from '@/ui/error-state';
+import {FieldRow} from '@/ui/field-row';
+import {FormActions} from '@/ui/form-actions';
+import {FormLayout} from '@/ui/form-layout';
+import {FormPanel} from '@/ui/form-panel';
+import {FormSelectField} from '@/ui/form-select-field';
+import {FormTextField} from '@/ui/form-text-field';
+import {Page} from '@/ui/page';
+import {PageSkeleton} from '@/ui/page-skeleton';
+import {useGoBack} from '@/ui/use-go-back';
+import {useRouteParam} from '@/ui/use-route-param';
 
 /**
  * Profile fields share the client update endpoint; coach assignment is a

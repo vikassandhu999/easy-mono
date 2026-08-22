@@ -1,23 +1,22 @@
 import {ErrorMessage, Fieldset} from '@heroui/react';
 import {generatePath, useLocation, useNavigate} from 'react-router-dom';
-
-import {BackButton} from '@/@components/back-button';
-import {ErrorState} from '@/@components/error-state';
-import {FormActions} from '@/@components/form-fields/form-actions';
-import {FormLayout} from '@/@components/form-fields/form-layout';
-import {FormTextField} from '@/@components/form-fields/form-text-field';
-import {Page} from '@/@components/page';
-import {PageSkeleton} from '@/@components/page-skeleton';
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
 import {applyFormErrors} from '@/api/shared';
 import {
   useCopyExerciseMutation,
   useCreateCoachTrainingExerciseMutation,
   useExerciseOptionsQueries,
 } from '@/api/training-exercises';
-import ExerciseForm, {exerciseToCreateRequest, useExerciseForm} from '@/exercises/exercise-form/exercise-form';
-import type {ExerciseFormValues} from '@/exercises/exercise-form/exercise-form-schema';
+import ExerciseForm, {exerciseToCreateRequest, useExerciseForm} from '@/exercises/exercise-form';
+import type {ExerciseFormValues} from '@/exercises/exercise-form-schema';
+import {ROUTES} from '@/routes';
+import {BackButton} from '@/ui/back-button';
+import {ErrorState} from '@/ui/error-state';
+import {FormActions} from '@/ui/form-actions';
+import {FormLayout} from '@/ui/form-layout';
+import {FormTextField} from '@/ui/form-text-field';
+import {Page} from '@/ui/page';
+import {PageSkeleton} from '@/ui/page-skeleton';
+import {useGoBack} from '@/ui/use-go-back';
 
 export default function CreateExercise() {
   const {state} = useLocation();

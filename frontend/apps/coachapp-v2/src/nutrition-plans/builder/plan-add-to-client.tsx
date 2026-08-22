@@ -1,14 +1,13 @@
 import {getFullName} from '@easy/utils';
 import {toast} from '@heroui/react';
 import {generatePath, useNavigate} from 'react-router-dom';
-
-import {clientRecipientName} from '@/@components/client-picker-data';
-import {PlanAddToClientControl} from '@/@components/plan-add-to-client';
-import type {PlanAssignmentDates} from '@/@components/plan-assignment-dates';
-import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
 import type {NutritionPlan} from '@/api/nutrition-plan-builder';
 import {useAssignNutritionPlanMutation} from '@/api/nutrition-plans-list';
+import {ROUTES} from '@/routes';
+import {clientRecipientName} from '@/ui/client-picker-data';
+import {PlanAddToClientControl} from '@/ui/plan-add-to-client';
+import type {PlanAssignmentDates} from '@/ui/plan-assignment-dates';
 
 export type Props = {
   plan: NutritionPlan;

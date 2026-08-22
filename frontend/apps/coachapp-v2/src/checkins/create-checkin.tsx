@@ -1,12 +1,11 @@
 import {generatePath, useNavigate} from 'react-router-dom';
-
-import {BackButton} from '@/@components/back-button';
-import {Page} from '@/@components/page';
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
 import {PURPOSE_LABELS, useCreateFormTemplateMutation} from '@/api/checkins';
 import {applyFormErrors} from '@/api/shared';
 import CheckinDetailsForm, {type CheckinDetailsValues, useCheckinDetailsForm} from '@/checkins/checkin-details-form';
+import {ROUTES} from '@/routes';
+import {BackButton} from '@/ui/back-button';
+import {Page} from '@/ui/page';
+import {useGoBack} from '@/ui/use-go-back';
 
 export default function CreateCheckin() {
   const navigate = useNavigate();

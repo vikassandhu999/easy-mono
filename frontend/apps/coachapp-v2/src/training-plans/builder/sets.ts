@@ -2,7 +2,7 @@
  * A set list, as values: the array algebra plus the one-line summary under each
  * row. No React, no cache.
  */
-import type {TrainingPlanPlannedSet} from '@/api/training-plan-builder';
+import type {TrainingPlanPlannedSet} from '../../api/training-plan-builder.ts';
 
 import {tracks} from './tracking.ts';
 

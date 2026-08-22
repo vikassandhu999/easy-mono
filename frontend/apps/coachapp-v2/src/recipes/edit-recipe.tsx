@@ -1,24 +1,24 @@
 import {AlertDialog, Button, useOverlayState} from '@heroui/react';
 import {useState} from 'react';
 import {generatePath} from 'react-router-dom';
-import {BackButton} from '@/@components/back-button';
-import {ErrorState} from '@/@components/error-state';
-import {Page} from '@/@components/page';
-import {PageSkeleton} from '@/@components/page-skeleton';
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
-import {useRouteParam} from '@/@hooks/use-route-param';
 import {type Recipe, useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/nutrition-foods';
 import {applyFormErrors} from '@/api/shared';
-import {libraryInUseMessage} from '@/foods/lib/library-impact';
-import type {IngredientItem} from '@/recipes/lib/recipe-math';
-import RecipeForm, {useRecipeForm} from '@/recipes/recipe-form/recipe-form';
+import {libraryInUseMessage} from '@/foods/library-impact';
+import RecipeForm, {useRecipeForm} from '@/recipes/recipe-form';
 import {
   type RecipeFormValues,
   recipeIngredientsToDrafts,
   recipeToFormValues,
   recipeToUpdateRequest,
-} from '@/recipes/recipe-form/recipe-form-data';
+} from '@/recipes/recipe-form-data';
+import type {IngredientItem} from '@/recipes/recipe-math';
+import {ROUTES} from '@/routes';
+import {BackButton} from '@/ui/back-button';
+import {ErrorState} from '@/ui/error-state';
+import {Page} from '@/ui/page';
+import {PageSkeleton} from '@/ui/page-skeleton';
+import {useGoBack} from '@/ui/use-go-back';
+import {useRouteParam} from '@/ui/use-route-param';
 
 // Rendered only when recipe data is available, avoiding useEffect to sync server state
 // into local state (which the React Compiler lint rule forbids).

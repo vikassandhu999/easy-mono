@@ -1,4 +1,4 @@
-import {TodayCard, type TodayEntry} from '@/@components/today-card';
+import {TodayCard, type TodayEntry} from '@/ui/today-card';
 
 /**
  * Desktop rail — the workbench's left column (spec §5): the Today card.

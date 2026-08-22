@@ -1,15 +1,15 @@
 import {useMemo, useState} from 'react';
 import {generatePath, useLocation, useNavigate} from 'react-router-dom';
-import {BackButton} from '@/@components/back-button';
-import {Page} from '@/@components/page';
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
 import type {Food} from '@/api/nutrition-foods';
 import {useCreateCoachFoodMutation} from '@/api/nutrition-foods';
 import type {ServingSize} from '@/api/shared';
 import {applyFormErrors} from '@/api/shared';
-import FoodForm, {foodToDuplicateFormValues, foodToMediaValue, useFoodForm} from '@/foods/food-form/food-form';
-import {editorServingSizesFromFood, type FoodFormValues, foodToCreateRequest} from '@/foods/food-form/food-form-data';
+import FoodForm, {foodToDuplicateFormValues, foodToMediaValue, useFoodForm} from '@/foods/food-form';
+import {editorServingSizesFromFood, type FoodFormValues, foodToCreateRequest} from '@/foods/food-form-data';
+import {ROUTES} from '@/routes';
+import {BackButton} from '@/ui/back-button';
+import {Page} from '@/ui/page';
+import {useGoBack} from '@/ui/use-go-back';
 
 export default function CreateFood() {
   const navigate = useNavigate();

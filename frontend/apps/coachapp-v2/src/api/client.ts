@@ -1,9 +1,9 @@
 import {toast} from '@heroui/react';
 import createClient, {type Middleware} from 'openapi-fetch';
-import {ApiError} from '@/api/api-error';
-import {clearTokens, getAccessToken} from '@/api/authStorage';
-import type {paths} from '@/api/schema';
-import {refreshTokenIfNeeded} from '@/api/token-refresh';
+import {ApiError} from './api-error.ts';
+import {clearTokens, getAccessToken} from './authStorage.ts';
+import type {paths} from './schema.ts';
+import {refreshTokenIfNeeded} from './token-refresh.ts';
 
 let baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 
@@ -72,7 +72,7 @@ client.use(authMiddleware);
  * Unwrap an openapi-fetch result for use as a React Query queryFn/mutationFn:
  * returns `data` on success, throws `ApiError` on a non-2xx response.
  */
-export {ApiError} from '@/api/api-error';
+export {ApiError} from './api-error.ts';
 export async function call<T, E>(promise: Promise<{data?: T; error?: E; response: Response}>): Promise<T> {
   const {data, error, response} = await promise;
   if (error !== undefined) {

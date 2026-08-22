@@ -1,9 +1,9 @@
 import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-import {call, client} from '@/api/client';
-import {workbenchKeys} from '@/api/keys';
-import type {components} from '@/api/schema';
-import {workbenchMutationTargets} from '@/api/workbench-targets';
+import {call, client} from './client.ts';
+import {workbenchKeys} from './keys.ts';
+import type {components} from './schema.ts';
+import {workbenchMutationTargets} from './workbench-targets.ts';
 
 export type WorkbenchCounts = components['schemas']['WorkbenchCounts'];
 export type WorkbenchCountsResponse = components['schemas']['WorkbenchCountsResponse'];

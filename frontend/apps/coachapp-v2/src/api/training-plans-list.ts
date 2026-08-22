@@ -13,13 +13,13 @@
  */
 import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-import {call, client} from '@/api/client';
-import {clientKeys, trainingPlanKeys, trainingSessionKeys} from '@/api/keys';
-import type {components, paths} from '@/api/schema';
-import {omitUndefined} from '@/api/shared';
-import {trainingPlanAssignmentRequest} from '@/api/training-plan-requests';
-import {coachClientTrainingSessionHistoryRequest} from '@/api/training-session-history';
-import {workbenchMutationTargets} from '@/api/workbench-targets';
+import {call, client} from './client.ts';
+import {clientKeys, trainingPlanKeys, trainingSessionKeys} from './keys.ts';
+import type {components, paths} from './schema.ts';
+import {omitUndefined} from './shared.ts';
+import {trainingPlanAssignmentRequest} from './training-plan-requests.ts';
+import {coachClientTrainingSessionHistoryRequest} from './training-session-history.ts';
+import {workbenchMutationTargets} from './workbench-targets.ts';
 
 const PAGE_SIZE = 20;
 

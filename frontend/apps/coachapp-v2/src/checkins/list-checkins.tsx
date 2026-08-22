@@ -1,13 +1,11 @@
 import {Plus} from 'lucide-react';
 import {useDeferredValue, useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-
-import BrowseScreen from '@/@components/browse-screen';
-import ListEmptyState from '@/@components/list-empty-state';
-import {ROUTES} from '@/@config/routes';
 import {useListFormTemplatesQuery} from '@/api/checkins';
-
-import DefaultIntakeControl from './components/default-intake-control';
+import DefaultIntakeControl from '@/checkins/default-intake-control';
+import {ROUTES} from '@/routes';
+import BrowseScreen from '@/ui/browse-screen';
+import ListEmptyState from '@/ui/list-empty-state';
 import FormTemplateListItem from './form-template-list-item';
 
 type StatusFilter = 'active' | 'all' | 'archived';

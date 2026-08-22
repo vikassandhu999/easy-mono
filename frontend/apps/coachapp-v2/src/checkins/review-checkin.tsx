@@ -2,16 +2,15 @@ import {formatIsoDateOnly} from '@easy/utils';
 import {Button, toast} from '@heroui/react';
 import {Check, MessageCircle} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
-
-import {BackButton} from '@/@components/back-button';
-import {ErrorState} from '@/@components/error-state';
-import {Page} from '@/@components/page';
-import {PageSkeleton} from '@/@components/page-skeleton';
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
-import {useRouteParam} from '@/@hooks/use-route-param';
 import {useListCheckInReviewQueueQuery, useReviewFormSubmissionMutation} from '@/api/checkins';
 import ReviewAnswers from '@/checkins/review-answers';
+import {ROUTES} from '@/routes';
+import {BackButton} from '@/ui/back-button';
+import {ErrorState} from '@/ui/error-state';
+import {Page} from '@/ui/page';
+import {PageSkeleton} from '@/ui/page-skeleton';
+import {useGoBack} from '@/ui/use-go-back';
+import {useRouteParam} from '@/ui/use-route-param';
 
 function clientName(item: {client: {first_name: null | string; last_name: null | string}}): string {
   return [item.client.first_name, item.client.last_name].filter(Boolean).join(' ') || 'Client';

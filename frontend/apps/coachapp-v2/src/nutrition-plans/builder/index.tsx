@@ -11,15 +11,14 @@
  * line's denominators rather than repeating the form.
  */
 import {getFullName} from '@easy/utils';
-
-import {BackButton} from '@/@components/back-button';
-import {ErrorState} from '@/@components/error-state';
-import {Page} from '@/@components/page';
-import {PageSkeleton} from '@/@components/page-skeleton';
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
-import {useRouteParam} from '@/@hooks/use-route-param';
 import {useGetNutritionPlanQuery} from '@/api/nutrition-plan-builder';
+import {ROUTES} from '@/routes';
+import {BackButton} from '@/ui/back-button';
+import {ErrorState} from '@/ui/error-state';
+import {Page} from '@/ui/page';
+import {PageSkeleton} from '@/ui/page-skeleton';
+import {useGoBack} from '@/ui/use-go-back';
+import {useRouteParam} from '@/ui/use-route-param';
 import {NutritionPlanActions} from './plan-actions';
 import {PlanAddToClient} from './plan-add-to-client';
 import {PlanBuilder} from './plan-builder';

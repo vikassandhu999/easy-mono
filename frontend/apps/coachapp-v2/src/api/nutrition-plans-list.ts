@@ -13,12 +13,12 @@
  */
 import {type QueryClient, useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-import {call, client} from '@/api/client';
-import {clientKeys, nutritionDayKeys, nutritionPlanKeys} from '@/api/keys';
-import {nutritionPlanAssignmentRequest} from '@/api/nutrition-plan-lifecycle';
-import type {components, paths} from '@/api/schema';
-import {omitUndefined} from '@/api/shared';
-import {workbenchMutationTargets} from '@/api/workbench-targets';
+import {call, client} from './client.ts';
+import {clientKeys, nutritionDayKeys, nutritionPlanKeys} from './keys.ts';
+import {nutritionPlanAssignmentRequest} from './nutrition-plan-lifecycle.ts';
+import type {components, paths} from './schema.ts';
+import {omitUndefined} from './shared.ts';
+import {workbenchMutationTargets} from './workbench-targets.ts';
 
 const PAGE_SIZE = 20;
 

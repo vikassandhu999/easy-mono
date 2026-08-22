@@ -1,22 +1,21 @@
 import {generatePath} from 'react-router-dom';
-
-import {BackButton} from '@/@components/back-button';
-import {ErrorState} from '@/@components/error-state';
-import {Page} from '@/@components/page';
-import {PageSkeleton} from '@/@components/page-skeleton';
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
-import {useRouteParam} from '@/@hooks/use-route-param';
 import {applyFormErrors} from '@/api/shared';
 import {patchPlan, type TrainingPlan, useGetTrainingPlanQuery} from '@/api/training-plan-builder';
 import {useUpdateTrainingPlanMutation} from '@/api/training-plans-list';
-import {handleStaleTrainingPlanConflict} from '@/training-plans/lib/stale-training-plan-conflict';
-import TrainingPlanForm, {useTrainingPlanForm} from '@/training-plans/training-plan-form/training-plan-form';
+import {ROUTES} from '@/routes';
+import {handleStaleTrainingPlanConflict} from '@/training-plans/stale-training-plan-conflict';
+import TrainingPlanForm, {useTrainingPlanForm} from '@/training-plans/training-plan-form';
 import {
   type TrainingPlanFormValues,
   trainingPlanToFormValues,
   trainingPlanToUpdateRequest,
-} from '@/training-plans/training-plan-form/training-plan-form-data';
+} from '@/training-plans/training-plan-form-data';
+import {BackButton} from '@/ui/back-button';
+import {ErrorState} from '@/ui/error-state';
+import {Page} from '@/ui/page';
+import {PageSkeleton} from '@/ui/page-skeleton';
+import {useGoBack} from '@/ui/use-go-back';
+import {useRouteParam} from '@/ui/use-route-param';
 
 // The one header for every state (loading / error / loaded). Keeps the back
 // button, title, and description identical so only the body swaps.

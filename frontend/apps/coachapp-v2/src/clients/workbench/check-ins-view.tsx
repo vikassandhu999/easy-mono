@@ -1,14 +1,13 @@
 import {getInitials} from '@easy/utils';
 import {ClipboardCheck} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
-
-import BrowseListBox from '@/@components/browse-list-box';
-import {EmptyState} from '@/@components/empty-state';
-import {ROUTES} from '@/@config/routes';
-import {useInfiniteItems} from '@/@hooks/use-infinite-items';
 import {useCheckInsQueueInfiniteQuery, type WorkbenchCheckInQueueItem} from '@/api/workbench';
-import {requirePrimaryReason} from '@/clients/lib/workbench-programming';
-import {presentCheckInReason} from '@/clients/lib/workbench-reason-presentation';
+import {requirePrimaryReason} from '@/clients/workbench-programming';
+import {presentCheckInReason} from '@/clients/workbench-reason-presentation';
+import {ROUTES} from '@/routes';
+import BrowseListBox from '@/ui/browse-list-box';
+import {EmptyState} from '@/ui/empty-state';
+import {useInfiniteItems} from '@/ui/use-infinite-items';
 
 import {QueueRow} from './queue-row';
 

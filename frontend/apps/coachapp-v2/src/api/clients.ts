@@ -1,10 +1,10 @@
 import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-import {call, client} from '@/api/client';
-import {billingKeys, clientKeys} from '@/api/keys';
-import type {components, paths} from '@/api/schema';
-import {omitUndefined} from '@/api/shared';
-import {workbenchMutationTargets} from '@/api/workbench-targets';
+import {call, client} from './client.ts';
+import {billingKeys, clientKeys} from './keys.ts';
+import type {components, paths} from './schema.ts';
+import {omitUndefined} from './shared.ts';
+import {workbenchMutationTargets} from './workbench-targets.ts';
 
 const PAGE_SIZE = 20;
 

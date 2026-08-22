@@ -5,25 +5,24 @@ import {cn} from '@heroui/styles';
 import {Dumbbell, Utensils} from 'lucide-react';
 import {GridListItem} from 'react-aria-components';
 import {useNavigate, useSearchParams} from 'react-router-dom';
-
-import BrowseListBox, {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
-import {EmptyState} from '@/@components/empty-state';
-import {ROUTES} from '@/@config/routes';
-import {useInfiniteItems} from '@/@hooks/use-infinite-items';
 import {
   useProgrammingQueueInfiniteQuery,
   useWorkbenchCountsQuery,
   type WorkbenchProgrammingQueueItem,
 } from '@/api/workbench';
-import {workbenchCount} from '@/clients/lib/workbench-counts';
+import {workbenchCount} from '@/clients/workbench-counts';
 import {
   assignPlanHref,
   groupProgrammingItems,
   type ProgrammingServiceFilter,
   primaryReason,
   programmingGroupDescription,
-} from '@/clients/lib/workbench-programming';
-import {presentProgrammingReason} from '@/clients/lib/workbench-reason-presentation';
+} from '@/clients/workbench-programming';
+import {presentProgrammingReason} from '@/clients/workbench-reason-presentation';
+import {ROUTES} from '@/routes';
+import BrowseListBox, {LIST_ITEM_CLASS} from '@/ui/browse-list-box';
+import {EmptyState} from '@/ui/empty-state';
+import {useInfiniteItems} from '@/ui/use-infinite-items';
 
 const FILTERS: {id: ProgrammingServiceFilter; label: string}[] = [
   {id: 'all', label: 'All'},

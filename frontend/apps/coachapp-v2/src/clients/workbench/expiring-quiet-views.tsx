@@ -1,19 +1,18 @@
 import {getInitials} from '@easy/utils';
 import {CalendarClock, Moon} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
-
-import BrowseListBox from '@/@components/browse-list-box';
-import {EmptyState} from '@/@components/empty-state';
-import {ROUTES} from '@/@config/routes';
-import {useInfiniteItems} from '@/@hooks/use-infinite-items';
 import {
   useExpiringQueueInfiniteQuery,
   useQuietQueueInfiniteQuery,
   type WorkbenchExpiringQueueItem,
   type WorkbenchQuietQueueItem,
 } from '@/api/workbench';
-import {requirePrimaryReason} from '@/clients/lib/workbench-programming';
-import {presentExpiringReason, presentQuietReason} from '@/clients/lib/workbench-reason-presentation';
+import {requirePrimaryReason} from '@/clients/workbench-programming';
+import {presentExpiringReason, presentQuietReason} from '@/clients/workbench-reason-presentation';
+import {ROUTES} from '@/routes';
+import BrowseListBox from '@/ui/browse-list-box';
+import {EmptyState} from '@/ui/empty-state';
+import {useInfiniteItems} from '@/ui/use-infinite-items';
 
 import {QueueRow} from './queue-row';
 import {SnoozeMenu} from './snooze-menu';

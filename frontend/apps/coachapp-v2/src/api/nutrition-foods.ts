@@ -10,10 +10,10 @@
  */
 import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-import {call, client} from '@/api/client';
-import {foodKeys, recipeKeys} from '@/api/keys';
-import type {components, paths} from '@/api/schema';
-import {omitUndefined} from '@/api/shared';
+import {call, client} from './client.ts';
+import {foodKeys, recipeKeys} from './keys.ts';
+import type {components, paths} from './schema.ts';
+import {omitUndefined} from './shared.ts';
 
 const PAGE_SIZE = 20;
 

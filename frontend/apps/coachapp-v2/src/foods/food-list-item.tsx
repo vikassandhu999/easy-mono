@@ -1,9 +1,8 @@
 import {Chip} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {HandPlatter, Video} from 'lucide-react';
-
-import {BrowseRow, BrowseRowThumb, OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
 import type {Food} from '@/api/nutrition-foods';
+import {BrowseRow, BrowseRowThumb, OUTLINE_CHIP_CLASS} from '@/ui/browse-list-box';
 
 type NumericFoodKey = 'protein_g_per_100g' | 'carbs_g_per_100g' | 'fat_g_per_100g';
 

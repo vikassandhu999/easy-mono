@@ -1,22 +1,22 @@
 import {useState} from 'react';
 import {generatePath, Navigate} from 'react-router-dom';
-import {BackButton} from '@/@components/back-button';
-import {ErrorState} from '@/@components/error-state';
-import {Page} from '@/@components/page';
-import {PageSkeleton} from '@/@components/page-skeleton';
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
-import {useRouteParam} from '@/@hooks/use-route-param';
 import {type Food, useGetFoodQuery, useUpdateFoodMutation} from '@/api/nutrition-foods';
 import type {ServingSize} from '@/api/shared';
 import {applyFormErrors} from '@/api/shared';
-import FoodForm, {foodToFormValues, foodToMediaValue, useFoodForm} from '@/foods/food-form/food-form';
+import FoodForm, {foodToFormValues, foodToMediaValue, useFoodForm} from '@/foods/food-form';
 import {
   editorServingSizesFromFood,
   type FoodFormValues,
   foodToUpdateRequest,
   isFoodEditable,
-} from '@/foods/food-form/food-form-data';
+} from '@/foods/food-form-data';
+import {ROUTES} from '@/routes';
+import {BackButton} from '@/ui/back-button';
+import {ErrorState} from '@/ui/error-state';
+import {Page} from '@/ui/page';
+import {PageSkeleton} from '@/ui/page-skeleton';
+import {useGoBack} from '@/ui/use-go-back';
+import {useRouteParam} from '@/ui/use-route-param';
 
 // Rendered only when food data is available, avoiding useEffect to sync server state
 // into local state (which the React Compiler lint rule forbids).

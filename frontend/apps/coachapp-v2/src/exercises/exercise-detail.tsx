@@ -3,17 +3,16 @@ import {AlertDialog, Button, Chip, Typography, toast} from '@heroui/react';
 import {Copy, Dumbbell, Image as ImageIcon, Pencil, Trash2} from 'lucide-react';
 import type {ReactNode} from 'react';
 import {generatePath, useNavigate} from 'react-router-dom';
-
-import {BackButton} from '@/@components/back-button';
-import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
-import {DetailSectionHeading} from '@/@components/detail-section-heading';
-import {ErrorState} from '@/@components/error-state';
-import {Page} from '@/@components/page';
-import {PageSkeleton} from '@/@components/page-skeleton';
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
-import {useRouteParam} from '@/@hooks/use-route-param';
 import {useDeleteExerciseMutation, useGetExerciseQuery} from '@/api/training-exercises';
+import {ROUTES} from '@/routes';
+import {BackButton} from '@/ui/back-button';
+import {OUTLINE_CHIP_CLASS} from '@/ui/browse-list-box';
+import {DetailSectionHeading} from '@/ui/detail-section-heading';
+import {ErrorState} from '@/ui/error-state';
+import {Page} from '@/ui/page';
+import {PageSkeleton} from '@/ui/page-skeleton';
+import {useGoBack} from '@/ui/use-go-back';
+import {useRouteParam} from '@/ui/use-route-param';
 
 const MECHANICS_LABEL: Record<string, string> = {
   compound: 'Compound',

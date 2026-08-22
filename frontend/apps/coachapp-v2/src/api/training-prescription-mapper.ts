@@ -1,4 +1,4 @@
-import type {components} from '@/api/schema';
+import type {components} from './schema.ts';
 
 export type TrainingPrescriptionReplaceRequest = components['schemas']['TrainingPrescriptionReplaceRequest'];
 

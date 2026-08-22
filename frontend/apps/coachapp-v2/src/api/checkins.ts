@@ -7,9 +7,9 @@
 import {isOneOf} from '@easy/utils/closed-vocabulary';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-import {call, client} from '@/api/client';
-import {checkInKeys, clientKeys, formAssignmentKeys, formTemplateKeys, workbenchKeys} from '@/api/keys';
-import type {components, operations} from '@/api/schema';
+import {call, client} from './client.ts';
+import {checkInKeys, clientKeys, formAssignmentKeys, formTemplateKeys, workbenchKeys} from './keys.ts';
+import type {components, operations} from './schema.ts';
 
 export type ClientProfileCheckInSchedule = components['schemas']['ClientProfileCheckInSchedule'];
 export type ClientProfileCheckInScheduleRequest = components['schemas']['ClientProfileCheckInScheduleRequest'];

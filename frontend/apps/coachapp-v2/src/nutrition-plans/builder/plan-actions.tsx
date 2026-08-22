@@ -1,8 +1,5 @@
 import {toast} from '@heroui/react';
 import {useNavigate} from 'react-router-dom';
-
-import {type PlanActionOutcome, PlanActionsMenu} from '@/@components/plan-actions-menu';
-import {ROUTES} from '@/@config/routes';
 import type {NutritionPlan} from '@/api/nutrition-plan-builder';
 import {patchPlan} from '@/api/nutrition-plan-builder';
 import {nutritionPlanDeleteRequest, nutritionPlanRevisionRequest} from '@/api/nutrition-plan-lifecycle';
@@ -12,7 +9,9 @@ import {
   useDuplicateNutritionPlanMutation,
   useRestoreNutritionPlanMutation,
 } from '@/api/nutrition-plans-list';
-import {handleStaleNutritionPlanConflict} from '@/nutrition-plans/lib/stale-nutrition-plan-conflict';
+import {handleStaleNutritionPlanConflict} from '@/nutrition-plans/stale-nutrition-plan-conflict';
+import {ROUTES} from '@/routes';
+import {type PlanActionOutcome, PlanActionsMenu} from '@/ui/plan-actions-menu';
 
 export type Props = {
   plan: NutritionPlan;

@@ -1,12 +1,11 @@
 import {Plus} from 'lucide-react';
 import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-
-import BrowseScreen from '@/@components/browse-screen';
-import ListEmptyState from '@/@components/list-empty-state';
-import {ROUTES} from '@/@config/routes';
-import {useInfiniteItems} from '@/@hooks/use-infinite-items';
 import {useCoachRecipesInfiniteQuery} from '@/api/nutrition-foods';
+import {ROUTES} from '@/routes';
+import BrowseScreen from '@/ui/browse-screen';
+import ListEmptyState from '@/ui/list-empty-state';
+import {useInfiniteItems} from '@/ui/use-infinite-items';
 
 import RecipeListItem from './recipe-list-item';
 

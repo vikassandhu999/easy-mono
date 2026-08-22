@@ -15,7 +15,6 @@ import {Plus} from 'lucide-react';
 import {useState} from 'react';
 
 import {type FormPurpose, type FormQuestionType, newQuestion, type QuestionDraft} from '@/api/checkins';
-import {PickerModal} from '@/builder-kit/picker-modal';
 import {QUESTION_PRESET_CATEGORIES, QUESTION_PRESETS} from '@/checkins/question-presets';
 import {
   QUESTION_TYPE_ICONS,
@@ -24,6 +23,7 @@ import {
   questionTypeLabel,
   questionTypeOrder,
 } from '@/checkins/question-type-meta';
+import {PickerModal} from '@/ui/picker-modal';
 
 const PALETTE_TITLE = 'Add question';
 

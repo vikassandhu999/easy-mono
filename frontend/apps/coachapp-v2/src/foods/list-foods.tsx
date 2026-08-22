@@ -2,13 +2,12 @@ import {Button} from '@heroui/react';
 import {Plus} from 'lucide-react';
 import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-
-import BrowseScreen from '@/@components/browse-screen';
-import ListEmptyState from '@/@components/list-empty-state';
-import MultiSelectAutocomplete from '@/@components/multi-select-autocomplete';
-import {ROUTES} from '@/@config/routes';
-import {useInfiniteItems} from '@/@hooks/use-infinite-items';
 import {useCoachFoodsInfiniteQuery, useListFoodCategoriesQuery} from '@/api/nutrition-foods';
+import {ROUTES} from '@/routes';
+import BrowseScreen from '@/ui/browse-screen';
+import ListEmptyState from '@/ui/list-empty-state';
+import MultiSelectAutocomplete from '@/ui/multi-select-autocomplete';
+import {useInfiniteItems} from '@/ui/use-infinite-items';
 
 import FoodListItem from './food-list-item';
 

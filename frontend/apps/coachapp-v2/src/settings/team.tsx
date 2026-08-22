@@ -27,10 +27,6 @@ import {UserPlus} from 'lucide-react';
 import {useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
-
-import {ErrorState} from '@/@components/error-state';
-import {FieldRow} from '@/@components/form-fields/field-row';
-import {FormTextField} from '@/@components/form-fields/form-text-field';
 import {useGetBillingQuery} from '@/api/billing';
 import {applyFormErrors, getApiErrorMessage, omitUndefined} from '@/api/shared';
 import {
@@ -42,8 +38,11 @@ import {
   useResendTrainerInviteMutation,
   useRevokeTrainerInviteMutation,
 } from '@/api/team';
-import {PickerModal} from '@/builder-kit/picker-modal';
-import {SettingsSectionHeader} from '@/settings/components/settings-section-header';
+import {SettingsSectionHeader} from '@/settings/settings-section-header';
+import {ErrorState} from '@/ui/error-state';
+import {FieldRow} from '@/ui/field-row';
+import {FormTextField} from '@/ui/form-text-field';
+import {PickerModal} from '@/ui/picker-modal';
 
 const INVITE_TITLE = 'Invite a trainer';
 const INVITE_BLURB = "They'll get an email invite and take a seat once they join.";

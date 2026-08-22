@@ -3,14 +3,6 @@ import {Avatar, Button, Spinner, TextArea, toast} from '@heroui/react';
 import {useQueryClient} from '@tanstack/react-query';
 import {Send} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-
-import {BackButton} from '@/@components/back-button';
-import {ErrorState} from '@/@components/error-state';
-import {Page} from '@/@components/page';
-import {ROUTES} from '@/@config/routes';
-import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
-import {useChannelEvent} from '@/@hooks/use-channel-event';
-import {useGoBack} from '@/@hooks/use-go-back';
 import {
   appendMessage,
   type ChatMessage,
@@ -26,6 +18,13 @@ import AttachmentComposer from '@/messages/attachment-composer';
 import MessageAttachments from '@/messages/message-attachments';
 import MessageEmbed from '@/messages/message-embed';
 import type {AttachmentComposerState} from '@/messages/use-attachment-composer';
+import {ROUTES} from '@/routes';
+import {BackButton} from '@/ui/back-button';
+import {ErrorState} from '@/ui/error-state';
+import {Page} from '@/ui/page';
+import useAttachmentDownloadUrls from '@/ui/use-attachment-download-urls';
+import {useChannelEvent} from '@/ui/use-channel-event';
+import {useGoBack} from '@/ui/use-go-back';
 
 function formatDay(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, {day: 'numeric', month: 'short', year: 'numeric'});

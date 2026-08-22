@@ -1,16 +1,12 @@
 import {generatePath, useNavigate} from 'react-router-dom';
-
-import {BackButton} from '@/@components/back-button';
-import {Page} from '@/@components/page';
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
 import {applyFormErrors} from '@/api/shared';
 import {useCreateTrainingPlanMutation} from '@/api/training-plans-list';
-import TrainingPlanForm, {useTrainingPlanForm} from '@/training-plans/training-plan-form/training-plan-form';
-import {
-  type TrainingPlanFormValues,
-  trainingPlanToCreateRequest,
-} from '@/training-plans/training-plan-form/training-plan-form-data';
+import {ROUTES} from '@/routes';
+import TrainingPlanForm, {useTrainingPlanForm} from '@/training-plans/training-plan-form';
+import {type TrainingPlanFormValues, trainingPlanToCreateRequest} from '@/training-plans/training-plan-form-data';
+import {BackButton} from '@/ui/back-button';
+import {Page} from '@/ui/page';
+import {useGoBack} from '@/ui/use-go-back';
 
 export default function CreateTrainingPlan() {
   const navigate = useNavigate();

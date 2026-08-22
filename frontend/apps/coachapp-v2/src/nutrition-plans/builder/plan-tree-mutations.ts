@@ -1,4 +1,4 @@
-import type {NutritionDayPatternSlot, NutritionMealOption} from '@/api/nutrition-plan-builder';
+import type {NutritionDayPatternSlot, NutritionMealOption} from '../../api/nutrition-plan-builder.ts';
 
 type MutableMenuOption = Pick<NutritionMealOption, 'nutrition_meal_id' | 'position'>;
 type MutableMenuSlot = Pick<NutritionDayPatternSlot, 'meal_slot'> & {options: MutableMenuOption[]};

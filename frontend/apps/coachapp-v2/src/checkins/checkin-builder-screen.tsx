@@ -9,14 +9,6 @@ import {AlertDialog, Button, Typography, toast, useOverlayState} from '@heroui/r
 import {Pencil, Trash2} from 'lucide-react';
 import type {ReactNode} from 'react';
 import {generatePath, useNavigate} from 'react-router-dom';
-
-import {BackButton} from '@/@components/back-button';
-import {ErrorState} from '@/@components/error-state';
-import {Page} from '@/@components/page';
-import {PageSkeleton} from '@/@components/page-skeleton';
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
-import {useRouteParam} from '@/@hooks/use-route-param';
 import {
   type ClientProfileFormTemplate,
   PURPOSE_LABELS,
@@ -28,6 +20,13 @@ import {
   useUpdateFormTemplateMutation,
 } from '@/api/checkins';
 import CheckinBuilder from '@/checkins/checkin-builder';
+import {ROUTES} from '@/routes';
+import {BackButton} from '@/ui/back-button';
+import {ErrorState} from '@/ui/error-state';
+import {Page} from '@/ui/page';
+import {PageSkeleton} from '@/ui/page-skeleton';
+import {useGoBack} from '@/ui/use-go-back';
+import {useRouteParam} from '@/ui/use-route-param';
 
 function LoadedBuilder({template}: {template: ClientProfileFormTemplate}) {
   const navigate = useNavigate();

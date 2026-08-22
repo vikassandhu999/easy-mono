@@ -9,11 +9,11 @@ import {Description, ErrorMessage, Fieldset, Label, ToggleButton, ToggleButtonGr
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
-import {FormActions} from '@/@components/form-fields/form-actions';
-import {FormLayout} from '@/@components/form-fields/form-layout';
-import {FormPanel} from '@/@components/form-fields/form-panel';
-import {FormTextField} from '@/@components/form-fields/form-text-field';
 import {PURPOSE_LABELS, PURPOSES} from '@/api/checkins';
+import {FormActions} from '@/ui/form-actions';
+import {FormLayout} from '@/ui/form-layout';
+import {FormPanel} from '@/ui/form-panel';
+import {FormTextField} from '@/ui/form-text-field';
 
 export const checkinDetailsSchema = z.object({
   name: z.string().trim().min(1, 'Name is required'),

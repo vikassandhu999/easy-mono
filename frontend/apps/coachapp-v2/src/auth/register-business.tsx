@@ -3,13 +3,12 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm, useWatch} from 'react-hook-form';
 import {Navigate, useNavigate} from 'react-router-dom';
 import {z} from 'zod';
-import {FormTextField} from '@/@components/form-fields/form-text-field';
-
-import {ROUTES} from '@/@config/routes';
 import {useCreateBusinessMutation, useExchangeTokenMutation, useGetCurrentBusinessQuery} from '@/api/auth';
 import {getRefreshToken, setTokens} from '@/api/authStorage';
 import {applyFormErrors} from '@/api/shared';
-import AuthLayout from '@/auth/components/auth-layout';
+import AuthLayout from '@/auth/auth-layout';
+import {ROUTES} from '@/routes';
+import {FormTextField} from '@/ui/form-text-field';
 
 const schema = z.object({
   name: z.string().min(1, 'Enter business name').max(100, 'Use 100 characters or fewer'),

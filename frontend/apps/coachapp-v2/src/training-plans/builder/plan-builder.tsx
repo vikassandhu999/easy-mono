@@ -6,13 +6,12 @@
  */
 import {AlertDialog, Button, Spinner, Typography, useOverlayState} from '@heroui/react';
 import {useRef, useState} from 'react';
-
-import {PlanPeriodCard} from '@/@components/plan-period-card';
 import type {TrainingPlan} from '@/api/training-plan-builder';
-import {SetEditor} from './components/set-editor';
-import {WorkoutHeader} from './components/workout-header';
-import {WorkoutPanel} from './components/workout-panel';
-import {WorkoutTabs} from './components/workout-tabs';
+import {SetEditor} from '@/training-plans/builder/set-editor';
+import {WorkoutHeader} from '@/training-plans/builder/workout-header';
+import {WorkoutPanel} from '@/training-plans/builder/workout-panel';
+import {WorkoutTabs} from '@/training-plans/builder/workout-tabs';
+import {PlanPeriodCard} from '@/ui/plan-period-card';
 import {findElement} from './plan-tree';
 import {daysForWorkout} from './schedule';
 import {useActiveWorkout, usePlanBuilder} from './use-plan-builder';

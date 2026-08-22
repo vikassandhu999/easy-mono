@@ -1,9 +1,8 @@
 import {Chip} from '@heroui/react';
 import {ClipboardCheck} from 'lucide-react';
-
-import {BrowseRow} from '@/@components/browse-list-box';
 import {type ClientProfileFormTemplate, PURPOSE_LABELS} from '@/api/checkins';
-import {questionCount} from '@/checkins/lib/form-templates';
+import {questionCount} from '@/checkins/form-templates';
+import {BrowseRow} from '@/ui/browse-list-box';
 
 type TemplateStatus = ClientProfileFormTemplate['status'];
 

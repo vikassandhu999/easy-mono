@@ -4,12 +4,12 @@ import {Button, ToggleButton, ToggleButtonGroup} from '@heroui/react';
 import {ArrowUpDown} from 'lucide-react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-import BrowseListBox from '@/@components/browse-list-box';
-import ListEmptyState from '@/@components/list-empty-state';
-import {ROUTES} from '@/@config/routes';
-import {useInfiniteItems} from '@/@hooks/use-infinite-items';
 import {type ClientStatus, type ClientSummary, useClientsInfiniteQuery, useListClientsQuery} from '@/api/clients';
-import ClientListItem from '@/clients/clients-list/client-list-item';
+import ClientListItem from '@/clients/client-list-item';
+import {ROUTES} from '@/routes';
+import BrowseListBox from '@/ui/browse-list-box';
+import ListEmptyState from '@/ui/list-empty-state';
+import {useInfiniteItems} from '@/ui/use-infinite-items';
 import {ViewShell} from './view-shell';
 
 type FilterId = 'active' | 'all' | 'inactive' | 'invited';

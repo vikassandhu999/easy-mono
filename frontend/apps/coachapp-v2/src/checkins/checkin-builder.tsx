@@ -42,9 +42,6 @@ import {
   X,
 } from 'lucide-react';
 import {type ReactNode, useRef, useState} from 'react';
-import {FormActions} from '@/@components/form-fields/form-actions';
-import {FormLayout} from '@/@components/form-fields/form-layout';
-import {Page} from '@/@components/page';
 import {type FormPurpose, newQuestion, newSection, type QuestionDraft, type SectionDraft} from '@/api/checkins';
 import AddQuestionControl from '@/checkins/question-palette';
 import {
@@ -54,6 +51,9 @@ import {
   questionTypeLabel,
   questionTypeOrder,
 } from '@/checkins/question-type-meta';
+import {FormActions} from '@/ui/form-actions';
+import {FormLayout} from '@/ui/form-layout';
+import {Page} from '@/ui/page';
 
 const CARD_CLASS = 'rounded-card border border-border bg-surface p-4 sm:p-5';
 const DASHED_BUTTON_CLASS = 'w-full rounded-control border border-dashed border-border';

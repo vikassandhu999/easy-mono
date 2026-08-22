@@ -1,8 +1,7 @@
 import {Button, Typography} from '@heroui/react';
-
-import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import type {ClientProfileReviewQueueItem} from '@/api/checkins';
-import {formatAnswer} from '@/checkins/lib/form-answers';
+import {formatAnswer} from '@/checkins/form-answers';
+import useAttachmentDownloadUrls from '@/ui/use-attachment-download-urls';
 
 export default function ReviewAnswers({item}: {item: ClientProfileReviewQueueItem}) {
   const sections = item.question_snapshot;

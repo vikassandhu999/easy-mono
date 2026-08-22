@@ -1,9 +1,6 @@
 import {createBrowserRouter, Navigate} from 'react-router-dom';
 
-import AppShell from '@/@components/app-shell';
-import {ROUTES} from '@/@config/routes';
-import {withAuth} from '@/@hoc/with-auth';
-import {withNotAuth} from '@/@hoc/with-not-auth';
+import AppShell from '@/app-shell';
 import AcceptInvite from '@/auth/accept-invite';
 import Login from '@/auth/login';
 import RegisterBusiness from '@/auth/register-business';
@@ -16,15 +13,14 @@ import CreateCheckin from '@/checkins/create-checkin';
 import EditCheckin from '@/checkins/edit-checkin';
 import ListCheckins from '@/checkins/list-checkins';
 import ReviewCheckin from '@/checkins/review-checkin';
+import CheckinSubmission from '@/clients/client-checkin-submission';
+import IntakeResponses from '@/clients/client-intake-responses';
+import NutritionDay from '@/clients/client-nutrition-day';
+import ProgressPhotos from '@/clients/client-progress-photos';
 import ClientScreen from '@/clients/client-screen';
-import CheckinSubmission from '@/clients/client-screen/checkin-submission';
-import IntakeResponses from '@/clients/client-screen/intake-responses';
-import NutritionDay from '@/clients/client-screen/nutrition-day';
-import ProgressPhotos from '@/clients/client-screen/progress-photos';
-import WeightHistory from '@/clients/client-screen/weight-history';
+import WeightHistory from '@/clients/client-weight-history';
 import EditClient from '@/clients/edit-client';
 import InviteClient from '@/clients/invite-client';
-import RequiredServicesPrototype from '@/clients/prototypes/required-services-prototype';
 import SessionDetail from '@/clients/session-detail';
 import WorkbenchScreen from '@/clients/workbench/workbench-screen';
 import Dashboard from '@/dashboard/dashboard';
@@ -47,11 +43,14 @@ import CreateRecipe from '@/recipes/create-recipe';
 import EditRecipe from '@/recipes/edit-recipe';
 import ListRecipes from '@/recipes/list-recipes';
 import RecipeDetail from '@/recipes/recipe-detail';
+import {ROUTES} from '@/routes';
 import Settings from '@/settings/settings';
 import TrainingPlanBuilder from '@/training-plans/builder';
 import CreateTrainingPlan from '@/training-plans/create-training-plan';
 import EditTrainingPlan from '@/training-plans/edit-training-plan';
 import ListTrainingPlans from '@/training-plans/list-training-plans';
+import {withAuth} from '@/with-auth';
+import {withNotAuth} from '@/with-not-auth';
 
 const LoginScreen = withNotAuth(Login);
 const SignupScreen = withNotAuth(Signup);
@@ -78,9 +77,6 @@ export const router = createBrowserRouter([
       {path: ROUTES.DASHBOARD, Component: Dashboard},
       {path: ROUTES.CLIENTS, Component: WorkbenchScreen},
       {path: ROUTES.INVITE_CLIENT, Component: InviteClient},
-      ...(import.meta.env.DEV
-        ? [{path: ROUTES.REQUIRED_SERVICES_PROTOTYPE, Component: RequiredServicesPrototype}]
-        : []),
       {path: ROUTES.CLIENT_DETAIL, Component: ClientScreen},
       {path: ROUTES.CLIENT_SESSION_DETAIL, Component: SessionDetail},
       {path: ROUTES.CLIENT_WEIGHT, Component: WeightHistory},

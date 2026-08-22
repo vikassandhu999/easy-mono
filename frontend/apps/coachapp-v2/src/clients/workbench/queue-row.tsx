@@ -3,7 +3,7 @@ import {cn} from '@heroui/styles';
 import type {ReactNode} from 'react';
 import {GridListItem} from 'react-aria-components';
 
-import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
+import {LIST_ITEM_CLASS} from '@/ui/browse-list-box';
 
 export type QueueTone = 'accent' | 'danger' | 'default' | 'warning';
 

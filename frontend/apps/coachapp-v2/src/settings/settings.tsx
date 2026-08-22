@@ -10,20 +10,19 @@ import {Avatar, Button, Tabs, Typography} from '@heroui/react';
 import {CreditCard, Shield, User, Users} from 'lucide-react';
 import {useCallback} from 'react';
 import {generatePath, useNavigate, useParams} from 'react-router-dom';
-
-import {ErrorState} from '@/@components/error-state';
-import {Page} from '@/@components/page';
-import {PageSkeleton} from '@/@components/page-skeleton';
-import {ROUTES} from '@/@config/routes';
-import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {clearTokens} from '@/api/authStorage';
 import {type CoachProfile, useGetCoachProfileQuery, useUpdateCoachProfileMutation} from '@/api/profile';
 import {queryClient} from '@/api/query-client';
 import {disconnectSocket} from '@/api/socket';
+import {ROUTES} from '@/routes';
 import BillingSection from '@/settings/billing';
-import EditableRow from '@/settings/components/editable-row';
-import {SettingsSectionHeader} from '@/settings/components/settings-section-header';
+import EditableRow from '@/settings/editable-row';
+import {SettingsSectionHeader} from '@/settings/settings-section-header';
 import TeamSection from '@/settings/team';
+import {ErrorState} from '@/ui/error-state';
+import {Page} from '@/ui/page';
+import {PageSkeleton} from '@/ui/page-skeleton';
+import {useIsDesktop} from '@/ui/use-is-desktop';
 
 const TABS = [
   {icon: User, id: 'profile', label: 'Profile'},

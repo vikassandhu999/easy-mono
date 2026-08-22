@@ -24,13 +24,13 @@
 
 import {useQuery} from '@tanstack/react-query';
 
-import {call, client} from '@/api/client';
-import {clientKeys, trainingPlanKeys} from '@/api/keys';
-import {patchQueryData, queryClient} from '@/api/query-client';
-import type {components} from '@/api/schema';
-import {trainingPlanPeriodRequest} from '@/api/training-plan-requests';
-import {planToPrescriptionRequest} from '@/api/training-prescription';
-import {workbenchMutationTargets} from '@/api/workbench-targets';
+import {call, client} from './client.ts';
+import {clientKeys, trainingPlanKeys} from './keys.ts';
+import {patchQueryData, queryClient} from './query-client.ts';
+import type {components} from './schema.ts';
+import {trainingPlanPeriodRequest} from './training-plan-requests.ts';
+import {planToPrescriptionRequest} from './training-prescription.ts';
+import {workbenchMutationTargets} from './workbench-targets.ts';
 
 export type TrainingPlan = components['schemas']['TrainingPlan'];
 export type TrainingPlanWorkout = components['schemas']['TrainingPlanWorkout'];

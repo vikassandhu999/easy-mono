@@ -1,22 +1,21 @@
 import {generatePath} from 'react-router-dom';
-
-import {BackButton} from '@/@components/back-button';
-import {ErrorState} from '@/@components/error-state';
-import {Page} from '@/@components/page';
-import {PageSkeleton} from '@/@components/page-skeleton';
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
-import {useRouteParam} from '@/@hooks/use-route-param';
 import {type NutritionPlan, patchPlan, useGetNutritionPlanQuery} from '@/api/nutrition-plan-builder';
 import {useUpdateNutritionPlanMutation} from '@/api/nutrition-plans-list';
 import {applyFormErrors} from '@/api/shared';
-import {handleStaleNutritionPlanConflict} from '@/nutrition-plans/lib/stale-nutrition-plan-conflict';
-import NutritionPlanForm, {useNutritionPlanForm} from '@/nutrition-plans/nutrition-plan-form/nutrition-plan-form';
+import NutritionPlanForm, {useNutritionPlanForm} from '@/nutrition-plans/nutrition-plan-form';
 import {
   type NutritionPlanFormValues,
   nutritionPlanToFormValues,
   nutritionPlanToUpdateRequest,
-} from '@/nutrition-plans/nutrition-plan-form/nutrition-plan-form-data';
+} from '@/nutrition-plans/nutrition-plan-form-data';
+import {handleStaleNutritionPlanConflict} from '@/nutrition-plans/stale-nutrition-plan-conflict';
+import {ROUTES} from '@/routes';
+import {BackButton} from '@/ui/back-button';
+import {ErrorState} from '@/ui/error-state';
+import {Page} from '@/ui/page';
+import {PageSkeleton} from '@/ui/page-skeleton';
+import {useGoBack} from '@/ui/use-go-back';
+import {useRouteParam} from '@/ui/use-route-param';
 
 function EditNutritionPlanHeader({goBack, kind}: {goBack: () => void; kind?: NutritionPlan['kind']}) {
   const title =

@@ -1,9 +1,8 @@
 import {formatIsoDateOnly} from '@easy/utils';
 import {ClipboardCheck} from 'lucide-react';
 import {Link} from 'react-router-dom';
-
-import {ROUTES} from '@/@config/routes';
 import type {ChatMessageEmbed} from '@/api/conversations';
+import {ROUTES} from '@/routes';
 
 export default function MessageEmbed({embed}: {embed: ChatMessageEmbed}) {
   return (

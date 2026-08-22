@@ -3,10 +3,6 @@ import {Button, Typography, toast} from '@heroui/react';
 import {ArrowLeft, ExternalLink, Plus, Trash2} from 'lucide-react';
 import {type ReactNode, useEffect, useId, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {Page} from '@/@components/page';
-import {PageSkeleton} from '@/@components/page-skeleton';
-import SectionHeading from '@/@components/section-heading';
-import {ROUTES} from '@/@config/routes';
 import {
   draftToRequest,
   emptyLandingDraft,
@@ -22,6 +18,10 @@ import {
 } from '@/api/landing-page';
 import {useGetCoachProfileQuery} from '@/api/profile';
 import {getApiErrorMessage, getValidationErrors} from '@/api/shared';
+import {ROUTES} from '@/routes';
+import {Page} from '@/ui/page';
+import {PageSkeleton} from '@/ui/page-skeleton';
+import SectionHeading from '@/ui/section-heading';
 
 const MAX_PROGRAMS = 3;
 const MAX_QUESTIONS = 5;

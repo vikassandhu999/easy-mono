@@ -3,14 +3,12 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router-dom';
 import {z} from 'zod';
-import {FormTextField} from '@/@components/form-fields/form-text-field';
-
-import {ROUTES} from '@/@config/routes';
 import {useSendOtpMutation} from '@/api/auth';
 import {ApiError} from '@/api/client';
 import {applyFormErrors} from '@/api/shared';
-import {AuthFooter} from '@/auth/components/auth-footer';
-import AuthLayout from '@/auth/components/auth-layout';
+import AuthLayout, {AuthFooter} from '@/auth/auth-layout';
+import {ROUTES} from '@/routes';
+import {FormTextField} from '@/ui/form-text-field';
 
 const schema = z.object({
   email: z.string().min(1, 'Enter email').email('Enter a valid email'),

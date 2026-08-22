@@ -2,7 +2,7 @@ import {CAMERA_ACCEPT, mediaKind} from '@easy/utils';
 import {Button, ProgressBar} from '@heroui/react';
 import {Camera, ImagePlus, Mic, RotateCcw, Square, Trash2, X} from 'lucide-react';
 
-import {ACCEPTED_TYPES} from '@/messages/lib/attachment-files';
+import {ACCEPTED_TYPES} from '@/messages/attachment-files';
 import useAttachmentComposer, {type AttachmentComposerState} from '@/messages/use-attachment-composer';
 
 type AttachmentComposerProps = {

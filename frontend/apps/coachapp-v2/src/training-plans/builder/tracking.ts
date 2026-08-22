@@ -8,7 +8,7 @@
 
 import {isOneOf} from '@easy/utils/closed-vocabulary';
 
-import type {components} from '@/api/schema';
+import type {components} from '../../api/schema.ts';
 
 /** The measures a set can carry. `load` and `distance` also own a unit. */
 export type FieldKey = 'distance' | 'duration' | 'load' | 'reps' | 'rpe';

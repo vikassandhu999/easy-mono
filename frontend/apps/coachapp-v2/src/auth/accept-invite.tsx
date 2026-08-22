@@ -4,13 +4,12 @@ import {useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 import {z} from 'zod';
-
-import {ROUTES} from '@/@config/routes';
 import {useShowTrainerInvitationQuery, useTrainerAcceptInviteMutation} from '@/api/auth';
 import {clearTokens, getAccessToken} from '@/api/authStorage';
 import {queryClient} from '@/api/query-client';
 import {applyFormErrors, getApiErrorCode} from '@/api/shared';
-import AuthLayout from '@/auth/components/auth-layout';
+import AuthLayout from '@/auth/auth-layout';
+import {ROUTES} from '@/routes';
 
 // ── Copy ─────────────────────────────────────────────────────
 // Kept verbatim from the UX spec / handoff doc. Switching these is a copy

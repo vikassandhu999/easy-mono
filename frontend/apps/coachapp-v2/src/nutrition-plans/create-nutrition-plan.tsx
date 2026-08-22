@@ -1,16 +1,12 @@
 import {generatePath, useNavigate} from 'react-router-dom';
-
-import {BackButton} from '@/@components/back-button';
-import {Page} from '@/@components/page';
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
 import {useCreateNutritionPlanMutation} from '@/api/nutrition-plans-list';
 import {applyFormErrors} from '@/api/shared';
-import NutritionPlanForm, {useNutritionPlanForm} from '@/nutrition-plans/nutrition-plan-form/nutrition-plan-form';
-import {
-  type NutritionPlanFormValues,
-  nutritionPlanToCreateRequest,
-} from '@/nutrition-plans/nutrition-plan-form/nutrition-plan-form-data';
+import NutritionPlanForm, {useNutritionPlanForm} from '@/nutrition-plans/nutrition-plan-form';
+import {type NutritionPlanFormValues, nutritionPlanToCreateRequest} from '@/nutrition-plans/nutrition-plan-form-data';
+import {ROUTES} from '@/routes';
+import {BackButton} from '@/ui/back-button';
+import {Page} from '@/ui/page';
+import {useGoBack} from '@/ui/use-go-back';
 
 export default function CreateNutritionPlan() {
   const navigate = useNavigate();

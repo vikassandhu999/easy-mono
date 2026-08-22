@@ -1,11 +1,10 @@
 import {Spinner} from '@heroui/react';
 import {useCallback} from 'react';
 import {useSearchParams} from 'react-router-dom';
-
-import {ErrorState} from '@/@components/error-state';
-import {useRouteParam} from '@/@hooks/use-route-param';
 import {useGetCoachClientConversationQuery} from '@/api/conversations';
 import ConversationView from '@/messages/conversation-view';
+import {ErrorState} from '@/ui/error-state';
+import {useRouteParam} from '@/ui/use-route-param';
 
 export default function ConversationPage() {
   const id = useRouteParam('id');

@@ -1,15 +1,15 @@
 import {AlertDialog, Button, toast, useOverlayState} from '@heroui/react';
 import {useState} from 'react';
 import {generatePath, useNavigate} from 'react-router-dom';
-import {BackButton} from '@/@components/back-button';
-import {Page} from '@/@components/page';
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
 import {useCreateRecipeMutation} from '@/api/nutrition-foods';
 import {applyFormErrors} from '@/api/shared';
-import type {IngredientItem} from '@/recipes/lib/recipe-math';
-import RecipeForm, {useRecipeForm} from '@/recipes/recipe-form/recipe-form';
-import {type RecipeFormValues, recipeToCreateRequest} from '@/recipes/recipe-form/recipe-form-data';
+import RecipeForm, {useRecipeForm} from '@/recipes/recipe-form';
+import {type RecipeFormValues, recipeToCreateRequest} from '@/recipes/recipe-form-data';
+import type {IngredientItem} from '@/recipes/recipe-math';
+import {ROUTES} from '@/routes';
+import {BackButton} from '@/ui/back-button';
+import {Page} from '@/ui/page';
+import {useGoBack} from '@/ui/use-go-back';
 
 export default function CreateRecipe() {
   const navigate = useNavigate();

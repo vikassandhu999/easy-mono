@@ -1,8 +1,7 @@
 import {Typography} from '@heroui/react';
 import {Link} from 'react-router-dom';
-
-import {Page} from '@/@components/page';
-import {ROUTES} from '@/@config/routes';
+import {ROUTES} from '@/routes';
+import {Page} from '@/ui/page';
 
 interface LibrarySection {
   description: string;

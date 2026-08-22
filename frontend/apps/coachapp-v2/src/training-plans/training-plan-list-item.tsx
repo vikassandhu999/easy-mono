@@ -1,8 +1,7 @@
 import {Chip} from '@heroui/react';
 import {Dumbbell} from 'lucide-react';
-
-import {BrowseRow} from '@/@components/browse-list-box';
 import type {TrainingPlan} from '@/api/training-plan-builder';
+import {BrowseRow} from '@/ui/browse-list-box';
 
 function getTrainingPlanMeta(plan: TrainingPlan): string {
   const workoutCount = plan.workouts.length;

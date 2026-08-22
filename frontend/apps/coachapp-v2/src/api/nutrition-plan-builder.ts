@@ -22,13 +22,13 @@
 
 import {useQuery} from '@tanstack/react-query';
 
-import {call, client} from '@/api/client';
-import {nutritionDayKeys, nutritionPlanKeys} from '@/api/keys';
-import {planToMenuRequest} from '@/api/nutrition-menu';
-import {nutritionPlanPeriodRequest} from '@/api/nutrition-plan-lifecycle';
-import {invalidatePlanCaches} from '@/api/nutrition-plans-list';
-import {patchQueryData, queryClient} from '@/api/query-client';
-import type {components} from '@/api/schema';
+import {call, client} from './client.ts';
+import {nutritionDayKeys, nutritionPlanKeys} from './keys.ts';
+import {planToMenuRequest} from './nutrition-menu.ts';
+import {nutritionPlanPeriodRequest} from './nutrition-plan-lifecycle.ts';
+import {invalidatePlanCaches} from './nutrition-plans-list.ts';
+import {patchQueryData, queryClient} from './query-client.ts';
+import type {components} from './schema.ts';
 
 export type NutritionPlan = components['schemas']['NutritionPlan'];
 export type NutritionDayPattern = components['schemas']['NutritionDayPattern'];

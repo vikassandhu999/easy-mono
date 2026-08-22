@@ -3,15 +3,13 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm, useWatch} from 'react-hook-form';
 import {Navigate, useNavigate} from 'react-router-dom';
 import {z} from 'zod';
-import {FormOtpField} from '@/@components/form-fields/form-otp-field';
-
-import {ROUTES} from '@/@config/routes';
-import {useHistoryStateString} from '@/@hooks/use-history-state';
 import {useExchangeTokenMutation, useSendOtpMutation} from '@/api/auth';
 import {setTokens} from '@/api/authStorage';
 import {applyFormErrors} from '@/api/shared';
-import {AuthFooter} from '@/auth/components/auth-footer';
-import AuthLayout from '@/auth/components/auth-layout';
+import AuthLayout, {AuthFooter} from '@/auth/auth-layout';
+import {ROUTES} from '@/routes';
+import {FormOtpField} from '@/ui/form-otp-field';
+import {useHistoryStateString} from '@/ui/use-history-state';
 
 const schema = z.object({
   otp: z.string().length(6, 'Enter all 6 digits'),

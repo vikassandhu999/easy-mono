@@ -3,23 +3,23 @@ import {Avatar, Button, Card, Chip, Label, Separator, Surface, Typography, toast
 import {CheckCircle2, ClipboardCopy, MessageCircle, UserPlus} from 'lucide-react';
 import {useState} from 'react';
 import {generatePath, useNavigate} from 'react-router-dom';
-import {AddSeatsDialog} from '@/@components/add-seats-dialog';
-import {BackButton} from '@/@components/back-button';
-import {Page} from '@/@components/page';
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
 import {type BillingSummary, getSeatLimitError, useGetBillingQuery} from '@/api/billing';
 import {type Client, useInviteClientMutation} from '@/api/clients';
 import {applyFormErrors} from '@/api/shared';
 import {useReassignClientMutation} from '@/api/team';
+import {getWhatsAppUrl} from '@/clients/client-invite';
 import InviteClientForm, {
   INVITE_CLIENT_FORM_FIELDS,
   type InviteClientFormValues,
   inviteClientToRequest,
   useInviteClientForm,
-} from '@/clients/client-invite-form/invite-client-form';
-import {SeatUsageCard} from '@/clients/client-invite-form/seat-usage-card';
-import {getWhatsAppUrl} from '@/clients/lib/invite-client';
+} from '@/clients/invite-client-form';
+import {SeatUsageCard} from '@/clients/seat-usage-card';
+import {ROUTES} from '@/routes';
+import {AddSeatsDialog} from '@/ui/add-seats-dialog';
+import {BackButton} from '@/ui/back-button';
+import {Page} from '@/ui/page';
+import {useGoBack} from '@/ui/use-go-back';
 
 function SeatLimitBlocked({
   onBack,

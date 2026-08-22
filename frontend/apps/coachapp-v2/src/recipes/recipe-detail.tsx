@@ -2,19 +2,6 @@ import {formatIsoDateOnly} from '@easy/utils';
 import {Button, Chip, Typography, toast} from '@heroui/react';
 import {ChefHat, Copy, Pencil, Trash2} from 'lucide-react';
 import {generatePath, useNavigate} from 'react-router-dom';
-
-import {BackButton} from '@/@components/back-button';
-import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
-import {DETAIL_SECTION_CLASS, DetailSectionHeading} from '@/@components/detail-section-heading';
-import {ErrorState} from '@/@components/error-state';
-import {LibraryDeleteDialog} from '@/@components/library-delete-dialog';
-import {LibraryUsageSection} from '@/@components/library-usage';
-import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
-import {Page} from '@/@components/page';
-import {PageSkeleton} from '@/@components/page-skeleton';
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
-import {useRouteParam} from '@/@hooks/use-route-param';
 import type {NutrientTotals} from '@/api/nutrition-foods';
 import {
   useCopyNutritionRecipeMutation,
@@ -22,7 +9,19 @@ import {
   useGetRecipeImpactQuery,
   useGetRecipeQuery,
 } from '@/api/nutrition-foods';
-import {hasLibraryUsage, libraryInUseMessage, normalizeLibraryImpact} from '@/foods/lib/library-impact';
+import {hasLibraryUsage, libraryInUseMessage, normalizeLibraryImpact} from '@/foods/library-impact';
+import {ROUTES} from '@/routes';
+import {BackButton} from '@/ui/back-button';
+import {OUTLINE_CHIP_CLASS} from '@/ui/browse-list-box';
+import {DETAIL_SECTION_CLASS, DetailSectionHeading} from '@/ui/detail-section-heading';
+import {ErrorState} from '@/ui/error-state';
+import {LibraryDeleteDialog} from '@/ui/library-delete-dialog';
+import {LibraryUsageSection} from '@/ui/library-usage';
+import {MacroBreakdownCard} from '@/ui/macro-breakdown-card';
+import {Page} from '@/ui/page';
+import {PageSkeleton} from '@/ui/page-skeleton';
+import {useGoBack} from '@/ui/use-go-back';
+import {useRouteParam} from '@/ui/use-route-param';
 
 const MACRO_SEGMENTS: {
   color: 'accent' | 'success' | 'warning';

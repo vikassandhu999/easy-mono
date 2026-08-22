@@ -17,18 +17,16 @@
  */
 import {Typography, useOverlayState} from '@heroui/react';
 import {useMemo, useRef, useState} from 'react';
-
-import {PlanPeriodCard} from '@/@components/plan-period-card';
 import type {NutritionMeal, NutritionPlan} from '@/api/nutrition-plan-builder';
-
-import {AddItemsFlow} from './components/add-items-flow';
-import {AmountSheet} from './components/amount-sheet';
-import {DayEnergyHeader} from './components/day-energy-header';
-import {DayHeader} from './components/day-header';
-import {DeleteDayDialog} from './components/delete-day-dialog';
-import {MealCard, type MealSwap} from './components/meal-card';
-import type {HydratedMealItem} from './components/meal-item-row';
-import {AddMealControl} from './components/meal-palette';
+import {AddItemsFlow} from '@/nutrition-plans/builder/add-items-flow';
+import {AmountSheet} from '@/nutrition-plans/builder/amount-sheet';
+import {DayEnergyHeader} from '@/nutrition-plans/builder/day-energy-header';
+import {DayHeader} from '@/nutrition-plans/builder/day-header';
+import {DeleteDayDialog} from '@/nutrition-plans/builder/delete-day-dialog';
+import {MealCard, type MealSwap} from '@/nutrition-plans/builder/meal-card';
+import type {HydratedMealItem} from '@/nutrition-plans/builder/meal-item-row';
+import {AddMealControl} from '@/nutrition-plans/builder/meal-palette';
+import {PlanPeriodCard} from '@/ui/plan-period-card';
 import {computeDayTotals, computeMealListTotals} from './macros';
 import {assignmentCounts, firstFreeSlot, getDays, getWeekdayAssignments, slotRows} from './plan-tree';
 import {assignedWeekdays} from './schedule';

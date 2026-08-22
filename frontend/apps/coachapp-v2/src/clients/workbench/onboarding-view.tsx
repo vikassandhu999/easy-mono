@@ -4,21 +4,16 @@ import {ClipboardList, Mail, Phone, UserPlus} from 'lucide-react';
 import {useState} from 'react';
 import {GridListItem} from 'react-aria-components';
 import {useNavigate} from 'react-router-dom';
-
-import BrowseListBox, {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
-import {EmptyState} from '@/@components/empty-state';
-import {toastMutationError} from '@/@components/mutation-toast';
-import {ROUTES} from '@/@config/routes';
-import {useInfiniteItems} from '@/@hooks/use-infinite-items';
 import {useRemindFormAssignmentMutation} from '@/api/checkins';
 import {useResendClientInviteMutation} from '@/api/clients';
 import {useOnboardingQueueInfiniteQuery, type WorkbenchOnboardingQueueItem} from '@/api/workbench';
-import {requirePrimaryReason} from '@/clients/lib/workbench-programming';
-import {
-  formatWorkbenchDate,
-  presentOnboardingReason,
-  showCallUtility,
-} from '@/clients/lib/workbench-reason-presentation';
+import {requirePrimaryReason} from '@/clients/workbench-programming';
+import {formatWorkbenchDate, presentOnboardingReason, showCallUtility} from '@/clients/workbench-reason-presentation';
+import {ROUTES} from '@/routes';
+import BrowseListBox, {LIST_ITEM_CLASS} from '@/ui/browse-list-box';
+import {EmptyState} from '@/ui/empty-state';
+import {toastMutationError} from '@/ui/mutation-toast';
+import {useInfiniteItems} from '@/ui/use-infinite-items';
 
 type PendingAction =
   | {

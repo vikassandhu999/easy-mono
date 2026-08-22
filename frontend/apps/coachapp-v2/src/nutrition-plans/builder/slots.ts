@@ -4,7 +4,7 @@ import {
   type MealSlot,
   ORDINARY_MEAL_SLOTS,
   WORKOUT_MEAL_SLOTS,
-} from '../../../../../packages/utils/src/meal-slots.ts';
+} from '@easy/utils/meal-slots';
 
 export {MEAL_SLOTS, ORDINARY_MEAL_SLOTS, WORKOUT_MEAL_SLOTS};
 

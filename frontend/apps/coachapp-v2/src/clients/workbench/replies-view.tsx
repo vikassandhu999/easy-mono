@@ -16,18 +16,17 @@ import {Check, Eye, MessageCircle, Send, UserX} from 'lucide-react';
 import {useEffect, useState} from 'react';
 import {GridListItem} from 'react-aria-components';
 import {useNavigate} from 'react-router-dom';
-
-import BrowseListBox, {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
-import {EmptyState} from '@/@components/empty-state';
-import {toastMutationError} from '@/@components/mutation-toast';
-import {ROUTES} from '@/@config/routes';
-import {useInfiniteItems} from '@/@hooks/use-infinite-items';
-import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {ApiError} from '@/api/client';
 import {useMarkCoachConversationReadMutation, useMarkConversationHandledMutation} from '@/api/conversations';
 import {useRepliesQueueInfiniteQuery, type WorkbenchRepliesQueueItem} from '@/api/workbench';
-import {requirePrimaryReason} from '@/clients/lib/workbench-programming';
-import {presentReplyReason, presentReplySequenceFacts} from '@/clients/lib/workbench-reason-presentation';
+import {requirePrimaryReason} from '@/clients/workbench-programming';
+import {presentReplyReason, presentReplySequenceFacts} from '@/clients/workbench-reason-presentation';
+import {ROUTES} from '@/routes';
+import BrowseListBox, {LIST_ITEM_CLASS} from '@/ui/browse-list-box';
+import {EmptyState} from '@/ui/empty-state';
+import {toastMutationError} from '@/ui/mutation-toast';
+import {useInfiniteItems} from '@/ui/use-infinite-items';
+import {useIsDesktop} from '@/ui/use-is-desktop';
 
 function conversationName(item: WorkbenchRepliesQueueItem): string {
   return item.conversation.client_name || 'Client';

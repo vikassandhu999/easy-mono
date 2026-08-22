@@ -14,14 +14,14 @@
 
 import {portionWireFromInput} from '@easy/utils/nutrition-portion';
 import {toast} from '@heroui/react';
-import {toastMutationError} from '@/@components/mutation-toast';
 import {createLocalNodeId, emptyNutrients, mealItemFromDraft, nextPosition, reorderNodes} from '@/api/nutrition-menu';
 import type {NutritionMeal, NutritionPlan, NutritionPortionInput} from '@/api/nutrition-plan-builder';
 import * as api from '@/api/nutrition-plan-builder';
-import {createCoalescingQueue} from '@/builder-kit/coalescing-queue';
-import {periodError} from '@/clients/lib/plan-coverage';
-import {coverageErrorMessage} from '@/nutrition-plans/lib/coverage-error';
-import {handleStaleNutritionPlanConflict} from '@/nutrition-plans/lib/stale-nutrition-plan-conflict';
+import {periodError} from '@/clients/plan-coverage';
+import {coverageErrorMessage} from '@/nutrition-plans/coverage-error';
+import {handleStaleNutritionPlanConflict} from '@/nutrition-plans/stale-nutrition-plan-conflict';
+import {createCoalescingQueue} from '@/ui/coalescing-queue';
+import {toastMutationError} from '@/ui/mutation-toast';
 
 import type {MealItemDraft} from './amount-draft';
 import {changeOptionSlot, copyWithItemPortion} from './commands-state';

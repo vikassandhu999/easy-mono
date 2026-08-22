@@ -1,8 +1,5 @@
 import {toast} from '@heroui/react';
 import {useNavigate} from 'react-router-dom';
-
-import {type PlanActionOutcome, PlanActionsMenu} from '@/@components/plan-actions-menu';
-import {ROUTES} from '@/@config/routes';
 import type {TrainingPlan} from '@/api/training-plan-builder';
 import {patchPlan} from '@/api/training-plan-builder';
 import {trainingPlanDeleteRequest, trainingPlanRevisionRequest} from '@/api/training-plan-lifecycle';
@@ -12,7 +9,9 @@ import {
   useDuplicateTrainingPlanMutation,
   useRestoreTrainingPlanMutation,
 } from '@/api/training-plans-list';
-import {handleStaleTrainingPlanConflict} from '@/training-plans/lib/stale-training-plan-conflict';
+import {ROUTES} from '@/routes';
+import {handleStaleTrainingPlanConflict} from '@/training-plans/stale-training-plan-conflict';
+import {type PlanActionOutcome, PlanActionsMenu} from '@/ui/plan-actions-menu';
 
 export type Props = {
   plan: TrainingPlan;

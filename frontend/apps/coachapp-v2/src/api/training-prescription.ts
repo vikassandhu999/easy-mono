@@ -1,12 +1,12 @@
 import {TRAINING_WEEKDAYS} from '@easy/utils';
 
-import type {components} from '@/api/schema';
+import type {components} from './schema.ts';
 import {
   createLocalNodeId,
   isLocalNodeId,
   planToPrescriptionRequestForWeekdays,
   type TrainingPrescriptionReplaceRequest,
-} from '@/api/training-prescription-mapper';
+} from './training-prescription-mapper.ts';
 
 export type {TrainingPrescriptionReplaceRequest};
 export {createLocalNodeId, isLocalNodeId, planToPrescriptionRequestForWeekdays};

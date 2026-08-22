@@ -10,7 +10,7 @@ import {
   MAX_RECORDING_MS,
   type UploadItem,
   validateAttachmentFiles,
-} from '@/messages/lib/attachment-files';
+} from '@/messages/attachment-files';
 
 export type AttachmentComposerState = {
   attachmentIds: string[];

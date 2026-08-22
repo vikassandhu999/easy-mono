@@ -1,9 +1,8 @@
 import {Chip} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {Dumbbell, Video} from 'lucide-react';
-
-import {BrowseRow, BrowseRowThumb, OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
 import type {TrainingExercise} from '@/api/training-exercises';
+import {BrowseRow, BrowseRowThumb, OUTLINE_CHIP_CLASS} from '@/ui/browse-list-box';
 
 const MECHANICS_MAP: Record<string, string> = {
   compound: 'Compound',

@@ -4,12 +4,11 @@ import {Check, ChevronRight, Rocket} from 'lucide-react';
 import type {ReactNode} from 'react';
 import {Fragment, useEffect, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-
-import {ROUTES} from '@/@config/routes';
 import {useListClientsQuery} from '@/api/clients';
 import {useListNutritionPlansQuery} from '@/api/nutrition-plans-list';
 import {useUpdateDashboardSetupMutation} from '@/api/profile';
 import {useListTrainingPlansQuery} from '@/api/training-plans-list';
+import {ROUTES} from '@/routes';
 
 type HiddenReason = 'completed' | 'dismissed' | null;
 

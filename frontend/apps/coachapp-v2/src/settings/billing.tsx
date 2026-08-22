@@ -23,10 +23,6 @@ import {
   UserPlus,
   XCircle,
 } from 'lucide-react';
-import {AddSeatsDialog} from '@/@components/add-seats-dialog';
-import {ErrorState} from '@/@components/error-state';
-import {ListSkeleton} from '@/@components/list-skeleton';
-import SectionHeading from '@/@components/section-heading';
 import {
   type BillingEvent,
   type BillingSummary,
@@ -35,7 +31,11 @@ import {
   useGetBillingQuery,
 } from '@/api/billing';
 import {getApiErrorMessage} from '@/api/shared';
-import {SettingsSectionHeader} from '@/settings/components/settings-section-header';
+import {SettingsSectionHeader} from '@/settings/settings-section-header';
+import {AddSeatsDialog} from '@/ui/add-seats-dialog';
+import {ErrorState} from '@/ui/error-state';
+import {ListSkeleton} from '@/ui/list-skeleton';
+import SectionHeading from '@/ui/section-heading';
 
 function ActivatingBanner({timedOut}: {timedOut: boolean}) {
   if (timedOut) {

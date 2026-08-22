@@ -1,5 +1,5 @@
-import {type NutritionItemRef, toItemInput} from '../../../../../packages/utils/src/nutrition-item-ref.ts';
-import {toPortionInput} from '../../../../../packages/utils/src/nutrition-portion.ts';
+import {type NutritionItemRef, toItemInput} from '@easy/utils/nutrition-item-ref';
+import {toPortionInput} from '@easy/utils/nutrition-portion';
 import type {components} from '../../api/schema.ts';
 
 type NutritionMealItemInput = components['schemas']['NutritionMealItemInput'];

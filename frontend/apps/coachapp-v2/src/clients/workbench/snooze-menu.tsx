@@ -1,8 +1,7 @@
 import {Button, Dropdown, Header, Label, toast} from '@heroui/react';
 import {AlarmClockOff} from 'lucide-react';
-
-import {toastMutationError} from '@/@components/mutation-toast';
 import {type QueueSnoozeRequest, useSnoozeQueueMutation} from '@/api/workbench';
+import {toastMutationError} from '@/ui/mutation-toast';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

@@ -6,9 +6,8 @@
  */
 import {ClipboardCheck} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
-
-import {ROUTES} from '@/@config/routes';
 import {useListClientFormAssignmentsQuery} from '@/api/checkins';
+import {ROUTES} from '@/routes';
 
 export default function IntakeCard() {
   const navigate = useNavigate();

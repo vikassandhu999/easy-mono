@@ -1,10 +1,10 @@
 import {Button, toast} from '@heroui/react';
 import {useCallback} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {ROUTES} from '@/@config/routes';
 import {clearTokens} from '@/api/authStorage';
 import {useGetClientProfileQuery} from '@/api/profile';
 import {queryClient} from '@/api/query-client';
+import {ROUTES} from '@/routes';
 
 /**
  * Shown instead of the app shell when the client's status is `awaiting_seat`

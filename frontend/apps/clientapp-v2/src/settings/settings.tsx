@@ -3,10 +3,6 @@ import {Avatar, Button, Separator, Spinner} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useCallback} from 'react';
 import {useNavigate} from 'react-router-dom';
-import ErrorState from '@/@components/error-state';
-
-import PageLayout from '@/@components/page-layout';
-import SectionHeading from '@/@components/section-heading';
 import {clearTokens} from '@/api/authStorage';
 import {
   type ClientCoach,
@@ -16,7 +12,10 @@ import {
 } from '@/api/profile';
 import {queryClient} from '@/api/query-client';
 import {disconnectSocket} from '@/api/socket';
-import EditableRow from '@/settings/components/editable-row';
+import EditableRow from '@/settings/editable-row';
+import ErrorState from '@/ui/error-state';
+import PageLayout from '@/ui/page-layout';
+import SectionHeading from '@/ui/section-heading';
 
 // ── Helpers ─────────────────────────────────────────────────
 

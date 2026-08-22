@@ -3,11 +3,6 @@ import {Button, Skeleton, toast} from '@heroui/react';
 import {ArrowLeft, CheckCircle2, CircleX} from 'lucide-react';
 import {useCallback, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
-
-import ErrorState from '@/@components/error-state';
-import PageLayout from '@/@components/page-layout';
-import {ROUTES} from '@/@config/routes';
-import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {
   type ClientProfileFormAssignment,
   type ClientProfileFormSubmissionRequest,
@@ -18,6 +13,10 @@ import {
 import {useGetClientProfileQuery} from '@/api/profile';
 import CheckinField, {type AnswerValue, type CheckinQuestion} from '@/checkins/checkin-field';
 import type {PhotoUploadState} from '@/checkins/photo-answer-field';
+import {ROUTES} from '@/routes';
+import ErrorState from '@/ui/error-state';
+import PageLayout from '@/ui/page-layout';
+import useAttachmentDownloadUrls from '@/ui/use-attachment-download-urls';
 
 type Section = ClientProfileFormAssignment['form_template']['sections'][number];
 

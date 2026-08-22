@@ -1,4 +1,4 @@
-import type {components, paths} from '@/api/schema';
+import type {components, paths} from './schema.ts';
 
 type TrainingSessionUpdateRequest = components['schemas']['TrainingSessionUpdateRequest'];
 type SessionListQuery = NonNullable<paths['/v1/client/training-sessions']['get']['parameters']['query']>;

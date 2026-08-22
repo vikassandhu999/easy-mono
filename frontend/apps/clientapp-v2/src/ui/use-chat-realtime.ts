@@ -1,8 +1,7 @@
 import {useQueryClient} from '@tanstack/react-query';
-
-import {useChannelEvent} from '@/@hooks/use-channel-event';
 import {appendClientMessage, parseChatMessage, useGetClientConversationQuery} from '@/api/conversation';
 import {conversationKeys} from '@/api/keys';
+import {useChannelEvent} from '@/ui/use-channel-event';
 
 /** Mounted once in AppShell — the single join of the conversation topic. */
 export function useChatRealtime() {

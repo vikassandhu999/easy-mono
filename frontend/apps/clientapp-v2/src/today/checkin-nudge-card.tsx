@@ -1,8 +1,7 @@
 import {AlertCircle, ClipboardCheck} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
-
-import {ROUTES} from '@/@config/routes';
 import {assignmentDisplayStatus, useListClientFormAssignmentsQuery} from '@/api/checkins';
+import {ROUTES} from '@/routes';
 
 export default function CheckinNudgeCard() {
   const navigate = useNavigate();

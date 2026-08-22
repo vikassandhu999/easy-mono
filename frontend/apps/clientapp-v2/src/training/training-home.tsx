@@ -2,9 +2,6 @@ import {TRAINING_DAY_LABELS} from '@easy/utils';
 import {Spinner} from '@heroui/react';
 import {Activity, ChevronRight, Eye, Play} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
-
-import PageLayout from '@/@components/page-layout';
-import {ROUTES} from '@/@config/routes';
 import {
   type ClientTrainingPlan,
   type TrainingPlanWorkout,
@@ -15,6 +12,7 @@ import {
   useResolveClientTrainingCoverageQuery,
 } from '@/api/training';
 import {clientTrainingPlanFromCoverage} from '@/api/training-coverage';
+import {ROUTES} from '@/routes';
 import {
   currentPlanWeek,
   currentWeekDates,
@@ -23,6 +21,7 @@ import {
   workoutForDay,
   workoutPreviewPath,
 } from '@/training/training-utils';
+import PageLayout from '@/ui/page-layout';
 import {formatDayDate, snapshotOf} from '@/workout/session-utils';
 
 function ResumeBanner({session, onResume}: {onResume: () => void; session: TrainingSession}) {

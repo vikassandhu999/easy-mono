@@ -9,10 +9,6 @@ import {Spinner} from '@heroui/react';
 import {ArrowLeft, ChevronLeft, ChevronRight} from 'lucide-react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-import ErrorState from '@/@components/error-state';
-
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
 import {type NutritionDay, useListClientNutritionDaysQuery} from '@/api/nutrition';
 import {
   ADHERENCE_RING,
@@ -22,6 +18,9 @@ import {
   calorieShare,
   kcalText,
 } from '@/nutrition/nutrition-utils';
+import {ROUTES} from '@/routes';
+import ErrorState from '@/ui/error-state';
+import {useGoBack} from '@/ui/use-go-back';
 
 const SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 

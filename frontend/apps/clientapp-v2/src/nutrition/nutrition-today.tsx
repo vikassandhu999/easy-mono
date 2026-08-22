@@ -10,8 +10,6 @@ import {Spinner, toast} from '@heroui/react';
 import {Check, ChevronDown, ChevronLeft, ChevronRight, Plus} from 'lucide-react';
 import {useEffect, useRef, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
-import ErrorState from '@/@components/error-state';
-import {ROUTES} from '@/@config/routes';
 import {
   type NutritionDayOption,
   pickedToItemRef,
@@ -24,10 +22,7 @@ import {
   useReplaceItemMutation,
   useSwitchNutritionMealOptionMutation,
 } from '@/api/nutrition';
-import AmountSheet from '@/nutrition/components/amount-sheet';
-import FoodPicker, {type Picked} from '@/nutrition/components/food-picker';
-import MacroHero from '@/nutrition/components/macro-hero';
-import OptionSheet from '@/nutrition/components/option-sheet';
+import AmountSheet from '@/nutrition/amount-sheet';
 import {
   beginDiaryCommand,
   completeDiaryCommand,
@@ -40,6 +35,8 @@ import {
   switchOptionIntentFingerprint,
 } from '@/nutrition/diary-command-key';
 import {diaryWriteError} from '@/nutrition/diary-write-error';
+import FoodPicker, {type Picked} from '@/nutrition/food-picker';
+import MacroHero from '@/nutrition/macro-hero';
 import {
   ADHERENCE_TEXT,
   adherenceDisplay,
@@ -51,6 +48,9 @@ import {
   sheetTargetFromRow,
   slotsFromDay,
 } from '@/nutrition/nutrition-utils';
+import OptionSheet from '@/nutrition/option-sheet';
+import {ROUTES} from '@/routes';
+import ErrorState from '@/ui/error-state';
 
 const VERDICT_LABEL: Record<string, string> = {on: 'on target ✓', over: 'over target', under: 'under target'};
 

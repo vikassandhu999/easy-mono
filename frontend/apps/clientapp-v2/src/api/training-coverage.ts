@@ -1,4 +1,4 @@
-import type {components, paths} from '@/api/schema';
+import type {components, paths} from './schema.ts';
 
 type ClientTrainingCoverageResponse = components['schemas']['ClientTrainingCoverageResponse'];
 type ClientTrainingPlan = components['schemas']['ClientTrainingPlan'];

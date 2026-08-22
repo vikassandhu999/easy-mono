@@ -2,9 +2,6 @@ import {formatIsoDateOnly} from '@easy/utils';
 import {Spinner} from '@heroui/react';
 import {ChevronRight, ClipboardCheck} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
-
-import PageLayout from '@/@components/page-layout';
-import {ROUTES} from '@/@config/routes';
 import {
   type AssignmentDisplayStatus,
   assignmentDisplayStatus,
@@ -12,6 +9,8 @@ import {
   PURPOSE_LABELS,
   useListClientFormAssignmentsQuery,
 } from '@/api/checkins';
+import {ROUTES} from '@/routes';
+import PageLayout from '@/ui/page-layout';
 
 function statusClass(status: AssignmentDisplayStatus): string {
   if (status.startsWith('Completed')) {

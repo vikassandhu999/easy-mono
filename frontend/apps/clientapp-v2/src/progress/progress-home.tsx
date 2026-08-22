@@ -8,12 +8,11 @@ import {Button, Spinner} from '@heroui/react';
 import {ArrowLeft, Plus, Trash2, TrendingUp} from 'lucide-react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-import ErrorState from '@/@components/error-state';
-
-import PageLayout from '@/@components/page-layout';
 import {asGoal, useDeleteWeightEntryMutation, useListWeightEntriesQuery, type WeightEntry} from '@/api/progress';
-import LogWeightSheet from '@/progress/components/log-weight-sheet';
-import WeightChart from '@/progress/components/weight-chart';
+import LogWeightSheet from '@/progress/log-weight-sheet';
+import WeightChart from '@/progress/weight-chart';
+import ErrorState from '@/ui/error-state';
+import PageLayout from '@/ui/page-layout';
 
 function fmtDate(date: string): string {
   return new Date(`${date}T00:00:00`).toLocaleDateString('en-US', {day: 'numeric', month: 'short'});

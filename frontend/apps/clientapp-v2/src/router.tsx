@@ -1,9 +1,6 @@
 import {createBrowserRouter, Navigate} from 'react-router-dom';
 
-import AppShell from '@/@components/app-shell';
-import {ROUTES} from '@/@config/routes';
-import {withAuth} from '@/@hoc/with-auth';
-import {withNotAuth} from '@/@hoc/with-not-auth';
+import AppShell from '@/app-shell';
 import AcceptInvite from '@/auth/accept-invite';
 import Login from '@/auth/login';
 import VerifyInviteOtp from '@/auth/verify-invite-otp';
@@ -16,10 +13,13 @@ import CoachChat from '@/messages/coach-chat';
 import NutritionHistory from '@/nutrition/nutrition-history';
 import NutritionToday from '@/nutrition/nutrition-today';
 import ProgressHome from '@/progress/progress-home';
+import {ROUTES} from '@/routes';
 import Settings from '@/settings/settings';
 import TodayHome from '@/today/today-home';
 import TrainingHome from '@/training/training-home';
 import WorkoutPreview from '@/training/workout-preview';
+import {withAuth} from '@/with-auth';
+import {withNotAuth} from '@/with-not-auth';
 import ActiveWorkout from '@/workout/active-workout';
 
 // ── Auth wrappers ────────────────────────────────────────────

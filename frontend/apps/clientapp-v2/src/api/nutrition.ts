@@ -4,10 +4,10 @@
  */
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-import {call, client} from '@/api/client';
-import {foodKeys, nutritionDayKeys, recipeKeys} from '@/api/keys';
-import type {components, paths} from '@/api/schema';
-import {getApiErrorCode} from '@/api/shared';
+import {call, client} from './client.ts';
+import {foodKeys, nutritionDayKeys, recipeKeys} from './keys.ts';
+import type {components, paths} from './schema.ts';
+import {getApiErrorCode} from './shared.ts';
 
 export type Food = components['schemas']['Food'];
 export type NutritionDay = components['schemas']['NutritionDay'];

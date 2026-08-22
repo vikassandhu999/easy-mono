@@ -7,9 +7,8 @@ import {formatDuration} from '@easy/utils';
 import {Button, Spinner} from '@heroui/react';
 import {ChevronRight} from 'lucide-react';
 import {Link} from 'react-router-dom';
-
-import PageLayout from '@/@components/page-layout';
 import {type TrainingSession, useClientTrainingSessionsInfiniteQuery} from '@/api/training';
+import PageLayout from '@/ui/page-layout';
 import {formatDayDate, formatVolume, sessionVolumeKg, snapshotOf, sorenessEmoji} from '@/workout/session-utils';
 
 function monthOf(iso: string): {key: string; label: string} {

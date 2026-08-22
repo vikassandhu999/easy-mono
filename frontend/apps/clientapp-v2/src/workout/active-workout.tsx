@@ -14,7 +14,6 @@ import {Button, Spinner, toast, useOverlayState} from '@heroui/react';
 import {Check, ChevronDown, Minus, Pause, Play, Plus, Repeat2, SkipForward, X} from 'lucide-react';
 import {useEffect, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {ROUTES} from '@/@config/routes';
 import {
   type TrainingPerformedSet,
   type TrainingSession,
@@ -26,6 +25,7 @@ import {
   useListClientExercisesQuery,
   useUpdateClientPerformedSetMutation,
 } from '@/api/training';
+import {ROUTES} from '@/routes';
 import {
   type ActiveExerciseCard,
   activeExerciseCards,

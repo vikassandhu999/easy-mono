@@ -8,10 +8,9 @@ import {formatDuration} from '@easy/utils';
 import {Button, Spinner} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useParams} from 'react-router-dom';
-
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
 import {type TrainingPerformedSet, type TrainingSession, useGetClientTrainingSessionQuery} from '@/api/training';
+import {ROUTES} from '@/routes';
+import {useGoBack} from '@/ui/use-go-back';
 import {
   addedExercises,
   assignPerformed,

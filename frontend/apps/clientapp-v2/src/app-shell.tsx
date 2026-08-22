@@ -2,13 +2,13 @@ import {Toast} from '@heroui/react';
 import {CalendarDays, ClipboardCheck, Dumbbell, MessageCircle, UtensilsCrossed} from 'lucide-react';
 import {type ReactNode} from 'react';
 import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
-import {AwaitingSeatScreen} from '@/@components/awaiting-seat-screen';
-import ErrorState from '@/@components/error-state';
-import SplashScreen from '@/@components/splash-screen';
-import {ROUTES} from '@/@config/routes';
-import {useChatRealtime} from '@/@hooks/use-chat-realtime';
 import {useGetClientConversationQuery} from '@/api/conversation';
 import {useGetClientProfileQuery} from '@/api/profile';
+import {ROUTES} from '@/routes';
+import {AwaitingSeatScreen} from '@/ui/awaiting-seat-screen';
+import ErrorState from '@/ui/error-state';
+import SplashScreen from '@/ui/splash-screen';
+import {useChatRealtime} from '@/ui/use-chat-realtime';
 
 const ICON_SIZE = 22;
 

@@ -5,15 +5,15 @@
  */
 import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-import {call, client} from '@/api/client';
-import {exerciseKeys, sessionKeys, trainingPlanKeys} from '@/api/keys';
-import type {components, paths} from '@/api/schema';
-import {clientTrainingCoverageRequest} from '@/api/training-coverage';
+import {call, client} from './client.ts';
+import {exerciseKeys, sessionKeys, trainingPlanKeys} from './keys.ts';
+import type {components, paths} from './schema.ts';
+import {clientTrainingCoverageRequest} from './training-coverage.ts';
 import {
   clientTrainingSessionCompleteRequest,
   clientTrainingSessionDiscardRequest,
   clientTrainingSessionHistoryRequest,
-} from '@/api/training-session-commands';
+} from './training-session-commands.ts';
 
 export type ClientTrainingPlan = components['schemas']['ClientTrainingPlan'];
 export type TrainingPerformedSet = components['schemas']['TrainingPerformedSet'];

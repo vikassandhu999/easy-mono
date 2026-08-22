@@ -101,7 +101,7 @@ Severity of the rule isn't the point; recurrence is.
 | RM-142 | Colour utility needs a `--color-*` alias | Frontend | check-color-utilities |
 | RM-142 | `useMutation` result is a new object every render | Frontend | review |
 | RM-143 | List-shaped query keys nest under `lists()` | Frontend | review |
-| RM-144 | Every shared concept has an owning feature | Frontend | check-rm |
+| RM-144 | Three kinds of directory, and the arrows point one way | Frontend | check-rm |
 | RM-145 | Neutralise HeroUI press scale with `transform-none` | Frontend | review |
 | RM-146 | Committed overlay action visible in both shells | Frontend | review |
 | RM-147 | Action verb lands at the workflow it promises | Frontend | review |
@@ -798,17 +798,31 @@ test round-trips start-only, rejects a reversed pair, accepts a completed pair, 
 one side. **Verify by:** assign a Test plan, enter Start then End separately, reopen and
 assert both; attempt a reversed end and assert the stored pair is unchanged.
 
-### RM-144 — Every shared concept has an owning feature; never a neutral bucket
-A `domain/`/`utils/` layer-folder is a junk drawer: the name carries no meaning, nobody
-owns it, and it erases the dependency information that matters (history depends on
-workout; nutrition-plans depends on recipes). When 2+ features need a concept, the
-OWNING feature publishes it (`{feature}/lib/*` in coachapp, feature-root files in
-clientapp) and consumers import across — that arrow mirrors the product. Internals
-(`components/`, screens, form files) are never imported across features; shared UI goes
-to `@components/`, shared hooks to `@hooks/`, product-agnostic helpers to `@easy/utils`.
-Instance: a `src/domain/` bucket existed in coachapp and got dutifully replicated into
-clientapp before being recognized as the anti-pattern. **Enforced by:** `just check-rm`
-(bans `@/domain/` and cross-feature internals imports).
+### RM-144 — Three kinds of directory, and the arrows point one way
+A folder named for a layer (`domain/`, `utils/`, `components/`, `lib/`) is a junk drawer:
+the name carries no meaning, nobody owns it, and it erases the dependency information
+that matters. An app's `src/` holds exactly three kinds of directory — `api/` (the server
+contract), `ui/` (feature-agnostic components and hooks), and one folder per route group,
+nesting only when the child is itself a route group. Files are told apart by NAME.
+
+**Arrows point one way: feature → ui → api.** `ui/` imports `api/` and `@easy/utils`,
+never a feature. A feature imports `ui/`, `api/`, and other features' `.ts` files only —
+its `.tsx` is private. `router.tsx` and `app-shell.tsx` are the composition root and are
+exempt. Carrying the public surface on the file EXTENSION rather than on a folder is what
+makes it testable: anything another feature can reach is pure `.ts`, and pure `.ts` gets a
+sibling `.check.ts`.
+
+A `.ts` must never share a basename with a `.tsx` — module resolution picks the `.ts` and
+the component silently vanishes from the route that imported it.
+
+Instances: a `src/domain/` bucket existed in coachapp and got dutifully replicated into
+clientapp before being recognized as the anti-pattern. Its replacement — "a feature's
+`lib/` is its public surface" — described the right arrow but left three ways to nest the
+same thing, and coachapp grew to 50 directories for 325 files, six competing sub-idioms
+inside `clients/` alone, and a `@components/` that imported three different features.
+**Enforced by:** `scripts/check-frontend-shape.mjs` via `just check-rm` (bans bucket and
+`@`-prefixed directories, `ui/`→feature imports, cross-feature `.tsx` imports, and
+`.ts`/`.tsx` basename collisions).
 
 ### RM-143 — A list-shaped query key must nest under its domain's `lists()` prefix
 React Query invalidates by key prefix, so nesting is what lets existing

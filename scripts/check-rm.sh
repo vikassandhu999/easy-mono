@@ -44,7 +44,7 @@ check RM-101 "dead HeroUI v2 tokens (use accent/border/surface/muted)" \
 check RM-109 "literal hex colors in UI (use semantic tokens)" \
   '\[#[0-9a-fA-F]{3,8}\]|['"'"'"]#[0-9a-fA-F]{3,8}['"'"'"]' "$COACH"
 
-check RM-121 "react-aria NumberField for numeric entry (use @/@components/number-input)" \
+check RM-121 "react-aria NumberField for numeric entry (use @/ui/number-input)" \
   '<NumberField' "$COACH"
 
 # Only bg-foreground / text-background invert. border-foreground is a legitimate border color.
@@ -122,27 +122,15 @@ check RM-175 "hand-copied page title (use Page.Title; a copy cannot inherit the 
 check RM-180 "scale-100! used to cancel a press effect (use transform-none!)" \
   ':scale-100!' "$COACH" "$CLIENT"
 
-# RM-144 — every shared concept has an owning feature; no neutral bucket.
-# (a) The domain/ layer-bucket must not come back.
-check RM-144 "neutral domain/ bucket (concepts live in their owning feature's lib/)" \
-  "@/domain/" "$COACH" "$CLIENT"
-
-# (b) A feature's subdirectories (components/, *-form/, screens' folders) are its
-# INTERNALS. Cross-feature imports may only target the owner's public surface —
-# `{feature}/lib/*` in coachapp, root-level files in clientapp. router.tsx is
-# exempt (it mounts nested screens by design).
-for app in "$COACH" "$CLIENT"; do
-  for dir in "$app"/*/; do
-    feat=$(basename "$dir")
-    case "$feat" in @*|api|assets) continue ;; esac
-    hits=$(rg -n -g '*.tsx' -g '*.ts' -g '!router.tsx' "from '@/$feat/[^']+/" "$app" | grep -v "^$dir" | grep -v "@/$feat/lib/")
-    if [ -n "$hits" ]; then
-      echo "FAIL RM-144 — $feat internals imported across features (see docs/agents/recurring-mistakes.md)"
-      echo "$hits" | head -10
-      fail=1
-    fi
-  done
-done
+# RM-144 — the frontend tree has three kinds of directory (api/, ui/, one per
+# route group) and the arrows point one way: feature -> ui -> api. A feature's
+# `.ts` files are its public surface; its `.tsx` is private. See
+# check-frontend-shape.mjs, which replaces the older "lib/ is the public
+# surface" convention — the rule now rides on the file extension, so there is
+# no folder to get wrong.
+if ! node scripts/check-frontend-shape.mjs "$(dirname "$COACH")" "$(dirname "$CLIENT")"; then
+  fail=1
+fi
 
 # RM-181 — a Button whose label hides at a breakpoint (`hidden sm:inline` span)
 # is icon-only there and must carry a constant aria-label. Multi-line match:
@@ -158,17 +146,17 @@ fi
 
 # RM-205 — centered picker dialogs share one width, and their selectable
 # collections use collection semantics rather than row-shaped Buttons.
-if ! rg -q 'size="md"' "$COACH/builder-kit/picker-modal.tsx" || rg -q '\bwide\??\b|size=\{' "$COACH/builder-kit/picker-modal.tsx"; then
+if ! rg -q 'size="md"' "$COACH/ui/picker-modal.tsx" || rg -q '\bwide\??\b|size=\{' "$COACH/ui/picker-modal.tsx"; then
   echo "FAIL RM-205 — PickerModal must own the single md desktop width (see docs/agents/recurring-mistakes.md)"
   fail=1
 fi
 check RM-205 "button-mapped picker collection (use ListBox/ListBox.Item)" \
   'role="group"|button--row' \
-  "$COACH/builder-kit/search-picker-sheet.tsx" "$COACH/@components/client-picker.tsx"
+  "$COACH/ui/search-picker-sheet.tsx" "$COACH/ui/client-picker.tsx"
 for picker in \
-  "$COACH/@components/client-search-modal.tsx" \
-  "$COACH/@components/conversation-inbox-list.tsx" \
-  "$COACH/@components/client-picker.tsx"; do
+  "$COACH/ui/client-search-modal.tsx" \
+  "$COACH/ui/conversation-inbox-list.tsx" \
+  "$COACH/ui/client-picker.tsx"; do
   if ! rg -q 'className="sticky top-0 z-10 bg-surface pb-2 pt-2"' "$picker"; then
     echo "FAIL RM-205 — picker search must use the stable sticky search band (see docs/agents/recurring-mistakes.md)"
     echo "$picker"
@@ -188,8 +176,8 @@ for selector in \
     fail=1
   fi
 done
-if ! rg -q 'keyboard-sheet__backdrop' "$COACH/builder-kit/keyboard-sheet.tsx" || \
-   ! rg -q 'keyboard-sheet__panel' "$COACH/builder-kit/keyboard-sheet.tsx"; then
+if ! rg -q 'keyboard-sheet__backdrop' "$COACH/ui/keyboard-sheet.tsx" || \
+   ! rg -q 'keyboard-sheet__panel' "$COACH/ui/keyboard-sheet.tsx"; then
   echo "FAIL RM-206 — KeyboardSheet must use the theme's motion hooks (see docs/agents/recurring-mistakes.md)"
   fail=1
 fi
@@ -198,7 +186,7 @@ check RM-206 "call-site overlay motion (use the central theme rules)" \
   "$COACH" -U
 check RM-206 "KeyboardSheet-local motion (use keyboard-sheet theme hooks)" \
   'isEntering|isExiting|transition-(opacity|transform)|duration-[0-9]+' \
-  "$COACH/builder-kit/keyboard-sheet.tsx"
+  "$COACH/ui/keyboard-sheet.tsx"
 
 # RM-207 — the responsive create/edit body is a UI primitive, not a Tailwind
 # recipe for every caller to reassemble. FormPanel is the only owner.
@@ -209,10 +197,10 @@ check RM-207 "hand-assembled responsive form body (use FormPanel)" \
 # RM-209 — the accepted workbench variants deliberately have different
 # anatomy. These anchors prevent them from being flattened back into the
 # generic queue row / loose-card layouts that clipped or lost hierarchy.
-onboarding_view="$COACH/clients/workbench/onboarding-view.tsx"
-programming_view="$COACH/clients/workbench/programming-view.tsx"
-replies_view="$COACH/clients/workbench/replies-view.tsx"
-workbench_screen="$COACH/clients/workbench/workbench-screen.tsx"
+onboarding_view="$COACH/workbench/onboarding-view.tsx"
+programming_view="$COACH/workbench/programming-view.tsx"
+replies_view="$COACH/workbench/replies-view.tsx"
+workbench_screen="$COACH/workbench/workbench-screen.tsx"
 if rg -q "from './queue-row'" "$onboarding_view" || \
    ! rg -Fq 'grid-cols-[auto_minmax(0,1fr)]' "$onboarding_view" || \
    ! rg -Fq 'toolbar={<ProgrammingToolbar />}' "$workbench_screen" || \
@@ -228,7 +216,7 @@ fi
 
 # RM-210 — a breaking vocabulary cutover includes internal URL/view state.
 # Onboarding is the only production name; `new` survives only in locked evidence.
-workbench_queues="$COACH/clients/lib/workbench-queues.ts"
+workbench_queues="$COACH/workbench/queues.ts"
 if rg -q "WorkbenchQueueId.*'new'|id: 'new'" "$workbench_queues"; then
   echo "FAIL RM-210 — production workbench state still exposes the retired new queue name"
   fail=1
@@ -252,13 +240,13 @@ fi
 # RM-214 — Unclassified vs required-plan debt is one classification helper.
 # Presentation (roster, chips, edit warning) must call it, not re-derive from
 # plan-name absence.
-client_lib="$COACH/clients/lib/client.ts"
-client_list_item="$COACH/clients/clients-list/client-list-item.tsx"
+client_lib="$COACH/clients/client.ts"
+client_list_item="$COACH/workbench/client-list-item.tsx"
 if ! rg -Fq 'export function isUnclassified' "$client_lib" || \
    ! rg -Fq 'export function needsRequiredPlan' "$client_lib" || \
    ! rg -Fq 'isUnclassified(client)' "$client_list_item" || \
    ! rg -Fq 'needsRequiredPlan(client)' "$client_list_item" || \
-   ! rg -Fq 'isUnclassified(client)' "$COACH/clients/components/client-status-chips.tsx" || \
+   ! rg -Fq 'isUnclassified(client)' "$COACH/clients/client-status-chips.tsx" || \
    ! rg -Fq 'isUnclassified(client)' "$COACH/clients/edit-client.tsx"; then
   echo "FAIL RM-214 — roster must distinguish Unclassified clients from required-plan debt"
   fail=1
@@ -266,7 +254,7 @@ fi
 
 # RM-215 — service choices are content cards, not one-line control-height
 # toggles. Release the theme's fixed ToggleButton height so both text lines fit.
-required_services_field="$COACH/clients/components/required-services-field.tsx"
+required_services_field="$COACH/clients/client-required-services-field.tsx"
 if ! rg -Fq 'className={`toggle-button--row rounded-card border p-4 outline-none' "$required_services_field" || \
    ! rg -Fq ':not(.toggle-button--row)' "$COACH/index.css" || \
    ! rg -Fq '.toggle-button--row {' "$COACH/index.css"; then
@@ -276,8 +264,8 @@ fi
 
 # RM-216 — Service type locks every identity control through one helper, and
 # every draft commit clears stale builder validation.
-checkin_builder="$COACH/checkins/checkin-builder.tsx"
-if ! rg -Fq 'export function questionIdentityLocked' "$COACH/checkins/question-type-meta.ts" || \
+checkin_builder="$COACH/library/checkins/checkin-builder.tsx"
+if ! rg -Fq 'export function questionIdentityLocked' "$COACH/library/checkins/question-type-meta.ts" || \
    [ "$(rg -Fc 'isDisabled={locked}' "$checkin_builder")" -lt 2 ] || \
    ! rg -qU 'const commitSections[^}]+setError\(null\);[^}]+setSections' "$checkin_builder"; then
   echo "FAIL RM-216 — Service type must stay locked and stale builder errors must clear on draft edits"
@@ -287,7 +275,7 @@ fi
 # RM-217 — the ClientApp fill/review route uses stable loading geometry and
 # the shared retryable page-error surface.
 fill_checkin="$CLIENT/checkins/fill-checkin.tsx"
-if ! rg -Fq "import ErrorState from '@/@components/error-state'" "$fill_checkin" || \
+if ! rg -Fq "import ErrorState from '@/ui/error-state'" "$fill_checkin" || \
    ! rg -Fq 'Skeleton className=' "$fill_checkin" || \
    ! rg -Fq 'onRetry={() => refetch()}' "$fill_checkin"; then
   echo "FAIL RM-217 — ClientApp check-in detail must keep skeleton and retryable error states"
@@ -301,7 +289,7 @@ if ! rg -Fq '${purposeLabel(assignment.purpose)} submitted' "$fill_checkin"; the
 fi
 
 # RM-219 — shared queue facts wrap on mobile and truncate only on desktop.
-queue_row="$COACH/clients/workbench/queue-row.tsx"
+queue_row="$COACH/workbench/queue-row.tsx"
 if ! rg -Fq 'whitespace-normal type-eyebrow leading-tight text-muted sm:truncate' "$queue_row"; then
   echo "FAIL RM-219 — mobile queue rows must not clip their actionable absolute fact"
   fail=1

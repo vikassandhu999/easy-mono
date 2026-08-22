@@ -1,9 +1,9 @@
 import {ApiError} from '@easy/utils/api-error';
 import {toast} from '@heroui/react';
 import createClient, {type Middleware} from 'openapi-fetch';
+import {refreshTokenIfNeeded} from '@/api/token-refresh';
 import {clearTokens, getAccessToken} from './authStorage.ts';
 import type {paths} from './schema.ts';
-import {refreshTokenIfNeeded} from './token-refresh.ts';
 
 let baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 

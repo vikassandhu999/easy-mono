@@ -1,8 +1,8 @@
 import {ApiError} from '@easy/utils/api-error';
 import createClient, {type Middleware} from 'openapi-fetch';
+import {refreshTokenIfNeeded} from '@/api/token-refresh';
 import {clearTokens, getAccessToken} from './authStorage.ts';
 import type {paths} from './schema.ts';
-import {refreshTokenIfNeeded} from './token-refresh.ts';
 
 /**
  * Auth-only paths that should never be preserved as a post-login redirect.

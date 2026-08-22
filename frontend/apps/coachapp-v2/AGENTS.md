@@ -12,18 +12,32 @@ This file is the contract for `coachapp-v2`. Follow it while writing and reviewi
 
 ## Source Layout
 
-- Feature modules own their screens and one-feature UI: `src/clients/`, `src/exercises/`, `src/foods/`, `src/nutrition-plans/`, `src/training-plans/`, etc.
-- Shared app folders:
-  - `src/api/`: React Query hooks and API-facing types, one domain per file; `keys.ts` (query-key registry), `client.ts` (openapi-fetch + auth), `schema.ts` (generated types).
-  - `src/@components/`: UI used by two or more features.
-  - `src/@hooks/`: shared hooks.
-  - `src/@hoc/`: route guards and screen wrappers.
-  - `src/@config/`: route constants and config.
-- New screen for an existing feature: `src/{feature}/screen-name.tsx`.
-- Component used by one feature: `src/{feature}/components/component-name.tsx`.
-- Component used by two or more features: `src/@components/component-name.tsx`.
-- Pure helpers and non-trivial constants: `src/{feature}/lib/topic.ts` or the owning form/API file. Generic, product-agnostic helpers (name/date/number formatting) go in `@easy/utils` — check it before writing one.
-- **Every shared concept has an owning feature — there is no neutral `domain/`/`utils/` bucket.** Check-ins own the form-answer vocabulary (`checkins/lib/form-answers.ts`); recipes own recipe math (`recipes/lib/recipe-math.ts`). A feature's `lib/` is its public surface: other features may import it (`nutrition-plans` imports `recipes/lib/recipe-math` — the arrow mirrors the product). A feature's `components/`, `screens` and form files are internals — never imported across features; if two features need the UI, it moves to `@components/`. Enforced by `just check-rm` (RM-144).
+Three kinds of directory, no fourth (workspace rule, `frontend/AGENTS.md` § Boundary):
+
+```
+src/
+  main.tsx  router.tsx  routes.ts  app-shell.tsx  pwa.ts  index.css
+  api/         the server contract — flat, one file per backend resource
+  ui/          feature-agnostic components and hooks — flat
+  auth/  dashboard/  clients/  workbench/  messages/  settings/  landing/
+  library/     library.tsx plus the UI shared across the library group, then
+    exercises/  foods/  recipes/  checkins/
+    nutrition-plans/  + builder/
+    training-plans/   + builder/
+```
+
+- `library/` nests because the routes do (`/library/foods`, `/library/recipes`). `builder/` nests for the same reason — it is the `:id` route.
+- `workbench/` is a sibling of `clients/`, not a child. It answers `/clients`, but it is a triage queue with its own logic modules and its own API resource; client detail is a different surface.
+- **New screen for an existing feature**: `src/{feature}/screen-name.tsx`.
+- **Component one feature uses**: `src/{feature}/name.tsx`, named so it reads on its own (`client-section-card.tsx`, not `components/section-card.tsx`).
+- **Component two or more features use**: `src/ui/name.tsx`. Shared only within the library group: `src/library/name.tsx`.
+- **Pure helpers and non-trivial constants**: a `.ts` beside the screen that owns them, with a sibling `.check.ts`. Product-agnostic ones (name/date/number formatting, list reordering) go in `@easy/utils` — check it before writing one.
+- **Never** a directory named `components`, `lib`, `utils`, `helpers`, `domain`, or one starting with `@`.
+- **Never** a `.ts` sharing a basename with a `.tsx` — module resolution picks the `.ts` and the component silently disappears.
+
+**Arrows point one way: feature → ui → api.** `ui/` never imports a feature; a feature never imports another feature's `.tsx`. A feature's `.ts` files are its public surface, and that is what makes them testable — pure logic another feature can reach is pure logic a `.check.ts` can reach. `router.tsx` and `app-shell.tsx` are the composition root and are exempt. Enforced by `scripts/check-frontend-shape.mjs` via `just check-rm` (RM-144).
+
+`api/` has its own seam, and it is not "one file per resource": **hook modules** import `client.ts` and React Query; **pure modules** (request builders, mappers, lifecycle helpers) import neither, so a `.check.ts` can run them under bare `node --experimental-strip-types`. Never merge a pure module into a hooks module — its suite dies on `import.meta.env`. Anything a `.check.ts` reaches must use relative imports carrying the `.ts` extension, not `@/` aliases, for the same reason.
 
 ## Names, Types, And Imports
 
@@ -47,10 +61,10 @@ This file is the contract for `coachapp-v2`. Follow it while writing and reviewi
 ## Routing And Navigation
 
 - Routes live in `src/router.tsx` with `createBrowserRouter()`.
-- Route paths live in `src/@config/routes.ts`. Add or change both the route constant and router entry together.
+- Route paths live in `src/routes.ts`. Add or change both the route constant and router entry together.
 - Protected app screens are wrapped through `withAuth`; guest-only screens use `withNotAuth`.
 - Do not add route loaders for server data. React Query owns data loading.
-- Back buttons use `useGoBack(fallback)` from `@/@hooks/use-go-back`; do not hand-roll `navigate(-1)` or plain fallback paths for Back.
+- Back buttons use `useGoBack(fallback)` from `@/ui/use-go-back`; do not hand-roll `navigate(-1)` or plain fallback paths for Back.
 
 ## Form Navigation
 
@@ -82,18 +96,18 @@ This file is the contract for `coachapp-v2`. Follow it while writing and reviewi
     applyFormErrors(err, "Thing wasn't saved. Check the details and try again", form.setError);
   }
   ```
-- Prefer existing form-field wrappers in `src/@components/form-fields/` for common fields.
+- Prefer existing form-field wrappers in `src/ui/` (the `form-*` files) for common fields.
 
 ## Canonical Components
 
 One shared primitive per job — never hand-roll these (graduated from the recurring-mistakes ledger; the greppable ones are enforced by `just check-rm`):
 
-- **Numeric entry**: `NumberInput` from `@/@components/number-input` (or `FormNumberField`). Never react-aria `NumberField` — it races mobile soft keyboards and drops digits.
-- **Forms**: `FormLayout`, `FormPanel`, `FormActions`, `FieldRow`, `FormTextField`/`FormNumberField`/`FormSelectField`/`FormTextAreaField`, `BackButton`, `SectionHeading` (all under `@/@components`). `FormPanel` is the one responsive create/edit body surface; never re-type its card classes. Labels sentence case, units as `(g)`, never `(optional)`/`(required)` in a label — optional is implicit, required = `isRequired`. Sections are `Fieldset` + `Legend`. Header parity (`BackButton` + `Title`) across loading/error/loaded.
-- **Browse/search lists**: `BrowseListBox` (`@/@components/browse-list-box`) — bakes in skeleton loading, error+Retry, empty state, infinite load-more. Flat queries pass `fetchNextPage={() => undefined}`. Rows that carry their OWN controls (a verb button, a menu) pass `grid` and render `GridListItem` instead of `ListBox.Item`: a listbox option is one focusable unit, so buttons inside it are unreachable by keyboard however correct the markup (RM-178). Grid rows own their press — list-level `onAction` is ignored, the row passes its own.
+- **Numeric entry**: `NumberInput` from `@/ui/number-input` (or `FormNumberField`). Never react-aria `NumberField` — it races mobile soft keyboards and drops digits.
+- **Forms**: `FormLayout`, `FormPanel`, `FormActions`, `FieldRow`, `FormTextField`/`FormNumberField`/`FormSelectField`/`FormTextAreaField`, `BackButton`, `SectionHeading` (all under `@/ui`). `FormPanel` is the one responsive create/edit body surface; never re-type its card classes. Labels sentence case, units as `(g)`, never `(optional)`/`(required)` in a label — optional is implicit, required = `isRequired`. Sections are `Fieldset` + `Legend`. Header parity (`BackButton` + `Title`) across loading/error/loaded.
+- **Browse/search lists**: `BrowseListBox` (`@/ui/browse-list-box`) — bakes in skeleton loading, error+Retry, empty state, infinite load-more. Flat queries pass `fetchNextPage={() => undefined}`. Rows that carry their OWN controls (a verb button, a menu) pass `grid` and render `GridListItem` instead of `ListBox.Item`: a listbox option is one focusable unit, so buttons inside it are unreachable by keyboard however correct the markup (RM-178). Grid rows own their press — list-level `onAction` is ignored, the row passes its own.
 - **Errors**: page-level fetch errors use the shared `ErrorState` card; inline load errors say "Couldn't load X", never "Failed to load X".
 - **Loading**: first-load renders a layout-approximating skeleton (`ListSkeleton` via BrowseListBox, `PageSkeleton` for detail/settings with the real `Page.Header`), never a centered spinner. Pending buttons keep constant width — overlay the spinner on an `invisible` copy of the label (see `form-actions.tsx`), never swap label text.
-- **Pickers**: one content component in the canonical shell `PickerModal` (`@/builder-kit/picker-modal`) — one `md` desktop width, `KeyboardSheet` on mobile (decision 2026-08-04: pickers get one stable, predictable position; never anchored to the trigger). Search pickers go through `SearchPickerSheet`, which composes it. Every selectable collection inside a picker is a `ListBox`/`ListBox.Item` (or `GridList` when rows own controls), never a map of row-shaped Buttons; buttons remain correct for independent actions and tile palettes. Anchored `Popover`s (via `ResponsiveOverlay`) are only for select-like controls (meal slot) and inline editors (set editor, amount sheet). Never desktop-only pickers.
+- **Pickers**: one content component in the canonical shell `PickerModal` (`@/ui/picker-modal`) — one `md` desktop width, `KeyboardSheet` on mobile (decision 2026-08-04: pickers get one stable, predictable position; never anchored to the trigger). Search pickers go through `SearchPickerSheet`, which composes it. Every selectable collection inside a picker is a `ListBox`/`ListBox.Item` (or `GridList` when rows own controls), never a map of row-shaped Buttons; buttons remain correct for independent actions and tile palettes. Anchored `Popover`s (via `ResponsiveOverlay`) are only for select-like controls (meal slot) and inline editors (set editor, amount sheet). Never desktop-only pickers.
 - **Overlay motion**: `index.css` owns entrance/exit motion for every HeroUI `Modal`, `AlertDialog`, and `KeyboardSheet`. Centered surfaces lift and settle; bottom sheets slide from their edge; reduced-motion removes spatial movement and keeps a brief opacity fade. Never add animation, transition, or duration classes at an overlay call site.
 
 ## Page Anatomy
@@ -109,7 +123,7 @@ One shared primitive per job — never hand-roll these (graduated from the recur
 - Build mobile-first. The app must work at 375px and at 1280px.
 - Base Tailwind classes target mobile; `sm:`, `md:`, and `lg:` enhance wider layouts.
 - Style with Tailwind utilities and HeroUI props. Do not add per-component CSS files.
-- Use `Page` from `@/@components/page` for app screens unless the owning feature has a stronger established pattern.
+- Use `Page` from `@/ui/page` for app screens unless the owning feature has a stronger established pattern.
 - **Type sizes are `type-*`, never `text-*`.** `text-eyebrow` and friends do not exist as utilities — the size tokens live in a `--type-*` namespace precisely so tailwind-merge cannot confuse them with `text-<colour>` and silently drop them (RM-134). `text-*` is colour only.
 - **Never write a height on a control.** Buttons, toggles, tabs and inputs get their height from the control-height block in `index.css` (`--spacing-control`, 36px, both breakpoints). No `min-h-*`, no `h-*`, no `sm:` override at a call site — a screen that needs a different control height is a theme change, not a className. This replaced `min-h-11` copied onto 93 controls across 44 files, each paired with an `sm:min-h-9`/`sm:min-h-0` that existed only to undo HeroUI's own `h-10 md:h-9`. Renaming that class to a token would have been the same copy-paste with a nicer name; the height belongs on the component.
   - HeroUI's `--sm`/`--lg` size modifiers still scale — the override is scoped away from them, and 53 `size="sm"` buttons depend on it.

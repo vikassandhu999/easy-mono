@@ -8,7 +8,22 @@ Commands: the app's `package.json` `scripts`, or `just --list` from the repo roo
 
 Apps depend on `packages/*`. Packages do not depend on app internals. Package exports are public contracts.
 
-A shared concept has an owning feature (`lib/` or a feature-root file). Other features import that surface. Feature `components/`, screens, and form files stay inside the feature; UI used by two features moves to `@components/`. RM-144.
+Inside an app's `src/` there are three kinds of directory and no fourth:
+
+- `api/` — the server contract. Flat, one file per backend resource.
+- `ui/` — feature-agnostic components and hooks. Flat.
+- `<feature>/` — one per route group. Nests only when the child is itself a route group (`library/foods/`, `nutrition-plans/builder/`).
+
+No `components/`, no `lib/`, no `utils/`, no `@`-sigils. Files are told apart by **name**, not by a generic parent folder.
+
+**The arrows point one way: feature → ui → api.**
+
+- `ui/` imports `api/`, `@easy/utils`, and nothing else. Never a feature.
+- A feature imports `ui/`, `api/`, and other features' **`.ts` files only**.
+- A feature's `.tsx` is private, always. UI that two features need moves to `ui/`.
+- `router.tsx` and `app-shell.tsx` are the composition root and may import anything.
+
+The public surface rides on the file extension rather than on a folder, which is what keeps it testable: if another feature needs it, it is pure `.ts`, and pure `.ts` gets a sibling `.check.ts`. Enforced by `scripts/check-frontend-shape.mjs` through `just check-rm` (RM-144).
 
 `@easy/utils` is for product-agnostic helpers (dates, names, numbers). Check it before writing one.
 

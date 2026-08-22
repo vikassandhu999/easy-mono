@@ -1,9 +1,9 @@
 import {Button, Chip, Typography} from '@heroui/react';
 import {useListClientFormAssignmentsForCoachQuery, useReviewFormSubmissionMutation} from '@/api/checkins';
 import {useListClientWeightEntriesQuery} from '@/api/clients';
-import {submissionPhotoIds} from '@/checkins/form-answers';
 import {formatDayMonth} from '@/clients/client-detail-data';
 import {FormAnswer} from '@/clients/client-form-answer';
+import {submissionPhotoIds} from '@/library/checkins/form-answers';
 import {ROUTES} from '@/routes';
 import {BackButton} from '@/ui/back-button';
 import {ErrorState} from '@/ui/error-state';

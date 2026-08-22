@@ -13,8 +13,8 @@ import {Button, Popover, Typography, toast} from '@heroui/react';
 import {Minus, Plus} from 'lucide-react';
 import {useRef, useState} from 'react';
 import {type BillingSummary, useCheckoutSeatsMutation, useGetBillingQuery} from '@/api/billing';
+import {openRazorpayCheckout} from '@/api/razorpay';
 import {getApiErrorMessage} from '@/api/shared';
-import {openRazorpayCheckout} from '@/settings/razorpay';
 import {KeyboardSheet} from '@/ui/keyboard-sheet';
 import {useIsDesktop} from '@/ui/use-is-desktop';
 

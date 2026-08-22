@@ -1,8 +1,8 @@
 import {useNavigate} from 'react-router-dom';
 import {useWorkbenchCountsQuery} from '@/api/workbench';
-import {queueEntries} from '@/clients/workbench-queues';
 import {ROUTES} from '@/routes';
 import {TodayCard} from '@/ui/today-card';
+import {queueEntries} from '@/workbench/queues';
 
 /**
  * The dashboard's Today section: the SAME TodayCard the workbench renders

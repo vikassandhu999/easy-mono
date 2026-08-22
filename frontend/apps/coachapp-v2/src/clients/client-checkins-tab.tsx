@@ -25,12 +25,12 @@ import {
 } from '@/api/checkins';
 import type {Client} from '@/api/clients';
 import {getApiErrorCode, getApiErrorMessage} from '@/api/shared';
-import {submissionPhotoIds} from '@/checkins/form-answers';
 import AssignSurface from '@/clients/client-assign-surface';
 import CheckinScheduleAddContent from '@/clients/client-checkin-schedule-add';
 import {formatDayMonth} from '@/clients/client-detail-data';
 import {PhotoThumb} from '@/clients/client-photo-thumb';
 import {SectionCard} from '@/clients/client-section-card';
+import {submissionPhotoIds} from '@/library/checkins/form-answers';
 import {ROUTES} from '@/routes';
 import {EmptyState} from '@/ui/empty-state';
 import {toastMutationError} from '@/ui/mutation-toast';

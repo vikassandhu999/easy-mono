@@ -14,7 +14,7 @@
  * start failing tomorrow.
  */
 
-import {formatAnswer} from '../checkins/form-answers.ts';
+import {formatAnswer} from '../library/checkins/form-answers.ts';
 import {
   coachingAccessState,
   coachingPeriodUpdate,

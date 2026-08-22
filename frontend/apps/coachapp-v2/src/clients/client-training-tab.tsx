@@ -23,8 +23,8 @@ import PlanAssignControl from '@/clients/client-plan-assign';
 import {PlanPanel} from '@/clients/client-plan-panel';
 import {SectionCard} from '@/clients/client-section-card';
 import {sessionWorkoutName} from '@/clients/client-session';
+import {handleStaleTrainingPlanConflict} from '@/library/training-plans/stale-training-plan-conflict';
 import {ROUTES} from '@/routes';
-import {handleStaleTrainingPlanConflict} from '@/training-plans/stale-training-plan-conflict';
 import {toastMutationError} from '@/ui/mutation-toast';
 import SectionHeading from '@/ui/section-heading';
 

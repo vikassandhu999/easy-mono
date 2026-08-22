@@ -20,11 +20,11 @@ import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom'
 import {useGetCoachProfileQuery} from '@/api/profile';
 import {useWorkbenchCountsQuery} from '@/api/workbench';
 import {workbenchMutationTargets} from '@/api/workbench-targets';
-import {hasWorkbenchAttention} from '@/clients/workbench-queues';
 import {ROUTES} from '@/routes';
 import {ClientSearchModal} from '@/ui/client-search-modal';
 import {useChannelEvent} from '@/ui/use-channel-event';
 import {useInstallPrompt} from '@/ui/use-install-prompt';
+import {hasWorkbenchAttention} from '@/workbench/queues';
 
 const ICON = 18;
 

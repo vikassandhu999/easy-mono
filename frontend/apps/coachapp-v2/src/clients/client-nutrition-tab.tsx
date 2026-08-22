@@ -15,7 +15,7 @@ import {adherenceBand, caloriePct, type DayTotals, nutritionDayTotals} from '@/c
 import PlanAssignControl from '@/clients/client-plan-assign';
 import {PlanPanel} from '@/clients/client-plan-panel';
 import {SectionCard} from '@/clients/client-section-card';
-import {handleStaleNutritionPlanConflict} from '@/nutrition-plans/stale-nutrition-plan-conflict';
+import {handleStaleNutritionPlanConflict} from '@/library/nutrition-plans/stale-nutrition-plan-conflict';
 import {ROUTES} from '@/routes';
 import {toastMutationError} from '@/ui/mutation-toast';
 

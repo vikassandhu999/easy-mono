@@ -8,7 +8,6 @@ import type {Client} from '@/api/clients';
 import {goalWeightValue, useListClientWeightEntriesQuery, useUpdateClientMutation} from '@/api/clients';
 import {useListCoachNutritionDaysQuery} from '@/api/nutrition-plans-list';
 import {useListCoachClientTrainingSessionsQuery} from '@/api/training-plans-list';
-import {type AnsweredSubmission, formatAnswer, isSummarisableAnswer, submissionPhotoIds} from '@/checkins/form-answers';
 import {
   completedSessionDates,
   dayOfMonth,
@@ -26,6 +25,12 @@ import {DetailRow} from '@/clients/client-detail-row';
 import IntakeAssignControl from '@/clients/client-intake-assign';
 import {PhotoThumb} from '@/clients/client-photo-thumb';
 import {SectionCard} from '@/clients/client-section-card';
+import {
+  type AnsweredSubmission,
+  formatAnswer,
+  isSummarisableAnswer,
+  submissionPhotoIds,
+} from '@/library/checkins/form-answers';
 import {ROUTES} from '@/routes';
 import {EmptyState} from '@/ui/empty-state';
 import {toastMutationError} from '@/ui/mutation-toast';

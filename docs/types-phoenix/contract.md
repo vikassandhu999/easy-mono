@@ -2,7 +2,7 @@
 
 This page is the closed set. If a case is not here, the design does not cover it, and implementation must not invent a slot, flag, or transformer to paper over it. Write the type and point `typed` at it.
 
-This page describes intent. It is not implemented. The live contract is OpenApiSpex.
+The library lives under `EasyWeb.TypedRoute`, `EasyWeb.Type`, and `EasyWeb.Types`. Controllers still use OpenApiSpex. `mix typed_routes.gen` does not write `schema.ts` until a controller is converted.
 
 The rule: every JSON slot on `typed` is an Elixir type you wrote. Status is an integer next to that type. Plugs stay plugs. The router stays the router.
 

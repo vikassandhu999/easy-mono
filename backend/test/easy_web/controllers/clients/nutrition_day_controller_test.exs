@@ -38,8 +38,11 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       assert slot["rows"] == []
       refute Enum.any?(slot["rows"], &(&1["status"] in ["pending", "skipped"]))
       assert hd(slot["options"])["meal_name"] == "Breakfast"
-      assert hd(hd(slot["options"])["items"])["name"] == "Oats"
-      assert hd(hd(slot["options"])["items"])["kind"] == "food"
+      item = hd(hd(slot["options"])["items"])
+      assert item["name"] == "Oats"
+      assert item["kind"] == "food"
+      assert item["planned_item_ref"]
+      refute Map.has_key?(item, "meal_item_id")
       assert_schema(data, "NutritionDay", EasyWeb.ApiSpec.spec())
     end
 
@@ -264,10 +267,10 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Oats")
       assign_covering_plan(ctx, food)
       today = Date.to_iso8601(local_today(ctx.client))
-      meal_item_id = live_meal_item_id(ctx)
+      planned_item_ref = live_meal_item_id(ctx)
       key = Ecto.UUID.generate()
 
-      body = %{"meal_slot" => "breakfast", "meal_item_id" => meal_item_id}
+      body = %{"meal_slot" => "breakfast", "planned_item_ref" => planned_item_ref}
 
       conn =
         ctx.conn
@@ -286,6 +289,26 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
 
       assert %{"data" => replayed} = json_response(replay, 201)
       assert replayed["slots"] == data["slots"]
+
+      replayed_item = replayed["slots"] |> hd() |> Map.fetch!("options") |> hd() |> Map.fetch!("items") |> hd()
+      assert replayed_item["planned_item_ref"]
+      refute Map.has_key?(replayed_item, "meal_item_id")
+    end
+
+    test "rejects the retired meal_item_id request field", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Oats")
+      assign_covering_plan(ctx, food)
+      today = Date.to_iso8601(local_today(ctx.client))
+
+      conn =
+        ctx.conn
+        |> put_req_header("idempotency-key", Ecto.UUID.generate())
+        |> post("/v1/client/nutrition-days/#{today}/planned-items", %{
+          "meal_slot" => "breakfast",
+          "meal_item_id" => live_meal_item_id(ctx)
+        })
+
+      assert json_response(conn, 422)
     end
 
     test "returns conflict when the same key is reused with a different payload", ctx do
@@ -299,7 +322,7 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       |> put_req_header("idempotency-key", key)
       |> post("/v1/client/nutrition-days/#{today}/planned-items", %{
         "meal_slot" => "breakfast",
-        "meal_item_id" => meal_item_id
+        "planned_item_ref" => meal_item_id
       })
       |> json_response(201)
 
@@ -308,7 +331,7 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
         |> put_req_header("idempotency-key", key)
         |> post("/v1/client/nutrition-days/#{today}/planned-items", %{
           "meal_slot" => "lunch",
-          "meal_item_id" => meal_item_id
+          "planned_item_ref" => meal_item_id
         })
 
       assert json_response(conn, 409)
@@ -394,7 +417,7 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       |> put_req_header("idempotency-key", Ecto.UUID.generate())
       |> post("/v1/client/nutrition-days/#{today}/planned-items", %{
         "meal_slot" => "breakfast",
-        "meal_item_id" => hd(option_a["items"])["meal_item_id"]
+        "planned_item_ref" => hd(option_a["items"])["planned_item_ref"]
       })
       |> json_response(201)
 
@@ -503,7 +526,7 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       |> put_req_header("idempotency-key", Ecto.UUID.generate())
       |> post("/v1/client/nutrition-days/#{today}/planned-items", %{
         "meal_slot" => "breakfast",
-        "meal_item_id" => meal_item_id
+        "planned_item_ref" => meal_item_id
       })
       |> json_response(201)
 
@@ -511,7 +534,7 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
 
       body = %{
         "meal_slot" => "breakfast",
-        "meal_item_id" => meal_item_id,
+        "planned_item_ref" => meal_item_id,
         "food_id" => eggs.id,
         "portion" => %{"kind" => "gram", "grams" => 80},
         "expected_revision" => 1
@@ -539,6 +562,26 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       assert replayed["slots"] == data["slots"]
     end
 
+    test "rejects the retired meal_item_id request field", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Oats")
+      eggs = insert(:food, creator: ctx.coach, business: ctx.business, name: "Eggs")
+      assign_covering_plan(ctx, food)
+      today = Date.to_iso8601(local_today(ctx.client))
+
+      conn =
+        ctx.conn
+        |> put_req_header("idempotency-key", Ecto.UUID.generate())
+        |> post("/v1/client/nutrition-days/#{today}/replacements", %{
+          "meal_slot" => "breakfast",
+          "meal_item_id" => live_meal_item_id(ctx),
+          "food_id" => eggs.id,
+          "portion" => %{"kind" => "gram", "grams" => 80},
+          "expected_revision" => 1
+        })
+
+      assert json_response(conn, 422)
+    end
+
     test "returns conflict when the same key is reused with a different payload", ctx do
       food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Oats")
       eggs = insert(:food, creator: ctx.coach, business: ctx.business, name: "Eggs")
@@ -551,7 +594,7 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       |> put_req_header("idempotency-key", Ecto.UUID.generate())
       |> post("/v1/client/nutrition-days/#{today}/planned-items", %{
         "meal_slot" => "breakfast",
-        "meal_item_id" => meal_item_id
+        "planned_item_ref" => meal_item_id
       })
       |> json_response(201)
 
@@ -559,7 +602,7 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       |> put_req_header("idempotency-key", key)
       |> post("/v1/client/nutrition-days/#{today}/replacements", %{
         "meal_slot" => "breakfast",
-        "meal_item_id" => meal_item_id,
+        "planned_item_ref" => meal_item_id,
         "food_id" => eggs.id,
         "portion" => %{"kind" => "gram", "grams" => 80},
         "expected_revision" => 1
@@ -571,7 +614,7 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
         |> put_req_header("idempotency-key", key)
         |> post("/v1/client/nutrition-days/#{today}/replacements", %{
           "meal_slot" => "breakfast",
-          "meal_item_id" => meal_item_id,
+          "planned_item_ref" => meal_item_id,
           "food_id" => eggs.id,
           "portion" => %{"kind" => "gram", "grams" => 90},
           "expected_revision" => 1
@@ -672,7 +715,7 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
         |> put_req_header("idempotency-key", Ecto.UUID.generate())
         |> post("/v1/client/nutrition-days/#{today}/planned-items", %{
           "meal_slot" => "breakfast",
-          "meal_item_id" => meal_item_id
+          "planned_item_ref" => meal_item_id
         })
 
       assert %{"data" => data} = json_response(logged, 201)
@@ -720,7 +763,7 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
   end
 
   defp live_meal_item_ids(ctx) do
-    hd(live_options(ctx))["items"] |> Enum.map(& &1["meal_item_id"])
+    hd(live_options(ctx))["items"] |> Enum.map(& &1["planned_item_ref"])
   end
 
   defp live_options(ctx) do

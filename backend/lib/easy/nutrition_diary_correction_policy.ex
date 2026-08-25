@@ -1,0 +1,49 @@
+defmodule Easy.Nutrition.Diary.CorrectionPolicy do
+  alias Easy.Clients.Client
+  alias Easy.LocalCalendar
+  alias Easy.Orgs.Business
+
+  @correction_days 7
+
+  @spec applied_timezone(Client.t()) :: String.t()
+  def applied_timezone(%Client{} = client) do
+    LocalCalendar.applied_timezone(client.timezone, business_timezone(client))
+  end
+
+  @spec local_today(Client.t() | String.t(), DateTime.t()) :: Date.t()
+  def local_today(%Client{} = client, %DateTime{} = now) do
+    local_today(applied_timezone(client), now)
+  end
+
+  def local_today(timezone, %DateTime{} = now) when is_binary(timezone) do
+    LocalCalendar.to_local_date(now, timezone)
+  end
+
+  @spec write_eligible?(Date.t(), Date.t()) :: boolean()
+  def write_eligible?(%Date{} = date, %Date{} = today) do
+    Date.diff(today, date) in 0..@correction_days
+  end
+
+  @spec validate_write(Date.t(), Date.t()) ::
+          :ok | {:error, :future_date | :outside_correction_window}
+  def validate_write(%Date{} = date, %Date{} = today) do
+    cond do
+      Date.compare(date, today) == :gt -> {:error, :future_date}
+      write_eligible?(date, today) -> :ok
+      true -> {:error, :outside_correction_window}
+    end
+  end
+
+  @spec validate_switch(Date.t(), Date.t()) ::
+          :ok | {:error, :future_date | :cannot_switch_past_slot}
+  def validate_switch(%Date{} = date, %Date{} = today) do
+    case Date.compare(date, today) do
+      :gt -> {:error, :future_date}
+      :lt -> {:error, :cannot_switch_past_slot}
+      :eq -> :ok
+    end
+  end
+
+  defp business_timezone(%Client{business: %Business{timezone: timezone}}), do: timezone
+  defp business_timezone(_client), do: nil
+end

@@ -402,7 +402,7 @@ else
     Diary.log_client_planned_item(
       client_ctx,
       today,
-      %{meal_slot: :breakfast, meal_item_id: item_id},
+      %{meal_slot: :breakfast, planned_item_ref: item_id},
       Ecto.UUID.generate()
     )
 

@@ -58,7 +58,7 @@ defmodule EasyWeb.NutritionDayJSON do
 
   defp item_data(item) do
     %{
-      meal_item_id: item.meal_item_id,
+      planned_item_ref: item.planned_item_ref,
       kind: item.kind,
       name: item.name,
       food_id: item.food_id,

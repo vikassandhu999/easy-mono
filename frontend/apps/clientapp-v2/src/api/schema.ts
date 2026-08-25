@@ -1060,10 +1060,10 @@ export interface components {
       food_id?: string | null;
       /** @enum {string} */
       kind: 'food' | 'recipe';
-      /** Format: uuid */
-      meal_item_id: string;
       name: string | null;
       nutrients: components['schemas']['NutrientTotals'];
+      /** Format: uuid */
+      planned_item_ref: string;
       portion: components['schemas']['NutritionPortion'];
       position: number;
       /** Format: uuid */
@@ -2179,8 +2179,8 @@ export interface components {
      * @example {
      *       "expected_revision": 1,
      *       "food_id": "a1b2c3d4-74a4-4f9f-b1e9-a9bb07ab4a7c",
-     *       "meal_item_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
      *       "meal_slot": "breakfast",
+     *       "planned_item_ref": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
      *       "portion": {
      *         "grams": 80,
      *         "kind": "gram"
@@ -2191,8 +2191,6 @@ export interface components {
       expected_revision: number;
       /** Format: uuid */
       food_id?: string | null;
-      /** Format: uuid */
-      meal_item_id: string;
       /** @enum {string} */
       meal_slot:
         | 'early_morning'
@@ -2207,6 +2205,8 @@ export interface components {
         | 'during_workout'
         | 'post_workout';
       notes?: string | null;
+      /** Format: uuid */
+      planned_item_ref: string;
       portion: components['schemas']['NutritionPortionInput'];
       /** Format: uuid */
       recipe_id?: string | null;
@@ -4164,13 +4164,11 @@ export interface components {
     /**
      * DiaryLogPlannedItemRequest
      * @example {
-     *       "meal_item_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-     *       "meal_slot": "breakfast"
+     *       "meal_slot": "breakfast",
+     *       "planned_item_ref": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c"
      *     }
      */
     DiaryLogPlannedItemRequest: {
-      /** Format: uuid */
-      meal_item_id: string;
       /** @enum {string} */
       meal_slot:
         | 'early_morning'
@@ -4184,6 +4182,8 @@ export interface components {
         | 'pre_workout'
         | 'during_workout'
         | 'post_workout';
+      /** Format: uuid */
+      planned_item_ref: string;
     };
     /** MessageResponse */
     MessageResponse: {

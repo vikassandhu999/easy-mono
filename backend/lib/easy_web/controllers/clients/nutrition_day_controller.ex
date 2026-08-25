@@ -275,7 +275,13 @@ defmodule EasyWeb.Clients.NutritionDayController do
     key = conn |> get_req_header("idempotency-key") |> List.first()
 
     with {:ok, date} <- parse_date(date),
-         {:ok, day} <- Diary.log_client_planned_item(conn.assigns.ctx, date, conn.body_params, key) do
+         {:ok, day} <-
+           Diary.log_client_planned_item(
+             conn.assigns.ctx,
+             date,
+             conn.body_params,
+             key
+           ) do
       conn
       |> put_status(:created)
       |> render(:show, day: day)
@@ -325,7 +331,13 @@ defmodule EasyWeb.Clients.NutritionDayController do
     key = conn |> get_req_header("idempotency-key") |> List.first()
 
     with {:ok, date} <- parse_date(date),
-         {:ok, day} <- Diary.replace_client_planned_item(conn.assigns.ctx, date, conn.body_params, key) do
+         {:ok, day} <-
+           Diary.replace_client_planned_item(
+             conn.assigns.ctx,
+             date,
+             conn.body_params,
+             key
+           ) do
       render(conn, :show, day: day)
     end
   end

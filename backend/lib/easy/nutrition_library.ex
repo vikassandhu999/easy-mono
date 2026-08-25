@@ -9,6 +9,41 @@ defmodule Easy.Nutrition.Library do
   import Ecto.Changeset
   import Ecto.Query
 
+  @type portion_input() :: %{
+          required(:kind) => :gram | :serving,
+          optional(:grams) => number() | nil,
+          optional(:amount) => number() | nil,
+          optional(:unit) => String.t() | nil,
+          optional(:label) => String.t() | nil
+        }
+
+  @type resolved_food_portion() :: %{
+          required(:grams) => float(),
+          required(:amount) => float() | nil,
+          required(:unit) => String.t() | nil,
+          required(:label) => String.t() | nil
+        }
+
+  @type resolved_recipe_portion() :: %{
+          required(:grams) => float() | nil,
+          required(:amount) => float() | nil
+        }
+
+  @type resolved_portion() :: resolved_food_portion() | resolved_recipe_portion()
+
+  @type item_spec() :: %{
+          required(:kind) => :food | :recipe,
+          required(:id) => String.t(),
+          required(:portion) => portion_input()
+        }
+
+  @type resolved_item() :: %{
+          required(:kind) => :food | :recipe,
+          required(:item) => Food.t() | Recipe.t(),
+          required(:portion) => resolved_portion(),
+          required(:nutrients) => NutrientTotals.t()
+        }
+
   # Foods
 
   @spec get_food(Ctx.t(), String.t()) :: {:ok, Food.t()} | {:error, :not_found}
@@ -61,7 +96,12 @@ defmodule Easy.Nutrition.Library do
   def update_food(%Ctx{} = ctx, food_id, expected_revision, attrs) do
     with :ok <- ensure_coach(ctx),
          {:ok, food} <-
-           mutate_locked(Food.for_business_or_system(ctx.business_id), food_id, expected_revision, &update_locked_food(ctx, &1, attrs)) do
+           mutate_locked(
+             Food.for_business_or_system(ctx.business_id),
+             food_id,
+             expected_revision,
+             &update_locked_food(ctx, &1, attrs)
+           ) do
       {:ok, Repo.preload(food, :media, force: true)}
     end
   end
@@ -121,14 +161,8 @@ defmodule Easy.Nutrition.Library do
     end
   end
 
-  @spec resolve_food_portion(Food.t(), map()) ::
-          {:ok,
-           %{
-             grams: float(),
-             amount: float() | nil,
-             unit: String.t() | nil,
-             label: String.t() | nil
-           }}
+  @spec resolve_food_portion(Food.t(), portion_input()) ::
+          {:ok, resolved_food_portion()}
           | {:error, :invalid_portion}
   def resolve_food_portion(_food, %{kind: :gram, grams: grams})
       when is_number(grams) and grams > 0 do
@@ -247,8 +281,8 @@ defmodule Easy.Nutrition.Library do
     end
   end
 
-  @spec resolve_recipe_portion(Recipe.t(), map()) ::
-          {:ok, %{grams: float() | nil, amount: float() | nil}} | {:error, :invalid_portion}
+  @spec resolve_recipe_portion(Recipe.t(), portion_input()) ::
+          {:ok, resolved_recipe_portion()} | {:error, :invalid_portion}
   def resolve_recipe_portion(%Recipe{servings_count: servings, cooked_weight_g: cooked}, %{
         kind: :serving,
         amount: amount
@@ -275,8 +309,8 @@ defmodule Easy.Nutrition.Library do
 
   # Item resolution
 
-  @spec resolve_items(Ctx.t(), [map()]) ::
-          {:ok, [map()]} | {:error, :not_found | :invalid_portion}
+  @spec resolve_items(Ctx.t(), [item_spec()]) ::
+          {:ok, [resolved_item()]} | {:error, :not_found | :invalid_portion}
   def resolve_items(%Ctx{} = ctx, items) when is_list(items) do
     foods = visible_foods_by_id(ctx, for(%{kind: :food, id: id} <- items, do: id))
     recipes = visible_recipes_by_id(ctx, for(%{kind: :recipe, id: id} <- items, do: id))

@@ -65,4 +65,70 @@ defmodule Easy.ContextLayoutTest do
 
     assert offenders == []
   end
+
+  test "Nutrition Programming depends on ClientAccess rather than the Clients context" do
+    source = File.read!("lib/easy/nutrition_programming.ex")
+
+    assert source =~ "alias Easy.ClientAccess"
+    refute source =~ ~r/^\s*alias Easy\.Clients$/m
+    refute source =~ ~r/(?<!Easy\.)\bClients\./
+  end
+
+  test "Nutrition Programming delegates the complete Menu replacement engine" do
+    programming = File.read!("lib/easy/nutrition_programming.ex")
+    engine_path = "lib/easy/nutrition_programming_menu_replacement.ex"
+
+    assert File.exists?(engine_path)
+    assert programming =~ "alias Easy.Nutrition.Programming.MenuReplacement"
+    assert programming =~ "MenuReplacement.replace(ctx, plan, attrs)"
+    assert programming =~ "mutate_plan(ctx, plan_id, expected_revision"
+
+    engine = File.read!(engine_path)
+    refute engine =~ "Repo.transaction"
+  end
+
+  test "Nutrition Diary delegates the complete idempotency command runner" do
+    diary = File.read!("lib/easy/nutrition_diary.ex")
+    runner_path = "lib/easy/nutrition_diary_idempotency.ex"
+
+    assert File.exists?(runner_path)
+    assert diary =~ "alias Easy.Nutrition.Diary.Idempotency"
+    assert diary =~ "Idempotency.run("
+    assert diary =~ "Idempotency.purge_expired("
+    refute diary =~ "DiaryCommandLedger"
+    refute diary =~ "Repo.rollback"
+
+    runner = File.read!(runner_path)
+    assert runner =~ "Repo.transaction"
+    assert runner =~ ~r/\{:rollback, reason\}\s*->\s*Repo\.rollback\(reason\)/
+  end
+
+  test "Nutrition Diary delegates read assembly and correction policy" do
+    diary = File.read!("lib/easy/nutrition_diary.ex")
+    assembler_path = "lib/easy/nutrition_diary_day_assembler.ex"
+    policy_path = "lib/easy/nutrition_diary_correction_policy.ex"
+    day_type_path = "lib/easy/nutrition_day.ex"
+
+    assert File.exists?(assembler_path)
+    assert File.exists?(policy_path)
+    assert File.exists?(day_type_path)
+    assert diary =~ "alias Easy.Nutrition.Day"
+    assert diary =~ "alias Easy.Nutrition.Diary.{CorrectionPolicy, DayAssembler}"
+    assert diary =~ "DayAssembler.list("
+    assert diary =~ "DayAssembler.assemble("
+    assert diary =~ "CorrectionPolicy."
+    refute diary =~ "@correction_days"
+
+    assembler = File.read!(assembler_path)
+    policy = File.read!(policy_path)
+    day_types = File.read!(day_type_path)
+
+    assert diary =~ "defp insert_frozen_item!("
+    refute assembler =~ ~r/\bRepo\.(?:insert|update|delete)\(/
+    assert policy =~ "@correction_days 7"
+    refute assembler =~ "@correction_days"
+    assert day_types =~ "@type t()"
+    assert day_types =~ "@type planned_item()"
+    refute day_types =~ "defstruct"
+  end
 end

@@ -1,6 +1,10 @@
 # Meal logging diary
 
-Status: resolved
+Status: superseded
+
+This design is retained for history. The authoritative Nutrition behavior is defined by
+[Nutrition backend rewrite](../nutrition-backend-rewrite/spec.md) and
+[ADR 0002](../../docs/adr/0002-nutrition-module-ownership.md), including freezing every offered option and preserving actual intake when the active option changes.
 
 ## Problem Statement
 

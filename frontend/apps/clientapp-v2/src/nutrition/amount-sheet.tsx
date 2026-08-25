@@ -141,15 +141,15 @@ export default function AmountSheet({
           commandIntent.current,
           plannedItemIntentFingerprint({
             date: target.date,
-            mealItemId: target.mealItemId,
+            plannedItemRef: target.plannedItemRef,
             slot: target.slot,
           }),
         );
         await logPlanned.mutateAsync({
           date: target.date,
           idempotencyKey: commandIntent.current.key,
-          meal_item_id: target.mealItemId,
           meal_slot: target.slot,
+          planned_item_ref: target.plannedItemRef,
         });
         commandIntent.current = null;
       }
@@ -187,7 +187,7 @@ export default function AmountSheet({
     }
   };
 
-  const canReplace = target.mode === 'planned' || target.mealItemId != null;
+  const canReplace = target.mode === 'planned' || target.plannedItemRef != null;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end bg-[rgba(8,8,11,0.5)]">

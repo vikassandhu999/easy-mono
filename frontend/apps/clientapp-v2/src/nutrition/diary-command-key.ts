@@ -43,8 +43,13 @@ export function extraIntentFingerprint(picked: {
   });
 }
 
-export function plannedItemIntentFingerprint(input: {date: string; mealItemId: string; slot: string}): string {
-  return JSON.stringify({date: input.date, mealItemId: input.mealItemId, scope: 'planned-item', slot: input.slot});
+export function plannedItemIntentFingerprint(input: {date: string; plannedItemRef: string; slot: string}): string {
+  return JSON.stringify({
+    date: input.date,
+    plannedItemRef: input.plannedItemRef,
+    scope: 'planned-item',
+    slot: input.slot,
+  });
 }
 
 export function plannedOptionIntentFingerprint(input: {date: string; slot: string}): string {
@@ -75,7 +80,7 @@ export function replaceIntentFingerprint(input: {
   expectedRevision: number;
   id: string;
   kind: string;
-  mealItemId: string;
+  plannedItemRef: string;
   slot: string;
   weight: null | number;
 }): string {
@@ -84,7 +89,7 @@ export function replaceIntentFingerprint(input: {
     expectedRevision: input.expectedRevision,
     id: input.id,
     kind: input.kind,
-    mealItemId: input.mealItemId,
+    plannedItemRef: input.plannedItemRef,
     scope: 'replace',
     slot: input.slot,
     weight: input.weight,

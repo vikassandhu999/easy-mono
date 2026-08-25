@@ -123,13 +123,13 @@ export default function NutritionToday() {
     try {
       const intent = beginDiaryCommand(
         commandIntents.current,
-        plannedItemIntentFingerprint({date, mealItemId: row.mealItemId, slot: slot.slot}),
+        plannedItemIntentFingerprint({date, plannedItemRef: row.plannedItemRef, slot: slot.slot}),
       );
       await logPlannedItem({
         date,
         idempotencyKey: intent.key,
-        meal_item_id: row.mealItemId,
         meal_slot: slot.slot,
+        planned_item_ref: row.plannedItemRef,
       });
       completeDiaryCommand(commandIntents.current, intent);
     } catch (caught) {
@@ -170,7 +170,7 @@ export default function NutritionToday() {
         : toPortionInput({amount: picked.defaultAmount ?? 1, kind: 'serving', label: null, unit: 'serving'});
 
     try {
-      if (replacing?.mealItemId) {
+      if (replacing?.plannedItemRef) {
         const expectedRevision = replacing.mode === 'logged' ? replacing.loggedEntry.revision : 1;
         const intent = beginDiaryCommand(
           commandIntents.current,
@@ -179,7 +179,7 @@ export default function NutritionToday() {
             expectedRevision,
             id: picked.id,
             kind: picked.kind,
-            mealItemId: replacing.mealItemId,
+            plannedItemRef: replacing.plannedItemRef,
             slot: replacing.slot,
             weight: picked.defaultWeightG,
           }),
@@ -189,8 +189,8 @@ export default function NutritionToday() {
           date,
           expected_revision: expectedRevision,
           idempotencyKey: intent.key,
-          meal_item_id: replacing.mealItemId,
           meal_slot: replacing.slot,
+          planned_item_ref: replacing.plannedItemRef,
           portion,
         });
         completeDiaryCommand(commandIntents.current, intent);
@@ -395,7 +395,7 @@ export default function NutritionToday() {
                       row.status === 'pending' ||
                       row.status === 'as_planned' ||
                       row.status === 'swapped'
-                    ? row.mealItemId
+                    ? row.plannedItemRef
                     : `row-${index}`;
               return (
                 <div

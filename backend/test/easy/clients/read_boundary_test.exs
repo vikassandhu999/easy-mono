@@ -1,7 +1,10 @@
 defmodule Easy.Clients.ReadBoundaryTest do
   use Easy.SchemaCase
 
-  alias Easy.Clients
+  alias Easy.{ClientAccess, Clients}
+  alias Easy.Clients.Client
+  alias Easy.Nutrition.Plan, as: NutritionPlan
+  alias Easy.Training.TrainingPlan
 
   @training_schemas [
     "lib/easy/training/training_exercise.ex",
@@ -157,6 +160,20 @@ defmodule Easy.Clients.ReadBoundaryTest do
   end
 
   describe "authorize_client/2 and authorize_client_id/2" do
+    test "ClientAccess is the shared authorization seam" do
+      business = insert(:business)
+      trainer = insert(:coach, business: business)
+      other_trainer = insert(:coach, business: business)
+      client = insert(:client, business: business, assigned_coach: trainer)
+
+      assert {:ok, %{id: id}} = ClientAccess.authorize_client(trainer_ctx(trainer), client.id)
+      assert id == client.id
+      assert :ok = ClientAccess.authorize_client_id(trainer_ctx(trainer), client.id)
+
+      assert {:error, :not_found} =
+               ClientAccess.authorize_client(trainer_ctx(other_trainer), client.id)
+    end
+
     test "authorize_client/2 mirrors get_client/2's visibility rules" do
       business = insert(:business)
       trainer = insert(:coach, business: business)
@@ -180,6 +197,52 @@ defmodule Easy.Clients.ReadBoundaryTest do
       assert :ok = Clients.authorize_client_id(trainer_ctx(trainer), client.id)
       assert {:error, :not_found} = Clients.authorize_client_id(trainer_ctx(other_trainer), client.id)
     end
+  end
+
+  test "pending-invitation revocation does not manually delete assigned plans" do
+    source = File.read!(Path.join(File.cwd!(), "lib/easy/clients.ex"))
+
+    refute source =~ "Repo.delete_all"
+  end
+
+  test "pending-invitation revocation removes assigned plans through database cascades" do
+    business = insert(:business)
+    coach = insert(:coach, business: business)
+
+    client =
+      insert(:client,
+        business: business,
+        creator: coach,
+        assigned_coach: coach,
+        status: :pending,
+        user: nil
+      )
+
+    {:ok, training_template} =
+      business.id
+      |> TrainingPlan.insert_changeset(coach.user_id, %{name: "Training template"})
+      |> Repo.insert()
+
+    {:ok, training_plan} =
+      business.id
+      |> TrainingPlan.insert_changeset(coach.user_id, client.id, training_template, %{})
+      |> Repo.insert()
+
+    {:ok, nutrition_template} =
+      business.id
+      |> NutritionPlan.insert_changeset(coach.user_id, %{name: "Nutrition template"})
+      |> Repo.insert()
+
+    {:ok, nutrition_plan} =
+      business.id
+      |> NutritionPlan.insert_changeset(coach.user_id, client.id, nutrition_template, %{})
+      |> Repo.insert()
+
+    assert {:ok, %{id: deleted_id}} = Clients.revoke_invitation(trainer_ctx(coach), client.id)
+    assert deleted_id == client.id
+    assert Repo.get(Client, client.id) == nil
+    assert Repo.get(TrainingPlan, training_plan.id) == nil
+    assert Repo.get(NutritionPlan, nutrition_plan.id) == nil
   end
 
   describe "assignment on client-create paths" do

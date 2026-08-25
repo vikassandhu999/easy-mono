@@ -161,14 +161,14 @@ export default function NutritionDay() {
               >
                 {rows.map((row, index) => (
                   <DiaryRow
-                    key={row.entry?.id ?? row.planned?.meal_item_id ?? `row-${index}`}
+                    key={row.entry?.id ?? row.planned?.planned_item_ref ?? `row-${index}`}
                     row={row}
                   />
                 ))}
                 {liveItems.map((item) => (
                   <LiveItem
                     item={item}
-                    key={item.meal_item_id}
+                    key={item.planned_item_ref}
                   />
                 ))}
               </SectionCard>

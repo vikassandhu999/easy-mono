@@ -84,9 +84,9 @@ assert(
   'changing the Nutrition Day date rotates the extra fingerprint',
 );
 
-const plannedItem = plannedItemIntentFingerprint({date: '2026-08-17', mealItemId: 'item-1', slot: 'breakfast'});
+const plannedItem = plannedItemIntentFingerprint({date: '2026-08-17', plannedItemRef: 'item-1', slot: 'breakfast'});
 assert(
-  plannedItem === plannedItemIntentFingerprint({date: '2026-08-17', mealItemId: 'item-1', slot: 'breakfast'}),
+  plannedItem === plannedItemIntentFingerprint({date: '2026-08-17', plannedItemRef: 'item-1', slot: 'breakfast'}),
   'planned-item fingerprints are stable',
 );
 assert(
@@ -114,7 +114,7 @@ const replaceSame = {
   expectedRevision: 1,
   id: 'food-eggs',
   kind: 'food',
-  mealItemId: 'item-1',
+  plannedItemRef: 'item-1',
   slot: 'breakfast',
   weight: 80,
 };

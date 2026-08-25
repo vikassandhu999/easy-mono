@@ -1,11 +1,11 @@
 defmodule Easy.Nutrition.Diary do
   alias Easy.Clients
-  alias Easy.Clients.Client
   alias Easy.Ctx
-  alias Easy.LocalCalendar
+  alias Easy.Nutrition.Day
+  alias Easy.Nutrition.Diary.{CorrectionPolicy, DayAssembler}
+  alias Easy.Nutrition.Diary.Idempotency
 
   alias Easy.Nutrition.{
-    DiaryCommandLedger,
     DiaryEntry,
     DiaryFrozenOption,
     DiaryFrozenPlannedItem,
@@ -14,7 +14,6 @@ defmodule Easy.Nutrition.Diary do
     Library,
     Meal,
     MealItem,
-    MealOption,
     MealSlot,
     NutrientTotals,
     Programming,
@@ -25,11 +24,56 @@ defmodule Easy.Nutrition.Diary do
 
   import Ecto.Query
 
-  @correction_days 7
+  @type portion_input() :: %{
+          required(:kind) => :gram | :serving | String.t(),
+          optional(:grams) => number() | nil,
+          optional(:amount) => number() | nil,
+          optional(:unit) => String.t() | nil,
+          optional(:label) => String.t() | nil
+        }
+
+  @type add_extra_input() :: %{
+          required(:meal_slot) => atom() | String.t(),
+          optional(:food_id) => String.t(),
+          optional(:recipe_id) => String.t(),
+          required(:portion) => portion_input(),
+          optional(:notes) => String.t() | nil
+        }
+
+  @type planned_item_input() :: %{
+          required(:meal_slot) => atom() | String.t(),
+          required(:planned_item_ref) => String.t()
+        }
+
+  @type planned_option_input() :: %{required(:meal_slot) => atom() | String.t()}
+
+  @type switch_option_input() :: %{
+          required(:meal_slot) => atom() | String.t(),
+          required(:meal_id) => String.t(),
+          required(:expected_revision) => pos_integer()
+        }
+
+  @type replacement_input() :: %{
+          required(:meal_slot) => atom() | String.t(),
+          required(:planned_item_ref) => String.t(),
+          optional(:food_id) => String.t(),
+          optional(:recipe_id) => String.t(),
+          required(:portion) => portion_input(),
+          optional(:notes) => String.t() | nil,
+          required(:expected_revision) => pos_integer()
+        }
+
+  @type update_entry_input() :: %{
+          required(:expected_revision) => pos_integer(),
+          optional(:portion) => portion_input() | nil,
+          optional(:notes) => String.t() | nil
+        }
+
+  @type delete_entry_input() :: %{required(:expected_revision) => pos_integer()}
 
   ## Nutrition Day reads
 
-  @spec get_client_nutrition_day(Ctx.t(), Date.t()) :: {:ok, map()} | {:error, :not_found}
+  @spec get_client_nutrition_day(Ctx.t(), Date.t()) :: {:ok, Day.t()} | {:error, :not_found}
   def get_client_nutrition_day(%Ctx{} = ctx, %Date{} = date) do
     with {:ok, %{nutrition_days: [day]}} <- list_client_nutrition_days(ctx, date: date) do
       {:ok, day}
@@ -37,7 +81,7 @@ defmodule Easy.Nutrition.Diary do
   end
 
   @spec get_nutrition_day_for_client(Ctx.t(), String.t(), Date.t()) ::
-          {:ok, map()} | {:error, :not_found}
+          {:ok, Day.t()} | {:error, :not_found}
   def get_nutrition_day_for_client(%Ctx{} = ctx, client_id, %Date{} = date) do
     with {:ok, %{nutrition_days: [day]}} <- list_nutrition_days_for_client(ctx, client_id, date: date) do
       {:ok, day}
@@ -45,27 +89,27 @@ defmodule Easy.Nutrition.Diary do
   end
 
   @spec list_client_nutrition_days(Ctx.t(), keyword()) ::
-          {:ok, %{count: non_neg_integer(), nutrition_days: [map()]}}
+          {:ok, Day.list_result()}
           | {:error, :not_found | :invalid_date_range | :date_range_too_wide | :incomplete_date_range}
   def list_client_nutrition_days(%Ctx{} = ctx, opts \\ []) do
     with {:ok, client} <- Clients.get_client_account(ctx) do
-      list_days(ctx, client, opts, :client)
+      DayAssembler.list(ctx, client, opts, :client)
     end
   end
 
   @spec list_nutrition_days_for_client(Ctx.t(), String.t(), keyword()) ::
-          {:ok, %{count: non_neg_integer(), nutrition_days: [map()]}}
+          {:ok, Day.list_result()}
           | {:error, :not_found | :invalid_date_range | :date_range_too_wide | :incomplete_date_range}
   def list_nutrition_days_for_client(%Ctx{} = ctx, client_id, opts \\ []) do
     with {:ok, client} <- Clients.authorize_client(ctx, client_id) do
-      list_days(ctx, client, opts, :coach)
+      DayAssembler.list(ctx, client, opts, :coach)
     end
   end
 
   ## Client commands
 
-  @spec add_client_extra(Ctx.t(), Date.t(), map(), String.t()) ::
-          {:ok, map()}
+  @spec add_client_extra(Ctx.t(), Date.t(), add_extra_input(), String.t()) ::
+          {:ok, Day.t()}
           | {:error,
              :not_found
              | :client_inactive
@@ -79,23 +123,27 @@ defmodule Easy.Nutrition.Diary do
     with {:ok, uuid} <- cast_uuid(key),
          {:ok, client} <- load_active_client(ctx),
          {:ok, command} <- cast_extra_command(attrs) do
-      fingerprint =
-        command_fingerprint("POST", date, "extras", %{
+      Idempotency.run(
+        client,
+        uuid,
+        :add_extra,
+        date,
+        %{
           meal_slot: command.meal_slot,
           food_id: command.food_id,
           recipe_id: command.recipe_id,
           portion: command.portion,
           notes: command.notes
-        })
-
-      replay_or_run(client, uuid, fingerprint, fn -> record_extra(ctx, client, date, command) end)
+        },
+        fn now -> record_extra(ctx, client, date, command, now) end
+      )
     end
   end
 
   def add_client_extra(%Ctx{}, %Date{}, _attrs, _key), do: {:error, :invalid_idempotency_key}
 
-  @spec log_client_planned_item(Ctx.t(), Date.t(), map(), String.t()) ::
-          {:ok, map()}
+  @spec log_client_planned_item(Ctx.t(), Date.t(), planned_item_input(), String.t()) ::
+          {:ok, Day.t()}
           | {:error,
              :not_found
              | :client_inactive
@@ -109,20 +157,24 @@ defmodule Easy.Nutrition.Diary do
     with {:ok, uuid} <- cast_uuid(key),
          {:ok, client} <- load_active_client(ctx),
          {:ok, command} <- cast_planned_item_command(attrs) do
-      fingerprint =
-        command_fingerprint("POST", date, "planned-items", %{
+      Idempotency.run(
+        client,
+        uuid,
+        :log_planned_item,
+        date,
+        %{
           meal_slot: command.meal_slot,
-          meal_item_id: command.meal_item_id
-        })
-
-      replay_or_run(client, uuid, fingerprint, fn -> record_planned_item(ctx, client, date, command) end)
+          meal_item_id: command.planned_item_ref
+        },
+        fn now -> record_planned_item(ctx, client, date, command, now) end
+      )
     end
   end
 
   def log_client_planned_item(%Ctx{}, %Date{}, _attrs, _key), do: {:error, :invalid_idempotency_key}
 
-  @spec log_client_planned_option(Ctx.t(), Date.t(), map(), String.t()) ::
-          {:ok, map()}
+  @spec log_client_planned_option(Ctx.t(), Date.t(), planned_option_input(), String.t()) ::
+          {:ok, Day.t()}
           | {:error,
              :not_found
              | :client_inactive
@@ -136,15 +188,16 @@ defmodule Easy.Nutrition.Diary do
     with {:ok, uuid} <- cast_uuid(key),
          {:ok, client} <- load_active_client(ctx),
          {:ok, meal_slot} <- MealSlot.cast(attrs[:meal_slot]) do
-      fingerprint = command_fingerprint("POST", date, "planned-options", %{meal_slot: meal_slot})
-      replay_or_run(client, uuid, fingerprint, fn -> record_planned_option(ctx, client, date, meal_slot) end)
+      Idempotency.run(client, uuid, :log_planned_option, date, %{meal_slot: meal_slot}, fn now ->
+        record_planned_option(ctx, client, date, meal_slot, now)
+      end)
     end
   end
 
   def log_client_planned_option(%Ctx{}, %Date{}, _attrs, _key), do: {:error, :invalid_idempotency_key}
 
   @spec log_client_planned_day(Ctx.t(), Date.t(), String.t()) ::
-          {:ok, map()}
+          {:ok, Day.t()}
           | {:error,
              :not_found
              | :client_inactive
@@ -156,15 +209,16 @@ defmodule Easy.Nutrition.Diary do
   def log_client_planned_day(%Ctx{} = ctx, %Date{} = date, key) when is_binary(key) do
     with {:ok, uuid} <- cast_uuid(key),
          {:ok, client} <- load_active_client(ctx) do
-      fingerprint = command_fingerprint("POST", date, "planned-day", %{})
-      replay_or_run(client, uuid, fingerprint, fn -> record_planned_day(ctx, client, date) end)
+      Idempotency.run(client, uuid, :log_planned_day, date, %{}, fn now ->
+        record_planned_day(ctx, client, date, now)
+      end)
     end
   end
 
   def log_client_planned_day(%Ctx{}, %Date{}, _key), do: {:error, :invalid_idempotency_key}
 
-  @spec switch_client_option(Ctx.t(), Date.t(), map(), String.t()) ::
-          {:ok, map()}
+  @spec switch_client_option(Ctx.t(), Date.t(), switch_option_input(), String.t()) ::
+          {:ok, Day.t()}
           | {:error,
              :not_found
              | :client_inactive
@@ -177,21 +231,25 @@ defmodule Easy.Nutrition.Diary do
     with {:ok, uuid} <- cast_uuid(key),
          {:ok, client} <- load_active_client(ctx),
          {:ok, command} <- cast_switch_command(attrs) do
-      fingerprint =
-        command_fingerprint("POST", date, "active-option", %{
+      Idempotency.run(
+        client,
+        uuid,
+        :switch_option,
+        date,
+        %{
           meal_slot: command.meal_slot,
           meal_id: command.meal_id,
           expected_revision: command.expected_revision
-        })
-
-      replay_or_run(client, uuid, fingerprint, fn -> record_switch(ctx, client, date, command) end)
+        },
+        fn now -> record_switch(ctx, client, date, command, now) end
+      )
     end
   end
 
   def switch_client_option(%Ctx{}, %Date{}, _attrs, _key), do: {:error, :invalid_idempotency_key}
 
-  @spec replace_client_planned_item(Ctx.t(), Date.t(), map(), String.t()) ::
-          {:ok, map()}
+  @spec replace_client_planned_item(Ctx.t(), Date.t(), replacement_input(), String.t()) ::
+          {:ok, Day.t()}
           | {:error,
              :not_found
              | :client_inactive
@@ -206,25 +264,29 @@ defmodule Easy.Nutrition.Diary do
     with {:ok, uuid} <- cast_uuid(key),
          {:ok, client} <- load_active_client(ctx),
          {:ok, command} <- cast_replace_command(attrs) do
-      fingerprint =
-        command_fingerprint("POST", date, "replacements", %{
+      Idempotency.run(
+        client,
+        uuid,
+        :replace_planned_item,
+        date,
+        %{
           meal_slot: command.meal_slot,
-          meal_item_id: command.meal_item_id,
+          meal_item_id: command.planned_item_ref,
           food_id: command.food_id,
           recipe_id: command.recipe_id,
           portion: command.portion,
           notes: command.notes,
           expected_revision: command.expected_revision
-        })
-
-      replay_or_run(client, uuid, fingerprint, fn -> record_replacement(ctx, client, date, command) end)
+        },
+        fn now -> record_replacement(ctx, client, date, command, now) end
+      )
     end
   end
 
   def replace_client_planned_item(%Ctx{}, %Date{}, _attrs, _key), do: {:error, :invalid_idempotency_key}
 
-  @spec update_client_entry(Ctx.t(), Date.t(), String.t(), map(), String.t()) ::
-          {:ok, map()}
+  @spec update_client_entry(Ctx.t(), Date.t(), String.t(), update_entry_input(), String.t()) ::
+          {:ok, Day.t()}
           | {:error,
              :not_found
              | :client_inactive
@@ -239,21 +301,25 @@ defmodule Easy.Nutrition.Diary do
     with {:ok, uuid} <- cast_uuid(key),
          {:ok, client} <- load_active_client(ctx),
          {:ok, command} <- cast_update_command(attrs) do
-      fingerprint =
-        command_fingerprint("PATCH", date, "entries/#{entry_id}", %{
+      Idempotency.run(
+        client,
+        uuid,
+        {:update_entry, entry_id},
+        date,
+        %{
           expected_revision: command.expected_revision,
           portion: command.portion,
           notes: command.notes
-        })
-
-      replay_or_run(client, uuid, fingerprint, fn -> record_update(ctx, client, date, entry_id, command) end)
+        },
+        fn now -> record_update(ctx, client, date, entry_id, command, now) end
+      )
     end
   end
 
   def update_client_entry(%Ctx{}, %Date{}, _entry_id, _attrs, _key), do: {:error, :invalid_idempotency_key}
 
-  @spec delete_client_entry(Ctx.t(), Date.t(), String.t(), map(), String.t()) ::
-          {:ok, map()}
+  @spec delete_client_entry(Ctx.t(), Date.t(), String.t(), delete_entry_input(), String.t()) ::
+          {:ok, Day.t()}
           | {:error,
              :not_found
              | :client_inactive
@@ -267,12 +333,14 @@ defmodule Easy.Nutrition.Diary do
     with {:ok, uuid} <- cast_uuid(key),
          {:ok, client} <- load_active_client(ctx),
          {:ok, expected_revision} <- cast_revision(attrs[:expected_revision]) do
-      fingerprint =
-        command_fingerprint("DELETE", date, "entries/#{entry_id}", %{expected_revision: expected_revision})
-
-      replay_or_run(client, uuid, fingerprint, fn ->
-        record_delete(ctx, client, date, entry_id, expected_revision)
-      end)
+      Idempotency.run(
+        client,
+        uuid,
+        {:delete_entry, entry_id},
+        date,
+        %{expected_revision: expected_revision},
+        fn now -> record_delete(ctx, client, date, entry_id, expected_revision, now) end
+      )
     end
   end
 
@@ -282,14 +350,7 @@ defmodule Easy.Nutrition.Diary do
 
   @spec purge_expired_command_ledger(DateTime.t()) :: {:ok, non_neg_integer()}
   def purge_expired_command_ledger(now \\ DateTime.utc_now(:second)) do
-    case Repo.all(from(row in DiaryCommandLedger.expired(now), select: row.id, limit: 1000)) do
-      [] ->
-        {:ok, 0}
-
-      ids ->
-        {count, nil} = Repo.delete_all(from(row in DiaryCommandLedger, where: row.id in ^ids))
-        {:ok, count}
-    end
+    Idempotency.purge_expired(now)
   end
 
   ## Command casting
@@ -327,8 +388,8 @@ defmodule Easy.Nutrition.Diary do
 
   defp cast_planned_item_command(attrs) do
     with {:ok, meal_slot} <- MealSlot.cast(attrs[:meal_slot]),
-         {:ok, meal_item_id} <- cast_id(attrs[:meal_item_id]) do
-      {:ok, %{meal_slot: meal_slot, meal_item_id: meal_item_id}}
+         {:ok, planned_item_ref} <- cast_id(attrs[:planned_item_ref]) do
+      {:ok, %{meal_slot: meal_slot, planned_item_ref: planned_item_ref}}
     end
   end
 
@@ -342,9 +403,9 @@ defmodule Easy.Nutrition.Diary do
 
   defp cast_replace_command(attrs) do
     with {:ok, extra} <- cast_extra_command(attrs),
-         {:ok, meal_item_id} <- cast_id(attrs[:meal_item_id]),
+         {:ok, planned_item_ref} <- cast_id(attrs[:planned_item_ref]),
          {:ok, revision} <- cast_revision(attrs[:expected_revision]) do
-      {:ok, Map.merge(extra, %{meal_item_id: meal_item_id, expected_revision: revision})}
+      {:ok, Map.merge(extra, %{planned_item_ref: planned_item_ref, expected_revision: revision})}
     end
   end
 
@@ -385,65 +446,69 @@ defmodule Easy.Nutrition.Diary do
 
   ## Command execution
 
-  defp record_extra(ctx, client, date, command) do
-    timezone = applied_timezone(client)
-    today = LocalCalendar.to_local_date(DateTime.utc_now(), timezone)
+  defp record_extra(ctx, client, date, command, now) do
+    timezone = CorrectionPolicy.applied_timezone(client)
+    today = CorrectionPolicy.local_today(timezone, now)
 
-    with :ok <- ensure_writable(date, slot_timezone(client, date, command.meal_slot, timezone)),
+    with :ok <- ensure_writable(date, slot_timezone(client, date, command.meal_slot, timezone), now),
          {:ok, [resolved]} <-
-           Library.resolve_items(ctx, [%{kind: command.kind, id: command.id, portion: command.portion}]) do
-      slot =
-        locked_slot(client, date, command.meal_slot) ||
-          create_frozen_slot!(client, date, timezone, command.meal_slot, nil, freeze_source(ctx, date, today))
-
-      {:ok, _entry} =
-        Repo.insert(DiaryEntry.insert_changeset(client.business_id, client.id, slot.id, resolved_entry_attrs(resolved, command)))
-
-      {:ok, assemble_day(ctx, client, date, :client)}
+           Library.resolve_items(ctx, [%{kind: command.kind, id: command.id, portion: command.portion}]),
+         {:ok, slot} <- ensure_extra_slot(ctx, client, date, timezone, today, command.meal_slot, now) do
+      case Repo.insert(
+             DiaryEntry.insert_changeset(
+               client.business_id,
+               client.id,
+               slot.id,
+               resolved_entry_attrs(resolved, command)
+             )
+           ) do
+        {:ok, _entry} -> DayAssembler.assemble(ctx, client, date, :client, now)
+        {:error, changeset} -> {:rollback, changeset}
+      end
     end
   end
 
-  defp record_planned_item(ctx, client, date, command) do
-    timezone = applied_timezone(client)
-    today = LocalCalendar.to_local_date(DateTime.utc_now(), timezone)
+  defp record_planned_item(ctx, client, date, command, now) do
+    timezone = CorrectionPolicy.applied_timezone(client)
+    today = CorrectionPolicy.local_today(timezone, now)
 
-    with :ok <- ensure_writable(date, slot_timezone(client, date, command.meal_slot, timezone)),
-         {:ok, slot} <- ensure_planned_slot(ctx, client, date, timezone, today, command.meal_slot),
-         {:ok, item} <- find_frozen_item(slot, command.meal_item_id) do
-      fulfil_or_extra!(client, slot, item)
-      {:ok, assemble_day(ctx, client, date, :client)}
+    with :ok <- ensure_writable(date, slot_timezone(client, date, command.meal_slot, timezone), now),
+         {:ok, slot} <- ensure_planned_slot(ctx, client, date, timezone, today, command.meal_slot, now),
+         {:ok, item} <- find_frozen_item(slot, command.planned_item_ref),
+         :ok <- fulfil_or_extra(client, slot, item) do
+      DayAssembler.assemble(ctx, client, date, :client, now)
     end
   end
 
-  defp record_planned_option(ctx, client, date, meal_slot) do
-    timezone = applied_timezone(client)
-    today = LocalCalendar.to_local_date(DateTime.utc_now(), timezone)
+  defp record_planned_option(ctx, client, date, meal_slot, now) do
+    timezone = CorrectionPolicy.applied_timezone(client)
+    today = CorrectionPolicy.local_today(timezone, now)
 
-    with :ok <- ensure_writable(date, slot_timezone(client, date, meal_slot, timezone)),
-         {:ok, slot} <- ensure_planned_slot(ctx, client, date, timezone, today, meal_slot) do
-      fulfil_remaining_active!(client, slot)
-      {:ok, assemble_day(ctx, client, date, :client)}
+    with :ok <- ensure_writable(date, slot_timezone(client, date, meal_slot, timezone), now),
+         {:ok, slot} <- ensure_planned_slot(ctx, client, date, timezone, today, meal_slot, now),
+         :ok <- fulfil_remaining_active(client, slot) do
+      DayAssembler.assemble(ctx, client, date, :client, now)
     end
   end
 
-  defp record_planned_day(ctx, client, date) do
-    timezone = applied_timezone(client)
-    today = LocalCalendar.to_local_date(DateTime.utc_now(), timezone)
+  defp record_planned_day(ctx, client, date, now) do
+    timezone = CorrectionPolicy.applied_timezone(client)
+    today = CorrectionPolicy.local_today(timezone, now)
     frozen = frozen_by_slot(client, date)
 
-    with :ok <- ensure_day_writable(date, timezone, frozen) do
-      meal_slots = planned_day_meal_slots(ctx, date, today, frozen)
-      Enum.each(meal_slots, &fulfil_day_slot!(ctx, client, date, timezone, today, &1))
-      {:ok, assemble_day(ctx, client, date, :client)}
+    with :ok <- ensure_day_writable(date, timezone, frozen, now),
+         {:ok, meal_slots} <- planned_day_meal_slots(ctx, date, today, frozen),
+         :ok <- fulfil_day_slots(ctx, client, date, timezone, today, meal_slots, now) do
+      DayAssembler.assemble(ctx, client, date, :client, now)
     end
   end
 
-  defp ensure_day_writable(date, fallback_timezone, frozen) when map_size(frozen) == 0,
-    do: ensure_writable(date, fallback_timezone)
+  defp ensure_day_writable(date, fallback_timezone, frozen, now) when map_size(frozen) == 0,
+    do: ensure_writable(date, fallback_timezone, now)
 
-  defp ensure_day_writable(date, _fallback_timezone, frozen) do
+  defp ensure_day_writable(date, _fallback_timezone, frozen, now) do
     Enum.reduce_while(frozen, :ok, fn {_meal_slot, slot}, :ok ->
-      case ensure_writable(date, slot.applied_timezone) do
+      case ensure_writable(date, slot.applied_timezone, now) do
         :ok -> {:cont, :ok}
         {:error, _reason} = error -> {:halt, error}
       end
@@ -454,64 +519,83 @@ defmodule Easy.Nutrition.Diary do
     if Date.compare(date, today) == :eq do
       covered_meal_slots(ctx, date)
     else
-      Map.keys(frozen)
+      {:ok, Map.keys(frozen)}
     end
   end
 
   defp covered_meal_slots(ctx, date) do
     case Programming.resolve_client_coverage(ctx, date) do
-      {:ok, nil} -> []
-      {:ok, guidance} -> Enum.map(live_slots(guidance.day_pattern, guidance.plan, nil, true), & &1.meal_slot)
-      {:error, reason} -> Repo.rollback(reason)
+      {:ok, nil} -> {:ok, []}
+      {:ok, guidance} -> {:ok, guidance.day_pattern |> pattern_options() |> covered_slots()}
+      {:error, reason} -> {:rollback, reason}
     end
   end
 
-  defp fulfil_day_slot!(ctx, client, date, timezone, today, meal_slot) do
-    case ensure_planned_slot(ctx, client, date, timezone, today, meal_slot) do
-      {:ok, slot} -> fulfil_remaining_active!(client, slot)
+  defp covered_slots(options) do
+    covered = MapSet.new(options, & &1.meal_slot)
+    Enum.filter(MealSlot.values(), &MapSet.member?(covered, &1))
+  end
+
+  defp fulfil_day_slots(ctx, client, date, timezone, today, meal_slots, now) do
+    Enum.reduce_while(meal_slots, :ok, fn meal_slot, :ok ->
+      case fulfil_day_slot(ctx, client, date, timezone, today, meal_slot, now) do
+        :ok -> {:cont, :ok}
+        {:rollback, _reason} = rollback -> {:halt, rollback}
+      end
+    end)
+  end
+
+  defp fulfil_day_slot(ctx, client, date, timezone, today, meal_slot, now) do
+    case ensure_planned_slot(ctx, client, date, timezone, today, meal_slot, now) do
+      {:ok, slot} -> fulfil_remaining_active(client, slot)
       {:error, :cannot_start_past_slot} -> :ok
-      {:error, reason} -> Repo.rollback(reason)
+      {:error, reason} -> {:rollback, reason}
+      {:rollback, _reason} = rollback -> rollback
     end
   end
 
-  defp record_switch(ctx, client, date, command) do
-    timezone = applied_timezone(client)
+  defp record_switch(ctx, client, date, command, now) do
+    timezone = CorrectionPolicy.applied_timezone(client)
 
-    with :ok <- ensure_switchable(date, slot_timezone(client, date, command.meal_slot, timezone)),
-         {:ok, slot} <- ensure_switch_slot(ctx, client, date, timezone, command),
+    with :ok <- ensure_switchable(date, slot_timezone(client, date, command.meal_slot, timezone), now),
+         {:ok, slot} <- ensure_switch_slot(ctx, client, date, timezone, command, now),
          :ok <- ensure_revision(slot, command.expected_revision),
-         {:ok, option} <- find_frozen_option(slot, command.meal_id) do
-      activate_option!(slot, option)
-      {:ok, assemble_day(ctx, client, date, :client)}
+         {:ok, option} <- find_frozen_option(slot, command.meal_id),
+         {:ok, _slot} <- activate_option(slot, option) do
+      DayAssembler.assemble(ctx, client, date, :client, now)
     end
   end
 
-  defp ensure_switchable(date, timezone) do
-    today = LocalCalendar.to_local_date(DateTime.utc_now(), timezone)
-
-    cond do
-      Date.compare(date, today) == :gt -> {:error, :future_date}
-      Date.compare(date, today) == :lt -> {:error, :cannot_switch_past_slot}
-      true -> :ok
-    end
+  defp ensure_switchable(date, timezone, now) do
+    today = CorrectionPolicy.local_today(timezone, now)
+    CorrectionPolicy.validate_switch(date, today)
   end
 
-  defp ensure_switch_slot(ctx, client, date, timezone, command) do
+  defp ensure_switch_slot(ctx, client, date, timezone, command, now) do
     case locked_slot(client, date, command.meal_slot) do
       %DiarySlot{has_coverage: true, frozen_options: [_ | _]} = slot -> {:ok, slot}
       %DiarySlot{} -> {:error, :not_found}
-      nil -> freeze_slot_for_switch(ctx, client, date, timezone, command)
+      nil -> freeze_slot_for_switch(ctx, client, date, timezone, command, now)
     end
   end
 
-  defp freeze_slot_for_switch(ctx, client, date, timezone, command) do
+  defp freeze_slot_for_switch(ctx, client, date, timezone, command, now) do
     if command.expected_revision != 1 do
       {:error, stale_revision_changeset(%DiarySlot{revision: 1})}
     else
-      with {true, guidance} <- coverage_guidance(ctx, date),
+      with {:ok, {true, guidance}} <- coverage_guidance(ctx, date),
            true <- live_option?(guidance, command.meal_slot, command.meal_id) do
-        {:ok, create_frozen_slot!(client, date, timezone, command.meal_slot, command.meal_id, {true, guidance})}
+        create_frozen_slot(
+          client,
+          date,
+          timezone,
+          command.meal_slot,
+          command.meal_id,
+          {true, guidance},
+          now
+        )
       else
+        {:rollback, _reason} = rollback -> rollback
         _missing -> {:error, :not_found}
       end
     end
@@ -530,39 +614,39 @@ defmodule Easy.Nutrition.Diary do
     end
   end
 
-  defp activate_option!(%DiarySlot{active_frozen_option_id: id} = slot, %{id: id}), do: slot
+  defp activate_option(%DiarySlot{active_frozen_option_id: id} = slot, %{id: id}), do: {:ok, slot}
 
-  defp activate_option!(slot, option) do
+  defp activate_option(slot, option) do
     case Repo.update(
            DiarySlot.update_changeset(slot, %{
              active_frozen_option_id: option.id,
              revision: slot.revision + 1
            })
          ) do
-      {:ok, updated} -> updated
-      {:error, changeset} -> Repo.rollback(changeset)
+      {:ok, updated} -> {:ok, updated}
+      {:error, changeset} -> {:rollback, changeset}
     end
   end
 
-  defp record_replacement(ctx, client, date, command) do
-    timezone = applied_timezone(client)
-    today = LocalCalendar.to_local_date(DateTime.utc_now(), timezone)
+  defp record_replacement(ctx, client, date, command, now) do
+    timezone = CorrectionPolicy.applied_timezone(client)
+    today = CorrectionPolicy.local_today(timezone, now)
 
-    with :ok <- ensure_writable(date, slot_timezone(client, date, command.meal_slot, timezone)),
-         {:ok, slot} <- ensure_planned_slot(ctx, client, date, timezone, today, command.meal_slot),
-         {:ok, item} <- find_any_frozen_item(slot, command.meal_item_id),
+    with :ok <- ensure_writable(date, slot_timezone(client, date, command.meal_slot, timezone), now),
+         {:ok, slot} <- ensure_planned_slot(ctx, client, date, timezone, today, command.meal_slot, now),
+         {:ok, item} <- find_any_frozen_item(slot, command.planned_item_ref),
          entry <- lock_replacement_entry(client, slot, item),
          {:ok, [resolved]} <-
            Library.resolve_items(ctx, [%{kind: command.kind, id: command.id, portion: command.portion}]),
          {:ok, _entry} <- replace_fulfilment(client, slot, item, entry, resolved, command) do
-      {:ok, assemble_day(ctx, client, date, :client)}
+      DayAssembler.assemble(ctx, client, date, :client, now)
     end
   end
 
-  defp find_any_frozen_item(slot, meal_item_id) do
+  defp find_any_frozen_item(slot, planned_item_ref) do
     items = Enum.flat_map(slot.frozen_options, &planned_items_for_option/1)
 
-    case Enum.find(items, &(&1.id == meal_item_id or &1.source_meal_item_id == meal_item_id)) do
+    case Enum.find(items, &(&1.id == planned_item_ref or &1.source_meal_item_id == planned_item_ref)) do
       nil -> {:error, :not_found}
       item -> {:ok, item}
     end
@@ -606,25 +690,25 @@ defmodule Easy.Nutrition.Diary do
     end
   end
 
-  defp record_update(ctx, client, date, entry_id, command) do
+  defp record_update(ctx, client, date, entry_id, command, now) do
     with {:ok, entry} <- lock_entry(client, date, entry_id),
-         :ok <- ensure_writable(date, entry.diary_slot.applied_timezone),
+         :ok <- ensure_writable(date, entry.diary_slot.applied_timezone, now),
          :ok <- ensure_entry_revision(entry, command.expected_revision),
          {:ok, attrs} <- update_attrs(entry, command) do
       case Repo.update(DiaryEntry.update_changeset(entry, attrs)) do
-        {:ok, _entry} -> {:ok, assemble_day(ctx, client, date, :client)}
-        {:error, changeset} -> Repo.rollback(changeset)
+        {:ok, _entry} -> DayAssembler.assemble(ctx, client, date, :client, now)
+        {:error, changeset} -> {:rollback, changeset}
       end
     end
   end
 
-  defp record_delete(ctx, client, date, entry_id, expected_revision) do
+  defp record_delete(ctx, client, date, entry_id, expected_revision, now) do
     with {:ok, entry} <- lock_entry(client, date, entry_id),
-         :ok <- ensure_writable(date, entry.diary_slot.applied_timezone),
+         :ok <- ensure_writable(date, entry.diary_slot.applied_timezone, now),
          :ok <- ensure_entry_revision(entry, expected_revision) do
       case Repo.delete(entry) do
-        {:ok, _deleted} -> {:ok, assemble_day(ctx, client, date, :client)}
-        {:error, changeset} -> Repo.rollback(changeset)
+        {:ok, _deleted} -> DayAssembler.assemble(ctx, client, date, :client, now)
+        {:error, changeset} -> {:rollback, changeset}
       end
     end
   end
@@ -690,14 +774,9 @@ defmodule Easy.Nutrition.Diary do
 
   defp portion_scale(_entry, _portion), do: {:error, :invalid_portion}
 
-  defp ensure_writable(date, timezone) do
-    today = LocalCalendar.to_local_date(DateTime.utc_now(), timezone)
-
-    cond do
-      Date.compare(date, today) == :gt -> {:error, :future_date}
-      Date.diff(today, date) > @correction_days -> {:error, :outside_correction_window}
-      true -> :ok
-    end
+  defp ensure_writable(date, timezone, now) do
+    today = CorrectionPolicy.local_today(timezone, now)
+    CorrectionPolicy.validate_write(date, today)
   end
 
   defp slot_timezone(client, date, meal_slot, fallback) do
@@ -711,33 +790,44 @@ defmodule Easy.Nutrition.Diary do
     (slot && slot.applied_timezone) || fallback
   end
 
-  defp ensure_planned_slot(ctx, client, date, timezone, today, meal_slot) do
+  defp ensure_planned_slot(ctx, client, date, timezone, today, meal_slot, now) do
     case locked_slot(client, date, meal_slot) do
       %DiarySlot{has_coverage: true} = slot -> {:ok, slot}
       %DiarySlot{} -> {:error, :not_found}
-      nil -> start_planned_slot(ctx, client, date, timezone, today, meal_slot)
+      nil -> start_planned_slot(ctx, client, date, timezone, today, meal_slot, now)
     end
   end
 
-  defp start_planned_slot(ctx, client, date, timezone, today, meal_slot) do
-    cond do
-      Date.compare(date, today) != :eq ->
-        {:error, :cannot_start_past_slot}
+  defp ensure_extra_slot(ctx, client, date, timezone, today, meal_slot, now) do
+    case locked_slot(client, date, meal_slot) do
+      %DiarySlot{} = slot ->
+        {:ok, slot}
 
-      not scheduled_meal_slot?(ctx, date, meal_slot) ->
-        {:error, :not_found}
-
-      true ->
-        {:ok, create_frozen_slot!(client, date, timezone, meal_slot, nil, freeze_source(ctx, date, today))}
+      nil ->
+        with {:ok, source} <- freeze_source(ctx, date, today) do
+          create_frozen_slot(client, date, timezone, meal_slot, nil, source, now)
+        end
     end
   end
 
-  defp scheduled_meal_slot?(ctx, date, meal_slot) do
-    case coverage_guidance(ctx, date) do
-      {false, nil} -> false
-      {true, guidance} -> Enum.any?(live_slots(guidance.day_pattern, guidance.plan, nil, true), &(&1.meal_slot == meal_slot))
+  defp start_planned_slot(ctx, client, date, timezone, today, meal_slot, now) do
+    if Date.compare(date, today) != :eq do
+      {:error, :cannot_start_past_slot}
+    else
+      with {:ok, source} <- coverage_guidance(ctx, date),
+           true <- scheduled_meal_slot?(source, meal_slot) do
+        create_frozen_slot(client, date, timezone, meal_slot, nil, source, now)
+      else
+        {:rollback, _reason} = rollback -> rollback
+        false -> {:error, :not_found}
+      end
     end
   end
+
+  defp scheduled_meal_slot?({false, nil}, _meal_slot), do: false
+
+  defp scheduled_meal_slot?({true, guidance}, meal_slot),
+    do: Enum.any?(pattern_options(guidance.day_pattern), &(&1.meal_slot == meal_slot))
 
   defp ensure_revision(%DiarySlot{revision: revision}, revision), do: :ok
   defp ensure_revision(slot, _expected), do: {:error, stale_revision_changeset(slot)}
@@ -752,17 +842,17 @@ defmodule Easy.Nutrition.Diary do
     |> Map.put(:action, :stale_revision)
   end
 
-  defp find_frozen_item(slot, meal_item_id) do
+  defp find_frozen_item(slot, planned_item_ref) do
     ordered = Enum.sort_by(slot.frozen_options, &{&1.position, &1.id})
     items = planned_items_for_option(active_frozen_option(slot, ordered))
 
-    case Enum.find(items, &(&1.id == meal_item_id or &1.source_meal_item_id == meal_item_id)) do
+    case Enum.find(items, &(&1.id == planned_item_ref or &1.source_meal_item_id == planned_item_ref)) do
       nil -> {:error, :not_found}
       item -> {:ok, item}
     end
   end
 
-  defp fulfil_remaining_active!(client, slot) do
+  defp fulfil_remaining_active(client, slot) do
     ordered = Enum.sort_by(slot.frozen_options, &{&1.position, &1.id})
     active = active_frozen_option(slot, ordered)
     fulfilled = MapSet.new(slot.entries, & &1.frozen_planned_item_id)
@@ -770,40 +860,51 @@ defmodule Easy.Nutrition.Diary do
     active
     |> planned_items_for_option()
     |> Enum.reject(&MapSet.member?(fulfilled, &1.id))
-    |> Enum.each(&insert_fulfilment_or_copy!(client, slot, &1))
+    |> Enum.reduce_while(:ok, fn item, :ok ->
+      case insert_fulfilment_or_copy(client, slot, item) do
+        {:ok, _entry} -> {:cont, :ok}
+        {:rollback, _reason} = rollback -> {:halt, rollback}
+      end
+    end)
   end
 
   defp planned_items_for_option(nil), do: []
   defp planned_items_for_option(option), do: List.wrap(option.planned_items)
 
-  defp fulfil_or_extra!(client, slot, item) do
-    if Enum.any?(slot.entries, &(&1.frozen_planned_item_id == item.id)) do
-      insert_copy!(client, slot, item)
-    else
-      insert_fulfilment_or_copy!(client, slot, item)
+  defp fulfil_or_extra(client, slot, item) do
+    result =
+      if Enum.any?(slot.entries, &(&1.frozen_planned_item_id == item.id)) do
+        insert_copy(client, slot, item)
+      else
+        insert_fulfilment_or_copy(client, slot, item)
+      end
+
+    case result do
+      {:ok, _entry} -> :ok
+      {:rollback, _reason} = rollback -> rollback
     end
   end
 
-  defp insert_fulfilment_or_copy!(client, slot, item) do
+  defp insert_fulfilment_or_copy(client, slot, item) do
     case Repo.insert(DiaryEntry.insert_changeset(client.business_id, client.id, slot.id, fulfilment_attrs(item))) do
       {:ok, entry} ->
-        entry
+        {:ok, entry}
 
       {:error, changeset} ->
         # A partial unique index allows one fulfilment per planned item. Losing
         # that race is not an error: the entry still counts, as an unlinked copy.
         if Keyword.has_key?(changeset.errors, :frozen_planned_item_id) do
-          insert_copy!(client, slot, item)
+          insert_copy(client, slot, item)
         else
-          Repo.rollback(changeset)
+          {:rollback, changeset}
         end
     end
   end
 
-  defp insert_copy!(client, slot, item) do
+  defp insert_copy(client, slot, item) do
     case Repo.insert(DiaryEntry.insert_changeset(client.business_id, client.id, slot.id, copy_attrs(item))) do
-      {:ok, entry} -> entry
-      {:error, changeset} -> Repo.rollback(changeset)
+      {:ok, entry} -> {:ok, entry}
+      {:error, changeset} -> {:rollback, changeset}
     end
   end
 
@@ -858,116 +959,6 @@ defmodule Easy.Nutrition.Diary do
     }
   end
 
-  ## Idempotency ledger
-
-  defp command_fingerprint(method, date, segment, payload) do
-    DiaryCommandLedger.fingerprint(method, "/v1/client/nutrition-days/#{Date.to_iso8601(date)}/#{segment}", payload)
-  end
-
-  defp replay_or_run(client, key, fingerprint, fun) do
-    Repo.transaction(fn ->
-      case reserve_ledger(client, key, fingerprint) do
-        {:replay, outcome} -> outcome
-        :conflict -> Repo.rollback(:conflict)
-        {:run, ledger} -> run_and_store(ledger, fun)
-      end
-    end)
-    |> case do
-      {:ok, {status, _value} = outcome} when status in [:ok, :error] -> outcome
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  defp run_and_store(ledger, fun) do
-    outcome = fun.()
-
-    case outcome do
-      {:ok, _day} -> stamp_client_activity!(ledger.business_id, ledger.client_id)
-      {:error, _reason} -> :ok
-    end
-
-    store_outcome!(ledger, outcome)
-  end
-
-  defp stamp_client_activity!(business_id, client_id) do
-    Client
-    |> Client.last_active_stamp(business_id, client_id, DateTime.utc_now(:second))
-    |> Repo.update_all([])
-    |> case do
-      {1, nil} -> :ok
-      {0, nil} -> Repo.rollback(:not_found)
-    end
-  end
-
-  defp reserve_ledger(client, key, fingerprint) do
-    case lock_ledger(client, key) do
-      %DiaryCommandLedger{} = ledger -> compare_reserved(ledger, fingerprint)
-      nil -> insert_fresh_ledger(client, key, fingerprint)
-    end
-  end
-
-  defp insert_fresh_ledger(client, key, fingerprint) do
-    now = DateTime.utc_now(:second)
-
-    {_count, rows} =
-      Repo.insert_all(
-        DiaryCommandLedger,
-        [
-          %{
-            id: Ecto.UUID.generate(),
-            idempotency_key: key,
-            fingerprint: fingerprint,
-            outcome: nil,
-            expires_at: DateTime.add(now, DiaryCommandLedger.retention_days(), :day),
-            business_id: client.business_id,
-            client_id: client.id,
-            inserted_at: now,
-            updated_at: now
-          }
-        ],
-        on_conflict: :nothing,
-        returning: true
-      )
-
-    case rows do
-      [ledger] ->
-        {:run, ledger}
-
-      [] ->
-        # Our insert lost the (client, key) race: lock and compare against the
-        # winner's row. If it vanished before we locked it (the winner rolled
-        # back), the key is free again — retry the insert.
-        case lock_ledger(client, key) do
-          nil -> insert_fresh_ledger(client, key, fingerprint)
-          ledger -> compare_reserved(ledger, fingerprint)
-        end
-    end
-  end
-
-  defp compare_reserved(%DiaryCommandLedger{fingerprint: fingerprint} = ledger, fingerprint) do
-    if ledger.outcome do
-      {:replay, :erlang.binary_to_term(ledger.outcome)}
-    else
-      {:run, ledger}
-    end
-  end
-
-  defp compare_reserved(_ledger, _fingerprint), do: :conflict
-
-  defp lock_ledger(client, key) do
-    DiaryCommandLedger
-    |> DiaryCommandLedger.for_client(client.business_id, client.id)
-    |> DiaryCommandLedger.lock_key(key)
-    |> Repo.one()
-  end
-
-  defp store_outcome!(ledger, outcome) do
-    case Repo.update(DiaryCommandLedger.update_changeset(ledger, %{outcome: :erlang.term_to_binary(outcome)})) do
-      {:ok, _ledger} -> outcome
-      {:error, changeset} -> Repo.rollback(changeset)
-    end
-  end
-
   ## Freezing
 
   defp locked_slot(client, date, meal_slot) do
@@ -981,19 +972,27 @@ defmodule Easy.Nutrition.Diary do
     if Date.compare(date, today) == :eq do
       coverage_guidance(ctx, date)
     else
-      {false, nil}
+      {:ok, {false, nil}}
     end
   end
 
   defp coverage_guidance(ctx, date) do
     case Programming.resolve_client_coverage(ctx, date) do
-      {:ok, nil} -> {false, nil}
-      {:ok, guidance} -> {true, guidance}
-      {:error, reason} -> Repo.rollback(reason)
+      {:ok, nil} -> {:ok, {false, nil}}
+      {:ok, guidance} -> {:ok, {true, guidance}}
+      {:error, reason} -> {:rollback, reason}
     end
   end
 
-  defp create_frozen_slot!(client, date, timezone, meal_slot, active_meal_id, {has_coverage, guidance}) do
+  defp create_frozen_slot(
+         client,
+         date,
+         timezone,
+         meal_slot,
+         active_meal_id,
+         {has_coverage, guidance},
+         now
+       ) do
     attrs =
       %{
         local_date: date,
@@ -1004,20 +1003,21 @@ defmodule Easy.Nutrition.Diary do
       }
       |> Map.merge(frozen_target_attrs(guidance))
 
-    case insert_slot_row(client, attrs) do
+    case insert_slot_row(client, attrs, now) do
       {:inserted, slot} ->
-        freeze_slot!(slot, meal_slot, guidance, active_meal_id)
+        freeze_slot(slot, meal_slot, guidance, active_meal_id)
 
       :conflict ->
         # Lost the slot-identity race: a concurrent request created and froze
         # this slot; lock and use theirs.
-        locked_slot(client, date, meal_slot) || Repo.rollback(:conflict)
+        case locked_slot(client, date, meal_slot) do
+          %DiarySlot{} = slot -> {:ok, slot}
+          nil -> {:rollback, :conflict}
+        end
     end
   end
 
-  defp insert_slot_row(client, attrs) do
-    now = DateTime.utc_now(:second)
-
+  defp insert_slot_row(client, attrs, now) do
     {_count, rows} =
       Repo.insert_all(
         DiarySlot,
@@ -1053,9 +1053,9 @@ defmodule Easy.Nutrition.Diary do
     }
   end
 
-  defp freeze_slot!(slot, _meal_slot, nil, _active_meal_id), do: slot
+  defp freeze_slot(slot, _meal_slot, nil, _active_meal_id), do: {:ok, slot}
 
-  defp freeze_slot!(slot, meal_slot, %{plan: plan, day_pattern: pattern}, active_meal_id) do
+  defp freeze_slot(slot, meal_slot, %{plan: plan, day_pattern: pattern}, active_meal_id) do
     meals = Map.new(List.wrap(plan.meals), &{&1.id, &1})
 
     options =
@@ -1069,10 +1069,10 @@ defmodule Easy.Nutrition.Diary do
 
     case Repo.update(DiarySlot.update_changeset(slot, %{active_frozen_option_id: active && active.id})) do
       {:ok, updated} ->
-        Repo.preload(updated, [frozen_options: :planned_items, entries: []], force: true)
+        {:ok, Repo.preload(updated, [frozen_options: :planned_items, entries: []], force: true)}
 
       {:error, changeset} ->
-        Repo.rollback(changeset)
+        {:rollback, changeset}
     end
   end
 
@@ -1123,110 +1123,7 @@ defmodule Easy.Nutrition.Diary do
       )
   end
 
-  ## Read-model assembly
-
-  defp list_days(ctx, client, opts, actor) do
-    client = Repo.preload(client, :business)
-    offset = max(Keyword.get(opts, :offset, 0), 0)
-    limit = opts |> Keyword.get(:limit, 20) |> max(1) |> min(100)
-
-    with {:ok, dates} <- resolve_dates(opts, local_today(client)) do
-      page = dates |> Enum.drop(offset) |> Enum.take(limit)
-      {:ok, %{count: length(dates), nutrition_days: Enum.map(page, &assemble_day(ctx, client, &1, actor))}}
-    end
-  end
-
-  defp resolve_dates(opts, today) do
-    date = Keyword.get(opts, :date)
-    from_date = Keyword.get(opts, :from)
-    to_date = Keyword.get(opts, :to)
-
-    cond do
-      not is_nil(date) ->
-        {:ok, [date]}
-
-      not is_nil(from_date) and not is_nil(to_date) ->
-        range_dates(from_date, to_date)
-
-      not is_nil(from_date) or not is_nil(to_date) ->
-        {:error, :incomplete_date_range}
-
-      true ->
-        {:ok, [today]}
-    end
-  end
-
-  defp range_dates(from_date, to_date) do
-    cond do
-      Date.compare(from_date, to_date) == :gt ->
-        {:error, :invalid_date_range}
-
-      Date.diff(to_date, from_date) > 30 ->
-        {:error, :date_range_too_wide}
-
-      true ->
-        {:ok, Enum.to_list(Date.range(from_date, to_date))}
-    end
-  end
-
-  defp assemble_day(ctx, client, date, actor) do
-    frozen = frozen_by_slot(client, date)
-    timezone = day_timezone(Map.values(frozen), applied_timezone(client))
-    today = LocalCalendar.to_local_date(DateTime.utc_now(), timezone)
-
-    case live_guidance(ctx, client.id, date, today, actor) do
-      {:ok, nil} -> merge_day(date, today, timezone, nil, frozen)
-      {:ok, guidance} -> merge_day(date, today, timezone, guidance, frozen)
-    end
-  end
-
-  defp live_guidance(ctx, client_id, date, today, actor) do
-    if Date.compare(date, today) == :lt do
-      {:ok, nil}
-    else
-      resolve_guidance(ctx, client_id, date, actor)
-    end
-  end
-
-  defp resolve_guidance(ctx, _client_id, date, :client), do: Programming.resolve_client_coverage(ctx, date)
-  defp resolve_guidance(ctx, client_id, date, :coach), do: Programming.resolve_coverage_for_client(ctx, client_id, date)
-
-  defp merge_day(date, today, timezone, guidance, frozen) do
-    live =
-      if guidance do
-        guidance.day_pattern
-        |> live_slots(guidance.plan, timezone, write_eligible?(date, today))
-        |> Map.new(&{&1.meal_slot, &1})
-      else
-        %{}
-      end
-
-    slots =
-      MealSlot.values()
-      |> Enum.map(&merged_slot(&1, frozen, live))
-      |> Enum.reject(&is_nil/1)
-
-    targets = if(guidance, do: targets(guidance.plan), else: frozen_targets(frozen))
-    applied = day_timezone(slots, timezone)
-
-    %{
-      date: date,
-      plan_id: guidance && guidance.plan.id,
-      write_eligible: Enum.any?(slots, & &1.write_eligible) or (slots == [] and write_eligible?(date, today)),
-      applied_timezone: applied,
-      targets: targets,
-      slots: slots,
-      summary: day_summary(slots, targets)
-    }
-  end
-
-  defp merged_slot(slot, frozen, live) do
-    cond do
-      Map.has_key?(frozen, slot) -> frozen_slot_view(Map.fetch!(frozen, slot))
-      Map.has_key?(live, slot) -> Map.fetch!(live, slot)
-      true -> nil
-    end
-  end
+  ## Write-side snapshot shape helpers
 
   defp frozen_by_slot(client, date) do
     DiarySlot
@@ -1237,143 +1134,11 @@ defmodule Easy.Nutrition.Diary do
     |> Map.new(&{&1.meal_slot, &1})
   end
 
-  defp live_slots(nil, _plan, _timezone, _write_eligible), do: []
-
-  defp live_slots(pattern, plan, timezone, write_eligible) do
-    meals = Map.new(List.wrap(plan.meals), &{&1.id, &1})
-    grouped = Enum.group_by(List.wrap(pattern.meal_options), & &1.meal_slot)
-
-    MealSlot.values()
-    |> Enum.filter(&Map.has_key?(grouped, &1))
-    |> Enum.map(&slot_from_options(&1, Map.fetch!(grouped, &1), meals, timezone, write_eligible))
-  end
-
-  defp slot_from_options(slot, options, meals, timezone, write_eligible) do
-    ordered = Enum.sort_by(options, &{&1.position, &1.id})
-    default = hd(ordered)
-    items = meal_items(meals[default.nutrition_meal_id])
-
-    %{
-      meal_slot: slot,
-      meal_id: default.nutrition_meal_id,
-      revision: nil,
-      applied_timezone: timezone,
-      write_eligible: write_eligible,
-      planned_calories: NutrientTotals.sum(items).calories,
-      logged_calories: nil,
-      options: Enum.map(ordered, &option_data(&1, meals)),
-      rows: []
-    }
-  end
-
-  defp frozen_slot_view(%DiarySlot{} = slot) do
-    ordered = Enum.sort_by(slot.frozen_options, &{&1.position, &1.id})
-    active = active_frozen_option(slot, ordered)
-    items = if active, do: active.planned_items, else: []
-    today = LocalCalendar.to_local_date(DateTime.utc_now(), slot.applied_timezone)
-
-    %{
-      meal_slot: slot.meal_slot,
-      meal_id: active && active.source_meal_id,
-      revision: slot.revision,
-      applied_timezone: slot.applied_timezone,
-      write_eligible: write_eligible?(slot.local_date, today),
-      planned_calories: NutrientTotals.sum(items).calories,
-      logged_calories: NutrientTotals.sum(slot.entries).calories,
-      options: Enum.map(ordered, &frozen_option_data/1),
-      rows: frozen_rows(slot, active, today)
-    }
-  end
-
   defp active_frozen_option(%DiarySlot{active_frozen_option_id: id}, options) when not is_nil(id) do
     Enum.find(options, &(&1.id == id)) || List.first(options)
   end
 
   defp active_frozen_option(_slot, options), do: List.first(options)
-
-  defp frozen_rows(%DiarySlot{has_coverage: false} = slot, _active, _today) do
-    Enum.map(slot.entries, &row(:recorded, nil, &1))
-  end
-
-  defp frozen_rows(%DiarySlot{} = slot, active, today) do
-    planned = if active, do: List.wrap(active.planned_items), else: []
-    planned_ids = MapSet.new(planned, & &1.id)
-    extras = Enum.reject(slot.entries, &MapSet.member?(planned_ids, &1.frozen_planned_item_id))
-
-    Enum.map(planned, &planned_row(&1, slot, today)) ++ Enum.map(extras, &row(:added, nil, &1))
-  end
-
-  defp planned_row(item, slot, today) do
-    entry = Enum.find(slot.entries, &(&1.frozen_planned_item_id == item.id))
-    row(planned_status(entry, item, slot.local_date, today), frozen_item_data(item), entry)
-  end
-
-  defp row(status, planned, entry) do
-    %{status: status, planned: planned, entry: entry && entry_data(entry)}
-  end
-
-  defp option_data(%MealOption{} = option, meals) do
-    meal = meals[option.nutrition_meal_id]
-    items = meal_items(meal)
-
-    %{
-      meal_id: option.nutrition_meal_id,
-      meal_name: meal && meal.name,
-      position: option.position,
-      items: Enum.map(items, &item_data/1)
-    }
-  end
-
-  defp frozen_option_data(%DiaryFrozenOption{} = option) do
-    %{
-      meal_id: option.source_meal_id,
-      meal_name: option.meal_name,
-      position: option.position,
-      items: Enum.map(option.planned_items, &frozen_item_data/1)
-    }
-  end
-
-  defp item_data(%MealItem{} = item) do
-    %{
-      meal_item_id: item.id,
-      kind: item_kind(item),
-      name: item_name(item),
-      food_id: item.food_id,
-      recipe_id: item.recipe_id,
-      position: item.position,
-      portion: portion_data(item),
-      nutrients: NutrientTotals.from_fields(item)
-    }
-  end
-
-  defp frozen_item_data(%DiaryFrozenPlannedItem{} = item) do
-    %{
-      meal_item_id: item.id,
-      kind: item.kind,
-      name: item.display_name,
-      food_id: item.food_id,
-      recipe_id: item.recipe_id,
-      position: item.position,
-      portion: portion_data(item),
-      nutrients: NutrientTotals.from_fields(item)
-    }
-  end
-
-  defp entry_data(%DiaryEntry{} = entry) do
-    %{
-      id: entry.id,
-      kind: entry.kind,
-      name: entry.display_name,
-      food_id: entry.food_id,
-      recipe_id: entry.recipe_id,
-      portion: portion_data(entry),
-      nutrients: NutrientTotals.from_fields(entry),
-      notes: entry.notes,
-      revision: entry.revision,
-      inserted_at: entry.inserted_at,
-      updated_at: entry.updated_at
-    }
-  end
 
   defp item_kind(%MealItem{food_id: food_id}) when not is_nil(food_id), do: :food
   defp item_kind(%MealItem{}), do: :recipe
@@ -1382,118 +1147,6 @@ defmodule Easy.Nutrition.Diary do
   defp item_name(%MealItem{recipe: %Recipe{name: name}}), do: name
   defp item_name(_item), do: nil
 
-  defp portion_data(item) do
-    %{
-      kind: item.portion_kind,
-      grams: item.weight_g,
-      amount: item.amount,
-      unit: item.unit,
-      label: item.serving_label
-    }
-  end
-
   defp meal_items(%Meal{meal_items: items}) when is_list(items), do: items
   defp meal_items(_meal), do: []
-
-  defp targets(plan) do
-    %{
-      calories: plan.target_calories,
-      protein_g: plan.target_protein_g,
-      carbs_g: plan.target_carbs_g,
-      fat_g: plan.target_fat_g,
-      fiber_g: plan.target_fiber_g
-    }
-  end
-
-  defp frozen_targets(frozen) do
-    case frozen |> Map.values() |> Enum.find(& &1.has_coverage) do
-      nil ->
-        %{calories: nil, protein_g: nil, carbs_g: nil, fat_g: nil, fiber_g: nil}
-
-      slot ->
-        %{
-          calories: slot.target_calories,
-          protein_g: slot.target_protein_g,
-          carbs_g: slot.target_carbs_g,
-          fat_g: slot.target_fat_g,
-          fiber_g: slot.target_fiber_g
-        }
-    end
-  end
-
-  defp day_timezone(slots, fallback) do
-    Enum.find_value(MealSlot.values(), fallback, fn meal_slot ->
-      case Enum.find(slots, &(&1.meal_slot == meal_slot and is_binary(&1.applied_timezone))) do
-        %{applied_timezone: timezone} -> timezone
-        _missing -> nil
-      end
-    end)
-  end
-
-  defp local_today(%Client{} = client) do
-    LocalCalendar.to_local_date(DateTime.utc_now(), applied_timezone(client))
-  end
-
-  defp applied_timezone(%Client{} = client) do
-    LocalCalendar.applied_timezone(client.timezone, business_timezone(client))
-  end
-
-  defp business_timezone(%Client{business: %Easy.Orgs.Business{timezone: timezone}}), do: timezone
-  defp business_timezone(_client), do: nil
-
-  ## Status derivation
-
-  defp write_eligible?(date, today), do: Date.diff(today, date) in 0..@correction_days
-
-  defp planned_status(nil, _item, date, today) do
-    if Date.compare(date, today) == :lt, do: :skipped, else: :pending
-  end
-
-  defp planned_status(entry, item, _date, _today) do
-    if same_source?(entry, item), do: :as_planned, else: :swapped
-  end
-
-  defp same_source?(entry, item) do
-    entry.kind == item.kind and entry.source_food_id == item.source_food_id and
-      entry.source_recipe_id == item.source_recipe_id
-  end
-
-  defp day_summary(slots, targets) do
-    rows = Enum.flat_map(slots, & &1.rows)
-    entries = for %{entry: entry} when not is_nil(entry) <- rows, do: entry
-    logged = NutrientTotals.combine(Enum.map(entries, & &1.nutrients))
-    planned = NutrientTotals.combine(Enum.map(Enum.flat_map(slots, &active_option_items/1), & &1.nutrients))
-
-    %{
-      logged: logged,
-      planned: planned,
-      counts: status_counts(rows),
-      has_intake: entries != [],
-      adherence: calorie_adherence(entries, logged.calories, targets.calories)
-    }
-  end
-
-  defp active_option_items(slot) do
-    option = Enum.find(slot.options, &(&1.meal_id == slot.meal_id)) || List.first(slot.options)
-    (option && option.items) || []
-  end
-
-  defp status_counts(rows) do
-    Map.merge(
-      %{as_planned: 0, swapped: 0, added: 0, recorded: 0, pending: 0, skipped: 0},
-      Enum.frequencies_by(rows, & &1.status)
-    )
-  end
-
-  defp calorie_adherence([], _logged, _target), do: :none
-
-  defp calorie_adherence(_entries, logged, target)
-       when is_number(logged) and is_number(target) and target > 0,
-       do: calorie_band(logged / target)
-
-  defp calorie_adherence(_entries, _logged, _target), do: nil
-
-  defp calorie_band(pct) when pct < 0.9, do: :under
-  defp calorie_band(pct) when pct > 1.1, do: :over
-  defp calorie_band(_pct), do: :on
 end

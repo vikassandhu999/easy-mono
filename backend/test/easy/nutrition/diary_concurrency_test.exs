@@ -143,7 +143,7 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
   end
 
   test "simultaneous switches with the same revision keep one winner", ctx do
-    today = Date.utc_today()
+    today = Easy.LocalCalendar.to_local_date(DateTime.utc_now(), "Asia/Kolkata")
     parent = self()
     {_slot, option_b_id} = seed_two_frozen_options!(ctx.client, ctx.food, ctx.coach, today)
     attrs = %{meal_slot: :breakfast, meal_id: option_b_id, expected_revision: 1}
@@ -293,7 +293,7 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
       Diary.log_client_planned_item(
         ctx.ctx,
         today,
-        %{meal_slot: :breakfast, meal_item_id: planned_item.id},
+        %{meal_slot: :breakfast, planned_item_ref: planned_item.id},
         Ecto.UUID.generate()
       )
 
@@ -316,7 +316,7 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
           today,
           %{
             meal_slot: :breakfast,
-            meal_item_id: row.planned.meal_item_id,
+            planned_item_ref: row.planned.planned_item_ref,
             food_id: substitute.id,
             portion: %{kind: :gram, grams: 50.0},
             expected_revision: entry.revision

@@ -240,7 +240,7 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionDayOptionItem do
     type: :object,
     additionalProperties: false,
     properties: %{
-      meal_item_id: %Schema{type: :string, format: :uuid},
+      planned_item_ref: %Schema{type: :string, format: :uuid},
       kind: %Schema{type: :string, enum: ["food", "recipe"]},
       name: %Schema{type: :string, nullable: true},
       food_id: %Schema{type: :string, format: :uuid, nullable: true},
@@ -249,7 +249,7 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionDayOptionItem do
       portion: NutritionPortion,
       nutrients: NutrientTotals
     },
-    required: [:meal_item_id, :kind, :name, :position, :portion, :nutrients]
+    required: [:planned_item_ref, :kind, :name, :position, :portion, :nutrients]
   })
 end
 
@@ -377,12 +377,12 @@ defmodule EasyWeb.OpenApi.Schemas.DiaryLogPlannedItemRequest do
       additionalProperties: false,
       properties: %{
         meal_slot: %Schema{type: :string, enum: Easy.Nutrition.MealSlot.names()},
-        meal_item_id: %Schema{type: :string, format: :uuid}
+        planned_item_ref: %Schema{type: :string, format: :uuid}
       },
-      required: [:meal_slot, :meal_item_id],
+      required: [:meal_slot, :planned_item_ref],
       example: %{
         "meal_slot" => "breakfast",
-        "meal_item_id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c"
+        "planned_item_ref" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c"
       }
     },
     struct?: false
@@ -448,17 +448,17 @@ defmodule EasyWeb.OpenApi.Schemas.DiaryReplacePlannedItemRequest do
       additionalProperties: false,
       properties: %{
         meal_slot: %Schema{type: :string, enum: Easy.Nutrition.MealSlot.names()},
-        meal_item_id: %Schema{type: :string, format: :uuid},
+        planned_item_ref: %Schema{type: :string, format: :uuid},
         food_id: %Schema{type: :string, format: :uuid, nullable: true},
         recipe_id: %Schema{type: :string, format: :uuid, nullable: true},
         portion: NutritionPortionInput,
         notes: %Schema{type: :string, maxLength: 255, nullable: true},
         expected_revision: %Schema{type: :integer, minimum: 1}
       },
-      required: [:meal_slot, :meal_item_id, :portion, :expected_revision],
+      required: [:meal_slot, :planned_item_ref, :portion, :expected_revision],
       example: %{
         "meal_slot" => "breakfast",
-        "meal_item_id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+        "planned_item_ref" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
         "food_id" => "a1b2c3d4-74a4-4f9f-b1e9-a9bb07ab4a7c",
         "portion" => %{"kind" => "gram", "grams" => 80},
         "expected_revision" => 1

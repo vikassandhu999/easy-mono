@@ -33,28 +33,28 @@ type SlotRowBase = {
 
 export type ChecklistSlotRow = SlotRowBase & {
   entry: null;
-  mealItemId: string;
+  plannedItemRef: string;
   plannedItem: NutritionDayOptionItem;
   status: 'checklist';
 };
 
 export type PlannedSlotRow = SlotRowBase & {
   entry: NutritionDayEntry | null;
-  mealItemId: string;
+  plannedItemRef: string;
   plannedItem: NutritionDayOptionItem;
   status: 'as_planned' | 'pending' | 'swapped';
 };
 
 export type ExtraSlotRow = SlotRowBase & {
   entry: NutritionDayEntry;
-  mealItemId: null;
+  plannedItemRef: null;
   plannedItem: null;
   status: 'added' | 'recorded';
 };
 
 export type SkippedSlotRow = SlotRowBase & {
   entry: null;
-  mealItemId: string;
+  plannedItemRef: string;
   plannedItem: NutritionDayOptionItem;
   status: 'skipped';
 };
@@ -65,7 +65,7 @@ export type SheetTarget =
   | {
       date: string;
       mealId: null | string;
-      mealItemId: string;
+      plannedItemRef: string;
       mode: 'planned';
       name: string;
       plannedItem: NutritionDayOptionItem;
@@ -76,7 +76,7 @@ export type SheetTarget =
       date: string;
       loggedEntry: NutritionDayEntry;
       mealId: null | string;
-      mealItemId: null | string;
+      plannedItemRef: null | string;
       mode: 'logged';
       name: string;
       plannedItem: null | NutritionDayOptionItem;
@@ -90,7 +90,7 @@ export function sheetTargetFromRow(date: string, slot: SlotView, row: SlotRow): 
       return {
         date,
         mealId: slot.mealId,
-        mealItemId: row.mealItemId,
+        plannedItemRef: row.plannedItemRef,
         mode: 'planned',
         name: row.name,
         plannedItem: row.plannedItem,
@@ -103,7 +103,7 @@ export function sheetTargetFromRow(date: string, slot: SlotView, row: SlotRow): 
         date,
         loggedEntry: row.entry,
         mealId: slot.mealId,
-        mealItemId: null,
+        plannedItemRef: null,
         mode: 'logged',
         name: row.name,
         plannedItem: null,
@@ -119,7 +119,7 @@ export function sheetTargetFromRow(date: string, slot: SlotView, row: SlotRow): 
           date,
           loggedEntry: row.entry,
           mealId: slot.mealId,
-          mealItemId: row.mealItemId,
+          plannedItemRef: row.plannedItemRef,
           mode: 'logged',
           name: row.name,
           plannedItem: row.plannedItem,
@@ -130,7 +130,7 @@ export function sheetTargetFromRow(date: string, slot: SlotView, row: SlotRow): 
       return {
         date,
         mealId: slot.mealId,
-        mealItemId: row.mealItemId,
+        plannedItemRef: row.plannedItemRef,
         mode: 'planned',
         name: row.name,
         plannedItem: row.plannedItem,
@@ -183,7 +183,7 @@ function checklistRow(item: NutritionDayOptionItem): SlotRow {
   return {
     calories: plannedItemCalories(item),
     entry: null,
-    mealItemId: item.meal_item_id,
+    plannedItemRef: item.planned_item_ref,
     name: item.name ?? 'Food',
     plannedItem: item,
     status: 'checklist',
@@ -203,7 +203,7 @@ function diaryRow(row: NutritionDayRow): SlotRow {
       return {
         calories: entry.nutrients.calories ?? null,
         entry,
-        mealItemId: null,
+        plannedItemRef: null,
         name: entry.name ?? 'Food',
         plannedItem: null,
         status: row.status,
@@ -216,7 +216,7 @@ function diaryRow(row: NutritionDayRow): SlotRow {
       return {
         calories: plannedItemCalories(planned),
         entry: null,
-        mealItemId: planned.meal_item_id,
+        plannedItemRef: planned.planned_item_ref,
         name: planned.name ?? 'Planned item',
         plannedItem: planned,
         status: 'skipped',
@@ -231,7 +231,7 @@ function diaryRow(row: NutritionDayRow): SlotRow {
       return {
         calories: entry?.nutrients.calories ?? plannedItemCalories(planned),
         entry,
-        mealItemId: planned.meal_item_id,
+        plannedItemRef: planned.planned_item_ref,
         name: entry?.name ?? planned.name ?? 'Food',
         plannedItem: planned,
         status: row.status,

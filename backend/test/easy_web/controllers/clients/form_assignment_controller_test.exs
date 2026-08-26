@@ -1,8 +1,6 @@
 defmodule EasyWeb.Clients.FormAssignmentControllerTest do
   use Easy.ConnCase
 
-  import OpenApiSpex.TestAssertions
-
   alias Easy.Forms.FormAssignment
   alias Easy.Forms.FormSubmission
   alias Easy.Repo
@@ -25,6 +23,20 @@ defmodule EasyWeb.Clients.FormAssignmentControllerTest do
       assert data["id"] == assignment.id
       assert data["client_id"] == client.id
       assert data["form_template"]["id"] == template.id
+      assert data["form_template"]["response_count"] == 0
+    end
+
+    test "rejects unknown query parameters" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, user: insert(:user))
+
+      conn =
+        build_conn()
+        |> authenticate_client(client)
+        |> get("/v1/client/form-assignments?unexpected=true")
+
+      assert %{"error_detail" => %{"fields" => %{"$" => ["must be empty"]}}} =
+               json_response(conn, 422)
     end
   end
 
@@ -78,7 +90,21 @@ defmodule EasyWeb.Clients.FormAssignmentControllerTest do
       assert latest["answers"] == %{"meal_prep_ability" => "high"}
       assert latest["question_snapshot"] == template.sections
       assert latest["attachments"] == []
-      assert_schema(latest, "ClientProfileFormSubmission", EasyWeb.ApiSpec.spec())
+    end
+
+    test "rejects unknown query parameters" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, user: insert(:user))
+      template = insert(:form_template, business: coach.business)
+      assignment = insert(:form_assignment, business: coach.business, client: client, form_template: template)
+
+      conn =
+        build_conn()
+        |> authenticate_client(client)
+        |> get("/v1/client/form-assignments/#{assignment.id}?unexpected=true")
+
+      assert %{"error_detail" => %{"fields" => %{"$" => ["must be empty"]}}} =
+               json_response(conn, 422)
     end
 
     test "does not return another client's assignment" do
@@ -201,8 +227,7 @@ defmodule EasyWeb.Clients.FormAssignmentControllerTest do
                "duration_ms" => nil
              }
 
-      assert_schema(data, "Attachment", EasyWeb.ApiSpec.spec())
-      assert_schema(submission, "ClientProfileFormSubmission", EasyWeb.ApiSpec.spec())
+      assert submission["form_assignment_id"] == assignment.id
     end
 
     test "does not submit another client's assignment" do
@@ -243,6 +268,27 @@ defmodule EasyWeb.Clients.FormAssignmentControllerTest do
       assert json_response(conn, 422)
 
       assert Repo.get!(FormAssignment, assignment.id).status == :assigned
+      refute Repo.get_by(FormSubmission, form_assignment_id: assignment.id)
+    end
+
+    test "rejects unknown body fields" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, user: insert(:user))
+      template = insert(:form_template, business: coach.business)
+      assignment = insert(:form_assignment, business: coach.business, client: client, form_template: template)
+
+      conn =
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> authenticate_client(client)
+        |> post("/v1/client/form-assignments/#{assignment.id}/submit", %{
+          "answers" => %{"meal_prep_ability" => "high"},
+          "unexpected" => true
+        })
+
+      assert %{"error_detail" => %{"fields" => %{"unexpected" => ["is unknown"]}}} =
+               json_response(conn, 422)
+
       refute Repo.get_by(FormSubmission, form_assignment_id: assignment.id)
     end
 

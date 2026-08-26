@@ -214,8 +214,8 @@ assert.equal(completedCheckIns(undefined), 0);
 
 // — the weight trend: CD-OV shows ▼ 1.2 kg in 4 weeks ——————————————————————
 const entries: WeightTrendEntry[] = [
-  {date: '2026-07-21', id: 'd', unit: 'kg', value: 72.4},
-  {date: '2026-06-23', id: 'a', unit: 'kg', value: 73.6},
+  {date: '2026-07-21', id: 'd', unit: 'kg', value: '72.4'},
+  {date: '2026-06-23', id: 'a', unit: 'kg', value: '73.6'},
 ];
 const trend = weightTrend(entries, 68);
 assert.equal(trend?.direction, 'down');
@@ -228,8 +228,8 @@ assert.equal(weightTrend(entries.slice(0, 1), 68)?.direction, 'flat', 'one entry
 assert.equal(
   weightTrend(
     [
-      {date: '2026-07-01', value: 70, unit: 'kg', id: 'x'},
-      {date: '2026-07-21', value: 70, unit: 'kg', id: 'y'},
+      {date: '2026-07-01', value: '70', unit: 'kg', id: 'x'},
+      {date: '2026-07-21', value: '70', unit: 'kg', id: 'y'},
     ],
     null,
   )?.direction,

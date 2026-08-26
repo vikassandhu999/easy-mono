@@ -65,6 +65,11 @@ defmodule EasyWeb.Coaches.EquipmentControllerTest do
       assert description == "Returned"
     end
 
+    test "returns 422 when query has an extra key", %{conn: conn} do
+      conn = get(conn, "/v1/coach/training-equipment", %{"search" => "x", "nope" => "1"})
+      assert %{"error_code" => "invalid_input"} = json_response(conn, 422)
+    end
+
     test "returns 403 without auth token" do
       conn = build_conn() |> get("/v1/coach/training-equipment")
       assert json_response(conn, 403)

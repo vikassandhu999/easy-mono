@@ -1,0 +1,118 @@
+defmodule EasyWeb.Types.Attachment do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:id) => String.t(),
+          required(:content_type) =>
+            :"image/jpeg"
+            | :"image/png"
+            | :"image/webp"
+            | :"image/heic"
+            | :"video/mp4"
+            | :"video/webm"
+            | :"video/quicktime"
+            | :"audio/webm"
+            | :"audio/mp4"
+            | :"audio/mpeg",
+          required(:byte_size) => pos_integer(),
+          required(:duration_ms) => pos_integer() | nil
+        }
+end
+
+defmodule EasyWeb.Types.FormSubmissionEmbedSnapshot do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:form_assignment_id) => String.t(),
+          required(:title) => String.t(),
+          required(:submitted_at) => DateTime.t()
+        }
+end
+
+defmodule EasyWeb.Types.ChatMessageEmbed do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:type) => :form_submission,
+          required(:id) => String.t(),
+          required(:snapshot) => EasyWeb.Types.FormSubmissionEmbedSnapshot.t()
+        }
+end
+
+defmodule EasyWeb.Types.ChatMessageEmbedRequest do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:type) => :form_submission,
+          required(:id) => String.t()
+        }
+end
+
+defmodule EasyWeb.Types.ChatMessage do
+  use EasyWeb.Type
+
+  alias Easy.Chat.Message
+  alias EasyWeb.Types.Attachment
+
+  @type t :: %{
+          required(:id) => String.t(),
+          required(:conversation_id) => String.t(),
+          required(:sender_type) => :coach | :client,
+          required(:sender_id) => String.t(),
+          required(:body) => String.t() | nil,
+          required(:attachments) => [EasyWeb.Types.Attachment.t()],
+          required(:embed) => EasyWeb.Types.ChatMessageEmbed.t() | nil,
+          required(:inserted_at) => DateTime.t()
+        }
+
+  @type list_query :: %{
+          optional(:before) => String.t(),
+          optional(:limit) => integer()
+        }
+
+  @type coach_create :: %{
+          optional(:body) => String.t() | nil,
+          optional(:attachment_ids) => [String.t()],
+          optional(:embed) => EasyWeb.Types.ChatMessageEmbedRequest.t() | nil
+        }
+
+  @type client_create :: %{
+          optional(:body) => String.t() | nil,
+          optional(:attachment_ids) => [String.t()]
+        }
+
+  @spec format(Message.t()) :: t()
+  def format(%Message{embed_type: nil} = message), do: message_data(message, nil)
+
+  def format(%Message{embed_type: :form_submission} = message) do
+    embed = %{
+      type: :form_submission,
+      id: message.embed_id,
+      snapshot: message.embed_snapshot
+    }
+
+    message_data(message, embed)
+  end
+
+  defp message_data(message, embed) do
+    %{
+      id: message.id,
+      conversation_id: message.conversation_id,
+      sender_type: message.sender_type,
+      sender_id: message.sender_id,
+      body: message.body,
+      attachments: Enum.map(message.attachments, &Attachment.take/1),
+      embed: embed,
+      inserted_at: message.inserted_at
+    }
+  end
+end
+
+defmodule EasyWeb.Types.ChatMessagePage do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:data) => [EasyWeb.Types.ChatMessage.t()],
+          required(:has_more) => boolean()
+        }
+end

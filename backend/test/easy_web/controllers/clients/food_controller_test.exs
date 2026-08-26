@@ -1,8 +1,6 @@
 defmodule EasyWeb.Clients.FoodControllerTest do
   use Easy.ConnCase
 
-  import OpenApiSpex.TestAssertions
-
   setup do
     coach = insert(:coach)
     client = insert(:client, creator: coach, business: coach.business)
@@ -12,6 +10,12 @@ defmodule EasyWeb.Clients.FoodControllerTest do
   end
 
   describe "GET /v1/client/nutrition-foods" do
+    test "rejects unknown query parameters", ctx do
+      conn = get(ctx.conn, "/v1/client/nutrition-foods", %{"unknown" => "value"})
+
+      assert json_response(conn, 422)
+    end
+
     test "lists business and system foods", ctx do
       insert(:food, creator: ctx.coach, business: ctx.business, name: "Business Oats")
       insert(:food, name: "System Rice", business: nil, creator: nil)
@@ -60,16 +64,19 @@ defmodule EasyWeb.Clients.FoodControllerTest do
 
   describe "GET /v1/client/nutrition-foods/:id" do
     test "returns food detail", ctx do
-      food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Dal")
+      media = insert(:library_media, business: ctx.business, uploaded_by_id: ctx.coach.id)
+      food = insert(:food, creator: ctx.coach, business: ctx.business, media: media, name: "Dal")
 
       conn = get(ctx.conn, "/v1/client/nutrition-foods/#{food.id}")
       assert %{"data" => data} = json_response(conn, 200)
-      assert_schema(data, "Food", EasyWeb.ApiSpec.spec())
       assert data["id"] == food.id
       assert data["name"] == "Dal"
+      assert data["creator_id"] == ctx.coach.id
       assert data["revision"] == 1
       assert data["nutrients"]["complete"] == true
       assert data["calories_per_100g"] != nil
+      assert data["media"]["id"] == media.id
+      assert data["media"]["content_type"] == media.content_type
     end
 
     test "rounds canonical nutrients to one decimal", ctx do

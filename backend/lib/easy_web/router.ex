@@ -151,8 +151,8 @@ defmodule EasyWeb.Router do
     post "/form-assignments/:id/remind", FormAssignmentController, :remind
 
     # Client-scoped plan lists
-    get "/clients/:client_id/training-plans", ClientPlanController, :training_plans
-    get "/clients/:client_id/nutrition-plans", ClientPlanController, :nutrition_plans
+    get "/clients/:client_id/training-plans", ClientTrainingPlanController, :index
+    get "/clients/:client_id/nutrition-plans", ClientNutritionPlanController, :index
     get "/clients/:client_id/weight_entries", ClientWeightEntryController, :index
 
     get "/nutrition-foods", FoodController, :index

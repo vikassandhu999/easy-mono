@@ -35,8 +35,10 @@ defmodule EasyWeb.TypedRoute.Dump do
   def remote(nil, _mod), do: nil
 
   def remote(value, mod) do
+    Code.ensure_loaded!(mod)
+
     cond do
-      function_exported?(mod, :format, 1) and is_struct(value) -> mod.format(value)
+      function_exported?(mod, :format, 1) -> mod.format(value)
       function_exported?(mod, :take, 1) -> mod.take(value)
       true -> value
     end
@@ -45,6 +47,7 @@ defmodule EasyWeb.TypedRoute.Dump do
   @spec dump(term(), Type.ir()) :: term()
   def dump(value, {:remote, mod, name}) do
     ir = Type.fetch!(mod, name)
+    Code.ensure_loaded!(mod)
 
     if name == :t and (is_struct(value) or function_exported?(mod, :format, 1)) do
       dump(remote(value, mod), ir)
@@ -95,13 +98,45 @@ defmodule EasyWeb.TypedRoute.Dump do
   defp dump_scalar(value, :json), do: value
   defp dump_scalar(value, _ir), do: value
 
+  defp matches?(value, {:remote, mod, :t}) when is_struct(value) do
+    Code.ensure_loaded!(mod)
+
+    function_exported?(mod, :format, 1) or function_exported?(mod, :take, 1) or
+      matches?(value, Type.fetch!(mod, :t))
+  end
+
+  defp matches?(value, {:remote, mod, name}), do: matches?(value, Type.fetch!(mod, name))
   defp matches?(nil, nil), do: true
-  defp matches?(nil, {:union, variants}), do: nil in variants
-  defp matches?(value, {:remote, _mod, :t}), do: is_struct(value) or is_map(value)
+  defp matches?(value, {:union, variants}), do: Enum.any?(variants, &matches?(value, &1))
+
+  defp matches?(value, {:record, fields}) when is_map(value) do
+    Enum.all?(fields, &record_field_matches?(value, &1))
+  end
+
+  defp matches?(value, {:dict, _inner}), do: is_map(value)
+  defp matches?(value, {:list, _inner}), do: is_list(value)
   defp matches?(value, :string), do: is_binary(value)
   defp matches?(value, :boolean), do: is_boolean(value)
-  defp matches?(value, {:atom, atom}), do: value == atom
+  defp matches?(value, :integer), do: is_integer(value)
+  defp matches?(value, :pos_integer), do: is_integer(value) and value > 0
+  defp matches?(value, :non_neg_integer), do: is_integer(value) and value >= 0
+  defp matches?(value, :number), do: is_number(value)
+  defp matches?(value, :float), do: is_number(value)
+  defp matches?(%DateTime{}, :datetime), do: true
+  defp matches?(%Date{}, :date), do: true
+  defp matches?(%Decimal{}, :decimal), do: true
+  defp matches?(value, :datetime), do: is_binary(value)
+  defp matches?(value, :date), do: is_binary(value)
+  defp matches?(value, :decimal), do: is_binary(value)
+  defp matches?(value, {:atom, atom}), do: value == atom or value == Atom.to_string(atom)
+  defp matches?(_value, :json), do: true
   defp matches?(_, _), do: false
+
+  defp record_field_matches?(map, {name, :required, ir}) do
+    has_key?(map, name) and matches?(fetch(map, name), ir)
+  end
+
+  defp record_field_matches?(_map, {_name, :optional, _ir}), do: true
 
   defp match_remote_t?({:remote, _mod, :t}), do: true
   defp match_remote_t?(_), do: false

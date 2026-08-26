@@ -1,116 +1,24 @@
 defmodule EasyWeb.Coaches.FormTemplateController do
   use EasyWeb, :controller
-  use OpenApiSpex.ControllerSpecs
+  use EasyWeb.TypedRoute
 
   alias Easy.Forms
-  alias OpenApiSpex.Operation
+  alias EasyWeb.Types.FormTemplate
 
-  alias EasyWeb.OpenApi.Schemas.{
-    ClientProfileFormTemplateListResponse,
-    ClientProfileFormTemplateRequest,
-    ClientProfileFormTemplateResponse,
-    ClientProfileFormTemplateUpdateRequest,
-    ErrorResponse
-  }
-
-  plug OpenApiSpex.Plug.CastAndValidate,
-       [json_render_error_v2: true]
-       when action in [:create, :update, :delete, :set_default_intake, :clear_default_intake]
-
-  tags ["coach form templates"]
-
-  operation :index,
-    summary: "List form templates",
-    description: "Lists form templates in the authenticated coach business.",
-    operation_id: "listFormTemplates",
-    security: [%{"bearerAuth" => []}],
-    responses: [
-      ok: {"Form templates", "application/json", ClientProfileFormTemplateListResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
-    ]
-
-  operation :create,
-    summary: "Create form template",
-    description: "Creates a form template in the authenticated coach business.",
-    operation_id: "createFormTemplate",
-    security: [%{"bearerAuth" => []}],
-    request_body: {"Form template create request", "application/json", ClientProfileFormTemplateRequest, required: true},
-    responses: [
-      created: {"Form template created", "application/json", ClientProfileFormTemplateResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
-  operation :show,
-    summary: "Get form template",
-    description: "Loads one form template in the authenticated coach business.",
-    operation_id: "getFormTemplate",
-    security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Form template id")],
-    responses: [
-      ok: {"Form template", "application/json", ClientProfileFormTemplateResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse}
-    ]
-
-  operation :update,
-    summary: "Update form template",
-    description: "Updates a form template in the authenticated coach business.",
-    operation_id: "updateFormTemplate",
-    security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Form template id")],
-    request_body: {"Form template update request", "application/json", ClientProfileFormTemplateUpdateRequest, required: true},
-    responses: [
-      ok: {"Form template updated", "application/json", ClientProfileFormTemplateResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
-  operation :delete,
-    summary: "Delete form template",
-    description: "Deletes a form template in the authenticated coach business.",
-    operation_id: "deleteFormTemplate",
-    security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Form template id")],
-    responses: [
-      no_content: "Form template deleted",
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
-  operation :set_default_intake,
-    summary: "Set default intake template",
-    description: "Marks this template as the intake auto-assigned to newly invited clients.",
-    operation_id: "setDefaultIntakeTemplate",
-    security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Form template id")],
-    responses: [
-      ok: {"Form template updated", "application/json", ClientProfileFormTemplateResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse},
-      unprocessable_entity: {"Not an active intake template", "application/json", ErrorResponse}
-    ]
-
-  operation :clear_default_intake,
-    summary: "Clear default intake template",
-    description: "Unmarks this template; newly invited clients fall back to the automatic default.",
-    operation_id: "clearDefaultIntakeTemplate",
-    security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Form template id")],
-    responses: [
-      ok: {"Form template updated", "application/json", ClientProfileFormTemplateResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse}
-    ]
+  typed(:index, ok: {200, data([FormTemplate.t()])})
+  typed(:create, body: FormTemplate.create(), ok: {201, data(FormTemplate.t())})
+  typed(:show, ok: {200, data(FormTemplate.t())})
+  typed(:update, body: FormTemplate.update(), ok: {200, data(FormTemplate.t())})
+  typed(:delete, ok: {204, nil})
+  typed(:set_default_intake, ok: {200, data(FormTemplate.t())})
+  typed(:clear_default_intake, ok: {200, data(FormTemplate.t())})
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
     ctx = conn.assigns.ctx
 
     with {:ok, templates} <- Forms.list_form_templates(ctx) do
-      render(conn, :index, templates: templates)
+      ok(conn, %{data: templates})
     end
   end
 
@@ -119,9 +27,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
     ctx = conn.assigns.ctx
 
     with {:ok, template} <- Forms.create_form_template(ctx, conn.body_params) do
-      conn
-      |> put_status(:created)
-      |> render(:show, template: template)
+      ok(conn, %{data: template})
     end
   end
 
@@ -130,7 +36,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
     ctx = conn.assigns.ctx
 
     with {:ok, template} <- Forms.get_form_template(ctx, id) do
-      render(conn, :show, template: template)
+      ok(conn, %{data: template})
     end
   end
 
@@ -140,7 +46,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
     id = conn.path_params["id"]
 
     with {:ok, template} <- Forms.update_form_template(ctx, id, conn.body_params) do
-      render(conn, :show, template: template)
+      ok(conn, %{data: template})
     end
   end
 
@@ -150,7 +56,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
     id = conn.path_params["id"]
 
     with {:ok, _template} <- Forms.delete_form_template(ctx, id) do
-      send_resp(conn, :no_content, "")
+      ok(conn)
     end
   end
 
@@ -160,7 +66,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
     id = conn.path_params["id"]
 
     with {:ok, template} <- Forms.set_default_intake_template(ctx, id) do
-      render(conn, :show, template: template)
+      ok(conn, %{data: template})
     end
   end
 
@@ -170,7 +76,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
     id = conn.path_params["id"]
 
     with {:ok, template} <- Forms.clear_default_intake_template(ctx, id) do
-      render(conn, :show, template: template)
+      ok(conn, %{data: template})
     end
   end
 end

@@ -1,7 +1,4 @@
-import type {components} from './schema.ts';
-
-type ChatMessage = components['schemas']['ChatMessage'];
-type ChatMessageEmbed = components['schemas']['ChatMessageEmbed'];
+import type {ChatMessage, ChatMessageEmbed} from './schema.ts';
 
 /**
  * A `message_new` socket frame, parsed into the domain type.

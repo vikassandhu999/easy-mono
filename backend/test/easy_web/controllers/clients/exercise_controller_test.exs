@@ -36,6 +36,13 @@ defmodule EasyWeb.Clients.ExerciseControllerTest do
   end
 
   describe "GET /v1/client/training-exercises" do
+    test "rejects unknown list query parameters", ctx do
+      conn = get(ctx.conn, "/v1/client/training-exercises?unexpected=true")
+
+      assert %{"error_detail" => %{"fields" => %{"unexpected" => ["is unknown"]}}} =
+               json_response(conn, 422)
+    end
+
     test "lists business + system exercises", ctx do
       search = "client-list-#{Ecto.UUID.generate()}"
       biz_exercise = insert(:exercise, business: ctx.business, name: "Business #{search}")
@@ -94,14 +101,29 @@ defmodule EasyWeb.Clients.ExerciseControllerTest do
 
   describe "GET /v1/client/training-exercises/:id" do
     test "shows exercise with muscles and equipment", ctx do
-      exercise = insert(:exercise, business: ctx.business)
+      muscle = insert(:muscle)
+      equipment = insert(:equipment)
+
+      exercise =
+        insert(:exercise,
+          business: ctx.business,
+          muscles: [muscle],
+          equipment: [equipment]
+        )
 
       conn = get(ctx.conn, "/v1/client/training-exercises/#{exercise.id}")
       assert %{"data" => data} = json_response(conn, 200)
       assert data["id"] == exercise.id
       assert data["name"] == exercise.name
-      assert is_list(data["muscles"])
-      assert is_list(data["equipment"])
+
+      assert data["muscles"] == [
+               %{"id" => muscle.id, "name" => muscle.name, "description" => muscle.description}
+             ]
+
+      assert data["equipment"] == [
+               %{"id" => equipment.id, "name" => equipment.name, "description" => equipment.description}
+             ]
+
       assert is_list(data["images"])
     end
 

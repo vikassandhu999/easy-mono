@@ -44,8 +44,11 @@ export default function ProgressHome() {
   const earliest = byNewest[byNewest.length - 1];
   const goal = asGoal(data?.goal);
   const unit = latest?.unit ?? 'kg';
-  const change = latest && earliest && latest.id !== earliest.id ? latest.value - earliest.value : null;
-  const goalDelta = goal?.value != null && latest ? latest.value - goal.value : null;
+  const latestValue = latest ? Number(latest.value) : null;
+  const goalValue = goal ? Number(goal.value) : null;
+  const change =
+    latestValue != null && earliest && latest?.id !== earliest.id ? latestValue - Number(earliest.value) : null;
+  const goalDelta = goalValue != null && latestValue != null ? latestValue - goalValue : null;
 
   const remove = async (id: string) => {
     try {
@@ -141,7 +144,7 @@ export default function ProgressHome() {
               <div className="mt-3">
                 <WeightChart
                   entries={entries}
-                  goal={goal?.value ?? null}
+                  goal={goalValue}
                 />
               </div>
             ) : null}
@@ -185,7 +188,7 @@ export default function ProgressHome() {
       {sheet ? (
         <LogWeightSheet
           defaultUnit={unit}
-          {...(latest?.value !== undefined ? {defaultValue: latest.value} : {})}
+          {...(latestValue != null ? {defaultValue: latestValue} : {})}
           onClose={() => setSheet(false)}
         />
       ) : null}

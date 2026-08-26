@@ -323,6 +323,21 @@ defmodule Easy.ChatTest do
       assert reloaded.embed_snapshot["title"] == assignment.form_template.name
     end
 
+    test "accepts the typed form submission embed atom", %{coach: coach, client: client} do
+      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+      template = insert(:form_template, business: coach.business)
+      assignment = insert(:form_assignment, business: coach.business, client: client, form_template: template)
+      submission = insert(:form_submission, business: coach.business, client: client, form_assignment: assignment)
+
+      assert {:ok, message} =
+               Chat.send_message(coach_ctx(coach), conversation.id, %{
+                 embed: %{type: :form_submission, id: submission.id}
+               })
+
+      assert message.embed_type == :form_submission
+      assert message.embed_id == submission.id
+    end
+
     test "supports attachment-only and embed-only previews", %{coach: coach, client: client} do
       {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
       attachment = insert(:attachment, business: coach.business, client: client, content_type: "video/mp4")

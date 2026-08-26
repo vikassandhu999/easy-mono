@@ -172,7 +172,16 @@ defmodule Easy.Billing do
   end
 
   @spec checkout(Ctx.t(), pos_integer()) ::
-          {:ok, map()} | {:error, :billing_disabled | :not_owner | :razorpay_error}
+          {:ok, map()} | {:error, :billing_disabled | :not_owner | :razorpay_error | Ecto.Changeset.t()}
+  def checkout(%Ctx{}, seats_to_add) when is_integer(seats_to_add) and seats_to_add > 100 do
+    changeset =
+      {%{}, %{seats_to_add: :integer}}
+      |> Ecto.Changeset.cast(%{seats_to_add: seats_to_add}, [:seats_to_add])
+      |> Ecto.Changeset.validate_number(:seats_to_add, less_than_or_equal_to: 100)
+
+    {:error, changeset}
+  end
+
   def checkout(%Ctx{business_id: business_id} = ctx, seats_to_add)
       when is_integer(seats_to_add) and seats_to_add > 0 do
     with :ok <- ensure_billing_enabled(),

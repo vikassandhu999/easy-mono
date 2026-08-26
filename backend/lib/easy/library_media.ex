@@ -58,7 +58,15 @@ defmodule Easy.LibraryMedia do
   end
 
   defp insert_and_sign_upload(business_id, coach_id, attrs) do
-    attrs = Map.new(attrs, fn {key, value} -> {to_string(key), value} end)
+    attrs =
+      Map.new(attrs, fn
+        {key, value} when key in [:content_type, "content_type"] ->
+          {"content_type", to_string(value)}
+
+        {key, value} ->
+          {to_string(key), value}
+      end)
+
     id = Ecto.UUID.generate()
     storage_key = storage_key(business_id, id, attrs["content_type"])
     media_attrs = Map.put(attrs, "storage_key", storage_key)

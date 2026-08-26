@@ -1,8 +1,6 @@
 defmodule EasyWeb.Clients.UploadControllerTest do
   use Easy.ConnCase
 
-  import OpenApiSpex.TestAssertions
-
   setup do
     coach = insert(:coach)
     client = insert(:client, creator: coach, business: coach.business, user: insert(:user), status: :active)
@@ -27,7 +25,17 @@ defmodule EasyWeb.Clients.UploadControllerTest do
     assert data["upload_url_expires_at"]
     assert data["upload_headers"] == %{"Content-Type" => "audio/mpeg"}
     assert Easy.Repo.get!(Easy.Attachments.Attachment, data["id"]).client_id == client.id
-    assert_schema(data, "AttachmentUpload", EasyWeb.ApiSpec.spec())
+  end
+
+  test "POST /v1/client/uploads rejects extra body keys", %{conn: conn} do
+    conn =
+      post(conn, "/v1/client/uploads", %{
+        "content_type" => "image/png",
+        "byte_size" => 2_048,
+        "unexpected" => true
+      })
+
+    assert json_response(conn, 422)
   end
 
   test "rejects invalid metadata", %{conn: conn} do
@@ -61,6 +69,5 @@ defmodule EasyWeb.Clients.UploadControllerTest do
     assert second_download["id"] == second.id
     assert first_download["id"] == first.id
     refute Map.has_key?(second_download, "storage_key")
-    assert_schema(second_download, "AttachmentDownload", EasyWeb.ApiSpec.spec())
   end
 end

@@ -1,169 +1,23 @@
 defmodule EasyWeb.Coaches.ClientController do
   use EasyWeb, :controller
-  use OpenApiSpex.ControllerSpecs
+  use EasyWeb.TypedRoute
 
   alias Easy.Clients
-  alias OpenApiSpex.{Operation, Schema}
+  alias EasyWeb.Types.Client, as: ClientType
+  alias EasyWeb.Types.ClientIndex
 
-  alias EasyWeb.OpenApi.Schemas.{
-    ClientInviteRequest,
-    ClientListResponse,
-    ClientResponse,
-    ClientUpdateRequest,
-    ErrorResponse,
-    ReassignClientRequest,
-    SeatLimitError
-  }
-
-  plug OpenApiSpex.Plug.CastAndValidate,
-       [json_render_error_v2: true]
-       when action in [:invite, :resend_invite, :update, :delete, :reassign]
-
-  tags ["coach clients"]
-
-  operation :invite,
-    summary: "Invite client",
-    description: "Creates a pending client invitation in the authenticated business.",
-    operation_id: "inviteClient",
-    security: [%{"bearerAuth" => []}],
-    request_body: {"Client invite request", "application/json", ClientInviteRequest, required: true},
-    responses: [
-      created: {"Client invited", "application/json", ClientResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      conflict: {"Seat limit reached", "application/json", SeatLimitError},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
-  operation :resend_invite,
-    summary: "Resend client invitation",
-    description: "Refreshes and resends a pending client invitation.",
-    operation_id: "resendClientInvite",
-    security: [%{"bearerAuth" => []}],
-    parameters: [
-      Operation.parameter(:id, :path, :string, "Client id")
-    ],
-    responses: [
-      ok: {"Client", "application/json", ClientResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
-  operation :show,
-    summary: "Get client",
-    description: "Loads one client in the authenticated business.",
-    operation_id: "getClient",
-    security: [%{"bearerAuth" => []}],
-    parameters: [
-      Operation.parameter(:id, :path, :string, "Client id")
-    ],
-    responses: [
-      ok: {"Client", "application/json", ClientResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse}
-    ]
-
-  operation :update,
-    summary: "Update client",
-    description: "Updates coach-editable client fields and allowed status transitions.",
-    operation_id: "updateClient",
-    security: [%{"bearerAuth" => []}],
-    parameters: [
-      Operation.parameter(:id, :path, :string, "Client id")
-    ],
-    request_body: {"Client update request", "application/json", ClientUpdateRequest, required: true},
-    responses: [
-      ok: {"Client updated", "application/json", ClientResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse},
-      conflict: {"Seat limit reached", "application/json", SeatLimitError},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
-  operation :delete,
-    summary: "Revoke client invitation",
-    description: "Deletes a pending client invitation and related pending assignments.",
-    operation_id: "deleteClient",
-    security: [%{"bearerAuth" => []}],
-    parameters: [
-      Operation.parameter(:id, :path, :string, "Client id")
-    ],
-    responses: [
-      no_content: "Client invitation revoked",
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
-  operation :reassign,
-    summary: "Reassign client",
-    description: "Owner-only: reassigns a client to a different active trainer on the team.",
-    operation_id: "reassignClient",
-    security: [%{"bearerAuth" => []}],
-    parameters: [
-      Operation.parameter(:id, :path, :string, "Client id")
-    ],
-    request_body: {"Reassign client request", "application/json", ReassignClientRequest, required: true},
-    responses: [
-      ok: {"Client reassigned", "application/json", ClientResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      forbidden: {"Not the business owner", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
-  operation :index,
-    summary: "List clients",
-    description: "Lists clients in the authenticated business with status summary counts.",
-    operation_id: "listClients",
-    security: [%{"bearerAuth" => []}],
-    parameters: [
-      Operation.parameter(:offset, :query, :integer, "Number of clients to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 20)", required: false),
-      Operation.parameter(:search, :query, :string, "Case-insensitive client search", required: false),
-      Operation.parameter(
-        :status,
-        :query,
-        %Schema{type: :string, enum: ["active", "pending", "inactive"]},
-        "Only clients with this status",
-        required: false
-      ),
-      Operation.parameter(
-        :stage,
-        :query,
-        %Schema{type: :string, enum: ["onboarding", "coaching"]},
-        "Only clients with this stage",
-        required: false
-      ),
-      Operation.parameter(
-        :sort,
-        :query,
-        %Schema{type: :string, enum: ["newest", "last_active"]},
-        "Row order — newest first (default) or last client activity first",
-        required: false
-      ),
-      Operation.parameter(
-        :include_plans,
-        :query,
-        :boolean,
-        "Include each client's in-force training and nutrition plan names. Off by default — it costs two extra queries per page and only the clients list renders them.",
-        required: false
-      )
-    ],
-    responses: [
-      ok: {"Clients", "application/json", ClientListResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
+  typed(:invite, body: ClientType.invite(), ok: {201, data(ClientType.t())})
+  typed(:resend_invite, ok: {200, data(ClientType.t())})
+  typed(:show, ok: {200, data(ClientType.t())})
+  typed(:update, body: ClientType.update(), ok: {200, data(ClientType.t())})
+  typed(:delete, ok: {204, nil})
+  typed(:reassign, body: ClientType.reassign(), ok: {200, data(ClientType.t())})
+  typed(:index, query: ClientType.list_query(), ok: {200, ClientIndex.t()})
 
   @spec invite(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def invite(conn, _params) do
-    ctx = conn.assigns.ctx
-
-    with {:ok, client} <- Clients.invite_client(ctx, conn.body_params) do
-      conn
-      |> put_status(:created)
-      |> render(:show, client: client)
+    with {:ok, client} <- Clients.invite_client(conn.assigns.ctx, conn.body_params) do
+      ok(conn, %{data: client})
     end
   end
 
@@ -172,7 +26,7 @@ defmodule EasyWeb.Coaches.ClientController do
     client_id = conn.path_params["id"]
 
     with {:ok, client} <- Clients.get_client_with_preloads(conn.assigns.ctx, client_id) do
-      render(conn, :show, client: client)
+      ok(conn, %{data: client})
     end
   end
 
@@ -181,7 +35,7 @@ defmodule EasyWeb.Coaches.ClientController do
     client_id = conn.path_params["id"]
 
     with {:ok, updated_client} <- Clients.update_client(conn.assigns.ctx, client_id, conn.body_params) do
-      render(conn, :show, client: updated_client)
+      ok(conn, %{data: updated_client})
     end
   end
 
@@ -190,7 +44,7 @@ defmodule EasyWeb.Coaches.ClientController do
     client_id = conn.path_params["id"]
 
     with {:ok, _deleted} <- Clients.revoke_invitation(conn.assigns.ctx, client_id) do
-      send_resp(conn, :no_content, "")
+      ok(conn)
     end
   end
 
@@ -199,7 +53,7 @@ defmodule EasyWeb.Coaches.ClientController do
     client_id = conn.path_params["id"]
 
     with {:ok, updated_client} <- Clients.resend_invitation(conn.assigns.ctx, client_id) do
-      render(conn, :show, client: updated_client)
+      ok(conn, %{data: updated_client})
     end
   end
 
@@ -209,38 +63,27 @@ defmodule EasyWeb.Coaches.ClientController do
     %{coach_id: coach_id} = conn.body_params
 
     with {:ok, client} <- Clients.reassign_client(conn.assigns.ctx, client_id, coach_id) do
-      render(conn, :show, client: client)
+      ok(conn, %{data: client})
     end
   end
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  # Mapped explicitly, never `String.to_atom/1` on a query param (AGENTS.md).
-  defp parse_sort("last_active"), do: :last_active
-  defp parse_sort(_other), do: :newest
+  def index(conn, _params) do
+    params = conn.query_params
 
-  # Normalized here rather than trusted from the cast: a query param reaches the
-  # action as a string unless the spec has taught the cast otherwise, and the
-  # context matches on a real boolean. Anything that isn't an explicit yes is no.
-  defp parse_boolean(true), do: true
-  defp parse_boolean("true"), do: true
-  defp parse_boolean(_other), do: false
-
-  def index(conn, params) do
     opts = [
       search: Map.get(params, "search", ""),
-      offset: parse_integer(params, "offset", 0),
-      limit: parse_integer(params, "limit", 20),
+      offset: Map.get(params, "offset", 0),
+      limit: Map.get(params, "limit", 20),
       status: Map.get(params, "status"),
       stage: Map.get(params, "stage"),
-      sort: parse_sort(Map.get(params, "sort")),
-      include_plans: parse_boolean(Map.get(params, "include_plans"))
+      sort: Map.get(params, "sort", :newest),
+      include_plans: Map.get(params, "include_plans", false)
     ]
 
     with {:ok, %{clients: clients, count: count, summary: summary}} <-
            Clients.list_clients(conn.assigns.ctx, opts) do
-      conn
-      |> put_status(:ok)
-      |> render(:index, count: count, clients: clients, summary: summary)
+      ok(conn, %{data: clients, count: count, summary: summary})
     end
   end
 end

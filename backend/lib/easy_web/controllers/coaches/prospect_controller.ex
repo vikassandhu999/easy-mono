@@ -1,95 +1,31 @@
 defmodule EasyWeb.Coaches.ProspectController do
   use EasyWeb, :controller
-  use OpenApiSpex.ControllerSpecs
+  use EasyWeb.TypedRoute
 
   alias Easy.Landing
-  alias OpenApiSpex.Operation
+  alias EasyWeb.Types.{Prospect, ProspectEnrollment, ProspectIndex}
 
-  alias EasyWeb.OpenApi.Schemas.{
-    ErrorResponse,
-    ProspectEnrollRequest,
-    ProspectEnrollResponse,
-    ProspectListResponse,
-    ProspectResponse,
-    ProspectUpdateRequest
-  }
-
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:update, :enroll]
-
-  tags ["coach prospects"]
-
-  operation :index,
-    summary: "List prospects",
-    description: "Lists prospects in the authenticated coach business, optionally filtered by status.",
-    operation_id: "listProspects",
-    security: [%{"bearerAuth" => []}],
-    parameters: [
-      Operation.parameter(:status, :query, :string, "Filter by status"),
-      Operation.parameter(:offset, :query, :integer, "Pagination offset"),
-      Operation.parameter(:limit, :query, :integer, "Page size (max 20)")
-    ],
-    responses: [
-      ok: {"Prospects", "application/json", ProspectListResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
-    ]
-
-  operation :show,
-    summary: "Get prospect",
-    operation_id: "getProspect",
-    security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Prospect id")],
-    responses: [
-      ok: {"Prospect", "application/json", ProspectResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse}
-    ]
-
-  operation :update,
-    summary: "Update prospect",
-    description: "Updates prospect status or notes.",
-    operation_id: "updateProspect",
-    security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Prospect id")],
-    request_body: {"Prospect update request", "application/json", ProspectUpdateRequest, required: true},
-    responses: [
-      ok: {"Prospect updated", "application/json", ProspectResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
-  operation :enroll,
-    summary: "Enroll prospect",
-    description:
-      "Creates a pending client from the prospect, sends the invite, and marks it won. " <>
-        "Already-enrolled prospects return the linked client without creating another.",
-    operation_id: "enrollProspect",
-    security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Prospect id")],
-    request_body: {"Enroll request", "application/json", ProspectEnrollRequest, required: true},
-    responses: [
-      created: {"Prospect enrolled", "application/json", ProspectEnrollResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
+  typed(:index, query: Prospect.list_query(), ok: {200, ProspectIndex.t()})
+  typed(:show, ok: {200, data(Prospect.t())})
+  typed(:update, body: Prospect.update(), ok: {200, data(Prospect.t())})
+  typed(:enroll, body: Prospect.enroll(), ok: {201, ProspectEnrollment.t()})
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def index(conn, params) do
+  def index(conn, _params) do
     opts =
-      [status: params["status"]]
-      |> maybe_int(:offset, params["offset"])
-      |> maybe_int(:limit, params["limit"])
+      [status: conn.query_params["status"]]
+      |> maybe_put(:offset, conn.query_params["offset"])
+      |> maybe_put(:limit, conn.query_params["limit"])
 
     with {:ok, result} <- Landing.list_prospects(conn.assigns.ctx, opts) do
-      render(conn, :index, result: result)
+      ok(conn, %{data: result.prospects, count: result.count, summary: result.summary})
     end
   end
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
     with {:ok, prospect} <- Landing.get_prospect(conn.assigns.ctx, id) do
-      render(conn, :show, prospect: prospect)
+      ok(conn, %{data: prospect})
     end
   end
 
@@ -98,7 +34,7 @@ defmodule EasyWeb.Coaches.ProspectController do
     id = conn.path_params["id"]
 
     with {:ok, prospect} <- Landing.update_prospect(conn.assigns.ctx, id, conn.body_params) do
-      render(conn, :show, prospect: prospect)
+      ok(conn, %{data: prospect})
     end
   end
 
@@ -107,18 +43,10 @@ defmodule EasyWeb.Coaches.ProspectController do
     id = conn.path_params["id"]
 
     with {:ok, result} <- Landing.enroll_prospect(conn.assigns.ctx, id, conn.body_params) do
-      conn
-      |> put_status(:created)
-      |> render(:enroll, result: result)
+      ok(conn, %{data: %{prospect: result.prospect, already_enrolled: result.already_enrolled}})
     end
   end
 
-  defp maybe_int(opts, _key, nil), do: opts
-
-  defp maybe_int(opts, key, value) do
-    case Integer.parse(to_string(value)) do
-      {int, _} -> Keyword.put(opts, key, int)
-      :error -> opts
-    end
-  end
+  defp maybe_put(opts, _key, nil), do: opts
+  defp maybe_put(opts, key, value), do: Keyword.put(opts, key, value)
 end

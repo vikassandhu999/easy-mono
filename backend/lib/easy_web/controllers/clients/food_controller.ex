@@ -1,60 +1,32 @@
 defmodule EasyWeb.Clients.FoodController do
   use EasyWeb, :controller
-  use OpenApiSpex.ControllerSpecs
+  use EasyWeb.TypedRoute
 
   alias Easy.Nutrition.Library
-  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, FoodListResponse, FoodResponse}
-  alias OpenApiSpex.Operation
+  alias EasyWeb.Types.Nutrition.Food
 
-  tags ["client foods"]
-
-  operation :index,
-    summary: "List client foods",
-    description: "Lists system and business foods visible to the authenticated client.",
-    operation_id: "listClientFoods",
-    security: [%{"bearerAuth" => []}],
-    parameters: [
-      Operation.parameter(:offset, :query, :integer, "Number of foods to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 20)", required: false),
-      Operation.parameter(:search, :query, :string, "Case-insensitive food name search", required: false)
-    ],
-    responses: [
-      ok: {"Foods", "application/json", FoodListResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
-    ]
-
-  operation :show,
-    summary: "Get client food",
-    description: "Loads one system or business food visible to the authenticated client.",
-    operation_id: "getClientFood",
-    security: [%{"bearerAuth" => []}],
-    parameters: [
-      Operation.parameter(:id, :path, :string, "Food id")
-    ],
-    responses: [
-      ok: {"Food", "application/json", FoodResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse}
-    ]
+  typed(:index, query: Food.client_list_query(), ok: {200, page(Food.t())})
+  typed(:show, ok: {200, data(Food.t())})
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def index(conn, params) do
+  def index(conn, _params) do
+    params = conn.query_params
+
     opts = [
       search: Map.get(params, "search", ""),
-      offset: parse_integer(params, "offset", 0),
-      limit: parse_integer(params, "limit", 20)
+      offset: Map.get(params, "offset", 0),
+      limit: Map.get(params, "limit", 20)
     ]
 
-    with {:ok, %{foods: foods, count: count}} <-
-           Library.list_foods(conn.assigns.ctx, opts) do
-      render(conn, :index, foods: foods, count: count)
+    with {:ok, %{foods: foods, count: count}} <- Library.list_foods(conn.assigns.ctx, opts) do
+      ok(conn, %{data: foods, count: count})
     end
   end
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
     with {:ok, food} <- Library.get_food(conn.assigns.ctx, id) do
-      render(conn, :show, food: food)
+      ok(conn, %{data: food})
     end
   end
 end

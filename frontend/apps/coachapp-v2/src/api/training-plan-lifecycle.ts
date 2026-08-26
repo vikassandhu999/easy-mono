@@ -1,10 +1,10 @@
 import {ApiError} from '@easy/utils/api-error';
 import {parseApiErrorBody} from '@easy/utils/parse-api-error';
-import type {components} from './schema.ts';
+import type {TrainingPlan, TrainingPlanAssign, TrainingPlanUpdate} from './schema.ts';
 
 // --- training-plan-lifecycle ---
 
-export type ClientPlanLifecycle = components['schemas']['CoachClientTrainingPlan']['lifecycle'];
+export type ClientPlanLifecycle = Exclude<TrainingPlan['lifecycle'], null>;
 
 const CLIENT_PLAN_LIFECYCLE_LABELS: Record<ClientPlanLifecycle, string> = {
   archived: 'Archived',
@@ -52,8 +52,8 @@ export function getStaleTrainingPlanRevision(error: unknown): null | number {
 
 // --- training-plan-requests ---
 
-type TrainingPlanAssignRequest = components['schemas']['TrainingPlanAssignRequest'];
-type TrainingPlanUpdateRequest = components['schemas']['TrainingPlanUpdateRequest'];
+type TrainingPlanAssignRequest = TrainingPlanAssign;
+type TrainingPlanUpdateRequest = TrainingPlanUpdate;
 
 type Assignment = {
   body: TrainingPlanAssignRequest;

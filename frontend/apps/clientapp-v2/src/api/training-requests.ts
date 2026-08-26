@@ -1,9 +1,10 @@
-import type {components, paths} from './schema.ts';
+import type {paths, SessionUpdate, TrainingPlan} from './schema.ts';
 
 // --- training-coverage ---
 
-type ClientTrainingCoverageResponse = components['schemas']['ClientTrainingCoverageResponse'];
-type ClientTrainingPlan = components['schemas']['ClientTrainingPlan'];
+export type ClientTrainingCoverageResponse =
+  paths['/v1/client/training-plans/coverage']['get']['responses'][200]['content']['application/json'];
+type ClientTrainingPlan = TrainingPlan;
 type CoverageQuery = NonNullable<paths['/v1/client/training-plans/coverage']['get']['parameters']['query']>;
 
 export function clientTrainingCoverageRequest(date?: string): {params: {query: CoverageQuery}} {
@@ -18,7 +19,7 @@ export function clientTrainingPlanFromCoverage(
 
 // --- training-session-commands ---
 
-type TrainingSessionUpdateRequest = components['schemas']['TrainingSessionUpdateRequest'];
+type TrainingSessionUpdateRequest = SessionUpdate;
 type SessionListQuery = NonNullable<paths['/v1/client/training-sessions']['get']['parameters']['query']>;
 type CompleteArgs = paths['/v1/client/training-sessions/{id}/complete']['post']['parameters']['path'] &
   TrainingSessionUpdateRequest;

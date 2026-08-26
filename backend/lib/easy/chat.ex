@@ -302,8 +302,8 @@ defmodule Easy.Chat do
   defp resolve_embed(_ctx, _client_id, _embed, :reject_embed, changeset),
     do: {:error, Ecto.Changeset.add_error(changeset, :embed, "is not allowed")}
 
-  defp resolve_embed(ctx, client_id, %{type: "form_submission", id: id}, :allow_embed, _changeset)
-       when is_binary(id) do
+  defp resolve_embed(ctx, client_id, %{type: type, id: id}, :allow_embed, _changeset)
+       when type in [:form_submission, "form_submission"] and is_binary(id) do
     case Ecto.UUID.cast(id) do
       {:ok, id} -> resolve_form_submission(ctx, client_id, id)
       :error -> {:error, :not_found}

@@ -5,27 +5,31 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
 import {formAssignmentKeys, weightEntryKeys} from '@/api/keys';
-import type {components} from '@/api/schema';
+import type {FormAssignment, FormAssignmentSubmit, paths} from '@/api/schema';
 
-export type ClientProfileFormAssignment = components['schemas']['ClientProfileFormAssignment'];
-export type ClientProfileFormSubmissionRequest = components['schemas']['ClientProfileFormSubmissionRequest'];
+export type {FormAssignment, FormAssignmentSubmit, FormSubmission} from '@/api/schema';
 
-type ListResponse = components['schemas']['ClientProfileFormAssignmentListResponse'];
-type AssignmentResponse = components['schemas']['ClientProfileFormAssignmentResponse'];
-type SubmissionResponse = components['schemas']['ClientProfileFormSubmissionResponse'];
+export type ClientProfileFormAssignment = FormAssignment;
+export type ClientProfileFormSubmissionRequest = FormAssignmentSubmit;
+
+type ListResponse = paths['/v1/client/form-assignments']['get']['responses'][200]['content']['application/json'];
+type AssignmentResponse =
+  paths['/v1/client/form-assignments/{id}']['get']['responses'][200]['content']['application/json'];
+type SubmissionResponse =
+  paths['/v1/client/form-assignments/{id}/submit']['post']['responses'][201]['content']['application/json'];
 
 export function useListClientFormAssignmentsQuery() {
   return useQuery({
     queryKey: formAssignmentKeys.list(),
-    queryFn: () => call(client.GET('/v1/client/form-assignments')) as Promise<ListResponse>,
+    queryFn: (): Promise<ListResponse> => call(client.GET('/v1/client/form-assignments')),
   });
 }
 
 export function useGetClientFormAssignmentQuery(id: string, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: formAssignmentKeys.detail(id),
-    queryFn: () =>
-      call(client.GET('/v1/client/form-assignments/{id}', {params: {path: {id}}})) as Promise<AssignmentResponse>,
+    queryFn: (): Promise<AssignmentResponse> =>
+      call(client.GET('/v1/client/form-assignments/{id}', {params: {path: {id}}})),
     enabled: options?.enabled ?? true,
   });
 }
@@ -33,10 +37,8 @@ export function useGetClientFormAssignmentQuery(id: string, options?: {enabled?:
 export function useSubmitClientFormAssignmentMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({id, ...body}: ClientProfileFormSubmissionRequest & {id: string}) =>
-      call(
-        client.POST('/v1/client/form-assignments/{id}/submit', {params: {path: {id}}, body}),
-      ) as Promise<SubmissionResponse>,
+    mutationFn: ({id, ...body}: ClientProfileFormSubmissionRequest & {id: string}): Promise<SubmissionResponse> =>
+      call(client.POST('/v1/client/form-assignments/{id}/submit', {params: {path: {id}}, body})),
     onSuccess: (_data, {id}) => {
       qc.invalidateQueries({queryKey: formAssignmentKeys.detail(id)});
       qc.invalidateQueries({queryKey: formAssignmentKeys.lists()});

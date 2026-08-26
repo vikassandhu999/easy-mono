@@ -1,8 +1,6 @@
 defmodule EasyWeb.Coaches.WorkbenchControllerTest do
   use Easy.ConnCase
 
-  import OpenApiSpex.TestAssertions
-
   setup do
     coach = insert(:coach)
     conn = build_conn() |> authenticate_coach(coach) |> put_req_header("content-type", "application/json")
@@ -24,9 +22,6 @@ defmodule EasyWeb.Coaches.WorkbenchControllerTest do
                "expiring" => 0,
                "quiet" => 0
              }
-
-      api_spec = EasyWeb.ApiSpec.spec()
-      assert_schema(json_response(conn, 200), "WorkbenchCountsResponse", api_spec)
     end
 
     test "counts queue members", %{conn: conn, business: business, coach: coach} do
@@ -104,6 +99,13 @@ defmodule EasyWeb.Coaches.WorkbenchControllerTest do
   end
 
   describe "GET /v1/coach/workbench/queues/onboarding" do
+    test "rejects unknown query parameters", %{conn: conn} do
+      conn = get(conn, "/v1/coach/workbench/queues/onboarding?unexpected=true")
+
+      assert %{"error_detail" => %{"fields" => %{"unexpected" => ["is unknown"]}}} =
+               json_response(conn, 422)
+    end
+
     test "returns reason-bearing items with the total before pagination", %{
       conn: conn,
       business: business,
@@ -135,12 +137,6 @@ defmodule EasyWeb.Coaches.WorkbenchControllerTest do
                  "follow_up_due_at" => DateTime.to_iso8601(DateTime.add(sent_at, 3, :day))
                }
              ]
-
-      assert_schema(
-        json_response(conn, 200),
-        "WorkbenchOnboardingQueueResponse",
-        EasyWeb.ApiSpec.spec()
-      )
     end
 
     test "renders the Intake overdue reason variant", %{
@@ -179,12 +175,6 @@ defmodule EasyWeb.Coaches.WorkbenchControllerTest do
                  "form_title" => template.name
                }
              ]
-
-      assert_schema(
-        json_response(conn, 200),
-        "WorkbenchOnboardingQueueResponse",
-        EasyWeb.ApiSpec.spec()
-      )
     end
   end
 
@@ -244,12 +234,6 @@ defmodule EasyWeb.Coaches.WorkbenchControllerTest do
 
       assert [%{"code" => "service_coverage_missing"}] = reasons_by_client[missing.id]
       assert [%{"code" => "service_coverage_ending_soon"}] = reasons_by_client[ending.id]
-
-      assert_schema(
-        json_response(conn, 200),
-        "WorkbenchProgrammingQueueResponse",
-        EasyWeb.ApiSpec.spec()
-      )
     end
 
     test "renders nutrition Coverage reason variants", %{
@@ -302,12 +286,6 @@ defmodule EasyWeb.Coaches.WorkbenchControllerTest do
 
       assert [%{"code" => "service_coverage_missing"}] = reasons_by_client[missing.id]
       assert [%{"code" => "service_coverage_ending_soon"}] = reasons_by_client[ending.id]
-
-      assert_schema(
-        json_response(conn, 200),
-        "WorkbenchProgrammingQueueResponse",
-        EasyWeb.ApiSpec.spec()
-      )
     end
 
     test "renders every explicit queue envelope and reason schema", %{
@@ -350,7 +328,6 @@ defmodule EasyWeb.Coaches.WorkbenchControllerTest do
       assert_queue(
         conn,
         "/v1/coach/workbench/queues/programming?service=training",
-        "WorkbenchProgrammingQueueResponse",
         "service_never_programmed",
         client.id
       )
@@ -358,7 +335,6 @@ defmodule EasyWeb.Coaches.WorkbenchControllerTest do
       assert_queue(
         conn,
         "/v1/coach/workbench/queues/expiring",
-        "WorkbenchExpiringQueueResponse",
         "engagement_ending_soon",
         client.id
       )
@@ -366,32 +342,106 @@ defmodule EasyWeb.Coaches.WorkbenchControllerTest do
       assert_queue(
         conn,
         "/v1/coach/workbench/queues/quiet",
-        "WorkbenchQuietQueueResponse",
         "missed_check_in",
         client.id
       )
 
       check_ins = get(conn, "/v1/coach/workbench/queues/check-ins")
       assert %{"count" => 1, "data" => [check_in_item]} = json_response(check_ins, 200)
-      assert check_in_item["submission"]["id"] == submission.id
-      assert hd(check_in_item["reasons"])["code"] == "check_in_awaiting_review"
-      assert_schema(json_response(check_ins, 200), "WorkbenchCheckInQueueResponse", EasyWeb.ApiSpec.spec())
+
+      assert check_in_item["submission"] == %{
+               "id" => submission.id,
+               "form_assignment_id" => assignment.id,
+               "submitted_at" => DateTime.to_iso8601(submission.submitted_at),
+               "reviewed_at" => nil
+             }
+
+      assert check_in_item["assignment"] == %{
+               "id" => assignment.id,
+               "client_id" => client.id,
+               "form_template_id" => template.id,
+               "purpose" => "check_in",
+               "status" => "missed",
+               "due_date" => Date.to_iso8601(assignment.due_date)
+             }
+
+      assert check_in_item["reasons"] == [
+               %{
+                 "code" => "check_in_awaiting_review",
+                 "submission_id" => submission.id,
+                 "submitted_at" => DateTime.to_iso8601(submission.submitted_at)
+               }
+             ]
 
       replies = get(conn, "/v1/coach/workbench/queues/replies")
       assert %{"count" => 1, "data" => [reply_item]} = json_response(replies, 200)
       assert reply_item["conversation"]["id"] == conversation.id
+
+      assert Map.keys(reply_item["conversation"]) |> Enum.sort() ==
+               ~w(client_id client_name id inserted_at last_message_at last_message_preview last_message_role unread_count updated_at waiting_since)
+
       assert reply_item["client_status"] == "active"
       assert reply_item["waiting_message_count"] == 0
-      assert hd(reply_item["reasons"])["code"] == "reply_needed"
-      assert_schema(json_response(replies, 200), "WorkbenchRepliesQueueResponse", EasyWeb.ApiSpec.spec())
+
+      assert reply_item["reasons"] == [
+               %{
+                 "code" => "reply_needed",
+                 "waiting_since" => DateTime.to_iso8601(waiting_since)
+               }
+             ]
     end
   end
 
-  defp assert_queue(conn, path, schema, reason_code, client_id) do
+  describe "PUT /v1/coach/clients/:id/queue-snooze" do
+    test "rejects unknown body fields", %{conn: conn, business: business, coach: coach} do
+      client = insert(:client, business: business, creator: coach)
+
+      conn =
+        put(conn, "/v1/coach/clients/#{client.id}/queue-snooze", %{
+          "queue" => "quiet",
+          "snoozed_until" => Date.to_iso8601(Date.add(Date.utc_today(), 1)),
+          "unexpected" => true
+        })
+
+      assert %{"error_detail" => %{"fields" => %{"unexpected" => ["is unknown"]}}} =
+               json_response(conn, 422)
+    end
+
+    test "rejects invalid queue and date values", %{conn: conn, business: business, coach: coach} do
+      client = insert(:client, business: business, creator: coach)
+
+      for body <- [
+            %{"queue" => "onboarding", "snoozed_until" => Date.to_iso8601(Date.utc_today())},
+            %{"queue" => "quiet", "snoozed_until" => "not-a-date"}
+          ] do
+        conn = put(conn, "/v1/coach/clients/#{client.id}/queue-snooze", body)
+        assert json_response(conn, 422)
+      end
+    end
+
+    test "snoozes a supported queue", %{conn: conn, business: business, coach: coach} do
+      client = insert(:client, business: business, creator: coach)
+
+      conn =
+        put(conn, "/v1/coach/clients/#{client.id}/queue-snooze", %{
+          "queue" => "quiet",
+          "snoozed_until" => Date.to_iso8601(Date.add(Date.utc_today(), 1))
+        })
+
+      assert response(conn, 204) == ""
+    end
+  end
+
+  defp assert_queue(conn, path, reason_code, client_id) do
     response = get(conn, path)
     assert %{"count" => 1, "data" => [item]} = json_response(response, 200)
     assert item["client"]["id"] == client_id
+
+    assert MapSet.new(Map.keys(item["client"])) ==
+             MapSet.new(
+               ~w(assigned_coach_id email expiring_soon first_name goal_weight_unit goal_weight_value id inactive_reason inserted_at invitation_expires_at invitation_sent_at invite_url joined_at last_active_at last_name notes nutrition_plan_name phone required_services stage status subscription_ends_on subscription_started_on training_plan_name updated_at)
+             )
+
     assert hd(item["reasons"])["code"] == reason_code
-    assert_schema(json_response(response, 200), schema, EasyWeb.ApiSpec.spec())
   end
 end

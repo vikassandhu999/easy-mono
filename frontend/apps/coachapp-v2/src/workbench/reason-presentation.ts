@@ -1,12 +1,14 @@
-import type {components} from '../api/schema.ts';
+import type {
+  CheckInAwaitingReviewReason as CheckInReason,
+  EngagementEndingSoonReason as ExpiringReason,
+  WorkbenchOnboardingReason as OnboardingReason,
+  WorkbenchProgrammingReason as ProgrammingReason,
+  MissedCheckInReason as QuietReason,
+  ReplyNeededReason as ReplyReason,
+  WorkbenchRepliesQueueItem,
+} from '../api/workbench.ts';
 
-type OnboardingReason = components['schemas']['WorkbenchOnboardingReason'];
-type ProgrammingReason = components['schemas']['WorkbenchProgrammingReason'];
-type ExpiringReason = components['schemas']['EngagementEndingSoonReason'];
-type QuietReason = components['schemas']['MissedCheckInReason'];
-type CheckInReason = components['schemas']['CheckInAwaitingReviewReason'];
-type ReplyReason = components['schemas']['ReplyNeededReason'];
-type ReplyClientStatus = components['schemas']['WorkbenchRepliesQueueItem']['client_status'];
+type ReplyClientStatus = WorkbenchRepliesQueueItem['client_status'];
 
 export type ReasonPresentation = {
   action: string;

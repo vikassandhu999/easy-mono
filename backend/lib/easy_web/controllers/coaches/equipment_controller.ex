@@ -1,32 +1,16 @@
 defmodule EasyWeb.Coaches.EquipmentController do
   use EasyWeb, :controller
-  use OpenApiSpex.ControllerSpecs
+  use EasyWeb.TypedRoute
 
   alias Easy.Training.Library
-  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, TrainingEquipmentListResponse}
-  alias OpenApiSpex.Operation
+  alias EasyWeb.Types.Training.Equipment
 
-  tags ["coach equipment"]
-
-  operation :index,
-    summary: "List equipment",
-    description: "Lists equipment for exercise creation, editing, and filtering.",
-    operation_id: "listEquipment",
-    security: [%{"bearerAuth" => []}],
-    parameters: [
-      Operation.parameter(:search, :query, :string, "Case-insensitive equipment name search", required: false)
-    ],
-    responses: [
-      ok: {"Equipment", "application/json", TrainingEquipmentListResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
-    ]
+  typed(:index, query: Equipment.list_query(), ok: {200, data([Equipment.t()])})
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def index(conn, params) do
-    search = Map.get(params, "search", "")
-
-    with {:ok, equipment} <- Library.list_equipment(search) do
-      render(conn, :index, equipment: equipment)
+  def index(conn, _params) do
+    with {:ok, equipment} <- Library.list_equipment(conn.query_params["search"]) do
+      ok(conn, %{data: equipment})
     end
   end
 end

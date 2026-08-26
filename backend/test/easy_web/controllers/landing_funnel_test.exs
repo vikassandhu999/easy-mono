@@ -70,6 +70,10 @@ defmodule EasyWeb.LandingFunnelTest do
     test "returns null before a page exists", %{conn: conn} do
       assert %{"data" => nil} = json_response(get(conn, "/v1/coach/landing-page"), 200)
     end
+
+    test "rejects unknown show filters", %{conn: conn} do
+      assert json_response(get(conn, "/v1/coach/landing-page?unknown=true"), 422)
+    end
   end
 
   describe "public landing page read" do
@@ -89,6 +93,14 @@ defmodule EasyWeb.LandingFunnelTest do
 
     test "404s for an unknown slug" do
       assert json_response(get(build_conn(), "/v1/public/landing-pages/nope"), 404)
+    end
+
+    test "rejects unknown show filters", %{conn: conn} do
+      publish_page(conn, %{"slug" => "closed-public-read"})
+
+      response = get(build_conn(), "/v1/public/landing-pages/closed-public-read?unknown=true")
+
+      assert json_response(response, 422)
     end
   end
 
@@ -151,6 +163,24 @@ defmodule EasyWeb.LandingFunnelTest do
       assert %{"data" => [_]} = json_response(get(conn, "/v1/coach/prospects?status=reviewing"), 200)
       assert %{"data" => []} = json_response(get(conn, "/v1/coach/prospects?status=new"), 200)
     end
+
+    test "rejects unknown list filters", %{conn: conn} do
+      assert json_response(get(conn, "/v1/coach/prospects?unknown=true"), 422)
+    end
+
+    test "rejects unknown update fields", %{conn: conn} do
+      publish_page(conn, %{"slug" => "closed-update"})
+      submit_application("closed-update", "closed-update@example.com")
+      [prospect] = json_response(get(conn, "/v1/coach/prospects"), 200)["data"]
+
+      response =
+        patch(conn, "/v1/coach/prospects/#{prospect["id"]}", %{
+          "status" => "reviewing",
+          "unknown" => true
+        })
+
+      assert json_response(response, 422)
+    end
   end
 
   describe "enroll prospect" do
@@ -183,6 +213,16 @@ defmodule EasyWeb.LandingFunnelTest do
       assert second["already_enrolled"] == true
       assert second["prospect"]["client"]["id"] == first["prospect"]["client"]["id"]
       assert client_count(business.id) == 1
+    end
+
+    test "rejects unknown enrollment fields", %{conn: conn} do
+      publish_page(conn, %{"slug" => "closed-enroll"})
+      submit_application("closed-enroll", "closed-enroll@example.com")
+      [prospect] = json_response(get(conn, "/v1/coach/prospects"), 200)["data"]
+
+      response = post(conn, "/v1/coach/prospects/#{prospect["id"]}/enroll", %{"unknown" => true})
+
+      assert json_response(response, 422)
     end
   end
 

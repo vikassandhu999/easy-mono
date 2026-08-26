@@ -1,7 +1,7 @@
 defmodule EasyWeb.Coaches.FoodControllerTest do
   use Easy.ConnCase
 
-  import OpenApiSpex.TestAssertions
+  alias EasyWeb.Types.Nutrition.Food, as: FoodType
 
   setup do
     coach = insert(:coach)
@@ -20,8 +20,6 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
 
       conn = post(conn, "/v1/coach/nutrition-foods", attrs)
       assert %{"data" => data} = json_response(conn, 201)
-      assert_schema(data, "Food", EasyWeb.ApiSpec.spec())
-
       assert data["name"] == attrs["name"]
       assert data["calories_per_100g"] == attrs["calories_per_100g"]
       assert data["protein_g_per_100g"] == attrs["protein_g_per_100g"]
@@ -96,8 +94,6 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
 
       conn = get(conn, "/v1/coach/nutrition-foods/#{food.id}")
       assert %{"data" => data} = json_response(conn, 200)
-      assert_schema(data, "Food", EasyWeb.ApiSpec.spec())
-
       assert data["id"] == food.id
       assert data["name"] == food.name
       assert data["revision"] == 1
@@ -128,7 +124,6 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
         })
 
       assert %{"data" => data} = json_response(conn, 200)
-      assert_schema(data, "Food", EasyWeb.ApiSpec.spec())
       assert data["name"] == "Updated Name"
       assert data["id"] == food.id
       assert data["revision"] == 2
@@ -196,6 +191,12 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
   end
 
   describe "GET /v1/coach/nutrition-foods" do
+    test "rejects unknown query parameters", %{conn: conn} do
+      conn = get(conn, "/v1/coach/nutrition-foods", %{"unknown" => "value"})
+
+      assert json_response(conn, 422)
+    end
+
     test "returns paginated list of foods", %{conn: conn, coach: coach, business: business} do
       for _ <- 1..3, do: insert(:food, creator: coach, business: business)
 
@@ -412,8 +413,6 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
 
       conn = post(conn, "/v1/coach/nutrition-foods/#{system_food.id}/copy")
       assert %{"data" => data} = json_response(conn, 201)
-      assert_schema(data, "Food", EasyWeb.ApiSpec.spec())
-
       assert data["source"] == "custom"
       assert data["revision"] == 1
       assert data["calories_per_100g"] == 120.0
@@ -442,7 +441,6 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
 
       conn = get(conn, "/v1/coach/nutrition-foods/#{food.id}/impact")
       assert %{"data" => data} = json_response(conn, 200)
-      assert_schema(%{"data" => data}, "FoodImpactResponse", EasyWeb.ApiSpec.spec())
       assert [%{"id" => recipe_id, "name" => "Lassi"}] = data["recipes"]
       assert recipe_id == recipe.id
       assert [%{"id" => plan_id, "name" => "Cut"}] = data["templates"]
@@ -468,6 +466,16 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
 
       conn = get(conn, "/v1/coach/nutrition-foods/#{food.id}/impact")
       assert json_response(conn, 404)
+    end
+  end
+
+  describe "Food.format/1" do
+    test "normalizes nil collection fields", %{coach: coach, business: business} do
+      food = insert(:food, creator: coach, business: business) |> Easy.Repo.preload(:media)
+      food = %{food | allergens: nil, dietary_tags: nil, serving_sizes: nil}
+
+      assert %{allergens: [], dietary_tags: [], serving_sizes: []} =
+               FoodType.format(food)
     end
   end
 end

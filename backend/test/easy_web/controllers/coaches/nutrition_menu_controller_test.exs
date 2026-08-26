@@ -1,12 +1,43 @@
 defmodule EasyWeb.Coaches.NutritionMenuControllerTest do
   use Easy.ConnCase
 
-  import OpenApiSpex.TestAssertions
-
   alias Easy.Nutrition.{Meal, MealItem, Plan}
   alias Easy.Repo
 
   describe "PUT /v1/coach/nutrition-plans/:id/menu" do
+    test "rejects unknown nested Menu keys", %{conn: conn} do
+      coach = insert(:coach)
+      template = insert(:plan, business: coach.business, creator: coach.user)
+
+      response =
+        conn
+        |> authenticate_coach(coach)
+        |> put(
+          "/v1/coach/nutrition-plans/#{template.id}/menu",
+          menu_body(1,
+            meals: [
+              %{
+                "local_ref" => "breakfast",
+                "name" => "Breakfast",
+                "position" => 0,
+                "meal_items" => [
+                  %{
+                    "kind" => "food",
+                    "food_id" => Ecto.UUID.generate(),
+                    "position" => 0,
+                    "portion" => %{"kind" => "gram", "grams" => 50, "unexpected" => true}
+                  }
+                ]
+              }
+            ]
+          )
+        )
+        |> json_response(422)
+
+      assert %{"error_code" => "invalid_input", "error_detail" => %{"fields" => fields}} = response
+      assert fields["meals.0.meal_items.0.portion.unexpected"] == ["is unknown"]
+    end
+
     test "replaces and returns the complete Menu with nutrients rounded to one decimal", %{conn: conn} do
       coach = insert(:coach)
       template = insert(:plan, business: coach.business, creator: coach.user)
@@ -135,7 +166,6 @@ defmodule EasyWeb.Coaches.NutritionMenuControllerTest do
 
       assert response["data"]["schedule"]["monday"] == pattern_id
       assert response["data"]["schedule"]["sunday"] == pattern_id
-      assert_schema(response["data"], "NutritionPlan", EasyWeb.ApiSpec.spec())
     end
 
     test "keeps persisted Meal ids and omits meals that are left out of the replacement", %{conn: conn} do
@@ -183,7 +213,6 @@ defmodule EasyWeb.Coaches.NutritionMenuControllerTest do
                }
              } = response
 
-      assert_schema(response["data"], "NutritionPlan", EasyWeb.ApiSpec.spec())
       assert Repo.get(Meal, dropped_id) == nil
     end
 
@@ -205,7 +234,6 @@ defmodule EasyWeb.Coaches.NutritionMenuControllerTest do
                "error_detail" => %{"current_revision" => 3}
              } = response
 
-      assert_schema(response, "StaleRevisionError", EasyWeb.ApiSpec.spec())
       assert Repo.get!(Plan, template.id).revision == 3
       assert Repo.aggregate(Meal.for_plan(template.id), :count, :id) == 0
     end

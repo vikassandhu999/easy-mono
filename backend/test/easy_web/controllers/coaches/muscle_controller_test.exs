@@ -51,6 +51,11 @@ defmodule EasyWeb.Coaches.MuscleControllerTest do
       end
     end
 
+    test "returns 422 when query has an extra key", %{conn: conn} do
+      conn = get(conn, "/v1/coach/training-muscles", %{"search" => "x", "nope" => "1"})
+      assert %{"error_code" => "invalid_input"} = json_response(conn, 422)
+    end
+
     test "trims search and matches muscles case-insensitively", %{conn: conn} do
       search = "muscle-search-#{Ecto.UUID.generate()}"
 

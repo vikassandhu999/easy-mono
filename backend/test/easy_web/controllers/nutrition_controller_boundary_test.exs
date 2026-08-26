@@ -14,7 +14,7 @@ defmodule EasyWeb.NutritionControllerBoundaryTest do
 
   @pure_nutrition_controllers @nutrition_controllers ++
                                 [
-                                  "lib/easy_web/controllers/coaches/client_plan_controller.ex"
+                                  "lib/easy_web/controllers/coaches/client_nutrition_plan_controller.ex"
                                 ]
 
   test "nutrition controllers do not call Repo directly" do
@@ -37,16 +37,13 @@ defmodule EasyWeb.NutritionControllerBoundaryTest do
     end
   end
 
-  test "nutrition controllers do not call schema actions or the old read boundary" do
+  test "nutrition controllers do not alias schemas or the old read boundary" do
     for path <- @pure_nutrition_controllers do
       source = File.read!(Path.join(File.cwd!(), path))
 
       refute source =~ "alias Easy.Nutrition.Reads", path
       refute source =~ "alias Easy.Nutrition.MealLogging", path
-
-      refute source =~
-               ~r/\b(Food|Recipe|Meal|MealItem)\.(create|update|delete)\(/,
-             path
+      refute source =~ ~r/alias Easy\.Nutrition\.(Food|Recipe|Meal|MealItem)\b/, path
     end
   end
 end

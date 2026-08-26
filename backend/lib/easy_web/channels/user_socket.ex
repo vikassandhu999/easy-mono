@@ -13,7 +13,7 @@ defmodule EasyWeb.UserSocket do
   @spec connect(map(), Phoenix.Socket.t(), map()) :: {:ok, Phoenix.Socket.t()} | :error
   def connect(%{"token" => token}, socket, _connect_info) do
     with {:ok, claims} <- Token.verify_access_token(token),
-         role when not is_nil(role) <- Utils.safe_to_atom(claims["role"], ~w(coach client)) do
+         role when not is_nil(role) <- Utils.safe_to_atom(claims["role"], [:coach, :client]) do
       ctx = Ctx.new(claims["business_id"], claims["user_id"], claims["coach_id"], claims["is_owner"] == true)
       assign_actor(socket, role, ctx)
     else

@@ -1,7 +1,7 @@
-import type {components} from '../api/schema.ts';
+import type {FoodImpact as FoodImpactEnvelope, RecipeImpact as RecipeImpactEnvelope} from '../api/schema.ts';
 
-export type FoodImpact = NonNullable<components['schemas']['FoodImpactResponse']['data']>;
-export type RecipeImpact = NonNullable<components['schemas']['RecipeImpactResponse']['data']>;
+export type FoodImpact = FoodImpactEnvelope['data'];
+export type RecipeImpact = RecipeImpactEnvelope['data'];
 
 type FoodRecipeReference = NonNullable<FoodImpact['recipes']>[number];
 type LibraryReference =

@@ -10,8 +10,6 @@ defmodule EasyWeb.ControllerHelpers do
 
   @spec parse_enum(map(), String.t(), [atom()]) :: atom() | nil
   def parse_enum(params, key, allowed) do
-    string_allowed = Enum.map(allowed, &to_string/1)
-
     case Map.get(params, key) do
       nil ->
         nil
@@ -20,7 +18,7 @@ defmodule EasyWeb.ControllerHelpers do
         if value in allowed, do: value, else: nil
 
       value when is_binary(value) ->
-        Easy.Utils.safe_to_atom(value, string_allowed)
+        Easy.Utils.safe_to_atom(value, allowed)
 
       _ ->
         nil

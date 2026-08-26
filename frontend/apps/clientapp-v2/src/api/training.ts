@@ -7,7 +7,17 @@ import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack
 
 import {call, client} from './client.ts';
 import {exerciseKeys, sessionKeys, trainingPlanKeys} from './keys.ts';
-import type {components, paths} from './schema.ts';
+import type {
+  PerformedSet,
+  PerformedSetCreate,
+  PerformedSetUpdate,
+  paths,
+  Session,
+  SessionCreate,
+  SessionUpdate,
+  TrainingPlan,
+  TrainingPlanWorkout as TrainingPlanWorkoutSchema,
+} from './schema.ts';
 import {
   clientTrainingCoverageRequest,
   clientTrainingSessionCompleteRequest,
@@ -15,14 +25,14 @@ import {
   clientTrainingSessionHistoryRequest,
 } from './training-requests.ts';
 
-export type ClientTrainingPlan = components['schemas']['ClientTrainingPlan'];
-export type TrainingPerformedSet = components['schemas']['TrainingPerformedSet'];
-export type TrainingPlanWorkout = components['schemas']['TrainingPlanWorkout'];
-export type TrainingSession = components['schemas']['TrainingSession'];
-type TrainingSessionRequest = components['schemas']['TrainingSessionRequest'];
-type TrainingSessionUpdateRequest = components['schemas']['TrainingSessionUpdateRequest'];
-type TrainingPerformedSetCreateRequest = components['schemas']['TrainingPerformedSetCreateRequest'];
-type TrainingPerformedSetUpdateRequest = components['schemas']['TrainingPerformedSetUpdateRequest'];
+export type ClientTrainingPlan = TrainingPlan;
+export type TrainingPerformedSet = PerformedSet;
+export type TrainingPlanWorkout = TrainingPlanWorkoutSchema;
+export type TrainingSession = Session;
+type TrainingSessionRequest = SessionCreate;
+type TrainingSessionUpdateRequest = SessionUpdate;
+type TrainingPerformedSetCreateRequest = PerformedSetCreate;
+type TrainingPerformedSetUpdateRequest = PerformedSetUpdate;
 
 type PlanListQuery = paths['/v1/client/training-plans']['get']['parameters']['query'];
 type SessionListQuery = paths['/v1/client/training-sessions']['get']['parameters']['query'];

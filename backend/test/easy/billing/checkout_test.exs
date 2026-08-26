@@ -63,6 +63,14 @@ defmodule Easy.Billing.CheckoutTest do
     assert [%{kind: :seats_added, seat_delta: 1} | _] = summary(ctx_for(business)).recent_events
   end
 
+  test "checkout rejects more than 100 seats before calling the provider" do
+    stub_razorpay()
+    business = insert(:business)
+
+    assert {:error, changeset} = Billing.checkout(ctx_for(business), 101)
+    assert %{seats_to_add: ["must be less than or equal to 100"]} = errors_on(changeset)
+  end
+
   test "buying seats activates the oldest awaiting_seat clients" do
     stub_razorpay()
     business = insert(:business)

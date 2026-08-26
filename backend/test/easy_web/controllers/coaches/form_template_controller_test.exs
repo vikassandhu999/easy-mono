@@ -45,6 +45,13 @@ defmodule EasyWeb.Coaches.FormTemplateControllerTest do
       assert Enum.any?(data, &(&1["name"] == "Weekly check-in"))
       assert length(data) == 2
     end
+
+    test "rejects unknown query parameters", %{conn: conn} do
+      conn = get(conn, "/v1/coach/form-templates?unexpected=true")
+
+      assert %{"error_detail" => %{"fields" => %{"$" => ["must be empty"]}}} =
+               json_response(conn, 422)
+    end
   end
 
   describe "GET /v1/coach/form-templates/:id" do
@@ -243,7 +250,7 @@ defmodule EasyWeb.Coaches.FormTemplateControllerTest do
 
       conn = put(conn, "/v1/coach/form-templates/#{first.id}/default-intake")
       assert %{"data" => %{"is_default_intake" => true} = data} = json_response(conn, 200)
-      OpenApiSpex.TestAssertions.assert_schema(data, "ClientProfileFormTemplate", EasyWeb.ApiSpec.spec())
+      assert data["id"] == first.id
 
       conn = recycle_json(conn) |> put("/v1/coach/form-templates/#{second.id}/default-intake")
       assert %{"data" => %{"is_default_intake" => true}} = json_response(conn, 200)

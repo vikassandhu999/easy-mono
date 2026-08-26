@@ -1,6 +1,6 @@
-import type {components} from './schema.ts';
+import type {ChatMessage} from './schema.ts';
 
-export type ChatMessage = components['schemas']['ChatMessage'];
+export type {ChatMessage} from './schema.ts';
 
 const CHAT_SENDER_TYPES = ['coach', 'client'] as const;
 

@@ -3,16 +3,21 @@ import {type InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClie
 import {call, client} from '@/api/client';
 import {conversationKeys, workbenchKeys} from '@/api/keys';
 import {patchQueryData, queryClient} from '@/api/query-client';
-import type {components, paths} from '@/api/schema';
+import type {
+  ChatMessage,
+  ChatMessageCoachCreate,
+  ChatMessageEmbed,
+  ChatMessageEmbedRequest,
+  ChatMessagePage,
+  Conversation,
+  ConversationMarkHandled,
+} from '@/api/schema';
 import {workbenchMutationTargets} from '@/api/workbench-targets';
 
+export type {ChatMessage, ChatMessageEmbed, ChatMessageEmbedRequest, Conversation} from '@/api/schema';
 export {parseChatMessage} from './chat-message.ts';
 
-export type ChatMessage = components['schemas']['ChatMessage'];
-export type ChatMessageEmbed = components['schemas']['ChatMessageEmbed'];
-export type ChatMessageEmbedRequest = components['schemas']['ChatMessageEmbedRequest'];
-export type Conversation = components['schemas']['Conversation'];
-export type ChatMessagesResponse = components['schemas']['ChatMessagesResponse'];
+export type ChatMessagesResponse = ChatMessagePage;
 
 const PAGE_SIZE = 20;
 
@@ -70,8 +75,7 @@ export function useConversationMessagesInfiniteQuery(conversationId: string) {
   });
 }
 
-export type CreateMessageBody =
-  paths['/v1/coach/conversations/{id}/messages']['post']['requestBody']['content']['application/json'];
+export type CreateMessageBody = ChatMessageCoachCreate;
 
 export function useCreateCoachConversationMessageMutation() {
   const qc = useQueryClient();
@@ -117,7 +121,7 @@ export function useMarkCoachConversationReadMutation() {
   });
 }
 
-export type MarkHandledRequest = components['schemas']['MarkHandledRequest'];
+export type MarkHandledRequest = ConversationMarkHandled;
 
 /** Drain a waiting conversation without sending a message. Stale clocks return 409. */
 export function useMarkConversationHandledMutation() {

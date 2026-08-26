@@ -1,12 +1,19 @@
 defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
   use Easy.ConnCase
 
-  import OpenApiSpex.TestAssertions
-
   alias Easy.Repo
   alias Easy.Training.TrainingPlan
 
   describe "Training Template collection" do
+    test "rejects unknown list query keys", %{conn: conn} do
+      coach = insert(:coach)
+      conn = authenticate_coach(conn, coach)
+      response = get(conn, "/v1/coach/training-plans", %{"unexpected" => "value"})
+
+      assert %{"error_detail" => %{"fields" => %{"unexpected" => ["is unknown"]}}} =
+               json_response(response, 422)
+    end
+
     test "creates and lists discriminated templates", %{conn: conn} do
       coach = insert(:coach)
       conn = authenticate_coach(conn, coach)
@@ -27,7 +34,6 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
       assert created["lifecycle"] == nil
       assert created["client_id"] == nil
       refute Map.has_key?(created, "business_id")
-      assert_schema(created, "TrainingPlan", EasyWeb.ApiSpec.spec())
 
       plan = Repo.get!(TrainingPlan, created["id"])
       workout = insert(:workout, business: coach.business, plan: plan, name: "Upper", position: 0)
@@ -58,7 +64,6 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
       assert [%{"reps" => "8-10"}] = element["planned_sets"]
       assert listed["schedule"]["monday"] == workout.id
       assert listed["schedule"]["tuesday"] == nil
-      assert_schema(listed, "TrainingPlan", EasyWeb.ApiSpec.spec())
     end
 
     test "rejects client-plan fields on the template collection", %{conn: conn} do
@@ -74,7 +79,8 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
           "start_date" => "2026-08-15"
         })
 
-      assert %{"errors" => [_ | _]} = json_response(response, 422)
+      assert %{"error_detail" => %{"fields" => %{"client_id" => ["is unknown"]}}} =
+               json_response(response, 422)
     end
   end
 
@@ -98,7 +104,6 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
       assert shown["kind"] == "template"
       assert shown["revision"] == 1
       assert [%{"workout_elements" => [_]}] = shown["workouts"]
-      assert_schema(shown, "TrainingPlan", EasyWeb.ApiSpec.spec())
 
       update_conn =
         patch(conn, "/v1/coach/training-plans/#{template.id}", %{
@@ -122,7 +127,6 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
                "error_detail" => %{"current_revision" => 2}
              } = stale_response
 
-      assert_schema(stale_response, "TrainingPlanStaleRevisionError", EasyWeb.ApiSpec.spec())
       assert Repo.get!(TrainingPlan, template.id).name == "Revised Template"
 
       stale_archive_conn =
@@ -325,42 +329,41 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
         |> json_response(201)
 
       assert %{
-               "data" =>
-                 %{
-                   "id" => duplicate_id,
-                   "kind" => "template",
-                   "name" => "HTTP Strength (Copy)",
-                   "revision" => 1,
-                   "client_id" => nil,
-                   "source_template_id" => nil,
-                   "workouts" => [
-                     %{
-                       "id" => copied_lower_id,
-                       "name" => "Lower",
-                       "position" => 10,
-                       "workout_elements" => [
-                         %{
-                           "id" => copied_lower_item_id,
-                           "exercise_id" => squat_id,
-                           "planned_sets" => [%{"reps" => "5", "load_unit" => "kg"}]
-                         }
-                       ]
-                     },
-                     %{
-                       "id" => copied_upper_id,
-                       "name" => "Upper",
-                       "position" => 20,
-                       "workout_elements" => [
-                         %{
-                           "id" => copied_upper_item_id,
-                           "exercise_id" => press_id,
-                           "planned_sets" => [%{"reps" => "8-10"}]
-                         }
-                       ]
-                     }
-                   ],
-                   "schedule" => copied_schedule
-                 } = data
+               "data" => %{
+                 "id" => duplicate_id,
+                 "kind" => "template",
+                 "name" => "HTTP Strength (Copy)",
+                 "revision" => 1,
+                 "client_id" => nil,
+                 "source_template_id" => nil,
+                 "workouts" => [
+                   %{
+                     "id" => copied_lower_id,
+                     "name" => "Lower",
+                     "position" => 10,
+                     "workout_elements" => [
+                       %{
+                         "id" => copied_lower_item_id,
+                         "exercise_id" => squat_id,
+                         "planned_sets" => [%{"reps" => "5", "load_unit" => "kg"}]
+                       }
+                     ]
+                   },
+                   %{
+                     "id" => copied_upper_id,
+                     "name" => "Upper",
+                     "position" => 20,
+                     "workout_elements" => [
+                       %{
+                         "id" => copied_upper_item_id,
+                         "exercise_id" => press_id,
+                         "planned_sets" => [%{"reps" => "8-10"}]
+                       }
+                     ]
+                   }
+                 ],
+                 "schedule" => copied_schedule
+               }
              } = response
 
       assert duplicate_id != template.id
@@ -372,7 +375,6 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
       assert press_id == press.id
       assert copied_schedule["monday"] == copied_lower_id
       assert copied_schedule["friday"] == copied_upper_id
-      assert_schema(data, "TrainingPlan", EasyWeb.ApiSpec.spec())
     end
 
     test "returns not found for archived, Client Plan, and cross-tenant sources", %{conn: conn} do
@@ -439,22 +441,21 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
         |> json_response(201)
 
       assert %{
-               "data" =>
-                 %{
-                   "id" => assigned_id,
-                   "kind" => "client_plan",
-                   "lifecycle" => "incomplete",
-                   "revision" => 1,
-                   "client_id" => client_id,
-                   "source_template_id" => source_id,
-                   "workouts" => [
-                     %{
-                       "id" => copied_workout_id,
-                       "workout_elements" => [%{"id" => copied_prescribed_id}]
-                     }
-                   ],
-                   "schedule" => %{"monday" => scheduled_workout_id}
-                 } = data
+               "data" => %{
+                 "id" => assigned_id,
+                 "kind" => "client_plan",
+                 "lifecycle" => "incomplete",
+                 "revision" => 1,
+                 "client_id" => client_id,
+                 "source_template_id" => source_id,
+                 "workouts" => [
+                   %{
+                     "id" => copied_workout_id,
+                     "workout_elements" => [%{"id" => copied_prescribed_id}]
+                   }
+                 ],
+                 "schedule" => %{"monday" => scheduled_workout_id}
+               }
              } = response
 
       assert assigned_id != template.id
@@ -464,7 +465,6 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
       assert copied_prescribed_id != prescribed.id
       assert scheduled_workout_id == copied_workout_id
       assert Repo.get!(Easy.Clients.Client, client.id).stage == :coaching
-      assert_schema(data, "CoachClientTrainingPlan", EasyWeb.ApiSpec.spec())
     end
 
     test "conceals archived and inaccessible Assignment inputs", %{conn: conn} do

@@ -1,13 +1,20 @@
 import {useMutation} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
-import type {components} from '@/api/schema';
+import type {Attachment, ChatMessageEmbed, UploadCreate, UploadDownload, UploadDownloadUrls} from '@/api/schema';
 
-export type Attachment = components['schemas']['Attachment'];
-export type AttachmentDownload = components['schemas']['AttachmentDownload'];
-type AttachmentDownloadRequest = components['schemas']['AttachmentDownloadRequest'];
-export type AttachmentUploadRequest = components['schemas']['AttachmentUploadRequest'];
-export type ChatMessageEmbed = components['schemas']['ChatMessageEmbed'];
+export type {
+  Attachment,
+  ChatMessageEmbed,
+  Upload,
+  UploadCreate,
+  UploadDownload,
+  UploadDownloadUrls,
+} from '@/api/schema';
+
+export type AttachmentDownload = UploadDownload;
+type AttachmentDownloadRequest = UploadDownloadUrls;
+export type AttachmentUploadRequest = UploadCreate;
 
 /** Mints a presigned PUT for a new attachment. Nothing is cached — no invalidation. */
 export function useCreateClientUploadMutation() {

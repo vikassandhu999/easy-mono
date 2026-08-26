@@ -2,7 +2,6 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
   use Easy.ConnCase
 
   import Easy.DataCase, only: [trainer_ctx: 1]
-  import OpenApiSpex.TestAssertions
 
   alias Easy.LocalCalendar
   alias Easy.Nutrition.{Programming, WeekSchedule}
@@ -20,6 +19,12 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
   end
 
   describe "GET /v1/coach/clients/:client_id/nutrition-days" do
+    test "rejects unknown query parameters", ctx do
+      conn = get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/nutrition-days?unexpected=true")
+
+      assert json_response(conn, 422)
+    end
+
     test "returns the same live Nutrition Day as the client", ctx do
       food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Oats")
       plan = assign_covering_plan(ctx, food)
@@ -35,7 +40,6 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
       assert data["applied_timezone"]
       assert data["summary"]["adherence"] == "none"
       refute data["summary"]["has_intake"]
-      assert_schema(data, "NutritionDay", EasyWeb.ApiSpec.spec())
     end
 
     test "rejects reversed ranges and paginates history", ctx do

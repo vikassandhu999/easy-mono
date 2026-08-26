@@ -37,6 +37,10 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       assert hd(data)["lifecycle"] == "incomplete"
       assert hd(data)["meals"] == []
       assert Map.has_key?(hd(data), "day_patterns")
+      assert hd(data)["client_id"] == ctx.client.id
+      assert hd(data)["client"]["id"] == ctx.client.id
+      assert hd(data)["creator_id"] == ctx.coach.user.id
+      assert Map.has_key?(hd(data), "source_template_id")
     end
 
     test "returns empty list when no plans assigned", ctx do
@@ -93,6 +97,10 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       assert data["lifecycle"] == "incomplete"
       assert data["day_patterns"] == []
       assert data["meals"] == []
+      assert data["client_id"] == ctx.client.id
+      assert data["client"]["id"] == ctx.client.id
+      assert data["creator_id"] == ctx.coach.user.id
+      assert Map.has_key?(data, "source_template_id")
     end
 
     test "returns 404 for other client's plan", ctx do

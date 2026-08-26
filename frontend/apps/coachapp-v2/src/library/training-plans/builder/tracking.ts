@@ -8,7 +8,7 @@
 
 import {isOneOf} from '@easy/utils/closed-vocabulary';
 
-import type {components} from '../../../api/schema.ts';
+import type {TrainingPlanExercise} from '../../../api/schema.ts';
 
 /** The measures a set can carry. `load` and `distance` also own a unit. */
 export type FieldKey = 'distance' | 'duration' | 'load' | 'reps' | 'rpe';
@@ -18,7 +18,7 @@ export type FieldKey = 'distance' | 'duration' | 'load' | 'reps' | 'rpe';
  * below are keyed on it rather than on `string`, so a tracking type added
  * backend-side fails the build here instead of falling through to the default.
  */
-export type TrackingType = NonNullable<components['schemas']['TrainingPlanExercise']['tracking_type']>;
+export type TrackingType = NonNullable<TrainingPlanExercise['tracking_type']>;
 
 export const TRACKING_TYPES = [
   'weight_reps',

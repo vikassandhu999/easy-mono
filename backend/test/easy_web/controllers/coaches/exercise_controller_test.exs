@@ -54,6 +54,8 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       assert data["name"] == payload["name"]
       assert data["description"] == payload["description"]
       assert data["instructions"] == payload["instructions"]
+      assert data["source"] == "custom"
+      assert data["tracking_type"] == "weight_reps"
       assert data["mechanics"] == payload["mechanics"]
       assert data["force"] == payload["force"]
       assert data["images"] == payload["images"]
@@ -94,15 +96,8 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
         |> put_req_header("content-type", "application/json")
         |> post("/v1/coach/training-exercises", %{"description" => "missing name"})
 
-      assert %{
-               "errors" => [
-                 %{
-                   "detail" => "Missing field: name",
-                   "source" => %{"pointer" => "/name"},
-                   "title" => "Invalid value"
-                 }
-               ]
-             } = json_response(conn, 422)
+      assert %{"error_detail" => %{"fields" => %{"name" => ["is required"]}}} =
+               json_response(conn, 422)
     end
 
     test "rejects trusted identifiers in the request body", %{conn: conn} do
@@ -114,11 +109,19 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
           "business_id" => Ecto.UUID.generate()
         })
 
-      assert %{"errors" => [_error]} = json_response(conn, 422)
+      assert %{"error_detail" => %{"fields" => %{"business_id" => ["is unknown"]}}} =
+               json_response(conn, 422)
     end
   end
 
   describe "GET /v1/coach/training-exercises" do
+    test "rejects unknown list query parameters", %{conn: conn} do
+      conn = get(conn, "/v1/coach/training-exercises?unexpected=true")
+
+      assert %{"error_detail" => %{"fields" => %{"unexpected" => ["is unknown"]}}} =
+               json_response(conn, 422)
+    end
+
     test "lists current business and system exercises only", %{conn: conn, business: business} do
       search_term = "Visible #{Ecto.UUID.generate()}"
 
@@ -309,6 +312,34 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
   end
 
   describe "GET /v1/coach/training-exercises/:id" do
+    test "renders the public media subset and normalizes nil images", %{conn: conn, business: business} do
+      media = insert(:library_media, business: business)
+      exercise = insert(:exercise, business: business, images: nil, media: media)
+
+      conn = get(conn, "/v1/coach/training-exercises/#{exercise.id}")
+
+      assert %{
+               "data" => %{
+                 "images" => [],
+                 "media" => %{
+                   "id" => media_id,
+                   "kind" => "image",
+                   "content_type" => content_type,
+                   "byte_size" => byte_size,
+                   "url" => url
+                 }
+               }
+             } = json_response(conn, 200)
+
+      assert media_id == media.id
+      assert content_type == media.content_type
+      assert byte_size == media.byte_size
+      assert is_binary(url)
+
+      assert data = json_response(conn, 200)["data"]
+      assert data["media"] |> Map.keys() |> Enum.sort() == ["byte_size", "content_type", "id", "kind", "url"]
+    end
+
     test "shows a business exercise with muscles and equipment", %{conn: conn, business: business} do
       lat = insert(:muscle, name: "Lat #{Ecto.UUID.generate()}")
       cable = insert(:equipment, name: "Cable Machine #{Ecto.UUID.generate()}")
@@ -414,7 +445,8 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
           "business_id" => Ecto.UUID.generate()
         })
 
-      assert %{"errors" => [_error]} = json_response(conn, 422)
+      assert %{"error_detail" => %{"fields" => %{"business_id" => ["is unknown"]}}} =
+               json_response(conn, 422)
 
       updated = Repo.get!(TrainingExercise, exercise.id)
       assert updated.name == exercise.name
@@ -568,15 +600,8 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
         |> put_req_header("content-type", "application/json")
         |> post("/v1/coach/training-exercises/#{source.id}/copy", %{})
 
-      assert %{
-               "errors" => [
-                 %{
-                   "detail" => "Missing field: name",
-                   "source" => %{"pointer" => "/name"},
-                   "title" => "Invalid value"
-                 }
-               ]
-             } = json_response(conn, 422)
+      assert %{"error_detail" => %{"fields" => %{"name" => ["is required"]}}} =
+               json_response(conn, 422)
     end
 
     test "returns 404 when duplicating another business exercise", %{conn: conn, business: business} do

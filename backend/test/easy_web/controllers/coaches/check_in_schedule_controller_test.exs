@@ -3,7 +3,6 @@ defmodule EasyWeb.Coaches.CheckInScheduleControllerTest do
 
   alias Easy.Forms.CheckInSchedule
   alias Easy.Repo
-  alias EasyWeb.ApiSpec
 
   setup do
     coach = insert(:coach)
@@ -34,6 +33,13 @@ defmodule EasyWeb.Coaches.CheckInScheduleControllerTest do
     conn = get(recycle(conn), "/v1/coach/clients/#{client.id}/check-in-schedules")
     assert %{"data" => [%{"id" => id}]} = json_response(conn, 200)
     assert id == created["id"]
+  end
+
+  test "rejects unknown list query parameters", %{conn: conn, client: client} do
+    conn = get(conn, "/v1/coach/clients/#{client.id}/check-in-schedules?unexpected=true")
+
+    assert %{"error_detail" => %{"fields" => %{"$" => ["must be empty"]}}} =
+             json_response(conn, 422)
   end
 
   test "updates and deletes an unused schedule", %{conn: conn, client: client, template: template} do
@@ -168,13 +174,6 @@ defmodule EasyWeb.Coaches.CheckInScheduleControllerTest do
       })
 
     assert json_response(conn, 404)
-  end
-
-  test "OpenAPI contains schedule routes and retires manual assign" do
-    paths = ApiSpec.spec().paths
-    assert paths["/v1/coach/clients/{client_id}/check-in-schedules"]
-    assert paths["/v1/coach/check-in-schedules/{id}"]
-    refute paths["/v1/coach/form-templates/{id}/assign"]
   end
 
   defp schedule_body(template_id, due) do

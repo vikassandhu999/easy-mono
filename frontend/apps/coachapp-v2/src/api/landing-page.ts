@@ -2,11 +2,11 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
 import {landingPageKeys} from '@/api/keys';
-import type {components} from '@/api/schema';
+import type {LandingPage, LandingPageUpsert} from '@/api/schema';
 
-export type LandingPage = components['schemas']['LandingPage'];
-export type LandingPageResponse = components['schemas']['LandingPageResponse'];
-export type LandingPageUpsertRequest = components['schemas']['LandingPageUpsertRequest'];
+export type {LandingPage, LandingPageUpsert} from '@/api/schema';
+
+export type LandingPageUpsertRequest = LandingPageUpsert;
 
 export type Template = LandingPage['template'];
 type LandingQuestion = NonNullable<LandingPage['application_questions']>[number];

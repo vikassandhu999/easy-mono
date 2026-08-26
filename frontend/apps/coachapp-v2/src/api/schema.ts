@@ -3,626 +3,2824 @@
  * Do not make direct changes to the file.
  */
 
+/* typed-routes:types */
+/* typed-routes:hash 8f5d48f349cc365a9c34869bf0b17cccf64129bd895084395d8dc5c8eb0f562c */
+export type Attachment = {
+  id: string;
+  content_type:
+    | 'image/jpeg'
+    | 'image/png'
+    | 'image/webp'
+    | 'image/heic'
+    | 'video/mp4'
+    | 'video/webm'
+    | 'video/quicktime'
+    | 'audio/webm'
+    | 'audio/mp4'
+    | 'audio/mpeg';
+  byte_size: number;
+  duration_ms: number | null;
+};
+export type Billing = {
+  status: 'free' | 'active' | 'past_due' | 'cancel_at_period_end' | 'cancelled';
+  free_seats: number;
+  paid_seats: number;
+  seat_limit: number;
+  used_seats: number;
+  available_seats: number;
+  awaiting_seat_count: number;
+  monthly_seat_price_inr: number;
+  current_period_end: string | null;
+  is_owner: boolean;
+  recent_events: Array<BillingEvent> | null;
+};
+export type BillingCheckout = {seats_to_add: number};
+export type BillingCheckoutPayload = {key_id: string; subscription_id: string};
+export type BillingCheckoutResult = {
+  action: 'checkout' | 'updated';
+  checkout: BillingCheckoutPayload | null;
+  billing: Billing;
+};
+export type BillingEvent = {
+  id: string;
+  kind:
+    | 'seats_added'
+    | 'seats_removed'
+    | 'payment_succeeded'
+    | 'payment_failed'
+    | 'cancellation_scheduled'
+    | 'subscription_cancelled';
+  seat_delta: number | null;
+  amount_paid: number | null;
+  currency: string | null;
+  occurred_at: string;
+};
+export type Business = {
+  id: string;
+  name: string;
+  handle: string;
+  about: string | null;
+  default_weight_unit: 'kg' | 'lbs';
+  dashboard_setup_hidden_at: string | null;
+  dashboard_setup_hidden_reason: 'dismissed' | 'completed' | null;
+  inserted_at: string;
+  updated_at: string;
+};
+export type BusinessCreate = {name: string; handle: string; about?: string | null; default_weight_unit?: 'kg' | 'lbs'};
+export type BusinessUpdate = {
+  name?: string;
+  handle?: string;
+  about?: string | null;
+  default_weight_unit?: 'kg' | 'lbs';
+};
+export type BusinessUpdateDashboardSetup = {dashboard_setup_hidden_reason: 'dismissed' | 'completed' | null};
+export type ChatMessage = {
+  id: string;
+  conversation_id: string;
+  sender_type: 'coach' | 'client';
+  sender_id: string;
+  body: string | null;
+  attachments: Array<Attachment>;
+  embed: ChatMessageEmbed | null;
+  inserted_at: string;
+};
+export type ChatMessageCoachCreate = {
+  body?: string | null;
+  attachment_ids?: Array<string>;
+  embed?: ChatMessageEmbedRequest | null;
+};
+export type ChatMessageEmbed = {type: 'form_submission'; id: string; snapshot: FormSubmissionEmbedSnapshot};
+export type ChatMessageEmbedRequest = {type: 'form_submission'; id: string};
+export type ChatMessageListQuery = {before?: string; limit?: number};
+export type ChatMessagePage = {data: Array<ChatMessage>; has_more: boolean};
+export type CheckInAwaitingReviewReason = {
+  code: 'check_in_awaiting_review';
+  submission_id: string;
+  submitted_at: string;
+};
+export type CheckInReview = {
+  id: string;
+  form_assignment_id: string;
+  question_snapshot: Array<FormSnapshotSection>;
+  answers: {[key: string]: FormAssignmentAnswer};
+  submitted_by_type: 'coach' | 'client' | 'system';
+  submitted_at: string;
+  reviewed_at: string | null;
+  reviewed_by_id: string | null;
+  attachments: Array<{
+    id: string;
+    content_type:
+      | 'image/jpeg'
+      | 'image/png'
+      | 'image/webp'
+      | 'image/heic'
+      | 'video/mp4'
+      | 'video/webm'
+      | 'video/quicktime'
+      | 'audio/webm'
+      | 'audio/mp4'
+      | 'audio/mpeg';
+    byte_size: number;
+    duration_ms: number | null;
+  }>;
+  inserted_at: string;
+  client: {id: string; email: string | null; first_name: string | null; last_name: string | null};
+  form_assignment: FormAssignment;
+};
+export type CheckInReviewListQuery = {offset?: number; limit?: number};
+export type CheckInSchedule = {
+  id: string;
+  client_id: string;
+  form_template_id: string;
+  frequency: 'once' | 'weekly' | 'biweekly' | 'monthly';
+  next_due_on: string;
+  active: boolean;
+  form_template: FormTemplate;
+  inserted_at: string;
+  updated_at: string;
+};
+export type CheckInScheduleCreate = {
+  form_template_id: string;
+  frequency: 'once' | 'weekly' | 'biweekly' | 'monthly';
+  next_due_on: string;
+};
+export type CheckInScheduleUpdate = {
+  frequency?: 'once' | 'weekly' | 'biweekly' | 'monthly';
+  next_due_on?: string;
+  active?: boolean;
+};
+export type Client = {
+  id: string;
+  email: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+  notes: string | null;
+  goal_weight_value: string | null;
+  goal_weight_unit: 'kg' | 'lbs' | null;
+  status: 'active' | 'pending' | 'inactive';
+  stage: 'onboarding' | 'coaching';
+  inactive_reason: 'manual' | 'subscription_expired' | 'awaiting_seat' | null;
+  subscription_started_on: string | null;
+  subscription_ends_on: string | null;
+  joined_at: string | null;
+  required_services: Array<'training' | 'nutrition'>;
+  expiring_soon: boolean;
+  last_active_at: string | null;
+  training_plan_name: string | null;
+  nutrition_plan_name: string | null;
+  assigned_coach_id: string | null;
+  invite_url: string | null;
+  invitation_sent_at: string | null;
+  invitation_expires_at: string | null;
+  inserted_at: string;
+  updated_at: string;
+};
+export type ClientIndex = {
+  data: Array<Client>;
+  count: number;
+  summary: {active: number; pending: number; inactive: number};
+};
+export type ClientInvite = {
+  email?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  phone?: string | null;
+  notes?: string | null;
+  required_services?: Array<'training' | 'nutrition'>;
+};
+export type ClientListQuery = {
+  offset?: number;
+  limit?: number;
+  search?: string;
+  status?: 'active' | 'pending' | 'inactive';
+  stage?: 'onboarding' | 'coaching';
+  sort?: 'newest' | 'last_active';
+  include_plans?: boolean;
+};
+export type ClientReassign = {coach_id: string};
+export type ClientUpdate = {
+  email?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  phone?: string | null;
+  notes?: string | null;
+  goal_weight_value?: number | null;
+  goal_weight_unit?: 'kg' | 'lbs' | null;
+  status?: 'active' | 'inactive';
+  stage?: 'onboarding' | 'coaching' | null;
+  subscription_started_on?: string | null;
+  subscription_ends_on?: string | null;
+  required_services?: Array<'training' | 'nutrition'>;
+};
+export type CoachProfile = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string;
+  phone: string | null;
+  is_owner: boolean;
+  business: {
+    id: string;
+    name: string;
+    slug: string;
+    whatsapp_number: string | null;
+    dashboard_setup_hidden_at: string | null;
+    dashboard_setup_hidden_reason: 'dismissed' | 'completed' | null;
+  };
+};
+export type CoachProfileUpdate = {
+  first_name?: string | null;
+  last_name?: string | null;
+  phone?: string | null;
+  business_name?: string | null;
+  whatsapp_number?: string | null;
+};
+export type Conversation = {
+  id: string;
+  client_id: string;
+  client_name: string | null;
+  last_message_at: string | null;
+  last_message_preview: string | null;
+  last_message_role: 'coach' | 'client' | null;
+  waiting_since: string | null;
+  unread_count: number;
+  inserted_at: string;
+  updated_at: string;
+};
+export type ConversationListQuery = {offset?: number; limit?: number; search?: string};
+export type ConversationMarkHandled = {expected_last_message_at: string};
+export type Day = {
+  date: string;
+  plan_id: string | null;
+  write_eligible: boolean;
+  applied_timezone: string;
+  targets: NutritionDayTargets;
+  summary: NutritionDaySummary;
+  slots: Array<NutritionDaySlot>;
+};
+export type DayListQuery = {date?: string; from?: string; to?: string; offset?: number; limit?: number};
+export type EngagementEndingSoonReason = {code: 'engagement_ending_soon'; ends_on: string};
+export type Equipment = {id: string; name: string; description: string | null};
+export type EquipmentListQuery = {search?: string};
+export type Exercise = {
+  id: string;
+  source: string | null;
+  tracking_type: string | null;
+  name: string;
+  description: string | null;
+  instructions: string | null;
+  mechanics: 'compound' | 'isolation' | 'isometric' | null;
+  force: 'push' | 'pull' | 'static' | null;
+  images: Array<string>;
+  media: ExerciseMedia | null;
+  muscles: Array<ExerciseRelation>;
+  equipment: Array<ExerciseRelation>;
+  inserted_at: string;
+  updated_at: string;
+};
+export type ExerciseCopy = {name: string};
+export type ExerciseCreate = {
+  name: string;
+  description?: string | null;
+  instructions?: string | null;
+  mechanics?: 'compound' | 'isolation' | 'isometric' | null;
+  force?: 'push' | 'pull' | 'static' | null;
+  images?: Array<string>;
+  media_id?: string | null;
+  muscle_ids?: Array<string>;
+  equipment_ids?: Array<string>;
+};
+export type ExerciseListQuery = {
+  offset?: number;
+  limit?: number;
+  search?: string;
+  muscle_ids?: Array<string>;
+  equipment_ids?: Array<string>;
+};
+export type ExerciseMedia = {
+  id: string;
+  kind: 'image' | 'video';
+  content_type: string;
+  byte_size: number;
+  url: string | null;
+};
+export type ExerciseRelation = {id: string; name: string; description: string | null};
+export type ExerciseUpdate = {
+  name?: string;
+  description?: string | null;
+  instructions?: string | null;
+  mechanics?: 'compound' | 'isolation' | 'isometric' | null;
+  force?: 'push' | 'pull' | 'static' | null;
+  images?: Array<string>;
+  media_id?: string | null;
+  muscle_ids?: Array<string>;
+  equipment_ids?: Array<string>;
+};
+export type Food = {
+  id: string;
+  name: string;
+  brand: string | null;
+  barcode: string | null;
+  source: 'system' | 'imported' | 'custom' | null;
+  category: string | null;
+  revision: number;
+  nutrients: FoodNutrients;
+  calories_per_100g: number | null;
+  protein_g_per_100g: number | null;
+  carbs_g_per_100g: number | null;
+  fat_g_per_100g: number | null;
+  fiber_g_per_100g: number | null;
+  sugar_g_per_100g: number | null;
+  allergens: Array<string>;
+  dietary_tags: Array<string>;
+  notes: string | null;
+  image_url: string | null;
+  media: FoodMedia | null;
+  serving_sizes: Array<FoodServingSize>;
+  creator_id: string | null;
+  inserted_at: string;
+  updated_at: string;
+};
+export type FoodCategoryList = {data: Array<string>};
+export type FoodCreate = {
+  name: string;
+  brand?: string | null;
+  barcode?: string | null;
+  category?: string | null;
+  calories_per_100g?: number | null;
+  protein_g_per_100g?: number | null;
+  carbs_g_per_100g?: number | null;
+  fat_g_per_100g?: number | null;
+  fiber_g_per_100g?: number | null;
+  sugar_g_per_100g?: number | null;
+  allergens?: Array<string>;
+  dietary_tags?: Array<string>;
+  notes?: string | null;
+  image_url?: string | null;
+  media_id?: string | null;
+  serving_sizes?: Array<FoodServingSize>;
+};
+export type FoodImpact = {
+  data: {recipes: Array<FoodRecipeRef>; templates: Array<FoodPlanRef>; active_client_plans: Array<FoodPlanRef>};
+};
+export type FoodListQuery = {offset?: number; limit?: number; search?: string; categories?: Array<string>};
+export type FoodMedia = {
+  id: string;
+  kind: 'image' | 'video';
+  content_type: string;
+  byte_size: number;
+  url: string | null;
+};
+export type FoodNutrients = {
+  calories: number | null;
+  protein: number | null;
+  carbohydrates: number | null;
+  fat: number | null;
+  fiber: number | null;
+  complete: boolean;
+};
+export type FoodPlanRef = {id: string; name: string; client_id: string | null};
+export type FoodRecipeRef = {id: string; name: string};
+export type FoodServingSize = {label: string; amount: number; unit: string; weight_g: number; is_default: boolean};
+export type FoodUpdate = {
+  expected_revision: number;
+  name?: string;
+  brand?: string | null;
+  barcode?: string | null;
+  category?: string | null;
+  calories_per_100g?: number | null;
+  protein_g_per_100g?: number | null;
+  carbs_g_per_100g?: number | null;
+  fat_g_per_100g?: number | null;
+  fiber_g_per_100g?: number | null;
+  sugar_g_per_100g?: number | null;
+  allergens?: Array<string>;
+  dietary_tags?: Array<string>;
+  notes?: string | null;
+  image_url?: string | null;
+  media_id?: string | null;
+  serving_sizes?: Array<FoodServingSize>;
+};
+export type FormAssignment = {
+  id: string;
+  client_id: string;
+  form_template_id: string;
+  check_in_schedule_id: string | null;
+  purpose: 'intake' | 'check_in';
+  priority: 'high' | 'normal';
+  status: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
+  due_date: string | null;
+  completed_at: string | null;
+  due_reminder_sent_at: string | null;
+  overdue_reminder_sent_at: string | null;
+  latest_submission: FormSubmission | null;
+  latest_submission_reviewed_at: string | null;
+  form_template: FormTemplate;
+  inserted_at: string;
+  updated_at: string;
+};
+export type FormAssignmentAnswer = string | number | boolean | Array<string> | {services: Array<string>};
+export type FormAssignmentCreate = {form_template_id: string};
+export type FormAssignmentSubmission = FormSubmission;
+export type FormAssignmentUpdate = {
+  priority?: 'high' | 'normal';
+  status?: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
+  due_date?: string | null;
+};
+export type FormSnapshotQuestion = {
+  id: string;
+  label: string;
+  type:
+    | 'text'
+    | 'number'
+    | 'boolean'
+    | 'date'
+    | 'select'
+    | 'multi_select'
+    | 'rating'
+    | 'weight'
+    | 'photo'
+    | 'service_type';
+  required?: boolean;
+  options?: Array<string>;
+};
+export type FormSnapshotSection = {questions: Array<FormSnapshotQuestion>; title?: string; section?: string};
+export type FormSubmission = {
+  id: string;
+  form_assignment_id: string;
+  question_snapshot: Array<FormSnapshotSection>;
+  answers: {[key: string]: FormAssignmentAnswer};
+  submitted_by_type: 'coach' | 'client' | 'system';
+  submitted_at: string;
+  reviewed_at: string | null;
+  reviewed_by_id: string | null;
+  attachments: Array<{
+    id: string;
+    content_type:
+      | 'image/jpeg'
+      | 'image/png'
+      | 'image/webp'
+      | 'image/heic'
+      | 'video/mp4'
+      | 'video/webm'
+      | 'video/quicktime'
+      | 'audio/webm'
+      | 'audio/mp4'
+      | 'audio/mpeg';
+    byte_size: number;
+    duration_ms: number | null;
+  }>;
+  inserted_at: string;
+};
+export type FormSubmissionEmbedSnapshot = {form_assignment_id: string; title: string; submitted_at: string};
+export type FormTemplate = {
+  id: string;
+  name: string;
+  purpose: 'intake' | 'check_in';
+  sections: Array<{questions: Array<FormTemplateQuestion>; title?: string}>;
+  status: 'active' | 'archived';
+  is_default_intake: boolean;
+  response_count: number;
+  inserted_at: string;
+  updated_at: string;
+};
+export type FormTemplateCreate = {
+  name: string;
+  purpose: 'intake' | 'check_in';
+  sections: Array<FormTemplateSection>;
+  status?: 'active' | 'archived';
+};
+export type FormTemplateQuestion =
+  | {
+      id: string;
+      label: string;
+      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
+      required?: boolean;
+      options?: Array<string>;
+    }
+  | {id: string; label: string; type: 'service_type'; required?: boolean};
+export type FormTemplateSection = {questions: Array<FormTemplateQuestion>; title?: string};
+export type FormTemplateUpdate = {name?: string; sections?: Array<FormTemplateSection>; status?: 'active' | 'archived'};
+export type Health = {status: string; service: string; timestamp: string; version: string};
+export type IntakeOverdueReason = {code: 'intake_overdue'; assignment_id: string; due_on: string; form_title: string};
+export type InvitationFollowUpDueReason = {
+  code: 'invitation_follow_up_due';
+  invitation_id: string;
+  sent_at: string;
+  follow_up_due_at: string;
+};
+export type LandingPage = {
+  id: string;
+  slug: string;
+  template: 'proof_first' | 'problem_fit' | 'coach_story';
+  eyebrow: string | null;
+  headline: string;
+  subheadline: string | null;
+  coach_intro: string | null;
+  hero_image_url: string | null;
+  proof_points: Array<{label?: string; value?: string}>;
+  fit_points: Array<string>;
+  application_questions: Array<{
+    id?: string;
+    label?: string;
+    type?: 'short_text' | 'long_text' | 'single_select';
+    options?: Array<string>;
+  }>;
+  status: 'draft' | 'published';
+  programs: Array<{
+    id: string;
+    name: string;
+    audience: string | null;
+    promise: string | null;
+    description: string | null;
+    price_display: string | null;
+    position: number;
+  }>;
+  inserted_at: string;
+  updated_at: string;
+};
+export type LandingPageApplication = {
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  instagram?: string | null;
+  landing_program_id?: string | null;
+  answers?: {[key: string]: unknown};
+};
+export type LandingPageApplicationResult = {
+  id: string;
+  name: string;
+  program_name: string | null;
+  business_name: string;
+  whatsapp_number: string | null;
+};
+export type LandingPagePublic = {
+  slug: string;
+  template: 'proof_first' | 'problem_fit' | 'coach_story';
+  eyebrow: string | null;
+  headline: string;
+  subheadline: string | null;
+  coach_intro: string | null;
+  hero_image_url: string | null;
+  proof_points: Array<{label?: string; value?: string}>;
+  fit_points: Array<string>;
+  application_questions: Array<{
+    id?: string;
+    label?: string;
+    type?: 'short_text' | 'long_text' | 'single_select';
+    options?: Array<string>;
+  }>;
+  programs: Array<{
+    id: string;
+    name: string;
+    audience: string | null;
+    promise: string | null;
+    description: string | null;
+    price_display: string | null;
+    position: number;
+  }>;
+  business_name: string;
+  whatsapp_number: string | null;
+};
+export type LandingPageUpsert = {
+  slug: string;
+  template: 'proof_first' | 'problem_fit' | 'coach_story';
+  headline: string;
+  status: 'draft' | 'published';
+  eyebrow?: string | null;
+  subheadline?: string | null;
+  coach_intro?: string | null;
+  hero_image_url?: string | null;
+  proof_points?: Array<{label?: string; value?: string}>;
+  fit_points?: Array<string>;
+  application_questions?: Array<{
+    id?: string;
+    label?: string;
+    type?: 'short_text' | 'long_text' | 'single_select';
+    options?: Array<string>;
+  }>;
+  programs?: Array<{
+    name: string;
+    audience?: string | null;
+    promise?: string | null;
+    description?: string | null;
+    price_display?: string | null;
+  }>;
+};
+export type LibraryMedia = {
+  id: string;
+  kind: 'image' | 'video';
+  content_type: string;
+  byte_size: number;
+  url: string | null;
+  public_url: string | null;
+  upload_url: string;
+  upload_url_expires_at: string;
+  upload_headers: {[key: string]: string};
+};
+export type LibraryMediaCreate = {
+  content_type: 'image/jpeg' | 'image/png' | 'image/webp' | 'video/mp4' | 'video/webm';
+  byte_size: number;
+};
+export type MissedCheckInReason = {code: 'missed_check_in'; assignment_id: string; due_on: string};
+export type Muscle = {id: string; name: string; description: string | null};
+export type MuscleListQuery = {search?: string};
+export type NutritionDayEntry = {
+  id: string;
+  kind: 'food' | 'recipe';
+  name: string;
+  food_id: string | null;
+  recipe_id: string | null;
+  portion: NutritionPortion;
+  nutrients: FoodNutrients;
+  notes: string | null;
+  revision: number;
+  inserted_at: string;
+  updated_at: string;
+};
+export type NutritionDayOption = {
+  meal_id: string | null;
+  meal_name: string | null;
+  position: number;
+  items: Array<NutritionDayOptionItem>;
+};
+export type NutritionDayOptionItem = {
+  planned_item_ref: string;
+  kind: 'food' | 'recipe';
+  name: string | null;
+  food_id: string | null;
+  recipe_id: string | null;
+  position: number;
+  portion: NutritionPortion;
+  nutrients: FoodNutrients;
+};
+export type NutritionDayPattern = {
+  id: string;
+  name: string;
+  position: number;
+  weekdays: Array<'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'>;
+  slots: Array<NutritionDayPatternSlot>;
+  nutrition_plan_id: string;
+  inserted_at: string;
+  updated_at: string;
+};
+export type NutritionDayPatternInput = {
+  id?: string;
+  local_ref?: string;
+  name: string;
+  position: number;
+  slots: Array<NutritionDayPatternSlotInput>;
+};
+export type NutritionDayPatternSlot = {
+  meal_slot:
+    | 'early_morning'
+    | 'breakfast'
+    | 'mid_morning'
+    | 'lunch'
+    | 'afternoon'
+    | 'evening'
+    | 'dinner'
+    | 'pre_sleep'
+    | 'pre_workout'
+    | 'during_workout'
+    | 'post_workout';
+  options: Array<NutritionMealOption>;
+};
+export type NutritionDayPatternSlotInput = {
+  meal_slot:
+    | 'early_morning'
+    | 'breakfast'
+    | 'mid_morning'
+    | 'lunch'
+    | 'afternoon'
+    | 'evening'
+    | 'dinner'
+    | 'pre_sleep'
+    | 'pre_workout'
+    | 'during_workout'
+    | 'post_workout';
+  options: Array<NutritionMealOptionInput>;
+};
+export type NutritionDayRow = {
+  status: 'as_planned' | 'swapped' | 'pending' | 'skipped' | 'added' | 'recorded';
+  planned: NutritionDayOptionItem | null;
+  entry: NutritionDayEntry | null;
+};
+export type NutritionDaySlot = {
+  meal_slot:
+    | 'early_morning'
+    | 'breakfast'
+    | 'mid_morning'
+    | 'lunch'
+    | 'afternoon'
+    | 'evening'
+    | 'dinner'
+    | 'pre_sleep'
+    | 'pre_workout'
+    | 'during_workout'
+    | 'post_workout';
+  meal_id: string | null;
+  revision: number | null;
+  applied_timezone: string | null;
+  write_eligible: boolean;
+  planned_calories: number | null;
+  logged_calories: number | null;
+  options: Array<NutritionDayOption>;
+  rows: Array<NutritionDayRow>;
+};
+export type NutritionDaySummary = {
+  logged: FoodNutrients;
+  planned: FoodNutrients;
+  counts: NutritionDaySummaryCounts;
+  has_intake: boolean;
+  adherence: 'none' | 'under' | 'on' | 'over' | null;
+};
+export type NutritionDaySummaryCounts = {
+  as_planned: number;
+  swapped: number;
+  added: number;
+  recorded: number;
+  pending: number;
+  skipped: number;
+};
+export type NutritionDayTargets = {
+  calories: number | null;
+  protein_g: number | null;
+  carbs_g: number | null;
+  fat_g: number | null;
+  fiber_g: number | null;
+};
+export type NutritionMeal = {
+  id: string;
+  name: string;
+  notes: string | null;
+  position: number;
+  nutrition_plan_id: string;
+  nutrients: FoodNutrients;
+  meal_items: Array<NutritionMealItem>;
+  inserted_at: string;
+  updated_at: string;
+};
+export type NutritionMealInput = {
+  id?: string;
+  local_ref?: string;
+  name: string;
+  notes?: string | null;
+  position: number;
+  meal_items: Array<NutritionMealItemInput>;
+};
+export type NutritionMealItem = {
+  id: string;
+  kind: 'food' | 'recipe';
+  name: string | null;
+  food_id: string | null;
+  recipe_id: string | null;
+  position: number;
+  portion: NutritionPortion;
+  nutrients: FoodNutrients;
+  nutrition_meal_id: string;
+  inserted_at: string;
+  updated_at: string;
+};
+export type NutritionMealItemInput = {
+  id?: string;
+  local_ref?: string;
+  kind: 'food' | 'recipe';
+  food_id?: string | null;
+  recipe_id?: string | null;
+  position: number;
+  portion: NutritionPortionInput;
+};
+export type NutritionMealOption = {
+  id: string;
+  position: number;
+  nutrition_meal_id: string;
+  inserted_at: string;
+  updated_at: string;
+};
+export type NutritionMealOptionInput = {
+  id?: string;
+  local_ref?: string;
+  nutrition_meal_id?: string;
+  meal_local_ref?: string;
+  position: number;
+};
+export type NutritionPlan = {
+  id: string;
+  kind: 'template' | 'client_plan';
+  name: string;
+  description: string | null;
+  revision: number;
+  archived_at: string | null;
+  status: 'active' | 'archived';
+  lifecycle: 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived' | null;
+  assigned_client_count: number;
+  target_calories: number | null;
+  target_protein_g: number | null;
+  target_carbs_g: number | null;
+  target_fat_g: number | null;
+  target_fiber_g: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  client_id: string | null;
+  client: NutritionPlanClient | null;
+  creator_id: string | null;
+  source_template_id: string | null;
+  meals: Array<NutritionMeal>;
+  day_patterns: Array<NutritionDayPattern>;
+  schedule: NutritionWeekSchedule;
+  inserted_at: string;
+  updated_at: string;
+};
+export type NutritionPlanAssign = {expected_revision: number; start_date?: string | null; end_date?: string | null};
+export type NutritionPlanClient = {id: string; first_name: string | null; last_name: string | null};
+export type NutritionPlanClientListQuery = {offset?: number; limit?: number; status?: 'active' | 'archived'};
+export type NutritionPlanCreate = {
+  name: string;
+  description?: string | null;
+  target_calories?: number | null;
+  target_protein_g?: number | null;
+  target_carbs_g?: number | null;
+  target_fat_g?: number | null;
+  target_fiber_g?: number | null;
+};
+export type NutritionPlanListQuery = {offset?: number; limit?: number; search?: string; archived?: boolean};
+export type NutritionPlanReplaceMenu = {
+  expected_revision: number;
+  meals: Array<NutritionMealInput>;
+  day_patterns: Array<NutritionDayPatternInput>;
+  schedule: NutritionWeekScheduleInput;
+};
+export type NutritionPlanUpdate = {
+  expected_revision: number;
+  name?: string;
+  description?: string | null;
+  target_calories?: number | null;
+  target_protein_g?: number | null;
+  target_carbs_g?: number | null;
+  target_fat_g?: number | null;
+  target_fiber_g?: number | null;
+  start_date?: string | null;
+  end_date?: string | null;
+};
+export type NutritionPortion = {
+  kind: 'gram' | 'serving';
+  grams: number | null;
+  amount: number | null;
+  unit: string | null;
+  label: string | null;
+};
+export type NutritionPortionInput = {
+  kind: 'gram' | 'serving';
+  grams?: number | null;
+  amount?: number | null;
+  unit?: string | null;
+  label?: string | null;
+};
+export type NutritionWeekSchedule = {
+  monday: string | null;
+  tuesday: string | null;
+  wednesday: string | null;
+  thursday: string | null;
+  friday: string | null;
+  saturday: string | null;
+  sunday: string | null;
+};
+export type NutritionWeekScheduleInput = {
+  monday: string;
+  tuesday: string;
+  wednesday: string;
+  thursday: string;
+  friday: string;
+  saturday: string;
+  sunday: string;
+};
+export type PerformedSet = {
+  id: string;
+  exercise_name: string;
+  snapshot_exercise_ref: string | null;
+  set_type: 'working' | 'warmup' | 'dropset';
+  position: number;
+  reps: string | null;
+  load_value: string | null;
+  load_unit: string | null;
+  rpe: string | null;
+  duration_seconds: number | null;
+  distance_value: string | null;
+  distance_unit: string | null;
+  notes: string | null;
+  exercise_id: string | null;
+  training_session_id: string;
+  exercise: TrainingPlanExercise | null;
+  inserted_at: string;
+  updated_at: string;
+};
+export type Prospect = {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  instagram: string | null;
+  answers: {[key: string]: unknown};
+  status: 'new' | 'reviewing' | 'won' | 'lost';
+  notes: string | null;
+  landing_page_slug: string | null;
+  program: {id: string; name: string} | null;
+  client: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    status: 'pending' | 'active' | 'inactive';
+  } | null;
+  inserted_at: string;
+  updated_at: string;
+};
+export type ProspectEnroll = {
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+};
+export type ProspectEnrollment = {data: {prospect: Prospect; already_enrolled: boolean}};
+export type ProspectIndex = {
+  data: Array<Prospect>;
+  count: number;
+  summary: {new: number; reviewing: number; won: number; lost: number};
+};
+export type ProspectListQuery = {status?: string; offset?: number; limit?: number};
+export type ProspectUpdate = {status: 'new' | 'reviewing' | 'won' | 'lost'; notes?: string | null};
+export type Recipe = {
+  id: string;
+  name: string;
+  description: string | null;
+  instructions: string | null;
+  servings_count: number;
+  cooked_weight_g: number | null;
+  revision: number;
+  allergens: Array<string>;
+  dietary_tags: Array<string>;
+  nutrients: FoodNutrients;
+  recipe_ingredients: Array<RecipeIngredient>;
+  creator_id: string | null;
+  inserted_at: string;
+  updated_at: string;
+};
+export type RecipeCreate = {
+  name: string;
+  description?: string | null;
+  instructions?: string | null;
+  servings_count: number;
+  cooked_weight_g?: number | null;
+  allergens?: Array<string>;
+  dietary_tags?: Array<string>;
+  recipe_ingredients?: Array<RecipeIngredientInput>;
+};
+export type RecipeImpact = {data: {templates: Array<RecipePlanRef>; active_client_plans: Array<RecipePlanRef>}};
+export type RecipeIngredient = {
+  food_id: string;
+  food: Food | null;
+  unit: string | null;
+  amount: number | null;
+  weight_g: number;
+  position: number;
+};
+export type RecipeIngredientInput = {food_id: string; unit?: string | null; amount?: number | null; weight_g: number};
+export type RecipeListQuery = {offset?: number; limit?: number; search?: string};
+export type RecipePlanRef = {id: string; name: string; client_id: string | null};
+export type RecipeUpdate = {
+  expected_revision: number;
+  name?: string;
+  description?: string | null;
+  instructions?: string | null;
+  servings_count?: number;
+  cooked_weight_g?: number | null;
+  allergens?: Array<string>;
+  dietary_tags?: Array<string>;
+  recipe_ingredients?: Array<RecipeIngredientInput>;
+};
+export type ReplyNeededReason = {code: 'reply_needed'; waiting_since: string};
+export type Revision = {expected_revision: number};
+export type ServiceCoverageEndingSoonReason = {
+  code: 'service_coverage_ending_soon';
+  service: 'training' | 'nutrition';
+  coverage_ends_on: string;
+  first_uncovered_on: string;
+};
+export type ServiceCoverageMissingReason = {
+  code: 'service_coverage_missing';
+  service: 'training' | 'nutrition';
+  first_uncovered_on: string;
+};
+export type ServiceNeverProgrammedReason = {code: 'service_never_programmed'; service: 'training' | 'nutrition'};
+export type Session = {
+  id: string;
+  kind: 'planned' | 'freestyle';
+  date: string;
+  started_at: string;
+  closed_at: string | null;
+  state: 'active' | 'completed' | 'discarded';
+  soreness_rating: number | null;
+  notes: string | null;
+  client_id?: string | null;
+  snapshot_version: number | null;
+  prescription_snapshot: SessionPrescriptionSnapshot | null;
+  source_plan_id: string | null;
+  source_workout_id: string | null;
+  performed_sets: Array<PerformedSet>;
+  inserted_at: string;
+  updated_at: string;
+};
+export type SessionListQuery = {from?: string; to?: string; offset?: number; limit?: number};
+export type SessionPlannedSet = {
+  set_type: 'working' | 'warmup' | 'dropset' | null;
+  reps: string | null;
+  load_value: string | null;
+  load_unit: 'kg' | 'lbs' | 'bodyweight' | 'none' | null;
+  duration_seconds: number | null;
+  distance_value: string | null;
+  distance_unit: 'meters' | 'km' | 'miles' | 'none' | null;
+  rpe: number | null;
+  rest_seconds: number | null;
+  notes: string | null;
+};
+export type SessionPrescriptionSnapshot = {version: number; plan: SessionSnapshotPlan; workout: SessionSnapshotWorkout};
+export type SessionSnapshotExercise = {
+  ref: string;
+  position: number;
+  exercise_id: string;
+  exercise_name: string;
+  tracking_type:
+    | 'weight_reps'
+    | 'bodyweight_reps'
+    | 'weighted_bodyweight'
+    | 'assisted_bodyweight'
+    | 'reps_only'
+    | 'duration'
+    | 'weight_duration'
+    | 'distance_duration'
+    | 'weight_distance';
+  sets: Array<SessionPlannedSet>;
+};
+export type SessionSnapshotPlan = {id: string; name: string; revision: number};
+export type SessionSnapshotWorkout = {id: string; name: string; exercises: Array<SessionSnapshotExercise>};
+export type TeamMember = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  status: 'invited' | 'active' | 'inactive';
+  is_owner: boolean;
+  invitation_sent_at: string | null;
+};
+export type TeamMemberInvite = {email: string; first_name?: string | null; last_name?: string | null};
+export type TeamMemberListQuery = {};
+export type TrainingPlan = {
+  id: string;
+  kind: 'template' | 'client_plan';
+  name: string;
+  description: string | null;
+  revision: number;
+  archived_at: string | null;
+  status: 'active' | 'archived';
+  lifecycle: 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived' | null;
+  start_date: string | null;
+  end_date: string | null;
+  client_id: string | null;
+  client: TrainingPlanClient | null;
+  creator_id: string;
+  source_template_id: string | null;
+  workouts: Array<TrainingPlanWorkout>;
+  schedule: TrainingSchedule;
+  inserted_at: string;
+  updated_at: string;
+};
+export type TrainingPlanAssign = {start_date?: string | null; end_date?: string | null};
+export type TrainingPlanClient = {id: string; first_name: string | null; last_name: string | null};
+export type TrainingPlanClientScopedListQuery = {offset?: number; limit?: number; status?: 'active' | 'archived'};
+export type TrainingPlanCreate = {name: string; description?: string | null};
+export type TrainingPlanExercise = {
+  id: string;
+  name: string;
+  mechanics: 'compound' | 'isolation' | 'isometric' | null;
+  force: 'push' | 'pull' | 'static' | null;
+  tracking_type:
+    | 'weight_reps'
+    | 'bodyweight_reps'
+    | 'weighted_bodyweight'
+    | 'assisted_bodyweight'
+    | 'reps_only'
+    | 'duration'
+    | 'weight_duration'
+    | 'distance_duration'
+    | 'weight_distance'
+    | null;
+  images: Array<string>;
+};
+export type TrainingPlanExerciseInput = {
+  id?: string;
+  local_ref?: string;
+  exercise_id: string;
+  position: number;
+  prescribed_sets: Array<TrainingPlanPlannedSetInput>;
+};
+export type TrainingPlanListQuery = {offset?: number; limit?: number; search?: string; archived?: boolean};
+export type TrainingPlanPlannedSet = {
+  set_type: 'working' | 'warmup' | 'dropset' | null;
+  reps: string | null;
+  load_value: string | null;
+  load_unit: 'kg' | 'lbs' | 'bodyweight' | 'none' | null;
+  duration_seconds: number | null;
+  distance_value: string | null;
+  distance_unit: 'meters' | 'km' | 'miles' | 'none' | null;
+  rpe: string | null;
+  rest_seconds: number | null;
+  notes: string | null;
+};
+export type TrainingPlanPlannedSetInput = {
+  set_type?: 'working' | 'warmup' | 'dropset' | null;
+  reps?: string | null;
+  load_value?: string | null;
+  load_unit?: 'kg' | 'lbs' | 'bodyweight' | 'none' | null;
+  duration_seconds?: number | null;
+  distance_value?: string | null;
+  distance_unit?: 'meters' | 'km' | 'miles' | 'none' | null;
+  rpe?: number | null;
+  rest_seconds?: number | null;
+  notes?: string | null;
+};
+export type TrainingPlanReplacePrescription = {
+  expected_revision: number;
+  workouts: Array<TrainingPlanWorkoutInput>;
+  schedule: Array<TrainingPlanScheduleInput>;
+};
+export type TrainingPlanScheduleInput = {
+  weekday: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+  workout_id?: string;
+  workout_ref?: string;
+};
+export type TrainingPlanUpdate = {
+  expected_revision: number;
+  name?: string;
+  description?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+};
+export type TrainingPlanWorkout = {
+  id: string;
+  name: string;
+  position: number;
+  weekdays: Array<string>;
+  training_plan_id: string;
+  workout_elements: Array<TrainingPlanWorkoutExercise>;
+  inserted_at: string;
+  updated_at: string;
+};
+export type TrainingPlanWorkoutExercise = {
+  id: string;
+  position: number;
+  exercise_id: string;
+  workout_id: string;
+  exercise: TrainingPlanExercise;
+  planned_sets: Array<TrainingPlanPlannedSet>;
+  inserted_at: string;
+  updated_at: string;
+};
+export type TrainingPlanWorkoutInput = {
+  id?: string;
+  local_ref?: string;
+  name: string;
+  position: number;
+  prescribed_exercises: Array<TrainingPlanExerciseInput>;
+};
+export type TrainingSchedule = {
+  monday: string | null;
+  tuesday: string | null;
+  wednesday: string | null;
+  thursday: string | null;
+  friday: string | null;
+  saturday: string | null;
+  sunday: string | null;
+};
+export type Upload = {
+  id: string;
+  content_type:
+    | 'image/jpeg'
+    | 'image/png'
+    | 'image/webp'
+    | 'image/heic'
+    | 'video/mp4'
+    | 'video/webm'
+    | 'video/quicktime'
+    | 'audio/webm'
+    | 'audio/mp4'
+    | 'audio/mpeg';
+  byte_size: number;
+  duration_ms: number | null;
+  upload_url: string;
+  upload_url_expires_at: string;
+  upload_headers: {[key: string]: string};
+};
+export type UploadCreate = {
+  content_type:
+    | 'image/jpeg'
+    | 'image/png'
+    | 'image/webp'
+    | 'image/heic'
+    | 'video/mp4'
+    | 'video/webm'
+    | 'video/quicktime'
+    | 'audio/webm'
+    | 'audio/mp4'
+    | 'audio/mpeg';
+  byte_size: number;
+  duration_ms?: number | null;
+};
+export type UploadDownload = {id: string; download_url: string; download_url_expires_at: string};
+export type UploadDownloadUrls = {attachment_ids: Array<string>};
+export type WeightEntry = {
+  id: string;
+  date: string;
+  value: string;
+  unit: 'kg' | 'lbs';
+  note: string | null;
+  form_submission_id: string | null;
+  inserted_at: string;
+};
+export type WeightEntryIndex = {
+  entries: Array<WeightEntry>;
+  goal: {value: string; unit: 'kg' | 'lbs'} | null;
+  summary: {
+    first_entry: {date: string; value: string; unit: 'kg' | 'lbs'} | null;
+    latest_entry: {date: string; value: string; unit: 'kg' | 'lbs'} | null;
+    total_change: number | null;
+    change_unit: 'kg' | 'lbs' | null;
+  };
+  adherence: {logged_days: number; window_days: number};
+};
+export type WeightEntryListQuery = {since?: string};
+export type Workbench = {
+  check_ins: number;
+  replies: number;
+  onboarding: number;
+  programming: WorkbenchProgrammingCounts;
+  expiring: number;
+  quiet: number;
+};
+export type WorkbenchCheckInAssignment = {
+  id: string;
+  client_id: string;
+  form_template_id: string;
+  purpose: 'check_in';
+  status: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
+  due_date: string | null;
+};
+export type WorkbenchCheckInQueueItem = {
+  submission: WorkbenchCheckInSubmission;
+  client: Client;
+  assignment: WorkbenchCheckInAssignment;
+  reasons: Array<CheckInAwaitingReviewReason>;
+};
+export type WorkbenchCheckInSubmission = {
+  id: string;
+  form_assignment_id: string;
+  submitted_at: string;
+  reviewed_at: string | null;
+};
+export type WorkbenchExpiringQueueItem = {client: Client; reasons: Array<EngagementEndingSoonReason>};
+export type WorkbenchListQuery = {offset?: number; limit?: number};
+export type WorkbenchOnboardingQueueItem = {
+  client: Client;
+  reasons: Array<InvitationFollowUpDueReason | IntakeOverdueReason>;
+};
+export type WorkbenchProgrammingCounts = {all: number; training: number; nutrition: number};
+export type WorkbenchProgrammingQuery = {offset?: number; limit?: number; service?: 'all' | 'training' | 'nutrition'};
+export type WorkbenchProgrammingQueueItem = {
+  client: Client;
+  reasons: Array<ServiceNeverProgrammedReason | ServiceCoverageMissingReason | ServiceCoverageEndingSoonReason>;
+};
+export type WorkbenchQuietQueueItem = {client: Client; reasons: Array<MissedCheckInReason>};
+export type WorkbenchRepliesQueueItem = {
+  conversation: Conversation;
+  waiting_message_count: number;
+  client_status: 'active' | 'pending' | 'inactive';
+  reasons: Array<ReplyNeededReason>;
+};
+export type WorkbenchSnooze = {queue: 'quiet' | 'expiring'; snoozed_until: string};
+/* typed-routes:types-end */
+
 export interface paths {
-  '/v1/coach/training-plans': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+  /* typed-routes:paths */
+  /* typed-routes:hash a0491e1439ee8e3a93e988a0d4a10ee0820e577eaab7ab3057fd507f2b8af766 */
+  '/api/health': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': Health}};
+      };
     };
-    /**
-     * List Training Templates
-     * @description Lists reusable Training Templates from the authenticated business for Programming screens.
-     */
-    get: operations['listTrainingPlans'];
-    put?: never;
-    /**
-     * Create a Training Template
-     * @description Creates a reusable Training Template in the authenticated business. The server sets business and creator ownership from trusted auth context.
-     */
-    post: operations['createTrainingPlan'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
   };
-  '/v1/coach/check-in-schedules/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+  '/v1/businesses': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': BusinessCreate}};
+      responses: {
+        201: {content: {'application/json': {data: Business}}};
+      };
     };
-    get?: never;
-    put?: never;
-    post?: never;
-    /** Delete unused check-in schedule */
-    delete: operations['deleteCheckInSchedule'];
-    options?: never;
-    head?: never;
-    /** Update check-in schedule */
-    patch: operations['updateCheckInSchedule'];
-    trace?: never;
-  };
-  '/v1/coach/clients/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get client
-     * @description Loads one client in the authenticated business.
-     */
-    get: operations['getClient'];
-    put?: never;
-    post?: never;
-    /**
-     * Revoke client invitation
-     * @description Deletes a pending client invitation and related pending assignments.
-     */
-    delete: operations['deleteClient'];
-    options?: never;
-    head?: never;
-    /**
-     * Update client
-     * @description Updates coach-editable client fields and allowed status transitions.
-     */
-    patch: operations['updateClient'];
-    trace?: never;
-  };
-  '/v1/coach/training-plans/{id}/restore': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Restore a Training Template or visible Client Plan
-     * @description Restores a revisioned Training Template or authorized Client Plan.
-     */
-    post: operations['restoreTrainingPlan'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/conversations/{id}/mark-handled': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Mark the observed client-message sequence handled
-     * @description Clears waiting_since only when the latest message still matches the supplied timestamp.
-     */
-    post: operations['markCoachConversationHandled'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/prospects/{id}/enroll': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Enroll prospect
-     * @description Creates a pending client from the prospect, sends the invite, and marks it won. Already-enrolled prospects return the linked client without creating another.
-     */
-    post: operations['enrollProspect'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/me': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get coach profile
-     * @description Loads the authenticated coach profile and business summary.
-     */
-    get: operations['getCoachProfile'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    /**
-     * Update coach profile
-     * @description Updates the authenticated coach profile.
-     */
-    patch: operations['updateCoachProfile'];
-    trace?: never;
-  };
-  '/v1/coach/clients/{id}/resend-invite': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Resend client invitation
-     * @description Refreshes and resends a pending client invitation.
-     */
-    post: operations['resendClientInvite'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/team/invite': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Invite trainer
-     * @description Owner-only: invites a trainer to join the authenticated business.
-     */
-    post: operations['inviteTrainer'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/clients/{client_id}/training-sessions': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** List client training sessions */
-    get: operations['listCoachClientTrainingSessions'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/clients/{client_id}/nutrition-days': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * List client nutrition days
-     * @description Nutrition Day payload for a client: the same row and Meal Slot vocabulary as the client read.
-     */
-    get: operations['listCoachNutritionDays'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/public/landing-pages/{slug}/applications': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Submit application
-     * @description Submits a public application, creating a prospect. No authentication.
-     */
-    post: operations['submitApplication'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/clients/{client_id}/training-sessions/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** Get client training session */
-    get: operations['getCoachClientTrainingSession'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/team/{id}/deactivate': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Deactivate trainer
-     * @description Owner-only: deactivates an active trainer and reassigns their clients to the owner.
-     */
-    post: operations['deactivateTrainer'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/clients/{client_id}/training-plans': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** List client training plans */
-    get: operations['listCoachClientTrainingPlans'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/clients/{client_id}/form-assignments': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * List client form assignments
-     * @description Lists form assignments for a client in the authenticated coach business.
-     */
-    get: operations['listClientFormAssignmentsForCoach'];
-    put?: never;
-    /**
-     * Assign a form template to a client
-     * @description Creates a form assignment for a client in the authenticated coach business.
-     */
-    post: operations['createClientFormAssignment'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/library-media/uploads': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Create a library media upload */
-    post: operations['createCoachLibraryMediaUpload'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/team/{id}/resend-invite': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Resend trainer invitation
-     * @description Owner-only: refreshes and resends a pending trainer invitation.
-     */
-    post: operations['resendTrainerInvite'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/auth/invitations/{token}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Preview invitation
-     * @description Returns invitation state and prefill details for an invitation token.
-     */
-    get: operations['showInvitation'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/nutrition-plans': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * List Nutrition Templates
-     * @description Lists reusable Nutrition Templates from the authenticated business.
-     */
-    get: operations['listNutritionPlans'];
-    put?: never;
-    /**
-     * Create a Nutrition Template
-     * @description Creates a reusable Nutrition Template with one empty Everyday Day Pattern assigned to every weekday.
-     */
-    post: operations['createNutritionPlan'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/workbench/queues/onboarding': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** List onboarding work */
-    get: operations['listWorkbenchOnboardingQueue'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
   };
   '/v1/businesses/me': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Business}}};
+      };
     };
-    /**
-     * Get current business
-     * @description Loads the authenticated coach business.
-     */
-    get: operations['getCurrentBusiness'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    /**
-     * Update current business
-     * @description Updates the authenticated coach business profile.
-     */
-    patch: operations['updateCurrentBusiness'];
-    trace?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': BusinessUpdate}};
+      responses: {
+        200: {content: {'application/json': {data: Business}}};
+      };
+    };
   };
-  '/v1/public/landing-pages/{slug}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+  '/v1/businesses/me/dashboard-setup': {
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': BusinessUpdateDashboardSetup}};
+      responses: {
+        200: {content: {'application/json': {data: Business}}};
+      };
     };
-    /**
-     * Get public landing page
-     * @description Loads a published landing page by slug. No authentication.
-     */
-    get: operations['getPublicLandingPage'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/conversations': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** List conversations (inbox) */
-    get: operations['listCoachConversations'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
   };
   '/v1/coach/attachments/download-urls': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': UploadDownloadUrls}};
+      responses: {
+        200: {content: {'application/json': {data: Array<UploadDownload>}}};
+      };
     };
-    get?: never;
-    put?: never;
-    /** Create attachment download URLs */
-    post: operations['getCoachAttachmentDownloadUrls'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
   };
-  '/v1/auth/token': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+  '/v1/coach/billing': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Billing}}};
+      };
     };
-    get?: never;
-    put?: never;
-    /**
-     * Create auth token
-     * @description Creates auth tokens from a refresh token or an OTP grant.
-     */
-    post: operations['createAuthToken'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
   };
-  '/v1/coach/nutrition-plans/{id}/restore': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+  '/v1/coach/billing/cancel': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Billing}}};
+      };
     };
-    get?: never;
-    put?: never;
-    /**
-     * Restore a Nutrition Template or visible Client Plan
-     * @description Restores a revisioned Nutrition Template or authorized Client Nutrition Plan.
-     */
-    post: operations['restoreNutritionPlan'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
   };
-  '/v1/coach/prospects': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+  '/v1/coach/billing/checkout': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': BillingCheckout}};
+      responses: {
+        200: {content: {'application/json': {data: BillingCheckoutResult}}};
+      };
     };
-    /**
-     * List prospects
-     * @description Lists prospects in the authenticated coach business, optionally filtered by status.
-     */
-    get: operations['listProspects'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
   };
-  '/v1/coach/conversations/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+  '/v1/coach/billing/sync': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Billing}}};
+      };
     };
-    /** Get a conversation */
-    get: operations['getCoachConversation'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
+  };
+  '/v1/coach/check-in-schedules/{id}': {
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        204: {content?: never};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': CheckInScheduleUpdate}};
+      responses: {
+        200: {content: {'application/json': {data: CheckInSchedule}}};
+      };
+    };
+  };
+  '/v1/coach/check-ins/review-queue': {
+    get: {
+      parameters: {
+        query?: CheckInReviewListQuery;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<CheckInReview>; count: number}}};
+      };
+    };
+  };
+  '/v1/coach/clients': {
+    get: {
+      parameters: {
+        query?: ClientListQuery;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': ClientIndex}};
+      };
+    };
+  };
+  '/v1/coach/clients/invite': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ClientInvite}};
+      responses: {
+        201: {content: {'application/json': {data: Client}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/check-in-schedules': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {client_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<CheckInSchedule>}}};
+      };
+    };
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {client_id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': CheckInScheduleCreate}};
+      responses: {
+        201: {content: {'application/json': {data: CheckInSchedule}}};
+      };
+    };
   };
   '/v1/coach/clients/{client_id}/conversation': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {client_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Conversation}}};
+      };
     };
-    /** Get (or create) a client's conversation */
-    get: operations['getCoachClientConversation'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
+  };
+  '/v1/coach/clients/{client_id}/form-assignments': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {client_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<FormAssignment>}}};
+      };
+    };
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {client_id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': FormAssignmentCreate}};
+      responses: {
+        201: {content: {'application/json': {data: FormAssignment}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/nutrition-days': {
+    get: {
+      parameters: {
+        query?: DayListQuery;
+        header?: never;
+        path: {client_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<Day>; count: number}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/nutrition-plans': {
+    get: {
+      parameters: {
+        query?: NutritionPlanClientListQuery;
+        header?: never;
+        path: {client_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<NutritionPlan>; count: number}}};
+      };
+    };
   };
   '/v1/coach/clients/{client_id}/nutrition-plans/{id}/assign': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': NutritionPlanAssign}};
+      responses: {
+        201: {content: {'application/json': {data: NutritionPlan}}};
+      };
     };
-    get?: never;
-    put?: never;
-    /**
-     * Assign a Nutrition Template
-     * @description Copies an unarchived Nutrition Template's complete Menu to an independent Client Nutrition Plan and advances onboarding atomically.
-     */
-    post: operations['assignNutritionPlan'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
   };
+  '/v1/coach/clients/{client_id}/training-plans': {
+    get: {
+      parameters: {
+        query?: TrainingPlanClientScopedListQuery;
+        header?: never;
+        path: {client_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<TrainingPlan>; count: number}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/training-plans/{id}/assign': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': TrainingPlanAssign}};
+      responses: {
+        201: {content: {'application/json': {data: TrainingPlan}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/training-sessions': {
+    get: {
+      parameters: {
+        query?: SessionListQuery;
+        header?: never;
+        path: {client_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<Session>; count: number}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/training-sessions/{id}': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Session}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/uploads': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {client_id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': UploadCreate}};
+      responses: {
+        201: {content: {'application/json': {data: Upload}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/weight_entries': {
+    get: {
+      parameters: {
+        query?: WeightEntryListQuery;
+        header?: never;
+        path: {client_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': WeightEntryIndex}};
+      };
+    };
+  };
+  '/v1/coach/clients/{id}': {
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        204: {content?: never};
+      };
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Client}}};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ClientUpdate}};
+      responses: {
+        200: {content: {'application/json': {data: Client}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{id}/queue-snooze': {
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': WorkbenchSnooze}};
+      responses: {
+        204: {content?: never};
+      };
+    };
+  };
+  '/v1/coach/clients/{id}/reassign': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ClientReassign}};
+      responses: {
+        200: {content: {'application/json': {data: Client}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{id}/resend-invite': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Client}}};
+      };
+    };
+  };
+  '/v1/coach/conversations': {
+    get: {
+      parameters: {
+        query?: ConversationListQuery;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<Conversation>; count: number}}};
+      };
+    };
+  };
+  '/v1/coach/conversations/{id}': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Conversation}}};
+      };
+    };
+  };
+  '/v1/coach/conversations/{id}/mark-handled': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ConversationMarkHandled}};
+      responses: {
+        204: {content?: never};
+      };
+    };
+  };
+  '/v1/coach/conversations/{id}/messages': {
+    get: {
+      parameters: {
+        query?: ChatMessageListQuery;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': ChatMessagePage}};
+      };
+    };
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ChatMessageCoachCreate}};
+      responses: {
+        201: {content: {'application/json': {data: ChatMessage}}};
+      };
+    };
+  };
+  '/v1/coach/conversations/{id}/read': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Conversation}}};
+      };
+    };
+  };
+  '/v1/coach/form-assignments/{id}': {
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': FormAssignmentUpdate}};
+      responses: {
+        200: {content: {'application/json': {data: FormAssignment}}};
+      };
+    };
+  };
+  '/v1/coach/form-assignments/{id}/remind': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        204: {content?: never};
+      };
+    };
+  };
+  '/v1/coach/form-assignments/{id}/submissions': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<FormAssignmentSubmission>}}};
+      };
+    };
+  };
+  '/v1/coach/form-submissions/{id}/review': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: FormSubmission}}};
+      };
+    };
+  };
+  '/v1/coach/form-templates': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<FormTemplate>}}};
+      };
+    };
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': FormTemplateCreate}};
+      responses: {
+        201: {content: {'application/json': {data: FormTemplate}}};
+      };
+    };
+  };
+  '/v1/coach/form-templates/{id}': {
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        204: {content?: never};
+      };
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: FormTemplate}}};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': FormTemplateUpdate}};
+      responses: {
+        200: {content: {'application/json': {data: FormTemplate}}};
+      };
+    };
+  };
+  '/v1/coach/form-templates/{id}/default-intake': {
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: FormTemplate}}};
+      };
+    };
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: FormTemplate}}};
+      };
+    };
+  };
+  '/v1/coach/landing-page': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: LandingPage | null}}};
+      };
+    };
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': LandingPageUpsert}};
+      responses: {
+        200: {content: {'application/json': {data: LandingPage}}};
+      };
+    };
+  };
+  '/v1/coach/library-media/uploads': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': LibraryMediaCreate}};
+      responses: {
+        201: {content: {'application/json': {data: LibraryMedia}}};
+      };
+    };
+  };
+  '/v1/coach/me': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: CoachProfile}}};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': CoachProfileUpdate}};
+      responses: {
+        200: {content: {'application/json': {data: CoachProfile}}};
+      };
+    };
+  };
+  '/v1/coach/nutrition-foods': {
+    get: {
+      parameters: {
+        query?: FoodListQuery;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<Food>; count: number}}};
+      };
+    };
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': FoodCreate}};
+      responses: {
+        201: {content: {'application/json': {data: Food}}};
+      };
+    };
+  };
+  '/v1/coach/nutrition-foods/categories': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': FoodCategoryList}};
+      };
+    };
+  };
+  '/v1/coach/nutrition-foods/{id}': {
+    delete: {
+      parameters: {
+        query: Revision;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        204: {content?: never};
+      };
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Food}}};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': FoodUpdate}};
+      responses: {
+        200: {content: {'application/json': {data: Food}}};
+      };
+    };
+  };
+  '/v1/coach/nutrition-foods/{id}/copy': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        201: {content: {'application/json': {data: Food}}};
+      };
+    };
+  };
+  '/v1/coach/nutrition-foods/{id}/impact': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': FoodImpact}};
+      };
+    };
+  };
+  '/v1/coach/nutrition-plans': {
+    get: {
+      parameters: {
+        query?: NutritionPlanListQuery;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<NutritionPlan>; count: number}}};
+      };
+    };
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': NutritionPlanCreate}};
+      responses: {
+        201: {content: {'application/json': {data: NutritionPlan}}};
+      };
+    };
+  };
+  '/v1/coach/nutrition-plans/{id}': {
+    delete: {
+      parameters: {
+        query: Revision;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        204: {content?: never};
+      };
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: NutritionPlan}}};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': NutritionPlanUpdate}};
+      responses: {
+        200: {content: {'application/json': {data: NutritionPlan}}};
+      };
+    };
+  };
+  '/v1/coach/nutrition-plans/{id}/archive': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': Revision}};
+      responses: {
+        200: {content: {'application/json': {data: NutritionPlan}}};
+      };
+    };
+  };
+  '/v1/coach/nutrition-plans/{id}/duplicate': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': Revision}};
+      responses: {
+        201: {content: {'application/json': {data: NutritionPlan}}};
+      };
+    };
+  };
+  '/v1/coach/nutrition-plans/{id}/menu': {
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': NutritionPlanReplaceMenu}};
+      responses: {
+        200: {content: {'application/json': {data: NutritionPlan}}};
+      };
+    };
+  };
+  '/v1/coach/nutrition-plans/{id}/restore': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': Revision}};
+      responses: {
+        200: {content: {'application/json': {data: NutritionPlan}}};
+      };
+    };
+  };
+  '/v1/coach/nutrition-recipes': {
+    get: {
+      parameters: {
+        query?: RecipeListQuery;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<Recipe>; count: number}}};
+      };
+    };
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': RecipeCreate}};
+      responses: {
+        201: {content: {'application/json': {data: Recipe}}};
+      };
+    };
+  };
+  '/v1/coach/nutrition-recipes/{id}': {
+    delete: {
+      parameters: {
+        query: Revision;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        204: {content?: never};
+      };
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Recipe}}};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': RecipeUpdate}};
+      responses: {
+        200: {content: {'application/json': {data: Recipe}}};
+      };
+    };
+  };
+  '/v1/coach/nutrition-recipes/{id}/copy': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        201: {content: {'application/json': {data: Recipe}}};
+      };
+    };
+  };
+  '/v1/coach/nutrition-recipes/{id}/impact': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': RecipeImpact}};
+      };
+    };
+  };
+  '/v1/coach/prospects': {
+    get: {
+      parameters: {
+        query?: ProspectListQuery;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': ProspectIndex}};
+      };
+    };
+  };
+  '/v1/coach/prospects/{id}': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Prospect}}};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ProspectUpdate}};
+      responses: {
+        200: {content: {'application/json': {data: Prospect}}};
+      };
+    };
+  };
+  '/v1/coach/prospects/{id}/enroll': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ProspectEnroll}};
+      responses: {
+        201: {content: {'application/json': ProspectEnrollment}};
+      };
+    };
+  };
+  '/v1/coach/team': {
+    get: {
+      parameters: {
+        query?: TeamMemberListQuery;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<TeamMember>}}};
+      };
+    };
+  };
+  '/v1/coach/team/invite': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': TeamMemberInvite}};
+      responses: {
+        200: {content: {'application/json': {data: TeamMember}}};
+      };
+    };
+  };
+  '/v1/coach/team/{id}': {
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: TeamMember}}};
+      };
+    };
+  };
+  '/v1/coach/team/{id}/deactivate': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: TeamMember}}};
+      };
+    };
+  };
+  '/v1/coach/team/{id}/reactivate': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: TeamMember}}};
+      };
+    };
+  };
+  '/v1/coach/team/{id}/resend-invite': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: TeamMember}}};
+      };
+    };
+  };
+  '/v1/coach/training-equipment': {
+    get: {
+      parameters: {
+        query?: EquipmentListQuery;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<Equipment>}}};
+      };
+    };
+  };
+  '/v1/coach/training-exercises': {
+    get: {
+      parameters: {
+        query?: ExerciseListQuery;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<Exercise>; count: number}}};
+      };
+    };
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ExerciseCreate}};
+      responses: {
+        201: {content: {'application/json': {data: Exercise}}};
+      };
+    };
+  };
+  '/v1/coach/training-exercises/{id}': {
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        204: {content?: never};
+      };
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Exercise}}};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ExerciseUpdate}};
+      responses: {
+        200: {content: {'application/json': {data: Exercise}}};
+      };
+    };
+  };
+  '/v1/coach/training-exercises/{id}/copy': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ExerciseCopy}};
+      responses: {
+        201: {content: {'application/json': {data: Exercise}}};
+      };
+    };
+  };
+  '/v1/coach/training-muscles': {
+    get: {
+      parameters: {
+        query?: MuscleListQuery;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<Muscle>}}};
+      };
+    };
+  };
+  '/v1/coach/training-plans': {
+    get: {
+      parameters: {
+        query?: TrainingPlanListQuery;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<TrainingPlan>; count: number}}};
+      };
+    };
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': TrainingPlanCreate}};
+      responses: {
+        201: {content: {'application/json': {data: TrainingPlan}}};
+      };
+    };
+  };
+  '/v1/coach/training-plans/{id}': {
+    delete: {
+      parameters: {
+        query: Revision;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        204: {content?: never};
+      };
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: TrainingPlan}}};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': TrainingPlanUpdate}};
+      responses: {
+        200: {content: {'application/json': {data: TrainingPlan}}};
+      };
+    };
+  };
+  '/v1/coach/training-plans/{id}/archive': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': Revision}};
+      responses: {
+        200: {content: {'application/json': {data: TrainingPlan}}};
+      };
+    };
+  };
+  '/v1/coach/training-plans/{id}/duplicate': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        201: {content: {'application/json': {data: TrainingPlan}}};
+      };
+    };
+  };
+  '/v1/coach/training-plans/{id}/prescription': {
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': TrainingPlanReplacePrescription}};
+      responses: {
+        200: {content: {'application/json': {data: TrainingPlan}}};
+      };
+    };
+  };
+  '/v1/coach/training-plans/{id}/restore': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': Revision}};
+      responses: {
+        200: {content: {'application/json': {data: TrainingPlan}}};
+      };
+    };
+  };
+  '/v1/coach/workbench': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Workbench}}};
+      };
+    };
+  };
+  '/v1/coach/workbench/queues/check-ins': {
+    get: {
+      parameters: {
+        query?: WorkbenchListQuery;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<WorkbenchCheckInQueueItem>; count: number}}};
+      };
+    };
+  };
+  '/v1/coach/workbench/queues/expiring': {
+    get: {
+      parameters: {
+        query?: WorkbenchListQuery;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<WorkbenchExpiringQueueItem>; count: number}}};
+      };
+    };
+  };
+  '/v1/coach/workbench/queues/onboarding': {
+    get: {
+      parameters: {
+        query?: WorkbenchListQuery;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<WorkbenchOnboardingQueueItem>; count: number}}};
+      };
+    };
+  };
+  '/v1/coach/workbench/queues/programming': {
+    get: {
+      parameters: {
+        query?: WorkbenchProgrammingQuery;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<WorkbenchProgrammingQueueItem>; count: number}}};
+      };
+    };
+  };
+  '/v1/coach/workbench/queues/quiet': {
+    get: {
+      parameters: {
+        query?: WorkbenchListQuery;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<WorkbenchQuietQueueItem>; count: number}}};
+      };
+    };
+  };
+  '/v1/coach/workbench/queues/replies': {
+    get: {
+      parameters: {
+        query?: WorkbenchListQuery;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<WorkbenchRepliesQueueItem>; count: number}}};
+      };
+    };
+  };
+  '/v1/public/landing-pages/{slug}': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {slug: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: LandingPagePublic}}};
+      };
+    };
+  };
+  '/v1/public/landing-pages/{slug}/applications': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {slug: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': LandingPageApplication}};
+      responses: {
+        201: {content: {'application/json': {data: LandingPageApplicationResult}}};
+      };
+    };
+  };
+  /* typed-routes:paths-end */
   '/v1/auth/accept-invite': {
     parameters: {
       query?: never;
@@ -637,804 +2835,6 @@ export interface paths {
      * @description Starts invitation acceptance by sending an OTP to the invited email.
      */
     post: operations['acceptInvite'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/billing/cancel': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Schedule cancellation
-     * @description Owner-only: schedules the subscription to cancel at the end of the current period.
-     */
-    post: operations['cancelBilling'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/workbench/queues/quiet': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** List missed check-in follow-up work */
-    get: operations['listWorkbenchQuietQueue'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/nutrition-foods/{id}/copy': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Copy a food into the coach's business */
-    post: operations['copyNutritionFood'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/form-templates/{id}/default-intake': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    /**
-     * Set default intake template
-     * @description Marks this template as the intake auto-assigned to newly invited clients.
-     */
-    put: operations['setDefaultIntakeTemplate'];
-    post?: never;
-    /**
-     * Clear default intake template
-     * @description Unmarks this template; newly invited clients fall back to the automatic default.
-     */
-    delete: operations['clearDefaultIntakeTemplate'];
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/form-assignments/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    /**
-     * Update form assignment
-     * @description Updates a form assignment in the authenticated coach business.
-     */
-    patch: operations['updateFormAssignment'];
-    trace?: never;
-  };
-  '/v1/coach/training-plans/{id}/duplicate': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Duplicate a Training Template
-     * @description Copies an active Training Template in the authenticated business, including its metadata, ordered Prescription, and Workout Schedule.
-     */
-    post: operations['duplicateTrainingPlan'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/clients/{id}/reassign': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Reassign client
-     * @description Owner-only: reassigns a client to a different active trainer on the team.
-     */
-    post: operations['reassignClient'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/workbench/queues/programming': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** List programming work */
-    get: operations['listWorkbenchProgrammingQueue'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/nutrition-foods/{id}/impact': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** Show plans/templates affected by a food */
-    get: operations['getNutritionFoodImpact'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/conversations/{id}/messages': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** List messages (cursor-paginated, ascending) */
-    get: operations['listCoachConversationMessages'];
-    put?: never;
-    /** Send a message */
-    post: operations['createCoachConversationMessage'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/auth/trainer-accept-invite': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Accept trainer invitation
-     * @description Starts trainer invitation acceptance by sending an OTP to the invited email.
-     */
-    post: operations['trainerAcceptInvite'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/billing/sync': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Reconcile billing with Razorpay
-     * @description Owner-only: fetches the subscription from Razorpay and applies the same transition the webhook would.
-     */
-    post: operations['syncBilling'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/conversations/{id}/read': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Mark the conversation read (coach side) */
-    post: operations['markCoachConversationRead'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/billing': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get billing and seat summary
-     * @description Loads the seat summary and recent billing events for the authenticated business.
-     */
-    get: operations['getBilling'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/workbench/queues/expiring': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** List expiring engagement work */
-    get: operations['listWorkbenchExpiringQueue'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/clients/invite': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Invite client
-     * @description Creates a pending client invitation in the authenticated business.
-     */
-    post: operations['inviteClient'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/auth/verify': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Verify email or OTP
-     * @description Verifies an email confirmation token or email OTP and returns auth tokens.
-     */
-    post: operations['verifyAuth'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/form-assignments/{id}/remind': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Send an Intake reminder
-     * @description Sends a reminder without changing the assignment status or Workbench queue membership.
-     */
-    post: operations['remindClientFormAssignment'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/nutrition-plans/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get a Nutrition Template or visible Client Plan
-     * @description Loads one Nutrition Template or authorized Client Nutrition Plan.
-     */
-    get: operations['getNutritionPlan'];
-    put?: never;
-    post?: never;
-    /**
-     * Delete a Nutrition Template or visible Client Plan
-     * @description Deletes one revisioned Nutrition Template or authorized Client Nutrition Plan.
-     */
-    delete: operations['deleteNutritionPlan'];
-    options?: never;
-    head?: never;
-    /**
-     * Update a Nutrition Template or visible Client Plan
-     * @description Updates revisioned metadata and nutrient targets. Relationship ids and tenant ownership are never accepted.
-     */
-    patch: operations['updateNutritionPlan'];
-    trace?: never;
-  };
-  '/v1/coach/clients/{client_id}/nutrition-plans': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** List client nutrition plans */
-    get: operations['listCoachClientNutritionPlans'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/prospects/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** Get prospect */
-    get: operations['getProspect'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    /**
-     * Update prospect
-     * @description Updates prospect status or notes.
-     */
-    patch: operations['updateProspect'];
-    trace?: never;
-  };
-  '/v1/coach/nutrition-plans/{id}/archive': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Archive a Nutrition Template or visible Client Plan
-     * @description Archives a revisioned Nutrition Template or authorized Client Nutrition Plan without deleting it.
-     */
-    post: operations['archiveNutritionPlan'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/businesses': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Create business
-     * @description Creates a business for the authenticated user.
-     */
-    post: operations['createBusiness'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/form-submissions/{id}/review': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Mark a form submission reviewed */
-    post: operations['reviewFormSubmission'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/workbench': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Workbench queue counts
-     * @description Total items remaining in each explicit workbench queue (work left, not unread indicators).
-     */
-    get: operations['getWorkbenchCounts'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/clients/{id}/queue-snooze': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    /**
-     * Snooze a workbench queue for a client
-     * @description Hides the client from the given queue (and its count) until the date passes, then they reappear automatically. Re-snoozing replaces the date. Only the `quiet` and `expiring` queues snooze.
-     */
-    put: operations['snoozeWorkbenchQueue'];
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/training-muscles': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * List muscles
-     * @description Lists muscles for exercise creation, editing, and filtering.
-     */
-    get: operations['listMuscles'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/team/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    post?: never;
-    /**
-     * Revoke trainer invitation
-     * @description Owner-only: deletes a pending trainer invitation.
-     */
-    delete: operations['revokeTrainerInvite'];
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/clients/{client_id}/weight_entries': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** List client weight entries */
-    get: operations['listClientWeightEntries'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/team': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * List team
-     * @description Owner-only: lists every trainer on the authenticated business, invited or active.
-     */
-    get: operations['getTeam'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/training-plans/{id}/archive': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Archive a Training Template or visible Client Plan
-     * @description Archives a revisioned Training Template or authorized Client Plan without deleting its history.
-     */
-    post: operations['archiveTrainingPlan'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/training-plans/{id}/prescription': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    /**
-     * Replace a complete Prescription
-     * @description Atomically replaces ordered workouts, Prescribed Exercises, Prescribed Sets, and the complete Workout Schedule for one authorized Training Template or Client Plan.
-     */
-    put: operations['replaceTrainingPrescription'];
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/nutrition-plans/{id}/menu': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    /**
-     * Replace a complete Menu
-     * @description Atomically replaces Meals, Day Patterns, Meal Options, and the Week Schedule for one authorized Nutrition Template or Client Plan. Every Menu Item is resolved through the Library.
-     */
-    put: operations['replaceNutritionMenu'];
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/auth/trainer-invitations/{token}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Preview trainer invitation
-     * @description Returns invitation state and prefill details for a trainer invitation token.
-     */
-    get: operations['showTrainerInvitation'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/clients/{client_id}/check-in-schedules': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** List client check-in schedules */
-    get: operations['listCheckInSchedulesForClient'];
-    put?: never;
-    /** Create client check-in schedule */
-    post: operations['createCheckInSchedule'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/form-templates': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * List form templates
-     * @description Lists form templates in the authenticated coach business.
-     */
-    get: operations['listFormTemplates'];
-    put?: never;
-    /**
-     * Create form template
-     * @description Creates a form template in the authenticated coach business.
-     */
-    post: operations['createFormTemplate'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/clients': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * List clients
-     * @description Lists clients in the authenticated business with status summary counts.
-     */
-    get: operations['listClients'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/training-plans/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get a Training Template or visible Client Plan
-     * @description Loads one Training Template or authorized Client Plan with its complete Prescription.
-     */
-    get: operations['getTrainingPlan'];
-    put?: never;
-    post?: never;
-    /**
-     * Delete a Training Template or visible Client Plan
-     * @description Deletes one revisioned Training Template or authorized Client Plan.
-     */
-    delete: operations['deleteTrainingPlan'];
-    options?: never;
-    head?: never;
-    /**
-     * Update a Training Template or visible Client Plan
-     * @description Updates revisioned metadata and, for a Client Plan, its Coverage dates. Relationship ids and tenant ownership are never accepted.
-     */
-    patch: operations['updateTrainingPlan'];
-    trace?: never;
-  };
-  '/v1/coach/training-exercises/{id}/copy': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Copy exercise
-     * @description Creates a named copy of a system or coach exercise in the coach library. Frontend pattern - ask the coach for the new exercise name before calling this endpoint, then append the returned copy to local exercise lists.
-     */
-    post: operations['copyExercise'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/training-exercises': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * List exercises
-     * @description Lists system and coach-library exercises for picker dialogs and exercise management screens. Frontend pattern - cache by query params and refresh after create, update, delete, or duplicate mutations.
-     */
-    get: operations['listCoachExercises'];
-    put?: never;
-    /**
-     * Create exercise
-     * @description Creates an exercise in the coach library so the frontend can immediately offer it in workout builders and exercise pickers. Frontend pattern - optimistically insert into local lists, then reconcile with the 201 payload or rollback on validation failure.
-     */
-    post: operations['createExercise'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1461,7 +2861,27 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/v1/coach/team/{id}/reactivate': {
+  '/v1/auth/invitations/{token}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Preview invitation
+     * @description Returns invitation state and prefill details for an invitation token.
+     */
+    get: operations['showInvitation'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/auth/otp': {
     parameters: {
       query?: never;
       header?: never;
@@ -1471,315 +2891,10 @@ export interface paths {
     get?: never;
     put?: never;
     /**
-     * Reactivate trainer
-     * @description Owner-only: reactivates an inactive trainer. Previously reassigned clients stay with the owner until redistributed.
+     * Send OTP
+     * @description Sends an OTP for email confirmation or authentication.
      */
-    post: operations['reactivateTrainer'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/training-exercises/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get exercise
-     * @description Loads one system or coach-library exercise with muscles and equipment for detail pages and edit forms. Frontend pattern - cache by id and refetch after mutations.
-     */
-    get: operations['getExercise'];
-    put?: never;
-    post?: never;
-    /**
-     * Delete exercise
-     * @description Deletes a coach-owned exercise from the coach library. Frontend pattern - confirm first, optimistically remove from lists, and restore if the server rejects the request.
-     */
-    delete: operations['deleteExercise'];
-    options?: never;
-    head?: never;
-    /**
-     * Update exercise
-     * @description Updates a coach-owned exercise for library management and edit screens. Frontend pattern - optimistically update the edited exercise, rollback on validation errors, and refetch dependent lists.
-     */
-    patch: operations['updateExercise'];
-    trace?: never;
-  };
-  '/v1/businesses/me/dashboard-setup': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    /**
-     * Update dashboard setup state
-     * @description Stores or clears the business owner's dashboard setup terminal state.
-     */
-    patch: operations['updateDashboardSetup'];
-    trace?: never;
-  };
-  '/v1/coach/check-ins/review-queue': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** List check-ins awaiting review */
-    get: operations['listCheckInReviewQueue'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/nutrition-recipes/{id}/impact': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** Show plans/templates affected by a recipe */
-    get: operations['getNutritionRecipeImpact'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/nutrition-plans/{id}/duplicate': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Duplicate a Nutrition Template
-     * @description Copies an active Nutrition Template, including its empty Day Pattern and Week Schedule, using the expected source revision.
-     */
-    post: operations['duplicateNutritionPlan'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/nutrition-recipes/{id}/copy': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Copy a recipe into the coach's business */
-    post: operations['copyNutritionRecipe'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/landing-page': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get landing page
-     * @description Loads the authenticated coach business landing page, or null if none exists yet.
-     */
-    get: operations['getLandingPage'];
-    /**
-     * Save landing page
-     * @description Upserts the landing page (page fields, programs, and questions) in one request.
-     */
-    put: operations['saveLandingPage'];
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/workbench/queues/check-ins': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** List check-in submissions awaiting review */
-    get: operations['listWorkbenchCheckInQueue'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/billing/checkout': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Buy seats
-     * @description Owner-only: starts or updates a Razorpay subscription for additional seats.
-     */
-    post: operations['checkoutBilling'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/form-assignments/{id}/submissions': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * List form submissions
-     * @description Lists submissions (answers) for a form assignment in the authenticated coach business.
-     */
-    get: operations['listFormSubmissions'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/nutrition-foods/categories': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * List food categories
-     * @description The distinct categories present in the foods visible to the coach. Free-form strings, not an enum.
-     */
-    get: operations['listFoodCategories'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/form-templates/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get form template
-     * @description Loads one form template in the authenticated coach business.
-     */
-    get: operations['getFormTemplate'];
-    put?: never;
-    post?: never;
-    /**
-     * Delete form template
-     * @description Deletes a form template in the authenticated coach business.
-     */
-    delete: operations['deleteFormTemplate'];
-    options?: never;
-    head?: never;
-    /**
-     * Update form template
-     * @description Updates a form template in the authenticated coach business.
-     */
-    patch: operations['updateFormTemplate'];
-    trace?: never;
-  };
-  '/v1/coach/clients/{client_id}/uploads': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Create an upload for a client */
-    post: operations['createCoachClientUpload'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/auth/trainer-accept-invite/verify': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Verify trainer invitation OTP
-     * @description Verifies a trainer invitation OTP, links or creates the user, and returns auth tokens.
-     */
-    post: operations['trainerAcceptInviteVerify'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/clients/{client_id}/training-plans/{id}/assign': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Assign a Training Template
-     * @description Copies an active Training Template's complete Prescription to an independent Client Plan and advances onboarding atomically.
-     */
-    post: operations['assignTrainingPlan'];
+    post: operations['sendOtp'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1806,76 +2921,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/v1/coach/nutrition-recipes': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * List recipes
-     * @description Lists recipes in the authenticated business.
-     */
-    get: operations['listRecipes'];
-    put?: never;
-    /**
-     * Create recipe
-     * @description Creates a recipe in the authenticated business.
-     */
-    post: operations['createRecipe'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/workbench/queues/replies': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** List conversations awaiting a coach response */
-    get: operations['listWorkbenchRepliesQueue'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/coach/nutrition-foods/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get food
-     * @description Loads one system or business food visible to the authenticated coach.
-     */
-    get: operations['getFood'];
-    put?: never;
-    post?: never;
-    /**
-     * Delete food
-     * @description Deletes a coach-owned food from the authenticated business.
-     */
-    delete: operations['deleteFood'];
-    options?: never;
-    head?: never;
-    /**
-     * Update food
-     * @description Updates a coach-owned food in the authenticated business.
-     */
-    patch: operations['updateFood'];
-    trace?: never;
-  };
-  '/v1/auth/otp': {
+  '/v1/auth/token': {
     parameters: {
       query?: never;
       header?: never;
@@ -1885,41 +2931,57 @@ export interface paths {
     get?: never;
     put?: never;
     /**
-     * Send OTP
-     * @description Sends an OTP for email confirmation or authentication.
+     * Create auth token
+     * @description Creates auth tokens from a refresh token or an OTP grant.
      */
-    post: operations['sendOtp'];
+    post: operations['createAuthToken'];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/v1/coach/nutrition-foods': {
+  '/v1/auth/trainer-accept-invite': {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    /**
-     * List foods
-     * @description Lists system and business foods visible to the authenticated coach.
-     */
-    get: operations['listFoods'];
+    get?: never;
     put?: never;
     /**
-     * Create food
-     * @description Creates a coach-owned food in the authenticated business.
+     * Accept trainer invitation
+     * @description Starts trainer invitation acceptance by sending an OTP to the invited email.
      */
-    post: operations['createFood'];
+    post: operations['trainerAcceptInvite'];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/v1/coach/training-equipment': {
+  '/v1/auth/trainer-accept-invite/verify': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Verify trainer invitation OTP
+     * @description Verifies a trainer invitation OTP, links or creates the user, and returns auth tokens.
+     */
+    post: operations['trainerAcceptInviteVerify'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/auth/trainer-invitations/{token}': {
     parameters: {
       query?: never;
       header?: never;
@@ -1927,10 +2989,10 @@ export interface paths {
       cookie?: never;
     };
     /**
-     * List equipment
-     * @description Lists equipment for exercise creation, editing, and filtering.
+     * Preview trainer invitation
+     * @description Returns invitation state and prefill details for a trainer invitation token.
      */
-    get: operations['listEquipment'];
+    get: operations['showTrainerInvitation'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1939,48 +3001,20 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/v1/coach/nutrition-recipes/{id}': {
+  '/v1/auth/verify': {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    /**
-     * Get recipe
-     * @description Loads one recipe in the authenticated business.
-     */
-    get: operations['getRecipe'];
+    get?: never;
     put?: never;
-    post?: never;
     /**
-     * Delete recipe
-     * @description Deletes a recipe in the authenticated business.
+     * Verify email or OTP
+     * @description Verifies an email confirmation token or email OTP and returns auth tokens.
      */
-    delete: operations['deleteRecipe'];
-    options?: never;
-    head?: never;
-    /**
-     * Update recipe
-     * @description Updates a recipe in the authenticated business.
-     */
-    patch: operations['updateRecipe'];
-    trace?: never;
-  };
-  '/api/health': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Health check
-     * @description Returns basic service health metadata.
-     */
-    get: operations['healthCheck'];
-    put?: never;
-    post?: never;
+    post: operations['verifyAuth'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1991,467 +3025,82 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
-    /** TeamResponse */
-    TeamResponse: {
-      data: components['schemas']['TeamMember'][];
+    /**
+     * AcceptInviteRequest
+     * @example {
+     *       "email": "client@example.com",
+     *       "invitation_token": "invite-token"
+     *     }
+     */
+    AcceptInviteRequest: {
+      /** Format: email */
+      email: string;
+      invitation_token: string;
     };
-    /** TrainingExerciseListResponse */
-    TrainingExerciseListResponse: {
-      count: number;
-      data: components['schemas']['TrainingExercise'][];
+    /**
+     * AcceptInviteVerifyRequest
+     * @example {
+     *       "email": "client@example.com",
+     *       "invitation_token": "invite-token",
+     *       "otp": "123456"
+     *     }
+     */
+    AcceptInviteVerifyRequest: {
+      /** Format: email */
+      email: string;
+      invitation_token: string;
+      otp: string;
     };
-    /** Recipe */
-    Recipe: {
-      allergens?: ('dairy' | 'egg' | 'fish' | 'shellfish' | 'tree_nuts' | 'peanuts' | 'wheat' | 'soy' | 'sesame')[];
-      cooked_weight_g: number | null;
-      /** Format: uuid */
-      creator_id?: string | null;
-      description?: string | null;
-      dietary_tags?: (
-        | 'vegan'
-        | 'vegetarian'
-        | 'halal'
-        | 'kosher'
-        | 'gluten_free'
-        | 'dairy_free'
-        | 'low_fodmap'
-        | 'keto'
-        | 'high_protein'
-      )[];
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      instructions: string | null;
-      name: string;
-      nutrients: components['schemas']['NutrientTotals'];
-      recipe_ingredients: components['schemas']['RecipeIngredient'][];
-      revision: number;
-      servings_count: number;
-      /** Format: date-time */
-      updated_at: string;
+    /** AuthTokenResponse */
+    AuthTokenResponse: {
+      access_token: string;
+      /** @example 300 */
+      expires_in: number;
+      refresh_token: string;
+      scope: string;
+      /** @example Bearer */
+      token_type: string;
     };
-    /** ChatMessage */
-    ChatMessage: {
-      /** @default [] */
-      attachments: components['schemas']['Attachment'][];
-      body: string | null;
-      /** Format: uuid */
-      conversation_id: string;
-      embed: components['schemas']['ChatMessageEmbed'] | null;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      /** Format: uuid */
-      sender_id: string;
-      /** @enum {string} */
-      sender_type: 'coach' | 'client';
-    };
-    /** AttachmentDownload */
-    AttachmentDownload: {
-      /** Format: uri */
-      download_url: string;
-      /** Format: date-time */
-      download_url_expires_at: string;
-      /** Format: uuid */
-      id: string;
-    };
-    /** CoachClientTrainingPlan */
-    CoachClientTrainingPlan: components['schemas']['TrainingPlan'] & {
-      /** @enum {string} */
-      kind: 'client_plan';
-      /** @enum {string} */
-      lifecycle: 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived';
-    };
-    /** TrainingPlanExercise */
-    TrainingPlanExercise: {
-      /** @enum {string|null} */
-      force: 'push' | 'pull' | 'static' | null;
-      /** Format: uuid */
-      id: string;
-      images: string[];
-      /** @enum {string|null} */
-      mechanics: 'compound' | 'isolation' | 'isometric' | null;
-      name: string;
-      /** @enum {string|null} */
-      tracking_type:
-        | 'weight_reps'
-        | 'bodyweight_reps'
-        | 'weighted_bodyweight'
-        | 'assisted_bodyweight'
-        | 'reps_only'
-        | 'duration'
-        | 'weight_duration'
-        | 'distance_duration'
-        | 'weight_distance'
-        | null;
-    };
-    /** NutritionDayOptionItem */
-    NutritionDayOptionItem: {
-      /** Format: uuid */
-      food_id?: string | null;
-      /** @enum {string} */
-      kind: 'food' | 'recipe';
-      name: string | null;
-      nutrients: components['schemas']['NutrientTotals'];
-      /** Format: uuid */
-      planned_item_ref: string;
-      portion: components['schemas']['NutritionPortion'];
-      position: number;
-      /** Format: uuid */
-      recipe_id?: string | null;
-    };
-    /** TrainingExerciseResponse */
-    TrainingExerciseResponse: {
-      data: components['schemas']['TrainingExercise'];
-    };
-    /** WeightEntry */
-    WeightEntry: {
-      /** Format: date */
-      date: string;
-      /** Format: uuid */
-      form_submission_id: string | null;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      note: string | null;
-      /** @enum {string} */
-      unit: 'kg' | 'lbs';
-      value: number;
-    };
-    /** TrainingSessionSnapshotPlan */
-    TrainingSessionSnapshotPlan: {
-      /** Format: uuid */
-      id: string;
-      name: string;
-      revision: number;
-    };
-    /** ClientProfileCheckInScheduleRequest */
-    ClientProfileCheckInScheduleRequest: {
-      /** Format: uuid */
-      form_template_id: string;
-      /** @enum {string} */
-      frequency: 'once' | 'weekly' | 'biweekly' | 'monthly';
-      /** Format: date */
-      next_due_on: string;
-    };
-    /** TeamMemberResponse */
-    TeamMemberResponse: {
-      data: components['schemas']['TeamMember'];
-    };
-    /** LandingPage */
-    LandingPage: {
-      application_questions?: {
-        id?: string;
-        label?: string;
-        options?: string[];
-        /** @enum {string} */
-        type?: 'short_text' | 'long_text' | 'single_select';
+    /** ErrorResponse */
+    ErrorResponse: {
+      error?: {
+        [key: string]: unknown;
+      };
+      errors?: {
+        [key: string]: unknown;
       }[];
-      coach_intro?: string | null;
-      eyebrow?: string | null;
-      fit_points?: string[];
-      headline: string;
-      hero_image_url?: string | null;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at?: string;
-      programs: components['schemas']['LandingProgram'][];
-      proof_points?: {
-        label?: string;
-        value?: string;
-      }[];
-      slug: string;
-      /** @enum {string} */
-      status: 'draft' | 'published';
-      subheadline?: string | null;
-      /** @enum {string} */
-      template: 'proof_first' | 'problem_fit' | 'coach_story';
-      /** Format: date-time */
-      updated_at?: string;
+    } & {
+      [key: string]: unknown;
     };
-    /** BillingCheckoutResponse */
-    BillingCheckoutResponse: {
-      data: components['schemas']['BillingCheckoutResult'];
-    };
-    /** FoodImpactResponse */
-    FoodImpactResponse: {
+    /** InvitationPreviewResponse */
+    InvitationPreviewResponse: {
       data: {
-        active_client_plans: {
-          client_id: string | null;
-          id: string;
-          name: string;
-        }[];
-        recipes: {
-          id: string;
-          name: string;
-        }[];
-        templates: {
-          client_id: string | null;
-          id: string;
-          name: string;
-        }[];
+        business_name?: string | null;
+        coach_first_name?: string | null;
+        /** Format: date-time */
+        expires_at?: string | null;
+        /** Format: email */
+        prefill_email?: string | null;
+        /** @enum {string} */
+        state: 'pending' | 'used' | 'expired' | 'invalid';
       };
     };
-    /**
-     * NutritionMenuReplaceRequest
-     * @description Authoritative Meals, Day Patterns, Meal Options, and Week Schedule for one plan revision. Omitted persisted nodes are deleted atomically.
-     * @example {
-     *       "day_patterns": [
-     *         {
-     *           "local_ref": "everyday",
-     *           "name": "Everyday",
-     *           "position": 0,
-     *           "slots": [
-     *             {
-     *               "meal_slot": "breakfast",
-     *               "options": [
-     *                 {
-     *                   "local_ref": "default",
-     *                   "meal_local_ref": "breakfast",
-     *                   "position": 0
-     *                 }
-     *               ]
-     *             }
-     *           ]
-     *         }
-     *       ],
-     *       "expected_revision": 1,
-     *       "meals": [
-     *         {
-     *           "local_ref": "breakfast",
-     *           "meal_items": [
-     *             {
-     *               "food_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-     *               "kind": "food",
-     *               "local_ref": "yogurt",
-     *               "portion": {
-     *                 "grams": 50,
-     *                 "kind": "gram"
-     *               },
-     *               "position": 0
-     *             }
-     *           ],
-     *           "name": "Breakfast",
-     *           "position": 0
-     *         }
-     *       ],
-     *       "schedule": {
-     *         "friday": "everyday",
-     *         "monday": "everyday",
-     *         "saturday": "everyday",
-     *         "sunday": "everyday",
-     *         "thursday": "everyday",
-     *         "tuesday": "everyday",
-     *         "wednesday": "everyday"
-     *       }
-     *     }
-     */
-    NutritionMenuReplaceRequest: {
-      day_patterns: components['schemas']['NutritionDayPatternInput'][];
-      expected_revision: number;
-      meals: components['schemas']['NutritionMealInput'][];
-      schedule: components['schemas']['NutritionWeekScheduleInput'];
+    /** MessageResponse */
+    MessageResponse: {
+      message: string;
     };
     /**
-     * BusinessUpdateRequest
+     * OtpRequest
      * @example {
-     *       "about": "Updated business profile.",
-     *       "name": "Strong Coaching"
+     *       "email": "coach@example.com",
+     *       "type": "authentication"
      *     }
      */
-    BusinessUpdateRequest: {
-      about?: string | null;
+    OtpRequest: {
+      /** Format: email */
+      email: string;
       /** @enum {string} */
-      default_weight_unit?: 'kg' | 'lbs';
-      handle?: string;
-      name?: string;
-    };
-    /**
-     * TrainingExerciseUpdateRequest
-     * @description Request body for updating a coach exercise.
-     * @example {
-     *       "description": "Upright squat variation.",
-     *       "instructions": "Stay tall and controlled.",
-     *       "mechanics": "compound",
-     *       "name": "High-Bar Back Squat"
-     *     }
-     */
-    TrainingExerciseUpdateRequest: {
-      description?: string | null;
-      equipment_ids?: string[];
-      /** @enum {string|null} */
-      force?: 'push' | 'pull' | 'static' | null;
-      images?: string[];
-      instructions?: string | null;
-      /** @enum {string|null} */
-      mechanics?: 'compound' | 'isolation' | 'isometric' | null;
-      /** Format: uuid */
-      media_id?: string | null;
-      muscle_ids?: string[];
-      name?: string;
-    };
-    /** PublicLandingPage */
-    PublicLandingPage: {
-      application_questions: {
-        id?: string;
-        label?: string;
-        options?: string[];
-        /** @enum {string} */
-        type?: 'short_text' | 'long_text' | 'single_select';
-      }[];
-      business_name: string;
-      coach_intro?: string | null;
-      eyebrow?: string | null;
-      fit_points?: string[];
-      headline: string;
-      hero_image_url?: string | null;
-      programs: components['schemas']['LandingProgram'][];
-      proof_points?: {
-        label?: string;
-        value?: string;
-      }[];
-      slug: string;
-      subheadline?: string | null;
-      /** @enum {string} */
-      template: 'proof_first' | 'problem_fit' | 'coach_story';
-      whatsapp_number?: string | null;
-    };
-    /** NutritionDaySummary */
-    NutritionDaySummary: {
-      /** @enum {string|null} */
-      adherence?: 'on' | 'under' | 'over' | 'none' | null;
-      counts: components['schemas']['NutritionDaySummaryCounts'];
-      has_intake: boolean;
-      logged: components['schemas']['NutrientTotals'];
-      planned: components['schemas']['NutrientTotals'];
-    };
-    /** TrainingPlanResponse */
-    TrainingPlanResponse: {
-      data: components['schemas']['TrainingPlan'];
-    };
-    /**
-     * DiarySwitchOptionRequest
-     * @example {
-     *       "expected_revision": 1,
-     *       "meal_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-     *       "meal_slot": "breakfast"
-     *     }
-     */
-    DiarySwitchOptionRequest: {
-      expected_revision: number;
-      /** Format: uuid */
-      meal_id: string;
-      /** @enum {string} */
-      meal_slot:
-        | 'early_morning'
-        | 'breakfast'
-        | 'mid_morning'
-        | 'lunch'
-        | 'afternoon'
-        | 'evening'
-        | 'dinner'
-        | 'pre_sleep'
-        | 'pre_workout'
-        | 'during_workout'
-        | 'post_workout';
-    };
-    /**
-     * FoodUpdateRequest
-     * @description Request body for updating a coach-owned food. `source` is server-owned and immutable.
-     * @example {
-     *       "dietary_tags": [
-     *         "high_protein"
-     *       ],
-     *       "expected_revision": 1,
-     *       "name": "Plain Greek Yogurt"
-     *     }
-     */
-    FoodUpdateRequest: {
-      allergens?: ('dairy' | 'egg' | 'fish' | 'shellfish' | 'tree_nuts' | 'peanuts' | 'wheat' | 'soy' | 'sesame')[];
-      barcode?: string | null;
-      brand?: string | null;
-      calories_per_100g?: number | null;
-      carbs_g_per_100g?: number | null;
-      category?: string | null;
-      dietary_tags?: (
-        | 'vegan'
-        | 'vegetarian'
-        | 'halal'
-        | 'kosher'
-        | 'gluten_free'
-        | 'dairy_free'
-        | 'low_fodmap'
-        | 'keto'
-        | 'high_protein'
-      )[];
-      expected_revision: number;
-      fat_g_per_100g?: number | null;
-      fiber_g_per_100g?: number | null;
-      image_url?: string | null;
-      /** Format: uuid */
-      media_id?: string | null;
-      name?: string;
-      notes?: string | null;
-      protein_g_per_100g?: number | null;
-      serving_sizes?: components['schemas']['FoodServingSize'][];
-      sugar_g_per_100g?: number | null;
-    };
-    /** ReplyNeededReason */
-    ReplyNeededReason: {
-      /** @enum {string} */
-      code: 'reply_needed';
-      /** Format: date-time */
-      waiting_since: string;
-    };
-    /** NutritionDayResponse */
-    NutritionDayResponse: {
-      data: components['schemas']['NutritionDay'];
-    };
-    /** TrainingEquipmentListResponse */
-    TrainingEquipmentListResponse: {
-      data: components['schemas']['TrainingEquipment'][];
-    };
-    /** WorkbenchCheckInAssignment */
-    WorkbenchCheckInAssignment: {
-      /** Format: uuid */
-      client_id: string;
-      /** Format: date */
-      due_date: string | null;
-      /** Format: uuid */
-      form_template_id: string;
-      /** Format: uuid */
-      id: string;
-      /** @enum {string} */
-      purpose: 'check_in';
-      /** @enum {string} */
-      status: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
-    };
-    /**
-     * TrainingPlanAssignRequest
-     * @description Request body for assigning a template to a client.
-     * @example {
-     *       "end_date": null,
-     *       "start_date": "2026-09-01"
-     *     }
-     */
-    TrainingPlanAssignRequest: {
-      /** Format: date */
-      end_date?: string | null;
-      /** Format: date */
-      start_date?: string | null;
-    };
-    /** WorkbenchRepliesQueueResponse */
-    WorkbenchRepliesQueueResponse: {
-      count: number;
-      data: components['schemas']['WorkbenchRepliesQueueItem'][];
-    };
-    /** ClientProfileFormAssignmentResponse */
-    ClientProfileFormAssignmentResponse: {
-      data: components['schemas']['ClientProfileFormAssignment'];
+      type: 'email_confirmation' | 'authentication';
     };
     /**
      * SignupRequest
@@ -2467,828 +3116,18 @@ export interface components {
       first_name?: string;
       last_name?: string;
     };
-    /**
-     * CoachChatMessageCreateRequest
-     * @example {
-     *       "attachment_ids": [],
-     *       "body": "Energy improved.",
-     *       "embed": {
-     *         "id": "a65edc2e-f91b-4f01-9b31-1d0fb8b9104e",
-     *         "type": "form_submission"
-     *       }
-     *     }
-     */
-    CoachChatMessageCreateRequest:
-      | {
-          /** @default [] */
-          attachment_ids: string[];
-          body: string;
-          embed?: components['schemas']['ChatMessageEmbedRequest'] | null;
-        }
-      | {
-          attachment_ids: string[];
-          body?: string | null;
-          embed?: components['schemas']['ChatMessageEmbedRequest'] | null;
-        }
-      | {
-          /** @default [] */
-          attachment_ids: string[];
-          body?: string | null;
-          embed: components['schemas']['ChatMessageEmbedRequest'];
-        };
-    /** MarkHandledRequest */
-    MarkHandledRequest: {
+    /** SignupResponse */
+    SignupResponse: {
       /** Format: date-time */
-      expected_last_message_at: string;
-    };
-    /** TrainingSessionResponse */
-    TrainingSessionResponse: {
-      data: components['schemas']['TrainingSession'];
-    };
-    /** EngagementEndingSoonReason */
-    EngagementEndingSoonReason: {
-      /** @enum {string} */
-      code: 'engagement_ending_soon';
-      /** Format: date */
-      ends_on: string;
-    };
-    /** RecipeIngredientRequest */
-    RecipeIngredientRequest: {
-      amount?: number | null;
-      /** Format: uuid */
-      food_id: string;
-      unit?: string | null;
-      weight_g: number;
-    };
-    /** ClientTrainingPlanListResponse */
-    ClientTrainingPlanListResponse: {
-      count: number;
-      data: components['schemas']['ClientTrainingPlan'][];
-    };
-    /** WorkbenchOnboardingReason */
-    WorkbenchOnboardingReason:
-      | components['schemas']['InvitationFollowUpDueReason']
-      | components['schemas']['IntakeOverdueReason'];
-    /** TrainingPlanListResponse */
-    TrainingPlanListResponse: {
-      count: number;
-      data: components['schemas']['TrainingPlan'][];
-    };
-    /** TeamMember */
-    TeamMember: {
-      /** Format: email */
-      email: string | null;
-      first_name: string | null;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      invitation_sent_at: string | null;
-      is_owner: boolean;
-      last_name: string | null;
-      /** @enum {string} */
-      status: 'invited' | 'active' | 'inactive';
-    };
-    /** NutritionMeal */
-    NutritionMeal: {
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      meal_items: components['schemas']['NutritionMealItem'][];
-      name: string;
-      notes: string | null;
-      nutrients: components['schemas']['NutrientTotals'];
-      /** Format: uuid */
-      nutrition_plan_id: string;
-      position: number;
-      /** Format: date-time */
-      updated_at: string;
-    };
-    /**
-     * TrainingExercise
-     * @example {
-     *       "description": "Main lower-body strength movement.",
-     *       "equipment": [
-     *         {
-     *           "description": "Straight Olympic barbell.",
-     *           "id": "7d72f2c3-8ed7-4b78-bf1f-c883df192772",
-     *           "name": "Barbell"
-     *         }
-     *       ],
-     *       "force": "push",
-     *       "id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-     *       "images": [
-     *         "https://cdn.example.com/exercises/back-squat.png"
-     *       ],
-     *       "inserted_at": "2026-05-30T12:00:00Z",
-     *       "instructions": "Brace, descend to depth, drive up.",
-     *       "mechanics": "compound",
-     *       "muscles": [
-     *         {
-     *           "description": "Primary knee extension muscle group.",
-     *           "id": "8f5db7e0-9b18-4d5f-9c2a-1f5d8f1131f0",
-     *           "name": "Quadriceps"
-     *         }
-     *       ],
-     *       "name": "Barbell Back Squat",
-     *       "updated_at": "2026-05-30T12:00:00Z"
-     *     }
-     */
-    TrainingExercise: {
-      description: string | null;
-      equipment: components['schemas']['TrainingExerciseRelation'][];
-      /** @enum {string|null} */
-      force: 'push' | 'pull' | 'static' | null;
-      /** Format: uuid */
-      id: string;
-      images: string[];
-      /** Format: date-time */
-      inserted_at: string;
-      instructions: string | null;
-      /** @enum {string|null} */
-      mechanics: 'compound' | 'isolation' | 'isometric' | null;
-      media: components['schemas']['LibraryMedia'] | null;
-      muscles: components['schemas']['TrainingExerciseRelation'][];
-      name: string;
-      source: string | null;
-      tracking_type: string | null;
-      /** Format: date-time */
-      updated_at: string;
-    };
-    /**
-     * ClientChatMessageCreateRequest
-     * @example {
-     *       "attachment_ids": [],
-     *       "body": "Here is today's set."
-     *     }
-     */
-    ClientChatMessageCreateRequest:
-      | {
-          /** @default [] */
-          attachment_ids: string[];
-          body: string;
-        }
-      | {
-          attachment_ids: string[];
-          body?: string | null;
-        };
-    /** CheckInAwaitingReviewReason */
-    CheckInAwaitingReviewReason: {
-      /** @enum {string} */
-      code: 'check_in_awaiting_review';
-      /** Format: uuid */
-      submission_id: string;
-      /** Format: date-time */
-      submitted_at: string;
-    };
-    /** NutritionWeekSchedule */
-    NutritionWeekSchedule: {
-      /** Format: uuid */
-      friday: string | null;
-      /** Format: uuid */
-      monday: string | null;
-      /** Format: uuid */
-      saturday: string | null;
-      /** Format: uuid */
-      sunday: string | null;
-      /** Format: uuid */
-      thursday: string | null;
-      /** Format: uuid */
-      tuesday: string | null;
-      /** Format: uuid */
-      wednesday: string | null;
-    };
-    /** NutritionDayListResponse */
-    NutritionDayListResponse: {
-      count: number;
-      data: components['schemas']['NutritionDay'][];
-    };
-    /**
-     * TrainingPrescriptionExerciseInput
-     * @description A persisted Prescribed Exercise uses id; a new one uses a request-local local_ref.
-     */
-    TrainingPrescriptionExerciseInput: {
-      /** Format: uuid */
-      exercise_id: string;
-      /** Format: uuid */
-      id?: string;
-      local_ref?: string;
-      position: number;
-      prescribed_sets: components['schemas']['TrainingPrescriptionPlannedSetInput'][];
-    };
-    /** ClientProfileCheckInScheduleListResponse */
-    ClientProfileCheckInScheduleListResponse: {
-      data: components['schemas']['ClientProfileCheckInSchedule'][];
-    };
-    /**
-     * NutritionMealOptionInput
-     * @description A persisted Meal Option uses id; a new one uses a request-local local_ref. The Meal is a persisted id or a meal_local_ref from this Menu.
-     */
-    NutritionMealOptionInput: {
-      /** Format: uuid */
-      id?: string;
-      local_ref?: string;
-      meal_local_ref?: string;
-      /** Format: uuid */
-      nutrition_meal_id?: string;
-      position: number;
-    };
-    /** NutritionPlanResponse */
-    NutritionPlanResponse: {
-      data: components['schemas']['NutritionPlan'];
-    };
-    /** BusinessResponse */
-    BusinessResponse: {
-      data: components['schemas']['Business'];
-    };
-    /**
-     * NutritionMealInput
-     * @description A persisted Meal uses id; a new one uses a request-local local_ref.
-     */
-    NutritionMealInput: {
-      /** Format: uuid */
-      id?: string;
-      local_ref?: string;
-      meal_items: components['schemas']['NutritionMealItemInput'][];
-      name: string;
-      notes?: string | null;
-      position: number;
-    };
-    /** ClientProfileReviewClient */
-    ClientProfileReviewClient: {
-      email: string | null;
-      first_name: string | null;
-      /** Format: uuid */
-      id: string;
-      last_name: string | null;
-    };
-    /** Food */
-    Food: {
-      allergens?: ('dairy' | 'egg' | 'fish' | 'shellfish' | 'tree_nuts' | 'peanuts' | 'wheat' | 'soy' | 'sesame')[];
-      barcode?: string | null;
-      brand?: string | null;
-      calories_per_100g?: number | null;
-      carbs_g_per_100g?: number | null;
-      category: string | null;
-      /** Format: uuid */
-      creator_id?: string | null;
-      dietary_tags?: (
-        | 'vegan'
-        | 'vegetarian'
-        | 'halal'
-        | 'kosher'
-        | 'gluten_free'
-        | 'dairy_free'
-        | 'low_fodmap'
-        | 'keto'
-        | 'high_protein'
-      )[];
-      fat_g_per_100g?: number | null;
-      fiber_g_per_100g?: number | null;
-      /** Format: uuid */
-      id: string;
-      image_url: string | null;
-      /** Format: date-time */
-      inserted_at: string;
-      media: components['schemas']['LibraryMedia'] | null;
-      name: string;
-      notes: string | null;
-      nutrients: components['schemas']['NutrientTotals'];
-      protein_g_per_100g?: number | null;
-      revision: number;
-      serving_sizes: components['schemas']['FoodServingSize'][];
-      /** @enum {string|null} */
-      source: 'system' | 'imported' | 'custom' | null;
-      sugar_g_per_100g?: number | null;
-      /** Format: date-time */
-      updated_at: string;
-    };
-    /** BillingEvent */
-    BillingEvent: {
-      /**
-       * @description INR (rupees)
-       * @example 1497
-       */
-      amount_paid?: number | null;
-      /** @example INR */
-      currency?: string | null;
-      /** Format: uuid */
-      id: string;
-      /**
-       * @example seats_added
-       * @enum {string}
-       */
-      kind:
-        | 'seats_added'
-        | 'seats_removed'
-        | 'payment_succeeded'
-        | 'payment_failed'
-        | 'cancellation_scheduled'
-        | 'subscription_cancelled';
-      /** Format: date-time */
-      occurred_at: string;
-      /** @example 3 */
-      seat_delta?: number | null;
-    };
-    /** FoodListResponse */
-    FoodListResponse: {
-      count: number;
-      data: components['schemas']['Food'][];
-    };
-    /** ChatMessageEmbedRequest */
-    ChatMessageEmbedRequest: {
-      /** Format: uuid */
-      id: string;
-      /** @enum {string} */
-      type: 'form_submission';
-    };
-    /** WorkbenchProgrammingQueueItem */
-    WorkbenchProgrammingQueueItem: {
-      client: components['schemas']['Client'];
-      reasons: components['schemas']['WorkbenchProgrammingReason'][];
-    };
-    /** TrainingSessionPrescriptionSnapshot */
-    TrainingSessionPrescriptionSnapshot: {
-      plan: components['schemas']['TrainingSessionSnapshotPlan'];
-      /** @enum {integer} */
-      version: 1;
-      workout: components['schemas']['TrainingSessionSnapshotWorkout'];
-    };
-    /**
-     * ClientTrainingPlan
-     * @example {
-     *       "archived_at": null,
-     *       "description": "Upper/lower strength block.",
-     *       "end_date": "2026-06-28",
-     *       "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
-     *       "inserted_at": "2026-05-30T12:00:00Z",
-     *       "kind": "client_plan",
-     *       "lifecycle": "current",
-     *       "name": "Four Day Strength",
-     *       "revision": 1,
-     *       "schedule": {
-     *         "friday": null,
-     *         "monday": null,
-     *         "saturday": null,
-     *         "sunday": null,
-     *         "thursday": null,
-     *         "tuesday": null,
-     *         "wednesday": null
-     *       },
-     *       "start_date": "2026-06-01",
-     *       "status": "active",
-     *       "updated_at": "2026-05-30T12:00:00Z",
-     *       "workouts": []
-     *     }
-     */
-    ClientTrainingPlan: {
-      /** Format: date-time */
-      archived_at: string | null;
-      description: string | null;
-      /** Format: date */
-      end_date: string | null;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      /** @enum {string} */
-      kind: 'client_plan';
-      /** @enum {string} */
-      lifecycle: 'incomplete' | 'upcoming' | 'current' | 'ended';
-      name: string;
-      revision: number;
-      schedule: components['schemas']['TrainingSchedule'];
-      /** Format: date */
-      start_date: string | null;
-      /** @enum {string} */
-      status: 'active' | 'archived';
-      /** Format: date-time */
-      updated_at: string;
-      workouts: components['schemas']['TrainingPlanWorkout'][];
-    };
-    /** FoodServingSize */
-    FoodServingSize: {
-      amount: number;
-      is_default: boolean;
-      label: string;
-      unit: string;
-      weight_g: number;
-    };
-    /**
-     * TrainingPlanCreateRequest
-     * @description Request body for creating a reusable Training Template.
-     * @example {
-     *       "description": "Upper/lower strength block.",
-     *       "name": "Four Day Strength Template"
-     *     }
-     */
-    TrainingPlanCreateRequest: {
-      description?: string | null;
-      name: string;
-    };
-    /** WorkbenchCounts */
-    WorkbenchCounts: {
-      /** @description Check-in submissions not yet reviewed */
-      check_ins: number;
-      /** @description Active clients whose engagement ends within 14 days */
-      expiring: number;
-      /** @description Clients with actionable onboarding work */
-      onboarding: number;
-      programming: components['schemas']['WorkbenchProgrammingCounts'];
-      /** @description Active clients whose latest already-due check-in is missed */
-      quiet: number;
-      /** @description Conversations with an open waiting sequence for the coach */
-      replies: number;
-    };
-    /**
-     * RequiredServices
-     * @enum {array}
-     */
-    RequiredServices: never[] | ['training'] | ['nutrition'] | ['training', 'nutrition'];
-    /** InvitationFollowUpDueReason */
-    InvitationFollowUpDueReason: {
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      code: 'invitation_follow_up_due';
-      /** Format: date-time */
-      follow_up_due_at: string;
-      /** Format: uuid */
-      invitation_id: string;
-      /** Format: date-time */
-      sent_at: string;
-    };
-    /**
-     * ClientProfileFormTemplateUpdateRequest
-     * @example {
-     *       "name": "Updated intake",
-     *       "status": "archived"
-     *     }
-     */
-    ClientProfileFormTemplateUpdateRequest: {
-      name?: string;
-      sections?: ({
-        questions: (
-          | ({
-              id: string;
-              label: string;
-              options?: string[];
-              required?: boolean;
-              /** @enum {string} */
-              type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
-            } & {
-              [key: string]: unknown;
-            })
-          | {
-              id: string;
-              label: string;
-              required?: boolean;
-              /** @enum {string} */
-              type: 'service_type';
-            }
-        )[];
-        title?: string;
-      } & {
-        [key: string]: unknown;
-      })[];
-      /** @enum {string} */
-      status?: 'active' | 'archived';
-    };
-    /** ClientProfileReviewQueueItem */
-    ClientProfileReviewQueueItem: {
-      answers: {
-        [key: string]: unknown;
-      };
-      attachments: components['schemas']['Attachment'][];
-      client: components['schemas']['ClientProfileReviewClient'];
-      form_assignment: components['schemas']['ClientProfileFormAssignment'];
-      /** Format: uuid */
-      form_assignment_id: string;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      question_snapshot: ({
-        questions: (
-          | ({
-              id: string;
-              label: string;
-              options?: string[];
-              required?: boolean;
-              /** @enum {string} */
-              type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
-            } & {
-              [key: string]: unknown;
-            })
-          | {
-              id: string;
-              label: string;
-              required?: boolean;
-              /** @enum {string} */
-              type: 'service_type';
-            }
-        )[];
-        title?: string;
-      } & {
-        [key: string]: unknown;
-      })[];
-      /** Format: date-time */
-      reviewed_at: string | null;
-      /** Format: uuid */
-      reviewed_by_id: string | null;
-      /** Format: date-time */
-      submitted_at: string;
-      /** @enum {string} */
-      submitted_by_type: 'coach' | 'client' | 'system';
-    };
-    /** NutritionDayOption */
-    NutritionDayOption: {
-      items: components['schemas']['NutritionDayOptionItem'][];
-      /** Format: uuid */
-      meal_id: string | null;
-      meal_name?: string | null;
-      position?: number;
-    };
-    /**
-     * PublicApplicationRequest
-     * @example {
-     *       "answers": {
-     *         "goal": "Lose 8 kg and build a routine."
-     *       },
-     *       "email": "priya@example.com",
-     *       "landing_program_id": "00000000-0000-0000-0000-000000000000",
-     *       "name": "Priya Sharma"
-     *     }
-     */
-    PublicApplicationRequest: {
-      answers?: {
-        [key: string]: unknown;
-      };
-      email?: string | null;
-      instagram?: string | null;
-      /** Format: uuid */
-      landing_program_id?: string | null;
-      name: string;
-      phone?: string | null;
-    };
-    /** Business */
-    Business: {
-      about: string | null;
-      /** Format: date-time */
-      dashboard_setup_hidden_at: string | null;
-      /** @enum {string|null} */
-      dashboard_setup_hidden_reason: 'dismissed' | 'completed' | null;
-      /** @enum {string} */
-      default_weight_unit: 'kg' | 'lbs';
-      handle: string;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      name: string;
-      /** Format: date-time */
-      updated_at: string;
-    };
-    /** ClientProfileCheckInSchedule */
-    ClientProfileCheckInSchedule: {
-      active: boolean;
-      /** Format: uuid */
-      client_id: string;
-      form_template: components['schemas']['ClientProfileFormTemplate'];
-      /** Format: uuid */
-      form_template_id: string;
-      /** @enum {string} */
-      frequency: 'once' | 'weekly' | 'biweekly' | 'monthly';
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      /** Format: date */
-      next_due_on: string;
-      /** Format: date-time */
-      updated_at: string;
-    };
-    /** ProspectProgram */
-    ProspectProgram: {
-      /** Format: uuid */
-      id: string;
-      name: string;
-    };
-    /**
-     * TrainerInviteRequest
-     * @example {
-     *       "email": "trainer@example.com",
-     *       "first_name": "Tara",
-     *       "last_name": "Trainer"
-     *     }
-     */
-    TrainerInviteRequest: {
+      confirmation_sent_at: string | null;
       /** Format: email */
       email: string;
-      first_name?: string | null;
-      last_name?: string | null;
-    };
-    /** Attachment */
-    Attachment: {
-      byte_size: number;
-      /** @enum {string} */
-      content_type:
-        | 'image/jpeg'
-        | 'image/png'
-        | 'image/webp'
-        | 'image/heic'
-        | 'video/mp4'
-        | 'video/webm'
-        | 'video/quicktime'
-        | 'audio/webm'
-        | 'audio/mp4'
-        | 'audio/mpeg';
-      duration_ms: number | null;
       /** Format: uuid */
       id: string;
-    };
-    /**
-     * ClientProfileUpdateRequest
-     * @example {
-     *       "first_name": "Jamie",
-     *       "goal_weight_unit": "lb",
-     *       "goal_weight_value": 180
-     *     }
-     */
-    ClientProfileUpdateRequest: {
-      first_name?: string | null;
-      goal_weight_unit?: string | null;
-      goal_weight_value?: number | null;
-      last_name?: string | null;
-      phone?: string | null;
-    };
-    /**
-     * FoodRequest
-     * @description Request body for creating or updating a food. `source` is stamped by the server, never accepted.
-     * @example {
-     *       "allergens": [
-     *         "dairy"
-     *       ],
-     *       "calories_per_100g": 97,
-     *       "carbs_g_per_100g": 4,
-     *       "category": "Dairy",
-     *       "dietary_tags": [
-     *         "high_protein"
-     *       ],
-     *       "fat_g_per_100g": 5,
-     *       "fiber_g_per_100g": 0,
-     *       "name": "Greek Yogurt",
-     *       "notes": "Plain, unsweetened.",
-     *       "protein_g_per_100g": 10,
-     *       "serving_sizes": [
-     *         {
-     *           "amount": 100,
-     *           "is_default": true,
-     *           "label": "100g",
-     *           "unit": "g",
-     *           "weight_g": 100
-     *         }
-     *       ],
-     *       "sugar_g_per_100g": 4
-     *     }
-     */
-    FoodRequest: {
-      allergens?: ('dairy' | 'egg' | 'fish' | 'shellfish' | 'tree_nuts' | 'peanuts' | 'wheat' | 'soy' | 'sesame')[];
-      barcode?: string | null;
-      brand?: string | null;
-      calories_per_100g?: number | null;
-      carbs_g_per_100g?: number | null;
-      category?: string | null;
-      dietary_tags?: (
-        | 'vegan'
-        | 'vegetarian'
-        | 'halal'
-        | 'kosher'
-        | 'gluten_free'
-        | 'dairy_free'
-        | 'low_fodmap'
-        | 'keto'
-        | 'high_protein'
-      )[];
-      fat_g_per_100g?: number | null;
-      fiber_g_per_100g?: number | null;
-      image_url?: string | null;
-      /** Format: uuid */
-      media_id?: string | null;
-      name: string;
-      notes?: string | null;
-      protein_g_per_100g?: number | null;
-      serving_sizes?: components['schemas']['FoodServingSize'][];
-      sugar_g_per_100g?: number | null;
-    };
-    /** NutritionDaySlot */
-    NutritionDaySlot: {
-      applied_timezone?: string | null;
-      logged_calories?: number | null;
-      /** Format: uuid */
-      meal_id?: string | null;
-      /** @enum {string} */
-      meal_slot:
-        | 'early_morning'
-        | 'breakfast'
-        | 'mid_morning'
-        | 'lunch'
-        | 'afternoon'
-        | 'evening'
-        | 'dinner'
-        | 'pre_sleep'
-        | 'pre_workout'
-        | 'during_workout'
-        | 'post_workout';
-      options: components['schemas']['NutritionDayOption'][];
-      planned_calories?: number | null;
-      revision?: number | null;
-      rows: components['schemas']['NutritionDayRow'][];
-      write_eligible: boolean;
-    };
-    /**
-     * DiaryReplacePlannedItemRequest
-     * @example {
-     *       "expected_revision": 1,
-     *       "food_id": "a1b2c3d4-74a4-4f9f-b1e9-a9bb07ab4a7c",
-     *       "meal_slot": "breakfast",
-     *       "planned_item_ref": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-     *       "portion": {
-     *         "grams": 80,
-     *         "kind": "gram"
-     *       }
-     *     }
-     */
-    DiaryReplacePlannedItemRequest: {
-      expected_revision: number;
-      /** Format: uuid */
-      food_id?: string | null;
-      /** @enum {string} */
-      meal_slot:
-        | 'early_morning'
-        | 'breakfast'
-        | 'mid_morning'
-        | 'lunch'
-        | 'afternoon'
-        | 'evening'
-        | 'dinner'
-        | 'pre_sleep'
-        | 'pre_workout'
-        | 'during_workout'
-        | 'post_workout';
-      notes?: string | null;
-      /** Format: uuid */
-      planned_item_ref: string;
-      portion: components['schemas']['NutritionPortionInput'];
-      /** Format: uuid */
-      recipe_id?: string | null;
-    };
-    /** WorkbenchRepliesQueueItem */
-    WorkbenchRepliesQueueItem: {
-      /**
-       * @description Client lifecycle status; inactive clients remain actionable in Replies
-       * @enum {string}
-       */
-      client_status: 'active' | 'pending' | 'inactive';
-      conversation: components['schemas']['Conversation'];
-      reasons: components['schemas']['ReplyNeededReason'][];
-      /** @description Client messages in the current waiting sequence */
-      waiting_message_count: number;
-    };
-    /** TrainerInvitationPreviewResponse */
-    TrainerInvitationPreviewResponse: {
-      data: {
-        business_name: string;
-        /** Format: email */
-        email?: string | null;
-        first_name?: string | null;
-      };
-    };
-    /** ClientProfileFormSubmissionResponse */
-    ClientProfileFormSubmissionResponse: {
-      data: components['schemas']['ClientProfileFormSubmission'];
-    };
-    /** NutritionDay */
-    NutritionDay: {
-      applied_timezone: string;
-      /** Format: date */
-      date: string;
-      /** Format: uuid */
-      plan_id?: string | null;
-      slots: components['schemas']['NutritionDaySlot'][];
-      summary: components['schemas']['NutritionDaySummary'];
-      targets: components['schemas']['NutritionDayTargets'];
-      write_eligible: boolean;
-    };
-    /** BillingCheckoutRequest */
-    BillingCheckoutRequest: {
-      /** @example 3 */
-      seats_to_add: number;
-    };
-    /** WorkbenchCountsResponse */
-    WorkbenchCountsResponse: {
-      data: components['schemas']['WorkbenchCounts'];
+      /** Format: date-time */
+      inserted_at: string;
+      /** Format: date-time */
+      updated_at: string;
     };
     /**
      * TokenRequest
@@ -3316,706 +3155,17 @@ export interface components {
           /** @enum {string} */
           role: 'owner' | 'coach' | 'client' | 'guest';
         };
-    /** ChatMessageResponse */
-    ChatMessageResponse: {
-      data: components['schemas']['ChatMessage'];
-    };
     /**
-     * ClientUpdateRequest
+     * TrainerAcceptInviteRequest
      * @example {
-     *       "first_name": "Jamie",
-     *       "goal_weight_unit": "lbs",
-     *       "goal_weight_value": 180,
-     *       "status": "active"
+     *       "email": "trainer@example.com",
+     *       "invitation_token": "invite-token"
      *     }
      */
-    ClientUpdateRequest: {
-      /** Format: email */
-      email?: string | null;
-      first_name?: string | null;
-      /** @enum {string|null} */
-      goal_weight_unit?: 'kg' | 'lbs' | null;
-      goal_weight_value?: number | null;
-      last_name?: string | null;
-      notes?: string | null;
-      phone?: string | null;
-      required_services?: components['schemas']['RequiredServicesNonEmpty'];
-      /** @enum {string|null} */
-      stage?: 'onboarding' | 'coaching' | null;
-      /** @enum {string} */
-      status?: 'active' | 'inactive';
-      /** Format: date */
-      subscription_ends_on?: string | null;
-      /** Format: date */
-      subscription_started_on?: string | null;
-    };
-    /** CoachClientTrainingPlanResponse */
-    CoachClientTrainingPlanResponse: {
-      data: components['schemas']['CoachClientTrainingPlan'];
-    };
-    /** ClientProfileCoach */
-    ClientProfileCoach: {
-      business_name: string;
-      first_name: string | null;
-      last_name: string | null;
-      phone: string | null;
-    };
-    /** ClientProfile */
-    ClientProfile: {
-      coach: components['schemas']['ClientProfileCoach'] | null;
-      /** @enum {string} */
-      default_weight_unit: 'kg' | 'lbs';
-      /** Format: email */
-      email: string | null;
-      first_name: string | null;
-      goal_weight_unit: string | null;
-      goal_weight_value: number | null;
-      /** Format: uuid */
-      id: string;
-      last_name: string | null;
-      phone: string | null;
-      status: string;
-      /** Format: date */
-      subscription_ends_on: string | null;
-      /** Format: date */
-      subscription_started_on: string | null;
-    };
-    /** ProspectResponse */
-    ProspectResponse: {
-      data: components['schemas']['Prospect'];
-    };
-    /** ClientSummary */
-    ClientSummary: {
-      active: number;
-      inactive: number;
-      pending: number;
-    };
-    /**
-     * ClientProfileFormTemplateRequest
-     * @example {
-     *       "name": "Initial intake",
-     *       "purpose": "intake",
-     *       "sections": [
-     *         {
-     *           "questions": [
-     *             {
-     *               "id": "meal_prep_ability",
-     *               "label": "Meal prep ability",
-     *               "type": "select"
-     *             }
-     *           ],
-     *           "title": "Nutrition"
-     *         }
-     *       ]
-     *     }
-     */
-    ClientProfileFormTemplateRequest: {
-      name: string;
-      /** @enum {string} */
-      purpose: 'intake' | 'check_in';
-      sections: ({
-        questions: (
-          | ({
-              id: string;
-              label: string;
-              options?: string[];
-              required?: boolean;
-              /** @enum {string} */
-              type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
-            } & {
-              [key: string]: unknown;
-            })
-          | {
-              id: string;
-              label: string;
-              required?: boolean;
-              /** @enum {string} */
-              type: 'service_type';
-            }
-        )[];
-        title?: string;
-      } & {
-        [key: string]: unknown;
-      })[];
-      /** @enum {string} */
-      status?: 'active' | 'archived';
-    };
-    /**
-     * WeightEntryRequest
-     * @example {
-     *       "date": "2026-05-31",
-     *       "unit": "lbs",
-     *       "value": 180.5
-     *     }
-     */
-    WeightEntryRequest: {
-      /** Format: date */
-      date: string;
-      note?: string | null;
-      /** @enum {string} */
-      unit: 'kg' | 'lbs';
-      value: number;
-    };
-    /** ProspectEnrollResponse */
-    ProspectEnrollResponse: {
-      data: {
-        already_enrolled: boolean;
-        prospect: components['schemas']['Prospect'];
-      };
-    };
-    /**
-     * LandingPageUpsertRequest
-     * @example {
-     *       "application_questions": [
-     *         {
-     *           "id": "goal",
-     *           "label": "What is your main goal?",
-     *           "options": [],
-     *           "type": "long_text"
-     *         }
-     *       ],
-     *       "headline": "Build strength without guessing what to do next.",
-     *       "programs": [
-     *         {
-     *           "audience": "For busy professionals",
-     *           "name": "Fat loss coaching"
-     *         }
-     *       ],
-     *       "proof_points": [
-     *         {
-     *           "label": "clients coached",
-     *           "value": "220+"
-     *         }
-     *       ],
-     *       "slug": "kavya-strength",
-     *       "status": "published",
-     *       "subheadline": "Personal coaching for people who train hard but need structure.",
-     *       "template": "proof_first"
-     *     }
-     */
-    LandingPageUpsertRequest: {
-      application_questions?: {
-        id?: string;
-        label?: string;
-        options?: string[];
-        /** @enum {string} */
-        type?: 'short_text' | 'long_text' | 'single_select';
-      }[];
-      coach_intro?: string | null;
-      eyebrow?: string | null;
-      fit_points?: string[];
-      headline: string;
-      hero_image_url?: string | null;
-      programs?: components['schemas']['LandingProgramInput'][];
-      proof_points?: {
-        label?: string;
-        value?: string;
-      }[];
-      slug: string;
-      /** @enum {string} */
-      status: 'draft' | 'published';
-      subheadline?: string | null;
-      /** @enum {string} */
-      template: 'proof_first' | 'problem_fit' | 'coach_story';
-    };
-    /**
-     * ClientProfileFormSubmissionRequest
-     * @example {
-     *       "answers": {
-     *         "meal_prep_ability": "high"
-     *       }
-     *     }
-     */
-    ClientProfileFormSubmissionRequest: {
-      answers: {
-        [key: string]: string | number | boolean | string[] | components['schemas']['ClientProfileServiceTypeAnswer'];
-      };
-    };
-    /**
-     * TrainingPerformedSetUpdateRequest
-     * @example {
-     *       "load_unit": "kg",
-     *       "load_value": 82.5,
-     *       "reps": "8",
-     *       "rpe": 9
-     *     }
-     */
-    TrainingPerformedSetUpdateRequest: {
-      /** @enum {string|null} */
-      distance_unit?: 'meters' | 'km' | 'miles' | 'none' | null;
-      distance_value?: number | null;
-      duration_seconds?: number | null;
-      /** @enum {string|null} */
-      load_unit?: 'kg' | 'lbs' | 'bodyweight' | 'none' | null;
-      load_value?: number | null;
-      notes?: string | null;
-      reps?: string | null;
-      rpe?: number | null;
-      /** @enum {string|null} */
-      set_type?: 'working' | 'warmup' | 'dropset' | null;
-    };
-    /**
-     * TrainingSessionUpdateRequest
-     * @example {
-     *       "notes": "Felt strong.",
-     *       "soreness_rating": 3
-     *     }
-     */
-    TrainingSessionUpdateRequest: {
-      notes?: string;
-      soreness_rating?: number;
-    };
-    /** ActiveTrainingSessionResponse */
-    ActiveTrainingSessionResponse: {
-      data: components['schemas']['TrainingSession'] | null;
-    };
-    /**
-     * TrainingEquipment
-     * @example {
-     *       "description": "Straight Olympic barbell.",
-     *       "id": "f6c9d143-42f5-42a4-9313-4c6483a610bb",
-     *       "name": "Barbell"
-     *     }
-     */
-    TrainingEquipment: {
-      description: string | null;
-      /** Format: uuid */
-      id: string;
-      name: string;
-    };
-    /** ClientProfileFormSubmissionListResponse */
-    ClientProfileFormSubmissionListResponse: {
-      data: components['schemas']['ClientProfileFormSubmission'][];
-    };
-    /**
-     * TrainingExerciseCreateRequest
-     * @description Request body for creating a coach exercise.
-     * @example {
-     *       "description": "Main lower-body strength movement.",
-     *       "equipment_ids": [
-     *         "7d72f2c3-8ed7-4b78-bf1f-c883df192772"
-     *       ],
-     *       "force": "push",
-     *       "images": [
-     *         "https://cdn.example.com/exercises/back-squat.png"
-     *       ],
-     *       "instructions": "Brace, descend to depth, drive up.",
-     *       "mechanics": "compound",
-     *       "muscle_ids": [
-     *         "8f5db7e0-9b18-4d5f-9c2a-1f5d8f1131f0"
-     *       ],
-     *       "name": "Barbell Back Squat"
-     *     }
-     */
-    TrainingExerciseCreateRequest: {
-      description?: string | null;
-      equipment_ids?: string[];
-      /** @enum {string|null} */
-      force?: 'push' | 'pull' | 'static' | null;
-      images?: string[];
-      instructions?: string | null;
-      /** @enum {string|null} */
-      mechanics?: 'compound' | 'isolation' | 'isometric' | null;
-      /** Format: uuid */
-      media_id?: string | null;
-      muscle_ids?: string[];
-      name: string;
-    };
-    /** ClientProfileFormAssignmentListResponse */
-    ClientProfileFormAssignmentListResponse: {
-      data: components['schemas']['ClientProfileFormAssignment'][];
-    };
-    /**
-     * TrainingPrescriptionReplaceRequest
-     * @description The authoritative ordered Prescription and complete Monday-Sunday Workout Schedule. Omitted persisted nodes are deleted atomically.
-     */
-    TrainingPrescriptionReplaceRequest: {
-      expected_revision: number;
-      schedule: components['schemas']['TrainingPrescriptionScheduleEntry'][];
-      workouts: components['schemas']['TrainingPrescriptionWorkoutInput'][];
-    };
-    /**
-     * CoachProfileUpdateRequest
-     * @example {
-     *       "first_name": "Alex",
-     *       "last_name": "Coach",
-     *       "phone": "+15551234567",
-     *       "whatsapp_number": "+15551234567"
-     *     }
-     */
-    CoachProfileUpdateRequest: {
-      business_name?: string | null;
-      first_name?: string | null;
-      last_name?: string | null;
-      phone?: string | null;
-      whatsapp_number?: string | null;
-    };
-    /**
-     * ProspectEnrollRequest
-     * @example {
-     *       "email": "priya@example.com",
-     *       "first_name": "Priya",
-     *       "last_name": "Sharma"
-     *     }
-     */
-    ProspectEnrollRequest: {
-      email?: string | null;
-      first_name?: string | null;
-      last_name?: string | null;
-      phone?: string | null;
-    };
-    /** PublicApplicationResponse */
-    PublicApplicationResponse: {
-      data: {
-        business_name: string;
-        /** Format: uuid */
-        id: string;
-        name: string;
-        program_name?: string | null;
-        whatsapp_number?: string | null;
-      };
-    };
-    /** ClientProfileCheckInScheduleUpdateRequest */
-    ClientProfileCheckInScheduleUpdateRequest: {
-      active?: boolean;
-      /** @enum {string} */
-      frequency?: 'once' | 'weekly' | 'biweekly' | 'monthly';
-      /** Format: date */
-      next_due_on?: string;
-    };
-    /** ClientProfileCheckInScheduleResponse */
-    ClientProfileCheckInScheduleResponse: {
-      data: components['schemas']['ClientProfileCheckInSchedule'];
-    };
-    /**
-     * TrainingExerciseCopyRequest
-     * @description Request body for duplicating an exercise.
-     * @example {
-     *       "name": "Trap Bar Deadlift"
-     *     }
-     */
-    TrainingExerciseCopyRequest: {
-      name: string;
-    };
-    /**
-     * DiaryDeleteEntryRequest
-     * @example {
-     *       "expected_revision": 1
-     *     }
-     */
-    DiaryDeleteEntryRequest: {
-      expected_revision: number;
-    };
-    /**
-     * DiaryLogPlannedOptionRequest
-     * @example {
-     *       "meal_slot": "breakfast"
-     *     }
-     */
-    DiaryLogPlannedOptionRequest: {
-      /** @enum {string} */
-      meal_slot:
-        | 'early_morning'
-        | 'breakfast'
-        | 'mid_morning'
-        | 'lunch'
-        | 'afternoon'
-        | 'evening'
-        | 'dinner'
-        | 'pre_sleep'
-        | 'pre_workout'
-        | 'during_workout'
-        | 'post_workout';
-    };
-    /**
-     * TrainingPlanRevisionRequest
-     * @description Optimistic revision required by an explicit Training Template or Client Plan lifecycle command.
-     * @example {
-     *       "expected_revision": 3
-     *     }
-     */
-    TrainingPlanRevisionRequest: {
-      expected_revision: number;
-    };
-    /** ServiceCoverageMissingReason */
-    ServiceCoverageMissingReason: {
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      code: 'service_coverage_missing';
-      /** Format: date */
-      first_uncovered_on: string;
-      /** @enum {string} */
-      service: 'training' | 'nutrition';
-    };
-    /** BillingSummary */
-    BillingSummary: {
-      /** @example 1 */
-      available_seats: number;
-      /** @example 0 */
-      awaiting_seat_count: number;
-      /** Format: date-time */
-      current_period_end: string | null;
-      /** @example 2 */
-      free_seats: number;
-      is_owner: boolean;
-      /** @example 499 */
-      monthly_seat_price_inr: number;
-      /** @example 3 */
-      paid_seats: number;
-      recent_events?: components['schemas']['BillingEvent'][] | null;
-      /** @example 5 */
-      seat_limit: number;
-      /**
-       * @example free
-       * @enum {string}
-       */
-      status: 'free' | 'active' | 'past_due' | 'cancel_at_period_end' | 'cancelled';
-      /**
-       * @description active clients + pending invites
-       * @example 4
-       */
-      used_seats: number;
-    };
-    /** Conversation */
-    Conversation: {
-      /** Format: uuid */
-      client_id: string;
-      client_name?: string | null;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      /** Format: date-time */
-      last_message_at?: string | null;
-      last_message_preview?: string | null;
-      /**
-       * @description Who spoke last in conversation history. Replies membership uses waiting_since.
-       * @enum {string|null}
-       */
-      last_message_role?: 'coach' | 'client' | null;
-      unread_count: number;
-      /** Format: date-time */
-      updated_at: string;
-      /** Format: date-time */
-      waiting_since: string | null;
-    };
-    /** ClientTrainingCoverage */
-    ClientTrainingCoverage: {
-      /** Format: date */
-      date: string;
-      plan: components['schemas']['ClientTrainingPlan'];
-      /** @enum {string} */
-      weekday: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
-      workout: components['schemas']['TrainingPlanWorkout'] | null;
-    };
-    /** TrainingExerciseRelation */
-    TrainingExerciseRelation: {
-      description: string | null;
-      /** Format: uuid */
-      id: string;
-      name: string;
-    };
-    /**
-     * RecipeRequest
-     * @example {
-     *       "description": "A high-protein meal prep bowl.",
-     *       "name": "Turkey Rice Bowl",
-     *       "recipe_ingredients": [
-     *         {
-     *           "food_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-     *           "position": 0,
-     *           "weight_g": 150
-     *         }
-     *       ],
-     *       "servings_count": 4
-     *     }
-     */
-    RecipeRequest: {
-      allergens?: ('dairy' | 'egg' | 'fish' | 'shellfish' | 'tree_nuts' | 'peanuts' | 'wheat' | 'soy' | 'sesame')[];
-      cooked_weight_g?: number | null;
-      description?: string | null;
-      dietary_tags?: (
-        | 'vegan'
-        | 'vegetarian'
-        | 'halal'
-        | 'kosher'
-        | 'gluten_free'
-        | 'dairy_free'
-        | 'low_fodmap'
-        | 'keto'
-        | 'high_protein'
-      )[];
-      instructions?: string | null;
-      name: string;
-      recipe_ingredients?: components['schemas']['RecipeIngredientRequest'][];
-      servings_count: number;
-    };
-    /** ProspectListResponse */
-    ProspectListResponse: {
-      count: number;
-      data: components['schemas']['Prospect'][];
-      summary: {
-        lost?: number;
-        new?: number;
-        reviewing?: number;
-        won?: number;
-      };
-    };
-    /** NutritionWeekScheduleInput */
-    NutritionWeekScheduleInput: {
-      /** @description A persisted Day Pattern id or a request-local local_ref from this Menu. */
-      friday: string;
-      /** @description A persisted Day Pattern id or a request-local local_ref from this Menu. */
-      monday: string;
-      /** @description A persisted Day Pattern id or a request-local local_ref from this Menu. */
-      saturday: string;
-      /** @description A persisted Day Pattern id or a request-local local_ref from this Menu. */
-      sunday: string;
-      /** @description A persisted Day Pattern id or a request-local local_ref from this Menu. */
-      thursday: string;
-      /** @description A persisted Day Pattern id or a request-local local_ref from this Menu. */
-      tuesday: string;
-      /** @description A persisted Day Pattern id or a request-local local_ref from this Menu. */
-      wednesday: string;
-    };
-    /** FoodResponse */
-    FoodResponse: {
-      data: components['schemas']['Food'];
-    };
-    /**
-     * OtpRequest
-     * @example {
-     *       "email": "coach@example.com",
-     *       "type": "authentication"
-     *     }
-     */
-    OtpRequest: {
+    TrainerAcceptInviteRequest: {
       /** Format: email */
       email: string;
-      /** @enum {string} */
-      type: 'email_confirmation' | 'authentication';
-    };
-    /**
-     * NutritionPortion
-     * @description A gram or serving Portion. Food servings retain display values and resolved grams.
-     */
-    NutritionPortion: {
-      amount: number | null;
-      grams: number | null;
-      /** @enum {string} */
-      kind: 'gram' | 'serving';
-      label: string | null;
-      unit: string | null;
-    };
-    /**
-     * ClientProfileFormAssignmentUpdateRequest
-     * @example {
-     *       "priority": "normal",
-     *       "status": "in_progress"
-     *     }
-     */
-    ClientProfileFormAssignmentUpdateRequest: {
-      /** Format: date */
-      due_date?: string | null;
-      /** @enum {string} */
-      priority?: 'high' | 'normal';
-      /** @enum {string} */
-      status?: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
-    };
-    /** TrainingPlanWorkout */
-    TrainingPlanWorkout: {
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      name: string;
-      position: number;
-      /** Format: uuid */
-      training_plan_id: string;
-      /** Format: date-time */
-      updated_at: string;
-      weekdays: ('monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday')[];
-      workout_elements: components['schemas']['TrainingPlanWorkoutExercise'][];
-    };
-    /** NutritionPortionInput */
-    NutritionPortionInput: {
-      amount?: number | null;
-      grams?: number | null;
-      /** @enum {string} */
-      kind: 'gram' | 'serving';
-      label?: string | null;
-      unit?: string | null;
-    };
-    /** NutritionPlanClient */
-    NutritionPlanClient: {
-      first_name: string | null;
-      /** Format: uuid */
-      id: string;
-      last_name: string | null;
-    };
-    /** Client */
-    Client: {
-      /** Format: uuid */
-      assigned_coach_id?: string | null;
-      /** Format: email */
-      email: string | null;
-      expiring_soon: boolean;
-      first_name: string | null;
-      /** @enum {string|null} */
-      goal_weight_unit: 'kg' | 'lbs' | null;
-      goal_weight_value: number | null;
-      /** Format: uuid */
-      id: string;
-      /** @enum {string|null} */
-      inactive_reason: 'manual' | 'subscription_expired' | 'awaiting_seat' | null;
-      /** Format: date-time */
-      inserted_at: string;
-      /** Format: date-time */
-      invitation_expires_at: string | null;
-      /** Format: date-time */
-      invitation_sent_at: string | null;
-      invite_url: string | null;
-      /** Format: date-time */
-      joined_at: string | null;
-      /**
-       * Format: date-time
-       * @description UTC time of the client's latest workout completion, food log, check-in submission, or weight entry
-       */
-      last_active_at: string | null;
-      last_name: string | null;
-      notes: string | null;
-      /** @description Name of the nutrition plan in force today. Null unless the request passed `include_plans=true`, and null when the client has none. */
-      nutrition_plan_name?: string | null;
-      phone: string | null;
-      required_services: components['schemas']['RequiredServices'];
-      /** @enum {string} */
-      stage: 'onboarding' | 'coaching';
-      /** @enum {string} */
-      status: 'active' | 'pending' | 'inactive';
-      /** Format: date */
-      subscription_ends_on: string | null;
-      /** Format: date */
-      subscription_started_on: string | null;
-      /** @description Name of the training plan in force today. Null unless the request passed `include_plans=true`, and null when the client has none. */
-      training_plan_name?: string | null;
-      /** Format: date-time */
-      updated_at: string;
-    };
-    /** MissedCheckInReason */
-    MissedCheckInReason: {
-      /** Format: uuid */
-      assignment_id: string;
-      /** @enum {string} */
-      code: 'missed_check_in';
-      /** Format: date */
-      due_on: string;
-    };
-    /** RecipeListResponse */
-    RecipeListResponse: {
-      count: number;
-      data: components['schemas']['Recipe'][];
+      invitation_token: string;
     };
     /**
      * TrainerAcceptInviteVerifyRequest
@@ -4031,899 +3181,14 @@ export interface components {
       invitation_token: string;
       otp: string;
     };
-    /** TrainingPlanClient */
-    TrainingPlanClient: {
-      first_name: string;
-      /** Format: uuid */
-      id: string;
-      last_name: string;
-    };
-    /** WorkbenchCheckInQueueResponse */
-    WorkbenchCheckInQueueResponse: {
-      count: number;
-      data: components['schemas']['WorkbenchCheckInQueueItem'][];
-    };
-    /** WorkbenchExpiringQueueResponse */
-    WorkbenchExpiringQueueResponse: {
-      count: number;
-      data: components['schemas']['WorkbenchExpiringQueueItem'][];
-    };
-    /** WorkbenchProgrammingQueueResponse */
-    WorkbenchProgrammingQueueResponse: {
-      count: number;
-      data: components['schemas']['WorkbenchProgrammingQueueItem'][];
-    };
-    /**
-     * ClientProfileFormAssignmentRequest
-     * @example {
-     *       "form_template_id": "0ac4b3bc-e0b6-44ea-ae7a-f48deac42912"
-     *     }
-     */
-    ClientProfileFormAssignmentRequest: {
-      /** Format: uuid */
-      form_template_id: string;
-    };
-    /** ClientProfileServiceTypeAnswer */
-    ClientProfileServiceTypeAnswer: {
-      services: components['schemas']['RequiredServicesNonEmpty'];
-    };
-    /**
-     * DiaryAddExtraRequest
-     * @example {
-     *       "food_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-     *       "meal_slot": "breakfast",
-     *       "portion": {
-     *         "grams": 80,
-     *         "kind": "gram"
-     *       }
-     *     }
-     */
-    DiaryAddExtraRequest: {
-      /** Format: uuid */
-      food_id?: string | null;
-      /** @enum {string} */
-      meal_slot:
-        | 'early_morning'
-        | 'breakfast'
-        | 'mid_morning'
-        | 'lunch'
-        | 'afternoon'
-        | 'evening'
-        | 'dinner'
-        | 'pre_sleep'
-        | 'pre_workout'
-        | 'during_workout'
-        | 'post_workout';
-      notes?: string | null;
-      portion: components['schemas']['NutritionPortionInput'];
-      /** Format: uuid */
-      recipe_id?: string | null;
-    };
-    /** LibraryMediaUpload */
-    LibraryMediaUpload: {
-      byte_size: number;
-      /** @enum {string} */
-      content_type: 'image/jpeg' | 'image/png' | 'image/webp' | 'video/mp4' | 'video/webm';
-      /** Format: uuid */
-      id: string;
-      /** @enum {string} */
-      kind: 'image' | 'video';
-      /** Format: uri */
-      public_url: string | null;
-      upload_headers: {
-        [key: string]: string;
+    /** TrainerInvitationPreviewResponse */
+    TrainerInvitationPreviewResponse: {
+      data: {
+        business_name: string;
+        /** Format: email */
+        email?: string | null;
+        first_name?: string | null;
       };
-      /** Format: uri */
-      upload_url: string;
-      /** Format: date-time */
-      upload_url_expires_at: string;
-      /** Format: uri */
-      url: string | null;
-    };
-    /**
-     * TrainingPrescriptionPlannedSetInput
-     * @example {
-     *       "reps": "8-10",
-     *       "rest_seconds": 90
-     *     }
-     */
-    TrainingPrescriptionPlannedSetInput: {
-      /** @enum {string|null} */
-      distance_unit?: 'meters' | 'km' | 'miles' | 'none' | null;
-      distance_value?: string | null;
-      duration_seconds?: number | null;
-      /** @enum {string|null} */
-      load_unit?: 'kg' | 'lbs' | 'bodyweight' | 'none' | null;
-      load_value?: string | null;
-      notes?: string | null;
-      reps?: string | null;
-      rest_seconds?: number | null;
-      rpe?: number | null;
-      /** @enum {string|null} */
-      set_type?: 'working' | 'warmup' | 'dropset' | null;
-    };
-    /** WorkbenchOnboardingQueueResponse */
-    WorkbenchOnboardingQueueResponse: {
-      count: number;
-      data: components['schemas']['WorkbenchOnboardingQueueItem'][];
-    };
-    /** TrainingPlanPlannedSet */
-    TrainingPlanPlannedSet: {
-      /** @enum {string|null} */
-      distance_unit: 'meters' | 'km' | 'miles' | 'none' | null;
-      distance_value: string | null;
-      duration_seconds: number | null;
-      /** @enum {string|null} */
-      load_unit: 'kg' | 'lbs' | 'bodyweight' | 'none' | null;
-      load_value: string | null;
-      notes: string | null;
-      reps: string | null;
-      rest_seconds: number | null;
-      rpe: number | null;
-      /** @enum {string|null} */
-      set_type: 'working' | 'warmup' | 'dropset' | null;
-    };
-    /**
-     * LibraryMediaUploadRequest
-     * @example {
-     *       "byte_size": 1024000,
-     *       "content_type": "image/jpeg"
-     *     }
-     */
-    LibraryMediaUploadRequest: {
-      byte_size: number;
-      /** @enum {string} */
-      content_type: 'image/jpeg' | 'image/png' | 'image/webp' | 'video/mp4' | 'video/webm';
-    };
-    /**
-     * TrainingMuscle
-     * @example {
-     *       "description": "Primary knee extension muscle group.",
-     *       "id": "c04c39ff-4762-4a53-b0a3-15c8688ff9d4",
-     *       "name": "Quadriceps"
-     *     }
-     */
-    TrainingMuscle: {
-      description: string | null;
-      /** Format: uuid */
-      id: string;
-      name: string;
-    };
-    /** TrainingSessionListResponse */
-    TrainingSessionListResponse: {
-      count: number;
-      data: components['schemas']['TrainingSession'][];
-    };
-    /** AuthTokenResponse */
-    AuthTokenResponse: {
-      access_token: string;
-      /** @example 300 */
-      expires_in: number;
-      refresh_token: string;
-      scope: string;
-      /** @example Bearer */
-      token_type: string;
-    };
-    /** HealthResponse */
-    HealthResponse: {
-      /** @example easy-backend */
-      service: string;
-      /** @example ok */
-      status: string;
-      /** Format: date-time */
-      timestamp: string;
-      /** @example 1.0.0 */
-      version: string;
-    };
-    /**
-     * DiaryUpdateEntryRequest
-     * @example {
-     *       "expected_revision": 1,
-     *       "notes": "half",
-     *       "portion": {
-     *         "grams": 25,
-     *         "kind": "gram"
-     *       }
-     *     }
-     */
-    DiaryUpdateEntryRequest: {
-      expected_revision: number;
-      notes?: string | null;
-      portion?: components['schemas']['NutritionPortionInput'];
-    };
-    /**
-     * RecipeUpdateRequest
-     * @example {
-     *       "expected_revision": 1,
-     *       "name": "Turkey Rice Bowl",
-     *       "servings_count": 4
-     *     }
-     */
-    RecipeUpdateRequest: {
-      allergens?: ('dairy' | 'egg' | 'fish' | 'shellfish' | 'tree_nuts' | 'peanuts' | 'wheat' | 'soy' | 'sesame')[];
-      cooked_weight_g?: number | null;
-      description?: string | null;
-      dietary_tags?: (
-        | 'vegan'
-        | 'vegetarian'
-        | 'halal'
-        | 'kosher'
-        | 'gluten_free'
-        | 'dairy_free'
-        | 'low_fodmap'
-        | 'keto'
-        | 'high_protein'
-      )[];
-      expected_revision: number;
-      instructions?: string | null;
-      name?: string;
-      recipe_ingredients?: components['schemas']['RecipeIngredientRequest'][];
-      servings_count?: number;
-    };
-    /** ClientResponse */
-    ClientResponse: {
-      data: components['schemas']['Client'];
-    };
-    /** WorkbenchCheckInSubmission */
-    WorkbenchCheckInSubmission: {
-      /** Format: uuid */
-      form_assignment_id: string;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      reviewed_at: string | null;
-      /** Format: date-time */
-      submitted_at: string;
-    };
-    /** CoachClientTrainingPlanListResponse */
-    CoachClientTrainingPlanListResponse: {
-      count: number;
-      data: components['schemas']['CoachClientTrainingPlan'][];
-    };
-    /**
-     * NutritionDayPatternInput
-     * @description A persisted Day Pattern uses id; a new one uses a request-local local_ref. Omitted persisted patterns are deleted.
-     */
-    NutritionDayPatternInput: {
-      /** Format: uuid */
-      id?: string;
-      local_ref?: string;
-      name: string;
-      position: number;
-      slots: components['schemas']['NutritionDayPatternSlotInput'][];
-    };
-    /** NutritionPlanListResponse */
-    NutritionPlanListResponse: {
-      count: number;
-      data: components['schemas']['NutritionPlan'][];
-    };
-    /** CoachProfileBusiness */
-    CoachProfileBusiness: {
-      /** Format: date-time */
-      dashboard_setup_hidden_at: string | null;
-      /** @enum {string|null} */
-      dashboard_setup_hidden_reason: 'dismissed' | 'completed' | null;
-      /** Format: uuid */
-      id: string;
-      name: string;
-      slug: string;
-      whatsapp_number: string | null;
-    };
-    /** FormSubmissionEmbedSnapshot */
-    FormSubmissionEmbedSnapshot: {
-      /** Format: uuid */
-      form_assignment_id: string;
-      /** Format: date-time */
-      submitted_at: string;
-      title: string;
-    };
-    /** LandingProgramInput */
-    LandingProgramInput: {
-      audience?: string | null;
-      description?: string | null;
-      name: string;
-      price_display?: string | null;
-      promise?: string | null;
-    };
-    /** NutritionDayEntry */
-    NutritionDayEntry: {
-      /** Format: uuid */
-      food_id: string | null;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      /** @enum {string} */
-      kind: 'food' | 'recipe';
-      name: string;
-      notes: string | null;
-      nutrients: components['schemas']['NutrientTotals'];
-      portion: components['schemas']['NutritionPortion'];
-      /** Format: uuid */
-      recipe_id: string | null;
-      revision: number;
-      /** Format: date-time */
-      updated_at: string;
-    };
-    /** TrainingPerformedSet */
-    TrainingPerformedSet: {
-      distance_unit?: string | null;
-      distance_value?: number | null;
-      duration_seconds?: number | null;
-      exercise?: components['schemas']['TrainingPlanExercise'] | null;
-      /** Format: uuid */
-      exercise_id: string | null;
-      exercise_name: string;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      load_unit: string | null;
-      load_value: number | null;
-      notes?: string | null;
-      position: number;
-      reps: string | null;
-      rpe?: number | null;
-      /** @enum {string} */
-      set_type: 'working' | 'warmup' | 'dropset';
-      /** Format: uuid */
-      snapshot_exercise_ref: string | null;
-      /** Format: uuid */
-      training_session_id: string;
-      /** Format: date-time */
-      updated_at: string;
-    };
-    /** ClientListResponse */
-    ClientListResponse: {
-      count: number;
-      data: components['schemas']['Client'][];
-      summary: components['schemas']['ClientSummary'];
-    };
-    /** SeatLimitError */
-    SeatLimitError: {
-      /** @example seat_limit_reached */
-      error_code: string;
-      error_detail?: {
-        [key: string]: unknown;
-      };
-      /** @example No seats available */
-      error_message: string;
-      seat_summary: components['schemas']['BillingSummary'];
-    } & {
-      [key: string]: unknown;
-    };
-    /** TrainingPerformedSetResponse */
-    TrainingPerformedSetResponse: {
-      data: components['schemas']['TrainingPerformedSet'];
-    };
-    /** ChatMessageEmbed */
-    ChatMessageEmbed: {
-      /** Format: uuid */
-      id: string;
-      snapshot: components['schemas']['FormSubmissionEmbedSnapshot'];
-      /** @enum {string} */
-      type: 'form_submission';
-    };
-    /**
-     * ClientInviteRequest
-     * @example {
-     *       "email": "client@example.com",
-     *       "first_name": "Jamie",
-     *       "last_name": "Client",
-     *       "notes": "Prefers morning sessions.",
-     *       "phone": "+15551234567"
-     *     }
-     */
-    ClientInviteRequest: {
-      /** Format: email */
-      email?: string | null;
-      first_name?: string | null;
-      last_name?: string | null;
-      notes?: string | null;
-      phone?: string | null;
-      required_services?: components['schemas']['RequiredServices'];
-    };
-    /**
-     * NutritionPlanCreateRequest
-     * @description Request body for creating a reusable Nutrition Template.
-     * @example {
-     *       "description": "Reusable cutting Template.",
-     *       "name": "Cut Block",
-     *       "target_calories": 2000,
-     *       "target_protein_g": 150
-     *     }
-     */
-    NutritionPlanCreateRequest: {
-      description?: string | null;
-      name: string;
-      target_calories?: number | null;
-      target_carbs_g?: number | null;
-      target_fat_g?: number | null;
-      target_fiber_g?: number | null;
-      target_protein_g?: number | null;
-    };
-    /** NutritionDayTargets */
-    NutritionDayTargets: {
-      calories?: number | null;
-      carbs_g?: number | null;
-      fat_g?: number | null;
-      fiber_g?: number | null;
-      protein_g?: number | null;
-    };
-    /** NutritionDayPattern */
-    NutritionDayPattern: {
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      name: string;
-      /** Format: uuid */
-      nutrition_plan_id: string;
-      position: number;
-      slots: components['schemas']['NutritionDayPatternSlot'][];
-      /** Format: date-time */
-      updated_at: string;
-      weekdays: ('monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday')[];
-    };
-    /** TrainingSchedule */
-    TrainingSchedule: {
-      /** Format: uuid */
-      friday: string | null;
-      /** Format: uuid */
-      monday: string | null;
-      /** Format: uuid */
-      saturday: string | null;
-      /** Format: uuid */
-      sunday: string | null;
-      /** Format: uuid */
-      thursday: string | null;
-      /** Format: uuid */
-      tuesday: string | null;
-      /** Format: uuid */
-      wednesday: string | null;
-    };
-    /** ConversationListResponse */
-    ConversationListResponse: {
-      count: number;
-      data: components['schemas']['Conversation'][];
-    };
-    /** StaleRevisionError */
-    StaleRevisionError: {
-      /** @enum {string} */
-      error_code: 'stale_revision';
-      error_detail: {
-        current_revision: number;
-      };
-      error_message: string;
-    };
-    /** ClientTrainingPlanResponse */
-    ClientTrainingPlanResponse: {
-      data: components['schemas']['ClientTrainingPlan'];
-    };
-    /**
-     * QueueSnoozeRequest
-     * @example {
-     *       "queue": "quiet",
-     *       "snoozed_until": "2026-08-20"
-     *     }
-     */
-    QueueSnoozeRequest: {
-      /** @enum {string} */
-      queue: 'quiet' | 'expiring';
-      /** Format: date */
-      snoozed_until: string;
-    };
-    /** ClientProfileReviewQueueListResponse */
-    ClientProfileReviewQueueListResponse: {
-      count: number;
-      data: components['schemas']['ClientProfileReviewQueueItem'][];
-    };
-    /** ClientTrainingCoverageResponse */
-    ClientTrainingCoverageResponse: {
-      data: components['schemas']['ClientTrainingCoverage'] | null;
-    };
-    /** NutritionDaySummaryCounts */
-    NutritionDaySummaryCounts: {
-      added: number;
-      as_planned: number;
-      pending: number;
-      recorded: number;
-      skipped: number;
-      swapped: number;
-    };
-    /** LandingProgram */
-    LandingProgram: {
-      audience?: string | null;
-      description?: string | null;
-      /** Format: uuid */
-      id: string;
-      name: string;
-      position: number;
-      price_display?: string | null;
-      promise?: string | null;
-    };
-    /** RecipeIngredient */
-    RecipeIngredient: {
-      amount?: number | null;
-      food: components['schemas']['Food'] | null;
-      /** Format: uuid */
-      food_id: string;
-      position: number;
-      unit?: string | null;
-      weight_g: number;
-    };
-    /**
-     * AcceptInviteVerifyRequest
-     * @example {
-     *       "email": "client@example.com",
-     *       "invitation_token": "invite-token",
-     *       "otp": "123456"
-     *     }
-     */
-    AcceptInviteVerifyRequest: {
-      /** Format: email */
-      email: string;
-      invitation_token: string;
-      otp: string;
-    };
-    /**
-     * NutritionMealItemInput
-     * @description A persisted Menu Item uses id; a new one uses a request-local local_ref.
-     */
-    NutritionMealItemInput: {
-      /** Format: uuid */
-      food_id?: string | null;
-      /** Format: uuid */
-      id?: string;
-      /** @enum {string} */
-      kind: 'food' | 'recipe';
-      local_ref?: string;
-      portion: components['schemas']['NutritionPortionInput'];
-      position: number;
-      /** Format: uuid */
-      recipe_id?: string | null;
-    };
-    /** ClientProfileFormAssignment */
-    ClientProfileFormAssignment: {
-      /** Format: uuid */
-      check_in_schedule_id: string | null;
-      /** Format: uuid */
-      client_id: string;
-      /** Format: date-time */
-      completed_at: string | null;
-      /** Format: date */
-      due_date: string | null;
-      /** Format: date-time */
-      due_reminder_sent_at: string | null;
-      form_template: components['schemas']['ClientProfileFormTemplate'];
-      /** Format: uuid */
-      form_template_id: string;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      latest_submission: components['schemas']['ClientProfileFormSubmission'] | null;
-      /** Format: date-time */
-      latest_submission_reviewed_at: string | null;
-      /** Format: date-time */
-      overdue_reminder_sent_at: string | null;
-      /** @enum {string} */
-      priority: 'high' | 'normal';
-      /** @enum {string} */
-      purpose: 'intake' | 'check_in';
-      /** @enum {string} */
-      status: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
-      /** Format: date-time */
-      updated_at: string;
-    };
-    /**
-     * TrainingPrescriptionScheduleEntry
-     * @description One weekday in the complete schedule. Omit both workout fields for rest; otherwise use exactly one persisted workout_id or request-local workout_ref.
-     */
-    TrainingPrescriptionScheduleEntry: {
-      /** @enum {string} */
-      weekday: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
-      /** Format: uuid */
-      workout_id?: string;
-      workout_ref?: string;
-    };
-    /** ClientProfileFormTemplateResponse */
-    ClientProfileFormTemplateResponse: {
-      data: components['schemas']['ClientProfileFormTemplate'];
-    };
-    /** ConversationResponse */
-    ConversationResponse: {
-      data: components['schemas']['Conversation'];
-    };
-    /** WorkbenchCheckInQueueItem */
-    WorkbenchCheckInQueueItem: {
-      assignment: components['schemas']['WorkbenchCheckInAssignment'];
-      client: components['schemas']['Client'];
-      reasons: components['schemas']['CheckInAwaitingReviewReason'][];
-      submission: components['schemas']['WorkbenchCheckInSubmission'];
-    };
-    /**
-     * ProspectUpdateRequest
-     * @example {
-     *       "notes": "Followed up on WhatsApp.",
-     *       "status": "reviewing"
-     *     }
-     */
-    ProspectUpdateRequest: {
-      notes?: string | null;
-      /** @enum {string} */
-      status: 'new' | 'reviewing' | 'won' | 'lost';
-    };
-    /**
-     * RequiredServicesNonEmpty
-     * @enum {array}
-     */
-    RequiredServicesNonEmpty: ['training'] | ['nutrition'] | ['training', 'nutrition'];
-    /** WorkbenchQuietQueueResponse */
-    WorkbenchQuietQueueResponse: {
-      count: number;
-      data: components['schemas']['WorkbenchQuietQueueItem'][];
-    };
-    /**
-     * NutritionPlanUpdateRequest
-     * @description Revisioned metadata and nutrient targets. Client Nutrition Plans also accept Coverage dates.
-     * @example {
-     *       "expected_revision": 3,
-     *       "name": "Updated Cut Block",
-     *       "target_calories": 1800
-     *     }
-     */
-    NutritionPlanUpdateRequest: {
-      description?: string | null;
-      /** Format: date */
-      end_date?: string | null;
-      expected_revision: number;
-      name?: string;
-      /** Format: date */
-      start_date?: string | null;
-      target_calories?: number | null;
-      target_carbs_g?: number | null;
-      target_fat_g?: number | null;
-      target_fiber_g?: number | null;
-      target_protein_g?: number | null;
-    };
-    /** WorkbenchProgrammingReason */
-    WorkbenchProgrammingReason:
-      | components['schemas']['ServiceNeverProgrammedReason']
-      | components['schemas']['ServiceCoverageMissingReason']
-      | components['schemas']['ServiceCoverageEndingSoonReason'];
-    /**
-     * TrainingPerformedSetCreateRequest
-     * @example {
-     *       "exercise_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-     *       "load_unit": "kg",
-     *       "load_value": 80,
-     *       "reps": "10",
-     *       "snapshot_exercise_ref": "f9c443b8-07d3-4ee8-aa7e-a287a013ea55"
-     *     }
-     */
-    TrainingPerformedSetCreateRequest: {
-      /** @enum {string|null} */
-      distance_unit?: 'meters' | 'km' | 'miles' | 'none' | null;
-      distance_value?: number | null;
-      duration_seconds?: number | null;
-      /** Format: uuid */
-      exercise_id?: string | null;
-      exercise_name?: string | null;
-      /** @enum {string|null} */
-      load_unit?: 'kg' | 'lbs' | 'bodyweight' | 'none' | null;
-      load_value?: number | null;
-      notes?: string | null;
-      reps?: string | null;
-      rpe?: number | null;
-      /** @enum {string|null} */
-      set_type?: 'working' | 'warmup' | 'dropset' | null;
-      /**
-       * Format: uuid
-       * @description Stable ref of the Prescribed Exercise in this Training Session snapshot
-       */
-      snapshot_exercise_ref?: string | null;
-    };
-    /** WorkbenchQuietQueueItem */
-    WorkbenchQuietQueueItem: {
-      client: components['schemas']['Client'];
-      reasons: components['schemas']['MissedCheckInReason'][];
-    };
-    /**
-     * NutritionPlanRevisionRequest
-     * @description Optimistic revision required by an explicit Nutrition Template or Client Plan lifecycle command.
-     * @example {
-     *       "expected_revision": 3
-     *     }
-     */
-    NutritionPlanRevisionRequest: {
-      expected_revision: number;
-    };
-    /** TrainingSessionSnapshotWorkout */
-    TrainingSessionSnapshotWorkout: {
-      exercises: components['schemas']['TrainingSessionSnapshotExercise'][];
-      /** Format: uuid */
-      id: string;
-      name: string;
-    };
-    /** AttachmentUploadResponse */
-    AttachmentUploadResponse: {
-      data: components['schemas']['AttachmentUpload'];
-    };
-    /** IntakeOverdueReason */
-    IntakeOverdueReason: {
-      /** Format: uuid */
-      assignment_id: string;
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      code: 'intake_overdue';
-      /** Format: date */
-      due_on: string;
-      /** @description Name of the assigned Intake form template */
-      form_title: string;
-    };
-    /** TrainingMuscleListResponse */
-    TrainingMuscleListResponse: {
-      data: components['schemas']['TrainingMuscle'][];
-    };
-    /**
-     * NutritionPlanAssignRequest
-     * @description Assigns an unarchived Nutrition Template to a visible client at the expected source revision.
-     * @example {
-     *       "end_date": null,
-     *       "expected_revision": 3,
-     *       "start_date": "2026-09-01"
-     *     }
-     */
-    NutritionPlanAssignRequest: {
-      /** Format: date */
-      end_date?: string | null;
-      expected_revision: number;
-      /** Format: date */
-      start_date?: string | null;
-    };
-    /** TrainingSessionSnapshotExercise */
-    TrainingSessionSnapshotExercise: {
-      /** Format: uuid */
-      exercise_id: string;
-      exercise_name: string;
-      position: number;
-      /** Format: uuid */
-      ref: string;
-      sets: components['schemas']['TrainingPlanPlannedSet'][];
-      /** @enum {string} */
-      tracking_type:
-        | 'weight_reps'
-        | 'bodyweight_reps'
-        | 'weighted_bodyweight'
-        | 'assisted_bodyweight'
-        | 'reps_only'
-        | 'duration'
-        | 'weight_duration'
-        | 'distance_duration'
-        | 'weight_distance';
-    };
-    /**
-     * TrainingSessionRequest
-     * @example {
-     *       "training_workout_id": "1b8248bc-4499-4a0c-986f-621fc95cbd0e"
-     *     }
-     */
-    TrainingSessionRequest: {
-      notes?: string | null;
-      soreness_rating?: number | null;
-      /** Format: uuid */
-      training_workout_id?: string | null;
-    };
-    /** AttachmentDownloadsResponse */
-    AttachmentDownloadsResponse: {
-      data: components['schemas']['AttachmentDownload'][];
-    };
-    /** AttachmentUpload */
-    AttachmentUpload: {
-      byte_size: number;
-      /** @enum {string} */
-      content_type:
-        | 'image/jpeg'
-        | 'image/png'
-        | 'image/webp'
-        | 'image/heic'
-        | 'video/mp4'
-        | 'video/webm'
-        | 'video/quicktime'
-        | 'audio/webm'
-        | 'audio/mp4'
-        | 'audio/mpeg';
-      duration_ms: number | null;
-      /** Format: uuid */
-      id: string;
-      upload_headers: {
-        [key: string]: string;
-      };
-      /** Format: uri */
-      upload_url: string;
-      /** Format: date-time */
-      upload_url_expires_at: string;
-    };
-    /** ChatMessagesResponse */
-    ChatMessagesResponse: {
-      /** @description Ascending by inserted_at */
-      data: components['schemas']['ChatMessage'][];
-      has_more: boolean;
-    };
-    /**
-     * BusinessRequest
-     * @example {
-     *       "about": "Personal training and nutrition coaching.",
-     *       "handle": "strong-coaching",
-     *       "name": "Strong Coaching"
-     *     }
-     */
-    BusinessRequest: {
-      about?: string | null;
-      /** @enum {string} */
-      default_weight_unit?: 'kg' | 'lbs';
-      handle: string;
-      name: string;
-    };
-    /** ServiceCoverageEndingSoonReason */
-    ServiceCoverageEndingSoonReason: {
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      code: 'service_coverage_ending_soon';
-      /** Format: date */
-      coverage_ends_on: string;
-      /** Format: date */
-      first_uncovered_on: string;
-      /** @enum {string} */
-      service: 'training' | 'nutrition';
-    };
-    /** ServiceNeverProgrammedReason */
-    ServiceNeverProgrammedReason: {
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      code: 'service_never_programmed';
-      /** @enum {string} */
-      service: 'training' | 'nutrition';
-    };
-    /** NutritionDayRow */
-    NutritionDayRow: {
-      entry: components['schemas']['NutritionDayEntry'] | null;
-      planned: components['schemas']['NutritionDayOptionItem'] | null;
-      /** @enum {string} */
-      status: 'as_planned' | 'swapped' | 'pending' | 'skipped' | 'added' | 'recorded';
-    };
-    /**
-     * TrainingPrescriptionWorkoutInput
-     * @description A persisted workout uses id; a new one uses a request-local local_ref.
-     */
-    TrainingPrescriptionWorkoutInput: {
-      /** Format: uuid */
-      id?: string;
-      local_ref?: string;
-      name: string;
-      position: number;
-      prescribed_exercises: components['schemas']['TrainingPrescriptionExerciseInput'][];
-    };
-    /**
-     * FoodCategoryListResponse
-     * @example {
-     *       "data": [
-     *         "Dairy",
-     *         "Fruit",
-     *         "Grains",
-     *         "Poultry"
-     *       ]
-     *     }
-     */
-    FoodCategoryListResponse: {
-      data: string[];
     };
     /**
      * VerifyRequest
@@ -4941,691 +3206,6 @@ export interface components {
           email: string;
           otp: string;
         };
-    /** ErrorResponse */
-    ErrorResponse: {
-      error?: {
-        [key: string]: unknown;
-      };
-      errors?: {
-        [key: string]: unknown;
-      }[];
-    } & {
-      [key: string]: unknown;
-    };
-    /** SignupResponse */
-    SignupResponse: {
-      /** Format: date-time */
-      confirmation_sent_at: string | null;
-      /** Format: email */
-      email: string;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      /** Format: date-time */
-      updated_at: string;
-    };
-    /**
-     * TrainingPlan
-     * @example {
-     *       "archived_at": null,
-     *       "client": null,
-     *       "client_id": null,
-     *       "creator_id": "c8e8fe38-d9cc-4506-9514-8527a8b56d68",
-     *       "description": "Upper/lower strength block.",
-     *       "end_date": null,
-     *       "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
-     *       "inserted_at": "2026-05-30T12:00:00Z",
-     *       "kind": "template",
-     *       "lifecycle": null,
-     *       "name": "Four Day Strength Template",
-     *       "revision": 1,
-     *       "schedule": {
-     *         "friday": null,
-     *         "monday": null,
-     *         "saturday": null,
-     *         "sunday": null,
-     *         "thursday": null,
-     *         "tuesday": null,
-     *         "wednesday": null
-     *       },
-     *       "source_template_id": null,
-     *       "start_date": null,
-     *       "status": "active",
-     *       "updated_at": "2026-05-30T12:00:00Z",
-     *       "workouts": []
-     *     }
-     */
-    TrainingPlan: {
-      /** Format: date-time */
-      archived_at: string | null;
-      client: components['schemas']['TrainingPlanClient'] | null;
-      /** Format: uuid */
-      client_id: string | null;
-      /** Format: uuid */
-      creator_id: string;
-      description: string | null;
-      /** Format: date */
-      end_date: string | null;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      /** @enum {string} */
-      kind: 'template' | 'client_plan';
-      /** @enum {string|null} */
-      lifecycle: 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived' | null;
-      name: string;
-      revision: number;
-      schedule: components['schemas']['TrainingSchedule'];
-      /** Format: uuid */
-      source_template_id: string | null;
-      /** Format: date */
-      start_date: string | null;
-      /** @enum {string} */
-      status: 'active' | 'archived';
-      /** Format: date-time */
-      updated_at: string;
-      workouts: components['schemas']['TrainingPlanWorkout'][];
-    };
-    /** BillingCheckoutPayload */
-    BillingCheckoutPayload: {
-      /** @example rzp_test_key */
-      key_id: string;
-      /** @example sub_123 */
-      subscription_id: string;
-    };
-    /** NutritionDayPatternSlotInput */
-    NutritionDayPatternSlotInput: {
-      /** @enum {string} */
-      meal_slot:
-        | 'early_morning'
-        | 'breakfast'
-        | 'mid_morning'
-        | 'lunch'
-        | 'afternoon'
-        | 'evening'
-        | 'dinner'
-        | 'pre_sleep'
-        | 'pre_workout'
-        | 'during_workout'
-        | 'post_workout';
-      options: components['schemas']['NutritionMealOptionInput'][];
-    };
-    /** PublicLandingPageResponse */
-    PublicLandingPageResponse: {
-      data: components['schemas']['PublicLandingPage'];
-    };
-    /** NutrientTotals */
-    NutrientTotals: {
-      calories: number | null;
-      carbohydrates: number | null;
-      complete: boolean;
-      fat: number | null;
-      fiber: number | null;
-      protein: number | null;
-    };
-    /** NutritionMealOption */
-    NutritionMealOption: {
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      /** Format: uuid */
-      nutrition_meal_id: string;
-      position: number;
-      /** Format: date-time */
-      updated_at: string;
-    };
-    /** WorkbenchOnboardingQueueItem */
-    WorkbenchOnboardingQueueItem: {
-      client: components['schemas']['Client'];
-      reasons: components['schemas']['WorkbenchOnboardingReason'][];
-    };
-    /** WeightEntryListResponse */
-    WeightEntryListResponse: {
-      adherence?: {
-        [key: string]: unknown;
-      } | null;
-      entries: components['schemas']['WeightEntry'][];
-      goal: {
-        [key: string]: unknown;
-      } | null;
-      summary: {
-        [key: string]: unknown;
-      };
-    };
-    /** ClientProfileResponse */
-    ClientProfileResponse: {
-      data: components['schemas']['ClientProfile'];
-    };
-    /** ClientProfileFormTemplate */
-    ClientProfileFormTemplate: {
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      /** @description Intake auto-assigned to newly invited clients (one per business) */
-      is_default_intake: boolean;
-      name: string;
-      /** @enum {string} */
-      purpose: 'intake' | 'check_in';
-      /** @description Submissions clients have made against this form */
-      response_count?: number;
-      sections: ({
-        questions: (
-          | ({
-              id: string;
-              label: string;
-              options?: string[];
-              required?: boolean;
-              /** @enum {string} */
-              type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
-            } & {
-              [key: string]: unknown;
-            })
-          | {
-              id: string;
-              label: string;
-              required?: boolean;
-              /** @enum {string} */
-              type: 'service_type';
-            }
-        )[];
-        title?: string;
-      } & {
-        [key: string]: unknown;
-      })[];
-      /** @enum {string} */
-      status: 'active' | 'archived';
-      /** Format: date-time */
-      updated_at: string;
-    };
-    /**
-     * TrainingPlanUpdateRequest
-     * @description Revisioned metadata for a Training Template, or metadata and Coverage dates for a Client Plan.
-     * @example {
-     *       "description": "Updated training focus.",
-     *       "expected_revision": 3,
-     *       "name": "Updated Strength Template"
-     *     }
-     */
-    TrainingPlanUpdateRequest: {
-      description?: string | null;
-      /** Format: date */
-      end_date?: string | null;
-      expected_revision: number;
-      name?: string;
-      /** Format: date */
-      start_date?: string | null;
-    };
-    /**
-     * LibraryMedia
-     * @description Public library media referenced by an exercise or food.
-     */
-    LibraryMedia: {
-      byte_size: number;
-      content_type: string;
-      /** Format: uuid */
-      id: string;
-      /** @enum {string} */
-      kind: 'image' | 'video';
-      /** Format: uri */
-      url: string | null;
-    };
-    /** NutritionMealItem */
-    NutritionMealItem: {
-      /** Format: uuid */
-      food_id: string | null;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      /** @enum {string} */
-      kind: 'food' | 'recipe';
-      name: string | null;
-      nutrients: components['schemas']['NutrientTotals'];
-      /** Format: uuid */
-      nutrition_meal_id: string;
-      portion: components['schemas']['NutritionPortion'];
-      position: number;
-      /** Format: uuid */
-      recipe_id: string | null;
-      /** Format: date-time */
-      updated_at: string;
-    };
-    /**
-     * DiaryLogPlannedItemRequest
-     * @example {
-     *       "meal_slot": "breakfast",
-     *       "planned_item_ref": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c"
-     *     }
-     */
-    DiaryLogPlannedItemRequest: {
-      /** @enum {string} */
-      meal_slot:
-        | 'early_morning'
-        | 'breakfast'
-        | 'mid_morning'
-        | 'lunch'
-        | 'afternoon'
-        | 'evening'
-        | 'dinner'
-        | 'pre_sleep'
-        | 'pre_workout'
-        | 'during_workout'
-        | 'post_workout';
-      /** Format: uuid */
-      planned_item_ref: string;
-    };
-    /** MessageResponse */
-    MessageResponse: {
-      message: string;
-    };
-    /** LibraryMediaUploadResponse */
-    LibraryMediaUploadResponse: {
-      data: components['schemas']['LibraryMediaUpload'];
-    };
-    /** TrainingPlanWorkoutExercise */
-    TrainingPlanWorkoutExercise: {
-      exercise: components['schemas']['TrainingPlanExercise'] | null;
-      /** Format: uuid */
-      exercise_id: string;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      planned_sets: components['schemas']['TrainingPlanPlannedSet'][];
-      position: number;
-      /** Format: date-time */
-      updated_at: string;
-      /** Format: uuid */
-      workout_id: string;
-    };
-    /**
-     * AttachmentUploadRequest
-     * @example {
-     *       "byte_size": 1024000,
-     *       "content_type": "audio/mpeg",
-     *       "duration_ms": 30000
-     *     }
-     */
-    AttachmentUploadRequest: {
-      byte_size: number;
-      /** @enum {string} */
-      content_type:
-        | 'image/jpeg'
-        | 'image/png'
-        | 'image/webp'
-        | 'image/heic'
-        | 'video/mp4'
-        | 'video/webm'
-        | 'video/quicktime'
-        | 'audio/webm'
-        | 'audio/mp4'
-        | 'audio/mpeg';
-      duration_ms?: number | null;
-    };
-    /** TrainingSession */
-    TrainingSession: {
-      /** Format: uuid */
-      client_id?: string | null;
-      /** Format: date-time */
-      closed_at: string | null;
-      /** Format: date */
-      date: string;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      /** @enum {string} */
-      kind: 'planned' | 'freestyle';
-      notes?: string | null;
-      performed_sets: components['schemas']['TrainingPerformedSet'][];
-      prescription_snapshot: components['schemas']['TrainingSessionPrescriptionSnapshot'] | null;
-      snapshot_version: number | null;
-      soreness_rating?: number | null;
-      /** Format: uuid */
-      source_plan_id: string | null;
-      /** Format: uuid */
-      source_workout_id: string | null;
-      /** Format: date-time */
-      started_at: string;
-      /** @enum {string} */
-      state: 'active' | 'completed' | 'discarded';
-      /** Format: date-time */
-      updated_at: string;
-    };
-    /** TrainingPlanStaleRevisionError */
-    TrainingPlanStaleRevisionError: {
-      /** @enum {string} */
-      error_code: 'stale_revision';
-      error_detail: {
-        current_revision: number;
-      };
-      error_message: string;
-    };
-    /** BillingResponse */
-    BillingResponse: {
-      data: components['schemas']['BillingSummary'];
-    };
-    /** RecipeImpactResponse */
-    RecipeImpactResponse: {
-      data?: {
-        active_client_plans?: {
-          client_id?: string | null;
-          id?: string;
-          name?: string;
-        }[];
-        templates?: {
-          client_id?: string | null;
-          id?: string;
-          name?: string;
-        }[];
-      };
-    };
-    /** WorkbenchExpiringQueueItem */
-    WorkbenchExpiringQueueItem: {
-      client: components['schemas']['Client'];
-      reasons: components['schemas']['EngagementEndingSoonReason'][];
-    };
-    /** Prospect */
-    Prospect: {
-      answers: {
-        [key: string]: unknown;
-      };
-      client?: components['schemas']['ProspectClient'] | null;
-      email?: string | null;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at?: string;
-      instagram?: string | null;
-      landing_page_slug?: string | null;
-      name: string;
-      notes?: string | null;
-      phone?: string | null;
-      program?: components['schemas']['ProspectProgram'] | null;
-      /** @enum {string} */
-      status: 'new' | 'reviewing' | 'won' | 'lost';
-      /** Format: date-time */
-      updated_at?: string;
-    };
-    /** ProspectClient */
-    ProspectClient: {
-      first_name?: string | null;
-      /** Format: uuid */
-      id: string;
-      last_name?: string | null;
-      status: string;
-    };
-    /**
-     * NutritionPlan
-     * @example {
-     *       "archived_at": null,
-     *       "assigned_client_count": 0,
-     *       "client": null,
-     *       "client_id": null,
-     *       "creator_id": "c8e8fe38-d9cc-4506-9514-8527a8b56d68",
-     *       "day_patterns": [
-     *         {
-     *           "id": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
-     *           "inserted_at": "2026-05-30T12:00:00Z",
-     *           "name": "Everyday",
-     *           "nutrition_plan_id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
-     *           "position": 0,
-     *           "slots": [],
-     *           "updated_at": "2026-05-30T12:00:00Z",
-     *           "weekdays": [
-     *             "monday",
-     *             "tuesday",
-     *             "wednesday",
-     *             "thursday",
-     *             "friday",
-     *             "saturday",
-     *             "sunday"
-     *           ]
-     *         }
-     *       ],
-     *       "description": "Reusable cutting Template.",
-     *       "end_date": null,
-     *       "id": "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
-     *       "inserted_at": "2026-05-30T12:00:00Z",
-     *       "kind": "template",
-     *       "lifecycle": null,
-     *       "meals": [],
-     *       "name": "Cut Block",
-     *       "revision": 1,
-     *       "schedule": {
-     *         "friday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
-     *         "monday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
-     *         "saturday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
-     *         "sunday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
-     *         "thursday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
-     *         "tuesday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11",
-     *         "wednesday": "7c1d3e4a-2b0f-4d55-9a1c-8e6f0b2c4d11"
-     *       },
-     *       "source_template_id": null,
-     *       "start_date": null,
-     *       "status": "active",
-     *       "target_calories": 2000,
-     *       "target_carbs_g": 200,
-     *       "target_fat_g": 60,
-     *       "target_fiber_g": 30,
-     *       "target_protein_g": 150,
-     *       "updated_at": "2026-05-30T12:00:00Z"
-     *     }
-     */
-    NutritionPlan: {
-      /** Format: date-time */
-      archived_at: string | null;
-      assigned_client_count: number;
-      client: components['schemas']['NutritionPlanClient'] | null;
-      /** Format: uuid */
-      client_id: string | null;
-      /** Format: uuid */
-      creator_id: string | null;
-      day_patterns: components['schemas']['NutritionDayPattern'][];
-      description: string | null;
-      /** Format: date */
-      end_date: string | null;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      /** @enum {string} */
-      kind: 'template' | 'client_plan';
-      /** @enum {string|null} */
-      lifecycle: 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived' | null;
-      meals: components['schemas']['NutritionMeal'][];
-      name: string;
-      revision: number;
-      schedule: components['schemas']['NutritionWeekSchedule'];
-      /** Format: uuid */
-      source_template_id: string | null;
-      /** Format: date */
-      start_date: string | null;
-      /** @enum {string} */
-      status: 'active' | 'archived';
-      target_calories: number | null;
-      target_carbs_g: number | null;
-      target_fat_g: number | null;
-      target_fiber_g: number | null;
-      target_protein_g: number | null;
-      /** Format: date-time */
-      updated_at: string;
-    };
-    /**
-     * DashboardSetupUpdateRequest
-     * @example {
-     *       "dashboard_setup_hidden_reason": "dismissed"
-     *     }
-     */
-    DashboardSetupUpdateRequest: {
-      /** @enum {string|null} */
-      dashboard_setup_hidden_reason: 'dismissed' | 'completed' | null;
-    };
-    /** BillingCheckoutResult */
-    BillingCheckoutResult: {
-      /**
-       * @example checkout
-       * @enum {string}
-       */
-      action: 'checkout' | 'updated';
-      billing: components['schemas']['BillingSummary'];
-      checkout: components['schemas']['BillingCheckoutPayload'] | null;
-    };
-    /** CoachProfileResponse */
-    CoachProfileResponse: {
-      data: components['schemas']['CoachProfile'];
-    };
-    /** WeightEntryResponse */
-    WeightEntryResponse: {
-      data: components['schemas']['WeightEntry'];
-    };
-    /** RecipeResponse */
-    RecipeResponse: {
-      data: components['schemas']['Recipe'];
-    };
-    /**
-     * TrainerAcceptInviteRequest
-     * @example {
-     *       "email": "trainer@example.com",
-     *       "invitation_token": "invite-token"
-     *     }
-     */
-    TrainerAcceptInviteRequest: {
-      /** Format: email */
-      email: string;
-      invitation_token: string;
-    };
-    /** NutritionDayPatternSlot */
-    NutritionDayPatternSlot: {
-      /** @enum {string} */
-      meal_slot:
-        | 'early_morning'
-        | 'breakfast'
-        | 'mid_morning'
-        | 'lunch'
-        | 'afternoon'
-        | 'evening'
-        | 'dinner'
-        | 'pre_sleep'
-        | 'pre_workout'
-        | 'during_workout'
-        | 'post_workout';
-      options: components['schemas']['NutritionMealOption'][];
-    };
-    /** InvitationPreviewResponse */
-    InvitationPreviewResponse: {
-      data: {
-        business_name?: string | null;
-        coach_first_name?: string | null;
-        /** Format: date-time */
-        expires_at?: string | null;
-        /** Format: email */
-        prefill_email?: string | null;
-        /** @enum {string} */
-        state: 'pending' | 'used' | 'expired' | 'invalid';
-      };
-    };
-    /** WorkbenchProgrammingCounts */
-    WorkbenchProgrammingCounts: {
-      all: number;
-      nutrition: number;
-      training: number;
-    };
-    /** CoachProfile */
-    CoachProfile: {
-      business: components['schemas']['CoachProfileBusiness'];
-      /** Format: email */
-      email: string;
-      first_name: string | null;
-      /** Format: uuid */
-      id: string;
-      is_owner: boolean;
-      last_name: string | null;
-      phone: string | null;
-    };
-    /**
-     * ReassignClientRequest
-     * @example {
-     *       "coach_id": "b2d2b1b0-1234-4a2b-9c3d-abcdef123456"
-     *     }
-     */
-    ReassignClientRequest: {
-      /** Format: uuid */
-      coach_id: string;
-    };
-    /** ClientProfileFormTemplateListResponse */
-    ClientProfileFormTemplateListResponse: {
-      data: components['schemas']['ClientProfileFormTemplate'][];
-    };
-    /** ClientProfileFormSubmission */
-    ClientProfileFormSubmission: {
-      answers: {
-        [key: string]: string | number | boolean | string[] | components['schemas']['ClientProfileServiceTypeAnswer'];
-      };
-      attachments: components['schemas']['Attachment'][];
-      /** Format: uuid */
-      form_assignment_id: string;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      inserted_at: string;
-      question_snapshot: ({
-        questions: (
-          | ({
-              id: string;
-              label: string;
-              options?: string[];
-              required?: boolean;
-              /** @enum {string} */
-              type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
-            } & {
-              [key: string]: unknown;
-            })
-          | {
-              id: string;
-              label: string;
-              required?: boolean;
-              /** @enum {string} */
-              type: 'service_type';
-            }
-        )[];
-        title?: string;
-      } & {
-        [key: string]: unknown;
-      })[];
-      /** Format: date-time */
-      reviewed_at: string | null;
-      /** Format: uuid */
-      reviewed_by_id: string | null;
-      /** Format: date-time */
-      submitted_at: string;
-      /** @enum {string} */
-      submitted_by_type: 'coach' | 'client' | 'system';
-    };
-    /** LandingPageResponse */
-    LandingPageResponse: {
-      data: components['schemas']['LandingPage'] | null;
-    };
-    /** AttachmentDownloadRequest */
-    AttachmentDownloadRequest: {
-      attachment_ids: string[];
-    };
-    /**
-     * AcceptInviteRequest
-     * @example {
-     *       "email": "client@example.com",
-     *       "invitation_token": "invite-token"
-     *     }
-     */
-    AcceptInviteRequest: {
-      /** Format: email */
-      email: string;
-      invitation_token: string;
-    };
   };
   responses: never;
   parameters: never;
@@ -5635,1878 +3215,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  listTrainingPlans: {
-    parameters: {
-      query?: {
-        /** @description Number of training plans to skip */
-        offset?: number;
-        /** @description Page size (default 20, max 100) */
-        limit?: number;
-        /** @description Case-insensitive training plan name search */
-        search?: string;
-        /** @description Filter by whether the Training Template is archived */
-        archived?: boolean;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Training Templates */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingPlanListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  createTrainingPlan: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Training Template create request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TrainingPlanCreateRequest'];
-      };
-    };
-    responses: {
-      /** @description Training Template created */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingPlanResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  deleteCheckInSchedule: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Schedule id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Schedule deleted */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Schedule has assignments */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  updateCheckInSchedule: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Schedule id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Schedule */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ClientProfileCheckInScheduleUpdateRequest'];
-      };
-    };
-    responses: {
-      /** @description Schedule */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientProfileCheckInScheduleResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error, or reactivation would exceed the active-schedule cap (error_code check_in_schedule_cap_reached) */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  getClient: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Client id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Client */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  deleteClient: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Client id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Client invitation revoked */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  updateClient: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Client id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Client update request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ClientUpdateRequest'];
-      };
-    };
-    responses: {
-      /** @description Client updated */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Seat limit reached */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['SeatLimitError'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  restoreTrainingPlan: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Training Template or Client Plan id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Expected revision */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TrainingPlanRevisionRequest'];
-      };
-    };
-    responses: {
-      /** @description Training Template or Client Plan restored */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingPlanResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Stale revision */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingPlanStaleRevisionError'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  markCoachConversationHandled: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Conversation id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Observed message timestamp */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['MarkHandledRequest'];
-      };
-    };
-    responses: {
-      /** @description Conversation marked handled */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description A newer message exists */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  enrollProspect: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Prospect id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Enroll request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ProspectEnrollRequest'];
-      };
-    };
-    responses: {
-      /** @description Prospect enrolled */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ProspectEnrollResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  getCoachProfile: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Coach profile */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['CoachProfileResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  updateCoachProfile: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Coach profile update request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['CoachProfileUpdateRequest'];
-      };
-    };
-    responses: {
-      /** @description Coach profile updated */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['CoachProfileResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  resendClientInvite: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Client id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Client */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  inviteTrainer: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Trainer invite request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TrainerInviteRequest'];
-      };
-    };
-    responses: {
-      /** @description Trainer invited */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TeamMemberResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not the business owner */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listCoachClientTrainingSessions: {
-    parameters: {
-      query?: {
-        /** @description Inclusive start date (YYYY-MM-DD) */
-        from?: string;
-        /** @description Inclusive end date (YYYY-MM-DD) */
-        to?: string;
-        /** @description Number of training sessions to skip */
-        offset?: number;
-        /** @description Page size (default 20, max 100) */
-        limit?: number;
-      };
-      header?: never;
-      path: {
-        /** @description Client id */
-        client_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Training sessions */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingSessionListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Invalid date filter */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listCoachNutritionDays: {
-    parameters: {
-      query?: {
-        /** @description Exact local date (YYYY-MM-DD); overrides from/to */
-        date?: string;
-        /** @description Inclusive start date; required with to */
-        from?: string;
-        /** @description Inclusive end date; required with from; range max 31 days */
-        to?: string;
-        /** @description Number of local dates to skip */
-        offset?: number;
-        /** @description Page size (default 20, max 100) */
-        limit?: number;
-      };
-      header?: never;
-      path: {
-        /** @description Client id */
-        client_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Nutrition days */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['NutritionDayListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Invalid date range */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  submitApplication: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Landing page slug */
-        slug: string;
-      };
-      cookie?: never;
-    };
-    /** @description Application request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['PublicApplicationRequest'];
-      };
-    };
-    responses: {
-      /** @description Application received */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['PublicApplicationResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  getCoachClientTrainingSession: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Client id */
-        client_id: string;
-        /** @description Training session id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Training session */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingSessionResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  deactivateTrainer: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Coach id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Trainer deactivated */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TeamMemberResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not the business owner */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listCoachClientTrainingPlans: {
-    parameters: {
-      query?: {
-        /** @description Number of plans to skip */
-        offset?: number;
-        /** @description Page size (default 20, max 100) */
-        limit?: number;
-        /** @description Only plans with this status */
-        status?: 'active' | 'archived';
-      };
-      header?: never;
-      path: {
-        /** @description Client id */
-        client_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Training plans */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['CoachClientTrainingPlanListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listClientFormAssignmentsForCoach: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Client id */
-        client_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Form assignments */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientProfileFormAssignmentListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  createClientFormAssignment: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Client id */
-        client_id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Form assignment request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ClientProfileFormAssignmentRequest'];
-      };
-    };
-    responses: {
-      /** @description Form assignment created */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientProfileFormAssignmentResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  createCoachLibraryMediaUpload: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Upload request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['LibraryMediaUploadRequest'];
-      };
-    };
-    responses: {
-      /** @description Upload created */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['LibraryMediaUploadResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Storage unavailable */
-      503: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  resendTrainerInvite: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Coach id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Trainer */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TeamMemberResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not the business owner */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  showInvitation: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Invitation token */
-        token: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Invitation preview */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['InvitationPreviewResponse'];
-        };
-      };
-    };
-  };
-  listNutritionPlans: {
-    parameters: {
-      query?: {
-        /** @description Number of nutrition plans to skip */
-        offset?: number;
-        /** @description Page size (default 20, max 100) */
-        limit?: number;
-        /** @description Case-insensitive nutrition plan name search */
-        search?: string;
-        /** @description Filter by whether the Nutrition Template is archived */
-        archived?: boolean;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Nutrition Templates */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['NutritionPlanListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  createNutritionPlan: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Nutrition Template create request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['NutritionPlanCreateRequest'];
-      };
-    };
-    responses: {
-      /** @description Nutrition Template created */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['NutritionPlanResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listWorkbenchOnboardingQueue: {
-    parameters: {
-      query?: {
-        /** @description Offset */
-        offset?: number;
-        /** @description Limit (max 100) */
-        limit?: number;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Onboarding queue */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['WorkbenchOnboardingQueueResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  getCurrentBusiness: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Business */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['BusinessResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  updateCurrentBusiness: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Business update request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['BusinessUpdateRequest'];
-      };
-    };
-    responses: {
-      /** @description Business updated */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['BusinessResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  getPublicLandingPage: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Landing page slug */
-        slug: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Landing page */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['PublicLandingPageResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listCoachConversations: {
-    parameters: {
-      query?: {
-        /** @description Offset */
-        offset?: number;
-        /** @description Limit (max 20) */
-        limit?: number;
-        /** @description Client name, email, or phone */
-        search?: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Conversations */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ConversationListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  getCoachAttachmentDownloadUrls: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Attachment ids */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['AttachmentDownloadRequest'];
-      };
-    };
-    responses: {
-      /** @description Attachment downloads */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['AttachmentDownloadsResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Storage unavailable */
-      503: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  createAuthToken: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Token request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TokenRequest'];
-      };
-    };
-    responses: {
-      /** @description Auth token */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['AuthTokenResponse'];
-        };
-      };
-      /** @description Invalid grant */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  restoreNutritionPlan: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Nutrition Template or Client Plan id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Expected revision */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['NutritionPlanRevisionRequest'];
-      };
-    };
-    responses: {
-      /** @description Nutrition Template or Client Plan restored */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['NutritionPlanResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Stale revision */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['StaleRevisionError'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listProspects: {
-    parameters: {
-      query?: {
-        /** @description Filter by status */
-        status?: string;
-        /** @description Pagination offset */
-        offset?: number;
-        /** @description Page size (max 20) */
-        limit?: number;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Prospects */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ProspectListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  getCoachConversation: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Conversation id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Conversation */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ConversationResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  getCoachClientConversation: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Client id */
-        client_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Conversation */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ConversationResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  assignNutritionPlan: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Visible client id */
-        client_id: string;
-        /** @description Nutrition Template id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Nutrition Template Assignment request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['NutritionPlanAssignRequest'];
-      };
-    };
-    responses: {
-      /** @description Client Nutrition Plan created */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['NutritionPlanResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Stale revision */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['StaleRevisionError'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
   acceptInvite: {
     parameters: {
       query?: never;
@@ -7541,2370 +3249,6 @@ export interface operations {
       };
       /** @description Invitation unavailable */
       410: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  cancelBilling: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Billing */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['BillingResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not the business owner */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Payment provider error */
-      502: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listWorkbenchQuietQueue: {
-    parameters: {
-      query?: {
-        /** @description Offset */
-        offset?: number;
-        /** @description Limit (max 100) */
-        limit?: number;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Quiet queue */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['WorkbenchQuietQueueResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  copyNutritionFood: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Food */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['FoodResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  setDefaultIntakeTemplate: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Form template id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Form template updated */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientProfileFormTemplateResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not an active intake template */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  clearDefaultIntakeTemplate: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Form template id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Form template updated */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientProfileFormTemplateResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  updateFormAssignment: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Form assignment id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Form assignment update request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ClientProfileFormAssignmentUpdateRequest'];
-      };
-    };
-    responses: {
-      /** @description Form assignment updated */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientProfileFormAssignmentResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  duplicateTrainingPlan: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Training Template id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Training Template duplicated */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingPlanResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  reassignClient: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Client id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Reassign client request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ReassignClientRequest'];
-      };
-    };
-    responses: {
-      /** @description Client reassigned */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not the business owner */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listWorkbenchProgrammingQueue: {
-    parameters: {
-      query?: {
-        /** @description Offset */
-        offset?: number;
-        /** @description Limit (max 100) */
-        limit?: number;
-        /** @description Required service */
-        service?: 'all' | 'training' | 'nutrition';
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Programming queue */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['WorkbenchProgrammingQueueResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Invalid service */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  getNutritionFoodImpact: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Impact */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['FoodImpactResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listCoachConversationMessages: {
-    parameters: {
-      query?: {
-        /** @description Message id cursor — return messages older than this */
-        before?: string;
-        /** @description Page size (default 20, max 20) */
-        limit?: number;
-      };
-      header?: never;
-      path: {
-        /** @description Conversation id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Messages */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ChatMessagesResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  createCoachConversationMessage: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Conversation id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Message */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['CoachChatMessageCreateRequest'];
-      };
-    };
-    responses: {
-      /** @description Message */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ChatMessageResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  trainerAcceptInvite: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Trainer accept invite request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TrainerAcceptInviteRequest'];
-      };
-    };
-    responses: {
-      /** @description OTP sent */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['MessageResponse'];
-        };
-      };
-      /** @description Invitation not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Invitation unavailable */
-      410: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  syncBilling: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Billing */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['BillingResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not the business owner */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Payment provider error */
-      502: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  markCoachConversationRead: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Conversation id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Conversation */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ConversationResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  getBilling: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Billing */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['BillingResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listWorkbenchExpiringQueue: {
-    parameters: {
-      query?: {
-        /** @description Offset */
-        offset?: number;
-        /** @description Limit (max 100) */
-        limit?: number;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Expiring queue */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['WorkbenchExpiringQueueResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  inviteClient: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Client invite request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ClientInviteRequest'];
-      };
-    };
-    responses: {
-      /** @description Client invited */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Seat limit reached */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['SeatLimitError'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  verifyAuth: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Verify request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['VerifyRequest'];
-      };
-    };
-    responses: {
-      /** @description Auth token */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['AuthTokenResponse'];
-        };
-      };
-      /** @description Invalid token or OTP */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Token expired */
-      410: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  remindClientFormAssignment: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Form assignment id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Reminder sent */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  getNutritionPlan: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Nutrition plan id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Nutrition Template or Client Plan */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['NutritionPlanResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  deleteNutritionPlan: {
-    parameters: {
-      query: {
-        /** @description Revision observed by the deleting client */
-        expected_revision: number;
-      };
-      header?: never;
-      path: {
-        /** @description Nutrition plan id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Nutrition Template or Client Plan deleted */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Stale revision */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['StaleRevisionError'];
-        };
-      };
-    };
-  };
-  updateNutritionPlan: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Nutrition plan id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Nutrition Template or Client Plan update request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['NutritionPlanUpdateRequest'];
-      };
-    };
-    responses: {
-      /** @description Nutrition Template or Client Plan updated */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['NutritionPlanResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Stale revision */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['StaleRevisionError'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listCoachClientNutritionPlans: {
-    parameters: {
-      query?: {
-        /** @description Number of plans to skip */
-        offset?: number;
-        /** @description Page size (default 20, max 20) */
-        limit?: number;
-        /** @description Only plans with this status */
-        status?: 'active' | 'archived';
-      };
-      header?: never;
-      path: {
-        /** @description Client id */
-        client_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Nutrition plans */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['NutritionPlanListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  getProspect: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Prospect id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Prospect */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ProspectResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  updateProspect: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Prospect id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Prospect update request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ProspectUpdateRequest'];
-      };
-    };
-    responses: {
-      /** @description Prospect updated */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ProspectResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  archiveNutritionPlan: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Nutrition Template or Client Plan id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Expected revision */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['NutritionPlanRevisionRequest'];
-      };
-    };
-    responses: {
-      /** @description Nutrition Template or Client Plan archived */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['NutritionPlanResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Stale revision */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['StaleRevisionError'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  createBusiness: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Business create request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['BusinessRequest'];
-      };
-    };
-    responses: {
-      /** @description Business created */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['BusinessResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  reviewFormSubmission: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Form submission id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Reviewed submission */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientProfileFormSubmissionResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  getWorkbenchCounts: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Workbench counts */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['WorkbenchCountsResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  snoozeWorkbenchQueue: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Client id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Queue snooze request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['QueueSnoozeRequest'];
-      };
-    };
-    responses: {
-      /** @description Snoozed */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listMuscles: {
-    parameters: {
-      query?: {
-        /** @description Case-insensitive muscle name search */
-        search?: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Muscles */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingMuscleListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  revokeTrainerInvite: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Coach id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Trainer invitation revoked */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TeamMemberResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not the business owner */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listClientWeightEntries: {
-    parameters: {
-      query?: {
-        /** @description Only entries since this date */
-        since?: string;
-      };
-      header?: never;
-      path: {
-        /** @description Client id */
-        client_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Weight entries */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['WeightEntryListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  getTeam: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Team */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TeamResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not the business owner */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  archiveTrainingPlan: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Training Template or Client Plan id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Expected revision */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TrainingPlanRevisionRequest'];
-      };
-    };
-    responses: {
-      /** @description Training Template or Client Plan archived */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingPlanResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Stale revision */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingPlanStaleRevisionError'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  replaceTrainingPrescription: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Training Template or Client Plan id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Complete Prescription */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TrainingPrescriptionReplaceRequest'];
-      };
-    };
-    responses: {
-      /** @description Training Template or Client Plan with replaced Prescription */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingPlanResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Stale revision */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingPlanStaleRevisionError'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  replaceNutritionMenu: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Nutrition Template or Client Plan id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Complete Menu */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['NutritionMenuReplaceRequest'];
-      };
-    };
-    responses: {
-      /** @description Nutrition Template or Client Plan with replaced Menu */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['NutritionPlanResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Stale revision */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['StaleRevisionError'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  showTrainerInvitation: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Trainer invitation token */
-        token: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Trainer invitation preview */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainerInvitationPreviewResponse'];
-        };
-      };
-      /** @description Invitation not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Invitation unavailable */
-      410: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listCheckInSchedulesForClient: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Client id */
-        client_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Schedules */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientProfileCheckInScheduleListResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  createCheckInSchedule: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Client id */
-        client_id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Schedule */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ClientProfileCheckInScheduleRequest'];
-      };
-    };
-    responses: {
-      /** @description Schedule */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientProfileCheckInScheduleResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error, or active-schedule cap reached (error_code check_in_schedule_cap_reached) */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listFormTemplates: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Form templates */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientProfileFormTemplateListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  createFormTemplate: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Form template create request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ClientProfileFormTemplateRequest'];
-      };
-    };
-    responses: {
-      /** @description Form template created */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientProfileFormTemplateResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listClients: {
-    parameters: {
-      query?: {
-        /** @description Number of clients to skip */
-        offset?: number;
-        /** @description Page size (default 20, max 20) */
-        limit?: number;
-        /** @description Case-insensitive client search */
-        search?: string;
-        /** @description Only clients with this status */
-        status?: 'active' | 'pending' | 'inactive';
-        /** @description Only clients with this stage */
-        stage?: 'onboarding' | 'coaching';
-        /** @description Row order — newest first (default) or last client activity first */
-        sort?: 'newest' | 'last_active';
-        /** @description Include each client's in-force training and nutrition plan names. Off by default — it costs two extra queries per page and only the clients list renders them. */
-        include_plans?: boolean;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Clients */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  getTrainingPlan: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Training plan id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Training Template or Client Plan */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingPlanResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  deleteTrainingPlan: {
-    parameters: {
-      query: {
-        /** @description Revision observed by the deleting client */
-        expected_revision: number;
-      };
-      header?: never;
-      path: {
-        /** @description Training plan id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Training Template or Client Plan deleted */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Stale revision */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingPlanStaleRevisionError'];
-        };
-      };
-    };
-  };
-  updateTrainingPlan: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Training plan id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Training Template or Client Plan update request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TrainingPlanUpdateRequest'];
-      };
-    };
-    responses: {
-      /** @description Training Template or Client Plan updated */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingPlanResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Stale revision */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingPlanStaleRevisionError'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  copyExercise: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Exercise id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Exercise copy request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TrainingExerciseCopyRequest'];
-      };
-    };
-    responses: {
-      /** @description Exercise copied */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingExerciseResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listCoachExercises: {
-    parameters: {
-      query?: {
-        /** @description Number of exercises to skip */
-        offset?: number;
-        /** @description Maximum exercises to return */
-        limit?: number;
-        /** @description Case-insensitive exercise name search */
-        search?: string;
-        /** @description Only exercises linked to any of these muscle ids */
-        muscle_ids?: string[];
-        /** @description Only exercises linked to any of these equipment ids */
-        equipment_ids?: string[];
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Exercises */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingExerciseListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  createExercise: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Exercise create request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TrainingExerciseCreateRequest'];
-      };
-    };
-    responses: {
-      /** @description Exercise created */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingExerciseResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
         headers: {
           [name: string]: unknown;
         };
@@ -9993,46 +3337,53 @@ export interface operations {
       };
     };
   };
-  reactivateTrainer: {
+  showInvitation: {
     parameters: {
       query?: never;
       header?: never;
       path: {
-        /** @description Coach id */
-        id: string;
+        /** @description Invitation token */
+        token: string;
       };
       cookie?: never;
     };
     requestBody?: never;
     responses: {
-      /** @description Trainer reactivated */
+      /** @description Invitation preview */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['TeamMemberResponse'];
+          'application/json': components['schemas']['InvitationPreviewResponse'];
         };
       };
-      /** @description Unauthorized */
-      401: {
+    };
+  };
+  sendOtp: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description OTP request */
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OtpRequest'];
+      };
+    };
+    responses: {
+      /** @description OTP sent */
+      200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['MessageResponse'];
         };
       };
-      /** @description Not the business owner */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
+      /** @description User not found */
       404: {
         headers: {
           [name: string]: unknown;
@@ -10052,85 +3403,30 @@ export interface operations {
       };
     };
   };
-  getExercise: {
+  signup: {
     parameters: {
       query?: never;
       header?: never;
-      path: {
-        /** @description Exercise id */
-        id: string;
-      };
+      path?: never;
       cookie?: never;
     };
-    requestBody?: never;
-    responses: {
-      /** @description Exercise */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingExerciseResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
+    /** @description Signup request */
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SignupRequest'];
       };
     };
-  };
-  deleteExercise: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Exercise id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
     responses: {
-      /** @description Exercise deleted */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Unauthorized */
-      401: {
+      /** @description Signup */
+      201: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['SignupResponse'];
         };
       };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Still in use — an exercise still used by a workout */
+      /** @description Conflict */
       409: {
         headers: {
           [name: string]: unknown;
@@ -10139,52 +3435,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-    };
-  };
-  updateExercise: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Exercise id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Exercise update request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TrainingExerciseUpdateRequest'];
-      };
-    };
-    responses: {
-      /** @description Exercise updated */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingExerciseResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description Validation error */
       422: {
         headers: {
@@ -10196,49 +3446,31 @@ export interface operations {
       };
     };
   };
-  updateDashboardSetup: {
+  createAuthToken: {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    /** @description Dashboard setup update request */
+    /** @description Token request */
     requestBody: {
       content: {
-        'application/json': components['schemas']['DashboardSetupUpdateRequest'];
+        'application/json': components['schemas']['TokenRequest'];
       };
     };
     responses: {
-      /** @description Business updated */
+      /** @description Auth token */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['BusinessResponse'];
+          'application/json': components['schemas']['AuthTokenResponse'];
         };
       };
-      /** @description Unauthorized */
+      /** @description Invalid grant */
       401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Owner access required */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
         headers: {
           [name: string]: unknown;
         };
@@ -10257,220 +3489,40 @@ export interface operations {
       };
     };
   };
-  listCheckInReviewQueue: {
-    parameters: {
-      query?: {
-        /** @description Offset (default 0) */
-        offset?: number;
-        /** @description Page size (default 20, max 20) */
-        limit?: number;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Review queue */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientProfileReviewQueueListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  getNutritionRecipeImpact: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Impact */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['RecipeImpactResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  duplicateNutritionPlan: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Nutrition Template id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Expected source revision */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['NutritionPlanRevisionRequest'];
-      };
-    };
-    responses: {
-      /** @description Nutrition Template duplicated */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['NutritionPlanResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Stale revision */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['StaleRevisionError'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  copyNutritionRecipe: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Recipe */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['RecipeResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  getLandingPage: {
+  trainerAcceptInvite: {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    requestBody?: never;
-    responses: {
-      /** @description Landing page */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['LandingPageResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  saveLandingPage: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Landing page upsert request */
+    /** @description Trainer accept invite request */
     requestBody: {
       content: {
-        'application/json': components['schemas']['LandingPageUpsertRequest'];
+        'application/json': components['schemas']['TrainerAcceptInviteRequest'];
       };
     };
     responses: {
-      /** @description Landing page saved */
+      /** @description OTP sent */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['LandingPageResponse'];
+          'application/json': components['schemas']['MessageResponse'];
         };
       };
-      /** @description Unauthorized */
-      401: {
+      /** @description Invitation not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Invitation unavailable */
+      410: {
         headers: {
           [name: string]: unknown;
         };
@@ -10480,379 +3532,6 @@ export interface operations {
       };
       /** @description Validation error */
       422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listWorkbenchCheckInQueue: {
-    parameters: {
-      query?: {
-        /** @description Offset */
-        offset?: number;
-        /** @description Limit (max 100) */
-        limit?: number;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Check-ins queue */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['WorkbenchCheckInQueueResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  checkoutBilling: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Checkout request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['BillingCheckoutRequest'];
-      };
-    };
-    responses: {
-      /** @description Checkout result */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['BillingCheckoutResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not the business owner */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Payment provider error */
-      502: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listFormSubmissions: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Form assignment id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Form submissions */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientProfileFormSubmissionListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listFoodCategories: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Categories */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['FoodCategoryListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  getFormTemplate: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Form template id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Form template */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientProfileFormTemplateResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  deleteFormTemplate: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Form template id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Form template deleted */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  updateFormTemplate: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Form template id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Form template update request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ClientProfileFormTemplateUpdateRequest'];
-      };
-    };
-    responses: {
-      /** @description Form template updated */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientProfileFormTemplateResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  createCoachClientUpload: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Client id */
-        client_id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Upload request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['AttachmentUploadRequest'];
-      };
-    };
-    responses: {
-      /** @description Upload created */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['AttachmentUploadResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Storage unavailable */
-      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -10932,36 +3611,29 @@ export interface operations {
       };
     };
   };
-  assignTrainingPlan: {
+  showTrainerInvitation: {
     parameters: {
       query?: never;
       header?: never;
       path: {
-        /** @description Visible client id */
-        client_id: string;
-        /** @description Training Template id */
-        id: string;
+        /** @description Trainer invitation token */
+        token: string;
       };
       cookie?: never;
     };
-    /** @description Training Template Assignment request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TrainingPlanAssignRequest'];
-      };
-    };
+    requestBody?: never;
     responses: {
-      /** @description Client Plan created */
-      201: {
+      /** @description Trainer invitation preview */
+      200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['CoachClientTrainingPlanResponse'];
+          'application/json': components['schemas']['TrainerInvitationPreviewResponse'];
         };
       };
-      /** @description Unauthorized */
-      401: {
+      /** @description Invitation not found */
+      404: {
         headers: {
           [name: string]: unknown;
         };
@@ -10969,8 +3641,51 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description Not found */
-      404: {
+      /** @description Invitation unavailable */
+      410: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  verifyAuth: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Verify request */
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['VerifyRequest'];
+      };
+    };
+    responses: {
+      /** @description Auth token */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AuthTokenResponse'];
+        };
+      };
+      /** @description Invalid token or OTP */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Token expired */
+      410: {
         headers: {
           [name: string]: unknown;
         };
@@ -10985,650 +3700,6 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  signup: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Signup request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['SignupRequest'];
-      };
-    };
-    responses: {
-      /** @description Signup */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['SignupResponse'];
-        };
-      };
-      /** @description Conflict */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listRecipes: {
-    parameters: {
-      query?: {
-        /** @description Number of recipes to skip */
-        offset?: number;
-        /** @description Maximum recipes to return */
-        limit?: number;
-        /** @description Case-insensitive recipe search */
-        search?: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Recipes */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['RecipeListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  createRecipe: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Recipe request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['RecipeRequest'];
-      };
-    };
-    responses: {
-      /** @description Recipe created */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['RecipeResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listWorkbenchRepliesQueue: {
-    parameters: {
-      query?: {
-        /** @description Offset */
-        offset?: number;
-        /** @description Limit (max 100) */
-        limit?: number;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Replies queue */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['WorkbenchRepliesQueueResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  getFood: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Food id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Food */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['FoodResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  deleteFood: {
-    parameters: {
-      query: {
-        /** @description Revision observed by the deleting client */
-        expected_revision: number;
-      };
-      header?: never;
-      path: {
-        /** @description Food id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Food deleted */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Stale revision or still in use */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  updateFood: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Food id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Food update request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['FoodUpdateRequest'];
-      };
-    };
-    responses: {
-      /** @description Food updated */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['FoodResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Stale revision */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['StaleRevisionError'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  sendOtp: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description OTP request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['OtpRequest'];
-      };
-    };
-    responses: {
-      /** @description OTP sent */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['MessageResponse'];
-        };
-      };
-      /** @description User not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listFoods: {
-    parameters: {
-      query?: {
-        /** @description Number of foods to skip */
-        offset?: number;
-        /** @description Maximum foods to return */
-        limit?: number;
-        /** @description Case-insensitive food name search */
-        search?: string;
-        /** @description Only foods in these categories */
-        categories?: string[];
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Foods */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['FoodListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  createFood: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Food create request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['FoodRequest'];
-      };
-    };
-    responses: {
-      /** @description Food created */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['FoodResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listEquipment: {
-    parameters: {
-      query?: {
-        /** @description Case-insensitive equipment name search */
-        search?: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Equipment */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TrainingEquipmentListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  getRecipe: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Recipe id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Recipe */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['RecipeResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  deleteRecipe: {
-    parameters: {
-      query: {
-        /** @description Revision observed by the deleting client */
-        expected_revision: number;
-      };
-      header?: never;
-      path: {
-        /** @description Recipe id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Recipe deleted */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Stale revision or still in use */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  updateRecipe: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Recipe id */
-        id: string;
-      };
-      cookie?: never;
-    };
-    /** @description Recipe update request */
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['RecipeUpdateRequest'];
-      };
-    };
-    responses: {
-      /** @description Recipe updated */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['RecipeResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Stale revision or still in use */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  healthCheck: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Health */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HealthResponse'];
         };
       };
     };

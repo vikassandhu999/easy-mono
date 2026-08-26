@@ -9,32 +9,68 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from './client.ts';
 import {checkInKeys, clientKeys, formAssignmentKeys, formTemplateKeys, workbenchKeys} from './keys.ts';
-import type {components, operations} from './schema.ts';
+import type {
+  CheckInReview,
+  CheckInReviewListQuery,
+  CheckInSchedule,
+  CheckInScheduleCreate,
+  CheckInScheduleUpdate,
+  FormAssignment,
+  FormAssignmentCreate,
+  FormAssignmentUpdate,
+  FormSubmission,
+  FormTemplate,
+  FormTemplateCreate,
+  FormTemplateUpdate,
+  paths,
+} from './schema.ts';
 
-export type ClientProfileCheckInSchedule = components['schemas']['ClientProfileCheckInSchedule'];
-export type ClientProfileCheckInScheduleRequest = components['schemas']['ClientProfileCheckInScheduleRequest'];
-export type ClientProfileCheckInScheduleUpdateRequest =
-  components['schemas']['ClientProfileCheckInScheduleUpdateRequest'];
-export type ClientProfileCheckInScheduleResponse = components['schemas']['ClientProfileCheckInScheduleResponse'];
+export type {
+  CheckInReview,
+  CheckInReviewListQuery,
+  CheckInSchedule,
+  CheckInScheduleCreate,
+  CheckInScheduleUpdate,
+  FormAssignment,
+  FormAssignmentCreate,
+  FormAssignmentSubmission,
+  FormAssignmentUpdate,
+  FormSubmission,
+  FormTemplate,
+  FormTemplateCreate,
+  FormTemplateUpdate,
+} from './schema.ts';
+
+export type ClientProfileCheckInSchedule = CheckInSchedule;
+export type ClientProfileCheckInScheduleRequest = CheckInScheduleCreate;
+export type ClientProfileCheckInScheduleUpdateRequest = CheckInScheduleUpdate;
+export type ClientProfileCheckInScheduleResponse =
+  paths['/v1/coach/check-in-schedules/{id}']['patch']['responses'][200]['content']['application/json'];
 export type ClientProfileCheckInScheduleListResponse =
-  components['schemas']['ClientProfileCheckInScheduleListResponse'];
-export type ClientProfileFormAssignment = components['schemas']['ClientProfileFormAssignment'];
-export type ClientProfileFormAssignmentRequest = components['schemas']['ClientProfileFormAssignmentRequest'];
-export type ClientProfileFormAssignmentUpdateRequest =
-  components['schemas']['ClientProfileFormAssignmentUpdateRequest'];
-export type ClientProfileFormAssignmentResponse = components['schemas']['ClientProfileFormAssignmentResponse'];
-export type ClientProfileFormAssignmentListResponse = components['schemas']['ClientProfileFormAssignmentListResponse'];
-export type ClientProfileFormSubmission = components['schemas']['ClientProfileFormSubmission'];
-export type ClientProfileFormSubmissionResponse = components['schemas']['ClientProfileFormSubmissionResponse'];
-export type ClientProfileFormSubmissionListResponse = components['schemas']['ClientProfileFormSubmissionListResponse'];
-export type ClientProfileFormTemplate = components['schemas']['ClientProfileFormTemplate'];
-export type ClientProfileFormTemplateRequest = components['schemas']['ClientProfileFormTemplateRequest'];
-export type ClientProfileFormTemplateUpdateRequest = components['schemas']['ClientProfileFormTemplateUpdateRequest'];
-export type ClientProfileFormTemplateResponse = components['schemas']['ClientProfileFormTemplateResponse'];
-export type ClientProfileFormTemplateListResponse = components['schemas']['ClientProfileFormTemplateListResponse'];
-export type ClientProfileReviewQueueItem = components['schemas']['ClientProfileReviewQueueItem'];
-export type ClientProfileReviewQueueListResponse = components['schemas']['ClientProfileReviewQueueListResponse'];
-export type ListCheckInReviewQueueParams = NonNullable<operations['listCheckInReviewQueue']['parameters']['query']>;
+  paths['/v1/coach/clients/{client_id}/check-in-schedules']['get']['responses'][200]['content']['application/json'];
+export type ClientProfileFormAssignment = FormAssignment;
+export type ClientProfileFormAssignmentRequest = FormAssignmentCreate;
+export type ClientProfileFormAssignmentUpdateRequest = FormAssignmentUpdate;
+export type ClientProfileFormAssignmentResponse =
+  paths['/v1/coach/form-assignments/{id}']['patch']['responses'][200]['content']['application/json'];
+export type ClientProfileFormAssignmentListResponse =
+  paths['/v1/coach/clients/{client_id}/form-assignments']['get']['responses'][200]['content']['application/json'];
+export type ClientProfileFormSubmission = FormSubmission;
+export type ClientProfileFormSubmissionResponse =
+  paths['/v1/coach/form-submissions/{id}/review']['post']['responses'][200]['content']['application/json'];
+export type ClientProfileFormSubmissionListResponse =
+  paths['/v1/coach/form-assignments/{id}/submissions']['get']['responses'][200]['content']['application/json'];
+export type ClientProfileFormTemplate = FormTemplate;
+export type ClientProfileFormTemplateRequest = FormTemplateCreate;
+export type ClientProfileFormTemplateUpdateRequest = FormTemplateUpdate;
+export type ClientProfileFormTemplateResponse =
+  paths['/v1/coach/form-templates/{id}']['get']['responses'][200]['content']['application/json'];
+export type ClientProfileFormTemplateListResponse =
+  paths['/v1/coach/form-templates']['get']['responses'][200]['content']['application/json'];
+export type ClientProfileReviewQueueItem = CheckInReview;
+export type ClientProfileReviewQueueListResponse =
+  paths['/v1/coach/check-ins/review-queue']['get']['responses'][200]['content']['application/json'];
+export type ListCheckInReviewQueueParams = CheckInReviewListQuery;
 
 export type FormPurpose = ClientProfileFormTemplate['purpose'];
 
@@ -329,20 +365,11 @@ export function useDeleteCheckInScheduleMutation() {
 // Form assignments
 // ---------------------------------------------------------------------------
 
-/**
- * The `as Promise<…>` casts on the three hooks below are LOAD-BEARING, not
- * leftovers: openapi-fetch runs response types through `Readable<T>`, which
- * widens tuple unions to plain arrays — so a `service_type` answer's `services`
- * tuple no longer matches the generated schema every consumer is typed against.
- * The cast restores the operation's own response type.
- */
 export function useListClientFormAssignmentsForCoachQuery(clientId: string, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: formAssignmentKeys.forClient(clientId),
     queryFn: () =>
-      call(
-        client.GET('/v1/coach/clients/{client_id}/form-assignments', {params: {path: {client_id: clientId}}}),
-      ) as Promise<ClientProfileFormAssignmentListResponse>,
+      call(client.GET('/v1/coach/clients/{client_id}/form-assignments', {params: {path: {client_id: clientId}}})),
     enabled: options?.enabled ?? true,
   });
 }
@@ -376,10 +403,7 @@ export function useListCheckInReviewQueueQuery(
 ) {
   return useQuery({
     queryKey: checkInKeys.reviewQueue(params),
-    queryFn: () =>
-      call(
-        client.GET('/v1/coach/check-ins/review-queue', {params: {query: params}}),
-      ) as Promise<ClientProfileReviewQueueListResponse>,
+    queryFn: () => call(client.GET('/v1/coach/check-ins/review-queue', {params: {query: params}})),
     enabled: options?.enabled ?? true,
   });
 }
@@ -387,10 +411,7 @@ export function useListCheckInReviewQueueQuery(
 export function useReviewFormSubmissionMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
-      call(
-        client.POST('/v1/coach/form-submissions/{id}/review', {params: {path: {id}}}),
-      ) as Promise<ClientProfileFormSubmissionResponse>,
+    mutationFn: (id: string) => call(client.POST('/v1/coach/form-submissions/{id}/review', {params: {path: {id}}})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: checkInKeys.reviewQueue()});
       qc.invalidateQueries({queryKey: formAssignmentKeys.all});

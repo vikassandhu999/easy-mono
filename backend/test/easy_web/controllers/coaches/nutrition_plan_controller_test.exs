@@ -1,12 +1,22 @@
 defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
   use Easy.ConnCase
 
-  import OpenApiSpex.TestAssertions
-
   alias Easy.Nutrition.Plan
   alias Easy.Repo
 
   describe "Nutrition Template collection" do
+    test "rejects unknown list query keys", %{conn: conn} do
+      coach = insert(:coach)
+
+      response =
+        conn
+        |> authenticate_coach(coach)
+        |> get("/v1/coach/nutrition-plans", %{"unexpected" => "value"})
+
+      assert %{"error_detail" => %{"fields" => %{"unexpected" => ["is unknown"]}}} =
+               json_response(response, 422)
+    end
+
     test "creates and lists discriminated templates with an empty Everyday Day Pattern", %{conn: conn} do
       coach = insert(:coach)
       conn = authenticate_coach(conn, coach)
@@ -46,14 +56,11 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
                "sunday" => pattern_id
              }
 
-      assert_schema(created, "NutritionPlan", EasyWeb.ApiSpec.spec())
-
       list_conn = get(conn, "/v1/coach/nutrition-plans", %{"search" => "cut"})
 
       assert %{"data" => [listed], "count" => 1} = json_response(list_conn, 200)
       assert listed["id"] == created["id"]
       assert listed["kind"] == "template"
-      assert_schema(listed, "NutritionPlan", EasyWeb.ApiSpec.spec())
     end
 
     test "rejects client-plan fields on the template collection", %{conn: conn} do
@@ -69,7 +76,8 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
           "start_date" => "2026-08-15"
         })
 
-      assert %{"errors" => [_ | _]} = json_response(response, 422)
+      assert %{"error_detail" => %{"fields" => %{"client_id" => ["is unknown"]}}} =
+               json_response(response, 422)
     end
 
     test "lists only templates for this business", %{conn: conn} do
@@ -101,7 +109,6 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       assert shown["kind"] == "template"
       assert shown["revision"] == 1
       assert shown["day_patterns"] == []
-      assert_schema(shown, "NutritionPlan", EasyWeb.ApiSpec.spec())
 
       update_conn =
         patch(conn, "/v1/coach/nutrition-plans/#{template.id}", %{
@@ -125,7 +132,6 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
                "error_detail" => %{"current_revision" => 2}
              } = stale_response
 
-      assert_schema(stale_response, "StaleRevisionError", EasyWeb.ApiSpec.spec())
       assert Repo.get!(Plan, template.id).name == "Revised Template"
 
       stale_archive_conn =
@@ -225,13 +231,12 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       assert client_id == client.id
 
       assert %{
-               "data" =>
-                 %{
-                   "start_date" => start_iso,
-                   "end_date" => end_iso,
-                   "lifecycle" => "upcoming",
-                   "revision" => 2
-                 } = data
+               "data" => %{
+                 "start_date" => start_iso,
+                 "end_date" => end_iso,
+                 "lifecycle" => "upcoming",
+                 "revision" => 2
+               }
              } =
                conn
                |> patch("/v1/coach/nutrition-plans/#{client_plan.id}", %{
@@ -243,7 +248,6 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
 
       assert start_iso == Date.to_iso8601(start_date)
       assert end_iso == Date.to_iso8601(end_date)
-      assert_schema(data, "NutritionPlan", EasyWeb.ApiSpec.spec())
     end
 
     test "reports incomplete, overlap, stale-revision, and archived Coverage errors", %{conn: conn} do
@@ -363,24 +367,22 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
         |> json_response(201)
 
       assert %{
-               "data" =>
-                 %{
-                   "id" => duplicate_id,
-                   "kind" => "template",
-                   "name" => "HTTP Cut (Copy)",
-                   "revision" => 1,
-                   "client_id" => nil,
-                   "source_template_id" => nil,
-                   "day_patterns" => [%{"id" => copied_pattern_id, "name" => "Everyday"}],
-                   "schedule" => copied_schedule
-                 } = data
+               "data" => %{
+                 "id" => duplicate_id,
+                 "kind" => "template",
+                 "name" => "HTTP Cut (Copy)",
+                 "revision" => 1,
+                 "client_id" => nil,
+                 "source_template_id" => nil,
+                 "day_patterns" => [%{"id" => copied_pattern_id, "name" => "Everyday"}],
+                 "schedule" => copied_schedule
+               }
              } = response
 
       assert duplicate_id != created["id"]
       assert copied_pattern_id != hd(created["day_patterns"])["id"]
       assert copied_schedule["monday"] == copied_pattern_id
       assert copied_schedule["sunday"] == copied_pattern_id
-      assert_schema(data, "NutritionPlan", EasyWeb.ApiSpec.spec())
     end
 
     test "returns not found for archived, Client Plan, and cross-tenant sources", %{conn: conn} do
@@ -443,17 +445,16 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
         |> json_response(201)
 
       assert %{
-               "data" =>
-                 %{
-                   "id" => assigned_id,
-                   "kind" => "client_plan",
-                   "lifecycle" => "incomplete",
-                   "revision" => 1,
-                   "client_id" => client_id,
-                   "source_template_id" => source_id,
-                   "day_patterns" => [%{"id" => copied_pattern_id, "name" => "Everyday"}],
-                   "schedule" => copied_schedule
-                 } = data
+               "data" => %{
+                 "id" => assigned_id,
+                 "kind" => "client_plan",
+                 "lifecycle" => "incomplete",
+                 "revision" => 1,
+                 "client_id" => client_id,
+                 "source_template_id" => source_id,
+                 "day_patterns" => [%{"id" => copied_pattern_id, "name" => "Everyday"}],
+                 "schedule" => copied_schedule
+               }
              } = response
 
       assert assigned_id != created["id"]
@@ -462,7 +463,6 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       assert copied_pattern_id != pattern_id
       assert copied_schedule["monday"] == copied_pattern_id
       assert Repo.get!(Easy.Clients.Client, client.id).stage == :coaching
-      assert_schema(data, "NutritionPlan", EasyWeb.ApiSpec.spec())
 
       assert %{"data" => [listed], "count" => 1} =
                conn
@@ -495,7 +495,6 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
         |> json_response(409)
 
       assert %{"error_code" => "stale_revision", "error_detail" => %{"current_revision" => 1}} = stale
-      assert_schema(stale, "StaleRevisionError", EasyWeb.ApiSpec.spec())
 
       archived =
         insert(:plan,
@@ -527,17 +526,6 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
 
         assert %{"error_code" => "not_found"} = response
       end
-    end
-
-    test "generated OpenAPI includes the Assignment route" do
-      assignment = EasyWeb.ApiSpec.spec().paths["/v1/coach/clients/{client_id}/nutrition-plans/{id}/assign"].post
-
-      assert assignment.operationId == "assignNutritionPlan"
-      assert assignment.requestBody.required == true
-      assert assignment.responses[201]
-      assert assignment.responses[404]
-      assert assignment.responses[409]
-      assert assignment.responses[422]
     end
   end
 end

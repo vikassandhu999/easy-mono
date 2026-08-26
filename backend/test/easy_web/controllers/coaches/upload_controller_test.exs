@@ -1,8 +1,6 @@
 defmodule EasyWeb.Coaches.UploadControllerTest do
   use Easy.ConnCase
 
-  import OpenApiSpex.TestAssertions
-
   setup do
     owner_user = insert(:user)
     business = insert(:business, owner: owner_user)
@@ -41,7 +39,20 @@ defmodule EasyWeb.Coaches.UploadControllerTest do
     assert data["byte_size"] == 2_048
     assert data["duration_ms"] == 30_000
     refute Map.has_key?(data, "purpose")
-    assert_schema(data, "AttachmentUpload", EasyWeb.ApiSpec.spec())
+  end
+
+  test "POST /v1/coach/clients/:client_id/uploads rejects extra body keys", %{
+    owner_conn: conn,
+    trainer_client: client
+  } do
+    conn =
+      post(conn, "/v1/coach/clients/#{client.id}/uploads", %{
+        "content_type" => "image/png",
+        "byte_size" => 2_048,
+        "unexpected" => true
+      })
+
+    assert json_response(conn, 422)
   end
 
   test "POST /v1/coach/clients/:client_id/uploads lets an assigned trainer create an upload", %{
@@ -89,6 +100,20 @@ defmodule EasyWeb.Coaches.UploadControllerTest do
     assert second_download["download_url"] =~ "storage.example.test/easy-test/"
     assert second_download["download_url_expires_at"]
     refute Map.has_key?(second_download, "storage_key")
-    assert_schema(second_download, "AttachmentDownload", EasyWeb.ApiSpec.spec())
+  end
+
+  test "POST /v1/coach/attachments/download-urls rejects extra body keys", %{
+    owner_conn: conn,
+    trainer_client: client
+  } do
+    attachment = insert(:attachment, business: client.business, client: client)
+
+    conn =
+      post(conn, "/v1/coach/attachments/download-urls", %{
+        "attachment_ids" => [attachment.id],
+        "unexpected" => true
+      })
+
+    assert json_response(conn, 422)
   end
 end

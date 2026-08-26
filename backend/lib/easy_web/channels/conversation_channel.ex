@@ -2,7 +2,7 @@ defmodule EasyWeb.ConversationChannel do
   use Phoenix.Channel
 
   alias Easy.Chat
-  alias EasyWeb.Coaches.ConversationJSON
+  alias EasyWeb.Types.ChatMessage
 
   @impl true
   @spec join(String.t(), map(), Phoenix.Socket.t()) ::
@@ -17,7 +17,7 @@ defmodule EasyWeb.ConversationChannel do
   @impl true
   @spec handle_info(term(), Phoenix.Socket.t()) :: {:noreply, Phoenix.Socket.t()}
   def handle_info({:chat_message_created, message}, socket) do
-    push(socket, "message_new", ConversationJSON.message_data(message))
+    push(socket, "message_new", ChatMessage.format(message))
     {:noreply, socket}
   end
 

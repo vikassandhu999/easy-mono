@@ -14,7 +14,7 @@ export default function WeightChart({entries, goal}: {entries: WeightEntry[]; go
     return null;
   }
 
-  const values = pts.map((p) => p.value);
+  const values = pts.map((p) => Number(p.value));
   const min = Math.min(...values, ...(goal != null ? [goal] : []));
   const max = Math.max(...values, ...(goal != null ? [goal] : []));
   const span = max - min;
@@ -24,7 +24,7 @@ export default function WeightChart({entries, goal}: {entries: WeightEntry[]; go
   const x = (i: number) => PAD + (i / (pts.length - 1)) * (W - 2 * PAD);
   const y = (v: number) => PAD + (1 - (v - lo) / (hi - lo)) * (H - 2 * PAD);
 
-  const line = pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ');
+  const line = pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(Number(p.value)).toFixed(1)}`).join(' ');
   const area = `${line} L${x(pts.length - 1).toFixed(1)},${H - PAD} L${x(0).toFixed(1)},${H - PAD} Z`;
 
   return (
@@ -81,7 +81,7 @@ export default function WeightChart({entries, goal}: {entries: WeightEntry[]; go
       {pts.map((p, i) => (
         <circle
           cx={x(i)}
-          cy={y(p.value)}
+          cy={y(Number(p.value))}
           fill={i === pts.length - 1 ? 'var(--accent)' : 'var(--surface)'}
           key={p.id}
           r={i === pts.length - 1 ? 3.5 : 2.5}

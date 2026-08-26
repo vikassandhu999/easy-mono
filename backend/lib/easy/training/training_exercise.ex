@@ -86,6 +86,7 @@ defmodule Easy.Training.TrainingExercise do
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, coach_id)
     |> validate_required([:name])
+    |> validate_text_lengths()
     |> unique_constraint([:name, :business_id], name: :training_exercises_name_business_id_index)
     |> foreign_key_constraint(:media_id)
     |> check_constraint(:media_id, name: :training_exercises_business_media_check)
@@ -98,6 +99,7 @@ defmodule Easy.Training.TrainingExercise do
     exercise
     |> cast(attrs, @cast_fields)
     |> validate_required([:name])
+    |> validate_text_lengths()
     |> unique_constraint([:name, :business_id], name: :training_exercises_name_business_id_index)
     |> foreign_key_constraint(:media_id)
     |> check_constraint(:media_id, name: :training_exercises_business_media_check)
@@ -107,6 +109,13 @@ defmodule Easy.Training.TrainingExercise do
 
   defp maybe_put_assoc(cs, _key, nil), do: cs
   defp maybe_put_assoc(cs, key, records), do: put_assoc(cs, key, records)
+
+  defp validate_text_lengths(changeset) do
+    changeset
+    |> validate_length(:name, max: 255)
+    |> validate_length(:description, max: 5000)
+    |> validate_length(:instructions, max: 10_000)
+  end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do

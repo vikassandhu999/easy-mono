@@ -1,8 +1,6 @@
 defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
   use Easy.ConnCase
 
-  import OpenApiSpex.TestAssertions
-
   setup do
     coach = insert(:coach)
     conn = build_conn() |> authenticate_coach(coach)
@@ -12,6 +10,12 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
   end
 
   describe "GET /v1/coach/clients/:client_id/training-sessions" do
+    test "rejects unknown query parameters", %{conn: conn, client: client} do
+      conn = get(conn, "/v1/coach/clients/#{client.id}/training-sessions?unexpected=true")
+
+      assert json_response(conn, 422)
+    end
+
     test "lists sessions for a client", %{conn: conn, business: business, client: client} do
       insert(:workout_session, client: client, business: business, date: Date.utc_today())
 
@@ -89,10 +93,10 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
 
       conn = get(conn, "/v1/coach/clients/#{client.id}/training-sessions/#{session.id}")
       response = json_response(conn, 200)
-      assert_schema(response, "TrainingSessionResponse", EasyWeb.ApiSpec.spec())
       assert %{"data" => data} = response
 
       assert data["id"] == session.id
+      assert data["client_id"] == client.id
       assert is_list(data["performed_sets"])
     end
 

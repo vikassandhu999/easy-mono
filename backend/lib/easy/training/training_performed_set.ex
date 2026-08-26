@@ -82,6 +82,7 @@ defmodule Easy.Training.TrainingPerformedSet do
     changeset
     |> update_change(:exercise_name, &Easy.Utils.trim/1)
     |> validate_required([:position, :exercise_name, :set_type, :training_session_id, :business_id])
+    |> validate_length(:notes, max: 5000)
     |> validate_number(:position, greater_than_or_equal_to: 0)
     |> validate_number(:rpe, greater_than_or_equal_to: 1, less_than_or_equal_to: 10)
     |> check_constraint(:position, name: :training_performed_sets_position_check)

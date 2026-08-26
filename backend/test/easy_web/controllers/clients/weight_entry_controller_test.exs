@@ -39,7 +39,12 @@ defmodule EasyWeb.Clients.WeightEntryControllerTest do
 
       conn = get(ctx.conn, "/v1/client/weight_entries")
 
-      assert %{"entries" => entries, "goal" => goal, "summary" => summary} =
+      assert %{
+               "entries" => entries,
+               "goal" => goal,
+               "summary" => summary,
+               "adherence" => adherence
+             } =
                json_response(conn, 200)
 
       assert length(entries) == 2
@@ -50,6 +55,7 @@ defmodule EasyWeb.Clients.WeightEntryControllerTest do
       assert summary["latest_entry"]["date"] == "2026-04-20"
       assert summary["change_unit"] == "kg"
       assert summary["total_change"] == -3.8
+      assert adherence == %{"logged_days" => 0, "window_days" => 30}
     end
 
     test "filters by since", ctx do
@@ -145,6 +151,11 @@ defmodule EasyWeb.Clients.WeightEntryControllerTest do
       conn = get(ctx.conn, "/v1/client/weight_entries", %{"since" => "bad-date"})
       assert json_response(conn, 422)
     end
+
+    test "returns 422 for an unknown query parameter", ctx do
+      conn = get(ctx.conn, "/v1/client/weight_entries", %{"unexpected" => "value"})
+      assert json_response(conn, 422)
+    end
   end
 
   describe "POST /v1/client/weight_entries" do
@@ -193,6 +204,18 @@ defmodule EasyWeb.Clients.WeightEntryControllerTest do
           "date" => "bad-date",
           "value" => 0,
           "unit" => "kg"
+        })
+
+      assert json_response(conn, 422)
+    end
+
+    test "returns 422 for an unknown body field", ctx do
+      conn =
+        post(ctx.conn, "/v1/client/weight_entries", %{
+          "date" => "2026-04-22",
+          "value" => 91.4,
+          "unit" => "kg",
+          "unexpected" => true
         })
 
       assert json_response(conn, 422)

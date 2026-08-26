@@ -1,15 +1,18 @@
 import {moveItem} from '@easy/utils';
 import {parseNutritionPortion, portionWireFromInput, toPortionInput} from '@easy/utils/nutrition-portion';
-import type {components} from './schema.ts';
+import type {
+  NutritionMeal,
+  NutritionMealItem,
+  NutritionMealItemInput as NutritionMealItemInputSchema,
+  NutritionPlan,
+  NutritionPlanReplaceMenu,
+  NutritionPortionInput as NutritionPortionInputSchema,
+  NutritionWeekSchedule,
+} from './schema.ts';
 
-export type NutritionMenuReplaceRequest = components['schemas']['NutritionMenuReplaceRequest'];
-export type NutritionMealItemInput = components['schemas']['NutritionMealItemInput'];
-export type NutritionPortionInput = components['schemas']['NutritionPortionInput'];
-
-type NutritionPlan = components['schemas']['NutritionPlan'];
-type NutritionMeal = components['schemas']['NutritionMeal'];
-type NutritionMealItem = components['schemas']['NutritionMealItem'];
-type NutritionWeekSchedule = components['schemas']['NutritionWeekSchedule'];
+export type NutritionMenuReplaceRequest = NutritionPlanReplaceMenu;
+export type NutritionMealItemInput = NutritionMealItemInputSchema;
+export type NutritionPortionInput = NutritionPortionInputSchema;
 
 type DayPattern = NutritionPlan['day_patterns'][number];
 type PatternSlot = DayPattern['slots'][number];

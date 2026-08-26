@@ -48,6 +48,16 @@ defmodule Easy.Training.ExecutionPerformedSetTest do
       assert "can't be blank" in errors_on(changeset).exercise_name
     end
 
+    test "rejects notes longer than 5000 characters", ctx do
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{
+                 exercise_name: "Carry",
+                 notes: String.duplicate("x", 5001)
+               })
+
+      assert "should be at most 5000 character(s)" in errors_on(changeset).notes
+    end
+
     test "retains a stable snapshot exercise reference for planned and substituted work", ctx do
       %{prescribed: prescribed, session: session} = start_planned_session(ctx)
       substitute = insert(:exercise, business: ctx.coach.business, name: "Front Squat")
@@ -141,6 +151,20 @@ defmodule Easy.Training.ExecutionPerformedSetTest do
       close_session(ctx.session)
 
       assert {:error, :not_found} = Execution.update_client_performed_set(ctx.ctx, set.id, %{reps: "8"})
+    end
+
+    test "rejects notes longer than 5000 characters", ctx do
+      assert {:ok, set} =
+               Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{
+                 exercise_id: ctx.exercise.id
+               })
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               Execution.update_client_performed_set(ctx.ctx, set.id, %{
+                 notes: String.duplicate("x", 5001)
+               })
+
+      assert "should be at most 5000 character(s)" in errors_on(changeset).notes
     end
   end
 

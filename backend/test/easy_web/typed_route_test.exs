@@ -3,9 +3,9 @@ defmodule EasyWeb.TypedRouteTest do
 
   alias EasyWeb.Plugs.Idempotency
   alias EasyWeb.TypedRoute
-  alias EasyWeb.TypedRoute.{Cast, Check, Dump, Emit, Type}
+  alias EasyWeb.TypedRoute.{Cast, Check, Dump, Emit, SchemaMerge, Type}
   alias EasyWeb.TypedRouteTestController, as: Controller
-  alias EasyWeb.Types.TypedItem
+  alias EasyWeb.Types.{TypedComputed, TypedDictionary, TypedItem, TypedStructComputed}
 
   defmodule Item do
     defstruct [:id, :name]
@@ -50,6 +50,11 @@ defmodule EasyWeb.TypedRouteTest do
     assert {:error, %{"limit" => ["is invalid"]}} = Cast.query(%{"limit" => "0"}, ir)
   end
 
+  test "caster rejects query keys when an action declares no query" do
+    assert {:ok, %{}} = Cast.query(%{}, nil)
+    assert {:error, %{"$" => ["must be empty"]}} = Cast.query(%{"unknown" => "true"}, nil)
+  end
+
   test "caster coerces path dates and leaves other segments" do
     ir = Type.expand(quote(do: %{date: Date.t()}), __ENV__)
     date = ~D[2026-01-02]
@@ -74,6 +79,84 @@ defmodule EasyWeb.TypedRouteTest do
     assert Dump.dump(Decimal.new("1.50"), :decimal) == "1.50"
   end
 
+  test "loads dictionary types from BEAM metadata" do
+    assert TypedDictionary.__wire_type__(:t) == {:dict, :string}
+  end
+
+  test "dump uses format/1 for map-backed computed types" do
+    assert Dump.dump(%{raw_url: "https://example.test/file"}, {:remote, TypedComputed, :t}) == %{
+             public_url: "https://example.test/file"
+           }
+  end
+
+  test "dump selects and encodes a record in a nullable union" do
+    ir = Type.expand(quote(do: %{required(:value) => Decimal.t()} | nil), __ENV__)
+
+    assert Dump.dump(%{value: Decimal.new("88.00")}, ir) == %{value: "88.00"}
+  end
+
+  test "dump and checker select a closed record union by its required discriminator" do
+    ir =
+      Type.expand(
+        quote do
+          %{
+            required(:code) => :first,
+            required(:first_value) => String.t()
+          }
+          | %{
+              required(:code) => :second,
+              required(:second_value) => String.t()
+            }
+        end,
+        __ENV__
+      )
+
+    dumped = Dump.dump(%{code: :second, second_value: "kept"}, ir)
+
+    assert dumped == %{code: "second", second_value: "kept"}
+    assert :ok = Check.assert!(dumped, ir)
+  end
+
+  test "dump and checker select a string-keyed record union by its encoded discriminator" do
+    ir =
+      Type.expand(
+        quote do
+          %{
+            required(:type) => :select,
+            required(:options) => [String.t()]
+          }
+          | %{
+              required(:type) => :service_type,
+              required(:services) => [String.t()]
+            }
+        end,
+        __ENV__
+      )
+
+    dumped = Dump.dump(%{"type" => "select", "options" => ["one"]}, ir)
+
+    assert dumped == %{type: "select", options: ["one"]}
+    assert :ok = Check.assert!(dumped, ir)
+  end
+
+  test "dump selects the formatter-backed record in a nullable union" do
+    ir = Type.expand(quote(do: TypedStructComputed.t() | nil), __ENV__)
+
+    assert Dump.dump(%EasyWeb.TypedStructInput{raw_url: "https://example.test/file"}, ir) == %{
+             public_url: "https://example.test/file"
+           }
+  end
+
+  test "checker accepts encoded scalar values in nullable unions" do
+    for {value, ir} <- [
+          {"2026-01-02T03:04:05Z", {:union, [:datetime, nil]}},
+          {"2026-01-02", {:union, [:date, nil]}},
+          {"88.00", {:union, [:decimal, nil]}}
+        ] do
+      assert :ok = Check.assert!(value, ir)
+    end
+  end
+
   test "checker raises with a field path" do
     ir = TypedItem.__wire_type__(:t)
 
@@ -88,6 +171,43 @@ defmodule EasyWeb.TypedRouteTest do
     assert Emit.export_named_types(named) =~ "export type TypedItem"
     assert Emit.path_template("/v1/coach/nutrition-recipes/:id") == "/v1/coach/nutrition-recipes/{id}"
     assert Emit.ir_to_ts({:record, [{:name, :optional, :string}]}) == "{ name?: string }"
+  end
+
+  test "schema merge injects typed types and paths and is idempotent after strip" do
+    leftover = """
+    /**
+     * leftover
+     */
+
+    export interface paths {
+      '/v1/coach/training-plans': {
+        get: operations['listTrainingPlans'];
+      };
+    }
+    """
+
+    types = "export type Muscle = { id: string };"
+    paths = "'/v1/coach/training-muscles': {\n  get: { parameters: { query?: never } }\n}"
+
+    merged = SchemaMerge.inject(leftover, types, paths)
+    assert merged =~ "export type Muscle"
+    assert merged =~ "'/v1/coach/training-muscles'"
+    assert merged =~ "listTrainingPlans"
+
+    again = SchemaMerge.inject(merged, types, paths)
+    assert again == merged
+  end
+
+  test "schema merge drift check survives formatting but detects content changes" do
+    source = "export interface paths {\n}\n"
+    types = "export type Health = { status: string };"
+    paths = "'/api/health': { get: unknown }"
+
+    merged = SchemaMerge.inject(source, types, paths)
+    formatted = String.replace(merged, "{ status: string }", "{\n  status: string;\n}")
+
+    assert SchemaMerge.current?(formatted, types, paths)
+    refute SchemaMerge.current?(formatted, types <> "\nexport type Extra = string;", paths)
   end
 
   test "create action casts body, formats, and returns 201" do

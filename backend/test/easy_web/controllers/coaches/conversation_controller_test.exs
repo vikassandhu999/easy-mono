@@ -1,8 +1,6 @@
 defmodule EasyWeb.Coaches.ConversationControllerTest do
   use Easy.ConnCase
 
-  import OpenApiSpex.TestAssertions
-
   setup do
     coach = insert(:coach)
     client = insert(:client, business: coach.business, creator: coach)
@@ -38,7 +36,9 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
       assert message["body"] == "Hello"
       assert message["attachments"] == []
       assert message["embed"] == nil
-      assert_schema(message, "ChatMessage", EasyWeb.ApiSpec.spec())
+
+      assert Map.keys(message) |> Enum.sort() ==
+               ~w(attachments body conversation_id embed id inserted_at sender_id sender_type)
 
       list_conn =
         build_conn() |> authenticate_coach(coach) |> get("/v1/coach/conversations/#{conversation_id}/messages")
@@ -94,7 +94,6 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
       assert assignment_id == assignment.id
       assert title == assignment.form_template.name
       assert submitted_at == DateTime.to_iso8601(submission.submitted_at)
-      assert_schema(response["data"], "ChatMessage", EasyWeb.ApiSpec.spec())
 
       list_conn =
         build_conn()
@@ -133,9 +132,36 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
       conn = post(conn, "/v1/coach/conversations/#{conversation_id}/messages", %{"body" => ""})
       assert json_response(conn, 422)
     end
+
+    test "rejects unknown keys and invalid embed types", %{conn: conn, client: client} do
+      %{"data" => %{"id" => conversation_id}} =
+        conn |> get("/v1/coach/clients/#{client.id}/conversation") |> json_response(200)
+
+      unknown =
+        post(conn, "/v1/coach/conversations/#{conversation_id}/messages", %{
+          "body" => "Hello",
+          "sender_type" => "client"
+        })
+
+      invalid_embed =
+        post(conn, "/v1/coach/conversations/#{conversation_id}/messages", %{
+          "embed" => %{"type" => "workout", "id" => Ecto.UUID.generate()}
+        })
+
+      assert json_response(unknown, 422)
+      assert json_response(invalid_embed, 422)
+    end
   end
 
   describe "GET /v1/coach/conversations" do
+    test "rejects invalid or unknown query values", %{conn: conn} do
+      invalid = get(conn, "/v1/coach/conversations", %{"limit" => "many"})
+      unknown = get(conn, "/v1/coach/conversations", %{"sort" => "oldest"})
+
+      assert json_response(invalid, 422)
+      assert json_response(unknown, 422)
+    end
+
     test "inbox lists with unread counts, newest first", %{conn: conn, coach: coach, client: client} do
       conversation = insert(:conversation, business: coach.business, client: client)
 
@@ -148,7 +174,8 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
       )
 
       conn = get(conn, "/v1/coach/conversations")
-      assert %{"data" => [data], "count" => 1} = json_response(conn, 200)
+      assert response = %{"data" => [data], "count" => 1} = json_response(conn, 200)
+      assert Map.keys(response) |> Enum.sort() == ["count", "data"]
       assert data["unread_count"] == 1
     end
 

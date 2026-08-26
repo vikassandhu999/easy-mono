@@ -2,13 +2,15 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
 import {clientKeys, teamKeys} from '@/api/keys';
-import type {components} from '@/api/schema';
+import type {ClientReassign, paths, TeamMemberInvite} from '@/api/schema';
 
-export type TeamMember = components['schemas']['TeamMember'];
-export type TeamResponse = components['schemas']['TeamResponse'];
-export type TeamMemberResponse = components['schemas']['TeamMemberResponse'];
-export type TrainerInviteRequest = components['schemas']['TrainerInviteRequest'];
-export type ReassignClientRequest = components['schemas']['ReassignClientRequest'];
+export type {TeamMember, TeamMemberInvite} from '@/api/schema';
+
+export type TeamResponse = paths['/v1/coach/team']['get']['responses'][200]['content']['application/json'];
+export type TeamMemberResponse =
+  paths['/v1/coach/team/invite']['post']['responses'][200]['content']['application/json'];
+export type TrainerInviteRequest = TeamMemberInvite;
+export type ReassignClientRequest = ClientReassign;
 
 export function useGetTeamQuery(options?: {enabled?: boolean}) {
   return useQuery({

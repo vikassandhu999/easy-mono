@@ -2,7 +2,7 @@
 
 This page is the closed set. If a case is not here, the design does not cover it, and implementation must not invent a slot, flag, or transformer to paper over it. Write the type and point `typed` at it.
 
-The library lives under `EasyWeb.TypedRoute`, `EasyWeb.Type`, and `EasyWeb.Types`. Controllers still use OpenApiSpex. `mix typed_routes.gen` does not write `schema.ts` until a controller is converted.
+The library lives under `EasyWeb.TypedRoute`, `EasyWeb.Type`, and `EasyWeb.Types`. Dual-run writes each app’s `schema.ts` from typed routes plus leftover OpenAPI. `just gen-api` dumps OpenAPI, runs openapi-typescript, then `mix typed_routes.gen`.
 
 The rule: every JSON slot on `typed` is an Elixir type you wrote. Status is an integer next to that type. Plugs stay plugs. The router stays the router.
 

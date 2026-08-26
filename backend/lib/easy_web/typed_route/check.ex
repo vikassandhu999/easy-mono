@@ -74,6 +74,7 @@ defmodule EasyWeb.TypedRoute.Check do
 
   defp fits?(value, {:remote, mod, name}), do: fits?(value, Type.fetch!(mod, name))
   defp fits?(nil, nil), do: true
+  defp fits?(value, {:union, variants}), do: Enum.any?(variants, &fits?(value, &1))
   defp fits?(value, :string), do: is_binary(value)
   defp fits?(value, :boolean), do: is_boolean(value)
   defp fits?(value, :integer), do: is_integer(value)
@@ -81,11 +82,27 @@ defmodule EasyWeb.TypedRoute.Check do
   defp fits?(value, :non_neg_integer), do: is_integer(value) and value >= 0
   defp fits?(value, :number), do: is_number(value)
   defp fits?(value, :float), do: is_number(value)
+  defp fits?(value, type) when type in [:datetime, :date, :decimal], do: is_binary(value)
   defp fits?(value, {:atom, atom}), do: value == Atom.to_string(atom) or value == atom
-  defp fits?(value, {:record, _}) when is_map(value), do: true
+
+  defp fits?(value, {:record, fields}) when is_map(value) do
+    Enum.all?(fields, &record_field_fits?(value, &1))
+  end
+
+  defp fits?(value, {:dict, _inner}) when is_map(value), do: true
   defp fits?(value, {:list, _}) when is_list(value), do: true
   defp fits?(_value, :json), do: true
   defp fits?(_, _), do: false
+
+  defp record_field_fits?(map, {name, :required, ir}) do
+    has_key?(map, name) and fits?(fetch(map, name), ir)
+  end
+
+  defp record_field_fits?(_map, {_name, :optional, _ir}), do: true
+
+  defp has_key?(map, name), do: Map.has_key?(map, name) or Map.has_key?(map, Atom.to_string(name))
+
+  defp fetch(map, name), do: Map.get(map, name, Map.get(map, Atom.to_string(name)))
 
   defp fail(path, message) do
     loc = if path == [], do: "$", else: Enum.join(path, ".")

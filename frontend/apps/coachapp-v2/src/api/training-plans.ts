@@ -2,7 +2,20 @@ import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack
 import {call, client} from './client.ts';
 import {clientKeys, trainingPlanKeys, trainingSessionKeys} from './keys.ts';
 import {patchQueryData, queryClient} from './query-client.ts';
-import type {components, paths} from './schema.ts';
+import type {
+  PerformedSet as PerformedSetSchema,
+  paths,
+  Revision,
+  Session as SessionSchema,
+  TrainingPlanAssign,
+  TrainingPlanCreate,
+  TrainingPlanPlannedSet as TrainingPlanPlannedSetSchema,
+  TrainingPlan as TrainingPlanSchema,
+  TrainingPlanUpdate,
+  TrainingPlanWorkoutExercise as TrainingPlanWorkoutExerciseSchema,
+  TrainingPlanWorkout as TrainingPlanWorkoutSchema,
+  TrainingSchedule as TrainingScheduleSchema,
+} from './schema.ts';
 import {omitUndefined} from './shared.ts';
 import {trainingPlanAssignmentRequest, trainingPlanPeriodRequest} from './training-plan-lifecycle.ts';
 import {coachClientTrainingSessionHistoryRequest, planToPrescriptionRequest} from './training-sessions.ts';
@@ -26,22 +39,25 @@ import {workbenchMutationTargets} from './workbench-targets.ts';
 
 const PAGE_SIZE = 20;
 
-export type TrainingPlanListResponse = components['schemas']['TrainingPlanListResponse'];
-export type TrainingPlanCreateRequest = components['schemas']['TrainingPlanCreateRequest'];
-export type TrainingPlanUpdateRequest = components['schemas']['TrainingPlanUpdateRequest'];
-export type TrainingPlanRevisionRequest = components['schemas']['TrainingPlanRevisionRequest'];
-export type TrainingPlanAssignRequest = components['schemas']['TrainingPlanAssignRequest'];
-export type ClientTrainingPlan = components['schemas']['CoachClientTrainingPlan'];
-export type ClientTrainingPlanListResponse = components['schemas']['CoachClientTrainingPlanListResponse'];
-export type TrainingSession = components['schemas']['TrainingSession'];
-export type TrainingPerformedSet = components['schemas']['TrainingPerformedSet'];
-export type TrainingSessionListResponse = components['schemas']['TrainingSessionListResponse'];
+export type TrainingPlanListResponse =
+  paths['/v1/coach/training-plans']['get']['responses'][200]['content']['application/json'];
+export type TrainingPlanCreateRequest = TrainingPlanCreate;
+export type TrainingPlanUpdateRequest = TrainingPlanUpdate;
+export type TrainingPlanRevisionRequest = Revision;
+export type TrainingPlanAssignRequest = TrainingPlanAssign;
+export type ClientTrainingPlan = TrainingPlanSchema;
+export type ClientTrainingPlanListResponse =
+  paths['/v1/coach/clients/{client_id}/training-plans']['get']['responses'][200]['content']['application/json'];
+export type TrainingSession = SessionSchema;
+export type TrainingPerformedSet = PerformedSetSchema;
+export type TrainingSessionListResponse =
+  paths['/v1/coach/clients/{client_id}/training-sessions']['get']['responses'][200]['content']['application/json'];
 
 type ListTrainingPlansQuery = NonNullable<paths['/v1/coach/training-plans']['get']['parameters']['query']>;
 type ListCoachClientTrainingPlansQuery = NonNullable<
   paths['/v1/coach/clients/{client_id}/training-plans']['get']['parameters']['query']
 >;
-type CoachClientTrainingPlansFilters = Omit<ListCoachClientTrainingPlansQuery, 'limit' | 'offset'>;
+type CoachClientTrainingPlansFilters = Pick<ListCoachClientTrainingPlansQuery, 'status'>;
 type ListCoachClientTrainingSessionsQuery = NonNullable<
   paths['/v1/coach/clients/{client_id}/training-sessions']['get']['parameters']['query']
 >;
@@ -264,7 +280,7 @@ export function useAssignTrainingPlanMutation() {
 /** A date-window session list can exceed one 20-row page; offset-paginated. */
 export function useCoachClientTrainingSessionsInfiniteQuery(
   clientId: string,
-  filters?: Omit<ListCoachClientTrainingSessionsQuery, 'limit' | 'offset'>,
+  filters?: Pick<ListCoachClientTrainingSessionsQuery, 'from' | 'to'>,
 ) {
   return useInfiniteQuery({
     queryKey: trainingSessionKeys.forClientInfinite(clientId, filters),
@@ -340,13 +356,14 @@ export function useGetCoachClientTrainingSessionQuery(clientId: string, id: stri
  * invalidations `useUpdateTrainingPlanMutation` would.
  */
 
-export type TrainingPlan = components['schemas']['TrainingPlan'];
-export type TrainingPlanWorkout = components['schemas']['TrainingPlanWorkout'];
-export type TrainingPlanWorkoutExercise = components['schemas']['TrainingPlanWorkoutExercise'];
-export type TrainingSchedule = components['schemas']['TrainingSchedule'];
-export type TrainingPlanPlannedSet = components['schemas']['TrainingPlanPlannedSet'];
+export type TrainingPlan = TrainingPlanSchema;
+export type TrainingPlanWorkout = TrainingPlanWorkoutSchema;
+export type TrainingPlanWorkoutExercise = TrainingPlanWorkoutExerciseSchema;
+export type TrainingSchedule = TrainingScheduleSchema;
+export type TrainingPlanPlannedSet = TrainingPlanPlannedSetSchema;
 
-type TrainingPlanResponse = components['schemas']['TrainingPlanResponse'];
+type TrainingPlanResponse =
+  paths['/v1/coach/training-plans/{id}']['get']['responses'][200]['content']['application/json'];
 
 /**
  * General-purpose fetch for one training plan.

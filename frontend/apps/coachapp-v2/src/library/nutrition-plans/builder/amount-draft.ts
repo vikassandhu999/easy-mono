@@ -1,9 +1,6 @@
 import {type NutritionItemRef, toItemInput} from '@easy/utils/nutrition-item-ref';
 import {toPortionInput} from '@easy/utils/nutrition-portion';
-import type {components} from '../../../api/schema.ts';
-
-type NutritionMealItemInput = components['schemas']['NutritionMealItemInput'];
-type NutritionPortionInput = components['schemas']['NutritionPortionInput'];
+import type {NutritionMealItemInput, NutritionPortionInput} from '../../../api/schema.ts';
 
 type Serving = {label: string; unit: string};
 

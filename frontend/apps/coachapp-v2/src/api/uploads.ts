@@ -8,18 +8,38 @@
 import {useMutation} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
-import type {components} from '@/api/schema';
+import type {
+  Attachment,
+  LibraryMedia,
+  LibraryMediaCreate,
+  paths,
+  Upload,
+  UploadCreate,
+  UploadDownload,
+  UploadDownloadUrls,
+} from '@/api/schema';
 
-export type Attachment = components['schemas']['Attachment'];
-export type AttachmentUpload = components['schemas']['AttachmentUpload'];
-export type AttachmentUploadRequest = components['schemas']['AttachmentUploadRequest'];
-export type AttachmentUploadResponse = components['schemas']['AttachmentUploadResponse'];
-export type AttachmentDownload = components['schemas']['AttachmentDownload'];
-export type AttachmentDownloadRequest = components['schemas']['AttachmentDownloadRequest'];
-export type AttachmentDownloadsResponse = components['schemas']['AttachmentDownloadsResponse'];
-export type LibraryMediaUpload = components['schemas']['LibraryMediaUpload'];
-export type LibraryMediaUploadRequest = components['schemas']['LibraryMediaUploadRequest'];
-export type LibraryMediaUploadResponse = components['schemas']['LibraryMediaUploadResponse'];
+export type {
+  Attachment,
+  LibraryMedia,
+  LibraryMediaCreate,
+  Upload,
+  UploadCreate,
+  UploadDownload,
+  UploadDownloadUrls,
+} from '@/api/schema';
+export type AttachmentUpload = Upload;
+export type AttachmentUploadRequest = UploadCreate;
+export type AttachmentUploadResponse =
+  paths['/v1/coach/clients/{client_id}/uploads']['post']['responses'][201]['content']['application/json'];
+export type AttachmentDownload = UploadDownload;
+export type AttachmentDownloadRequest = UploadDownloadUrls;
+export type AttachmentDownloadsResponse =
+  paths['/v1/coach/attachments/download-urls']['post']['responses'][200]['content']['application/json'];
+export type LibraryMediaUpload = LibraryMedia;
+export type LibraryMediaUploadRequest = LibraryMediaCreate;
+export type LibraryMediaUploadResponse =
+  paths['/v1/coach/library-media/uploads']['post']['responses'][201]['content']['application/json'];
 
 export function useGetCoachAttachmentDownloadUrlsMutation() {
   return useMutation({
@@ -36,6 +56,6 @@ export function useCreateCoachClientUploadMutation() {
 
 export function useCreateCoachLibraryMediaUploadMutation() {
   return useMutation({
-    mutationFn: (body: LibraryMediaUploadRequest) => call(client.POST('/v1/coach/library-media/uploads', {body})),
+    mutationFn: (body: LibraryMediaCreate) => call(client.POST('/v1/coach/library-media/uploads', {body})),
   });
 }

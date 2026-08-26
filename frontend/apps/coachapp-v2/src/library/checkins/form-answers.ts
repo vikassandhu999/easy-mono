@@ -5,13 +5,12 @@
  * importable across features, unlike its components/screens.
  */
 
-import type {FormQuestionType} from '../../api/checkins.ts';
-import type {components} from '../../api/schema.ts';
+import type {FormQuestionType, FormSubmission} from '../../api/checkins.ts';
 
 /** The question types a form can hold, from the generated `question_snapshot`. */
 export type AnswerType = FormQuestionType;
 
-type GeneratedSubmission = components['schemas']['ClientProfileFormSubmission'];
+type GeneratedSubmission = FormSubmission;
 
 /** One section of a submitted form's `question_snapshot`, as the API emits it. */
 export type FormSnapshotSection = GeneratedSubmission['question_snapshot'][number];

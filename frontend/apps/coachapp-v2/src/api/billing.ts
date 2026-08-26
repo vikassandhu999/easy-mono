@@ -3,13 +3,15 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 
 import {call, client} from '@/api/client';
 import {billingKeys, clientKeys} from '@/api/keys';
-import type {components} from '@/api/schema';
+import type {Billing, BillingCheckout, BillingCheckoutResult, BillingEvent, paths} from '@/api/schema';
 
-export type BillingEvent = components['schemas']['BillingEvent'];
-export type BillingSummary = components['schemas']['BillingSummary'];
-export type BillingResponse = components['schemas']['BillingResponse'];
-export type BillingCheckoutRequest = components['schemas']['BillingCheckoutRequest'];
-export type BillingCheckoutResponse = components['schemas']['BillingCheckoutResponse'];
+export type {Billing, BillingCheckout, BillingCheckoutResult, BillingEvent};
+export type BillingSummary = Billing;
+export type CheckoutRequest = BillingCheckout;
+export type BillingCheckoutRequest = CheckoutRequest;
+export type BillingResponse = paths['/v1/coach/billing']['get']['responses'][200]['content']['application/json'];
+export type BillingCheckoutResponse =
+  paths['/v1/coach/billing/checkout']['post']['responses'][200]['content']['application/json'];
 export {getSeatLimitError} from './seat-limit-error';
 
 const SYNC_POLL_INTERVAL_MS = 5_000;

@@ -9,7 +9,7 @@ defmodule EasyWeb.TypedRoute.Cast do
   def body(value, ir), do: run(value, ir, :atoms, [])
 
   @spec query(map(), Type.ir() | nil) :: result()
-  def query(_value, nil), do: {:ok, %{}}
+  def query(value, nil), do: empty_or_error(value)
   def query(value, ir), do: run(value, ir, :strings, [])
 
   @spec path(map(), Type.ir() | nil) :: result()

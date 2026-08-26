@@ -14,13 +14,13 @@ defmodule EasyWeb.TypedRoute.Plug do
     controller = conn.private[:phoenix_controller]
     action = conn.private[:phoenix_action]
 
-    if controller && action && function_exported?(controller, :__typed_route__, 1) do
-      case controller.__typed_route__(action) do
-        nil -> conn
-        route -> cast(conn, route)
-      end
+    with true <- is_atom(controller),
+         {:module, _} <- Code.ensure_loaded(controller),
+         true <- function_exported?(controller, :__typed_route__, 1),
+         %{} = route <- controller.__typed_route__(action) do
+      cast(conn, route)
     else
-      conn
+      _ -> conn
     end
   end
 

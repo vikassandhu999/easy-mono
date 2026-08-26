@@ -27,7 +27,7 @@ defmodule EasyWeb.AuthController do
     VerifyRequest
   }
 
-  @allowed_roles ["owner", "coach", "client", "guest"]
+  @allowed_roles [:owner, :coach, :client, :guest]
 
   plug OpenApiSpex.Plug.CastAndValidate,
        [json_render_error_v2: true]

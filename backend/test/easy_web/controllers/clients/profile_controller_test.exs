@@ -1,8 +1,6 @@
 defmodule EasyWeb.Clients.ProfileControllerTest do
   use Easy.ConnCase
 
-  import OpenApiSpex.TestAssertions
-
   describe "GET /v1/client/me" do
     test "returns client profile with coach info" do
       coach = insert(:coach, first_name: "Rajat", last_name: "Jain", phone: "+91 99999 12345")
@@ -16,6 +14,8 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
           first_name: "Vikas",
           last_name: "Kumar",
           phone: "+91 98765 43210",
+          goal_weight_value: Decimal.new("82.5"),
+          goal_weight_unit: :lbs,
           subscription_started_on: ~D[2026-07-01],
           subscription_ends_on: ~D[2026-09-30],
           status: :active
@@ -33,14 +33,28 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
       assert data["first_name"] == "Vikas"
       assert data["last_name"] == "Kumar"
       assert data["phone"] == "+91 98765 43210"
-      assert data["goal_weight_value"] == nil
-      assert data["goal_weight_unit"] == nil
+      assert data["goal_weight_value"] == "82.50"
+      assert data["goal_weight_unit"] == "lbs"
       assert data["default_weight_unit"] == "kg"
       assert data["status"] == "active"
       assert data["subscription_started_on"] == "2026-07-01"
       assert data["subscription_ends_on"] == "2026-09-30"
       refute Map.has_key?(data, "business_id")
-      assert_schema(data, "ClientProfile", EasyWeb.ApiSpec.spec())
+
+      assert Map.keys(data) |> Enum.sort() == [
+               "coach",
+               "default_weight_unit",
+               "email",
+               "first_name",
+               "goal_weight_unit",
+               "goal_weight_value",
+               "id",
+               "last_name",
+               "phone",
+               "status",
+               "subscription_ends_on",
+               "subscription_started_on"
+             ]
 
       assert %{
                "first_name" => "Rajat",
@@ -48,6 +62,8 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
                "phone" => "+91 99999 12345",
                "business_name" => _
              } = data["coach"]
+
+      assert Map.keys(data["coach"]) |> Enum.sort() == ["business_name", "first_name", "last_name", "phone"]
     end
 
     test "returns assigned coach's info when business has multiple coaches" do
@@ -96,6 +112,26 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
 
       assert %{"data" => data} = json_response(conn, 200)
       assert data["coach"] == nil
+    end
+
+    test "returns 422 when query has an extra key" do
+      coach = insert(:coach)
+      user = insert(:user, email_confirmed_at: DateTime.utc_now(:second))
+
+      client =
+        insert(:client,
+          business: coach.business,
+          creator: coach,
+          user: user,
+          status: :active
+        )
+
+      conn =
+        build_conn()
+        |> authenticate_client(client)
+        |> get("/v1/client/me", %{"nope" => "1"})
+
+      assert %{"error_code" => "invalid_input"} = json_response(conn, 422)
     end
 
     test "returns 403 without auth token" do
@@ -202,9 +238,28 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
       assert data["email"] == "original@test.com"
       assert data["status"] == "active"
 
-      # Verify in DB
       reloaded = Easy.Repo.get!(Easy.Clients.Client, client.id)
       assert reloaded.notes == "original notes"
+    end
+
+    test "returns 422 when body has an extra key" do
+      coach = insert(:coach)
+      user = insert(:user, email_confirmed_at: DateTime.utc_now(:second))
+
+      client =
+        insert(:client,
+          business: coach.business,
+          creator: coach,
+          user: user,
+          status: :active
+        )
+
+      conn =
+        build_conn()
+        |> authenticate_client(client)
+        |> patch("/v1/client/me", %{"first_name" => "New", "nope" => true})
+
+      assert %{"error_code" => "invalid_input"} = json_response(conn, 422)
     end
 
     test "returns 403 without auth token" do

@@ -1,8 +1,6 @@
 defmodule EasyWeb.Clients.ConversationControllerTest do
   use Easy.ConnCase
 
-  import OpenApiSpex.TestAssertions
-
   setup do
     coach = insert(:coach)
     client = insert(:client, business: coach.business, creator: coach, user: insert(:user))
@@ -10,11 +8,24 @@ defmodule EasyWeb.Clients.ConversationControllerTest do
     %{conn: conn, coach: coach, client: client}
   end
 
-  test "GET /v1/client/conversation creates lazily", %{conn: conn} do
+  test "GET /v1/client/conversation creates lazily with the shared conversation shape", %{
+    conn: conn,
+    client: client
+  } do
     conn = get(conn, "/v1/client/conversation")
     assert %{"data" => data} = json_response(conn, 200)
     assert data["unread_count"] == 0
-    refute Map.has_key?(data, "client_name")
+
+    assert %{
+             "client_name" => client_name,
+             "last_message_role" => nil,
+             "waiting_since" => nil
+           } = data
+
+    assert client_name == String.trim("#{client.first_name} #{client.last_name}")
+
+    assert Map.keys(data) |> Enum.sort() ==
+             ~w(client_id client_name id inserted_at last_message_at last_message_preview last_message_role unread_count updated_at waiting_since)
   end
 
   test "send + list + read round-trip", %{conn: conn, client: client} do
@@ -23,7 +34,8 @@ defmodule EasyWeb.Clients.ConversationControllerTest do
     assert %{"data" => message = %{"sender_type" => "client", "attachments" => [], "embed" => nil}} =
              json_response(post_conn, 201)
 
-    assert_schema(message, "ChatMessage", EasyWeb.ApiSpec.spec())
+    assert Map.keys(message) |> Enum.sort() ==
+             ~w(attachments body conversation_id embed id inserted_at sender_id sender_type)
 
     list_conn = build_conn() |> authenticate_client(client) |> get("/v1/client/conversation/messages")
     assert %{"data" => [%{"body" => "hi coach"}], "has_more" => false} = json_response(list_conn, 200)
@@ -44,6 +56,14 @@ defmodule EasyWeb.Clients.ConversationControllerTest do
       })
 
     assert json_response(conn, 422)
+  end
+
+  test "rejects unknown message keys and invalid list query values", %{conn: conn} do
+    unknown_body = post(conn, "/v1/client/conversation/messages", %{"body" => "hello", "role" => "coach"})
+    invalid_query = get(conn, "/v1/client/conversation/messages", %{"limit" => "many"})
+
+    assert json_response(unknown_body, 422)
+    assert json_response(invalid_query, 422)
   end
 
   test "lists coach attachment metadata and form submission embeds", %{
@@ -103,7 +123,6 @@ defmodule EasyWeb.Clients.ConversationControllerTest do
     assert assignment_id == assignment.id
     assert title == template.name
     assert submitted_at == DateTime.to_iso8601(submission.submitted_at)
-    assert_schema(hd(response["data"]), "ChatMessage", EasyWeb.ApiSpec.spec())
   end
 
   test "requires authentication" do

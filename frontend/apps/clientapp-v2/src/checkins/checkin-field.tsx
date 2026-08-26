@@ -15,16 +15,17 @@ import {
   ToggleButtonGroup,
 } from '@heroui/react';
 import {useId} from 'react';
-import type {components} from '@/api/schema';
+import type {FormAssignmentAnswer, FormAssignmentSubmit, FormTemplate} from '@/api/schema';
 import PhotoAnswerField, {type PhotoUploadState} from '@/checkins/photo-answer-field';
 
-type TemplateSection = components['schemas']['ClientProfileFormTemplate']['sections'][number];
+type TemplateSection = FormTemplate['sections'][number];
 export type CheckinQuestion = TemplateSection['questions'][number];
-type SubmissionAnswer = components['schemas']['ClientProfileFormSubmissionRequest']['answers'][string];
+type SubmissionAnswer = FormAssignmentSubmit['answers'][string];
+type ServiceAnswer = Extract<FormAssignmentAnswer, {services: Array<string>}>;
 
 export type AnswerValue = SubmissionAnswer | null;
 
-function serviceAnswer(keys: Set<React.Key>): components['schemas']['ClientProfileServiceTypeAnswer'] {
+function serviceAnswer(keys: Set<React.Key>): ServiceAnswer {
   const selected = [...keys].map(String);
   const training = selected.includes('training');
   const nutrition = selected.includes('nutrition');

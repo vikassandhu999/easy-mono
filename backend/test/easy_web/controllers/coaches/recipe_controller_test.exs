@@ -1,8 +1,6 @@
 defmodule EasyWeb.Coaches.RecipeControllerTest do
   use Easy.ConnCase
 
-  import OpenApiSpex.TestAssertions
-
   setup do
     coach = insert(:coach)
 
@@ -20,8 +18,6 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
 
       conn = post(conn, "/v1/coach/nutrition-recipes", attrs)
       assert %{"data" => data} = json_response(conn, 201)
-      assert_schema(data, "Recipe", EasyWeb.ApiSpec.spec())
-
       assert data["name"] == attrs["name"]
       assert data["description"] == attrs["description"]
       assert data["instructions"] == attrs["instructions"]
@@ -58,8 +54,6 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
 
       conn = post(conn, "/v1/coach/nutrition-recipes", attrs)
       assert %{"data" => data} = json_response(conn, 201)
-      assert_schema(data, "Recipe", EasyWeb.ApiSpec.spec())
-
       assert [ingredient] = data["recipe_ingredients"]
       assert ingredient["food_id"] == food.id
       assert ingredient["position"] == 0
@@ -124,8 +118,6 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
 
       conn = get(conn, "/v1/coach/nutrition-recipes/#{recipe.id}")
       assert %{"data" => data} = json_response(conn, 200)
-      assert_schema(data, "Recipe", EasyWeb.ApiSpec.spec())
-
       assert data["id"] == recipe.id
       assert data["name"] == recipe.name
       assert data["revision"] == 1
@@ -185,7 +177,6 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
         })
 
       assert %{"data" => data} = json_response(conn, 200)
-      assert_schema(data, "Recipe", EasyWeb.ApiSpec.spec())
       assert data["name"] == "Updated Recipe"
       assert data["id"] == recipe.id
       assert data["revision"] == 2
@@ -347,6 +338,11 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
       conn = get(conn, "/v1/coach/nutrition-recipes")
       assert %{"data" => [], "count" => 0} = json_response(conn, 200)
     end
+
+    test "rejects unknown query parameters", %{conn: conn} do
+      conn = get(conn, "/v1/coach/nutrition-recipes?unknown=value")
+      assert json_response(conn, 422)
+    end
   end
 
   describe "strict validation" do
@@ -376,8 +372,6 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
 
       conn = post(conn, "/v1/coach/nutrition-recipes/#{recipe.id}/copy")
       assert %{"data" => data} = json_response(conn, 201)
-      assert_schema(data, "Recipe", EasyWeb.ApiSpec.spec())
-
       assert data["name"] == "Original Bowl (Copy)"
       assert data["revision"] == 1
       refute data["id"] == recipe.id
@@ -405,7 +399,6 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
 
       conn = get(conn, "/v1/coach/nutrition-recipes/#{recipe.id}/impact")
       assert %{"data" => data} = json_response(conn, 200)
-      assert_schema(%{"data" => data}, "RecipeImpactResponse", EasyWeb.ApiSpec.spec())
       assert [%{"id" => plan_id, "name" => "Cut"}] = data["templates"]
       assert plan_id == plan.id
       assert data["active_client_plans"] == []

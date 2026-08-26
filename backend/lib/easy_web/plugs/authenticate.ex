@@ -6,7 +6,7 @@ defmodule EasyWeb.Plugs.Authenticate do
   alias Easy.Utils
   alias EasyWeb.FallbackController
 
-  @allowed_roles ["owner", "coach", "client", "guest"]
+  @allowed_roles [:owner, :coach, :client, :guest]
 
   @spec init(term()) :: term()
   def init(opts), do: opts

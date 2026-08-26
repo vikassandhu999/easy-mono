@@ -10,24 +10,31 @@
  */
 import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
+import type {
+  FoodCreate,
+  FoodNutrients,
+  FoodUpdate,
+  RecipeCreate,
+  RecipeIngredientInput,
+  RecipeUpdate,
+} from '@/api/schema';
+
 import {call, client} from './client.ts';
 import {foodKeys, recipeKeys} from './keys.ts';
-import type {components, paths} from './schema.ts';
+import type {paths} from './schema.ts';
 import {omitUndefined} from './shared.ts';
 
 const PAGE_SIZE = 20;
 
-export type Food = components['schemas']['Food'];
-export type FoodRequest = components['schemas']['FoodRequest'];
-export type FoodUpdateRequest = components['schemas']['FoodUpdateRequest'];
-export type FoodServingSize = components['schemas']['FoodServingSize'];
-export type NutrientTotals = components['schemas']['NutrientTotals'];
+export type {Food, FoodServingSize, Recipe, RecipeImpact, RecipeIngredient} from '@/api/schema';
 
-export type Recipe = components['schemas']['Recipe'];
-export type RecipeRequest = components['schemas']['RecipeRequest'];
-export type RecipeUpdateRequest = components['schemas']['RecipeUpdateRequest'];
-export type RecipeIngredient = components['schemas']['RecipeIngredient'];
-export type RecipeIngredientRequest = components['schemas']['RecipeIngredientRequest'];
+export type FoodRequest = FoodCreate;
+export type FoodUpdateRequest = FoodUpdate;
+export type NutrientTotals = FoodNutrients;
+
+export type RecipeRequest = RecipeCreate;
+export type RecipeUpdateRequest = RecipeUpdate;
+export type RecipeIngredientRequest = RecipeIngredientInput;
 
 type ListFoodsQuery = NonNullable<paths['/v1/coach/nutrition-foods']['get']['parameters']['query']>;
 type ListRecipesQuery = NonNullable<paths['/v1/coach/nutrition-recipes']['get']['parameters']['query']>;

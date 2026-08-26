@@ -1,5 +1,11 @@
 import {TRAINING_WEEKDAYS} from '@easy/utils';
-import type {components, paths} from './schema.ts';
+import type {
+  components,
+  paths,
+  TrainingPlanReplacePrescription,
+  TrainingPlanScheduleInput,
+  TrainingPlan as TrainingPlanSchema,
+} from './schema.ts';
 import {omitUndefined} from './shared.ts';
 
 // --- training-session-history ---
@@ -19,7 +25,7 @@ export function coachClientTrainingSessionHistoryRequest(
 
 // --- training-prescription ---
 
-type TrainingPlan = components['schemas']['TrainingPlan'];
+type TrainingPlan = TrainingPlanSchema;
 
 export function planToPrescriptionRequest(plan: TrainingPlan): TrainingPrescriptionReplaceRequest {
   return planToPrescriptionRequestForWeekdays(plan, TRAINING_WEEKDAYS);
@@ -27,9 +33,9 @@ export function planToPrescriptionRequest(plan: TrainingPlan): TrainingPrescript
 
 // --- training-prescription-mapper ---
 
-export type TrainingPrescriptionReplaceRequest = components['schemas']['TrainingPrescriptionReplaceRequest'];
+export type TrainingPrescriptionReplaceRequest = TrainingPlanReplacePrescription;
 
-type TrainingWeekday = components['schemas']['TrainingPrescriptionScheduleEntry']['weekday'];
+type TrainingWeekday = TrainingPlanScheduleInput['weekday'];
 
 const LOCAL_ID_PREFIX = 'local:';
 

@@ -1,13 +1,9 @@
 defmodule Easy.Utils do
   import Ecto.Query, only: [from: 2]
 
-  @spec safe_to_atom(any(), [String.t()]) :: atom() | nil
+  @spec safe_to_atom(any(), [atom()]) :: atom() | nil
   def safe_to_atom(binary, allowed) when is_binary(binary) do
-    if binary in allowed do
-      String.to_existing_atom(binary)
-    end
-  rescue
-    ArgumentError -> nil
+    Enum.find(allowed, &(Atom.to_string(&1) == binary))
   end
 
   def safe_to_atom(_, _), do: nil

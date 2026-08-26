@@ -1,32 +1,16 @@
 defmodule EasyWeb.Coaches.MuscleController do
   use EasyWeb, :controller
-  use OpenApiSpex.ControllerSpecs
+  use EasyWeb.TypedRoute
 
   alias Easy.Training.Library
-  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, TrainingMuscleListResponse}
-  alias OpenApiSpex.Operation
+  alias EasyWeb.Types.Training.Muscle
 
-  tags ["coach muscles"]
-
-  operation :index,
-    summary: "List muscles",
-    description: "Lists muscles for exercise creation, editing, and filtering.",
-    operation_id: "listMuscles",
-    security: [%{"bearerAuth" => []}],
-    parameters: [
-      Operation.parameter(:search, :query, :string, "Case-insensitive muscle name search", required: false)
-    ],
-    responses: [
-      ok: {"Muscles", "application/json", TrainingMuscleListResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
-    ]
+  typed(:index, query: Muscle.list_query(), ok: {200, data([Muscle.t()])})
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def index(conn, params) do
-    search = Map.get(params, "search", "")
-
-    with {:ok, muscles} <- Library.list_muscles(search) do
-      render(conn, :index, muscles: muscles)
+  def index(conn, _params) do
+    with {:ok, muscles} <- Library.list_muscles(conn.query_params["search"]) do
+      ok(conn, %{data: muscles})
     end
   end
 end

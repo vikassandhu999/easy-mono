@@ -4,7 +4,28 @@ import {clientKeys, nutritionDayKeys, nutritionPlanKeys} from './keys.ts';
 import {planToMenuRequest} from './nutrition-menu.ts';
 import {nutritionPlanAssignmentRequest, nutritionPlanPeriodRequest} from './nutrition-plan-lifecycle.ts';
 import {patchQueryData, queryClient} from './query-client.ts';
-import type {components, paths} from './schema.ts';
+import type {
+  Day,
+  NutritionDayOptionItem as NutritionDayOptionItemSchema,
+  NutritionDayPattern as NutritionDayPatternSchema,
+  NutritionDayPatternSlot as NutritionDayPatternSlotSchema,
+  NutritionDayRow as NutritionDayRowSchema,
+  NutritionDaySlot as NutritionDaySlotSchema,
+  NutritionMealItemInput as NutritionMealItemInputSchema,
+  NutritionMealItem as NutritionMealItemSchema,
+  NutritionMealOption as NutritionMealOptionSchema,
+  NutritionMeal as NutritionMealSchema,
+  NutritionPlanAssign,
+  NutritionPlanCreate,
+  NutritionPlan as NutritionPlanSchema,
+  NutritionPlanUpdate,
+  NutritionPortionInput as NutritionPortionInputSchema,
+  NutritionPortion as NutritionPortionSchema,
+  NutritionWeekScheduleInput,
+  NutritionWeekSchedule as NutritionWeekScheduleSchema,
+  paths,
+  Revision,
+} from './schema.ts';
 import {omitUndefined} from './shared.ts';
 import {workbenchMutationTargets} from './workbench-targets.ts';
 
@@ -35,16 +56,16 @@ export {
 
 const PAGE_SIZE = 20;
 
-export type NutritionPlan = components['schemas']['NutritionPlan'];
-export type NutritionPlanCreateRequest = components['schemas']['NutritionPlanCreateRequest'];
-export type NutritionPlanUpdateRequest = components['schemas']['NutritionPlanUpdateRequest'];
-export type NutritionPlanRevisionRequest = components['schemas']['NutritionPlanRevisionRequest'];
-export type NutritionPlanAssignRequest = components['schemas']['NutritionPlanAssignRequest'];
-export type NutritionDay = components['schemas']['NutritionDay'];
-export type NutritionDayRow = components['schemas']['NutritionDayRow'];
-export type NutritionDaySlot = components['schemas']['NutritionDaySlot'];
+export type NutritionPlan = NutritionPlanSchema;
+export type NutritionPlanCreateRequest = NutritionPlanCreate;
+export type NutritionPlanUpdateRequest = NutritionPlanUpdate;
+export type NutritionPlanRevisionRequest = Revision;
+export type NutritionPlanAssignRequest = NutritionPlanAssign;
+export type NutritionDay = Day;
+export type NutritionDayRow = NutritionDayRowSchema;
+export type NutritionDaySlot = NutritionDaySlotSchema;
 export type MealSlot = NutritionDaySlot['meal_slot'];
-export type NutritionDayOptionItem = components['schemas']['NutritionDayOptionItem'];
+export type NutritionDayOptionItem = NutritionDayOptionItemSchema;
 
 type ListNutritionPlansQuery = NonNullable<paths['/v1/coach/nutrition-plans']['get']['parameters']['query']>;
 type ListCoachClientNutritionPlansQuery = NonNullable<
@@ -278,16 +299,16 @@ export function useListCoachNutritionDaysQuery(
  * `src/api/nutrition-plans-list.ts` instead, since it invalidates normally.
  */
 
-export type NutritionDayPattern = components['schemas']['NutritionDayPattern'];
-export type NutritionDayPatternSlot = components['schemas']['NutritionDayPatternSlot'];
-export type NutritionMealOption = components['schemas']['NutritionMealOption'];
-export type NutritionWeekSchedule = components['schemas']['NutritionWeekSchedule'];
-export type NutritionScheduleRequest = components['schemas']['NutritionWeekScheduleInput'];
-export type NutritionMeal = components['schemas']['NutritionMeal'];
-export type NutritionMealItem = components['schemas']['NutritionMealItem'];
-export type NutritionPortion = components['schemas']['NutritionPortion'];
-export type NutritionMealItemInput = components['schemas']['NutritionMealItemInput'];
-export type NutritionPortionInput = components['schemas']['NutritionPortionInput'];
+export type NutritionDayPattern = NutritionDayPatternSchema;
+export type NutritionDayPatternSlot = NutritionDayPatternSlotSchema;
+export type NutritionMealOption = NutritionMealOptionSchema;
+export type NutritionWeekSchedule = NutritionWeekScheduleSchema;
+export type NutritionScheduleRequest = NutritionWeekScheduleInput;
+export type NutritionMeal = NutritionMealSchema;
+export type NutritionMealItem = NutritionMealItemSchema;
+export type NutritionPortion = NutritionPortionSchema;
+export type NutritionMealItemInput = NutritionMealItemInputSchema;
+export type NutritionPortionInput = NutritionPortionInputSchema;
 
 /** Parsed portion — impossible sibling-null states removed at the boundary. */
 export type ParsedNutritionPortion =
@@ -296,7 +317,8 @@ export type ParsedNutritionPortion =
 
 export type NutritionItemRef = {food_id: string; kind: 'food'} | {kind: 'recipe'; recipe_id: string};
 
-type NutritionPlanResponse = components['schemas']['NutritionPlanResponse'];
+type NutritionPlanResponse =
+  paths['/v1/coach/nutrition-plans/{id}']['get']['responses'][200]['content']['application/json'];
 
 /**
  * General-purpose fetch for one nutrition plan.
@@ -378,7 +400,7 @@ export async function replaceMenu(planId: string, plan: NutritionPlan): Promise<
  */
 export async function updatePlanPeriod(
   planId: string,
-  body: Pick<components['schemas']['NutritionPlanUpdateRequest'], 'end_date' | 'start_date'>,
+  body: Pick<NutritionPlanUpdateRequest, 'end_date' | 'start_date'>,
 ): Promise<NutritionPlan> {
   const plan = readPlan(planId);
   if (!plan) {

@@ -1,7 +1,7 @@
-import type {components} from './schema.ts';
+import type {NutritionPlan, NutritionPlanAssign, NutritionPlanUpdate} from './schema.ts';
 import {parseApiError} from './shared.ts';
 
-export type ClientPlanLifecycle = Exclude<components['schemas']['NutritionPlan']['lifecycle'], null>;
+export type ClientPlanLifecycle = Exclude<NutritionPlan['lifecycle'], null>;
 
 const CLIENT_PLAN_LIFECYCLE_LABELS: Record<ClientPlanLifecycle, string> = {
   archived: 'Archived',
@@ -28,8 +28,8 @@ export function nutritionPlanDeleteRequest(plan: RevisionedNutritionPlan) {
   return {id: plan.id, expectedRevision: plan.revision};
 }
 
-type NutritionPlanAssignRequest = components['schemas']['NutritionPlanAssignRequest'];
-type NutritionPlanUpdateRequest = components['schemas']['NutritionPlanUpdateRequest'];
+type NutritionPlanAssignRequest = NutritionPlanAssign;
+type NutritionPlanUpdateRequest = NutritionPlanUpdate;
 
 type Assignment = {
   body: NutritionPlanAssignRequest;

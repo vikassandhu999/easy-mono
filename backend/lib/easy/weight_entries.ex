@@ -11,14 +11,19 @@ defmodule Easy.WeightEntries do
   # ---------------------------------------------------------------------------
 
   @spec list_client_weight_entries(Ctx.t(), keyword()) ::
-          {:ok, %{client: Client.t(), entries: [WeightEntry.t()]}}
+          {:ok, %{client: Client.t(), entries: [WeightEntry.t()], adherence: map()}}
           | {:error, :not_found | :invalid_since}
   def list_client_weight_entries(%Ctx{} = ctx, opts \\ []) do
     since = Keyword.get(opts, :since)
 
     with {:ok, client} <- get_client_account(ctx),
          {:ok, since_date} <- parse_since(since) do
-      {:ok, %{client: client, entries: list_entries(ctx.business_id, client.id, since_date)}}
+      {:ok,
+       %{
+         client: client,
+         entries: list_entries(ctx.business_id, client.id, since_date),
+         adherence: adherence_data(ctx.business_id, client.id, 30)
+       }}
     end
   end
 
@@ -70,16 +75,7 @@ defmodule Easy.WeightEntries do
   def adherence(%Ctx{} = ctx, client_id, opts \\ []) do
     with {:ok, _client} <- get_client_by_id(ctx, client_id) do
       window_days = Keyword.get(opts, :window_days, 30)
-      start_date = Date.add(Date.utc_today(), 1 - window_days)
-
-      logged_days =
-        WeightEntry
-        |> WeightEntry.for_client(ctx.business_id, client_id)
-        |> WeightEntry.since(start_date)
-        |> distinct(:date)
-        |> Repo.aggregate(:count, :id)
-
-      {:ok, %{logged_days: logged_days, window_days: window_days}}
+      {:ok, adherence_data(ctx.business_id, client_id, window_days)}
     end
   end
 
@@ -146,6 +142,19 @@ defmodule Easy.WeightEntries do
     |> maybe_since(since_date)
     |> WeightEntry.oldest()
     |> Repo.all()
+  end
+
+  defp adherence_data(business_id, client_id, window_days) do
+    start_date = Date.add(Date.utc_today(), 1 - window_days)
+
+    logged_days =
+      WeightEntry
+      |> WeightEntry.for_client(business_id, client_id)
+      |> WeightEntry.since(start_date)
+      |> distinct(:date)
+      |> Repo.aggregate(:count, :id)
+
+    %{logged_days: logged_days, window_days: window_days}
   end
 
   defp maybe_since(query, nil), do: query

@@ -1,55 +1,28 @@
 defmodule EasyWeb.Clients.WeightEntryController do
   use EasyWeb, :controller
-  use OpenApiSpex.ControllerSpecs
+  use EasyWeb.TypedRoute
 
   alias Easy.WeightEntries
-  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, WeightEntryListResponse, WeightEntryRequest, WeightEntryResponse}
-  alias OpenApiSpex.Operation
+  alias EasyWeb.Types.{WeightEntry, WeightEntryIndex}
 
-  plug OpenApiSpex.Plug.CastAndValidate,
-       [json_render_error_v2: true] when action in [:create, :delete]
-
-  tags ["client weight entries"]
-
-  operation :index,
-    summary: "List weight entries",
-    operation_id: "listWeightEntries",
-    security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:since, :query, :string, "Only entries since this date", required: false)],
-    responses: [ok: {"Weight entries", "application/json", WeightEntryListResponse}, unauthorized: {"Unauthorized", "application/json", ErrorResponse}]
-
-  operation :create,
-    summary: "Create weight entry",
-    operation_id: "createWeightEntry",
-    security: [%{"bearerAuth" => []}],
-    request_body: {"Weight entry request", "application/json", WeightEntryRequest, required: true},
-    responses: [
-      created: {"Weight entry created", "application/json", WeightEntryResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
-  operation :delete,
-    summary: "Delete weight entry",
-    operation_id: "deleteWeightEntry",
-    security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Weight entry id")],
-    responses: [no_content: "Weight entry deleted", unauthorized: {"Unauthorized", "application/json", ErrorResponse}, not_found: {"Not found", "application/json", ErrorResponse}]
+  typed(:index, query: WeightEntry.list_query(), ok: {200, WeightEntryIndex.t()})
+  typed(:create, body: WeightEntry.create(), ok: {201, data(WeightEntry.t())})
+  typed(:delete, ok: {204, nil})
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def index(conn, params) do
-    with {:ok, %{client: client, entries: entries}} <-
-           WeightEntries.list_client_weight_entries(conn.assigns.ctx, since: params["since"]) do
-      render(conn, :index, entries: entries, client: client)
+  def index(conn, _params) do
+    with {:ok, %{client: client, entries: entries, adherence: adherence}} <-
+           WeightEntries.list_client_weight_entries(conn.assigns.ctx,
+             since: conn.query_params["since"]
+           ) do
+      ok(conn, WeightEntry.index(entries, client, adherence))
     end
   end
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
     with {:ok, entry} <- WeightEntries.upsert_client_weight_entry(conn.assigns.ctx, conn.body_params) do
-      conn
-      |> put_status(:created)
-      |> render(:show, weight_entry: entry)
+      ok(conn, %{data: entry})
     end
   end
 
@@ -58,7 +31,7 @@ defmodule EasyWeb.Clients.WeightEntryController do
     entry_id = conn.path_params["id"]
 
     with {:ok, _deleted} <- WeightEntries.delete_client_weight_entry(conn.assigns.ctx, entry_id) do
-      send_resp(conn, :no_content, "")
+      ok(conn)
     end
   end
 end

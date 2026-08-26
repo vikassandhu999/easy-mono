@@ -48,6 +48,17 @@ defmodule EasyWeb.Coaches.ProfileControllerTest do
       assert is_nil(data["phone"])
     end
 
+    test "rejects unexpected query parameters" do
+      coach = insert(:coach)
+
+      conn =
+        build_conn()
+        |> authenticate_coach(coach)
+        |> get("/v1/coach/me?unexpected=true")
+
+      assert json_response(conn, 422)
+    end
+
     test "returns 403 without auth token" do
       conn = build_conn() |> get("/v1/coach/me")
       assert json_response(conn, 403)
@@ -141,6 +152,18 @@ defmodule EasyWeb.Coaches.ProfileControllerTest do
 
       assert %{"data" => data} = json_response(conn, 200)
       assert data["business"]["name"] == "Original"
+    end
+
+    test "rejects unexpected body fields" do
+      coach = insert(:coach)
+
+      conn =
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> authenticate_coach(coach)
+        |> patch("/v1/coach/me", %{"unexpected" => true})
+
+      assert %{"error_code" => "invalid_input"} = json_response(conn, 422)
     end
 
     test "returns 403 without auth token" do

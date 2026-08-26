@@ -2,14 +2,15 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
 import {profileKeys} from '@/api/keys';
-import type {components} from '@/api/schema';
+import type {CoachProfile as CoachProfileSchema, CoachProfileUpdate, paths} from '@/api/schema';
 
-export type CoachProfileBusiness = components['schemas']['CoachProfileBusiness'];
-export type CoachProfile = components['schemas']['CoachProfile'];
-export type CoachProfileResponse = components['schemas']['CoachProfileResponse'];
-export type UpdateProfileRequest = components['schemas']['CoachProfileUpdateRequest'];
-export type DashboardSetupUpdateRequest = components['schemas']['DashboardSetupUpdateRequest'];
-export type BusinessResponse = components['schemas']['BusinessResponse'];
+export type CoachProfileBusiness = CoachProfileSchema['business'];
+export type CoachProfileResponse = paths['/v1/coach/me']['get']['responses'][200]['content']['application/json'];
+export type UpdateProfileRequest = CoachProfileUpdate;
+export type DashboardSetupUpdateRequest =
+  paths['/v1/businesses/me/dashboard-setup']['patch']['requestBody']['content']['application/json'];
+export type BusinessResponse = paths['/v1/businesses/me']['get']['responses'][200]['content']['application/json'];
+export type {Business, CoachProfile, CoachProfileUpdate} from '@/api/schema';
 
 export function useGetCoachProfileQuery(options?: {enabled?: boolean}) {
   return useQuery({

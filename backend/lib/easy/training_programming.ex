@@ -43,6 +43,7 @@ defmodule Easy.Training.Programming do
         |> TrainingPlan.newest()
         |> Utils.paginate(offset, limit)
         |> TrainingPlan.include_workouts(ctx.business_id)
+        |> TrainingPlan.include_client(ctx.business_id)
         |> Repo.all()
 
       {:ok, %{count: Repo.aggregate(query, :count, :id), templates: templates}}
@@ -90,6 +91,7 @@ defmodule Easy.Training.Programming do
         |> TrainingPlan.newest()
         |> Utils.paginate(offset, limit)
         |> TrainingPlan.include_workouts(ctx.business_id)
+        |> TrainingPlan.include_client(ctx.business_id)
         |> Repo.all()
 
       {:ok, %{count: Repo.aggregate(query, :count, :id), plans: plans}}
@@ -102,6 +104,7 @@ defmodule Easy.Training.Programming do
       ctx
       |> client_plan_query(client_id)
       |> TrainingPlan.include_workouts(ctx.business_id)
+      |> TrainingPlan.include_client(ctx.business_id)
       |> Repo.get(plan_id)
       |> ok_or_not_found()
     end
@@ -124,6 +127,7 @@ defmodule Easy.Training.Programming do
         |> client_plan_query(client_id)
         |> TrainingPlan.covering(client_id, date)
         |> TrainingPlan.include_workouts(ctx.business_id)
+        |> TrainingPlan.include_client(ctx.business_id)
         |> Repo.one()
 
       resolve_coverage_plan(plan, date)

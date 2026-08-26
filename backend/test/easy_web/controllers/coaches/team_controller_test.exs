@@ -1,8 +1,6 @@
 defmodule EasyWeb.Coaches.TeamControllerTest do
   use Easy.ConnCase
 
-  import OpenApiSpex.TestAssertions
-
   setup do
     owner_user = insert(:user)
     business = insert(:business, owner: owner_user)
@@ -35,13 +33,34 @@ defmodule EasyWeb.Coaches.TeamControllerTest do
       assert %{"data" => data} = json_response(conn, 200)
 
       assert length(data) == 2
-      Enum.each(data, &assert_schema(&1, "TeamMember", EasyWeb.ApiSpec.spec()))
 
       owner_row = Enum.find(data, &(&1["id"] == owner_coach.id))
       trainer_row = Enum.find(data, &(&1["id"] == trainer.id))
 
-      assert owner_row["is_owner"] == true
-      assert trainer_row["is_owner"] == false
+      assert owner_row == %{
+               "email" => owner_coach.email,
+               "first_name" => owner_coach.first_name,
+               "id" => owner_coach.id,
+               "invitation_sent_at" => nil,
+               "is_owner" => true,
+               "last_name" => owner_coach.last_name,
+               "status" => "active"
+             }
+
+      assert trainer_row == %{
+               "email" => trainer.email,
+               "first_name" => trainer.first_name,
+               "id" => trainer.id,
+               "invitation_sent_at" => nil,
+               "is_owner" => false,
+               "last_name" => trainer.last_name,
+               "status" => "active"
+             }
+    end
+
+    test "returns 422 for an extra query parameter", %{owner_conn: conn} do
+      conn = get(conn, "/v1/coach/team?unexpected=true")
+      assert json_response(conn, 422)
     end
 
     test "non-owner trainer gets 403", %{trainer_conn: conn} do
@@ -71,8 +90,18 @@ defmodule EasyWeb.Coaches.TeamControllerTest do
       assert %{"error_detail" => %{"fields" => %{"email" => _}}} = json_response(conn, 422)
     end
 
-    test "returns 422 for a badly formatted email (CastAndValidate)", %{owner_conn: conn} do
+    test "returns 422 for a badly formatted email", %{owner_conn: conn} do
       conn = post(conn, "/v1/coach/team/invite", %{"email" => "not-an-email"})
+      assert json_response(conn, 422)
+    end
+
+    test "returns 422 for an extra body field", %{owner_conn: conn} do
+      conn =
+        post(conn, "/v1/coach/team/invite", %{
+          "email" => "new-trainer@test.com",
+          "unexpected" => true
+        })
+
       assert json_response(conn, 422)
     end
   end
@@ -135,7 +164,6 @@ defmodule EasyWeb.Coaches.TeamControllerTest do
       conn = post(conn, "/v1/coach/team/#{inactive.id}/reactivate")
       assert %{"data" => data} = json_response(conn, 200)
       assert data["status"] == "active"
-      assert_schema(data, "TeamMember", EasyWeb.ApiSpec.spec())
 
       updated = Easy.Repo.get!(Easy.Orgs.Coach, inactive.id)
       assert updated.status == :active

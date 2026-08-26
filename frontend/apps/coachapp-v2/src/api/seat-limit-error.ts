@@ -1,8 +1,20 @@
 import {ApiError} from '@easy/utils/api-error';
 import {parseApiErrorBody} from '@easy/utils/parse-api-error';
-import type {components} from './schema.ts';
+import type {Billing} from './schema.ts';
 
-type BillingSummary = components['schemas']['BillingSummary'];
+type SeatLimitBilling = Pick<
+  Billing,
+  | 'available_seats'
+  | 'awaiting_seat_count'
+  | 'current_period_end'
+  | 'free_seats'
+  | 'is_owner'
+  | 'monthly_seat_price_inr'
+  | 'paid_seats'
+  | 'seat_limit'
+  | 'status'
+  | 'used_seats'
+>;
 
 const BILLING_STATUSES = [
   'free',
@@ -10,13 +22,13 @@ const BILLING_STATUSES = [
   'past_due',
   'cancel_at_period_end',
   'cancelled',
-] as const satisfies readonly BillingSummary['status'][];
+] as const satisfies readonly Billing['status'][];
 
-function isBillingStatus(value: unknown): value is BillingSummary['status'] {
-  return typeof value === 'string' && (BILLING_STATUSES as readonly string[]).includes(value);
+function isBillingStatus(value: unknown): value is Billing['status'] {
+  return typeof value === 'string' && BILLING_STATUSES.some((status) => status === value);
 }
 
-function isBillingSummary(value: unknown): value is BillingSummary {
+function isSeatLimitBilling(value: unknown): value is SeatLimitBilling {
   if (!value || typeof value !== 'object') {
     return false;
   }
@@ -45,7 +57,7 @@ function isBillingSummary(value: unknown): value is BillingSummary {
 }
 
 /** Extract the seat summary from a 409 seat_limit_reached error, or null. */
-export function getSeatLimitError(err: unknown): {seatSummary: BillingSummary} | null {
+export function getSeatLimitError(err: unknown): {seatSummary: Billing} | null {
   if (!(err instanceof ApiError) || err.status !== 409) {
     return null;
   }
@@ -57,9 +69,9 @@ export function getSeatLimitError(err: unknown): {seatSummary: BillingSummary} |
 
   const seatSummary =
     err.data && typeof err.data === 'object' && 'seat_summary' in err.data ? err.data.seat_summary : undefined;
-  if (!isBillingSummary(seatSummary)) {
+  if (!isSeatLimitBilling(seatSummary)) {
     return null;
   }
 
-  return {seatSummary};
+  return {seatSummary: {...seatSummary, recent_events: null}};
 }

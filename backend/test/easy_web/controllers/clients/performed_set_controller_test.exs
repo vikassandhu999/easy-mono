@@ -1,8 +1,6 @@
 defmodule EasyWeb.Clients.PerformedSetControllerTest do
   use Easy.ConnCase
 
-  import OpenApiSpex.TestAssertions
-
   alias Easy.Ctx
   alias Easy.Training.Execution
 
@@ -33,7 +31,7 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
           load_unit: "kg"
         })
 
-      assert %{"data" => data} = response = json_response(conn, 201)
+      assert %{"data" => data} = json_response(conn, 201)
       assert data["position"] == 0
       assert data["exercise_id"] == ctx.exercise.id
       assert data["exercise_name"] == "Back Squat"
@@ -41,7 +39,6 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
       assert data["training_session_id"] == ctx.session.id
       refute Map.has_key?(data, "business_id")
       refute Map.has_key?(data, "completed")
-      assert_schema(response, "TrainingPerformedSetResponse", EasyWeb.ApiSpec.spec())
     end
 
     test "logs explicitly named work without a library reference", ctx do
@@ -100,7 +97,6 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
              } = response
 
       assert [first_id, second_id] == [first.id, second.id]
-      assert_schema(response, "ActiveTrainingSessionResponse", EasyWeb.ApiSpec.spec())
     end
   end
 

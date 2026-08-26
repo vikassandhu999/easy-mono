@@ -66,4 +66,5 @@ api-docs: openapi
 # Both apps: openapi-typescript type schema (React Query hooks are hand-written).
 gen-api: openapi
     cd frontend && pnpm --filter coachapp-v2 gen:api && pnpm --filter clientapp-v2 gen:api
+    cd backend && mix typed_routes.gen
     cd frontend && pnpm exec biome check --write apps/coachapp-v2/src/api/schema.ts apps/clientapp-v2/src/api/schema.ts

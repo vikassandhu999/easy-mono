@@ -1,8 +1,6 @@
 defmodule EasyWeb.Coaches.FormAssignmentControllerTest do
   use Easy.ConnCase
 
-  import OpenApiSpex.TestAssertions
-
   setup do
     coach = insert(:coach)
 
@@ -12,6 +10,17 @@ defmodule EasyWeb.Coaches.FormAssignmentControllerTest do
       |> authenticate_coach(coach)
 
     %{conn: conn, coach: coach, business: coach.business}
+  end
+
+  describe "GET /v1/coach/clients/:client_id/form-assignments" do
+    test "rejects unknown query parameters", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, business: business, creator: coach)
+
+      conn = get(conn, "/v1/coach/clients/#{client.id}/form-assignments?unexpected=true")
+
+      assert %{"error_detail" => %{"fields" => %{"$" => ["must be empty"]}}} =
+               json_response(conn, 422)
+    end
   end
 
   describe "POST /v1/coach/clients/:client_id/form-assignments" do
@@ -30,7 +39,21 @@ defmodule EasyWeb.Coaches.FormAssignmentControllerTest do
       assert data["purpose"] == "intake"
       assert data["status"] == "assigned"
       assert data["form_template"]["id"] == template.id
-      assert_schema(data, "ClientProfileFormAssignment", EasyWeb.ApiSpec.spec())
+      assert data["form_template"]["response_count"] == 0
+    end
+
+    test "rejects unknown body fields", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, business: business, creator: coach)
+      template = insert(:form_template, business: business, purpose: :intake)
+
+      conn =
+        post(conn, "/v1/coach/clients/#{client.id}/form-assignments", %{
+          "form_template_id" => template.id,
+          "unexpected" => true
+        })
+
+      assert %{"error_detail" => %{"fields" => %{"unexpected" => ["is unknown"]}}} =
+               json_response(conn, 422)
     end
 
     test "404 for a client in another business", %{conn: conn, business: business} do
@@ -142,8 +165,18 @@ defmodule EasyWeb.Coaches.FormAssignmentControllerTest do
                "duration_ms" => nil
              }
 
-      assert_schema(data, "Attachment", EasyWeb.ApiSpec.spec())
-      assert_schema(submission, "ClientProfileFormSubmission", EasyWeb.ApiSpec.spec())
+      assert submission["form_assignment_id"] == assignment.id
+    end
+
+    test "rejects unknown query parameters", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, business: business, creator: coach, user: insert(:user))
+      template = insert(:form_template, business: business)
+      assignment = insert(:form_assignment, business: business, client: client, form_template: template)
+
+      conn = get(conn, "/v1/coach/form-assignments/#{assignment.id}/submissions?unexpected=true")
+
+      assert %{"error_detail" => %{"fields" => %{"$" => ["must be empty"]}}} =
+               json_response(conn, 422)
     end
 
     test "404 for an assignment in another business", %{conn: conn} do
@@ -244,6 +277,24 @@ defmodule EasyWeb.Coaches.FormAssignmentControllerTest do
 
       assert %{"error_detail" => %{"fields" => %{"email" => ["client has no email address"]}}} =
                json_response(remind_conn, 422)
+    end
+
+    test "rejects request bodies", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, business: business, creator: coach)
+      template = insert(:form_template, business: business, purpose: :intake)
+
+      assignment =
+        insert(:form_assignment,
+          business: business,
+          client: client,
+          form_template: template,
+          purpose: :intake
+        )
+
+      conn = post(conn, "/v1/coach/form-assignments/#{assignment.id}/remind", %{"unexpected" => true})
+
+      assert %{"error_detail" => %{"fields" => %{"$" => ["must be empty"]}}} =
+               json_response(conn, 422)
     end
   end
 end

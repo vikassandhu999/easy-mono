@@ -22,8 +22,9 @@ export type SignupResponse = components['schemas']['SignupResponse'];
 export type TrainerAcceptInviteRequest = components['schemas']['TrainerAcceptInviteRequest'];
 export type TrainerAcceptInviteVerifyRequest = components['schemas']['TrainerAcceptInviteVerifyRequest'];
 export type TrainerInvitationPreviewResponse = components['schemas']['TrainerInvitationPreviewResponse'];
-export type BusinessRequest = components['schemas']['BusinessRequest'];
-export type BusinessResponse = components['schemas']['BusinessResponse'];
+export type BusinessRequest = paths['/v1/businesses']['post']['requestBody']['content']['application/json'];
+export type BusinessResponse = paths['/v1/businesses/me']['get']['responses'][200]['content']['application/json'];
+export type {Business} from '@/api/schema';
 
 export function useVerifyOtpMutation() {
   return useMutation({

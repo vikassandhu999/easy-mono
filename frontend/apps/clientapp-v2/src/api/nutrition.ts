@@ -6,23 +6,36 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from './client.ts';
 import {foodKeys, nutritionDayKeys, recipeKeys} from './keys.ts';
-import type {components, paths} from './schema.ts';
+import type {
+  Day,
+  DayAddExtra,
+  DayLogPlannedItem,
+  DayLogPlannedOption,
+  DayReplacePlannedItem,
+  DaySwitchOption,
+  DayUpdateEntry,
+  NutritionDaySlot as NutritionDaySlotSchema,
+  paths,
+  Revision,
+} from './schema.ts';
 import {getApiErrorCode} from './shared.ts';
 
-export type Food = components['schemas']['Food'];
-export type NutritionDay = components['schemas']['NutritionDay'];
-export type NutritionDayEntry = components['schemas']['NutritionDayEntry'];
-export type NutritionDayOption = components['schemas']['NutritionDayOption'];
-export type NutritionDayOptionItem = components['schemas']['NutritionDayOptionItem'];
-export type NutritionDayRow = components['schemas']['NutritionDayRow'];
-export type NutritionDaySlot = components['schemas']['NutritionDaySlot'];
+export type {
+  Food,
+  NutritionDayEntry,
+  NutritionDayOption,
+  NutritionDayOptionItem,
+  NutritionDayRow,
+  Recipe,
+} from '@/api/schema';
+export type NutritionDay = Day;
+export type NutritionDaySlot = NutritionDaySlotSchema;
 export type DiaryMealSlot = NutritionDaySlot['meal_slot'];
 export type MealSlot = DiaryMealSlot;
-export type Recipe = components['schemas']['Recipe'];
-export type SwitchOptionRequest = components['schemas']['DiarySwitchOptionRequest'];
-export type ReplacePlannedItemRequest = components['schemas']['DiaryReplacePlannedItemRequest'];
-export type UpdateDiaryEntryRequest = components['schemas']['DiaryUpdateEntryRequest'];
-export type DeleteDiaryEntryRequest = components['schemas']['DiaryDeleteEntryRequest'];
+export type SwitchOptionRequest = DaySwitchOption;
+export type ReplacePlannedItemRequest = DayReplacePlannedItem;
+export type UpdateDiaryEntryRequest = DayUpdateEntry;
+export type DeleteDiaryEntryRequest = Revision;
 
 /** Parsed portion — impossible sibling-null states removed at the boundary. */
 export type ParsedNutritionPortion =
@@ -79,9 +92,9 @@ function useInvalidateNutritionDays() {
   };
 }
 
-type AddExtraRequest = components['schemas']['DiaryAddExtraRequest'];
-type LogPlannedItemRequest = components['schemas']['DiaryLogPlannedItemRequest'];
-type LogPlannedOptionRequest = components['schemas']['DiaryLogPlannedOptionRequest'];
+type AddExtraRequest = DayAddExtra;
+type LogPlannedItemRequest = DayLogPlannedItem;
+type LogPlannedOptionRequest = DayLogPlannedOption;
 
 export function useLogPlannedItemMutation() {
   const invalidate = useInvalidateNutritionDays();

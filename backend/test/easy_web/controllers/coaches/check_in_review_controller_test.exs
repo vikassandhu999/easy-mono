@@ -1,10 +1,6 @@
 defmodule EasyWeb.Coaches.CheckInReviewControllerTest do
   use Easy.ConnCase
 
-  import OpenApiSpex.TestAssertions
-
-  alias EasyWeb.ApiSpec
-
   setup do
     coach = insert(:coach)
     client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
@@ -44,13 +40,18 @@ defmodule EasyWeb.Coaches.CheckInReviewControllerTest do
   } do
     conn = get(conn, "/v1/coach/check-ins/review-queue")
 
-    assert %{"count" => 1, "data" => [item]} = response = json_response(conn, 200)
+    assert %{"count" => 1, "data" => [item]} = json_response(conn, 200)
     assert item["id"] == submission.id
     assert item["client"]["id"] == client.id
     assert item["form_assignment"]["id"] == assignment.id
     assert item["form_assignment"]["form_template"]["id"] == template.id
-    assert_schema(item, "ClientProfileReviewQueueItem", ApiSpec.spec())
-    assert_schema(response, "ClientProfileReviewQueueListResponse", ApiSpec.spec())
+  end
+
+  test "rejects unknown review queue query parameters", %{conn: conn} do
+    conn = get(conn, "/v1/coach/check-ins/review-queue?unexpected=true")
+
+    assert %{"error_detail" => %{"fields" => %{"unexpected" => ["is unknown"]}}} =
+             json_response(conn, 422)
   end
 
   test "reviews a submission idempotently", %{conn: conn, submission: submission} do
@@ -59,7 +60,6 @@ defmodule EasyWeb.Coaches.CheckInReviewControllerTest do
     assert %{"data" => reviewed} = json_response(conn, 200)
     assert reviewed["reviewed_at"]
     assert reviewed["reviewed_by_id"]
-    assert_schema(reviewed, "ClientProfileFormSubmission", ApiSpec.spec())
 
     conn = post(recycle(conn), "/v1/coach/form-submissions/#{submission.id}/review", %{})
     assert %{"data" => reviewed_again} = json_response(conn, 200)
@@ -90,11 +90,5 @@ defmodule EasyWeb.Coaches.CheckInReviewControllerTest do
 
     conn = post(conn, "/v1/coach/form-submissions/#{other_submission.id}/review", %{})
     assert json_response(conn, 404)
-  end
-
-  test "OpenAPI contains both review routes" do
-    paths = ApiSpec.spec().paths
-    assert paths["/v1/coach/check-ins/review-queue"]
-    assert paths["/v1/coach/form-submissions/{id}/review"]
   end
 end

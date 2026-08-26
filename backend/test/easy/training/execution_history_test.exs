@@ -1,5 +1,7 @@
 defmodule Easy.Training.ExecutionHistoryTest do
-  use Easy.DataCase, async: true
+  # Query-capture assertions attach to the repository's global telemetry event.
+  # Run this module synchronously so unrelated tests cannot pollute that mailbox.
+  use Easy.DataCase, async: false
 
   alias Easy.Ctx
   alias Easy.Repo

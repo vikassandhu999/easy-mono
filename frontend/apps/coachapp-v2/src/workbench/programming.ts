@@ -1,10 +1,10 @@
-import type {components} from '../api/schema.ts';
+import type {WorkbenchProgrammingReason} from '../api/workbench.ts';
 import {ROUTES} from '../routes.ts';
 
 export type ProgrammingServiceFilter = 'all' | 'nutrition' | 'training';
 export type ProgrammingPriorityId = 'coverage_lapsed' | 'ending_soon' | 'never_programmed';
 
-type ProgrammingReason = components['schemas']['WorkbenchProgrammingReason'];
+type ProgrammingReason = WorkbenchProgrammingReason;
 type ProgrammingItem = {
   client: {id: string};
   reasons: ProgrammingReason[];

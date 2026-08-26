@@ -113,5 +113,14 @@ defmodule EasyWeb.Coaches.ClientWeightEntryControllerTest do
 
       assert json_response(conn, 422)
     end
+
+    test "returns 422 for an unknown query parameter", ctx do
+      conn =
+        get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/weight_entries", %{
+          "unexpected" => "value"
+        })
+
+      assert json_response(conn, 422)
+    end
   end
 end

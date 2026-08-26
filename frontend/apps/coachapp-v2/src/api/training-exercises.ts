@@ -14,17 +14,19 @@ import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack
 
 import {call, client} from '@/api/client';
 import {equipmentKeys, exerciseKeys, muscleKeys} from '@/api/keys';
-import type {components} from '@/api/schema';
+import type {Exercise, ExerciseCopy, ExerciseCreate, ExerciseRelation, ExerciseUpdate, paths} from '@/api/schema';
 import {omitUndefined} from '@/api/shared';
 
 const PAGE_SIZE = 20;
 
-export type TrainingExercise = components['schemas']['TrainingExercise'];
-export type TrainingExerciseRelation = components['schemas']['TrainingExerciseRelation'];
-export type TrainingExerciseCreateRequest = components['schemas']['TrainingExerciseCreateRequest'];
-export type TrainingExerciseUpdateRequest = components['schemas']['TrainingExerciseUpdateRequest'];
-export type TrainingExerciseCopyRequest = components['schemas']['TrainingExerciseCopyRequest'];
-export type TrainingExerciseListResponse = components['schemas']['TrainingExerciseListResponse'];
+export type TrainingExercise = Exercise;
+export type TrainingExerciseRelation = ExerciseRelation;
+export type TrainingExerciseCreateRequest = ExerciseCreate;
+export type TrainingExerciseUpdateRequest = ExerciseUpdate;
+export type TrainingExerciseCopyRequest = ExerciseCopy;
+export type TrainingExerciseListResponse =
+  paths['/v1/coach/training-exercises']['get']['responses'][200]['content']['application/json'];
+export type {Equipment, Muscle} from '@/api/schema';
 
 /** Filter params — offset/limit are handled by the infinite query machinery. */
 export type CoachTrainingExercisesFilters = {

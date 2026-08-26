@@ -2,7 +2,6 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
   use Easy.ConnCase
 
   import Easy.DataCase, only: [trainer_ctx: 1]
-  import OpenApiSpex.TestAssertions
 
   alias Easy.LocalCalendar
   alias Easy.Nutrition.{Programming, WeekSchedule}
@@ -20,6 +19,12 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
   end
 
   describe "GET /v1/client/nutrition-days" do
+    test "rejects unknown query parameters", ctx do
+      conn = get(ctx.conn, "/v1/client/nutrition-days?unexpected=true")
+
+      assert json_response(conn, 422)
+    end
+
     test "returns today's live options without pending or skipped status", ctx do
       food = insert(:food, creator: ctx.coach, business: ctx.business, name: "Oats")
       plan = assign_covering_plan(ctx, food)
@@ -43,7 +48,6 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       assert item["kind"] == "food"
       assert item["planned_item_ref"]
       refute Map.has_key?(item, "meal_item_id")
-      assert_schema(data, "NutritionDay", EasyWeb.ApiSpec.spec())
     end
 
     test "returns an empty successful day when Coverage is missing", ctx do
@@ -86,7 +90,6 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
         })
 
       assert %{"data" => days, "count" => 3} = json_response(conn, 200)
-      assert_schema(json_response(conn, 200), "NutritionDayListResponse", EasyWeb.ApiSpec.spec())
       assert Enum.map(days, & &1["date"]) == ["2026-08-10", "2026-08-11", "2026-08-12"]
       assert hd(days)["applied_timezone"]
       assert hd(days)["summary"]["adherence"] == "none"
@@ -191,7 +194,6 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       assert slot["meal_slot"] == "breakfast"
       assert hd(slot["options"])["meal_name"] == "Breakfast"
       assert Enum.any?(slot["rows"], &(&1["status"] == "added" and &1["entry"]["name"] == "Banana"))
-      assert_schema(data, "NutritionDay", EasyWeb.ApiSpec.spec())
 
       replay =
         ctx.conn
@@ -243,6 +245,23 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       assert json_response(conn, 422)
     end
 
+    test "rejects a malformed idempotency key", ctx do
+      food = insert(:food, creator: ctx.coach, business: ctx.business)
+      today = Date.to_iso8601(local_today(ctx.client))
+
+      conn =
+        ctx.conn
+        |> put_req_header("idempotency-key", "not-a-uuid")
+        |> post("/v1/client/nutrition-days/#{today}/extras", %{
+          "meal_slot" => "breakfast",
+          "food_id" => food.id,
+          "portion" => %{"kind" => "gram", "grams" => 50}
+        })
+
+      assert %{"error_detail" => %{"fields" => %{"Idempotency-Key" => ["must be a UUID"]}}} =
+               json_response(conn, 422)
+    end
+
     test "is not available to coaches", ctx do
       food = insert(:food, creator: ctx.coach, business: ctx.business)
       today = Date.to_iso8601(local_today(ctx.client))
@@ -280,7 +299,6 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       assert %{"data" => data} = json_response(conn, 201)
       [slot] = data["slots"]
       assert Enum.any?(slot["rows"], &(&1["status"] == "as_planned" and &1["entry"]["name"] == "Oats"))
-      assert_schema(data, "NutritionDay", EasyWeb.ApiSpec.spec())
 
       replay =
         ctx.conn
@@ -351,7 +369,6 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
 
       assert %{"data" => data} = json_response(conn, 201)
       assert Enum.all?(hd(data["slots"])["rows"], &(&1["status"] == "as_planned"))
-      assert_schema(data, "NutritionDay", EasyWeb.ApiSpec.spec())
 
       again =
         ctx.conn
@@ -390,7 +407,6 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       assert %{"data" => data} = json_response(conn, 201)
       assert Enum.any?(data["slots"], &(&1["meal_slot"] == "breakfast"))
       assert Enum.all?(hd(data["slots"])["rows"], &(&1["status"] == "as_planned"))
-      assert_schema(data, "NutritionDay", EasyWeb.ApiSpec.spec())
     end
 
     test "rejects a future Nutrition Day", ctx do
@@ -438,7 +454,6 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       assert slot["revision"] == 2
       assert Enum.any?(slot["rows"], &(&1["status"] == "added"))
       assert Enum.any?(slot["rows"], &(&1["status"] == "pending"))
-      assert_schema(data, "NutritionDay", EasyWeb.ApiSpec.spec())
 
       replay =
         ctx.conn
@@ -551,7 +566,6 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       assert swapped["entry"]["portion"]["grams"] == 80.0
       assert swapped["entry"]["nutrients"]["calories"] == 112.0
       assert swapped["entry"]["revision"] == 2
-      assert_schema(data, "NutritionDay", EasyWeb.ApiSpec.spec())
 
       replay =
         ctx.conn
@@ -655,7 +669,6 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       assert corrected["portion"]["grams"] == 40.0
       assert corrected["notes"] == "half"
       assert corrected["revision"] == entry["revision"] + 1
-      assert_schema(updated, "NutritionDay", EasyWeb.ApiSpec.spec())
     end
 
     test "returns conflict for a stale entry revision", ctx do
@@ -731,7 +744,6 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
       assert slot["options"] != []
       refute Enum.any?(slot["rows"], &(&1["entry"] && &1["entry"]["id"] == entry_id))
       assert Enum.any?(slot["rows"], &(&1["status"] == "pending"))
-      assert_schema(remaining, "NutritionDay", EasyWeb.ApiSpec.spec())
     end
   end
 

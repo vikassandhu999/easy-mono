@@ -1,14 +1,15 @@
 defmodule Easy.Training.ExecutionConcurrencyTest do
   use ExUnit.Case, async: false
 
-  import Ecto.Query
   import Ecto.Changeset
+  import Ecto.Query
 
   alias Easy.Clients.Client
+  alias Easy.Ctx
   alias Easy.Identity.User
   alias Easy.Orgs.{Business, Coach}
+  alias Easy.Repo
   alias Easy.Training.{Execution, TrainingSession}
-  alias Easy.{Ctx, Repo}
   alias Ecto.Adapters.SQL.Sandbox
 
   setup do

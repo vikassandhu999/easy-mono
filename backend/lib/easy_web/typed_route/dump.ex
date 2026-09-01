@@ -61,9 +61,9 @@ defmodule EasyWeb.TypedRoute.Dump do
   end
 
   def dump(value, {:union, variants}) do
-    case Enum.find(variants, &matches?(value, &1)) do
-      nil -> dump_scalar(value, hd(variants))
-      variant -> dump(value, variant)
+    case Enum.find_index(variants, &matches?(value, &1)) do
+      nil -> raise ArgumentError, "expected union, got #{inspect(value)}"
+      index -> dump(value, Enum.at(variants, index))
     end
   end
 
@@ -136,7 +136,9 @@ defmodule EasyWeb.TypedRoute.Dump do
     has_key?(map, name) and matches?(fetch(map, name), ir)
   end
 
-  defp record_field_matches?(_map, {_name, :optional, _ir}), do: true
+  defp record_field_matches?(map, {name, :optional, ir}) do
+    not has_key?(map, name) or matches?(fetch(map, name), ir)
+  end
 
   defp match_remote_t?({:remote, _mod, :t}), do: true
   defp match_remote_t?(_), do: false

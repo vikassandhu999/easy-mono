@@ -3,6 +3,8 @@ defmodule EasyWeb.Auth.TokenTest do
 
   import Ecto.Query
 
+  alias Easy.Identity.{OneTimeToken, OneTimeTokens, Users}
+  alias Easy.Repo
   alias EasyWeb.OpenApi.Schemas.{TokenRequest, VerifyRequest}
 
   describe "TokenRequest" do
@@ -115,16 +117,16 @@ defmodule EasyWeb.Auth.TokenTest do
 
   defp confirmed_user_with_otp(otp) do
     user = insert(:user)
-    {:ok, user} = Easy.Identity.Users.confirm_user_email(user)
-    {:ok, _} = Easy.Identity.OneTimeTokens.create_token(user, :authentication, otp)
+    {:ok, user} = Users.confirm_user_email(user)
+    {:ok, _} = OneTimeTokens.create_token(user, :authentication, otp)
     user
   end
 
   defp backdate_tokens(user, minutes: minutes) do
     stale = NaiveDateTime.utc_now() |> NaiveDateTime.add(-minutes * 60) |> NaiveDateTime.truncate(:second)
 
-    Easy.Repo.update_all(
-      from(t in Easy.Identity.OneTimeToken, where: t.user_id == ^user.id),
+    Repo.update_all(
+      from(t in OneTimeToken, where: t.user_id == ^user.id),
       set: [inserted_at: stale]
     )
   end

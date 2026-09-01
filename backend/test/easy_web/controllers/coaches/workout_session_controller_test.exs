@@ -96,7 +96,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
       assert %{"data" => data} = response
 
       assert data["id"] == session.id
-      assert data["client_id"] == client.id
+      refute Map.has_key?(data, "client_id")
       assert is_list(data["performed_sets"])
     end
 

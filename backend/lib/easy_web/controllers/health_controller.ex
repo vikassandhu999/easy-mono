@@ -1,6 +1,5 @@
 defmodule EasyWeb.HealthController do
-  use EasyWeb, :controller
-  use EasyWeb.TypedRoute
+  use EasyWeb, :typed_controller
 
   alias EasyWeb.Types.Health
 

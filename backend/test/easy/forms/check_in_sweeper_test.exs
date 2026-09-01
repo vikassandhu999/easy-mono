@@ -4,9 +4,9 @@ defmodule Easy.Forms.CheckInSweeperTest do
   import Swoosh.TestAssertions
 
   alias Easy.CheckInSweeper
+  alias Easy.Ctx
   alias Easy.Forms
   alias Easy.Forms.FormAssignment
-  alias Easy.Ctx
   alias Easy.Repo
 
   test "sends and stamps one due reminder per occurrence" do

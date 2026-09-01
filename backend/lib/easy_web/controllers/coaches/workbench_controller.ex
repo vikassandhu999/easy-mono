@@ -1,6 +1,5 @@
 defmodule EasyWeb.Coaches.WorkbenchController do
-  use EasyWeb, :controller
-  use EasyWeb.TypedRoute
+  use EasyWeb, :typed_controller
 
   alias Easy.Workbench
   alias EasyWeb.Types.Workbench, as: WorkbenchType

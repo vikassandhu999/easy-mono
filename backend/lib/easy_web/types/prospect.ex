@@ -10,7 +10,7 @@ defmodule EasyWeb.Types.Prospect do
           required(:phone) => String.t() | nil,
           required(:email) => String.t() | nil,
           required(:instagram) => String.t() | nil,
-          required(:answers) => %{String.t() => EasyWeb.Types.json()},
+          required(:answers) => %{String.t() => EasyWeb.TypedRoute.Types.json()},
           required(:status) => :new | :reviewing | :won | :lost,
           required(:notes) => String.t() | nil,
           required(:landing_page_slug) => String.t() | nil,

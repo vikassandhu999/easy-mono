@@ -1,8 +1,8 @@
 defmodule Easy.Nutrition.WeekSchedule do
   use Ecto.Schema
 
-  alias Easy.Orgs
   alias Easy.Nutrition.{DayPattern, Plan}
+  alias Easy.Orgs
 
   import Ecto.Changeset
   import Ecto.Query

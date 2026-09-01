@@ -81,7 +81,6 @@ defmodule EasyWeb.Types.Training.Session do
           required(:state) => :active | :completed | :discarded,
           required(:soreness_rating) => pos_integer() | nil,
           required(:notes) => String.t() | nil,
-          optional(:client_id) => String.t() | nil,
           required(:snapshot_version) => pos_integer() | nil,
           required(:prescription_snapshot) => EasyWeb.Types.Training.SessionPrescriptionSnapshot.t() | nil,
           required(:source_plan_id) => String.t() | nil,
@@ -120,7 +119,6 @@ defmodule EasyWeb.Types.Training.Session do
       state: session.state,
       soreness_rating: session.soreness_rating,
       notes: session.notes,
-      client_id: session.client_id,
       snapshot_version: session.snapshot_version,
       prescription_snapshot: format_snapshot(session.prescription_snapshot),
       source_plan_id: session.source_plan_id,
@@ -151,13 +149,6 @@ defmodule EasyWeb.Types.Training.Session do
         } = session
       ),
       do: session
-
-  @spec client_format(TrainingSession.t()) :: t()
-  def client_format(%TrainingSession{} = session) do
-    session
-    |> format()
-    |> Map.delete(:client_id)
-  end
 
   defp format_snapshot(nil), do: nil
 

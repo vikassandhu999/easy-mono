@@ -1,6 +1,5 @@
 defmodule EasyWeb.Coaches.LandingPageController do
-  use EasyWeb, :controller
-  use EasyWeb.TypedRoute
+  use EasyWeb, :typed_controller
 
   alias Easy.Landing
   alias EasyWeb.Types.LandingPage

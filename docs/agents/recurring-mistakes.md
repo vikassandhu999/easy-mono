@@ -359,6 +359,22 @@ relation for values already loaded. **Enforced by:**
 `test/easy/workbench_query_plan_test.exs` rejects large sequential scans and per-client
 query growth across every Workbench projection.
 
+### RM-029 — Generators and drift checks must not start the application
+Code generation is a compile-time operation. Starting the supervision tree from a generator
+or drift check runs sweepers and external delivery workers against the developer database,
+so a read-looking command can mutate data or send messages. Compile and
+`Application.load/1` only; invoke OpenApiSpex with `--start-app=false`.
+**Enforced by:** `scripts/check-rm.sh` rejects `app.start` in generator Mix tasks and requires
+the no-start flag in `just gen-api`.
+
+### RM-030 — Typed-route mechanics do not know application policy
+The typed-route core parses, casts, checks, dumps, and emits wire types. Authentication
+pipelines, required application plugs, and error response construction belong in the
+application adapter supplied by `EasyWeb, :typed_controller`. Otherwise every new policy
+change edits framework mechanics and makes the generator silently depend on Easy-specific
+names. **Enforced by:** `scripts/check-rm.sh` rejects direct `Easy` application references
+inside `backend/lib/easy_web/typed_route.ex` and `backend/lib/easy_web/typed_route/`.
+
 ---
 
 ## Frontend

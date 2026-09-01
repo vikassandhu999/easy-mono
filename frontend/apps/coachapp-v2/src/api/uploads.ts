@@ -9,7 +9,6 @@ import {useMutation} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
 import type {
-  Attachment,
   LibraryMedia,
   LibraryMediaCreate,
   paths,

@@ -1,6 +1,5 @@
 defmodule EasyWeb.Coaches.LibraryMediaController do
-  use EasyWeb, :controller
-  use EasyWeb.TypedRoute
+  use EasyWeb, :typed_controller
 
   alias Easy.LibraryMedia, as: LibraryMediaContext
   alias EasyWeb.Types.LibraryMedia

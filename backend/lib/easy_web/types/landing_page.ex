@@ -123,7 +123,7 @@ defmodule EasyWeb.Types.LandingPage do
           optional(:email) => String.t() | nil,
           optional(:instagram) => String.t() | nil,
           optional(:landing_program_id) => String.t() | nil,
-          optional(:answers) => %{String.t() => EasyWeb.Types.json()}
+          optional(:answers) => %{String.t() => EasyWeb.TypedRoute.Types.json()}
         }
 
   @type application_result :: %{

@@ -1,13 +1,16 @@
 defmodule EasyWeb.OpenApiSpecCacheTest do
   use ExUnit.Case, async: true
 
+  alias EasyWeb.ApiSpec
+  alias OpenApiSpex.Plug.{Cache, NoneCache}
+
   test "test env keeps the OpenAPI spec cache" do
-    refute OpenApiSpex.Plug.Cache.adapter() == OpenApiSpex.Plug.NoneCache
+    refute Cache.adapter() == NoneCache
   end
 
   test "NoneCache does not retain a spec" do
-    spec = EasyWeb.ApiSpec.spec()
-    :ok = OpenApiSpex.Plug.NoneCache.put(EasyWeb.ApiSpec, {spec, %{}})
-    assert OpenApiSpex.Plug.NoneCache.get(EasyWeb.ApiSpec) == nil
+    spec = ApiSpec.spec()
+    :ok = NoneCache.put(ApiSpec, {spec, %{}})
+    assert NoneCache.get(ApiSpec) == nil
   end
 end

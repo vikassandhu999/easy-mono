@@ -55,7 +55,7 @@ deploy:
 
 # regenerate the OpenAPI spec from the backend and split it per app
 openapi:
-    cd backend && mix openapi.spec.json --spec EasyWeb.ApiSpec --pretty=true ../frontend/openapi/easy-openapi.json
+    cd backend && mix openapi.spec.json --start-app=false --spec EasyWeb.ApiSpec --pretty=true ../frontend/openapi/easy-openapi.json
     node frontend/scripts/split-openapi.mjs
 
 # browse the coach API in Scalar (http://localhost:4444) — edit index.html's data-url for client.openapi.json

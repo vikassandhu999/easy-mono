@@ -4,6 +4,6 @@ defmodule EasyWeb.Types.ErrorResponse do
   @type t :: %{
           required(:error_code) => String.t(),
           required(:error_message) => String.t(),
-          optional(:error_detail) => EasyWeb.Types.json() | nil
+          optional(:error_detail) => EasyWeb.TypedRoute.Types.json() | nil
         }
 end

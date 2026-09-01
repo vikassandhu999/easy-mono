@@ -29,6 +29,7 @@ const day = {
               planned_item_ref: 'opaque-ref-1',
               portion: {amount: null, grams: 50, kind: 'gram', label: null, unit: null},
               position: 0,
+              recipe_id: null,
             },
           ],
           meal_id: 'meal-1',
@@ -49,7 +50,7 @@ const day = {
     logged: {...nutrients, calories: null},
     planned: nutrients,
   },
-  targets: {calories: 2000},
+  targets: {calories: 2000, carbs_g: null, fat_g: null, fiber_g: null, protein_g: null},
   write_eligible: true,
 } satisfies NutritionDay;
 

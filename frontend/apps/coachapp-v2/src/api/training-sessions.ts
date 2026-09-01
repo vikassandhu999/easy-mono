@@ -1,6 +1,5 @@
 import {TRAINING_WEEKDAYS} from '@easy/utils';
 import type {
-  components,
   paths,
   TrainingPlanReplacePrescription,
   TrainingPlanScheduleInput,
@@ -61,7 +60,10 @@ export function planToPrescriptionRequestForWeekdays(
         ...identity(element.id),
         exercise_id: element.exercise_id,
         position: element.position,
-        prescribed_sets: element.planned_sets,
+        prescribed_sets: element.planned_sets.map(({rpe, ...set}) => ({
+          ...set,
+          rpe: decimalNumber(rpe),
+        })),
       })),
     })),
     schedule: weekdays.map((weekday) => {
@@ -69,6 +71,18 @@ export function planToPrescriptionRequestForWeekdays(
       return workoutId ? {weekday, ...scheduleIdentity(workoutId)} : {weekday};
     }),
   };
+}
+
+function decimalNumber(value: string | null): number | null {
+  if (value === null) {
+    return null;
+  }
+
+  const number = Number(value);
+  if (!Number.isFinite(number)) {
+    throw new Error(`Invalid decimal value: ${value}`);
+  }
+  return number;
 }
 
 function identity(id: string): {id: string} | {local_ref: string} {

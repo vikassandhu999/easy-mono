@@ -12,7 +12,7 @@ export type ExerciseGroup = {
   sets: TrainingPerformedSet[];
 };
 
-export function formatLoad(value: null | number, unit: null | string): string {
+export function formatLoad(value: null | number | string, unit: null | string): string {
   if (value == null) {
     return '';
   }

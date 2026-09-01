@@ -1,6 +1,5 @@
 defmodule EasyWeb.BusinessController do
-  use EasyWeb, :controller
-  use EasyWeb.TypedRoute
+  use EasyWeb, :typed_controller
 
   alias Easy.Orgs
   alias EasyWeb.Types.Business

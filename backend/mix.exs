@@ -71,10 +71,20 @@ defmodule Easy.MixProject do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
-      # credo runs advisory in precommit (--mute-exit-status) so legacy debt doesn't
-      # block the gate; `mix check` is the strict, failing convention pass.
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "credo --mute-exit-status", "test"],
-      check: ["format --check-formatted", "compile --warnings-as-errors", "credo --strict"]
+      precommit: [
+        "compile --warnings-as-errors",
+        "deps.unlock --unused",
+        "format",
+        "typed_routes.gen --check",
+        "credo --strict",
+        "test"
+      ],
+      check: [
+        "format --check-formatted",
+        "compile --warnings-as-errors",
+        "typed_routes.gen --check",
+        "credo --strict"
+      ]
     ]
   end
 

@@ -14,8 +14,8 @@ defmodule EasyWeb.TypedRoute.SchemaMerge do
 
   @spec current?(String.t(), String.t(), String.t()) :: boolean()
   def current?(source, types_ts, paths_ts) do
-    current_block?(source, @types_start, types_ts) and
-      current_block?(source, @paths_start, paths_ts)
+    current_block?(source, @types_start, @types_end, types_ts) and
+      current_block?(source, @paths_start, @paths_end, paths_ts)
   end
 
   @spec strip(String.t()) :: String.t()
@@ -52,13 +52,31 @@ defmodule EasyWeb.TypedRoute.SchemaMerge do
     String.replace(source, ~r/export interface paths \{\n*/, "export interface paths {" <> block <> "\n", global: false)
   end
 
-  defp current_block?(source, marker, content) do
+  defp current_block?(source, start_marker, end_marker, content) do
     if String.trim(content) == "" do
-      not String.contains?(source, marker)
+      not String.contains?(source, start_marker)
     else
-      String.contains?(source, marker <> "\n" <> hash_comment(content)) or
-        String.contains?(source, marker <> "\n  " <> hash_comment(content))
+      pattern =
+        ~r/#{Regex.escape(start_marker)}\s*(.*?)\s*#{Regex.escape(end_marker)}/s
+
+      case Regex.run(pattern, source, capture: :all_but_first) do
+        [block] -> normalize(block_without_hash(block)) == normalize(content)
+        _ -> false
+      end
     end
+  end
+
+  defp block_without_hash(block) do
+    String.replace(block, ~r/^\s*\/\* typed-routes:hash [0-9a-f]+ \*\/\s*/, "")
+  end
+
+  defp normalize(content) do
+    content
+    |> String.replace("\"", "'")
+    |> String.replace(~r/[\s;]/, "")
+    |> String.replace(",", "")
+    |> String.replace(":|", ":")
+    |> String.replace("=|", "=")
   end
 
   defp hash_comment(content) do

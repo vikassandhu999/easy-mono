@@ -1,6 +1,5 @@
 defmodule EasyWeb.Clients.WorkoutSessionController do
-  use EasyWeb, :controller
-  use EasyWeb.TypedRoute
+  use EasyWeb, :typed_controller
 
   alias Easy.Training.Execution
   alias EasyWeb.Types.Training.Session
@@ -17,7 +16,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
   def index(conn, _params) do
     with {:ok, %{sessions: sessions, count: count}} <-
            Execution.list_client_sessions(conn.assigns.ctx, history_opts(conn.query_params)) do
-      ok(conn, %{data: Enum.map(sessions, &Session.client_format/1), count: count})
+      ok(conn, %{data: sessions, count: count})
     end
   end
 
@@ -27,14 +26,14 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
     attrs = Map.delete(conn.body_params, :training_workout_id)
 
     with {:ok, session} <- Execution.start_client_session(conn.assigns.ctx, workout_id, attrs) do
-      ok(conn, %{data: Session.client_format(session)})
+      ok(conn, %{data: session})
     end
   end
 
   @spec active(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def active(conn, _params) do
     with {:ok, session} <- Execution.get_client_active_session(conn.assigns.ctx) do
-      ok(conn, %{data: client_session(session)})
+      ok(conn, %{data: session})
     end
   end
 
@@ -43,7 +42,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
     id = conn.path_params["id"]
 
     with {:ok, session} <- Execution.get_client_session(conn.assigns.ctx, id) do
-      ok(conn, %{data: Session.client_format(session)})
+      ok(conn, %{data: session})
     end
   end
 
@@ -52,7 +51,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
     id = conn.path_params["id"]
 
     with {:ok, updated} <- Execution.update_client_session(conn.assigns.ctx, id, conn.body_params) do
-      ok(conn, %{data: Session.client_format(updated)})
+      ok(conn, %{data: updated})
     end
   end
 
@@ -61,7 +60,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
     id = conn.path_params["id"]
 
     with {:ok, session} <- Execution.complete_client_session(conn.assigns.ctx, id, conn.body_params) do
-      ok(conn, %{data: Session.client_format(session)})
+      ok(conn, %{data: session})
     end
   end
 
@@ -70,12 +69,9 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
     id = conn.path_params["id"]
 
     with {:ok, session} <- Execution.discard_client_session(conn.assigns.ctx, id) do
-      ok(conn, %{data: Session.client_format(session)})
+      ok(conn, %{data: session})
     end
   end
-
-  defp client_session(nil), do: nil
-  defp client_session(session), do: Session.client_format(session)
 
   defp history_opts(query) do
     [

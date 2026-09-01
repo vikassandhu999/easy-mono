@@ -24,6 +24,13 @@ defmodule EasyWeb do
     end
   end
 
+  def typed_controller do
+    quote do
+      use EasyWeb, :controller
+      use EasyWeb.TypedRoute, adapter: EasyWeb.TypedRouteAdapter
+    end
+  end
+
   def verified_routes do
     quote do
       use Phoenix.VerifiedRoutes,

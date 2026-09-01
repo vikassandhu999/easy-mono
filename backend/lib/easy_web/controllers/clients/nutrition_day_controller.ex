@@ -1,6 +1,5 @@
 defmodule EasyWeb.Clients.NutritionDayController do
-  use EasyWeb, :controller
-  use EasyWeb.TypedRoute
+  use EasyWeb, :typed_controller
 
   alias Easy.Nutrition.Diary
   alias Easy.Utils

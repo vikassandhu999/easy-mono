@@ -1,6 +1,5 @@
 defmodule EasyWeb.Coaches.ProfileController do
-  use EasyWeb, :controller
-  use EasyWeb.TypedRoute
+  use EasyWeb, :typed_controller
 
   alias Easy.Coaches
   alias EasyWeb.Types.CoachProfile

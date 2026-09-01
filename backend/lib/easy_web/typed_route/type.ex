@@ -34,14 +34,15 @@ defmodule EasyWeb.TypedRoute.Type do
   @spec from_beam!(module(), atom()) :: ir()
   def from_beam!(module, name) do
     key = {__MODULE__, module, name}
+    version = {module.module_info(:md5), __MODULE__.module_info(:md5)}
 
     case :persistent_term.get(key, :__miss__) do
-      :__miss__ ->
-        ir = load_from_beam!(module, name)
-        :persistent_term.put(key, ir)
+      {^version, ir} ->
         ir
 
-      ir ->
+      _stale_or_missing ->
+        ir = load_from_beam!(module, name)
+        :persistent_term.put(key, {version, ir})
         ir
     end
   end
@@ -78,19 +79,19 @@ defmodule EasyWeb.TypedRoute.Type do
   defp normalize({:data, _, [inner]}, path), do: data(normalize(inner, path ++ ["data"]))
   defp normalize({:page, _, [inner]}, path), do: page(normalize(inner, path ++ ["page"]))
 
-  defp normalize({{:., _, [{:__aliases__, _, [:EasyWeb, :Types]}, :data]}, _, [inner]}, path) do
+  defp normalize({{:., _, [{:__aliases__, _, [:EasyWeb, :TypedRoute, :Types]}, :data]}, _, [inner]}, path) do
     data(normalize(inner, path ++ ["data"]))
   end
 
-  defp normalize({{:., _, [EasyWeb.Types, :data]}, _, [inner]}, path) do
+  defp normalize({{:., _, [EasyWeb.TypedRoute.Types, :data]}, _, [inner]}, path) do
     data(normalize(inner, path ++ ["data"]))
   end
 
-  defp normalize({{:., _, [{:__aliases__, _, [:EasyWeb, :Types]}, :page]}, _, [inner]}, path) do
+  defp normalize({{:., _, [{:__aliases__, _, [:EasyWeb, :TypedRoute, :Types]}, :page]}, _, [inner]}, path) do
     page(normalize(inner, path ++ ["page"]))
   end
 
-  defp normalize({{:., _, [EasyWeb.Types, :page]}, _, [inner]}, path) do
+  defp normalize({{:., _, [EasyWeb.TypedRoute.Types, :page]}, _, [inner]}, path) do
     page(normalize(inner, path ++ ["page"]))
   end
 
@@ -107,9 +108,9 @@ defmodule EasyWeb.TypedRoute.Type do
   end
 
   defp normalize({:json, _, []}, _path), do: :json
-  defp normalize({{:., _, [EasyWeb.Types, :json]}, _, []}, _path), do: :json
+  defp normalize({{:., _, [EasyWeb.TypedRoute.Types, :json]}, _, []}, _path), do: :json
 
-  defp normalize({{:., _, [{:__aliases__, _, [:EasyWeb, :Types]}, :json]}, _, []}, _path), do: :json
+  defp normalize({{:., _, [{:__aliases__, _, [:EasyWeb, :TypedRoute, :Types]}, :json]}, _, []}, _path), do: :json
 
   defp normalize({:non_neg_integer, _, []}, _path), do: :non_neg_integer
   defp normalize({:pos_integer, _, []}, _path), do: :pos_integer
@@ -141,7 +142,7 @@ defmodule EasyWeb.TypedRoute.Type do
       not_wire_module?(mod) ->
         raise ArgumentError, "illegal wire type #{format_path(path)}: #{inspect(mod)}.#{name}()"
 
-      name == :json and mod == EasyWeb.Types ->
+      name == :json and mod == EasyWeb.TypedRoute.Types ->
         :json
 
       true ->

@@ -1,8 +1,8 @@
 defmodule Easy.Foods.CategoryFilterTest do
   use Easy.SchemaCase
 
-  alias Easy.Nutrition.Library
   alias Easy.Nutrition.Food
+  alias Easy.Nutrition.Library
   alias Easy.Repo
 
   # `category` is a free-form string on `foods`, so the FO toolbar's options come

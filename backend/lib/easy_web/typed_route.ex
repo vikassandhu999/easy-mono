@@ -1,11 +1,14 @@
 defmodule EasyWeb.TypedRoute do
   alias EasyWeb.TypedRoute.{Check, Dump, Type}
 
-  defmacro __using__(_opts) do
+  defmacro __using__(opts) do
+    adapter = opts |> Keyword.fetch!(:adapter) |> Macro.expand(__CALLER__)
+
     quote do
       import EasyWeb.TypedRoute, only: [typed: 2, ok: 1, ok: 2]
-      plug EasyWeb.TypedRoute.Plug
+      plug EasyWeb.TypedRoute.Plug, adapter: unquote(adapter)
       @typed_routes %{}
+      @typed_route_adapter unquote(adapter)
       @before_compile EasyWeb.TypedRoute
     end
   end
@@ -20,6 +23,9 @@ defmodule EasyWeb.TypedRoute do
 
   defmacro __before_compile__(env) do
     routes = env.module |> Module.get_attribute(:typed_routes) |> List.wrap() |> List.first() || %{}
+    plugs = Module.get_attribute(env.module, :plugs) || []
+    adapter = Module.get_attribute(env.module, :typed_route_adapter)
+    routes = adapter.enrich_routes(routes, plugs, env)
     source = File.read!(env.file)
     reject_openapi!(env.module, env)
     reject_forbidden!(source, env)
@@ -28,6 +34,9 @@ defmodule EasyWeb.TypedRoute do
     quote do
       @spec __typed_route__(atom()) :: map() | nil
       def __typed_route__(action), do: Map.get(unquote(Macro.escape(routes)), action)
+
+      @spec __typed_route_adapter__() :: module()
+      def __typed_route_adapter__, do: unquote(adapter)
     end
   end
 
@@ -46,7 +55,7 @@ defmodule EasyWeb.TypedRoute do
   def ok(conn, payload) do
     {status, ir} = route!(conn).ok
     formatted = Dump.dump(payload, ir)
-    if check?(), do: Check.assert!(formatted, ir)
+    Check.assert!(formatted, ir)
 
     conn
     |> Plug.Conn.put_resp_content_type("application/json")
@@ -86,10 +95,6 @@ defmodule EasyWeb.TypedRoute do
       raise ArgumentError, "#{inspect(controller)} has no type #{action}"
   end
 
-  @check Mix.env() != :prod
-
-  defp check?, do: @check
-
   defp reject_openapi!(module, env) do
     if Module.defines?(module, {:open_api_operation, 1}) do
       raise CompileError,
@@ -109,7 +114,7 @@ defmodule EasyWeb.TypedRoute do
   end
 
   defp reject_untyped_actions!(module, routes, env) do
-    skip = MapSet.new([:action, :call, :init, :__typed_route__])
+    skip = MapSet.new([:action, :call, :init, :__typed_route__, :__typed_route_adapter__])
 
     missing =
       module

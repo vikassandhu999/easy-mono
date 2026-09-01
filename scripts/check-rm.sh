@@ -30,6 +30,29 @@ if [ -n "$hits" ]; then
   fail=1
 fi
 
+# RM-029 — generators are read/compile operations. Starting the supervision tree
+# can run sweepers or external delivery workers against a developer database.
+hits=$(rg -n 'Mix\.Task\.run\("app\.start"\)' backend/lib/mix/tasks -g '*gen*.ex' 2>/dev/null)
+if [ -n "$hits" ]; then
+  echo "FAIL RM-029 — generator starts the application (see docs/agents/recurring-mistakes.md)"
+  echo "$hits" | head -10
+  fail=1
+fi
+if ! rg -q 'openapi\.spec\.json --start-app=false' Justfile; then
+  echo "FAIL RM-029 — just gen-api must pass --start-app=false (see docs/agents/recurring-mistakes.md)"
+  fail=1
+fi
+
+# RM-030 — the adapter is the only seam where typed routes learn Easy-specific
+# plugs, errors, pipelines, or domain modules.
+hits=$(rg -n --pcre2 'Easy\.|EasyWeb\.(?!TypedRoute\b)' \
+  backend/lib/easy_web/typed_route.ex backend/lib/easy_web/typed_route 2>/dev/null)
+if [ -n "$hits" ]; then
+  echo "FAIL RM-030 — typed-route core references application policy (see docs/agents/recurring-mistakes.md)"
+  echo "$hits" | head -10
+  fail=1
+fi
+
 # Hardcoded app paths rot into dead links on any route rename. Static paths use
 # ROUTES.X; parameterized ones use generatePath(ROUTES.X, params). The api layer
 # is unaffected (its paths start with /v1 and never sit in navigate/to/backticks

@@ -54,7 +54,14 @@ defmodule Easy.Clients.ListPlanNamesTest do
       coach: coach,
       client: client
     } do
-      insert(:plan, business: business, creator: coach, client: client, name: "Fat loss", status: :active, start_date: Date.utc_today())
+      insert(:plan,
+        business: business,
+        creator: coach,
+        client: client,
+        name: "Fat loss",
+        status: :active,
+        start_date: Date.utc_today()
+      )
 
       assert {:ok, %{clients: [listed]}} = Clients.list_clients(owner_ctx(business), include_plans: true)
       assert listed.training_plan_name == nil

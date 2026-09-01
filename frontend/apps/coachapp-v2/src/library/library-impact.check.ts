@@ -2,7 +2,7 @@ import {hasLibraryUsage, libraryInUseMessage, normalizeLibraryImpact} from './li
 
 const foodImpact = {
   recipes: [{id: 'recipe-1', name: 'Lassi'}],
-  templates: [{id: 'plan-1', name: 'Cut'}],
+  templates: [{client_id: null, id: 'plan-1', name: 'Cut'}],
   active_client_plans: [{id: 'plan-2', name: 'Client Cut', client_id: 'client-1'}],
 };
 
@@ -23,7 +23,7 @@ if (hasLibraryUsage(empty)) {
 }
 
 const recipeOnly = normalizeLibraryImpact({
-  templates: [{id: 'plan-3', name: 'Old Cut'}],
+  templates: [{client_id: null, id: 'plan-3', name: 'Old Cut'}],
   active_client_plans: [],
 });
 if (recipeOnly.recipes.length !== 0 || recipeOnly.templates[0]?.name !== 'Old Cut') {

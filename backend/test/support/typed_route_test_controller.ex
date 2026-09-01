@@ -1,6 +1,5 @@
 defmodule EasyWeb.TypedRouteTestController do
-  use EasyWeb, :controller
-  use EasyWeb.TypedRoute
+  use EasyWeb, :typed_controller
 
   alias EasyWeb.Types.TypedItem
 

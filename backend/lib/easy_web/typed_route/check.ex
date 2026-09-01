@@ -98,7 +98,9 @@ defmodule EasyWeb.TypedRoute.Check do
     has_key?(map, name) and fits?(fetch(map, name), ir)
   end
 
-  defp record_field_fits?(_map, {_name, :optional, _ir}), do: true
+  defp record_field_fits?(map, {name, :optional, ir}) do
+    not has_key?(map, name) or fits?(fetch(map, name), ir)
+  end
 
   defp has_key?(map, name), do: Map.has_key?(map, name) or Map.has_key?(map, Atom.to_string(name))
 

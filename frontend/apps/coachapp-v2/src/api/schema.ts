@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 8f5d48f349cc365a9c34869bf0b17cccf64129bd895084395d8dc5c8eb0f562c */
+/* typed-routes:hash c1867482dd5523b3f0c3e7c2c96f26bd032d5a68c62cd78d5157d8d7f3edbd1f */
 export type Attachment = {
   id: string;
   content_type:
@@ -1022,7 +1022,6 @@ export type Session = {
   state: 'active' | 'completed' | 'discarded';
   soreness_rating: number | null;
   notes: string | null;
-  client_id?: string | null;
   snapshot_version: number | null;
   prescription_snapshot: SessionPrescriptionSnapshot | null;
   source_plan_id: string | null;
@@ -1311,7 +1310,7 @@ export type WorkbenchSnooze = {queue: 'quiet' | 'expiring'; snoozed_until: strin
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash a0491e1439ee8e3a93e988a0d4a10ee0820e577eaab7ab3057fd507f2b8af766 */
+  /* typed-routes:hash e4dff5b32664bf8aba8da74238ee8a26ab985073edf06fad2ce8047091d6d9f6 */
   '/api/health': {
     get: {
       parameters: {
@@ -1329,7 +1328,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -1343,7 +1342,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -1354,7 +1353,7 @@ export interface paths {
     patch: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -1368,7 +1367,7 @@ export interface paths {
     patch: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -1382,7 +1381,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -1396,7 +1395,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -1409,7 +1408,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -1422,7 +1421,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -1436,7 +1435,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -1449,7 +1448,7 @@ export interface paths {
     delete: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1460,7 +1459,7 @@ export interface paths {
     patch: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1474,7 +1473,7 @@ export interface paths {
     get: {
       parameters: {
         query?: CheckInReviewListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -1487,7 +1486,7 @@ export interface paths {
     get: {
       parameters: {
         query?: ClientListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -1500,7 +1499,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -1514,7 +1513,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {client_id: string};
         cookie?: never;
       };
@@ -1525,7 +1524,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {client_id: string};
         cookie?: never;
       };
@@ -1539,7 +1538,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {client_id: string};
         cookie?: never;
       };
@@ -1552,7 +1551,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {client_id: string};
         cookie?: never;
       };
@@ -1563,7 +1562,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {client_id: string};
         cookie?: never;
       };
@@ -1577,7 +1576,7 @@ export interface paths {
     get: {
       parameters: {
         query?: DayListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path: {client_id: string};
         cookie?: never;
       };
@@ -1590,7 +1589,7 @@ export interface paths {
     get: {
       parameters: {
         query?: NutritionPlanClientListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path: {client_id: string};
         cookie?: never;
       };
@@ -1603,7 +1602,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {client_id: string; id: string};
         cookie?: never;
       };
@@ -1617,7 +1616,7 @@ export interface paths {
     get: {
       parameters: {
         query?: TrainingPlanClientScopedListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path: {client_id: string};
         cookie?: never;
       };
@@ -1630,7 +1629,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {client_id: string; id: string};
         cookie?: never;
       };
@@ -1644,7 +1643,7 @@ export interface paths {
     get: {
       parameters: {
         query?: SessionListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path: {client_id: string};
         cookie?: never;
       };
@@ -1657,7 +1656,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {client_id: string; id: string};
         cookie?: never;
       };
@@ -1670,7 +1669,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {client_id: string};
         cookie?: never;
       };
@@ -1684,7 +1683,7 @@ export interface paths {
     get: {
       parameters: {
         query?: WeightEntryListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path: {client_id: string};
         cookie?: never;
       };
@@ -1697,7 +1696,7 @@ export interface paths {
     delete: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1708,7 +1707,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1719,7 +1718,7 @@ export interface paths {
     patch: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1733,7 +1732,7 @@ export interface paths {
     put: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1747,7 +1746,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1761,7 +1760,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1774,7 +1773,7 @@ export interface paths {
     get: {
       parameters: {
         query?: ConversationListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -1787,7 +1786,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1800,7 +1799,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1814,7 +1813,7 @@ export interface paths {
     get: {
       parameters: {
         query?: ChatMessageListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1825,7 +1824,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1839,7 +1838,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1852,7 +1851,7 @@ export interface paths {
     patch: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1866,7 +1865,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1879,7 +1878,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1892,7 +1891,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1905,7 +1904,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -1916,7 +1915,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -1930,7 +1929,7 @@ export interface paths {
     delete: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1941,7 +1940,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1952,7 +1951,7 @@ export interface paths {
     patch: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1966,7 +1965,7 @@ export interface paths {
     delete: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1977,7 +1976,7 @@ export interface paths {
     put: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -1990,7 +1989,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2001,7 +2000,7 @@ export interface paths {
     put: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2015,7 +2014,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2029,7 +2028,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2040,7 +2039,7 @@ export interface paths {
     patch: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2054,7 +2053,7 @@ export interface paths {
     get: {
       parameters: {
         query?: FoodListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2065,7 +2064,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2079,7 +2078,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2092,7 +2091,7 @@ export interface paths {
     delete: {
       parameters: {
         query: Revision;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2103,7 +2102,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2114,7 +2113,7 @@ export interface paths {
     patch: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2128,7 +2127,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2141,7 +2140,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2154,7 +2153,7 @@ export interface paths {
     get: {
       parameters: {
         query?: NutritionPlanListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2165,7 +2164,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2179,7 +2178,7 @@ export interface paths {
     delete: {
       parameters: {
         query: Revision;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2190,7 +2189,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2201,7 +2200,7 @@ export interface paths {
     patch: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2215,7 +2214,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2229,7 +2228,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2243,7 +2242,7 @@ export interface paths {
     put: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2257,7 +2256,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2271,7 +2270,7 @@ export interface paths {
     get: {
       parameters: {
         query?: RecipeListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2282,7 +2281,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2296,7 +2295,7 @@ export interface paths {
     delete: {
       parameters: {
         query: Revision;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2307,7 +2306,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2318,7 +2317,7 @@ export interface paths {
     patch: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2332,7 +2331,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2345,7 +2344,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2358,7 +2357,7 @@ export interface paths {
     get: {
       parameters: {
         query?: ProspectListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2371,7 +2370,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2382,7 +2381,7 @@ export interface paths {
     patch: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2396,7 +2395,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2410,7 +2409,7 @@ export interface paths {
     get: {
       parameters: {
         query?: TeamMemberListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2423,7 +2422,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2437,7 +2436,7 @@ export interface paths {
     delete: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2450,7 +2449,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2463,7 +2462,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2476,7 +2475,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2489,7 +2488,7 @@ export interface paths {
     get: {
       parameters: {
         query?: EquipmentListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2502,7 +2501,7 @@ export interface paths {
     get: {
       parameters: {
         query?: ExerciseListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2513,7 +2512,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2527,7 +2526,7 @@ export interface paths {
     delete: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2538,7 +2537,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2549,7 +2548,7 @@ export interface paths {
     patch: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2563,7 +2562,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2577,7 +2576,7 @@ export interface paths {
     get: {
       parameters: {
         query?: MuscleListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2590,7 +2589,7 @@ export interface paths {
     get: {
       parameters: {
         query?: TrainingPlanListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2601,7 +2600,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2615,7 +2614,7 @@ export interface paths {
     delete: {
       parameters: {
         query: Revision;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2626,7 +2625,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2637,7 +2636,7 @@ export interface paths {
     patch: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2651,7 +2650,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2665,7 +2664,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2678,7 +2677,7 @@ export interface paths {
     put: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2692,7 +2691,7 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
@@ -2706,7 +2705,7 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2719,7 +2718,7 @@ export interface paths {
     get: {
       parameters: {
         query?: WorkbenchListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2732,7 +2731,7 @@ export interface paths {
     get: {
       parameters: {
         query?: WorkbenchListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2745,7 +2744,7 @@ export interface paths {
     get: {
       parameters: {
         query?: WorkbenchListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2758,7 +2757,7 @@ export interface paths {
     get: {
       parameters: {
         query?: WorkbenchProgrammingQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2771,7 +2770,7 @@ export interface paths {
     get: {
       parameters: {
         query?: WorkbenchListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
@@ -2784,7 +2783,7 @@ export interface paths {
     get: {
       parameters: {
         query?: WorkbenchListQuery;
-        header?: never;
+        header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };

@@ -1,6 +1,5 @@
 defmodule EasyWeb.Clients.TrainingPlanController do
-  use EasyWeb, :controller
-  use EasyWeb.TypedRoute
+  use EasyWeb, :typed_controller
 
   alias Easy.Training.Programming
   alias EasyWeb.Types.{TrainingPlan, TrainingPlanCoverage}
@@ -18,7 +17,7 @@ defmodule EasyWeb.Clients.TrainingPlanController do
     date = Map.get(conn.query_params, "date", Date.utc_today())
 
     with {:ok, coverage} <- Programming.resolve_client_coverage(conn.assigns.ctx, date) do
-      ok(conn, %{data: TrainingPlanCoverage.format(coverage)})
+      ok(conn, %{data: coverage})
     end
   end
 

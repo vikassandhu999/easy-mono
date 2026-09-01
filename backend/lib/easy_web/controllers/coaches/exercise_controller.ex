@@ -1,6 +1,5 @@
 defmodule EasyWeb.Coaches.ExerciseController do
-  use EasyWeb, :controller
-  use EasyWeb.TypedRoute
+  use EasyWeb, :typed_controller
 
   alias Easy.Training.Library
   alias EasyWeb.Types.Training.Exercise

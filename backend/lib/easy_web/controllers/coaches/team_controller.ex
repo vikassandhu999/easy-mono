@@ -1,6 +1,5 @@
 defmodule EasyWeb.Coaches.TeamController do
-  use EasyWeb, :controller
-  use EasyWeb.TypedRoute
+  use EasyWeb, :typed_controller
 
   alias Easy.Coaches
   alias EasyWeb.Types.TeamMember

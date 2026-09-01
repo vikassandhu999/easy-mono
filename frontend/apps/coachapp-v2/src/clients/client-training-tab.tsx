@@ -84,7 +84,7 @@ export function TrainingTab({client}: {client: Client}) {
     const scheduledDays = Object.values(plan.schedule).filter(Boolean).length;
 
     return [
-      clientPlanLifecycleLabel(plan.lifecycle),
+      plan.lifecycle ? clientPlanLifecycleLabel(plan.lifecycle) : null,
       plan.start_date ? `Started ${formatDayMonth(plan.start_date)}` : null,
       scheduledDays ? `${scheduledDays} days a week` : null,
     ]

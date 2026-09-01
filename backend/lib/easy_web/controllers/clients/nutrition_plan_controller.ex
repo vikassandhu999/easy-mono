@@ -1,6 +1,5 @@
 defmodule EasyWeb.Clients.NutritionPlanController do
-  use EasyWeb, :controller
-  use EasyWeb.TypedRoute
+  use EasyWeb, :typed_controller
 
   alias Easy.Nutrition.Programming
   alias EasyWeb.Types.NutritionPlan

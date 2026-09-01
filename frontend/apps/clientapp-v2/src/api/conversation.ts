@@ -3,7 +3,7 @@ import {type InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClie
 import {call, client} from '@/api/client';
 import {conversationKeys} from '@/api/keys';
 import {patchQueryData, queryClient} from '@/api/query-client';
-import type {ChatMessage, ChatMessageClientCreate, ChatMessagePage, Conversation} from '@/api/schema';
+import type {ChatMessage, ChatMessageClientCreate, ChatMessagePage} from '@/api/schema';
 
 export {parseChatMessage} from '@/api/parse-chat-message';
 export type {ChatMessage, Conversation} from '@/api/schema';

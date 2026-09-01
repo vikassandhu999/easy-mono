@@ -1,6 +1,5 @@
 defmodule EasyWeb.Coaches.ClientWeightEntryController do
-  use EasyWeb, :controller
-  use EasyWeb.TypedRoute
+  use EasyWeb, :typed_controller
 
   alias Easy.WeightEntries
   alias EasyWeb.Types.{WeightEntry, WeightEntryIndex}

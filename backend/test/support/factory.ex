@@ -23,13 +23,13 @@ defmodule Easy.Factory do
   alias Easy.Nutrition.RecipeIngredient
   alias Easy.Orgs.Business
   alias Easy.Orgs.Coach
+  alias Easy.Training.PrescribedExercise
   alias Easy.Training.TrainingEquipment
   alias Easy.Training.TrainingExercise
   alias Easy.Training.TrainingMuscle
-  alias Easy.Training.TrainingPlan
   alias Easy.Training.TrainingPerformedSet
+  alias Easy.Training.TrainingPlan
   alias Easy.Training.TrainingSession
-  alias Easy.Training.PrescribedExercise
   alias Easy.Training.TrainingWorkout, as: Workout
   alias Easy.Training.WorkoutSchedule
 

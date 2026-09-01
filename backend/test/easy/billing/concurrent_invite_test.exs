@@ -11,11 +11,13 @@ defmodule Easy.Billing.ConcurrentInviteTest do
   import Easy.Factory
 
   alias Easy.Billing.{BusinessBilling, Event}
+  alias Easy.Clients
   alias Easy.Clients.Client
+  alias Easy.Ctx
   alias Easy.Forms.{FormAssignment, FormTemplate}
-  alias Easy.Orgs.{Business, Coach}
-  alias Easy.{Clients, Ctx, Repo}
   alias Easy.Identity.User
+  alias Easy.Orgs.{Business, Coach}
+  alias Easy.Repo
   alias Ecto.Adapters.SQL.Sandbox
 
   setup do

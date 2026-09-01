@@ -1,6 +1,5 @@
 defmodule EasyWeb.Clients.ConversationController do
-  use EasyWeb, :controller
-  use EasyWeb.TypedRoute
+  use EasyWeb, :typed_controller
 
   alias Easy.Chat
   alias EasyWeb.Types.{ChatMessage, ChatMessagePage, Conversation}

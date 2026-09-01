@@ -1,7 +1,7 @@
 import {useMutation} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
-import type {Attachment, ChatMessageEmbed, UploadCreate, UploadDownload, UploadDownloadUrls} from '@/api/schema';
+import type {UploadCreate, UploadDownload, UploadDownloadUrls} from '@/api/schema';
 
 export type {
   Attachment,

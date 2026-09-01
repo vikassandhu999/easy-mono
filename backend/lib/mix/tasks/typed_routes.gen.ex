@@ -1,11 +1,9 @@
 defmodule Mix.Tasks.TypedRoutes.Gen do
   use Mix.Task
 
-  alias EasyWeb.TypedRoute.{Emit, SchemaMerge, Type}
+  alias EasyWeb.TypedRoute.{Emit, Generator, SchemaMerge, Type}
 
   @shortdoc "Generate TypeScript from typed routes"
-
-  @excluded [OpenApiSpex.Plug.RenderSpec, OpenApiSpex.Plug.SwaggerUI, EasyWeb.WebhookController]
 
   @apps [
     %{
@@ -22,7 +20,8 @@ defmodule Mix.Tasks.TypedRoutes.Gen do
 
   @impl Mix.Task
   def run(args) do
-    Mix.Task.run("app.start")
+    Mix.Task.run("compile")
+    Application.load(:easy)
     routes = typed_router_entries()
     assert_unique_segments!()
 
@@ -41,7 +40,7 @@ defmodule Mix.Tasks.TypedRoutes.Gen do
   end
 
   defp sync_app(app, routes, check?) do
-    entries = Enum.filter(routes, fn {route, _} -> prefix?(route, app.prefixes) end)
+    entries = Enum.filter(routes, fn {route, _, _} -> prefix?(route, app.prefixes) end)
     path = schema_path(app.file)
     source = File.read!(path)
     {types, paths} = fragments(entries)
@@ -71,16 +70,27 @@ defmodule Mix.Tasks.TypedRoutes.Gen do
 
   defp typed_router_entries do
     EasyWeb.Router.__routes__()
-    |> Enum.reject(&(&1.plug in @excluded))
     |> Enum.filter(&typed_plug?/1)
     |> Enum.map(fn route ->
-      {route, route.plug.__typed_route__(route.plug_opts)}
+      route = with_pipeline(route)
+      typed = route.plug.__typed_route__(route.plug_opts)
+      headers = route.plug.__typed_route_adapter__().headers(route, typed)
+      Generator.validate!(route, typed)
+      {route, typed, headers}
     end)
+  end
+
+  defp with_pipeline(route) do
+    path = Regex.replace(~r/:([A-Za-z0-9_]+)/, route.path, "typed-route")
+    method = route.verb |> to_string() |> String.upcase()
+    %{pipe_through: pipeline} = Phoenix.Router.route_info(EasyWeb.Router, method, path, "localhost")
+    Map.put(route, :pipe_through, pipeline)
   end
 
   defp typed_plug?(route) do
     Code.ensure_loaded?(route.plug) and
       function_exported?(route.plug, :__typed_route__, 1) and
+      function_exported?(route.plug, :__typed_route_adapter__, 0) and
       is_map(route.plug.__typed_route__(route.plug_opts))
   end
 
@@ -120,7 +130,7 @@ defmodule Mix.Tasks.TypedRoutes.Gen do
 
   defp fragments(entries) do
     named =
-      Enum.reduce(entries, %{}, fn {_route, typed}, acc ->
+      Enum.reduce(entries, %{}, fn {_route, typed, _headers}, acc ->
         acc
         |> merge_named(typed.body)
         |> merge_named(typed.query)
@@ -136,7 +146,7 @@ defmodule Mix.Tasks.TypedRoutes.Gen do
 
   defp grouped_paths_ts(entries, named) do
     entries
-    |> Enum.group_by(fn {route, _} -> Emit.path_template(route.path) end)
+    |> Enum.group_by(fn {route, _, _} -> Emit.path_template(route.path) end)
     |> Enum.sort_by(fn {path, _} -> path end)
     |> Enum.map_join(",\n", &path_object(&1, named))
   end
@@ -144,13 +154,13 @@ defmodule Mix.Tasks.TypedRoutes.Gen do
   defp path_object({path, group}, named) do
     methods =
       group
-      |> Enum.sort_by(fn {route, _} -> method_name(route.verb) end)
+      |> Enum.sort_by(fn {route, _, _} -> method_name(route.verb) end)
       |> Enum.map_join(",\n", fn entry -> indent(method_entry(entry, named), 2) end)
 
     "'#{path}': {\n#{methods}\n}"
   end
 
-  defp method_entry({route, typed}, named) do
+  defp method_entry({route, typed, headers}, named) do
     method = method_name(route.verb)
     {status, ok_ir} = typed.ok
 
@@ -158,7 +168,7 @@ defmodule Mix.Tasks.TypedRoutes.Gen do
     #{method}: {
       parameters: {
         #{query_line(typed.query, named)}
-        header?: never;
+        #{header_line(headers)}
         #{path_line(route.path, typed.path, named)}
         cookie?: never;
       };
@@ -171,6 +181,23 @@ defmodule Mix.Tasks.TypedRoutes.Gen do
   end
 
   defp method_name(verb), do: verb |> to_string() |> String.downcase()
+
+  defp header_line([]), do: "header?: never;"
+
+  defp header_line(headers) do
+    fields = Enum.map_join(headers, "; ", &header_field/1)
+    optional = if Enum.any?(headers, & &1.required?), do: "", else: "?"
+    "header#{optional}: { #{fields} };"
+  end
+
+  defp header_field(%{name: name, required?: required?}) do
+    optional = if required?, do: "", else: "?"
+    "#{header_name(name)}#{optional}: string"
+  end
+
+  defp header_name(name) do
+    if Regex.match?(~r/^[A-Za-z_$][A-Za-z0-9_$]*$/, name), do: name, else: "'#{name}'"
+  end
 
   defp query_line(nil, _named), do: "query?: never;"
 

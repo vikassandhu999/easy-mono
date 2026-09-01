@@ -6,11 +6,11 @@ defmodule EasyWeb.TypedRoute.Cast do
   @spec body(term(), Type.ir() | nil) :: result()
   def body(nil, nil), do: {:ok, %{}}
   def body(value, nil), do: empty_or_error(value)
-  def body(value, ir), do: run(value, ir, :atoms, [])
+  def body(value, ir), do: run(value, ir, :body, [])
 
   @spec query(map(), Type.ir() | nil) :: result()
   def query(value, nil), do: empty_or_error(value)
-  def query(value, ir), do: run(value, ir, :strings, [])
+  def query(value, ir), do: run(value, ir, :query, [])
 
   @spec path(map(), Type.ir() | nil) :: result()
   def path(value, nil), do: {:ok, value || %{}}
@@ -26,54 +26,66 @@ defmodule EasyWeb.TypedRoute.Cast do
     {:error, %{"$" => ["must be empty"]}}
   end
 
-  defp empty_or_error(_value), do: {:ok, %{}}
+  defp empty_or_error(_value), do: {:error, %{"$" => ["must be empty"]}}
 
-  defp run(value, {:remote, mod, name}, keys, path) do
-    run(value, Type.fetch!(mod, name), keys, path)
+  defp run(value, {:remote, mod, name}, source, path) do
+    run(value, Type.fetch!(mod, name), source, path)
   end
 
-  defp run(value, {:union, variants}, keys, path) do
+  defp run(value, {:union, variants}, source, path) do
     Enum.reduce_while(variants, {:error, %{join(path) => ["is invalid"]}}, fn variant, _acc ->
-      case run(value, variant, keys, path) do
+      case run(value, variant, source, path) do
         {:ok, _} = ok -> {:halt, ok}
         {:error, _} -> {:cont, {:error, %{join(path) => ["is invalid"]}}}
       end
     end)
   end
 
-  defp run(list, {:list, inner}, keys, path) when is_list(list) do
-    list
-    |> Enum.with_index()
-    |> Enum.reduce_while({:ok, []}, fn {item, idx}, {:ok, acc} ->
-      case run(item, inner, keys, path ++ [Integer.to_string(idx)]) do
-        {:ok, coerced} -> {:cont, {:ok, acc ++ [coerced]}}
-        {:error, _} = err -> {:halt, err}
-      end
-    end)
-  end
+  defp run(list, {:list, inner}, source, path) when is_list(list) do
+    result =
+      list
+      |> Enum.with_index()
+      |> Enum.reduce_while({:ok, []}, fn {item, idx}, {:ok, acc} ->
+        case run(item, inner, source, path ++ [Integer.to_string(idx)]) do
+          {:ok, coerced} -> {:cont, {:ok, [coerced | acc]}}
+          {:error, _} = err -> {:halt, err}
+        end
+      end)
 
-  defp run(value, {:list, inner}, keys, path) do
-    run([value], {:list, inner}, keys, path)
-  end
-
-  defp run(map, {:record, fields}, keys, path) when is_map(map) do
-    with :ok <- reject_unknown(map, fields, keys, path) do
-      Enum.reduce_while(fields, {:ok, %{}}, &cast_record_field(&1, &2, map, keys, path))
+    case result do
+      {:ok, reversed} -> {:ok, Enum.reverse(reversed)}
+      {:error, _} = err -> err
     end
   end
 
-  defp run(map, {:dict, inner}, keys, path) when is_map(map) do
+  defp run(value, {:list, inner}, :query, path) do
+    run([value], {:list, inner}, :query, path)
+  end
+
+  defp run(_value, {:list, _inner}, _source, path) do
+    {:error, %{join(path) => ["is invalid"]}}
+  end
+
+  defp run(map, {:record, fields}, source, path) when is_map(map) do
+    keys = key_style(source)
+
+    with :ok <- reject_unknown(map, fields, keys, path) do
+      Enum.reduce_while(fields, {:ok, %{}}, &cast_record_field(&1, &2, map, source, path))
+    end
+  end
+
+  defp run(map, {:dict, inner}, source, path) when is_map(map) do
     Enum.reduce_while(map, {:ok, %{}}, fn {k, v}, {:ok, acc} ->
       key = to_string(k)
 
-      case run(v, inner, keys, path ++ [key]) do
+      case run(v, inner, source, path ++ [key]) do
         {:ok, coerced} -> {:cont, {:ok, Map.put(acc, key, coerced)}}
         {:error, _} = err -> {:halt, err}
       end
     end)
   end
 
-  defp run(value, ir, _keys, path), do: coerce(value, ir, path)
+  defp run(value, ir, _source, path), do: coerce(value, ir, path)
 
   defp cast_path_field({name, req, ir}, {:ok, acc}) do
     key = Atom.to_string(name)
@@ -81,15 +93,25 @@ defmodule EasyWeb.TypedRoute.Cast do
     case {Map.get(acc, key), req} do
       {nil, :optional} -> {:cont, {:ok, acc}}
       {nil, :required} -> {:halt, {:error, %{key => ["is required"]}}}
-      {raw, _} -> put_coerced(acc, key, run(raw, ir, :strings, [key]))
+      {raw, _} -> put_coerced(acc, key, run(raw, ir, :path, [key]))
     end
   end
 
-  defp cast_record_field({name, req, ir}, {:ok, acc}, map, keys, path) do
+  defp cast_record_field({name, req, ir}, {:ok, acc}, map, source, path) do
     case {lookup(map, name), req} do
-      {:__missing__, :optional} -> {:cont, {:ok, acc}}
-      {:__missing__, :required} -> {:halt, {:error, %{join(path ++ [Atom.to_string(name)]) => ["is required"]}}}
-      {raw, _} -> put_coerced_key(acc, name, run(raw, ir, keys, path ++ [Atom.to_string(name)]), keys)
+      {:__missing__, :optional} ->
+        {:cont, {:ok, acc}}
+
+      {:__missing__, :required} ->
+        {:halt, {:error, %{join(path ++ [Atom.to_string(name)]) => ["is required"]}}}
+
+      {raw, _} ->
+        put_coerced_key(
+          acc,
+          name,
+          run(raw, ir, source, path ++ [Atom.to_string(name)]),
+          key_style(source)
+        )
     end
   end
 
@@ -140,6 +162,9 @@ defmodule EasyWeb.TypedRoute.Cast do
 
   defp put_key(acc, name, value, :atoms), do: Map.put(acc, name, value)
   defp put_key(acc, name, value, :strings), do: Map.put(acc, Atom.to_string(name), value)
+
+  defp key_style(:body), do: :atoms
+  defp key_style(source) when source in [:query, :path], do: :strings
 
   defp coerce(value, :json, _path), do: {:ok, value}
   defp coerce(nil, nil, _path), do: {:ok, nil}

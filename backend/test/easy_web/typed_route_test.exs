@@ -1,11 +1,14 @@
 defmodule EasyWeb.TypedRouteTest do
   use Easy.ConnCase, async: true
 
+  alias EasyWeb.Clients.NutritionDayController
   alias EasyWeb.Plugs.Idempotency
   alias EasyWeb.TypedRoute
-  alias EasyWeb.TypedRoute.{Cast, Check, Dump, Emit, SchemaMerge, Type}
+  alias EasyWeb.TypedRoute.{Cast, Check, Dump, Emit, Generator, SchemaMerge, Type}
+  alias EasyWeb.TypedRouteAdapter, as: RouteAdapter
   alias EasyWeb.TypedRouteTestController, as: Controller
   alias EasyWeb.Types.{TypedComputed, TypedDictionary, TypedItem, TypedStructComputed}
+  alias Phoenix.Router.Route
 
   defmodule Item do
     defstruct [:id, :name]
@@ -48,6 +51,19 @@ defmodule EasyWeb.TypedRouteTest do
     ir = TypedItem.__wire_type__(:list_query)
     assert {:ok, %{"offset" => 0, "limit" => 20}} = Cast.query(%{"offset" => "0", "limit" => "20"}, ir)
     assert {:error, %{"limit" => ["is invalid"]}} = Cast.query(%{"limit" => "0"}, ir)
+  end
+
+  test "caster accepts scalar list values only for repeated query parameters" do
+    assert {:ok, %{"tag" => ["one"]}} =
+             Cast.query(%{"tag" => "one"}, {:record, [{:tag, :required, {:list, :string}}]})
+
+    assert {:error, %{"$" => ["is invalid"]}} = Cast.body("one", {:list, :string})
+    assert {:ok, ["one", "two"]} = Cast.body(["one", "two"], {:list, :string})
+  end
+
+  test "caster rejects non-object payloads when an action declares no body" do
+    assert {:error, %{"$" => ["must be empty"]}} = Cast.body([], nil)
+    assert {:error, %{"$" => ["must be empty"]}} = Cast.body("ignored", nil)
   end
 
   test "caster rejects query keys when an action declares no query" do
@@ -93,6 +109,7 @@ defmodule EasyWeb.TypedRouteTest do
     ir = Type.expand(quote(do: %{required(:value) => Decimal.t()} | nil), __ENV__)
 
     assert Dump.dump(%{value: Decimal.new("88.00")}, ir) == %{value: "88.00"}
+    assert Dump.dump(nil, ir) == nil
   end
 
   test "dump and checker select a closed record union by its required discriminator" do
@@ -147,6 +164,20 @@ defmodule EasyWeb.TypedRouteTest do
            }
   end
 
+  test "dump fails closed when no union variant matches" do
+    ir =
+      Type.expand(
+        quote do
+          %{required(:kind) => :safe, required(:public) => String.t()} | nil
+        end,
+        __ENV__
+      )
+
+    assert_raise ArgumentError, ~r/expected union/, fn ->
+      Dump.dump(%{kind: :wrong, secret: "must not escape"}, ir)
+    end
+  end
+
   test "checker accepts encoded scalar values in nullable unions" do
     for {value, ir} <- [
           {"2026-01-02T03:04:05Z", {:union, [:datetime, nil]}},
@@ -198,7 +229,7 @@ defmodule EasyWeb.TypedRouteTest do
     assert again == merged
   end
 
-  test "schema merge drift check survives formatting but detects content changes" do
+  test "schema merge drift check survives formatting but detects edits inside generated blocks" do
     source = "export interface paths {\n}\n"
     types = "export type Health = { status: string };"
     paths = "'/api/health': { get: unknown }"
@@ -207,14 +238,47 @@ defmodule EasyWeb.TypedRouteTest do
     formatted = String.replace(merged, "{ status: string }", "{\n  status: string;\n}")
 
     assert SchemaMerge.current?(formatted, types, paths)
+    refute SchemaMerge.current?(String.replace(formatted, "status", "state"), types, paths)
     refute SchemaMerge.current?(formatted, types <> "\nexport type Extra = string;", paths)
+  end
+
+  test "typed controller records idempotency requirements for generation" do
+    assert NutritionDayController.__typed_route_adapter__() == RouteAdapter
+    assert :idempotency in NutritionDayController.__typed_route__(:add_extra).headers
+    assert NutritionDayController.__typed_route__(:index).headers == []
+  end
+
+  test "application adapter derives authentication and idempotency headers" do
+    route = %Route{pipe_through: [:require_client]}
+
+    assert RouteAdapter.headers(route, %{headers: [:idempotency]}) == [
+             %{name: "Authorization", required?: false},
+             %{name: "Idempotency-Key", required?: true}
+           ]
+
+    assert RouteAdapter.headers(%{route | pipe_through: [:api]}, %{headers: []}) == []
+  end
+
+  test "generator rejects bodies on GET routes and unknown path overrides" do
+    get = %Phoenix.Router.Route{verb: :get, path: "/things/:id"}
+
+    assert_raise ArgumentError, ~r/cannot declare a typed body/, fn ->
+      Generator.validate!(get, %{body: :string, path: nil})
+    end
+
+    assert_raise ArgumentError, ~r/not segments/, fn ->
+      Generator.validate!(%{get | verb: :post}, %{
+        body: nil,
+        path: {:record, [{:missing, :required, :string}]}
+      })
+    end
   end
 
   test "create action casts body, formats, and returns 201" do
     conn =
       :create
       |> typed_conn(%{"name" => "soup"})
-      |> TypedRoute.Plug.call([])
+      |> TypedRoute.Plug.call(RouteAdapter)
       |> Controller.create(%{})
 
     assert conn.status == 201
@@ -225,7 +289,7 @@ defmodule EasyWeb.TypedRouteTest do
     conn =
       :create
       |> typed_conn(%{"name" => "soup", "extra" => true})
-      |> TypedRoute.Plug.call([])
+      |> TypedRoute.Plug.call(RouteAdapter)
 
     assert conn.status == 422
     assert conn.halted
@@ -238,7 +302,7 @@ defmodule EasyWeb.TypedRouteTest do
     show =
       :show
       |> typed_conn(%{}, %{"id" => "9"})
-      |> TypedRoute.Plug.call([])
+      |> TypedRoute.Plug.call(RouteAdapter)
       |> Controller.show(%{})
 
     assert show.status == 200
@@ -247,7 +311,7 @@ defmodule EasyWeb.TypedRouteTest do
     delete =
       :delete
       |> typed_conn()
-      |> TypedRoute.Plug.call([])
+      |> TypedRoute.Plug.call(RouteAdapter)
       |> Controller.delete(%{})
 
     assert delete.status == 204
@@ -258,7 +322,7 @@ defmodule EasyWeb.TypedRouteTest do
     conn =
       :index
       |> typed_conn(%{}, %{}, %{"offset" => "2", "limit" => "10"})
-      |> TypedRoute.Plug.call([])
+      |> TypedRoute.Plug.call(RouteAdapter)
       |> Controller.index(%{})
 
     assert conn.status == 200

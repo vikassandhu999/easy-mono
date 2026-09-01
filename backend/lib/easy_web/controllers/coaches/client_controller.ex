@@ -1,6 +1,5 @@
 defmodule EasyWeb.Coaches.ClientController do
-  use EasyWeb, :controller
-  use EasyWeb.TypedRoute
+  use EasyWeb, :typed_controller
 
   alias Easy.Clients
   alias EasyWeb.Types.Client, as: ClientType

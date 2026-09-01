@@ -51,7 +51,15 @@ defmodule Easy.Nutrition.DiarySlot do
     ])
     |> put_change(:business_id, business_id)
     |> put_change(:client_id, client_id)
-    |> validate_required([:local_date, :meal_slot, :applied_timezone, :has_coverage, :revision, :business_id, :client_id])
+    |> validate_required([
+      :local_date,
+      :meal_slot,
+      :applied_timezone,
+      :has_coverage,
+      :revision,
+      :business_id,
+      :client_id
+    ])
     |> validate_number(:revision, greater_than: 0)
     |> unique_constraint([:client_id, :local_date, :meal_slot], name: :nutrition_diary_slots_identity_index)
     |> check_constraint(:meal_slot, name: :nutrition_diary_slots_meal_slot_check)

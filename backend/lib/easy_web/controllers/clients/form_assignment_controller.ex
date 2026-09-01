@@ -1,6 +1,5 @@
 defmodule EasyWeb.Clients.FormAssignmentController do
-  use EasyWeb, :controller
-  use EasyWeb.TypedRoute
+  use EasyWeb, :typed_controller
 
   alias Easy.Forms
   alias EasyWeb.Types.FormAssignment

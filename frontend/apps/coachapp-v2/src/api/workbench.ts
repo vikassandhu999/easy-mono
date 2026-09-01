@@ -8,6 +8,7 @@ import type {
   IntakeOverdueReason as IntakeOverdueReasonSchema,
   InvitationFollowUpDueReason as InvitationFollowUpDueReasonSchema,
   MissedCheckInReason as MissedCheckInReasonSchema,
+  paths,
   ReplyNeededReason as ReplyNeededReasonSchema,
   ServiceCoverageEndingSoonReason as ServiceCoverageEndingSoonReasonSchema,
   ServiceCoverageMissingReason as ServiceCoverageMissingReasonSchema,
@@ -24,7 +25,8 @@ import type {
 import {workbenchMutationTargets} from './workbench-targets.ts';
 
 export type WorkbenchCounts = WorkbenchSchema;
-export type WorkbenchCountsResponse = {data: WorkbenchCounts};
+export type WorkbenchCountsResponse =
+  paths['/v1/coach/workbench']['get']['responses'][200]['content']['application/json'];
 
 export type QueueSnoozeRequest = WorkbenchSnooze;
 
@@ -44,19 +46,23 @@ export type CheckInAwaitingReviewReason = CheckInAwaitingReviewReasonSchema;
 export type ReplyNeededReason = ReplyNeededReasonSchema;
 
 export type WorkbenchOnboardingQueueItem = WorkbenchOnboardingQueueItemSchema;
-export type WorkbenchOnboardingQueueResponse = QueueResponse<WorkbenchOnboardingQueueItem>;
+export type WorkbenchOnboardingQueueResponse =
+  paths['/v1/coach/workbench/queues/onboarding']['get']['responses'][200]['content']['application/json'];
 export type WorkbenchProgrammingQueueItem = WorkbenchProgrammingQueueItemSchema;
-export type WorkbenchProgrammingQueueResponse = QueueResponse<WorkbenchProgrammingQueueItem>;
+export type WorkbenchProgrammingQueueResponse =
+  paths['/v1/coach/workbench/queues/programming']['get']['responses'][200]['content']['application/json'];
 export type WorkbenchExpiringQueueItem = WorkbenchExpiringQueueItemSchema;
-export type WorkbenchExpiringQueueResponse = QueueResponse<WorkbenchExpiringQueueItem>;
+export type WorkbenchExpiringQueueResponse =
+  paths['/v1/coach/workbench/queues/expiring']['get']['responses'][200]['content']['application/json'];
 export type WorkbenchQuietQueueItem = WorkbenchQuietQueueItemSchema;
-export type WorkbenchQuietQueueResponse = QueueResponse<WorkbenchQuietQueueItem>;
+export type WorkbenchQuietQueueResponse =
+  paths['/v1/coach/workbench/queues/quiet']['get']['responses'][200]['content']['application/json'];
 export type WorkbenchRepliesQueueItem = WorkbenchRepliesQueueItemSchema;
-export type WorkbenchRepliesQueueResponse = QueueResponse<WorkbenchRepliesQueueItem>;
+export type WorkbenchRepliesQueueResponse =
+  paths['/v1/coach/workbench/queues/replies']['get']['responses'][200]['content']['application/json'];
 export type WorkbenchCheckInQueueItem = WorkbenchCheckInQueueItemSchema;
-export type WorkbenchCheckInQueueResponse = QueueResponse<WorkbenchCheckInQueueItem>;
-
-type QueueResponse<T> = {count: number; data: T[]};
+export type WorkbenchCheckInQueueResponse =
+  paths['/v1/coach/workbench/queues/check-ins']['get']['responses'][200]['content']['application/json'];
 
 const PAGE_SIZE = 20;
 

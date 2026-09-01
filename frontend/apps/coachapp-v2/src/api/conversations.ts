@@ -3,15 +3,7 @@ import {type InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClie
 import {call, client} from '@/api/client';
 import {conversationKeys, workbenchKeys} from '@/api/keys';
 import {patchQueryData, queryClient} from '@/api/query-client';
-import type {
-  ChatMessage,
-  ChatMessageCoachCreate,
-  ChatMessageEmbed,
-  ChatMessageEmbedRequest,
-  ChatMessagePage,
-  Conversation,
-  ConversationMarkHandled,
-} from '@/api/schema';
+import type {ChatMessage, ChatMessageCoachCreate, ChatMessagePage, ConversationMarkHandled} from '@/api/schema';
 import {workbenchMutationTargets} from '@/api/workbench-targets';
 
 export type {ChatMessage, ChatMessageEmbed, ChatMessageEmbedRequest, Conversation} from '@/api/schema';

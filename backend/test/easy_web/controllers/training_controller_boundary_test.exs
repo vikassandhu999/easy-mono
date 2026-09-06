@@ -5,7 +5,7 @@ defmodule EasyWeb.TrainingControllerBoundaryTest do
     "lib/easy_web/controllers/coaches/training_plan_controller.ex",
     "lib/easy_web/controllers/clients/training_plan_controller.ex",
     "lib/easy_web/controllers/coaches/client_training_plan_controller.ex",
-    "lib/easy_web/controllers/coaches/client_nutrition_plan_controller.ex",
+    "lib/easy_web/controllers/coaches/nutrition_coverage_controller.ex",
     "lib/easy_web/controllers/coaches/workout_session_controller.ex",
     "lib/easy_web/controllers/clients/workout_session_controller.ex",
     "lib/easy_web/controllers/clients/performed_set_controller.ex",

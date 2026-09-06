@@ -97,10 +97,13 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
 
   @spec replace_menu(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def replace_menu(conn, _params) do
-    {expected_revision, attrs} = Map.pop!(conn.body_params, :expected_revision)
-
     with {:ok, plan} <-
-           Programming.replace_menu(conn.assigns.ctx, conn.path_params["id"], expected_revision, attrs) do
+           Programming.replace_menu(
+             conn.assigns.ctx,
+             conn.path_params["id"],
+             conn.body_params.expected_revision,
+             conn.body_params.menu
+           ) do
       ok(conn, %{data: plan})
     end
   end

@@ -61,6 +61,15 @@ defmodule Easy.Nutrition.Plan do
     timestamps(type: :utc_datetime)
   end
 
+  @spec current_or_upcoming(Ecto.Queryable.t(), Date.t()) :: Ecto.Query.t()
+  def current_or_upcoming(query \\ __MODULE__, date) do
+    from(plan in query,
+      where: is_nil(plan.archived_at) and not is_nil(plan.start_date),
+      where: is_nil(plan.end_date) or plan.end_date >= ^date,
+      order_by: [asc: plan.start_date, asc: plan.id]
+    )
+  end
+
   @spec lifecycles() :: [atom()]
   def lifecycles, do: @lifecycles
 

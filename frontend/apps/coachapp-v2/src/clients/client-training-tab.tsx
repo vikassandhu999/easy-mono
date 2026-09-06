@@ -32,8 +32,7 @@ import SectionHeading from '@/ui/section-heading';
 export function TrainingTab({client}: {client: Client}) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const [assignFromUrl] = useState(() => params.get('assign') === 'plan');
-  const [assignOpen, setAssignOpen] = useState(assignFromUrl);
+  const [assignOpen, setAssignOpen] = useState(() => params.get('assign') === 'plan');
   const [showArchived, setShowArchived] = useState(false);
   const archivePlanMutation = useArchiveTrainingPlanMutation();
 

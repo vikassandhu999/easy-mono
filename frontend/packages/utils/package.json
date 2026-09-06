@@ -13,8 +13,6 @@
     "./api-error": "./src/api-error.ts",
     "./closed-vocabulary": "./src/closed-vocabulary.ts",
     "./meal-slots": "./src/meal-slots.ts",
-    "./nutrition-item-ref": "./src/nutrition-item-ref.ts",
-    "./nutrition-portion": "./src/nutrition-portion.ts",
     "./parse-api-error": "./src/parse-api-error.ts"
   },
   "scripts": {

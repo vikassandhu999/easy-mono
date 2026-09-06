@@ -1,10 +1,8 @@
+import {Button} from '@heroui/react';
+import {useState} from 'react';
 import {generatePath} from 'react-router-dom';
-import {
-  type NutritionPlan,
-  patchPlan,
-  useGetNutritionPlanQuery,
-  useUpdateNutritionPlanMutation,
-} from '@/api/nutrition-plans';
+import {ApiError} from '@/api/client';
+import {type NutritionPlan, useGetNutritionPlanQuery, useUpdateNutritionPlanMutation} from '@/api/nutrition-plans';
 import {applyFormErrors} from '@/api/shared';
 import NutritionPlanForm, {useNutritionPlanForm} from '@/library/nutrition-plans/nutrition-plan-form';
 import {
@@ -12,7 +10,6 @@ import {
   nutritionPlanToFormValues,
   nutritionPlanToUpdateRequest,
 } from '@/library/nutrition-plans/nutrition-plan-form-data';
-import {handleStaleNutritionPlanConflict} from '@/library/nutrition-plans/stale-nutrition-plan-conflict';
 import {ROUTES} from '@/routes';
 import {BackButton} from '@/ui/back-button';
 import {ErrorState} from '@/ui/error-state';
@@ -42,7 +39,7 @@ function EditNutritionPlanHeader({goBack, kind}: {goBack: () => void; kind?: Nut
         </div>
         <Page.Description>
           {kind === 'client_plan'
-            ? 'Update Client Plan metadata and targets. Coverage dates live in the builder.'
+            ? 'Update Client Plan details, targets, and coverage dates.'
             : kind === 'template'
               ? 'Update Template metadata and targets. Its Menu remains in the builder.'
               : "Update the plan's goals. Meals & days live in the builder."}
@@ -54,7 +51,7 @@ function EditNutritionPlanHeader({goBack, kind}: {goBack: () => void; kind?: Nut
 
 function EditNutritionPlanForm({
   backPath,
-  plan,
+  plan: initial,
   planId,
   refetchLatest,
 }: {
@@ -65,30 +62,39 @@ function EditNutritionPlanForm({
 }) {
   const goBack = useGoBack(backPath);
   const updatePlanMutation = useUpdateNutritionPlanMutation();
+  const [plan, setBase] = useState(initial);
+  const [reloading, setReloading] = useState(false);
   const form = useNutritionPlanForm({defaultValues: nutritionPlanToFormValues(plan)});
+
+  const discard = async () => {
+    setReloading(true);
+    try {
+      const latest = await refetchLatest();
+      if (!latest) {
+        throw new Error('Missing plan');
+      }
+      form.reset(nutritionPlanToFormValues(latest));
+      setBase(latest);
+    } catch {
+      form.setError('root', {message: "Couldn't reload. Your draft is still here."});
+    } finally {
+      setReloading(false);
+    }
+  };
 
   const onSubmit = async (formData: NutritionPlanFormValues) => {
     try {
-      const result = await updatePlanMutation.mutateAsync({
+      await updatePlanMutation.mutateAsync({
         id: planId,
         body: nutritionPlanToUpdateRequest(formData, plan.revision),
       });
-      patchPlan(planId, (draft) => {
-        Object.assign(draft, result.data);
-      });
       goBack();
     } catch (err) {
-      const handled = await handleStaleNutritionPlanConflict(err, {
-        refetchLatest,
-        replaceWithLatest: (latest) => {
-          form.reset(nutritionPlanToFormValues(latest));
-        },
-        notify: (message) => {
-          form.setError('root', {message});
-        },
-      });
-
-      if (!handled) {
+      if (err instanceof ApiError && err.status === 409) {
+        form.setError('root', {
+          message: 'Changed elsewhere. Your draft is still here. Discard changes to load the saved version.',
+        });
+      } else {
         applyFormErrors(err, "Nutrition plan wasn't updated. Check the details and try again", form.setError);
       }
     }
@@ -105,9 +111,16 @@ function EditNutritionPlanForm({
           className="pt-4 pb-6"
           size="content"
         >
+          <Button
+            isDisabled={updatePlanMutation.isPending || reloading}
+            onPress={discard}
+            variant="tertiary"
+          >
+            Discard changes and reload
+          </Button>
           <NutritionPlanForm
             form={form}
-            isSubmitting={updatePlanMutation.isPending}
+            isSubmitting={updatePlanMutation.isPending || reloading}
             onCancel={goBack}
             onSubmit={onSubmit}
             submitLabel="Save changes"
@@ -121,7 +134,7 @@ function EditNutritionPlanForm({
 
 export default function EditNutritionPlan() {
   const id = useRouteParam('id');
-  const {data, isError, isLoading: isFetching, refetch} = useGetNutritionPlanQuery(id);
+  const {data, isLoading: isFetching, refetch} = useGetNutritionPlanQuery(id);
   const backPath = generatePath(ROUTES.NUTRITION_PLAN_DETAIL, {id});
   const goBack = useGoBack(backPath);
 
@@ -141,7 +154,7 @@ export default function EditNutritionPlan() {
     );
   }
 
-  if (isError || !data) {
+  if (!data) {
     return (
       <Page>
         <EditNutritionPlanHeader goBack={goBack} />
@@ -162,10 +175,11 @@ export default function EditNutritionPlan() {
 
   return (
     <EditNutritionPlanForm
+      key={id}
       backPath={backPath}
       plan={data.data}
       planId={id}
-      refetchLatest={async () => (await refetch()).data?.data}
+      refetchLatest={async () => (await refetch({throwOnError: true})).data?.data}
     />
   );
 }

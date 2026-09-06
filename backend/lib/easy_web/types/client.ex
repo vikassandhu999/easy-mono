@@ -3,9 +3,12 @@ defmodule EasyWeb.Types.Client do
 
   alias Easy.Clients.Client, as: ClientSchema
   alias Easy.Identity.User
+  alias Easy.LocalCalendar
+  alias Easy.Orgs.Business
 
   @type t :: %{
           required(:id) => String.t(),
+          required(:local_date) => Date.t(),
           required(:email) => String.t() | nil,
           required(:first_name) => String.t() | nil,
           required(:last_name) => String.t() | nil,
@@ -72,6 +75,7 @@ defmodule EasyWeb.Types.Client do
   def format(%ClientSchema{} = client) do
     %{
       id: client.id,
+      local_date: LocalCalendar.to_local_date(DateTime.utc_now(), applied_timezone(client)),
       email: client.email,
       first_name: display_first_name(client),
       last_name: display_last_name(client),
@@ -115,6 +119,10 @@ defmodule EasyWeb.Types.Client do
 
   defp pending_only(%ClientSchema{status: :pending}, value), do: value
   defp pending_only(%ClientSchema{}, _value), do: nil
+
+  defp applied_timezone(%ClientSchema{timezone: timezone, business: %Business{timezone: business_timezone}}) do
+    LocalCalendar.applied_timezone(timezone, business_timezone)
+  end
 
   defp goal_weight_value(nil), do: nil
 

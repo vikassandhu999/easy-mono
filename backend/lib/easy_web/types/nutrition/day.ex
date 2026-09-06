@@ -36,31 +36,21 @@ defmodule EasyWeb.Types.Nutrition.NutritionDayOption do
         }
 end
 
-defmodule EasyWeb.Types.Nutrition.NutritionDayEntry do
+defmodule EasyWeb.Types.Nutrition.NutritionDayRow do
   use EasyWeb.Type
 
   @type t :: %{
           required(:id) => String.t(),
+          required(:entry_id) => String.t() | nil,
+          required(:planned_item_ref) => String.t() | nil,
+          required(:status) => :as_planned | :swapped | :pending | :skipped | :added | :recorded,
           required(:kind) => :food | :recipe,
           required(:name) => String.t(),
           required(:food_id) => String.t() | nil,
           required(:recipe_id) => String.t() | nil,
           required(:portion) => EasyWeb.Types.Nutrition.NutritionPortion.t(),
           required(:nutrients) => EasyWeb.Types.Nutrition.FoodNutrients.t(),
-          required(:notes) => String.t() | nil,
-          required(:revision) => pos_integer(),
-          required(:inserted_at) => DateTime.t(),
-          required(:updated_at) => DateTime.t()
-        }
-end
-
-defmodule EasyWeb.Types.Nutrition.NutritionDayRow do
-  use EasyWeb.Type
-
-  @type t :: %{
-          required(:status) => :as_planned | :swapped | :pending | :skipped | :added | :recorded,
-          required(:planned) => EasyWeb.Types.Nutrition.NutritionDayOptionItem.t() | nil,
-          required(:entry) => EasyWeb.Types.Nutrition.NutritionDayEntry.t() | nil
+          required(:notes) => String.t() | nil
         }
 end
 
@@ -81,7 +71,7 @@ defmodule EasyWeb.Types.Nutrition.NutritionDaySlot do
             | :during_workout
             | :post_workout,
           required(:meal_id) => String.t() | nil,
-          required(:revision) => pos_integer() | nil,
+          required(:revision) => non_neg_integer(),
           required(:applied_timezone) => String.t() | nil,
           required(:write_eligible) => boolean(),
           required(:planned_calories) => float() | nil,
@@ -116,6 +106,41 @@ defmodule EasyWeb.Types.Nutrition.NutritionDaySummary do
         }
 end
 
+defmodule EasyWeb.Types.Nutrition.DayEntryInput do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:id) => String.t(),
+          required(:planned_item_ref) => String.t() | nil,
+          required(:food_id) => String.t() | nil,
+          required(:recipe_id) => String.t() | nil,
+          required(:portion) => EasyWeb.Types.Nutrition.NutritionPortion.t(),
+          required(:notes) => String.t() | nil
+        }
+end
+
+defmodule EasyWeb.Types.Nutrition.DaySlotInput do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:meal_slot) =>
+            :early_morning
+            | :breakfast
+            | :mid_morning
+            | :lunch
+            | :afternoon
+            | :evening
+            | :dinner
+            | :pre_sleep
+            | :pre_workout
+            | :during_workout
+            | :post_workout,
+          required(:expected_revision) => non_neg_integer(),
+          required(:meal_id) => String.t() | nil,
+          required(:entries) => [EasyWeb.Types.Nutrition.DayEntryInput.t()]
+        }
+end
+
 defmodule EasyWeb.Types.Nutrition.Day do
   use EasyWeb.Type
 
@@ -140,99 +165,7 @@ defmodule EasyWeb.Types.Nutrition.Day do
           optional(:limit) => integer()
         }
 
-  @type add_extra :: %{
-          required(:meal_slot) =>
-            :early_morning
-            | :breakfast
-            | :mid_morning
-            | :lunch
-            | :afternoon
-            | :evening
-            | :dinner
-            | :pre_sleep
-            | :pre_workout
-            | :during_workout
-            | :post_workout,
-          required(:portion) => EasyWeb.Types.Nutrition.NutritionPortionInput.t(),
-          optional(:food_id) => String.t() | nil,
-          optional(:recipe_id) => String.t() | nil,
-          optional(:notes) => String.t() | nil
-        }
-
-  @type log_planned_item :: %{
-          required(:meal_slot) =>
-            :early_morning
-            | :breakfast
-            | :mid_morning
-            | :lunch
-            | :afternoon
-            | :evening
-            | :dinner
-            | :pre_sleep
-            | :pre_workout
-            | :during_workout
-            | :post_workout,
-          required(:planned_item_ref) => String.t()
-        }
-
-  @type log_planned_option :: %{
-          required(:meal_slot) =>
-            :early_morning
-            | :breakfast
-            | :mid_morning
-            | :lunch
-            | :afternoon
-            | :evening
-            | :dinner
-            | :pre_sleep
-            | :pre_workout
-            | :during_workout
-            | :post_workout
-        }
-
-  @type switch_option :: %{
-          required(:meal_slot) =>
-            :early_morning
-            | :breakfast
-            | :mid_morning
-            | :lunch
-            | :afternoon
-            | :evening
-            | :dinner
-            | :pre_sleep
-            | :pre_workout
-            | :during_workout
-            | :post_workout,
-          required(:meal_id) => String.t(),
-          required(:expected_revision) => pos_integer()
-        }
-
-  @type replace_planned_item :: %{
-          required(:meal_slot) =>
-            :early_morning
-            | :breakfast
-            | :mid_morning
-            | :lunch
-            | :afternoon
-            | :evening
-            | :dinner
-            | :pre_sleep
-            | :pre_workout
-            | :during_workout
-            | :post_workout,
-          required(:planned_item_ref) => String.t(),
-          required(:portion) => EasyWeb.Types.Nutrition.NutritionPortionInput.t(),
-          required(:expected_revision) => pos_integer(),
-          optional(:food_id) => String.t() | nil,
-          optional(:recipe_id) => String.t() | nil,
-          optional(:notes) => String.t() | nil
-        }
-
-  @type update_entry :: %{
-          required(:expected_revision) => pos_integer(),
-          optional(:portion) => EasyWeb.Types.Nutrition.NutritionPortionInput.t(),
-          optional(:notes) => String.t() | nil
-        }
+  @type save :: %{required(:slots) => [EasyWeb.Types.Nutrition.DaySlotInput.t()]}
 
   @spec format(NutritionDay.t()) :: t()
   def format(%{
@@ -344,39 +277,7 @@ defmodule EasyWeb.Types.Nutrition.Day do
     }
   end
 
-  defp format_row(%{status: status, planned: planned, entry: entry}) do
-    %{status: status, planned: format_item(planned), entry: format_entry(entry)}
-  end
-
-  defp format_entry(nil), do: nil
-
-  defp format_entry(%{
-         id: id,
-         kind: kind,
-         name: name,
-         food_id: food_id,
-         recipe_id: recipe_id,
-         portion: portion,
-         nutrients: nutrients,
-         notes: notes,
-         revision: revision,
-         inserted_at: inserted_at,
-         updated_at: updated_at
-       }) do
-    %{
-      id: id,
-      kind: kind,
-      name: name,
-      food_id: food_id,
-      recipe_id: recipe_id,
-      portion: portion,
-      nutrients: NutrientTotals.round(nutrients),
-      notes: notes,
-      revision: revision,
-      inserted_at: inserted_at,
-      updated_at: updated_at
-    }
-  end
+  defp format_row(row), do: %{row | nutrients: NutrientTotals.round(row.nutrients)}
 
   defp round_one(nil), do: nil
   defp round_one(value) when is_number(value), do: Float.round(value / 1, 1)

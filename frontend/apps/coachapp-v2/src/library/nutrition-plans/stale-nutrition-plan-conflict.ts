@@ -1,26 +1,20 @@
 import {getStaleNutritionPlanRevision} from '../../api/nutrition-plan-lifecycle.ts';
 
-export function staleNutritionPlanConflictMessage(currentRevision: number) {
-  return `This plan changed elsewhere (revision ${currentRevision}). I reloaded the latest version — review it and reapply your edit.`;
-}
-
-export async function handleStaleNutritionPlanConflict<T>(
+export async function handleStaleNutritionPlanConflict(
   error: unknown,
   handlers: {
     notify: (message: string) => void;
-    refetchLatest: () => Promise<T | undefined> | T | undefined;
-    replaceWithLatest?: (latest: T) => void;
+    refetchLatest: () => Promise<unknown>;
   },
 ) {
-  const currentRevision = getStaleNutritionPlanRevision(error);
-  if (!currentRevision) {
+  if (!getStaleNutritionPlanRevision(error)) {
     return false;
   }
-
-  const latest = await handlers.refetchLatest();
-  if (latest) {
-    handlers.replaceWithLatest?.(latest);
+  try {
+    await handlers.refetchLatest();
+    handlers.notify('This plan changed elsewhere. Review the latest version and try again.');
+  } catch {
+    handlers.notify("This plan changed elsewhere. Couldn't reload it; try again when connected.");
   }
-  handlers.notify(staleNutritionPlanConflictMessage(currentRevision));
   return true;
 }

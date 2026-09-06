@@ -6,21 +6,20 @@
  */
 import {Button, ToggleButton, ToggleButtonGroup} from '@heroui/react';
 import {ChevronLeft, ChevronRight, Plus} from 'lucide-react';
-import type {NutritionPlanDay} from '@/library/nutrition-plans/builder/plan-tree';
 import {AS_ICON_BUTTON} from '@/ui/ua-defaults';
+import type {MenuDay} from './menu';
 
 interface DayTabsProps {
-  days: NutritionPlanDay[];
+  days: MenuDay[];
   activeDayId: string;
   onSelect: (dayId: string) => void;
   onAdd: () => void;
-  isAdding: boolean;
   onMove?: (direction: -1 | 1) => void;
   isFirst?: boolean;
   isLast?: boolean;
 }
 
-export function DayTabs({days, activeDayId, onSelect, onAdd, isAdding, onMove, isFirst, isLast}: DayTabsProps) {
+export function DayTabs({days, activeDayId, onSelect, onAdd, onMove, isFirst, isLast}: DayTabsProps) {
   return (
     <div className="flex flex-wrap items-center gap-2 pb-0.5 sm:flex-nowrap sm:overflow-x-auto">
       {days.length > 0 ? (
@@ -83,7 +82,6 @@ export function DayTabs({days, activeDayId, onSelect, onAdd, isAdding, onMove, i
       <Button
         className="shrink-0 gap-1 rounded-control border border-dashed border-border bg-transparent px-3 font-btn type-eyebrow font-semibold leading-none text-accent"
         data-testid="nb-add-day"
-        isPending={isAdding}
         onPress={onAdd}
         variant="ghost"
       >

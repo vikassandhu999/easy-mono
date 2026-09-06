@@ -1,4 +1,5 @@
 defmodule Easy.Nutrition.DiaryFixtures do
+  import Easy.Nutrition.ProgrammingMenuFixtures, only: [uuid: 1]
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.LocalCalendar
@@ -69,7 +70,7 @@ defmodule Easy.Nutrition.DiaryFixtures do
     |> Enum.map(& &1.planned_item_ref)
   end
 
-  @spec extra_attrs(Food.t(), keyword()) :: Diary.add_extra_input()
+  @spec extra_attrs(Food.t(), keyword()) :: map()
   def extra_attrs(food, opts \\ []) do
     %{
       meal_slot: Keyword.get(opts, :slot, :breakfast),
@@ -78,18 +79,75 @@ defmodule Easy.Nutrition.DiaryFixtures do
     }
   end
 
-  @spec extra_path(Date.t()) :: String.t()
-  def extra_path(date), do: "/v1/client/nutrition-days/#{Date.to_iso8601(date)}/extras"
-
-  @spec extra_payload(Diary.add_extra_input()) :: map()
-  def extra_payload(attrs) do
+  @spec slot_draft(map(), boolean()) :: map()
+  def slot_draft(slot, include_pending \\ false) do
     %{
-      meal_slot: attrs.meal_slot,
-      food_id: attrs.food_id,
-      recipe_id: nil,
-      portion: attrs.portion,
-      notes: nil
+      meal_slot: slot.meal_slot,
+      meal_id: slot.meal_id,
+      expected_revision: slot.revision,
+      entries:
+        slot.rows
+        |> Enum.filter(&(include_pending or not is_nil(&1.entry_id)))
+        |> Enum.map(&entry_draft/1)
     }
+  end
+
+  @spec entry_draft(map()) :: map()
+  def entry_draft(row) do
+    row
+    |> Map.take([:planned_item_ref, :food_id, :recipe_id, :portion, :notes])
+    |> Map.put(:id, row.entry_id || Ecto.UUID.generate())
+  end
+
+  @spec save_extra(Ctx.t(), Date.t(), map()) :: tuple()
+  def save_extra(ctx, date, attrs) do
+    with {:ok, day} <- Diary.get_client_nutrition_day(ctx, date) do
+      slot = Enum.find(day.slots, &(&1.meal_slot == attrs.meal_slot))
+
+      draft =
+        if slot,
+          do: slot_draft(slot),
+          else: %{meal_slot: attrs.meal_slot, meal_id: nil, expected_revision: 0, entries: []}
+
+      entry =
+        Map.merge(
+          %{
+            id: Ecto.UUID.generate(),
+            planned_item_ref: nil,
+            food_id: nil,
+            recipe_id: nil,
+            notes: nil
+          },
+          Map.delete(attrs, :meal_slot)
+        )
+
+      Diary.save_client_nutrition_day(ctx, date, %{
+        slots: [%{draft | entries: draft.entries ++ [entry]}]
+      })
+    end
+  end
+
+  @spec save_planned_slot(Ctx.t(), Date.t(), map()) :: tuple()
+  def save_planned_slot(ctx, date, attrs) do
+    with {:ok, day} <- Diary.get_client_nutrition_day(ctx, date) do
+      case Enum.find(day.slots, &(&1.meal_slot == attrs.meal_slot)) do
+        nil -> {:error, :cannot_start_past_slot}
+        slot -> Diary.save_client_nutrition_day(ctx, date, %{slots: [slot_draft(slot, true)]})
+      end
+    end
+  end
+
+  @spec save_option(Ctx.t(), Date.t(), map()) :: tuple()
+  def save_option(ctx, date, attrs) do
+    with {:ok, day} <- Diary.get_client_nutrition_day(ctx, date) do
+      case Enum.find(day.slots, &(&1.meal_slot == attrs.meal_slot)) do
+        nil ->
+          {:error, :not_found}
+
+        slot ->
+          Diary.save_client_nutrition_day(ctx, date, %{slots: [Map.merge(slot_draft(slot), attrs)]})
+      end
+    end
   end
 
   @spec client_ctx(Client.t()) :: Ctx.t()
@@ -99,20 +157,22 @@ defmodule Easy.Nutrition.DiaryFixtures do
 
   @spec local_today(Client.t()) :: Date.t()
   def local_today(client) do
-    timezone = LocalCalendar.applied_timezone(client.timezone, client.business && client.business.timezone)
+    timezone =
+      LocalCalendar.applied_timezone(client.timezone, client.business && client.business.timezone)
+
     LocalCalendar.to_local_date(DateTime.utc_now(), timezone)
   end
 
   defp breakfast_menu(plan, food) do
     slot_menu(plan, food, [
-      %{meal_slot: :breakfast, local_ref: "breakfast", name: "Breakfast", grams: 50}
+      %{meal_slot: :breakfast, id: uuid("breakfast"), name: "Breakfast", grams: 50}
     ])
   end
 
   defp ordered_menu(plan, food) do
     slot_menu(plan, food, [
-      %{meal_slot: :post_workout, local_ref: "post", name: "Post workout", grams: 30},
-      %{meal_slot: :breakfast, local_ref: "breakfast", name: "Breakfast", grams: 50}
+      %{meal_slot: :post_workout, id: uuid("post"), name: "Post workout", grams: 30},
+      %{meal_slot: :breakfast, id: uuid("breakfast"), name: "Breakfast", grams: 50}
     ])
   end
 
@@ -122,19 +182,17 @@ defmodule Easy.Nutrition.DiaryFixtures do
     %{
       meals: [
         %{
-          local_ref: "a",
+          id: uuid("a"),
           name: "Breakfast A",
-          position: 0,
           meal_items: [
-            %{local_ref: "a-item", kind: :food, food_id: food.id, position: 0, portion: %{kind: :gram, grams: 50}}
+            %{id: uuid("a-item"), kind: :food, food_id: food.id, portion: %{kind: :gram, grams: 50}}
           ]
         },
         %{
-          local_ref: "b",
+          id: uuid("b"),
           name: "Breakfast B",
-          position: 1,
           meal_items: [
-            %{local_ref: "b-item", kind: :food, food_id: food.id, position: 0, portion: %{kind: :gram, grams: 40}}
+            %{id: uuid("b-item"), kind: :food, food_id: food.id, portion: %{kind: :gram, grams: 40}}
           ]
         }
       ],
@@ -142,13 +200,12 @@ defmodule Easy.Nutrition.DiaryFixtures do
         %{
           id: pattern.id,
           name: pattern.name,
-          position: 0,
           slots: [
             %{
               meal_slot: :breakfast,
               options: [
-                %{local_ref: "opt-a", meal_local_ref: "a", position: 0},
-                %{local_ref: "opt-b", meal_local_ref: "b", position: 1}
+                %{id: uuid("opt-a"), nutrition_meal_id: uuid("a")},
+                %{id: uuid("opt-b"), nutrition_meal_id: uuid("b")}
               ]
             }
           ]
@@ -164,12 +221,16 @@ defmodule Easy.Nutrition.DiaryFixtures do
     %{
       meals: [
         %{
-          local_ref: "breakfast",
+          id: uuid("breakfast"),
           name: "Breakfast",
-          position: 0,
           meal_items: [
-            %{local_ref: "oats-1", kind: :food, food_id: food.id, position: 0, portion: %{kind: :gram, grams: 50}},
-            %{local_ref: "oats-2", kind: :food, food_id: food.id, position: 1, portion: %{kind: :gram, grams: 30}}
+            %{
+              id: uuid("oats-1"),
+              kind: :food,
+              food_id: food.id,
+              portion: %{kind: :gram, grams: 50}
+            },
+            %{id: uuid("oats-2"), kind: :food, food_id: food.id, portion: %{kind: :gram, grams: 30}}
           ]
         }
       ],
@@ -177,9 +238,11 @@ defmodule Easy.Nutrition.DiaryFixtures do
         %{
           id: pattern.id,
           name: pattern.name,
-          position: 0,
           slots: [
-            %{meal_slot: :breakfast, options: [%{local_ref: "opt", meal_local_ref: "breakfast", position: 0}]}
+            %{
+              meal_slot: :breakfast,
+              options: [%{id: uuid("opt"), nutrition_meal_id: uuid("breakfast")}]
+            }
           ]
         }
       ],
@@ -191,17 +254,15 @@ defmodule Easy.Nutrition.DiaryFixtures do
     pattern = hd(plan.day_patterns)
 
     meals =
-      Enum.with_index(slots, fn slot, position ->
+      Enum.map(slots, fn slot ->
         %{
-          local_ref: slot.local_ref,
+          id: slot.id,
           name: slot.name,
-          position: position,
           meal_items: [
             %{
-              local_ref: "#{slot.local_ref}-item",
+              id: uuid("#{slot.id}-item"),
               kind: :food,
               food_id: food.id,
-              position: 0,
               portion: %{kind: :gram, grams: slot.grams}
             }
           ]
@@ -212,13 +273,13 @@ defmodule Easy.Nutrition.DiaryFixtures do
       Enum.map(slots, fn slot ->
         %{
           meal_slot: slot.meal_slot,
-          options: [%{local_ref: "#{slot.local_ref}-opt", meal_local_ref: slot.local_ref, position: 0}]
+          options: [%{id: uuid("#{slot.id}-opt"), nutrition_meal_id: slot.id}]
         }
       end)
 
     %{
       meals: meals,
-      day_patterns: [%{id: pattern.id, name: pattern.name, position: 0, slots: options}],
+      day_patterns: [%{id: pattern.id, name: pattern.name, slots: options}],
       schedule: Map.new(WeekSchedule.weekdays(), &{&1, pattern.id})
     }
   end

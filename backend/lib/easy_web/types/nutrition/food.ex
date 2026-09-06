@@ -58,6 +58,7 @@ defmodule EasyWeb.Types.Nutrition.Food do
   alias Easy.LibraryMedia.Media
   alias Easy.Nutrition.Food, as: FoodSchema
   alias Easy.Nutrition.NutrientTotals
+  alias Easy.Nutrition.Portions
 
   @type t :: %{
           required(:id) => String.t(),
@@ -66,6 +67,8 @@ defmodule EasyWeb.Types.Nutrition.Food do
           required(:barcode) => String.t() | nil,
           required(:source) => :system | :imported | :custom | nil,
           required(:category) => String.t() | nil,
+          required(:default_portion) => EasyWeb.Types.Nutrition.NutritionPortion.t(),
+          required(:portion_options) => [EasyWeb.Types.Nutrition.NutritionPortion.t()],
           required(:revision) => pos_integer(),
           required(:nutrients) => EasyWeb.Types.Nutrition.FoodNutrients.t(),
           required(:calories_per_100g) => float() | nil,
@@ -149,6 +152,7 @@ defmodule EasyWeb.Types.Nutrition.Food do
 
   @spec format(FoodSchema.t()) :: t()
   def format(%FoodSchema{} = food) do
+    portions = Portions.for_food(food)
     nutrients = food |> NutrientTotals.from_food() |> NutrientTotals.round()
 
     %{
@@ -159,6 +163,8 @@ defmodule EasyWeb.Types.Nutrition.Food do
       source: food.source,
       category: food.category,
       revision: food.revision,
+      default_portion: portions.default_portion,
+      portion_options: portions.portion_options,
       nutrients: nutrients,
       calories_per_100g: nutrients.calories,
       protein_g_per_100g: nutrients.protein,

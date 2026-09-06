@@ -1,4 +1,5 @@
 defmodule Easy.Nutrition.LibraryConcurrencyTest do
+  import Easy.Nutrition.ProgrammingMenuFixtures, only: [uuid: 1]
   use ExUnit.Case, async: false
 
   import Ecto.Query
@@ -70,21 +71,19 @@ defmodule Easy.Nutrition.LibraryConcurrencyTest do
         Programming.replace_menu(ctx.ctx, template.id, 1, %{
           meals: [
             %{
-              local_ref: "meal",
+              id: uuid("meal"),
               name: "Meal",
-              position: 0,
               meal_items: [
                 %{
-                  local_ref: "item",
+                  id: uuid("item"),
                   kind: :recipe,
                   recipe_id: recipe.id,
-                  position: 0,
                   portion: %{kind: :gram, grams: 50.0}
                 }
               ]
             }
           ],
-          day_patterns: [%{id: pattern.id, name: pattern.name, position: 0, slots: []}],
+          day_patterns: [%{id: pattern.id, name: pattern.name, slots: []}],
           schedule: Map.new(WeekSchedule.weekdays(), &{&1, pattern.id})
         })
       end)

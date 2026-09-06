@@ -22,29 +22,12 @@ defmodule EasyWeb.Types.NutritionWeekSchedule do
         }
 end
 
-defmodule EasyWeb.Types.NutritionWeekScheduleInput do
-  use EasyWeb.Type
-
-  @type t :: %{
-          required(:monday) => String.t(),
-          required(:tuesday) => String.t(),
-          required(:wednesday) => String.t(),
-          required(:thursday) => String.t(),
-          required(:friday) => String.t(),
-          required(:saturday) => String.t(),
-          required(:sunday) => String.t()
-        }
-end
-
 defmodule EasyWeb.Types.NutritionMealOption do
   use EasyWeb.Type
 
   @type t :: %{
           required(:id) => String.t(),
-          required(:position) => non_neg_integer(),
-          required(:nutrition_meal_id) => String.t(),
-          required(:inserted_at) => DateTime.t(),
-          required(:updated_at) => DateTime.t()
+          required(:nutrition_meal_id) => String.t()
         }
 end
 
@@ -74,110 +57,21 @@ defmodule EasyWeb.Types.NutritionDayPattern do
   @type t :: %{
           required(:id) => String.t(),
           required(:name) => String.t(),
-          required(:position) => non_neg_integer(),
-          required(:weekdays) => [
-            :monday | :tuesday | :wednesday | :thursday | :friday | :saturday | :sunday
-          ],
-          required(:slots) => [EasyWeb.Types.NutritionDayPatternSlot.t()],
-          required(:nutrition_plan_id) => String.t(),
-          required(:inserted_at) => DateTime.t(),
-          required(:updated_at) => DateTime.t()
+          required(:slots) => [EasyWeb.Types.NutritionDayPatternSlot.t()]
         }
 end
 
 defmodule EasyWeb.Types.Nutrition.NutritionPortion do
   use EasyWeb.Type
 
-  @type t :: %{
-          required(:kind) => :gram | :serving,
-          required(:grams) => float() | nil,
-          required(:amount) => float() | nil,
-          required(:unit) => String.t() | nil,
-          required(:label) => String.t() | nil
-        }
-end
-
-defmodule EasyWeb.Types.Nutrition.NutritionPortionInput do
-  use EasyWeb.Type
-
-  @type t :: %{
-          required(:kind) => :gram | :serving,
-          optional(:grams) => float() | nil,
-          optional(:amount) => float() | nil,
-          optional(:unit) => String.t() | nil,
-          optional(:label) => String.t() | nil
-        }
-end
-
-defmodule EasyWeb.Types.NutritionMealItemInput do
-  use EasyWeb.Type
-
-  @type t :: %{
-          optional(:id) => String.t(),
-          optional(:local_ref) => String.t(),
-          required(:kind) => :food | :recipe,
-          optional(:food_id) => String.t() | nil,
-          optional(:recipe_id) => String.t() | nil,
-          required(:position) => non_neg_integer(),
-          required(:portion) => EasyWeb.Types.Nutrition.NutritionPortionInput.t()
-        }
-end
-
-defmodule EasyWeb.Types.NutritionMealInput do
-  use EasyWeb.Type
-
-  @type t :: %{
-          optional(:id) => String.t(),
-          optional(:local_ref) => String.t(),
-          required(:name) => String.t(),
-          optional(:notes) => String.t() | nil,
-          required(:position) => non_neg_integer(),
-          required(:meal_items) => [EasyWeb.Types.NutritionMealItemInput.t()]
-        }
-end
-
-defmodule EasyWeb.Types.NutritionMealOptionInput do
-  use EasyWeb.Type
-
-  @type t :: %{
-          optional(:id) => String.t(),
-          optional(:local_ref) => String.t(),
-          optional(:nutrition_meal_id) => String.t(),
-          optional(:meal_local_ref) => String.t(),
-          required(:position) => non_neg_integer()
-        }
-end
-
-defmodule EasyWeb.Types.NutritionDayPatternSlotInput do
-  use EasyWeb.Type
-
-  @type t :: %{
-          required(:meal_slot) =>
-            :early_morning
-            | :breakfast
-            | :mid_morning
-            | :lunch
-            | :afternoon
-            | :evening
-            | :dinner
-            | :pre_sleep
-            | :pre_workout
-            | :during_workout
-            | :post_workout,
-          required(:options) => [EasyWeb.Types.NutritionMealOptionInput.t()]
-        }
-end
-
-defmodule EasyWeb.Types.NutritionDayPatternInput do
-  use EasyWeb.Type
-
-  @type t :: %{
-          optional(:id) => String.t(),
-          optional(:local_ref) => String.t(),
-          required(:name) => String.t(),
-          required(:position) => non_neg_integer(),
-          required(:slots) => [EasyWeb.Types.NutritionDayPatternSlotInput.t()]
-        }
+  @type t ::
+          %{required(:kind) => :gram, required(:grams) => float()}
+          | %{
+              required(:kind) => :serving,
+              required(:amount) => float(),
+              required(:unit) => String.t(),
+              required(:label) => String.t() | nil
+            }
 end
 
 defmodule EasyWeb.Types.NutritionMealItem do
@@ -186,15 +80,11 @@ defmodule EasyWeb.Types.NutritionMealItem do
   @type t :: %{
           required(:id) => String.t(),
           required(:kind) => :food | :recipe,
-          required(:name) => String.t() | nil,
-          required(:food_id) => String.t() | nil,
-          required(:recipe_id) => String.t() | nil,
-          required(:position) => non_neg_integer(),
+          optional(:name) => String.t() | nil,
+          optional(:food_id) => String.t() | nil,
+          optional(:recipe_id) => String.t() | nil,
           required(:portion) => EasyWeb.Types.Nutrition.NutritionPortion.t(),
-          required(:nutrients) => EasyWeb.Types.Nutrition.FoodNutrients.t(),
-          required(:nutrition_meal_id) => String.t(),
-          required(:inserted_at) => DateTime.t(),
-          required(:updated_at) => DateTime.t()
+          optional(:nutrients) => EasyWeb.Types.Nutrition.FoodNutrients.t()
         }
 end
 
@@ -204,13 +94,21 @@ defmodule EasyWeb.Types.NutritionMeal do
   @type t :: %{
           required(:id) => String.t(),
           required(:name) => String.t(),
-          required(:notes) => String.t() | nil,
-          required(:position) => non_neg_integer(),
-          required(:nutrition_plan_id) => String.t(),
-          required(:nutrients) => EasyWeb.Types.Nutrition.FoodNutrients.t(),
-          required(:meal_items) => [EasyWeb.Types.NutritionMealItem.t()],
-          required(:inserted_at) => DateTime.t(),
-          required(:updated_at) => DateTime.t()
+          optional(:notes) => String.t() | nil,
+          optional(:nutrients) => EasyWeb.Types.Nutrition.FoodNutrients.t(),
+          required(:meal_items) => [EasyWeb.Types.NutritionMealItem.t()]
+        }
+end
+
+defmodule EasyWeb.Types.NutritionMenu do
+  use EasyWeb.Type
+
+  # Array order is authoritative. Names on items and nutrient totals are
+  # server-calculated: accepted on save for round trips, never trusted.
+  @type t :: %{
+          required(:meals) => [EasyWeb.Types.NutritionMeal.t()],
+          required(:day_patterns) => [EasyWeb.Types.NutritionDayPattern.t()],
+          required(:schedule) => EasyWeb.Types.NutritionWeekSchedule.t()
         }
 end
 
@@ -228,6 +126,7 @@ defmodule EasyWeb.Types.NutritionPlan do
     MealSlot,
     NutrientTotals,
     Plan,
+    Portions,
     Recipe,
     WeekSchedule
   }
@@ -253,9 +152,7 @@ defmodule EasyWeb.Types.NutritionPlan do
           required(:client) => EasyWeb.Types.NutritionPlanClient.t() | nil,
           required(:creator_id) => String.t() | nil,
           required(:source_template_id) => String.t() | nil,
-          required(:meals) => [EasyWeb.Types.NutritionMeal.t()],
-          required(:day_patterns) => [EasyWeb.Types.NutritionDayPattern.t()],
-          required(:schedule) => EasyWeb.Types.NutritionWeekSchedule.t(),
+          required(:menu) => EasyWeb.Types.NutritionMenu.t(),
           required(:inserted_at) => DateTime.t(),
           required(:updated_at) => DateTime.t()
         }
@@ -291,9 +188,7 @@ defmodule EasyWeb.Types.NutritionPlan do
 
   @type replace_menu :: %{
           required(:expected_revision) => pos_integer(),
-          required(:meals) => [EasyWeb.Types.NutritionMealInput.t()],
-          required(:day_patterns) => [EasyWeb.Types.NutritionDayPatternInput.t()],
-          required(:schedule) => EasyWeb.Types.NutritionWeekScheduleInput.t()
+          required(:menu) => EasyWeb.Types.NutritionMenu.t()
         }
 
   @type list_query :: %{
@@ -333,9 +228,11 @@ defmodule EasyWeb.Types.NutritionPlan do
       client: format_client(plan),
       creator_id: plan.creator_id,
       source_template_id: plan.source_template_id,
-      meals: Enum.map(meals, &format_meal/1),
-      day_patterns: Enum.map(patterns, &format_day_pattern(&1, schedule)),
-      schedule: format_schedule(schedule),
+      menu: %{
+        meals: Enum.map(meals, &format_meal/1),
+        day_patterns: Enum.map(patterns, &format_day_pattern/1),
+        schedule: format_schedule(schedule)
+      },
       inserted_at: plan.inserted_at,
       updated_at: plan.updated_at
     }
@@ -346,12 +243,8 @@ defmodule EasyWeb.Types.NutritionPlan do
       id: meal.id,
       name: meal.name,
       notes: meal.notes,
-      position: meal.position,
-      nutrition_plan_id: meal.nutrition_plan_id,
       nutrients: items |> NutrientTotals.sum() |> NutrientTotals.round(),
-      meal_items: Enum.map(items, &format_meal_item/1),
-      inserted_at: meal.inserted_at,
-      updated_at: meal.updated_at
+      meal_items: Enum.map(items, &format_meal_item/1)
     }
   end
 
@@ -370,32 +263,17 @@ defmodule EasyWeb.Types.NutritionPlan do
       name: name,
       food_id: item.food_id,
       recipe_id: item.recipe_id,
-      position: item.position,
-      portion: %{
-        kind: item.portion_kind,
-        grams: item.weight_g,
-        amount: item.amount,
-        unit: item.unit,
-        label: item.serving_label
-      },
-      nutrients: item |> NutrientTotals.from_fields() |> NutrientTotals.round(),
-      nutrition_meal_id: item.nutrition_meal_id,
-      inserted_at: item.inserted_at,
-      updated_at: item.updated_at
+      portion: Portions.from_snapshot(item),
+      nutrients: item |> NutrientTotals.from_fields() |> NutrientTotals.round()
     }
   end
 
-  defp format_day_pattern(%DayPattern{meal_options: options} = pattern, schedule)
+  defp format_day_pattern(%DayPattern{meal_options: options} = pattern)
        when is_list(options) do
     %{
       id: pattern.id,
       name: pattern.name,
-      position: pattern.position,
-      weekdays: DayPattern.weekdays_for(pattern, schedule),
-      slots: format_slots(options),
-      nutrition_plan_id: pattern.nutrition_plan_id,
-      inserted_at: pattern.inserted_at,
-      updated_at: pattern.updated_at
+      slots: format_slots(options)
     }
   end
 
@@ -419,10 +297,7 @@ defmodule EasyWeb.Types.NutritionPlan do
   defp format_option(%MealOption{} = option) do
     %{
       id: option.id,
-      position: option.position,
-      nutrition_meal_id: option.nutrition_meal_id,
-      inserted_at: option.inserted_at,
-      updated_at: option.updated_at
+      nutrition_meal_id: option.nutrition_meal_id
     }
   end
 
@@ -442,4 +317,14 @@ defmodule EasyWeb.Types.NutritionPlan do
   defp format_client(%Plan{kind: :client_plan, client: %Client{} = client}) do
     %{id: client.id, first_name: client.first_name, last_name: client.last_name}
   end
+end
+
+defmodule EasyWeb.Types.NutritionCoverage do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:date) => Date.t(),
+          required(:current) => EasyWeb.Types.NutritionPlan.t() | nil,
+          required(:upcoming) => [EasyWeb.Types.NutritionPlan.t()]
+        }
 end

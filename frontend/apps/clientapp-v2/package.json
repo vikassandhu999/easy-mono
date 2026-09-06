@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --port 1314 --host",
     "build": "tsc --noEmit -p tsconfig.app.json && pnpm run check && vite build",
-    "check": "node ../../scripts/run-checks.mjs src scripts ../../packages/utils/src",
+    "check": "node ../../scripts/run-checks.mjs src tests scripts ../../packages/utils/src",
     "gen:api": "openapi-typescript ../../openapi/client.openapi.json -o src/api/schema.ts",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "lint": "biome check --write .",

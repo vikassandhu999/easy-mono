@@ -3,9 +3,7 @@ defmodule EasyWeb.Types.Nutrition.RecipeIngredientInput do
 
   @type t :: %{
           required(:food_id) => String.t(),
-          optional(:unit) => String.t() | nil,
-          optional(:amount) => number() | nil,
-          required(:weight_g) => number()
+          required(:portion) => EasyWeb.Types.Nutrition.NutritionPortion.t()
         }
 end
 
@@ -15,9 +13,7 @@ defmodule EasyWeb.Types.Nutrition.RecipeIngredient do
   @type t :: %{
           required(:food_id) => String.t(),
           required(:food) => EasyWeb.Types.Nutrition.Food.t() | nil,
-          required(:unit) => String.t() | nil,
-          required(:amount) => float() | nil,
-          required(:weight_g) => float(),
+          required(:portion) => EasyWeb.Types.Nutrition.NutritionPortion.t(),
           required(:position) => non_neg_integer()
         }
 end
@@ -36,6 +32,7 @@ defmodule EasyWeb.Types.Nutrition.Recipe do
   use EasyWeb.Type
 
   alias Easy.Nutrition.NutrientTotals
+  alias Easy.Nutrition.Portions
   alias Easy.Nutrition.Recipe, as: RecipeSchema
   alias Easy.Nutrition.RecipeIngredient, as: RecipeIngredientSchema
 
@@ -46,6 +43,8 @@ defmodule EasyWeb.Types.Nutrition.Recipe do
           required(:instructions) => String.t() | nil,
           required(:servings_count) => pos_integer(),
           required(:cooked_weight_g) => float() | nil,
+          required(:default_portion) => EasyWeb.Types.Nutrition.NutritionPortion.t(),
+          required(:portion_options) => [EasyWeb.Types.Nutrition.NutritionPortion.t()],
           required(:revision) => pos_integer(),
           required(:allergens) => [String.t()],
           required(:dietary_tags) => [String.t()],
@@ -94,6 +93,8 @@ defmodule EasyWeb.Types.Nutrition.Recipe do
 
   @spec format(RecipeSchema.t()) :: t()
   def format(%RecipeSchema{} = recipe) do
+    portions = Portions.for_recipe(recipe)
+
     %{
       id: recipe.id,
       name: recipe.name,
@@ -102,6 +103,8 @@ defmodule EasyWeb.Types.Nutrition.Recipe do
       servings_count: recipe.servings_count,
       cooked_weight_g: recipe.cooked_weight_g,
       revision: recipe.revision,
+      default_portion: portions.default_portion,
+      portion_options: portions.portion_options,
       allergens: recipe.allergens || [],
       dietary_tags: recipe.dietary_tags || [],
       nutrients: recipe |> NutrientTotals.from_recipe() |> NutrientTotals.round(),
@@ -116,9 +119,7 @@ defmodule EasyWeb.Types.Nutrition.Recipe do
     %{
       food_id: ingredient.food_id,
       food: ingredient.food,
-      unit: ingredient.unit,
-      amount: ingredient.amount,
-      weight_g: ingredient.weight_g,
+      portion: Portions.from_snapshot(ingredient),
       position: ingredient.position
     }
   end

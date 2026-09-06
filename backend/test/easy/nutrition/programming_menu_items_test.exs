@@ -55,12 +55,12 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
                  1,
                  menu(template,
                    meals: [
-                     meal_input("dinner", "Dinner", 10, [
-                       recipe_item("rice", recipe.id, 20, %{kind: :serving, amount: 1})
+                     meal_input("dinner", "Dinner", [
+                       recipe_item("rice", recipe.id, %{kind: :serving, amount: 1, unit: "serving", label: nil})
                      ]),
-                     meal_input("breakfast", "Breakfast", 0, [
-                       food_item("yogurt", food.id, 0, %{kind: :gram, grams: 50}),
-                       food_item("cup", food.id, 1, %{
+                     meal_input("breakfast", "Breakfast", [
+                       food_item("yogurt", food.id, %{kind: :gram, grams: 50}),
+                       food_item("cup", food.id, %{
                          kind: :serving,
                          amount: 1,
                          unit: "cup",
@@ -72,11 +72,11 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
                )
 
       assert replaced.revision == 2
-      assert [breakfast, dinner] = replaced.meals
+      assert [dinner, breakfast] = replaced.meals
       assert breakfast.name == "Breakfast"
-      assert breakfast.position == 0
+      assert breakfast.position == 1
       assert dinner.name == "Dinner"
-      assert dinner.position == 10
+      assert dinner.position == 0
 
       assert [yogurt, cup] = breakfast.meal_items
       assert yogurt.food_id == food.id
@@ -129,8 +129,8 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
                  1,
                  menu(template,
                    meals: [
-                     meal_input("breakfast", "Breakfast", 0, [
-                       food_item("cup", food.id, 0, %{
+                     meal_input("breakfast", "Breakfast", [
+                       food_item("cup", food.id, %{
                          kind: :serving,
                          amount: 1,
                          unit: "cup",
@@ -169,22 +169,22 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
       requests = [
         menu(template,
           meals: [
-            meal_input("one", "One", 0, [
-              food_item("hidden", hidden_food.id, 0, %{kind: :gram, grams: 50})
+            meal_input("one", "One", [
+              food_item("hidden", hidden_food.id, %{kind: :gram, grams: 50})
             ])
           ]
         ),
         menu(template,
           meals: [
-            meal_input("one", "One", 0, [
-              recipe_item("hidden", hidden_recipe.id, 0, %{kind: :serving, amount: 1})
+            meal_input("one", "One", [
+              recipe_item("hidden", hidden_recipe.id, %{kind: :serving, amount: 1, unit: "serving", label: nil})
             ])
           ]
         ),
         menu(template,
           meals: [
-            meal_input("one", "One", 0, [
-              food_item("serving", food.id, 0, %{
+            meal_input("one", "One", [
+              food_item("serving", food.id, %{
                 kind: :serving,
                 amount: 1,
                 unit: "cup",
@@ -226,8 +226,8 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
                  1,
                  menu(template,
                    meals: [
-                     meal_input("breakfast", "Breakfast", 0, [
-                       food_item("item", food.id, 0, %{kind: :gram, grams: 50})
+                     meal_input("breakfast", "Breakfast", [
+                       food_item("item", food.id, %{kind: :gram, grams: 50})
                      ])
                    ]
                  )
@@ -285,8 +285,8 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
                  1,
                  menu(template,
                    meals: [
-                     meal_input("weighed", "Weighed", 0, [
-                       recipe_item("grams", weighed.id, 0, %{kind: :gram, grams: 100})
+                     meal_input("weighed", "Weighed", [
+                       recipe_item("grams", weighed.id, %{kind: :gram, grams: 100})
                      ])
                    ]
                  )
@@ -301,8 +301,8 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
                  2,
                  menu(replaced,
                    meals: [
-                     meal_input("unweighed", "Unweighed", 0, [
-                       recipe_item("grams", unweighed.id, 0, %{kind: :gram, grams: 100})
+                     meal_input("unweighed", "Unweighed", [
+                       recipe_item("grams", unweighed.id, %{kind: :gram, grams: 100})
                      ])
                    ]
                  )

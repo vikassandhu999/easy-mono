@@ -16,7 +16,7 @@ defmodule Easy.Nutrition.Day do
   @type slot() :: %{
           meal_slot: atom(),
           meal_id: String.t() | nil,
-          revision: pos_integer() | nil,
+          revision: non_neg_integer(),
           applied_timezone: String.t() | nil,
           write_eligible: boolean(),
           planned_calories: number() | nil,
@@ -44,23 +44,17 @@ defmodule Easy.Nutrition.Day do
         }
 
   @type row() :: %{
-          status: :as_planned | :swapped | :added | :recorded | :pending | :skipped,
-          planned: planned_item() | nil,
-          entry: entry() | nil
-        }
-
-  @type entry() :: %{
           id: String.t(),
+          entry_id: String.t() | nil,
+          planned_item_ref: String.t() | nil,
+          status: :as_planned | :swapped | :added | :recorded | :pending | :skipped,
           kind: :food | :recipe,
           name: String.t(),
           food_id: String.t() | nil,
           recipe_id: String.t() | nil,
           portion: portion(),
           nutrients: NutrientTotals.t(),
-          notes: String.t() | nil,
-          revision: pos_integer(),
-          inserted_at: DateTime.t(),
-          updated_at: DateTime.t()
+          notes: String.t() | nil
         }
 
   @type targets() :: %{
@@ -86,11 +80,5 @@ defmodule Easy.Nutrition.Day do
           adherence: :none | :under | :on | :over | nil
         }
 
-  @type portion() :: %{
-          kind: atom(),
-          grams: number() | nil,
-          amount: number() | nil,
-          unit: String.t() | nil,
-          label: String.t() | nil
-        }
+  @type portion() :: Easy.Nutrition.Portions.t()
 end

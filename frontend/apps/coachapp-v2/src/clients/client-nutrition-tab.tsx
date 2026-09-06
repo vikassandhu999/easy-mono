@@ -1,31 +1,29 @@
-import {Chip, ProgressBar, toast} from '@heroui/react';
-import {UtensilsCrossed} from 'lucide-react';
+import {AlertDialog, Button, Chip, ProgressBar, toast, useOverlayState} from '@heroui/react';
 import {useEffect, useState} from 'react';
 import {Link, useNavigate, useSearchParams} from 'react-router-dom';
 import type {Client} from '@/api/clients';
-import {clientPlanLifecycleLabel, nutritionPlanRevisionRequest} from '@/api/nutrition-plan-lifecycle';
 import {
   type NutritionPlan,
-  useArchiveNutritionPlanMutation,
-  useListCoachClientNutritionPlansQuery,
+  useGetCoachClientNutritionCoverageQuery,
   useListCoachNutritionDaysQuery,
+  useUpdateNutritionPlanMutation,
 } from '@/api/nutrition-plans';
 import {dayWindowRange, formatDayMonth, formatKcal, formatRowDate, lastNDays} from '@/clients/client-detail-data';
 import {adherenceBand, caloriePct, type DayTotals, nutritionDayTotals} from '@/clients/client-nutrition-summary';
 import PlanAssignControl from '@/clients/client-plan-assign';
-import {PlanPanel} from '@/clients/client-plan-panel';
 import {SectionCard} from '@/clients/client-section-card';
 import {handleStaleNutritionPlanConflict} from '@/library/nutrition-plans/stale-nutrition-plan-conflict';
 import {ROUTES} from '@/routes';
+import {ErrorState} from '@/ui/error-state';
 import {toastMutationError} from '@/ui/mutation-toast';
 
 /** CD-NU: the active plan, then 14 days of adherence. */
 export function NutritionTab({client}: {client: Client}) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const [assignFromUrl] = useState(() => params.get('assign') === 'plan');
-  const archivePlanMutation = useArchiveNutritionPlanMutation();
-  const isEnding = archivePlanMutation.isPending;
+  const [assignOpen, setAssignOpen] = useState(() => params.get('assign') === 'plan');
+  const updatePlan = useUpdateNutritionPlanMutation();
+  const endDialog = useOverlayState();
 
   useEffect(() => {
     if (params.get('assign') !== 'plan') {
@@ -37,20 +35,26 @@ export function NutritionTab({client}: {client: Client}) {
   }, [params, setParams]);
 
   const days = lastNDays(14);
-  const plans = useListCoachClientNutritionPlansQuery(client.id, {status: 'active'});
+  const plans = useGetCoachClientNutritionCoverageQuery(client.id);
   const nutritionDays = useListCoachNutritionDaysQuery(client.id, dayWindowRange(days));
 
-  const plan = plans.data?.data?.[0];
+  const coverage = plans.data?.data;
+  const plan = coverage?.current;
 
   const endPlan = async (activePlan: NutritionPlan) => {
     try {
-      await archivePlanMutation.mutateAsync({
+      if (!coverage) {
+        return;
+      }
+      await updatePlan.mutateAsync({
         id: activePlan.id,
-        body: nutritionPlanRevisionRequest(activePlan),
+        body: {expected_revision: activePlan.revision, end_date: coverage.date},
       });
+      endDialog.close();
+      toast.success('Plan ends after today');
     } catch (err) {
       const handled = await handleStaleNutritionPlanConflict(err, {
-        refetchLatest: async () => (await plans.refetch()).data?.data?.find(({id}) => id === activePlan.id),
+        refetchLatest: async () => plans.refetch({throwOnError: true}),
         notify: (message) => {
           toast.info(message, {timeout: 4000});
         },
@@ -76,39 +80,133 @@ export function NutritionTab({client}: {client: Client}) {
 
   return (
     <div className="flex flex-col gap-4">
-      <PlanPanel
-        icon={UtensilsCrossed}
-        defaultAssignOpen={assignFromUrl}
-        emptyBody={`Assign a plan so ${client.first_name ?? 'this client'} can log meals against it.`}
-        emptyTitle="No nutrition plan"
-        meta={
-          plan
-            ? [
-                plan.lifecycle ? clientPlanLifecycleLabel(plan.lifecycle) : null,
-                plan.start_date ? `Started ${formatDayMonth(plan.start_date)}` : null,
-                plan.target_calories ? `${formatKcal(plan.target_calories)} kcal` : null,
-                plan.target_protein_g ? `P ${plan.target_protein_g} g` : null,
-                plan.target_carbs_g ? `C ${plan.target_carbs_g} g` : null,
-                plan.target_fat_g ? `F ${plan.target_fat_g} g` : null,
-              ]
-                .filter(Boolean)
-                .join(' · ')
-            : null
+      <SectionCard
+        title="Nutrition plans"
+        action={
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              onPress={() => setAssignOpen(true)}
+            >
+              Assign plan
+            </Button>
+            <PlanAssignControl
+              clientId={client.id}
+              clientName={client.first_name ?? 'this client'}
+              kind="nutrition"
+              isOpen={assignOpen}
+              onOpenChange={setAssignOpen}
+            />
+          </>
         }
-        assign={(control) => (
-          <PlanAssignControl
-            {...control}
-            clientId={client.id}
-            clientName={client.first_name ?? 'this client'}
-            kind="nutrition"
+      >
+        {plans.isError ? (
+          <ErrorState
+            message="Couldn't load nutrition plans."
+            onRetry={plans.refetch}
           />
+        ) : plans.isLoading ? (
+          <div className="m-4 h-20 animate-pulse rounded-panel bg-surface-secondary" />
+        ) : (
+          <div className="space-y-4 p-4">
+            <div>
+              <p className="type-eyebrow text-muted">Current plan</p>
+              {plan ? (
+                <>
+                  <p className="type-body font-semibold">{plan.name}</p>
+                  <p className="type-body-sm text-muted">
+                    {plan.start_date ? formatDayMonth(plan.start_date) : ''} –{' '}
+                    {plan.end_date ? formatDayMonth(plan.end_date) : 'Open-ended'}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onPress={() => navigate(ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', plan.id))}
+                    >
+                      Open plan
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      isDisabled={plan.end_date === coverage?.date}
+                      onPress={endDialog.open}
+                    >
+                      End after today
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <p className="type-body text-muted">No plan covers today.</p>
+              )}
+            </div>
+            {(coverage?.upcoming.length ?? 0) > 0 && (
+              <div className="space-y-3">
+                <p className="type-eyebrow text-muted">Upcoming plans</p>
+                {coverage?.upcoming.map((upcoming) => (
+                  <div
+                    key={upcoming.id}
+                    className="flex items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="type-body font-semibold">{upcoming.name}</p>
+                      <p className="type-body-sm text-muted">
+                        {upcoming.start_date ? formatDayMonth(upcoming.start_date) : ''} –{' '}
+                        {upcoming.end_date ? formatDayMonth(upcoming.end_date) : 'Open-ended'}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onPress={() => navigate(ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', upcoming.id))}
+                    >
+                      Open plan
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
-        assignLabel="Assign plan"
-        isEnding={isEnding}
-        name={plan?.name ?? null}
-        onEnd={plan ? () => endPlan(plan) : undefined}
-        onOpen={plan ? () => navigate(ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', plan.id)) : undefined}
-      />
+      </SectionCard>
+      <AlertDialog.Backdrop
+        isOpen={endDialog.isOpen}
+        onOpenChange={endDialog.setOpen}
+        variant="transparent"
+      >
+        <AlertDialog.Container>
+          <AlertDialog.Dialog>
+            <AlertDialog.Header>
+              <AlertDialog.Heading>End after today?</AlertDialog.Heading>
+            </AlertDialog.Header>
+            <AlertDialog.Body>
+              {plan?.name} covers the rest of today in this client's timezone. A new plan can start tomorrow. Logged
+              meals stay available.
+            </AlertDialog.Body>
+            <AlertDialog.Footer>
+              <Button
+                slot="close"
+                variant="tertiary"
+                isDisabled={updatePlan.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                isPending={updatePlan.isPending}
+                onPress={() => {
+                  if (plan) {
+                    endPlan(plan);
+                  }
+                }}
+              >
+                End after today
+              </Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </AlertDialog.Backdrop>
 
       <SectionCard
         divided

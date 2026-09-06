@@ -2,6 +2,9 @@
 
 Date: 2026-08-25
 
+Historical audit. The September simplification supersedes the implementation details
+below; see [the current code map](../docs/nutrition-code-map.md).
+
 ## Outcome
 
 The backend Nutrition design has a sound public boundary and moderate-high internal cognitive load.
@@ -134,7 +137,7 @@ Diary is 1,499 lines and combines:
 * freezing at line 971;
 * read-model assembly and status at lines 1126 and 1444.
 
-The public contexts remain stable. `Programming.MenuReplacement`, `Diary.DayAssembler`, `Diary.Idempotency`, and `Diary.CorrectionPolicy` own the identified workflows.
+The contexts remain Library, Programming, and Diary. MenuReplacement owns menu persistence; DayAssembler and CorrectionPolicy own diary reads and date rules. Diary now owns one atomic slot-save transaction.
 
 ### 3. Clients and Nutrition Programming dependency cycle
 
@@ -158,11 +161,9 @@ Nutrition Day, Slot, Row, command payload, resolved Library item, Portion, and M
 
 Severity: medium. Estimated effort: 1-3 days when combined with the Diary extraction. Benefit: medium-high.
 
-Diary still calls `Repo.rollback/1` from private command helpers. Those helpers are safe only because every mutation reaches them through the transaction in `Easy.Nutrition.Diary.Idempotency.run/6`. That dependency is private, but it is nonlocal control flow a maintainer must remember during extraction or reuse.
-
-`Easy.Nutrition.Diary.Idempotency` maps semantic command identities to the legacy HTTP method and path bytes. This mapping is retained for the 30-day ledger compatibility window.
-
-The command runner has one transaction owner and a semantic command identity interface. Ambient rollback dependencies in Diary helpers remain to be replaced with tagged-tuple boundaries.
+Resolved in September: Diary saves one or more complete slots under revision checks.
+Its transaction owns rollback, while slot and entry helpers return tagged results.
+The request ledger, legacy route mapping, replay behavior, and sweeper were removed.
 
 ### 6. Resolved specifications disagree about option switching
 

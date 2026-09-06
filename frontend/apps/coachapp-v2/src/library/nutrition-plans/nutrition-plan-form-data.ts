@@ -2,10 +2,18 @@ import {z} from 'zod';
 import type {NutritionPlan, NutritionPlanCreateRequest, NutritionPlanUpdateRequest} from '../../api/nutrition-plans.ts';
 import {omitUndefined, toNullableText, toOptionalText} from '../../api/shared.ts';
 import {numberFieldSchema} from '../../ui/number-field-value.ts';
+import {periodError} from '../plan-coverage.ts';
 
 const optionalNumber = numberFieldSchema(z.number().min(0, 'Use 0 or higher').optional());
 
 export const nutritionPlanFormSchema = z.object({
+  coverage: z
+    .object({start_date: z.string().nullable(), end_date: z.string().nullable()})
+    .refine((value) => !periodError(value.start_date, value.end_date), {
+      message: 'End date must be on or after start date',
+      path: ['end_date'],
+    })
+    .optional(),
   calories: optionalNumber,
   carbs_g: optionalNumber,
   description: z.string().optional(),
@@ -35,6 +43,7 @@ export function nutritionPlanToFormValues(plan: NutritionPlan): NutritionPlanFor
     fats_g: plan.target_fat_g ?? undefined,
     fiber_g: plan.target_fiber_g ?? undefined,
     name: plan.name,
+    ...(plan.kind === 'client_plan' ? {coverage: {start_date: plan.start_date, end_date: plan.end_date}} : {}),
     protein_g: plan.target_protein_g ?? undefined,
   };
 }
@@ -57,6 +66,7 @@ export function nutritionPlanToUpdateRequest(
 ): NutritionPlanUpdateRequest {
   return {
     expected_revision: expectedRevision,
+    ...(values.coverage ?? {}),
     name: values.name,
     description: toNullableText(values.description),
     target_calories: values.calories ?? null,

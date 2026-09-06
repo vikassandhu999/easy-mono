@@ -1,10 +1,10 @@
-import {formatDateShort, getFullName} from '@easy/utils';
-import {AlertDialog, Button} from '@heroui/react';
+import {getFullName} from '@easy/utils';
+import {Button} from '@heroui/react';
 import {UserPlus} from 'lucide-react';
 import {useState} from 'react';
 import type {Client} from '@/api/clients';
 import ClientPickerContent from '@/ui/client-picker';
-import {clientRecipientName, type PlanAddDecision, planAddDecision} from '@/ui/client-picker-data';
+import {clientRecipientName} from '@/ui/client-picker-data';
 import {PickerModal} from '@/ui/picker-modal';
 import {type PlanAssignmentDates, type PlanKind, planAssignmentConflictMessage} from '@/ui/plan-assignment-dates';
 import PlanScheduleStep from '@/ui/plan-schedule-step';
@@ -18,38 +18,18 @@ export type PlanAddToClientControlProps = {
 };
 
 /** The whole flow is one value, so a prompt can never coexist with the modal. */
-type Flow =
-  | {step: 'closed'}
-  | {step: 'pick'}
-  | {step: 'prompt'; client: Client; decision: Exclude<PlanAddDecision, {kind: 'schedule'}>}
-  | {step: 'dates'; client: Client; error: null | string};
+type Flow = {step: 'closed'} | {step: 'pick'} | {step: 'dates'; client: Client; error: null | string};
 
 function recipientName(client: Client): string {
   return clientRecipientName(client, getFullName(client.first_name, client.last_name));
 }
 
-/**
- * "Add to client" button + flow shared by the training and nutrition plan
- * builders (add-to-client spec 2026-08-07, amended 2026-08-08): pick a client,
- * resolve coverage (same-discipline plan blocks, other coverage confirms),
- * choose assignment dates, then let the discipline adapter create the copy.
- */
 export function PlanAddToClientControl({planKind, planName, onAssign, isAssigning}: PlanAddToClientControlProps) {
   const [flow, setFlow] = useState<Flow>({step: 'closed'});
-  const otherPlanKind = planKind === 'nutrition' ? 'training' : 'nutrition';
 
   const close = () => {
     if (!isAssigning) {
       setFlow({step: 'closed'});
-    }
-  };
-
-  const pick = (client: Client) => {
-    const decision = planAddDecision(client, planKind);
-    if (decision.kind === 'schedule') {
-      setFlow({client, error: null, step: 'dates'});
-    } else {
-      setFlow({client, decision, step: 'prompt'});
     }
   };
 
@@ -69,24 +49,6 @@ export function PlanAddToClientControl({planKind, planName, onAssign, isAssignin
         step: 'dates',
       });
     }
-  };
-
-  const prompt = flow.step === 'prompt' ? flow : null;
-  const promptBody = () => {
-    if (!prompt) {
-      return null;
-    }
-    const name = recipientName(prompt.client);
-    const {decision} = prompt;
-    if (decision.kind === 'blocked') {
-      return `${name} already has "${decision.existingPlanName}" active as their ${planKind} plan. End or reschedule it before adding another ${planKind} plan.`;
-    }
-    const coverage = decision.otherPlanName
-      ? `currently has "${decision.otherPlanName}" as their ${otherPlanKind} plan`
-      : decision.coveredUntil
-        ? `is covered until ${formatDateShort(decision.coveredUntil)}`
-        : 'is on an open-ended plan';
-    return `${name} ${coverage}. Choose dates for "${planName}" as their ${planKind} plan too?`;
   };
 
   return (
@@ -120,6 +82,7 @@ export function PlanAddToClientControl({planKind, planName, onAssign, isAssignin
           <PlanScheduleStep
             backLabel="Back to clients"
             clientName={recipientName(flow.client)}
+            defaultStart={flow.client.local_date}
             errorMessage={flow.error}
             isSubmitting={isAssigning}
             kind={planKind}
@@ -133,48 +96,9 @@ export function PlanAddToClientControl({planKind, planName, onAssign, isAssignin
             planName={planName}
           />
         ) : (
-          <ClientPickerContent onSelect={pick} />
+          <ClientPickerContent onSelect={(client) => setFlow({client, error: null, step: 'dates'})} />
         )}
       </PickerModal>
-
-      <AlertDialog.Backdrop
-        isOpen={prompt !== null}
-        onOpenChange={(next) => {
-          if (!next) {
-            setFlow({step: 'closed'});
-          }
-        }}
-        variant="transparent"
-      >
-        <AlertDialog.Container>
-          <AlertDialog.Dialog>
-            <AlertDialog.CloseTrigger />
-            <AlertDialog.Header>
-              <AlertDialog.Icon status="warning" />
-              <AlertDialog.Heading>
-                {prompt?.decision.kind === 'blocked' ? `Can't add "${planName}" yet` : `Add "${planName}" too?`}
-              </AlertDialog.Heading>
-            </AlertDialog.Header>
-            <AlertDialog.Body>{promptBody()}</AlertDialog.Body>
-            <AlertDialog.Footer>
-              <Button
-                slot="close"
-                variant="tertiary"
-              >
-                {prompt?.decision.kind === 'blocked' ? 'Close' : 'Cancel'}
-              </Button>
-              {prompt?.decision.kind === 'confirm' ? (
-                <Button
-                  onPress={() => setFlow({client: prompt.client, error: null, step: 'dates'})}
-                  variant="primary"
-                >
-                  Choose dates
-                </Button>
-              ) : null}
-            </AlertDialog.Footer>
-          </AlertDialog.Dialog>
-        </AlertDialog.Container>
-      </AlertDialog.Backdrop>
     </>
   );
 }

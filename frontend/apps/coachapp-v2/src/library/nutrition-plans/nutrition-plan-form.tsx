@@ -1,11 +1,12 @@
 import {Description, ErrorMessage, Fieldset, Separator} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {useForm} from 'react-hook-form';
+import {Controller, useForm} from 'react-hook-form';
 import {
   NUTRITION_PLAN_FORM_DEFAULTS,
   type NutritionPlanFormValues,
   nutritionPlanFormSchema,
 } from '@/library/nutrition-plans/nutrition-plan-form-data';
+import DateInput from '@/ui/date-input';
 import {FieldRow} from '@/ui/field-row';
 import {FormActions} from '@/ui/form-actions';
 import {FormLayout} from '@/ui/form-layout';
@@ -52,6 +53,8 @@ export default function NutritionPlanForm({
     handleSubmit,
   } = form;
 
+  const coverage = form.watch('coverage');
+
   return (
     <FormLayout onSubmit={handleSubmit(onSubmit)}>
       <FormPanel>
@@ -83,7 +86,7 @@ export default function NutritionPlanForm({
 
         <Fieldset>
           <Fieldset.Legend>Daily macro goal</Fieldset.Legend>
-          <Description>Optional daily targets. You can fine-tune these in the builder.</Description>
+          <Description>Daily targets used alongside the menu.</Description>
 
           <Fieldset.Group>
             <FieldRow className="grid-cols-2 md:grid-cols-3">
@@ -100,6 +103,38 @@ export default function NutritionPlanForm({
             </FieldRow>
           </Fieldset.Group>
         </Fieldset>
+        {coverage ? (
+          <Fieldset className="mt-6">
+            <Fieldset.Legend>Coverage dates</Fieldset.Legend>
+            <Description>When this client plan applies.</Description>
+            <FieldRow>
+              <Controller
+                control={control}
+                name="coverage.start_date"
+                render={({field, fieldState}) => (
+                  <DateInput
+                    label="Start date"
+                    value={field.value}
+                    onChange={field.onChange}
+                    errorMessage={fieldState.error?.message}
+                  />
+                )}
+              />
+              <Controller
+                control={control}
+                name="coverage.end_date"
+                render={({field, fieldState}) => (
+                  <DateInput
+                    label="End date"
+                    value={field.value}
+                    onChange={field.onChange}
+                    errorMessage={fieldState.error?.message}
+                  />
+                )}
+              />
+            </FieldRow>
+          </Fieldset>
+        ) : null}
       </FormPanel>
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}

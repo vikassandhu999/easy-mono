@@ -7,26 +7,26 @@
  * behaviour, so a menu trigger must be a `Button` (UI-CONTRACT §2 "Any button").
  */
 
+import {MEAL_SLOT_LABELS, MEAL_SLOTS, type MealSlot} from '@easy/utils/meal-slots';
 import {Button, Label, ListBox} from '@heroui/react';
 import {ChevronDown} from 'lucide-react';
 import {useRef, useState} from 'react';
-import {type BuilderMealSlot, MEAL_SLOTS, slotLabel} from '@/library/nutrition-plans/builder/slots';
 import {TAG} from '@/ui/builder-tokens';
 import {ResponsiveOverlay} from '@/ui/responsive-overlay';
 
-function isBuilderMealSlot(value: string): value is BuilderMealSlot {
+function isMealSlot(value: string): value is MealSlot {
   return (MEAL_SLOTS as readonly string[]).includes(value);
 }
 
 interface MealSlotControlProps {
-  slot: BuilderMealSlot;
-  onChange: (slot: BuilderMealSlot) => void;
+  slot: MealSlot;
+  onChange: (slot: MealSlot) => void;
 }
 
 export function MealSlotControl({slot, onChange}: MealSlotControlProps) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
-  const label = slotLabel(slot);
+  const label = MEAL_SLOT_LABELS[slot];
 
   return (
     <>
@@ -56,7 +56,7 @@ export function MealSlotControl({slot, onChange}: MealSlotControlProps) {
           onSelectionChange={(keys) => {
             const next = [...keys][0];
             setOpen(false);
-            if (typeof next === 'string' && isBuilderMealSlot(next)) {
+            if (typeof next === 'string' && isMealSlot(next)) {
               onChange(next);
             }
           }}
@@ -67,9 +67,9 @@ export function MealSlotControl({slot, onChange}: MealSlotControlProps) {
             <ListBox.Item
               id={option}
               key={option}
-              textValue={slotLabel(option)}
+              textValue={MEAL_SLOT_LABELS[option]}
             >
-              <Label className="max-w-full truncate">{slotLabel(option)}</Label>
+              <Label className="max-w-full truncate">{MEAL_SLOT_LABELS[option]}</Label>
               <ListBox.ItemIndicator />
             </ListBox.Item>
           ))}

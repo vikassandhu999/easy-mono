@@ -1,40 +1,15 @@
-/**
- * MealCard — one meal on the active day of the nutrition plan builder.
- *
- * Collapsed header (redesign): slot tag (opens the slot menu) · meal name ·
- * `Used in {n} places` when the meal is shared across days · `+{n} swap` when
- * the meal has alternates · kcal · ⋯ menu · expand chevron.
- * Expanded body: item rows, `+ Add food or recipe`, then the
- * `Client can swap with` list and `+ Add a swap`.
- *
- * The card is a `Disclosure` (UI-CONTRACT §2 / AGENTS.md — the app has no
- * Accordion). Two triggers are used so the ⋯ menu can sit between the meal's
- * figures and the chevron the way the reference does; the slot tag and the ⋯
- * menu are siblings of the trigger, never nested inside it (no button-in-button).
- *
- * Data model note: the "meal" is a plan-level entity and the day holds an
- * ordered slot option per meal, so this component takes both — `meal` for the
- * content and `optionId` for the day assignment it is rendered under. Swaps are
- * the non-default options in the same slot. Every write goes through
- * `commands`; the card renders what it is given and never touches the cache.
- * The add-items flow and the edit-mode amount sheet are mounted ONCE at the
- * composition root — this card only reports intent (`onAddItems`, `onEditItem`).
- */
+import type {MealSlot} from '@easy/utils/meal-slots';
 import {Button, Chip, Disclosure, Dropdown, Label, Separator} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {ArrowLeftRight, ChevronDown, ChevronUp, Info, MoreHorizontal, TrashIcon, X} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import type {NutritionMeal} from '@/api/nutrition-plans';
-import {kcalLabel} from '@/library/nutrition-plans/builder/macros';
-import type {HydratedMealItem} from '@/library/nutrition-plans/builder/meal-item-row';
 import {MealItemRow} from '@/library/nutrition-plans/builder/meal-item-row';
 import type {MealPaletteOption} from '@/library/nutrition-plans/builder/meal-palette';
 import {AddSwapControl} from '@/library/nutrition-plans/builder/meal-palette';
 import {MealSlotControl} from '@/library/nutrition-plans/builder/meal-slot-control';
-import type {BuilderMealSlot} from '@/library/nutrition-plans/builder/slots';
-import type {PlanBuilderCommands} from '@/library/nutrition-plans/builder/use-plan-builder';
 import {INLINE_LINK, TAG} from '@/ui/builder-tokens';
 import {AS_ICON_BUTTON, AS_TEXT, NO_GAP} from '@/ui/ua-defaults';
+import {kcalLabel, type MenuEdit, type MenuItem, type MenuMeal} from './menu';
 
 const ICON_BUTTON = `shrink-0 rounded-chip bg-transparent text-muted sm:size-7 ${AS_ICON_BUTTON}`;
 
@@ -45,19 +20,20 @@ const ICON_BUTTON = `shrink-0 rounded-chip bg-transparent text-muted sm:size-7 $
 export interface MealSwap {
   /** The day-meal option id — removing a swap removes this option. */
   optionId: string;
-  meal: NutritionMeal;
+  meal: MenuMeal;
 }
 
 interface MealCardProps {
-  meal: NutritionMeal;
-  commands: PlanBuilderCommands;
+  meal: MenuMeal;
+  edit: (action: MenuEdit) => void;
+  showNutrition: boolean;
   /** The day this card is rendered under, and the slot option binding it there. */
   dayId: string;
   optionId: string;
   open: boolean;
   onToggle: () => void;
   /** Meal slot this meal occupies on the active day. */
-  slot: BuilderMealSlot;
+  slot: MealSlot;
   /** How many day-slot options across the plan point at this meal. */
   assignmentCount: number;
   swaps: MealSwap[];
@@ -65,7 +41,7 @@ interface MealCardProps {
   /** Opens the root-mounted add-items flow for this meal. */
   onAddItems: () => void;
   /** Opens the root-mounted amount sheet on this item, anchored to the tapped row. */
-  onEditItem: (item: HydratedMealItem, anchor: HTMLElement) => void;
+  onEditItem: (item: MenuItem, anchor: HTMLElement) => void;
   /** Menu-order ▲▼ — omitted while the card is bound to a Day Pattern slot. */
   onMove?: (direction: -1 | 1) => void;
   isFirst?: boolean;
@@ -83,7 +59,8 @@ interface MealCardProps {
 
 export function MealCard({
   meal,
-  commands,
+  edit,
+  showNutrition,
   dayId,
   optionId,
   open,
@@ -122,7 +99,7 @@ export function MealCard({
     setTimeout(() => nameInputRef.current?.select(), 0);
   }, []);
 
-  const commitRename = useCallback(async () => {
+  const commitRename = useCallback(() => {
     const trimmed = nameValue.trim();
     if (!trimmed || trimmed === meal.name) {
       setEditingName(false);
@@ -130,16 +107,13 @@ export function MealCard({
       return;
     }
     setEditingName(false);
-    const ok = await commands.renameMeal(meal.id, trimmed);
-    if (!ok) {
-      setNameValue(meal.name);
-    }
-  }, [commands, nameValue, meal.id, meal.name]);
+    edit({type: 'renameMeal', mealId: meal.id, name: trimmed});
+  }, [edit, nameValue, meal.id, meal.name]);
 
   const handleNameKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
-        commitRename().catch(() => undefined);
+        commitRename();
       } else if (e.key === 'Escape') {
         setEditingName(false);
         setNameValue(meal.name);
@@ -156,8 +130,8 @@ export function MealCard({
   // (manifests/NB.json) are only tagged on the card that is actually open.
   const openId = (id: string) => (open ? id : undefined);
 
-  const items: HydratedMealItem[] = [...meal.meal_items].sort((a, b) => a.position - b.position);
-  const kcal = kcalLabel(meal.nutrients);
+  const items: MenuItem[] = meal.meal_items;
+  const kcal = showNutrition ? kcalLabel(meal.nutrients) : null;
   const isShared = assignmentCount >= 2;
 
   // ---------------------------------------------------------------------------
@@ -192,7 +166,7 @@ export function MealCard({
           <MealSlotControl
             onChange={(nextSlot) => {
               if (nextSlot !== slot) {
-                commands.changeSlot(dayId, optionId, nextSlot).catch(() => undefined);
+                edit({type: 'changeSlot', dayId, optionId, slot: nextSlot});
               }
             }}
             slot={slot}
@@ -207,7 +181,7 @@ export function MealCard({
             aria-label="Meal name"
             className="order-last w-full min-w-0 border-b border-accent bg-transparent type-body font-semibold text-foreground outline-none sm:order-none sm:w-auto sm:flex-1"
             onBlur={() => {
-              commitRename().catch(() => undefined);
+              commitRename();
             }}
             onChange={(e) => setNameValue(e.target.value)}
             onKeyDown={handleNameKeyDown}
@@ -302,9 +276,9 @@ export function MealCard({
                 if (key === 'rename-meal') {
                   startEditing();
                 } else if (key === 'remove-from-day') {
-                  commands.removeOption(dayId, optionId).catch(() => undefined);
+                  edit({type: 'removeOption', dayId, optionId});
                 } else if (key === 'delete-meal') {
-                  commands.removeMeal(meal.id).catch(() => undefined);
+                  edit({type: 'removeMeal', mealId: meal.id});
                 }
               }}
             >
@@ -379,11 +353,12 @@ export function MealCard({
                 isLast={index === items.length - 1}
                 showTestIds={open}
                 item={item}
+                showNutrition={showNutrition}
                 onMove={(direction) => {
-                  commands.moveItem(meal.id, index, index + direction).catch(() => undefined);
+                  edit({type: 'moveItem', mealId: meal.id, from: index, to: index + direction});
                 }}
                 onRemove={() => {
-                  commands.removeItem(meal.id, item.id).catch(() => undefined);
+                  edit({type: 'removeItem', mealId: meal.id, itemId: item.id});
                 }}
                 onTap={(anchor) => onEditItem(item, anchor)}
               />
@@ -430,12 +405,12 @@ export function MealCard({
                     >
                       {swap.meal.name}
                     </span>
-                    {kcalLabel(swap.meal.nutrients) ? (
+                    {(showNutrition ? kcalLabel(swap.meal.nutrients) : null) ? (
                       <span
                         className="shrink-0 whitespace-nowrap type-eyebrow text-muted"
                         data-testid={openId('nb-swap-kcal')}
                       >
-                        {kcalLabel(swap.meal.nutrients)}
+                        {showNutrition ? kcalLabel(swap.meal.nutrients) : null}
                       </span>
                     ) : null}
                     <Button
@@ -444,7 +419,7 @@ export function MealCard({
                       data-testid={openId('nb-swap-move-up')}
                       isIconOnly
                       onPress={() => {
-                        commands.moveOption(dayId, slot, optionIndex, optionIndex - 1).catch(() => undefined);
+                        edit({type: 'moveOption', dayId, slot, from: optionIndex, to: optionIndex - 1});
                       }}
                       size="sm"
                       variant="ghost"
@@ -458,7 +433,7 @@ export function MealCard({
                       isDisabled={index === swaps.length - 1}
                       isIconOnly
                       onPress={() => {
-                        commands.moveOption(dayId, slot, optionIndex, optionIndex + 1).catch(() => undefined);
+                        edit({type: 'moveOption', dayId, slot, from: optionIndex, to: optionIndex + 1});
                       }}
                       size="sm"
                       variant="ghost"
@@ -471,7 +446,7 @@ export function MealCard({
                       data-testid={openId('nb-swap-remove')}
                       isIconOnly
                       onPress={() => {
-                        commands.removeOption(dayId, swap.optionId).catch(() => undefined);
+                        edit({type: 'removeOption', dayId, optionId: swap.optionId});
                       }}
                       size="sm"
                       variant="ghost"
@@ -486,7 +461,7 @@ export function MealCard({
             <div className="mt-2">
               <AddSwapControl
                 onAdd={(mealId) => {
-                  commands.addOption(dayId, slot, mealId).catch(() => undefined);
+                  edit({type: 'addOption', dayId, slot, mealId, id: crypto.randomUUID()});
                 }}
                 options={swapCandidates}
                 {...(open ? {testId: 'nb-add-swap'} : {})}

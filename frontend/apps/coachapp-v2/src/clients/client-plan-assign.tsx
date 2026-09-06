@@ -10,6 +10,7 @@ import {Button, SearchField, Typography, toast} from '@heroui/react';
 import {Dumbbell, Plus, Utensils, X} from 'lucide-react';
 import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
+import {useGetClientQuery} from '@/api/clients';
 import {
   type NutritionPlan,
   useAssignNutritionPlanMutation,
@@ -20,7 +21,9 @@ import {useAssignTrainingPlanMutation, useCoachTrainingPlansInfiniteQuery} from 
 import AssignSurface from '@/clients/client-assign-surface';
 import {ROUTES} from '@/routes';
 import BrowseListBox, {BrowseRow} from '@/ui/browse-list-box';
+import {ErrorState} from '@/ui/error-state';
 import ListEmptyState from '@/ui/list-empty-state';
+import {PageSkeleton} from '@/ui/page-skeleton';
 import {type PlanAssignmentDates, type PlanKind, planAssignmentConflictMessage} from '@/ui/plan-assignment-dates';
 import PlanScheduleStep from '@/ui/plan-schedule-step';
 
@@ -53,11 +56,11 @@ function trainingMeta(plan: TrainingPlan): string {
 
 function PlanAssignContent({kind, clientId, clientName, onClose}: Props) {
   const navigate = useNavigate();
+  const clientQuery = useGetClientQuery(clientId);
   const isNutrition = kind === 'nutrition';
 
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
-  const [step, setStep] = useState<'pick' | 'schedule'>('pick');
   const [selected, setSelected] = useState<SelectedPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,13 +84,11 @@ function PlanAssignContent({kind, clientId, clientName, onClose}: Props) {
   const handlePickNutrition = (plan: NutritionPlan) => {
     setSelected({kind: 'nutrition', plan});
     setError(null);
-    setStep('schedule');
   };
 
   const handlePickTraining = (plan: TrainingPlan) => {
     setSelected({kind: 'training', plan});
     setError(null);
-    setStep('schedule');
   };
 
   const handleConfirm = async ({startDate, endDate}: PlanAssignmentDates) => {
@@ -144,7 +145,7 @@ function PlanAssignContent({kind, clientId, clientName, onClose}: Props) {
         </Button>
       </div>
 
-      {step === 'pick' ? (
+      {selected === null ? (
         <div className="space-y-3">
           <Typography
             color="muted"
@@ -256,18 +257,26 @@ function PlanAssignContent({kind, clientId, clientName, onClose}: Props) {
             Create a new {isNutrition ? 'nutrition' : 'training'} plan
           </Button>
         </div>
-      ) : selected ? (
+      ) : clientQuery.data ? (
         <PlanScheduleStep
           clientName={clientName}
+          defaultStart={clientQuery.data.data.local_date}
           errorMessage={error}
           isSubmitting={assigning}
           kind={kind}
-          onBack={() => setStep('pick')}
+          onBack={() => setSelected(null)}
           onConfirm={handleConfirm}
           planMeta={selected.kind === 'nutrition' ? nutritionMeta(selected.plan) : trainingMeta(selected.plan)}
           planName={selected.plan.name}
         />
-      ) : null}
+      ) : clientQuery.isError ? (
+        <ErrorState
+          message="Couldn't load client dates."
+          onRetry={clientQuery.refetch}
+        />
+      ) : (
+        <PageSkeleton />
+      )}
     </div>
   );
 }
@@ -276,33 +285,16 @@ interface ControlProps {
   kind: PlanKind;
   clientId: string;
   clientName: string;
-  /** Only used when the control renders its own trigger. */
-  label?: string;
-  /**
-   * Controlled mode — `PlanPanel` opens this from its ⋯ menu (or its empty-state
-   * button), so the surface renders no trigger of its own.
-   */
-  isOpen?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export default function PlanAssignControl({
-  clientId,
-  clientName,
-  isOpen,
-  kind,
-  label = 'Change plan',
-  onOpenChange,
-}: ControlProps) {
+export default function PlanAssignControl({clientId, clientName, isOpen, kind, onOpenChange}: ControlProps) {
   return (
     <AssignSurface
       ariaLabel={kind === 'nutrition' ? 'Assign nutrition plan' : 'Assign training plan'}
       isOpen={isOpen}
-      label={label}
       onOpenChange={onOpenChange}
-      // `outline` for a standalone trigger — the design draws plan controls as the
-      // bordered secondary button, never bare.
-      triggerVariant="outline"
     >
       {(close) => (
         <PlanAssignContent

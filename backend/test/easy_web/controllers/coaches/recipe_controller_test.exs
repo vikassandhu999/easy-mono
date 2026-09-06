@@ -29,6 +29,14 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
       refute Map.has_key?(data, "foods")
       refute Map.has_key?(data, "serving_sizes")
 
+      assert %{"kind" => "serving", "amount" => 1.0, "unit" => "serving", "label" => nil} =
+               data["default_portion"]
+
+      assert [
+               %{"kind" => "serving", "amount" => 1.0, "unit" => "serving", "label" => nil},
+               %{"kind" => "gram", "grams" => 100.0}
+             ] = data["portion_options"]
+
       assert data["id"]
       assert data["creator_id"]
       assert data["inserted_at"]
@@ -49,13 +57,17 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
       attrs =
         build(:recipe_attrs)
         |> Map.put("recipe_ingredients", [
-          %{"food_id" => food.id, "amount" => 2.0, "unit" => "cup", "weight_g" => 100.0}
+          %{"food_id" => food.id, "portion" => %{"kind" => "gram", "grams" => 100.0}}
         ])
 
       conn = post(conn, "/v1/coach/nutrition-recipes", attrs)
       assert %{"data" => data} = json_response(conn, 201)
       assert [ingredient] = data["recipe_ingredients"]
       assert ingredient["food_id"] == food.id
+
+      assert %{"kind" => "gram", "grams" => 100.0} =
+               ingredient["portion"]
+
       assert ingredient["position"] == 0
       assert data["nutrients"]["calories"] == 10.2
       assert data["nutrients"]["complete"] == true
@@ -79,7 +91,7 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
 
       attrs =
         build(:recipe_attrs)
-        |> Map.put("recipe_ingredients", [%{"food_id" => food.id, "weight_g" => 50.0}])
+        |> Map.put("recipe_ingredients", [%{"food_id" => food.id, "portion" => %{"kind" => "gram", "grams" => 50.0}}])
 
       conn = post(conn, "/v1/coach/nutrition-recipes", attrs)
       assert %{"data" => data} = json_response(conn, 201)
@@ -92,7 +104,7 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
       attrs =
         build(:recipe_attrs)
         |> Map.put("recipe_ingredients", [
-          %{"recipe_id" => Ecto.UUID.generate(), "weight_g" => 100.0}
+          %{"recipe_id" => Ecto.UUID.generate(), "portion" => %{"kind" => "gram", "grams" => 100.0}}
         ])
 
       conn = post(conn, "/v1/coach/nutrition-recipes", attrs)
@@ -131,7 +143,17 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
       media = insert(:library_media, business: business, uploaded_by_id: coach.id)
       food = insert(:food, creator: coach, business: business, media: media)
       recipe = insert(:recipe, creator: coach, business: business)
-      insert(:recipe_ingredient, business: business, recipe: recipe, food: food)
+
+      insert(:recipe_ingredient,
+        business: business,
+        recipe: recipe,
+        food: food,
+        portion_kind: :gram,
+        amount: nil,
+        unit: nil,
+        serving_label: nil,
+        weight_g: 100.0
+      )
 
       conn = get(conn, "/v1/coach/nutrition-recipes/#{recipe.id}")
       assert %{"data" => data} = json_response(conn, 200)
@@ -165,6 +187,10 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
         business: business,
         recipe: recipe,
         food: food,
+        portion_kind: :gram,
+        amount: nil,
+        unit: nil,
+        serving_label: nil,
         weight_g: 200.0
       )
 
@@ -173,7 +199,7 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
           "expected_revision" => 1,
           "name" => "Updated Recipe",
           "servings_count" => recipe.servings_count,
-          "recipe_ingredients" => [%{"food_id" => food.id, "weight_g" => 200.0}]
+          "recipe_ingredients" => [%{"food_id" => food.id, "portion" => %{"kind" => "gram", "grams" => 200.0}}]
         })
 
       assert %{"data" => data} = json_response(conn, 200)
@@ -352,6 +378,16 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
       conn = post(conn, "/v1/coach/nutrition-recipes", attrs)
       assert json_response(conn, 422)
     end
+
+    test "rejects retired raw ingredient portion fields", %{conn: conn} do
+      attrs =
+        build(:recipe_attrs)
+        |> Map.put("recipe_ingredients", [
+          %{"food_id" => Ecto.UUID.generate(), "weight_g" => 100.0}
+        ])
+
+      assert conn |> post("/v1/coach/nutrition-recipes", attrs) |> json_response(422)
+    end
   end
 
   describe "POST /v1/coach/nutrition-recipes/:id/copy" do
@@ -367,6 +403,10 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
         business: business,
         recipe: recipe,
         food: food,
+        portion_kind: :gram,
+        amount: nil,
+        unit: nil,
+        serving_label: nil,
         weight_g: 200.0
       )
 

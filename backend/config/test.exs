@@ -25,7 +25,15 @@ config :easy, Easy.Mailer, adapter: Swoosh.Adapters.Test
 
 config :easy, start_client_subscription_sweeper: false
 config :easy, start_check_in_sweeper: false
-config :easy, start_nutrition_diary_ledger_sweeper: false
+
+# Real browser tests use ordinary connections in a disposable, fixed database.
+# This override exists only in MIX_ENV=test; dev and production cannot enable it.
+if System.get_env("EASY_E2E") == "true" do
+  config :easy, Easy.Repo, database: "easy_test_e2e", pool: DBConnection.ConnectionPool
+  config :easy, EasyWeb.Endpoint, http: [ip: {127, 0, 0, 1}, port: 4400]
+  config :easy, Easy.Mailer, adapter: Swoosh.Adapters.Local
+  config :easy, :fixed_otp, "123456"
+end
 
 config :easy, Easy.Storage,
   endpoint: "https://storage.example.test",

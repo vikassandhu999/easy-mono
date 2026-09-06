@@ -360,8 +360,10 @@ else
   pattern = hd(template.day_patterns)
   gram = fn grams -> %{kind: :gram, grams: grams * 1.0} end
 
-  item = fn ref, food, grams, position ->
-    %{local_ref: ref, kind: :food, food_id: food.id, position: position, portion: gram.(grams)}
+  meal_ids = Map.new(~w(breakfast lunch dinner), &{&1, Ecto.UUID.generate()})
+
+  item = fn food, grams ->
+    %{id: Ecto.UUID.generate(), kind: :food, food_id: food.id, portion: gram.(grams)}
   end
 
   [b0, b1, l0, l1, d0, d1 | _] = food_pool ++ food_pool
@@ -369,19 +371,18 @@ else
   {:ok, source} =
     Programming.replace_menu(ctx, template.id, 1, %{
       meals: [
-        %{local_ref: "breakfast", name: "Breakfast", position: 0, meal_items: [item.("b0", b0, 80, 0), item.("b1", b1, 200, 1)]},
-        %{local_ref: "lunch", name: "Lunch", position: 1, meal_items: [item.("l0", l0, 150, 0), item.("l1", l1, 120, 1)]},
-        %{local_ref: "dinner", name: "Dinner", position: 2, meal_items: [item.("d0", d0, 180, 0), item.("d1", d1, 150, 1)]}
+        %{id: meal_ids["breakfast"], name: "Breakfast", meal_items: [item.(b0, 80), item.(b1, 200)]},
+        %{id: meal_ids["lunch"], name: "Lunch", meal_items: [item.(l0, 150), item.(l1, 120)]},
+        %{id: meal_ids["dinner"], name: "Dinner", meal_items: [item.(d0, 180), item.(d1, 150)]}
       ],
       day_patterns: [
         %{
           id: pattern.id,
           name: pattern.name,
-          position: 0,
           slots: [
-            %{meal_slot: :breakfast, options: [%{local_ref: "ob", meal_local_ref: "breakfast", position: 0}]},
-            %{meal_slot: :lunch, options: [%{local_ref: "ol", meal_local_ref: "lunch", position: 0}]},
-            %{meal_slot: :dinner, options: [%{local_ref: "od", meal_local_ref: "dinner", position: 0}]}
+            %{meal_slot: :breakfast, options: [%{id: Ecto.UUID.generate(), nutrition_meal_id: meal_ids["breakfast"]}]},
+            %{meal_slot: :lunch, options: [%{id: Ecto.UUID.generate(), nutrition_meal_id: meal_ids["lunch"]}]},
+            %{meal_slot: :dinner, options: [%{id: Ecto.UUID.generate(), nutrition_meal_id: meal_ids["dinner"]}]}
           ]
         }
       ],
@@ -396,15 +397,15 @@ else
 
   skip_days = MapSet.new([3])
   extra_food = hd(food_pool)
-  item_id = hd(hd(plan.meals).meal_items).id
+  item = hd(hd(plan.meals).meal_items)
 
-  {:ok, _} =
-    Diary.log_client_planned_item(
-      client_ctx,
-      today,
-      %{meal_slot: :breakfast, planned_item_ref: item_id},
-      Ecto.UUID.generate()
-    )
+  {:ok, day} = Diary.get_client_nutrition_day(client_ctx, today)
+  breakfast = Enum.find(day.slots, &(&1.meal_slot == :breakfast))
+  {:ok, _} = Diary.save_client_nutrition_day(client_ctx, today, %{slots: [%{
+    meal_slot: :breakfast, meal_id: breakfast.meal_id, expected_revision: breakfast.revision,
+    entries: [%{id: Ecto.UUID.generate(), planned_item_ref: item.id, food_id: item.food_id, recipe_id: item.recipe_id, notes: nil,
+      portion: %{kind: item.portion_kind, grams: item.weight_g, amount: item.amount, unit: item.unit, label: item.serving_label}}]
+  }]})
 
   extras =
     Enum.reduce(1..4, 0, fn offset, count ->
@@ -413,25 +414,19 @@ else
       else
         date = Date.add(today, -offset)
 
-        {:ok, _} =
-          Diary.add_client_extra(
-            client_ctx,
-            date,
-            %{meal_slot: :lunch, food_id: extra_food.id, portion: gram.(80)},
-            Ecto.UUID.generate()
-          )
+        {:ok, _} = Diary.save_client_nutrition_day(client_ctx, date, %{slots: [%{
+          meal_slot: :lunch, meal_id: nil, expected_revision: 0,
+          entries: [%{id: Ecto.UUID.generate(), planned_item_ref: nil, food_id: extra_food.id, recipe_id: nil, notes: nil, portion: gram.(80)}]
+        }]})
 
         count + 1
       end
     end)
 
-  {:ok, _} =
-    Diary.add_client_extra(
-      client_ctx,
-      Date.add(today, -7),
-      %{meal_slot: :dinner, food_id: extra_food.id, portion: gram.(40)},
-      Ecto.UUID.generate()
-    )
+  {:ok, _} = Diary.save_client_nutrition_day(client_ctx, Date.add(today, -7), %{slots: [%{
+    meal_slot: :dinner, meal_id: nil, expected_revision: 0,
+    entries: [%{id: Ecto.UUID.generate(), planned_item_ref: nil, food_id: extra_food.id, recipe_id: nil, notes: nil, portion: gram.(40)}]
+  }]})
 
   IO.puts("nutrition: assigned Client Plan + planned fulfilment + #{extras} extras + 1 no-Coverage entry")
 end

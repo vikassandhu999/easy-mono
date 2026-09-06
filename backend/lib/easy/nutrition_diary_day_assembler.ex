@@ -15,6 +15,7 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
     MealOption,
     MealSlot,
     NutrientTotals,
+    Portions,
     Programming,
     Recipe
   }
@@ -174,13 +175,13 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
     %{
       meal_slot: slot,
       meal_id: default.nutrition_meal_id,
-      revision: nil,
+      revision: 0,
       applied_timezone: timezone,
       write_eligible: write_eligible,
       planned_calories: NutrientTotals.sum(items).calories,
       logged_calories: nil,
       options: Enum.map(ordered, &option_data(&1, meals)),
-      rows: []
+      rows: Enum.map(items, &row(:pending, item_data(&1), nil))
     }
   end
 
@@ -227,7 +228,22 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
   end
 
   defp row(status, planned, entry) do
-    %{status: status, planned: planned, entry: entry && entry_data(entry)}
+    item = if entry, do: entry_data(entry), else: planned
+    ref = planned && planned.planned_item_ref
+
+    %{
+      id: ref || entry.id,
+      entry_id: entry && entry.id,
+      planned_item_ref: ref,
+      status: status,
+      kind: item.kind,
+      name: item.name || "Food",
+      food_id: item.food_id,
+      recipe_id: item.recipe_id,
+      portion: item.portion,
+      nutrients: item.nutrients,
+      notes: entry && entry.notes
+    }
   end
 
   defp option_data(%MealOption{} = option, meals) do
@@ -259,20 +275,20 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
       food_id: item.food_id,
       recipe_id: item.recipe_id,
       position: item.position,
-      portion: portion_data(item),
+      portion: Portions.from_snapshot(item),
       nutrients: NutrientTotals.from_fields(item)
     }
   end
 
   defp frozen_item_data(%DiaryFrozenPlannedItem{} = item) do
     %{
-      planned_item_ref: item.id,
+      planned_item_ref: item.source_meal_item_id,
       kind: item.kind,
       name: item.display_name,
       food_id: item.food_id,
       recipe_id: item.recipe_id,
       position: item.position,
-      portion: portion_data(item),
+      portion: Portions.from_snapshot(item),
       nutrients: NutrientTotals.from_fields(item)
     }
   end
@@ -284,10 +300,9 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
       name: entry.display_name,
       food_id: entry.food_id,
       recipe_id: entry.recipe_id,
-      portion: portion_data(entry),
+      portion: Portions.from_snapshot(entry),
       nutrients: NutrientTotals.from_fields(entry),
       notes: entry.notes,
-      revision: entry.revision,
       inserted_at: entry.inserted_at,
       updated_at: entry.updated_at
     }
@@ -299,16 +314,6 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
   defp item_name(%MealItem{food: %Food{name: name}}), do: name
   defp item_name(%MealItem{recipe: %Recipe{name: name}}), do: name
   defp item_name(_item), do: nil
-
-  defp portion_data(item) do
-    %{
-      kind: item.portion_kind,
-      grams: item.weight_g,
-      amount: item.amount,
-      unit: item.unit,
-      label: item.serving_label
-    }
-  end
 
   defp meal_items(%Meal{meal_items: items}) when is_list(items), do: items
   defp meal_items(_meal), do: []
@@ -363,7 +368,7 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
 
   defp day_summary(slots, targets) do
     rows = Enum.flat_map(slots, & &1.rows)
-    entries = for %{entry: entry} when not is_nil(entry) <- rows, do: entry
+    entries = Enum.reject(rows, &is_nil(&1.entry_id))
     logged = NutrientTotals.combine(Enum.map(entries, & &1.nutrients))
     planned = NutrientTotals.combine(Enum.map(Enum.flat_map(slots, &active_option_items/1), & &1.nutrients))
 

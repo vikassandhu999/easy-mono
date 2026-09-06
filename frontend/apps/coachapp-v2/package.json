@@ -7,7 +7,7 @@
     "dev": "vite --port 2021 --host",
     "build": "tsc --noEmit -p tsconfig.app.json && pnpm run check && vite build",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
-    "check": "node ../../scripts/run-checks.mjs src ../../packages/utils/src",
+    "check": "node ../../scripts/run-checks.mjs src tests ../../packages/utils/src",
     "gen:api": "openapi-typescript ../../openapi/coach.openapi.json -o src/api/schema.ts",
     "lint": "biome check --write .",
     "preview": "vite preview"

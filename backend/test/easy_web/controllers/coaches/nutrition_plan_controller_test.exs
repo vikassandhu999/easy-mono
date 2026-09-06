@@ -41,12 +41,9 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       assert created["status"] == "active"
       refute Map.has_key?(created, "business_id")
 
-      assert [%{"name" => "Everyday", "position" => 0, "id" => pattern_id, "weekdays" => weekdays}] =
-               created["day_patterns"]
+      assert [%{"name" => "Everyday", "id" => pattern_id, "slots" => []}] = created["menu"]["day_patterns"]
 
-      assert Enum.sort(weekdays) == Enum.sort(~w(monday tuesday wednesday thursday friday saturday sunday))
-
-      assert created["schedule"] == %{
+      assert created["menu"]["schedule"] == %{
                "monday" => pattern_id,
                "tuesday" => pattern_id,
                "wednesday" => pattern_id,
@@ -108,7 +105,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       assert %{"data" => shown} = json_response(show_conn, 200)
       assert shown["kind"] == "template"
       assert shown["revision"] == 1
-      assert shown["day_patterns"] == []
+      assert shown["menu"]["day_patterns"] == []
 
       update_conn =
         patch(conn, "/v1/coach/nutrition-plans/#{template.id}", %{
@@ -374,13 +371,15 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
                  "revision" => 1,
                  "client_id" => nil,
                  "source_template_id" => nil,
-                 "day_patterns" => [%{"id" => copied_pattern_id, "name" => "Everyday"}],
-                 "schedule" => copied_schedule
+                 "menu" => %{
+                   "day_patterns" => [%{"id" => copied_pattern_id, "name" => "Everyday"}],
+                   "schedule" => copied_schedule
+                 }
                }
              } = response
 
       assert duplicate_id != created["id"]
-      assert copied_pattern_id != hd(created["day_patterns"])["id"]
+      assert copied_pattern_id != hd(created["menu"]["day_patterns"])["id"]
       assert copied_schedule["monday"] == copied_pattern_id
       assert copied_schedule["sunday"] == copied_pattern_id
     end
@@ -433,7 +432,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
         |> json_response(201)
         |> Map.fetch!("data")
 
-      pattern_id = hd(created["day_patterns"])["id"]
+      pattern_id = hd(created["menu"]["day_patterns"])["id"]
 
       response =
         conn
@@ -452,8 +451,10 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
                  "revision" => 1,
                  "client_id" => client_id,
                  "source_template_id" => source_id,
-                 "day_patterns" => [%{"id" => copied_pattern_id, "name" => "Everyday"}],
-                 "schedule" => copied_schedule
+                 "menu" => %{
+                   "day_patterns" => [%{"id" => copied_pattern_id, "name" => "Everyday"}],
+                   "schedule" => copied_schedule
+                 }
                }
              } = response
 

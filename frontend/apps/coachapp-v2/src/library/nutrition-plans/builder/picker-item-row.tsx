@@ -5,8 +5,7 @@
 import {Chip} from '@heroui/react';
 
 import type {Food, Recipe} from '@/api/nutrition-foods';
-import {fmt} from '@/library/nutrition-plans/builder/macros';
-import {recipeServings} from '@/library/recipes/recipe-math';
+import {fmt} from './menu';
 
 export type FoodOrRecipe = Food | Recipe;
 
@@ -17,14 +16,14 @@ export function isRecipe(item: FoodOrRecipe): item is Recipe {
 
 function perServingCalories(recipe: Recipe): number | null | undefined {
   const kcal = recipe.nutrients.calories;
-  return kcal == null ? kcal : kcal / recipeServings(recipe);
+  return kcal == null ? kcal : kcal / recipe.servings_count;
 }
 
 /** Protein badge — per 100g for foods, per serving for recipes. e.g. "80P". */
 function macroBadge(item: FoodOrRecipe): string {
   if (isRecipe(item)) {
     const protein = item.nutrients.protein;
-    return `${fmt(protein == null ? protein : protein / recipeServings(item))}P`;
+    return `${fmt(protein == null ? protein : protein / item.servings_count)}P`;
   }
   return `${fmt(item.protein_g_per_100g)}P`;
 }

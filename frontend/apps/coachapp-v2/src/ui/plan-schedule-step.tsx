@@ -1,10 +1,10 @@
 /**
  * PlanScheduleStep — the date step of every plan→client assign flow: a
- * required start (defaulting to the local/UTC-safe current day), an optional
+ * required start (defaulting to the client’s calendar day), an optional
  * open-ended end with 4/8/12-week presets, then confirm. The parent owns the
  * mutation and surfaces its failure via `errorMessage`.
  */
-import {formatDateISO, formatIsoDateOnly} from '@easy/utils';
+import {formatIsoDateOnly} from '@easy/utils';
 import {Button, Label, Spinner, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {ChevronLeft, Dumbbell, Utensils} from 'lucide-react';
@@ -14,7 +14,6 @@ import {Controller, useForm} from 'react-hook-form';
 import DateInput from '@/ui/date-input';
 import {
   addAssignmentWeeks,
-  assignmentStartDate,
   PLAN_ASSIGNMENT_DURATIONS,
   type PlanAssignmentDates,
   type PlanKind,
@@ -27,6 +26,7 @@ interface Props {
   planName: string;
   planMeta?: string;
   clientName: string;
+  defaultStart: string;
   isSubmitting: boolean;
   errorMessage?: null | string;
   onBack: () => void;
@@ -41,14 +41,13 @@ export default function PlanScheduleStep({
   planName,
   planMeta,
   clientName,
+  defaultStart,
   isSubmitting,
   errorMessage,
   onBack,
   onChange,
   onConfirm,
 }: Props) {
-  const now = new Date();
-  const defaultStart = assignmentStartDate(formatDateISO(now), now.toISOString().slice(0, 10));
   // Guards the gap between an Enter-key resubmit and `isSubmitting` rendering.
   const submitLocked = useRef(false);
   const form = useForm<PlanAssignmentDates>({

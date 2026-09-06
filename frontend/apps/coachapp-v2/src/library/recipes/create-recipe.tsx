@@ -1,11 +1,9 @@
 import {AlertDialog, Button, toast, useOverlayState} from '@heroui/react';
-import {useState} from 'react';
 import {generatePath, useNavigate} from 'react-router-dom';
 import {useCreateRecipeMutation} from '@/api/nutrition-foods';
 import {applyFormErrors} from '@/api/shared';
 import RecipeForm, {useRecipeForm} from '@/library/recipes/recipe-form';
 import {type RecipeFormValues, recipeToCreateRequest} from '@/library/recipes/recipe-form-data';
-import type {IngredientItem} from '@/library/recipes/recipe-math';
 import {ROUTES} from '@/routes';
 import {BackButton} from '@/ui/back-button';
 import {Page} from '@/ui/page';
@@ -15,14 +13,11 @@ export default function CreateRecipe() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.RECIPES);
   const createRecipe = useCreateRecipeMutation();
-  const [ingredients, setIngredients] = useState<IngredientItem[]>([]);
   const leaveConfirm = useOverlayState();
 
   const form = useRecipeForm();
 
-  // Unsaved-changes guard: the form's own dirtiness plus the ingredient and
-  // serving-size props (which aren't react-hook-form fields).
-  const hasUnsavedChanges = form.formState.isDirty || ingredients.length > 0;
+  const hasUnsavedChanges = form.formState.isDirty;
 
   const attemptLeave = () => {
     if (hasUnsavedChanges) {
@@ -34,7 +29,7 @@ export default function CreateRecipe() {
 
   const onSubmit = async (data: RecipeFormValues) => {
     try {
-      const result = await createRecipe.mutateAsync(recipeToCreateRequest({ingredients, values: data}));
+      const result = await createRecipe.mutateAsync(recipeToCreateRequest(data));
       toast.success('Recipe created');
       navigate(generatePath(ROUTES.RECIPE_DETAIL, {id: result.data.id}), {replace: true});
     } catch (err) {
@@ -60,10 +55,8 @@ export default function CreateRecipe() {
         >
           <RecipeForm
             form={form}
-            ingredients={ingredients}
             isSubmitting={createRecipe.isPending}
             onCancel={attemptLeave}
-            onIngredientsChange={setIngredients}
             onSubmit={onSubmit}
             submitLabel="Create recipe"
             submittingLabel="Creating recipe"

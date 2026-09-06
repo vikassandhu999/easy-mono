@@ -1,9 +1,8 @@
 defmodule Easy.Nutrition.RecipeTest do
   use Easy.SchemaCase, async: false
-
   alias Easy.Nutrition.Library
 
-  describe "copy_recipe/2" do
+  describe("copy_recipe/2") do
     test "uses distinguishable names and preserves the remaining scalar fields" do
       coach = insert_coach()
       food = insert(:food, business: coach.business, creator: coach)
@@ -14,14 +13,11 @@ defmodule Easy.Nutrition.RecipeTest do
           creator: coach,
           allergens: ["dairy"],
           dietary_tags: ["keto"],
-          recipe_ingredients: [
-            build(:recipe_ingredient, business: coach.business, food: food)
-          ]
+          recipe_ingredients: [build(:recipe_ingredient, business: coach.business, food: food)]
         )
 
       assert {:ok, copy} = Library.copy_recipe(trainer_ctx(coach), source.id)
       assert {:ok, second_copy} = Library.copy_recipe(trainer_ctx(coach), copy.id)
-
       assert copy.name == "#{source.name} (Copy)"
       assert second_copy.name == "#{source.name} (Copy 2)"
       assert copy.description == source.description
@@ -33,7 +29,7 @@ defmodule Easy.Nutrition.RecipeTest do
     end
   end
 
-  describe "create_recipe/2" do
+  describe("create_recipe/2") do
     test "trims names and rejects values beyond the API limit" do
       coach = insert_coach()
 
@@ -51,7 +47,9 @@ defmodule Easy.Nutrition.RecipeTest do
       assert "can't be blank" in errors_on(create_blank_changeset).name
 
       assert {:error, blank_changeset} =
-               Library.update_recipe(trainer_ctx(coach), recipe.id, recipe.revision, %{name: "   "})
+               Library.update_recipe(trainer_ctx(coach), recipe.id, recipe.revision, %{
+                 name: "   "
+               })
 
       assert "can't be blank" in errors_on(blank_changeset).name
 
@@ -72,13 +70,11 @@ defmodule Easy.Nutrition.RecipeTest do
       attrs = %{
         name: "Cross tenant recipe",
         servings_count: 2,
-        recipe_ingredients: [
-          %{food_id: other_food.id, weight_g: 100.0}
-        ]
+        recipe_ingredients: [%{portion: %{kind: :gram, grams: 100.0}, food_id: other_food.id}]
       }
 
       assert {:error, changeset} = Library.create_recipe(trainer_ctx(coach), attrs)
-      assert "has invalid food" in errors_on(changeset).recipe_ingredients
+      assert changeset == :not_found
     end
   end
 

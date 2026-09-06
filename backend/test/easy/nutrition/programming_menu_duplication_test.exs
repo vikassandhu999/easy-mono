@@ -20,20 +20,19 @@ defmodule Easy.Nutrition.ProgrammingMenuDuplicationTest do
                  1,
                  %{
                    meals: [
-                     meal_input("breakfast", "Breakfast", 0, [
-                       food_item("yogurt", food.id, 0, %{kind: :gram, grams: 50})
+                     meal_input("breakfast", "Breakfast", [
+                       food_item("yogurt", food.id, %{kind: :gram, grams: 50})
                      ])
                    ],
                    day_patterns: [
                      %{
                        id: pattern.id,
                        name: pattern.name,
-                       position: 0,
                        slots: [
                          %{
                            meal_slot: :breakfast,
                            options: [
-                             %{local_ref: "opt", meal_local_ref: "breakfast", position: 0}
+                             %{id: uuid("opt"), nutrition_meal_id: uuid("breakfast")}
                            ]
                          }
                        ]

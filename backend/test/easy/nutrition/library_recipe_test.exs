@@ -1,19 +1,51 @@
 defmodule Easy.Nutrition.LibraryRecipeTest do
   use Easy.SchemaCase
-
   alias Easy.Nutrition.Library
   alias Easy.Nutrition.Recipe
   alias Easy.Repo
 
-  describe "create_recipe/2" do
+  test "ingredient servings resolve into grams and retain their named portion when copied" do
+    coach = insert(:coach)
+
+    food =
+      insert(:food,
+        business: coach.business,
+        creator: coach,
+        serving_sizes: [
+          %{label: "Heaped scoop", amount: 1.0, unit: "scoop", weight_g: 30.0, is_default: true}
+        ]
+      )
+
+    ctx = trainer_ctx(coach)
+
+    {:ok, recipe} =
+      Library.create_recipe(ctx, %{
+        name: "Porridge",
+        servings_count: 1,
+        recipe_ingredients: [
+          %{
+            food_id: food.id,
+            portion: %{kind: :serving, amount: 1.5, unit: "scoop", label: "Heaped scoop"}
+          }
+        ]
+      })
+
+    [ingredient] = recipe.recipe_ingredients
+    assert ingredient.portion_kind == :serving
+    assert ingredient.weight_g == 45.0
+    assert ingredient.amount == 1.5
+    assert ingredient.serving_label == "Heaped scoop"
+    {:ok, copied} = Library.copy_recipe(ctx, recipe.id)
+    assert hd(copied.recipe_ingredients).weight_g == 45.0
+    assert hd(copied.recipe_ingredients).serving_label == "Heaped scoop"
+  end
+
+  describe("create_recipe/2") do
     test "stamps business ownership, creator, and revision 1" do
       coach = insert(:coach)
 
       assert {:ok, recipe} =
-               Library.create_recipe(trainer_ctx(coach), %{
-                 name: "Dal tadka",
-                 servings_count: 4
-               })
+               Library.create_recipe(trainer_ctx(coach), %{name: "Dal tadka", servings_count: 4})
 
       assert recipe.business_id == coach.business_id
       assert recipe.creator_id == coach.id
@@ -25,10 +57,7 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
     test "trusts the coach identity carried by Ctx" do
       coach = insert(:coach)
       ctx = %{trainer_ctx(coach) | user_id: Ecto.UUID.generate()}
-
-      assert {:ok, recipe} =
-               Library.create_recipe(ctx, %{name: "Dal tadka", servings_count: 4})
-
+      assert {:ok, recipe} = Library.create_recipe(ctx, %{name: "Dal tadka", servings_count: 4})
       assert recipe.creator_id == coach.id
     end
 
@@ -64,8 +93,8 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
                  name: "Dal",
                  servings_count: 2,
                  recipe_ingredients: [
-                   %{food_id: first.id, weight_g: 100.0},
-                   %{food_id: second.id, weight_g: 50.0}
+                   %{portion: %{kind: :gram, grams: 100.0}, food_id: first.id},
+                   %{portion: %{kind: :gram, grams: 50.0}, food_id: second.id}
                  ]
                })
 
@@ -87,10 +116,12 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
                Library.create_recipe(trainer_ctx(coach), %{
                  name: "Cross tenant",
                  servings_count: 1,
-                 recipe_ingredients: [%{food_id: hidden.id, weight_g: 100.0}]
+                 recipe_ingredients: [
+                   %{portion: %{kind: :gram, grams: 100.0}, food_id: hidden.id}
+                 ]
                })
 
-      assert %{recipe_ingredients: ["has invalid food"]} = errors_on(changeset)
+      assert changeset == :not_found
     end
 
     test "rejects a non-positive ingredient weight" do
@@ -101,10 +132,10 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
                Library.create_recipe(trainer_ctx(coach), %{
                  name: "Empty scoop",
                  servings_count: 1,
-                 recipe_ingredients: [%{food_id: food.id, weight_g: 0}]
+                 recipe_ingredients: [%{portion: %{kind: :gram, grams: 0}, food_id: food.id}]
                })
 
-      assert %{recipe_ingredients: [%{weight_g: _}]} = errors_on(changeset)
+      assert changeset == :invalid_portion
     end
 
     test "rejects a subrecipe ingredient" do
@@ -116,14 +147,20 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
                Library.create_recipe(trainer_ctx(coach), %{
                  name: "Stacked",
                  servings_count: 1,
-                 recipe_ingredients: [%{food_id: food.id, recipe_id: nested.id, weight_g: 100.0}]
+                 recipe_ingredients: [
+                   %{
+                     portion: %{kind: :gram, grams: 100.0},
+                     food_id: food.id,
+                     recipe_id: nested.id
+                   }
+                 ]
                })
 
-      assert %{recipe_ingredients: [%{food_id: _}]} = errors_on(changeset)
+      assert changeset == :invalid_portion
     end
   end
 
-  describe "update_recipe/4" do
+  describe("update_recipe/4") do
     test "replaces metadata and the complete ingredient collection and bumps revision" do
       coach = insert(:coach)
       kept = insert(:food, business: coach.business, creator: coach)
@@ -144,8 +181,8 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
                  servings_count: 3,
                  cooked_weight_g: 600.0,
                  recipe_ingredients: [
-                   %{food_id: added.id, weight_g: 120.0},
-                   %{food_id: kept.id, weight_g: 40.0}
+                   %{portion: %{kind: :gram, grams: 120.0}, food_id: added.id},
+                   %{portion: %{kind: :gram, grams: 40.0}, food_id: kept.id}
                  ]
                })
 
@@ -215,7 +252,14 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
       other = insert(:coach)
       original_food = insert(:food, business: coach.business, creator: coach)
       hidden_food = insert(:food, business: other.business, creator: other)
-      recipe = insert(:recipe, business: coach.business, creator: coach, name: "Original", servings_count: 2)
+
+      recipe =
+        insert(:recipe,
+          business: coach.business,
+          creator: coach,
+          name: "Original",
+          servings_count: 2
+        )
 
       original_ingredient =
         insert(:recipe_ingredient,
@@ -226,24 +270,29 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
           position: 0
         )
 
-      assert {:error, %Ecto.Changeset{valid?: false}} =
+      assert {:error, :not_found} =
                Library.update_recipe(trainer_ctx(coach), recipe.id, recipe.revision, %{
                  name: "Should roll back",
                  servings_count: 3,
-                 recipe_ingredients: [%{food_id: hidden_food.id, weight_g: 100.0}]
+                 recipe_ingredients: [
+                   %{portion: %{kind: :gram, grams: 100.0}, food_id: hidden_food.id}
+                 ]
                })
 
       persisted = Repo.get!(Recipe, recipe.id) |> Repo.preload(:recipe_ingredients)
       assert persisted.name == "Original"
       assert persisted.servings_count == 2
       assert persisted.revision == recipe.revision
-      assert [%{id: ingredient_id, food_id: food_id, weight_g: 80.0}] = persisted.recipe_ingredients
+
+      assert [%{id: ingredient_id, food_id: food_id, weight_g: 80.0}] =
+               persisted.recipe_ingredients
+
       assert ingredient_id == original_ingredient.id
       assert food_id == original_food.id
     end
   end
 
-  describe "delete_recipe/3" do
+  describe("delete_recipe/3") do
     test "deletes on the expected revision and rejects a stale one" do
       coach = insert(:coach)
       recipe = insert(:recipe, business: coach.business, creator: coach)
@@ -263,7 +312,7 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
     end
   end
 
-  describe "copy_recipe/2" do
+  describe("copy_recipe/2") do
     test "duplicates a visible recipe at revision 1 with a distinguishable name" do
       coach = insert(:coach)
       food = insert(:food, business: coach.business, creator: coach)
@@ -296,13 +345,12 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
     end
   end
 
-  describe "list_recipes/2" do
+  describe("list_recipes/2") do
     test "does not list another business's recipes" do
       coach = insert(:coach)
       insert(:recipe, business: coach.business, creator: coach, name: "Ours")
       other = insert(:coach)
       insert(:recipe, business: other.business, creator: other, name: "Theirs")
-
       assert {:ok, %{count: 1, recipes: [recipe]}} = Library.list_recipes(trainer_ctx(coach))
       assert recipe.name == "Ours"
     end
@@ -318,19 +366,19 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
     end
   end
 
-  describe "resolve_recipe_portion/2" do
+  describe("resolve_recipe_portion/2") do
     test "accepts a positive serving portion on every recipe" do
       recipe = insert(:recipe, servings_count: 4, cooked_weight_g: nil)
 
       assert {:ok, %{amount: 2.0, grams: nil}} =
-               Library.resolve_recipe_portion(recipe, %{kind: :serving, amount: 2})
+               Library.resolve_recipe_portion(recipe, %{kind: :serving, amount: 2, unit: "serving", label: nil})
     end
 
     test "resolves serving grams when cooked weight exists" do
       recipe = insert(:recipe, servings_count: 4, cooked_weight_g: 800.0)
 
       assert {:ok, %{amount: 1.0, grams: 200.0}} =
-               Library.resolve_recipe_portion(recipe, %{kind: :serving, amount: 1})
+               Library.resolve_recipe_portion(recipe, %{kind: :serving, amount: 1, unit: "serving", label: nil})
     end
 
     test "accepts a gram portion only when cooked weight exists" do
@@ -345,7 +393,7 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
     end
   end
 
-  describe "recipe_nutrients/1" do
+  describe("recipe_nutrients/1") do
     test "propagates unknown canonical nutrients and keeps calculation precision" do
       coach = insert(:coach)
 
@@ -376,22 +424,30 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
           business: coach.business,
           creator: coach,
           recipe_ingredients: [
-            build(:recipe_ingredient, business: coach.business, food: complete, weight_g: 100.0, position: 0),
-            build(:recipe_ingredient, business: coach.business, food: incomplete, weight_g: 50.0, position: 1)
+            build(:recipe_ingredient,
+              business: coach.business,
+              food: complete,
+              weight_g: 100.0,
+              position: 0
+            ),
+            build(:recipe_ingredient,
+              business: coach.business,
+              food: incomplete,
+              weight_g: 50.0,
+              position: 1
+            )
           ]
         )
 
       {:ok, loaded} = Library.get_recipe(trainer_ctx(coach), recipe.id)
       nutrients = Library.recipe_nutrients(loaded)
-
-      # 10.16 from 100g + 10.0 from 50g of the 20 cal/100g food
       assert nutrients.calories == 20.16
       assert nutrients.protein == nil
       refute nutrients.complete
     end
   end
 
-  describe "resolve_items/2" do
+  describe("resolve_items/2") do
     test "returns food and recipe results in input identity order" do
       coach = insert(:coach)
 
@@ -436,7 +492,7 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
       assert {:ok, [food_result, recipe_result]} =
                Library.resolve_items(trainer_ctx(coach), [
                  %{kind: :food, id: food.id, portion: %{kind: :gram, grams: 50}},
-                 %{kind: :recipe, id: recipe.id, portion: %{kind: :serving, amount: 1}}
+                 %{kind: :recipe, id: recipe.id, portion: %{kind: :serving, amount: 1, unit: "serving", label: nil}}
                ])
 
       assert food_result.kind == :food
@@ -444,12 +500,10 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
       assert food_result.portion.grams == 50.0
       assert food_result.nutrients.calories == 50.0
       assert food_result.nutrients.complete
-
       assert recipe_result.kind == :recipe
       assert recipe_result.item.id == recipe.id
       assert recipe_result.portion.amount == 1.0
       assert recipe_result.portion.grams == 200.0
-      # whole recipe is 400 cal from 200g at 200 cal/100g; one of two servings is 200
       assert recipe_result.nutrients.calories == 200.0
     end
 
@@ -460,7 +514,7 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
 
       assert {:error, :not_found} =
                Library.resolve_items(trainer_ctx(coach), [
-                 %{kind: :recipe, id: recipe.id, portion: %{kind: :serving, amount: 1}}
+                 %{kind: :recipe, id: recipe.id, portion: %{kind: :serving, amount: 1, unit: "serving", label: nil}}
                ])
     end
   end

@@ -49,11 +49,13 @@ defmodule Easy.Clients do
   def reassign_client(%Ctx{} = ctx, client_id, coach_id) do
     with :ok <- ensure_owner(ctx),
          {:ok, coach} <- get_active_coach(ctx, coach_id),
-         {:ok, client} <- authorize_client(ctx, client_id) do
-      client
-      |> change()
-      |> put_change(:assigned_coach_id, coach.id)
-      |> Repo.update()
+         {:ok, client} <- authorize_client(ctx, client_id),
+         {:ok, updated_client} <-
+           client
+           |> change()
+           |> put_change(:assigned_coach_id, coach.id)
+           |> Repo.update() do
+      preload_client(updated_client)
     end
   end
 
@@ -121,7 +123,7 @@ defmodule Easy.Clients do
          :ok <- validate_email_has_no_active_client(invite_attrs),
          {:ok, client} <- reserve_and_create_invitation(ctx, coach, invite_attrs),
          :ok <- maybe_send_invitation_email(client, coach) do
-      {:ok, client}
+      preload_client(client)
     end
   end
 

@@ -1,4 +1,4 @@
-import {formatDateShort, getFullName, getInitials} from '@easy/utils';
+import {getFullName, getInitials} from '@easy/utils';
 import {
   Avatar,
   Button,
@@ -20,33 +20,13 @@ import {LIST_ITEM_CLASS} from '@/ui/browse-list-box';
 import {
   CLIENT_PICKER_PAGE_SIZE,
   clientContact,
-  clientCoverage,
   clientNeedsProgramming,
   eligibleClientPage,
 } from '@/ui/client-picker-data';
 import {ErrorState} from '@/ui/error-state';
 
-/** The row's coverage copy, from the facts in `clientCoverage`. */
-function coverageCopy(client: Client): {copy: string; warning: boolean} {
-  const coverage = clientCoverage(client);
-  switch (coverage.kind) {
-    case 'needs-programming':
-      return {
-        copy: coverage.coverageEnds ? `Coverage ends ${formatDateShort(coverage.coverageEnds)}` : 'No plan in force',
-        warning: true,
-      };
-    case 'covered':
-      return {
-        copy: coverage.until ? `Covered until ${formatDateShort(coverage.until)}` : 'On an open-ended plan',
-        warning: false,
-      };
-    case 'uncovered':
-      return {copy: 'No plan in force', warning: false};
-  }
-}
-
 function ClientRow({client}: {client: Client}) {
-  const coverage = coverageCopy(client);
+  const needsPlan = clientNeedsProgramming(client);
   const name = getFullName(client.first_name, client.last_name) || 'No name';
   return (
     <ListBox.Item
@@ -77,8 +57,12 @@ function ClientRow({client}: {client: Client}) {
           {clientContact(client)}
         </Description>
       </span>
-      <span className={cn('shrink-0 type-eyebrow font-normal', coverage.warning ? 'text-warning' : 'text-muted')}>
-        {coverage.copy}
+      <span className={cn('shrink-0 type-eyebrow font-normal', needsPlan ? 'text-warning' : 'text-muted')}>
+        {needsPlan
+          ? 'Needs plan'
+          : client.nutrition_plan_name || client.training_plan_name
+            ? 'Has current plan'
+            : 'No current plan'}
       </span>
     </ListBox.Item>
   );

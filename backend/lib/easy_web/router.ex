@@ -152,7 +152,7 @@ defmodule EasyWeb.Router do
 
     # Client-scoped plan lists
     get "/clients/:client_id/training-plans", ClientTrainingPlanController, :index
-    get "/clients/:client_id/nutrition-plans", ClientNutritionPlanController, :index
+    get "/clients/:client_id/nutrition-coverage", NutritionCoverageController, :show
     get "/clients/:client_id/weight_entries", ClientWeightEntryController, :index
 
     get "/nutrition-foods", FoodController, :index
@@ -267,14 +267,7 @@ defmodule EasyWeb.Router do
     get "/nutrition-recipes/:id", RecipeController, :show
 
     get "/nutrition-days", NutritionDayController, :index
-    post "/nutrition-days/:date/extras", NutritionDayController, :add_extra
-    post "/nutrition-days/:date/planned-items", NutritionDayController, :log_planned_item
-    post "/nutrition-days/:date/planned-options", NutritionDayController, :log_planned_option
-    post "/nutrition-days/:date/planned-day", NutritionDayController, :log_planned_day
-    post "/nutrition-days/:date/active-option", NutritionDayController, :switch_option
-    post "/nutrition-days/:date/replacements", NutritionDayController, :replace_planned_item
-    patch "/nutrition-days/:date/entries/:id", NutritionDayController, :update_entry
-    delete "/nutrition-days/:date/entries/:id", NutritionDayController, :delete_entry
+    patch "/nutrition-days/:date", NutritionDayController, :save
 
     # Weight entries
     get "/weight_entries", WeightEntryController, :index

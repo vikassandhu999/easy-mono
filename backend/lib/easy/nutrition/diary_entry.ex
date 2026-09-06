@@ -30,7 +30,6 @@ defmodule Easy.Nutrition.DiaryEntry do
     field :fiber, :float
     field :complete, :boolean, default: false
     field :notes, :string
-    field :revision, :integer, default: 1
     field :source_food_id, :binary_id
     field :source_recipe_id, :binary_id
 
@@ -60,7 +59,6 @@ defmodule Easy.Nutrition.DiaryEntry do
     :fiber,
     :complete,
     :notes,
-    :revision,
     :source_food_id,
     :source_recipe_id,
     :frozen_planned_item_id,
@@ -81,12 +79,10 @@ defmodule Easy.Nutrition.DiaryEntry do
       :display_name,
       :portion_kind,
       :complete,
-      :revision,
       :business_id,
       :client_id,
       :nutrition_diary_slot_id
     ])
-    |> validate_number(:revision, greater_than: 0)
     |> validate_length(:notes, max: 255)
     |> unique_constraint(:frozen_planned_item_id, name: :nutrition_diary_entries_one_fulfilment_index)
     |> check_constraint(:source_food_id, name: :nutrition_diary_entries_source_identity_check)
@@ -112,14 +108,11 @@ defmodule Easy.Nutrition.DiaryEntry do
       :fiber,
       :complete,
       :notes,
-      :revision,
       :source_food_id,
       :source_recipe_id,
       :food_id,
       :recipe_id
     ])
-    |> validate_required([:revision])
-    |> validate_number(:revision, greater_than: 0)
     |> validate_length(:notes, max: 255)
     |> check_constraint(:source_food_id, name: :nutrition_diary_entries_source_identity_check)
   end
@@ -128,7 +121,4 @@ defmodule Easy.Nutrition.DiaryEntry do
   def for_client(query \\ __MODULE__, business_id, client_id) do
     from(entry in query, where: entry.business_id == ^business_id and entry.client_id == ^client_id)
   end
-
-  @spec lock_id(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def lock_id(query \\ __MODULE__, id), do: from(entry in query, where: entry.id == ^id, lock: "FOR UPDATE")
 end

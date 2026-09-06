@@ -1,9 +1,7 @@
 import {toast} from '@heroui/react';
 import {useNavigate} from 'react-router-dom';
-import {nutritionPlanDeleteRequest, nutritionPlanRevisionRequest} from '@/api/nutrition-plan-lifecycle';
 import type {NutritionPlan} from '@/api/nutrition-plans';
 import {
-  patchPlan,
   useArchiveNutritionPlanMutation,
   useDeleteNutritionPlanMutation,
   useDuplicateNutritionPlanMutation,
@@ -29,11 +27,6 @@ export function NutritionPlanActions({plan, onDeleted, refetchLatest}: Props) {
   const handleStaleConflict = (error: unknown) =>
     handleStaleNutritionPlanConflict(error, {
       refetchLatest,
-      replaceWithLatest: (latest) => {
-        patchPlan(plan.id, (draft) => {
-          Object.assign(draft, latest);
-        });
-      },
       notify: (message) => {
         toast.info(message, {timeout: 4000});
       },
@@ -41,10 +34,9 @@ export function NutritionPlanActions({plan, onDeleted, refetchLatest}: Props) {
 
   const setStatus = async (status: 'active' | 'archived'): Promise<PlanActionOutcome> => {
     const mutation = status === 'archived' ? archivePlanMutation : restorePlanMutation;
-    let result: Awaited<ReturnType<typeof mutation.mutateAsync>>;
 
     try {
-      result = await mutation.mutateAsync({id: plan.id, body: nutritionPlanRevisionRequest(plan)});
+      await mutation.mutateAsync({id: plan.id, body: {expected_revision: plan.revision}});
     } catch (error) {
       if (await handleStaleConflict(error)) {
         return 'stale';
@@ -52,16 +44,13 @@ export function NutritionPlanActions({plan, onDeleted, refetchLatest}: Props) {
       throw error;
     }
 
-    patchPlan(plan.id, (draft) => {
-      Object.assign(draft, result.data);
-    });
     return 'applied';
   };
 
   const copy = async () => {
     const result = await duplicatePlanMutation.mutateAsync({
       id: plan.id,
-      body: nutritionPlanRevisionRequest(plan),
+      body: {expected_revision: plan.revision},
     });
     toast.success('Plan copied', {timeout: 1000});
     navigate(ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', result.data.id));
@@ -69,7 +58,7 @@ export function NutritionPlanActions({plan, onDeleted, refetchLatest}: Props) {
 
   const remove = async (): Promise<PlanActionOutcome> => {
     try {
-      await deletePlanMutation.mutateAsync(nutritionPlanDeleteRequest(plan));
+      await deletePlanMutation.mutateAsync({id: plan.id, expectedRevision: plan.revision});
     } catch (error) {
       if (await handleStaleConflict(error)) {
         return 'stale';

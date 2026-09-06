@@ -39,13 +39,13 @@ defmodule Easy.Workbench do
   @spec list_onboarding_queue(Ctx.t(), keyword()) ::
           {:ok, %{count: non_neg_integer(), items: [map()]}}
   def list_onboarding_queue(%Ctx{} = ctx, opts \\ []) do
-    {:ok, WorkbenchOnboardingQueue.list(ctx, opts)}
+    {:ok, ctx |> WorkbenchOnboardingQueue.list(opts) |> preload_client_businesses()}
   end
 
   @spec list_check_in_queue(Ctx.t(), keyword()) ::
           {:ok, %{count: non_neg_integer(), items: [map()]}}
   def list_check_in_queue(%Ctx{} = ctx, opts \\ []) do
-    {:ok, WorkbenchCheckInQueue.list(ctx, opts)}
+    {:ok, ctx |> WorkbenchCheckInQueue.list(opts) |> preload_client_businesses()}
   end
 
   @spec list_replies_queue(Ctx.t(), keyword()) ::
@@ -57,19 +57,21 @@ defmodule Easy.Workbench do
   @spec list_programming_queue(Ctx.t(), keyword()) ::
           {:ok, %{count: non_neg_integer(), items: [map()]}} | {:error, :invalid_service}
   def list_programming_queue(%Ctx{} = ctx, opts \\ []) do
-    WorkbenchProgrammingQueue.list(ctx, opts)
+    with {:ok, page} <- WorkbenchProgrammingQueue.list(ctx, opts) do
+      {:ok, preload_client_businesses(page)}
+    end
   end
 
   @spec list_expiring_queue(Ctx.t(), keyword()) ::
           {:ok, %{count: non_neg_integer(), items: [map()]}}
   def list_expiring_queue(%Ctx{} = ctx, opts \\ []) do
-    {:ok, WorkbenchExpiringQueue.list(ctx, opts)}
+    {:ok, ctx |> WorkbenchExpiringQueue.list(opts) |> preload_client_businesses()}
   end
 
   @spec list_quiet_queue(Ctx.t(), keyword()) ::
           {:ok, %{count: non_neg_integer(), items: [map()]}}
   def list_quiet_queue(%Ctx{} = ctx, opts \\ []) do
-    {:ok, WorkbenchQuietQueue.list(ctx, opts)}
+    {:ok, ctx |> WorkbenchQuietQueue.list(opts) |> preload_client_businesses()}
   end
 
   @spec programming_counts(Ctx.t()) ::
@@ -89,5 +91,10 @@ defmodule Easy.Workbench do
         conflict_target: [:business_id, :client_id, :queue]
       )
     end
+  end
+
+  defp preload_client_businesses(%{items: items} = page) do
+    clients = items |> Enum.map(& &1.client) |> Repo.preload(:business)
+    %{page | items: Enum.zip_with(items, clients, fn item, client -> %{item | client: client} end)}
   end
 end

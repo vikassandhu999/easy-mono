@@ -378,13 +378,6 @@ defmodule EasyWeb.FallbackController do
     )
   end
 
-  def call(conn, {:error, :invalid_idempotency_key}) do
-    call(
-      conn,
-      {:error, Error.unprocessable(%{fields: %{"Idempotency-Key" => ["must be a UUID"]}})}
-    )
-  end
-
   def call(conn, {:error, :invalid_portion}) do
     call(conn, {:error, Error.unprocessable(%{fields: %{portion: ["is invalid"]}})})
   end

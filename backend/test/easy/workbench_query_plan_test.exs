@@ -110,15 +110,15 @@ defmodule Easy.WorkbenchQueryPlanTest do
     [
       {:owner_counts, fn -> Workbench.counts(owner_ctx) end, 6},
       {:trainer_counts, fn -> Workbench.counts(trainer_ctx) end, 6},
-      {:onboarding_list, fn -> Workbench.list_onboarding_queue(trainer_ctx, limit: 20) end, 2},
-      {:check_ins_list, fn -> Workbench.list_check_in_queue(trainer_ctx, limit: 20) end, 2},
+      {:onboarding_list, fn -> Workbench.list_onboarding_queue(trainer_ctx, limit: 20) end, 3},
+      {:check_ins_list, fn -> Workbench.list_check_in_queue(trainer_ctx, limit: 20) end, 3},
       {:replies_list, fn -> Workbench.list_replies_queue(trainer_ctx, limit: 20) end, 5},
       {:owner_replies_list, fn -> Workbench.list_replies_queue(owner_ctx, limit: 20) end, 5},
-      {:programming_list, fn -> Workbench.list_programming_queue(trainer_ctx, limit: 20) end, 2},
-      {:owner_programming_list, fn -> Workbench.list_programming_queue(owner_ctx, limit: 20) end, 2},
-      {:expiring_list, fn -> Workbench.list_expiring_queue(trainer_ctx, limit: 20) end, 2},
-      {:owner_expiring_list, fn -> Workbench.list_expiring_queue(owner_ctx, limit: 20) end, 2},
-      {:quiet_list, fn -> Workbench.list_quiet_queue(trainer_ctx, limit: 20) end, 2}
+      {:programming_list, fn -> Workbench.list_programming_queue(trainer_ctx, limit: 20) end, 3},
+      {:owner_programming_list, fn -> Workbench.list_programming_queue(owner_ctx, limit: 20) end, 3},
+      {:expiring_list, fn -> Workbench.list_expiring_queue(trainer_ctx, limit: 20) end, 3},
+      {:owner_expiring_list, fn -> Workbench.list_expiring_queue(owner_ctx, limit: 20) end, 3},
+      {:quiet_list, fn -> Workbench.list_quiet_queue(trainer_ctx, limit: 20) end, 3}
     ]
   end
 

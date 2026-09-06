@@ -1,16 +1,3 @@
-/**
- * AddItemsFlow — adding foods/recipes to a meal as ONE operation, in ONE
- * stable surface (centered modal on desktop, keyboard sheet on mobile).
- *
- * Phase 1 — the list: search the food and recipe libraries, multi-select,
- *           create a custom food when nothing matches. `SearchPickerBody`
- *           provides the list mechanics; this file owns the data.
- * Phase 2 — amounts: once the list is finalised, one `AmountSheetContent`
- *           per picked item ("2 of 4"), collected locally. Nothing leaves
- *           until the last item's confirm, which hands the whole batch up
- *           through `onAdd` — the builder commits it as one operation.
- *           The surface never moves between phases.
- */
 import {Button} from '@heroui/react';
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {
@@ -29,7 +16,7 @@ interface AddItemsFlowProps {
   mealName: string;
   open: boolean;
   onClose: () => void;
-  /** The finished batch, in pick order — the builder posts it as one commit. */
+  /** The finished batch, in pick order, is added to the local menu. */
   onAdd: (items: {body: MealItemDraft; name: string | null}[]) => void;
 }
 

@@ -11,7 +11,7 @@ defmodule Easy.WorkbenchProgrammingQueue do
 
   @spec counts(Ctx.t()) :: %{all: non_neg_integer(), training: non_neg_integer(), nutrition: non_neg_integer()}
   def counts(%Ctx{} = ctx) do
-    facts = service_facts(ctx, Date.utc_today())
+    facts = service_facts(ctx, DateTime.utc_now())
 
     from(fact in subquery(facts),
       select: %{
@@ -37,7 +37,7 @@ defmodule Easy.WorkbenchProgrammingQueue do
           {:ok, %{count: non_neg_integer(), items: [map()]}} | {:error, :invalid_service}
   def list(%Ctx{} = ctx, opts) do
     with {:ok, service} <- normalize_service(Keyword.get(opts, :service, :all)) do
-      facts = ctx |> service_facts(Date.utc_today()) |> for_service(service)
+      facts = ctx |> service_facts(DateTime.utc_now()) |> for_service(service)
       {offset, limit} = pagination(opts)
 
       items =
@@ -108,14 +108,15 @@ defmodule Easy.WorkbenchProgrammingQueue do
     end
   end
 
-  @spec service_facts(Ctx.t(), Date.t()) :: Ecto.Query.t()
-  def service_facts(%Ctx{} = ctx, today) do
-    status = service_status(ctx, today)
+  @spec service_facts(Ctx.t(), DateTime.t()) :: Ecto.Query.t()
+  def service_facts(%Ctx{} = ctx, now) do
+    status = service_status(ctx, now)
 
     from(service in subquery(status),
       where: not service.has_history or not is_nil(service.first_uncovered_on),
       select: %{
         client_id: service.client_id,
+        today: service.today,
         service: service.service,
         service_rank: service.service_rank,
         code:
@@ -123,41 +124,35 @@ defmodule Easy.WorkbenchProgrammingQueue do
             "CASE WHEN NOT ? THEN 'service_never_programmed' WHEN ? = ? THEN 'service_coverage_missing' ELSE 'service_coverage_ending_soon' END",
             service.has_history,
             service.first_uncovered_on,
-            ^today
+            service.today
           ),
         priority:
           fragment(
             "CASE WHEN NOT ? THEN 0 WHEN ? = ? THEN 1 ELSE 2 END",
             service.has_history,
             service.first_uncovered_on,
-            ^today
+            service.today
           ),
         first_uncovered_on: service.first_uncovered_on,
         coverage_ends_on:
           fragment(
             "CASE WHEN ? > ? THEN ? - 1 ELSE NULL END",
             service.first_uncovered_on,
-            ^today,
+            service.today,
             service.first_uncovered_on
           )
       }
     )
   end
 
-  defp service_status(%Ctx{} = ctx, today) do
-    required = required_service_clients(ctx)
+  defp service_status(%Ctx{} = ctx, now) do
+    required = required_service_clients(ctx, now)
     history = assigned_plan_history(ctx.business_id)
     intervals = active_plan_intervals(ctx.business_id)
-    horizon = Date.add(today, 7)
 
     days =
-      from(
-        day in fragment(
-          "SELECT generate_series(?::date, ?::date, interval '1 day')::date AS day",
-          ^today,
-          ^horizon
-        ),
-        select: %{day: type(field(day, :day), :date)}
+      from(day in fragment("SELECT generate_series(0, 7) AS offset"),
+        select: %{offset: field(day, :offset)}
       )
 
     from(service in subquery(required),
@@ -170,25 +165,27 @@ defmodule Easy.WorkbenchProgrammingQueue do
       on:
         plan.business_id == service.business_id and
           plan.client_id == service.client_id and plan.service == service.service and
-          (is_nil(plan.start_date) or plan.start_date <= day.day) and
-          (is_nil(plan.end_date) or plan.end_date >= day.day),
+          (is_nil(plan.start_date) or plan.start_date <= fragment("? + ?", service.today, day.offset)) and
+          (is_nil(plan.end_date) or plan.end_date >= fragment("? + ?", service.today, day.offset)),
       group_by: [
         service.client_id,
+        service.today,
         service.service,
         service.service_rank,
         history.client_id
       ],
       select: %{
         client_id: service.client_id,
+        today: service.today,
         service: service.service,
         service_rank: service.service_rank,
         has_history: not is_nil(history.client_id),
-        first_uncovered_on: fragment("min(?) FILTER (WHERE ? IS NULL)", day.day, plan.client_id)
+        first_uncovered_on: fragment("min(? + ?) FILTER (WHERE ? IS NULL)", service.today, day.offset, plan.client_id)
       }
     )
   end
 
-  defp required_service_clients(%Ctx{} = ctx) do
+  defp required_service_clients(%Ctx{} = ctx, now) do
     visible =
       Client
       |> Client.for_business(ctx.business_id)
@@ -197,10 +194,23 @@ defmodule Easy.WorkbenchProgrammingQueue do
 
     training =
       from(client in visible,
+        join: business in Easy.Orgs.Business,
+        on: business.id == client.business_id,
         where: fragment("? = ANY(?)", ^"training", client.required_services),
         select: %{
           business_id: client.business_id,
           client_id: client.id,
+          today:
+            type(
+              fragment(
+                "(?::timestamp AT TIME ZONE 'UTC' AT TIME ZONE COALESCE(NULLIF(?, ''), NULLIF(?, ''), ?))::date",
+                type(^now, :utc_datetime),
+                client.timezone,
+                business.timezone,
+                ^Easy.LocalCalendar.default_timezone()
+              ),
+              :date
+            ),
           service: type(^"training", :string),
           service_rank: 0
         }
@@ -208,10 +218,23 @@ defmodule Easy.WorkbenchProgrammingQueue do
 
     nutrition =
       from(client in visible,
+        join: business in Easy.Orgs.Business,
+        on: business.id == client.business_id,
         where: fragment("? = ANY(?)", ^"nutrition", client.required_services),
         select: %{
           business_id: client.business_id,
           client_id: client.id,
+          today:
+            type(
+              fragment(
+                "(?::timestamp AT TIME ZONE 'UTC' AT TIME ZONE COALESCE(NULLIF(?, ''), NULLIF(?, ''), ?))::date",
+                type(^now, :utc_datetime),
+                client.timezone,
+                business.timezone,
+                ^Easy.LocalCalendar.default_timezone()
+              ),
+              :date
+            ),
           service: type(^"nutrition", :string),
           service_rank: 1
         }

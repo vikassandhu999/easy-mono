@@ -36,6 +36,18 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
       assert [%{"label" => "1 cup", "unit" => "cup", "weight_g" => 100.0, "amount" => 1.0, "is_default" => true}] =
                data["serving_sizes"]
 
+      assert %{
+               "kind" => "serving",
+               "amount" => 1.0,
+               "unit" => "cup",
+               "label" => "1 cup"
+             } = data["default_portion"]
+
+      assert [
+               %{"kind" => "gram", "grams" => 100.0},
+               %{"kind" => "serving", "amount" => 1.0, "unit" => "cup", "label" => "1 cup"}
+             ] = data["portion_options"]
+
       refute Map.has_key?(hd(data["serving_sizes"]), "id")
       assert data["id"]
       assert data["creator_id"]
@@ -352,7 +364,17 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
     } do
       food = insert(:food, creator: coach, business: business)
       recipe = insert(:recipe, creator: coach, business: business)
-      insert(:recipe_ingredient, business: business, recipe: recipe, food: food, weight_g: 100.0)
+
+      insert(:recipe_ingredient,
+        business: business,
+        recipe: recipe,
+        food: food,
+        portion_kind: :gram,
+        amount: nil,
+        unit: nil,
+        serving_label: nil,
+        weight_g: 100.0
+      )
 
       conn = delete(conn, "/v1/coach/nutrition-foods/#{food.id}?expected_revision=1")
       assert %{"error_code" => "in_use"} = json_response(conn, 409)
@@ -434,7 +456,18 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
     } do
       food = insert(:food, creator: coach, business: business, name: "Yogurt")
       recipe = insert(:recipe, creator: coach, business: business, name: "Lassi")
-      insert(:recipe_ingredient, business: business, recipe: recipe, food: food, weight_g: 100.0)
+
+      insert(:recipe_ingredient,
+        business: business,
+        recipe: recipe,
+        food: food,
+        portion_kind: :gram,
+        amount: nil,
+        unit: nil,
+        serving_label: nil,
+        weight_g: 100.0
+      )
+
       plan = insert(:plan, business: business, creator: coach.user, kind: :template, name: "Cut")
       meal = insert(:meal, business: business, plan: plan, creator: coach)
       insert(:meal_item, business: business, plan: plan, meal: meal, food: food)

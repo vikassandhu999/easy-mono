@@ -1,17 +1,12 @@
 import {AlertDialog, Button, useOverlayState} from '@heroui/react';
 import {useState} from 'react';
 import {generatePath} from 'react-router-dom';
+import {ApiError} from '@/api/client';
 import {type Recipe, useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/nutrition-foods';
 import {applyFormErrors} from '@/api/shared';
 import {libraryInUseMessage} from '@/library/library-impact';
 import RecipeForm, {useRecipeForm} from '@/library/recipes/recipe-form';
-import {
-  type RecipeFormValues,
-  recipeIngredientsToDrafts,
-  recipeToFormValues,
-  recipeToUpdateRequest,
-} from '@/library/recipes/recipe-form-data';
-import type {IngredientItem} from '@/library/recipes/recipe-math';
+import {type RecipeFormValues, recipeToFormValues, recipeToUpdateRequest} from '@/library/recipes/recipe-form-data';
 import {ROUTES} from '@/routes';
 import {BackButton} from '@/ui/back-button';
 import {ErrorState} from '@/ui/error-state';
@@ -20,29 +15,29 @@ import {PageSkeleton} from '@/ui/page-skeleton';
 import {useGoBack} from '@/ui/use-go-back';
 import {useRouteParam} from '@/ui/use-route-param';
 
-// Rendered only when recipe data is available, avoiding useEffect to sync server state
-// into local state (which the React Compiler lint rule forbids).
-function EditRecipeForm({backPath, recipe, recipeId}: {backPath: string; recipe: Recipe; recipeId: string}) {
+function EditRecipeForm({
+  backPath,
+  recipe: initial,
+  recipeId,
+  reload,
+}: {
+  backPath: string;
+  recipe: Recipe;
+  recipeId: string;
+  reload: () => Promise<Recipe | undefined>;
+}) {
   const goBack = useGoBack(backPath);
   const updateRecipe = useUpdateRecipeMutation();
-  const [ingredients, setIngredients] = useState<IngredientItem[]>(() =>
-    recipeIngredientsToDrafts(recipe.recipe_ingredients),
-  );
-  // Ingredients and serving sizes aren't react-hook-form fields, so track their
-  // edits separately from form.formState.isDirty for the unsaved-changes guard.
-  const [contentChanged, setContentChanged] = useState(false);
   const leaveConfirm = useOverlayState();
+
+  const [recipe, setBase] = useState(initial);
+  const [reloading, setReloading] = useState(false);
 
   const form = useRecipeForm({
     defaultValues: recipeToFormValues(recipe),
   });
 
-  const hasUnsavedChanges = form.formState.isDirty || contentChanged;
-
-  const handleIngredientsChange = (items: IngredientItem[]) => {
-    setIngredients(items);
-    setContentChanged(true);
-  };
+  const hasUnsavedChanges = form.formState.isDirty;
 
   const attemptLeave = () => {
     if (hasUnsavedChanges) {
@@ -52,14 +47,36 @@ function EditRecipeForm({backPath, recipe, recipeId}: {backPath: string; recipe:
     goBack();
   };
 
+  const discard = async () => {
+    setReloading(true);
+    try {
+      const latest = await reload();
+      if (!latest) {
+        throw new Error('Missing recipe');
+      }
+      form.reset(recipeToFormValues(latest));
+      setBase(latest);
+    } catch {
+      form.setError('root', {message: "Couldn't reload. Your draft is still here."});
+    } finally {
+      setReloading(false);
+    }
+  };
+
   const onSubmit = async (formData: RecipeFormValues) => {
     try {
       await updateRecipe.mutateAsync({
         id: recipeId,
-        body: recipeToUpdateRequest({expectedRevision: recipe.revision, ingredients, values: formData}),
+        body: recipeToUpdateRequest(formData, recipe.revision),
       });
       goBack();
     } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        form.setError('root', {
+          message: 'Changed elsewhere. Your draft is still here. Discard changes to load the saved version.',
+        });
+        return;
+      }
       applyFormErrors(
         err,
         libraryInUseMessage(err, "Recipe wasn't updated. Check the details and try again"),
@@ -84,12 +101,17 @@ function EditRecipeForm({backPath, recipe, recipeId}: {backPath: string; recipe:
           className="pt-4 pb-6"
           size="content"
         >
+          <Button
+            isDisabled={updateRecipe.isPending || reloading}
+            onPress={discard}
+            variant="tertiary"
+          >
+            Discard changes and reload
+          </Button>
           <RecipeForm
             form={form}
-            ingredients={ingredients}
-            isSubmitting={updateRecipe.isPending}
+            isSubmitting={updateRecipe.isPending || reloading}
             onCancel={attemptLeave}
-            onIngredientsChange={handleIngredientsChange}
             onSubmit={onSubmit}
             submitLabel="Save changes"
             submittingLabel="Saving changes"
@@ -140,7 +162,7 @@ export default function EditRecipe() {
   const backPath = generatePath(ROUTES.RECIPE_DETAIL, {id});
   const goBackOuter = useGoBack(backPath);
 
-  if (isError) {
+  if (isError && !data) {
     return (
       <Page>
         <Page.Header size="content">
@@ -191,6 +213,8 @@ export default function EditRecipe() {
 
   return (
     <EditRecipeForm
+      key={id}
+      reload={async () => (await refetch({throwOnError: true})).data?.data}
       backPath={backPath}
       recipe={data.data}
       recipeId={id}

@@ -1,4 +1,5 @@
 defmodule Easy.Nutrition.ProgrammingCoverageTest do
+  import Easy.Nutrition.ProgrammingMenuFixtures, only: [uuid: 1]
   use Easy.DataCase, async: true
 
   alias Easy.LocalCalendar
@@ -22,7 +23,15 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
       ended = insert_client_plan(coach, client, name: "Past", start_date: Date.add(today, -7), end_date: Date.add(today, -1))
       archived = insert_client_plan(coach, client, name: "Old", start_date: today, archived_at: DateTime.utc_now(:second))
 
-      assert {:ok, %{plans: plans}} = Programming.list_plans_for_client(ctx, client.id)
+      plans =
+        Enum.map([incomplete, upcoming, current, ended, archived], fn plan ->
+          {:ok, loaded} = Programming.get_plan(ctx, plan.id)
+          loaded
+        end)
+
+      assert {:ok, %{current: selected, upcoming: [scheduled]}} = Programming.get_coverage_for_client(ctx, client.id)
+      assert selected.id == current.id
+      assert scheduled.id == upcoming.id
       by_id = Map.new(plans, &{&1.id, &1})
 
       assert by_id[incomplete.id].lifecycle == :incomplete
@@ -223,11 +232,10 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
     %{
       meals: [
         %{
-          local_ref: "breakfast",
+          id: uuid("breakfast"),
           name: "Breakfast",
-          position: 0,
           meal_items: [
-            %{local_ref: "yogurt", kind: :food, food_id: food.id, position: 0, portion: %{kind: :gram, grams: 50}}
+            %{id: uuid("yogurt"), kind: :food, food_id: food.id, portion: %{kind: :gram, grams: 50}}
           ]
         }
       ],
@@ -235,9 +243,8 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
         %{
           id: pattern.id,
           name: pattern.name,
-          position: 0,
           slots: [
-            %{meal_slot: :breakfast, options: [%{local_ref: "opt", meal_local_ref: "breakfast", position: 0}]}
+            %{meal_slot: :breakfast, options: [%{id: uuid("opt"), nutrition_meal_id: uuid("breakfast")}]}
           ]
         }
       ],

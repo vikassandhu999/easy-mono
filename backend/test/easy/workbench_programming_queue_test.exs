@@ -8,7 +8,8 @@ defmodule Easy.WorkbenchProgrammingQueueTest do
     business = insert(:business)
     coach = insert(:coach, business: business, user: business.owner)
 
-    %{business: business, coach: coach, ctx: owner_ctx(business), today: Date.utc_today()}
+    today = Easy.LocalCalendar.to_local_date(DateTime.utc_now(), Easy.LocalCalendar.default_timezone())
+    %{business: business, coach: coach, ctx: owner_ctx(business), today: today}
   end
 
   test "expands required services and returns overlapping distinct counts", ctx do
@@ -225,6 +226,27 @@ defmodule Easy.WorkbenchProgrammingQueueTest do
 
     malformed = Ctx.new(ctx.business.id, Ecto.UUID.generate(), nil, false)
     assert {:ok, %{count: 0, items: []}} = Workbench.list_programming_queue(malformed)
+  end
+
+  test "coverage and urgency use each client's local midnight", ctx do
+    now = DateTime.new!(ctx.today, ~T[12:00:00], "Etc/UTC")
+    tomorrow = Date.add(ctx.today, 1)
+    east = insert_client(ctx, [:nutrition], timezone: "Pacific/Kiritimati")
+    west = insert_client(ctx, [:training], timezone: "Pacific/Honolulu")
+    insert_nutrition_plan(ctx, east, tomorrow, nil)
+    insert_training_plan(ctx, west, tomorrow, nil)
+
+    facts = Easy.WorkbenchProgrammingQueue.service_facts(ctx.ctx, now) |> Repo.all()
+    refute Enum.any?(facts, &(&1.client_id == east.id))
+    assert [fact] = facts
+    assert fact.client_id == west.id
+    assert fact.code == "service_coverage_missing"
+    assert fact.first_uncovered_on == ctx.today
+
+    Repo.update!(Ecto.Changeset.change(east, timezone: ""))
+    Repo.update!(Ecto.Changeset.change(ctx.business, timezone: "Pacific/Kiritimati"))
+    fallback = Easy.WorkbenchProgrammingQueue.service_facts(ctx.ctx, now) |> Repo.all()
+    refute Enum.any?(fallback, &(&1.client_id == east.id))
   end
 
   defp insert_client(ctx, services, attrs \\ []) do

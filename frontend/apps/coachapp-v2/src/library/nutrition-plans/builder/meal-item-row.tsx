@@ -7,31 +7,24 @@
  * Rows are separated by hairlines rather than an accent rule.
  */
 
-import {formatParsedPortion, parseNutritionPortion} from '@easy/utils/nutrition-portion';
 import {Button} from '@heroui/react';
 import {ChevronDown, ChevronUp, X} from 'lucide-react';
-import type {Food, Recipe} from '@/api/nutrition-foods';
-import type {NutritionMealItem} from '@/api/nutrition-plans';
 import {AS_TEXT, NO_GAP} from '@/ui/ua-defaults';
+import type {MenuItem} from './menu';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-/** A meal item plus the `food`/`recipe` objects a hydrated cache may carry —
- *  the generated type has only the ids. */
-export type HydratedMealItem = NutritionMealItem & {
-  food?: Food | null;
-  recipe?: Recipe | null;
-};
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatAmount(item: HydratedMealItem): string {
-  const parsed = parseNutritionPortion(item.portion);
-  return parsed ? formatParsedPortion(parsed) : '';
+function formatAmount(item: MenuItem): string {
+  const portion = item.portion;
+  return portion.kind === 'gram'
+    ? `${portion.grams}g`
+    : `${portion.amount} ${portion.label || portion.unit || 'servings'}`;
 }
 
 function fmt(n: number | null | undefined): string {
@@ -42,7 +35,7 @@ function fmt(n: number | null | undefined): string {
 }
 
 function formatMacroContribution(
-  nutrients: HydratedMealItem['nutrients'],
+  nutrients: MenuItem['nutrients'],
 ): {kcal: string; p: string; c: string; f: string} | null {
   if (!nutrients) {
     return null;
@@ -62,7 +55,8 @@ function formatMacroContribution(
 // ---------------------------------------------------------------------------
 
 export interface MealItemRowProps {
-  item: HydratedMealItem;
+  item: MenuItem;
+  showNutrition: boolean;
   /** Tap opens the AmountSheet in edit mode. The pressed row IS the desktop
    *  popover's anchor, so it arrives with the event — no ref registry. */
   onTap: (anchor: HTMLElement) => void;
@@ -75,10 +69,19 @@ export interface MealItemRowProps {
   showTestIds?: boolean;
 }
 
-export function MealItemRow({item, onTap, onMove, isFirst, isLast, onRemove, showTestIds}: MealItemRowProps) {
-  const name = item.name ?? item.food?.name ?? item.recipe?.name ?? (item.food_id ? 'Food' : 'Recipe');
+export function MealItemRow({
+  item,
+  onTap,
+  onMove,
+  isFirst,
+  isLast,
+  onRemove,
+  showTestIds,
+  showNutrition,
+}: MealItemRowProps) {
+  const name = item.name ?? (item.kind === 'food' ? 'Food' : 'Recipe');
   const amount = formatAmount(item);
-  const macro = formatMacroContribution(item.nutrients);
+  const macro = showNutrition ? formatMacroContribution(item.nutrients) : null;
 
   return (
     <div

@@ -1,28 +1,12 @@
-/**
- * Client nutrition. Day view is GET /nutrition-days (targets + options + diary
- * rows). Diary writes go through /nutrition-days/{date}/* with an Idempotency-Key.
- */
+/** Client nutrition day reads and saves. */
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from './client.ts';
 import {foodKeys, nutritionDayKeys, recipeKeys} from './keys.ts';
-import type {
-  Day,
-  DayAddExtra,
-  DayLogPlannedItem,
-  DayLogPlannedOption,
-  DayReplacePlannedItem,
-  DaySwitchOption,
-  DayUpdateEntry,
-  NutritionDaySlot as NutritionDaySlotSchema,
-  paths,
-  Revision,
-} from './schema.ts';
-import {getApiErrorCode} from './shared.ts';
+import type {Day, DaySave, NutritionDaySlot as NutritionDaySlotSchema, paths} from './schema.ts';
 
 export type {
   Food,
-  NutritionDayEntry,
   NutritionDayOption,
   NutritionDayOptionItem,
   NutritionDayRow,
@@ -31,27 +15,7 @@ export type {
 export type NutritionDay = Day;
 export type NutritionDaySlot = NutritionDaySlotSchema;
 export type DiaryMealSlot = NutritionDaySlot['meal_slot'];
-export type MealSlot = DiaryMealSlot;
-export type SwitchOptionRequest = DaySwitchOption;
-export type ReplacePlannedItemRequest = DayReplacePlannedItem;
-export type UpdateDiaryEntryRequest = DayUpdateEntry;
-export type DeleteDiaryEntryRequest = Revision;
-
-/** Parsed portion — impossible sibling-null states removed at the boundary. */
-export type ParsedNutritionPortion =
-  | {grams: number; kind: 'gram'}
-  | {amount: number; kind: 'serving'; label: null | string; unit: string};
-
-export type NutritionItemRef = {food_id: string; kind: 'food'} | {kind: 'recipe'; recipe_id: string};
-
-export {pickedToItemRef, toItemInput} from '@easy/utils/nutrition-item-ref';
-export {
-  formatParsedPortion,
-  parseNutritionPortion,
-  portionWireFromInput,
-  toPortionInput,
-  toPortionWire,
-} from '@easy/utils/nutrition-portion';
+export type SaveNutritionDayRequest = DaySave & {date: string};
 
 type NutritionDayQuery = paths['/v1/client/nutrition-days']['get']['parameters']['query'];
 type FoodListQuery = paths['/v1/client/nutrition-foods']['get']['parameters']['query'];
@@ -83,141 +47,33 @@ export function useListClientRecipesQuery(query: RecipeListQuery = {}, options?:
   });
 }
 
-// ── Log writes ───────────────────────────────────────────────
+// ── Save ─────────────────────────────────────────────────────
 
-function useInvalidateNutritionDays() {
+type NutritionDaysResponse = paths['/v1/client/nutrition-days']['get']['responses'][200]['content']['application/json'];
+
+export function useSaveNutritionDayMutation() {
   const qc = useQueryClient();
-  return () => {
-    qc.invalidateQueries({queryKey: nutritionDayKeys.lists()});
-  };
-}
 
-type AddExtraRequest = DayAddExtra;
-type LogPlannedItemRequest = DayLogPlannedItem;
-type LogPlannedOptionRequest = DayLogPlannedOption;
+  const invalidate = () => qc.invalidateQueries({queryKey: nutritionDayKeys.lists()});
 
-export function useLogPlannedItemMutation() {
-  const invalidate = useInvalidateNutritionDays();
   return useMutation({
-    mutationFn: ({date, idempotencyKey, ...body}: LogPlannedItemRequest & {date: string; idempotencyKey: string}) =>
-      call(
-        client.POST('/v1/client/nutrition-days/{date}/planned-items', {
-          params: {path: {date}, header: {'Idempotency-Key': idempotencyKey}},
-          body,
-        }),
-      ),
-    onSuccess: invalidate,
-  });
-}
+    mutationFn: ({date, ...body}: SaveNutritionDayRequest) =>
+      call(client.PATCH('/v1/client/nutrition-days/{date}', {params: {path: {date}}, body})),
+    retry: false,
+    onSuccess: async (result, {date}) => {
+      await qc.cancelQueries({queryKey: nutritionDayKeys.lists()});
+      qc.setQueriesData<NutritionDaysResponse>({queryKey: nutritionDayKeys.lists()}, (current) => {
+        if (!current) {
+          return current;
+        }
 
-export function useAddExtraMutation() {
-  const invalidate = useInvalidateNutritionDays();
-  return useMutation({
-    mutationFn: ({date, idempotencyKey, ...body}: AddExtraRequest & {date: string; idempotencyKey: string}) =>
-      call(
-        client.POST('/v1/client/nutrition-days/{date}/extras', {
-          params: {path: {date}, header: {'Idempotency-Key': idempotencyKey}},
-          body,
-        }),
-      ),
-    onSuccess: invalidate,
-  });
-}
-
-export function useLogPlannedOptionMutation() {
-  const invalidate = useInvalidateNutritionDays();
-  return useMutation({
-    mutationFn: ({date, idempotencyKey, ...body}: LogPlannedOptionRequest & {date: string; idempotencyKey: string}) =>
-      call(
-        client.POST('/v1/client/nutrition-days/{date}/planned-options', {
-          params: {path: {date}, header: {'Idempotency-Key': idempotencyKey}},
-          body,
-        }),
-      ),
-    onSuccess: invalidate,
-  });
-}
-
-export function useLogPlannedDayMutation() {
-  const invalidate = useInvalidateNutritionDays();
-  return useMutation({
-    mutationFn: ({date, idempotencyKey}: {date: string; idempotencyKey: string}) =>
-      call(
-        client.POST('/v1/client/nutrition-days/{date}/planned-day', {
-          params: {path: {date}, header: {'Idempotency-Key': idempotencyKey}},
-        }),
-      ),
-    onSuccess: invalidate,
-  });
-}
-
-export function useReplaceItemMutation() {
-  const invalidate = useInvalidateNutritionDays();
-  return useMutation({
-    mutationFn: ({date, idempotencyKey, ...body}: ReplacePlannedItemRequest & {date: string; idempotencyKey: string}) =>
-      call(
-        client.POST('/v1/client/nutrition-days/{date}/replacements', {
-          params: {path: {date}, header: {'Idempotency-Key': idempotencyKey}},
-          body,
-        }),
-      ),
-    onSuccess: invalidate,
-  });
-}
-
-export function useUpdateDiaryEntryMutation() {
-  const invalidate = useInvalidateNutritionDays();
-  return useMutation({
-    mutationFn: ({
-      date,
-      id,
-      idempotencyKey,
-      ...body
-    }: UpdateDiaryEntryRequest & {date: string; id: string; idempotencyKey: string}) =>
-      call(
-        client.PATCH('/v1/client/nutrition-days/{date}/entries/{id}', {
-          params: {path: {date, id}, header: {'Idempotency-Key': idempotencyKey}},
-          body,
-        }),
-      ),
-    onSuccess: invalidate,
-  });
-}
-
-export function useDeleteDiaryEntryMutation() {
-  const invalidate = useInvalidateNutritionDays();
-  return useMutation({
-    mutationFn: ({
-      date,
-      id,
-      idempotencyKey,
-      ...body
-    }: DeleteDiaryEntryRequest & {date: string; id: string; idempotencyKey: string}) =>
-      call(
-        client.DELETE('/v1/client/nutrition-days/{date}/entries/{id}', {
-          params: {path: {date, id}, header: {'Idempotency-Key': idempotencyKey}},
-          body,
-        }),
-      ),
-    onSuccess: invalidate,
-  });
-}
-
-export function useSwitchNutritionMealOptionMutation() {
-  const invalidate = useInvalidateNutritionDays();
-  return useMutation({
-    mutationFn: ({date, idempotencyKey, ...body}: SwitchOptionRequest & {date: string; idempotencyKey: string}) =>
-      call(
-        client.POST('/v1/client/nutrition-days/{date}/active-option', {
-          params: {path: {date}, header: {'Idempotency-Key': idempotencyKey}},
-          body,
-        }),
-      ),
-    onSuccess: invalidate,
-    onError: (error) => {
-      if (getApiErrorCode(error) === 'stale_revision') {
-        invalidate();
-      }
+        return {
+          ...current,
+          data: current.data.map((day) => (day.date === date ? result.data : day)),
+        };
+      });
+      invalidate();
     },
+    onError: invalidate,
   });
 }

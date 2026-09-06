@@ -164,7 +164,6 @@ export default function IntakeAssignControl({clientId, clientName, isOpen, onOpe
     <AssignSurface
       ariaLabel="Assign intake"
       isOpen={isOpen}
-      label="Assign intake"
       onOpenChange={onOpenChange}
     >
       {(close) => (

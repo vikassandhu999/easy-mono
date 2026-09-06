@@ -219,11 +219,10 @@ export default function RecipeDetail() {
               <DetailSectionHeading title="Ingredients" />
               <div className="mt-3 flex flex-col gap-2">
                 {orderedIngredients.map((ingredient, i) => {
-                  const hasAmount = ingredient.amount != null && ingredient.amount !== 0;
-                  const hasWeight = ingredient.weight_g != null && ingredient.weight_g !== 0;
-                  const amountPart = hasAmount && ingredient.unit ? `${ingredient.amount} ${ingredient.unit}` : null;
-                  const weightPart = hasWeight ? `${ingredient.weight_g} g` : null;
-                  const detail = [amountPart, weightPart].filter(Boolean).join(' · ');
+                  const detail =
+                    ingredient.portion.kind === 'serving'
+                      ? `${ingredient.portion.amount} ${ingredient.portion.unit}`
+                      : `${ingredient.portion.grams} g`;
 
                   return (
                     <div

@@ -71,11 +71,3 @@ export const applyFormErrors = <TFieldValues extends FieldValues>(
     },
     knownFields,
   );
-
-// Re-export shared nutrition utilities from @easy/utils
-
-export type ServingSize = {
-  unit: string;
-  weight_g: null | number;
-  amount: null | number;
-};

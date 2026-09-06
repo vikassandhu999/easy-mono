@@ -87,22 +87,6 @@ defmodule Easy.ContextLayoutTest do
     refute engine =~ "Repo.transaction"
   end
 
-  test "Nutrition Diary delegates the complete idempotency command runner" do
-    diary = File.read!("lib/easy/nutrition_diary.ex")
-    runner_path = "lib/easy/nutrition_diary_idempotency.ex"
-
-    assert File.exists?(runner_path)
-    assert diary =~ "alias Easy.Nutrition.Diary.Idempotency"
-    assert diary =~ "Idempotency.run("
-    assert diary =~ "Idempotency.purge_expired("
-    refute diary =~ "DiaryCommandLedger"
-    refute diary =~ "Repo.rollback"
-
-    runner = File.read!(runner_path)
-    assert runner =~ "Repo.transaction"
-    assert runner =~ ~r/\{:rollback, reason\}\s*->\s*Repo\.rollback\(reason\)/
-  end
-
   test "Nutrition Diary delegates read assembly and correction policy" do
     diary = File.read!("lib/easy/nutrition_diary.ex")
     assembler_path = "lib/easy/nutrition_diary_day_assembler.ex"

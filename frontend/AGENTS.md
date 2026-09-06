@@ -23,7 +23,7 @@ No `components/`, no `lib/`, no `utils/`, no `@`-sigils. Files are told apart by
 - A feature's `.tsx` is private, always. UI that two features need moves to `ui/`.
 - `router.tsx` and `app-shell.tsx` are the composition root and may import anything.
 
-The public surface rides on the file extension rather than on a folder, which is what keeps it testable: if another feature needs it, it is pure `.ts`, and pure `.ts` gets a sibling `.check.ts`. Enforced by `scripts/check-frontend-shape.mjs` through `just check-rm` (RM-144).
+A feature shares pure `.ts` with other features; its `.tsx` stays private. Keep related behavior in the owning screen or model. Extract a file when it has an independent responsibility or caller. Import direction is enforced by `scripts/check-frontend-shape.mjs` through `just check-rm` (RM-144).
 
 `@easy/utils` is for product-agnostic helpers (dates, names, numbers). Check it before writing one.
 
@@ -46,11 +46,11 @@ A public JSON field or endpoint: root `AGENTS.md` **API** pointer.
 
 `pnpm -C apps/<app> build` is the finish gate (typecheck `-p tsconfig.app.json`, `check`, Vite). A bare `tsc --noEmit` on a solution `tsconfig.json` compiles nothing and exits 0 (RM-202).
 
-`*.check.ts` files are the frontend unit suite. `pnpm -C apps/<app> check` globs them (`src` plus `@easy/utils`; client also `scripts/`). A new file is live with no `package.json` edit. A new mapper, predicate, or lifecycle helper ships with a sibling `.check.ts` in the same change.
+Put behavior tests under the owning app’s `tests/<feature>/` as `*.test.ts`; browser scenarios use `*.browser.mjs`. Test complete operations and failure recovery. The `check` script discovers unit suites and legacy `*.check.ts` files. Helpers do not require individual test files, and test-runner constraints do not justify splitting production logic.
 
 `pnpm -C apps/<app> lint` is Biome `--write` — review its edits.
 
-Biome enforces `suspicious/noExplicitAny`, `suspicious/noConsole` (`.check.ts` files are exempt), and `style/noNonNullAssertion` as `warn`. Prefer discriminated unions and `requirePrimaryReason`/`primaryReason` over `reasons[0]!`.
+Biome enforces `suspicious/noExplicitAny`, `suspicious/noConsole` (test files are exempt), and `style/noNonNullAssertion` as `warn`. Prefer discriminated unions and `requirePrimaryReason`/`primaryReason` over `reasons[0]!`.
 
 Both apps set `"exactOptionalPropertyTypes": true`. Optional props typed `foo?: T` cannot be passed `undefined` — omit the key, or widen to `foo?: T | undefined` when undefined is intentional. Use `omitUndefined` from `src/api/shared` for request objects.
 

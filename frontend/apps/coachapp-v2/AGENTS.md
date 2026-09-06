@@ -8,7 +8,7 @@ This file is the contract for `coachapp-v2`. Follow it while writing and reviewi
 - Dev server: `pnpm -C apps/coachapp-v2 dev` on port 2021.
 - Build/type-check: `pnpm -C apps/coachapp-v2 build`.
 - Lint/format: `pnpm -C apps/coachapp-v2 lint`. This runs Biome with `--write`, so expect file changes.
-- Unit suite: sibling `*.check.ts` files. `pnpm -C apps/coachapp-v2 check` globs `src` and `@easy/utils`. A new mapper, predicate, or lifecycle helper ships with its `.check.ts` in the same change.
+- Unit tests: see `frontend/AGENTS.md` §Verify. Nutrition suites live in `tests/nutrition/`.
 
 ## Source Layout
 
@@ -31,20 +31,20 @@ src/
 - **New screen for an existing feature**: `src/{feature}/screen-name.tsx`.
 - **Component one feature uses**: `src/{feature}/name.tsx`, named so it reads on its own (`client-section-card.tsx`, not `components/section-card.tsx`).
 - **Component two or more features use**: `src/ui/name.tsx`. Shared only within the library group: `src/library/name.tsx`.
-- **Pure helpers and non-trivial constants**: a `.ts` beside the screen that owns them, with a sibling `.check.ts`. Product-agnostic ones (name/date/number formatting, list reordering) go in `@easy/utils` — check it before writing one.
+- **Feature logic**: keep related operations together in the owning screen or model. Extract `.ts` for an independent responsibility or another caller. Product-agnostic ones (name/date/number formatting, list reordering) go in `@easy/utils` — check it before writing one.
 - **Never** a directory named `components`, `lib`, `utils`, `helpers`, `domain`, or one starting with `@`.
 - **Never** a `.ts` sharing a basename with a `.tsx` — module resolution picks the `.ts` and the component silently disappears.
 
-**Arrows point one way: feature → ui → api.** `ui/` never imports a feature; a feature never imports another feature's `.tsx`. A feature's `.ts` files are its public surface, and that is what makes them testable — pure logic another feature can reach is pure logic a `.check.ts` can reach. `router.tsx` and `app-shell.tsx` are the composition root and are exempt. Enforced by `scripts/check-frontend-shape.mjs` via `just check-rm` (RM-144).
+**Arrows point one way: feature → ui → api.** `ui/` never imports a feature; a feature never imports another feature's `.tsx`. A feature's `.ts` files are its public surface; test location does not determine module boundaries. `router.tsx` and `app-shell.tsx` are the composition root and are exempt. Enforced by `scripts/check-frontend-shape.mjs` via `just check-rm` (RM-144).
 
-`api/` has its own seam, and it is not "one file per resource": **hook modules** import `client.ts` and React Query; **pure modules** (request builders, mappers, lifecycle helpers) import neither, so a `.check.ts` can run them under bare `node --experimental-strip-types`. Never merge a pure module into a hooks module — its suite dies on `import.meta.env`. Anything a `.check.ts` reaches must use relative imports carrying the `.ts` extension, not `@/` aliases, for the same reason.
+API hooks own HTTP and cache effects. Keep feature editing rules in the feature. Pure model tests may import `.ts` with relative paths; exercise React and HTTP behavior through browser scenarios rather than exporting private helpers to satisfy the test runner.
 
 ## Names, Types, And Imports
 
 - Screen and component files use kebab-case: `list-clients.tsx`, `client-card.tsx`.
 - Use direct `@/...` imports. Do not add new barrel files or re-export surfaces.
 - Do not duplicate existing shapes. Derive types from API/domain types with `Pick`, `Omit`, `Partial`, indexed access, or local zod inference when the meaning is the same.
-- Component files should stay shallow: imports, props type, component, and form schema/type/hook if the file owns a form. If helpers or constants grow, move them to the owning `lib`, `domain`, or mapper file.
+- Keep a screen’s form schema, state transitions, and private helpers beside the behavior they support. File length alone is not a reason to split them.
 
 ## Data And API
 

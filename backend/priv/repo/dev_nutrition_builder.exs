@@ -79,78 +79,74 @@ end
 everyday = hd(template.day_patterns)
 gram = fn grams -> %{kind: :gram, grams: grams * 1.0} end
 
-food_item = fn ref, food, grams, position ->
-  %{local_ref: ref, kind: :food, food_id: food.id, position: position, portion: gram.(grams)}
+meal_ids = Map.new(~w(oats yogurt salmon chili empty), &{&1, Ecto.UUID.generate()})
+rest_id = Ecto.UUID.generate()
+food_item = fn food, grams ->
+  %{id: Ecto.UUID.generate(), kind: :food, food_id: food.id, portion: gram.(grams)}
 end
 
 {:ok, plan} =
   Programming.replace_menu(ctx, template.id, 1, %{
     meals: [
       %{
-        local_ref: "oats",
+        id: meal_ids["oats"],
         name: "Protein oats + berries",
-        position: 0,
-        meal_items: [food_item.("oats-1", f1, 80, 0), food_item.("oats-2", f2, 150, 1)]
+meal_items: [food_item.(f1, 80), food_item.(f2, 150)]
       },
       %{
-        local_ref: "yogurt",
+        id: meal_ids["yogurt"],
         name: "Greek yogurt + almonds",
-        position: 1,
-        meal_items: [food_item.("yogurt-1", f3, 170, 0), food_item.("yogurt-2", f4, 20, 1)]
+meal_items: [food_item.(f3, 170), food_item.(f4, 20)]
       },
       %{
-        local_ref: "salmon",
+        id: meal_ids["salmon"],
         name: "Salmon, rice & greens",
-        position: 2,
-        meal_items: [
-          food_item.("salmon-1", f5, 180, 0),
-          food_item.("salmon-2", f6, 150, 1),
-          food_item.("salmon-3", f2, 120, 2)
+meal_items: [
+          food_item.(f5, 180),
+          food_item.(f6, 150),
+          food_item.(f2, 120)
         ]
       },
       %{
-        local_ref: "chili",
+        id: meal_ids["chili"],
         name: "Turkey chili & rice",
-        position: 3,
-        meal_items: [food_item.("chili-1", f6, 150, 0), food_item.("chili-2", f2, 150, 1)]
+meal_items: [food_item.(f6, 150), food_item.(f2, 150)]
       },
-      %{local_ref: "empty", name: "New meal", position: 4, meal_items: []}
+      %{id: meal_ids["empty"], name: "New meal", meal_items: []}
     ],
     day_patterns: [
       %{
         id: everyday.id,
         name: "Training day",
-        position: 0,
-        slots: [
+slots: [
           %{
             meal_slot: :breakfast,
-            options: [%{local_ref: "t-b", meal_local_ref: "oats", position: 0}]
+            options: [%{id: Ecto.UUID.generate(), nutrition_meal_id: meal_ids["oats"]}]
           },
           %{
             meal_slot: :mid_morning,
-            options: [%{local_ref: "t-m", meal_local_ref: "yogurt", position: 0}]
+            options: [%{id: Ecto.UUID.generate(), nutrition_meal_id: meal_ids["yogurt"]}]
           },
           %{
             meal_slot: :dinner,
             options: [
-              %{local_ref: "t-d0", meal_local_ref: "salmon", position: 0},
-              %{local_ref: "t-d1", meal_local_ref: "chili", position: 1}
+              %{id: Ecto.UUID.generate(), nutrition_meal_id: meal_ids["salmon"]},
+              %{id: Ecto.UUID.generate(), nutrition_meal_id: meal_ids["chili"]}
             ]
           }
         ]
       },
       %{
-        local_ref: "rest",
+        id: rest_id,
         name: "Rest day",
-        position: 1,
-        slots: [
+slots: [
           %{
             meal_slot: :breakfast,
-            options: [%{local_ref: "r-b", meal_local_ref: "yogurt", position: 0}]
+            options: [%{id: Ecto.UUID.generate(), nutrition_meal_id: meal_ids["yogurt"]}]
           },
           %{
             meal_slot: :lunch,
-            options: [%{local_ref: "r-l", meal_local_ref: "empty", position: 0}]
+            options: [%{id: Ecto.UUID.generate(), nutrition_meal_id: meal_ids["empty"]}]
           }
         ]
       }
@@ -161,8 +157,8 @@ end
       wednesday: everyday.id,
       thursday: everyday.id,
       friday: everyday.id,
-      saturday: "rest",
-      sunday: "rest"
+      saturday: rest_id,
+      sunday: rest_id
     }
   })
 

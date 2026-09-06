@@ -15,6 +15,119 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
   import Easy.Nutrition.ProgrammingMenuFixtures
 
   describe "replace_menu/4" do
+    test "collisions for every node type roll back without modifying another plan or tenant" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      food = insert(:food, business: coach.business, creator: coach)
+      {:ok, target} = Programming.create_template(ctx, %{name: "Target"})
+      target_day = hd(target.day_patterns)
+      target_meal = meal_input("target", "Target meal", [food_item("target-item", food.id, %{kind: :gram, grams: 50})])
+
+      valid = %{
+        meals: [target_meal],
+        day_patterns: [%{id: target_day.id, name: "Everyday", slots: [%{meal_slot: :breakfast, options: [%{id: uuid("target-option"), nutrition_meal_id: target_meal.id}]}]}],
+        schedule: schedule_for(target_day.id)
+      }
+
+      for owner <- [coach, insert(:coach)] do
+        source_ctx = trainer_ctx(owner)
+        {:ok, source} = Programming.create_template(source_ctx, %{name: "Source"})
+        source_food = insert(:food, business: owner.business, creator: owner)
+        source_day = hd(source.day_patterns)
+        source_meal = meal_input(owner.id, "Source meal", [food_item("#{owner.id}-item", source_food.id, %{kind: :gram, grams: 50})])
+        source_option = uuid("#{owner.id}-option")
+
+        {:ok, source} =
+          Programming.replace_menu(source_ctx, source.id, 1, %{
+            meals: [source_meal],
+            day_patterns: [%{id: source_day.id, name: "Everyday", slots: [%{meal_slot: :breakfast, options: [%{id: source_option, nutrition_meal_id: source_meal.id}]}]}],
+            schedule: schedule_for(source_day.id)
+          })
+
+        {:ok, source} = Programming.get_template(source_ctx, source.id)
+
+        meal_collision =
+          valid
+          |> put_in([:meals, Access.at(0), :id], source_meal.id)
+          |> put_in([:day_patterns, Access.at(0), :slots, Access.at(0), :options, Access.at(0), :nutrition_meal_id], source_meal.id)
+
+        item_collision = put_in(valid, [:meals, Access.at(0), :meal_items, Access.at(0), :id], hd(source_meal.meal_items).id)
+
+        day_collision =
+          valid
+          |> put_in([:day_patterns, Access.at(0), :id], source_day.id)
+          |> Map.put(:schedule, schedule_for(source_day.id))
+
+        option_collision = put_in(valid, [:day_patterns, Access.at(0), :slots, Access.at(0), :options, Access.at(0), :id], source_option)
+
+        for invalid <- [meal_collision, item_collision, day_collision, option_collision] do
+          assert {:error, %Ecto.Changeset{valid?: false}} = Programming.replace_menu(ctx, target.id, 1, invalid)
+          assert {:ok, unchanged} = Programming.get_template(ctx, target.id)
+          assert unchanged.revision == 1
+          assert unchanged.meals == []
+          assert [%{id: target_day_id, meal_options: []}] = unchanged.day_patterns
+          assert target_day_id == target_day.id
+          assert {:ok, ^source} = Programming.get_template(source_ctx, source.id)
+        end
+      end
+    end
+
+    test "array reordering retains identities and shared meal references across a reload" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      {:ok, plan} = Programming.create_template(ctx, %{name: "Weekly menu"})
+      food = insert(:food, business: coach.business, creator: coach)
+      a = meal_input("a", "A", [food_item("a1", food.id, %{kind: :gram, grams: 50}), food_item("a2", food.id, %{kind: :gram, grams: 75})])
+      b = meal_input("b", "B", [])
+      day = hd(plan.day_patterns)
+      rest = uuid("rest")
+
+      input = %{
+        meals: [a, b],
+        day_patterns: [
+          %{
+            id: day.id,
+            name: "Training",
+            slots: [
+              %{
+                meal_slot: :breakfast,
+                options: [
+                  %{id: uuid("first"), nutrition_meal_id: a.id},
+                  %{id: uuid("second"), nutrition_meal_id: b.id}
+                ]
+              }
+            ]
+          },
+          %{id: rest, name: "Rest", slots: [%{meal_slot: :lunch, options: [%{id: uuid("reuse"), nutrition_meal_id: a.id}]}]}
+        ],
+        schedule: schedule_for(day.id) |> Map.put(:sunday, rest)
+      }
+
+      assert {:ok, _saved} = Programming.replace_menu(ctx, plan.id, 1, input)
+      [training, rest_day] = input.day_patterns
+      [slot] = training.slots
+
+      reordered = %{
+        input
+        | meals: [b, %{a | meal_items: Enum.reverse(a.meal_items)}],
+          day_patterns: [rest_day, %{training | slots: [%{slot | options: Enum.reverse(slot.options)}]}]
+      }
+
+      assert {:ok, _saved} = Programming.replace_menu(ctx, plan.id, 2, reordered)
+      assert {:ok, loaded} = Programming.get_template(ctx, plan.id)
+      assert Enum.map(loaded.meals, &{&1.id, &1.position}) == [{b.id, 0}, {a.id, 1}]
+      assert Enum.map(List.last(loaded.meals).meal_items, &{&1.id, &1.position}) == [{uuid("a2"), 0}, {uuid("a1"), 1}]
+      assert Enum.map(loaded.day_patterns, &{&1.id, &1.position}) == [{rest, 0}, {day.id, 1}]
+
+      assert Enum.map(List.last(loaded.day_patterns).meal_options, &{&1.id, &1.nutrition_meal_id, &1.position}) == [
+               {uuid("second"), b.id, 0},
+               {uuid("first"), a.id, 1}
+             ]
+
+      assert hd(hd(loaded.day_patterns).meal_options).nutrition_meal_id == a.id
+      assert Enum.find(loaded.week_schedule, &(&1.weekday == :sunday)).nutrition_day_pattern_id == rest
+    end
+
     test "retains persisted identities, reorders nodes, and deletes omitted Meals and Menu Items" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
@@ -28,11 +141,11 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
                  1,
                  menu(template,
                    meals: [
-                     meal_input("kept", "Kept", 0, [
-                       food_item("kept-item", food.id, 0, %{kind: :gram, grams: 50}),
-                       food_item("omitted-item", food.id, 1, %{kind: :gram, grams: 80})
+                     meal_input("kept", "Kept", [
+                       food_item("kept-item", food.id, %{kind: :gram, grams: 50}),
+                       food_item("omitted-item", food.id, %{kind: :gram, grams: 80})
                      ]),
-                     meal_input("omitted", "Omitted", 1, [])
+                     meal_input("omitted", "Omitted", [])
                    ]
                  )
                )
@@ -47,16 +160,16 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
                  2,
                  menu(created,
                    meals: [
-                     persisted_meal(kept.id, "Kept revised", 5, [
-                       persisted_item(kept_item.id, :food, food.id, 3, %{kind: :gram, grams: 40})
+                     persisted_meal(kept.id, "Kept revised", [
+                       persisted_item(kept_item.id, :food, food.id, %{kind: :gram, grams: 40})
                      ])
                    ]
                  )
                )
 
-      assert [%{id: kept_id, name: "Kept revised", position: 5}] = replaced.meals
+      assert [%{id: kept_id, name: "Kept revised", position: 0}] = replaced.meals
       assert kept_id == kept.id
-      assert [%{id: kept_item_id, position: 3, weight_g: 40.0}] = hd(replaced.meals).meal_items
+      assert [%{id: kept_item_id, position: 0, weight_g: 40.0}] = hd(replaced.meals).meal_items
       assert kept_item_id == kept_item.id
       assert Repo.get(Meal, omitted_meal.id) == nil
       assert Repo.get(MealItem, omitted_item.id) == nil
@@ -73,7 +186,7 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
                  ctx,
                  template.id,
                  1,
-                 menu(template, meals: [meal_input("breakfast", "Breakfast", 0, [])])
+                 menu(template, meals: [meal_input("breakfast", "Breakfast", [])])
                )
 
       assert {:error, %Ecto.Changeset{action: :stale_revision, data: %Plan{revision: 2}}} =
@@ -83,8 +196,8 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
                  1,
                  menu(template,
                    meals: [
-                     meal_input("lunch", "Lunch", 0, [
-                       food_item("item", food.id, 0, %{kind: :gram, grams: 50})
+                     meal_input("lunch", "Lunch", [
+                       food_item("item", food.id, %{kind: :gram, grams: 50})
                      ])
                    ]
                  )
@@ -96,7 +209,7 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
       assert Repo.aggregate(MealItem.for_plan(template.id), :count, :id) == 0
     end
 
-    test "rejects duplicate local references and does not write archived plans" do
+    test "rejects duplicate node IDs and does not write archived plans" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
       assert {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})
@@ -107,7 +220,7 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
                  template.id,
                  1,
                  menu(template,
-                   meals: [meal_input("same", "One", 0, []), meal_input("same", "Two", 1, [])]
+                   meals: [meal_input("same", "One", []), meal_input("same", "Two", [])]
                  )
                )
 
@@ -118,7 +231,7 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
                  ctx,
                  archived.id,
                  2,
-                 menu(archived, meals: [meal_input("one", "One", 0, [])])
+                 menu(archived, meals: [meal_input("one", "One", [])])
                )
 
       assert %{archived_at: ["is read-only"]} = errors_on(changeset)
@@ -139,13 +252,13 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
                  %{
                    meals: [],
                    day_patterns: [
-                     %{id: everyday.id, name: "Training", position: 1, slots: []},
-                     %{local_ref: "rest", name: "Rest", position: 0, slots: []}
+                     %{id: uuid("rest"), name: "Rest", slots: []},
+                     %{id: everyday.id, name: "Training", slots: []}
                    ],
                    schedule:
                      schedule_for(everyday.id)
-                     |> Map.put(:saturday, "rest")
-                     |> Map.put(:sunday, "rest")
+                     |> Map.put(:saturday, uuid("rest"))
+                     |> Map.put(:sunday, uuid("rest"))
                  }
                )
 
@@ -175,7 +288,7 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
                  2,
                  %{
                    meals: [],
-                   day_patterns: [%{id: rest_id, name: "Rest", position: 0, slots: []}],
+                   day_patterns: [%{id: rest_id, name: "Rest", slots: []}],
                    schedule: schedule_for(rest_id)
                  }
                )
@@ -195,8 +308,8 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
                Programming.replace_menu(ctx, template.id, 1, %{
                  meals: [],
                  day_patterns: [
-                   %{id: everyday.id, name: "Everyday", position: 0, slots: []},
-                   %{local_ref: "rest", name: "Rest", position: 1, slots: []}
+                   %{id: everyday.id, name: "Everyday", slots: []},
+                   %{id: uuid("rest"), name: "Rest", slots: []}
                  ],
                  schedule: schedule_for(everyday.id)
                })
@@ -206,7 +319,7 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
       assert {:ok, replaced} =
                Programming.replace_menu(ctx, template.id, 2, %{
                  meals: [],
-                 day_patterns: [%{id: rest.id, name: "Rest", position: 0, slots: []}],
+                 day_patterns: [%{id: rest.id, name: "Rest", slots: []}],
                  schedule: schedule_for(rest.id)
                })
 
@@ -226,7 +339,7 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
                  ctx,
                  template.id,
                  1,
-                 menu(template, meals: [meal_input("breakfast", "Breakfast", 0, [])])
+                 menu(template, meals: [meal_input("breakfast", "Breakfast", [])])
                )
 
       assert [%{id: pattern_id, meal_options: []}] = kept.day_patterns
@@ -235,7 +348,7 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
 
       assert {:error, %Ecto.Changeset{valid?: false}} =
                Programming.replace_menu(ctx, template.id, 2, %{
-                 meals: [meal_input("lunch", "Lunch", 0, [])],
+                 meals: [meal_input("lunch", "Lunch", [])],
                  day_patterns: [],
                  schedule: schedule_for(pattern.id)
                })
@@ -245,7 +358,7 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
       assert {:error, %Ecto.Changeset{valid?: false}} =
                Programming.replace_menu(ctx, template.id, 2, %{
                  meals: [],
-                 day_patterns: [%{id: pattern.id, name: pattern.name, position: 0, slots: []}],
+                 day_patterns: [%{id: pattern.id, name: pattern.name, slots: []}],
                  schedule: incomplete
                })
 
@@ -263,14 +376,14 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
 
       meals =
         for index <- 0..3 do
-          meal_input("meal-#{index}", "Meal #{index}", index, [
-            food_item("item-#{index}", food.id, 0, %{kind: :gram, grams: 50})
+          meal_input("meal-#{index}", "Meal #{index}", [
+            food_item("item-#{index}", food.id, %{kind: :gram, grams: 50})
           ])
         end
 
       options =
         for index <- 0..3 do
-          %{local_ref: "opt-#{index}", meal_local_ref: "meal-#{index}", position: index}
+          %{id: uuid("opt-#{index}"), nutrition_meal_id: uuid("meal-#{index}")}
         end
 
       assert {:ok, created} =
@@ -284,11 +397,10 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
                      %{
                        id: pattern.id,
                        name: pattern.name,
-                       position: 0,
                        slots: [
                          %{
                            meal_slot: :post_workout,
-                           options: [%{List.last(options) | position: 0}]
+                           options: [List.last(options)]
                          },
                          %{meal_slot: :breakfast, options: Enum.take(options, 3)}
                        ]
@@ -322,20 +434,18 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
                  template.id,
                  2,
                  %{
-                   meals: Enum.map(created.meals, &persisted_meal(&1.id, &1.name, &1.position, [])),
+                   meals: Enum.map(created.meals, &persisted_meal(&1.id, &1.name, [])),
                    day_patterns: [
                      %{
                        id: pattern.id,
                        name: pattern.name,
-                       position: 0,
                        slots: [
                          %{
                            meal_slot: :breakfast,
                            options: [
                              %{
                                id: kept_option.id,
-                               nutrition_meal_id: kept_option.nutrition_meal_id,
-                               position: 0
+                               nutrition_meal_id: kept_option.nutrition_meal_id
                              }
                            ]
                          }
@@ -353,7 +463,7 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
       assert Repo.aggregate(MealOption, :count, :id) == 1
     end
 
-    test "rejects duplicate slot Meals, unknown slots, non-contiguous option order, and Meals from another plan or tenant" do
+    test "rejects duplicate slot Meals, unknown slots, and Meals from another plan or tenant" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
       assert {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})
@@ -366,7 +476,7 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
                  ctx,
                  other.id,
                  1,
-                 menu(other, meals: [meal_input("foreign", "Foreign", 0, [])])
+                 menu(other, meals: [meal_input("foreign", "Foreign", [])])
                )
 
       foreign_meal_id = hd(other_menu.meals).id
@@ -380,7 +490,7 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
                  trainer_ctx(hidden),
                  hidden_template.id,
                  1,
-                 menu(hidden_template, meals: [meal_input("hidden", "Hidden", 0, [])])
+                 menu(hidden_template, meals: [meal_input("hidden", "Hidden", [])])
                )
 
       hidden_meal_id = hd(hidden_menu.meals).id
@@ -388,21 +498,20 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
       invalid = [
         %{
           meals: [
-            meal_input("breakfast", "Breakfast", 0, [
-              food_item("item", food.id, 0, %{kind: :gram, grams: 50})
+            meal_input("breakfast", "Breakfast", [
+              food_item("item", food.id, %{kind: :gram, grams: 50})
             ])
           ],
           day_patterns: [
             %{
               id: pattern.id,
               name: pattern.name,
-              position: 0,
               slots: [
                 %{
                   meal_slot: :breakfast,
                   options: [
-                    %{local_ref: "a", meal_local_ref: "breakfast", position: 0},
-                    %{local_ref: "b", meal_local_ref: "breakfast", position: 1}
+                    %{id: uuid("a"), nutrition_meal_id: uuid("breakfast")},
+                    %{id: uuid("b"), nutrition_meal_id: uuid("breakfast")}
                   ]
                 }
               ]
@@ -411,16 +520,15 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
           schedule: schedule_for(pattern.id)
         },
         %{
-          meals: [meal_input("breakfast", "Breakfast", 0, [])],
+          meals: [meal_input("breakfast", "Breakfast", [])],
           day_patterns: [
             %{
               id: pattern.id,
               name: pattern.name,
-              position: 0,
               slots: [
                 %{
                   meal_slot: :brunch,
-                  options: [%{local_ref: "a", meal_local_ref: "breakfast", position: 0}]
+                  options: [%{id: uuid("a"), nutrition_meal_id: uuid("breakfast")}]
                 }
               ]
             }
@@ -429,20 +537,19 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
         },
         %{
           meals: [
-            meal_input("one", "One", 0, []),
-            meal_input("two", "Two", 1, [])
+            meal_input("one", "One", []),
+            meal_input("two", "Two", [])
           ],
           day_patterns: [
             %{
               id: pattern.id,
               name: pattern.name,
-              position: 0,
               slots: [
                 %{
                   meal_slot: :breakfast,
                   options: [
-                    %{local_ref: "a", meal_local_ref: "one", position: 0},
-                    %{local_ref: "b", meal_local_ref: "two", position: 2}
+                    %{id: uuid("a"), nutrition_meal_id: uuid("one")},
+                    %{id: uuid("b"), nutrition_meal_id: uuid("missing")}
                   ]
                 }
               ]
@@ -456,11 +563,10 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
             %{
               id: pattern.id,
               name: pattern.name,
-              position: 0,
               slots: [
                 %{
                   meal_slot: :breakfast,
-                  options: [%{local_ref: "a", nutrition_meal_id: foreign_meal_id, position: 0}]
+                  options: [%{id: uuid("a"), nutrition_meal_id: foreign_meal_id}]
                 }
               ]
             }
@@ -473,11 +579,10 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
             %{
               id: pattern.id,
               name: pattern.name,
-              position: 0,
               slots: [
                 %{
                   meal_slot: :breakfast,
-                  options: [%{local_ref: "a", nutrition_meal_id: hidden_meal_id, position: 0}]
+                  options: [%{id: uuid("a"), nutrition_meal_id: hidden_meal_id}]
                 }
               ]
             }

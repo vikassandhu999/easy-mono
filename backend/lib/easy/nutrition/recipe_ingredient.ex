@@ -12,6 +12,8 @@ defmodule Easy.Nutrition.RecipeIngredient do
   @foreign_key_type :binary_id
 
   schema "nutrition_recipe_ingredients" do
+    field :portion_kind, Ecto.Enum, values: [:gram, :serving], default: :gram
+    field :serving_label, :string
     field :amount, :float
     field :unit, :string
     field :weight_g, :float
@@ -30,7 +32,7 @@ defmodule Easy.Nutrition.RecipeIngredient do
   @spec insert_changeset(String.t(), String.t(), non_neg_integer(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, recipe_id, position, attrs) do
     %__MODULE__{}
-    |> cast(attrs, [:food_id, :amount, :unit, :weight_g])
+    |> cast(attrs, [:food_id, :portion_kind, :serving_label, :amount, :unit, :weight_g])
     |> put_change(:business_id, business_id)
     |> put_change(:recipe_id, recipe_id)
     |> put_change(:position, position)

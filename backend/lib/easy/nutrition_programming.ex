@@ -94,27 +94,29 @@ defmodule Easy.Nutrition.Programming do
     mutate_template(ctx, template_id, expected_revision, &Repo.delete/1, reload?: false)
   end
 
-  @spec list_plans_for_client(Ctx.t(), String.t(), keyword()) ::
-          {:ok, %{count: non_neg_integer(), plans: [Plan.t()]}} | {:error, :not_found}
-  def list_plans_for_client(%Ctx{} = ctx, client_id, opts \\ []) do
-    {offset, limit} = page(opts)
-
+  @spec get_coverage_for_client(Ctx.t(), String.t()) ::
+          {:ok, %{date: Date.t(), current: Plan.t() | nil, upcoming: [Plan.t()]}} | {:error, :not_found}
+  def get_coverage_for_client(%Ctx{} = ctx, client_id) do
     with :ok <- ensure_coach(ctx),
-         {:ok, _client} <- ClientAccess.authorize_client(ctx, client_id) do
-      query =
-        ctx
-        |> client_plan_query(client_id)
-        |> Plan.for_archived(Keyword.get(opts, :archived))
+         {:ok, client} <- ClientAccess.authorize_client(ctx, client_id) do
+      client = Repo.preload(client, :business)
+      today = local_today_for(%Plan{client: client})
 
       plans =
-        query
-        |> Plan.newest()
-        |> Utils.paginate(offset, limit)
+        ctx
+        |> client_plan_query(client_id)
+        |> Plan.current_or_upcoming(today)
         |> Plan.include_menu(ctx.business_id)
         |> Plan.include_client(ctx.business_id)
         |> Repo.all()
+        |> Enum.map(&%{&1 | lifecycle: Plan.lifecycle(&1, today)})
 
-      {:ok, %{count: Repo.aggregate(query, :count, :id), plans: stamp_lifecycle(plans)}}
+      {:ok,
+       %{
+         date: today,
+         current: Enum.find(plans, &(&1.lifecycle == :current)),
+         upcoming: Enum.filter(plans, &(&1.lifecycle == :upcoming))
+       }}
     end
   end
 
@@ -552,8 +554,8 @@ defmodule Easy.Nutrition.Programming do
     %{plan | lifecycle: Plan.lifecycle(plan, local_today_for(plan))}
   end
 
-  defp local_today_for(%Plan{client: %Client{timezone: timezone}}) do
-    LocalCalendar.to_local_date(DateTime.utc_now(), LocalCalendar.applied_timezone(timezone, nil))
+  defp local_today_for(%Plan{client: %Client{timezone: timezone, business: %Business{timezone: business_timezone}}}) do
+    LocalCalendar.to_local_date(DateTime.utc_now(), LocalCalendar.applied_timezone(timezone, business_timezone))
   end
 
   defp local_today_for(_plan) do

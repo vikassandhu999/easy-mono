@@ -4,7 +4,7 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
   import Easy.DataCase, only: [trainer_ctx: 1]
 
   alias Easy.LocalCalendar
-  alias Easy.Nutrition.{Programming, WeekSchedule}
+  alias Easy.Nutrition.{Programming, ProgrammingMenuFixtures, WeekSchedule}
 
   setup do
     coach = insert(:coach)
@@ -36,7 +36,7 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
       assert data["plan_id"] == plan.id
       assert data["write_eligible"] == true
       assert hd(data["slots"])["meal_slot"] == "breakfast"
-      assert hd(data["slots"])["rows"] == []
+      assert [%{"status" => "pending", "entry_id" => nil}] = hd(data["slots"])["rows"]
       assert data["applied_timezone"]
       assert data["summary"]["adherence"] == "none"
       refute data["summary"]["has_intake"]
@@ -100,11 +100,15 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
     menu = %{
       meals: [
         %{
-          local_ref: "breakfast",
+          id: ProgrammingMenuFixtures.uuid("breakfast"),
           name: "Breakfast",
-          position: 0,
           meal_items: [
-            %{local_ref: "oats", kind: :food, food_id: food.id, position: 0, portion: %{kind: :gram, grams: 50}}
+            %{
+              id: ProgrammingMenuFixtures.uuid("oats"),
+              kind: :food,
+              food_id: food.id,
+              portion: %{kind: :gram, grams: 50}
+            }
           ]
         }
       ],
@@ -112,8 +116,17 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
         %{
           id: pattern.id,
           name: pattern.name,
-          position: 0,
-          slots: [%{meal_slot: :breakfast, options: [%{local_ref: "opt", meal_local_ref: "breakfast", position: 0}]}]
+          slots: [
+            %{
+              meal_slot: :breakfast,
+              options: [
+                %{
+                  id: ProgrammingMenuFixtures.uuid("opt"),
+                  nutrition_meal_id: ProgrammingMenuFixtures.uuid("breakfast")
+                }
+              ]
+            }
+          ]
         }
       ],
       schedule: Map.new(WeekSchedule.weekdays(), &{&1, pattern.id})

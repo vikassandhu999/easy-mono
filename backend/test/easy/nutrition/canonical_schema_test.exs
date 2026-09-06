@@ -1,9 +1,9 @@
 defmodule Easy.Nutrition.CanonicalSchemaTest do
+  alias Easy.Nutrition.DiaryFixtures
   use Easy.DataCase, async: true
+  alias Easy.Nutrition.{DiaryEntry, Food, Programming, Recipe}
 
-  alias Easy.Nutrition.{Diary, DiaryEntry, Food, Programming, Recipe}
-
-  describe "canonical Nutrition Programming constraints" do
+  describe("canonical Nutrition Programming constraints") do
     test "the database rejects client-plan fields on a template" do
       coach = insert(:coach)
       client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
@@ -104,7 +104,9 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       assert {:ok, first} = Programming.create_template(ctx, %{"name" => "First"})
       assert {:ok, second} = Programming.create_template(ctx, %{"name" => "Second"})
       food = insert(:food, business: coach.business, creator: coach)
-      {1, [%{id: meal_id}]} = Repo.insert_all("nutrition_meals", [meal_row(coach, first)], returning: [:id])
+
+      {1, [%{id: meal_id}]} =
+        Repo.insert_all("nutrition_meals", [meal_row(coach, first)], returning: [:id])
 
       assert_raise Postgrex.Error, fn ->
         Repo.insert_all("nutrition_meal_items", [
@@ -119,7 +121,9 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
       food = insert(:food, business: coach.business, creator: coach)
       recipe = insert(:recipe, business: coach.business, creator: coach)
-      {1, [%{id: meal_id}]} = Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
+
+      {1, [%{id: meal_id}]} =
+        Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
 
       assert_raise Postgrex.Error, fn ->
         Repo.insert_all("nutrition_meal_items", [
@@ -142,7 +146,9 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       ctx = trainer_ctx(coach)
       assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
       food = insert(:food, business: coach.business, creator: coach)
-      {1, [%{id: meal_id}]} = Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
+
+      {1, [%{id: meal_id}]} =
+        Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
 
       assert_raise Postgrex.Error, fn ->
         Repo.insert_all("nutrition_meal_items", [
@@ -162,7 +168,9 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       ctx = trainer_ctx(coach)
       assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
       food = insert(:food, business: coach.business, creator: coach)
-      {1, [%{id: meal_id}]} = Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
+
+      {1, [%{id: meal_id}]} =
+        Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
 
       Repo.insert_all("nutrition_meal_items", [meal_item_row(coach, plan, meal_id, food)])
 
@@ -176,7 +184,9 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       ctx = trainer_ctx(coach)
       assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
       food = insert(:food, business: coach.business, creator: coach)
-      {1, [%{id: meal_id}]} = Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
+
+      {1, [%{id: meal_id}]} =
+        Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
 
       assert_raise Postgrex.Error, fn ->
         Repo.insert_all("nutrition_meal_items", [
@@ -194,7 +204,11 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
         Repo.transaction(fn ->
           Repo.query!("SET CONSTRAINTS ALL IMMEDIATE")
 
-          Repo.delete_all(from(row in "nutrition_week_schedule", where: row.nutrition_plan_id == ^dump_uuid(plan.id)))
+          Repo.delete_all(
+            from(row in "nutrition_week_schedule",
+              where: row.nutrition_plan_id == ^dump_uuid(plan.id)
+            )
+          )
         end)
       end
     end
@@ -204,7 +218,9 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       ctx = trainer_ctx(coach)
       assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
       pattern = hd(plan.day_patterns)
-      {1, [%{id: meal_id}]} = Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
+
+      {1, [%{id: meal_id}]} =
+        Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
 
       assert_raise Postgrex.Error, fn ->
         Repo.insert_all("nutrition_meal_options", [
@@ -215,7 +231,9 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       Repo.insert_all("nutrition_meal_options", [option_row(coach, plan, pattern, meal_id)])
 
       assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_meal_options", [option_row(coach, plan, pattern, meal_id, position: 1)])
+        Repo.insert_all("nutrition_meal_options", [
+          option_row(coach, plan, pattern, meal_id, position: 1)
+        ])
       end
 
       {1, [%{id: other_meal_id}]} =
@@ -236,11 +254,7 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
 
       assert_raise Postgrex.Error, fn ->
         Repo.query!(
-          """
-          UPDATE nutrition_week_schedule
-          SET business_id = $1
-          WHERE nutrition_plan_id = $2 AND weekday = 'monday'
-          """,
+          "UPDATE nutrition_week_schedule\nSET business_id = $1\nWHERE nutrition_plan_id = $2 AND weekday = 'monday'\n",
           [dump_uuid(other_business.id), dump_uuid(plan.id)]
         )
       end
@@ -251,7 +265,10 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       ctx = trainer_ctx(coach)
       assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
       pattern = hd(plan.day_patterns)
-      {1, [%{id: meal_id}]} = Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
+
+      {1, [%{id: meal_id}]} =
+        Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
+
       other_business = insert(:business)
 
       assert_raise Postgrex.Error, fn ->
@@ -267,7 +284,9 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       assert {:ok, first} = Programming.create_template(ctx, %{"name" => "First"})
       assert {:ok, second} = Programming.create_template(ctx, %{"name" => "Second"})
       pattern = hd(first.day_patterns)
-      {1, [%{id: foreign_meal_id}]} = Repo.insert_all("nutrition_meals", [meal_row(coach, second)], returning: [:id])
+
+      {1, [%{id: foreign_meal_id}]} =
+        Repo.insert_all("nutrition_meals", [meal_row(coach, second)], returning: [:id])
 
       assert_raise Postgrex.Error, fn ->
         Repo.insert_all("nutrition_meal_options", [
@@ -291,7 +310,9 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       end)
 
       assert Repo.aggregate(
-               from(option in "nutrition_meal_options", where: option.nutrition_plan_id == ^dump_uuid(first.id)),
+               from(option in "nutrition_meal_options",
+                 where: option.nutrition_plan_id == ^dump_uuid(first.id)
+               ),
                :count
              ) == 4
     end
@@ -375,7 +396,6 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       food = insert(:food, business: coach.business, creator: coach, name: "Kept Food")
       recipe = insert(:recipe, business: coach.business, creator: coach, name: "Kept Recipe")
       client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
-
       assert Repo.get!(Easy.Nutrition.Food, food.id).name == "Kept Food"
       assert Repo.get!(Easy.Nutrition.Recipe, recipe.id).name == "Kept Recipe"
       assert Repo.get!(Easy.Clients.Client, client.id)
@@ -383,26 +403,29 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
     end
   end
 
-  describe "Library structural foreign keys" do
+  describe("Library structural foreign keys") do
     test "Menu Items and Recipe Ingredients restrict Food deletion" do
       coach = insert(:coach)
       food = insert(:food, business: coach.business, creator: coach)
       recipe = insert(:recipe, business: coach.business, creator: coach)
-      insert(:recipe_ingredient, business: coach.business, recipe: recipe, food: food, weight_g: 100.0)
 
-      assert_raise Ecto.ConstraintError, fn ->
-        Repo.delete!(Repo.get!(Food, food.id))
-      end
+      insert(:recipe_ingredient,
+        business: coach.business,
+        recipe: recipe,
+        food: food,
+        weight_g: 100.0
+      )
 
+      assert_raise Ecto.ConstraintError, fn -> Repo.delete!(Repo.get!(Food, food.id)) end
       ctx = trainer_ctx(coach)
       assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
-      {1, [%{id: meal_id}]} = Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
+
+      {1, [%{id: meal_id}]} =
+        Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
+
       unused = insert(:food, business: coach.business, creator: coach)
       Repo.insert_all("nutrition_meal_items", [meal_item_row(coach, plan, meal_id, unused)])
-
-      assert_raise Ecto.ConstraintError, fn ->
-        Repo.delete!(Repo.get!(Food, unused.id))
-      end
+      assert_raise Ecto.ConstraintError, fn -> Repo.delete!(Repo.get!(Food, unused.id)) end
     end
 
     test "Menu Items restrict Recipe deletion" do
@@ -410,37 +433,45 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       ctx = trainer_ctx(coach)
       assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
       recipe = insert(:recipe, business: coach.business, creator: coach)
-      {1, [%{id: meal_id}]} = Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
+
+      {1, [%{id: meal_id}]} =
+        Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
 
       Repo.insert_all("nutrition_meal_items", [
-        meal_item_row(coach, plan, meal_id, recipe,
-          food_id: nil,
-          recipe_id: dump_uuid(recipe.id)
-        )
+        meal_item_row(coach, plan, meal_id, recipe, food_id: nil, recipe_id: dump_uuid(recipe.id))
       ])
 
-      assert_raise Ecto.ConstraintError, fn ->
-        Repo.delete!(Repo.get!(Recipe, recipe.id))
-      end
+      assert_raise Ecto.ConstraintError, fn -> Repo.delete!(Repo.get!(Recipe, recipe.id)) end
     end
 
     test "Diary entries nullify Food deletion" do
       coach = insert(:coach)
       client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
-      food = insert(:food, business: coach.business, creator: coach, name: "Banana", calories_per_100g: 90.0)
+
+      food =
+        insert(:food,
+          business: coach.business,
+          creator: coach,
+          name: "Banana",
+          calories_per_100g: 90.0
+        )
+
       today = Date.utc_today()
 
-      client_ctx = %Easy.Ctx{business_id: client.business_id, user_id: client.user_id, client_id: client.id}
+      client_ctx = %Easy.Ctx{
+        business_id: client.business_id,
+        user_id: client.user_id,
+        client_id: client.id
+      }
 
       assert {:ok, day} =
-               Diary.add_client_extra(
+               DiaryFixtures.save_extra(
                  client_ctx,
                  today,
-                 %{meal_slot: :breakfast, food_id: food.id, portion: %{kind: :gram, grams: 100.0}},
-                 Ecto.UUID.generate()
+                 %{meal_slot: :breakfast, food_id: food.id, portion: %{kind: :gram, grams: 100.0}}
                )
 
-      entry = hd(day.slots).rows |> Enum.find(& &1.entry) |> Map.fetch!(:entry)
+      entry = hd(day.slots).rows |> Enum.find(& &1.entry_id)
       Repo.delete!(Repo.get!(Food, food.id))
       kept = Repo.get!(DiaryEntry, entry.id)
       assert kept.food_id == nil
@@ -448,19 +479,12 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
     end
   end
 
-  describe "canonical Nutrition Diary constraints" do
+  describe("canonical Nutrition Diary constraints") do
     test "cascade and Diary lookup indexes cover their leading foreign-key filters" do
       rows =
-        Repo.query!("""
-        SELECT indexname
-        FROM pg_indexes
-        WHERE schemaname = current_schema()
-          AND indexname IN (
-            'nutrition_week_schedule_pattern_index',
-            'nutrition_meal_options_meal_index',
-            'nutrition_diary_entries_business_slot_index'
-          )
-        """).rows
+        Repo.query!(
+          "SELECT indexname\nFROM pg_indexes\nWHERE schemaname = current_schema()\n  AND indexname IN (\n    'nutrition_week_schedule_pattern_index',\n    'nutrition_meal_options_meal_index',\n    'nutrition_diary_entries_business_slot_index'\n  )\n"
+        ).rows
 
       assert MapSet.new(rows, fn [name] -> name end) ==
                MapSet.new([
@@ -473,22 +497,10 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
     test "the database rejects a duplicate Diary Slot identity" do
       client = insert(:client)
       today = Date.utc_today()
-
       Repo.insert_all("nutrition_diary_slots", [diary_slot_row(client, today)])
 
       assert_raise Postgrex.Error, fn ->
         Repo.insert_all("nutrition_diary_slots", [diary_slot_row(client, today)])
-      end
-    end
-
-    test "the database rejects a duplicate idempotency key for one client" do
-      client = insert(:client)
-      key = dump_uuid()
-
-      Repo.insert_all("nutrition_diary_command_ledger", [ledger_row(client, key)])
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_diary_command_ledger", [ledger_row(client, key)])
       end
     end
 
@@ -498,7 +510,6 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       slot_a = diary_slot_row(client, today)
       slot_b = diary_slot_row(client, today, meal_slot: "lunch")
       option_b = frozen_option_row(client, slot_b.id)
-
       Repo.insert_all("nutrition_diary_slots", [slot_a, slot_b])
       Repo.insert_all("nutrition_diary_frozen_options", [option_b])
       Repo.query!("SET CONSTRAINTS nutrition_diary_slots_active_option_fkey IMMEDIATE")
@@ -518,13 +529,13 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       slot = diary_slot_row(client, today)
       option = frozen_option_row(client, slot.id)
       item_id = dump_uuid()
-
       Repo.insert_all("nutrition_diary_slots", [slot])
       Repo.insert_all("nutrition_diary_frozen_options", [option])
 
       Repo.insert_all("nutrition_diary_frozen_planned_items", [
         timestamps(%{
           id: item_id,
+          source_meal_item_id: dump_uuid(),
           kind: "food",
           display_name: "Oats",
           portion_kind: "gram",
@@ -547,7 +558,6 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
           portion_kind: "gram",
           weight_g: 50.0,
           complete: false,
-          revision: 1,
           business_id: dump_uuid(client.business_id),
           client_id: dump_uuid(client.id),
           nutrition_diary_slot_id: slot.id,
@@ -569,13 +579,10 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       slot_client = insert(:client, business: business)
       other_client = insert(:client, business: business)
       slot = diary_slot_row(slot_client, Date.utc_today())
-
       Repo.insert_all("nutrition_diary_slots", [slot])
 
       assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_diary_entries", [
-          diary_entry_row(other_client, slot.id)
-        ])
+        Repo.insert_all("nutrition_diary_entries", [diary_entry_row(other_client, slot.id)])
       end
     end
 
@@ -585,7 +592,6 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       entry_slot = diary_slot_row(client, today)
       other_slot = diary_slot_row(client, today, meal_slot: "lunch")
       other_option = frozen_option_row(client, other_slot.id)
-
       Repo.insert_all("nutrition_diary_slots", [entry_slot, other_slot])
       Repo.insert_all("nutrition_diary_frozen_options", [other_option])
 
@@ -742,7 +748,6 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
           portion_kind: "gram",
           weight_g: 50.0,
           complete: false,
-          revision: 1,
           business_id: dump_uuid(client.business_id),
           client_id: dump_uuid(client.id),
           nutrition_diary_slot_id: slot_id,
@@ -753,18 +758,7 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
     )
   end
 
-  defp ledger_row(client, key) do
-    now = DateTime.utc_now(:second)
-
-    timestamps(%{
-      id: dump_uuid(),
-      idempotency_key: key,
-      fingerprint: "abc",
-      expires_at: DateTime.add(now, 30, :day),
-      business_id: dump_uuid(client.business_id),
-      client_id: dump_uuid(client.id)
-    })
+  defp dump_uuid(uuid \\ Ecto.UUID.generate()) do
+    Ecto.UUID.dump!(uuid)
   end
-
-  defp dump_uuid(uuid \\ Ecto.UUID.generate()), do: Ecto.UUID.dump!(uuid)
 end

@@ -1,8 +1,9 @@
 defmodule Easy.Nutrition.CutoverTest do
+  alias Easy.Nutrition.DiaryFixtures
+  import Easy.Nutrition.ProgrammingMenuFixtures, only: [uuid: 1]
   use Easy.SchemaCase, async: false
-
   alias Easy.LocalCalendar
-  alias Easy.Nutrition.{Diary, Library, Programming, WeekSchedule}
+  alias Easy.Nutrition.{Library, Programming, WeekSchedule}
   alias Easy.Repo
 
   @legacy_tables [
@@ -12,7 +13,6 @@ defmodule Easy.Nutrition.CutoverTest do
     "nutrition_day_meals",
     "nutrition_weekday_assignments"
   ]
-
   @retained_tables [
     "nutrition_foods",
     "nutrition_recipes",
@@ -20,7 +20,6 @@ defmodule Easy.Nutrition.CutoverTest do
     "businesses",
     "clients"
   ]
-
   @legacy_files [
     "lib/easy/meal_logs.ex",
     "lib/easy/meal_slot.ex",
@@ -34,13 +33,11 @@ defmodule Easy.Nutrition.CutoverTest do
     "lib/easy_web/controllers/clients/food_log_entry_controller.ex",
     "lib/easy_web/open_api/schemas/logging.ex"
   ]
-
   test "legacy Programming and Diary tables are gone while Library rows remain" do
     coach = insert(:coach)
     food = insert(:food, business: coach.business, creator: coach, name: "Kept oats")
     recipe = insert(:recipe, business: coach.business, creator: coach)
     media = insert(:library_media, business: coach.business, uploaded_by_id: coach.user_id)
-
     assert Repo.get!(Easy.Nutrition.Food, food.id).name == "Kept oats"
     assert Repo.get!(Easy.Nutrition.Recipe, recipe.id).id == recipe.id
     assert Repo.get!(Easy.LibraryMedia.Media, media.id).id == media.id
@@ -48,14 +45,12 @@ defmodule Easy.Nutrition.CutoverTest do
     assert Repo.get!(Easy.Orgs.Coach, coach.id).id == coach.id
 
     for table <- @legacy_tables do
-      assert {:ok, %{rows: [[false]]}} =
-               Repo.query("SELECT to_regclass($1) IS NOT NULL", [table]),
+      assert {:ok, %{rows: [[false]]}} = Repo.query("SELECT to_regclass($1) IS NOT NULL", [table]),
              table
     end
 
     for table <- @retained_tables do
-      assert {:ok, %{rows: [[true]]}} =
-               Repo.query("SELECT to_regclass($1) IS NOT NULL", [table]),
+      assert {:ok, %{rows: [[true]]}} = Repo.query("SELECT to_regclass($1) IS NOT NULL", [table]),
              table
     end
   end
@@ -69,14 +64,34 @@ defmodule Easy.Nutrition.CutoverTest do
   test "factories and public modules rebuild Library, Programming, and Diary without discarded ids" do
     coach = insert(:coach)
     client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
-    food = insert(:food, business: coach.business, creator: coach, name: "Oats", calories_per_100g: 389.0)
+
+    food =
+      insert(:food,
+        business: coach.business,
+        creator: coach,
+        name: "Oats",
+        calories_per_100g: 389.0
+      )
+
     extra = insert(:food, business: coach.business, creator: coach, name: "Banana")
     recipe = insert(:recipe, business: coach.business, creator: coach)
-    insert(:recipe_ingredient, business: coach.business, recipe: recipe, food: food, weight_g: 80.0)
-    ctx = trainer_ctx(coach)
-    client_ctx = %Easy.Ctx{business_id: client.business_id, user_id: client.user_id, client_id: client.id}
-    today = local_today(client)
 
+    insert(:recipe_ingredient,
+      business: coach.business,
+      recipe: recipe,
+      food: food,
+      weight_g: 80.0
+    )
+
+    ctx = trainer_ctx(coach)
+
+    client_ctx = %Easy.Ctx{
+      business_id: client.business_id,
+      user_id: client.user_id,
+      client_id: client.id
+    }
+
+    today = local_today(client)
     assert {:ok, _library_food} = Library.get_food(ctx, food.id)
     assert {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})
     pattern = hd(template.day_patterns)
@@ -84,12 +99,12 @@ defmodule Easy.Nutrition.CutoverTest do
     menu = %{
       meals: [
         %{
-          local_ref: "breakfast",
+          id: uuid("breakfast"),
           name: "Oats",
           position: 0,
           meal_items: [
             %{
-              local_ref: "oats",
+              id: uuid("oats"),
               kind: :food,
               food_id: food.id,
               position: 0,
@@ -106,7 +121,7 @@ defmodule Easy.Nutrition.CutoverTest do
           slots: [
             %{
               meal_slot: :breakfast,
-              options: [%{local_ref: "opt", meal_local_ref: "breakfast", position: 0}]
+              options: [%{id: uuid("opt"), nutrition_meal_id: uuid("breakfast")}]
             }
           ]
         }
@@ -125,33 +140,33 @@ defmodule Easy.Nutrition.CutoverTest do
     item_id = hd(hd(plan.meals).meal_items).id
 
     assert {:ok, planned} =
-             Diary.log_client_planned_item(
+             DiaryFixtures.save_extra(
                client_ctx,
                today,
-               %{meal_slot: :breakfast, planned_item_ref: item_id},
-               Ecto.UUID.generate()
+               %{
+                 meal_slot: :breakfast,
+                 planned_item_ref: item_id,
+                 portion: %{kind: :gram, grams: 50.0}
+               }
              )
 
     assert hd(planned.slots).rows |> Enum.any?(&(&1.status == :as_planned))
 
     assert {:ok, with_extra} =
-             Diary.add_client_extra(
+             DiaryFixtures.save_extra(
                client_ctx,
                today,
-               %{meal_slot: :breakfast, food_id: extra.id, portion: %{kind: :gram, grams: 80.0}},
-               Ecto.UUID.generate()
+               %{meal_slot: :breakfast, food_id: extra.id, portion: %{kind: :gram, grams: 80.0}}
              )
 
     assert Enum.any?(hd(with_extra.slots).rows, &(&1.status == :added))
-
     uncovered = Date.add(today, -1)
 
     assert {:ok, recorded} =
-             Diary.add_client_extra(
+             DiaryFixtures.save_extra(
                client_ctx,
                uncovered,
-               %{meal_slot: :lunch, food_id: extra.id, portion: %{kind: :gram, grams: 40.0}},
-               Ecto.UUID.generate()
+               %{meal_slot: :lunch, food_id: extra.id, portion: %{kind: :gram, grams: 40.0}}
              )
 
     assert Enum.any?(recorded.slots, fn slot ->
@@ -162,7 +177,9 @@ defmodule Easy.Nutrition.CutoverTest do
   end
 
   defp local_today(client) do
-    timezone = LocalCalendar.applied_timezone(client.timezone, client.business && client.business.timezone)
+    timezone =
+      LocalCalendar.applied_timezone(client.timezone, client.business && client.business.timezone)
+
     LocalCalendar.to_local_date(DateTime.utc_now(), timezone)
   end
 end

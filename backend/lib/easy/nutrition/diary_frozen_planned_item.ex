@@ -77,6 +77,7 @@ defmodule Easy.Nutrition.DiaryFrozenPlannedItem do
       :portion_kind,
       :complete,
       :position,
+      :source_meal_item_id,
       :business_id,
       :nutrition_diary_slot_id,
       :nutrition_diary_frozen_option_id

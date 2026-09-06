@@ -299,8 +299,9 @@ defmodule Easy.Factory do
   def recipe_ingredient_factory do
     %RecipeIngredient{
       food: build(:food),
-      amount: 1.0,
-      unit: "g",
+      portion_kind: :gram,
+      amount: nil,
+      unit: nil,
       weight_g: 50.0,
       position: 0
     }

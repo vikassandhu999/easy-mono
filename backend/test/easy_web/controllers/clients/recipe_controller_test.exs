@@ -51,8 +51,9 @@ defmodule EasyWeb.Clients.RecipeControllerTest do
         business: ctx.business,
         recipe: recipe,
         food: food,
-        amount: 200,
-        unit: "g",
+        portion_kind: :gram,
+        amount: nil,
+        unit: nil,
         weight_g: 200
       )
 

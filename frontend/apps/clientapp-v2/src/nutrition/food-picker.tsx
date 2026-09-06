@@ -1,7 +1,7 @@
 /**
  * Food / recipe picker (spec 02-logging, option 3). Full-screen search with a
  * Foods/Recipes toggle and (for off-plan adds) a meal-slot chooser. Returns the
- * picked item + a default portion weight; the caller logs it (unplanned or replacement).
+ * picked item + its backend default portion; the caller logs it (unplanned or replacement).
  */
 import {MEAL_SLOT_LABELS, MEAL_SLOTS} from '@easy/utils';
 import {Spinner} from '@heroui/react';
@@ -22,37 +22,22 @@ function recipeCaloriesLabel(recipe: Recipe): string {
 }
 
 export type Picked = {
-  defaultAmount: null | number;
-  defaultWeightG: null | number;
+  portion: Food['default_portion'];
   id: string;
   kind: 'food' | 'recipe';
   name: string;
-  perUnit: string;
   slot: DiaryMealSlot;
 };
 
-// A recipe's portion comes from its yield: cooked_weight_g / servings_count.
-function servingWeightG(r: Recipe): null | number {
-  if (!r.cooked_weight_g || !r.servings_count) {
-    return null;
-  }
-  return r.cooked_weight_g / r.servings_count;
-}
-
-function defaultServingWeight(sizes: {is_default: boolean; weight_g: number}[] | undefined): null | number {
-  if (!sizes?.length) {
-    return null;
-  }
-  return (sizes.find((s) => s.is_default) ?? sizes[0])?.weight_g ?? null;
-}
-
 export default function FoodPicker({
   title,
+  busy = false,
   showSlotPicker,
   defaultSlot,
   onClose,
   onPick,
 }: {
+  busy?: boolean;
   defaultSlot?: DiaryMealSlot;
   onClose: () => void;
   onPick: (picked: Picked) => void;
@@ -82,23 +67,18 @@ export default function FoodPicker({
 
   const pickFood = (f: Food) =>
     onPick({
-      defaultAmount: null,
-      defaultWeightG: defaultServingWeight(f.serving_sizes) ?? 100,
+      portion: f.default_portion,
       id: f.id,
       kind: 'food',
       name: f.name,
-      perUnit: `per 100g · ${Math.round(f.calories_per_100g ?? 0)} kcal`,
       slot,
     });
   const pickRecipe = (r: Recipe) =>
     onPick({
-      // One serving in grams, when the recipe has a measured yield; otherwise servings.
-      defaultAmount: servingWeightG(r) == null ? 1 : null,
-      defaultWeightG: servingWeightG(r),
+      portion: r.default_portion,
       id: r.id,
       kind: 'recipe',
       name: r.name,
-      perUnit: recipeCaloriesLabel(r),
       slot,
     });
 
@@ -117,6 +97,8 @@ export default function FoodPicker({
 
   return (
     <div
+      inert={busy}
+      aria-busy={busy}
       aria-label={title}
       aria-modal="true"
       className="fixed inset-0 z-50 flex flex-col bg-background"

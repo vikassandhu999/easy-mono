@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash c1867482dd5523b3f0c3e7c2c96f26bd032d5a68c62cd78d5157d8d7f3edbd1f */
+/* typed-routes:hash af1824d93bfae1ca8ea1f559fd039dd78e0c17b3f9d755d5cd00faccedbe903c */
 export type Attachment = {
   id: string;
   content_type:
@@ -151,6 +151,7 @@ export type CheckInScheduleUpdate = {
 };
 export type Client = {
   id: string;
+  local_date: string;
   email: string | null;
   first_name: string | null;
   last_name: string | null;
@@ -324,6 +325,8 @@ export type Food = {
   barcode: string | null;
   source: 'system' | 'imported' | 'custom' | null;
   category: string | null;
+  default_portion: NutritionPortion;
+  portion_options: Array<NutritionPortion>;
   revision: number;
   nutrients: FoodNutrients;
   calories_per_100g: number | null;
@@ -626,19 +629,7 @@ export type LibraryMediaCreate = {
 export type MissedCheckInReason = {code: 'missed_check_in'; assignment_id: string; due_on: string};
 export type Muscle = {id: string; name: string; description: string | null};
 export type MuscleListQuery = {search?: string};
-export type NutritionDayEntry = {
-  id: string;
-  kind: 'food' | 'recipe';
-  name: string;
-  food_id: string | null;
-  recipe_id: string | null;
-  portion: NutritionPortion;
-  nutrients: FoodNutrients;
-  notes: string | null;
-  revision: number;
-  inserted_at: string;
-  updated_at: string;
-};
+export type NutritionCoverage = {date: string; current: NutritionPlan | null; upcoming: Array<NutritionPlan>};
 export type NutritionDayOption = {
   meal_id: string | null;
   meal_name: string | null;
@@ -655,23 +646,7 @@ export type NutritionDayOptionItem = {
   portion: NutritionPortion;
   nutrients: FoodNutrients;
 };
-export type NutritionDayPattern = {
-  id: string;
-  name: string;
-  position: number;
-  weekdays: Array<'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'>;
-  slots: Array<NutritionDayPatternSlot>;
-  nutrition_plan_id: string;
-  inserted_at: string;
-  updated_at: string;
-};
-export type NutritionDayPatternInput = {
-  id?: string;
-  local_ref?: string;
-  name: string;
-  position: number;
-  slots: Array<NutritionDayPatternSlotInput>;
-};
+export type NutritionDayPattern = {id: string; name: string; slots: Array<NutritionDayPatternSlot>};
 export type NutritionDayPatternSlot = {
   meal_slot:
     | 'early_morning'
@@ -687,25 +662,18 @@ export type NutritionDayPatternSlot = {
     | 'post_workout';
   options: Array<NutritionMealOption>;
 };
-export type NutritionDayPatternSlotInput = {
-  meal_slot:
-    | 'early_morning'
-    | 'breakfast'
-    | 'mid_morning'
-    | 'lunch'
-    | 'afternoon'
-    | 'evening'
-    | 'dinner'
-    | 'pre_sleep'
-    | 'pre_workout'
-    | 'during_workout'
-    | 'post_workout';
-  options: Array<NutritionMealOptionInput>;
-};
 export type NutritionDayRow = {
+  id: string;
+  entry_id: string | null;
+  planned_item_ref: string | null;
   status: 'as_planned' | 'swapped' | 'pending' | 'skipped' | 'added' | 'recorded';
-  planned: NutritionDayOptionItem | null;
-  entry: NutritionDayEntry | null;
+  kind: 'food' | 'recipe';
+  name: string;
+  food_id: string | null;
+  recipe_id: string | null;
+  portion: NutritionPortion;
+  nutrients: FoodNutrients;
+  notes: string | null;
 };
 export type NutritionDaySlot = {
   meal_slot:
@@ -721,7 +689,7 @@ export type NutritionDaySlot = {
     | 'during_workout'
     | 'post_workout';
   meal_id: string | null;
-  revision: number | null;
+  revision: number;
   applied_timezone: string | null;
   write_eligible: boolean;
   planned_calories: number | null;
@@ -754,57 +722,24 @@ export type NutritionDayTargets = {
 export type NutritionMeal = {
   id: string;
   name: string;
-  notes: string | null;
-  position: number;
-  nutrition_plan_id: string;
-  nutrients: FoodNutrients;
-  meal_items: Array<NutritionMealItem>;
-  inserted_at: string;
-  updated_at: string;
-};
-export type NutritionMealInput = {
-  id?: string;
-  local_ref?: string;
-  name: string;
   notes?: string | null;
-  position: number;
-  meal_items: Array<NutritionMealItemInput>;
+  nutrients?: FoodNutrients;
+  meal_items: Array<NutritionMealItem>;
 };
 export type NutritionMealItem = {
   id: string;
   kind: 'food' | 'recipe';
-  name: string | null;
-  food_id: string | null;
-  recipe_id: string | null;
-  position: number;
-  portion: NutritionPortion;
-  nutrients: FoodNutrients;
-  nutrition_meal_id: string;
-  inserted_at: string;
-  updated_at: string;
-};
-export type NutritionMealItemInput = {
-  id?: string;
-  local_ref?: string;
-  kind: 'food' | 'recipe';
+  name?: string | null;
   food_id?: string | null;
   recipe_id?: string | null;
-  position: number;
-  portion: NutritionPortionInput;
+  portion: NutritionPortion;
+  nutrients?: FoodNutrients;
 };
-export type NutritionMealOption = {
-  id: string;
-  position: number;
-  nutrition_meal_id: string;
-  inserted_at: string;
-  updated_at: string;
-};
-export type NutritionMealOptionInput = {
-  id?: string;
-  local_ref?: string;
-  nutrition_meal_id?: string;
-  meal_local_ref?: string;
-  position: number;
+export type NutritionMealOption = {id: string; nutrition_meal_id: string};
+export type NutritionMenu = {
+  meals: Array<NutritionMeal>;
+  day_patterns: Array<NutritionDayPattern>;
+  schedule: NutritionWeekSchedule;
 };
 export type NutritionPlan = {
   id: string;
@@ -827,15 +762,12 @@ export type NutritionPlan = {
   client: NutritionPlanClient | null;
   creator_id: string | null;
   source_template_id: string | null;
-  meals: Array<NutritionMeal>;
-  day_patterns: Array<NutritionDayPattern>;
-  schedule: NutritionWeekSchedule;
+  menu: NutritionMenu;
   inserted_at: string;
   updated_at: string;
 };
 export type NutritionPlanAssign = {expected_revision: number; start_date?: string | null; end_date?: string | null};
 export type NutritionPlanClient = {id: string; first_name: string | null; last_name: string | null};
-export type NutritionPlanClientListQuery = {offset?: number; limit?: number; status?: 'active' | 'archived'};
 export type NutritionPlanCreate = {
   name: string;
   description?: string | null;
@@ -846,12 +778,7 @@ export type NutritionPlanCreate = {
   target_fiber_g?: number | null;
 };
 export type NutritionPlanListQuery = {offset?: number; limit?: number; search?: string; archived?: boolean};
-export type NutritionPlanReplaceMenu = {
-  expected_revision: number;
-  meals: Array<NutritionMealInput>;
-  day_patterns: Array<NutritionDayPatternInput>;
-  schedule: NutritionWeekScheduleInput;
-};
+export type NutritionPlanReplaceMenu = {expected_revision: number; menu: NutritionMenu};
 export type NutritionPlanUpdate = {
   expected_revision: number;
   name?: string;
@@ -864,20 +791,9 @@ export type NutritionPlanUpdate = {
   start_date?: string | null;
   end_date?: string | null;
 };
-export type NutritionPortion = {
-  kind: 'gram' | 'serving';
-  grams: number | null;
-  amount: number | null;
-  unit: string | null;
-  label: string | null;
-};
-export type NutritionPortionInput = {
-  kind: 'gram' | 'serving';
-  grams?: number | null;
-  amount?: number | null;
-  unit?: string | null;
-  label?: string | null;
-};
+export type NutritionPortion =
+  | {kind: 'gram'; grams: number}
+  | {kind: 'serving'; amount: number; unit: string; label: string | null};
 export type NutritionWeekSchedule = {
   monday: string | null;
   tuesday: string | null;
@@ -886,15 +802,6 @@ export type NutritionWeekSchedule = {
   friday: string | null;
   saturday: string | null;
   sunday: string | null;
-};
-export type NutritionWeekScheduleInput = {
-  monday: string;
-  tuesday: string;
-  wednesday: string;
-  thursday: string;
-  friday: string;
-  saturday: string;
-  sunday: string;
 };
 export type PerformedSet = {
   id: string;
@@ -957,6 +864,8 @@ export type Recipe = {
   instructions: string | null;
   servings_count: number;
   cooked_weight_g: number | null;
+  default_portion: NutritionPortion;
+  portion_options: Array<NutritionPortion>;
   revision: number;
   allergens: Array<string>;
   dietary_tags: Array<string>;
@@ -977,15 +886,8 @@ export type RecipeCreate = {
   recipe_ingredients?: Array<RecipeIngredientInput>;
 };
 export type RecipeImpact = {data: {templates: Array<RecipePlanRef>; active_client_plans: Array<RecipePlanRef>}};
-export type RecipeIngredient = {
-  food_id: string;
-  food: Food | null;
-  unit: string | null;
-  amount: number | null;
-  weight_g: number;
-  position: number;
-};
-export type RecipeIngredientInput = {food_id: string; unit?: string | null; amount?: number | null; weight_g: number};
+export type RecipeIngredient = {food_id: string; food: Food | null; portion: NutritionPortion; position: number};
+export type RecipeIngredientInput = {food_id: string; portion: NutritionPortion};
 export type RecipeListQuery = {offset?: number; limit?: number; search?: string};
 export type RecipePlanRef = {id: string; name: string; client_id: string | null};
 export type RecipeUpdate = {
@@ -1310,7 +1212,7 @@ export type WorkbenchSnooze = {queue: 'quiet' | 'expiring'; snoozed_until: strin
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash e4dff5b32664bf8aba8da74238ee8a26ab985073edf06fad2ce8047091d6d9f6 */
+  /* typed-routes:hash abef0e4cfed49542180beddc11f49b3171ee73586ffb5b2d59de1c3bfdf4a3f1 */
   '/api/health': {
     get: {
       parameters: {
@@ -1572,6 +1474,19 @@ export interface paths {
       };
     };
   };
+  '/v1/coach/clients/{client_id}/nutrition-coverage': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: NutritionCoverage}}};
+      };
+    };
+  };
   '/v1/coach/clients/{client_id}/nutrition-days': {
     get: {
       parameters: {
@@ -1582,19 +1497,6 @@ export interface paths {
       };
       responses: {
         200: {content: {'application/json': {data: Array<Day>; count: number}}};
-      };
-    };
-  };
-  '/v1/coach/clients/{client_id}/nutrition-plans': {
-    get: {
-      parameters: {
-        query?: NutritionPlanClientListQuery;
-        header?: {Authorization?: string};
-        path: {client_id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: Array<NutritionPlan>; count: number}}};
       };
     };
   };

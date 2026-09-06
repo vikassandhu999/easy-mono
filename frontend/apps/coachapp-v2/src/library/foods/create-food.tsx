@@ -1,11 +1,10 @@
-import {useMemo, useState} from 'react';
+import {useMemo} from 'react';
 import {generatePath, useLocation, useNavigate} from 'react-router-dom';
 import type {Food} from '@/api/nutrition-foods';
 import {useCreateCoachFoodMutation} from '@/api/nutrition-foods';
-import type {ServingSize} from '@/api/shared';
 import {applyFormErrors} from '@/api/shared';
 import FoodForm, {foodToDuplicateFormValues, foodToMediaValue, useFoodForm} from '@/library/foods/food-form';
-import {editorServingSizesFromFood, type FoodFormValues, foodToCreateRequest} from '@/library/foods/food-form-data';
+import {type FoodFormValues, foodToCreateRequest} from '@/library/foods/food-form-data';
 import {ROUTES} from '@/routes';
 import {BackButton} from '@/ui/back-button';
 import {Page} from '@/ui/page';
@@ -25,15 +24,11 @@ export default function CreateFood() {
     [duplicateFrom],
   );
 
-  const [servingSizes, setServingSizes] = useState<ServingSize[]>(
-    editorServingSizesFromFood(duplicateFrom?.serving_sizes ?? []),
-  );
-
   const form = useFoodForm(duplicateFormValues ? {defaultValues: duplicateFormValues} : undefined);
 
   const onSubmit = async (data: FoodFormValues) => {
     try {
-      const result = await createFoodMutation.mutateAsync(foodToCreateRequest({servingSizes, values: data}));
+      const result = await createFoodMutation.mutateAsync(foodToCreateRequest(data));
       navigate(generatePath(ROUTES.FOOD_DETAIL, {id: result.data.id}), {replace: true});
     } catch (err) {
       applyFormErrors(err, "Food wasn't created. Check the details and try again", form.setError);
@@ -61,9 +56,7 @@ export default function CreateFood() {
             initialMedia={duplicateFrom ? foodToMediaValue(duplicateFrom) : null}
             isSubmitting={createFoodMutation.isPending}
             onCancel={goBack}
-            onServingSizesChange={setServingSizes}
             onSubmit={onSubmit}
-            servingSizes={servingSizes}
             submitLabel="Create food"
             submittingLabel="Creating food"
           />

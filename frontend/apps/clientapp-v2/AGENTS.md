@@ -18,7 +18,7 @@ model are different, and several coachapp rules deliberately do NOT apply here (
   (`"files": []`), so a bare `tsc --noEmit` compiles nothing and exits 0. It did exactly
   that for months while 183 errors accumulated (RM-202).
 - Lint/format: `pnpm -C apps/clientapp-v2 lint` — Biome with `--write`, so expect edits.
-- Unit suite: sibling `*.check.ts` files. `pnpm -C apps/clientapp-v2 check` globs `src`, `scripts`, and `@easy/utils`. A new mapper, predicate, or lifecycle helper ships with its `.check.ts` in the same change. Verify UI at a phone width.
+- Unit tests: see `frontend/AGENTS.md` §Verify. Nutrition suites live in `tests/nutrition/`. Verify UI at a phone width.
 - Native: `pnpm native` (build + `cap sync`), then `cap open ios|android`.
 
 ## Source Layout
@@ -36,14 +36,14 @@ src/
 ```
 
 - **Component one feature uses**: `src/{feature}/name.tsx`. **Two or more**: `src/ui/name.tsx`.
-- **Pure helpers**: a `.ts` beside the screen that owns them, with a sibling `.check.ts`. Product-agnostic ones go in `@easy/utils` — `formatDateISO`, `addDays`, `getInitials`, `formatDuration`, `formatMacroValue`, `moveItem`, `MEAL_SLOTS`, `TRAINING_WEEKDAYS` are already there.
+- **Feature logic**: keep related operations together in the owning screen or model. Product-agnostic ones go in `@easy/utils` — `formatDateISO`, `addDays`, `getInitials`, `formatDuration`, `formatMacroValue`, `moveItem`, `MEAL_SLOTS`, `TRAINING_WEEKDAYS` are already there.
 - **Never** a directory named `components`, `lib`, `utils`, `helpers`, `domain`, or one starting with `@`. **Never** a `.ts` sharing a basename with a `.tsx`.
 
 **Arrows point one way: feature → ui → api.** `ui/` never imports a feature; a feature never imports another feature's `.tsx`. A feature's root-level `.ts` files are its public surface — workout owns the session model (`workout/session-utils.ts`, which history and training import), nutrition owns adherence and targets (`nutrition/nutrition-utils.ts`, which today imports). `router.tsx` and `app-shell.tsx` are the composition root and are exempt.
 
 A screen that composes cards owns those cards: `today/` holds its own home-screen nudges rather than reaching into `checkins/` for them. Enforced by `scripts/check-frontend-shape.mjs` via `just check-rm` (RM-144).
 
-Anything a `.check.ts` reaches must use relative imports carrying the `.ts` extension, not `@/` aliases — the suite runs under bare `node --experimental-strip-types`, which resolves neither aliases nor extensionless specifiers. The same reason keeps `api/` split between hook modules (React Query, `client.ts`) and pure ones (request builders, mappers): merging the two kinds kills the pure module's suite on `import.meta.env`.
+Pure model tests use relative imports with the `.ts` extension for Node’s type stripping. Exercise React and API integration through browser scenarios. Keep production logic together even when it needs browser coverage.
 
 Files are kebab-case. Use direct `@/...` imports; no barrel files.
 

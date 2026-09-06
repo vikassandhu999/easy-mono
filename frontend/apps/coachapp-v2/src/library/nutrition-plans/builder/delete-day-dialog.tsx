@@ -5,42 +5,33 @@
  */
 
 import {WEEKDAY_SHORT_LABELS, WEEKDAYS} from '@easy/utils';
-import {AlertDialog, Button, Spinner} from '@heroui/react';
+import {AlertDialog, Button} from '@heroui/react';
 
-import type {NutritionPlanDay, WeekdayAssignments} from '@/library/nutrition-plans/builder/plan-tree';
+import type {Menu, MenuDay} from './menu';
 
-function confirmBody(day: NutritionPlanDay, days: NutritionPlanDay[], assignments: WeekdayAssignments): string {
+function confirmBody(day: MenuDay, days: MenuDay[], assignments: Menu['schedule']): string {
   const assigned = WEEKDAYS.filter((w) => assignments[w] === day.id);
   if (assigned.length === 0) {
     return 'Its meals stay in the plan.';
   }
-  const fallback = days.filter((d) => d.id !== day.id).sort((a, b) => a.position - b.position)[0];
+  const fallback = days.find((d) => d.id !== day.id);
   const labels = assigned.map((w) => WEEKDAY_SHORT_LABELS[w] ?? w).join(', ');
   return `Its meals stay in the plan. ${labels} will move to "${fallback?.name ?? 'the remaining day'}".`;
 }
 
 interface DeleteDayDialogProps {
-  day: NutritionPlanDay;
-  days: NutritionPlanDay[];
-  assignments: WeekdayAssignments;
-  deleting: boolean;
+  day: MenuDay;
+  days: MenuDay[];
+  assignments: Menu['schedule'];
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
 }
 
-export function DeleteDayDialog({
-  day,
-  days,
-  assignments,
-  deleting,
-  isOpen,
-  onOpenChange,
-  onConfirm,
-}: DeleteDayDialogProps) {
+export function DeleteDayDialog({day, days, assignments, isOpen, onOpenChange, onConfirm}: DeleteDayDialogProps) {
   return (
     <AlertDialog.Backdrop
-      isDismissable={!deleting}
+      isDismissable
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       variant="transparent"
@@ -55,7 +46,6 @@ export function DeleteDayDialog({
           <AlertDialog.Body>{confirmBody(day, days, assignments)}</AlertDialog.Body>
           <AlertDialog.Footer>
             <Button
-              isDisabled={deleting}
               slot="close"
               variant="tertiary"
             >
@@ -63,20 +53,11 @@ export function DeleteDayDialog({
             </Button>
             <Button
               className="relative"
-              isPending={deleting}
+              isDisabled={days.length < 2}
               onPress={onConfirm}
               variant="danger"
             >
-              <span className={deleting ? 'invisible' : undefined}>Delete</span>
-              {deleting ? (
-                <span className="absolute inset-0 flex items-center justify-center">
-                  <Spinner
-                    color="current"
-                    size="sm"
-                  />
-                  <span className="sr-only">Deleting</span>
-                </span>
-              ) : null}
+              Delete
             </Button>
           </AlertDialog.Footer>
         </AlertDialog.Dialog>

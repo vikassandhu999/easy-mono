@@ -191,7 +191,7 @@
   "html": {"formatter": {"indentScriptAndStyle": false, "selfCloseVoidElements": "always"}},
   "overrides": [
     {
-      "includes": ["**/*.check.ts"],
+      "includes": ["**/*.check.ts", "**/tests/**", "scripts/run-checks.mjs"],
       "linter": {
         "rules": {
           "suspicious": {

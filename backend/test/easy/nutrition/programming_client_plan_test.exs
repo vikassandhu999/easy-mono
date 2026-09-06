@@ -1,4 +1,5 @@
 defmodule Easy.Nutrition.ProgrammingClientPlanTest do
+  import Easy.Nutrition.ProgrammingMenuFixtures, only: [uuid: 1]
   use Easy.DataCase, async: true
 
   alias Easy.Nutrition.{Meal, MealItem, MealOption, Plan, Programming, WeekSchedule}
@@ -117,7 +118,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
       assert {:ok, _updated_template} =
                Programming.replace_menu(ctx, source.id, 2, %{
                  meals: [],
-                 day_patterns: [%{id: pattern.id, name: "Training Day", position: 0, slots: []}],
+                 day_patterns: [%{id: pattern.id, name: "Training Day", slots: []}],
                  schedule: schedule_for(pattern.id)
                })
 
@@ -204,7 +205,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
       assert {:ok, replaced} =
                Programming.replace_menu(ctx, restored.id, 3, %{
                  meals: [],
-                 day_patterns: [%{id: pattern.id, name: pattern.name, position: 0, slots: []}],
+                 day_patterns: [%{id: pattern.id, name: pattern.name, slots: []}],
                  schedule: schedule_for(pattern.id)
                })
 
@@ -264,11 +265,10 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
     %{
       meals: [
         %{
-          local_ref: "breakfast",
+          id: uuid("breakfast"),
           name: "Breakfast",
-          position: 0,
           meal_items: [
-            %{local_ref: "yogurt", kind: :food, food_id: food.id, position: 0, portion: %{kind: :gram, grams: 50}}
+            %{id: uuid("yogurt"), kind: :food, food_id: food.id, portion: %{kind: :gram, grams: 50}}
           ]
         }
       ],
@@ -276,9 +276,8 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
         %{
           id: pattern.id,
           name: pattern.name,
-          position: 0,
           slots: [
-            %{meal_slot: :breakfast, options: [%{local_ref: "opt", meal_local_ref: "breakfast", position: 0}]}
+            %{meal_slot: :breakfast, options: [%{id: uuid("opt"), nutrition_meal_id: uuid("breakfast")}]}
           ]
         }
       ],

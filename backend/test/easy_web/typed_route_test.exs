@@ -2,7 +2,6 @@ defmodule EasyWeb.TypedRouteTest do
   use Easy.ConnCase, async: true
 
   alias EasyWeb.Clients.NutritionDayController
-  alias EasyWeb.Plugs.Idempotency
   alias EasyWeb.TypedRoute
   alias EasyWeb.TypedRoute.{Cast, Check, Dump, Emit, Generator, SchemaMerge, Type}
   alias EasyWeb.TypedRouteAdapter, as: RouteAdapter
@@ -242,19 +241,16 @@ defmodule EasyWeb.TypedRouteTest do
     refute SchemaMerge.current?(formatted, types <> "\nexport type Extra = string;", paths)
   end
 
-  test "typed controller records idempotency requirements for generation" do
+  test "typed controller records the save operation without custom headers" do
     assert NutritionDayController.__typed_route_adapter__() == RouteAdapter
-    assert :idempotency in NutritionDayController.__typed_route__(:add_extra).headers
-    assert NutritionDayController.__typed_route__(:index).headers == []
+    refute Map.has_key?(NutritionDayController.__typed_route__(:save), :headers)
+    refute Map.has_key?(NutritionDayController.__typed_route__(:index), :headers)
   end
 
-  test "application adapter derives authentication and idempotency headers" do
+  test "application adapter derives authentication headers" do
     route = %Route{pipe_through: [:require_client]}
 
-    assert RouteAdapter.headers(route, %{headers: [:idempotency]}) == [
-             %{name: "Authorization", required?: false},
-             %{name: "Idempotency-Key", required?: true}
-           ]
+    assert RouteAdapter.headers(route, %{}) == [%{name: "Authorization", required?: false}]
 
     assert RouteAdapter.headers(%{route | pipe_through: [:api]}, %{headers: []}) == []
   end
@@ -328,21 +324,6 @@ defmodule EasyWeb.TypedRouteTest do
     assert conn.status == 200
     assert conn.query_params == %{"offset" => 2, "limit" => 10}
     assert Jason.decode!(conn.resp_body) == %{"data" => [], "count" => 0}
-  end
-
-  test "Idempotency plug requires a UUID" do
-    conn = Idempotency.call(build_conn(), [])
-    assert conn.status == 422
-    assert conn.halted
-
-    uuid = Ecto.UUID.generate()
-
-    conn =
-      build_conn()
-      |> Plug.Conn.put_req_header("idempotency-key", uuid)
-      |> Idempotency.call([])
-
-    assert conn.assigns.idempotency_key == uuid
   end
 
   defp typed_conn(action, body \\ %{}, path \\ %{}, query \\ %{}) do

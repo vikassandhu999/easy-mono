@@ -49,6 +49,10 @@ build:
 test:
     cd backend && mix test
 
+# Real nutrition journeys: isolated Phoenix database + both production app builds
+test-e2e *args:
+    rtk proxy pnpm -C frontend test:e2e {{args}}
+
 # deploy backend to fly (context rooted in backend/)
 deploy:
     cd backend && fly deploy

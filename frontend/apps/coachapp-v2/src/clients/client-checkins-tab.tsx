@@ -38,6 +38,7 @@ import useAttachmentDownloadUrls from '@/ui/use-attachment-download-urls';
 
 /** CD-CI: the schedule, submission history, the intake row, and the photos rail. */
 export function CheckinsTab({client}: {client: Client}) {
+  const scheduleDialog = useOverlayState();
   const schedules = useListCheckInSchedulesForClientQuery(client.id);
   const forms = useListClientFormAssignmentsForCoachQuery(client.id);
 
@@ -80,16 +81,18 @@ export function CheckinsTab({client}: {client: Client}) {
             />
           </SectionCard>
         )}
+        <Button
+          className="w-full"
+          variant="outline"
+          onPress={() => scheduleDialog.open()}
+        >
+          <Plus size={14} />
+          Add schedule
+        </Button>
         <AssignSurface
           ariaLabel="Add check-in schedule"
-          label={
-            <>
-              <Plus size={14} />
-              Add schedule
-            </>
-          }
-          triggerClassName="w-full"
-          triggerVariant="outline"
+          isOpen={scheduleDialog.isOpen}
+          onOpenChange={scheduleDialog.setOpen}
         >
           {(close) => (
             <CheckinScheduleAddContent

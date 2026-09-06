@@ -1223,18 +1223,13 @@ in a height-capped scroll list gets `shrink-0`. **Verify by:** rendering more ro
 cap fits and asserting a row's `offsetHeight` ≥ its content (or clicking a row Playwright
 says is "intercepted" by its sibling — that interception IS the overlap).
 
-### RM-204 — A date-only "today" written from the browser must hold on both clocks
-The assign flow sent `start_date = formatDateISO(new Date())` (the coach's LOCAL calendar
-date) while every backend in-force comparison uses `Date.utc_today()`. A plan assigned at
-00:05 IST carried tomorrow's date by UTC lights and was silently out of force for ~5.5
-hours (no chip, no coverage) — found live via Quinn Wilson's row. When the FE writes a
-date-only field that means "now", send the EARLIER of the local and UTC calendar dates
-(`assignStartDate()` in `@components/plan-add-to-client.tsx`) so the value satisfies both
-the server's UTC comparisons and any local-date check immediately. Not mechanically gated:
-`formatDateISO(new Date())` is legitimate in display code — the rule bites only in
-mutation payloads. **Verify by:** running the helper with `TZ=Pacific/Kiritimati` (UTC+14)
-and `TZ=Pacific/Midway` (UTC−11) and asserting the result is never after either clock's
-today.
+### RM-204 — Plan coverage uses the client's calendar
+Assignment defaults, coverage reads, lifecycle labels, and Programming queues must
+use the client's local date, computed by the server with the business timezone
+fallback. The coach browser and UTC can show different dates near midnight.
+Do not choose the earlier of competing clocks; that hides disagreement instead of
+fixing ownership. **Verify by:** exercising UTC+14 and UTC−10 clients at the same
+instant, and checking assignment uses the returned `Client.local_date`.
 
 ### RM-205 — A picker collection is a ListBox, not a stack of row-shaped Buttons
 The shared search picker, add-to-client picker, and plan-template picker each rendered

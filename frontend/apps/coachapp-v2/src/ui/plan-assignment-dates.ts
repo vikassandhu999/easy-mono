@@ -28,11 +28,6 @@ export const planAssignmentDatesSchema = z
 
 export type PlanAssignmentDates = z.infer<typeof planAssignmentDatesSchema>;
 
-/** Choose the earlier calendar day so a "starts today" copy is in force on both local and UTC clocks. */
-export function assignmentStartDate(localDate: string, utcDate: string): string {
-  return localDate < utcDate ? localDate : utcDate;
-}
-
 export function addAssignmentWeeks(startDate: string, weeks: number): string {
   // '' is DateInput's cleared/incomplete value; parseDate('') throws.
   if (!startDate) {

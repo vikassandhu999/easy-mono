@@ -14,7 +14,7 @@ defmodule EasyWeb.NutritionControllerBoundaryTest do
 
   @pure_nutrition_controllers @nutrition_controllers ++
                                 [
-                                  "lib/easy_web/controllers/coaches/client_nutrition_plan_controller.ex"
+                                  "lib/easy_web/controllers/coaches/nutrition_coverage_controller.ex"
                                 ]
 
   test "nutrition controllers do not call Repo directly" do

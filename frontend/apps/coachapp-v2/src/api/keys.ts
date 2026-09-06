@@ -92,10 +92,9 @@ export const recipeKeys = {
 
 export const nutritionPlanKeys = {
   ...domain('nutrition-plans'),
-  /** Prefix over every client's assigned-plans list — for mutations that don't know which client. */
-  forClients: () => ['nutrition-plans', 'for-client'] as const,
-  forClient: (clientId: string) => [...nutritionPlanKeys.forClients(), clientId] as const,
 };
+
+export const nutritionCoverageKeys = domain('nutrition-coverage');
 
 export const nutritionDayKeys = {
   ...domain('nutrition-days'),

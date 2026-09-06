@@ -1,10 +1,10 @@
+import {MEAL_SLOT_LABELS} from '@easy/utils/meal-slots';
 import {Chip, ProgressBar, Typography} from '@heroui/react';
 import {Utensils} from 'lucide-react';
 import type {NutrientTotals} from '@/api/nutrition-foods';
-import type {NutritionDayOptionItem, NutritionDayRow, NutritionPortion} from '@/api/nutrition-plans';
+import type {NutritionDayRow, NutritionPortion} from '@/api/nutrition-plans';
 import {useListCoachNutritionDaysQuery} from '@/api/nutrition-plans';
 import {formatKcal, formatRowDate} from '@/clients/client-detail-data';
-import {liveOptionItems, slotLabel} from '@/clients/client-meal-slots';
 import {SectionCard} from '@/clients/client-section-card';
 import {ROUTES} from '@/routes';
 import {BackButton} from '@/ui/back-button';
@@ -140,8 +140,6 @@ export default function NutritionDay() {
           </SectionCard>
 
           {slots.map((slot) => {
-            const rows = slot.rows ?? [];
-            const liveItems = rows.length === 0 ? liveOptionItems(slot) : [];
             return (
               <SectionCard
                 divided
@@ -156,19 +154,13 @@ export default function NutritionDay() {
                     </Typography>
                   ) : null
                 }
-                title={slotLabel(slot.meal_slot)}
+                title={MEAL_SLOT_LABELS[slot.meal_slot]}
                 titleAs="heading"
               >
-                {rows.map((row, index) => (
+                {slot.rows.map((row) => (
                   <DiaryRow
-                    key={row.entry?.id ?? row.planned?.planned_item_ref ?? `row-${index}`}
+                    key={row.id}
                     row={row}
-                  />
-                ))}
-                {liveItems.map((item) => (
-                  <LiveItem
-                    item={item}
-                    key={item.planned_item_ref}
                   />
                 ))}
               </SectionCard>
@@ -195,7 +187,7 @@ type ItemRowProps = {
   chip?: string | undefined;
   name: string;
   nutrients?: Pick<NutrientTotals, 'carbohydrates' | 'fat' | 'protein'> | undefined;
-  portion?: Pick<NutritionPortion, 'amount' | 'grams' | 'unit'> | undefined;
+  portion?: NutritionPortion | undefined;
   skipped?: boolean;
 };
 
@@ -237,13 +229,13 @@ function ItemRow({calories, chip, name, nutrients, portion, skipped}: ItemRowPro
           {chip}
         </Chip>
       )}
-      {(portion?.grams != null || portion?.amount != null) && (
+      {portion && (
         <Typography
           className="shrink-0"
           color="muted"
           type="body-xs"
         >
-          {portion.grams != null ? `${Math.round(portion.grams)} g` : `${portion.amount} ${portion.unit ?? 'serving'}`}
+          {portion.kind === 'gram' ? `${Math.round(portion.grams)} g` : `${portion.amount} ${portion.unit}`}
         </Typography>
       )}
       <Typography
@@ -259,14 +251,13 @@ function ItemRow({calories, chip, name, nutrients, portion, skipped}: ItemRowPro
 
 function DiaryRow({row}: {row: NutritionDayRow}) {
   const skipped = row.status === 'skipped';
-  const entry = skipped ? null : row.entry;
   return (
     <ItemRow
-      calories={skipped ? row.planned?.nutrients.calories : row.entry?.nutrients.calories}
+      calories={row.nutrients.calories}
       chip={STATUS_CHIP[row.status] || undefined}
-      name={skipped ? (row.planned?.name ?? 'Planned item') : (row.entry?.name ?? 'Food')}
-      nutrients={entry?.nutrients}
-      portion={entry?.portion}
+      name={row.name}
+      nutrients={row.nutrients}
+      portion={row.portion}
       skipped={skipped}
     />
   );
@@ -321,16 +312,5 @@ function Total({
         </ProgressBar.Track>
       </ProgressBar>
     </div>
-  );
-}
-
-function LiveItem({item}: {item: NutritionDayOptionItem}) {
-  return (
-    <ItemRow
-      calories={item.nutrients.calories}
-      name={item.name ?? 'Food'}
-      nutrients={item.nutrients}
-      portion={item.portion}
-    />
   );
 }

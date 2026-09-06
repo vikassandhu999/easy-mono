@@ -30,7 +30,7 @@ interface DayHeaderProps {
   /** Opens the confirm — deleting a day may strand its weekdays. */
   onRequestDelete: () => void;
   /** A weekday belongs to exactly one day, so only turning one ON is
-      meaningful — the command layer moves it off whoever held it. */
+      meaningful; changing the schedule moves it off the other day. */
   onScheduleWeekday: (weekday: TrainingWeekday) => void;
   tabs: React.ComponentProps<typeof DayTabs>;
 }

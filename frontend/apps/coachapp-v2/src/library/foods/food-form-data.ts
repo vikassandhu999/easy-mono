@@ -1,11 +1,25 @@
 import {z} from 'zod';
-import type {Food, FoodRequest, FoodServingSize, FoodUpdateRequest} from '../../api/nutrition-foods.ts';
-import {omitUndefined, type ServingSize, toNullableText, toOptionalText} from '../../api/shared.ts';
+import type {Food, FoodRequest, FoodUpdateRequest} from '../../api/nutrition-foods.ts';
+import {omitUndefined, toNullableText, toOptionalText} from '../../api/shared.ts';
 import {numberFieldSchema} from '../../ui/number-field-value.ts';
 
 const optionalNumber = numberFieldSchema(z.number().min(0, 'Use 0 or higher').optional());
 
 export const foodFormSchema = z.object({
+  serving_sizes: z
+    .array(
+      z.object({
+        label: z.string().trim().min(1, 'Enter a serving label'),
+        unit: z.string().trim().min(1, 'Enter a unit'),
+        amount: numberFieldSchema(z.number().positive('Enter a positive amount')),
+        weight_g: numberFieldSchema(z.number().positive('Enter a positive weight')),
+        is_default: z.boolean(),
+      }),
+    )
+    .refine(
+      (sizes) => sizes.length === 0 || sizes.filter((size) => size.is_default).length === 1,
+      'Choose one default serving',
+    ),
   name: z.string().trim().min(1, 'Enter food name').max(255, 'Use 255 characters or fewer'),
   category: z.string().optional(),
   source: z.string().optional(),
@@ -23,6 +37,7 @@ export const foodFormSchema = z.object({
 export type FoodFormValues = z.infer<typeof foodFormSchema>;
 
 export const FOOD_FORM_DEFAULTS: FoodFormValues = {
+  serving_sizes: [],
   name: '',
   category: '',
   source: 'Custom',
@@ -41,38 +56,7 @@ export function isFoodEditable(source: Food['source']): boolean {
   return source === 'custom';
 }
 
-export function editorServingSizesFromFood(sizes: Food['serving_sizes']): ServingSize[] {
-  return [...sizes]
-    .sort((left, right) => Number(right.is_default) - Number(left.is_default))
-    .map((size) => ({
-      amount: size.amount ?? null,
-      unit: size.unit,
-      weight_g: size.weight_g ?? null,
-    }));
-}
-
-function toFoodServingSizes(sizes: ServingSize[]): FoodServingSize[] {
-  const complete = sizes.flatMap(({amount, unit, weight_g}) =>
-    unit.trim() !== '' && amount != null && amount > 0 && weight_g != null && weight_g > 0
-      ? [{amount, unit, weight_g}]
-      : [],
-  );
-  return complete.map(({amount, unit, weight_g}, index) => ({
-    amount,
-    is_default: index === 0,
-    label: unit,
-    unit,
-    weight_g,
-  }));
-}
-
-export function foodToCreateRequest({
-  servingSizes,
-  values,
-}: {
-  servingSizes: ServingSize[];
-  values: FoodFormValues;
-}): FoodRequest {
+export function foodToCreateRequest(values: FoodFormValues): FoodRequest {
   return omitUndefined({
     name: values.name,
     category: toOptionalText(values.category),
@@ -85,19 +69,11 @@ export function foodToCreateRequest({
     fat_g_per_100g: values.fats_g,
     fiber_g_per_100g: values.fiber_g,
     sugar_g_per_100g: values.sugar_g,
-    serving_sizes: servingSizes.length > 0 ? toFoodServingSizes(servingSizes) : undefined,
+    serving_sizes: values.serving_sizes,
   });
 }
 
-export function foodToUpdateRequest({
-  expectedRevision,
-  servingSizes,
-  values,
-}: {
-  expectedRevision: number;
-  servingSizes: ServingSize[];
-  values: FoodFormValues;
-}): FoodUpdateRequest {
+export function foodToUpdateRequest(values: FoodFormValues, expectedRevision: number): FoodUpdateRequest {
   return {
     expected_revision: expectedRevision,
     name: values.name,
@@ -111,6 +87,6 @@ export function foodToUpdateRequest({
     fat_g_per_100g: values.fats_g ?? null,
     fiber_g_per_100g: values.fiber_g ?? null,
     sugar_g_per_100g: values.sugar_g ?? null,
-    serving_sizes: toFoodServingSizes(servingSizes),
+    serving_sizes: values.serving_sizes,
   };
 }

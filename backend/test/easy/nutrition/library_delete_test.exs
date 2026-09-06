@@ -6,13 +6,13 @@ defmodule Easy.Nutrition.LibraryDeleteTest do
   alias Easy.Nutrition.Library
   alias Easy.Repo
 
-  describe("delete_food/3") do
+  describe("delete_food/2") do
     test "is blocked while a recipe ingredient still uses the food" do
       %{ctx: ctx, business: business, coach: coach} = scenario()
       food = insert(:food, business: business, creator: coach)
       recipe = insert(:recipe, business: business, creator: coach)
-      insert(:recipe_ingredient, business: business, recipe: recipe, food: food, weight_g: 100.0)
-      assert {:error, :in_use} = Library.delete_food(ctx, food.id, food.revision)
+      insert(:recipe_ingredient, business: business, recipe: recipe, food: food, portion: %{kind: :gram, grams: 100.0})
+      assert {:error, :in_use} = Library.delete_food(ctx, food.id)
     end
 
     test "succeeds when only a logged entry references the food, and the log survives" do
@@ -31,19 +31,19 @@ defmodule Easy.Nutrition.LibraryDeleteTest do
                )
 
       entry = hd(day.slots).rows |> Enum.find(& &1.entry_id)
-      assert {:ok, _deleted} = Library.delete_food(ctx, food.id, food.revision)
+      assert {:ok, _deleted} = Library.delete_food(ctx, food.id)
       kept = Repo.get!(DiaryEntry, entry.id)
-      assert kept.food_id == nil
+      assert kept.food_id == food.id
       assert kept.display_name == "Banana"
-      assert kept.calories == 90.0
+      assert kept.nutrients.calories == 90.0
     end
   end
 
-  describe("delete_recipe/3") do
+  describe("delete_recipe/2") do
     test "succeeds when nothing references the recipe" do
       %{ctx: ctx, business: business, coach: coach} = scenario()
       recipe = insert(:recipe, business: business, creator: coach)
-      assert {:ok, _deleted} = Library.delete_recipe(ctx, recipe.id, recipe.revision)
+      assert {:ok, _deleted} = Library.delete_recipe(ctx, recipe.id)
     end
   end
 

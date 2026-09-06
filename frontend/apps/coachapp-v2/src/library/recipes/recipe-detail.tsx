@@ -56,9 +56,9 @@ export default function RecipeDetail() {
     }
   };
 
-  const handleDelete = async ({expectedRevision, id}: {expectedRevision: number; id: string}) => {
+  const handleDelete = async (id: string) => {
     try {
-      await deleteRecipe.mutateAsync({expectedRevision, id});
+      await deleteRecipe.mutateAsync({id});
       navigate(ROUTES.RECIPES, {replace: true});
     } catch (error) {
       toast.danger(libraryInUseMessage(error, "Couldn't delete recipe"));
@@ -147,7 +147,7 @@ export default function RecipeDetail() {
             isPending={isDeleting}
             itemName={recipe.name}
             label="Recipe"
-            onDelete={() => handleDelete({expectedRevision: recipe.revision, id: recipe.id})}
+            onDelete={() => handleDelete(recipe.id)}
             trigger={
               <Button
                 aria-label="Delete recipe"
@@ -314,7 +314,7 @@ export default function RecipeDetail() {
             isPending={isDeleting}
             itemName={recipe.name}
             label="Recipe"
-            onDelete={() => handleDelete({expectedRevision: recipe.revision, id: recipe.id})}
+            onDelete={() => handleDelete(recipe.id)}
             trigger={
               <Button
                 isIconOnly

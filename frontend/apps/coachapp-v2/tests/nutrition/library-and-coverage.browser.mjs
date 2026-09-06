@@ -30,7 +30,6 @@ const foodFixture = {
   media: null,
   category: null,
   notes: null,
-  image_url: null,
   ...timestamps,
 };
 const client = {
@@ -51,8 +50,7 @@ function plan(id, name, start, end) {
     name,
     kind: 'client_plan',
     revision: 2,
-    status: 'active',
-    archived_at: null,
+    lifecycle: 'current',
     client_id: client.id,
     client,
     start_date: start,
@@ -126,7 +124,7 @@ try {
       function Assign() {
         const mutation = useAssignNutritionPlanMutation();
         return React.createElement(PlanAddToClientControl, {planKind: 'nutrition', planName: 'Next block', isAssigning: mutation.isPending,
-          onAssign: async (client, dates) => mutation.mutateAsync({clientId: client.id, id: 'template', body: {expected_revision: 1, start_date: dates.startDate, end_date: dates.endDate}})});
+          onAssign: async (client, dates) => mutation.mutateAsync({clientId: client.id, id: 'template', body: {start_date: dates.startDate, end_date: dates.endDate}})});
       }
       function frame(Component) {return () => React.createElement('main', {style: {minHeight: '100dvh', display: 'flex', flexDirection: 'column'}}, React.createElement(Component));}
       const router = createBrowserRouter([

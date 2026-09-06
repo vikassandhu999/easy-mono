@@ -15,6 +15,7 @@ defmodule EasyWeb.TypedRoute.Emit do
     Map.get_lazy(named, {mod, name}, fn -> type_name(mod, name) end)
   end
 
+  def ir_to_ts(:uuid, _named), do: "string"
   def ir_to_ts(:string, _named), do: "string"
   def ir_to_ts(:integer, _named), do: "number"
   def ir_to_ts(:pos_integer, _named), do: "number"

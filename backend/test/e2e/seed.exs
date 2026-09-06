@@ -70,7 +70,7 @@ fixtures =
     plan =
       if scenario in ~w(corrections history) do
         {:ok, plan} =
-          Programming.assign_template_to_client(ctx, client.id, template.id, template.revision, %{
+          Programming.assign_template_to_client(ctx, client.id, template.id, %{
             start_date: Date.to_iso8601(date),
             end_date: nil
           })

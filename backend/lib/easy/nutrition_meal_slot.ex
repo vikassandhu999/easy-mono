@@ -24,13 +24,4 @@ defmodule Easy.Nutrition.MealSlot do
 
   @spec names() :: [String.t()]
   def names, do: Enum.map(@values, &Atom.to_string/1)
-
-  @spec cast(term()) :: {:ok, atom()} | :error
-  def cast(slot) when slot in @values, do: {:ok, slot}
-
-  def cast(slot) when is_binary(slot) do
-    if slot in names(), do: {:ok, String.to_existing_atom(slot)}, else: :error
-  end
-
-  def cast(_slot), do: :error
 end

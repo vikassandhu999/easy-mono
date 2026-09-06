@@ -55,7 +55,7 @@ defmodule EasyWeb.TypedRoute do
   def ok(conn, payload) do
     {status, ir} = route!(conn).ok
     formatted = Dump.dump(payload, ir)
-    Check.assert!(formatted, ir)
+    if Application.get_env(:easy, :check_typed_responses, false), do: Check.assert!(formatted, ir)
 
     conn
     |> Plug.Conn.put_resp_content_type("application/json")

@@ -4,7 +4,7 @@ defmodule EasyWeb.Clients.NutritionDayController do
   alias Easy.Nutrition.Diary
   alias Easy.Utils
   alias EasyWeb.Types.Nutrition.Day
-  typed(:index, query: Day.list_query(), ok: {200, page(Day.t())})
+  typed(:index, query: Day.list_query(), ok: {200, data([Day.t()])})
   typed(:save, path: %{date: Date.t()}, body: Day.save(), ok: {200, data(Day.t())})
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -13,15 +13,13 @@ defmodule EasyWeb.Clients.NutritionDayController do
 
     with {:ok, date} <- Utils.parse_optional_date(query["date"]),
          {:ok, from_date, to_date} <- parse_range_unless_exact(query, date),
-         {:ok, %{nutrition_days: days, count: count}} <-
+         {:ok, %{nutrition_days: days}} <-
            Diary.list_client_nutrition_days(conn.assigns.ctx,
              date: date,
              from: from_date,
-             to: to_date,
-             offset: query["offset"] || 0,
-             limit: query["limit"] || 20
+             to: to_date
            ) do
-      ok(conn, %{data: days, count: count})
+      ok(conn, %{data: days})
     end
   end
 

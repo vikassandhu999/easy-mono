@@ -1,17 +1,17 @@
 defmodule Easy.Nutrition.LibraryProtectionTest do
   use Easy.SchemaCase, async: true
 
-  alias Easy.Nutrition.{Library, Programming}
+  alias Easy.Nutrition.{Food, Library, Programming}
   import Easy.Nutrition.ProgrammingMenuFixtures
 
-  describe "delete_food/3" do
+  describe "delete_food/2" do
     test "is blocked while a Menu Item still uses the food" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
       food = insert(:food, business: coach.business, creator: coach)
       put_food_on_menu(coach, food)
 
-      assert {:error, :in_use} = Library.delete_food(ctx, food.id, food.revision)
+      assert {:error, :in_use} = Library.delete_food(ctx, food.id)
     end
 
     test "is blocked while an archived plan still uses the food" do
@@ -20,7 +20,7 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
       food = insert(:food, business: coach.business, creator: coach)
       put_food_on_menu(coach, food, archived_at: DateTime.utc_now(:second))
 
-      assert {:error, :in_use} = Library.delete_food(ctx, food.id, food.revision)
+      assert {:error, :in_use} = Library.delete_food(ctx, food.id)
     end
 
     test "is not blocked by another business's Menu" do
@@ -32,7 +32,7 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
       other_food = insert(:food, business: other.business, creator: other)
       put_food_on_menu(other, other_food)
 
-      assert {:ok, _} = Library.delete_food(ctx, food.id, food.revision)
+      assert {:ok, _} = Library.delete_food(ctx, food.id)
     end
   end
 
@@ -107,7 +107,7 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
   end
 
   describe "update_food/4" do
-    test "allows editing serving sizes used by a Menu Item that already stored grams" do
+    test "rejects removing a serving used by a live Menu Item" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
 
@@ -122,14 +122,14 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
 
       put_food_on_menu(coach, food, portion: %{kind: :serving, amount: 1.0, unit: "cup", label: "cup"})
 
-      assert {:ok, updated} =
+      assert {:error, :in_use} =
                Library.update_food(ctx, food.id, food.revision, %{
                  serving_sizes: [
                    %{label: "scoop", amount: 1.0, unit: "scoop", weight_g: 30.0, is_default: true}
                  ]
                })
 
-      assert [%{unit: "scoop", weight_g: 30.0}] = updated.serving_sizes
+      assert [%{unit: "cup", weight_g: 200.0}] = Repo.get!(Food, food.id).serving_sizes
     end
   end
 
@@ -145,7 +145,7 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
         business: coach.business,
         recipe: recipe,
         food: food,
-        weight_g: 100.0
+        portion: %{kind: :gram, grams: 100.0}
       )
 
       template = put_food_on_menu(coach, food, name: "Cut Template")
@@ -169,7 +169,7 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
         business: other.business,
         recipe: other_recipe,
         food: other_food,
-        weight_g: 50.0
+        portion: %{kind: :gram, grams: 50.0}
       )
 
       put_food_on_menu(other, other_food, name: "Other Cut")
@@ -239,14 +239,14 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
     end
   end
 
-  describe "delete_recipe/3" do
+  describe "delete_recipe/2" do
     test "is blocked while a Menu Item still uses the recipe, including archived plans" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
       recipe = insert(:recipe, business: coach.business, creator: coach)
       put_recipe_on_menu(coach, recipe, archived_at: DateTime.utc_now(:second))
 
-      assert {:error, :in_use} = Library.delete_recipe(ctx, recipe.id, recipe.revision)
+      assert {:error, :in_use} = Library.delete_recipe(ctx, recipe.id)
     end
 
     test "is not blocked by another business's Menu" do
@@ -258,7 +258,7 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
       other_recipe = insert(:recipe, business: other.business, creator: other)
       put_recipe_on_menu(other, other_recipe)
 
-      assert {:ok, _} = Library.delete_recipe(ctx, recipe.id, recipe.revision)
+      assert {:ok, _} = Library.delete_recipe(ctx, recipe.id)
     end
   end
 
@@ -286,7 +286,7 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
     {:ok, saved} = Programming.replace_menu(ctx, plan.id, plan.revision, menu(plan, meals: [meal_input("meal", "Meal", [item])]))
 
     if archived_at do
-      {:ok, archived} = Programming.archive_plan(ctx, saved.id, saved.revision)
+      {:ok, archived} = Programming.archive_plan(ctx, saved.id)
       archived
     else
       saved

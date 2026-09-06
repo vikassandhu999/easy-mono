@@ -8,7 +8,7 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
 
   describe "Client Plan Coverage and lifecycle" do
     test "exports the canonical Client Plan lifecycle vocabulary" do
-      assert Plan.lifecycles() == [:incomplete, :upcoming, :current, :ended, :archived]
+      assert Plan.lifecycles() == [:active, :incomplete, :upcoming, :current, :ended, :archived]
     end
 
     test "derives lifecycle from dates, archive state, and the client's local date" do
@@ -48,7 +48,7 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
       {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})
       insert_client_plan(coach, client)
 
-      assert {:error, changeset} = Programming.assign_template_to_client(ctx, client.id, template.id, 1, %{})
+      assert {:error, changeset} = Programming.assign_template_to_client(ctx, client.id, template.id, %{})
       assert %{client_id: ["already has an incomplete Client Plan"]} = errors_on(changeset)
     end
 
@@ -61,19 +61,19 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
       {:ok, third_template} = Programming.create_template(ctx, %{"name" => "Block C"})
 
       assert {:ok, first} =
-               Programming.assign_template_to_client(ctx, client.id, first_template.id, 1, %{
+               Programming.assign_template_to_client(ctx, client.id, first_template.id, %{
                  "start_date" => "2026-09-01",
                  "end_date" => "2026-09-30"
                })
 
       assert {:ok, second} =
-               Programming.assign_template_to_client(ctx, client.id, second_template.id, 1, %{
+               Programming.assign_template_to_client(ctx, client.id, second_template.id, %{
                  "start_date" => "2026-10-01",
                  "end_date" => "2026-10-31"
                })
 
       assert {:error, overlap} =
-               Programming.assign_template_to_client(ctx, client.id, third_template.id, 1, %{
+               Programming.assign_template_to_client(ctx, client.id, third_template.id, %{
                  "start_date" => "2026-09-15",
                  "end_date" => nil
                })
@@ -85,8 +85,8 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
 
       assert %{start_date: ["overlaps another Client Plan's Coverage"]} = errors_on(restored_overlap)
 
-      assert {:ok, archived} = Programming.archive_plan(ctx, first.id, 1)
-      assert {:ok, _restored} = Programming.restore_plan(ctx, archived.id, 2)
+      assert {:ok, archived} = Programming.archive_plan(ctx, first.id)
+      assert {:ok, _restored} = Programming.restore_plan(ctx, archived.id)
     end
 
     test "restore is rejected when it would overlap unarchived Coverage" do
@@ -97,20 +97,20 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
       {:ok, second_template} = Programming.create_template(ctx, %{"name" => "Later"})
 
       {:ok, first} =
-        Programming.assign_template_to_client(ctx, client.id, first_template.id, 1, %{
+        Programming.assign_template_to_client(ctx, client.id, first_template.id, %{
           "start_date" => "2026-09-01",
           "end_date" => "2026-09-30"
         })
 
-      {:ok, archived} = Programming.archive_plan(ctx, first.id, 1)
+      {:ok, archived} = Programming.archive_plan(ctx, first.id)
 
       {:ok, _replacement} =
-        Programming.assign_template_to_client(ctx, client.id, second_template.id, 1, %{
+        Programming.assign_template_to_client(ctx, client.id, second_template.id, %{
           "start_date" => "2026-09-01",
           "end_date" => nil
         })
 
-      assert {:error, changeset} = Programming.restore_plan(ctx, archived.id, 2)
+      assert {:error, changeset} = Programming.restore_plan(ctx, archived.id)
       assert %{start_date: ["overlaps another Client Plan's Coverage"]} = errors_on(changeset)
     end
   end
@@ -125,7 +125,7 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
       {:ok, source} = Programming.replace_menu(ctx, template.id, 1, breakfast_menu(template, food))
 
       {:ok, assigned} =
-        Programming.assign_template_to_client(ctx, client.id, source.id, 2, %{
+        Programming.assign_template_to_client(ctx, client.id, source.id, %{
           "start_date" => "2026-08-15",
           "end_date" => "2026-08-15"
         })

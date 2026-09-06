@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 076fd54aa2d7c71ac218ac3812d8a65228df39424dc5c8d8f70058f2138a2224 */
+/* typed-routes:hash 2b19ba809772d93d1ada5c1c94e01a6e4e17874e46e49266c72b6c945fba009f */
 export type Attachment = {
   id: string;
   content_type:
@@ -260,7 +260,7 @@ export type Day = {
   summary: NutritionDaySummary;
   slots: Array<NutritionDaySlot>;
 };
-export type DayListQuery = {date?: string; from?: string; to?: string; offset?: number; limit?: number};
+export type DayListQuery = {date?: string; from?: string; to?: string};
 export type EngagementEndingSoonReason = {code: 'engagement_ending_soon'; ends_on: string};
 export type Equipment = {id: string; name: string; description: string | null};
 export type EquipmentListQuery = {search?: string};
@@ -322,8 +322,7 @@ export type Food = {
   id: string;
   name: string;
   brand: string | null;
-  barcode: string | null;
-  source: 'system' | 'imported' | 'custom' | null;
+  source: 'system' | 'custom';
   category: string | null;
   default_portion: NutritionPortion;
   portion_options: Array<NutritionPortion>;
@@ -338,7 +337,6 @@ export type Food = {
   allergens: Array<string>;
   dietary_tags: Array<string>;
   notes: string | null;
-  image_url: string | null;
   media: FoodMedia | null;
   serving_sizes: Array<FoodServingSize>;
   creator_id: string | null;
@@ -349,7 +347,6 @@ export type FoodCategoryList = {data: Array<string>};
 export type FoodCreate = {
   name: string;
   brand?: string | null;
-  barcode?: string | null;
   category?: string | null;
   calories_per_100g?: number | null;
   protein_g_per_100g?: number | null;
@@ -360,7 +357,6 @@ export type FoodCreate = {
   allergens?: Array<string>;
   dietary_tags?: Array<string>;
   notes?: string | null;
-  image_url?: string | null;
   media_id?: string | null;
   serving_sizes?: Array<FoodServingSize>;
 };
@@ -371,8 +367,8 @@ export type FoodListQuery = {offset?: number; limit?: number; search?: string; c
 export type FoodMedia = {
   id: string;
   kind: 'image' | 'video';
-  content_type: string;
-  byte_size: number;
+  content_type: string | null;
+  byte_size: number | null;
   url: string | null;
 };
 export type FoodNutrients = {
@@ -390,7 +386,6 @@ export type FoodUpdate = {
   expected_revision: number;
   name?: string;
   brand?: string | null;
-  barcode?: string | null;
   category?: string | null;
   calories_per_100g?: number | null;
   protein_g_per_100g?: number | null;
@@ -401,7 +396,6 @@ export type FoodUpdate = {
   allergens?: Array<string>;
   dietary_tags?: Array<string>;
   notes?: string | null;
-  image_url?: string | null;
   media_id?: string | null;
   serving_sizes?: Array<FoodServingSize>;
 };
@@ -746,9 +740,7 @@ export type NutritionPlan = {
   name: string;
   description: string | null;
   revision: number;
-  archived_at: string | null;
-  status: 'active' | 'archived';
-  lifecycle: 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived' | null;
+  lifecycle: 'active' | 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived';
   assigned_client_count: number;
   target_calories: number | null;
   target_protein_g: number | null;
@@ -765,7 +757,7 @@ export type NutritionPlan = {
   inserted_at: string;
   updated_at: string;
 };
-export type NutritionPlanAssign = {expected_revision: number; start_date?: string | null; end_date?: string | null};
+export type NutritionPlanAssign = {start_date?: string | null; end_date?: string | null};
 export type NutritionPlanClient = {id: string; first_name: string | null; last_name: string | null};
 export type NutritionPlanCreate = {
   name: string;
@@ -1211,7 +1203,7 @@ export type WorkbenchSnooze = {queue: 'quiet' | 'expiring'; snoozed_until: strin
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash abef0e4cfed49542180beddc11f49b3171ee73586ffb5b2d59de1c3bfdf4a3f1 */
+  /* typed-routes:hash faf68623f3dab816d899e3e172fc291cbcd6cf32d0ecda08b76052ccea6f6470 */
   '/api/health': {
     get: {
       parameters: {
@@ -1495,7 +1487,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<Day>; count: number}}};
+        200: {content: {'application/json': {data: Array<Day>}}};
       };
     };
   };
@@ -1991,7 +1983,7 @@ export interface paths {
   '/v1/coach/nutrition-foods/{id}': {
     delete: {
       parameters: {
-        query: Revision;
+        query?: never;
         header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
@@ -2078,7 +2070,7 @@ export interface paths {
   '/v1/coach/nutrition-plans/{id}': {
     delete: {
       parameters: {
-        query: Revision;
+        query?: never;
         header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
@@ -2119,7 +2111,6 @@ export interface paths {
         path: {id: string};
         cookie?: never;
       };
-      requestBody: {content: {'application/json': Revision}};
       responses: {
         200: {content: {'application/json': {data: NutritionPlan}}};
       };
@@ -2133,7 +2124,6 @@ export interface paths {
         path: {id: string};
         cookie?: never;
       };
-      requestBody: {content: {'application/json': Revision}};
       responses: {
         201: {content: {'application/json': {data: NutritionPlan}}};
       };
@@ -2161,7 +2151,6 @@ export interface paths {
         path: {id: string};
         cookie?: never;
       };
-      requestBody: {content: {'application/json': Revision}};
       responses: {
         200: {content: {'application/json': {data: NutritionPlan}}};
       };
@@ -2195,7 +2184,7 @@ export interface paths {
   '/v1/coach/nutrition-recipes/{id}': {
     delete: {
       parameters: {
-        query: Revision;
+        query?: never;
         header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;

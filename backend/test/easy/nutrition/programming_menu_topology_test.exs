@@ -109,7 +109,6 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
     item = food_item("item", c.food.id, %{kind: :gram, grams: 50})
 
     invalid_items = [
-      %{item | kind: :recipe},
       Map.put(item, :recipe_id, uuid("recipe")),
       %{item | food_id: nil},
       %{item | portion: %{kind: :gram, grams: 0}},
@@ -127,17 +126,16 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
   test "archive and revision conflicts retain the complete saved document", c do
     {:ok, saved} = Programming.replace_menu(c.ctx, c.plan.id, 1, menu(c.plan, meals: [meal_input("a", "A", [])]))
     assert {:error, %{action: :stale_revision}} = Programming.replace_menu(c.ctx, saved.id, 1, menu(saved, meals: []))
-    {:ok, archived} = Programming.archive_template(c.ctx, saved.id, 2)
+    {:ok, archived} = Programming.archive_template(c.ctx, saved.id)
     assert {:error, %Ecto.Changeset{}} = Programming.replace_menu(c.ctx, saved.id, 3, menu(saved, meals: []))
     assert Repo.get!(Plan, saved.id).menu == archived.menu
   end
 
-  test "Library labels stay live and nutrition changes on Save", c do
+  test "Library names and nutrients change together without saving the menu", c do
     {:ok, saved} = Programming.replace_menu(c.ctx, c.plan.id, 1, menu(c.plan, meals: [meal_input("a", "A", [food_item("item", c.food.id, %{kind: :gram, grams: 50})])]))
-    calories = hd(Menu.items(saved.menu)).nutrients.calories
     assert {:ok, _} = Library.update_food(c.ctx, c.food.id, c.food.revision, %{name: "Renamed", calories_per_100g: 901.25})
     assert {:ok, read} = Programming.get_template(c.ctx, saved.id)
-    assert [%{name: "Renamed", nutrients: %{calories: ^calories}}] = Menu.items(read.menu)
+    assert [%{name: "Renamed", nutrients: %{calories: 450.625}}] = Menu.items(read.menu)
     assert {:ok, resaved} = Programming.replace_menu(c.ctx, read.id, read.revision, Menu.format(read.menu))
     assert hd(Menu.items(resaved.menu)).nutrients.calories == 450.625
   end

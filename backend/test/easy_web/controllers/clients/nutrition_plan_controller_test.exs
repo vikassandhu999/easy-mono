@@ -48,7 +48,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       assert %{"data" => [], "count" => 0} = json_response(conn, 200)
     end
 
-    test "omits archived Client Plans unless status is archived", ctx do
+    test "filters archived Client Plans with the archived boolean", ctx do
       insert(:plan,
         creator: ctx.coach,
         business: ctx.business,
@@ -67,11 +67,11 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
 
       conn = get(ctx.conn, "/v1/client/nutrition-plans")
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
-      assert hd(data)["status"] == "active"
+      assert hd(data)["lifecycle"] == "incomplete"
 
-      archived_conn = get(ctx.conn, "/v1/client/nutrition-plans", %{"status" => "archived"})
+      archived_conn = get(ctx.conn, "/v1/client/nutrition-plans", %{"archived" => "true"})
       assert %{"data" => archived, "count" => 1} = json_response(archived_conn, 200)
-      assert hd(archived)["status"] == "archived"
+      assert hd(archived)["lifecycle"] == "archived"
     end
 
     test "returns 403 without auth" do
@@ -128,7 +128,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
         )
 
       conn = get(ctx.conn, "/v1/client/nutrition-plans/#{plan.id}")
-      assert %{"data" => %{"id" => id, "status" => "archived"}} = json_response(conn, 200)
+      assert %{"data" => %{"id" => id, "lifecycle" => "archived"}} = json_response(conn, 200)
       assert id == plan.id
     end
 

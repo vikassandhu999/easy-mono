@@ -5,9 +5,10 @@ defmodule Easy.Nutrition.LibraryConcurrencyTest do
   import Ecto.Query
   import Easy.Factory
 
+  alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Identity.User
-  alias Easy.Nutrition.{Food, Library, Menu, Plan, Programming, Recipe}
+  alias Easy.Nutrition.{Diary, DiaryDay, DiarySlot, Food, Library, Menu, Plan, Programming, Recipe}
   alias Easy.Nutrition.ProgrammingMenuFixtures
   alias Easy.Orgs.{Business, Coach}
   alias Easy.Repo
@@ -18,19 +19,21 @@ defmodule Easy.Nutrition.LibraryConcurrencyTest do
     business = insert(:business)
     coach = insert(:coach, business: business)
     ctx = %Ctx{business_id: business.id, user_id: coach.user_id, coach_id: coach.id}
-    user_ids = Enum.uniq([business.owner_id, coach.user_id])
+    client = insert(:client, business: business, creator: coach, timezone: "Etc/UTC")
+    user_ids = Enum.uniq([business.owner_id, coach.user_id, client.user_id])
 
     on_exit(fn ->
       Sandbox.checkout(Repo, sandbox: false)
       Repo.delete_all(from(plan in Plan, where: plan.business_id == ^business.id))
       Repo.delete_all(from(recipe in Recipe, where: recipe.business_id == ^business.id))
       Repo.delete_all(from(food in Food, where: food.business_id == ^business.id))
+      Repo.delete_all(from(client in Client, where: client.business_id == ^business.id))
       Repo.delete_all(from(coach in Coach, where: coach.business_id == ^business.id))
       Repo.delete_all(from(business in Business, where: business.id == ^business.id))
       Repo.delete_all(from(user in User, where: user.id in ^user_ids))
     end)
 
-    %{business: business, coach: coach, ctx: ctx}
+    %{business: business, coach: coach, ctx: ctx, client: client}
   end
 
   test "Menu replacement waits for the Recipe row before resolving a gram Portion", ctx do
@@ -115,8 +118,8 @@ defmodule Easy.Nutrition.LibraryConcurrencyTest do
 
       delete =
         case @kind do
-          :food -> fn -> Library.delete_food(c.ctx, source.id, source.revision) end
-          :recipe -> fn -> Library.delete_recipe(c.ctx, source.id, source.revision) end
+          :food -> fn -> Library.delete_food(c.ctx, source.id) end
+          :recipe -> fn -> Library.delete_recipe(c.ctx, source.id) end
         end
 
       {first_operation, second_operation} = if @first == :save, do: {save, delete}, else: {delete, save}
@@ -163,6 +166,147 @@ defmodule Easy.Nutrition.LibraryConcurrencyTest do
     assert {:ok, _} = Task.await(held)
     assert {:ok, saved} = Task.await(blocked)
     assert hd(Menu.items(saved.menu)).nutrients.calories == 123.0
+  end
+
+  test "a menu read retains one snapshot while another transaction removes and deletes its Food", c do
+    food = insert(:food, business: c.business, creator: c.coach, calories_per_100g: 100.0)
+    {:ok, plan} = Programming.create_template(c.ctx, %{name: "Live menu"})
+
+    input =
+      ProgrammingMenuFixtures.menu(plan,
+        meals: [
+          ProgrammingMenuFixtures.meal_input("meal", "Meal", [ProgrammingMenuFixtures.food_item("food", food.id, %{kind: :gram, grams: 100})])
+        ]
+      )
+
+    {:ok, saved} = Programming.replace_menu(c.ctx, plan.id, plan.revision, input)
+    reader = pause_read(fn -> Programming.get_template(c.ctx, plan.id) end, "nutrition_plans")
+    {:ok, _} = Programming.replace_menu(c.ctx, plan.id, saved.revision, ProgrammingMenuFixtures.menu(plan, meals: []))
+    {:ok, _} = Library.delete_food(c.ctx, food.id)
+    send(reader.pid, :resume)
+    assert {:ok, read} = Task.await(reader)
+    assert hd(Menu.items(read.menu)).nutrients.calories == 100.0
+    assert {:ok, current} = Programming.get_template(c.ctx, plan.id)
+    assert Menu.items(current.menu) == []
+  end
+
+  test "recipe reads keep servings and ingredients from the same committed version", c do
+    food = insert(:food, business: c.business, creator: c.coach, calories_per_100g: 100.0)
+
+    {:ok, recipe} =
+      Library.create_recipe(c.ctx, %{
+        name: "Recipe",
+        servings_count: 1,
+        recipe_ingredients: [%{food_id: food.id, portion: %{kind: :gram, grams: 100}}]
+      })
+
+    reader = pause_read(fn -> Library.get_recipe(c.ctx, recipe.id) end, "nutrition_recipes")
+
+    {:ok, _} =
+      Library.update_recipe(c.ctx, recipe.id, recipe.revision, %{
+        servings_count: 2,
+        recipe_ingredients: [%{food_id: food.id, portion: %{kind: :gram, grams: 600}}]
+      })
+
+    send(reader.pid, :resume)
+    assert {:ok, read} = Task.await(reader)
+    assert Library.recipe_nutrients(read).calories / read.servings_count == 100.0
+    assert {:ok, current} = Library.get_recipe(c.ctx, recipe.id)
+    assert Library.recipe_nutrients(current).calories / current.servings_count == 300.0
+  end
+
+  test "Diary freezes a complete Recipe version while the coach edits its ingredients", c do
+    food = insert(:food, business: c.business, creator: c.coach, calories_per_100g: 100.0)
+
+    {:ok, recipe} =
+      Library.create_recipe(c.ctx, %{
+        name: "Recipe",
+        servings_count: 1,
+        recipe_ingredients: [%{food_id: food.id, portion: %{kind: :gram, grams: 100}}]
+      })
+
+    ctx = %Ctx{business_id: c.business.id, user_id: c.client.user_id, client_id: c.client.id}
+    draft = diary_recipe_draft(recipe, :breakfast)
+    save = pause_read(fn -> Diary.save_client_nutrition_day(ctx, Date.utc_today(), %{slots: [draft]}) end, "nutrition_recipes")
+
+    assert {:ok, _} =
+             Library.update_recipe(c.ctx, recipe.id, recipe.revision, %{
+               servings_count: 2,
+               recipe_ingredients: [%{food_id: food.id, portion: %{kind: :gram, grams: 600}}]
+             })
+
+    send(save.pid, :resume)
+    assert {:ok, day} = Task.await(save)
+    assert day.summary.logged.calories == 100.0
+    assert {:ok, reread} = Diary.get_client_nutrition_day(ctx, Date.utc_today())
+    assert reread.summary.logged.calories == 100.0
+  end
+
+  test "a concurrent first Diary day save rolls back completely and can be retried", c do
+    recipe = insert(:recipe, business: c.business, creator: c.coach)
+    ctx = %Ctx{business_id: c.business.id, user_id: c.client.user_id, client_id: c.client.id}
+    breakfast = diary_recipe_draft(recipe, :breakfast)
+    lunch = diary_recipe_draft(recipe, :lunch)
+    first = pause_read(fn -> Diary.save_client_nutrition_day(ctx, Date.utc_today(), %{slots: [breakfast]}) end, "nutrition_recipes")
+    second = start_operation(fn -> Diary.save_client_nutrition_day(ctx, Date.utc_today(), %{slots: [lunch]}) end)
+    assert_waiting_for_lock(second)
+    send(first.pid, :resume)
+    assert {:ok, _} = Task.await(first)
+    assert {:error, :conflict} = Task.await(second)
+    assert [%{meal_slot: :breakfast, revision: 1}] = Repo.all(from s in DiarySlot, where: s.client_id == ^c.client.id)
+    assert 1 == Repo.aggregate(from(d in DiaryDay, where: d.client_id == ^c.client.id), :count)
+    assert {:ok, retried} = Diary.save_client_nutrition_day(ctx, Date.utc_today(), %{slots: [lunch]})
+    assert Enum.map(retried.slots, &{&1.meal_slot, &1.revision}) == [breakfast: 1, lunch: 1]
+  end
+
+  defp diary_recipe_draft(recipe, meal_slot) do
+    %{
+      meal_slot: meal_slot,
+      meal_id: nil,
+      expected_revision: 0,
+      entries: [
+        %{id: Ecto.UUID.generate(), planned_item_ref: nil, food_id: nil, recipe_id: recipe.id, portion: %{kind: :serving, amount: 1.0, unit: "serving", label: nil}, notes: nil}
+      ]
+    }
+  end
+
+  defp pause_read(operation, table) do
+    parent = self()
+
+    task =
+      Task.async(fn ->
+        Sandbox.checkout(Repo, sandbox: false)
+
+        receive do
+          :read -> operation.()
+        end
+      end)
+
+    handler = {__MODULE__, task.pid}
+
+    :telemetry.attach(
+      handler,
+      [:easy, :repo, :query],
+      fn _, _, metadata, _ ->
+        if self() == task.pid and String.contains?(metadata.query, "FROM \"#{table}\"") and not Process.get(handler, false) do
+          Process.put(handler, true)
+          send(parent, {:read_paused, self()})
+
+          receive do
+            :resume -> :ok
+          after
+            5_000 -> raise "snapshot reader was not released"
+          end
+        end
+      end,
+      nil
+    )
+
+    on_exit(fn -> :telemetry.detach(handler) end)
+    send(task.pid, :read)
+    pid = task.pid
+    assert_receive {:read_paused, ^pid}, 2_000
+    task
   end
 
   defp hold_transaction(operation) do

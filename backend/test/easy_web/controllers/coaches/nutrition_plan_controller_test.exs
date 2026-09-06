@@ -35,10 +35,8 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       assert created["kind"] == "template"
       assert created["name"] == "Cut Block"
       assert created["revision"] == 1
-      assert created["archived_at"] == nil
-      assert created["lifecycle"] == nil
+      assert created["lifecycle"] == "active"
       assert created["client_id"] == nil
-      assert created["status"] == "active"
       refute Map.has_key?(created, "business_id")
 
       assert [%{"name" => "Everyday", "id" => pattern_id, "slots" => []}] = created["menu"]["day_patterns"]
@@ -96,7 +94,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
   end
 
   describe "Nutrition Template lifecycle" do
-    test "shows, updates, archives, restores, and deletes through revisioned commands", %{conn: conn} do
+    test "shows, updates, archives, restores, and deletes", %{conn: conn} do
       coach = insert(:coach)
       conn = authenticate_coach(conn, coach)
       template = insert(:plan, business: coach.business, creator: coach.user)
@@ -131,37 +129,16 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
 
       assert Repo.get!(Plan, template.id).name == "Revised Template"
 
-      stale_archive_conn =
-        post(conn, "/v1/coach/nutrition-plans/#{template.id}/archive", %{"expected_revision" => 1})
+      archive_conn = post(conn, "/v1/coach/nutrition-plans/#{template.id}/archive")
+      assert %{"data" => %{"lifecycle" => "archived", "revision" => 3}} = json_response(archive_conn, 200)
 
-      assert %{
-               "error_code" => "stale_revision",
-               "error_detail" => %{"current_revision" => 2}
-             } = json_response(stale_archive_conn, 409)
+      restore_conn = post(conn, "/v1/coach/nutrition-plans/#{template.id}/restore")
+      assert %{"data" => %{"lifecycle" => "active", "revision" => 4}} = json_response(restore_conn, 200)
 
-      archive_conn =
-        post(conn, "/v1/coach/nutrition-plans/#{template.id}/archive", %{"expected_revision" => 2})
+      obsolete_revision = delete(conn, "/v1/coach/nutrition-plans/#{template.id}?expected_revision=4")
+      assert json_response(obsolete_revision, 422)
 
-      assert %{"data" => %{"archived_at" => archived_at, "revision" => 3, "status" => "archived"}} =
-               json_response(archive_conn, 200)
-
-      assert archived_at
-
-      stale_restore_conn =
-        post(conn, "/v1/coach/nutrition-plans/#{template.id}/restore", %{"expected_revision" => 2})
-
-      assert %{
-               "error_code" => "stale_revision",
-               "error_detail" => %{"current_revision" => 3}
-             } = json_response(stale_restore_conn, 409)
-
-      restore_conn =
-        post(conn, "/v1/coach/nutrition-plans/#{template.id}/restore", %{"expected_revision" => 3})
-
-      assert %{"data" => %{"archived_at" => nil, "revision" => 4, "status" => "active"}} =
-               json_response(restore_conn, 200)
-
-      delete_conn = delete(conn, "/v1/coach/nutrition-plans/#{template.id}?expected_revision=4")
+      delete_conn = delete(conn, "/v1/coach/nutrition-plans/#{template.id}")
 
       assert response(delete_conn, 204) == ""
       assert Repo.get(Plan, template.id) == nil
@@ -184,21 +161,17 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
              )
 
       assert json_response(
-               post(conn, "/v1/coach/nutrition-plans/#{hidden.id}/archive", %{
-                 "expected_revision" => 1
-               }),
+               post(conn, "/v1/coach/nutrition-plans/#{hidden.id}/archive"),
                404
              )
 
       assert json_response(
-               post(conn, "/v1/coach/nutrition-plans/#{hidden.id}/restore", %{
-                 "expected_revision" => 1
-               }),
+               post(conn, "/v1/coach/nutrition-plans/#{hidden.id}/restore"),
                404
              )
 
       assert json_response(
-               delete(conn, "/v1/coach/nutrition-plans/#{hidden.id}?expected_revision=1"),
+               delete(conn, "/v1/coach/nutrition-plans/#{hidden.id}"),
                404
              )
     end
@@ -299,7 +272,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
 
       archived =
         conn
-        |> post("/v1/coach/nutrition-plans/#{first.id}/archive", %{"expected_revision" => 1})
+        |> post("/v1/coach/nutrition-plans/#{first.id}/archive")
         |> json_response(200)
         |> Map.fetch!("data")
 
@@ -329,10 +302,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
 
       second_incomplete =
         conn
-        |> post("/v1/coach/clients/#{client.id}/nutrition-plans/#{other_template.id}/assign", %{
-          "expected_revision" => 1,
-          "start_date" => nil
-        })
+        |> post("/v1/coach/clients/#{client.id}/nutrition-plans/#{other_template.id}/assign", %{"start_date" => nil})
         |> json_response(422)
 
       assert %{
@@ -358,9 +328,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
 
       response =
         conn
-        |> post("/v1/coach/nutrition-plans/#{created["id"]}/duplicate", %{
-          "expected_revision" => created["revision"]
-        })
+        |> post("/v1/coach/nutrition-plans/#{created["id"]}/duplicate")
         |> json_response(201)
 
       assert %{
@@ -411,7 +379,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       for source <- [archived, client_plan, hidden] do
         response =
           conn
-          |> post("/v1/coach/nutrition-plans/#{source.id}/duplicate", %{"expected_revision" => 1})
+          |> post("/v1/coach/nutrition-plans/#{source.id}/duplicate")
           |> json_response(404)
 
         assert %{"error_code" => "not_found"} = response
@@ -437,7 +405,6 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       response =
         conn
         |> post("/v1/coach/clients/#{client.id}/nutrition-plans/#{created["id"]}/assign", %{
-          "expected_revision" => created["revision"],
           "start_date" => nil,
           "end_date" => nil
         })
@@ -474,7 +441,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       assert listed["assigned_client_count"] == 1
     end
 
-    test "returns conflict for a stale source revision and conceals invalid Assignment inputs", %{conn: conn} do
+    test "conceals invalid Assignment inputs", %{conn: conn} do
       coach = insert(:coach)
       client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
       other = insert(:coach)
@@ -487,15 +454,6 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
         |> post("/v1/coach/nutrition-plans", %{"name" => "Fresh"})
         |> json_response(201)
         |> Map.fetch!("data")
-
-      stale =
-        conn
-        |> post("/v1/coach/clients/#{client.id}/nutrition-plans/#{created["id"]}/assign", %{
-          "expected_revision" => 9
-        })
-        |> json_response(409)
-
-      assert %{"error_code" => "stale_revision", "error_detail" => %{"current_revision" => 1}} = stale
 
       archived =
         insert(:plan,
@@ -520,9 +478,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
           ] do
         response =
           conn
-          |> post("/v1/coach/clients/#{target}/nutrition-plans/#{source}/assign", %{
-            "expected_revision" => 1
-          })
+          |> post("/v1/coach/clients/#{target}/nutrition-plans/#{source}/assign")
           |> json_response(404)
 
         assert %{"error_code" => "not_found"} = response

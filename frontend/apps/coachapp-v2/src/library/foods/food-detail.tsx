@@ -45,9 +45,9 @@ export default function FoodDetail() {
   const impact = normalizeLibraryImpact(impactData?.data);
   const inUse = hasLibraryUsage(impact);
 
-  const handleDelete = async ({expectedRevision, id}: {expectedRevision: number; id: string}) => {
+  const handleDelete = async (id: string) => {
     try {
-      await deleteFoodMutation.mutateAsync({id, expectedRevision});
+      await deleteFoodMutation.mutateAsync({id});
       navigate(ROUTES.FOODS, {replace: true});
     } catch (error) {
       toast.danger(libraryInUseMessage(error, "Couldn't delete food"));
@@ -146,7 +146,7 @@ export default function FoodDetail() {
               isPending={deleteFoodMutation.isPending}
               itemName={food.name}
               label="Food"
-              onDelete={() => handleDelete({id: food.id, expectedRevision: food.revision})}
+              onDelete={() => handleDelete(food.id)}
               trigger={
                 <Button
                   aria-label="Delete food"
@@ -168,11 +168,11 @@ export default function FoodDetail() {
         <Page.Frame size="content">
           <div className="flex items-start gap-4">
             <div className="flex size-20 shrink-0 items-center justify-center rounded-card bg-surface-secondary">
-              {(food.media?.kind === 'image' ? food.media.url : food.media ? null : food.image_url) ? (
+              {food.media?.kind === 'image' && food.media.url ? (
                 <img
                   alt={food.name}
                   className="size-20 rounded-card object-cover"
-                  src={(food.media?.kind === 'image' ? food.media.url : food.image_url) ?? undefined}
+                  src={food.media.url}
                 />
               ) : food.media?.kind === 'video' ? (
                 <Video className="size-8 text-foreground" />
@@ -311,7 +311,7 @@ export default function FoodDetail() {
               isPending={deleteFoodMutation.isPending}
               itemName={food.name}
               label="Food"
-              onDelete={() => handleDelete({id: food.id, expectedRevision: food.revision})}
+              onDelete={() => handleDelete(food.id)}
               trigger={
                 <Button
                   isIconOnly

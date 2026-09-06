@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash f36f596a552206f3f113fafd8093d4ba801804a02bac37f016b3abab6e236e22 */
+/* typed-routes:hash 725104fe2fa253187eb9c17c369f002709e48a19e817c8c8669c957aa8330a31 */
 export type Attachment = {
   id: string;
   content_type:
@@ -85,7 +85,7 @@ export type DayEntryInput = {
   portion: NutritionPortion;
   notes: string | null;
 };
-export type DayListQuery = {date?: string; from?: string; to?: string; offset?: number; limit?: number};
+export type DayListQuery = {date?: string; from?: string; to?: string};
 export type DaySave = {slots: Array<DaySlotInput>};
 export type DaySlotInput = {
   meal_slot:
@@ -139,8 +139,7 @@ export type Food = {
   id: string;
   name: string;
   brand: string | null;
-  barcode: string | null;
-  source: 'system' | 'imported' | 'custom' | null;
+  source: 'system' | 'custom';
   category: string | null;
   default_portion: NutritionPortion;
   portion_options: Array<NutritionPortion>;
@@ -155,7 +154,6 @@ export type Food = {
   allergens: Array<string>;
   dietary_tags: Array<string>;
   notes: string | null;
-  image_url: string | null;
   media: FoodMedia | null;
   serving_sizes: Array<FoodServingSize>;
   creator_id: string | null;
@@ -166,8 +164,8 @@ export type FoodClientListQuery = {offset?: number; limit?: number; search?: str
 export type FoodMedia = {
   id: string;
   kind: 'image' | 'video';
-  content_type: string;
-  byte_size: number;
+  content_type: string | null;
+  byte_size: number | null;
   url: string | null;
 };
 export type FoodNutrients = {
@@ -426,9 +424,7 @@ export type NutritionPlan = {
   name: string;
   description: string | null;
   revision: number;
-  archived_at: string | null;
-  status: 'active' | 'archived';
-  lifecycle: 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived' | null;
+  lifecycle: 'active' | 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived';
   assigned_client_count: number;
   target_calories: number | null;
   target_protein_g: number | null;
@@ -446,7 +442,7 @@ export type NutritionPlan = {
   updated_at: string;
 };
 export type NutritionPlanClient = {id: string; first_name: string | null; last_name: string | null};
-export type NutritionPlanClientListQuery = {offset?: number; limit?: number; status?: 'active' | 'archived'};
+export type NutritionPlanClientListQuery = {offset?: number; limit?: number; archived?: boolean};
 export type NutritionPortion =
   | {kind: 'gram'; grams: number}
   | {kind: 'serving'; amount: number; unit: string; label: string | null};
@@ -730,7 +726,7 @@ export type WeightEntryListQuery = {since?: string};
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash f78134e95e73a23fd82003d92d6a740f4325330fb4f2a6ee8e9f0ba8ed7ae692 */
+  /* typed-routes:hash 68250ed9bd727992df1df2041f867e43e0a0080b6625aa0c7aa643228d0aed75 */
   '/api/health': {
     get: {
       parameters: {
@@ -883,7 +879,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<Day>; count: number}}};
+        200: {content: {'application/json': {data: Array<Day>}}};
       };
     };
   };

@@ -15,7 +15,6 @@ import type {
   NutritionPlanUpdate,
   NutritionPortion as NutritionPortionSchema,
   paths,
-  Revision,
 } from './schema.ts';
 import {omitUndefined} from './shared.ts';
 import {workbenchMutationTargets} from './workbench-targets.ts';
@@ -27,7 +26,6 @@ const PAGE_SIZE = 20;
 export type NutritionPlan = NutritionPlanSchema;
 export type NutritionPlanCreateRequest = NutritionPlanCreate;
 export type NutritionPlanUpdateRequest = NutritionPlanUpdate;
-export type NutritionPlanRevisionRequest = Revision;
 export type NutritionPlanAssignRequest = NutritionPlanAssign;
 export type NutritionCoverage = NutritionCoverageSchema;
 export type NutritionDay = Day;
@@ -141,12 +139,7 @@ export function useUpdateNutritionPlanMutation() {
 export function useDeleteNutritionPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({id, expectedRevision}: {id: string; expectedRevision: number}) =>
-      call(
-        client.DELETE('/v1/coach/nutrition-plans/{id}', {
-          params: {path: {id}, query: {expected_revision: expectedRevision}},
-        }),
-      ),
+    mutationFn: ({id}: {id: string}) => call(client.DELETE('/v1/coach/nutrition-plans/{id}', {params: {path: {id}}})),
     onSuccess: (_data, {id}) => {
       qc.removeQueries({queryKey: nutritionPlanKeys.detail(id)});
       invalidatePlanCaches(qc);
@@ -157,8 +150,7 @@ export function useDeleteNutritionPlanMutation() {
 export function useArchiveNutritionPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({id, body}: {id: string; body: NutritionPlanRevisionRequest}) =>
-      call(client.POST('/v1/coach/nutrition-plans/{id}/archive', {params: {path: {id}}, body})),
+    mutationFn: ({id}: {id: string}) => call(client.POST('/v1/coach/nutrition-plans/{id}/archive', {params: {path: {id}}})),
     onSuccess: (response, {id}) => {
       qc.setQueryData(nutritionPlanKeys.detail(id), response);
       invalidatePlanCaches(qc, {id});
@@ -169,8 +161,7 @@ export function useArchiveNutritionPlanMutation() {
 export function useRestoreNutritionPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({id, body}: {id: string; body: NutritionPlanRevisionRequest}) =>
-      call(client.POST('/v1/coach/nutrition-plans/{id}/restore', {params: {path: {id}}, body})),
+    mutationFn: ({id}: {id: string}) => call(client.POST('/v1/coach/nutrition-plans/{id}/restore', {params: {path: {id}}})),
     onSuccess: (response, {id}) => {
       qc.setQueryData(nutritionPlanKeys.detail(id), response);
       invalidatePlanCaches(qc, {id});
@@ -181,8 +172,7 @@ export function useRestoreNutritionPlanMutation() {
 export function useDuplicateNutritionPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({id, body}: {id: string; body: NutritionPlanRevisionRequest}) =>
-      call(client.POST('/v1/coach/nutrition-plans/{id}/duplicate', {params: {path: {id}}, body})),
+    mutationFn: ({id}: {id: string}) => call(client.POST('/v1/coach/nutrition-plans/{id}/duplicate', {params: {path: {id}}})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
     },
@@ -209,7 +199,7 @@ export function useAssignNutritionPlanMutation() {
 
 export type ListCoachNutritionDaysParams = Pick<
   ListCoachNutritionDaysQuery,
-  'date' | 'from' | 'to' | 'offset' | 'limit'
+  'date' | 'from' | 'to'
 >;
 
 export function useListCoachNutritionDaysQuery(

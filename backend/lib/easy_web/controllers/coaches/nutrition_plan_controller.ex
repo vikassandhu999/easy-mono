@@ -2,14 +2,14 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   use EasyWeb, :typed_controller
 
   alias Easy.Nutrition.Programming
-  alias EasyWeb.Types.{NutritionPlan, Revision}
+  alias EasyWeb.Types.NutritionPlan
 
   typed(:create, body: NutritionPlan.create(), ok: {201, data(NutritionPlan.t())})
   typed(:show, ok: {200, data(NutritionPlan.t())})
   typed(:update, body: NutritionPlan.update(), ok: {200, data(NutritionPlan.t())})
-  typed(:delete, query: Revision.t(), ok: {204, nil})
-  typed(:archive, body: Revision.t(), ok: {200, data(NutritionPlan.t())})
-  typed(:restore, body: Revision.t(), ok: {200, data(NutritionPlan.t())})
+  typed(:delete, ok: {204, nil})
+  typed(:archive, ok: {200, data(NutritionPlan.t())})
+  typed(:restore, ok: {200, data(NutritionPlan.t())})
   typed(:index, query: NutritionPlan.list_query(), ok: {200, page(NutritionPlan.t())})
 
   typed(:replace_menu,
@@ -17,7 +17,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     ok: {200, data(NutritionPlan.t())}
   )
 
-  typed(:duplicate, body: Revision.t(), ok: {201, data(NutritionPlan.t())})
+  typed(:duplicate, ok: {201, data(NutritionPlan.t())})
   typed(:assign, body: NutritionPlan.assign(), ok: {201, data(NutritionPlan.t())})
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -49,8 +49,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     with {:ok, _plan} <-
            Programming.delete_plan(
              conn.assigns.ctx,
-             conn.path_params["id"],
-             conn.query_params["expected_revision"]
+             conn.path_params["id"]
            ) do
       ok(conn)
     end
@@ -61,8 +60,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     with {:ok, plan} <-
            Programming.archive_plan(
              conn.assigns.ctx,
-             conn.path_params["id"],
-             conn.body_params[:expected_revision]
+             conn.path_params["id"]
            ) do
       ok(conn, %{data: plan})
     end
@@ -73,8 +71,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     with {:ok, plan} <-
            Programming.restore_plan(
              conn.assigns.ctx,
-             conn.path_params["id"],
-             conn.body_params[:expected_revision]
+             conn.path_params["id"]
            ) do
       ok(conn, %{data: plan})
     end
@@ -113,8 +110,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     with {:ok, plan} <-
            Programming.duplicate_template(
              conn.assigns.ctx,
-             conn.path_params["id"],
-             conn.body_params[:expected_revision]
+             conn.path_params["id"]
            ) do
       ok(conn, %{data: plan})
     end
@@ -122,15 +118,12 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
 
   @spec assign(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def assign(conn, _params) do
-    {expected_revision, attrs} = Map.pop!(conn.body_params, :expected_revision)
-
     with {:ok, plan} <-
            Programming.assign_template_to_client(
              conn.assigns.ctx,
              conn.path_params["client_id"],
              conn.path_params["id"],
-             expected_revision,
-             attrs
+             conn.body_params
            ) do
       ok(conn, %{data: plan})
     end

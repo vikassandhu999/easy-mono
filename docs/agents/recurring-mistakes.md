@@ -183,8 +183,6 @@ offset/limit pagination is non-deterministic on same-second timestamps. The rule
 is second-precision, so every meal of a duplicated plan ties and the plan detail's meal
 order varied between reads of the same plan. If the sort key isn't unique, add `:id`.
 **Enforced by:** review (credo doesn't catch it; the multi-line forms defeat grep).
-Known outstanding: `Food.search` orders by `ts_rank` alone, so paginated food search can
-repeat or skip equally-ranked foods across pages.
 
 ### RM-002 — OpenApiSpex schema ↔ JSON view parity
 Schema generates the FE types; the view produces the response; they drift when edited
@@ -273,8 +271,8 @@ SET NULL is an UPDATE, and Postgres evaluates CHECK constraints on UPDATE. A
 parent raise `Ecto.ConstraintError` (a 500), not fail gracefully. Deleting any food that
 had ever been logged was impossible for this reason. Decide per table which the row
 needs: Diary rows retain scalar source identities and frozen names and nutrients,
-so their nullable live Library references can be cleared. Recipe Ingredient food
-references remain restrictive. Menu documents protect Library references with row
+with no duplicate Library foreign keys. Reads hide unavailable Library links.
+Recipe Ingredient food references remain restrictive. Menu documents protect Library references with row
 locks and tenant-scoped usage checks that return `{:error, :in_use}`. Review question: "for every nilify-on-delete FK, is there a CHECK
 or NOT NULL over that column — and is exactly-one a write rule or a lifetime invariant?"
 
@@ -372,6 +370,12 @@ application adapter supplied by `EasyWeb, :typed_controller`. Otherwise every ne
 change edits framework mechanics and makes the generator silently depend on Easy-specific
 names. **Enforced by:** `scripts/check-rm.sh` rejects direct `Easy` application references
 inside `backend/lib/easy_web/typed_route.ex` and `backend/lib/easy_web/typed_route/`.
+
+### RM-031 — Multistage nutrition reads share a database snapshot
+Enforced by `test/easy/nutrition/library_concurrency_test.exs`: menu reads, recipe
+reads, and Diary freezes keep one committed version while Library edits proceed;
+conflicting Diary saves roll back and can be retried. Joining an existing transaction
+does not upgrade its isolation level.
 
 ---
 

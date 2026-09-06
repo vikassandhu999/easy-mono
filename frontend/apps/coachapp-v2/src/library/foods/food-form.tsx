@@ -18,7 +18,6 @@ import {FormTextField} from '@/ui/form-text-field';
 // accepts it in a body. The form carries it for display only, in a read-only field.
 const SOURCE_LABELS: Record<NonNullable<Food['source']>, string> = {
   custom: 'Custom',
-  imported: 'Imported',
   system: 'System',
 };
 
@@ -29,7 +28,6 @@ export function foodToFormValues(food: Food): FoodFormValues {
     category: food.category ?? '',
     source: SOURCE_LABELS[food.source ?? 'custom'],
     notes: food.notes ?? '',
-    image_url: food.image_url ?? '',
     media_id: food.media?.id ?? null,
     calories_per_100g: food.calories_per_100g ?? undefined,
     protein_g: food.protein_g_per_100g ?? undefined,

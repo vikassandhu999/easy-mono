@@ -5,7 +5,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
   alias Easy.Nutrition.{Menu, Plan, Programming}
   alias Easy.Repo
 
-  describe "assign_template_to_client/5" do
+  describe "assign_template_to_client/4" do
     test "copies the complete Menu into an independent Client Plan and advances onboarding" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
@@ -15,7 +15,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
       {:ok, source} = Programming.replace_menu(ctx, template.id, 1, breakfast_menu(template, food))
 
       assert {:ok, assigned} =
-               Programming.assign_template_to_client(ctx, client.id, source.id, 2, %{
+               Programming.assign_template_to_client(ctx, client.id, source.id, %{
                  "start_date" => "2026-09-01",
                  "end_date" => "2026-09-30"
                })
@@ -33,12 +33,12 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
       assert Repo.get!(Easy.Clients.Client, client.id).stage == :coaching
     end
 
-    test "rejects invalid sources, invisible clients, and a stale source revision without advancing onboarding" do
+    test "rejects invalid sources, invisible clients, and accepts the latest source" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
       client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach, stage: :onboarding)
       {:ok, template} = Programming.create_template(ctx, %{"name" => "Source"})
-      {:ok, archived} = Programming.archive_template(ctx, template.id, 1)
+      {:ok, archived} = Programming.archive_template(ctx, template.id)
 
       client_plan =
         insert(:plan,
@@ -54,19 +54,18 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
       hidden_client = insert(:client, business: other.business, creator: other, assigned_coach: other)
       {:ok, fresh} = Programming.create_template(ctx, %{"name" => "Fresh"})
 
-      for {target, source, revision} <- [
+      for {target, source, _revision} <- [
             {client.id, archived.id, 2},
             {client.id, client_plan.id, 1},
             {client.id, hidden_template.id, 1},
             {hidden_client.id, fresh.id, 1}
           ] do
-        assert {:error, :not_found} = Programming.assign_template_to_client(ctx, target, source, revision, %{})
+        assert {:error, :not_found} = Programming.assign_template_to_client(ctx, target, source, %{})
       end
 
-      assert {:error, %Ecto.Changeset{action: :stale_revision, data: %Plan{revision: 1}}} =
-               Programming.assign_template_to_client(ctx, client.id, fresh.id, 9, %{})
-
       assert Repo.get!(Easy.Clients.Client, client.id).stage == :onboarding
+      assert {:ok, _assigned} = Programming.assign_template_to_client(ctx, client.id, fresh.id, %{})
+      assert Repo.get!(Easy.Clients.Client, client.id).stage == :coaching
     end
 
     test "rolls onboarding back when Client Plan constraints reject Assignment" do
@@ -82,7 +81,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
         kind: :client_plan
       )
 
-      assert {:error, changeset} = Programming.assign_template_to_client(ctx, client.id, template.id, 1, %{})
+      assert {:error, changeset} = Programming.assign_template_to_client(ctx, client.id, template.id, %{})
       assert %{client_id: [_]} = errors_on(changeset)
       assert Repo.get!(Easy.Clients.Client, client.id).stage == :onboarding
 
@@ -98,7 +97,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
       food = insert(:food, business: coach.business, creator: coach)
       {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut Block"})
       {:ok, source} = Programming.replace_menu(ctx, template.id, 1, breakfast_menu(template, food))
-      {:ok, assigned} = Programming.assign_template_to_client(ctx, client.id, source.id, 2, %{})
+      {:ok, assigned} = Programming.assign_template_to_client(ctx, client.id, source.id, %{})
 
       assert {:ok, renamed} = Programming.update_plan(ctx, assigned.id, 1, %{"name" => "Individualized"})
       assert renamed.name == "Individualized"
@@ -117,7 +116,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
       assert [%{name: "Breakfast"}] = reloaded.menu.meals
       assert [%{name: "Everyday"}] = reloaded.menu.day_patterns
 
-      assert {:ok, _deleted} = Programming.delete_template(ctx, source.id, 3)
+      assert {:ok, _deleted} = Programming.delete_template(ctx, source.id)
       persisted = Repo.get!(Plan, assigned.id)
       assert persisted.source_template_id == nil
       assert persisted.menu == Repo.get!(Plan, assigned.id).menu
@@ -153,25 +152,22 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
       former_ctx = trainer_ctx(former)
       assert {:error, :not_found} = Programming.get_plan(former_ctx, client_plan.id)
       assert {:error, :not_found} = Programming.update_plan(former_ctx, client_plan.id, 2, %{"name" => "Nope"})
-      assert {:error, :not_found} = Programming.archive_plan(former_ctx, client_plan.id, 2)
-      assert {:error, :not_found} = Programming.restore_plan(former_ctx, client_plan.id, 2)
-      assert {:error, :not_found} = Programming.delete_plan(former_ctx, client_plan.id, 2)
+      assert {:error, :not_found} = Programming.archive_plan(former_ctx, client_plan.id)
+      assert {:error, :not_found} = Programming.restore_plan(former_ctx, client_plan.id)
+      assert {:error, :not_found} = Programming.delete_plan(former_ctx, client_plan.id)
       assert {:error, :not_found} = Programming.replace_menu(former_ctx, client_plan.id, 2, %{meals: []})
 
       current_ctx = trainer_ctx(current)
 
-      assert {:ok, archived} = Programming.archive_plan(current_ctx, client_plan.id, 2)
+      assert {:ok, archived} = Programming.archive_plan(current_ctx, client_plan.id)
       assert archived.archived_at
       assert archived.revision == 3
 
-      assert {:ok, restored} = Programming.restore_plan(current_ctx, client_plan.id, 3)
+      assert {:ok, restored} = Programming.restore_plan(current_ctx, client_plan.id)
       assert restored.archived_at == nil
       assert restored.revision == 4
 
-      assert {:error, %Ecto.Changeset{action: :stale_revision}} =
-               Programming.delete_plan(current_ctx, client_plan.id, 1)
-
-      assert {:ok, deleted} = Programming.delete_plan(current_ctx, client_plan.id, 4)
+      assert {:ok, deleted} = Programming.delete_plan(current_ctx, client_plan.id)
       assert deleted.id == client_plan.id
       assert Repo.get(Plan, client_plan.id) == nil
     end
@@ -183,13 +179,13 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
       food = insert(:food, business: coach.business, creator: coach)
       {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})
       {:ok, source} = Programming.replace_menu(ctx, template.id, 1, breakfast_menu(template, food))
-      {:ok, assigned} = Programming.assign_template_to_client(ctx, client.id, source.id, 2, %{})
+      {:ok, assigned} = Programming.assign_template_to_client(ctx, client.id, source.id, %{})
 
-      assert {:ok, _archived} = Programming.archive_plan(ctx, assigned.id, 1)
+      assert {:ok, _archived} = Programming.archive_plan(ctx, assigned.id)
       assert {:error, changeset} = Programming.update_plan(ctx, assigned.id, 2, %{"name" => "Nope"})
       assert %{archived_at: ["is read-only"]} = errors_on(changeset)
 
-      assert {:ok, restored} = Programming.restore_plan(ctx, assigned.id, 2)
+      assert {:ok, restored} = Programming.restore_plan(ctx, assigned.id)
       pattern = hd(restored.menu.day_patterns)
 
       assert {:ok, replaced} =
@@ -204,8 +200,8 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
       {:ok, template_after} = Programming.get_plan(ctx, source.id)
       assert [%{name: "Breakfast"}] = template_after.menu.meals
 
-      assert {:ok, archived_again} = Programming.archive_plan(ctx, replaced.id, 4)
-      assert {:ok, deleted} = Programming.delete_plan(ctx, archived_again.id, 5)
+      assert {:ok, archived_again} = Programming.archive_plan(ctx, replaced.id)
+      assert {:ok, deleted} = Programming.delete_plan(ctx, archived_again.id)
       assert deleted.id == assigned.id
       assert Repo.get(Plan, assigned.id) == nil
     end

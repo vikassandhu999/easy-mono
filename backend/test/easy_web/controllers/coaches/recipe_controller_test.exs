@@ -152,11 +152,7 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
         business: business,
         recipe: recipe,
         food: food,
-        portion_kind: :gram,
-        amount: nil,
-        unit: nil,
-        serving_label: nil,
-        weight_g: 100.0
+        portion: %{kind: :gram, grams: 100.0}
       )
 
       conn = get(conn, "/v1/coach/nutrition-recipes/#{recipe.id}")
@@ -191,11 +187,7 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
         business: business,
         recipe: recipe,
         food: food,
-        portion_kind: :gram,
-        amount: nil,
-        unit: nil,
-        serving_label: nil,
-        weight_g: 200.0
+        portion: %{kind: :gram, grams: 200.0}
       )
 
       conn =
@@ -288,7 +280,7 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
     test "deletes a recipe successfully", %{conn: conn, coach: coach, business: business} do
       recipe = insert(:recipe, creator: coach, business: business)
 
-      conn = delete(conn, "/v1/coach/nutrition-recipes/#{recipe.id}?expected_revision=1")
+      conn = delete(conn, "/v1/coach/nutrition-recipes/#{recipe.id}")
       assert response(conn, 204)
 
       conn = build_conn() |> authenticate_coach(coach) |> get("/v1/coach/nutrition-recipes/#{recipe.id}")
@@ -296,15 +288,21 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
     end
 
     test "returns 404 for non-existent recipe", %{conn: conn} do
-      conn = delete(conn, "/v1/coach/nutrition-recipes/#{Ecto.UUID.generate()}?expected_revision=1")
+      conn = delete(conn, "/v1/coach/nutrition-recipes/#{Ecto.UUID.generate()}")
       assert json_response(conn, 404)
+    end
+
+    test "rejects obsolete revision query parameters", %{conn: conn, coach: coach, business: business} do
+      recipe = insert(:recipe, creator: coach, business: business)
+      conn = delete(conn, "/v1/coach/nutrition-recipes/#{recipe.id}?expected_revision=1")
+      assert json_response(conn, 422)
     end
 
     test "cannot delete recipe from another business", %{conn: conn} do
       other_coach = insert(:coach)
       other_recipe = insert(:recipe, creator: other_coach, business: other_coach.business)
 
-      conn = delete(conn, "/v1/coach/nutrition-recipes/#{other_recipe.id}?expected_revision=1")
+      conn = delete(conn, "/v1/coach/nutrition-recipes/#{other_recipe.id}")
       assert json_response(conn, 404)
     end
 
@@ -314,7 +312,7 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
       item = recipe_item("item", recipe.id, %{kind: :serving, amount: 1, unit: "serving", label: nil})
       assert {:ok, _} = Programming.replace_menu(DataCase.trainer_ctx(coach), plan.id, plan.revision, menu(plan, meals: [meal_input("meal", "Meal", [item])]))
 
-      conn = delete(conn, "/v1/coach/nutrition-recipes/#{recipe.id}?expected_revision=1")
+      conn = delete(conn, "/v1/coach/nutrition-recipes/#{recipe.id}")
       assert %{"error_code" => "in_use"} = json_response(conn, 409)
     end
 
@@ -407,11 +405,7 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
         business: business,
         recipe: recipe,
         food: food,
-        portion_kind: :gram,
-        amount: nil,
-        unit: nil,
-        serving_label: nil,
-        weight_g: 200.0
+        portion: %{kind: :gram, grams: 200.0}
       )
 
       conn = post(conn, "/v1/coach/nutrition-recipes/#{recipe.id}/copy")

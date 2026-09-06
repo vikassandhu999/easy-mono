@@ -43,6 +43,10 @@ defmodule EasyWeb.TypedRoute.Check do
     end)
   end
 
+  defp check(value, :uuid, path) do
+    if match?({:ok, _}, Ecto.UUID.cast(value)), do: :ok, else: fail(path, "expected UUID")
+  end
+
   defp check(value, :string, _path) when is_binary(value), do: :ok
   defp check(value, :boolean, _path) when is_boolean(value), do: :ok
   defp check(value, :integer, _path) when is_integer(value), do: :ok
@@ -75,6 +79,7 @@ defmodule EasyWeb.TypedRoute.Check do
   defp fits?(value, {:remote, mod, name}), do: fits?(value, Type.fetch!(mod, name))
   defp fits?(nil, nil), do: true
   defp fits?(value, {:union, variants}), do: Enum.any?(variants, &fits?(value, &1))
+  defp fits?(value, :uuid), do: match?({:ok, _}, Ecto.UUID.cast(value))
   defp fits?(value, :string), do: is_binary(value)
   defp fits?(value, :boolean), do: is_boolean(value)
   defp fits?(value, :integer), do: is_integer(value)

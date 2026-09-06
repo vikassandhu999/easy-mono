@@ -171,6 +171,13 @@ defmodule EasyWeb.TypedRoute.Cast do
 
   defp coerce(value, :string, _path) when is_binary(value), do: {:ok, value}
 
+  defp coerce(value, :uuid, path) do
+    case Ecto.UUID.cast(value) do
+      {:ok, id} -> {:ok, id}
+      :error -> {:error, %{join(path) => ["must be a UUID"]}}
+    end
+  end
+
   defp coerce(value, :integer, path), do: int(value, path, &is_integer/1)
   defp coerce(value, :pos_integer, path), do: int(value, path, &(&1 > 0))
   defp coerce(value, :non_neg_integer, path), do: int(value, path, &(&1 >= 0))

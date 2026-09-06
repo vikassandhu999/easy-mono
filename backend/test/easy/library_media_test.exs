@@ -2,6 +2,8 @@ defmodule Easy.LibraryMediaTest do
   use Easy.DataCase, async: false
 
   alias Easy.LibraryMedia
+  alias Easy.LibraryMedia.Media
+  alias Easy.Nutrition.Library
 
   describe "create_upload/2" do
     test "creates a business-scoped row and a signed PUT against the public bucket" do
@@ -36,6 +38,43 @@ defmodule Easy.LibraryMediaTest do
         assert {:error, %Ecto.Changeset{}} = LibraryMedia.create_upload(trainer_ctx(coach), attrs)
       end
     end
+  end
+
+  test "shared external system images survive Food copies through the same media representation" do
+    coach = insert(:coach)
+    ctx = trainer_ctx(coach)
+
+    media =
+      Repo.insert!(%Media{
+        id: Ecto.UUID.generate(),
+        uploaded_by_type: :system,
+        external_url: "https://images.example.test/oats.jpg"
+      })
+
+    food = insert(:food, source: :system, business: nil, creator: nil, media: media)
+    assert {:ok, _} = LibraryMedia.fetch_attachable(ctx, media.id)
+    assert {:ok, copy} = Library.copy_food(ctx, food.id)
+    assert copy.media_id == media.id
+
+    assert %{kind: :image, url: "https://images.example.test/oats.jpg", content_type: nil, byte_size: nil} =
+             LibraryMedia.public_representation(copy.media)
+  end
+
+  test "incomplete uploaded media cannot pass the source constraint through SQL NULL" do
+    coach = insert(:coach)
+
+    error =
+      assert_raise Ecto.ConstraintError, fn ->
+        Repo.insert!(%Media{
+          id: Ecto.UUID.generate(),
+          business_id: coach.business_id,
+          uploaded_by_type: :coach,
+          storage_key: "missing-size.jpg",
+          content_type: "image/jpeg"
+        })
+      end
+
+    assert error.constraint == "library_media_source_check"
   end
 
   describe "fetch_attachable/2 and authorize_attach/2" do

@@ -138,7 +138,7 @@ try {
       if (delayRead) {
         await new Promise((resolve) => setTimeout(resolve, 1500));
       }
-      return route.fulfill({json: {data: [day()], count: 1}});
+      return route.fulfill({json: {data: [day()]}});
     }
     const body = request.postDataJSON();
     writes.push({method, body, path: new URL(request.url()).pathname, key: request.headers()['idempotency-key']});
@@ -260,7 +260,7 @@ try {
     coach.on('pageerror', (error) => errors.push(error.message));
     await mount(coach, coachOrigin, '/src/clients/client-nutrition-day.tsx', true);
     await coach.route('**/v1/coach/clients/*/nutrition-days**', (route) =>
-      route.fulfill({json: {data: [day()], count: 1}}),
+      route.fulfill({json: {data: [day()]}}),
     );
     await coach.goto(`${coachOrigin}/clients/client/nutrition/2026-09-05`);
     await coach.getByText('Oats', {exact: true}).waitFor();

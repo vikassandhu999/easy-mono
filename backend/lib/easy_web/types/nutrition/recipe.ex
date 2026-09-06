@@ -119,7 +119,7 @@ defmodule EasyWeb.Types.Nutrition.Recipe do
     %{
       food_id: ingredient.food_id,
       food: ingredient.food,
-      portion: Portions.from_snapshot(ingredient),
+      portion: Portions.format(ingredient.portion),
       position: ingredient.position
     }
   end

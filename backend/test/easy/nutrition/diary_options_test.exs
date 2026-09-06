@@ -60,7 +60,7 @@ defmodule Easy.Nutrition.DiaryOptionsTest do
 
     [stored] = Repo.all(DiarySlot.for_client(client.business_id, client.id))
     past = Date.add(today, -1)
-    Repo.update!(Ecto.Changeset.change(stored, local_date: past))
+    move_slot_date(stored, past)
     other = List.last(slot.options)
 
     assert {:error, :cannot_switch_past_slot} =

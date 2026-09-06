@@ -14,7 +14,7 @@ defmodule EasyWeb.Clients.NutritionPlanController do
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
     params = conn.query_params
-    archived = if params["status"], do: params["status"] == :archived, else: nil
+    archived = Map.get(params, "archived")
 
     with {:ok, %{plans: plans, count: count}} <-
            Programming.list_client_plans(conn.assigns.ctx,

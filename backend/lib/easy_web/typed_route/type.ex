@@ -1,6 +1,7 @@
 defmodule EasyWeb.TypedRoute.Type do
   @type ir ::
           :string
+          | :uuid
           | :integer
           | :pos_integer
           | :non_neg_integer
@@ -132,6 +133,7 @@ defmodule EasyWeb.TypedRoute.Type do
     raise ArgumentError, "illegal wire type #{format_path(path)}: #{Macro.to_string(other)}"
   end
 
+  defp remote(Ecto.UUID, :t, _path), do: :uuid
   defp remote(String, :t, _path), do: :string
   defp remote(DateTime, :t, _path), do: :datetime
   defp remote(Date, :t, _path), do: :date

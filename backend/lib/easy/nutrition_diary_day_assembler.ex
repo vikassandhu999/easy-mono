@@ -5,10 +5,12 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
   alias Easy.Nutrition.Diary.CorrectionPolicy
 
   alias Easy.Nutrition.{
+    DiaryDay,
     DiaryEntry,
     DiaryFrozenOption,
     DiaryFrozenPlannedItem,
     DiarySlot,
+    Library,
     MealSlot,
     Menu,
     NutrientTotals,
@@ -17,6 +19,7 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
   }
 
   alias Easy.Repo
+  alias Easy.Result
 
   @type actor :: :client | :coach
   @type list_error :: :not_found | :invalid_date_range | :date_range_too_wide | :incomplete_date_range
@@ -30,15 +33,14 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
           {:ok, Day.list_result()} | {:error, list_error()}
   def list(%Ctx{} = ctx, %Client{} = client, opts, actor, %DateTime{} = now)
       when is_list(opts) and actor in [:client, :coach] do
-    client = Repo.preload(client, :business)
-    offset = max(Keyword.get(opts, :offset, 0), 0)
-    limit = opts |> Keyword.get(:limit, 20) |> max(1) |> min(100)
+    Repo.snapshot(fn ->
+      client = Repo.preload(client, :business)
 
-    with {:ok, dates} <- resolve_dates(opts, CorrectionPolicy.local_today(client, now)),
-         page = dates |> Enum.drop(offset) |> Enum.take(limit),
-         {:ok, days} <- each_ok(page, &assemble(ctx, client, &1, actor, now)) do
-      {:ok, %{count: length(dates), nutrition_days: days}}
-    end
+      with {:ok, dates} <- resolve_dates(opts, CorrectionPolicy.local_today(client, now)),
+           {:ok, days} <- Result.traverse(dates, &assemble(ctx, client, &1, actor, now)) do
+        {:ok, %{nutrition_days: days}}
+      end
+    end)
   end
 
   @spec assemble(Ctx.t(), Client.t(), Date.t(), actor()) :: {:ok, Day.t()} | {:error, :not_found}
@@ -50,13 +52,25 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
           {:ok, Day.t()} | {:error, :not_found}
   def assemble(%Ctx{} = ctx, %Client{} = client, %Date{} = date, actor, %DateTime{} = now)
       when actor in [:client, :coach] do
+    Repo.snapshot(fn -> assemble_day(ctx, client, date, actor, now) end)
+  end
+
+  defp assemble_day(ctx, client, date, actor, now) do
     frozen = frozen_by_slot(client, date)
+    frozen_day = Repo.one(DiaryDay.for_date(client.business_id, client.id, date))
+    items = Enum.flat_map(Map.values(frozen), fn slot -> slot.entries ++ Enum.flat_map(slot.frozen_options, & &1.planned_items) end)
     timezone = day_timezone(Map.values(frozen), CorrectionPolicy.applied_timezone(client))
     today = CorrectionPolicy.local_today(timezone, now)
 
     case live_guidance(ctx, client.id, date, today, actor) do
-      {:ok, guidance} -> {:ok, merge_day(date, today, timezone, guidance, frozen, now)}
-      {:error, reason} -> {:error, reason}
+      {:ok, guidance} ->
+        live_items = if guidance, do: Menu.items(guidance.plan.menu), else: []
+        {:ok, available} = Library.available_items(ctx, items ++ live_items)
+        day = merge_day(date, today, timezone, guidance, frozen, frozen_day, now)
+        {:ok, day |> available_sources(available) |> round_values()}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -104,7 +118,7 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
   defp resolve_guidance(ctx, _client_id, date, :client), do: Programming.resolve_client_coverage(ctx, date)
   defp resolve_guidance(ctx, client_id, date, :coach), do: Programming.resolve_coverage_for_client(ctx, client_id, date)
 
-  defp merge_day(date, today, timezone, guidance, frozen, now) do
+  defp merge_day(date, today, timezone, guidance, frozen, frozen_day, now) do
     live =
       if guidance do
         guidance.day_pattern
@@ -119,7 +133,7 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
       |> Enum.map(&merged_slot(&1, frozen, live, now))
       |> Enum.reject(&is_nil/1)
 
-    targets = if(guidance, do: targets(guidance.plan), else: frozen_targets(frozen))
+    targets = DiaryDay.targets(frozen_day || (guidance && guidance.plan))
     applied = day_timezone(slots, timezone)
 
     %{
@@ -182,7 +196,7 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
 
   defp frozen_slot_view(%DiarySlot{} = slot, now) do
     ordered = Enum.sort_by(slot.frozen_options, &{&1.position, &1.id})
-    active = active_frozen_option(slot, ordered)
+    active = DiarySlot.active_option(slot)
     items = if active, do: active.planned_items, else: []
     today = CorrectionPolicy.local_today(slot.applied_timezone, now)
 
@@ -198,12 +212,6 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
       rows: frozen_rows(slot, active, today)
     }
   end
-
-  defp active_frozen_option(%DiarySlot{active_frozen_option_id: id}, options) when not is_nil(id) do
-    Enum.find(options, &(&1.id == id)) || List.first(options)
-  end
-
-  defp active_frozen_option(_slot, options), do: List.first(options)
 
   defp frozen_rows(%DiarySlot{has_coverage: false} = slot, _active, _today) do
     Enum.map(slot.entries, &row(:recorded, nil, &1))
@@ -257,68 +265,42 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
   defp item_data(item, position) do
     %{
       planned_item_ref: item.id,
-      kind: item.kind,
+      kind: Library.item_kind(item),
       name: item.name,
       food_id: item.food_id,
       recipe_id: item.recipe_id,
       position: position,
-      portion: Menu.Portion.input(item.portion),
-      nutrients: Map.from_struct(item.nutrients)
+      portion: Portions.format(item.portion),
+      nutrients: item.nutrients
     }
   end
 
   defp frozen_item_data(%DiaryFrozenPlannedItem{} = item) do
     %{
       planned_item_ref: item.source_meal_item_id,
-      kind: item.kind,
+      kind: Library.item_kind(item),
       name: item.display_name,
       food_id: item.food_id,
       recipe_id: item.recipe_id,
       position: item.position,
-      portion: Portions.from_snapshot(item),
-      nutrients: NutrientTotals.from_fields(item)
+      portion: Portions.format(item.portion),
+      nutrients: item.nutrients
     }
   end
 
   defp entry_data(%DiaryEntry{} = entry) do
     %{
       id: entry.id,
-      kind: entry.kind,
+      kind: Library.item_kind(entry),
       name: entry.display_name,
       food_id: entry.food_id,
       recipe_id: entry.recipe_id,
-      portion: Portions.from_snapshot(entry),
-      nutrients: NutrientTotals.from_fields(entry),
+      portion: Portions.format(entry.portion),
+      nutrients: entry.nutrients,
       notes: entry.notes,
       inserted_at: entry.inserted_at,
       updated_at: entry.updated_at
     }
-  end
-
-  defp targets(plan) do
-    %{
-      calories: plan.target_calories,
-      protein_g: plan.target_protein_g,
-      carbs_g: plan.target_carbs_g,
-      fat_g: plan.target_fat_g,
-      fiber_g: plan.target_fiber_g
-    }
-  end
-
-  defp frozen_targets(frozen) do
-    case frozen |> Map.values() |> Enum.find(& &1.has_coverage) do
-      nil ->
-        %{calories: nil, protein_g: nil, carbs_g: nil, fat_g: nil, fiber_g: nil}
-
-      slot ->
-        %{
-          calories: slot.target_calories,
-          protein_g: slot.target_protein_g,
-          carbs_g: slot.target_carbs_g,
-          fat_g: slot.target_fat_g,
-          fiber_g: slot.target_fiber_g
-        }
-    end
   end
 
   defp day_timezone(slots, fallback) do
@@ -339,8 +321,7 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
   end
 
   defp same_source?(entry, item) do
-    entry.kind == item.kind and entry.source_food_id == item.source_food_id and
-      entry.source_recipe_id == item.source_recipe_id
+    entry.food_id == item.food_id and entry.recipe_id == item.recipe_id
   end
 
   defp day_summary(slots, targets) do
@@ -382,16 +363,25 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
   defp calorie_band(pct) when pct > 1.1, do: :over
   defp calorie_band(_pct), do: :on
 
-  defp each_ok(items, fun) do
-    Enum.reduce_while(items, {:ok, []}, fn item, {:ok, acc} ->
-      case fun.(item) do
-        {:ok, value} -> {:cont, {:ok, [value | acc]}}
-        {:error, _reason} = error -> {:halt, error}
-      end
-    end)
-    |> case do
-      {:ok, values} -> {:ok, Enum.reverse(values)}
-      {:error, _reason} = error -> error
-    end
+  defp available_sources(%{food_id: food_id, recipe_id: recipe_id} = item, available) do
+    %{item | food_id: if(MapSet.member?(available, {:food, food_id}), do: food_id), recipe_id: if(MapSet.member?(available, {:recipe, recipe_id}), do: recipe_id)}
   end
+
+  defp available_sources(%_{} = value, _available), do: value
+  defp available_sources(map, available) when is_map(map), do: Map.new(map, fn {key, value} -> {key, available_sources(value, available)} end)
+  defp available_sources(list, available) when is_list(list), do: Enum.map(list, &available_sources(&1, available))
+  defp available_sources(value, _available), do: value
+
+  defp round_values(%_{} = value), do: value
+
+  defp round_values(map) when is_map(map),
+    do:
+      Map.new(map, fn
+        {:portion, portion} -> {:portion, portion}
+        {key, value} -> {key, round_values(value)}
+      end)
+
+  defp round_values(list) when is_list(list), do: Enum.map(list, &round_values/1)
+  defp round_values(value) when is_float(value), do: Float.round(value, 1)
+  defp round_values(value), do: value
 end

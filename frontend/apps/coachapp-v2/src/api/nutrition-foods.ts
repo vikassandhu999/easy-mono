@@ -8,7 +8,7 @@
  * `coachApi.enhanceEndpoints` (see `git show HEAD:.../nutrition-foods.ts`) —
  * ported 1:1 below as `invalidateQueries` calls in each mutation's `onSuccess`.
  */
-import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {type QueryClient, useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import type {
   FoodCreate,
@@ -20,7 +20,7 @@ import type {
 } from '@/api/schema';
 
 import {call, client} from './client.ts';
-import {foodKeys, recipeKeys} from './keys.ts';
+import {foodKeys, nutritionCoverageKeys, nutritionDayKeys, nutritionPlanKeys, recipeKeys} from './keys.ts';
 import type {paths} from './schema.ts';
 import {omitUndefined} from './shared.ts';
 
@@ -35,6 +35,13 @@ export type NutrientTotals = FoodNutrients;
 export type RecipeRequest = RecipeCreate;
 export type RecipeUpdateRequest = RecipeUpdate;
 export type RecipeIngredientRequest = RecipeIngredientInput;
+
+/** Food and recipe nutrient changes are reflected by every live plan, coverage, and diary read. */
+function invalidateLiveNutritionCaches(qc: QueryClient) {
+  qc.invalidateQueries({queryKey: nutritionPlanKeys.all});
+  qc.invalidateQueries({queryKey: nutritionCoverageKeys.all});
+  qc.invalidateQueries({queryKey: nutritionDayKeys.all});
+}
 
 type ListFoodsQuery = NonNullable<paths['/v1/coach/nutrition-foods']['get']['parameters']['query']>;
 type ListRecipesQuery = NonNullable<paths['/v1/coach/nutrition-recipes']['get']['parameters']['query']>;
@@ -128,6 +135,8 @@ export function useUpdateFoodMutation() {
       qc.invalidateQueries({queryKey: foodKeys.detail(id)});
       qc.invalidateQueries({queryKey: foodKeys.impact(id)});
       qc.invalidateQueries({queryKey: foodKeys.lists()});
+      qc.invalidateQueries({queryKey: recipeKeys.all});
+      invalidateLiveNutritionCaches(qc);
     },
   });
 }
@@ -135,15 +144,11 @@ export function useUpdateFoodMutation() {
 export function useDeleteFoodMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({id, expectedRevision}: {id: string; expectedRevision: number}) =>
-      call(
-        client.DELETE('/v1/coach/nutrition-foods/{id}', {
-          params: {path: {id}, query: {expected_revision: expectedRevision}},
-        }),
-      ),
+    mutationFn: ({id}: {id: string}) => call(client.DELETE('/v1/coach/nutrition-foods/{id}', {params: {path: {id}}})),
     onSuccess: (_data, {id}) => {
       qc.removeQueries({queryKey: foodKeys.detail(id)});
       qc.invalidateQueries({queryKey: foodKeys.lists()});
+      qc.invalidateQueries({queryKey: nutritionDayKeys.all});
     },
   });
 }
@@ -213,6 +218,7 @@ export function useUpdateRecipeMutation() {
       qc.invalidateQueries({queryKey: recipeKeys.detail(id)});
       qc.invalidateQueries({queryKey: recipeKeys.impact(id)});
       qc.invalidateQueries({queryKey: recipeKeys.lists()});
+      invalidateLiveNutritionCaches(qc);
     },
   });
 }
@@ -220,15 +226,11 @@ export function useUpdateRecipeMutation() {
 export function useDeleteRecipeMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({id, expectedRevision}: {id: string; expectedRevision: number}) =>
-      call(
-        client.DELETE('/v1/coach/nutrition-recipes/{id}', {
-          params: {path: {id}, query: {expected_revision: expectedRevision}},
-        }),
-      ),
+    mutationFn: ({id}: {id: string}) => call(client.DELETE('/v1/coach/nutrition-recipes/{id}', {params: {path: {id}}})),
     onSuccess: (_data, {id}) => {
       qc.removeQueries({queryKey: recipeKeys.detail(id)});
       qc.invalidateQueries({queryKey: recipeKeys.lists()});
+      qc.invalidateQueries({queryKey: nutritionDayKeys.all});
     },
   });
 }

@@ -4,6 +4,7 @@ import {parseApiError} from './shared.ts';
 export type ClientPlanLifecycle = Exclude<NutritionPlan['lifecycle'], null>;
 
 const CLIENT_PLAN_LIFECYCLE_LABELS: Record<ClientPlanLifecycle, string> = {
+  active: 'Active',
   archived: 'Archived',
   current: 'Current',
   ended: 'Ended',

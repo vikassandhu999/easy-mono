@@ -24,7 +24,7 @@ defmodule Easy.Nutrition.JourneyTest do
       business: coach.business,
       recipe: recipe,
       food: food,
-      weight_g: 80.0
+      portion: %{kind: :gram, grams: 80.0}
     )
 
     ctx = trainer_ctx(coach)
@@ -59,7 +59,7 @@ defmodule Easy.Nutrition.JourneyTest do
     assert {:ok, source} = Programming.replace_menu(ctx, template.id, 1, menu)
 
     assert {:ok, plan} =
-             Programming.assign_template_to_client(ctx, client.id, source.id, 2, %{
+             Programming.assign_template_to_client(ctx, client.id, source.id, %{
                "start_date" => Date.to_iso8601(today),
                "end_date" => nil
              })

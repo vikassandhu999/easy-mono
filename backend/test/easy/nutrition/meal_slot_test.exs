@@ -18,8 +18,5 @@ defmodule Easy.Nutrition.MealSlotTest do
     assert MealSlot.workout() == [:pre_workout, :during_workout, :post_workout]
     assert MealSlot.values() == MealSlot.ordinary() ++ MealSlot.workout()
     assert MealSlot.names() == Enum.map(MealSlot.values(), &Atom.to_string/1)
-    assert MealSlot.cast("breakfast") == {:ok, :breakfast}
-    assert MealSlot.cast(:post_workout) == {:ok, :post_workout}
-    assert MealSlot.cast("brunch") == :error
   end
 end

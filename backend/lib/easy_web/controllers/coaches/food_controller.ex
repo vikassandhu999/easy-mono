@@ -3,12 +3,11 @@ defmodule EasyWeb.Coaches.FoodController do
 
   alias Easy.Nutrition.Library
   alias EasyWeb.Types.Nutrition.Food
-  alias EasyWeb.Types.Revision
 
   typed(:create, body: Food.create(), ok: {201, data(Food.t())})
   typed(:show, ok: {200, data(Food.t())})
   typed(:update, body: Food.update(), ok: {200, data(Food.t())})
-  typed(:delete, query: Revision.t(), ok: {204, nil})
+  typed(:delete, ok: {204, nil})
   typed(:index, query: Food.list_query(), ok: {200, page(Food.t())})
   typed(:categories, ok: {200, Food.category_list()})
   typed(:impact, ok: {200, Food.impact()})
@@ -41,9 +40,8 @@ defmodule EasyWeb.Coaches.FoodController do
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, _params) do
     food_id = conn.path_params["id"]
-    expected_revision = conn.query_params["expected_revision"]
 
-    with {:ok, _food} <- Library.delete_food(conn.assigns.ctx, food_id, expected_revision) do
+    with {:ok, _food} <- Library.delete_food(conn.assigns.ctx, food_id) do
       ok(conn)
     end
   end

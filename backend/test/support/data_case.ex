@@ -26,7 +26,8 @@ defmodule Easy.DataCase do
   end
 
   def setup_sandbox(tags) do
-    pid = Sandbox.start_owner!(Repo, shared: not tags[:async])
+    # Read snapshots inherit the sandbox transaction, including its isolation level.
+    pid = Sandbox.start_owner!(Repo, shared: not tags[:async], isolation: "REPEATABLE READ")
     on_exit(fn -> Sandbox.stop_owner(pid) end)
   end
 

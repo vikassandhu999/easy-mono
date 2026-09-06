@@ -37,7 +37,7 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
             build(:recipe_ingredient,
               business: coach.business,
               food: food,
-              weight_g: 200.0,
+              portion: %{kind: :gram, grams: 200.0},
               position: 0
             )
           ]
@@ -74,14 +74,14 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
       assert [yogurt, cup] = breakfast.meal_items
       assert yogurt.food_id == food.id
       assert yogurt.portion.kind == :gram
-      assert yogurt.weight_g == 50.0
+      assert yogurt.portion.grams == 50.0
       assert yogurt.nutrients.calories == 100.0
       assert yogurt.nutrients.protein == 10.0
       assert yogurt.nutrients.complete
 
       assert cup.food_id == food.id
       assert cup.portion.kind == :serving
-      assert cup.weight_g == 80.0
+      assert cup.portion.grams == 80.0
       assert cup.portion.amount == 1.0
       assert cup.portion.unit == "cup"
       assert cup.portion.label == "1 cup"
@@ -90,8 +90,7 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
       assert [
                %{
                  recipe_id: recipe_id,
-                 portion: %{kind: :serving, amount: 1.0},
-                 weight_g: 200.0,
+                 portion: %{kind: :serving, amount: 1.0, grams: 200.0},
                  nutrients: %{calories: 200.0}
                }
              ] =
@@ -100,7 +99,7 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
       assert recipe_id == recipe.id
     end
 
-    test "keeps a stored Food serving Portion after Library serving sizes change" do
+    test "resolves serving weight changes immediately and protects referenced serving identities" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
       assert {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})
@@ -133,19 +132,19 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
                  )
                )
 
-      assert [%{portion: %{unit: "cup", label: "1 cup"}, weight_g: 80.0}] =
+      assert [%{portion: %{unit: "cup", label: "1 cup", grams: 80.0}}] =
                hd(replaced.menu.meals).meal_items
 
       assert {:ok, _} =
                Library.update_food(ctx, food.id, food.revision, %{
                  serving_sizes: [
-                   %{label: "scoop", amount: 1.0, unit: "scoop", weight_g: 30.0, is_default: true}
+                   %{label: "1 cup", amount: 1.0, unit: "cup", weight_g: 30.0, is_default: true}
                  ]
                })
 
       assert {:ok, current} = Programming.get_template(ctx, template.id)
 
-      assert [%{portion: %{unit: "cup", label: "1 cup"}, weight_g: 80.0}] =
+      assert [%{portion: %{unit: "cup", label: "1 cup", grams: 30.0}}] =
                hd(current.menu.meals).meal_items
     end
 
@@ -248,7 +247,7 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
             build(:recipe_ingredient,
               business: coach.business,
               food: food,
-              weight_g: 200.0,
+              portion: %{kind: :gram, grams: 200.0},
               position: 0
             )
           ]
@@ -264,7 +263,7 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
             build(:recipe_ingredient,
               business: coach.business,
               food: food,
-              weight_g: 200.0,
+              portion: %{kind: :gram, grams: 200.0},
               position: 0
             )
           ]
@@ -284,7 +283,7 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
                  )
                )
 
-      assert [%{portion: %{kind: :gram}, weight_g: 100.0}] = hd(replaced.menu.meals).meal_items
+      assert [%{portion: %{kind: :gram, grams: 100.0}}] = hd(replaced.menu.meals).meal_items
 
       assert {:error, %Ecto.Changeset{valid?: false}} =
                Programming.replace_menu(

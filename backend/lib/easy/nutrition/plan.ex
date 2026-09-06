@@ -15,7 +15,7 @@ defmodule Easy.Nutrition.Plan do
   @foreign_key_type :binary_id
 
   @kinds [:template, :client_plan]
-  @lifecycles [:incomplete, :upcoming, :current, :ended, :archived]
+  @lifecycles [:active, :incomplete, :upcoming, :current, :ended, :archived]
   @template_fields [
     :name,
     :description,
@@ -25,7 +25,6 @@ defmodule Easy.Nutrition.Plan do
     :target_fat_g,
     :target_fiber_g
   ]
-  @client_plan_fields [:client_id, :source_template_id, :start_date, :end_date]
   @target_fields [
     :target_calories,
     :target_protein_g,
@@ -71,12 +70,13 @@ defmodule Easy.Nutrition.Plan do
   @spec lifecycles() :: [atom()]
   def lifecycles, do: @lifecycles
 
-  @spec lifecycle(t(), Date.t()) :: :incomplete | :upcoming | :current | :ended | :archived | nil
+  @spec lifecycle(t(), Date.t()) :: :active | :incomplete | :upcoming | :current | :ended | :archived
   def lifecycle(plan, date \\ Date.utc_today())
-  def lifecycle(%__MODULE__{kind: :template}, _date), do: nil
 
   def lifecycle(%__MODULE__{archived_at: archived_at}, _date) when not is_nil(archived_at),
     do: :archived
+
+  def lifecycle(%__MODULE__{kind: :template}, _date), do: :active
 
   def lifecycle(%__MODULE__{start_date: nil}, _date), do: :incomplete
 
@@ -94,7 +94,6 @@ defmodule Easy.Nutrition.Plan do
     |> cast(attrs, @template_fields)
     |> change(kind: :template, business_id: business_id, creator_id: creator_id, revision: 1)
     |> put_embed(:menu, menu)
-    |> reject_fields_invalid_for_kind(:template, supplied_field_names(attrs))
     |> validate_common_fields()
     |> validate_required([:kind, :business_id, :creator_id, :revision])
     |> apply_constraints()
@@ -135,7 +134,6 @@ defmodule Easy.Nutrition.Plan do
 
     plan
     |> cast(attrs, fields)
-    |> reject_fields_invalid_for_kind(plan.kind, supplied_field_names(attrs))
     |> validate_common_fields()
     |> validate_date_range()
     |> apply_constraints()
@@ -146,38 +144,6 @@ defmodule Easy.Nutrition.Plan do
     plan
     |> change(attrs)
     |> apply_constraints()
-  end
-
-  defp reject_fields_invalid_for_kind(changeset, :template, supplied_fields) do
-    reject_fields(
-      changeset,
-      @client_plan_fields,
-      supplied_fields,
-      "is not valid for a Nutrition Template"
-    )
-  end
-
-  defp reject_fields_invalid_for_kind(changeset, :client_plan, supplied_fields) do
-    reject_fields(
-      changeset,
-      [:client_id, :source_template_id],
-      supplied_fields,
-      "cannot be changed on a Client Nutrition Plan"
-    )
-  end
-
-  defp supplied_field_names(attrs) do
-    attrs |> Map.keys() |> Enum.map(&to_string/1) |> MapSet.new()
-  end
-
-  defp reject_fields(changeset, fields, supplied_fields, message) do
-    Enum.reduce(fields, changeset, fn field, changeset ->
-      if MapSet.member?(supplied_fields, Atom.to_string(field)) do
-        add_error(changeset, field, message)
-      else
-        changeset
-      end
-    end)
   end
 
   defp validate_common_fields(changeset) do
@@ -297,11 +263,12 @@ defmodule Easy.Nutrition.Plan do
     )
   end
 
-  @spec for_menu_item(Ecto.Queryable.t(), atom(), String.t(), atom() | nil) :: Ecto.Query.t()
+  @spec for_menu_item(Ecto.Queryable.t(), atom(), String.t(), atom() | map() | nil) :: Ecto.Query.t()
   def for_menu_item(query, kind, id, portion_kind \\ nil) do
     field = if kind == :food, do: :food_id, else: :recipe_id
     item = %{field => id}
-    item = if portion_kind, do: Map.put(item, :portion, %{kind: portion_kind}), else: item
+    portion = if is_atom(portion_kind) and not is_nil(portion_kind), do: %{kind: portion_kind}, else: portion_kind
+    item = if portion, do: Map.put(item, :portion, portion), else: item
     fragment_value = %{meals: [%{meal_items: [item]}]}
     from(plan in query, where: fragment("? @> ?::jsonb", plan.menu, ^fragment_value))
   end

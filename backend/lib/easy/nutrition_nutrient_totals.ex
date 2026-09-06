@@ -1,5 +1,9 @@
 defmodule Easy.Nutrition.NutrientTotals do
-  alias Easy.Nutrition.{Food, Recipe, RecipeIngredient}
+  use Ecto.Type
+
+  alias Easy.Nutrition.{Food, Portions, Recipe, RecipeIngredient}
+
+  @fields [:calories, :protein, :carbohydrates, :fat, :fiber]
 
   @type t() :: %{
           calories: float() | nil,
@@ -62,21 +66,41 @@ defmodule Easy.Nutrition.NutrientTotals do
     }
   end
 
-  @spec from_fields(map()) :: t()
-  def from_fields(item) do
-    complete(item.calories, item.protein, item.carbohydrates, item.fat, item.fiber)
+  @impl Ecto.Type
+  def embed_as(_format), do: :dump
+
+  @impl Ecto.Type
+  def type, do: :map
+
+  @impl Ecto.Type
+  def cast(values) when is_map(values) do
+    nutrients = Map.take(values, @fields)
+
+    if map_size(nutrients) == 5 and Enum.all?(Map.values(nutrients), &(is_nil(&1) or (is_number(&1) and &1 >= 0))) do
+      {:ok, Map.put(nutrients, :complete, Enum.all?(Map.values(nutrients), &is_number/1))}
+    else
+      :error
+    end
   end
 
+  def cast(_values), do: :error
+
+  @impl Ecto.Type
+  def load(values), do: cast(Map.new(@fields, &{&1, Map.get(values, to_string(&1))}))
+
+  @impl Ecto.Type
+  def dump(values), do: {:ok, Map.take(values, @fields)}
+
   @spec sum([map()]) :: t()
-  def sum(items), do: combine(Enum.map(items, &from_fields/1))
+  def sum(items), do: combine(Enum.map(items, & &1.nutrients))
 
   @spec combine([t()]) :: t()
   def combine([]), do: @empty
   def combine([first | rest]), do: Enum.reduce(rest, first, &add(&2, &1))
 
-  defp from_ingredient(%RecipeIngredient{food: %Food{} = food, weight_g: weight})
-       when is_number(weight) and weight > 0 do
-    scale(from_food(food), weight / 100)
+  defp from_ingredient(%RecipeIngredient{food: %Food{} = food, portion: portion}) do
+    {:ok, resolved} = Portions.resolve_food(food, portion)
+    scale(from_food(food), resolved.grams / 100)
   end
 
   defp from_ingredient(_ingredient), do: @empty

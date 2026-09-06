@@ -63,18 +63,19 @@ defmodule Easy.Nutrition.ProgrammingTemplateTest do
       assert listed.kind == :template
     end
 
-    test "rejects Client Plan fields and invalid names" do
+    test "ignores trusted relationship fields and rejects invalid names" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
 
-      assert {:error, relationship_fields} =
+      assert {:ok, template} =
                Programming.create_template(ctx, %{
                  "name" => "Invalid",
                  "client_id" => Ecto.UUID.generate(),
                  "start_date" => "2026-08-15"
                })
 
-      assert %{client_id: [_], start_date: [_]} = errors_on(relationship_fields)
+      assert template.client_id == nil
+      assert template.start_date == nil
 
       assert {:error, blank_name} = Programming.create_template(ctx, %{"name" => "   "})
       assert %{name: ["can't be blank"]} = errors_on(blank_name)
@@ -86,7 +87,7 @@ defmodule Easy.Nutrition.ProgrammingTemplateTest do
     end
   end
 
-  describe "duplicate_template/3" do
+  describe "duplicate_template/2" do
     test "duplicates an active Template, including its Everyday Day Pattern and Week Schedule" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
@@ -97,7 +98,7 @@ defmodule Easy.Nutrition.ProgrammingTemplateTest do
                  "target_protein_g" => 140.0
                })
 
-      assert {:ok, copy} = Programming.duplicate_template(ctx, template.id, 1)
+      assert {:ok, copy} = Programming.duplicate_template(ctx, template.id)
       assert copy.id != template.id
       assert copy.kind == :template
       assert copy.name == "Strength Base (Copy)"
@@ -109,13 +110,13 @@ defmodule Easy.Nutrition.ProgrammingTemplateTest do
       assert Repo.get!(Plan, template.id).revision == 1
     end
 
-    test "rejects an archived Template, a Client Plan, and a stale source revision" do
+    test "rejects an archived Template, a Client Plan, and copies the latest source" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
       assert {:ok, template} = Programming.create_template(ctx, %{"name" => "Source"})
-      assert {:ok, archived} = Programming.archive_template(ctx, template.id, 1)
+      assert {:ok, archived} = Programming.archive_template(ctx, template.id)
 
-      assert {:error, :not_found} = Programming.duplicate_template(ctx, archived.id, 2)
+      assert {:error, :not_found} = Programming.duplicate_template(ctx, archived.id)
 
       client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
 
@@ -127,12 +128,12 @@ defmodule Easy.Nutrition.ProgrammingTemplateTest do
           kind: :client_plan
         )
 
-      assert {:error, :not_found} = Programming.duplicate_template(ctx, client_plan.id, 1)
+      assert {:error, :not_found} = Programming.duplicate_template(ctx, client_plan.id)
 
       assert {:ok, active} = Programming.create_template(ctx, %{"name" => "Fresh"})
 
-      assert {:error, %Ecto.Changeset{action: :stale_revision, data: %Plan{revision: 1}}} =
-               Programming.duplicate_template(ctx, active.id, 9)
+      assert {:ok, _copy} =
+               Programming.duplicate_template(ctx, active.id)
     end
   end
 

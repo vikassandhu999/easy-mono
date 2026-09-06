@@ -103,7 +103,6 @@ function PlanAssignContent({kind, clientId, clientName, onClose}: Props) {
           id: selected.plan.id,
           body: {
             end_date: endDate,
-            expected_revision: selected.plan.revision,
             start_date: startDate,
           },
         });

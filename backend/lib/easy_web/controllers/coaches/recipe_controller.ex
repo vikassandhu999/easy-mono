@@ -3,12 +3,11 @@ defmodule EasyWeb.Coaches.RecipeController do
 
   alias Easy.Nutrition.Library
   alias EasyWeb.Types.Nutrition.Recipe
-  alias EasyWeb.Types.Revision
 
   typed(:create, body: Recipe.create(), ok: {201, data(Recipe.t())})
   typed(:show, ok: {200, data(Recipe.t())})
   typed(:update, body: Recipe.update(), ok: {200, data(Recipe.t())})
-  typed(:delete, query: Revision.t(), ok: {204, nil})
+  typed(:delete, ok: {204, nil})
   typed(:index, query: Recipe.list_query(), ok: {200, page(Recipe.t())})
   typed(:impact, ok: {200, Recipe.impact()})
   typed(:copy, ok: {201, data(Recipe.t())})
@@ -40,9 +39,8 @@ defmodule EasyWeb.Coaches.RecipeController do
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, _params) do
     recipe_id = conn.path_params["id"]
-    expected_revision = conn.query_params["expected_revision"]
 
-    with {:ok, _recipe} <- Library.delete_recipe(conn.assigns.ctx, recipe_id, expected_revision) do
+    with {:ok, _recipe} <- Library.delete_recipe(conn.assigns.ctx, recipe_id) do
       ok(conn)
     end
   end

@@ -102,7 +102,7 @@ An independent nutrition prescription owned by one client. It may originate from
 _Avoid_: Assigned nutrition plan
 
 **Menu**:
-The document of Meals, Menu Items, Day Patterns, and Week Schedule owned by one Nutrition Template or Client Nutrition Plan. It is saved and copied as a whole. Meals, items, and patterns have identities local to that Menu.
+The document of Meals, Menu Items, Day Patterns, and Week Schedule owned by one Nutrition Template or Client Nutrition Plan. It is saved and copied as a whole. Meals, items, and patterns have identities local to that Menu. Item names, serving weights, and nutrients follow the current Library; recorded Diary values stay frozen.
 _Avoid_: Plan structure
 
 **Day Pattern**:
@@ -137,4 +137,4 @@ One recorded occurrence of actual intake. It may retain an association with one 
 _Avoid_: Food log, meal log
 
 **Nutrition Day**:
-The shared client and coach read model combining live guidance for unstarted slots with frozen rows for started slots.
+The shared client and coach view combining live guidance for unstarted slots with recorded guidance and intake for started slots. Its targets freeze when the first slot is saved and remain the same for the whole date.

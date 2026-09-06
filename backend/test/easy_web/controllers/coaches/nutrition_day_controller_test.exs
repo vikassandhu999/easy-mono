@@ -42,7 +42,7 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
       refute data["summary"]["has_intake"]
     end
 
-    test "rejects reversed ranges and paginates history", ctx do
+    test "rejects reversed ranges and returns the full requested history", ctx do
       reversed =
         get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/nutrition-days", %{
           "from" => "2026-08-12",
@@ -51,16 +51,10 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
 
       assert json_response(reversed, 422)
 
-      conn =
-        get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/nutrition-days", %{
-          "from" => "2026-08-10",
-          "to" => "2026-08-14",
-          "offset" => "1",
-          "limit" => "2"
-        })
+      conn = get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/nutrition-days", %{"from" => "2026-08-10", "to" => "2026-08-14"})
 
-      assert %{"data" => days, "count" => 5} = json_response(conn, 200)
-      assert Enum.map(days, & &1["date"]) == ["2026-08-11", "2026-08-12"]
+      assert %{"data" => days} = json_response(conn, 200)
+      assert Enum.map(days, & &1["date"]) == ["2026-08-10", "2026-08-11", "2026-08-12", "2026-08-13", "2026-08-14"]
     end
 
     test "conceals a client from another business", ctx do
@@ -88,7 +82,7 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
           "to" => "not-a-date"
         })
 
-      assert %{"data" => [%{"date" => ^today}], "count" => 1} = json_response(conn, 200)
+      assert %{"data" => [%{"date" => ^today}]} = json_response(conn, 200)
     end
   end
 
@@ -131,7 +125,7 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
     today = local_today(ctx.client)
 
     {:ok, plan} =
-      Programming.assign_template_to_client(coach_ctx, ctx.client.id, source.id, 2, %{
+      Programming.assign_template_to_client(coach_ctx, ctx.client.id, source.id, %{
         "start_date" => Date.to_iso8601(today),
         "end_date" => nil
       })

@@ -63,3 +63,5 @@ config :easy, Easy.Razorpay,
   plan_id: "plan_test",
   seat_price_inr: 499,
   req_options: [plug: {Req.Test, Easy.Razorpay}]
+
+config :easy, :check_typed_responses, true

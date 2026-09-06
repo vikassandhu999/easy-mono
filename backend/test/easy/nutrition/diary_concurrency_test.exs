@@ -80,7 +80,12 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
 
   defp assert_one_winner(results) do
     assert Enum.count(results, &match?({:ok, _}, &1)) == 1
-    assert Enum.count(results, &match?({:error, %Ecto.Changeset{action: :stale_revision}}, &1)) == 1
+
+    assert Enum.count(results, fn
+             {:error, :conflict} -> true
+             {:error, %Ecto.Changeset{action: :stale_revision}} -> true
+             _ -> false
+           end) == 1
   end
 
   defp cleanup(business_id, user_ids) do

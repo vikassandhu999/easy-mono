@@ -33,8 +33,7 @@ export default function FoodListItem({food}: {food: Food}) {
   const isSystem = food.source === 'system';
   const kcal = food.calories_per_100g;
   const isVideo = food.media?.kind === 'video';
-  const thumbSrc =
-    food.media?.kind === 'image' ? (food.media.url ?? undefined) : isVideo ? undefined : (food.image_url ?? undefined);
+  const thumbSrc = food.media?.kind === 'image' ? (food.media.url ?? undefined) : undefined;
 
   return (
     <BrowseRow

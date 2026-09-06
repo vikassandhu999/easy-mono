@@ -3,6 +3,7 @@ defmodule Easy.Training.Programming do
   alias Easy.Ctx
   alias Easy.Orgs.Business
   alias Easy.Repo
+  alias Easy.Revision
   alias Easy.Training.{Library, PlannedSet, PrescribedExercise, TrainingPlan, TrainingWorkout, WorkoutSchedule}
   alias Easy.Utils
 
@@ -15,7 +16,7 @@ defmodule Easy.Training.Programming do
   @spec create_template(Ctx.t(), map()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_template(%Ctx{} = ctx, attrs) do
-    with :ok <- ensure_coach(ctx) do
+    with :ok <- Ctx.ensure_coach(ctx) do
       ctx.business_id
       |> TrainingPlan.insert_changeset(ctx.user_id, attrs)
       |> Repo.insert()
@@ -31,7 +32,7 @@ defmodule Easy.Training.Programming do
     search = opts |> Keyword.get(:search, "") |> to_string() |> String.trim()
     archived = Keyword.get(opts, :archived)
 
-    with :ok <- ensure_coach(ctx) do
+    with :ok <- Ctx.ensure_coach(ctx) do
       query =
         ctx
         |> template_query()
@@ -57,7 +58,7 @@ defmodule Easy.Training.Programming do
     limit = opts |> Keyword.get(:limit, 20) |> max(1) |> min(100)
     archived = Keyword.get(opts, :archived)
 
-    with :ok <- ensure_coach(ctx),
+    with :ok <- Ctx.ensure_coach(ctx),
          {:ok, _client} <- Clients.authorize_client(ctx, client_id) do
       query =
         TrainingPlan
@@ -153,7 +154,7 @@ defmodule Easy.Training.Programming do
 
   @spec get_template(Ctx.t(), String.t()) :: {:ok, TrainingPlan.t()} | {:error, :not_found}
   def get_template(%Ctx{} = ctx, template_id) do
-    with :ok <- ensure_coach(ctx) do
+    with :ok <- Ctx.ensure_coach(ctx) do
       ctx
       |> template_query()
       |> TrainingPlan.include_workouts(ctx.business_id)
@@ -165,7 +166,7 @@ defmodule Easy.Training.Programming do
   @spec duplicate_template(Ctx.t(), String.t()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def duplicate_template(%Ctx{} = ctx, template_id) do
-    with :ok <- ensure_coach(ctx) do
+    with :ok <- Ctx.ensure_coach(ctx) do
       result =
         Repo.transaction(fn ->
           lock_business_for_duplicate_name(ctx.business_id)
@@ -179,7 +180,7 @@ defmodule Easy.Training.Programming do
   @spec assign_template_to_client(Ctx.t(), String.t(), String.t(), map()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def assign_template_to_client(%Ctx{} = ctx, client_id, template_id, attrs) do
-    with :ok <- ensure_coach(ctx) do
+    with :ok <- Ctx.ensure_coach(ctx) do
       result = Repo.transaction(fn -> assign_visible_template(ctx, client_id, template_id, attrs) end)
 
       finalize_plan_mutation(result, ctx, true)
@@ -188,7 +189,7 @@ defmodule Easy.Training.Programming do
 
   @spec get_plan(Ctx.t(), String.t()) :: {:ok, TrainingPlan.t()} | {:error, :not_found}
   def get_plan(%Ctx{} = ctx, plan_id) do
-    with :ok <- ensure_coach(ctx),
+    with :ok <- Ctx.ensure_coach(ctx),
          {:ok, plan} <-
            ctx
            |> plan_query()
@@ -269,14 +270,14 @@ defmodule Easy.Training.Programming do
   end
 
   defp mutate_template(ctx, template_id, expected_revision, mutation, opts \\ []) do
-    with :ok <- ensure_coach(ctx) do
+    with :ok <- Ctx.ensure_coach(ctx) do
       result = Repo.transaction(fn -> mutate_locked_template(ctx, template_id, expected_revision, mutation) end)
       finalize_template_mutation(result, ctx, Keyword.get(opts, :reload?, true))
     end
   end
 
   defp mutate_plan(ctx, plan_id, expected_revision, mutation, opts \\ []) do
-    with :ok <- ensure_coach(ctx) do
+    with :ok <- Ctx.ensure_coach(ctx) do
       result = Repo.transaction(fn -> mutate_locked_plan(ctx, plan_id, expected_revision, mutation) end)
       finalize_plan_mutation(result, ctx, Keyword.get(opts, :reload?, true))
     end
@@ -284,7 +285,7 @@ defmodule Easy.Training.Programming do
 
   defp mutate_locked_template(ctx, template_id, expected_revision, mutation) do
     template = ctx |> template_query() |> lock("FOR UPDATE") |> Repo.get(template_id)
-    mutate_revisioned(template, expected_revision, mutation)
+    Revision.mutate(template, expected_revision, mutation)
   end
 
   defp duplicate_locked_template(ctx, template_id) do
@@ -404,26 +405,13 @@ defmodule Easy.Training.Programming do
     plan = ctx |> plan_query() |> lock("FOR UPDATE") |> Repo.get(plan_id)
 
     case authorize_locked_plan(ctx, plan) do
-      :ok -> mutate_revisioned(plan, expected_revision, mutation)
+      :ok -> Revision.mutate(plan, expected_revision, mutation)
       :error -> Repo.rollback(:not_found)
     end
   end
 
   defp authorize_locked_plan(_ctx, nil), do: :error
   defp authorize_locked_plan(ctx, plan), do: if(authorize_plan(ctx, plan) == :ok, do: :ok, else: :error)
-
-  defp mutate_revisioned(nil, _expected_revision, _mutation), do: Repo.rollback(:not_found)
-
-  defp mutate_revisioned(%TrainingPlan{revision: revision} = plan, expected_revision, _mutation)
-       when revision != expected_revision,
-       do: Repo.rollback(stale_revision_changeset(plan))
-
-  defp mutate_revisioned(plan, _expected_revision, mutation) do
-    case mutation.(plan) do
-      {:ok, changed} -> changed
-      {:error, reason} -> Repo.rollback(reason)
-    end
-  end
 
   defp finalize_template_mutation({:ok, template}, ctx, true), do: get_template(ctx, template.id)
   defp finalize_template_mutation({:ok, template}, _ctx, false), do: {:ok, template}
@@ -903,16 +891,6 @@ defmodule Easy.Training.Programming do
 
   defp authorize_plan(ctx, %TrainingPlan{kind: :client_plan, client_id: client_id}),
     do: Clients.authorize_client_id(ctx, client_id)
-
-  defp stale_revision_changeset(plan) do
-    plan
-    |> change()
-    |> add_error(:revision, "is stale")
-    |> Map.put(:action, :stale_revision)
-  end
-
-  defp ensure_coach(%Ctx{coach_id: coach_id}) when not is_nil(coach_id), do: :ok
-  defp ensure_coach(%Ctx{}), do: {:error, :not_found}
 
   defp ok_or_not_found(nil), do: {:error, :not_found}
   defp ok_or_not_found(value), do: {:ok, value}

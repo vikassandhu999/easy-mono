@@ -1,90 +1,31 @@
-defmodule Easy.Nutrition.Menu.Portion do
-  use Ecto.Schema
-  import Ecto.Changeset
-
-  @type t() :: %__MODULE__{}
-  @primary_key false
-  embedded_schema do
-    field :kind, Ecto.Enum, values: [:gram, :serving]
-    field :grams, :float
-    field :amount, :float
-    field :unit, :string
-    field :label, :string
-  end
-
-  @spec changeset(t(), map()) :: Ecto.Changeset.t()
-  def changeset(portion, attrs) do
-    changeset = cast(portion, attrs, [:kind])
-
-    case get_field(changeset, :kind) do
-      :gram ->
-        changeset
-        |> cast(attrs, [:grams])
-        |> validate_required([:grams])
-        |> validate_number(:grams, greater_than: 0)
-
-      :serving ->
-        changeset
-        |> cast(attrs, [:amount, :unit, :label])
-        |> validate_required([:amount, :unit])
-        |> validate_number(:amount, greater_than: 0)
-
-      _other ->
-        add_error(changeset, :kind, "must be gram or serving")
-    end
-  end
-
-  @spec input(t()) :: Easy.Nutrition.Portions.t()
-  def input(%__MODULE__{kind: :gram, grams: grams}), do: %{kind: :gram, grams: grams}
-  def input(%__MODULE__{kind: :serving} = portion), do: Map.take(portion, [:kind, :amount, :unit, :label])
-end
-
-defmodule Easy.Nutrition.Menu.Nutrients do
-  use Ecto.Schema
-
-  @type t() :: %__MODULE__{}
-  @primary_key false
-  embedded_schema do
-    field :calories, :float
-    field :protein, :float
-    field :carbohydrates, :float
-    field :fat, :float
-    field :fiber, :float
-    field :complete, :boolean, default: false
-  end
-end
-
 defmodule Easy.Nutrition.Menu.Item do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Easy.Nutrition.Menu.{Nutrients, Portion}
+  alias Easy.Nutrition.Portions
 
   @type t() :: %__MODULE__{}
   @primary_key {:id, :binary_id, autogenerate: false}
   embedded_schema do
-    field :kind, Ecto.Enum, values: [:food, :recipe]
     field :food_id, Ecto.UUID
     field :recipe_id, Ecto.UUID
     field :name, :string, virtual: true
-    field :weight_g, :float
-    embeds_one :portion, Portion
-    embeds_one :nutrients, Nutrients
+    field :portion, Portions
+    field :nutrients, :map, virtual: true
   end
 
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(item, attrs) do
     item
-    |> cast(attrs, [:id, :kind, :food_id, :recipe_id])
-    |> validate_required([:id, :kind])
-    |> cast_embed(:portion, required: true)
+    |> cast(attrs, [:id, :food_id, :recipe_id, :portion])
+    |> validate_required([:id, :portion])
     |> validate_source()
   end
 
   defp validate_source(changeset) do
-    case {get_field(changeset, :kind), get_field(changeset, :food_id), get_field(changeset, :recipe_id)} do
-      {:food, id, nil} when is_binary(id) -> changeset
-      {:recipe, nil, id} when is_binary(id) -> changeset
-      _other -> add_error(changeset, :kind, "must match exactly one Library reference")
+    case {get_field(changeset, :food_id), get_field(changeset, :recipe_id)} do
+      {id, nil} when is_binary(id) -> changeset
+      {nil, id} when is_binary(id) -> changeset
+      _other -> add_error(changeset, :food_id, "must supply exactly one Library reference")
     end
   end
 end
@@ -161,8 +102,8 @@ end
 defmodule Easy.Nutrition.Menu do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Easy.Nutrition.{Library, MealSlot, NutrientTotals}
-  alias Easy.Nutrition.Menu.{DayPattern, Meal, Nutrients, Portion}
+  alias Easy.Nutrition.{Library, MealSlot, NutrientTotals, Portions}
+  alias Easy.Nutrition.Menu.{DayPattern, Meal}
 
   @weekdays [:monday, :tuesday, :wednesday, :thursday, :friday, :saturday, :sunday]
   @type t() :: %__MODULE__{}
@@ -231,7 +172,7 @@ defmodule Easy.Nutrition.Menu do
   @spec references(t()) :: [Library.item_spec()]
   def references(menu) do
     Enum.map(items(menu), fn item ->
-      %{kind: item.kind, id: item.food_id || item.recipe_id, portion: Portion.input(item.portion)}
+      %{kind: Library.item_kind(item), id: item.food_id || item.recipe_id, portion: Portions.format(item.portion)}
     end)
   end
 
@@ -241,13 +182,8 @@ defmodule Easy.Nutrition.Menu do
 
     map_items(menu, fn item ->
       value = Map.fetch!(by_id, item.id)
-      %{item | weight_g: value.portion.grams, nutrients: struct!(Nutrients, value.nutrients)}
+      %{item | name: value.item.name, portion: value.portion, nutrients: value.nutrients}
     end)
-  end
-
-  @spec name_items(t(), map()) :: t()
-  def name_items(menu, names) do
-    map_items(menu, fn item -> %{item | name: Map.get(names, {item.kind, item.food_id || item.recipe_id})} end)
   end
 
   defp map_items(menu, fun) do
@@ -295,11 +231,11 @@ defmodule Easy.Nutrition.Menu do
   defp format_item(item) do
     %{
       id: item.id,
-      kind: item.kind,
+      kind: Library.item_kind(item),
       food_id: item.food_id,
       recipe_id: item.recipe_id,
       name: item.name,
-      portion: Portion.input(item.portion),
+      portion: Portions.format(item.portion),
       nutrients: NutrientTotals.round(item.nutrients)
     }
   end

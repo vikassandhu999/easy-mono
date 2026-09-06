@@ -19,6 +19,7 @@ defmodule Easy.LibraryMedia.Media do
     field :uploaded_by_type, Ecto.Enum, values: @actors
     field :uploaded_by_id, :binary_id
     field :storage_key, :string
+    field :external_url, :string
     field :content_type, :string
     field :byte_size, :integer
 
@@ -37,6 +38,7 @@ defmodule Easy.LibraryMedia.Media do
     |> validate_required([:business_id, :storage_key, :content_type, :byte_size])
     |> validate_inclusion(:content_type, content_types())
     |> validate_byte_size()
+    |> check_constraint(:storage_key, name: :library_media_source_check)
     |> unique_constraint(:storage_key)
     |> foreign_key_constraint(:business_id)
   end
@@ -44,6 +46,11 @@ defmodule Easy.LibraryMedia.Media do
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do
     from(m in query, where: m.business_id == ^business_id)
+  end
+
+  @spec attachable(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def attachable(query \\ __MODULE__, business_id) do
+    from(m in query, where: m.business_id == ^business_id or (is_nil(m.business_id) and m.uploaded_by_type == :system))
   end
 
   @spec content_types() :: [String.t()]

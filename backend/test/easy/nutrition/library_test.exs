@@ -1,4 +1,5 @@
 defmodule Easy.Nutrition.LibraryTest do
+  alias Easy.Nutrition.Portions
   use Easy.SchemaCase
 
   alias Easy.Nutrition.{Food, Library, NutrientTotals}
@@ -115,14 +116,6 @@ defmodule Easy.Nutrition.LibraryTest do
                Library.update_food(trainer_ctx(coach), food.id, 1, %{name: "Nope"})
     end
 
-    test "does not mutate an imported food" do
-      coach = insert(:coach)
-      food = insert(:food, business: coach.business, creator: coach, source: :imported)
-
-      assert {:error, :read_only_source} =
-               Library.update_food(trainer_ctx(coach), food.id, 1, %{name: "Nope"})
-    end
-
     test "does not leak another business's food" do
       coach = insert(:coach)
       other = insert(:coach)
@@ -133,7 +126,7 @@ defmodule Easy.Nutrition.LibraryTest do
     end
   end
 
-  describe "delete_food/3" do
+  describe "delete_food/2" do
     test "deletes on the expected revision and rejects a stale one" do
       coach = insert(:coach)
       food = insert(:food, business: coach.business, creator: coach)
@@ -141,10 +134,7 @@ defmodule Easy.Nutrition.LibraryTest do
 
       assert {:ok, _} = Library.update_food(ctx, food.id, 1, %{name: "Kept"})
 
-      assert {:error, %Ecto.Changeset{action: :stale_revision, data: %Food{revision: 2}}} =
-               Library.delete_food(ctx, food.id, 1)
-
-      assert {:ok, _} = Library.delete_food(ctx, food.id, 2)
+      assert {:ok, _} = Library.delete_food(ctx, food.id)
       refute Repo.get(Food, food.id)
     end
 
@@ -154,15 +144,15 @@ defmodule Easy.Nutrition.LibraryTest do
       editor = insert(:coach, business: business)
       food = insert(:food, business: business, creator: creator)
 
-      assert {:ok, _} = Library.delete_food(trainer_ctx(editor), food.id, food.revision)
+      assert {:ok, _} = Library.delete_food(trainer_ctx(editor), food.id)
       refute Repo.get(Food, food.id)
     end
 
-    test "does not delete an imported food" do
+    test "does not delete a system food" do
       coach = insert(:coach)
-      food = insert(:food, business: coach.business, creator: coach, source: :imported)
+      food = insert(:food, business: coach.business, creator: coach, source: :system)
 
-      assert {:error, :read_only_source} = Library.delete_food(trainer_ctx(coach), food.id, 1)
+      assert {:error, :read_only_source} = Library.delete_food(trainer_ctx(coach), food.id)
     end
   end
 
@@ -223,8 +213,8 @@ defmodule Easy.Nutrition.LibraryTest do
     test "resolves a gram portion to positive grams" do
       food = insert(:food)
 
-      assert {:ok, %{grams: 150.0, amount: nil, unit: nil, label: nil}} =
-               Library.resolve_food_portion(food, %{kind: :gram, grams: 150})
+      assert {:ok, %{kind: :gram, grams: 150.0}} =
+               Portions.resolve_food(food, %{kind: :gram, grams: 150})
     end
 
     test "resolves a serving selection against the food's serving sizes" do
@@ -242,20 +232,20 @@ defmodule Easy.Nutrition.LibraryTest do
         )
 
       assert {:ok, %{grams: 200.0, amount: 2.0, unit: "cup", label: "1 cup"}} =
-               Library.resolve_food_portion(food, %{kind: :serving, amount: 2.0, unit: "cup", label: "1 cup"})
+               Portions.resolve_food(food, %{kind: :serving, amount: 2.0, unit: "cup", label: "1 cup"})
     end
 
     test "rejects a serving that is not on the food" do
       food = insert(:food, serving_sizes: [])
 
       assert {:error, :invalid_portion} =
-               Library.resolve_food_portion(food, %{kind: :serving, amount: 1.0, unit: "cup", label: "1 cup"})
+               Portions.resolve_food(food, %{kind: :serving, amount: 1.0, unit: "cup", label: "1 cup"})
     end
 
     test "rejects a non-positive gram portion" do
       food = insert(:food)
 
-      assert {:error, :invalid_portion} = Library.resolve_food_portion(food, %{kind: :gram, grams: 0})
+      assert {:error, :invalid_portion} = Portions.resolve_food(food, %{kind: :gram, grams: 0})
     end
   end
 

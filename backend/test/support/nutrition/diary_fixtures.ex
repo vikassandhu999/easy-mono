@@ -47,7 +47,7 @@ defmodule Easy.Nutrition.DiaryFixtures do
     start_date = Date.add(today, Keyword.get(opts, :start_offset, 0))
 
     {:ok, plan} =
-      Programming.assign_template_to_client(ctx, client.id, source.id, 2, %{
+      Programming.assign_template_to_client(ctx, client.id, source.id, %{
         "start_date" => Date.to_iso8601(start_date),
         "end_date" => nil
       })
@@ -279,5 +279,13 @@ defmodule Easy.Nutrition.DiaryFixtures do
       day_patterns: [%{id: pattern.id, name: pattern.name, slots: options}],
       schedule: Map.new(Menu.weekdays(), &{&1, pattern.id})
     }
+  end
+
+  @spec move_slot_date(Easy.Nutrition.DiarySlot.t(), Date.t()) :: Easy.Nutrition.DiarySlot.t()
+  def move_slot_date(slot, date) do
+    day = Easy.Repo.get!(Easy.Nutrition.DiaryDay, slot.nutrition_diary_day_id)
+    attrs = day |> Map.from_struct() |> Map.drop([:id, :__meta__, :business, :client, :inserted_at, :updated_at]) |> Map.put(:local_date, date)
+    shifted = Easy.Repo.insert!(struct!(Easy.Nutrition.DiaryDay, attrs))
+    Easy.Repo.update!(Ecto.Changeset.change(slot, local_date: date, nutrition_diary_day_id: shifted.id))
   end
 end

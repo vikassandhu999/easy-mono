@@ -19,12 +19,8 @@ defmodule Easy.Nutrition.DiarySlot do
     field :applied_timezone, :string
     field :has_coverage, :boolean
     field :revision, :integer, default: 1
-    field :target_calories, :float
-    field :target_protein_g, :float
-    field :target_carbs_g, :float
-    field :target_fat_g, :float
-    field :target_fiber_g, :float
 
+    belongs_to :day, Easy.Nutrition.DiaryDay, foreign_key: :nutrition_diary_day_id
     belongs_to :business, Orgs.Business
     belongs_to :client, Client
     belongs_to :active_frozen_option, DiaryFrozenOption, foreign_key: :active_frozen_option_id
@@ -38,20 +34,17 @@ defmodule Easy.Nutrition.DiarySlot do
   def insert_changeset(business_id, client_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, [
+      :nutrition_diary_day_id,
       :local_date,
       :meal_slot,
       :applied_timezone,
       :has_coverage,
-      :revision,
-      :target_calories,
-      :target_protein_g,
-      :target_carbs_g,
-      :target_fat_g,
-      :target_fiber_g
+      :revision
     ])
     |> put_change(:business_id, business_id)
     |> put_change(:client_id, client_id)
     |> validate_required([
+      :nutrition_diary_day_id,
       :local_date,
       :meal_slot,
       :applied_timezone,
@@ -118,4 +111,7 @@ defmodule Easy.Nutrition.DiarySlot do
       preload: [frozen_options: ^option_query, entries: ^entry_query]
     )
   end
+
+  @spec active_option(t()) :: DiaryFrozenOption.t() | nil
+  def active_option(slot), do: Enum.find(slot.frozen_options, &(&1.id == slot.active_frozen_option_id)) || List.first(slot.frozen_options)
 end

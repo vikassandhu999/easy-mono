@@ -5,7 +5,7 @@ defmodule Easy.Nutrition.ProgrammingTemplateLifecycleTest do
   alias Easy.Repo
 
   describe "Nutrition Template lifecycle" do
-    test "updates metadata and targets only at the expected revision" do
+    test "updates metadata and targets only without a revision precondition" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
       assert {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})
@@ -29,16 +29,16 @@ defmodule Easy.Nutrition.ProgrammingTemplateLifecycleTest do
       assert Repo.get!(Plan, template.id).name == "Updated Template"
     end
 
-    test "rejects Client Plan fields when updating a Nutrition Template" do
+    test "casts only template fields when updating a Nutrition Template" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
       assert {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})
 
-      assert {:error, changeset} =
+      assert {:ok, updated} =
                Programming.update_template(ctx, template.id, 1, %{"start_date" => "not-a-date"})
 
-      assert %{start_date: ["is not valid for a Nutrition Template"]} = errors_on(changeset)
-      assert Repo.get!(Plan, template.id).revision == 1
+      assert updated.start_date == nil
+      assert updated.revision == 2
     end
 
     test "archives and restores explicitly with monotonic revisions" do
@@ -46,7 +46,7 @@ defmodule Easy.Nutrition.ProgrammingTemplateLifecycleTest do
       ctx = trainer_ctx(coach)
       assert {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})
 
-      assert {:ok, archived} = Programming.archive_template(ctx, template.id, 1)
+      assert {:ok, archived} = Programming.archive_template(ctx, template.id)
       assert archived.archived_at
       assert archived.revision == 2
 
@@ -55,10 +55,7 @@ defmodule Easy.Nutrition.ProgrammingTemplateLifecycleTest do
 
       assert %{archived_at: ["is read-only"]} = errors_on(changeset)
 
-      assert {:error, %Ecto.Changeset{action: :stale_revision, data: %Plan{revision: 2}}} =
-               Programming.restore_template(ctx, template.id, 1)
-
-      assert {:ok, restored} = Programming.restore_template(ctx, template.id, 2)
+      assert {:ok, restored} = Programming.restore_template(ctx, template.id)
       assert restored.archived_at == nil
       assert restored.revision == 3
     end
@@ -79,7 +76,7 @@ defmodule Easy.Nutrition.ProgrammingTemplateLifecycleTest do
           start_date: ~D[2026-09-01]
         )
 
-      assert {:ok, deleted} = Programming.delete_template(ctx, template.id, 1)
+      assert {:ok, deleted} = Programming.delete_template(ctx, template.id)
       assert deleted.id == template.id
       assert Repo.get(Plan, template.id) == nil
       assert Repo.get!(Plan, client_plan.id).source_template_id == nil
@@ -110,23 +107,20 @@ defmodule Easy.Nutrition.ProgrammingTemplateLifecycleTest do
       for id <- [hidden.id, client_plan.id] do
         assert {:error, :not_found} = Programming.get_template(ctx, id)
         assert {:error, :not_found} = Programming.update_template(ctx, id, 1, %{"name" => "Nope"})
-        assert {:error, :not_found} = Programming.archive_template(ctx, id, 1)
-        assert {:error, :not_found} = Programming.restore_template(ctx, id, 1)
-        assert {:error, :not_found} = Programming.delete_template(ctx, id, 1)
+        assert {:error, :not_found} = Programming.archive_template(ctx, id)
+        assert {:error, :not_found} = Programming.restore_template(ctx, id)
+        assert {:error, :not_found} = Programming.delete_template(ctx, id)
       end
 
       assert {:error, :not_found} = Programming.get_template(client_ctx, same_business.id)
     end
 
-    test "deletes an active Template at the expected revision" do
+    test "deletes an active Template without a revision precondition" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
       assert {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})
 
-      assert {:error, %Ecto.Changeset{action: :stale_revision}} =
-               Programming.delete_template(ctx, template.id, 9)
-
-      assert {:ok, deleted} = Programming.delete_template(ctx, template.id, 1)
+      assert {:ok, deleted} = Programming.delete_template(ctx, template.id)
       assert deleted.id == template.id
       assert Repo.get(Plan, template.id) == nil
 

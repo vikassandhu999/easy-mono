@@ -11,9 +11,11 @@ Meal Slot. Array order replaces database position columns. This removes five chi
 tables, their ownership checks, row reconciliation, and copy-ID maps.
 
 Menu validation is pure. Programming owns its transaction and revision check.
-Library resolves portions and nutrients on Save. Reads use current Library names
-with the stored nutrients and resolved weights. Diary freezes offered values when
-a slot starts and retains its own relational identities for recording intake.
+Library validates references and portions on Save. The document stores chosen
+portions and Library IDs; reads resolve current names, weights, and nutrients
+together, as described in [the live Library decision](0004-nutrition-live-library.md).
+Diary freezes offered values when a slot starts and retains its own relational
+identities for recording intake.
 
 The document removes menu-to-Library foreign keys. Ordered Library row locks and
 tenant-scoped JSONB usage queries protect references during application writes.

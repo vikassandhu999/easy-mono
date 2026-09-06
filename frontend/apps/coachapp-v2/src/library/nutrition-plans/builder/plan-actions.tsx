@@ -36,7 +36,7 @@ export function NutritionPlanActions({plan, onDeleted, refetchLatest}: Props) {
     const mutation = status === 'archived' ? archivePlanMutation : restorePlanMutation;
 
     try {
-      await mutation.mutateAsync({id: plan.id, body: {expected_revision: plan.revision}});
+      await mutation.mutateAsync({id: plan.id});
     } catch (error) {
       if (await handleStaleConflict(error)) {
         return 'stale';
@@ -48,17 +48,14 @@ export function NutritionPlanActions({plan, onDeleted, refetchLatest}: Props) {
   };
 
   const copy = async () => {
-    const result = await duplicatePlanMutation.mutateAsync({
-      id: plan.id,
-      body: {expected_revision: plan.revision},
-    });
+    const result = await duplicatePlanMutation.mutateAsync({id: plan.id});
     toast.success('Plan copied', {timeout: 1000});
     navigate(ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', result.data.id));
   };
 
   const remove = async (): Promise<PlanActionOutcome> => {
     try {
-      await deletePlanMutation.mutateAsync({id: plan.id, expectedRevision: plan.revision});
+      await deletePlanMutation.mutateAsync({id: plan.id});
     } catch (error) {
       if (await handleStaleConflict(error)) {
         return 'stale';
@@ -70,7 +67,7 @@ export function NutritionPlanActions({plan, onDeleted, refetchLatest}: Props) {
 
   return (
     <PlanActionsMenu
-      canCopy={plan.kind === 'template' && plan.status === 'active'}
+      canCopy={plan.kind === 'template' && plan.lifecycle === 'active'}
       deleteBody="Are you sure you want to delete this nutrition plan permanently?"
       deleting={deletePlanMutation.isPending}
       onCopy={copy}

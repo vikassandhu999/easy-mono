@@ -3,12 +3,10 @@ import {Salad} from 'lucide-react';
 import type {NutritionPlan} from '@/api/nutrition-plans';
 import {BrowseRow} from '@/ui/browse-list-box';
 
-type NutritionPlanStatus = NutritionPlan['status'];
-
-const STATUS_MAP: Record<NutritionPlanStatus, {color: 'success' | 'warning'; label: string}> = {
-  active: {color: 'success', label: 'Active'},
-  archived: {color: 'warning', label: 'Archived'},
-};
+const statusFor = (lifecycle: NutritionPlan['lifecycle']) =>
+  lifecycle === 'archived'
+    ? {color: 'warning' as const, label: 'Archived'}
+    : {color: 'success' as const, label: 'Active'};
 
 // Row meta per COPY.md: `{kcal} kcal · {p}g protein · {n} clients`.
 function getPlanMeta(plan: NutritionPlan): string {
@@ -28,7 +26,7 @@ function getPlanMeta(plan: NutritionPlan): string {
 }
 
 export default function NutritionPlanListItem({isFirst, plan}: {isFirst?: boolean; plan: NutritionPlan}) {
-  const status = STATUS_MAP[plan.status];
+  const status = statusFor(plan.lifecycle);
   const meta = getPlanMeta(plan);
 
   return (

@@ -1,4 +1,5 @@
 defmodule Easy.Nutrition.DiaryEntryCorrectionsTest do
+  alias Easy.Nutrition.Portions
   use Easy.DataCase, async: true
   import Easy.Nutrition.DiaryFixtures
   alias Easy.Nutrition.{Diary, DiarySlot, Library, Portions}
@@ -10,7 +11,7 @@ defmodule Easy.Nutrition.DiaryEntryCorrectionsTest do
     [slot] = logged.slots
     draft = slot_draft(slot)
     [entry] = draft.entries
-    {:ok, _} = Library.update_food(trainer_ctx(coach), food.id, food.revision, %{calories: 900.0})
+    {:ok, _} = Library.update_food(trainer_ctx(coach), food.id, food.revision, %{calories_per_100g: 900.0})
     changed = %{entry | portion: %{kind: :gram, grams: 100}, notes: "Double"}
 
     assert {:ok, day} =
@@ -85,7 +86,7 @@ defmodule Easy.Nutrition.DiaryEntryCorrectionsTest do
     {:ok, day} = save_extra(ctx, date, extra_attrs(food))
     [stored] = Repo.all(DiarySlot.for_client(client.business_id, client.id))
     past = Date.add(date, -8)
-    Repo.update!(Ecto.Changeset.change(stored, local_date: past))
+    move_slot_date(stored, past)
 
     assert {:error, :outside_correction_window} =
              Diary.save_client_nutrition_day(ctx, past, %{slots: [slot_draft(hd(day.slots))]})
@@ -98,7 +99,7 @@ defmodule Easy.Nutrition.DiaryEntryCorrectionsTest do
 
     {:ok, updated} =
       Library.update_food(trainer_ctx(coach), food.id, food.revision, %{
-        calories: 900.0,
+        calories_per_100g: 900.0,
         serving_sizes: [
           %{amount: 1.0, unit: "cup", label: "Cup", weight_g: 100.0, is_default: true},
           %{amount: 1.0, unit: "cup", label: "Small cup", weight_g: 60.0, is_default: false}
@@ -132,7 +133,7 @@ defmodule Easy.Nutrition.DiaryEntryCorrectionsTest do
     ctx = client_ctx(client)
     portion = %{kind: :serving, amount: 1, unit: "cup", label: "Cup"}
     {:ok, _day} = save_extra(ctx, today, %{meal_slot: :lunch, food_id: food.id, portion: portion})
-    {:ok, _} = Library.delete_food(trainer_ctx(coach), food.id, food.revision)
+    {:ok, _} = Library.delete_food(trainer_ctx(coach), food.id)
     {:ok, day} = Diary.get_client_nutrition_day(ctx, today)
     slot = Enum.find(day.slots, &(&1.meal_slot == :lunch))
     draft = slot_draft(slot)
@@ -166,7 +167,7 @@ defmodule Easy.Nutrition.DiaryEntryCorrectionsTest do
     assert hd(hd(changed.slots).rows).portion.amount == 2.0
 
     assert {:error, :invalid_portion} =
-             Library.resolve_recipe_portion(
+             Portions.resolve_recipe(
                recipe,
                %{kind: :serving, amount: 1, unit: "cup", label: "Cup"}
              )

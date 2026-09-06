@@ -36,7 +36,7 @@ function validateFile(file: File): string | undefined {
 }
 
 export type LibraryMediaValue = {
-  contentType: string;
+  contentType: string | null;
   kind: 'image' | 'video';
   url: string | null;
 };

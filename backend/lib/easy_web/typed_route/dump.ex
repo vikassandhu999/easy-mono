@@ -115,6 +115,7 @@ defmodule EasyWeb.TypedRoute.Dump do
 
   defp matches?(value, {:dict, _inner}), do: is_map(value)
   defp matches?(value, {:list, _inner}), do: is_list(value)
+  defp matches?(value, :uuid), do: is_binary(value)
   defp matches?(value, :string), do: is_binary(value)
   defp matches?(value, :boolean), do: is_boolean(value)
   defp matches?(value, :integer), do: is_integer(value)

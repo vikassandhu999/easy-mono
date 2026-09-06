@@ -136,7 +136,7 @@ export function PlanBuilder({plan, reload}: {plan: NutritionPlan; reload: () => 
     editor.kind === 'deleteDay' ? menu.day_patterns.find((day) => day.id === editor.dayId) : undefined;
 
   const clientName = saved.client ? getFullName(saved.client.first_name, saved.client.last_name) : '';
-  const readOnly = saved.status === 'archived';
+  const readOnly = saved.lifecycle === 'archived';
   return (
     <Page className="text-foreground leading-[normal]">
       <Page.Header

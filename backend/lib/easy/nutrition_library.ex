@@ -2,8 +2,10 @@ defmodule Easy.Nutrition.Library do
   alias Easy.CopyName
   alias Easy.Ctx
   alias Easy.LibraryMedia
-  alias Easy.Nutrition.{Food, NutrientTotals, Programming, Recipe, RecipeIngredient}
+  alias Easy.Nutrition.{Food, NutrientTotals, Portions, Programming, Recipe, RecipeIngredient}
   alias Easy.Repo
+  alias Easy.Result
+  alias Easy.Revision
   alias Easy.Utils
 
   import Ecto.Changeset
@@ -11,12 +13,7 @@ defmodule Easy.Nutrition.Library do
 
   @type portion_input() :: Easy.Nutrition.Portions.t()
 
-  @type resolved_portion() :: %{
-          required(:grams) => float() | nil,
-          required(:amount) => float() | nil,
-          required(:unit) => String.t() | nil,
-          required(:label) => String.t() | nil
-        }
+  @type resolved_portion() :: Easy.Nutrition.Portions.t()
 
   @type item_spec() :: %{
           required(:kind) => :food | :recipe,
@@ -35,33 +32,37 @@ defmodule Easy.Nutrition.Library do
 
   @spec get_food(Ctx.t(), String.t()) :: {:ok, Food.t()} | {:error, :not_found}
   def get_food(%Ctx{} = ctx, food_id) do
-    Food
-    |> Food.for_business_or_system(ctx.business_id)
-    |> Food.include_media()
-    |> Repo.get(food_id)
-    |> ok_or_not_found()
+    Repo.snapshot(fn ->
+      Food
+      |> Food.for_business_or_system(ctx.business_id)
+      |> Food.include_media()
+      |> Repo.get(food_id)
+      |> ok_or_not_found()
+    end)
   end
 
   @spec list_foods(Ctx.t(), keyword()) :: {:ok, %{count: non_neg_integer(), foods: [Food.t()]}}
   def list_foods(%Ctx{} = ctx, opts \\ []) do
-    search = String.trim(Keyword.get(opts, :search, "") || "")
-    offset = Keyword.get(opts, :offset, 0)
-    limit = min(Keyword.get(opts, :limit, 20), 100)
+    Repo.snapshot(fn ->
+      search = String.trim(Keyword.get(opts, :search, "") || "")
+      offset = Keyword.get(opts, :offset, 0)
+      limit = min(Keyword.get(opts, :limit, 20), 100)
 
-    base =
-      Food
-      |> Food.for_business_or_system(ctx.business_id)
-      |> Food.search(search)
-      |> Food.for_categories(Keyword.get(opts, :categories))
+      base =
+        Food
+        |> Food.for_business_or_system(ctx.business_id)
+        |> Food.search(search)
+        |> Food.for_categories(Keyword.get(opts, :categories))
 
-    # `Food.search` orders by rank; only unsearched listings need an order.
-    ordered = if search == "", do: Food.newest(base), else: base
+      # `Food.search` orders by rank; only unsearched listings need an order.
+      ordered = if search == "", do: Food.newest(base), else: base
 
-    {:ok,
-     %{
-       count: Repo.aggregate(base, :count, :id),
-       foods: ordered |> Utils.paginate(offset, limit) |> Food.include_media() |> Repo.all()
-     }}
+      {:ok,
+       %{
+         count: Repo.aggregate(base, :count, :id),
+         foods: ordered |> Utils.paginate(offset, limit) |> Food.include_media() |> Repo.all()
+       }}
+    end)
   end
 
   @spec list_food_categories(Ctx.t()) :: {:ok, [String.t()]}
@@ -75,7 +76,7 @@ defmodule Easy.Nutrition.Library do
 
   @spec create_food(Ctx.t(), map()) :: {:ok, Food.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_food(%Ctx{} = ctx, attrs) do
-    with :ok <- ensure_coach(ctx),
+    with :ok <- Ctx.ensure_coach(ctx),
          :ok <- LibraryMedia.authorize_attach(ctx, attrs[:media_id]),
          {:ok, food} <-
            ctx.business_id |> Food.insert_changeset(ctx.coach_id, attrs) |> Repo.insert() do
@@ -86,9 +87,9 @@ defmodule Easy.Nutrition.Library do
   @spec update_food(Ctx.t(), String.t(), pos_integer(), map()) ::
           {:ok, Food.t()} | {:error, :not_found | :read_only_source | Ecto.Changeset.t()}
   def update_food(%Ctx{} = ctx, food_id, expected_revision, attrs) do
-    with :ok <- ensure_coach(ctx),
+    with :ok <- Ctx.ensure_coach(ctx),
          {:ok, food} <-
-           mutate_locked(
+           Revision.locked(
              Food.for_business_or_system(ctx.business_id),
              food_id,
              expected_revision,
@@ -98,15 +99,15 @@ defmodule Easy.Nutrition.Library do
     end
   end
 
-  @spec delete_food(Ctx.t(), String.t(), pos_integer()) ::
+  @spec delete_food(Ctx.t(), String.t()) ::
           {:ok, Food.t()}
           | {:error, :not_found | :read_only_source | :in_use | Ecto.Changeset.t()}
-  def delete_food(%Ctx{} = ctx, food_id, expected_revision) do
-    with :ok <- ensure_coach(ctx) do
-      mutate_locked(
+  def delete_food(%Ctx{} = ctx, food_id) do
+    with :ok <- Ctx.ensure_coach(ctx) do
+      Revision.locked(
         Food.for_business_or_system(ctx.business_id),
         food_id,
-        expected_revision,
+        :any,
         &delete_locked_food(ctx, &1)
       )
     end
@@ -116,20 +117,21 @@ defmodule Easy.Nutrition.Library do
           {:ok, %{recipes: [map()], templates: [map()], client_plans: [map()]}}
           | {:error, :not_found}
   def get_food_impact(%Ctx{} = ctx, food_id) do
-    with {:ok, food} <- get_food(ctx, food_id) do
-      {:ok,
-       Map.put(
-         menu_usage(ctx, :food, food.id),
-         :recipes,
-         recipe_usage(ctx.business_id, food.id)
-       )}
-    end
+    Repo.snapshot(fn ->
+      with {:ok, food} <- get_food(ctx, food_id) do
+        {:ok,
+         Map.put(
+           menu_usage(ctx, :food, food.id),
+           :recipes,
+           recipe_usage(ctx.business_id, food.id)
+         )}
+      end
+    end)
   end
 
   @copied_food_fields [
     :name,
     :brand,
-    :barcode,
     :category,
     :calories_per_100g,
     :protein_g_per_100g,
@@ -140,7 +142,6 @@ defmodule Easy.Nutrition.Library do
     :allergens,
     :dietary_tags,
     :notes,
-    :image_url,
     :media_id
   ]
 
@@ -161,68 +162,40 @@ defmodule Easy.Nutrition.Library do
     end
   end
 
-  @spec resolve_food_portion(Food.t(), portion_input()) ::
-          {:ok, resolved_portion()}
-          | {:error, :invalid_portion}
-  def resolve_food_portion(_food, %{kind: :gram, grams: grams})
-      when is_number(grams) and grams > 0 do
-    {:ok, %{grams: grams / 1, amount: nil, unit: nil, label: nil}}
-  end
-
-  def resolve_food_portion(%Food{serving_sizes: sizes}, %{
-        kind: :serving,
-        amount: amount,
-        unit: unit,
-        label: label
-      })
-      when is_number(amount) and amount > 0 and is_binary(unit) do
-    case Enum.find(sizes, &(&1.unit == unit and &1.label == label)) do
-      %{amount: serving_amount, weight_g: weight_g} when serving_amount > 0 and weight_g > 0 ->
-        grams = amount / serving_amount * weight_g
-
-        if grams > 0 do
-          {:ok, %{grams: grams / 1, amount: amount / 1, unit: unit, label: label}}
-        else
-          {:error, :invalid_portion}
-        end
-
-      _missing ->
-        {:error, :invalid_portion}
-    end
-  end
-
-  def resolve_food_portion(_food, _portion), do: {:error, :invalid_portion}
-
   # Recipes
 
   @spec get_recipe(Ctx.t(), String.t()) :: {:ok, Recipe.t()} | {:error, :not_found}
   def get_recipe(%Ctx{} = ctx, recipe_id) do
-    Recipe
-    |> Recipe.for_business(ctx.business_id)
-    |> Recipe.include_ingredients(ctx.business_id)
-    |> Repo.get(recipe_id)
-    |> ok_or_not_found()
+    Repo.snapshot(fn ->
+      Recipe
+      |> Recipe.for_business(ctx.business_id)
+      |> Recipe.include_ingredients(ctx.business_id)
+      |> Repo.get(recipe_id)
+      |> ok_or_not_found()
+    end)
   end
 
   @spec list_recipes(Ctx.t(), keyword()) ::
           {:ok, %{count: non_neg_integer(), recipes: [Recipe.t()]}}
   def list_recipes(%Ctx{} = ctx, opts \\ []) do
-    search = String.trim(Keyword.get(opts, :search, "") || "")
-    offset = Keyword.get(opts, :offset, 0)
-    limit = min(Keyword.get(opts, :limit, 20), 100)
+    Repo.snapshot(fn ->
+      search = String.trim(Keyword.get(opts, :search, "") || "")
+      offset = Keyword.get(opts, :offset, 0)
+      limit = min(Keyword.get(opts, :limit, 20), 100)
 
-    base = Recipe |> Recipe.for_business(ctx.business_id) |> Recipe.search(search)
+      base = Recipe |> Recipe.for_business(ctx.business_id) |> Recipe.search(search)
 
-    {:ok,
-     %{
-       count: Repo.aggregate(base, :count, :id),
-       recipes:
-         base
-         |> Recipe.newest()
-         |> Utils.paginate(offset, limit)
-         |> Recipe.include_ingredients(ctx.business_id)
-         |> Repo.all()
-     }}
+      {:ok,
+       %{
+         count: Repo.aggregate(base, :count, :id),
+         recipes:
+           base
+           |> Recipe.newest()
+           |> Utils.paginate(offset, limit)
+           |> Recipe.include_ingredients(ctx.business_id)
+           |> Repo.all()
+       }}
+    end)
   end
 
   @spec create_recipe(Ctx.t(), map()) ::
@@ -230,7 +203,7 @@ defmodule Easy.Nutrition.Library do
   def create_recipe(%Ctx{} = ctx, attrs) do
     {ingredients, scalar_attrs} = Map.pop(attrs, :recipe_ingredients, :unchanged)
 
-    with :ok <- ensure_coach(ctx),
+    with :ok <- Ctx.ensure_coach(ctx),
          {:ok, recipe} <- insert_recipe(ctx, scalar_attrs, ingredients) do
       get_recipe(ctx, recipe.id)
     end
@@ -241,9 +214,9 @@ defmodule Easy.Nutrition.Library do
   def update_recipe(%Ctx{} = ctx, recipe_id, expected_revision, attrs) do
     {ingredients, scalar_attrs} = Map.pop(attrs, :recipe_ingredients, :unchanged)
 
-    with :ok <- ensure_coach(ctx),
+    with :ok <- Ctx.ensure_coach(ctx),
          {:ok, recipe} <-
-           mutate_locked(
+           Revision.locked(
              Recipe.for_business(ctx.business_id),
              recipe_id,
              expected_revision,
@@ -255,14 +228,14 @@ defmodule Easy.Nutrition.Library do
     end
   end
 
-  @spec delete_recipe(Ctx.t(), String.t(), pos_integer()) ::
+  @spec delete_recipe(Ctx.t(), String.t()) ::
           {:ok, Recipe.t()} | {:error, :not_found | :in_use | Ecto.Changeset.t()}
-  def delete_recipe(%Ctx{} = ctx, recipe_id, expected_revision) do
-    with :ok <- ensure_coach(ctx) do
-      mutate_locked(
+  def delete_recipe(%Ctx{} = ctx, recipe_id) do
+    with :ok <- Ctx.ensure_coach(ctx) do
+      Revision.locked(
         Recipe.for_business(ctx.business_id),
         recipe_id,
-        expected_revision,
+        :any,
         &delete_locked_recipe(ctx, &1)
       )
     end
@@ -271,9 +244,11 @@ defmodule Easy.Nutrition.Library do
   @spec get_recipe_impact(Ctx.t(), String.t()) ::
           {:ok, %{templates: [map()], client_plans: [map()]}} | {:error, :not_found}
   def get_recipe_impact(%Ctx{} = ctx, recipe_id) do
-    with {:ok, recipe} <- get_recipe(ctx, recipe_id) do
-      {:ok, menu_usage(ctx, :recipe, recipe.id)}
-    end
+    Repo.snapshot(fn ->
+      with {:ok, recipe} <- get_recipe(ctx, recipe_id) do
+        {:ok, menu_usage(ctx, :recipe, recipe.id)}
+      end
+    end)
   end
 
   @spec copy_recipe(Ctx.t(), String.t()) ::
@@ -289,153 +264,74 @@ defmodule Easy.Nutrition.Library do
         :allergens,
         :dietary_tags
       ])
-      |> Map.put(:name, copy_name(recipe.name, ctx.business_id))
+      |> Map.put(:name, CopyName.next(recipe.name, Repo.all(from(r in Recipe.for_business(ctx.business_id), select: r.name))))
       |> Map.put(
         :recipe_ingredients,
         Enum.map(
           recipe.recipe_ingredients,
-          &%{
-            food_id: &1.food_id,
-            portion: %{
-              kind: &1.portion_kind,
-              grams: &1.weight_g,
-              amount: &1.amount,
-              unit: &1.unit,
-              label: &1.serving_label
-            }
-          }
+          &%{food_id: &1.food_id, portion: Portions.format(&1.portion)}
         )
       )
       |> then(&create_recipe(ctx, &1))
     end
   end
 
-  @spec resolve_recipe_portion(Recipe.t(), portion_input()) ::
-          {:ok, resolved_portion()} | {:error, :invalid_portion}
-  def resolve_recipe_portion(%Recipe{servings_count: servings, cooked_weight_g: cooked}, %{
-        kind: :serving,
-        amount: amount,
-        unit: "serving",
-        label: nil
-      })
-      when is_integer(servings) and servings > 0 and is_number(amount) and amount > 0 do
-    grams =
-      case cooked do
-        weight when is_number(weight) and weight > 0 -> amount / servings * weight
-        _missing -> nil
-      end
-
-    {:ok, %{amount: amount / 1, grams: grams, unit: "serving", label: nil}}
-  end
-
-  def resolve_recipe_portion(%Recipe{cooked_weight_g: cooked}, %{kind: :gram, grams: grams})
-      when is_number(cooked) and cooked > 0 and is_number(grams) and grams > 0 do
-    {:ok, %{amount: nil, grams: grams / 1, unit: nil, label: nil}}
-  end
-
-  def resolve_recipe_portion(_recipe, _portion), do: {:error, :invalid_portion}
-
   @spec recipe_nutrients(Recipe.t()) :: NutrientTotals.t()
   def recipe_nutrients(%Recipe{} = recipe), do: NutrientTotals.from_recipe(recipe)
 
   # Item resolution
 
-  @spec resolve_items(Ctx.t(), [item_spec()]) ::
-          {:ok, [resolved_item()]} | {:error, :not_found | :invalid_portion}
-  def resolve_items(%Ctx{} = ctx, items) when is_list(items) do
-    foods = visible_foods_by_id(ctx, for(%{kind: :food, id: id} <- items, do: id))
-    recipes = visible_recipes_by_id(ctx, for(%{kind: :recipe, id: id} <- items, do: id))
+  @spec item_kind(map()) :: :food | :recipe
+  def item_kind(%{food_id: id}) when is_binary(id), do: :food
+  def item_kind(%{recipe_id: id}) when is_binary(id), do: :recipe
 
-    items
-    |> Enum.reduce_while({:ok, []}, fn item, {:ok, acc} ->
-      case resolve_item(item, foods, recipes) do
-        {:ok, resolved} -> {:cont, {:ok, [resolved | acc]}}
-        {:error, reason} -> {:halt, {:error, reason}}
-      end
-    end)
-    |> case do
-      {:ok, resolved} -> {:ok, Enum.reverse(resolved)}
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  @spec item_names(Ctx.t(), [item_spec()]) :: {:ok, map()}
-  def item_names(ctx, specs) do
-    food_ids = for %{kind: :food, id: id} <- specs, do: id
-    recipe_ids = for %{kind: :recipe, id: id} <- specs, do: id
-    foods = Food.for_business_or_system(ctx.business_id) |> where([f], f.id in ^food_ids) |> select([f], {f.id, f.name}) |> Repo.all()
-    recipes = Recipe.for_business(ctx.business_id) |> where([r], r.id in ^recipe_ids) |> select([r], {r.id, r.name}) |> Repo.all()
-    {:ok, Map.new(Enum.map(foods, fn {id, name} -> {{:food, id}, name} end) ++ Enum.map(recipes, fn {id, name} -> {{:recipe, id}, name} end))}
-  end
+  @spec resolve_items(Ctx.t(), [item_spec()]) :: {:ok, [resolved_item()]} | {:error, :not_found | :invalid_portion}
+  def resolve_items(ctx, items), do: Repo.snapshot(fn -> resolve(ctx, items, false) end)
 
   @spec resolve_items_for_write(Ctx.t(), [item_spec()]) ::
           {:ok, [resolved_item()]} | {:error, :not_found | :invalid_portion}
-  def resolve_items_for_write(ctx, specs) do
+  def resolve_items_for_write(ctx, items) do
     true = Repo.in_transaction?()
-    recipe_ids = for %{kind: :recipe, id: id} <- specs, do: id
-
-    Recipe.for_business(ctx.business_id)
-    |> where([r], r.id in ^recipe_ids)
-    |> order_by([r], asc: r.id)
-    |> lock("FOR SHARE")
-    |> Repo.all()
-
-    ingredient_foods =
-      RecipeIngredient.for_business(ctx.business_id)
-      |> where([i], i.recipe_id in ^recipe_ids)
-      |> select([i], i.food_id)
-      |> Repo.all()
-
-    food_ids = ingredient_foods ++ for(%{kind: :food, id: id} <- specs, do: id)
-
-    Food.for_business_or_system(ctx.business_id)
-    |> where([f], f.id in ^food_ids)
-    |> order_by([f], asc: f.id)
-    |> lock("FOR SHARE")
-    |> Repo.all()
-
-    resolve_items(ctx, specs)
+    resolve(ctx, items, true)
   end
 
-  # Revision-checked mutation under a row lock
+  @spec available_items(Ctx.t(), [map()]) :: {:ok, MapSet.t()}
+  def available_items(_ctx, []), do: {:ok, MapSet.new()}
 
-  defp mutate_locked(visible_query, id, expected_revision, mutation) do
-    Repo.transaction(fn ->
-      visible_query
-      |> lock("FOR UPDATE")
-      |> Repo.get(id)
-      |> mutate_revisioned(expected_revision, mutation)
-    end)
+  def available_items(ctx, items) do
+    food_ids = Enum.flat_map(items, &List.wrap(&1.food_id))
+    recipe_ids = Enum.flat_map(items, &List.wrap(&1.recipe_id))
+    foods = Food.for_business_or_system(ctx.business_id) |> where([f], f.id in ^food_ids) |> select([f], f.id) |> Repo.all()
+    recipes = Recipe.for_business(ctx.business_id) |> where([r], r.id in ^recipe_ids) |> select([r], r.id) |> Repo.all()
+    {:ok, MapSet.new(Enum.map(foods, &{:food, &1}) ++ Enum.map(recipes, &{:recipe, &1}))}
   end
 
-  defp mutate_revisioned(nil, _expected_revision, _mutation), do: Repo.rollback(:not_found)
+  defp resolve(_ctx, [], _lock?), do: {:ok, []}
 
-  defp mutate_revisioned(%Food{source: source}, _expected_revision, _mutation)
-       when source in [:system, :imported],
-       do: Repo.rollback(:read_only_source)
-
-  defp mutate_revisioned(%{revision: revision} = record, expected_revision, _mutation)
-       when revision != expected_revision,
-       do: Repo.rollback(stale_revision_changeset(record))
-
-  defp mutate_revisioned(record, _expected_revision, mutation) do
-    case mutation.(record) do
-      {:ok, changed} -> changed
-      {:error, reason} -> Repo.rollback(reason)
-    end
+  defp resolve(ctx, items, lock?) do
+    recipe_ids = for %{kind: :recipe, id: id} <- items, do: id
+    recipes = Recipe.for_business(ctx.business_id) |> where([r], r.id in ^recipe_ids) |> ordered_read(lock?)
+    ingredients = RecipeIngredient.for_business(ctx.business_id) |> where([i], i.recipe_id in ^recipe_ids) |> Repo.all()
+    food_ids = Enum.map(ingredients, & &1.food_id) ++ for(%{kind: :food, id: id} <- items, do: id)
+    foods = Food.for_business_or_system(ctx.business_id) |> where([f], f.id in ^food_ids) |> ordered_read(lock?) |> Map.new(&{&1.id, &1})
+    ingredients = Enum.group_by(ingredients, & &1.recipe_id, &%{&1 | food: Map.get(foods, &1.food_id)})
+    recipes = Map.new(recipes, &{&1.id, %{&1 | recipe_ingredients: Map.get(ingredients, &1.id, [])}})
+    Result.traverse(items, &resolve_item(&1, foods, recipes))
   end
 
-  defp stale_revision_changeset(record) do
-    record
-    |> change()
-    |> add_error(:revision, "is stale")
-    |> Map.put(:action, :stale_revision)
+  defp ordered_read(query, lock?) do
+    query = order_by(query, [row], asc: row.id)
+    query = if lock?, do: lock(query, "FOR SHARE"), else: query
+    Repo.all(query)
   end
 
   # Food mutations
 
+  defp update_locked_food(_ctx, %Food{source: :system}, _attrs), do: {:error, :read_only_source}
+
   defp update_locked_food(ctx, food, attrs) do
-    with :ok <- LibraryMedia.authorize_attach(ctx, attrs[:media_id]) do
+    with :ok <- LibraryMedia.authorize_attach(ctx, attrs[:media_id]),
+         :ok <- protect_serving_references(ctx, food, attrs) do
       food
       |> Food.update_changeset(attrs)
       |> put_change(:revision, food.revision + 1)
@@ -443,7 +339,29 @@ defmodule Easy.Nutrition.Library do
     end
   end
 
+  defp protect_serving_references(_ctx, _food, attrs) when not is_map_key(attrs, :serving_sizes), do: :ok
+
+  defp protect_serving_references(ctx, food, attrs) do
+    sizes = attrs.serving_sizes
+    removed = Enum.reject(food.serving_sizes, fn stored -> Enum.any?(sizes, &(&1.unit == stored.unit and &1.label == stored.label)) end)
+    if Enum.any?(removed, &serving_used?(ctx, food.id, &1)), do: {:error, :in_use}, else: :ok
+  end
+
+  defp serving_used?(ctx, food_id, size) do
+    portion = %{kind: :serving, unit: size.unit, label: size.label}
+    {:ok, menu_used?} = Programming.library_item_used?(ctx, :food, food_id, portion)
+
+    menu_used? or
+      Repo.exists?(
+        from(i in RecipeIngredient.for_business(ctx.business_id),
+          where: i.food_id == ^food_id and fragment("? @> ?::jsonb", i.portion, ^portion)
+        )
+      )
+  end
+
   # The Library row lock serializes menu references against deletion.
+  defp delete_locked_food(_ctx, %Food{source: :system}), do: {:error, :read_only_source}
+
   defp delete_locked_food(ctx, food) do
     if food_used_structurally?(ctx, food.id) do
       {:error, :in_use}
@@ -453,9 +371,9 @@ defmodule Easy.Nutrition.Library do
   end
 
   defp food_used_structurally?(ctx, food_id) do
-    {:ok, usage} = Programming.library_usage(ctx, :food, food_id)
+    {:ok, used?} = Programming.library_item_used?(ctx, :food, food_id)
 
-    usage.plans != [] or
+    used? or
       Repo.exists?(from(ri in RecipeIngredient.for_business(ctx.business_id), where: ri.food_id == ^food_id))
   end
 
@@ -512,13 +430,13 @@ defmodule Easy.Nutrition.Library do
   defp removing_cooked_weight?(_recipe, _changeset), do: false
 
   defp recipe_referenced_by_menu?(ctx, recipe_id) do
-    {:ok, usage} = Programming.library_usage(ctx, :recipe, recipe_id)
-    usage.plans != []
+    {:ok, used?} = Programming.library_item_used?(ctx, :recipe, recipe_id)
+    used?
   end
 
   defp gram_portion_references_recipe?(ctx, recipe_id) do
-    {:ok, usage} = Programming.library_usage(ctx, :recipe, recipe_id)
-    usage.gram_portion?
+    {:ok, used?} = Programming.library_item_used?(ctx, :recipe, recipe_id, :gram)
+    used?
   end
 
   # Ingredient replacement: the request carries the complete collection, positions
@@ -529,29 +447,17 @@ defmodule Easy.Nutrition.Library do
   defp replace_ingredients(ctx, recipe, ingredients) when is_list(ingredients) do
     specs = Enum.map(ingredients, &%{kind: :food, id: &1[:food_id], portion: &1[:portion]})
 
-    with :ok <- validate_ingredient_inputs(ingredients),
-         {:ok, resolved} <- resolve_items_for_write(ctx, specs) do
+    with {:ok, resolved} <- resolve_items_for_write(ctx, specs) do
       changesets =
-        Enum.with_index(Enum.zip(ingredients, resolved), fn {input, item}, position ->
+        Enum.with_index(resolved, fn item, position ->
           RecipeIngredient.insert_changeset(recipe.business_id, recipe.id, position, %{
             food_id: item.item.id,
-            portion_kind: input.portion.kind,
-            weight_g: item.portion.grams,
-            amount: item.portion[:amount],
-            unit: item.portion[:unit],
-            serving_label: item.portion[:label]
+            portion: Portions.format(item.portion)
           })
         end)
 
       replace_ingredient_rows(recipe, changesets)
     end
-  end
-
-  defp validate_ingredient_inputs(ingredients) do
-    if Enum.all?(ingredients, fn input ->
-         Map.keys(input) -- [:food_id, :portion] == [] and
-           match?({:ok, _}, Ecto.UUID.cast(input[:food_id]))
-       end), do: :ok, else: {:error, :invalid_portion}
   end
 
   defp replace_ingredient_rows(recipe, changesets) do
@@ -606,42 +512,11 @@ defmodule Easy.Nutrition.Library do
     }
   end
 
-  defp copy_name(original_name, business_id) do
-    existing_names =
-      Recipe
-      |> Recipe.for_business(business_id)
-      |> select([r], r.name)
-      |> Repo.all()
-
-    CopyName.next(original_name, existing_names)
-  end
-
   # Item resolution helpers
-
-  defp visible_foods_by_id(_ctx, []), do: %{}
-
-  defp visible_foods_by_id(ctx, ids) do
-    Food
-    |> Food.for_business_or_system(ctx.business_id)
-    |> where([f], f.id in ^ids)
-    |> Repo.all()
-    |> Map.new(&{&1.id, &1})
-  end
-
-  defp visible_recipes_by_id(_ctx, []), do: %{}
-
-  defp visible_recipes_by_id(ctx, ids) do
-    Recipe
-    |> Recipe.for_business(ctx.business_id)
-    |> Recipe.include_ingredients(ctx.business_id)
-    |> where([r], r.id in ^ids)
-    |> Repo.all()
-    |> Map.new(&{&1.id, &1})
-  end
 
   defp resolve_item(%{kind: :food, id: id, portion: portion}, foods, _recipes) do
     with {:ok, food} <- Map.fetch(foods, id),
-         {:ok, resolved} <- resolve_food_portion(food, portion) do
+         {:ok, resolved} <- Portions.resolve_food(food, portion) do
       {:ok,
        %{
          kind: :food,
@@ -657,7 +532,7 @@ defmodule Easy.Nutrition.Library do
 
   defp resolve_item(%{kind: :recipe, id: id, portion: portion}, _foods, recipes) do
     with {:ok, recipe} <- Map.fetch(recipes, id),
-         {:ok, resolved} <- resolve_recipe_portion(recipe, portion) do
+         {:ok, resolved} <- Portions.resolve_recipe(recipe, portion) do
       {:ok,
        %{
          kind: :recipe,
@@ -681,9 +556,6 @@ defmodule Easy.Nutrition.Library do
   end
 
   # Shared guards
-
-  defp ensure_coach(%Ctx{coach_id: coach_id}) when not is_nil(coach_id), do: :ok
-  defp ensure_coach(%Ctx{}), do: {:error, :not_found}
 
   defp ok_or_not_found(nil), do: {:error, :not_found}
   defp ok_or_not_found(record), do: {:ok, record}

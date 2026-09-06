@@ -2,6 +2,7 @@ defmodule Easy.Nutrition.Food do
   use Ecto.Schema
 
   alias Easy.Nutrition
+  alias Easy.Nutrition.Tags
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -12,14 +13,10 @@ defmodule Easy.Nutrition.Food do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @allergens ~w(dairy egg fish shellfish tree_nuts peanuts wheat soy sesame)
-  @dietary_tags ~w(vegan vegetarian halal kosher gluten_free dairy_free low_fodmap keto high_protein)
-
   schema "nutrition_foods" do
     field :name, :string
     field :brand, :string
-    field :barcode, :string
-    field :source, Ecto.Enum, values: [:system, :imported, :custom]
+    field :source, Ecto.Enum, values: [:system, :custom]
     field :category, :string
 
     field :calories_per_100g, :float
@@ -33,8 +30,6 @@ defmodule Easy.Nutrition.Food do
     field :dietary_tags, {:array, :string}, default: []
 
     field :notes, :string
-    field :image_url, :string
-    field :import_id, :string
     field :revision, :integer, default: 1
 
     embeds_many :serving_sizes, Nutrition.ServingSize, on_replace: :delete
@@ -49,7 +44,6 @@ defmodule Easy.Nutrition.Food do
   @cast_fields [
     :name,
     :brand,
-    :barcode,
     :category,
     :calories_per_100g,
     :protein_g_per_100g,
@@ -60,7 +54,6 @@ defmodule Easy.Nutrition.Food do
     :allergens,
     :dietary_tags,
     :notes,
-    :image_url,
     :media_id
   ]
 
@@ -76,7 +69,6 @@ defmodule Easy.Nutrition.Food do
     |> validate_macros()
     |> validate_enums()
     |> foreign_key_constraint(:media_id)
-    |> check_constraint(:media_id, name: :nutrition_foods_business_media_check)
     |> check_constraint(:revision, name: :nutrition_foods_revision_positive)
     |> cast_embed(:serving_sizes, with: &Nutrition.ServingSize.changeset/2)
     |> validate_serving_sizes()
@@ -90,7 +82,6 @@ defmodule Easy.Nutrition.Food do
     |> validate_macros()
     |> validate_enums()
     |> foreign_key_constraint(:media_id)
-    |> check_constraint(:media_id, name: :nutrition_foods_business_media_check)
     |> check_constraint(:revision, name: :nutrition_foods_revision_positive)
     |> cast_embed(:serving_sizes, with: &Nutrition.ServingSize.changeset/2)
     |> validate_serving_sizes()
@@ -113,8 +104,8 @@ defmodule Easy.Nutrition.Food do
 
   defp validate_enums(changeset) do
     changeset
-    |> validate_subset(:allergens, @allergens)
-    |> validate_subset(:dietary_tags, @dietary_tags)
+    |> validate_subset(:allergens, Tags.allergens())
+    |> validate_subset(:dietary_tags, Tags.dietary())
   end
 
   defp validate_serving_sizes(changeset) do

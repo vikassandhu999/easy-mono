@@ -17,7 +17,7 @@ export function PlanAddToClient({plan}: Props) {
   const navigate = useNavigate();
   const assignNutritionMutation = useAssignNutritionPlanMutation();
 
-  if (plan.client_id || plan.status === 'archived') {
+  if (plan.client_id || plan.lifecycle === 'archived') {
     return null;
   }
 
@@ -28,7 +28,6 @@ export function PlanAddToClient({plan}: Props) {
       id: plan.id,
       body: {
         end_date: dates.endDate,
-        expected_revision: plan.revision,
         start_date: dates.startDate,
       },
     });

@@ -11,7 +11,7 @@ defmodule Easy.Nutrition.Day do
           summary: summary()
         }
 
-  @type list_result() :: %{count: non_neg_integer(), nutrition_days: [t()]}
+  @type list_result() :: %{nutrition_days: [t()]}
 
   @type slot() :: %{
           meal_slot: atom(),

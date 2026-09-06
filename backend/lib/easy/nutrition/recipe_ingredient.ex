@@ -12,11 +12,7 @@ defmodule Easy.Nutrition.RecipeIngredient do
   @foreign_key_type :binary_id
 
   schema "nutrition_recipe_ingredients" do
-    field :portion_kind, Ecto.Enum, values: [:gram, :serving], default: :gram
-    field :serving_label, :string
-    field :amount, :float
-    field :unit, :string
-    field :weight_g, :float
+    field :portion, Nutrition.Portions
     field :position, :integer, default: 0
 
     belongs_to :recipe, Nutrition.Recipe
@@ -32,28 +28,15 @@ defmodule Easy.Nutrition.RecipeIngredient do
   @spec insert_changeset(String.t(), String.t(), non_neg_integer(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, recipe_id, position, attrs) do
     %__MODULE__{}
-    |> cast(attrs, [:food_id, :portion_kind, :serving_label, :amount, :unit, :weight_g])
+    |> cast(attrs, [:food_id, :portion])
     |> put_change(:business_id, business_id)
     |> put_change(:recipe_id, recipe_id)
     |> put_change(:position, position)
-    |> reject_subrecipe(attrs)
-    |> validate_required([:business_id, :recipe_id, :food_id, :weight_g, :position])
-    |> validate_number(:weight_g, greater_than: 0)
+    |> validate_required([:business_id, :recipe_id, :food_id, :portion, :position])
     |> validate_number(:position, greater_than_or_equal_to: 0)
     |> unique_constraint(:position, name: :nutrition_recipe_ingredients_recipe_id_position_index)
-    |> check_constraint(:weight_g,
-      name: :nutrition_recipe_ingredients_weight_positive,
-      message: "must be greater than 0"
-    )
+    |> check_constraint(:portion, name: :nutrition_recipe_ingredients_portion_check)
     |> check_constraint(:position, name: :nutrition_recipe_ingredients_position_nonnegative)
     |> foreign_key_constraint(:food_id)
-  end
-
-  defp reject_subrecipe(changeset, attrs) do
-    if Map.has_key?(attrs, :recipe_id) do
-      add_error(changeset, :food_id, "subrecipes are not allowed")
-    else
-      changeset
-    end
   end
 end

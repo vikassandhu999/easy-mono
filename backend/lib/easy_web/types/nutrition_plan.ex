@@ -2,7 +2,7 @@ defmodule EasyWeb.Types.NutritionPlanClient do
   use EasyWeb.Type
 
   @type t :: %{
-          required(:id) => String.t(),
+          required(:id) => Ecto.UUID.t(),
           required(:first_name) => String.t() | nil,
           required(:last_name) => String.t() | nil
         }
@@ -46,7 +46,7 @@ defmodule EasyWeb.Types.NutritionDayPattern do
   use EasyWeb.Type
 
   @type t :: %{
-          required(:id) => String.t(),
+          required(:id) => Ecto.UUID.t(),
           required(:name) => String.t(),
           required(:slots) => [EasyWeb.Types.NutritionDayPatternSlot.t()]
         }
@@ -69,11 +69,11 @@ defmodule EasyWeb.Types.NutritionMealItem do
   use EasyWeb.Type
 
   @type t :: %{
-          required(:id) => String.t(),
+          required(:id) => Ecto.UUID.t(),
           required(:kind) => :food | :recipe,
           optional(:name) => String.t() | nil,
-          optional(:food_id) => String.t() | nil,
-          optional(:recipe_id) => String.t() | nil,
+          optional(:food_id) => Ecto.UUID.t() | nil,
+          optional(:recipe_id) => Ecto.UUID.t() | nil,
           required(:portion) => EasyWeb.Types.Nutrition.NutritionPortion.t(),
           optional(:nutrients) => EasyWeb.Types.Nutrition.FoodNutrients.t()
         }
@@ -83,7 +83,7 @@ defmodule EasyWeb.Types.NutritionMeal do
   use EasyWeb.Type
 
   @type t :: %{
-          required(:id) => String.t(),
+          required(:id) => Ecto.UUID.t(),
           required(:name) => String.t(),
           optional(:notes) => String.t() | nil,
           optional(:nutrients) => EasyWeb.Types.Nutrition.FoodNutrients.t(),
@@ -111,14 +111,12 @@ defmodule EasyWeb.Types.NutritionPlan do
   alias Easy.Nutrition.{Menu, Plan}
 
   @type t :: %{
-          required(:id) => String.t(),
+          required(:id) => Ecto.UUID.t(),
           required(:kind) => :template | :client_plan,
           required(:name) => String.t(),
           required(:description) => String.t() | nil,
           required(:revision) => pos_integer(),
-          required(:archived_at) => DateTime.t() | nil,
-          required(:status) => :active | :archived,
-          required(:lifecycle) => :incomplete | :upcoming | :current | :ended | :archived | nil,
+          required(:lifecycle) => :active | :incomplete | :upcoming | :current | :ended | :archived,
           required(:assigned_client_count) => non_neg_integer(),
           required(:target_calories) => float() | nil,
           required(:target_protein_g) => float() | nil,
@@ -127,10 +125,10 @@ defmodule EasyWeb.Types.NutritionPlan do
           required(:target_fiber_g) => float() | nil,
           required(:start_date) => Date.t() | nil,
           required(:end_date) => Date.t() | nil,
-          required(:client_id) => String.t() | nil,
+          required(:client_id) => Ecto.UUID.t() | nil,
           required(:client) => EasyWeb.Types.NutritionPlanClient.t() | nil,
-          required(:creator_id) => String.t() | nil,
-          required(:source_template_id) => String.t() | nil,
+          required(:creator_id) => Ecto.UUID.t() | nil,
+          required(:source_template_id) => Ecto.UUID.t() | nil,
           required(:menu) => EasyWeb.Types.NutritionMenu.t(),
           required(:inserted_at) => DateTime.t(),
           required(:updated_at) => DateTime.t()
@@ -160,7 +158,6 @@ defmodule EasyWeb.Types.NutritionPlan do
         }
 
   @type assign :: %{
-          required(:expected_revision) => pos_integer(),
           optional(:start_date) => Date.t() | nil,
           optional(:end_date) => Date.t() | nil
         }
@@ -180,7 +177,7 @@ defmodule EasyWeb.Types.NutritionPlan do
   @type client_list_query :: %{
           optional(:offset) => integer(),
           optional(:limit) => integer(),
-          optional(:status) => :active | :archived
+          optional(:archived) => boolean()
         }
 
   @spec format(Plan.t()) :: t()
@@ -191,8 +188,6 @@ defmodule EasyWeb.Types.NutritionPlan do
       name: plan.name,
       description: plan.description,
       revision: plan.revision,
-      archived_at: plan.archived_at,
-      status: if(plan.archived_at, do: :archived, else: :active),
       lifecycle: plan.lifecycle,
       assigned_client_count: plan.assigned_client_count || 0,
       target_calories: plan.target_calories,

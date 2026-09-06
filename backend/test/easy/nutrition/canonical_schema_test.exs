@@ -1,7 +1,7 @@
 defmodule Easy.Nutrition.CanonicalSchemaTest do
   alias Easy.Nutrition.DiaryFixtures
   use Easy.DataCase, async: true
-  alias Easy.Nutrition.{DiaryEntry, Food, Menu}
+  alias Easy.Nutrition.{DiaryDay, DiaryEntry, Food, Menu}
 
   describe("canonical Nutrition Programming constraints") do
     test "the database rejects client-plan fields on a template" do
@@ -126,11 +126,18 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       coach = insert(:coach)
       food = insert(:food, business: coach.business, creator: coach)
       recipe = insert(:recipe, business: coach.business, creator: coach)
-      insert(:recipe_ingredient, business: coach.business, recipe: recipe, food: food, weight_g: 100.0)
+
+      insert(:recipe_ingredient,
+        business: coach.business,
+        recipe: recipe,
+        food: food,
+        portion: %{kind: :gram, grams: 100.0}
+      )
+
       assert_raise Ecto.ConstraintError, fn -> Repo.delete!(Repo.get!(Food, food.id)) end
     end
 
-    test "Diary entries nullify Food deletion" do
+    test "Diary entries retain source identity after Food deletion" do
       coach = insert(:coach)
       client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
 
@@ -160,12 +167,47 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       entry = hd(day.slots).rows |> Enum.find(& &1.entry_id)
       Repo.delete!(Repo.get!(Food, food.id))
       kept = Repo.get!(DiaryEntry, entry.id)
-      assert kept.food_id == nil
+      assert kept.food_id == food.id
       assert kept.display_name == "Banana"
     end
   end
 
   describe("canonical Nutrition Diary constraints") do
+    for {field, invalid} <- [
+          portion: %{},
+          portion: %{kind: "gram", grams: 0},
+          portion: %{kind: "serving", amount: -1, unit: "cup"},
+          nutrients: %{},
+          nutrients: %{calories: -1, protein: nil, carbohydrates: nil, fat: nil, fiber: nil}
+        ] do
+      @field field
+      @invalid invalid
+      test "the database rejects invalid #{@field} value #{inspect(@invalid)}" do
+        client = insert(:client)
+        slot = diary_slot_row(client, Date.utc_today())
+        Repo.insert_all("nutrition_diary_slots", [slot])
+        row = diary_entry_row(client, slot.id, [{@field, @invalid}])
+        error = assert_raise Postgrex.Error, fn -> Repo.insert_all("nutrition_diary_entries", [row]) end
+        assert error.postgres.code == :check_violation
+        assert error.postgres.constraint == "nutrition_diary_entries_#{@field}_check"
+      end
+    end
+
+    test "a Diary Slot cannot point to another client's day" do
+      client = insert(:client)
+      other = insert(:client, business: client.business)
+      date = Date.utc_today()
+      slot = diary_slot_row(client, date)
+      other_day = diary_slot_row(other, date).nutrition_diary_day_id
+
+      error =
+        assert_raise Postgrex.Error, fn ->
+          Repo.insert_all("nutrition_diary_slots", [%{slot | nutrition_diary_day_id: other_day}])
+        end
+
+      assert error.postgres.constraint == "nutrition_diary_slots_day_identity_fkey"
+    end
+
     test "cascade and Diary lookup indexes cover their leading foreign-key filters" do
       rows =
         Repo.query!("SELECT indexname\nFROM pg_indexes\nWHERE schemaname = current_schema()\n  AND indexname IN (\n    'nutrition_diary_entries_business_slot_index'\n  )\n").rows
@@ -218,34 +260,28 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
         timestamps(%{
           id: item_id,
           source_meal_item_id: dump_uuid(),
-          kind: "food",
           display_name: "Oats",
-          portion_kind: "gram",
-          weight_g: 50.0,
-          complete: false,
+          portion: %{kind: "gram", grams: 50.0},
+          nutrients: %{calories: nil, protein: nil, carbohydrates: nil, fat: nil, fiber: nil},
           position: 0,
           business_id: dump_uuid(client.business_id),
           nutrition_diary_slot_id: slot.id,
           nutrition_diary_frozen_option_id: option.id,
-          food_id: dump_uuid(food.id),
-          source_food_id: dump_uuid(food.id)
+          food_id: dump_uuid(food.id)
         })
       ])
 
       entry = fn ->
         timestamps(%{
           id: dump_uuid(),
-          kind: "food",
           display_name: "Oats",
-          portion_kind: "gram",
-          weight_g: 50.0,
-          complete: false,
+          portion: %{kind: "gram", grams: 50.0},
+          nutrients: %{calories: nil, protein: nil, carbohydrates: nil, fat: nil, fiber: nil},
           business_id: dump_uuid(client.business_id),
           client_id: dump_uuid(client.id),
           nutrition_diary_slot_id: slot.id,
           frozen_planned_item_id: item_id,
-          food_id: dump_uuid(food.id),
-          source_food_id: dump_uuid(food.id)
+          food_id: dump_uuid(food.id)
         })
       end
 
@@ -308,10 +344,14 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
   end
 
   defp diary_slot_row(client, date, overrides \\ []) do
+    query = DiaryDay.for_date(client.business_id, client.id, date)
+    day = Repo.one(query) || Repo.insert!(%DiaryDay{business_id: client.business_id, client_id: client.id, local_date: date})
+
     timestamps(
       Map.merge(
         %{
           id: dump_uuid(),
+          nutrition_diary_day_id: dump_uuid(day.id),
           local_date: date,
           meal_slot: "breakfast",
           applied_timezone: "Asia/Kolkata",
@@ -341,15 +381,13 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       Map.merge(
         %{
           id: dump_uuid(),
-          kind: "food",
           display_name: "Oats",
-          portion_kind: "gram",
-          weight_g: 50.0,
-          complete: false,
+          portion: %{kind: "gram", grams: 50.0},
+          nutrients: %{calories: nil, protein: nil, carbohydrates: nil, fat: nil, fiber: nil},
           business_id: dump_uuid(client.business_id),
           client_id: dump_uuid(client.id),
           nutrition_diary_slot_id: slot_id,
-          source_food_id: dump_uuid()
+          food_id: dump_uuid()
         },
         Map.new(overrides)
       )

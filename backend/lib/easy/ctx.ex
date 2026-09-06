@@ -23,4 +23,7 @@ defmodule Easy.Ctx do
   @spec fetch_client_id(t()) :: {:ok, Ecto.UUID.t()} | {:error, :not_found}
   def fetch_client_id(%__MODULE__{client_id: client_id}) when not is_nil(client_id), do: {:ok, client_id}
   def fetch_client_id(%__MODULE__{}), do: {:error, :not_found}
+  @spec ensure_coach(t()) :: :ok | {:error, :not_found}
+  def ensure_coach(%__MODULE__{coach_id: id}) when is_binary(id), do: :ok
+  def ensure_coach(%__MODULE__{}), do: {:error, :not_found}
 end

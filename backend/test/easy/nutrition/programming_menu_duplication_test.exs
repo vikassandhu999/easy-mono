@@ -5,7 +5,7 @@ defmodule Easy.Nutrition.ProgrammingMenuDuplicationTest do
 
   import Easy.Nutrition.ProgrammingMenuFixtures
 
-  describe "duplicate_template/3" do
+  describe "duplicate_template/2" do
     test "copies Meals, Menu Items, Day Patterns, and the Week Schedule onto the new Template" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
@@ -40,13 +40,14 @@ defmodule Easy.Nutrition.ProgrammingMenuDuplicationTest do
                  }
                )
 
-      assert {:ok, copy} = Programming.duplicate_template(ctx, source.id, 2)
+      assert {:ok, copy} = Programming.duplicate_template(ctx, source.id)
       assert copy.id != source.id
       assert copy.revision == 1
       assert copy.menu == source.menu
       assert {:ok, _} = Library.update_food(ctx, food.id, food.revision, %{calories_per_100g: 999.0})
-      assert {:ok, second_copy} = Programming.duplicate_template(ctx, source.id, 2)
-      assert second_copy.menu == source.menu
+      assert {:ok, second_copy} = Programming.duplicate_template(ctx, source.id)
+      {:ok, live_source} = Programming.get_template(ctx, source.id)
+      assert second_copy.menu == live_source.menu
     end
   end
 end

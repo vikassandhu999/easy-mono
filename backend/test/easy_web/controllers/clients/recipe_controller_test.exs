@@ -51,10 +51,7 @@ defmodule EasyWeb.Clients.RecipeControllerTest do
         business: ctx.business,
         recipe: recipe,
         food: food,
-        portion_kind: :gram,
-        amount: nil,
-        unit: nil,
-        weight_g: 200
+        portion: %{kind: :gram, grams: 200}
       )
 
       conn = get(ctx.conn, "/v1/client/nutrition-recipes/#{recipe.id}")

@@ -29,7 +29,7 @@ defmodule Easy.LibraryMedia do
   @spec fetch_attachable(Ctx.t(), String.t()) :: {:ok, Media.t()} | {:error, :not_found}
   def fetch_attachable(%Ctx{} = ctx, media_id) do
     Media
-    |> Media.for_business(ctx.business_id)
+    |> Media.attachable(ctx.business_id)
     |> Repo.get(media_id)
     |> case do
       nil -> {:error, :not_found}
@@ -50,10 +50,10 @@ defmodule Easy.LibraryMedia do
   def public_representation(%Media{} = media) do
     %{
       id: media.id,
-      kind: Media.kind(media.content_type),
+      kind: if(media.external_url, do: :image, else: Media.kind(media.content_type)),
       content_type: media.content_type,
       byte_size: media.byte_size,
-      url: public_url(media.storage_key)
+      url: media.external_url || public_url(media.storage_key)
     }
   end
 

@@ -2,6 +2,7 @@ defmodule Easy.Nutrition.Recipe do
   use Ecto.Schema
 
   alias Easy.Nutrition.{Food, RecipeIngredient}
+  alias Easy.Nutrition.Tags
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -11,9 +12,6 @@ defmodule Easy.Nutrition.Recipe do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
-
-  @allergens ~w(dairy egg fish shellfish tree_nuts peanuts wheat soy sesame)
-  @dietary_tags ~w(vegan vegetarian halal kosher gluten_free dairy_free low_fodmap keto high_protein)
 
   schema "nutrition_recipes" do
     field :name, :string
@@ -29,7 +27,6 @@ defmodule Easy.Nutrition.Recipe do
     belongs_to :creator, Orgs.Coach, foreign_key: :creator_id
     belongs_to :business, Orgs.Business
     has_many :recipe_ingredients, RecipeIngredient, on_delete: :delete_all, on_replace: :delete
-    has_many :foods, through: [:recipe_ingredients, :food]
 
     timestamps(type: :utc_datetime)
   end
@@ -68,8 +65,8 @@ defmodule Easy.Nutrition.Recipe do
     |> validate_length(:name, max: 255)
     |> validate_number(:servings_count, greater_than: 0)
     |> validate_number(:cooked_weight_g, greater_than: 0)
-    |> validate_subset(:allergens, @allergens)
-    |> validate_subset(:dietary_tags, @dietary_tags)
+    |> validate_subset(:allergens, Tags.allergens())
+    |> validate_subset(:dietary_tags, Tags.dietary())
     |> check_constraint(:revision, name: :nutrition_recipes_revision_positive)
     |> check_constraint(:cooked_weight_g, name: :nutrition_recipes_cooked_weight_positive)
     |> check_constraint(:servings_count, name: :nutrition_recipes_servings_count_positive)

@@ -18,7 +18,7 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
     test "returns the current day's flattened pending rows", ctx do
       response = ctx.conn |> get("/v1/client/nutrition-days") |> json_response(200)
 
-      assert %{"data" => [%{"date" => date, "slots" => [slot]}], "count" => 1} = response
+      assert %{"data" => [%{"date" => date, "slots" => [slot]}]} = response
       assert date == Date.to_iso8601(ctx.today)
       assert %{"entry_id" => nil, "planned_item_ref" => planned_item_ref, "status" => "pending"} = hd(slot["rows"])
       assert is_binary(planned_item_ref)
@@ -30,6 +30,12 @@ defmodule EasyWeb.Clients.NutritionDayControllerTest do
   end
 
   describe "PATCH /v1/client/nutrition-days/:date" do
+    test "rejects malformed UUIDs in diary input", ctx do
+      conn = patch(ctx.conn, "/v1/client/nutrition-days/#{ctx.today}", %{"slots" => [%{"meal_slot" => "breakfast", "meal_id" => "not-a-uuid", "entries" => []}]})
+
+      assert json_response(conn, 422)
+    end
+
     test "is unavailable to a coach", ctx do
       conn =
         build_conn()

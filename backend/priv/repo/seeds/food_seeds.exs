@@ -3,27 +3,11 @@ NimbleCSV.define(FoodsCSVParser, separator: ",", escape: "\"")
 defmodule Easy.Repo.Seeds.Foods do
   alias Easy.Nutrition.{Food, ServingSize}
   alias Easy.Repo
+  import Ecto.Query
 
   @batch_size 500
   @source :system
   @food_categories ["I", "PF"]
-
-  @food_fields [
-    :name,
-    :calories_per_100g,
-    :protein_g_per_100g,
-    :carbs_g_per_100g,
-    :fat_g_per_100g,
-    :fiber_g_per_100g,
-    :serving_sizes,
-    :source,
-    :category,
-    :allergens,
-    :dietary_tags,
-    :notes,
-    :image_url,
-    :import_id
-  ]
 
   @spec run() :: :ok
   def run do
@@ -32,12 +16,16 @@ defmodule Easy.Repo.Seeds.Foods do
     seed_csv = Path.join(:code.priv_dir(:easy), "repo/foods_seed.csv")
     full_csv = Path.join(:code.priv_dir(:easy), "repo/foods_database.csv")
 
+    {:ok, _} = Repo.transaction(fn ->
+    Repo.query!("SELECT pg_advisory_xact_lock(hashtext('nutrition_food_seed'))")
     cond do
+      Repo.exists?(from(f in Food, where: f.source == :system)) -> IO.puts("  Foods already seeded")
       File.exists?(full_csv) -> seed_foods(full_csv)
       File.exists?(seed_csv) -> seed_foods(seed_csv)
       true -> IO.puts("  Skipping foods — no foods CSV found")
     end
 
+    end, timeout: 120_000)
     :ok
   end
 
@@ -57,18 +45,14 @@ defmodule Easy.Repo.Seeds.Foods do
       |> Stream.chunk_every(@batch_size)
       |> Enum.reduce(0, fn batch, total ->
         {count, _} =
-          Repo.insert_all(Food, batch,
-            on_conflict: {:replace, @food_fields ++ [:updated_at]},
-            conflict_target: {:unsafe_fragment, ~s|("import_id") WHERE import_id IS NOT NULL|},
-            timeout: 120_000
-          )
+          Repo.insert_all(Food, batch, timeout: 120_000)
 
         inserted = total + count
-        IO.write("\r  Upserted #{inserted} foods...")
+        IO.write("\r  Inserted #{inserted} foods...")
         inserted
       end)
 
-    IO.puts("\r  Foods: #{count} upserted            ")
+    IO.puts("\r  Foods: #{count} inserted            ")
   end
 
   defp parse_row([_id, json_string]) do
@@ -86,7 +70,6 @@ defmodule Easy.Repo.Seeds.Foods do
 
     %{
       id: Ecto.UUID.generate(),
-      import_id: to_string(food["food_id"]),
       name: food["food_name"] |> String.trim(),
       calories_per_100g: round_macro(food["calorie"]),
       protein_g_per_100g: round_macro(food["proteins"]),
@@ -99,13 +82,20 @@ defmodule Easy.Repo.Seeds.Foods do
       allergens: [],
       dietary_tags: [],
       notes: nil,
-      image_url: food["food_image_url"],
+      media_id: seed_image(food["food_image_url"], now),
       creator_id: nil,
       business_id: nil,
       inserted_at: now,
       updated_at: now
     }
   end
+
+  defp seed_image(url, now) when is_binary(url) and url != "" do
+    id = Ecto.UUID.generate()
+    Repo.insert_all(Easy.LibraryMedia.Media, [%{id: id, uploaded_by_type: :system, external_url: url, inserted_at: now, updated_at: now}])
+    id
+  end
+  defp seed_image(_url, _now), do: nil
 
   defp build_serving_sizes(measures) do
     measures

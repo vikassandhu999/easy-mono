@@ -312,7 +312,7 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
     test "deletes a food successfully", %{conn: conn, coach: coach, business: business} do
       food = insert(:food, creator: coach, business: business)
 
-      conn = delete(conn, "/v1/coach/nutrition-foods/#{food.id}?expected_revision=1")
+      conn = delete(conn, "/v1/coach/nutrition-foods/#{food.id}")
       assert response(conn, 204)
 
       # Verify the food is actually gone
@@ -321,7 +321,7 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
     end
 
     test "returns 404 for non-existent food", %{conn: conn} do
-      conn = delete(conn, "/v1/coach/nutrition-foods/#{Ecto.UUID.generate()}?expected_revision=1")
+      conn = delete(conn, "/v1/coach/nutrition-foods/#{Ecto.UUID.generate()}")
       assert json_response(conn, 404)
     end
 
@@ -329,7 +329,7 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
       other_coach = insert(:coach)
       other_food = insert(:food, creator: other_coach, business: other_coach.business)
 
-      conn = delete(conn, "/v1/coach/nutrition-foods/#{other_food.id}?expected_revision=1")
+      conn = delete(conn, "/v1/coach/nutrition-foods/#{other_food.id}")
       assert json_response(conn, 404)
     end
 
@@ -337,28 +337,14 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
       creator = insert(:coach, business: business)
       food = insert(:food, creator: creator, business: business)
 
-      conn = delete(conn, "/v1/coach/nutrition-foods/#{food.id}?expected_revision=1")
+      conn = delete(conn, "/v1/coach/nutrition-foods/#{food.id}")
       assert response(conn, 204)
     end
 
-    test "returns conflict when the expected revision is stale", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
+    test "rejects obsolete revision query parameters", %{conn: conn, coach: coach, business: business} do
       food = insert(:food, creator: coach, business: business)
-
-      patch(conn, "/v1/coach/nutrition-foods/#{food.id}", %{
-        "expected_revision" => 1,
-        "name" => "Kept"
-      })
-
       conn = delete(conn, "/v1/coach/nutrition-foods/#{food.id}?expected_revision=1")
-
-      assert %{
-               "error_code" => "stale_revision",
-               "error_detail" => %{"current_revision" => 2}
-             } = json_response(conn, 409)
+      assert json_response(conn, 422)
     end
 
     test "returns 409 when a Recipe Ingredient still uses the food", %{
@@ -373,14 +359,10 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
         business: business,
         recipe: recipe,
         food: food,
-        portion_kind: :gram,
-        amount: nil,
-        unit: nil,
-        serving_label: nil,
-        weight_g: 100.0
+        portion: %{kind: :gram, grams: 100.0}
       )
 
-      conn = delete(conn, "/v1/coach/nutrition-foods/#{food.id}?expected_revision=1")
+      conn = delete(conn, "/v1/coach/nutrition-foods/#{food.id}")
       assert %{"error_code" => "in_use"} = json_response(conn, 409)
     end
 
@@ -390,7 +372,7 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
       item = food_item("item", food.id, %{kind: :gram, grams: 100})
       assert {:ok, _} = Programming.replace_menu(DataCase.trainer_ctx(coach), plan.id, plan.revision, menu(plan, meals: [meal_input("meal", "Meal", [item])]))
 
-      conn = delete(conn, "/v1/coach/nutrition-foods/#{food.id}?expected_revision=1")
+      conn = delete(conn, "/v1/coach/nutrition-foods/#{food.id}")
       assert %{"error_code" => "in_use"} = json_response(conn, 409)
     end
 
@@ -420,14 +402,7 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
     test "deleting a system food is rejected with 422", %{conn: conn} do
       system_food = insert(:food, business: nil, creator: nil, source: :system)
 
-      conn = delete(conn, "/v1/coach/nutrition-foods/#{system_food.id}?expected_revision=1")
-      assert json_response(conn, 422)
-    end
-
-    test "patching an imported food is rejected with 422", %{conn: conn, coach: coach, business: business} do
-      imported = insert(:food, business: business, creator: coach, source: :imported)
-
-      conn = patch(conn, "/v1/coach/nutrition-foods/#{imported.id}", %{"expected_revision" => 1, "name" => "Renamed"})
+      conn = delete(conn, "/v1/coach/nutrition-foods/#{system_food.id}")
       assert json_response(conn, 422)
     end
   end
@@ -465,11 +440,7 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
         business: business,
         recipe: recipe,
         food: food,
-        portion_kind: :gram,
-        amount: nil,
-        unit: nil,
-        serving_label: nil,
-        weight_g: 100.0
+        portion: %{kind: :gram, grams: 100.0}
       )
 
       plan = insert(:plan, business: business, creator: coach.user, kind: :template, name: "Cut")

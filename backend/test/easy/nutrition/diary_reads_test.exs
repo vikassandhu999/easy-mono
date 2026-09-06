@@ -2,7 +2,7 @@ defmodule Easy.Nutrition.DiaryReadsTest do
   alias Easy.Nutrition.DiaryFixtures
   use Easy.DataCase, async: true
   alias Easy.LocalCalendar
-  alias Easy.Nutrition.{Diary, Diary.DayAssembler, DiaryEntry, Library, Plan, Programming}
+  alias Easy.Nutrition.{Diary, Diary.DayAssembler, DiaryDay, DiaryEntry, DiarySlot, Library, Plan, Programming}
   alias Easy.Repo
   import Ecto.Query
   import Easy.Nutrition.DiaryFixtures
@@ -126,7 +126,7 @@ defmodule Easy.Nutrition.DiaryReadsTest do
 
       utc_today = LocalCalendar.to_local_date(DateTime.utc_now(), "UTC")
 
-      assert {:ok, %{count: 1, nutrition_days: [day]}} =
+      assert {:ok, %{nutrition_days: [day]}} =
                Diary.list_client_nutrition_days(client_ctx(client), [])
 
       assert day.date == utc_today
@@ -195,20 +195,18 @@ defmodule Easy.Nutrition.DiaryReadsTest do
                )
     end
 
-    test "paginates a bounded local-date range and reports the full count" do
+    test "returns every date in the bounded range" do
       client = insert(:client)
       from_date = ~D[2026-08-01]
       to_date = ~D[2026-08-05]
 
-      assert {:ok, %{count: 5, nutrition_days: days}} =
+      assert {:ok, %{nutrition_days: days}} =
                Diary.list_client_nutrition_days(client_ctx(client),
                  from: from_date,
-                 to: to_date,
-                 offset: 1,
-                 limit: 2
+                 to: to_date
                )
 
-      assert Enum.map(days, & &1.date) == [~D[2026-08-02], ~D[2026-08-03]]
+      assert Enum.map(days, & &1.date) == Enum.to_list(Date.range(from_date, to_date))
     end
 
     test "rejects reversed, incomplete, and oversized local-date ranges" do
@@ -343,6 +341,34 @@ defmodule Easy.Nutrition.DiaryReadsTest do
     end
   end
 
+  test "day targets freeze once while unstarted slots continue to use live Library values" do
+    %{client: client, coach: coach, food: food, plan: plan} = covering_setup(menu: :ordered)
+    today = local_today(client)
+    ctx = client_ctx(client)
+    assert {:ok, first} = DiaryFixtures.save_planned_slot(ctx, today, %{meal_slot: :breakfast})
+    frozen_breakfast = Enum.find(first.slots, &(&1.meal_slot == :breakfast))
+
+    assert {:ok, _} = Programming.update_plan(trainer_ctx(coach), plan.id, plan.revision, %{target_calories: 3000.0})
+    assert {:ok, _} = Library.update_food(trainer_ctx(coach), food.id, food.revision, %{name: "Updated oats", calories_per_100g: 400.0})
+    assert {:ok, live} = Diary.get_client_nutrition_day(ctx, today)
+    assert live.targets == first.targets
+    assert Enum.find(live.slots, &(&1.meal_slot == :breakfast)) == frozen_breakfast
+    workout = Enum.find(live.slots, &(&1.meal_slot == :post_workout))
+    assert hd(hd(workout.options).items).name == "Updated oats"
+    assert workout.planned_calories == 120.0
+
+    assert {:ok, second} = DiaryFixtures.save_planned_slot(ctx, today, %{meal_slot: :post_workout})
+    assert second.targets == first.targets
+    days = Repo.all(from d in DiaryDay, where: d.client_id == ^client.id)
+    assert [day] = days
+    day_ids = Repo.all(from s in DiarySlot, where: s.client_id == ^client.id, select: s.nutrition_diary_day_id)
+    assert day_ids == [day.id, day.id]
+    assert {:ok, _} = Programming.delete_plan(trainer_ctx(coach), plan.id)
+    assert {:ok, history} = Diary.get_client_nutrition_day(ctx, today)
+    assert history.targets == first.targets
+    assert history.slots == second.slots
+  end
+
   describe("frozen history durability") do
     test "deleting a Nutrition Template leaves assigned Client Plans and Diary history" do
       %{client: client, coach: coach, food: food, plan: plan} = covering_setup()
@@ -358,7 +384,7 @@ defmodule Easy.Nutrition.DiaryReadsTest do
                )
 
       template = Repo.get!(Plan, template_id)
-      assert {:ok, _} = Programming.delete_template(ctx, template.id, template.revision)
+      assert {:ok, _} = Programming.delete_template(ctx, template.id)
       assert Repo.get(Plan, template.id) == nil
       kept = Repo.get!(Plan, plan.id)
       assert kept.source_template_id == nil
@@ -386,7 +412,7 @@ defmodule Easy.Nutrition.DiaryReadsTest do
 
       frozen_targets = logged.targets
       frozen_adherence = logged.summary.adherence
-      assert {:ok, _} = Programming.delete_plan(trainer_ctx(coach), plan.id, plan.revision)
+      assert {:ok, _} = Programming.delete_plan(trainer_ctx(coach), plan.id)
       assert Repo.get(Plan, plan.id) == nil
       assert {:ok, day} = Diary.get_client_nutrition_day(client_ctx(client), today)
       assert Enum.any?(hd(day.slots).rows, &(&1.entry_id && &1.id == entry_id))
@@ -414,7 +440,7 @@ defmodule Easy.Nutrition.DiaryReadsTest do
                )
 
       planned_calories = hd(switched.slots).planned_calories
-      assert {:ok, _} = Programming.delete_plan(trainer_ctx(coach), plan.id, plan.revision)
+      assert {:ok, _} = Programming.delete_plan(trainer_ctx(coach), plan.id)
       assert {:ok, kept} = Diary.get_client_nutrition_day(ctx, today)
 
       assert Enum.map(hd(kept.slots).options, & &1.meal_id) == [
@@ -462,15 +488,15 @@ defmodule Easy.Nutrition.DiaryReadsTest do
       assert hd(replaced.slots).rows |> hd() |> Map.fetch!(:status) == :swapped
       coach_ctx = trainer_ctx(coach)
       template = Repo.get!(Plan, plan.source_template_id)
-      assert {:ok, _} = Programming.delete_plan(coach_ctx, plan.id, plan.revision)
-      assert {:ok, _} = Programming.delete_template(coach_ctx, template.id, template.revision)
-      assert {:ok, _} = Library.delete_food(coach_ctx, planned_food.id, planned_food.revision)
-      assert {:ok, _} = Library.delete_food(coach_ctx, substitute.id, substitute.revision)
+      assert {:ok, _} = Programming.delete_plan(coach_ctx, plan.id)
+      assert {:ok, _} = Programming.delete_template(coach_ctx, template.id)
+      assert {:ok, _} = Library.delete_food(coach_ctx, planned_food.id)
+      assert {:ok, _} = Library.delete_food(coach_ctx, substitute.id)
       assert {:ok, reread} = Diary.get_client_nutrition_day(ctx, today)
       assert hd(reread.slots).rows |> hd() |> Map.fetch!(:status) == :swapped
     end
 
-    test "deleting a Food or Recipe unused by Menus nulls the Diary reference and keeps frozen values" do
+    test "deleting a Food or Recipe unused by Menus hides the deleted Library link and keeps frozen values" do
       %{client: client, coach: coach} = covering_setup()
       today = local_today(client)
       ctx = trainer_ctx(coach)
@@ -492,12 +518,12 @@ defmodule Easy.Nutrition.DiaryReadsTest do
 
       food_entry = hd(food_day.slots).rows |> Enum.find(& &1.entry_id)
       assert food_entry.food_id == food.id
-      assert {:ok, _} = Library.delete_food(ctx, food.id, food.revision)
+      assert {:ok, _} = Library.delete_food(ctx, food.id)
       kept_food = Repo.get!(DiaryEntry, food_entry.id)
-      assert kept_food.food_id == nil
+      assert kept_food.food_id == food.id
       assert kept_food.display_name == "Banana"
-      assert kept_food.calories == 90.0
-      assert kept_food.complete
+      assert kept_food.nutrients.calories == 90.0
+      assert kept_food.nutrients.complete
       assert {:ok, reread} = Diary.get_client_nutrition_day(client_ctx(client), today)
       row = Enum.find(hd(reread.slots).rows, &(&1.entry_id && &1.id == food_entry.id))
       assert row.food_id == nil
@@ -517,7 +543,7 @@ defmodule Easy.Nutrition.DiaryReadsTest do
         business: coach.business,
         recipe: lone_recipe,
         food: recipe_food,
-        weight_g: 100.0
+        portion: %{kind: :gram, grams: 100.0}
       )
 
       assert {:ok, recipe_day} =
@@ -537,12 +563,12 @@ defmodule Easy.Nutrition.DiaryReadsTest do
         |> Enum.find(&(&1.entry_id && &1.kind == :recipe))
 
       assert recipe_entry.recipe_id == lone_recipe.id
-      assert {:ok, _} = Library.delete_recipe(ctx, lone_recipe.id, lone_recipe.revision)
+      assert {:ok, _} = Library.delete_recipe(ctx, lone_recipe.id)
       kept_recipe = Repo.get!(DiaryEntry, recipe_entry.id)
-      assert kept_recipe.recipe_id == nil
+      assert kept_recipe.recipe_id == lone_recipe.id
       assert kept_recipe.display_name == "Rice bowl"
-      assert kept_recipe.amount == 1.0
-      assert kept_recipe.complete
+      assert kept_recipe.portion.amount == 1.0
+      assert kept_recipe.nutrients.complete
       assert {:ok, reread_recipe} = Diary.get_client_nutrition_day(client_ctx(client), today)
 
       recipe_row =

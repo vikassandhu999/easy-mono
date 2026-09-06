@@ -3,7 +3,7 @@ defmodule Easy.Nutrition.CutoverTest do
   import Easy.Nutrition.ProgrammingMenuFixtures, only: [uuid: 1]
   use Easy.SchemaCase, async: false
   alias Easy.LocalCalendar
-  alias Easy.Nutrition.{Library, Programming, WeekSchedule}
+  alias Easy.Nutrition.{Library, Menu, Programming}
   alias Easy.Repo
 
   @legacy_tables [
@@ -94,7 +94,7 @@ defmodule Easy.Nutrition.CutoverTest do
     today = local_today(client)
     assert {:ok, _library_food} = Library.get_food(ctx, food.id)
     assert {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})
-    pattern = hd(template.day_patterns)
+    pattern = hd(template.menu.day_patterns)
 
     menu = %{
       meals: [
@@ -121,12 +121,12 @@ defmodule Easy.Nutrition.CutoverTest do
           slots: [
             %{
               meal_slot: :breakfast,
-              options: [%{id: uuid("opt"), nutrition_meal_id: uuid("breakfast")}]
+              meal_ids: [uuid("breakfast")]
             }
           ]
         }
       ],
-      schedule: Map.new(WeekSchedule.weekdays(), &{&1, pattern.id})
+      schedule: Map.new(Menu.weekdays(), &{&1, pattern.id})
     }
 
     assert {:ok, source} = Programming.replace_menu(ctx, template.id, 1, menu)
@@ -137,7 +137,7 @@ defmodule Easy.Nutrition.CutoverTest do
                "end_date" => nil
              })
 
-    item_id = hd(hd(plan.meals).meal_items).id
+    item_id = hd(hd(plan.menu.meals).meal_items).id
 
     assert {:ok, planned} =
              DiaryFixtures.save_extra(

@@ -13,11 +13,8 @@ defmodule Easy.Factory do
   alias Easy.Identity.User
   alias Easy.Identity.UserSession
   alias Easy.LibraryMedia.Media, as: LibraryMedia
-  alias Easy.Nutrition.DayPattern
   alias Easy.Nutrition.Food
-  alias Easy.Nutrition.Meal
-  alias Easy.Nutrition.MealItem
-  alias Easy.Nutrition.MealOption
+  alias Easy.Nutrition.Menu
   alias Easy.Nutrition.Plan
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient
@@ -334,6 +331,7 @@ defmodule Easy.Factory do
     archived_at = archived_at || if(status in [:archived, "archived"], do: DateTime.utc_now(:second))
 
     %Plan{
+      menu: Menu.empty(),
       kind: kind,
       name: sequence(:plan_name, &"Plan #{&1}"),
       description: "Weekly plan",
@@ -366,116 +364,6 @@ defmodule Easy.Factory do
       "target_carbs_g" => 180.0,
       "target_fat_g" => 50.0,
       "target_fiber_g" => 25.0
-    }
-  end
-
-  def meal_factory(attrs) do
-    attrs = Map.new(attrs)
-    {plan, attrs} = Map.pop(attrs, :plan)
-    {business, attrs} = Map.pop(attrs, :business)
-    {creator, attrs} = Map.pop(attrs, :creator)
-
-    business = business || (plan && plan.business) || insert(:business)
-    plan = plan || build(:plan, business: business, creator: creator || insert(:coach, business: business))
-
-    %Meal{
-      name: sequence(:meal_name, &"Meal #{&1}"),
-      notes: nil,
-      position: sequence(:meal_position, & &1),
-      business: business,
-      plan: plan
-    }
-    |> merge_attributes(attrs)
-  end
-
-  def day_pattern_factory do
-    plan = build(:plan)
-
-    %DayPattern{
-      name: "Everyday",
-      position: sequence(:day_pattern_position, & &1),
-      business: plan.business,
-      plan: plan
-    }
-  end
-
-  def meal_option_factory do
-    meal = build(:meal)
-    pattern = build(:day_pattern, plan: meal.plan, business: meal.business)
-
-    %MealOption{
-      meal_slot: :breakfast,
-      position: 0,
-      business: meal.business,
-      plan: meal.plan,
-      day_pattern: pattern,
-      meal: meal
-    }
-  end
-
-  def meal_item_factory(attrs) do
-    attrs = Map.new(attrs)
-    {meal, attrs} = Map.pop(attrs, :meal)
-    {business, attrs} = Map.pop(attrs, :business)
-    {plan, attrs} = Map.pop(attrs, :plan)
-    {food, attrs} = Map.pop(attrs, :food)
-    {recipe, attrs} = Map.pop(attrs, :recipe)
-    {portion, attrs} = pop_meal_item_portion(attrs)
-
-    meal = meal || build(:meal)
-    plan = plan || meal.plan
-    business = business || meal.business
-    food = food || unless(recipe, do: build(:food, business: business))
-
-    %MealItem{
-      portion_kind: portion.kind,
-      weight_g: portion.weight_g,
-      amount: portion.amount,
-      unit: portion.unit,
-      serving_label: portion.serving_label,
-      position: 0,
-      calories: nil,
-      protein: nil,
-      carbohydrates: nil,
-      fat: nil,
-      fiber: nil,
-      complete: false,
-      food: food,
-      recipe: recipe,
-      business: business,
-      plan: plan,
-      meal: meal
-    }
-    |> merge_attributes(attrs)
-  end
-
-  defp pop_meal_item_portion(attrs) do
-    {portion_kind, attrs} = Map.pop(attrs, :portion_kind)
-    {amount, attrs} = Map.pop(attrs, :amount)
-    {unit, attrs} = Map.pop(attrs, :unit)
-    {weight_g, attrs} = Map.pop(attrs, :weight_g)
-    {serving_label, attrs} = Map.pop(attrs, :serving_label)
-
-    portion =
-      if gram_meal_item?(portion_kind, amount, unit) do
-        %{kind: :gram, amount: nil, unit: nil, serving_label: nil, weight_g: weight_g || 100.0}
-      else
-        %{kind: :serving, amount: amount || 1.0, unit: unit || "serving", serving_label: serving_label, weight_g: weight_g}
-      end
-
-    {portion, attrs}
-  end
-
-  defp gram_meal_item?(:gram, _amount, _unit), do: true
-  defp gram_meal_item?(nil, amount, unit) when is_nil(amount) or unit in [nil, "g"], do: true
-  defp gram_meal_item?(_kind, _amount, _unit), do: false
-
-  def meal_item_attrs_factory do
-    %{
-      "weight_g" => 100.0,
-      "amount" => 1.0,
-      "unit" => "serving",
-      "position" => 0
     }
   end
 

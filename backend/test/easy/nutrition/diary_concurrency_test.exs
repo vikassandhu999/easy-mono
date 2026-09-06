@@ -7,14 +7,7 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
   alias Easy.Ctx
   alias Easy.Identity.User
 
-  alias Easy.Nutrition.{
-    Diary,
-    DiaryEntry,
-    DiaryFrozenOption,
-    DiaryFrozenPlannedItem,
-    DiarySlot,
-    Food
-  }
+  alias Easy.Nutrition.{Diary, DiaryEntry, DiaryFrozenOption, DiaryFrozenPlannedItem, DiarySlot, Food}
 
   alias Easy.Orgs.{Business, Coach}
   alias Easy.Repo
@@ -100,7 +93,6 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
           DiaryFrozenPlannedItem,
           DiaryFrozenOption,
           DiarySlot,
-          Easy.Nutrition.Meal,
           Easy.Nutrition.Plan,
           Food,
           Client,

@@ -50,7 +50,7 @@ function fixture() {
         {
           id: 'day',
           name: 'Every day',
-          slots: [{meal_slot: 'breakfast', options: [{id: 'option', nutrition_meal_id: 'meal'}]}],
+          slots: [{meal_slot: 'breakfast', meal_ids: ['meal']}],
         },
       ],
       schedule: Object.fromEntries(
@@ -240,7 +240,7 @@ try {
       assert.equal(plan.menu.meals.length, 2, 'reusing breakfast does not copy the meal');
       assert(
         plan.menu.day_patterns[1].slots.some((slot) =>
-          slot.options.some((option) => option.nutrition_meal_id === 'meal'),
+          slot.meal_ids.includes('meal'),
         ),
       );
       await page.getByRole('button', {name: 'Delete New day', exact: true}).click();

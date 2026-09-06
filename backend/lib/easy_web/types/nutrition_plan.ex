@@ -12,22 +12,13 @@ defmodule EasyWeb.Types.NutritionWeekSchedule do
   use EasyWeb.Type
 
   @type t :: %{
-          required(:monday) => String.t() | nil,
-          required(:tuesday) => String.t() | nil,
-          required(:wednesday) => String.t() | nil,
-          required(:thursday) => String.t() | nil,
-          required(:friday) => String.t() | nil,
-          required(:saturday) => String.t() | nil,
-          required(:sunday) => String.t() | nil
-        }
-end
-
-defmodule EasyWeb.Types.NutritionMealOption do
-  use EasyWeb.Type
-
-  @type t :: %{
-          required(:id) => String.t(),
-          required(:nutrition_meal_id) => String.t()
+          required(:monday) => String.t(),
+          required(:tuesday) => String.t(),
+          required(:wednesday) => String.t(),
+          required(:thursday) => String.t(),
+          required(:friday) => String.t(),
+          required(:saturday) => String.t(),
+          required(:sunday) => String.t()
         }
 end
 
@@ -47,7 +38,7 @@ defmodule EasyWeb.Types.NutritionDayPatternSlot do
             | :pre_workout
             | :during_workout
             | :post_workout,
-          required(:options) => [EasyWeb.Types.NutritionMealOption.t()]
+          required(:meal_ids) => [String.t()]
         }
 end
 
@@ -117,19 +108,7 @@ defmodule EasyWeb.Types.NutritionPlan do
 
   alias Easy.Clients.Client
 
-  alias Easy.Nutrition.{
-    DayPattern,
-    Food,
-    Meal,
-    MealItem,
-    MealOption,
-    MealSlot,
-    NutrientTotals,
-    Plan,
-    Portions,
-    Recipe,
-    WeekSchedule
-  }
+  alias Easy.Nutrition.{Menu, Plan}
 
   @type t :: %{
           required(:id) => String.t(),
@@ -205,8 +184,7 @@ defmodule EasyWeb.Types.NutritionPlan do
         }
 
   @spec format(Plan.t()) :: t()
-  def format(%Plan{meals: meals, day_patterns: patterns, week_schedule: schedule} = plan)
-      when is_list(meals) and is_list(patterns) and is_list(schedule) do
+  def format(%Plan{} = plan) do
     %{
       id: plan.id,
       kind: plan.kind,
@@ -228,88 +206,10 @@ defmodule EasyWeb.Types.NutritionPlan do
       client: format_client(plan),
       creator_id: plan.creator_id,
       source_template_id: plan.source_template_id,
-      menu: %{
-        meals: Enum.map(meals, &format_meal/1),
-        day_patterns: Enum.map(patterns, &format_day_pattern/1),
-        schedule: format_schedule(schedule)
-      },
+      menu: Menu.format(plan.menu),
       inserted_at: plan.inserted_at,
       updated_at: plan.updated_at
     }
-  end
-
-  defp format_meal(%Meal{meal_items: items} = meal) when is_list(items) do
-    %{
-      id: meal.id,
-      name: meal.name,
-      notes: meal.notes,
-      nutrients: items |> NutrientTotals.sum() |> NutrientTotals.round(),
-      meal_items: Enum.map(items, &format_meal_item/1)
-    }
-  end
-
-  defp format_meal_item(%MealItem{food_id: food_id, food: %Food{name: name}} = item)
-       when not is_nil(food_id),
-       do: format_meal_item(item, :food, name)
-
-  defp format_meal_item(%MealItem{recipe_id: recipe_id, recipe: %Recipe{name: name}} = item)
-       when not is_nil(recipe_id),
-       do: format_meal_item(item, :recipe, name)
-
-  defp format_meal_item(%MealItem{} = item, kind, name) do
-    %{
-      id: item.id,
-      kind: kind,
-      name: name,
-      food_id: item.food_id,
-      recipe_id: item.recipe_id,
-      portion: Portions.from_snapshot(item),
-      nutrients: item |> NutrientTotals.from_fields() |> NutrientTotals.round()
-    }
-  end
-
-  defp format_day_pattern(%DayPattern{meal_options: options} = pattern)
-       when is_list(options) do
-    %{
-      id: pattern.id,
-      name: pattern.name,
-      slots: format_slots(options)
-    }
-  end
-
-  defp format_slots(options) do
-    grouped = Enum.group_by(options, & &1.meal_slot)
-
-    MealSlot.values()
-    |> Enum.filter(&Map.has_key?(grouped, &1))
-    |> Enum.map(fn slot ->
-      %{
-        meal_slot: slot,
-        options:
-          grouped
-          |> Map.fetch!(slot)
-          |> Enum.sort_by(&{&1.position, &1.id})
-          |> Enum.map(&format_option/1)
-      }
-    end)
-  end
-
-  defp format_option(%MealOption{} = option) do
-    %{
-      id: option.id,
-      nutrition_meal_id: option.nutrition_meal_id
-    }
-  end
-
-  defp format_schedule(schedule) do
-    scheduled =
-      Map.new(schedule, fn %WeekSchedule{} = row ->
-        {row.weekday, row.nutrition_day_pattern_id}
-      end)
-
-    Map.new(WeekSchedule.weekdays(), fn weekday ->
-      {weekday, scheduled[weekday]}
-    end)
   end
 
   defp format_client(%Plan{kind: :template}), do: nil

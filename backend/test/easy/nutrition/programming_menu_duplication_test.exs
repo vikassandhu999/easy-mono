@@ -1,7 +1,7 @@
 defmodule Easy.Nutrition.ProgrammingMenuDuplicationTest do
   use Easy.DataCase, async: true
 
-  alias Easy.Nutrition.Programming
+  alias Easy.Nutrition.{Library, Programming}
 
   import Easy.Nutrition.ProgrammingMenuFixtures
 
@@ -10,7 +10,7 @@ defmodule Easy.Nutrition.ProgrammingMenuDuplicationTest do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
       assert {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})
-      pattern = hd(template.day_patterns)
+      pattern = hd(template.menu.day_patterns)
       food = insert(:food, business: coach.business, creator: coach)
 
       assert {:ok, source} =
@@ -31,9 +31,7 @@ defmodule Easy.Nutrition.ProgrammingMenuDuplicationTest do
                        slots: [
                          %{
                            meal_slot: :breakfast,
-                           options: [
-                             %{id: uuid("opt"), nutrition_meal_id: uuid("breakfast")}
-                           ]
+                           meal_ids: [uuid("breakfast")]
                          }
                        ]
                      }
@@ -43,18 +41,12 @@ defmodule Easy.Nutrition.ProgrammingMenuDuplicationTest do
                )
 
       assert {:ok, copy} = Programming.duplicate_template(ctx, source.id, 2)
-      assert [%{name: "Breakfast", id: copy_meal_id, meal_items: [item]}] = copy.meals
-      assert copy_meal_id != hd(source.meals).id
-      assert item.food_id == food.id
-      assert item.weight_g == 50.0
-      assert item.id != hd(hd(source.meals).meal_items).id
-      assert [%{id: copy_pattern_id, meal_options: [option]}] = copy.day_patterns
-      assert copy_pattern_id != hd(source.day_patterns).id
-      assert option.nutrition_meal_id == copy_meal_id
-      assert option.meal_slot == :breakfast
-      assert option.position == 0
-      assert option.id != hd(hd(source.day_patterns).meal_options).id
-      assert Enum.all?(copy.week_schedule, &(&1.nutrition_day_pattern_id == copy_pattern_id))
+      assert copy.id != source.id
+      assert copy.revision == 1
+      assert copy.menu == source.menu
+      assert {:ok, _} = Library.update_food(ctx, food.id, food.revision, %{calories_per_100g: 999.0})
+      assert {:ok, second_copy} = Programming.duplicate_template(ctx, source.id, 2)
+      assert second_copy.menu == source.menu
     end
   end
 end

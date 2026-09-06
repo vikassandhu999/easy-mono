@@ -6,6 +6,7 @@ defmodule Easy.WorkbenchQueryPlanTest do
   alias Easy.Clients.Client
   alias Easy.Forms.FormAssignment
   alias Easy.Forms.FormSubmission
+  alias Easy.Nutrition.Menu
   alias Easy.Nutrition.Plan
   alias Easy.QueryPlan
   alias Easy.Repo
@@ -467,6 +468,7 @@ defmodule Easy.WorkbenchQueryPlanTest do
         creator_id: tenant.owner_coach.user_id,
         end_date: end_date,
         inserted_at: seeded_at,
+        menu: Menu.empty(),
         name: "Plan #{client_index} #{service}",
         start_date: start_date,
         updated_at: seeded_at

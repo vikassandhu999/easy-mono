@@ -1,7 +1,7 @@
 defmodule Easy.Nutrition.DiaryFrozenOption do
   use Ecto.Schema
 
-  alias Easy.Nutrition.{DiaryFrozenPlannedItem, DiarySlot, Meal}
+  alias Easy.Nutrition.{DiaryFrozenPlannedItem, DiarySlot}
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -18,7 +18,6 @@ defmodule Easy.Nutrition.DiaryFrozenOption do
 
     belongs_to :business, Orgs.Business
     belongs_to :diary_slot, DiarySlot, foreign_key: :nutrition_diary_slot_id
-    belongs_to :meal, Meal, foreign_key: :nutrition_meal_id
     has_many :planned_items, DiaryFrozenPlannedItem, foreign_key: :nutrition_diary_frozen_option_id
 
     timestamps(type: :utc_datetime)
@@ -27,7 +26,7 @@ defmodule Easy.Nutrition.DiaryFrozenOption do
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, slot_id, attrs) do
     %__MODULE__{}
-    |> cast(attrs, [:position, :meal_name, :source_meal_id, :nutrition_meal_id])
+    |> cast(attrs, [:position, :meal_name, :source_meal_id])
     |> put_change(:business_id, business_id)
     |> put_change(:nutrition_diary_slot_id, slot_id)
     |> validate_required([:position, :meal_name, :source_meal_id, :business_id, :nutrition_diary_slot_id])

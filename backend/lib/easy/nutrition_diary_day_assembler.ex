@@ -9,15 +9,11 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
     DiaryFrozenOption,
     DiaryFrozenPlannedItem,
     DiarySlot,
-    Food,
-    Meal,
-    MealItem,
-    MealOption,
     MealSlot,
+    Menu,
     NutrientTotals,
     Portions,
-    Programming,
-    Recipe
+    Programming
   }
 
   alias Easy.Repo
@@ -159,29 +155,28 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
   defp live_slots(nil, _plan, _timezone, _write_eligible), do: []
 
   defp live_slots(pattern, plan, timezone, write_eligible) do
-    meals = Map.new(List.wrap(plan.meals), &{&1.id, &1})
-    grouped = Enum.group_by(List.wrap(pattern.meal_options), & &1.meal_slot)
-
     MealSlot.values()
-    |> Enum.filter(&Map.has_key?(grouped, &1))
-    |> Enum.map(&slot_from_options(&1, Map.fetch!(grouped, &1), meals, timezone, write_eligible))
+    |> Enum.flat_map(fn slot ->
+      case Menu.meals_for_slot(plan.menu, pattern, slot) do
+        [] -> []
+        meals -> [slot_from_meals(slot, meals, timezone, write_eligible)]
+      end
+    end)
   end
 
-  defp slot_from_options(slot, options, meals, timezone, write_eligible) do
-    ordered = Enum.sort_by(options, &{&1.position, &1.id})
-    default = hd(ordered)
-    items = meal_items(meals[default.nutrition_meal_id])
+  defp slot_from_meals(slot, [default | _rest] = meals, timezone, write_eligible) do
+    items = default.meal_items
 
     %{
       meal_slot: slot,
-      meal_id: default.nutrition_meal_id,
+      meal_id: default.id,
       revision: 0,
       applied_timezone: timezone,
       write_eligible: write_eligible,
-      planned_calories: NutrientTotals.sum(items).calories,
+      planned_calories: NutrientTotals.combine(Enum.map(items, & &1.nutrients)).calories,
       logged_calories: nil,
-      options: Enum.map(ordered, &option_data(&1, meals)),
-      rows: Enum.map(items, &row(:pending, item_data(&1), nil))
+      options: Enum.with_index(meals, &option_data/2),
+      rows: Enum.with_index(items, fn item, position -> row(:pending, item_data(item, position), nil) end)
     }
   end
 
@@ -246,16 +241,8 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
     }
   end
 
-  defp option_data(%MealOption{} = option, meals) do
-    meal = meals[option.nutrition_meal_id]
-    items = meal_items(meal)
-
-    %{
-      meal_id: option.nutrition_meal_id,
-      meal_name: meal && meal.name,
-      position: option.position,
-      items: Enum.map(items, &item_data/1)
-    }
+  defp option_data(meal, position) do
+    %{meal_id: meal.id, meal_name: meal.name, position: position, items: Enum.with_index(meal.meal_items, &item_data/2)}
   end
 
   defp frozen_option_data(%DiaryFrozenOption{} = option) do
@@ -267,16 +254,16 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
     }
   end
 
-  defp item_data(%MealItem{} = item) do
+  defp item_data(item, position) do
     %{
       planned_item_ref: item.id,
-      kind: item_kind(item),
-      name: item_name(item),
+      kind: item.kind,
+      name: item.name,
       food_id: item.food_id,
       recipe_id: item.recipe_id,
-      position: item.position,
-      portion: Portions.from_snapshot(item),
-      nutrients: NutrientTotals.from_fields(item)
+      position: position,
+      portion: Menu.Portion.input(item.portion),
+      nutrients: Map.from_struct(item.nutrients)
     }
   end
 
@@ -307,16 +294,6 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
       updated_at: entry.updated_at
     }
   end
-
-  defp item_kind(%MealItem{food_id: food_id}) when not is_nil(food_id), do: :food
-  defp item_kind(%MealItem{}), do: :recipe
-
-  defp item_name(%MealItem{food: %Food{name: name}}), do: name
-  defp item_name(%MealItem{recipe: %Recipe{name: name}}), do: name
-  defp item_name(_item), do: nil
-
-  defp meal_items(%Meal{meal_items: items}) when is_list(items), do: items
-  defp meal_items(_meal), do: []
 
   defp targets(plan) do
     %{

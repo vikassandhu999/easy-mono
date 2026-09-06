@@ -24,7 +24,8 @@ Read the editor in this order:
 1. [menu.ts](../frontend/apps/coachapp-v2/src/library/nutrition-plans/builder/menu.ts)
    edits the API's `NutritionMenu` directly. Meals contain items. Day patterns contain
    slots and ordered meal choices. The week schedule points to day patterns. Array
-   order is authoritative and each node keeps its UUID through saves.
+   order is authoritative. Meals, items, and days keep their UUIDs through saves.
+   Each slot contains ordered `meal_ids`; a choice needs no separate UUID.
 2. [plan-builder.tsx](../frontend/apps/coachapp-v2/src/library/nutrition-plans/builder/plan-builder.tsx)
    owns the draft, Save, Discard, navigation protection, and the active editor. The
    query cache contains saved server data. It is never patched while typing.
@@ -37,15 +38,15 @@ The public contract is in
 [nutrition_plan.ex](../backend/lib/easy_web/types/nutrition_plan.ex).
 `NutritionMenu` is shared by reads and writes. Database positions, parent IDs, and
 row timestamps stay on the server. Item names and nutrient totals are optional on
-input and recalculated on save; sending a read response back does not make these
+input and supplied by the server; sending a read response back does not make these
 values authoritative. Gram portions use `grams`; serving portions use `amount`,
 `unit`, and `label`. The server resolves serving weights.
 
 The server requires at least one day, a complete week schedule, valid meal
 references, and unique UUIDs. It checks the plan revision and saves everything in
-one transaction. A supplied UUID can update only a row in this plan; collisions
-with rows elsewhere fail and roll back. Foods and recipes are resolved in the
-coach's business scope. Archived plans are read-only.
+one transaction. UUIDs identify values within a menu. A copied menu retains those
+IDs under its own plan ID, and editing one copy never changes another. Foods and
+recipes are resolved in the coach's business scope. Archived plans are read-only.
 
 The other builder components render controls or collect input. They report local
 edits; they do not decide when to send requests, retry, undo, or refetch.
@@ -59,6 +60,34 @@ form. Assignment and lifecycle actions are unavailable while menu edits are pend
 The editor retains meals shared across days and alternative meal choices. Deleting
 a day transfers its weekdays to a remaining day and keeps its meals. Deleting a meal
 removes its uses throughout the menu. These are product rules, located in `editMenu`.
+
+## Menu persistence
+
+[Plan](../backend/lib/easy/nutrition/plan.ex) stores one embedded
+[Menu](../backend/lib/easy/nutrition/menu.ex) as JSONB. Plan details, ownership,
+revision, targets, and coverage dates remain columns. Nutrition has eight tables:
+three for the Library, one for Programming, and four for the Diary.
+
+Menu owns casting, internal references, ordering, and schedule validation.
+Programming locks the plan, checks its revision, resolves Library portions, and
+replaces the complete document. Assignment and duplication copy that document
+without recalculating nutrition or remapping node IDs. There are no child menu
+tables, position updates, or row reconciliation.
+
+Menu item names come from the Library on reads. Item nutrients and resolved gram
+weights remain as calculated on the last menu Save. Renaming a food changes the
+builder's label; editing its nutrients changes the prescription only when the coach
+saves the menu again. Started diary slots keep their frozen names and nutrients.
+
+Library usage queries search plan documents through one GIN index. A referenced
+food or recipe cannot be deleted, including when an archived plan uses it. Recipe
+gram portions prevent removal of the recipe's cooked weight. Menu saves lock
+recipes, then foods, in UUID order until commit; Library mutations lock their row
+before checking usage. These locks protect the references against concurrent
+deletion. Recipe ingredient foreign keys remain in the database.
+
+The [menu document decision](adr/0003-nutrition-menu-document.md) records the
+storage tradeoff and deployment requirements.
 
 ## Assignment and coverage
 
@@ -159,8 +188,8 @@ The contract lives in [day.ex](../backend/lib/easy_web/types/nutrition/day.ex).
   and nutrient calculation.
 * [Programming](../backend/lib/easy/nutrition_programming.ex) owns templates,
   independent client plans, assignment, and coverage.
-* [Menu replacement](../backend/lib/easy/nutrition_programming_menu_replacement.ex)
-  validates ownership, references, schedule, and items, then persists one transaction.
+* [Menu](../backend/lib/easy/nutrition/menu.ex) owns the embedded values and pure
+  validation. Programming persists the complete value in one transaction.
 * [Diary](../backend/lib/easy/nutrition_diary.ex) preserves offered guidance when a
   slot starts and records actual intake. Later plan edits cannot rewrite that history.
 

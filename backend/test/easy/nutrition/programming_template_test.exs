@@ -1,7 +1,7 @@
 defmodule Easy.Nutrition.ProgrammingTemplateTest do
   use Easy.DataCase, async: true
 
-  alias Easy.Nutrition.{DayPattern, Plan, Programming, WeekSchedule}
+  alias Easy.Nutrition.{Menu, Plan, Programming}
   alias Easy.Repo
 
   describe "create_template/2 and list_templates/2" do
@@ -31,11 +31,11 @@ defmodule Easy.Nutrition.ProgrammingTemplateTest do
       assert template.business_id == coach.business_id
       assert template.creator_id == coach.user_id
 
-      assert [%DayPattern{name: "Everyday", position: 0, id: pattern_id}] = template.day_patterns
-      assert length(template.week_schedule) == 7
+      assert [%{name: "Everyday", id: pattern_id}] = template.menu.day_patterns
+      assert map_size(template.menu.schedule) == 7
 
-      assert Enum.map(template.week_schedule, & &1.weekday) == WeekSchedule.weekdays()
-      assert Enum.all?(template.week_schedule, &(&1.nutrition_day_pattern_id == pattern_id))
+      assert MapSet.new(Map.keys(template.menu.schedule)) == MapSet.new(Menu.weekdays(), &to_string/1)
+      assert Enum.all?(Map.values(template.menu.schedule), &(&1 == pattern_id))
     end
 
     test "lists only matching Templates from the business" do
@@ -103,9 +103,9 @@ defmodule Easy.Nutrition.ProgrammingTemplateTest do
       assert copy.name == "Strength Base (Copy)"
       assert copy.revision == 1
       assert copy.target_protein_g == 140.0
-      assert [%{name: "Everyday", position: 0, id: pattern_id}] = copy.day_patterns
-      assert length(copy.week_schedule) == 7
-      assert Enum.all?(copy.week_schedule, &(&1.nutrition_day_pattern_id == pattern_id))
+      assert [%{name: "Everyday", id: pattern_id}] = copy.menu.day_patterns
+      assert map_size(copy.menu.schedule) == 7
+      assert Enum.all?(Map.values(copy.menu.schedule), &(&1 == pattern_id))
       assert Repo.get!(Plan, template.id).revision == 1
     end
 

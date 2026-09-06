@@ -1,7 +1,8 @@
 defmodule Easy.Nutrition.LibraryProtectionTest do
   use Easy.SchemaCase, async: true
 
-  alias Easy.Nutrition.Library
+  alias Easy.Nutrition.{Library, Programming}
+  import Easy.Nutrition.ProgrammingMenuFixtures
 
   describe "delete_food/3" do
     test "is blocked while a Menu Item still uses the food" do
@@ -119,20 +120,7 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
           ]
         )
 
-      plan = insert_plan(coach, [])
-      meal = insert(:meal, business: coach.business, plan: plan, creator: coach)
-
-      insert(:meal_item,
-        business: coach.business,
-        plan: plan,
-        meal: meal,
-        food: food,
-        portion_kind: :serving,
-        amount: 1.0,
-        unit: "cup",
-        serving_label: "cup",
-        weight_g: 200.0
-      )
+      put_food_on_menu(coach, food, portion: %{kind: :serving, amount: 1.0, unit: "cup", label: "cup"})
 
       assert {:ok, updated} =
                Library.update_food(ctx, food.id, food.revision, %{
@@ -275,36 +263,33 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
   end
 
   defp put_food_on_menu(coach, food, attrs \\ []) do
-    plan = insert_plan(coach, attrs)
-    meal = insert(:meal, business: coach.business, plan: plan, creator: coach)
-    insert(:meal_item, business: coach.business, plan: plan, meal: meal, food: food)
-    plan
+    {portion, attrs} = Keyword.pop(attrs, :portion, %{kind: :gram, grams: 100.0})
+    put_item_on_menu(coach, food_item("food", food.id, portion), attrs)
   end
 
   defp put_recipe_on_menu(coach, recipe, attrs \\ []) do
-    {portion, attrs} = Keyword.pop(attrs, :portion, :gram)
-    plan = insert_plan(coach, attrs)
-    meal = insert(:meal, business: coach.business, plan: plan, creator: coach)
+    {kind, attrs} = Keyword.pop(attrs, :portion, :serving)
 
-    insert(:meal_item,
-      business: coach.business,
-      plan: plan,
-      meal: meal,
-      recipe: recipe,
-      food: nil,
-      portion_kind: portion
-    )
+    portion =
+      case kind do
+        :gram -> %{kind: :gram, grams: 100.0}
+        :serving -> %{kind: :serving, amount: 1.0, unit: "serving", label: nil}
+      end
 
-    plan
+    put_item_on_menu(coach, recipe_item("recipe", recipe.id, portion), attrs)
   end
 
-  defp insert_plan(coach, attrs) do
-    insert(
-      :plan,
-      Keyword.merge(
-        [business: coach.business, creator: coach.user, kind: :template, name: "Cut"],
-        attrs
-      )
-    )
+  defp put_item_on_menu(coach, item, attrs) do
+    {archived_at, attrs} = Keyword.pop(attrs, :archived_at)
+    plan = insert(:plan, Keyword.merge([business: coach.business, creator: coach.user, name: "Cut"], attrs))
+    ctx = trainer_ctx(coach)
+    {:ok, saved} = Programming.replace_menu(ctx, plan.id, plan.revision, menu(plan, meals: [meal_input("meal", "Meal", [item])]))
+
+    if archived_at do
+      {:ok, archived} = Programming.archive_plan(ctx, saved.id, saved.revision)
+      archived
+    else
+      saved
+    end
   end
 end

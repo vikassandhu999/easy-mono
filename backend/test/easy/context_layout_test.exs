@@ -74,19 +74,6 @@ defmodule Easy.ContextLayoutTest do
     refute source =~ ~r/(?<!Easy\.)\bClients\./
   end
 
-  test "Nutrition Programming delegates the complete Menu replacement engine" do
-    programming = File.read!("lib/easy/nutrition_programming.ex")
-    engine_path = "lib/easy/nutrition_programming_menu_replacement.ex"
-
-    assert File.exists?(engine_path)
-    assert programming =~ "alias Easy.Nutrition.Programming.MenuReplacement"
-    assert programming =~ "MenuReplacement.replace(ctx, plan, attrs)"
-    assert programming =~ "mutate_plan(ctx, plan_id, expected_revision"
-
-    engine = File.read!(engine_path)
-    refute engine =~ "Repo.transaction"
-  end
-
   test "Nutrition Diary delegates read assembly and correction policy" do
     diary = File.read!("lib/easy/nutrition_diary.ex")
     assembler_path = "lib/easy/nutrition_diary_day_assembler.ex"

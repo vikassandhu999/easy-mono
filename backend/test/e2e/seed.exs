@@ -1,8 +1,8 @@
 import Easy.Factory
 
 alias Easy.Ctx
+alias Easy.Nutrition.Menu
 alias Easy.Nutrition.Programming
-alias Easy.Nutrition.WeekSchedule
 
 unless Mix.env() == :test and Easy.Repo.config()[:database] == "easy_test_e2e" do
   raise "E2E seeds require the isolated easy_test_e2e database"
@@ -39,7 +39,7 @@ fixtures =
     insert(:food, business: business, creator: coach, name: "Banana", calories_per_100g: 90)
     ctx = Ctx.new(business.id, owner.id, coach.id, true)
     {:ok, template} = Programming.create_template(ctx, %{name: "Everyday plan", target_calories: 2000})
-    day = hd(template.day_patterns)
+    day = hd(template.menu.day_patterns)
     meal_id = Ecto.UUID.generate()
 
     menu = %{
@@ -57,11 +57,11 @@ fixtures =
           id: day.id,
           name: "Every day",
           slots: [
-            %{meal_slot: :breakfast, options: [%{id: Ecto.UUID.generate(), nutrition_meal_id: meal_id}]}
+            %{meal_slot: :breakfast, meal_ids: [meal_id]}
           ]
         }
       ],
-      schedule: Map.new(WeekSchedule.weekdays(), &{&1, day.id})
+      schedule: Map.new(Menu.weekdays(), &{&1, day.id})
     }
 
     {:ok, template} = Programming.replace_menu(ctx, template.id, template.revision, menu)

@@ -3,7 +3,7 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
   use Easy.DataCase, async: true
 
   alias Easy.LocalCalendar
-  alias Easy.Nutrition.{Plan, Programming, WeekSchedule}
+  alias Easy.Nutrition.{Menu, Plan, Programming}
   alias Easy.QueryPlan
 
   describe "Client Plan Coverage and lifecycle" do
@@ -134,8 +134,8 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
                Programming.resolve_client_coverage(client_ctx(client), ~D[2026-08-15])
 
       assert resolved.id == assigned.id
-      assert pattern.id == hd(assigned.day_patterns).id
-      assert [%{meal_slot: :breakfast, position: 0}] = pattern.meal_options
+      assert pattern.id == hd(assigned.menu.day_patterns).id
+      assert [%{meal_slot: :breakfast, meal_ids: [_meal_id]}] = pattern.slots
     end
 
     test "treats start and end dates as inclusive and an absent end date as open-ended" do
@@ -227,7 +227,7 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
   end
 
   defp breakfast_menu(plan, food) do
-    pattern = hd(plan.day_patterns)
+    pattern = hd(plan.menu.day_patterns)
 
     %{
       meals: [
@@ -244,11 +244,11 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
           id: pattern.id,
           name: pattern.name,
           slots: [
-            %{meal_slot: :breakfast, options: [%{id: uuid("opt"), nutrition_meal_id: uuid("breakfast")}]}
+            %{meal_slot: :breakfast, meal_ids: [uuid("breakfast")]}
           ]
         }
       ],
-      schedule: Map.new(WeekSchedule.weekdays(), &{&1, pattern.id})
+      schedule: Map.new(Menu.weekdays(), &{&1, pattern.id})
     }
   end
 

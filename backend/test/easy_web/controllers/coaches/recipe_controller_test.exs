@@ -1,6 +1,10 @@
 defmodule EasyWeb.Coaches.RecipeControllerTest do
   use Easy.ConnCase
 
+  alias Easy.DataCase
+  alias Easy.Nutrition.Programming
+  import Easy.Nutrition.ProgrammingMenuFixtures
+
   setup do
     coach = insert(:coach)
 
@@ -242,8 +246,8 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
     } do
       recipe = insert(:recipe, creator: coach, business: business, cooked_weight_g: 400.0, servings_count: 2)
       plan = insert(:plan, business: business, creator: coach.user, kind: :template)
-      meal = insert(:meal, business: business, plan: plan, creator: coach)
-      insert(:meal_item, business: business, plan: plan, meal: meal, recipe: recipe, food: nil, portion_kind: :gram)
+      item = recipe_item("item", recipe.id, %{kind: :gram, grams: 100})
+      assert {:ok, _} = Programming.replace_menu(DataCase.trainer_ctx(coach), plan.id, plan.revision, menu(plan, meals: [meal_input("meal", "Meal", [item])]))
 
       conn =
         patch(conn, "/v1/coach/nutrition-recipes/#{recipe.id}", %{
@@ -307,8 +311,8 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
     test "returns 409 when a Menu still uses the recipe", %{conn: conn, coach: coach, business: business} do
       recipe = insert(:recipe, creator: coach, business: business)
       plan = insert(:plan, business: business, creator: coach.user, kind: :template)
-      meal = insert(:meal, business: business, plan: plan, creator: coach)
-      insert(:meal_item, business: business, plan: plan, meal: meal, recipe: recipe, food: nil)
+      item = recipe_item("item", recipe.id, %{kind: :serving, amount: 1, unit: "serving", label: nil})
+      assert {:ok, _} = Programming.replace_menu(DataCase.trainer_ctx(coach), plan.id, plan.revision, menu(plan, meals: [meal_input("meal", "Meal", [item])]))
 
       conn = delete(conn, "/v1/coach/nutrition-recipes/#{recipe.id}?expected_revision=1")
       assert %{"error_code" => "in_use"} = json_response(conn, 409)
@@ -434,8 +438,8 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
     } do
       recipe = insert(:recipe, creator: coach, business: business, name: "Dal")
       plan = insert(:plan, business: business, creator: coach.user, kind: :template, name: "Cut")
-      meal = insert(:meal, business: business, plan: plan, creator: coach)
-      insert(:meal_item, business: business, plan: plan, meal: meal, recipe: recipe, food: nil)
+      item = recipe_item("item", recipe.id, %{kind: :serving, amount: 1, unit: "serving", label: nil})
+      assert {:ok, _} = Programming.replace_menu(DataCase.trainer_ctx(coach), plan.id, plan.revision, menu(plan, meals: [meal_input("meal", "Meal", [item])]))
 
       conn = get(conn, "/v1/coach/nutrition-recipes/#{recipe.id}/impact")
       assert %{"data" => data} = json_response(conn, 200)

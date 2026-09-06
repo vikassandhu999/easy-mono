@@ -10,7 +10,7 @@ import Ecto.Query
 import Ecto.Changeset
 
 alias Easy.Ctx
-alias Easy.Nutrition.{DayPattern, Food, Plan, Programming, WeekSchedule}
+alias Easy.Nutrition.{Food, Plan, Programming}
 alias Easy.Repo
 
 plan_name = "NB fixture — Lean Bulk"
@@ -61,22 +61,11 @@ end
       |> put_change(:id, plan_id)
       |> Repo.insert!()
 
-    pattern =
-      business.id
-      |> DayPattern.insert_changeset(template.id, %{name: "Everyday", position: 0})
-      |> Repo.insert!()
-
-    Enum.each(WeekSchedule.weekdays(), fn weekday ->
-      business.id
-      |> WeekSchedule.insert_changeset(template.id, pattern.id, %{weekday: weekday})
-      |> Repo.insert!()
-    end)
-
     {:ok, seeded} = Programming.get_template(ctx, template.id)
     seeded
   end)
 
-everyday = hd(template.day_patterns)
+everyday = hd(template.menu.day_patterns)
 gram = fn grams -> %{kind: :gram, grams: grams * 1.0} end
 
 meal_ids = Map.new(~w(oats yogurt salmon chili empty), &{&1, Ecto.UUID.generate()})
@@ -121,18 +110,15 @@ meal_items: [food_item.(f6, 150), food_item.(f2, 150)]
 slots: [
           %{
             meal_slot: :breakfast,
-            options: [%{id: Ecto.UUID.generate(), nutrition_meal_id: meal_ids["oats"]}]
+            meal_ids: [meal_ids["oats"]]
           },
           %{
             meal_slot: :mid_morning,
-            options: [%{id: Ecto.UUID.generate(), nutrition_meal_id: meal_ids["yogurt"]}]
+            meal_ids: [meal_ids["yogurt"]]
           },
           %{
             meal_slot: :dinner,
-            options: [
-              %{id: Ecto.UUID.generate(), nutrition_meal_id: meal_ids["salmon"]},
-              %{id: Ecto.UUID.generate(), nutrition_meal_id: meal_ids["chili"]}
-            ]
+            meal_ids: [meal_ids["salmon"], meal_ids["chili"]]
           }
         ]
       },
@@ -142,11 +128,11 @@ slots: [
 slots: [
           %{
             meal_slot: :breakfast,
-            options: [%{id: Ecto.UUID.generate(), nutrition_meal_id: meal_ids["yogurt"]}]
+            meal_ids: [meal_ids["yogurt"]]
           },
           %{
             meal_slot: :lunch,
-            options: [%{id: Ecto.UUID.generate(), nutrition_meal_id: meal_ids["empty"]}]
+            meal_ids: [meal_ids["empty"]]
           }
         ]
       }

@@ -39,7 +39,9 @@ defmodule Easy.Nutrition.DiaryIdentityMigrationTest do
     {:ok, day} = save_extra(ctx, date, %{meal_slot: :lunch, recipe_id: recipe.id, portion: %{kind: :serving, amount: 1, unit: "serving", label: nil}})
     [row] = hd(day.slots).rows
 
-    for table <- ~w(nutrition_meal_items nutrition_diary_frozen_planned_items nutrition_diary_entries) do
+    Repo.query!("CREATE TEMP TABLE nutrition_meal_items (LIKE nutrition_diary_frozen_planned_items INCLUDING DEFAULTS) ON COMMIT DROP")
+
+    for table <- ~w(nutrition_diary_frozen_planned_items nutrition_diary_entries) do
       Repo.query!("ALTER TABLE #{table} DROP CONSTRAINT #{table}_canonical_portion_check")
     end
 

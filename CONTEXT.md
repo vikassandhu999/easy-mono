@@ -102,11 +102,14 @@ An independent nutrition prescription owned by one client. It may originate from
 _Avoid_: Assigned nutrition plan
 
 **Menu**:
-The Meals, Menu Items, Day Patterns, Meal Options, and Week Schedule owned by one Nutrition Template or Client Nutrition Plan.
+The document of Meals, Menu Items, Day Patterns, Meal Options, and Week Schedule owned by one Nutrition Template or Client Nutrition Plan. It is saved and copied as a whole. Meals, items, and patterns have identities local to that Menu.
 _Avoid_: Plan structure
 
 **Day Pattern**:
 A named reusable arrangement of Meal Options across the closed Meal Slot vocabulary.
+
+**Meal Option**:
+A Meal offered in a Day Pattern's Meal Slot. Each slot contains ordered Meal IDs; the first is its default. An option has no separate identity inside a Menu.
 
 **Week Schedule**:
 The mapping of Monday through Sunday to one Day Pattern per weekday.

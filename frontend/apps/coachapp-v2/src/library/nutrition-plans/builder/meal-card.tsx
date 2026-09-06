@@ -17,26 +17,19 @@ const ICON_BUTTON = `shrink-0 rounded-chip bg-transparent text-muted sm:size-7 $
 // Types
 // ---------------------------------------------------------------------------
 
-export interface MealSwap {
-  /** The day-meal option id — removing a swap removes this option. */
-  optionId: string;
-  meal: MenuMeal;
-}
-
 interface MealCardProps {
   meal: MenuMeal;
   edit: (action: MenuEdit) => void;
   showNutrition: boolean;
-  /** The day this card is rendered under, and the slot option binding it there. */
+  /** The day containing this meal choice. */
   dayId: string;
-  optionId: string;
   open: boolean;
   onToggle: () => void;
   /** Meal slot this meal occupies on the active day. */
   slot: MealSlot;
   /** How many day-slot options across the plan point at this meal. */
   assignmentCount: number;
-  swaps: MealSwap[];
+  swaps: MenuMeal[];
   swapCandidates: MealPaletteOption[];
   /** Opens the root-mounted add-items flow for this meal. */
   onAddItems: () => void;
@@ -62,7 +55,6 @@ export function MealCard({
   edit,
   showNutrition,
   dayId,
-  optionId,
   open,
   onToggle,
   slot,
@@ -166,7 +158,7 @@ export function MealCard({
           <MealSlotControl
             onChange={(nextSlot) => {
               if (nextSlot !== slot) {
-                edit({type: 'changeSlot', dayId, optionId, slot: nextSlot});
+                edit({type: 'changeSlot', dayId, mealId: meal.id, fromSlot: slot, slot: nextSlot});
               }
             }}
             slot={slot}
@@ -276,7 +268,7 @@ export function MealCard({
                 if (key === 'rename-meal') {
                   startEditing();
                 } else if (key === 'remove-from-day') {
-                  edit({type: 'removeOption', dayId, optionId});
+                  edit({type: 'removeOption', dayId, slot, mealId: meal.id});
                 } else if (key === 'delete-meal') {
                   edit({type: 'removeMeal', mealId: meal.id});
                 }
@@ -396,25 +388,25 @@ export function MealCard({
                   <div
                     className="flex min-h-11 items-center gap-2 rounded-control border border-border px-3 py-2 sm:min-h-0"
                     data-testid={openId('nb-swap-row')}
-                    key={swap.optionId}
+                    key={swap.id}
                   >
                     <ArrowLeftRight className="size-3.5 shrink-0 text-muted" />
                     <span
                       className="min-w-0 flex-1 truncate type-eyebrow text-foreground"
                       data-testid={openId('nb-swap-name')}
                     >
-                      {swap.meal.name}
+                      {swap.name}
                     </span>
-                    {(showNutrition ? kcalLabel(swap.meal.nutrients) : null) ? (
+                    {(showNutrition ? kcalLabel(swap.nutrients) : null) ? (
                       <span
                         className="shrink-0 whitespace-nowrap type-eyebrow text-muted"
                         data-testid={openId('nb-swap-kcal')}
                       >
-                        {showNutrition ? kcalLabel(swap.meal.nutrients) : null}
+                        {showNutrition ? kcalLabel(swap.nutrients) : null}
                       </span>
                     ) : null}
                     <Button
-                      aria-label={`Move swap ${swap.meal.name} up`}
+                      aria-label={`Move swap ${swap.name} up`}
                       className={`shrink-0 rounded-chip bg-transparent p-0 text-muted sm:size-5.5 ${AS_TEXT} ${NO_GAP}`}
                       data-testid={openId('nb-swap-move-up')}
                       isIconOnly
@@ -427,7 +419,7 @@ export function MealCard({
                       <ChevronUp className="size-3.5" />
                     </Button>
                     <Button
-                      aria-label={`Move swap ${swap.meal.name} down`}
+                      aria-label={`Move swap ${swap.name} down`}
                       className={`shrink-0 rounded-chip bg-transparent p-0 text-muted sm:size-5.5 ${AS_TEXT} ${NO_GAP}`}
                       data-testid={openId('nb-swap-move-down')}
                       isDisabled={index === swaps.length - 1}
@@ -441,12 +433,12 @@ export function MealCard({
                       <ChevronDown className="size-3.5" />
                     </Button>
                     <Button
-                      aria-label={`Remove swap ${swap.meal.name}`}
+                      aria-label={`Remove swap ${swap.name}`}
                       className={`  shrink-0 rounded-chip bg-transparent p-0 text-muted  sm:size-5.5   ${AS_TEXT} ${NO_GAP}`}
                       data-testid={openId('nb-swap-remove')}
                       isIconOnly
                       onPress={() => {
-                        edit({type: 'removeOption', dayId, optionId: swap.optionId});
+                        edit({type: 'removeOption', dayId, slot, mealId: swap.id});
                       }}
                       size="sm"
                       variant="ghost"
@@ -461,7 +453,7 @@ export function MealCard({
             <div className="mt-2">
               <AddSwapControl
                 onAdd={(mealId) => {
-                  edit({type: 'addOption', dayId, slot, mealId, id: crypto.randomUUID()});
+                  edit({type: 'addOption', dayId, slot, mealId});
                 }}
                 options={swapCandidates}
                 {...(open ? {testId: 'nb-add-swap'} : {})}

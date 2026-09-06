@@ -95,7 +95,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       assert data["id"] == plan.id
       assert data["kind"] == "client_plan"
       assert data["lifecycle"] == "incomplete"
-      assert data["menu"]["day_patterns"] == []
+      assert [%{"name" => "Everyday", "slots" => []}] = data["menu"]["day_patterns"]
       assert data["menu"]["meals"] == []
       assert data["client_id"] == ctx.client.id
       assert data["client"]["id"] == ctx.client.id

@@ -1,6 +1,10 @@
 defmodule EasyWeb.Coaches.FoodControllerTest do
   use Easy.ConnCase
 
+  alias Easy.DataCase
+  alias Easy.Nutrition.Programming
+  import Easy.Nutrition.ProgrammingMenuFixtures
+
   alias EasyWeb.Types.Nutrition.Food, as: FoodType
 
   setup do
@@ -383,8 +387,8 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
     test "returns 409 when a Menu still uses the food", %{conn: conn, coach: coach, business: business} do
       food = insert(:food, creator: coach, business: business)
       plan = insert(:plan, business: business, creator: coach.user, kind: :template)
-      meal = insert(:meal, business: business, plan: plan, creator: coach)
-      insert(:meal_item, business: business, plan: plan, meal: meal, food: food)
+      item = food_item("item", food.id, %{kind: :gram, grams: 100})
+      assert {:ok, _} = Programming.replace_menu(DataCase.trainer_ctx(coach), plan.id, plan.revision, menu(plan, meals: [meal_input("meal", "Meal", [item])]))
 
       conn = delete(conn, "/v1/coach/nutrition-foods/#{food.id}?expected_revision=1")
       assert %{"error_code" => "in_use"} = json_response(conn, 409)
@@ -469,8 +473,8 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
       )
 
       plan = insert(:plan, business: business, creator: coach.user, kind: :template, name: "Cut")
-      meal = insert(:meal, business: business, plan: plan, creator: coach)
-      insert(:meal_item, business: business, plan: plan, meal: meal, food: food)
+      item = food_item("item", food.id, %{kind: :gram, grams: 100})
+      assert {:ok, _} = Programming.replace_menu(DataCase.trainer_ctx(coach), plan.id, plan.revision, menu(plan, meals: [meal_input("meal", "Meal", [item])]))
 
       conn = get(conn, "/v1/coach/nutrition-foods/#{food.id}/impact")
       assert %{"data" => data} = json_response(conn, 200)

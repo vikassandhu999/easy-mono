@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 3f19624c63cbf35fdeba24ff4714960ed191289a27835a7a4c588ce9ffe91337 */
+/* typed-routes:hash f36f596a552206f3f113fafd8093d4ba801804a02bac37f016b3abab6e236e22 */
 export type Attachment = {
   id: string;
   content_type:
@@ -340,7 +340,7 @@ export type NutritionDayPatternSlot = {
     | 'pre_workout'
     | 'during_workout'
     | 'post_workout';
-  options: Array<NutritionMealOption>;
+  meal_ids: Array<string>;
 };
 export type NutritionDayRow = {
   id: string;
@@ -415,7 +415,6 @@ export type NutritionMealItem = {
   portion: NutritionPortion;
   nutrients?: FoodNutrients;
 };
-export type NutritionMealOption = {id: string; nutrition_meal_id: string};
 export type NutritionMenu = {
   meals: Array<NutritionMeal>;
   day_patterns: Array<NutritionDayPattern>;
@@ -452,13 +451,13 @@ export type NutritionPortion =
   | {kind: 'gram'; grams: number}
   | {kind: 'serving'; amount: number; unit: string; label: string | null};
 export type NutritionWeekSchedule = {
-  monday: string | null;
-  tuesday: string | null;
-  wednesday: string | null;
-  thursday: string | null;
-  friday: string | null;
-  saturday: string | null;
-  sunday: string | null;
+  monday: string;
+  tuesday: string;
+  wednesday: string;
+  thursday: string;
+  friday: string;
+  saturday: string;
+  sunday: string;
 };
 export type PerformedSet = {
   id: string;

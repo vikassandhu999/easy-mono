@@ -272,10 +272,10 @@ SET NULL is an UPDATE, and Postgres evaluates CHECK constraints on UPDATE. A
 `num_nonnulls(a, b) = 1` check over nilify-on-delete FKs therefore makes deleting the
 parent raise `Ecto.ConstraintError` (a 500), not fail gracefully. Deleting any food that
 had ever been logged was impossible for this reason. Decide per table which the row
-needs: history rows (`nutrition_food_log_entries`) relax to `<= 1` because they
-denormalise `food_name` and freeze macros, so they outlive the library row; structural
-rows (`nutrition_meal_items`) keep `= 1` and the delete is blocked up front as
-`{:error, :in_use}`. Review question: "for every nilify-on-delete FK, is there a CHECK
+needs: Diary rows retain scalar source identities and frozen names and nutrients,
+so their nullable live Library references can be cleared. Recipe Ingredient food
+references remain restrictive. Menu documents protect Library references with row
+locks and tenant-scoped usage checks that return `{:error, :in_use}`. Review question: "for every nilify-on-delete FK, is there a CHECK
 or NOT NULL over that column — and is exactly-one a write rule or a lifetime invariant?"
 
 ### RM-018 — Dropping a uniqueness guarantee is an API change for every reader of that column

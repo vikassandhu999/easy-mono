@@ -2,7 +2,7 @@ defmodule Easy.Nutrition.Library do
   alias Easy.CopyName
   alias Easy.Ctx
   alias Easy.LibraryMedia
-  alias Easy.Nutrition.{Food, MealItem, NutrientTotals, Plan, Recipe, RecipeIngredient}
+  alias Easy.Nutrition.{Food, NutrientTotals, Programming, Recipe, RecipeIngredient}
   alias Easy.Repo
   alias Easy.Utils
 
@@ -107,7 +107,7 @@ defmodule Easy.Nutrition.Library do
         Food.for_business_or_system(ctx.business_id),
         food_id,
         expected_revision,
-        &delete_locked_food/1
+        &delete_locked_food(ctx, &1)
       )
     end
   end
@@ -119,7 +119,7 @@ defmodule Easy.Nutrition.Library do
     with {:ok, food} <- get_food(ctx, food_id) do
       {:ok,
        Map.put(
-         menu_usage(ctx.business_id, :food_id, food.id),
+         menu_usage(ctx, :food, food.id),
          :recipes,
          recipe_usage(ctx.business_id, food.id)
        )}
@@ -263,7 +263,7 @@ defmodule Easy.Nutrition.Library do
         Recipe.for_business(ctx.business_id),
         recipe_id,
         expected_revision,
-        &delete_locked_recipe/1
+        &delete_locked_recipe(ctx, &1)
       )
     end
   end
@@ -272,7 +272,7 @@ defmodule Easy.Nutrition.Library do
           {:ok, %{templates: [map()], active_client_plans: [map()]}} | {:error, :not_found}
   def get_recipe_impact(%Ctx{} = ctx, recipe_id) do
     with {:ok, recipe} <- get_recipe(ctx, recipe_id) do
-      {:ok, menu_usage(ctx.business_id, :recipe_id, recipe.id)}
+      {:ok, menu_usage(ctx, :recipe, recipe.id)}
     end
   end
 
@@ -359,6 +359,44 @@ defmodule Easy.Nutrition.Library do
     end
   end
 
+  @spec item_names(Ctx.t(), [item_spec()]) :: {:ok, map()}
+  def item_names(ctx, specs) do
+    food_ids = for %{kind: :food, id: id} <- specs, do: id
+    recipe_ids = for %{kind: :recipe, id: id} <- specs, do: id
+    foods = Food.for_business_or_system(ctx.business_id) |> where([f], f.id in ^food_ids) |> select([f], {f.id, f.name}) |> Repo.all()
+    recipes = Recipe.for_business(ctx.business_id) |> where([r], r.id in ^recipe_ids) |> select([r], {r.id, r.name}) |> Repo.all()
+    {:ok, Map.new(Enum.map(foods, fn {id, name} -> {{:food, id}, name} end) ++ Enum.map(recipes, fn {id, name} -> {{:recipe, id}, name} end))}
+  end
+
+  @spec resolve_items_for_write(Ctx.t(), [item_spec()]) ::
+          {:ok, [resolved_item()]} | {:error, :not_found | :invalid_portion}
+  def resolve_items_for_write(ctx, specs) do
+    true = Repo.in_transaction?()
+    recipe_ids = for %{kind: :recipe, id: id} <- specs, do: id
+
+    Recipe.for_business(ctx.business_id)
+    |> where([r], r.id in ^recipe_ids)
+    |> order_by([r], asc: r.id)
+    |> lock("FOR SHARE")
+    |> Repo.all()
+
+    ingredient_foods =
+      RecipeIngredient.for_business(ctx.business_id)
+      |> where([i], i.recipe_id in ^recipe_ids)
+      |> select([i], i.food_id)
+      |> Repo.all()
+
+    food_ids = ingredient_foods ++ for(%{kind: :food, id: id} <- specs, do: id)
+
+    Food.for_business_or_system(ctx.business_id)
+    |> where([f], f.id in ^food_ids)
+    |> order_by([f], asc: f.id)
+    |> lock("FOR SHARE")
+    |> Repo.all()
+
+    resolve_items(ctx, specs)
+  end
+
   # Revision-checked mutation under a row lock
 
   defp mutate_locked(visible_query, id, expected_revision, mutation) do
@@ -405,19 +443,20 @@ defmodule Easy.Nutrition.Library do
     end
   end
 
-  # Structural rows keep restrictive FKs. Diary entries freeze name and macros, so
-  # their live food_id can be cleared. Application :in_use must win before Postgres.
-  defp delete_locked_food(food) do
-    if food_used_structurally?(food.business_id, food.id) do
+  # The Library row lock serializes menu references against deletion.
+  defp delete_locked_food(ctx, food) do
+    if food_used_structurally?(ctx, food.id) do
       {:error, :in_use}
     else
       Repo.delete(food)
     end
   end
 
-  defp food_used_structurally?(business_id, food_id) do
-    Repo.exists?(from(ri in RecipeIngredient.for_business(business_id), where: ri.food_id == ^food_id)) or
-      Repo.exists?(from(item in MealItem.for_business(business_id), where: item.food_id == ^food_id))
+  defp food_used_structurally?(ctx, food_id) do
+    {:ok, usage} = Programming.library_usage(ctx, :food, food_id)
+
+    usage.plans != [] or
+      Repo.exists?(from(ri in RecipeIngredient.for_business(ctx.business_id), where: ri.food_id == ^food_id))
   end
 
   # Recipe mutations
@@ -437,7 +476,7 @@ defmodule Easy.Nutrition.Library do
   defp update_locked_recipe(ctx, recipe, scalar_attrs, ingredients) do
     changeset = Recipe.update_changeset(recipe, scalar_attrs)
 
-    with :ok <- ensure_cooked_weight_removable(recipe, changeset),
+    with :ok <- ensure_cooked_weight_removable(ctx, recipe, changeset),
          {:ok, updated} <-
            changeset
            |> put_change(:revision, recipe.revision + 1)
@@ -447,8 +486,8 @@ defmodule Easy.Nutrition.Library do
     end
   end
 
-  defp delete_locked_recipe(recipe) do
-    if recipe_referenced_by_menu?(recipe.business_id, recipe.id) do
+  defp delete_locked_recipe(ctx, recipe) do
+    if recipe_referenced_by_menu?(ctx, recipe.id) do
       {:error, :in_use}
     else
       Repo.delete(recipe)
@@ -456,9 +495,9 @@ defmodule Easy.Nutrition.Library do
   end
 
   # A Menu gram Portion only resolves through cooked weight, so it pins the field.
-  defp ensure_cooked_weight_removable(recipe, changeset) do
+  defp ensure_cooked_weight_removable(ctx, recipe, changeset) do
     if removing_cooked_weight?(recipe, changeset) and
-         gram_portion_references_recipe?(recipe.business_id, recipe.id) do
+         gram_portion_references_recipe?(ctx, recipe.id) do
       {:error, :in_use}
     else
       :ok
@@ -472,16 +511,14 @@ defmodule Easy.Nutrition.Library do
 
   defp removing_cooked_weight?(_recipe, _changeset), do: false
 
-  defp recipe_referenced_by_menu?(business_id, recipe_id) do
-    Repo.exists?(from(item in MealItem.for_business(business_id), where: item.recipe_id == ^recipe_id))
+  defp recipe_referenced_by_menu?(ctx, recipe_id) do
+    {:ok, usage} = Programming.library_usage(ctx, :recipe, recipe_id)
+    usage.plans != []
   end
 
-  defp gram_portion_references_recipe?(business_id, recipe_id) do
-    Repo.exists?(
-      from(item in MealItem.for_business(business_id),
-        where: item.recipe_id == ^recipe_id and item.portion_kind == :gram
-      )
-    )
+  defp gram_portion_references_recipe?(ctx, recipe_id) do
+    {:ok, usage} = Programming.library_usage(ctx, :recipe, recipe_id)
+    usage.gram_portion?
   end
 
   # Ingredient replacement: the request carries the complete collection, positions
@@ -493,7 +530,7 @@ defmodule Easy.Nutrition.Library do
     specs = Enum.map(ingredients, &%{kind: :food, id: &1[:food_id], portion: &1[:portion]})
 
     with :ok <- validate_ingredient_inputs(ingredients),
-         {:ok, resolved} <- resolve_items(ctx, specs) do
+         {:ok, resolved} <- resolve_items_for_write(ctx, specs) do
       changesets =
         Enum.with_index(Enum.zip(ingredients, resolved), fn {input, item}, position ->
           RecipeIngredient.insert_changeset(recipe.business_id, recipe.id, position, %{
@@ -560,24 +597,13 @@ defmodule Easy.Nutrition.Library do
     |> Repo.all()
   end
 
-  defp menu_usage(business_id, item_field, item_id) do
-    %{
-      templates: menu_plan_usage(business_id, item_field, item_id, :template),
-      active_client_plans: menu_plan_usage(business_id, item_field, item_id, :client_plan)
-    }
-  end
+  defp menu_usage(ctx, kind, id) do
+    {:ok, usage} = Programming.library_usage(ctx, kind, id)
 
-  defp menu_plan_usage(business_id, item_field, item_id, kind) do
-    from(plan in Plan.for_business(business_id),
-      join: item in MealItem,
-      on: item.nutrition_plan_id == plan.id and item.business_id == plan.business_id,
-      where: plan.kind == ^kind,
-      where: field(item, ^item_field) == ^item_id,
-      distinct: true,
-      order_by: [asc: plan.name, asc: plan.id],
-      select: %{id: plan.id, name: plan.name, client_id: plan.client_id}
-    )
-    |> Repo.all()
+    %{
+      templates: usage.plans |> Enum.filter(&(&1.kind == :template)) |> Enum.map(&Map.delete(&1, :kind)),
+      active_client_plans: usage.plans |> Enum.filter(&(&1.kind == :client_plan)) |> Enum.map(&Map.delete(&1, :kind))
+    }
   end
 
   defp copy_name(original_name, business_id) do

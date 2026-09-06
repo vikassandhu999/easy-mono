@@ -1,12 +1,7 @@
 defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
   use Easy.DataCase, async: true
 
-  alias Easy.Nutrition.{
-    Library,
-    Meal,
-    Plan,
-    Programming
-  }
+  alias Easy.Nutrition.{Library, Plan, Programming}
 
   alias Easy.Repo
 
@@ -72,35 +67,32 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
                )
 
       assert replaced.revision == 2
-      assert [dinner, breakfast] = replaced.meals
+      assert [dinner, breakfast] = replaced.menu.meals
       assert breakfast.name == "Breakfast"
-      assert breakfast.position == 1
       assert dinner.name == "Dinner"
-      assert dinner.position == 0
 
       assert [yogurt, cup] = breakfast.meal_items
       assert yogurt.food_id == food.id
-      assert yogurt.portion_kind == :gram
+      assert yogurt.portion.kind == :gram
       assert yogurt.weight_g == 50.0
-      assert yogurt.calories == 100.0
-      assert yogurt.protein == 10.0
-      assert yogurt.complete
+      assert yogurt.nutrients.calories == 100.0
+      assert yogurt.nutrients.protein == 10.0
+      assert yogurt.nutrients.complete
 
       assert cup.food_id == food.id
-      assert cup.portion_kind == :serving
+      assert cup.portion.kind == :serving
       assert cup.weight_g == 80.0
-      assert cup.amount == 1.0
-      assert cup.unit == "cup"
-      assert cup.serving_label == "1 cup"
-      assert cup.calories == 160.0
+      assert cup.portion.amount == 1.0
+      assert cup.portion.unit == "cup"
+      assert cup.portion.label == "1 cup"
+      assert cup.nutrients.calories == 160.0
 
       assert [
                %{
                  recipe_id: recipe_id,
-                 portion_kind: :serving,
-                 amount: 1.0,
+                 portion: %{kind: :serving, amount: 1.0},
                  weight_g: 200.0,
-                 calories: 200.0
+                 nutrients: %{calories: 200.0}
                }
              ] =
                dinner.meal_items
@@ -141,8 +133,8 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
                  )
                )
 
-      assert [%{unit: "cup", serving_label: "1 cup", weight_g: 80.0}] =
-               hd(replaced.meals).meal_items
+      assert [%{portion: %{unit: "cup", label: "1 cup"}, weight_g: 80.0}] =
+               hd(replaced.menu.meals).meal_items
 
       assert {:ok, _} =
                Library.update_food(ctx, food.id, food.revision, %{
@@ -153,8 +145,8 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
 
       assert {:ok, current} = Programming.get_template(ctx, template.id)
 
-      assert [%{unit: "cup", serving_label: "1 cup", weight_g: 80.0}] =
-               hd(current.meals).meal_items
+      assert [%{portion: %{unit: "cup", label: "1 cup"}, weight_g: 80.0}] =
+               hd(current.menu.meals).meal_items
     end
 
     test "rejects another tenant's Food or Recipe and an invalid Portion without partial writes" do
@@ -198,7 +190,7 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
       for attrs <- requests do
         assert {:error, reason} = Programming.replace_menu(ctx, template.id, 1, attrs)
         assert reason == :not_found or match?(%Ecto.Changeset{valid?: false}, reason)
-        assert Repo.aggregate(Meal.for_plan(template.id), :count, :id) == 0
+        assert Repo.get!(Plan, template.id).menu.meals == []
         assert Repo.get!(Plan, template.id).revision == 1
       end
     end
@@ -233,11 +225,11 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
                  )
                )
 
-      [item] = hd(replaced.meals).meal_items
-      assert item.calories == 16.6665
-      assert item.protein == nil
-      assert item.carbohydrates == 5.0
-      refute item.complete
+      [item] = hd(replaced.menu.meals).meal_items
+      assert item.nutrients.calories == 16.6665
+      assert item.nutrients.protein == nil
+      assert item.nutrients.carbohydrates == 5.0
+      refute item.nutrients.complete
     end
 
     test "resolves a Recipe gram Portion when cooked weight exists and rejects one when it does not" do
@@ -292,7 +284,7 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
                  )
                )
 
-      assert [%{portion_kind: :gram, weight_g: 100.0}] = hd(replaced.meals).meal_items
+      assert [%{portion: %{kind: :gram}, weight_g: 100.0}] = hd(replaced.menu.meals).meal_items
 
       assert {:error, %Ecto.Changeset{valid?: false}} =
                Programming.replace_menu(
@@ -310,7 +302,7 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
 
       assert {:ok, current} = Programming.get_template(ctx, template.id)
       assert current.revision == 2
-      assert [%{name: "Weighed"}] = current.meals
+      assert [%{name: "Weighed"}] = current.menu.meals
     end
   end
 end

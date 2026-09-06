@@ -1,7 +1,7 @@
 defmodule Easy.Nutrition.CanonicalSchemaTest do
   alias Easy.Nutrition.DiaryFixtures
   use Easy.DataCase, async: true
-  alias Easy.Nutrition.{DiaryEntry, Food, Programming, Recipe}
+  alias Easy.Nutrition.{DiaryEntry, Food, Menu}
 
   describe("canonical Nutrition Programming constraints") do
     test "the database rejects client-plan fields on a template" do
@@ -27,294 +27,12 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       end
     end
 
-    test "Day Pattern positions are nonnegative and unique within a plan" do
+    test "the database requires a menu document with its root collections" do
       coach = insert(:coach)
-      ctx = trainer_ctx(coach)
-      assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
 
       assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_day_patterns", [
-          timestamps(%{
-            id: dump_uuid(),
-            name: "Invalid",
-            position: -1,
-            business_id: dump_uuid(coach.business_id),
-            nutrition_plan_id: dump_uuid(plan.id)
-          })
-        ])
+        Repo.insert_all("nutrition_plans", [plan_row(coach, menu: %{})])
       end
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_day_patterns", [pattern_row(coach, plan, position: 0)])
-      end
-    end
-
-    test "a schedule row cannot point at a Day Pattern from another plan" do
-      coach = insert(:coach)
-      ctx = trainer_ctx(coach)
-      assert {:ok, first} = Programming.create_template(ctx, %{"name" => "First"})
-      assert {:ok, second} = Programming.create_template(ctx, %{"name" => "Second"})
-      pattern = hd(first.day_patterns)
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_week_schedule", [
-          timestamps(%{
-            id: dump_uuid(),
-            weekday: "monday",
-            business_id: dump_uuid(coach.business_id),
-            nutrition_plan_id: dump_uuid(second.id),
-            nutrition_day_pattern_id: dump_uuid(pattern.id)
-          })
-        ])
-      end
-    end
-
-    test "a plan has at most one Day Pattern per weekday" do
-      coach = insert(:coach)
-      ctx = trainer_ctx(coach)
-      assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
-      pattern = hd(plan.day_patterns)
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_week_schedule", [
-          schedule_row(coach, plan, pattern, weekday: "monday")
-        ])
-      end
-    end
-
-    test "Meal positions are nonnegative and unique within a plan" do
-      coach = insert(:coach)
-      ctx = trainer_ctx(coach)
-      assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_meals", [meal_row(coach, plan, position: -1)])
-      end
-
-      Repo.insert_all("nutrition_meals", [meal_row(coach, plan, position: 0)])
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_meals", [meal_row(coach, plan, position: 0)])
-      end
-    end
-
-    test "a Menu Item cannot belong to a Meal from another plan" do
-      coach = insert(:coach)
-      ctx = trainer_ctx(coach)
-      assert {:ok, first} = Programming.create_template(ctx, %{"name" => "First"})
-      assert {:ok, second} = Programming.create_template(ctx, %{"name" => "Second"})
-      food = insert(:food, business: coach.business, creator: coach)
-
-      {1, [%{id: meal_id}]} =
-        Repo.insert_all("nutrition_meals", [meal_row(coach, first)], returning: [:id])
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_meal_items", [
-          meal_item_row(coach, second, meal_id, food, nutrition_plan_id: dump_uuid(second.id))
-        ])
-      end
-    end
-
-    test "a Menu Item requires exactly one of food_id or recipe_id" do
-      coach = insert(:coach)
-      ctx = trainer_ctx(coach)
-      assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
-      food = insert(:food, business: coach.business, creator: coach)
-      recipe = insert(:recipe, business: coach.business, creator: coach)
-
-      {1, [%{id: meal_id}]} =
-        Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_meal_items", [
-          meal_item_row(coach, plan, meal_id, food, food_id: nil, recipe_id: nil)
-        ])
-      end
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_meal_items", [
-          meal_item_row(coach, plan, meal_id, food,
-            food_id: dump_uuid(food.id),
-            recipe_id: dump_uuid(recipe.id)
-          )
-        ])
-      end
-    end
-
-    test "gram Portions require positive grams and null serving fields" do
-      coach = insert(:coach)
-      ctx = trainer_ctx(coach)
-      assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
-      food = insert(:food, business: coach.business, creator: coach)
-
-      {1, [%{id: meal_id}]} =
-        Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_meal_items", [
-          meal_item_row(coach, plan, meal_id, food, weight_g: 0)
-        ])
-      end
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_meal_items", [
-          meal_item_row(coach, plan, meal_id, food, amount: 1.0, unit: "cup")
-        ])
-      end
-    end
-
-    test "Menu Item positions are unique within a Meal" do
-      coach = insert(:coach)
-      ctx = trainer_ctx(coach)
-      assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
-      food = insert(:food, business: coach.business, creator: coach)
-
-      {1, [%{id: meal_id}]} =
-        Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
-
-      Repo.insert_all("nutrition_meal_items", [meal_item_row(coach, plan, meal_id, food)])
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_meal_items", [meal_item_row(coach, plan, meal_id, food)])
-      end
-    end
-
-    test "nutrient columns reject negative values" do
-      coach = insert(:coach)
-      ctx = trainer_ctx(coach)
-      assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
-      food = insert(:food, business: coach.business, creator: coach)
-
-      {1, [%{id: meal_id}]} =
-        Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_meal_items", [
-          meal_item_row(coach, plan, meal_id, food, calories: -1.0)
-        ])
-      end
-    end
-
-    test "the database rejects an incomplete Week Schedule at transaction commit" do
-      coach = insert(:coach)
-      ctx = trainer_ctx(coach)
-      assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.transaction(fn ->
-          Repo.query!("SET CONSTRAINTS ALL IMMEDIATE")
-
-          Repo.delete_all(
-            from(row in "nutrition_week_schedule",
-              where: row.nutrition_plan_id == ^dump_uuid(plan.id)
-            )
-          )
-        end)
-      end
-    end
-
-    test "Meal Options use the closed Meal Slot vocabulary and unique Meal plus position per slot" do
-      coach = insert(:coach)
-      ctx = trainer_ctx(coach)
-      assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
-      pattern = hd(plan.day_patterns)
-
-      {1, [%{id: meal_id}]} =
-        Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_meal_options", [
-          option_row(coach, plan, pattern, meal_id, meal_slot: "brunch")
-        ])
-      end
-
-      Repo.insert_all("nutrition_meal_options", [option_row(coach, plan, pattern, meal_id)])
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_meal_options", [
-          option_row(coach, plan, pattern, meal_id, position: 1)
-        ])
-      end
-
-      {1, [%{id: other_meal_id}]} =
-        Repo.insert_all("nutrition_meals", [meal_row(coach, plan, position: 1)], returning: [:id])
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_meal_options", [
-          option_row(coach, plan, pattern, other_meal_id, position: 0)
-        ])
-      end
-    end
-
-    test "a schedule row cannot carry another business's tenant id" do
-      coach = insert(:coach)
-      ctx = trainer_ctx(coach)
-      assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
-      other_business = insert(:business)
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.query!(
-          "UPDATE nutrition_week_schedule\nSET business_id = $1\nWHERE nutrition_plan_id = $2 AND weekday = 'monday'\n",
-          [dump_uuid(other_business.id), dump_uuid(plan.id)]
-        )
-      end
-    end
-
-    test "a Meal Option cannot carry another business's tenant id" do
-      coach = insert(:coach)
-      ctx = trainer_ctx(coach)
-      assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
-      pattern = hd(plan.day_patterns)
-
-      {1, [%{id: meal_id}]} =
-        Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
-
-      other_business = insert(:business)
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_meal_options", [
-          option_row(coach, plan, pattern, meal_id, business_id: dump_uuid(other_business.id))
-        ])
-      end
-    end
-
-    test "a Meal Option cannot reference a Meal from another plan, and a slot has no option-count limit" do
-      coach = insert(:coach)
-      ctx = trainer_ctx(coach)
-      assert {:ok, first} = Programming.create_template(ctx, %{"name" => "First"})
-      assert {:ok, second} = Programming.create_template(ctx, %{"name" => "Second"})
-      pattern = hd(first.day_patterns)
-
-      {1, [%{id: foreign_meal_id}]} =
-        Repo.insert_all("nutrition_meals", [meal_row(coach, second)], returning: [:id])
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_meal_options", [
-          option_row(coach, first, pattern, foreign_meal_id, nutrition_plan_id: dump_uuid(first.id))
-        ])
-      end
-
-      meal_ids =
-        Enum.map(0..3, fn position ->
-          {1, [%{id: meal_id}]} =
-            Repo.insert_all("nutrition_meals", [meal_row(coach, first, position: position)], returning: [:id])
-
-          meal_id
-        end)
-
-      Enum.with_index(meal_ids, fn meal_id, position ->
-        {1, _} =
-          Repo.insert_all("nutrition_meal_options", [
-            option_row(coach, first, pattern, meal_id, position: position)
-          ])
-      end)
-
-      assert Repo.aggregate(
-               from(option in "nutrition_meal_options",
-                 where: option.nutrition_plan_id == ^dump_uuid(first.id)
-               ),
-               :count
-             ) == 4
     end
 
     test "an active client has at most one incomplete Client Plan" do
@@ -404,44 +122,12 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
   end
 
   describe("Library structural foreign keys") do
-    test "Menu Items and Recipe Ingredients restrict Food deletion" do
+    test "Recipe Ingredients restrict Food deletion" do
       coach = insert(:coach)
       food = insert(:food, business: coach.business, creator: coach)
       recipe = insert(:recipe, business: coach.business, creator: coach)
-
-      insert(:recipe_ingredient,
-        business: coach.business,
-        recipe: recipe,
-        food: food,
-        weight_g: 100.0
-      )
-
+      insert(:recipe_ingredient, business: coach.business, recipe: recipe, food: food, weight_g: 100.0)
       assert_raise Ecto.ConstraintError, fn -> Repo.delete!(Repo.get!(Food, food.id)) end
-      ctx = trainer_ctx(coach)
-      assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
-
-      {1, [%{id: meal_id}]} =
-        Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
-
-      unused = insert(:food, business: coach.business, creator: coach)
-      Repo.insert_all("nutrition_meal_items", [meal_item_row(coach, plan, meal_id, unused)])
-      assert_raise Ecto.ConstraintError, fn -> Repo.delete!(Repo.get!(Food, unused.id)) end
-    end
-
-    test "Menu Items restrict Recipe deletion" do
-      coach = insert(:coach)
-      ctx = trainer_ctx(coach)
-      assert {:ok, plan} = Programming.create_template(ctx, %{"name" => "Cut"})
-      recipe = insert(:recipe, business: coach.business, creator: coach)
-
-      {1, [%{id: meal_id}]} =
-        Repo.insert_all("nutrition_meals", [meal_row(coach, plan)], returning: [:id])
-
-      Repo.insert_all("nutrition_meal_items", [
-        meal_item_row(coach, plan, meal_id, recipe, food_id: nil, recipe_id: dump_uuid(recipe.id))
-      ])
-
-      assert_raise Ecto.ConstraintError, fn -> Repo.delete!(Repo.get!(Recipe, recipe.id)) end
     end
 
     test "Diary entries nullify Food deletion" do
@@ -482,14 +168,10 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
   describe("canonical Nutrition Diary constraints") do
     test "cascade and Diary lookup indexes cover their leading foreign-key filters" do
       rows =
-        Repo.query!(
-          "SELECT indexname\nFROM pg_indexes\nWHERE schemaname = current_schema()\n  AND indexname IN (\n    'nutrition_week_schedule_pattern_index',\n    'nutrition_meal_options_meal_index',\n    'nutrition_diary_entries_business_slot_index'\n  )\n"
-        ).rows
+        Repo.query!("SELECT indexname\nFROM pg_indexes\nWHERE schemaname = current_schema()\n  AND indexname IN (\n    'nutrition_diary_entries_business_slot_index'\n  )\n").rows
 
       assert MapSet.new(rows, fn [name] -> name end) ==
                MapSet.new([
-                 "nutrition_week_schedule_pattern_index",
-                 "nutrition_meal_options_meal_index",
                  "nutrition_diary_entries_business_slot_index"
                ])
     end
@@ -610,94 +292,10 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
           id: dump_uuid(),
           kind: "template",
           name: "Row",
+          menu: Menu.format(Menu.empty()),
           revision: 1,
           business_id: dump_uuid(coach.business_id),
           creator_id: dump_uuid(coach.user_id)
-        },
-        Map.new(overrides)
-      )
-    )
-  end
-
-  defp pattern_row(coach, plan, overrides) do
-    timestamps(
-      Map.merge(
-        %{
-          id: dump_uuid(),
-          name: "Extra",
-          position: 0,
-          business_id: dump_uuid(coach.business_id),
-          nutrition_plan_id: dump_uuid(plan.id)
-        },
-        Map.new(overrides)
-      )
-    )
-  end
-
-  defp schedule_row(coach, plan, pattern, overrides) do
-    timestamps(
-      Map.merge(
-        %{
-          id: dump_uuid(),
-          weekday: "monday",
-          business_id: dump_uuid(coach.business_id),
-          nutrition_plan_id: dump_uuid(plan.id),
-          nutrition_day_pattern_id: dump_uuid(pattern.id)
-        },
-        Map.new(overrides)
-      )
-    )
-  end
-
-  defp meal_row(coach, plan, overrides \\ []) do
-    timestamps(
-      Map.merge(
-        %{
-          id: dump_uuid(),
-          name: "Breakfast",
-          position: 0,
-          business_id: dump_uuid(coach.business_id),
-          nutrition_plan_id: dump_uuid(plan.id)
-        },
-        Map.new(overrides)
-      )
-    )
-  end
-
-  defp meal_item_row(coach, plan, meal_id, food, overrides \\ []) do
-    timestamps(
-      Map.merge(
-        %{
-          id: dump_uuid(),
-          portion_kind: "gram",
-          weight_g: 50.0,
-          amount: nil,
-          unit: nil,
-          serving_label: nil,
-          position: 0,
-          complete: false,
-          food_id: dump_uuid(food.id),
-          recipe_id: nil,
-          business_id: dump_uuid(coach.business_id),
-          nutrition_plan_id: dump_uuid(plan.id),
-          nutrition_meal_id: meal_id
-        },
-        Map.new(overrides)
-      )
-    )
-  end
-
-  defp option_row(coach, plan, pattern, meal_id, overrides \\ []) do
-    timestamps(
-      Map.merge(
-        %{
-          id: dump_uuid(),
-          meal_slot: "breakfast",
-          position: 0,
-          business_id: dump_uuid(coach.business_id),
-          nutrition_plan_id: dump_uuid(plan.id),
-          nutrition_day_pattern_id: dump_uuid(pattern.id),
-          nutrition_meal_id: meal_id
         },
         Map.new(overrides)
       )

@@ -7,7 +7,6 @@ export type Menu = NutritionMenu;
 export type MenuMeal = Menu['meals'][number];
 export type MenuItem = MenuMeal['meal_items'][number];
 export type MenuDay = Menu['day_patterns'][number];
-export type MenuOption = MenuDay['slots'][number]['options'][number];
 export type ItemInput = Pick<MenuItem, 'kind' | 'food_id' | 'recipe_id' | 'portion'>;
 
 export type MenuEdit =
@@ -16,13 +15,13 @@ export type MenuEdit =
   | {type: 'removeDay'; dayId: string}
   | {type: 'moveDay'; from: number; to: number}
   | {type: 'schedule'; weekday: TrainingWeekday; dayId: string}
-  | {type: 'addMeal'; id: string; dayId: string; optionId: string}
+  | {type: 'addMeal'; id: string; dayId: string}
   | {type: 'renameMeal'; mealId: string; name: string}
   | {type: 'removeMeal'; mealId: string}
-  | {type: 'addOption'; dayId: string; slot: MealSlot; mealId: string; id: string}
-  | {type: 'removeOption'; dayId: string; optionId: string}
+  | {type: 'addOption'; dayId: string; slot: MealSlot; mealId: string}
+  | {type: 'removeOption'; dayId: string; slot: MealSlot; mealId: string}
   | {type: 'moveOption'; dayId: string; slot: MealSlot; from: number; to: number}
-  | {type: 'changeSlot'; dayId: string; optionId: string; slot: MealSlot}
+  | {type: 'changeSlot'; dayId: string; mealId: string; fromSlot: MealSlot; slot: MealSlot}
   | {type: 'addItems'; mealId: string; items: {id: string; body: ItemInput; name: string | null}[]}
   | {type: 'removeItem'; mealId: string; itemId: string}
   | {type: 'moveItem'; mealId: string; from: number; to: number}
@@ -67,7 +66,7 @@ export function editMenu(menu: Menu, edit: MenuEdit): Menu {
           break;
         }
         draft.meals.push({id: edit.id, name: 'New meal', notes: null, meal_items: []});
-        addOption(day, firstFreeSlot(day), {id: edit.optionId, nutrition_meal_id: edit.id});
+        addOption(day, firstFreeSlot(day), edit.id);
         break;
       case 'renameMeal':
         if (meal) {
@@ -78,43 +77,42 @@ export function editMenu(menu: Menu, edit: MenuEdit): Menu {
         draft.meals = draft.meals.filter((meal) => meal.id !== edit.mealId);
         for (const day of draft.day_patterns) {
           for (const slot of day.slots) {
-            slot.options = slot.options.filter((option) => option.nutrition_meal_id !== edit.mealId);
+            slot.meal_ids = slot.meal_ids.filter((id) => id !== edit.mealId);
           }
-          day.slots = day.slots.filter((slot) => slot.options.length > 0);
+          day.slots = day.slots.filter((slot) => slot.meal_ids.length > 0);
         }
         break;
       case 'addOption':
         if (day && meal) {
-          addOption(day, edit.slot, {id: edit.id, nutrition_meal_id: meal.id});
+          addOption(day, edit.slot, meal.id);
         }
         break;
-      case 'removeOption':
+      case 'removeOption': {
         if (!day) {
           break;
         }
-        for (const slot of day.slots) {
-          slot.options = slot.options.filter((option) => option.id !== edit.optionId);
+        const removedSlot = day.slots.find((slot) => slot.meal_slot === edit.slot);
+        if (removedSlot) {
+          removedSlot.meal_ids = removedSlot.meal_ids.filter((id) => id !== edit.mealId);
         }
-        day.slots = day.slots.filter((slot) => slot.options.length > 0);
+        day.slots = day.slots.filter((slot) => slot.meal_ids.length > 0);
         break;
+      }
       case 'moveOption': {
         const slot = day?.slots.find((slot) => slot.meal_slot === edit.slot);
         if (slot) {
-          move(slot.options, edit.from, edit.to);
+          move(slot.meal_ids, edit.from, edit.to);
         }
         break;
       }
       case 'changeSlot': {
-        const source = day?.slots.find((slot) => slot.options.some((option) => option.id === edit.optionId));
-        const option = source?.options.find((option) => option.id === edit.optionId);
-        if (!day || !source || !option || source.meal_slot === edit.slot) {
+        const source = day?.slots.find((slot) => slot.meal_slot === edit.fromSlot);
+        if (!day || !source?.meal_ids.includes(edit.mealId) || edit.fromSlot === edit.slot) {
           break;
         }
-        // A meal can appear only once in a slot. Moving onto an existing choice
-        // keeps that choice and removes its duplicate in the source slot.
-        addOption(day, edit.slot, option);
-        source.options = source.options.filter((option) => option.id !== edit.optionId);
-        day.slots = day.slots.filter((slot) => slot.options.length > 0);
+        addOption(day, edit.slot, edit.mealId);
+        source.meal_ids = source.meal_ids.filter((id) => id !== edit.mealId);
+        day.slots = day.slots.filter((slot) => slot.meal_ids.length > 0);
         break;
       }
       case 'addItems':
@@ -160,14 +158,14 @@ function move<T>(items: T[], from: number, to: number) {
   }
 }
 
-function addOption(day: MenuDay, name: MealSlot, option: MenuOption) {
+function addOption(day: MenuDay, name: MealSlot, mealId: string) {
   let slot = day.slots.find((slot) => slot.meal_slot === name);
   if (!slot) {
-    slot = {meal_slot: name, options: []};
+    slot = {meal_slot: name, meal_ids: []};
     day.slots.push(slot);
   }
-  if (!slot.options.some((choice) => choice.nutrition_meal_id === option.nutrition_meal_id)) {
-    slot.options.push(option);
+  if (!slot.meal_ids.includes(mealId)) {
+    slot.meal_ids.push(mealId);
   }
 }
 
@@ -177,7 +175,7 @@ export function firstFreeSlot(day: MenuDay): MealSlot {
 
 export function dayRows(day: MenuDay) {
   return MEAL_SLOTS.flatMap((name) => {
-    const options = day.slots.find((slot) => slot.meal_slot === name)?.options ?? [];
+    const options = day.slots.find((slot) => slot.meal_slot === name)?.meal_ids ?? [];
     const [primary, ...alternates] = options;
     return primary ? [{slot: name, primary, alternates}] : [];
   });
@@ -186,7 +184,7 @@ export function dayRows(day: MenuDay) {
 export function dayTotals(day: MenuDay, meals: MenuMeal[]) {
   const totals = {calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0};
   for (const {primary} of dayRows(day)) {
-    const nutrients = meals.find((meal) => meal.id === primary.nutrition_meal_id)?.nutrients;
+    const nutrients = meals.find((meal) => meal.id === primary)?.nutrients;
     totals.calories += nutrients?.calories ?? 0;
     totals.protein_g += nutrients?.protein ?? 0;
     totals.carbs_g += nutrients?.carbohydrates ?? 0;

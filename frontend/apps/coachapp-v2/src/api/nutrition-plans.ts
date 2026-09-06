@@ -10,7 +10,6 @@ import type {
   NutritionDayRow as NutritionDayRowSchema,
   NutritionDaySlot as NutritionDaySlotSchema,
   NutritionMealItem as NutritionMealItemSchema,
-  NutritionMealOption as NutritionMealOptionSchema,
   NutritionMeal as NutritionMealSchema,
   NutritionMenu as NutritionMenuSchema,
   NutritionPlanAssign,
@@ -240,7 +239,6 @@ export function useListCoachNutritionDaysQuery(
 
 export type NutritionDayPattern = NutritionDayPatternSchema;
 export type NutritionDayPatternSlot = NutritionDayPatternSlotSchema;
-export type NutritionMealOption = NutritionMealOptionSchema;
 export type NutritionWeekSchedule = NutritionWeekScheduleSchema;
 export type NutritionMeal = NutritionMealSchema;
 export type NutritionMenu = NutritionMenuSchema;

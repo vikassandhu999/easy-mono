@@ -4,7 +4,7 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
   import Easy.DataCase, only: [trainer_ctx: 1]
 
   alias Easy.LocalCalendar
-  alias Easy.Nutrition.{Programming, ProgrammingMenuFixtures, WeekSchedule}
+  alias Easy.Nutrition.{Menu, Programming, ProgrammingMenuFixtures}
 
   setup do
     coach = insert(:coach)
@@ -95,7 +95,7 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
   defp assign_covering_plan(ctx, food) do
     coach_ctx = trainer_ctx(ctx.coach)
     {:ok, template} = Programming.create_template(coach_ctx, %{"name" => "Cut", "target_calories" => 2000.0})
-    pattern = hd(template.day_patterns)
+    pattern = hd(template.menu.day_patterns)
 
     menu = %{
       meals: [
@@ -119,17 +119,12 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
           slots: [
             %{
               meal_slot: :breakfast,
-              options: [
-                %{
-                  id: ProgrammingMenuFixtures.uuid("opt"),
-                  nutrition_meal_id: ProgrammingMenuFixtures.uuid("breakfast")
-                }
-              ]
+              meal_ids: [ProgrammingMenuFixtures.uuid("breakfast")]
             }
           ]
         }
       ],
-      schedule: Map.new(WeekSchedule.weekdays(), &{&1, pattern.id})
+      schedule: Map.new(Menu.weekdays(), &{&1, pattern.id})
     }
 
     {:ok, source} = Programming.replace_menu(coach_ctx, template.id, 1, menu)

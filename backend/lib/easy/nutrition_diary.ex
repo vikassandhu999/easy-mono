@@ -10,14 +10,11 @@ defmodule Easy.Nutrition.Diary do
     DiaryFrozenOption,
     DiaryFrozenPlannedItem,
     DiarySlot,
-    Food,
     Library,
-    Meal,
-    MealItem,
     MealSlot,
+    Menu,
     NutrientTotals,
-    Programming,
-    Recipe
+    Programming
   }
 
   alias Easy.Repo
@@ -542,15 +539,11 @@ defmodule Easy.Nutrition.Diary do
     do: {:ok, %{slot | frozen_options: [], entries: []}}
 
   defp freeze_slot(slot, meal_slot, %{plan: plan, day_pattern: pattern}) do
-    meals = Map.new(List.wrap(plan.meals), &{&1.id, &1})
+    frozen =
+      plan.menu
+      |> Menu.meals_for_slot(pattern, meal_slot)
+      |> Enum.with_index(&insert_frozen_option!(slot, &1, &2))
 
-    options =
-      pattern
-      |> pattern_options()
-      |> Enum.filter(&(&1.meal_slot == meal_slot))
-      |> Enum.sort_by(&{&1.position, &1.id})
-
-    frozen = Enum.map(options, &insert_frozen_option!(slot, &1, meals))
     active = List.first(frozen)
 
     case Repo.update(DiarySlot.update_changeset(slot, %{active_frozen_option_id: active && active.id})) do
@@ -562,51 +555,42 @@ defmodule Easy.Nutrition.Diary do
     end
   end
 
-  defp pattern_options(nil), do: []
-  defp pattern_options(pattern), do: List.wrap(pattern.meal_options)
-
-  defp insert_frozen_option!(slot, option, meals) do
-    meal = meals[option.nutrition_meal_id]
-
+  defp insert_frozen_option!(slot, meal, position) do
     {:ok, frozen} =
       Repo.insert(
         DiaryFrozenOption.insert_changeset(slot.business_id, slot.id, %{
-          position: option.position,
-          meal_name: (meal && meal.name) || "",
-          source_meal_id: option.nutrition_meal_id,
-          nutrition_meal_id: option.nutrition_meal_id
+          position: position,
+          meal_name: meal.name,
+          source_meal_id: meal.id
         })
       )
 
-    Enum.each(meal_items(meal), &insert_frozen_item!(slot, frozen, &1))
+    meal.meal_items
+    |> Enum.with_index()
+    |> Enum.each(fn {item, position} -> insert_frozen_item!(slot, frozen, item, position) end)
+
     Repo.preload(frozen, :planned_items, force: true)
   end
 
-  defp insert_frozen_item!(slot, option, %MealItem{} = item) do
-    {:ok, _item} =
-      Repo.insert(
-        DiaryFrozenPlannedItem.insert_changeset(slot.business_id, slot.id, option.id, %{
-          kind: item_kind(item),
-          display_name: item_name(item) || "",
-          portion_kind: item.portion_kind,
-          weight_g: item.weight_g,
-          amount: item.amount,
-          unit: item.unit,
-          serving_label: item.serving_label,
-          calories: item.calories,
-          protein: item.protein,
-          carbohydrates: item.carbohydrates,
-          fat: item.fat,
-          fiber: item.fiber,
-          complete: item.complete,
-          position: item.position,
-          source_meal_item_id: item.id,
-          source_food_id: item.food_id,
-          source_recipe_id: item.recipe_id,
-          food_id: item.food_id,
-          recipe_id: item.recipe_id
-        })
-      )
+  defp insert_frozen_item!(slot, option, item, position) do
+    attrs =
+      Map.merge(Map.from_struct(item.nutrients), %{
+        kind: item.kind,
+        display_name: item.name,
+        portion_kind: item.portion.kind,
+        weight_g: item.weight_g,
+        amount: item.portion.amount,
+        unit: item.portion.unit,
+        serving_label: item.portion.label,
+        position: position,
+        source_meal_item_id: item.id,
+        source_food_id: item.food_id,
+        source_recipe_id: item.recipe_id,
+        food_id: item.food_id,
+        recipe_id: item.recipe_id
+      })
+
+    {:ok, _item} = Repo.insert(DiaryFrozenPlannedItem.insert_changeset(slot.business_id, slot.id, option.id, attrs))
   end
 
   defp active_frozen_option(%DiarySlot{active_frozen_option_id: id}, options) when not is_nil(id) do
@@ -614,14 +598,4 @@ defmodule Easy.Nutrition.Diary do
   end
 
   defp active_frozen_option(_slot, options), do: List.first(options)
-
-  defp item_kind(%MealItem{food_id: food_id}) when not is_nil(food_id), do: :food
-  defp item_kind(%MealItem{}), do: :recipe
-
-  defp item_name(%MealItem{food: %Food{name: name}}), do: name
-  defp item_name(%MealItem{recipe: %Recipe{name: name}}), do: name
-  defp item_name(_item), do: nil
-
-  defp meal_items(%Meal{meal_items: items}) when is_list(items), do: items
-  defp meal_items(_meal), do: []
 end

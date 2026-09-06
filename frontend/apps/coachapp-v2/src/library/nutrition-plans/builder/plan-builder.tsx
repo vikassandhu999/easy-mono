@@ -264,21 +264,20 @@ export function PlanBuilder({plan, reload}: {plan: NutritionPlan; reload: () => 
                     </p>
                   ) : null}
                   {rows.map(({slot, primary, alternates}) => {
-                    const meal = menu.meals.find((meal) => meal.id === primary.nutrition_meal_id);
+                    const meal = menu.meals.find((meal) => meal.id === primary);
                     if (!meal) {
                       return null;
                     }
-                    const assignedIds = new Set([primary, ...alternates].map((option) => option.nutrition_meal_id));
+                    const assignedIds = new Set([primary, ...alternates]);
                     const count = menu.day_patterns.filter((day) =>
-                      day.slots.some((slot) => slot.options.some((option) => option.nutrition_meal_id === meal.id)),
+                      day.slots.some((slot) => slot.meal_ids.includes(meal.id)),
                     ).length;
                     return (
                       <MealCard
-                        key={primary.id}
+                        key={`${slot}:${primary}`}
                         meal={meal}
                         edit={edit}
                         dayId={activeDay.id}
-                        optionId={primary.id}
                         slot={slot}
                         assignmentCount={count}
                         showNutrition={!dirty}
@@ -293,8 +292,8 @@ export function PlanBuilder({plan, reload}: {plan: NutritionPlan; reload: () => 
                           setEditor({kind: 'amount', mealId: meal.id, itemId: item.id, anchor})
                         }
                         swaps={alternates.flatMap((option) => {
-                          const meal = menu.meals.find((meal) => meal.id === option.nutrition_meal_id);
-                          return meal ? [{optionId: option.id, meal}] : [];
+                          const meal = menu.meals.find((meal) => meal.id === option);
+                          return meal ? [meal] : [];
                         })}
                         swapCandidates={menu.meals
                           .filter((meal) => !assignedIds.has(meal.id))
@@ -306,7 +305,7 @@ export function PlanBuilder({plan, reload}: {plan: NutritionPlan; reload: () => 
                     planMealCount={menu.meals.length}
                     onCreate={() => {
                       const id = crypto.randomUUID();
-                      edit({type: 'addMeal', id, dayId: activeDay.id, optionId: crypto.randomUUID()});
+                      edit({type: 'addMeal', id, dayId: activeDay.id});
                       setOpenMealId(id);
                       setAutoRenameMealId(id);
                     }}
@@ -316,7 +315,6 @@ export function PlanBuilder({plan, reload}: {plan: NutritionPlan; reload: () => 
                         dayId: activeDay.id,
                         slot: firstFreeSlot(activeDay),
                         mealId,
-                        id: crypto.randomUUID(),
                       })
                     }
                     reusable={menu.meals.map((meal) => ({id: meal.id, name: meal.name}))}

@@ -3,7 +3,7 @@ defmodule Easy.Nutrition.DiaryFixtures do
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.LocalCalendar
-  alias Easy.Nutrition.{Diary, Food, Plan, Programming, WeekSchedule}
+  alias Easy.Nutrition.{Diary, Food, Menu, Plan, Programming}
   alias Easy.Orgs.Coach
 
   import Easy.Factory
@@ -177,7 +177,7 @@ defmodule Easy.Nutrition.DiaryFixtures do
   end
 
   defp two_option_menu(plan, food) do
-    pattern = hd(plan.day_patterns)
+    pattern = hd(plan.menu.day_patterns)
 
     %{
       meals: [
@@ -203,20 +203,17 @@ defmodule Easy.Nutrition.DiaryFixtures do
           slots: [
             %{
               meal_slot: :breakfast,
-              options: [
-                %{id: uuid("opt-a"), nutrition_meal_id: uuid("a")},
-                %{id: uuid("opt-b"), nutrition_meal_id: uuid("b")}
-              ]
+              meal_ids: [uuid("a"), uuid("b")]
             }
           ]
         }
       ],
-      schedule: Map.new(WeekSchedule.weekdays(), &{&1, pattern.id})
+      schedule: Map.new(Menu.weekdays(), &{&1, pattern.id})
     }
   end
 
   defp two_same_food_menu(plan, food) do
-    pattern = hd(plan.day_patterns)
+    pattern = hd(plan.menu.day_patterns)
 
     %{
       meals: [
@@ -241,17 +238,17 @@ defmodule Easy.Nutrition.DiaryFixtures do
           slots: [
             %{
               meal_slot: :breakfast,
-              options: [%{id: uuid("opt"), nutrition_meal_id: uuid("breakfast")}]
+              meal_ids: [uuid("breakfast")]
             }
           ]
         }
       ],
-      schedule: Map.new(WeekSchedule.weekdays(), &{&1, pattern.id})
+      schedule: Map.new(Menu.weekdays(), &{&1, pattern.id})
     }
   end
 
   defp slot_menu(plan, food, slots) do
-    pattern = hd(plan.day_patterns)
+    pattern = hd(plan.menu.day_patterns)
 
     meals =
       Enum.map(slots, fn slot ->
@@ -273,14 +270,14 @@ defmodule Easy.Nutrition.DiaryFixtures do
       Enum.map(slots, fn slot ->
         %{
           meal_slot: slot.meal_slot,
-          options: [%{id: uuid("#{slot.id}-opt"), nutrition_meal_id: slot.id}]
+          meal_ids: [slot.id]
         }
       end)
 
     %{
       meals: meals,
       day_patterns: [%{id: pattern.id, name: pattern.name, slots: options}],
-      schedule: Map.new(WeekSchedule.weekdays(), &{&1, pattern.id})
+      schedule: Map.new(Menu.weekdays(), &{&1, pattern.id})
     }
   end
 end

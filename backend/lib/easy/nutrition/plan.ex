@@ -3,7 +3,7 @@ defmodule Easy.Nutrition.Plan do
 
   alias Easy.Clients.Client
   alias Easy.Identity.User
-  alias Easy.Nutrition.{DayPattern, Meal, WeekSchedule}
+  alias Easy.Nutrition.Menu
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -54,9 +54,7 @@ defmodule Easy.Nutrition.Plan do
     belongs_to(:business, Orgs.Business)
     belongs_to(:client, Client)
     belongs_to(:source_template, __MODULE__, foreign_key: :source_template_id)
-    has_many(:day_patterns, DayPattern, foreign_key: :nutrition_plan_id)
-    has_many(:week_schedule, WeekSchedule, foreign_key: :nutrition_plan_id)
-    has_many(:meals, Meal, foreign_key: :nutrition_plan_id)
+    embeds_one(:menu, Menu, on_replace: :delete)
 
     timestamps(type: :utc_datetime)
   end
@@ -98,6 +96,7 @@ defmodule Easy.Nutrition.Plan do
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, creator_id)
     |> put_change(:revision, 1)
+    |> put_embed(:menu, Menu.empty())
     |> reject_fields_invalid_for_kind(:template, supplied_field_names(attrs))
     |> validate_common_fields()
     |> validate_required([:kind, :business_id, :creator_id, :revision])
@@ -120,6 +119,7 @@ defmodule Easy.Nutrition.Plan do
     |> put_change(:creator_id, creator_id)
     |> put_change(:client_id, client_id)
     |> put_change(:source_template_id, source_template.id)
+    |> put_embed(:menu, source_template.menu)
     |> put_change(:revision, 1)
     |> validate_common_fields()
     |> validate_required([:kind, :business_id, :creator_id, :client_id, :revision])
@@ -309,27 +309,13 @@ defmodule Easy.Nutrition.Plan do
     )
   end
 
-  @spec include_menu(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def include_menu(query \\ __MODULE__, business_id) do
-    pattern_query =
-      DayPattern
-      |> DayPattern.for_business(business_id)
-      |> DayPattern.include_options(business_id)
-      |> DayPattern.by_position()
-
-    schedule_query =
-      WeekSchedule
-      |> WeekSchedule.for_business(business_id)
-      |> WeekSchedule.by_weekday()
-
-    meal_query =
-      Meal
-      |> Meal.for_business(business_id)
-      |> Meal.include_items(business_id)
-
-    from(plan in query,
-      preload: [day_patterns: ^pattern_query, week_schedule: ^schedule_query, meals: ^meal_query]
-    )
+  @spec for_menu_item(Ecto.Queryable.t(), atom(), String.t(), atom() | nil) :: Ecto.Query.t()
+  def for_menu_item(query, kind, id, portion_kind \\ nil) do
+    field = if kind == :food, do: :food_id, else: :recipe_id
+    item = %{field => id}
+    item = if portion_kind, do: Map.put(item, :portion, %{kind: portion_kind}), else: item
+    fragment_value = %{meals: [%{meal_items: [item]}]}
+    from(plan in query, where: fragment("? @> ?::jsonb", plan.menu, ^fragment_value))
   end
 
   @spec include_client(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

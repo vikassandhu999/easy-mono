@@ -105,7 +105,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       assert %{"data" => shown} = json_response(show_conn, 200)
       assert shown["kind"] == "template"
       assert shown["revision"] == 1
-      assert shown["menu"]["day_patterns"] == []
+      assert [%{"name" => "Everyday", "slots" => []}] = shown["menu"]["day_patterns"]
 
       update_conn =
         patch(conn, "/v1/coach/nutrition-plans/#{template.id}", %{
@@ -379,7 +379,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
              } = response
 
       assert duplicate_id != created["id"]
-      assert copied_pattern_id != hd(created["menu"]["day_patterns"])["id"]
+      assert copied_pattern_id == hd(created["menu"]["day_patterns"])["id"]
       assert copied_schedule["monday"] == copied_pattern_id
       assert copied_schedule["sunday"] == copied_pattern_id
     end
@@ -461,7 +461,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       assert assigned_id != created["id"]
       assert client_id == client.id
       assert source_id == created["id"]
-      assert copied_pattern_id != pattern_id
+      assert copied_pattern_id == pattern_id
       assert copied_schedule["monday"] == copied_pattern_id
       assert Repo.get!(Easy.Clients.Client, client.id).stage == :coaching
 

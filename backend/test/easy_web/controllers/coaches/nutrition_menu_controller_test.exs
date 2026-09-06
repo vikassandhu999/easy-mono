@@ -1,7 +1,7 @@
 defmodule EasyWeb.Coaches.NutritionMenuControllerTest do
   use Easy.ConnCase
 
-  alias Easy.Nutrition.{Meal, Plan}
+  alias Easy.Nutrition.Plan
   alias Easy.Repo
 
   describe "PUT /v1/coach/nutrition-plans/:id/menu" do
@@ -70,7 +70,6 @@ defmodule EasyWeb.Coaches.NutritionMenuControllerTest do
       breakfast_id = Ecto.UUID.generate()
       dinner_id = Ecto.UUID.generate()
       item_id = Ecto.UUID.generate()
-      option_id = Ecto.UUID.generate()
 
       menu =
         menu(
@@ -95,7 +94,7 @@ defmodule EasyWeb.Coaches.NutritionMenuControllerTest do
           [
             %{
               "meal_slot" => "breakfast",
-              "options" => [%{"id" => option_id, "nutrition_meal_id" => breakfast_id}]
+              "meal_ids" => [breakfast_id]
             }
           ]
         )
@@ -110,13 +109,13 @@ defmodule EasyWeb.Coaches.NutritionMenuControllerTest do
       assert [%{"id" => ^dinner_id}, %{"id" => ^breakfast_id, "meal_items" => [%{"id" => ^item_id}]}] =
                saved["menu"]["meals"]
 
-      assert [%{"meal_slot" => "breakfast", "options" => [%{"id" => ^option_id, "nutrition_meal_id" => ^breakfast_id}]}] =
+      assert [%{"meal_slot" => "breakfast", "meal_ids" => [^breakfast_id]}] =
                saved["menu"]["day_patterns"] |> hd() |> Map.fetch!("slots")
 
       assert saved["menu"]["meals"] |> Enum.at(1) |> Map.fetch!("nutrients") |> Map.fetch!("calories") == 16.7
     end
 
-    test "rejects stale and colliding node ids without changing either menu", %{conn: conn} do
+    test "rejects stale saves and scopes node identity to each menu", %{conn: conn} do
       coach = insert(:coach)
       conn = authenticate_coach(conn, coach)
       first_plan = create_template(conn)
@@ -139,18 +138,18 @@ defmodule EasyWeb.Coaches.NutritionMenuControllerTest do
         |> json_response(409)
 
       assert %{"error_code" => "stale_revision"} = stale
-      collision_menu = menu(second_plan, [%{"id" => meal_id, "name" => "Collision", "meal_items" => []}])
+      copied_menu = menu(second_plan, [%{"id" => meal_id, "name" => "Independent", "meal_items" => []}])
 
-      assert %{"error_code" => "invalid_input"} =
+      assert %{"data" => %{"revision" => 2}} =
                conn
                |> recycle()
                |> authenticate_coach(coach)
-               |> put(path(second_plan), %{"expected_revision" => 1, "menu" => collision_menu})
-               |> json_response(422)
+               |> put(path(second_plan), %{"expected_revision" => 1, "menu" => copied_menu})
+               |> json_response(200)
 
       assert Repo.get!(Plan, first_plan["id"]).revision == 2
-      assert Repo.get!(Plan, second_plan["id"]).revision == 1
-      assert Repo.get(Meal, meal_id).nutrition_plan_id == first_plan["id"]
+      assert hd(Repo.get!(Plan, first_plan["id"]).menu.meals).name == "First"
+      assert hd(Repo.get!(Plan, second_plan["id"]).menu.meals).name == "Independent"
     end
 
     test "rejects duplicate node ids and deletes nodes omitted from a replacement", %{conn: conn} do
@@ -201,10 +200,10 @@ defmodule EasyWeb.Coaches.NutritionMenuControllerTest do
                |> put(path(created), %{"expected_revision" => 2, "menu" => menu(created, [hd(created["menu"]["meals"])])})
                |> json_response(200)
 
-      assert Repo.get(Meal, dropped_id) == nil
+      refute Enum.any?(Repo.get!(Plan, plan["id"]).menu.meals, &(&1.id == dropped_id))
     end
 
-    test "rejects a meal id owned by another tenant", %{conn: conn} do
+    test "a node UUID from another tenant grants no access to its source", %{conn: conn} do
       coach = insert(:coach)
       other = insert(:coach)
       other_conn = authenticate_coach(conn, other)
@@ -227,7 +226,7 @@ defmodule EasyWeb.Coaches.NutritionMenuControllerTest do
       conn = authenticate_coach(conn, coach)
       target = create_template(conn)
 
-      assert %{"error_code" => "invalid_input"} =
+      assert %{"data" => %{"revision" => 2}} =
                conn
                |> recycle()
                |> authenticate_coach(coach)
@@ -238,10 +237,12 @@ defmodule EasyWeb.Coaches.NutritionMenuControllerTest do
                    "menu" => menu(target, [%{"id" => foreign_meal_id, "name" => "Foreign", "meal_items" => []}])
                  }
                )
-               |> json_response(422)
+               |> json_response(200)
 
-      assert Repo.get!(Plan, target["id"]).revision == 1
-      assert Repo.get(Meal, foreign_meal_id).nutrition_plan_id == source["id"]
+      assert Repo.get!(Plan, target["id"]).revision == 2
+      assert hd(Repo.get!(Plan, source["id"]).menu.meals).id == foreign_meal_id
+      assert hd(Repo.get!(Plan, target["id"]).menu.meals).id == foreign_meal_id
+      conn |> recycle() |> authenticate_coach(coach) |> get("/v1/coach/nutrition-plans/#{source["id"]}") |> json_response(404)
     end
 
     test "returns invalid input for malformed food and recipe ids", %{conn: conn} do

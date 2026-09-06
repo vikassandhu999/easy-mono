@@ -21,7 +21,7 @@ defmodule Easy.Nutrition.ProgrammingTemplateLifecycleTest do
       assert updated.description == "Updated metadata"
       assert updated.target_calories == 1800.0
       assert updated.revision == 2
-      assert [%{name: "Everyday"}] = updated.day_patterns
+      assert [%{name: "Everyday"}] = updated.menu.day_patterns
 
       assert {:error, %Ecto.Changeset{action: :stale_revision, data: %Plan{revision: 2}}} =
                Programming.update_template(ctx, template.id, 1, %{"name" => "Lost write"})

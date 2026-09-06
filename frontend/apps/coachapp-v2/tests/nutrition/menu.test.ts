@@ -48,7 +48,7 @@ const plan: NutritionPlan = {
 };
 
 function breakfast() {
-  return editMenu(plan.menu, {type: 'addMeal', id: 'breakfast', dayId: 'day', optionId: 'option'});
+  return editMenu(plan.menu, {type: 'addMeal', id: 'breakfast', dayId: 'day'});
 }
 
 test('a coach can build a complete menu locally and save one consistent request', () => {
@@ -71,7 +71,7 @@ test('a coach can build a complete menu locally and save one consistent request'
   draft = editMenu(draft, {type: 'moveItem', mealId: 'breakfast', from: 1, to: 0});
   draft = editMenu(draft, {type: 'addDay', id: 'training'});
   draft = editMenu(draft, {type: 'schedule', dayId: 'training', weekday: 'monday'});
-  draft = editMenu(draft, {type: 'addOption', dayId: 'training', slot: 'breakfast', mealId: 'breakfast', id: 'shared'});
+  draft = editMenu(draft, {type: 'addOption', dayId: 'training', slot: 'breakfast', mealId: 'breakfast'});
   const request = {expected_revision: plan.revision, menu: draft};
   assert.deepEqual(plan, before, 'draft edits never mutate the query result');
   assert.equal(request.expected_revision, 4);
@@ -84,14 +84,14 @@ test('a coach can build a complete menu locally and save one consistent request'
   assert.equal(request.menu.meals[0]?.meal_items[1]?.portion.grams, 75);
   assert.equal(request.menu.day_patterns[0]?.id, 'day');
   assert.equal(request.menu.day_patterns[1]?.id, 'training');
-  assert.equal(request.menu.day_patterns[1]?.slots[0]?.options[0]?.nutrition_meal_id, 'breakfast');
+  assert.equal(request.menu.day_patterns[1]?.slots[0]?.meal_ids[0], 'breakfast');
   assert.equal(request.menu.schedule.monday, 'training');
   assert.equal(request.menu.schedule.tuesday, 'day');
 });
 
 test('removing a shared meal clears its assignments while removing a day keeps meals', () => {
   let draft = editMenu(breakfast(), {type: 'addDay', id: 'training'});
-  draft = editMenu(draft, {type: 'addOption', dayId: 'training', slot: 'lunch', mealId: 'breakfast', id: 'shared'});
+  draft = editMenu(draft, {type: 'addOption', dayId: 'training', slot: 'lunch', mealId: 'breakfast'});
   draft = editMenu(draft, {type: 'removeDay', dayId: 'day'});
   assert.equal(draft.meals.length, 1);
   assert.ok(Object.values(draft.schedule).every((id) => id === 'training'));
@@ -105,21 +105,37 @@ test('removing a shared meal clears its assignments while removing a day keeps m
 test('moving a meal option to its current slot is harmless; moving into a duplicate collapses it', () => {
   let draft = breakfast();
   const before = structuredClone(draft);
-  draft = editMenu(draft, {type: 'changeSlot', dayId: 'day', optionId: 'option', slot: 'early_morning'});
+  draft = editMenu(draft, {
+    type: 'changeSlot',
+    dayId: 'day',
+    mealId: 'breakfast',
+    fromSlot: 'early_morning',
+    slot: 'early_morning',
+  });
   assert.deepEqual(draft, before);
-  draft = editMenu(draft, {type: 'addOption', dayId: 'day', slot: 'lunch', mealId: 'breakfast', id: 'lunch-option'});
-  draft = editMenu(draft, {type: 'changeSlot', dayId: 'day', optionId: 'option', slot: 'lunch'});
-  assert.deepEqual(draft.day_patterns[0]?.slots, [
-    {meal_slot: 'lunch', options: [{id: 'lunch-option', nutrition_meal_id: 'breakfast'}]},
-  ]);
+  draft = editMenu(draft, {type: 'addOption', dayId: 'day', slot: 'lunch', mealId: 'breakfast'});
+  draft = editMenu(draft, {
+    type: 'changeSlot',
+    dayId: 'day',
+    mealId: 'breakfast',
+    fromSlot: 'early_morning',
+    slot: 'lunch',
+  });
+  assert.deepEqual(draft.day_patterns[0]?.slots, [{meal_slot: 'lunch', meal_ids: ['breakfast']}]);
 });
 
 test('removing the first choice promotes its alternative without changing identity', () => {
   let draft = breakfast();
-  draft = editMenu(draft, {type: 'addMeal', dayId: 'day', id: 'second', optionId: 'second-option'});
-  draft = editMenu(draft, {type: 'changeSlot', dayId: 'day', optionId: 'second-option', slot: 'early_morning'});
-  draft = editMenu(draft, {type: 'removeOption', dayId: 'day', optionId: 'option'});
+  draft = editMenu(draft, {type: 'addMeal', dayId: 'day', id: 'second'});
+  draft = editMenu(draft, {
+    type: 'changeSlot',
+    dayId: 'day',
+    mealId: 'second',
+    fromSlot: 'breakfast',
+    slot: 'early_morning',
+  });
+  draft = editMenu(draft, {type: 'removeOption', dayId: 'day', slot: 'early_morning', mealId: 'breakfast'});
   const slots = draft.day_patterns[0]?.slots;
   assert.equal(slots?.length, 1);
-  assert.deepEqual(slots?.[0]?.options, [{id: 'second-option', nutrition_meal_id: 'second'}]);
+  assert.deepEqual(slots?.[0]?.meal_ids, ['second']);
 });

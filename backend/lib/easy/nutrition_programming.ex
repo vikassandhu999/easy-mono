@@ -5,16 +5,8 @@ defmodule Easy.Nutrition.Programming do
   alias Easy.Ctx
   alias Easy.LocalCalendar
 
-  alias Easy.Nutrition.{
-    DayPattern,
-    Meal,
-    MealItem,
-    MealOption,
-    Plan,
-    WeekSchedule
-  }
+  alias Easy.Nutrition.{Library, Menu, Plan}
 
-  alias Easy.Nutrition.Programming.MenuReplacement
   alias Easy.Orgs.Business
   alias Easy.Repo
   alias Easy.Utils
@@ -51,10 +43,9 @@ defmodule Easy.Nutrition.Programming do
         |> Plan.newest()
         |> Utils.paginate(offset, limit)
         |> Plan.join_assigned_client_count(ctx.business_id)
-        |> Plan.include_menu(ctx.business_id)
         |> Repo.all()
 
-      {:ok, %{count: Repo.aggregate(query, :count, :id), templates: stamp_lifecycle(templates)}}
+      {:ok, %{count: Repo.aggregate(query, :count, :id), templates: templates |> name_menus(ctx) |> stamp_lifecycle()}}
     end
   end
 
@@ -64,9 +55,8 @@ defmodule Easy.Nutrition.Programming do
       ctx
       |> template_query()
       |> Plan.join_assigned_client_count(ctx.business_id)
-      |> Plan.include_menu(ctx.business_id)
       |> Repo.get(template_id)
-      |> ok_or_not_found()
+      |> ok_or_not_found(ctx)
     end
   end
 
@@ -106,9 +96,9 @@ defmodule Easy.Nutrition.Programming do
         ctx
         |> client_plan_query(client_id)
         |> Plan.current_or_upcoming(today)
-        |> Plan.include_menu(ctx.business_id)
         |> Plan.include_client(ctx.business_id)
         |> Repo.all()
+        |> name_menus(ctx)
         |> Enum.map(&%{&1 | lifecycle: Plan.lifecycle(&1, today)})
 
       {:ok,
@@ -127,10 +117,9 @@ defmodule Easy.Nutrition.Programming do
            Plan
            |> Plan.for_business(ctx.business_id)
            |> Plan.join_assigned_client_count(ctx.business_id)
-           |> Plan.include_menu(ctx.business_id)
            |> Plan.include_client(ctx.business_id)
            |> Repo.get(plan_id)
-           |> ok_or_not_found(),
+           |> ok_or_not_found(ctx),
          :ok <- authorize_plan(ctx, plan) do
       {:ok, plan}
     end
@@ -176,11 +165,10 @@ defmodule Easy.Nutrition.Programming do
         query
         |> Plan.newest()
         |> Utils.paginate(offset, limit)
-        |> Plan.include_menu(ctx.business_id)
         |> Plan.include_client(ctx.business_id)
         |> Repo.all()
 
-      {:ok, %{count: Repo.aggregate(query, :count, :id), plans: stamp_lifecycle(plans)}}
+      {:ok, %{count: Repo.aggregate(query, :count, :id), plans: plans |> name_menus(ctx) |> stamp_lifecycle()}}
     end
   end
 
@@ -189,20 +177,19 @@ defmodule Easy.Nutrition.Programming do
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
       ctx
       |> client_plan_query(client_id)
-      |> Plan.include_menu(ctx.business_id)
       |> Plan.include_client(ctx.business_id)
       |> Repo.get(plan_id)
-      |> ok_or_not_found()
+      |> ok_or_not_found(ctx)
     end
   end
 
   # Menu replacement
 
-  @spec replace_menu(Ctx.t(), String.t(), pos_integer(), MenuReplacement.menu_input()) ::
+  @spec replace_menu(Ctx.t(), String.t(), pos_integer(), map()) ::
           {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def replace_menu(%Ctx{} = ctx, plan_id, expected_revision, attrs) do
     mutate_plan(ctx, plan_id, expected_revision, fn plan ->
-      MenuReplacement.replace(ctx, plan, attrs)
+      save_menu(ctx, plan, attrs)
     end)
   end
 
@@ -240,21 +227,21 @@ defmodule Easy.Nutrition.Programming do
   @spec resolve_client_coverage(Ctx.t(), Date.t()) ::
           {:ok,
            nil
-           | %{plan: Plan.t(), day_pattern: DayPattern.t() | nil, date: Date.t(), weekday: atom()}}
+           | %{plan: Plan.t(), day_pattern: Menu.DayPattern.t() | nil, date: Date.t(), weekday: atom()}}
           | {:error, :not_found}
   def resolve_client_coverage(%Ctx{} = ctx, %Date{} = date) do
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
       ctx
       |> covering_plan_query(client_id, date)
       |> Repo.one()
-      |> resolve_covering_plan(date)
+      |> resolve_covering_plan(ctx, date)
     end
   end
 
   @spec resolve_coverage_for_client(Ctx.t(), String.t(), Date.t()) ::
           {:ok,
            nil
-           | %{plan: Plan.t(), day_pattern: DayPattern.t() | nil, date: Date.t(), weekday: atom()}}
+           | %{plan: Plan.t(), day_pattern: Menu.DayPattern.t() | nil, date: Date.t(), weekday: atom()}}
           | {:error, :not_found}
   def resolve_coverage_for_client(%Ctx{} = ctx, client_id, %Date{} = date) do
     with :ok <- ensure_coach(ctx),
@@ -262,7 +249,7 @@ defmodule Easy.Nutrition.Programming do
       ctx
       |> covering_plan_query(client_id, date)
       |> Repo.one()
-      |> resolve_covering_plan(date)
+      |> resolve_covering_plan(ctx, date)
     end
   end
 
@@ -299,23 +286,26 @@ defmodule Easy.Nutrition.Programming do
   # Plan lifecycle helpers
 
   defp insert_everyday_template(ctx, attrs) do
-    with {:ok, plan} <-
-           ctx.business_id |> Plan.insert_changeset(ctx.user_id, attrs) |> Repo.insert(),
-         {:ok, pattern} <-
-           DayPattern.insert_changeset(plan.business_id, plan.id, %{name: "Everyday", position: 0})
-           |> Repo.insert(),
-         :ok <- schedule_every_weekday(plan, pattern) do
-      plan
-    else
+    case ctx.business_id |> Plan.insert_changeset(ctx.user_id, attrs) |> Repo.insert() do
+      {:ok, plan} -> plan
       {:error, reason} -> Repo.rollback(reason)
     end
   end
 
-  defp schedule_every_weekday(plan, pattern) do
-    each_ok(WeekSchedule.weekdays(), fn weekday ->
-      WeekSchedule.insert_changeset(plan.business_id, plan.id, pattern.id, %{weekday: weekday})
-      |> Repo.insert()
-    end)
+  defp save_menu(_ctx, %Plan{archived_at: archived_at} = plan, _attrs) when not is_nil(archived_at),
+    do: {:error, archived_changeset(plan)}
+
+  defp save_menu(ctx, plan, attrs) do
+    with {:ok, menu} <- Menu.cast(attrs),
+         {:ok, resolved} <- Library.resolve_items_for_write(ctx, Menu.references(menu)) do
+      plan
+      |> change(revision: plan.revision + 1)
+      |> put_embed(:menu, Menu.resolve(menu, resolved))
+      |> Repo.update()
+    else
+      {:error, :invalid_portion} -> {:error, add_error(change(plan), :menu, "contains an invalid Portion")}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   defp update_active(%Plan{archived_at: archived_at} = plan, _attrs)
@@ -356,9 +346,7 @@ defmodule Easy.Nutrition.Programming do
     ctx
     |> get_locked_active_template(template_id)
     |> mutate_revisioned(expected_revision, fn locked ->
-      locked
-      |> reload_with_menu()
-      |> then(&copy_template(ctx, &1))
+      copy_template(ctx, locked)
     end)
   end
 
@@ -376,9 +364,7 @@ defmodule Easy.Nutrition.Programming do
     ctx
     |> get_locked_active_template(template_id)
     |> mutate_revisioned(expected_revision, fn locked ->
-      locked
-      |> reload_with_menu()
-      |> then(&copy_template_to_client(ctx, client_id, &1, attrs))
+      copy_template_to_client(ctx, client_id, locked, attrs)
     end)
   end
 
@@ -388,13 +374,6 @@ defmodule Easy.Nutrition.Programming do
     |> Plan.for_archived(false)
     |> lock("FOR UPDATE")
     |> Repo.get(template_id)
-  end
-
-  defp reload_with_menu(template) do
-    Plan
-    |> Plan.for_business(template.business_id)
-    |> Plan.include_menu(template.business_id)
-    |> Repo.get(template.id)
   end
 
   defp copy_template(ctx, template) do
@@ -408,100 +387,18 @@ defmodule Easy.Nutrition.Programming do
       target_fiber_g: template.target_fiber_g
     }
 
-    with {:ok, copy} <-
-           Plan.insert_changeset(ctx.business_id, ctx.user_id, attrs) |> Repo.insert(),
-         :ok <- copy_menu(template, copy) do
-      {:ok, copy}
-    end
+    Plan.insert_changeset(ctx.business_id, ctx.user_id, attrs)
+    |> put_embed(:menu, template.menu)
+    |> Repo.insert()
   end
 
   defp copy_template_to_client(ctx, client_id, template, attrs) do
     with {:ok, copy} <-
            Plan.insert_changeset(ctx.business_id, ctx.user_id, client_id, template, attrs)
            |> Repo.insert(),
-         :ok <- copy_menu(template, copy),
          :ok <- ClientAccess.advance_stage_to_coaching(ctx, client_id) do
       {:ok, copy}
     end
-  end
-
-  defp copy_menu(source, copy) do
-    with {:ok, pattern_ids} <- copy_day_patterns(source.day_patterns, copy),
-         {:ok, meal_ids} <- copy_each(source.meals, &copy_meal(&1, copy)),
-         :ok <- copy_meal_options(source.day_patterns, copy, pattern_ids, meal_ids) do
-      copy_week_schedule(source.week_schedule, copy, pattern_ids)
-    end
-  end
-
-  defp copy_day_patterns(patterns, copy) do
-    copy_each(patterns, fn pattern ->
-      DayPattern.insert_changeset(copy.business_id, copy.id, %{
-        name: pattern.name,
-        position: pattern.position
-      })
-      |> Repo.insert()
-    end)
-  end
-
-  defp copy_meal(meal, copy) do
-    attrs = %{name: meal.name, notes: meal.notes, position: meal.position}
-
-    with {:ok, copied} <-
-           Meal.insert_changeset(copy.business_id, copy.id, attrs) |> Repo.insert(),
-         :ok <- copy_meal_items(meal.meal_items, copy, copied) do
-      {:ok, copied}
-    end
-  end
-
-  defp copy_meal_items(items, copy, copied_meal) do
-    each_ok(items, fn item ->
-      attrs = %{
-        portion_kind: item.portion_kind,
-        weight_g: item.weight_g,
-        amount: item.amount,
-        unit: item.unit,
-        serving_label: item.serving_label,
-        position: item.position,
-        food_id: item.food_id,
-        recipe_id: item.recipe_id,
-        calories: item.calories,
-        protein: item.protein,
-        carbohydrates: item.carbohydrates,
-        fat: item.fat,
-        fiber: item.fiber,
-        complete: item.complete
-      }
-
-      MealItem.insert_changeset(copy.business_id, copy.id, copied_meal.id, attrs)
-      |> Repo.insert()
-    end)
-  end
-
-  defp copy_meal_options(patterns, copy, pattern_ids, meal_ids) do
-    patterns
-    |> Enum.flat_map(& &1.meal_options)
-    |> each_ok(fn option ->
-      MealOption.insert_changeset(
-        copy.business_id,
-        copy.id,
-        Map.fetch!(pattern_ids, option.nutrition_day_pattern_id),
-        Map.fetch!(meal_ids, option.nutrition_meal_id),
-        %{meal_slot: option.meal_slot, position: option.position}
-      )
-      |> Repo.insert()
-    end)
-  end
-
-  defp copy_week_schedule(schedule, copy, pattern_ids) do
-    each_ok(schedule, fn row ->
-      WeekSchedule.insert_changeset(
-        copy.business_id,
-        copy.id,
-        Map.fetch!(pattern_ids, row.nutrition_day_pattern_id),
-        %{weekday: row.weekday}
-      )
-      |> Repo.insert()
-    end)
   end
 
   defp copy_name(original_name, business_id) do
@@ -528,24 +425,42 @@ defmodule Easy.Nutrition.Programming do
   # Coverage helpers
 
   defp covering_plan_query(%Ctx{} = ctx, client_id, date) do
-    ctx
-    |> client_plan_query(client_id)
-    |> Plan.covering(client_id, date)
-    |> Plan.include_menu(ctx.business_id)
-    |> Plan.include_client(ctx.business_id)
+    query =
+      ctx
+      |> client_plan_query(client_id)
+      |> Plan.covering(client_id, date)
+      |> Plan.include_client(ctx.business_id)
+
+    # A diary transaction freezes one complete prescription while its source
+    # plan still protects the Library references.
+    if Repo.in_transaction?(), do: lock(query, "FOR SHARE"), else: query
   end
 
-  defp resolve_covering_plan(nil, _date), do: {:ok, nil}
+  defp resolve_covering_plan(nil, _ctx, _date), do: {:ok, nil}
 
-  defp resolve_covering_plan(plan, date) do
-    weekday = Enum.at(WeekSchedule.weekdays(), Date.day_of_week(date) - 1)
-    scheduled = Enum.find(List.wrap(plan.week_schedule), &(&1.weekday == weekday))
+  defp resolve_covering_plan(plan, ctx, date) do
+    [plan] = name_menus([plan], ctx)
+    weekday = Enum.at(Menu.weekdays(), Date.day_of_week(date) - 1)
+    {:ok, %{plan: stamp_lifecycle(plan), day_pattern: Menu.day_pattern(plan.menu, date), date: date, weekday: weekday}}
+  end
 
-    pattern =
-      scheduled &&
-        Enum.find(List.wrap(plan.day_patterns), &(&1.id == scheduled.nutrition_day_pattern_id))
+  defp name_menus(plans, ctx) do
+    references = Enum.flat_map(plans, &Menu.references(&1.menu))
+    {:ok, names} = Library.item_names(ctx, references)
+    Enum.map(plans, &%{&1 | menu: Menu.name_items(&1.menu, names)})
+  end
 
-    {:ok, %{plan: stamp_lifecycle(plan), day_pattern: pattern, date: date, weekday: weekday}}
+  @spec library_usage(Ctx.t(), :food | :recipe, String.t()) :: {:ok, map()}
+  def library_usage(ctx, kind, id) do
+    plans =
+      Plan.for_business(ctx.business_id)
+      |> Plan.for_menu_item(kind, id)
+      |> order_by([p], asc: p.name, asc: p.id)
+      |> select([p], %{id: p.id, name: p.name, client_id: p.client_id, kind: p.kind})
+      |> Repo.all()
+
+    gram_usage = Plan.for_business(ctx.business_id) |> Plan.for_menu_item(kind, id, :gram) |> Repo.exists?()
+    {:ok, %{plans: plans, gram_portion?: gram_usage}}
   end
 
   defp stamp_lifecycle(plans) when is_list(plans), do: Enum.map(plans, &stamp_lifecycle/1)
@@ -645,8 +560,12 @@ defmodule Easy.Nutrition.Programming do
   defp ensure_coach(%Ctx{coach_id: coach_id}) when not is_nil(coach_id), do: :ok
   defp ensure_coach(%Ctx{}), do: {:error, :not_found}
 
-  defp ok_or_not_found(nil), do: {:error, :not_found}
-  defp ok_or_not_found(%Plan{} = plan), do: {:ok, stamp_lifecycle(plan)}
+  defp ok_or_not_found(nil, _ctx), do: {:error, :not_found}
+
+  defp ok_or_not_found(%Plan{} = plan, ctx) do
+    [plan] = name_menus([plan], ctx)
+    {:ok, stamp_lifecycle(plan)}
+  end
 
   defp stale_revision_changeset(plan) do
     plan
@@ -659,23 +578,5 @@ defmodule Easy.Nutrition.Programming do
     plan
     |> change()
     |> add_error(:archived_at, "is read-only")
-  end
-
-  defp each_ok(items, fun) do
-    Enum.reduce_while(items, :ok, fn item, :ok ->
-      case fun.(item) do
-        {:ok, _row} -> {:cont, :ok}
-        {:error, reason} -> {:halt, {:error, reason}}
-      end
-    end)
-  end
-
-  defp copy_each(rows, copy_one) do
-    Enum.reduce_while(rows, {:ok, %{}}, fn row, {:ok, ids} ->
-      case copy_one.(row) do
-        {:ok, copied} -> {:cont, {:ok, Map.put(ids, row.id, copied.id)}}
-        {:error, reason} -> {:halt, {:error, reason}}
-      end
-    end)
   end
 end

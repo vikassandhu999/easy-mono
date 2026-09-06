@@ -2,7 +2,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
   import Easy.Nutrition.ProgrammingMenuFixtures, only: [uuid: 1]
   use Easy.DataCase, async: true
 
-  alias Easy.Nutrition.{Meal, MealItem, MealOption, Plan, Programming, WeekSchedule}
+  alias Easy.Nutrition.{Menu, Plan, Programming}
   alias Easy.Repo
 
   describe "assign_template_to_client/5" do
@@ -29,16 +29,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
       assert assigned.revision == 1
       assert assigned.start_date == ~D[2026-09-01]
       assert assigned.end_date == ~D[2026-09-30]
-      assert [%{name: "Breakfast", id: copied_meal_id, meal_items: [item]}] = assigned.meals
-      assert copied_meal_id != hd(source.meals).id
-      assert item.food_id == food.id
-      assert item.weight_g == 50.0
-      assert item.id != hd(hd(source.meals).meal_items).id
-      assert [%{id: copied_pattern_id, meal_options: [option]}] = assigned.day_patterns
-      assert copied_pattern_id != hd(source.day_patterns).id
-      assert option.nutrition_meal_id == copied_meal_id
-      assert option.meal_slot == :breakfast
-      assert Enum.all?(assigned.week_schedule, &(&1.nutrition_day_pattern_id == copied_pattern_id))
+      assert assigned.menu == source.menu
       assert Repo.get!(Easy.Clients.Client, client.id).stage == :coaching
     end
 
@@ -113,7 +104,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
       assert renamed.name == "Individualized"
       assert Repo.get!(Plan, source.id).name == "Cut Block"
 
-      pattern = hd(source.day_patterns)
+      pattern = hd(source.menu.day_patterns)
 
       assert {:ok, _updated_template} =
                Programming.replace_menu(ctx, source.id, 2, %{
@@ -123,15 +114,14 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
                })
 
       {:ok, reloaded} = Programming.get_plan(ctx, assigned.id)
-      assert [%{name: "Breakfast"}] = reloaded.meals
-      assert [%{name: "Everyday"}] = reloaded.day_patterns
+      assert [%{name: "Breakfast"}] = reloaded.menu.meals
+      assert [%{name: "Everyday"}] = reloaded.menu.day_patterns
 
       assert {:ok, _deleted} = Programming.delete_template(ctx, source.id, 3)
       persisted = Repo.get!(Plan, assigned.id)
       assert persisted.source_template_id == nil
-      assert Repo.get(Meal, hd(reloaded.meals).id)
-      assert Repo.aggregate(MealItem.for_plan(assigned.id), :count, :id) == 1
-      assert Repo.aggregate(MealOption.for_plan(assigned.id), :count, :id) == 1
+      assert persisted.menu == Repo.get!(Plan, assigned.id).menu
+      assert [%{name: "Breakfast", meal_items: [_item]}] = persisted.menu.meals
     end
   end
 
@@ -200,7 +190,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
       assert %{archived_at: ["is read-only"]} = errors_on(changeset)
 
       assert {:ok, restored} = Programming.restore_plan(ctx, assigned.id, 2)
-      pattern = hd(restored.day_patterns)
+      pattern = hd(restored.menu.day_patterns)
 
       assert {:ok, replaced} =
                Programming.replace_menu(ctx, restored.id, 3, %{
@@ -209,10 +199,10 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
                  schedule: schedule_for(pattern.id)
                })
 
-      assert replaced.meals == []
+      assert replaced.menu.meals == []
       assert replaced.revision == 4
       {:ok, template_after} = Programming.get_plan(ctx, source.id)
-      assert [%{name: "Breakfast"}] = template_after.meals
+      assert [%{name: "Breakfast"}] = template_after.menu.meals
 
       assert {:ok, archived_again} = Programming.archive_plan(ctx, replaced.id, 4)
       assert {:ok, deleted} = Programming.delete_plan(ctx, archived_again.id, 5)
@@ -260,7 +250,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
   end
 
   defp breakfast_menu(plan, food) do
-    pattern = hd(plan.day_patterns)
+    pattern = hd(plan.menu.day_patterns)
 
     %{
       meals: [
@@ -277,7 +267,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
           id: pattern.id,
           name: pattern.name,
           slots: [
-            %{meal_slot: :breakfast, options: [%{id: uuid("opt"), nutrition_meal_id: uuid("breakfast")}]}
+            %{meal_slot: :breakfast, meal_ids: [uuid("breakfast")]}
           ]
         }
       ],
@@ -285,7 +275,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
     }
   end
 
-  defp schedule_for(pattern_id), do: Map.new(WeekSchedule.weekdays(), &{&1, pattern_id})
+  defp schedule_for(pattern_id), do: Map.new(Menu.weekdays(), &{&1, pattern_id})
 
   defp insert_client_plan(coach, client, attrs \\ []) do
     insert(

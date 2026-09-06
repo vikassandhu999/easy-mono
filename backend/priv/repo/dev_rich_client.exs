@@ -357,7 +357,7 @@ else
       "target_fiber_g" => 30.0
     })
 
-  pattern = hd(template.day_patterns)
+  pattern = hd(template.menu.day_patterns)
   gram = fn grams -> %{kind: :gram, grams: grams * 1.0} end
 
   meal_ids = Map.new(~w(breakfast lunch dinner), &{&1, Ecto.UUID.generate()})
@@ -380,13 +380,13 @@ else
           id: pattern.id,
           name: pattern.name,
           slots: [
-            %{meal_slot: :breakfast, options: [%{id: Ecto.UUID.generate(), nutrition_meal_id: meal_ids["breakfast"]}]},
-            %{meal_slot: :lunch, options: [%{id: Ecto.UUID.generate(), nutrition_meal_id: meal_ids["lunch"]}]},
-            %{meal_slot: :dinner, options: [%{id: Ecto.UUID.generate(), nutrition_meal_id: meal_ids["dinner"]}]}
+            %{meal_slot: :breakfast, meal_ids: [meal_ids["breakfast"]]},
+            %{meal_slot: :lunch, meal_ids: [meal_ids["lunch"]]},
+            %{meal_slot: :dinner, meal_ids: [meal_ids["dinner"]]}
           ]
         }
       ],
-      schedule: Map.new(Easy.Nutrition.WeekSchedule.weekdays(), &{&1, pattern.id})
+      schedule: Map.new(Easy.Nutrition.Menu.weekdays(), &{&1, pattern.id})
     })
 
   {:ok, plan} =
@@ -397,7 +397,7 @@ else
 
   skip_days = MapSet.new([3])
   extra_food = hd(food_pool)
-  item = hd(hd(plan.meals).meal_items)
+  item = hd(hd(plan.menu.meals).meal_items)
 
   {:ok, day} = Diary.get_client_nutrition_day(client_ctx, today)
   breakfast = Enum.find(day.slots, &(&1.meal_slot == :breakfast))

@@ -5,12 +5,8 @@ import type {
   Day,
   NutritionCoverage as NutritionCoverageSchema,
   NutritionDayOptionItem as NutritionDayOptionItemSchema,
-  NutritionDayPattern as NutritionDayPatternSchema,
-  NutritionDayPatternSlot as NutritionDayPatternSlotSchema,
   NutritionDayRow as NutritionDayRowSchema,
   NutritionDaySlot as NutritionDaySlotSchema,
-  NutritionMealItem as NutritionMealItemSchema,
-  NutritionMeal as NutritionMealSchema,
   NutritionMenu as NutritionMenuSchema,
   NutritionPlanAssign,
   NutritionPlanCreate,
@@ -18,7 +14,6 @@ import type {
   NutritionPlan as NutritionPlanSchema,
   NutritionPlanUpdate,
   NutritionPortion as NutritionPortionSchema,
-  NutritionWeekSchedule as NutritionWeekScheduleSchema,
   paths,
   Revision,
 } from './schema.ts';
@@ -237,14 +232,8 @@ export function useListCoachNutritionDaysQuery(
   });
 }
 
-export type NutritionDayPattern = NutritionDayPatternSchema;
-export type NutritionDayPatternSlot = NutritionDayPatternSlotSchema;
-export type NutritionWeekSchedule = NutritionWeekScheduleSchema;
-export type NutritionMeal = NutritionMealSchema;
 export type NutritionMenu = NutritionMenuSchema;
-export type NutritionMealItem = NutritionMealItemSchema;
 export type NutritionPortion = NutritionPortionSchema;
-export type NutritionPortionInput = NutritionPortionSchema;
 
 /**
  * General-purpose fetch for one nutrition plan.

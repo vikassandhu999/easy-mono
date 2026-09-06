@@ -186,7 +186,7 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
       refute Enum.any?(impact.templates, &Map.has_key?(&1, :business_id))
 
       assert [%{id: client_plan_id, name: "Client Cut", client_id: client_id}] =
-               impact.active_client_plans
+               impact.client_plans
 
       assert client_plan_id == client_plan.id
       assert client_id == client.id
@@ -232,7 +232,7 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
       refute Enum.any?(impact.templates, &(&1.name == "Other Cut"))
 
       assert [%{id: client_plan_id, name: "Client Cut", client_id: client_id}] =
-               impact.active_client_plans
+               impact.client_plans
 
       assert client_plan_id == client_plan.id
       assert client_id == client.id

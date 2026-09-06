@@ -462,7 +462,7 @@ defmodule Easy.Nutrition.Diary do
   end
 
   defp coverage_guidance(ctx, date) do
-    case Programming.resolve_client_coverage(ctx, date) do
+    case Programming.resolve_client_coverage(ctx, date, lock: true) do
       {:ok, nil} -> {:ok, {false, nil}}
       {:ok, guidance} -> {:ok, {true, guidance}}
       {:error, reason} -> {:error, reason}

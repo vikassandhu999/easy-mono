@@ -6,8 +6,8 @@ by Ecto embedded values. Plan details, ownership, revision, targets, and coverag
 dates remain relational columns with their database constraints.
 
 Meals, Menu Items, and Day Patterns have UUIDs local to their Menu. Copies retain
-those IDs under a different plan ID. Meal Options are ordered Meal IDs within a
-slot. Array order replaces database position columns. This removes five child
+those IDs under a different plan ID. Each Slot lists ordered Meal IDs for one
+Meal Slot. Array order replaces database position columns. This removes five child
 tables, their ownership checks, row reconciliation, and copy-ID maps.
 
 Menu validation is pure. Programming owns its transaction and revision check.

@@ -451,7 +451,7 @@ export default function NutritionToday() {
       {editor.kind === 'confirmSwitch' ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6">
           <button
-            aria-label="Cancel meal option switch"
+            aria-label="Cancel option switch"
             className="absolute inset-0 cursor-default"
             onClick={() => closeEditor()}
             type="button"

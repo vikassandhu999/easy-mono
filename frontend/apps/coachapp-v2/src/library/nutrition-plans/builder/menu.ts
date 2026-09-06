@@ -1,7 +1,7 @@
 import {type TrainingWeekday, WEEKDAYS} from '@easy/utils';
 import {MEAL_SLOTS, type MealSlot} from '@easy/utils/meal-slots';
 import {produce} from 'immer';
-import type {NutritionMenu, NutritionPortionInput} from '../../../api/nutrition-plans.ts';
+import type {NutritionMenu, NutritionPortion} from '../../../api/nutrition-plans.ts';
 
 export type Menu = NutritionMenu;
 export type MenuMeal = Menu['meals'][number];
@@ -25,7 +25,7 @@ export type MenuEdit =
   | {type: 'addItems'; mealId: string; items: {id: string; body: ItemInput; name: string | null}[]}
   | {type: 'removeItem'; mealId: string; itemId: string}
   | {type: 'moveItem'; mealId: string; from: number; to: number}
-  | {type: 'amount'; mealId: string; itemId: string; portion: NutritionPortionInput};
+  | {type: 'amount'; mealId: string; itemId: string; portion: NutritionPortion};
 
 export function editMenu(menu: Menu, edit: MenuEdit): Menu {
   return produce(menu, (draft) => {

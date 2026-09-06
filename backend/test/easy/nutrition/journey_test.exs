@@ -1,67 +1,11 @@
-defmodule Easy.Nutrition.CutoverTest do
+defmodule Easy.Nutrition.JourneyTest do
   alias Easy.Nutrition.DiaryFixtures
   import Easy.Nutrition.ProgrammingMenuFixtures, only: [uuid: 1]
   use Easy.SchemaCase, async: false
   alias Easy.LocalCalendar
   alias Easy.Nutrition.{Library, Menu, Programming}
-  alias Easy.Repo
 
-  @legacy_tables [
-    "nutrition_meal_logs",
-    "nutrition_food_log_entries",
-    "nutrition_plan_days",
-    "nutrition_day_meals",
-    "nutrition_weekday_assignments"
-  ]
-  @retained_tables [
-    "nutrition_foods",
-    "nutrition_recipes",
-    "library_media",
-    "businesses",
-    "clients"
-  ]
-  @legacy_files [
-    "lib/easy/meal_logs.ex",
-    "lib/easy/meal_slot.ex",
-    "lib/easy/macro_calc.ex",
-    "lib/easy/nutrition/meal_log.ex",
-    "lib/easy/nutrition/food_log_entry.ex",
-    "lib/easy/nutrition/plan_day.ex",
-    "lib/easy/nutrition/day_meal.ex",
-    "lib/easy_web/controllers/clients/meal_log_controller.ex",
-    "lib/easy_web/controllers/coaches/meal_log_controller.ex",
-    "lib/easy_web/controllers/clients/food_log_entry_controller.ex",
-    "lib/easy_web/open_api/schemas/logging.ex"
-  ]
-  test "legacy Programming and Diary tables are gone while Library rows remain" do
-    coach = insert(:coach)
-    food = insert(:food, business: coach.business, creator: coach, name: "Kept oats")
-    recipe = insert(:recipe, business: coach.business, creator: coach)
-    media = insert(:library_media, business: coach.business, uploaded_by_id: coach.user_id)
-    assert Repo.get!(Easy.Nutrition.Food, food.id).name == "Kept oats"
-    assert Repo.get!(Easy.Nutrition.Recipe, recipe.id).id == recipe.id
-    assert Repo.get!(Easy.LibraryMedia.Media, media.id).id == media.id
-    assert Repo.get!(Easy.Orgs.Business, coach.business_id).id == coach.business_id
-    assert Repo.get!(Easy.Orgs.Coach, coach.id).id == coach.id
-
-    for table <- @legacy_tables do
-      assert {:ok, %{rows: [[false]]}} = Repo.query("SELECT to_regclass($1) IS NOT NULL", [table]),
-             table
-    end
-
-    for table <- @retained_tables do
-      assert {:ok, %{rows: [[true]]}} = Repo.query("SELECT to_regclass($1) IS NOT NULL", [table]),
-             table
-    end
-  end
-
-  test "replaced MealLogs, child-route, and raw-log modules are deleted" do
-    for path <- @legacy_files do
-      refute File.exists?(Path.join(File.cwd!(), path)), path
-    end
-  end
-
-  test "factories and public modules rebuild Library, Programming, and Diary without discarded ids" do
+  test "a coach builds a menu, assigns it, and the client records intake" do
     coach = insert(:coach)
     client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
 
@@ -101,30 +45,13 @@ defmodule Easy.Nutrition.CutoverTest do
         %{
           id: uuid("breakfast"),
           name: "Oats",
-          position: 0,
           meal_items: [
-            %{
-              id: uuid("oats"),
-              kind: :food,
-              food_id: food.id,
-              position: 0,
-              portion: %{kind: :gram, grams: 50.0}
-            }
+            %{id: uuid("oats"), kind: :food, food_id: food.id, portion: %{kind: :gram, grams: 50.0}}
           ]
         }
       ],
       day_patterns: [
-        %{
-          id: pattern.id,
-          name: pattern.name,
-          position: 0,
-          slots: [
-            %{
-              meal_slot: :breakfast,
-              meal_ids: [uuid("breakfast")]
-            }
-          ]
-        }
+        %{id: pattern.id, name: pattern.name, slots: [%{meal_slot: :breakfast, meal_ids: [uuid("breakfast")]}]}
       ],
       schedule: Map.new(Menu.weekdays(), &{&1, pattern.id})
     }

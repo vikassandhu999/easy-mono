@@ -6,7 +6,7 @@ defmodule Easy.Nutrition.ProgrammingMenuDuplicationTest do
   import Easy.Nutrition.ProgrammingMenuFixtures
 
   describe "duplicate_template/3" do
-    test "copies Meals, Menu Items, Meal Options, and the Week Schedule onto the new Template" do
+    test "copies Meals, Menu Items, Day Patterns, and the Week Schedule onto the new Template" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
       assert {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})

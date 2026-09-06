@@ -116,7 +116,7 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
   end
 
   describe "resolve_client_coverage/2" do
-    test "resolves inclusive Coverage and the selected Day Pattern with its Meal Options" do
+    test "resolves inclusive Coverage and the selected Day Pattern with its Slots" do
       coach = insert(:coach)
       client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
       food = insert(:food, business: coach.business, creator: coach)

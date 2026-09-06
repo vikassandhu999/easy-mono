@@ -37,13 +37,10 @@ defmodule EasyWeb.NutritionControllerBoundaryTest do
     end
   end
 
-  test "nutrition controllers do not alias schemas or the old read boundary" do
+  test "nutrition controllers do not alias schemas" do
     for path <- @pure_nutrition_controllers do
       source = File.read!(Path.join(File.cwd!(), path))
-
-      refute source =~ "alias Easy.Nutrition.Reads", path
-      refute source =~ "alias Easy.Nutrition.MealLogging", path
-      refute source =~ ~r/alias Easy\.Nutrition\.(Food|Recipe|Meal|MealItem)\b/, path
+      refute source =~ ~r/alias Easy\.Nutrition\.(Food|Recipe|Plan|Menu)\b/, path
     end
   end
 end

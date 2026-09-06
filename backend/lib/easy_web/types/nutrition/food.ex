@@ -144,7 +144,7 @@ defmodule EasyWeb.Types.Nutrition.Food do
           required(:data) => %{
             required(:recipes) => [EasyWeb.Types.Nutrition.FoodRecipeRef.t()],
             required(:templates) => [EasyWeb.Types.Nutrition.FoodPlanRef.t()],
-            required(:active_client_plans) => [EasyWeb.Types.Nutrition.FoodPlanRef.t()]
+            required(:client_plans) => [EasyWeb.Types.Nutrition.FoodPlanRef.t()]
           }
         }
 

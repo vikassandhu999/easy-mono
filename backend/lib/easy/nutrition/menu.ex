@@ -204,7 +204,7 @@ defmodule Easy.Nutrition.Menu do
 
     changeset
     |> check(:meals, unique?(Enum.map(nodes, & &1.id)), "node IDs must be unique UUIDs")
-    |> check(:day_patterns, Enum.all?(menu.day_patterns, &valid_slots?(&1.slots, meal_ids)), "contains invalid meal choices")
+    |> check(:day_patterns, Enum.all?(menu.day_patterns, &valid_slots?(&1.slots, meal_ids)), "offers a Meal outside this Menu")
     |> check(:schedule, valid_schedule?(menu.schedule, pattern_ids), "must map every weekday to a Day Pattern in this Menu")
   end
 

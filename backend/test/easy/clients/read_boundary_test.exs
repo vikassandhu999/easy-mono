@@ -235,7 +235,7 @@ defmodule Easy.Clients.ReadBoundaryTest do
 
     {:ok, nutrition_plan} =
       business.id
-      |> NutritionPlan.insert_changeset(coach.user_id, client.id, nutrition_template, %{})
+      |> NutritionPlan.assign_changeset(coach.user_id, client.id, nutrition_template, %{})
       |> Repo.insert()
 
     assert {:ok, %{id: deleted_id}} = Clients.revoke_invitation(trainer_ctx(coach), client.id)

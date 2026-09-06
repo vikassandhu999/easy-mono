@@ -3,28 +3,28 @@ import {hasLibraryUsage, libraryInUseMessage, normalizeLibraryImpact} from './li
 const foodImpact = {
   recipes: [{id: 'recipe-1', name: 'Lassi'}],
   templates: [{client_id: null, id: 'plan-1', name: 'Cut'}],
-  active_client_plans: [{id: 'plan-2', name: 'Client Cut', client_id: 'client-1'}],
+  client_plans: [{id: 'plan-2', name: 'Client Cut', client_id: 'client-1'}],
 };
 
 const impact = normalizeLibraryImpact(foodImpact);
 if (impact.recipes.length !== 1 || impact.recipes[0]?.name !== 'Lassi') {
   throw new Error('food impact must keep Recipe names without tenant fields');
 }
-if (impact.templates[0]?.id !== 'plan-1' || impact.active_client_plans[0]?.name !== 'Client Cut') {
+if (impact.templates[0]?.id !== 'plan-1' || impact.client_plans[0]?.name !== 'Client Cut') {
   throw new Error('food impact must keep Template and Client Plan names');
 }
 if (!hasLibraryUsage(impact)) {
   throw new Error('populated impact must count as in use');
 }
 
-const empty = normalizeLibraryImpact({recipes: [], templates: [], active_client_plans: []});
+const empty = normalizeLibraryImpact({recipes: [], templates: [], client_plans: []});
 if (hasLibraryUsage(empty)) {
   throw new Error('empty buckets must not count as in use');
 }
 
 const recipeOnly = normalizeLibraryImpact({
   templates: [{client_id: null, id: 'plan-3', name: 'Old Cut'}],
-  active_client_plans: [],
+  client_plans: [],
 });
 if (recipeOnly.recipes.length !== 0 || recipeOnly.templates[0]?.name !== 'Old Cut') {
   throw new Error('recipe impact must omit recipes and keep Template names');

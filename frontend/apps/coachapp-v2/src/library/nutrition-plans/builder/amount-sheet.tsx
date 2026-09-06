@@ -4,7 +4,7 @@ import {useEffect, useRef} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {type Food, type Recipe, useGetFoodQuery, useGetRecipeQuery} from '@/api/nutrition-foods';
-import type {NutritionPortionInput} from '@/api/nutrition-plans';
+import type {NutritionPortion} from '@/api/nutrition-plans';
 import {FormNumberField} from '@/ui/form-number-field';
 import {FormSelectField} from '@/ui/form-select-field';
 import {ResponsiveOverlay} from '@/ui/responsive-overlay';
@@ -16,7 +16,7 @@ const amountSchema = z.object({
   amount: z.number().finite().positive('Enter an amount greater than zero'),
 });
 type AmountValues = z.infer<typeof amountSchema>;
-type Unit = {key: string; name: string; portion: NutritionPortionInput};
+type Unit = {key: string; name: string; portion: NutritionPortion};
 
 export function AmountSheetContent({
   food,
@@ -30,7 +30,7 @@ export function AmountSheetContent({
   food: Food | null;
   recipe: Recipe | null;
   existingItem?: MenuItem;
-  onEditAmount?: (portion: NutritionPortionInput) => void;
+  onEditAmount?: (portion: NutritionPortion) => void;
   onCollect?: (item: ItemInput) => void;
   formId?: string;
   onCanConfirmChange?: (valid: boolean) => void;
@@ -81,7 +81,7 @@ export function AmountSheetContent({
     if (!unit) {
       return;
     }
-    const portion: NutritionPortionInput =
+    const portion: NutritionPortion =
       unit.portion.kind === 'gram'
         ? {kind: 'gram', grams: amount}
         : {kind: 'serving', amount, unit: unit.portion.unit, label: unit.portion.label};
@@ -145,7 +145,7 @@ export function AmountSheet({
   open: boolean;
   onClose: () => void;
   existingItem: MenuItem;
-  onEditAmount: (portion: NutritionPortionInput) => void;
+  onEditAmount: (portion: NutritionPortion) => void;
   anchorEl: HTMLElement;
 }) {
   const triggerRef = useRef<HTMLElement | null>(anchorEl);

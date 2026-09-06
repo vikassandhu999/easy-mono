@@ -102,21 +102,22 @@ An independent nutrition prescription owned by one client. It may originate from
 _Avoid_: Assigned nutrition plan
 
 **Menu**:
-The document of Meals, Menu Items, Day Patterns, Meal Options, and Week Schedule owned by one Nutrition Template or Client Nutrition Plan. It is saved and copied as a whole. Meals, items, and patterns have identities local to that Menu.
+The document of Meals, Menu Items, Day Patterns, and Week Schedule owned by one Nutrition Template or Client Nutrition Plan. It is saved and copied as a whole. Meals, items, and patterns have identities local to that Menu.
 _Avoid_: Plan structure
 
 **Day Pattern**:
-A named reusable arrangement of Meal Options across the closed Meal Slot vocabulary.
+A named reusable set of Slots across the closed Meal Slot vocabulary.
 
-**Meal Option**:
-A Meal offered in a Day Pattern's Meal Slot. Each slot contains ordered Meal IDs; the first is its default. An option has no separate identity inside a Menu.
+**Slot**:
+A Day Pattern's entry for one Meal Slot: the ordered Meal IDs it offers. The first is its default. A Slot has no identity of its own.
+_Avoid_: Meal option, meal choice
 
 **Week Schedule**:
 The mapping of Monday through Sunday to one Day Pattern per weekday.
 _Avoid_: Calendar, meal calendar
 
 **Live guidance**:
-The covering plan, targets, selected Day Pattern, and Meal Options resolved for a client-local date. Missing Coverage is a normal absence.
+The covering plan, targets, selected Day Pattern, and its offered Meals resolved for a client-local date. Missing Coverage is a normal absence.
 
 **Meal Slot**:
 One of the closed timing anchors used by programming and Diary: ordinary day-period slots and a separate pre-, during-, and post-workout group.
@@ -126,7 +127,7 @@ _Avoid_: Meal type, snack, occasion
 One client's frozen guidance and actual intake for one local date and Meal Slot under one applied timezone.
 
 **Frozen offered option**:
-A snapshotted Meal Option available when a Diary Slot starts. It owns relational frozen planned items.
+A snapshot of one Meal offered in a Diary Slot's Meal Slot when the slot starts. It owns relational frozen planned items.
 
 **Frozen planned item**:
 A copy of one Menu Item's source identity, display details, Portion, nutrient basis, nutrients, and position.

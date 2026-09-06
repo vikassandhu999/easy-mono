@@ -87,7 +87,7 @@ defmodule EasyWeb.Types.Nutrition.Recipe do
   @type impact :: %{
           required(:data) => %{
             required(:templates) => [EasyWeb.Types.Nutrition.RecipePlanRef.t()],
-            required(:active_client_plans) => [EasyWeb.Types.Nutrition.RecipePlanRef.t()]
+            required(:client_plans) => [EasyWeb.Types.Nutrition.RecipePlanRef.t()]
           }
         }
 

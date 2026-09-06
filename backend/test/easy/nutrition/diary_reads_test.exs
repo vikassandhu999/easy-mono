@@ -8,7 +8,7 @@ defmodule Easy.Nutrition.DiaryReadsTest do
   import Easy.Nutrition.DiaryFixtures
 
   describe("get_client_nutrition_day/2") do
-    test "returns live Meal Options for an unstarted slot on the client's local day" do
+    test "returns live offered Meals for an unstarted slot on the client's local day" do
       %{client: client, food: food, plan: plan} = covering_setup()
       today = local_today(client)
       assert {:ok, day} = Diary.get_client_nutrition_day(client_ctx(client), today)

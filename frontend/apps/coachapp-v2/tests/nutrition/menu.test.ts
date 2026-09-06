@@ -102,7 +102,7 @@ test('removing a shared meal clears its assignments while removing a day keeps m
   assert.deepEqual(draft.day_patterns[0]?.slots, []);
 });
 
-test('moving a meal option to its current slot is harmless; moving into a duplicate collapses it', () => {
+test('moving a meal to its current slot is harmless; moving into a duplicate collapses it', () => {
   let draft = breakfast();
   const before = structuredClone(draft);
   draft = editMenu(draft, {

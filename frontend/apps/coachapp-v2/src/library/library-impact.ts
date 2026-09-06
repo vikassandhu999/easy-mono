@@ -14,19 +14,19 @@ export type LibraryUsageItem = Required<Pick<FoodRecipeReference, 'id' | 'name'>
 export type LibraryImpact = {
   recipes: LibraryUsageItem[];
   templates: LibraryUsageItem[];
-  active_client_plans: LibraryUsageItem[];
+  client_plans: LibraryUsageItem[];
 };
 
 export function normalizeLibraryImpact(data: FoodImpact | RecipeImpact | undefined): LibraryImpact {
   return {
     recipes: namedRefs(data && 'recipes' in data ? data.recipes : undefined),
     templates: namedRefs(data?.templates),
-    active_client_plans: namedRefs(data?.active_client_plans),
+    client_plans: namedRefs(data?.client_plans),
   };
 }
 
 export function hasLibraryUsage(impact: LibraryImpact): boolean {
-  return impact.recipes.length + impact.templates.length + impact.active_client_plans.length > 0;
+  return impact.recipes.length + impact.templates.length + impact.client_plans.length > 0;
 }
 
 export function libraryInUseMessage(error: unknown, fallback: string): string {

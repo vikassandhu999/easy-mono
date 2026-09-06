@@ -445,7 +445,7 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
       assert %{"data" => data} = json_response(conn, 200)
       assert [%{"id" => plan_id, "name" => "Cut"}] = data["templates"]
       assert plan_id == plan.id
-      assert data["active_client_plans"] == []
+      assert data["client_plans"] == []
     end
 
     test "returns empty buckets for an unused recipe", %{
@@ -456,7 +456,7 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
       recipe = insert(:recipe, creator: coach, business: business)
 
       conn = get(conn, "/v1/coach/nutrition-recipes/#{recipe.id}/impact")
-      assert %{"data" => %{"templates" => [], "active_client_plans" => []}} = json_response(conn, 200)
+      assert %{"data" => %{"templates" => [], "client_plans" => []}} = json_response(conn, 200)
     end
 
     test "returns 404 for another business's recipe", %{conn: conn} do

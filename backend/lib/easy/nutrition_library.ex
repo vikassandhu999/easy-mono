@@ -113,7 +113,7 @@ defmodule Easy.Nutrition.Library do
   end
 
   @spec get_food_impact(Ctx.t(), String.t()) ::
-          {:ok, %{recipes: [map()], templates: [map()], active_client_plans: [map()]}}
+          {:ok, %{recipes: [map()], templates: [map()], client_plans: [map()]}}
           | {:error, :not_found}
   def get_food_impact(%Ctx{} = ctx, food_id) do
     with {:ok, food} <- get_food(ctx, food_id) do
@@ -269,7 +269,7 @@ defmodule Easy.Nutrition.Library do
   end
 
   @spec get_recipe_impact(Ctx.t(), String.t()) ::
-          {:ok, %{templates: [map()], active_client_plans: [map()]}} | {:error, :not_found}
+          {:ok, %{templates: [map()], client_plans: [map()]}} | {:error, :not_found}
   def get_recipe_impact(%Ctx{} = ctx, recipe_id) do
     with {:ok, recipe} <- get_recipe(ctx, recipe_id) do
       {:ok, menu_usage(ctx, :recipe, recipe.id)}
@@ -602,7 +602,7 @@ defmodule Easy.Nutrition.Library do
 
     %{
       templates: usage.plans |> Enum.filter(&(&1.kind == :template)) |> Enum.map(&Map.delete(&1, :kind)),
-      active_client_plans: usage.plans |> Enum.filter(&(&1.kind == :client_plan)) |> Enum.map(&Map.delete(&1, :kind))
+      client_plans: usage.plans |> Enum.filter(&(&1.kind == :client_plan)) |> Enum.map(&Map.delete(&1, :kind))
     }
   end
 

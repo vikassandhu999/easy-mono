@@ -20,7 +20,7 @@ defmodule Easy.Nutrition.Programming do
           {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_template(%Ctx{} = ctx, attrs) do
     with :ok <- ensure_coach(ctx) do
-      result = Repo.transaction(fn -> insert_everyday_template(ctx, attrs) end)
+      result = Repo.transaction(fn -> insert_template(ctx, attrs) end)
       finalize(result, &get_template(ctx, &1))
     end
   end
@@ -224,32 +224,25 @@ defmodule Easy.Nutrition.Programming do
 
   # Coverage
 
-  @spec resolve_client_coverage(Ctx.t(), Date.t()) ::
-          {:ok,
-           nil
-           | %{plan: Plan.t(), day_pattern: Menu.DayPattern.t() | nil, date: Date.t(), weekday: atom()}}
-          | {:error, :not_found}
-  def resolve_client_coverage(%Ctx{} = ctx, %Date{} = date) do
+  @type guidance() :: %{plan: Plan.t(), day_pattern: Menu.DayPattern.t(), date: Date.t(), weekday: atom()}
+
+  # `lock: true` holds the covering plan FOR SHARE until the caller's transaction
+  # commits, so a menu save cannot land between reading the plan and writing
+  # rows that reference its Library items.
+  @spec resolve_client_coverage(Ctx.t(), Date.t(), lock: boolean()) ::
+          {:ok, guidance() | nil} | {:error, :not_found}
+  def resolve_client_coverage(%Ctx{} = ctx, %Date{} = date, opts \\ []) do
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
-      ctx
-      |> covering_plan_query(client_id, date)
-      |> Repo.one()
-      |> resolve_covering_plan(ctx, date)
+      resolve_coverage(ctx, client_id, date, Keyword.get(opts, :lock, false))
     end
   end
 
   @spec resolve_coverage_for_client(Ctx.t(), String.t(), Date.t()) ::
-          {:ok,
-           nil
-           | %{plan: Plan.t(), day_pattern: Menu.DayPattern.t() | nil, date: Date.t(), weekday: atom()}}
-          | {:error, :not_found}
+          {:ok, guidance() | nil} | {:error, :not_found}
   def resolve_coverage_for_client(%Ctx{} = ctx, client_id, %Date{} = date) do
     with :ok <- ensure_coach(ctx),
          {:ok, _client} <- ClientAccess.authorize_client(ctx, client_id) do
-      ctx
-      |> covering_plan_query(client_id, date)
-      |> Repo.one()
-      |> resolve_covering_plan(ctx, date)
+      resolve_coverage(ctx, client_id, date, false)
     end
   end
 
@@ -283,9 +276,24 @@ defmodule Easy.Nutrition.Programming do
     covering_plans_for_clients(ctx, Map.new(client_ids, &{&1, date}))
   end
 
+  # Library usage
+
+  @spec library_usage(Ctx.t(), :food | :recipe, String.t()) :: {:ok, %{plans: [map()], gram_portion?: boolean()}}
+  def library_usage(%Ctx{} = ctx, kind, id) do
+    plans =
+      Plan.for_business(ctx.business_id)
+      |> Plan.for_menu_item(kind, id)
+      |> order_by([p], asc: p.name, asc: p.id)
+      |> select([p], %{id: p.id, name: p.name, client_id: p.client_id, kind: p.kind})
+      |> Repo.all()
+
+    gram_usage = Plan.for_business(ctx.business_id) |> Plan.for_menu_item(kind, id, :gram) |> Repo.exists?()
+    {:ok, %{plans: plans, gram_portion?: gram_usage}}
+  end
+
   # Plan lifecycle helpers
 
-  defp insert_everyday_template(ctx, attrs) do
+  defp insert_template(ctx, attrs) do
     case ctx.business_id |> Plan.insert_changeset(ctx.user_id, attrs) |> Repo.insert() do
       {:ok, plan} -> plan
       {:error, reason} -> Repo.rollback(reason)
@@ -377,24 +385,14 @@ defmodule Easy.Nutrition.Programming do
   end
 
   defp copy_template(ctx, template) do
-    attrs = %{
-      name: copy_name(template.name, ctx.business_id),
-      description: template.description,
-      target_calories: template.target_calories,
-      target_protein_g: template.target_protein_g,
-      target_carbs_g: template.target_carbs_g,
-      target_fat_g: template.target_fat_g,
-      target_fiber_g: template.target_fiber_g
-    }
-
-    Plan.insert_changeset(ctx.business_id, ctx.user_id, attrs)
-    |> put_embed(:menu, template.menu)
+    ctx.business_id
+    |> Plan.copy_changeset(ctx.user_id, template, copy_name(template.name, ctx.business_id))
     |> Repo.insert()
   end
 
   defp copy_template_to_client(ctx, client_id, template, attrs) do
     with {:ok, copy} <-
-           Plan.insert_changeset(ctx.business_id, ctx.user_id, client_id, template, attrs)
+           Plan.assign_changeset(ctx.business_id, ctx.user_id, client_id, template, attrs)
            |> Repo.insert(),
          :ok <- ClientAccess.advance_stage_to_coaching(ctx, client_id) do
       {:ok, copy}
@@ -424,16 +422,15 @@ defmodule Easy.Nutrition.Programming do
 
   # Coverage helpers
 
-  defp covering_plan_query(%Ctx{} = ctx, client_id, date) do
+  defp resolve_coverage(ctx, client_id, date, lock?) do
     query =
       ctx
       |> client_plan_query(client_id)
-      |> Plan.covering(client_id, date)
+      |> Plan.covering(date)
       |> Plan.include_client(ctx.business_id)
 
-    # A diary transaction freezes one complete prescription while its source
-    # plan still protects the Library references.
-    if Repo.in_transaction?(), do: lock(query, "FOR SHARE"), else: query
+    query = if lock?, do: lock(query, "FOR SHARE"), else: query
+    resolve_covering_plan(Repo.one(query), ctx, date)
   end
 
   defp resolve_covering_plan(nil, _ctx, _date), do: {:ok, nil}
@@ -448,19 +445,6 @@ defmodule Easy.Nutrition.Programming do
     references = Enum.flat_map(plans, &Menu.references(&1.menu))
     {:ok, names} = Library.item_names(ctx, references)
     Enum.map(plans, &%{&1 | menu: Menu.name_items(&1.menu, names)})
-  end
-
-  @spec library_usage(Ctx.t(), :food | :recipe, String.t()) :: {:ok, map()}
-  def library_usage(ctx, kind, id) do
-    plans =
-      Plan.for_business(ctx.business_id)
-      |> Plan.for_menu_item(kind, id)
-      |> order_by([p], asc: p.name, asc: p.id)
-      |> select([p], %{id: p.id, name: p.name, client_id: p.client_id, kind: p.kind})
-      |> Repo.all()
-
-    gram_usage = Plan.for_business(ctx.business_id) |> Plan.for_menu_item(kind, id, :gram) |> Repo.exists?()
-    {:ok, %{plans: plans, gram_portion?: gram_usage}}
   end
 
   defp stamp_lifecycle(plans) when is_list(plans), do: Enum.map(plans, &stamp_lifecycle/1)

@@ -88,39 +88,38 @@ defmodule Easy.Nutrition.Plan do
     end
   end
 
-  @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(business_id, creator_id, attrs) do
+  @spec insert_changeset(String.t(), String.t(), map(), Menu.t()) :: Ecto.Changeset.t()
+  def insert_changeset(business_id, creator_id, attrs, menu \\ Menu.empty()) do
     %__MODULE__{}
     |> cast(attrs, @template_fields)
-    |> put_change(:kind, :template)
-    |> put_change(:business_id, business_id)
-    |> put_change(:creator_id, creator_id)
-    |> put_change(:revision, 1)
-    |> put_embed(:menu, Menu.empty())
+    |> change(kind: :template, business_id: business_id, creator_id: creator_id, revision: 1)
+    |> put_embed(:menu, menu)
     |> reject_fields_invalid_for_kind(:template, supplied_field_names(attrs))
     |> validate_common_fields()
     |> validate_required([:kind, :business_id, :creator_id, :revision])
     |> apply_constraints()
   end
 
-  @spec insert_changeset(String.t(), String.t(), String.t(), t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(business_id, creator_id, client_id, source_template, attrs) do
+  @spec copy_changeset(String.t(), String.t(), t(), String.t()) :: Ecto.Changeset.t()
+  def copy_changeset(business_id, creator_id, template, name) do
+    attrs = template |> Map.take(@template_fields) |> Map.put(:name, name)
+    insert_changeset(business_id, creator_id, attrs, template.menu)
+  end
+
+  @spec assign_changeset(String.t(), String.t(), String.t(), t(), map()) :: Ecto.Changeset.t()
+  def assign_changeset(business_id, creator_id, client_id, source_template, attrs) do
     %__MODULE__{}
     |> cast(attrs, [:start_date, :end_date])
-    |> put_change(:kind, :client_plan)
-    |> put_change(:name, source_template.name)
-    |> put_change(:description, source_template.description)
-    |> put_change(:target_calories, source_template.target_calories)
-    |> put_change(:target_protein_g, source_template.target_protein_g)
-    |> put_change(:target_carbs_g, source_template.target_carbs_g)
-    |> put_change(:target_fat_g, source_template.target_fat_g)
-    |> put_change(:target_fiber_g, source_template.target_fiber_g)
-    |> put_change(:business_id, business_id)
-    |> put_change(:creator_id, creator_id)
-    |> put_change(:client_id, client_id)
-    |> put_change(:source_template_id, source_template.id)
+    |> change(Map.take(source_template, @template_fields))
+    |> change(
+      kind: :client_plan,
+      business_id: business_id,
+      creator_id: creator_id,
+      client_id: client_id,
+      source_template_id: source_template.id,
+      revision: 1
+    )
     |> put_embed(:menu, source_template.menu)
-    |> put_change(:revision, 1)
     |> validate_common_fields()
     |> validate_required([:kind, :business_id, :creator_id, :client_id, :revision])
     |> validate_date_range()
@@ -234,23 +233,15 @@ defmodule Easy.Nutrition.Plan do
   def for_business(query \\ __MODULE__, business_id),
     do: from(plan in query, where: plan.business_id == ^business_id)
 
-  @spec for_kind(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
-  def for_kind(query \\ __MODULE__, kind)
-  def for_kind(query, nil), do: query
-  def for_kind(query, kind), do: from(plan in query, where: plan.kind == ^kind)
+  @spec for_kind(Ecto.Queryable.t(), atom()) :: Ecto.Query.t()
+  def for_kind(query \\ __MODULE__, kind), do: from(plan in query, where: plan.kind == ^kind)
 
   @spec templates(Ecto.Queryable.t()) :: Ecto.Query.t()
   def templates(query \\ __MODULE__), do: for_kind(query, :template)
 
-  @spec for_client(Ecto.Queryable.t(), String.t(), String.t() | nil) :: Ecto.Query.t()
-  def for_client(query \\ __MODULE__, business_id, client_id)
-  def for_client(query, _business_id, nil), do: query
-
-  def for_client(query, business_id, client_id),
-    do:
-      from(plan in query,
-        where: plan.business_id == ^business_id and plan.client_id == ^client_id
-      )
+  @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
+  def for_client(query \\ __MODULE__, business_id, client_id),
+    do: from(plan in query, where: plan.business_id == ^business_id and plan.client_id == ^client_id)
 
   @spec for_archived(Ecto.Queryable.t(), boolean() | nil) :: Ecto.Query.t()
   def for_archived(query \\ __MODULE__, archived)
@@ -258,19 +249,16 @@ defmodule Easy.Nutrition.Plan do
   def for_archived(query, true), do: from(plan in query, where: not is_nil(plan.archived_at))
   def for_archived(query, false), do: from(plan in query, where: is_nil(plan.archived_at))
 
-  @spec for_search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
+  @spec for_search(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_search(query \\ __MODULE__, term)
-  def for_search(query, nil), do: query
   def for_search(query, ""), do: query
 
   def for_search(query, term),
     do: from(plan in query, where: ilike(plan.name, ^Easy.Search.like_pattern(term)))
 
-  @spec covering(Ecto.Queryable.t(), String.t(), Date.t()) :: Ecto.Query.t()
-  def covering(query \\ __MODULE__, client_id, date) do
+  @spec covering(Ecto.Queryable.t(), Date.t()) :: Ecto.Query.t()
+  def covering(query \\ __MODULE__, date) do
     from(plan in query,
-      where: plan.kind == :client_plan,
-      where: plan.client_id == ^client_id,
       where: is_nil(plan.archived_at),
       where: not is_nil(plan.start_date) and plan.start_date <= ^date,
       where: is_nil(plan.end_date) or plan.end_date >= ^date

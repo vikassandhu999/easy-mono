@@ -482,7 +482,7 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
       assert recipe_id == recipe.id
       assert [%{"id" => plan_id, "name" => "Cut"}] = data["templates"]
       assert plan_id == plan.id
-      assert data["active_client_plans"] == []
+      assert data["client_plans"] == []
       refute Map.has_key?(data, "business_id")
     end
 
@@ -494,7 +494,7 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
       food = insert(:food, creator: coach, business: business)
 
       conn = get(conn, "/v1/coach/nutrition-foods/#{food.id}/impact")
-      assert %{"data" => %{"recipes" => [], "templates" => [], "active_client_plans" => []}} = json_response(conn, 200)
+      assert %{"data" => %{"recipes" => [], "templates" => [], "client_plans" => []}} = json_response(conn, 200)
     end
 
     test "returns 404 for another business's food", %{conn: conn} do

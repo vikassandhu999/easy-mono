@@ -281,7 +281,7 @@ or NOT NULL over that column — and is exactly-one a write rule or a lifetime i
 ### RM-018 — Dropping a uniqueness guarantee is an API change for every reader of that column
 Relaxing a constraint is never local. Before dropping a unique index, grep the column and
 every column copied from it across the whole repo — other code may be using it as an
-identity key. `20260728100000` dropped unique `(nutrition_meal_id, position)` for the
+identity key. `20260728100000` dropped the unique `(meal, position)` index on menu items for the
 builder ("no position uniqueness anywhere"), but logging reconciliation keyed its
 already-logged skip-list on `planned_item_index`, a copy of that position — so two items
 sharing a position made "log meal" skip one silently, losing a client's food log. Fix was
@@ -291,10 +291,8 @@ column.
 
 ### RM-021 — Existence guards are tenant-scoped queries too
 `Repo.exists?` / `Repo.aggregate` guards ("is this row still referenced?") must carry
-`business_id` like any other tenant-owned read. Four delete guards
-(`ensure_food_not_in_use`, `ensure_recipe_not_in_use`, `ensure_exercise_not_in_use` — over
-`nutrition_meal_items`, `nutrition_recipe_ingredients`, `training_workout_exercises`)
-shipped unscoped: another tenant's row could veto your delete, the check was a cross-tenant
+`business_id` like any other tenant-owned read. The food, recipe, and exercise delete guards (over menu items, recipe
+ingredients, and workout exercises) shipped unscoped: another tenant's row could veto your delete, the check was a cross-tenant
 existence oracle, and the query couldn't use the `business_id`-leading indexes. The
 tenant-isolation rule has no "it's only a boolean" exception — pipe the schema's
 `for_business/2` into every existence probe. **Enforced by:** review; grep

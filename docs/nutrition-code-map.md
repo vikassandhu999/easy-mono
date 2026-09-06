@@ -23,7 +23,7 @@ Read the editor in this order:
 
 1. [menu.ts](../frontend/apps/coachapp-v2/src/library/nutrition-plans/builder/menu.ts)
    edits the API's `NutritionMenu` directly. Meals contain items. Day patterns contain
-   slots and ordered meal choices. The week schedule points to day patterns. Array
+   slots and ordered meals. The week schedule points to day patterns. Array
    order is authoritative. Meals, items, and days keep their UUIDs through saves.
    Each slot contains ordered `meal_ids`; a choice needs no separate UUID.
 2. [plan-builder.tsx](../frontend/apps/coachapp-v2/src/library/nutrition-plans/builder/plan-builder.tsx)
@@ -57,7 +57,7 @@ while the draft has changes. This deliberately gives up live nutrient previews.
 Coverage dates, plan details, and targets are edited together on the plan details
 form. Assignment and lifecycle actions are unavailable while menu edits are pending.
 
-The editor retains meals shared across days and alternative meal choices. Deleting
+The editor retains meals shared across days and alternative meals. Deleting
 a day transfers its weekdays to a remaining day and keeps its meals. Deleting a meal
 removes its uses throughout the menu. These are product rules, located in `editMenu`.
 
@@ -172,8 +172,8 @@ edit the latest version. Successful responses update cached days before refetchi
 guidance, entry ownership, and nutrient scaling. Same-food edits scale frozen
 nutrition. Switching serving units resolves only the new weight through the
 permitted library, then scales the frozen nutrition basis. Corrections in a stored
-unit still work after library deletion. Replacement foods resolve fresh nutrition. Switching a
-meal choice preserves existing intake. Past days never reconstruct old guidance
+unit still work after library deletion. Replacement foods resolve fresh nutrition. Switching the
+offered meal preserves existing intake. Past days never reconstruct old guidance
 from today's plan. Correction deadlines use the timezone frozen with each slot.
 
 Database migrations repair missing historical planned-item identities and recipe

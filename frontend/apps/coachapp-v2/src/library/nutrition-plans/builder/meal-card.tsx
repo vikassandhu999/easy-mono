@@ -21,7 +21,7 @@ interface MealCardProps {
   meal: MenuMeal;
   edit: (action: MenuEdit) => void;
   showNutrition: boolean;
-  /** The day containing this meal choice. */
+  /** The day containing this meal. */
   dayId: string;
   open: boolean;
   onToggle: () => void;

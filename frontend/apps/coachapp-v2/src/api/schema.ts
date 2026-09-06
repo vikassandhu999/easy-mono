@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 7871e1f5f2a6fd70eee6ef1ba68408434e462cdcd407b1d4290d0711723855e5 */
+/* typed-routes:hash 076fd54aa2d7c71ac218ac3812d8a65228df39424dc5c8d8f70058f2138a2224 */
 export type Attachment = {
   id: string;
   content_type:
@@ -365,7 +365,7 @@ export type FoodCreate = {
   serving_sizes?: Array<FoodServingSize>;
 };
 export type FoodImpact = {
-  data: {recipes: Array<FoodRecipeRef>; templates: Array<FoodPlanRef>; active_client_plans: Array<FoodPlanRef>};
+  data: {recipes: Array<FoodRecipeRef>; templates: Array<FoodPlanRef>; client_plans: Array<FoodPlanRef>};
 };
 export type FoodListQuery = {offset?: number; limit?: number; search?: string; categories?: Array<string>};
 export type FoodMedia = {
@@ -884,7 +884,7 @@ export type RecipeCreate = {
   dietary_tags?: Array<string>;
   recipe_ingredients?: Array<RecipeIngredientInput>;
 };
-export type RecipeImpact = {data: {templates: Array<RecipePlanRef>; active_client_plans: Array<RecipePlanRef>}};
+export type RecipeImpact = {data: {templates: Array<RecipePlanRef>; client_plans: Array<RecipePlanRef>}};
 export type RecipeIngredient = {food_id: string; food: Food | null; portion: NutritionPortion; position: number};
 export type RecipeIngredientInput = {food_id: string; portion: NutritionPortion};
 export type RecipeListQuery = {offset?: number; limit?: number; search?: string};

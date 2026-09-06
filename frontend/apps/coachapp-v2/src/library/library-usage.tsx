@@ -25,7 +25,7 @@ export function LibraryUsageSection({impact}: {impact: LibraryImpact}) {
     },
     {
       title: 'Client plans',
-      items: impact.active_client_plans,
+      items: impact.client_plans,
       to: (id: string) => generatePath(ROUTES.NUTRITION_PLAN_DETAIL, {id}),
     },
   ].filter((group) => group.items.length > 0);

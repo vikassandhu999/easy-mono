@@ -3,7 +3,7 @@ defmodule Easy.Nutrition.DiaryFixtures do
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.LocalCalendar
-  alias Easy.Nutrition.{Diary, Food, Menu, Plan, Programming}
+  alias Easy.Nutrition.{Diary, DiarySlot, Food, Menu, Plan, Programming}
   alias Easy.Orgs.Coach
 
   import Easy.Factory
@@ -288,4 +288,14 @@ defmodule Easy.Nutrition.DiaryFixtures do
     shifted = Easy.Repo.insert!(struct!(Easy.Nutrition.DiaryDay, attrs))
     Easy.Repo.update!(Ecto.Changeset.change(slot, local_date: date, nutrition_diary_day_id: shifted.id))
   end
+
+  @spec stored_entries(Client.t()) :: [Easy.Nutrition.DiarySlot.Entry.t()]
+  def stored_entries(client) do
+    DiarySlot.for_client(client.business_id, client.id)
+    |> Easy.Repo.all()
+    |> Enum.flat_map(& &1.document.entries)
+  end
+
+  @spec stored_entry(Client.t(), String.t()) :: Easy.Nutrition.DiarySlot.Entry.t() | nil
+  def stored_entry(client, id), do: Enum.find(stored_entries(client), &(&1.id == id))
 end

@@ -1,7 +1,7 @@
 defmodule Easy.Nutrition.Menu.Item do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Easy.Nutrition.Portions
+  alias Easy.Nutrition.{NutrientTotals, Portions}
 
   @type t() :: %__MODULE__{}
   @primary_key {:id, :binary_id, autogenerate: false}
@@ -10,7 +10,7 @@ defmodule Easy.Nutrition.Menu.Item do
     field :recipe_id, Ecto.UUID
     field :name, :string, virtual: true
     field :portion, Portions
-    field :nutrients, :map, virtual: true
+    field :nutrients, NutrientTotals, virtual: true
   end
 
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
@@ -170,20 +170,18 @@ defmodule Easy.Nutrition.Menu do
   def items(menu), do: Enum.flat_map(menu.meals, & &1.meal_items)
 
   @spec references(t()) :: [Library.item_spec()]
-  def references(menu) do
-    Enum.map(items(menu), fn item ->
-      %{kind: Library.item_kind(item), id: item.food_id || item.recipe_id, portion: Portions.format(item.portion)}
+  def references(menu), do: Enum.map(items(menu), &item_reference/1)
+
+  @spec resolve(t(), Library.resolved_items()) :: t()
+  def resolve(menu, resolved) do
+    map_items(menu, fn item ->
+      value = Map.fetch!(resolved, item_reference(item))
+      %{item | name: value.item.name, portion: value.portion, nutrients: value.nutrients}
     end)
   end
 
-  @spec resolve(t(), [Library.resolved_item()]) :: t()
-  def resolve(menu, resolved) do
-    by_id = menu |> items() |> Enum.zip(resolved) |> Map.new(fn {item, value} -> {item.id, value} end)
-
-    map_items(menu, fn item ->
-      value = Map.fetch!(by_id, item.id)
-      %{item | name: value.item.name, portion: value.portion, nutrients: value.nutrients}
-    end)
+  defp item_reference(item) do
+    %{kind: Library.item_kind(item), id: item.food_id || item.recipe_id, portion: Portions.format(item.portion)}
   end
 
   defp map_items(menu, fun) do

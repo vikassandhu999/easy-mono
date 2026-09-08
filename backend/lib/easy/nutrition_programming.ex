@@ -267,54 +267,47 @@ defmodule Easy.Nutrition.Programming do
   @spec covering_plans_for_clients(Ctx.t(), %{String.t() => Date.t()}) ::
           {:ok, %{String.t() => Plan.t()}}
   def covering_plans_for_clients(%Ctx{} = ctx, client_dates) when is_map(client_dates) do
-    Repo.snapshot(fn ->
-      dates = Map.values(client_dates)
-      client_ids = Map.keys(client_dates)
+    dates = Map.values(client_dates)
+    client_ids = Map.keys(client_dates)
 
-      plans =
-        Plan
-        |> Plan.covering_intervals(ctx.business_id)
-        |> where([plan], plan.client_id in ^client_ids)
-        |> where([plan], plan.start_date <= ^Enum.max(dates, Date))
-        |> where([plan], is_nil(plan.end_date) or plan.end_date >= ^Enum.min(dates, Date))
-        |> Plan.include_client(ctx.business_id)
-        |> Plan.newest()
-        |> Repo.all()
-        |> Enum.filter(fn plan ->
-          Plan.lifecycle(plan, Map.fetch!(client_dates, plan.client_id)) == :current
-        end)
-        |> stamp_lifecycle()
+    plans =
+      Plan
+      |> Plan.covering_intervals(ctx.business_id)
+      |> where([plan], plan.client_id in ^client_ids)
+      |> where([plan], plan.start_date <= ^Enum.max(dates, Date))
+      |> where([plan], is_nil(plan.end_date) or plan.end_date >= ^Enum.min(dates, Date))
+      |> Plan.include_client(ctx.business_id)
+      |> Plan.newest()
+      |> Repo.all()
+      |> Enum.filter(fn plan ->
+        Plan.lifecycle(plan, Map.fetch!(client_dates, plan.client_id)) == :current
+      end)
+      |> stamp_lifecycle()
 
-      {:ok, Enum.reduce(plans, %{}, fn plan, acc -> Map.put_new(acc, plan.client_id, plan) end)}
-    end)
+    {:ok, Enum.reduce(plans, %{}, fn plan, acc -> Map.put_new(acc, plan.client_id, plan) end)}
   end
 
   @spec covering_plans_for_clients(Ctx.t(), [String.t()], Date.t()) ::
           {:ok, %{String.t() => Plan.t()}}
   def covering_plans_for_clients(%Ctx{} = ctx, client_ids, %Date{} = date)
       when is_list(client_ids) do
-    Repo.snapshot(fn ->
-      covering_plans_for_clients(ctx, Map.new(client_ids, &{&1, date}))
-    end)
+    covering_plans_for_clients(ctx, Map.new(client_ids, &{&1, date}))
   end
 
   # Library usage
 
-  @spec library_usage(Ctx.t(), :food | :recipe, String.t()) :: {:ok, %{plans: [map()]}}
+  @spec library_usage(Ctx.t(), :food | :recipe, String.t()) :: [map()]
   def library_usage(%Ctx{} = ctx, kind, id) do
-    plans =
-      Plan.for_business(ctx.business_id)
-      |> Plan.for_menu_item(kind, id)
-      |> order_by([p], asc: p.name, asc: p.id)
-      |> select([p], %{id: p.id, name: p.name, client_id: p.client_id, kind: p.kind})
-      |> Repo.all()
-
-    {:ok, %{plans: plans}}
+    Plan.for_business(ctx.business_id)
+    |> Plan.for_menu_item(kind, id)
+    |> order_by([p], asc: p.name, asc: p.id)
+    |> select([p], %{id: p.id, name: p.name, client_id: p.client_id, kind: p.kind})
+    |> Repo.all()
   end
 
-  @spec library_item_used?(Ctx.t(), :food | :recipe, String.t(), atom() | map() | nil) :: {:ok, boolean()}
-  def library_item_used?(ctx, kind, id, portion_kind \\ nil) do
-    {:ok, Plan.for_business(ctx.business_id) |> Plan.for_menu_item(kind, id, portion_kind) |> Repo.exists?()}
+  @spec library_item_used?(Ctx.t(), :food | :recipe, String.t(), map() | nil) :: boolean()
+  def library_item_used?(%Ctx{} = ctx, kind, id, portion \\ nil) do
+    Plan.for_business(ctx.business_id) |> Plan.for_menu_item(kind, id, portion) |> Repo.exists?()
   end
 
   # Plan lifecycle helpers
@@ -466,13 +459,7 @@ defmodule Easy.Nutrition.Programming do
         Library.resolve_items(ctx, references)
       end
 
-    {plans, []} =
-      Enum.map_reduce(plans, resolved, fn plan, remaining ->
-        {items, remaining} = Enum.split(remaining, length(Menu.items(plan.menu)))
-        {%{plan | menu: Menu.resolve(plan.menu, items)}, remaining}
-      end)
-
-    plans
+    Enum.map(plans, &%{&1 | menu: Menu.resolve(&1.menu, resolved)})
   end
 
   defp stamp_lifecycle(plans) when is_list(plans), do: Enum.map(plans, &stamp_lifecycle/1)

@@ -8,7 +8,11 @@ defmodule Easy.Application do
       [
         Easy.Repo,
         {Phoenix.PubSub, name: Easy.PubSub},
-        {Task.Supervisor, name: Easy.TaskSupervisor}
+        {Task.Supervisor, name: Easy.TaskSupervisor},
+        Supervisor.child_spec(
+          {Task.Supervisor, name: Easy.MailerSupervisor, max_children: 20},
+          id: Easy.MailerSupervisor
+        )
       ] ++ sweeper_children() ++ [EasyWeb.Endpoint]
 
     opts = [strategy: :one_for_one, name: Easy.Supervisor]

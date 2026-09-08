@@ -21,7 +21,8 @@ Food serving, or required Recipe cooked weight cannot be removed. Serving weight
 and nutrient values can change.
 
 Portions and nutrient totals each have one map representation and one Ecto type.
-Diary snapshots store those values as JSONB with database checks. They retain one
+Diary snapshots store those values inside validated JSONB slot documents, as
+recorded in [the slot document decision](0005-nutrition-diary-slot-document.md). They retain one
 scalar source ID without a Library foreign key. Availability is checked on read;
 deleting a source hides the link and leaves historical identity and values intact.
 Kind and completeness are derived, never stored alongside their inputs.

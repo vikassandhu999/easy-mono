@@ -70,10 +70,10 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
           "to" => "also-not-a-date"
         })
 
-      assert %{"error_detail" => %{"fields" => %{"date" => ["is invalid"]}}} = json_response(conn, 422)
+      assert %{"error_detail" => %{"fields" => %{"from" => ["is invalid"]}}} = json_response(conn, 422)
     end
 
-    test "an exact date ignores malformed range fields", ctx do
+    test "rejects a malformed range field even beside an exact date", ctx do
       today = Date.to_iso8601(local_today(ctx.client))
 
       conn =
@@ -82,7 +82,7 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
           "to" => "not-a-date"
         })
 
-      assert %{"data" => [%{"date" => ^today}]} = json_response(conn, 200)
+      assert %{"error_detail" => %{"fields" => %{"to" => ["is invalid"]}}} = json_response(conn, 422)
     end
   end
 

@@ -7,7 +7,7 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
   alias Easy.Ctx
   alias Easy.Identity.User
 
-  alias Easy.Nutrition.{Diary, DiaryEntry, DiaryFrozenOption, DiaryFrozenPlannedItem, DiarySlot, Food}
+  alias Easy.Nutrition.{Diary, DiarySlot, Food}
 
   alias Easy.Orgs.{Business, Coach}
   alias Easy.Repo
@@ -49,7 +49,7 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
     next = DiaryFixtures.slot_draft(hd(day.slots))
     assert_one_winner(race(ctx.ctx, today, %{next | entries: [%{entry | notes: "Edited"}]}))
 
-    assert Repo.aggregate(from(e in DiaryEntry, where: e.business_id == ^ctx.business.id), :count) ==
+    assert length(DiaryFixtures.stored_entries(ctx.client)) ==
              1
 
     assert Repo.aggregate(from(s in DiarySlot, where: s.business_id == ^ctx.business.id), :count) ==
@@ -89,14 +89,7 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
   end
 
   defp cleanup(business_id, user_ids) do
-    Repo.update_all(from(slot in DiarySlot, where: slot.business_id == ^business_id),
-      set: [active_frozen_option_id: nil]
-    )
-
     for schema <- [
-          DiaryEntry,
-          DiaryFrozenPlannedItem,
-          DiaryFrozenOption,
           DiarySlot,
           Easy.Nutrition.Plan,
           Food,

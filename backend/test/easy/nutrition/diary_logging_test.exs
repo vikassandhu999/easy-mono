@@ -1,7 +1,7 @@
 defmodule Easy.Nutrition.DiaryLoggingTest do
   use Easy.DataCase, async: true
   import Easy.Nutrition.DiaryFixtures
-  alias Easy.Nutrition.{Diary, DiaryEntry, DiarySlot}
+  alias Easy.Nutrition.{Diary, DiarySlot}
 
   test "one save logs planned intake and extras and returns direct rows" do
     %{client: client, food: food, today: today} = covering_setup(menu: :two_options)
@@ -53,7 +53,7 @@ defmodule Easy.Nutrition.DiaryLoggingTest do
     assert {:error, %Ecto.Changeset{action: :stale_revision}} =
              Diary.save_client_nutrition_day(ctx, today, request)
 
-    assert Repo.aggregate(DiaryEntry.for_client(client.business_id, client.id), :count) == 0
+    assert stored_entries(client) == []
     assert Repo.aggregate(DiarySlot.for_client(client.business_id, client.id), :count) == 1
   end
 
@@ -101,13 +101,13 @@ defmodule Easy.Nutrition.DiaryLoggingTest do
           [%{draft | entries: [entry, entry]}],
           [%{draft | entries: [entry, %{entry | id: Ecto.UUID.generate()}]}]
         ] do
-      assert {:error, :conflict} = Diary.save_client_nutrition_day(ctx, today, %{slots: slots})
+      assert {:error, %Ecto.Changeset{valid?: false}} = Diary.save_client_nutrition_day(ctx, today, %{slots: slots})
     end
 
     assert Repo.aggregate(DiarySlot.for_client(client.business_id, client.id), :count) == 0
   end
 
-  test "entry IDs cannot be borrowed from another client or slot" do
+  test "entry identities are local to a slot and cannot access another client" do
     %{client: client, today: today, food: food} = covering_setup()
     ctx = client_ctx(client)
     {:ok, first} = save_extra(ctx, today, extra_attrs(food))
@@ -115,15 +115,17 @@ defmodule Easy.Nutrition.DiaryLoggingTest do
     entry = entry_draft(row)
     draft = %{meal_slot: :lunch, meal_id: nil, expected_revision: 0, entries: [entry]}
 
-    assert {:error, %Ecto.Changeset{}} =
-             Diary.save_client_nutrition_day(ctx, today, %{slots: [draft]})
+    assert {:ok, copied} = Diary.save_client_nutrition_day(ctx, today, %{slots: [draft]})
+    assert length(copied.slots) == 2
+    original = hd(first.slots)
+    assert hd(copied.slots) == original
 
     foreign = insert(:client)
 
     assert {:error, :not_found} =
              Diary.save_client_nutrition_day(client_ctx(foreign), today, %{slots: [draft]})
 
-    assert Repo.aggregate(DiaryEntry.for_client(client.business_id, client.id), :count) == 1
+    assert length(stored_entries(client)) == 2
   end
 
   test "multiple extras of one food have distinct identities" do
@@ -134,6 +136,38 @@ defmodule Easy.Nutrition.DiaryLoggingTest do
     {:ok, saved} = save_extra(client_ctx(client), date, extra_attrs(food))
     assert saved.summary.counts.recorded == 2
     assert length(Enum.uniq_by(hd(saved.slots).rows, & &1.entry_id)) == 2
+  end
+
+  test "the complete intake preserves requested order after reload" do
+    client = insert(:client)
+    food = insert(:food, business: client.business)
+    ctx = client_ctx(client)
+    date = local_today(client)
+    {:ok, _} = save_extra(ctx, date, extra_attrs(food, grams: 20))
+    {:ok, saved} = save_extra(ctx, date, extra_attrs(food, grams: 80))
+    draft = slot_draft(hd(saved.slots))
+    reordered = %{draft | entries: Enum.reverse(draft.entries)}
+
+    assert {:ok, saved} = Diary.save_client_nutrition_day(ctx, date, %{slots: [reordered]})
+    assert {:ok, loaded} = Diary.get_client_nutrition_day(ctx, date)
+    assert loaded == saved
+    assert Enum.map(hd(loaded.slots).rows, & &1.portion.grams) == [80.0, 20.0]
+  end
+
+  test "the same entry id in another client's slot cannot change the original intake" do
+    client = insert(:client)
+    other = insert(:client, business: client.business)
+    food = insert(:food, business: client.business)
+    date = local_today(client)
+    {:ok, original} = save_extra(client_ctx(client), date, extra_attrs(food, grams: 20))
+    draft = slot_draft(hd(original.slots))
+    [entry] = draft.entries
+    copy = %{draft | expected_revision: 0, entries: [%{entry | portion: %{kind: :gram, grams: 80}}]}
+
+    assert {:ok, saved} = Diary.save_client_nutrition_day(client_ctx(other), date, %{slots: [copy]})
+    assert hd(hd(saved.slots).rows).entry_id == entry.id
+    assert hd(hd(saved.slots).rows).portion.grams == 80.0
+    assert {:ok, ^original} = Diary.get_client_nutrition_day(client_ctx(client), date)
   end
 
   test "a new past slot has no reconstructed plan and observes the seven-day correction window" do

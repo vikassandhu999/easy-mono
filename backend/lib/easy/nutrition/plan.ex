@@ -264,10 +264,9 @@ defmodule Easy.Nutrition.Plan do
   end
 
   @spec for_menu_item(Ecto.Queryable.t(), atom(), String.t(), atom() | map() | nil) :: Ecto.Query.t()
-  def for_menu_item(query, kind, id, portion_kind \\ nil) do
+  def for_menu_item(query, kind, id, portion \\ nil) do
     field = if kind == :food, do: :food_id, else: :recipe_id
     item = %{field => id}
-    portion = if is_atom(portion_kind) and not is_nil(portion_kind), do: %{kind: portion_kind}, else: portion_kind
     item = if portion, do: Map.put(item, :portion, portion), else: item
     fragment_value = %{meals: [%{meal_items: [item]}]}
     from(plan in query, where: fragment("? @> ?::jsonb", plan.menu, ^fragment_value))

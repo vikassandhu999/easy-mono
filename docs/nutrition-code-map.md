@@ -65,8 +65,8 @@ removes its uses throughout the menu. These are product rules, located in `editM
 
 [Plan](../backend/lib/easy/nutrition/plan.ex) stores one embedded
 [Menu](../backend/lib/easy/nutrition/menu.ex) as JSONB. Plan details, ownership,
-revision, targets, and coverage dates remain columns. Nutrition has nine tables:
-three for the Library, one for Programming, and five for the Diary.
+revision, targets, and coverage dates remain columns. Nutrition has six tables:
+three for the Library, one for Programming, and two for the Diary.
 `nutrition_diary_days` owns the targets frozen once for each client date.
 
 Menu owns casting, internal references, ordering, and schedule validation.
@@ -81,11 +81,16 @@ also resolve named serving weights from the current Food. Library changes theref
 update menus without another Save. Started Diary slots keep their frozen names,
 portions, and nutrients.
 
-Each public read uses one repeatable-read database snapshot, so a concurrent Library
+Reads that resolve menus or recipes use one repeatable-read database snapshot, so a concurrent Library
 edit cannot mix old recipe servings with new ingredients or remove an item halfway
 through a menu read. These reads do not lock Library rows. Writes load recipes,
 ingredients, and foods once, taking recipe then food locks; they do not fetch media
 to calculate nutrients.
+
+Library resolution returns a map keyed by source and chosen portion. Each menu item
+looks up its own result; plans do not count or split a shared result list. Repeated
+references share a calculation, while different portions remain distinct. Recipe
+ingredients retain their requested order when consuming these results.
 
 Library usage queries search plan documents through one GIN index. A referenced
 food or recipe cannot be deleted, including when an archived plan uses it. Recipe
@@ -171,6 +176,11 @@ omitted entries in a supplied slot are deleted. Entries contain `id`,
 UUID from the client. `planned_item_ref` links it to an offered item; null means extra
 intake. Notes are explicit, including null to clear them.
 
+Entry IDs belong to their slot. Reusing an ID in another slot creates an independent
+entry there. Array order is authoritative for choices, their planned items, and
+actual intake. Displayed planned rows follow the selected meal; extras follow intake
+order. Choice and planned-item IDs retain the original Menu UUIDs.
+
 Log a row, edit its amount, replace food, undo, log a whole meal, change the meal
 choice, or log the rest of the day: each action constructs the desired slots and
 calls the same save. The backend locks slots in a consistent order and saves all
@@ -181,13 +191,24 @@ rolls back the complete save and returns the existing 409 conflict response. Thi
 can also happen for concurrent saves of different slots sharing day or activity
 state. Empty saved slots remain, retaining the revision after deletion.
 
+`Repo.snapshot` owns transaction rollback and serialization-conflict translation.
+Diary operations return success or an error directly. Malformed drafts, including
+repeated slots, entry IDs, and planned references, return 422; stale revisions and
+serialization races return 409.
+
 There are no request keys, response replay records, or cleanup workers. A retry
 with a revision already saved receives a conflict. After any error the API hook
 refreshes the day; an open editor keeps its original revision. Close and reopen to
 edit the latest version. Successful responses update cached days before refetching.
 
+[DiarySlot](../backend/lib/easy/nutrition/diary_slot.ex) stores one JSONB document
+containing `meal_id`, `options`, and `entries`. Its co-located embedded values own
+snapshot validation and planned-reference interpretation. Each save builds the
+complete desired intake and writes the slot once. There are no child Diary tables,
+child-row locks, preloads, or reconciliation. Day targets remain in DiaryDay.
+
 [Diary](../backend/lib/easy/nutrition_diary.ex) owns correction eligibility, frozen
-guidance, entry ownership, and nutrient scaling. Same-food edits scale frozen
+guidance, transactions, and nutrient scaling. Same-food edits scale frozen
 nutrition. Switching serving units resolves only the new weight through the
 permitted library, then scales the frozen nutrition basis. Corrections in a stored
 unit still work after library deletion. Replacement foods resolve fresh nutrition. Switching the
@@ -205,6 +226,11 @@ key. Reads check source availability and hide deleted links, while frozen names 
 nutrients remain usable. Item kind comes from its source ID; nutrient completeness
 comes from the five nutrient values. Neither is a persisted flag.
 
+[DayAssembler](../backend/lib/easy/nutrition_diary_day_assembler.ex) converts live
+Menu meals into the same slot document used by stored history. One renderer builds
+both kinds of slot. The [slot document decision](adr/0005-nutrition-diary-slot-document.md)
+records the storage boundary and migration requirements.
+
 The contract lives in [day.ex](../backend/lib/easy_web/types/nutrition/day.ex).
 
 ## API boundaries
@@ -214,7 +240,8 @@ Duplicate, assign, archive, restore, and delete do not. Plan responses expose on
 `lifecycle`; `archived_at` remains an internal storage field. Nutrition Day lists
 return every date in a range of at most 31 days, with no pagination or count.
 
-Typed routes reject unknown keys and malformed UUIDs with 422 before contexts run.
+Typed routes reject unknown keys, malformed UUIDs, and invalid dates with 422 before contexts run.
+Every supplied date parameter is validated, including `from` or `to` beside an exact `date`.
 Response type assertions run in development and test; production omits that walk.
 Both frontend contracts are generated from the backend types. Food and Recipe edits
 invalidate dependent Library, plan, coverage, and Diary queries.

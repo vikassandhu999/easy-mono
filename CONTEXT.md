@@ -124,16 +124,16 @@ One of the closed timing anchors used by programming and Diary: ordinary day-per
 _Avoid_: Meal type, snack, occasion
 
 **Diary Slot**:
-One client's frozen guidance and actual intake for one local date and Meal Slot under one applied timezone.
+One client's frozen guidance, chosen Meal, and actual intake for one local date and Meal Slot under one applied timezone.
 
 **Frozen offered option**:
-A snapshot of one Meal offered in a Diary Slot's Meal Slot when the slot starts. It owns relational frozen planned items.
+A snapshot of one Meal offered when a Diary Slot starts, including its ordered frozen planned items.
 
 **Frozen planned item**:
-A copy of one Menu Item's source identity, display details, Portion, nutrient basis, nutrients, and position.
+A copy of one Menu Item's identity, source, display details, Portion, and nutrients within a frozen offered option.
 
 **Diary Entry**:
-One recorded occurrence of actual intake. It may retain an association with one frozen planned item or be independent.
+One recorded occurrence of actual intake within a Diary Slot. It may retain an association with one frozen planned item or be extra intake; its identity belongs to that slot.
 _Avoid_: Food log, meal log
 
 **Nutrition Day**:

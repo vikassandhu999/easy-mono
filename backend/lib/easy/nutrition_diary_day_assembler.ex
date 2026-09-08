@@ -6,9 +6,6 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
 
   alias Easy.Nutrition.{
     DiaryDay,
-    DiaryEntry,
-    DiaryFrozenOption,
-    DiaryFrozenPlannedItem,
     DiarySlot,
     Library,
     MealSlot,
@@ -18,6 +15,7 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
     Programming
   }
 
+  alias Easy.Nutrition.DiarySlot.Document
   alias Easy.Repo
   alias Easy.Result
 
@@ -58,7 +56,7 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
   defp assemble_day(ctx, client, date, actor, now) do
     frozen = frozen_by_slot(client, date)
     frozen_day = Repo.one(DiaryDay.for_date(client.business_id, client.id, date))
-    items = Enum.flat_map(Map.values(frozen), fn slot -> slot.entries ++ Enum.flat_map(slot.frozen_options, & &1.planned_items) end)
+    items = Enum.flat_map(Map.values(frozen), &Document.items(&1.document))
     timezone = day_timezone(Map.values(frozen), CorrectionPolicy.applied_timezone(client))
     today = CorrectionPolicy.local_today(timezone, now)
 
@@ -122,7 +120,7 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
     live =
       if guidance do
         guidance.day_pattern
-        |> live_slots(guidance.plan, timezone, CorrectionPolicy.write_eligible?(date, today))
+        |> live_slots(guidance.plan, date, timezone, now)
         |> Map.new(&{&1.meal_slot, &1})
       else
         %{}
@@ -151,7 +149,7 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
 
   defp merged_slot(slot, frozen, live, now) do
     cond do
-      Map.has_key?(frozen, slot) -> frozen_slot_view(Map.fetch!(frozen, slot), now)
+      Map.has_key?(frozen, slot) -> slot_view(Map.fetch!(frozen, slot), now)
       Map.has_key?(live, slot) -> Map.fetch!(live, slot)
       true -> nil
     end
@@ -161,145 +159,100 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
     DiarySlot
     |> DiarySlot.for_client(client.business_id, client.id)
     |> DiarySlot.for_date(date)
-    |> DiarySlot.include_frozen(client.business_id)
     |> Repo.all()
     |> Map.new(&{&1.meal_slot, &1})
   end
 
-  defp live_slots(nil, _plan, _timezone, _write_eligible), do: []
+  defp live_slots(nil, _plan, _date, _timezone, _now), do: []
 
-  defp live_slots(pattern, plan, timezone, write_eligible) do
+  defp live_slots(pattern, plan, date, timezone, now) do
     MealSlot.values()
-    |> Enum.flat_map(fn slot ->
-      case Menu.meals_for_slot(plan.menu, pattern, slot) do
-        [] -> []
-        meals -> [slot_from_meals(slot, meals, timezone, write_eligible)]
+    |> Enum.flat_map(fn meal_slot ->
+      case Menu.meals_for_slot(plan.menu, pattern, meal_slot) do
+        [] ->
+          []
+
+        meals ->
+          slot = %DiarySlot{
+            meal_slot: meal_slot,
+            local_date: date,
+            applied_timezone: timezone,
+            has_coverage: true,
+            document: Document.from_meals(meals)
+          }
+
+          [slot_view(slot, now)]
       end
     end)
   end
 
-  defp slot_from_meals(slot, [default | _rest] = meals, timezone, write_eligible) do
-    items = default.meal_items
-
-    %{
-      meal_slot: slot,
-      meal_id: default.id,
-      revision: 0,
-      applied_timezone: timezone,
-      write_eligible: write_eligible,
-      planned_calories: NutrientTotals.combine(Enum.map(items, & &1.nutrients)).calories,
-      logged_calories: nil,
-      options: Enum.with_index(meals, &option_data/2),
-      rows: Enum.with_index(items, fn item, position -> row(:pending, item_data(item, position), nil) end)
-    }
-  end
-
-  defp frozen_slot_view(%DiarySlot{} = slot, now) do
-    ordered = Enum.sort_by(slot.frozen_options, &{&1.position, &1.id})
-    active = DiarySlot.active_option(slot)
-    items = if active, do: active.planned_items, else: []
+  defp slot_view(slot, now) do
+    document = slot.document
+    active = Document.active_option(document)
+    items = if active, do: active.items, else: []
     today = CorrectionPolicy.local_today(slot.applied_timezone, now)
 
     %{
       meal_slot: slot.meal_slot,
-      meal_id: active && active.source_meal_id,
+      meal_id: document.meal_id,
       revision: slot.revision,
       applied_timezone: slot.applied_timezone,
       write_eligible: CorrectionPolicy.write_eligible?(slot.local_date, today),
       planned_calories: NutrientTotals.sum(items).calories,
-      logged_calories: NutrientTotals.sum(slot.entries).calories,
-      options: Enum.map(ordered, &frozen_option_data/1),
-      rows: frozen_rows(slot, active, today)
+      logged_calories: NutrientTotals.sum(document.entries).calories,
+      options: Enum.with_index(document.options, &option_data/2),
+      rows: slot_rows(slot, items, today)
     }
   end
 
-  defp frozen_rows(%DiarySlot{has_coverage: false} = slot, _active, _today) do
-    Enum.map(slot.entries, &row(:recorded, nil, &1))
+  defp slot_rows(%DiarySlot{has_coverage: false} = slot, _items, _today) do
+    Enum.map(slot.document.entries, &row(:recorded, nil, &1))
   end
 
-  defp frozen_rows(%DiarySlot{} = slot, active, today) do
-    planned = if active, do: List.wrap(active.planned_items), else: []
-    planned_ids = MapSet.new(planned, & &1.id)
-    extras = Enum.reject(slot.entries, &MapSet.member?(planned_ids, &1.frozen_planned_item_id))
+  defp slot_rows(slot, items, today) do
+    planned_ids = MapSet.new(items, & &1.id)
+    entries = Map.new(slot.document.entries, &{&1.planned_item_ref, &1})
 
-    Enum.map(planned, &planned_row(&1, slot, today)) ++ Enum.map(extras, &row(:added, nil, &1))
-  end
+    planned =
+      Enum.map(items, fn item ->
+        entry = Map.get(entries, item.id)
+        row(planned_status(entry, item, slot.local_date, today), item, entry)
+      end)
 
-  defp planned_row(item, slot, today) do
-    entry = Enum.find(slot.entries, &(&1.frozen_planned_item_id == item.id))
-    row(planned_status(entry, item, slot.local_date, today), frozen_item_data(item), entry)
+    extras = Enum.reject(slot.document.entries, &MapSet.member?(planned_ids, &1.planned_item_ref))
+    planned ++ Enum.map(extras, &row(:added, nil, &1))
   end
 
   defp row(status, planned, entry) do
-    item = if entry, do: entry_data(entry), else: planned
-    ref = planned && planned.planned_item_ref
+    item = entry || planned
+    ref = planned && planned.id
 
-    %{
+    Map.merge(item_data(item), %{
       id: ref || entry.id,
       entry_id: entry && entry.id,
       planned_item_ref: ref,
       status: status,
-      kind: item.kind,
-      name: item.name || "Food",
-      food_id: item.food_id,
-      recipe_id: item.recipe_id,
-      portion: item.portion,
-      nutrients: item.nutrients,
       notes: entry && entry.notes
-    }
+    })
   end
 
-  defp option_data(meal, position) do
-    %{meal_id: meal.id, meal_name: meal.name, position: position, items: Enum.with_index(meal.meal_items, &item_data/2)}
+  defp option_data(option, position) do
+    items =
+      Enum.with_index(option.items, fn item, index ->
+        Map.merge(item_data(item), %{planned_item_ref: item.id, position: index})
+      end)
+
+    %{meal_id: option.id, meal_name: option.name, position: position, items: items}
   end
 
-  defp frozen_option_data(%DiaryFrozenOption{} = option) do
+  defp item_data(item) do
     %{
-      meal_id: option.source_meal_id,
-      meal_name: option.meal_name,
-      position: option.position,
-      items: Enum.map(option.planned_items, &frozen_item_data/1)
-    }
-  end
-
-  defp item_data(item, position) do
-    %{
-      planned_item_ref: item.id,
       kind: Library.item_kind(item),
       name: item.name,
       food_id: item.food_id,
       recipe_id: item.recipe_id,
-      position: position,
       portion: Portions.format(item.portion),
       nutrients: item.nutrients
-    }
-  end
-
-  defp frozen_item_data(%DiaryFrozenPlannedItem{} = item) do
-    %{
-      planned_item_ref: item.source_meal_item_id,
-      kind: Library.item_kind(item),
-      name: item.display_name,
-      food_id: item.food_id,
-      recipe_id: item.recipe_id,
-      position: item.position,
-      portion: Portions.format(item.portion),
-      nutrients: item.nutrients
-    }
-  end
-
-  defp entry_data(%DiaryEntry{} = entry) do
-    %{
-      id: entry.id,
-      kind: Library.item_kind(entry),
-      name: entry.display_name,
-      food_id: entry.food_id,
-      recipe_id: entry.recipe_id,
-      portion: Portions.format(entry.portion),
-      nutrients: entry.nutrients,
-      notes: entry.notes,
-      inserted_at: entry.inserted_at,
-      updated_at: entry.updated_at
     }
   end
 
@@ -340,7 +293,7 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
   end
 
   defp active_option_items(slot) do
-    option = Enum.find(slot.options, &(&1.meal_id == slot.meal_id)) || List.first(slot.options)
+    option = Enum.find(slot.options, &(&1.meal_id == slot.meal_id))
     (option && option.items) || []
   end
 
@@ -363,6 +316,7 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
   defp calorie_band(pct) when pct > 1.1, do: :over
   defp calorie_band(_pct), do: :on
 
+  # Hide unavailable Library links in item views while preserving frozen values and identity in storage.
   defp available_sources(%{food_id: food_id, recipe_id: recipe_id} = item, available) do
     %{item | food_id: if(MapSet.member?(available, {:food, food_id}), do: food_id), recipe_id: if(MapSet.member?(available, {:recipe, recipe_id}), do: recipe_id)}
   end
@@ -372,6 +326,7 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
   defp available_sources(list, available) when is_list(list), do: Enum.map(list, &available_sources(&1, available))
   defp available_sources(value, _available), do: value
 
+  # Round display numbers to one decimal; structs and chosen portion precision pass through unchanged.
   defp round_values(%_{} = value), do: value
 
   defp round_values(map) when is_map(map),

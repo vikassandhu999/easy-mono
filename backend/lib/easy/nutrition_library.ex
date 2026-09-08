@@ -4,7 +4,6 @@ defmodule Easy.Nutrition.Library do
   alias Easy.LibraryMedia
   alias Easy.Nutrition.{Food, NutrientTotals, Portions, Programming, Recipe, RecipeIngredient}
   alias Easy.Repo
-  alias Easy.Result
   alias Easy.Revision
   alias Easy.Utils
 
@@ -28,41 +27,39 @@ defmodule Easy.Nutrition.Library do
           required(:nutrients) => NutrientTotals.t()
         }
 
+  @type resolved_items() :: %{item_spec() => resolved_item()}
+
   # Foods
 
   @spec get_food(Ctx.t(), String.t()) :: {:ok, Food.t()} | {:error, :not_found}
   def get_food(%Ctx{} = ctx, food_id) do
-    Repo.snapshot(fn ->
-      Food
-      |> Food.for_business_or_system(ctx.business_id)
-      |> Food.include_media()
-      |> Repo.get(food_id)
-      |> ok_or_not_found()
-    end)
+    Food
+    |> Food.for_business_or_system(ctx.business_id)
+    |> Food.include_media()
+    |> Repo.get(food_id)
+    |> ok_or_not_found()
   end
 
   @spec list_foods(Ctx.t(), keyword()) :: {:ok, %{count: non_neg_integer(), foods: [Food.t()]}}
   def list_foods(%Ctx{} = ctx, opts \\ []) do
-    Repo.snapshot(fn ->
-      search = String.trim(Keyword.get(opts, :search, "") || "")
-      offset = Keyword.get(opts, :offset, 0)
-      limit = min(Keyword.get(opts, :limit, 20), 100)
+    search = String.trim(Keyword.get(opts, :search, "") || "")
+    offset = Keyword.get(opts, :offset, 0)
+    limit = min(Keyword.get(opts, :limit, 20), 100)
 
-      base =
-        Food
-        |> Food.for_business_or_system(ctx.business_id)
-        |> Food.search(search)
-        |> Food.for_categories(Keyword.get(opts, :categories))
+    base =
+      Food
+      |> Food.for_business_or_system(ctx.business_id)
+      |> Food.search(search)
+      |> Food.for_categories(Keyword.get(opts, :categories))
 
-      # `Food.search` orders by rank; only unsearched listings need an order.
-      ordered = if search == "", do: Food.newest(base), else: base
+    # `Food.search` orders by rank; only unsearched listings need an order.
+    ordered = if search == "", do: Food.newest(base), else: base
 
-      {:ok,
-       %{
-         count: Repo.aggregate(base, :count, :id),
-         foods: ordered |> Utils.paginate(offset, limit) |> Food.include_media() |> Repo.all()
-       }}
-    end)
+    {:ok,
+     %{
+       count: Repo.aggregate(base, :count, :id),
+       foods: ordered |> Utils.paginate(offset, limit) |> Food.include_media() |> Repo.all()
+     }}
   end
 
   @spec list_food_categories(Ctx.t()) :: {:ok, [String.t()]}
@@ -178,13 +175,12 @@ defmodule Easy.Nutrition.Library do
   @spec list_recipes(Ctx.t(), keyword()) ::
           {:ok, %{count: non_neg_integer(), recipes: [Recipe.t()]}}
   def list_recipes(%Ctx{} = ctx, opts \\ []) do
+    search = String.trim(Keyword.get(opts, :search, "") || "")
+    offset = Keyword.get(opts, :offset, 0)
+    limit = min(Keyword.get(opts, :limit, 20), 100)
+    base = Recipe |> Recipe.for_business(ctx.business_id) |> Recipe.search(search)
+
     Repo.snapshot(fn ->
-      search = String.trim(Keyword.get(opts, :search, "") || "")
-      offset = Keyword.get(opts, :offset, 0)
-      limit = min(Keyword.get(opts, :limit, 20), 100)
-
-      base = Recipe |> Recipe.for_business(ctx.business_id) |> Recipe.search(search)
-
       {:ok,
        %{
          count: Repo.aggregate(base, :count, :id),
@@ -285,11 +281,12 @@ defmodule Easy.Nutrition.Library do
   def item_kind(%{food_id: id}) when is_binary(id), do: :food
   def item_kind(%{recipe_id: id}) when is_binary(id), do: :recipe
 
-  @spec resolve_items(Ctx.t(), [item_spec()]) :: {:ok, [resolved_item()]} | {:error, :not_found | :invalid_portion}
+  @spec resolve_items(Ctx.t(), [item_spec()]) ::
+          {:ok, resolved_items()} | {:error, :not_found | :invalid_portion | :conflict}
   def resolve_items(ctx, items), do: Repo.snapshot(fn -> resolve(ctx, items, false) end)
 
   @spec resolve_items_for_write(Ctx.t(), [item_spec()]) ::
-          {:ok, [resolved_item()]} | {:error, :not_found | :invalid_portion}
+          {:ok, resolved_items()} | {:error, :not_found | :invalid_portion}
   def resolve_items_for_write(ctx, items) do
     true = Repo.in_transaction?()
     resolve(ctx, items, true)
@@ -306,7 +303,7 @@ defmodule Easy.Nutrition.Library do
     {:ok, MapSet.new(Enum.map(foods, &{:food, &1}) ++ Enum.map(recipes, &{:recipe, &1}))}
   end
 
-  defp resolve(_ctx, [], _lock?), do: {:ok, []}
+  defp resolve(_ctx, [], _lock?), do: {:ok, %{}}
 
   defp resolve(ctx, items, lock?) do
     recipe_ids = for %{kind: :recipe, id: id} <- items, do: id
@@ -316,7 +313,15 @@ defmodule Easy.Nutrition.Library do
     foods = Food.for_business_or_system(ctx.business_id) |> where([f], f.id in ^food_ids) |> ordered_read(lock?) |> Map.new(&{&1.id, &1})
     ingredients = Enum.group_by(ingredients, & &1.recipe_id, &%{&1 | food: Map.get(foods, &1.food_id)})
     recipes = Map.new(recipes, &{&1.id, %{&1 | recipe_ingredients: Map.get(ingredients, &1.id, [])}})
-    Result.traverse(items, &resolve_item(&1, foods, recipes))
+
+    items
+    |> Enum.uniq()
+    |> Enum.reduce_while({:ok, %{}}, fn spec, {:ok, resolved} ->
+      case resolve_item(spec, foods, recipes) do
+        {:ok, item} -> {:cont, {:ok, Map.put(resolved, spec, item)}}
+        error -> {:halt, error}
+      end
+    end)
   end
 
   defp ordered_read(query, lock?) do
@@ -349,9 +354,8 @@ defmodule Easy.Nutrition.Library do
 
   defp serving_used?(ctx, food_id, size) do
     portion = %{kind: :serving, unit: size.unit, label: size.label}
-    {:ok, menu_used?} = Programming.library_item_used?(ctx, :food, food_id, portion)
 
-    menu_used? or
+    Programming.library_item_used?(ctx, :food, food_id, portion) or
       Repo.exists?(
         from(i in RecipeIngredient.for_business(ctx.business_id),
           where: i.food_id == ^food_id and fragment("? @> ?::jsonb", i.portion, ^portion)
@@ -371,9 +375,7 @@ defmodule Easy.Nutrition.Library do
   end
 
   defp food_used_structurally?(ctx, food_id) do
-    {:ok, used?} = Programming.library_item_used?(ctx, :food, food_id)
-
-    used? or
+    Programming.library_item_used?(ctx, :food, food_id) or
       Repo.exists?(from(ri in RecipeIngredient.for_business(ctx.business_id), where: ri.food_id == ^food_id))
   end
 
@@ -429,15 +431,10 @@ defmodule Easy.Nutrition.Library do
 
   defp removing_cooked_weight?(_recipe, _changeset), do: false
 
-  defp recipe_referenced_by_menu?(ctx, recipe_id) do
-    {:ok, used?} = Programming.library_item_used?(ctx, :recipe, recipe_id)
-    used?
-  end
+  defp recipe_referenced_by_menu?(ctx, recipe_id), do: Programming.library_item_used?(ctx, :recipe, recipe_id)
 
-  defp gram_portion_references_recipe?(ctx, recipe_id) do
-    {:ok, used?} = Programming.library_item_used?(ctx, :recipe, recipe_id, :gram)
-    used?
-  end
+  defp gram_portion_references_recipe?(ctx, recipe_id),
+    do: Programming.library_item_used?(ctx, :recipe, recipe_id, %{kind: :gram})
 
   # Ingredient replacement: the request carries the complete collection, positions
   # come from its order.
@@ -449,7 +446,9 @@ defmodule Easy.Nutrition.Library do
 
     with {:ok, resolved} <- resolve_items_for_write(ctx, specs) do
       changesets =
-        Enum.with_index(resolved, fn item, position ->
+        Enum.with_index(specs, fn spec, position ->
+          item = Map.fetch!(resolved, spec)
+
           RecipeIngredient.insert_changeset(recipe.business_id, recipe.id, position, %{
             food_id: item.item.id,
             portion: Portions.format(item.portion)
@@ -504,11 +503,11 @@ defmodule Easy.Nutrition.Library do
   end
 
   defp menu_usage(ctx, kind, id) do
-    {:ok, usage} = Programming.library_usage(ctx, kind, id)
+    plans = Programming.library_usage(ctx, kind, id)
 
     %{
-      templates: usage.plans |> Enum.filter(&(&1.kind == :template)) |> Enum.map(&Map.delete(&1, :kind)),
-      client_plans: usage.plans |> Enum.filter(&(&1.kind == :client_plan)) |> Enum.map(&Map.delete(&1, :kind))
+      templates: plans |> Enum.filter(&(&1.kind == :template)) |> Enum.map(&Map.delete(&1, :kind)),
+      client_plans: plans |> Enum.filter(&(&1.kind == :client_plan)) |> Enum.map(&Map.delete(&1, :kind))
     }
   end
 

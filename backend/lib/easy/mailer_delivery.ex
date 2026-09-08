@@ -7,14 +7,28 @@ defmodule Easy.MailerDelivery do
     metadata = Keyword.get(opts, :metadata, %{})
     on_error = Keyword.get(opts, :on_error)
 
-    Task.Supervisor.start_child(Easy.TaskSupervisor, fn ->
-      deliver_with_error_handling(email, metadata, on_error)
-    end)
+    deliver = fn ->
+      case deliver_sync(email, metadata: metadata) do
+        {:ok, _response} -> :ok
+        {:error, reason} -> notify_error(on_error, reason)
+      end
+    end
+
+    case Task.Supervisor.start_child(Easy.MailerSupervisor, deliver) do
+      {:ok, _pid} ->
+        :ok
+
+      # Slow the producer when the email pool is full instead of growing tasks
+      # without bound or silently dropping an OTP or invitation.
+      {:error, :max_children} ->
+        :telemetry.execute([:easy, :mailer, :backpressure], %{count: 1}, %{})
+        deliver.()
+    end
 
     :ok
   end
 
-  @spec deliver_sync(Swoosh.Email.t(), keyword()) :: {:ok, any()} | {:error, any()}
+  @spec deliver_sync(Swoosh.Email.t(), keyword()) :: {:ok, term()} | {:error, term()}
   def deliver_sync(email, opts \\ []) do
     metadata = Keyword.get(opts, :metadata, %{})
 
@@ -27,42 +41,19 @@ defmodule Easy.MailerDelivery do
         log_error(email, reason, metadata)
         error
     end
-  end
-
-  defp deliver_with_error_handling(email, metadata, on_error) do
-    case Mailer.deliver(email) do
-      {:ok, _response} ->
-        log_success(email, metadata)
-        :ok
-
-      {:error, reason} ->
-        log_error(email, reason, metadata)
-
-        if on_error do
-          try do
-            on_error.(reason)
-          rescue
-            error ->
-              Logger.error("Error in on_error callback: #{inspect(error)}")
-          end
-        end
-
-        {:error, reason}
-    end
   rescue
     error ->
-      log_exception(email, error, __STACKTRACE__, metadata)
-
-      if on_error do
-        try do
-          on_error.(error)
-        rescue
-          callback_error ->
-            Logger.error("Error in on_error callback: #{inspect(callback_error)}")
-        end
-      end
-
+      log_exception(email, error, __STACKTRACE__, Keyword.get(opts, :metadata, %{}))
       {:error, error}
+  end
+
+  defp notify_error(nil, _reason), do: :ok
+
+  defp notify_error(callback, reason) do
+    callback.(reason)
+    :ok
+  rescue
+    error -> Logger.error("Error in on_error callback: #{inspect(error)}")
   end
 
   defp log_success(email, metadata) do

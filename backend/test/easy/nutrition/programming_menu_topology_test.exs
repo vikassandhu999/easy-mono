@@ -139,4 +139,24 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
     assert {:ok, resaved} = Programming.replace_menu(c.ctx, read.id, read.revision, Menu.format(read.menu))
     assert hd(Menu.items(resaved.menu)).nutrients.calories == 450.625
   end
+
+  test "listing copied menu identities resolves each portion independently, including empty menus", c do
+    item = food_item("shared-item", c.food.id, %{kind: :gram, grams: 25})
+    meal = meal_input("shared-meal", "Meal", [item])
+    {:ok, first} = Programming.replace_menu(c.ctx, c.plan.id, 1, menu(c.plan, meals: [meal]))
+    {:ok, second} = Programming.duplicate_template(c.ctx, first.id)
+    larger = %{meal | meal_items: [%{item | portion: %{kind: :gram, grams: 75}}]}
+    {:ok, second} = Programming.replace_menu(c.ctx, second.id, second.revision, menu(second, meals: [larger]))
+    {:ok, empty} = Programming.create_template(c.ctx, %{name: "Empty"})
+
+    assert {:ok, %{templates: plans}} = Programming.list_templates(c.ctx)
+    by_plan = Map.new(plans, &{&1.id, Menu.items(&1.menu)})
+    assert [small] = by_plan[first.id]
+    assert [large] = by_plan[second.id]
+    assert small.id == large.id
+    assert small.portion.grams == 25.0
+    assert large.portion.grams == 75.0
+    assert large.nutrients.calories == small.nutrients.calories * 3
+    assert by_plan[empty.id] == []
+  end
 end

@@ -94,7 +94,6 @@ defmodule Easy.ContextLayoutTest do
     policy = File.read!(policy_path)
     day_types = File.read!(day_type_path)
 
-    assert diary =~ "defp insert_frozen_item!("
     refute assembler =~ ~r/\bRepo\.(?:insert|update|delete)\(/
     assert policy =~ "@correction_days 7"
     refute assembler =~ "@correction_days"

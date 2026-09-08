@@ -481,7 +481,7 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
   end
 
   describe("resolve_items/2") do
-    test "returns food and recipe results in input identity order" do
+    test "resolves by source and portion regardless of input order or repetition" do
       coach = insert(:coach)
 
       food =
@@ -522,11 +522,16 @@ defmodule Easy.Nutrition.LibraryRecipeTest do
           ]
         )
 
-      assert {:ok, [food_result, recipe_result]} =
-               Library.resolve_items(trainer_ctx(coach), [
-                 %{kind: :food, id: food.id, portion: %{kind: :gram, grams: 50}},
-                 %{kind: :recipe, id: recipe.id, portion: %{kind: :serving, amount: 1, unit: "serving", label: nil}}
-               ])
+      small = %{kind: :food, id: food.id, portion: %{kind: :gram, grams: 50}}
+      large = %{small | portion: %{kind: :gram, grams: 150}}
+      serving = %{kind: :recipe, id: recipe.id, portion: %{kind: :serving, amount: 1, unit: "serving", label: nil}}
+      specs = [small, serving, large, small]
+      assert {:ok, resolved} = Library.resolve_items(trainer_ctx(coach), specs)
+      assert {:ok, ^resolved} = Library.resolve_items(trainer_ctx(coach), Enum.reverse(specs))
+      assert map_size(resolved) == 3
+      assert resolved[large].nutrients.calories == 150.0
+      food_result = Map.fetch!(resolved, small)
+      recipe_result = Map.fetch!(resolved, serving)
 
       assert food_result.kind == :food
       assert food_result.item.id == food.id

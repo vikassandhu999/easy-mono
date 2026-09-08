@@ -2,9 +2,7 @@ defmodule Easy.Nutrition.LibraryDeleteTest do
   alias Easy.Nutrition.DiaryFixtures
   use Easy.SchemaCase, async: false
   alias Easy.Ctx
-  alias Easy.Nutrition.DiaryEntry
   alias Easy.Nutrition.Library
-  alias Easy.Repo
 
   describe("delete_food/2") do
     test "is blocked while a recipe ingredient still uses the food" do
@@ -16,7 +14,7 @@ defmodule Easy.Nutrition.LibraryDeleteTest do
     end
 
     test "succeeds when only a logged entry references the food, and the log survives" do
-      %{ctx: ctx, business: business, coach: coach, client_ctx: client_ctx} = scenario()
+      %{ctx: ctx, business: business, coach: coach, client: client, client_ctx: client_ctx} = scenario()
 
       food =
         insert(:food, business: business, creator: coach, name: "Banana", calories_per_100g: 90.0)
@@ -32,9 +30,9 @@ defmodule Easy.Nutrition.LibraryDeleteTest do
 
       entry = hd(day.slots).rows |> Enum.find(& &1.entry_id)
       assert {:ok, _deleted} = Library.delete_food(ctx, food.id)
-      kept = Repo.get!(DiaryEntry, entry.id)
+      kept = DiaryFixtures.stored_entry(client, entry.id)
       assert kept.food_id == food.id
-      assert kept.display_name == "Banana"
+      assert kept.name == "Banana"
       assert kept.nutrients.calories == 90.0
     end
   end
@@ -56,6 +54,7 @@ defmodule Easy.Nutrition.LibraryDeleteTest do
       ctx: Ctx.new(business.id, coach.user_id, coach.id, true),
       client_ctx: %Ctx{business_id: business.id, user_id: client.user_id, client_id: client.id},
       business: business,
+      client: client,
       coach: coach
     }
   end

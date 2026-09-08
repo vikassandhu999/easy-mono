@@ -2,7 +2,7 @@ defmodule Easy.Nutrition.DiaryReadsTest do
   alias Easy.Nutrition.DiaryFixtures
   use Easy.DataCase, async: true
   alias Easy.LocalCalendar
-  alias Easy.Nutrition.{Diary, Diary.DayAssembler, DiaryDay, DiaryEntry, DiarySlot, Library, Plan, Programming}
+  alias Easy.Nutrition.{Diary, Diary.DayAssembler, DiaryDay, DiarySlot, Library, Plan, Programming}
   alias Easy.Repo
   import Ecto.Query
   import Easy.Nutrition.DiaryFixtures
@@ -519,9 +519,9 @@ defmodule Easy.Nutrition.DiaryReadsTest do
       food_entry = hd(food_day.slots).rows |> Enum.find(& &1.entry_id)
       assert food_entry.food_id == food.id
       assert {:ok, _} = Library.delete_food(ctx, food.id)
-      kept_food = Repo.get!(DiaryEntry, food_entry.id)
+      kept_food = DiaryFixtures.stored_entry(client, food_entry.id)
       assert kept_food.food_id == food.id
-      assert kept_food.display_name == "Banana"
+      assert kept_food.name == "Banana"
       assert kept_food.nutrients.calories == 90.0
       assert kept_food.nutrients.complete
       assert {:ok, reread} = Diary.get_client_nutrition_day(client_ctx(client), today)
@@ -564,9 +564,9 @@ defmodule Easy.Nutrition.DiaryReadsTest do
 
       assert recipe_entry.recipe_id == lone_recipe.id
       assert {:ok, _} = Library.delete_recipe(ctx, lone_recipe.id)
-      kept_recipe = Repo.get!(DiaryEntry, recipe_entry.id)
+      kept_recipe = DiaryFixtures.stored_entry(client, recipe_entry.id)
       assert kept_recipe.recipe_id == lone_recipe.id
-      assert kept_recipe.display_name == "Rice bowl"
+      assert kept_recipe.name == "Rice bowl"
       assert kept_recipe.portion.amount == 1.0
       assert kept_recipe.nutrients.complete
       assert {:ok, reread_recipe} = Diary.get_client_nutrition_day(client_ctx(client), today)

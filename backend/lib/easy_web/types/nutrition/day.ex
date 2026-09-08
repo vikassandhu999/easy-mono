@@ -155,9 +155,9 @@ defmodule EasyWeb.Types.Nutrition.Day do
         }
 
   @type list_query :: %{
-          optional(:date) => String.t(),
-          optional(:from) => String.t(),
-          optional(:to) => String.t()
+          optional(:date) => Date.t(),
+          optional(:from) => Date.t(),
+          optional(:to) => Date.t()
         }
 
   @type save :: %{required(:slots) => [EasyWeb.Types.Nutrition.DaySlotInput.t()]}

@@ -4,13 +4,13 @@ defmodule Easy.Fitness.WeightEntryTest do
   alias Easy.Fitness.WeightEntry
   alias Easy.WeightEntries
 
-  describe "insert_changeset/3" do
+  describe "insert_changeset/4" do
     test "is valid with required fields" do
       client = insert_client()
 
       changeset =
-        WeightEntry.insert_changeset(client.business_id, client.id, %{
-          date: ~D[2026-04-22],
+        WeightEntry.insert_changeset(client.business_id, client.id, Date.utc_today(), %{
+          date: Date.utc_today(),
           value: Decimal.new("91.40"),
           unit: :kg,
           note: "morning weigh-in"
@@ -23,7 +23,7 @@ defmodule Easy.Fitness.WeightEntryTest do
 
     test "is invalid without required fields" do
       client = insert_client()
-      changeset = WeightEntry.insert_changeset(client.business_id, client.id, %{})
+      changeset = WeightEntry.insert_changeset(client.business_id, client.id, Date.utc_today(), %{})
 
       refute changeset.valid?
 
@@ -38,8 +38,8 @@ defmodule Easy.Fitness.WeightEntryTest do
       client = insert_client()
 
       changeset =
-        WeightEntry.insert_changeset(client.business_id, client.id, %{
-          date: ~D[2026-04-22],
+        WeightEntry.insert_changeset(client.business_id, client.id, Date.utc_today(), %{
+          date: Date.utc_today(),
           value: Decimal.new("0"),
           unit: :kg,
           note: String.duplicate("a", 501)
@@ -51,12 +51,13 @@ defmodule Easy.Fitness.WeightEntryTest do
                errors_on(changeset)
     end
 
-    test "is invalid when date is too far in the future" do
+    test "validates future dates against the supplied day" do
       client = insert_client()
+      today = Date.add(Date.utc_today(), -7)
 
       changeset =
-        WeightEntry.insert_changeset(client.business_id, client.id, %{
-          date: Date.add(Date.utc_today(), 2),
+        WeightEntry.insert_changeset(client.business_id, client.id, today, %{
+          date: Date.add(today, 2),
           value: Decimal.new("91.40"),
           unit: :kg
         })
@@ -112,7 +113,7 @@ defmodule Easy.Fitness.WeightEntryTest do
       result_ids =
         WeightEntry
         |> WeightEntry.for_client(coach.business_id, client.id)
-        |> WeightEntry.since(~D[2026-04-10])
+        |> WeightEntry.for_since(~D[2026-04-10])
         |> WeightEntry.oldest()
         |> Repo.all()
         |> Enum.map(& &1.id)
@@ -122,7 +123,7 @@ defmodule Easy.Fitness.WeightEntryTest do
     end
   end
 
-  describe "adherence/3" do
+  describe "history adherence" do
     test "counts entries in the last 30 days" do
       client = insert_client()
       today = Date.utc_today()
@@ -132,8 +133,8 @@ defmodule Easy.Fitness.WeightEntryTest do
       insert_weight_entry(client: client, date: Date.add(today, -10))
       insert_weight_entry(client: client, date: Date.add(today, -40))
 
-      assert {:ok, %{logged_days: 2, window_days: 30}} =
-               WeightEntries.adherence(ctx, client.id)
+      assert {:ok, %{adherence: %{logged_days: 2, window_days: 30}}} =
+               WeightEntries.list_entries_for_client(ctx, client.id)
     end
 
     test "counts an upserted date only once" do
@@ -155,8 +156,8 @@ defmodule Easy.Fitness.WeightEntryTest do
           unit: "kg"
         })
 
-      assert {:ok, %{logged_days: 1, window_days: 30}} =
-               WeightEntries.adherence(ctx, client.id)
+      assert {:ok, %{adherence: %{logged_days: 1, window_days: 30}}} =
+               WeightEntries.list_entries_for_client(ctx, client.id)
     end
   end
 

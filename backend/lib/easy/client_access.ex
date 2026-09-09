@@ -7,9 +7,8 @@ defmodule Easy.ClientAccess do
 
   @spec authorize_client(Ctx.t(), String.t()) :: {:ok, Client.t()} | {:error, :not_found}
   def authorize_client(%Ctx{} = ctx, client_id) do
-    Client
-    |> Client.for_business(ctx.business_id)
-    |> Client.visible_to(ctx)
+    ctx
+    |> visible_clients()
     |> Repo.get(client_id)
     |> case do
       nil -> {:error, :not_found}
@@ -18,19 +17,31 @@ defmodule Easy.ClientAccess do
   end
 
   @spec authorize_client_id(Ctx.t(), String.t() | nil) :: :ok | {:error, :not_found}
-  def authorize_client_id(_ctx, nil), do: :ok
+  def authorize_client_id(%Ctx{}, nil), do: {:error, :not_found}
 
   def authorize_client_id(%Ctx{} = ctx, client_id) do
-    with {:ok, _client} <- authorize_client(ctx, client_id), do: :ok
+    query = ctx |> visible_clients() |> where([client], client.id == ^client_id)
+    if Repo.exists?(query), do: :ok, else: {:error, :not_found}
   end
 
-  @spec advance_stage_to_coaching(Ctx.t(), String.t()) :: :ok
-  def advance_stage_to_coaching(%Ctx{} = ctx, client_id) do
+  @spec authorize_client_ids(Ctx.t(), [String.t()]) :: :ok | {:error, :not_found}
+  def authorize_client_ids(%Ctx{}, []), do: :ok
+
+  def authorize_client_ids(%Ctx{} = ctx, client_ids) do
+    client_ids = Enum.uniq(client_ids)
+
+    visible_count =
+      ctx
+      |> visible_clients()
+      |> where([client], client.id in ^client_ids)
+      |> Repo.aggregate(:count, :id)
+
+    if visible_count == length(client_ids), do: :ok, else: {:error, :not_found}
+  end
+
+  defp visible_clients(ctx) do
     Client
     |> Client.for_business(ctx.business_id)
-    |> where([client], client.id == ^client_id and client.stage == :onboarding)
-    |> Repo.update_all(set: [stage: :coaching, updated_at: DateTime.utc_now(:second)])
-
-    :ok
+    |> Client.visible_to(ctx)
   end
 end

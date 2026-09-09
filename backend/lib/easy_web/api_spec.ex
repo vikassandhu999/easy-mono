@@ -5,6 +5,7 @@ defmodule EasyWeb.ApiSpec do
   @behaviour OpenApi
 
   @impl OpenApi
+  @spec spec() :: OpenApi.t()
   def spec do
     %OpenApi{
       servers: [%Server{url: "/"}],

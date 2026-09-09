@@ -2,7 +2,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
   import Easy.Nutrition.ProgrammingMenuFixtures, only: [uuid: 1]
   use Easy.DataCase, async: true
 
-  alias Easy.Nutrition.{Menu, Plan, Programming}
+  alias Easy.Nutrition.{Menu, Plan, PlanReader, Programming}
   alias Easy.Repo
 
   describe "assign_template_to_client/4" do
@@ -38,7 +38,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
       ctx = trainer_ctx(coach)
       client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach, stage: :onboarding)
       {:ok, template} = Programming.create_template(ctx, %{"name" => "Source"})
-      {:ok, archived} = Programming.archive_template(ctx, template.id)
+      {:ok, archived} = Programming.archive_plan(ctx, template.id)
 
       client_plan =
         insert(:plan,
@@ -112,11 +112,11 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
                  schedule: schedule_for(pattern.id)
                })
 
-      {:ok, reloaded} = Programming.get_plan(ctx, assigned.id)
+      {:ok, reloaded} = PlanReader.get_plan(ctx, assigned.id)
       assert [%{name: "Breakfast"}] = reloaded.menu.meals
       assert [%{name: "Everyday"}] = reloaded.menu.day_patterns
 
-      assert {:ok, _deleted} = Programming.delete_template(ctx, source.id)
+      assert {:ok, _deleted} = Programming.delete_plan(ctx, source.id)
       persisted = Repo.get!(Plan, assigned.id)
       assert persisted.source_template_id == nil
       assert persisted.menu == Repo.get!(Plan, assigned.id).menu
@@ -150,7 +150,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
       |> Repo.update!()
 
       former_ctx = trainer_ctx(former)
-      assert {:error, :not_found} = Programming.get_plan(former_ctx, client_plan.id)
+      assert {:error, :not_found} = PlanReader.get_plan(former_ctx, client_plan.id)
       assert {:error, :not_found} = Programming.update_plan(former_ctx, client_plan.id, 2, %{"name" => "Nope"})
       assert {:error, :not_found} = Programming.archive_plan(former_ctx, client_plan.id)
       assert {:error, :not_found} = Programming.restore_plan(former_ctx, client_plan.id)
@@ -197,7 +197,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
 
       assert replaced.menu.meals == []
       assert replaced.revision == 4
-      {:ok, template_after} = Programming.get_plan(ctx, source.id)
+      {:ok, template_after} = PlanReader.get_plan(ctx, source.id)
       assert [%{name: "Breakfast"}] = template_after.menu.meals
 
       assert {:ok, archived_again} = Programming.archive_plan(ctx, replaced.id)
@@ -217,21 +217,23 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
 
       visible = insert_client_plan(coach, client, name: "Visible")
       archived = insert_client_plan(coach, client, name: "Archived", archived_at: ~U[2026-08-15 12:00:00Z])
-      insert_client_plan(coach, other_client, name: "Other client")
-      insert_client_plan(other, other_business_client, name: "Other business")
+      other_client_plan = insert_client_plan(coach, other_client, name: "Other client")
+      foreign_plan = insert_client_plan(other, other_business_client, name: "Other business")
       template = insert(:plan, business: coach.business, creator: coach.user)
 
       ctx = client_ctx(client)
-      assert {:ok, %{count: 1, plans: [listed]}} = Programming.list_client_plans(ctx)
+      assert {:ok, %{count: 1, plans: [listed]}} = PlanReader.list_client_plans(ctx)
       assert listed.id == visible.id
-      assert {:ok, inspected} = Programming.get_client_plan(ctx, visible.id)
+      assert {:ok, inspected} = PlanReader.get_client_plan(ctx, visible.id)
       assert inspected.id == visible.id
       assert inspected.kind == :client_plan
-      assert {:ok, archived_plan} = Programming.get_client_plan(ctx, archived.id)
+      assert {:ok, archived_plan} = PlanReader.get_client_plan(ctx, archived.id)
       assert archived_plan.id == archived.id
       assert archived_plan.archived_at
 
-      assert {:error, :not_found} = Programming.get_client_plan(ctx, template.id)
+      for hidden_id <- [template.id, other_client_plan.id, foreign_plan.id] do
+        assert {:error, :not_found} = PlanReader.get_client_plan(ctx, hidden_id)
+      end
     end
 
     test "client-self reads require the trusted client id from Ctx" do
@@ -240,8 +242,8 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
       plan = insert_client_plan(coach, client)
       missing_client_ctx = %Easy.Ctx{business_id: coach.business_id, user_id: client.user_id}
 
-      assert {:error, :not_found} = Programming.list_client_plans(missing_client_ctx)
-      assert {:error, :not_found} = Programming.get_client_plan(missing_client_ctx, plan.id)
+      assert {:error, :not_found} = PlanReader.list_client_plans(missing_client_ctx)
+      assert {:error, :not_found} = PlanReader.get_client_plan(missing_client_ctx, plan.id)
     end
   end
 

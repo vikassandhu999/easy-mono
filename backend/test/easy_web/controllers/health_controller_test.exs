@@ -1,6 +1,21 @@
 defmodule EasyWeb.HealthControllerTest do
   use Easy.ConnCase
 
+  test "GET /ready succeeds without authentication when the database is reachable", %{conn: conn} do
+    assert conn |> get("/ready") |> response(204) == ""
+  end
+
+  test "readiness failures return 503 without database details", %{conn: conn} do
+    result = Easy.Health.check_readiness(fn -> {:error, "private database address"} end)
+    conn = EasyWeb.FallbackController.call(conn, result)
+
+    assert %{
+             "error_code" => "service_unavailable",
+             "error_message" => "Service is not ready",
+             "error_detail" => %{}
+           } = json_response(conn, 503)
+  end
+
   describe "GET /api/health" do
     test "returns service health metadata", %{conn: conn} do
       conn = get(conn, "/api/health")

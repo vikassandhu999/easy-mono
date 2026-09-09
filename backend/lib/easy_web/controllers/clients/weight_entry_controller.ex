@@ -10,11 +10,11 @@ defmodule EasyWeb.Clients.WeightEntryController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
-    with {:ok, %{client: client, entries: entries, adherence: adherence}} <-
+    with {:ok, history} <-
            WeightEntries.list_client_weight_entries(conn.assigns.ctx,
              since: conn.query_params["since"]
            ) do
-      ok(conn, WeightEntry.index(entries, client, adherence))
+      ok(conn, history)
     end
   end
 

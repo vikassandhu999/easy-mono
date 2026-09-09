@@ -2,6 +2,7 @@ defmodule Easy.Training.ProgrammingTemplateTest do
   use Easy.DataCase, async: true
 
   alias Easy.Repo
+  alias Easy.Training.PlanReader
   alias Easy.Training.Programming
   alias Easy.Training.TrainingPlan
 
@@ -70,7 +71,7 @@ defmodule Easy.Training.ProgrammingTemplateTest do
       )
 
       assert {:ok, %{count: 1, templates: [listed]}} =
-               Programming.list_templates(ctx, search: "strength", limit: 20, offset: 0)
+               PlanReader.list_templates(ctx, search: "strength", limit: 20, offset: 0)
 
       assert listed.id == template.id
       assert listed.kind == :template

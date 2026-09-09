@@ -10,6 +10,21 @@ defmodule Easy.Training.TrainingExercise do
   import Ecto.Query
 
   @type t() :: %__MODULE__{}
+  @type references() :: %{
+          muscle_ids: [String.t()] | nil,
+          equipment_ids: [String.t()] | nil,
+          media_id: String.t() | nil
+        }
+  @type tracking_type() ::
+          :weight_reps
+          | :bodyweight_reps
+          | :weighted_bodyweight
+          | :assisted_bodyweight
+          | :reps_only
+          | :duration
+          | :weight_duration
+          | :distance_duration
+          | :weight_distance
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -57,7 +72,7 @@ defmodule Easy.Training.TrainingExercise do
     timestamps(type: :utc_datetime)
   end
 
-  @spec tracking_types() :: [atom()]
+  @spec tracking_types() :: [tracking_type()]
   def tracking_types, do: @tracking_types
 
   @cast_fields [
@@ -73,6 +88,35 @@ defmodule Easy.Training.TrainingExercise do
     :import_id
   ]
 
+  @spec copy_changeset(String.t(), String.t(), t(), map()) :: Changeset.t()
+  def copy_changeset(business_id, coach_id, %__MODULE__{} = exercise, attrs) do
+    copied =
+      exercise
+      |> Map.take(@cast_fields -- [:source, :import_id, :name])
+      |> Map.update!(:images, &(&1 || []))
+
+    %__MODULE__{}
+    |> change(copied)
+    |> cast(attrs, [:name])
+    |> prepare_insert(business_id, coach_id, exercise.muscles, exercise.equipment)
+  end
+
+  @spec reference_input(map()) :: {:ok, references()} | {:error, Changeset.t()}
+  def reference_input(attrs) do
+    types = %{muscle_ids: {:array, Ecto.UUID}, equipment_ids: {:array, Ecto.UUID}, media_id: Ecto.UUID}
+    defaults = %{muscle_ids: nil, equipment_ids: nil, media_id: nil}
+
+    {defaults, types}
+    |> cast(attrs, Map.keys(types))
+    |> validate_change(:muscle_ids, &validate_reference_ids/2)
+    |> validate_change(:equipment_ids, &validate_reference_ids/2)
+    |> apply_action(:validate)
+  end
+
+  defp validate_reference_ids(field, ids) do
+    if Enum.any?(ids, &is_nil/1), do: [{field, "is invalid"}], else: []
+  end
+
   @spec insert_changeset(
           String.t(),
           String.t() | nil,
@@ -83,11 +127,18 @@ defmodule Easy.Training.TrainingExercise do
   def insert_changeset(business_id, coach_id, attrs, muscles \\ nil, equipment \\ nil) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
+    |> prepare_insert(business_id, coach_id, muscles, equipment)
+  end
+
+  defp prepare_insert(changeset, business_id, coach_id, muscles, equipment) do
+    changeset
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, coach_id)
     |> validate_required([:name])
     |> validate_text_lengths()
     |> unique_constraint([:name, :business_id], name: :training_exercises_name_business_id_index)
+    |> foreign_key_constraint(:business_id)
+    |> foreign_key_constraint(:creator_id)
     |> foreign_key_constraint(:media_id)
     |> check_constraint(:media_id, name: :training_exercises_business_media_check)
     |> maybe_put_assoc(:muscles, muscles)

@@ -28,7 +28,7 @@ defmodule Easy.Nutrition.DiaryOptionsTest do
   test "first save may select any offered option and fulfil its items" do
     %{client: client, today: today} = covering_setup(menu: :two_options)
     ctx = client_ctx(client)
-    {:ok, day} = Diary.get_client_nutrition_day(ctx, today)
+    {:ok, day} = get_client_nutrition_day(ctx, today)
     [slot] = day.slots
     option = List.last(slot.options)
 

@@ -202,7 +202,6 @@ defmodule EasyWeb.Types.TrainingPlan do
     PlannedSet,
     PrescribedExercise,
     TrainingExercise,
-    TrainingPlan,
     TrainingWorkout,
     WorkoutSchedule
   }
@@ -327,7 +326,7 @@ defmodule EasyWeb.Types.TrainingPlan do
       revision: plan.revision,
       archived_at: plan.archived_at,
       status: if(plan.archived_at, do: :archived, else: :active),
-      lifecycle: TrainingPlan.lifecycle(plan),
+      lifecycle: plan.lifecycle,
       start_date: plan.start_date,
       end_date: plan.end_date,
       client_id: plan.client_id,
@@ -414,6 +413,6 @@ defmodule EasyWeb.Types.TrainingPlan do
         {Atom.to_string(row.weekday), row.training_workout_id}
       end)
 
-    Map.new(TrainingWorkout.day_names(), &{&1, scheduled[&1]})
+    Map.new(WorkoutSchedule.weekday_names(), &{&1, scheduled[&1]})
   end
 end

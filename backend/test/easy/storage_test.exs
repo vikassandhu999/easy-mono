@@ -76,4 +76,49 @@ defmodule Easy.StorageTest do
 
     assert {:error, :storage_unavailable} = Storage.presign_put("photo.jpg", now: @now)
   end
+
+  test "invalid storage origins return a configuration error instead of a signed URL" do
+    config = Application.fetch_env!(:easy, Storage)
+
+    for origin <- [
+          "storage.example.test",
+          "https://",
+          "file:///tmp/storage",
+          "https://user:password@storage.example.test",
+          "https://storage.example.test?region=auto",
+          "https://storage.example.test#bucket",
+          "https://storage.example.test:65536"
+        ] do
+      Application.put_env(:easy, Storage, Keyword.merge(config, endpoint: origin, public_url: origin))
+      assert {:error, :storage_unavailable} = Storage.presign_put("photo.jpg", now: @now)
+      assert {:error, :storage_unavailable} = Storage.presign_get("photo.jpg", now: @now)
+      assert {:error, :storage_unavailable} = Storage.public_url("photo.jpg")
+    end
+  end
+
+  test "public URLs encode object keys while preserving the configured path prefix" do
+    config = Application.fetch_env!(:easy, Storage)
+    Application.put_env(:easy, Storage, Keyword.put(config, :public_url, "https://cdn.example.test/media/"))
+
+    assert {:ok, "https://cdn.example.test/media/clients/a%20b/%C3%BC%3F%23.jpg"} =
+             Storage.public_url("clients/a b/ü?#.jpg")
+  end
+
+  test "HTTP endpoints and custom ports remain available for local object storage" do
+    config = Application.fetch_env!(:easy, Storage)
+    Application.put_env(:easy, Storage, Keyword.put(config, :endpoint, "http://localhost:9000/s3"))
+
+    assert {:ok, signed} = Storage.presign_put("photo.jpg", now: @now)
+    assert signed.url =~ "http://localhost:9000/s3/coach-photos/photo.jpg?"
+  end
+
+  test "IPv6 authorities retain their brackets in the URL and signed host" do
+    config = Application.fetch_env!(:easy, Storage)
+    Application.put_env(:easy, Storage, Keyword.put(config, :endpoint, "http://[::1]:9000"))
+
+    assert {:ok, signed} = Storage.presign_get("photo.jpg", now: @now)
+    assert signed.url =~ "http://[::1]:9000/coach-photos/photo.jpg?"
+    assert URI.parse(signed.url).host == "::1"
+    assert URI.parse(signed.url).port == 9000
+  end
 end

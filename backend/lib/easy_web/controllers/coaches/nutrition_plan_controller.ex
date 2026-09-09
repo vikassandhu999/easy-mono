@@ -1,7 +1,7 @@
 defmodule EasyWeb.Coaches.NutritionPlanController do
   use EasyWeb, :typed_controller
 
-  alias Easy.Nutrition.Programming
+  alias Easy.Nutrition.{PlanReader, Programming}
   alias EasyWeb.Types.NutritionPlan
 
   typed(:create, body: NutritionPlan.create(), ok: {201, data(NutritionPlan.t())})
@@ -29,7 +29,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, _params) do
-    with {:ok, plan} <- Programming.get_plan(conn.assigns.ctx, conn.path_params["id"]) do
+    with {:ok, plan} <- PlanReader.get_plan(conn.assigns.ctx, conn.path_params["id"]) do
       ok(conn, %{data: plan})
     end
   end
@@ -82,7 +82,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     params = conn.query_params
 
     with {:ok, %{templates: plans, count: count}} <-
-           Programming.list_templates(conn.assigns.ctx,
+           PlanReader.list_templates(conn.assigns.ctx,
              search: Map.get(params, "search", ""),
              archived: Map.get(params, "archived"),
              offset: Map.get(params, "offset", 0),

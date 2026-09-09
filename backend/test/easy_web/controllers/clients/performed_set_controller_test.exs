@@ -2,7 +2,7 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
   use Easy.ConnCase
 
   alias Easy.Ctx
-  alias Easy.Training.Execution
+  alias Easy.Training.{Execution, PerformedSets}
 
   setup do
     coach = insert(:coach)
@@ -80,10 +80,10 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
 
     test "active-session reads return performed sets in append order", ctx do
       {:ok, first} =
-        Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{exercise_id: ctx.exercise.id})
+        PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{exercise_id: ctx.exercise.id})
 
       {:ok, second} =
-        Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{exercise_name: "Hill sprint"})
+        PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{exercise_name: "Hill sprint"})
 
       response = ctx.conn |> get("/v1/client/training-sessions/active") |> json_response(200)
 
@@ -103,7 +103,7 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
   describe "PATCH /v1/client/training-performed-sets/:id" do
     test "updates measurements", ctx do
       {:ok, set} =
-        Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{
+        PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{
           exercise_id: ctx.exercise.id,
           reps: "5"
         })
@@ -117,7 +117,7 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
 
     test "rejects identity fields at the request boundary", ctx do
       {:ok, set} =
-        Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{exercise_id: ctx.exercise.id})
+        PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{exercise_id: ctx.exercise.id})
 
       conn =
         patch_json(ctx.conn, "/v1/client/training-performed-sets/#{set.id}", %{
@@ -132,7 +132,7 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
   describe "DELETE /v1/client/training-performed-sets/:id" do
     test "deletes a set from the client's active session", ctx do
       {:ok, set} =
-        Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{exercise_id: ctx.exercise.id})
+        PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{exercise_id: ctx.exercise.id})
 
       assert response(delete(ctx.conn, "/v1/client/training-performed-sets/#{set.id}"), 204)
     end

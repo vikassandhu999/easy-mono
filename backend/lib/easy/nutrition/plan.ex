@@ -10,6 +10,8 @@ defmodule Easy.Nutrition.Plan do
   import Ecto.Query
 
   @type t() :: %__MODULE__{}
+  @type kind :: :template | :client_plan
+  @type lifecycle :: :active | :incomplete | :upcoming | :current | :ended | :archived
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -60,18 +62,16 @@ defmodule Easy.Nutrition.Plan do
 
   @spec current_or_upcoming(Ecto.Queryable.t(), Date.t()) :: Ecto.Query.t()
   def current_or_upcoming(query \\ __MODULE__, date) do
-    from(plan in query,
-      where: is_nil(plan.archived_at) and not is_nil(plan.start_date),
-      where: is_nil(plan.end_date) or plan.end_date >= ^date,
-      order_by: [asc: plan.start_date, asc: plan.id]
-    )
+    query
+    |> scheduled()
+    |> where([plan], is_nil(plan.end_date) or plan.end_date >= ^date)
+    |> order_by([plan], asc: plan.start_date, asc: plan.id)
   end
 
-  @spec lifecycles() :: [atom()]
+  @spec lifecycles() :: [lifecycle()]
   def lifecycles, do: @lifecycles
 
-  @spec lifecycle(t(), Date.t()) :: :active | :incomplete | :upcoming | :current | :ended | :archived
-  def lifecycle(plan, date \\ Date.utc_today())
+  @spec lifecycle(t(), Date.t()) :: lifecycle()
 
   def lifecycle(%__MODULE__{archived_at: archived_at}, _date) when not is_nil(archived_at),
     do: :archived
@@ -134,15 +134,24 @@ defmodule Easy.Nutrition.Plan do
 
     plan
     |> cast(attrs, fields)
+    |> put_change(:revision, plan.revision + 1)
     |> validate_common_fields()
     |> validate_date_range()
     |> apply_constraints()
   end
 
-  @spec lifecycle_changeset(t(), map()) :: Ecto.Changeset.t()
-  def lifecycle_changeset(plan, attrs) do
+  @spec menu_changeset(t(), Menu.t()) :: Ecto.Changeset.t()
+  def menu_changeset(plan, menu) do
     plan
-    |> change(attrs)
+    |> change(revision: plan.revision + 1)
+    |> put_embed(:menu, menu)
+    |> apply_constraints()
+  end
+
+  @spec lifecycle_changeset(t(), DateTime.t() | nil) :: Ecto.Changeset.t()
+  def lifecycle_changeset(plan, archived_at) do
+    plan
+    |> change(archived_at: archived_at, revision: plan.revision + 1)
     |> apply_constraints()
   end
 
@@ -199,7 +208,7 @@ defmodule Easy.Nutrition.Plan do
   def for_business(query \\ __MODULE__, business_id),
     do: from(plan in query, where: plan.business_id == ^business_id)
 
-  @spec for_kind(Ecto.Queryable.t(), atom()) :: Ecto.Query.t()
+  @spec for_kind(Ecto.Queryable.t(), kind()) :: Ecto.Query.t()
   def for_kind(query \\ __MODULE__, kind), do: from(plan in query, where: plan.kind == ^kind)
 
   @spec templates(Ecto.Queryable.t()) :: Ecto.Query.t()
@@ -223,22 +232,28 @@ defmodule Easy.Nutrition.Plan do
     do: from(plan in query, where: ilike(plan.name, ^Easy.Search.like_pattern(term)))
 
   @spec covering(Ecto.Queryable.t(), Date.t()) :: Ecto.Query.t()
-  def covering(query \\ __MODULE__, date) do
-    from(plan in query,
-      where: is_nil(plan.archived_at),
-      where: not is_nil(plan.start_date) and plan.start_date <= ^date,
-      where: is_nil(plan.end_date) or plan.end_date >= ^date
-    )
+  def covering(query \\ __MODULE__, date), do: active_in_window(query, date, date)
+
+  @spec active_in_window(Ecto.Queryable.t(), Date.t(), Date.t()) :: Ecto.Query.t()
+  def active_in_window(query \\ __MODULE__, from_date, to_date) do
+    query
+    |> scheduled()
+    |> where([plan], plan.start_date <= ^to_date)
+    |> where([plan], is_nil(plan.end_date) or plan.end_date >= ^from_date)
   end
 
   @spec covering_intervals(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def covering_intervals(query \\ __MODULE__, business_id) do
-    from(plan in query,
-      where:
-        plan.business_id == ^business_id and plan.kind == :client_plan and
-          is_nil(plan.archived_at) and
-          not is_nil(plan.start_date)
-    )
+    query
+    |> for_business(business_id)
+    |> for_kind(:client_plan)
+    |> scheduled()
+  end
+
+  defp scheduled(query) do
+    query
+    |> for_archived(false)
+    |> where([plan], not is_nil(plan.start_date))
   end
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
@@ -263,7 +278,7 @@ defmodule Easy.Nutrition.Plan do
     )
   end
 
-  @spec for_menu_item(Ecto.Queryable.t(), atom(), String.t(), atom() | map() | nil) :: Ecto.Query.t()
+  @spec for_menu_item(Ecto.Queryable.t(), :food | :recipe, String.t(), map() | nil) :: Ecto.Query.t()
   def for_menu_item(query, kind, id, portion \\ nil) do
     field = if kind == :food, do: :food_id, else: :recipe_id
     item = %{field => id}

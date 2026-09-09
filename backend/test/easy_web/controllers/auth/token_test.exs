@@ -3,7 +3,7 @@ defmodule EasyWeb.Auth.TokenTest do
 
   import Ecto.Query
 
-  alias Easy.Identity.{OneTimeToken, OneTimeTokens, Users}
+  alias Easy.Identity.{OneTimeToken, OneTimeTokens, Users, UserSession}
   alias Easy.Repo
   alias EasyWeb.OpenApi.Schemas.{TokenRequest, VerifyRequest}
 
@@ -37,6 +37,8 @@ defmodule EasyWeb.Auth.TokenTest do
   describe "POST /v1/auth/token" do
     test "refreshes a valid session", %{conn: conn} do
       session = insert(:user_session, role: :guest)
+      conn = %{conn | remote_ip: {0x2001, 0xDB8, 0, 0, 0, 0, 0, 1}}
+      conn = put_req_header(conn, "user-agent", "Token test client")
 
       conn =
         post(conn, "/v1/auth/token", %{
@@ -53,6 +55,9 @@ defmodule EasyWeb.Auth.TokenTest do
 
       assert is_binary(access_token)
       assert is_binary(refresh_token)
+      refreshed = Repo.get!(UserSession, session.id)
+      assert refreshed.ip == "2001:db8::1"
+      assert refreshed.user_agent == "Token test client"
     end
 
     test "rejects a garbage body with a 4xx response", %{conn: conn} do
@@ -94,6 +99,9 @@ defmodule EasyWeb.Auth.TokenTest do
         })
 
       assert %{"access_token" => _, "scope" => "guest"} = json_response(conn, 200)
+      session = Repo.get_by!(UserSession, user_id: user.id)
+      assert session.ip == "127.0.0.1"
+      assert session.user_agent == "unknown"
     end
 
     # Regression: only invitation-acceptance codes were checked for freshness, so

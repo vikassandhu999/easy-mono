@@ -1,6 +1,7 @@
 defmodule EasyWeb.TypedRoute do
   alias EasyWeb.TypedRoute.{Check, Dump, Type}
 
+  @spec __using__(keyword()) :: Macro.t()
   defmacro __using__(opts) do
     adapter = opts |> Keyword.fetch!(:adapter) |> Macro.expand(__CALLER__)
 
@@ -13,6 +14,7 @@ defmodule EasyWeb.TypedRoute do
     end
   end
 
+  @spec typed(atom(), keyword()) :: Macro.t()
   defmacro typed(action, opts) do
     route = compile_route(action, opts, __CALLER__)
 
@@ -21,6 +23,7 @@ defmodule EasyWeb.TypedRoute do
     end
   end
 
+  @spec __before_compile__(Macro.Env.t()) :: Macro.t()
   defmacro __before_compile__(env) do
     routes = env.module |> Module.get_attribute(:typed_routes) |> List.wrap() |> List.first() || %{}
     plugs = Module.get_attribute(env.module, :plugs) || []

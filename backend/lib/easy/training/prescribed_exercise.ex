@@ -24,6 +24,15 @@ defmodule Easy.Training.PrescribedExercise do
     timestamps(type: :utc_datetime)
   end
 
+  @spec copy_attrs(t()) :: %{exercise_id: String.t(), position: non_neg_integer(), prescribed_sets: [PlannedSet.attrs()]}
+  def copy_attrs(%__MODULE__{} = prescribed_exercise) do
+    %{
+      exercise_id: prescribed_exercise.exercise_id,
+      position: prescribed_exercise.position,
+      prescribed_sets: Enum.map(prescribed_exercise.prescribed_sets, &PlannedSet.to_attrs/1)
+    }
+  end
+
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, workout_id, attrs) do
     %__MODULE__{}

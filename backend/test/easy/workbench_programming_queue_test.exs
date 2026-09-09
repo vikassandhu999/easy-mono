@@ -41,7 +41,7 @@ defmodule Easy.WorkbenchProgrammingQueueTest do
 
     assert Enum.map(nutrition_items, & &1.client.id) == Enum.sort([nutrition.id, both.id])
 
-    assert {:ok, counts} = Workbench.programming_counts(ctx.ctx)
+    assert {:ok, %{programming: counts}} = Workbench.counts(ctx.ctx)
     assert counts == %{all: 3, training: 2, nutrition: 2}
   end
 

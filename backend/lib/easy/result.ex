@@ -1,5 +1,6 @@
 defmodule Easy.Result do
-  @spec traverse([term()], (term() -> {:ok, term()} | {:error, term()})) :: {:ok, [term()]} | {:error, term()}
+  @spec traverse([input], (input -> {:ok, output} | {:error, reason})) :: {:ok, [output]} | {:error, reason}
+        when input: var, output: var, reason: var
   def traverse(items, fun) do
     items
     |> Enum.reduce_while({:ok, []}, fn item, {:ok, acc} ->

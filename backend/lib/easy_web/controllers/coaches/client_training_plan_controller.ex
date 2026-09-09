@@ -1,7 +1,7 @@
 defmodule EasyWeb.Coaches.ClientTrainingPlanController do
   use EasyWeb, :typed_controller
 
-  alias Easy.Training.Programming
+  alias Easy.Training.PlanReader
   alias EasyWeb.Types.TrainingPlan
 
   typed(:index,
@@ -15,7 +15,7 @@ defmodule EasyWeb.Coaches.ClientTrainingPlanController do
     status = Map.get(params, "status")
 
     with {:ok, %{plans: plans, count: count}} <-
-           Programming.list_plans_for_client(
+           PlanReader.list_plans_for_client(
              conn.assigns.ctx,
              conn.path_params["client_id"],
              archived: if(status, do: status == :archived, else: nil),

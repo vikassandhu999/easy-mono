@@ -14,34 +14,21 @@ defmodule Easy.Utils do
   def trim(value) when is_binary(value), do: String.trim(value)
   def trim(value), do: value
 
-  @spec safe_date(any()) :: Date.t() | nil
-  def safe_date(nil), do: nil
-
-  def safe_date(string) when is_binary(string) do
-    case Date.from_iso8601(string) do
-      {:ok, date} -> date
-      _ -> nil
-    end
+  @spec paginate(Ecto.Queryable.t(), keyword()) :: Ecto.Query.t()
+  def paginate(query, opts) do
+    {offset, limit} = pagination_bounds(opts, 0)
+    paginate(query, offset, limit)
   end
 
-  def safe_date(_), do: nil
+  @spec pagination_bounds(keyword(), 0 | 1) :: {non_neg_integer(), non_neg_integer()}
+  def pagination_bounds(opts, minimum) when minimum in [0, 1] do
+    offset = max(Keyword.get(opts, :offset, 0), 0)
+    limit = opts |> Keyword.get(:limit, 20) |> max(minimum) |> min(100)
+    {offset, limit}
+  end
 
-  @spec paginate(Ecto.Queryable.t(), non_neg_integer(), pos_integer()) :: Ecto.Query.t()
+  @spec paginate(Ecto.Queryable.t(), non_neg_integer(), non_neg_integer()) :: Ecto.Query.t()
   def paginate(query, offset, limit) do
     from(q in query, offset: ^offset, limit: ^limit)
   end
-
-  @spec weekday_name(Date.t()) :: String.t()
-  def weekday_name(%Date{} = date) do
-    date |> Date.day_of_week() |> weekday_number_to_name()
-  end
-
-  @spec weekday_number_to_name(1..7) :: String.t()
-  def weekday_number_to_name(1), do: "monday"
-  def weekday_number_to_name(2), do: "tuesday"
-  def weekday_number_to_name(3), do: "wednesday"
-  def weekday_number_to_name(4), do: "thursday"
-  def weekday_number_to_name(5), do: "friday"
-  def weekday_number_to_name(6), do: "saturday"
-  def weekday_number_to_name(7), do: "sunday"
 end

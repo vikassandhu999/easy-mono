@@ -32,18 +32,31 @@ defmodule Easy.MailerDelivery do
   def deliver_sync(email, opts \\ []) do
     metadata = Keyword.get(opts, :metadata, %{})
 
+    :telemetry.span([:easy, :mailer, :delivery], %{}, fn ->
+      result = deliver_and_log(email, metadata)
+      {result, %{outcome: elem(result, 0)}}
+    end)
+  end
+
+  defp deliver_and_log(email, metadata) do
     case Mailer.deliver(email) do
       {:ok, response} ->
-        log_success(email, metadata)
+        log_delivery(:info, email, "Email sent successfully", metadata)
         {:ok, response}
 
       {:error, reason} = error ->
-        log_error(email, reason, metadata)
+        log_delivery(:error, email, "Failed to send email: #{inspect_reason(reason)}", metadata)
         error
     end
   rescue
     error ->
-      log_exception(email, error, __STACKTRACE__, Keyword.get(opts, :metadata, %{}))
+      log_delivery(
+        :error,
+        email,
+        "Exception while sending email: #{inspect_reason(error)}\n#{Exception.format_stacktrace(__STACKTRACE__)}",
+        metadata
+      )
+
       {:error, error}
   end
 
@@ -56,61 +69,13 @@ defmodule Easy.MailerDelivery do
     error -> Logger.error("Error in on_error callback: #{inspect(error)}")
   end
 
-  defp log_success(email, metadata) do
-    recipient = extract_recipient(email)
-    subject = email.subject
+  defp log_delivery(level, email, message, metadata) do
+    recipients = Enum.map_join(email.to, ", ", fn {_name, address} -> address end)
 
-    Logger.info("Email sent successfully recipient=#{recipient} subject=#{subject} metadata=#{inspect(metadata)}")
+    Logger.log(level, fn ->
+      "#{message} recipient=#{recipients} subject=#{email.subject} metadata=#{inspect(metadata)}"
+    end)
   end
 
-  defp log_error(email, reason, metadata) do
-    recipient = extract_recipient(email)
-    subject = email.subject
-
-    Logger.error("""
-    Failed to send email
-    Recipient: #{recipient}
-    Subject: #{subject}
-    Reason: #{inspect(reason, pretty: true, limit: :infinity)}
-    Metadata: #{inspect(metadata)}
-    """)
-  end
-
-  defp log_exception(email, error, stacktrace, metadata) do
-    recipient = extract_recipient(email)
-    subject = email.subject
-
-    Logger.error("""
-    Exception while sending email
-    Recipient: #{recipient}
-    Subject: #{subject}
-    Error: #{inspect(error, pretty: true, limit: :infinity)}
-    Stacktrace:
-    #{Exception.format_stacktrace(stacktrace)}
-    Metadata: #{inspect(metadata)}
-    """)
-  end
-
-  defp extract_recipient(email) do
-    case email.to do
-      [{_name, address}] ->
-        address
-
-      [{address}] ->
-        address
-
-      [address] when is_binary(address) ->
-        address
-
-      addresses when is_list(addresses) ->
-        Enum.map_join(addresses, ", ", fn
-          {_name, addr} -> addr
-          {addr} -> addr
-          addr when is_binary(addr) -> addr
-        end)
-
-      _ ->
-        "unknown"
-    end
-  end
+  defp inspect_reason(reason), do: inspect(reason, pretty: true, limit: 20, printable_limit: 1024)
 end

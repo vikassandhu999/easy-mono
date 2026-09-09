@@ -56,54 +56,31 @@ if System.get_env("PHX_SERVER") do
 end
 
 if config_env() == :prod do
-  storage_endpoint =
-    System.get_env("AWS_ENDPOINT_URL_S3") ||
-      raise "AWS_ENDPOINT_URL_S3 is missing. Provision private Tigris storage with fly storage create."
+  required_env = fn name ->
+    value = System.get_env(name)
 
-  storage_region =
-    System.get_env("AWS_REGION") ||
-      raise "AWS_REGION is missing. Tigris uses AWS_REGION=auto."
+    if is_nil(value) or String.trim(value) == "" do
+      raise "environment variable #{name} is missing or blank. Set a nonempty value before starting the release."
+    end
 
-  storage_bucket =
-    System.get_env("BUCKET_NAME") ||
-      raise "BUCKET_NAME is missing. Provision private Tigris storage with fly storage create."
-
-  storage_access_key =
-    System.get_env("AWS_ACCESS_KEY_ID") ||
-      raise "AWS_ACCESS_KEY_ID is missing. Provision private Tigris storage with fly storage create."
-
-  storage_secret_key =
-    System.get_env("AWS_SECRET_ACCESS_KEY") ||
-      raise "AWS_SECRET_ACCESS_KEY is missing. Provision private Tigris storage with fly storage create."
-
-  storage_public_bucket =
-    System.get_env("PUBLIC_BUCKET_NAME") ||
-      raise "PUBLIC_BUCKET_NAME is missing. Provision a public Tigris bucket for library media."
-
-  storage_public_url =
-    System.get_env("PUBLIC_STORAGE_URL") ||
-      raise "PUBLIC_STORAGE_URL is missing. Set the public CDN origin serving the public bucket."
+    value
+  end
 
   config :easy, Easy.Storage,
-    endpoint: storage_endpoint,
-    region: storage_region,
-    bucket: storage_bucket,
-    public_bucket: storage_public_bucket,
-    public_url: storage_public_url,
-    access_key_id: storage_access_key,
-    secret_access_key: storage_secret_key
+    endpoint: required_env.("AWS_ENDPOINT_URL_S3"),
+    region: required_env.("AWS_REGION"),
+    bucket: required_env.("BUCKET_NAME"),
+    public_bucket: required_env.("PUBLIC_BUCKET_NAME"),
+    public_url: required_env.("PUBLIC_STORAGE_URL"),
+    access_key_id: required_env.("AWS_ACCESS_KEY_ID"),
+    secret_access_key: required_env.("AWS_SECRET_ACCESS_KEY")
 
   cors_origins =
     System.get_env("CORS_ALLOWED_ORIGINS", "")
     |> String.split(",", trim: true)
     |> Enum.map(&String.trim/1)
 
-  database_url =
-    System.get_env("DATABASE_URL") ||
-      raise """
-      environment variable DATABASE_URL is missing.
-      For example: ecto://USER:PASS@HOST/DATABASE
-      """
+  database_url = required_env.("DATABASE_URL")
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
@@ -124,19 +101,8 @@ if config_env() == :prod do
   # want to use a different value for prod and you most likely don't want
   # to check this value into version control, so we use an environment
   # variable instead.
-  secret_key_base =
-    System.get_env("SECRET_KEY_BASE") ||
-      raise """
-      environment variable SECRET_KEY_BASE is missing.
-      You can generate one by calling: mix phx.gen.secret
-      """
-
-  jwt_secret =
-    System.get_env("JWT_SECRET") ||
-      raise """
-      environment variable JWT_SECRET is missing.
-      Set it to the shared secret used for signing JWTs.
-      """
+  secret_key_base = required_env.("SECRET_KEY_BASE")
+  jwt_secret = required_env.("JWT_SECRET")
 
   # Razorpay keys unset = billing disabled: businesses run on free seats only and
   # Billing.checkout returns {:error, :billing_disabled}. Set all four to enable.
@@ -214,26 +180,19 @@ if config_env() == :prod do
     "smtp" ->
       config :easy, Easy.Mailer,
         adapter: Swoosh.Adapters.SMTP,
-        relay: System.get_env("SMTP_RELAY"),
+        relay: required_env.("SMTP_RELAY"),
         username: System.get_env("SMTP_USERNAME"),
         password: System.get_env("SMTP_PASSWORD"),
         port: String.to_integer(System.get_env("SMTP_PORT") || "587"),
         tls: :always
 
-    _ ->
-      # Fail loudly at boot rather than silently dropping every OTP/invite email
-      # (login is email-OTP, so a missing key means no one can sign in).
-      resend_api_key =
-        System.get_env("RESEND_API_KEY") ||
-          raise """
-          RESEND_API_KEY is missing. Email is required for login (OTP) and client invites.
-          Set it on the host (fly secrets set RESEND_API_KEY=...) and verify the sender domain
-          in Resend, or set MAILER_ADAPTER=smtp with the SMTP_* vars.
-          """
-
+    "resend" ->
       config :easy, Easy.Mailer,
-        adapter: Resend.Swoosh.Adapter,
-        api_key: resend_api_key
+        adapter: Swoosh.Adapters.Resend,
+        api_key: required_env.("RESEND_API_KEY")
+
+    _ ->
+      raise "MAILER_ADAPTER must be resend or smtp. Email is required for login and client invitations."
   end
 
   # Configure Swoosh API client to use Req (already available in dependencies)

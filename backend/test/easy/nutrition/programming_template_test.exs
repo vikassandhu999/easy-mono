@@ -1,7 +1,7 @@
 defmodule Easy.Nutrition.ProgrammingTemplateTest do
   use Easy.DataCase, async: true
 
-  alias Easy.Nutrition.{Menu, Plan, Programming}
+  alias Easy.Nutrition.{Menu, Plan, PlanReader, Programming}
   alias Easy.Repo
 
   describe "create_template/2 and list_templates/2" do
@@ -57,7 +57,7 @@ defmodule Easy.Nutrition.ProgrammingTemplateTest do
       )
 
       assert {:ok, %{count: 1, templates: [listed]}} =
-               Programming.list_templates(ctx, search: "protein", limit: 20, offset: 0)
+               PlanReader.list_templates(ctx, search: "protein", limit: 20, offset: 0)
 
       assert listed.id == template.id
       assert listed.kind == :template
@@ -114,7 +114,7 @@ defmodule Easy.Nutrition.ProgrammingTemplateTest do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
       assert {:ok, template} = Programming.create_template(ctx, %{"name" => "Source"})
-      assert {:ok, archived} = Programming.archive_template(ctx, template.id)
+      assert {:ok, archived} = Programming.archive_plan(ctx, template.id)
 
       assert {:error, :not_found} = Programming.duplicate_template(ctx, archived.id)
 
@@ -177,7 +177,7 @@ defmodule Easy.Nutrition.ProgrammingTemplateTest do
         archived_at: ~U[2026-08-15 12:00:00Z]
       )
 
-      assert {:ok, %{count: 1, templates: [listed]}} = Programming.list_templates(ctx)
+      assert {:ok, %{count: 1, templates: [listed]}} = PlanReader.list_templates(ctx)
       assert listed.id == template.id
       assert listed.assigned_client_count == 2
     end

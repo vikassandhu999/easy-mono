@@ -32,6 +32,7 @@ defmodule EasyWeb.Types.Nutrition.Recipe do
   use EasyWeb.Type
 
   alias Easy.Nutrition.NutrientTotals
+  alias Easy.Nutrition.Portion
   alias Easy.Nutrition.Portions
   alias Easy.Nutrition.Recipe, as: RecipeSchema
   alias Easy.Nutrition.RecipeIngredient, as: RecipeIngredientSchema
@@ -119,7 +120,7 @@ defmodule EasyWeb.Types.Nutrition.Recipe do
     %{
       food_id: ingredient.food_id,
       food: ingredient.food,
-      portion: Portions.format(ingredient.portion),
+      portion: Portion.format(ingredient.portion),
       position: ingredient.position
     }
   end

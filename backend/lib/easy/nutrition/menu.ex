@@ -1,109 +1,37 @@
-defmodule Easy.Nutrition.Menu.Item do
-  use Ecto.Schema
-  import Ecto.Changeset
-  alias Easy.Nutrition.{NutrientTotals, Portions}
-
-  @type t() :: %__MODULE__{}
-  @primary_key {:id, :binary_id, autogenerate: false}
-  embedded_schema do
-    field :food_id, Ecto.UUID
-    field :recipe_id, Ecto.UUID
-    field :name, :string, virtual: true
-    field :portion, Portions
-    field :nutrients, NutrientTotals, virtual: true
-  end
-
-  @spec changeset(t(), map()) :: Ecto.Changeset.t()
-  def changeset(item, attrs) do
-    item
-    |> cast(attrs, [:id, :food_id, :recipe_id, :portion])
-    |> validate_required([:id, :portion])
-    |> validate_source()
-  end
-
-  defp validate_source(changeset) do
-    case {get_field(changeset, :food_id), get_field(changeset, :recipe_id)} do
-      {id, nil} when is_binary(id) -> changeset
-      {nil, id} when is_binary(id) -> changeset
-      _other -> add_error(changeset, :food_id, "must supply exactly one Library reference")
-    end
-  end
-end
-
-defmodule Easy.Nutrition.Menu.Meal do
-  use Ecto.Schema
-  import Ecto.Changeset
-  alias Easy.Nutrition.Menu.Item
-
-  @type t() :: %__MODULE__{}
-  @primary_key {:id, :binary_id, autogenerate: false}
-  embedded_schema do
-    field :name, :string
-    field :notes, :string
-    embeds_many :meal_items, Item
-  end
-
-  @spec changeset(t(), map()) :: Ecto.Changeset.t()
-  def changeset(meal, attrs) do
-    meal
-    |> cast(attrs, [:id, :name, :notes])
-    |> update_change(:name, &String.trim/1)
-    |> validate_required([:id, :name])
-    |> validate_length(:name, max: 255)
-    |> validate_length(:notes, max: 5000)
-    |> cast_embed(:meal_items)
-  end
-end
-
-defmodule Easy.Nutrition.Menu.Slot do
-  use Ecto.Schema
-  import Ecto.Changeset
-  alias Easy.Nutrition.MealSlot
-
-  @type t() :: %__MODULE__{}
-  @primary_key false
-  embedded_schema do
-    field :meal_slot, Ecto.Enum, values: MealSlot.values()
-    field :meal_ids, {:array, Ecto.UUID}
-  end
-
-  @spec changeset(t(), map()) :: Ecto.Changeset.t()
-  def changeset(slot, attrs) do
-    slot
-    |> cast(attrs, [:meal_slot, :meal_ids])
-    |> validate_required([:meal_slot, :meal_ids])
-    |> validate_length(:meal_ids, min: 1)
-  end
-end
-
-defmodule Easy.Nutrition.Menu.DayPattern do
-  use Ecto.Schema
-  import Ecto.Changeset
-  alias Easy.Nutrition.Menu.Slot
-
-  @type t() :: %__MODULE__{}
-  @primary_key {:id, :binary_id, autogenerate: false}
-  embedded_schema do
-    field :name, :string
-    embeds_many :slots, Slot
-  end
-
-  @spec changeset(t(), map()) :: Ecto.Changeset.t()
-  def changeset(pattern, attrs) do
-    pattern
-    |> cast(attrs, [:id, :name])
-    |> update_change(:name, &String.trim/1)
-    |> validate_required([:id, :name])
-    |> validate_length(:name, max: 255)
-    |> cast_embed(:slots)
-  end
-end
-
 defmodule Easy.Nutrition.Menu do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Easy.Nutrition.{Library, MealSlot, NutrientTotals, Portions}
+  alias Easy.Nutrition.{ItemReference, MealSlot, NutrientTotals, Portion}
   alias Easy.Nutrition.Menu.{DayPattern, Meal}
+
+  @type weekday :: :monday | :tuesday | :wednesday | :thursday | :friday | :saturday | :sunday
+
+  @type formatted_item :: %{
+          id: String.t(),
+          kind: :food | :recipe,
+          food_id: String.t() | nil,
+          recipe_id: String.t() | nil,
+          name: String.t() | nil,
+          portion: Portion.t(),
+          nutrients: NutrientTotals.t()
+        }
+  @type formatted_meal :: %{
+          id: String.t(),
+          name: String.t(),
+          notes: String.t() | nil,
+          nutrients: NutrientTotals.t(),
+          meal_items: [formatted_item()]
+        }
+  @type formatted_pattern :: %{
+          id: String.t(),
+          name: String.t(),
+          slots: [%{meal_slot: MealSlot.t(), meal_ids: [String.t()]}]
+        }
+  @type formatted :: %{
+          meals: [formatted_meal()],
+          day_patterns: [formatted_pattern()],
+          schedule: %{weekday() => String.t()}
+        }
 
   @weekdays [:monday, :tuesday, :wednesday, :thursday, :friday, :saturday, :sunday]
   @type t() :: %__MODULE__{}
@@ -114,7 +42,7 @@ defmodule Easy.Nutrition.Menu do
     field :schedule, {:map, Ecto.UUID}
   end
 
-  @spec weekdays() :: [atom()]
+  @spec weekdays() :: [weekday()]
   def weekdays, do: @weekdays
 
   @spec empty() :: t()
@@ -169,10 +97,10 @@ defmodule Easy.Nutrition.Menu do
   @spec items(t()) :: [Easy.Nutrition.Menu.Item.t()]
   def items(menu), do: Enum.flat_map(menu.meals, & &1.meal_items)
 
-  @spec references(t()) :: [Library.item_spec()]
+  @spec references(t()) :: [ItemReference.t()]
   def references(menu), do: Enum.map(items(menu), &item_reference/1)
 
-  @spec resolve(t(), Library.resolved_items()) :: t()
+  @spec resolve(t(), ItemReference.resolved_items()) :: t()
   def resolve(menu, resolved) do
     map_items(menu, fn item ->
       value = Map.fetch!(resolved, item_reference(item))
@@ -181,7 +109,7 @@ defmodule Easy.Nutrition.Menu do
   end
 
   defp item_reference(item) do
-    %{kind: Library.item_kind(item), id: item.food_id || item.recipe_id, portion: Portions.format(item.portion)}
+    ItemReference.new(item, Portion.format(item.portion))
   end
 
   defp map_items(menu, fun) do
@@ -195,7 +123,7 @@ defmodule Easy.Nutrition.Menu do
     Enum.find(menu.day_patterns, &(&1.id == id))
   end
 
-  @spec meals_for_slot(t(), DayPattern.t(), atom()) :: [Meal.t()]
+  @spec meals_for_slot(t(), DayPattern.t(), MealSlot.t()) :: [Meal.t()]
   def meals_for_slot(menu, pattern, meal_slot) do
     case Enum.find(pattern.slots, &(&1.meal_slot == meal_slot)) do
       nil ->
@@ -207,7 +135,7 @@ defmodule Easy.Nutrition.Menu do
     end
   end
 
-  @spec format(t()) :: map()
+  @spec format(t()) :: formatted()
   def format(menu) do
     %{
       meals: Enum.map(menu.meals, &format_meal/1),
@@ -229,11 +157,11 @@ defmodule Easy.Nutrition.Menu do
   defp format_item(item) do
     %{
       id: item.id,
-      kind: Library.item_kind(item),
+      kind: ItemReference.kind(item),
       food_id: item.food_id,
       recipe_id: item.recipe_id,
       name: item.name,
-      portion: Portions.format(item.portion),
+      portion: Portion.format(item.portion),
       nutrients: NutrientTotals.round(item.nutrients)
     }
   end

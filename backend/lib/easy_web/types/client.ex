@@ -1,10 +1,9 @@
 defmodule EasyWeb.Types.Client do
   use EasyWeb.Type
 
+  alias Easy.AppLinks
   alias Easy.Clients.Client, as: ClientSchema
   alias Easy.Identity.User
-  alias Easy.LocalCalendar
-  alias Easy.Orgs.Business
 
   @type t :: %{
           required(:id) => String.t(),
@@ -75,7 +74,7 @@ defmodule EasyWeb.Types.Client do
   def format(%ClientSchema{} = client) do
     %{
       id: client.id,
-      local_date: LocalCalendar.to_local_date(DateTime.utc_now(), applied_timezone(client)),
+      local_date: ClientSchema.local_date(client, DateTime.utc_now()),
       email: client.email,
       first_name: display_first_name(client),
       last_name: display_last_name(client),
@@ -95,7 +94,7 @@ defmodule EasyWeb.Types.Client do
       training_plan_name: client.training_plan_name,
       nutrition_plan_name: client.nutrition_plan_name,
       assigned_coach_id: client.assigned_coach_id,
-      invite_url: ClientSchema.build_invite_url(client),
+      invite_url: invite_url(client),
       invitation_sent_at: pending_only(client, client.invitation_sent_at),
       invitation_expires_at: pending_only(client, ClientSchema.invitation_expires_at(client)),
       inserted_at: client.inserted_at,
@@ -120,9 +119,10 @@ defmodule EasyWeb.Types.Client do
   defp pending_only(%ClientSchema{status: :pending}, value), do: value
   defp pending_only(%ClientSchema{}, _value), do: nil
 
-  defp applied_timezone(%ClientSchema{timezone: timezone, business: %Business{timezone: business_timezone}}) do
-    LocalCalendar.applied_timezone(timezone, business_timezone)
-  end
+  defp invite_url(%ClientSchema{status: :pending, invitation_token: token}) when is_binary(token),
+    do: AppLinks.client_invitation(token)
+
+  defp invite_url(%ClientSchema{}), do: nil
 
   defp goal_weight_value(nil), do: nil
 

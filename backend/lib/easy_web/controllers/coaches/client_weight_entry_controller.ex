@@ -10,9 +10,9 @@ defmodule EasyWeb.Coaches.ClientWeightEntryController do
   def index(conn, _params) do
     client_id = conn.path_params["client_id"]
 
-    with {:ok, %{client: client, entries: entries, adherence: adherence}} <-
+    with {:ok, history} <-
            WeightEntries.list_entries_for_client(conn.assigns.ctx, client_id, since: conn.query_params["since"]) do
-      ok(conn, WeightEntry.index(entries, client, adherence))
+      ok(conn, history)
     end
   end
 end

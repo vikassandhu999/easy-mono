@@ -71,7 +71,10 @@ defmodule Easy.Foods.CategoryFilterTest do
       insert(:food, business: business, creator: coach, category: nil)
       insert(:food, business: business, creator: coach, category: "")
 
-      assert {:ok, ["Dairy", "Grains"]} = Library.list_food_categories(owner_ctx(business))
+      insert(:food, business: nil, creator: nil, source: :system, category: "Fruit")
+      insert(:food, business: nil, creator: nil, source: :system, category: "Grains")
+
+      assert {:ok, ["Dairy", "Fruit", "Grains"]} = Library.list_food_categories(owner_ctx(business))
     end
 
     test "does not leak another business's categories" do

@@ -3,10 +3,50 @@ defmodule Easy.CoachesTest do
 
   alias Easy.Clients.Client
   alias Easy.Coaches
-  alias Easy.Identity.User
+  alias Easy.CoachInvitations
   alias Easy.Identity.UserSession
   alias Easy.Orgs.Coach
   alias Easy.Repo
+
+  test "onboarding creates a loaded membership and returns duplicate membership errors" do
+    business = insert(:business)
+    user = business.owner
+
+    assert {:ok, coach} = Coaches.create(user, business)
+    assert coach.user == user
+    assert coach.business == business
+    assert coach.user_id == user.id
+    assert coach.business_id == business.id
+    before = Repo.get!(Coach, coach.id)
+
+    for target <- [business, insert(:business)] do
+      assert {:error, %Ecto.Changeset{} = changeset} = Coaches.create(user, target)
+      assert %{user_id: ["has already been taken"]} = errors_on(changeset)
+      assert Repo.get!(Coach, coach.id) == before
+      assert [persisted] = Repo.all(Coach.for_user(user.id))
+      assert persisted.id == coach.id
+    end
+  end
+
+  test "coach lookups scope identity to the tenant and distinguish active membership" do
+    coach = insert(:coach)
+    inactive = insert(:coach, business: coach.business, status: :inactive)
+    outsider = insert(:coach)
+    ctx = trainer_ctx(coach)
+
+    assert {:ok, loaded} = Coaches.get_coach(ctx, coach.id)
+    assert loaded.user.id == coach.user_id
+    assert loaded.business.id == coach.business_id
+    assert {:ok, _inactive} = Coaches.get_coach(ctx, inactive.id)
+    assert {:ok, active} = Coaches.get_active_coach(ctx, coach.id)
+    assert active.id == coach.id
+    assert {:error, :not_found} = Coaches.get_active_coach(ctx, inactive.id)
+
+    for id <- [outsider.id, Ecto.UUID.generate()] do
+      assert {:error, :not_found} = Coaches.get_coach(ctx, id)
+      assert {:error, :not_found} = Coaches.get_active_coach(ctx, id)
+    end
+  end
 
   defp owner_ctx_with_coach(business) do
     unless Repo.get_by(Coach, business_id: business.id, user_id: business.owner_id) do
@@ -33,6 +73,49 @@ defmodule Easy.CoachesTest do
     )
   end
 
+  describe "update_profile/2" do
+    test "missing and foreign-business membership cannot load or update a profile" do
+      coach = insert(:coach)
+      other_business = insert(:business)
+      ctx = trainer_ctx(coach)
+
+      for invalid_ctx <- [%{ctx | user_id: Ecto.UUID.generate()}, %{ctx | business_id: other_business.id}] do
+        assert {:error, :not_found} = Coaches.get_coach(invalid_ctx)
+        assert {:error, :not_found} = Coaches.update_profile(invalid_ctx, %{first_name: "Unexpected"})
+      end
+
+      assert Repo.get!(Coach, coach.id).first_name == coach.first_name
+    end
+
+    test "string-keyed profile updates persist coach and business fields atomically" do
+      business = insert(:business)
+      ctx = owner_ctx_with_coach(business)
+
+      assert {:ok, coach} =
+               Coaches.update_profile(ctx, %{
+                 "first_name" => "Updated",
+                 "phone" => "123",
+                 "business_name" => "Updated business",
+                 "whatsapp_number" => "456"
+               })
+
+      assert coach.first_name == "Updated"
+      assert coach.phone == "123"
+      assert coach.business.name == "Updated business"
+      assert coach.business.whatsapp_number == "456"
+
+      assert {:ok, cleared} = Coaches.update_profile(ctx, %{"phone" => nil, "whatsapp_number" => nil})
+      assert cleared.phone == nil
+      assert cleared.business.whatsapp_number == nil
+
+      assert {:error, changeset} =
+               Coaches.update_profile(ctx, %{"first_name" => "Rolled back", "business_name" => nil})
+
+      assert errors_on(changeset).name == ["can't be blank"]
+      assert Repo.get!(Coach, coach.id).first_name == "Updated"
+    end
+  end
+
   describe "list_team/1" do
     test "returns every coach on the team, newest first" do
       business = insert(:business)
@@ -43,6 +126,7 @@ defmodule Easy.CoachesTest do
       |> Repo.update_all(set: [inserted_at: ~U[2026-01-01 00:00:00Z]])
 
       newer = insert(:coach, business: business, status: :active)
+      outsider = insert(:coach)
 
       from(c in Coach, where: c.id == ^newer.id)
       |> Repo.update_all(set: [inserted_at: ~U[2026-02-01 00:00:00Z]])
@@ -53,6 +137,7 @@ defmodule Easy.CoachesTest do
 
       assert newer.id in ids
       assert older.id in ids
+      refute outsider.id in ids
       assert Enum.find_index(ids, &(&1 == newer.id)) < Enum.find_index(ids, &(&1 == older.id))
     end
 
@@ -61,124 +146,6 @@ defmodule Easy.CoachesTest do
       trainer = insert(:coach, business: business)
 
       assert {:error, :not_owner} = Coaches.list_team(trainer_ctx(trainer))
-    end
-  end
-
-  describe "invite_trainer/2" do
-    test "invites a new trainer with a downcased email" do
-      business = insert(:business)
-      ctx = owner_ctx_with_coach(business)
-
-      assert {:ok, coach} =
-               Coaches.invite_trainer(ctx, %{
-                 email: "New.Trainer@Test.com",
-                 first_name: "New",
-                 last_name: "Trainer"
-               })
-
-      assert coach.status == :invited
-      assert coach.email == "new.trainer@test.com"
-      assert coach.invitation_token
-    end
-
-    test "re-inviting the same email is idempotent: same row, rotated token" do
-      business = insert(:business)
-      ctx = owner_ctx_with_coach(business)
-
-      attrs = %{email: "dup@test.com", first_name: "D", last_name: "P"}
-
-      assert {:ok, first} = Coaches.invite_trainer(ctx, attrs)
-      assert {:ok, second} = Coaches.invite_trainer(ctx, attrs)
-
-      assert first.id == second.id
-      assert first.invitation_token != second.invitation_token
-    end
-
-    test "an active teammate's email returns :already_on_team" do
-      business = insert(:business)
-      ctx = owner_ctx_with_coach(business)
-      insert(:coach, business: business, status: :active, email: "active@test.com")
-
-      assert {:error, :already_on_team} =
-               Coaches.invite_trainer(ctx, %{email: "active@test.com", first_name: "A", last_name: "B"})
-    end
-
-    test "an inactive teammate's email returns :already_on_team" do
-      business = insert(:business)
-      ctx = owner_ctx_with_coach(business)
-      insert(:coach, business: business, status: :inactive, email: "inactive@test.com")
-
-      assert {:error, :already_on_team} =
-               Coaches.invite_trainer(ctx, %{email: "inactive@test.com", first_name: "A", last_name: "B"})
-    end
-
-    test "inviting the owner's own email returns :already_on_team" do
-      business = insert(:business)
-      ctx = owner_ctx_with_coach(business)
-      owner_user = Repo.get!(User, business.owner_id)
-
-      assert {:error, :already_on_team} =
-               Coaches.invite_trainer(ctx, %{email: owner_user.email, first_name: "A", last_name: "B"})
-    end
-
-    test "non-owner cannot invite" do
-      business = insert(:business)
-      trainer = insert(:coach, business: business)
-
-      assert {:error, :not_owner} =
-               Coaches.invite_trainer(trainer_ctx(trainer), %{
-                 email: "x@test.com",
-                 first_name: "X",
-                 last_name: "Y"
-               })
-    end
-  end
-
-  describe "resend_invite/2" do
-    test "rotates the token for an invited row" do
-      business = insert(:business)
-      ctx = owner_ctx_with_coach(business)
-      invited = invited_coach(business)
-
-      assert {:ok, updated} = Coaches.resend_invite(ctx, invited.id)
-      assert updated.id == invited.id
-      assert updated.invitation_token != invited.invitation_token
-    end
-
-    test "returns :not_found for a non-invited row" do
-      business = insert(:business)
-      ctx = owner_ctx_with_coach(business)
-      active = insert(:coach, business: business, status: :active)
-
-      assert {:error, :not_found} = Coaches.resend_invite(ctx, active.id)
-    end
-
-    test "non-owner cannot resend" do
-      business = insert(:business)
-      trainer = insert(:coach, business: business)
-      invited = invited_coach(business)
-
-      assert {:error, :not_owner} = Coaches.resend_invite(trainer_ctx(trainer), invited.id)
-    end
-  end
-
-  describe "revoke_invite/2" do
-    test "deletes an invited row" do
-      business = insert(:business)
-      ctx = owner_ctx_with_coach(business)
-      invited = invited_coach(business)
-
-      assert {:ok, _} = Coaches.revoke_invite(ctx, invited.id)
-      refute Repo.get(Coach, invited.id)
-    end
-
-    test "does not delete an active row" do
-      business = insert(:business)
-      ctx = owner_ctx_with_coach(business)
-      active = insert(:coach, business: business, status: :active)
-
-      assert {:error, :not_found} = Coaches.revoke_invite(ctx, active.id)
-      assert Repo.get(Coach, active.id)
     end
   end
 
@@ -231,11 +198,11 @@ defmodule Easy.CoachesTest do
       assert {:error, :not_found} = Coaches.deactivate_trainer(ctx, invited.id)
       assert Repo.get!(Coach, invited.id).status == :invited
 
-      assert {:ok, _} = Coaches.revoke_invite(ctx, invited.id)
+      assert {:ok, _} = CoachInvitations.revoke_invite(ctx, invited.id)
       refute Repo.get(Coach, invited.id)
 
       assert {:ok, _reinvited} =
-               Coaches.invite_trainer(ctx, %{email: "invitee@test.com", first_name: "A", last_name: "B"})
+               CoachInvitations.invite_trainer(ctx, %{email: "invitee@test.com", first_name: "A", last_name: "B"})
     end
 
     test "returns :not_found for an :inactive row" do
@@ -285,71 +252,6 @@ defmodule Easy.CoachesTest do
 
       assert {:error, :not_found} = Coaches.reactivate_trainer(ctx, active.id)
       assert {:error, :not_found} = Coaches.reactivate_trainer(ctx, invited.id)
-    end
-  end
-
-  describe "resolve_invitation_token/1" do
-    test "a valid token resolves" do
-      business = insert(:business)
-      coach = invited_coach(business, %{invitation_token: "tok-valid"})
-
-      assert {:ok, resolved} = Coaches.resolve_invitation_token("tok-valid")
-      assert resolved.id == coach.id
-    end
-
-    test "an already-accepted (active) token returns :used" do
-      business = insert(:business)
-      insert(:coach, business: business, status: :active, invitation_token: "tok-used")
-
-      assert {:error, :used} = Coaches.resolve_invitation_token("tok-used")
-    end
-
-    test "an expired token returns :expired" do
-      business = insert(:business)
-
-      invited_coach(business, %{
-        invitation_token: "tok-expired",
-        invitation_sent_at: DateTime.add(DateTime.utc_now(:second), -31, :day)
-      })
-
-      assert {:error, :expired} = Coaches.resolve_invitation_token("tok-expired")
-    end
-
-    test "an unknown token returns :invalid" do
-      assert {:error, :invalid} = Coaches.resolve_invitation_token("does-not-exist")
-    end
-  end
-
-  describe "accept_invite/2" do
-    test "links the user and activates the row" do
-      business = insert(:business)
-      invited = invited_coach(business)
-      user = insert(:user)
-
-      assert {:ok, updated} = Coaches.accept_invite(invited, user.id)
-      assert updated.status == :active
-      assert updated.user_id == user.id
-      assert updated.invitation_token == nil
-    end
-
-    test "a second accept loses the race" do
-      business = insert(:business)
-      invited = invited_coach(business)
-      user = insert(:user)
-      other_user = insert(:user)
-
-      assert {:ok, _} = Coaches.accept_invite(invited, user.id)
-      assert {:error, :race_lost} = Coaches.accept_invite(invited, other_user.id)
-    end
-
-    test "a user who already coaches elsewhere gets :already_a_coach" do
-      business = insert(:business)
-      invited = invited_coach(business)
-
-      other_business = insert(:business)
-      existing_coach = insert(:coach, business: other_business, status: :active)
-
-      assert {:error, :already_a_coach} = Coaches.accept_invite(invited, existing_coach.user_id)
     end
   end
 end

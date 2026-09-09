@@ -3,7 +3,7 @@ defmodule Easy.WorkbenchLifecycleCommunicationQueuesTest do
 
   alias Easy.Chat
   alias Easy.Ctx
-  alias Easy.Forms
+  alias Easy.Forms.Submissions
   alias Easy.Workbench
 
   describe "Onboarding queue" do
@@ -125,7 +125,7 @@ defmodule Easy.WorkbenchLifecycleCommunicationQueuesTest do
       assert item.client.id == invitations |> Enum.map(& &1.id) |> Enum.sort() |> hd()
 
       invitation = hd(invitations)
-      {:ok, _resent} = Easy.Clients.resend_invitation(owner_ctx(business), invitation.id)
+      {:ok, _resent} = Easy.ClientInvitations.resend_invitation(owner_ctx(business), invitation.id)
 
       completed_client =
         insert(:client,
@@ -217,7 +217,7 @@ defmodule Easy.WorkbenchLifecycleCommunicationQueuesTest do
         end
 
       reviewed = insert(:form_submission, business: business, client: client, form_assignment: assignment)
-      {:ok, _} = Forms.review_form_submission(owner_ctx(business), reviewed.id)
+      {:ok, _} = Submissions.review(owner_ctx(business), reviewed.id)
 
       assert {:ok, %{count: 2, items: items}} =
                Workbench.list_check_in_queue(owner_ctx(business))

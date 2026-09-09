@@ -1,18 +1,12 @@
 defmodule Easy.Nutrition.Diary.CorrectionPolicy do
   alias Easy.Clients.Client
   alias Easy.LocalCalendar
-  alias Easy.Orgs.Business
 
   @correction_days 7
 
-  @spec applied_timezone(Client.t()) :: String.t()
-  def applied_timezone(%Client{} = client) do
-    LocalCalendar.applied_timezone(client.timezone, business_timezone(client))
-  end
-
   @spec local_today(Client.t() | String.t(), DateTime.t()) :: Date.t()
   def local_today(%Client{} = client, %DateTime{} = now) do
-    local_today(applied_timezone(client), now)
+    Client.local_date(client, now)
   end
 
   def local_today(timezone, %DateTime{} = now) when is_binary(timezone) do
@@ -43,7 +37,4 @@ defmodule Easy.Nutrition.Diary.CorrectionPolicy do
       :eq -> :ok
     end
   end
-
-  defp business_timezone(%Client{business: %Business{timezone: timezone}}), do: timezone
-  defp business_timezone(_client), do: nil
 end

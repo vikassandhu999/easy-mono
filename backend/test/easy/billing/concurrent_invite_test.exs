@@ -11,7 +11,7 @@ defmodule Easy.Billing.ConcurrentInviteTest do
   import Easy.Factory
 
   alias Easy.Billing.{BusinessBilling, Event}
-  alias Easy.Clients
+  alias Easy.ClientInvitations
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Forms.{FormAssignment, FormTemplate}
@@ -50,7 +50,7 @@ defmodule Easy.Billing.ConcurrentInviteTest do
           :go -> :ok
         end
 
-        Clients.invite_client(ctx, params_for(:client_attrs))
+        ClientInvitations.invite(ctx, params_for(:client_attrs))
       end)
     end
 

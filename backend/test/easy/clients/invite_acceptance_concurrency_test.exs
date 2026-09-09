@@ -5,7 +5,7 @@ defmodule Easy.Clients.InviteAcceptanceConcurrencyTest do
   import Easy.Factory
 
   alias Easy.Billing.BusinessBilling
-  alias Easy.Clients
+  alias Easy.ClientInvitations
   alias Easy.Clients.Client
   alias Easy.Identity.User
   alias Easy.Orgs.Business
@@ -46,7 +46,7 @@ defmodule Easy.Clients.InviteAcceptanceConcurrencyTest do
             :go -> :ok
           end
 
-          Clients.accept_invite(invitation, user.id, user.email)
+          ClientInvitations.accept_invite(invitation, user.id, user.email)
         end)
       end)
 
@@ -70,7 +70,7 @@ defmodule Easy.Clients.InviteAcceptanceConcurrencyTest do
     losing_user = Enum.find(users, &(&1.id != accepted.user_id))
 
     assert {:error, :race_lost} =
-             Clients.accept_invite(invitation, losing_user.id, losing_user.email)
+             ClientInvitations.accept_invite(invitation, losing_user.id, losing_user.email)
 
     assert Repo.reload(invitation).joined_at == joined_at
   end

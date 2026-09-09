@@ -2,6 +2,7 @@ defmodule EasyWeb.LandingFunnelTest do
   use Easy.ConnCase
 
   alias Easy.Clients.Client
+  alias Easy.Forms.FormAssignment
   alias Easy.Landing.Prospect
   alias Easy.Repo
 
@@ -53,6 +54,21 @@ defmodule EasyWeb.LandingFunnelTest do
       updated = publish_page(conn, %{"slug" => "kavya-strength", "programs" => [%{"name" => "Only one"}]})
       assert length(updated["programs"]) == 1
       assert created["id"] == updated["id"], "upsert keeps the same page"
+    end
+
+    test "a failed replacement restores page fields and all original programs", %{conn: conn, coach: coach} do
+      original = publish_page(conn, %{"slug" => "atomic-programs"})
+      ctx = %Easy.Ctx{business_id: coach.business_id, user_id: coach.user_id, coach_id: coach.id}
+
+      assert {:error, %Ecto.Changeset{}} =
+               Easy.Landing.upsert_landing_page(ctx, %{
+                 headline: "Replacement headline",
+                 programs: [%{name: "Valid replacement"}, %{name: ""}]
+               })
+
+      restored = json_response(get(conn, "/v1/coach/landing-page"), 200)["data"]
+      assert restored["headline"] == original["headline"]
+      assert restored["programs"] == original["programs"]
     end
 
     test "rejects more than three programs", %{conn: conn} do
@@ -184,6 +200,37 @@ defmodule EasyWeb.LandingFunnelTest do
   end
 
   describe "enroll prospect" do
+    test "a failed prospect link rolls back the client and intake without sending an invitation", %{
+      conn: conn,
+      business: business
+    } do
+      publish_page(conn, %{"slug" => "rollback-enroll"})
+      submit_application("rollback-enroll", "rollback@example.test")
+      [prospect] = json_response(get(conn, "/v1/coach/prospects"), 200)["data"]
+
+      Repo.query!("""
+      CREATE FUNCTION pg_temp.reject_test_enrollment() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN
+        RAISE EXCEPTION 'test enrollment link failure'
+          USING ERRCODE = '23503', CONSTRAINT = 'prospects_client_business_id_fkey';
+      END;
+      $$;
+      """)
+
+      Repo.query!("""
+      CREATE TRIGGER reject_test_enrollment BEFORE UPDATE OF client_id ON prospects
+      FOR EACH ROW WHEN (NEW.id = '#{prospect["id"]}')
+      EXECUTE FUNCTION pg_temp.reject_test_enrollment()
+      """)
+
+      response = post(conn, "/v1/coach/prospects/#{prospect["id"]}/enroll", %{})
+      assert json_response(response, 422)
+      assert client_count(business.id) == 0
+      refute Repo.exists?(FormAssignment.for_business(business.id))
+      assert %{client_id: nil, status: :new} = Repo.get!(Prospect, prospect["id"])
+      refute_receive {:email, _email}, 100
+    end
+
     test "creates a pending client, links it, marks won", %{conn: conn, business: business} do
       publish_page(conn, %{"slug" => "enroll-me"})
       submit_application("enroll-me", "newclient@example.com")

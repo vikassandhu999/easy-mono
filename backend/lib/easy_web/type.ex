@@ -1,12 +1,14 @@
 defmodule EasyWeb.Type do
   alias EasyWeb.TypedRoute.{Dump, Type}
 
+  @spec __using__(keyword()) :: Macro.t()
   defmacro __using__(_opts) do
     quote do
       @before_compile EasyWeb.Type
     end
   end
 
+  @spec __before_compile__(Macro.Env.t()) :: Macro.t()
   defmacro __before_compile__(env) do
     reject_format_catchall!(File.read!(env.file), env)
 

@@ -1,7 +1,8 @@
 defmodule EasyWeb.Clients.FormAssignmentController do
   use EasyWeb, :typed_controller
 
-  alias Easy.Forms
+  alias Easy.Forms.Assignments
+  alias Easy.Forms.Submissions
   alias EasyWeb.Types.FormAssignment
 
   typed(:index, ok: {200, data([FormAssignment.t()])})
@@ -12,7 +13,7 @@ defmodule EasyWeb.Clients.FormAssignmentController do
   def index(conn, _params) do
     ctx = conn.assigns.ctx
 
-    with {:ok, assignments} <- Forms.list_client_form_assignments(ctx) do
+    with {:ok, assignments} <- Assignments.list_client_form_assignments(ctx) do
       ok(conn, %{data: assignments})
     end
   end
@@ -21,7 +22,7 @@ defmodule EasyWeb.Clients.FormAssignmentController do
   def show(conn, %{"id" => id}) do
     ctx = conn.assigns.ctx
 
-    with {:ok, assignment} <- Forms.get_client_form_assignment(ctx, id) do
+    with {:ok, assignment} <- Assignments.get_client_form_assignment(ctx, id) do
       ok(conn, %{data: assignment})
     end
   end
@@ -31,7 +32,7 @@ defmodule EasyWeb.Clients.FormAssignmentController do
     ctx = conn.assigns.ctx
     id = conn.path_params["id"]
 
-    with {:ok, submission} <- Forms.submit_client_form_assignment(ctx, id, conn.body_params) do
+    with {:ok, submission} <- Submissions.submit_client_assignment(ctx, id, conn.body_params) do
       ok(conn, %{data: submission})
     end
   end

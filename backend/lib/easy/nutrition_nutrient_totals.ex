@@ -6,13 +6,22 @@ defmodule Easy.Nutrition.NutrientTotals do
   @fields [:calories, :protein, :carbohydrates, :fat, :fiber]
 
   @type t() :: %{
-          calories: float() | nil,
-          protein: float() | nil,
-          carbohydrates: float() | nil,
-          fat: float() | nil,
-          fiber: float() | nil,
+          calories: number() | nil,
+          protein: number() | nil,
+          carbohydrates: number() | nil,
+          fat: number() | nil,
+          fiber: number() | nil,
           complete: boolean()
         }
+
+  @type values :: %{
+          calories: number() | nil,
+          protein: number() | nil,
+          carbohydrates: number() | nil,
+          fat: number() | nil,
+          fiber: number() | nil
+        }
+  @type item :: %{required(:nutrients) => t(), optional(atom()) => term()}
 
   @empty %{
     calories: nil,
@@ -67,12 +76,15 @@ defmodule Easy.Nutrition.NutrientTotals do
   end
 
   @impl Ecto.Type
+  @spec embed_as(atom()) :: :dump
   def embed_as(_format), do: :dump
 
   @impl Ecto.Type
+  @spec type() :: :map
   def type, do: :map
 
   @impl Ecto.Type
+  @spec cast(term()) :: {:ok, t()} | :error
   def cast(values) when is_map(values) do
     nutrients = Map.take(values, @fields)
 
@@ -86,12 +98,19 @@ defmodule Easy.Nutrition.NutrientTotals do
   def cast(_values), do: :error
 
   @impl Ecto.Type
-  def load(values), do: cast(Map.new(@fields, &{&1, Map.get(values, to_string(&1))}))
+  @spec load(term()) :: {:ok, t()} | :error
+  def load(values) when is_map(values), do: cast(Map.new(@fields, &{&1, Map.get(values, to_string(&1))}))
+  def load(_values), do: :error
 
   @impl Ecto.Type
-  def dump(values), do: {:ok, Map.take(values, @fields)}
+  @spec dump(term()) :: {:ok, values()} | :error
+  def dump(values) do
+    with {:ok, nutrients} <- cast(values) do
+      {:ok, Map.delete(nutrients, :complete)}
+    end
+  end
 
-  @spec sum([map()]) :: t()
+  @spec sum([item()]) :: t()
   def sum(items), do: combine(Enum.map(items, & &1.nutrients))
 
   @spec combine([t()]) :: t()

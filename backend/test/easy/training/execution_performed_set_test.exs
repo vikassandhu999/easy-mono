@@ -3,7 +3,8 @@ defmodule Easy.Training.ExecutionPerformedSetTest do
 
   alias Easy.Ctx
   alias Easy.Repo
-  alias Easy.Training.Execution
+  alias Easy.Training.{Execution, PerformedSets}
+  alias Easy.Training.TrainingPerformedSet
 
   setup do
     coach = insert(:coach)
@@ -16,10 +17,80 @@ defmodule Easy.Training.ExecutionPerformedSetTest do
     %{client: client, coach: coach, ctx: ctx, exercise: exercise, session: session}
   end
 
+  test "set mutations reject missing identities and foreign or mismatched tenants", ctx do
+    assert {:ok, set} =
+             PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{exercise_id: ctx.exercise.id})
+
+    before = Repo.get!(TrainingPerformedSet, set.id)
+    foreign = insert(:client)
+    foreign_ctx = %Ctx{business_id: foreign.business_id, user_id: foreign.user_id, client_id: foreign.id}
+
+    for actor <- [foreign_ctx, %{ctx.ctx | business_id: foreign.business_id}, %{ctx.ctx | client_id: nil}] do
+      assert {:error, :not_found} =
+               PerformedSets.create_client_performed_set(actor, ctx.session.id, %{exercise_id: ctx.exercise.id})
+
+      assert {:error, :not_found} = PerformedSets.update_client_performed_set(actor, set.id, %{reps: "99"})
+      assert {:error, :not_found} = PerformedSets.delete_client_performed_set(actor, set.id)
+      assert [^before] = Repo.all(TrainingPerformedSet.for_session(ctx.session.id))
+    end
+
+    missing_id = Ecto.UUID.generate()
+    assert {:error, :not_found} = PerformedSets.create_client_performed_set(ctx.ctx, missing_id, %{})
+    assert {:error, :not_found} = PerformedSets.update_client_performed_set(ctx.ctx, missing_id, %{reps: "99"})
+    assert {:error, :not_found} = PerformedSets.delete_client_performed_set(ctx.ctx, missing_id)
+    assert [^before] = Repo.all(TrainingPerformedSet.for_session(ctx.session.id))
+  end
+
   describe "create_client_performed_set/3" do
+    test "malformed exercise references return changeset errors without inserting sets", ctx do
+      for exercise_id <- ["not-a-uuid", 123, %{}] do
+        assert {:error, %Ecto.Changeset{} = changeset} =
+                 PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{
+                   "exercise_id" => exercise_id,
+                   "exercise_name" => "Carry"
+                 })
+
+        assert "is invalid" in errors_on(changeset).exercise_id
+      end
+
+      assert {:ok, session} = Execution.get_client_session(ctx.ctx, ctx.session.id)
+      assert session.performed_sets == []
+    end
+
+    test "string-keyed exercise references use the stored name and ignore submitted identity", ctx do
+      assert {:ok, set} =
+               PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{
+                 "exercise_id" => ctx.exercise.id,
+                 "exercise_name" => %{"untrusted" => "name"},
+                 "position" => 99,
+                 "business_id" => Ecto.UUID.generate(),
+                 "training_session_id" => Ecto.UUID.generate(),
+                 "reps" => "5"
+               })
+
+      assert set.exercise_name == ctx.exercise.name
+      assert set.exercise.id == ctx.exercise.id
+      assert set.position == 0
+      assert set.business_id == ctx.ctx.business_id
+      assert set.training_session_id == ctx.session.id
+    end
+
+    test "string-keyed hidden exercise references are rejected before insertion", ctx do
+      hidden = insert(:exercise, business: insert(:business))
+
+      assert {:error, :not_found} =
+               PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{
+                 "exercise_id" => hidden.id,
+                 "exercise_name" => "Untrusted name"
+               })
+
+      assert {:ok, session} = Execution.get_client_session(ctx.ctx, ctx.session.id)
+      assert session.performed_sets == []
+    end
+
     test "records a visible exercise with a frozen name and server-assigned position", ctx do
       assert {:ok, set} =
-               Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{
+               PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{
                  exercise_id: ctx.exercise.id,
                  exercise_name: "Untrusted name",
                  reps: "5"
@@ -32,7 +103,7 @@ defmodule Easy.Training.ExecutionPerformedSetTest do
 
     test "records explicitly named work without a library exercise", ctx do
       assert {:ok, set} =
-               Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{
+               PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{
                  exercise_name: "  Sandbag carry  ",
                  duration_seconds: 60
                })
@@ -43,14 +114,14 @@ defmodule Easy.Training.ExecutionPerformedSetTest do
 
     test "requires either a visible exercise or a nonblank explicit name", ctx do
       assert {:error, %Ecto.Changeset{} = changeset} =
-               Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{exercise_name: "   "})
+               PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{exercise_name: "   "})
 
       assert "can't be blank" in errors_on(changeset).exercise_name
     end
 
     test "rejects notes longer than 5000 characters", ctx do
       assert {:error, %Ecto.Changeset{} = changeset} =
-               Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{
+               PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{
                  exercise_name: "Carry",
                  notes: String.duplicate("x", 5001)
                })
@@ -63,7 +134,7 @@ defmodule Easy.Training.ExecutionPerformedSetTest do
       substitute = insert(:exercise, business: ctx.coach.business, name: "Front Squat")
 
       assert {:ok, set} =
-               Execution.create_client_performed_set(ctx.ctx, session.id, %{
+               PerformedSets.create_client_performed_set(ctx.ctx, session.id, %{
                  exercise_id: substitute.id,
                  snapshot_exercise_ref: prescribed.id,
                  reps: "8"
@@ -77,7 +148,7 @@ defmodule Easy.Training.ExecutionPerformedSetTest do
       %{session: session} = start_planned_session(ctx)
 
       assert {:error, %Ecto.Changeset{} = changeset} =
-               Execution.create_client_performed_set(ctx.ctx, session.id, %{
+               PerformedSets.create_client_performed_set(ctx.ctx, session.id, %{
                  exercise_id: ctx.exercise.id,
                  snapshot_exercise_ref: Ecto.UUID.generate()
                })
@@ -89,21 +160,21 @@ defmodule Easy.Training.ExecutionPerformedSetTest do
       foreign_exercise = insert(:exercise, business: insert(:business))
 
       assert {:error, :not_found} =
-               Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{
+               PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{
                  exercise_id: foreign_exercise.id
                })
     end
 
     test "appends in server order and active-session reads preserve that order", ctx do
       assert {:ok, first} =
-               Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{
+               PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{
                  exercise_id: ctx.exercise.id,
                  position: 99,
                  reps: "5"
                })
 
       assert {:ok, second} =
-               Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{
+               PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{
                  exercise_name: "Carry",
                  position: 0,
                  duration_seconds: 30
@@ -120,7 +191,7 @@ defmodule Easy.Training.ExecutionPerformedSetTest do
       %{prescribed: prescribed, session: session} = start_planned_session(ctx)
 
       assert {:ok, set} =
-               Execution.create_client_performed_set(ctx.ctx, session.id, %{
+               PerformedSets.create_client_performed_set(ctx.ctx, session.id, %{
                  exercise_id: ctx.exercise.id,
                  snapshot_exercise_ref: prescribed.id,
                  reps: "5"
@@ -129,7 +200,7 @@ defmodule Easy.Training.ExecutionPerformedSetTest do
       other_exercise = insert(:exercise, business: ctx.coach.business, name: "Front Squat")
 
       assert {:ok, updated} =
-               Execution.update_client_performed_set(ctx.ctx, set.id, %{
+               PerformedSets.update_client_performed_set(ctx.ctx, set.id, %{
                  exercise_id: other_exercise.id,
                  exercise_name: "Changed",
                  snapshot_exercise_ref: Ecto.UUID.generate(),
@@ -146,21 +217,21 @@ defmodule Easy.Training.ExecutionPerformedSetTest do
 
     test "conceals sets outside the client's active session", ctx do
       assert {:ok, set} =
-               Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{exercise_id: ctx.exercise.id})
+               PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{exercise_id: ctx.exercise.id})
 
       close_session(ctx.session)
 
-      assert {:error, :not_found} = Execution.update_client_performed_set(ctx.ctx, set.id, %{reps: "8"})
+      assert {:error, :not_found} = PerformedSets.update_client_performed_set(ctx.ctx, set.id, %{reps: "8"})
     end
 
     test "rejects notes longer than 5000 characters", ctx do
       assert {:ok, set} =
-               Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{
+               PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{
                  exercise_id: ctx.exercise.id
                })
 
       assert {:error, %Ecto.Changeset{} = changeset} =
-               Execution.update_client_performed_set(ctx.ctx, set.id, %{
+               PerformedSets.update_client_performed_set(ctx.ctx, set.id, %{
                  notes: String.duplicate("x", 5001)
                })
 
@@ -171,16 +242,16 @@ defmodule Easy.Training.ExecutionPerformedSetTest do
   describe "delete_client_performed_set/2" do
     test "deletes only sets in the client's active session", ctx do
       assert {:ok, set} =
-               Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{exercise_id: ctx.exercise.id})
+               PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{exercise_id: ctx.exercise.id})
 
-      assert {:ok, deleted} = Execution.delete_client_performed_set(ctx.ctx, set.id)
+      assert {:ok, deleted} = PerformedSets.delete_client_performed_set(ctx.ctx, set.id)
       assert deleted.id == set.id
 
       assert {:ok, terminal_set} =
-               Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{exercise_id: ctx.exercise.id})
+               PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{exercise_id: ctx.exercise.id})
 
       close_session(ctx.session)
-      assert {:error, :not_found} = Execution.delete_client_performed_set(ctx.ctx, terminal_set.id)
+      assert {:error, :not_found} = PerformedSets.delete_client_performed_set(ctx.ctx, terminal_set.id)
     end
 
     test "conceals another client's active-session set from update and delete", ctx do
@@ -200,10 +271,10 @@ defmodule Easy.Training.ExecutionPerformedSetTest do
       assert {:ok, other_session} = Execution.start_client_session(other_ctx, nil, %{})
 
       assert {:ok, other_set} =
-               Execution.create_client_performed_set(other_ctx, other_session.id, %{exercise_id: ctx.exercise.id})
+               PerformedSets.create_client_performed_set(other_ctx, other_session.id, %{exercise_id: ctx.exercise.id})
 
-      assert {:error, :not_found} = Execution.update_client_performed_set(ctx.ctx, other_set.id, %{reps: "8"})
-      assert {:error, :not_found} = Execution.delete_client_performed_set(ctx.ctx, other_set.id)
+      assert {:error, :not_found} = PerformedSets.update_client_performed_set(ctx.ctx, other_set.id, %{reps: "8"})
+      assert {:error, :not_found} = PerformedSets.delete_client_performed_set(ctx.ctx, other_set.id)
     end
   end
 

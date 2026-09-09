@@ -7,7 +7,7 @@ defmodule Easy.Forms.IntakeAssignmentConcurrencyTest do
   alias Easy.Billing.BusinessBilling
   alias Easy.Clients.Client
   alias Easy.Ctx
-  alias Easy.Forms
+  alias Easy.Forms.Assignments
   alias Easy.Forms.FormAssignment
   alias Easy.Forms.FormTemplate
   alias Easy.Identity.User
@@ -51,7 +51,7 @@ defmodule Easy.Forms.IntakeAssignmentConcurrencyTest do
             :go -> :ok
           end
 
-          Forms.assign_form_template_to_client(ctx, client.id, template.id, %{})
+          Assignments.assign_form_template_to_client(ctx, client.id, template.id, %{})
         end)
       end)
 

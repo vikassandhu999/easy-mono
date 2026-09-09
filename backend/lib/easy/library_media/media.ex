@@ -1,6 +1,7 @@
 defmodule Easy.LibraryMedia.Media do
   use Ecto.Schema
 
+  alias Easy.MediaType
   alias Easy.Orgs.Business
 
   import Ecto.Changeset
@@ -28,19 +29,36 @@ defmodule Easy.LibraryMedia.Media do
     timestamps(type: :utc_datetime)
   end
 
-  @spec insert_changeset(String.t(), atom(), String.t(), String.t(), map()) :: Ecto.Changeset.t()
+  @spec insert_changeset(String.t(), :coach | :client | :system, String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, uploaded_by_type, uploaded_by_id, id, attrs) do
+    attrs =
+      Map.new(attrs, fn
+        {key, value} when key in [:content_type, "content_type"] and is_atom(value) ->
+          {"content_type", to_string(value)}
+
+        {key, value} ->
+          {to_string(key), value}
+      end)
+
     %__MODULE__{id: id}
-    |> cast(attrs, [:storage_key, :content_type, :byte_size])
+    |> cast(attrs, [:content_type, :byte_size])
     |> put_change(:business_id, business_id)
     |> put_change(:uploaded_by_type, uploaded_by_type)
     |> put_change(:uploaded_by_id, uploaded_by_id)
+    |> put_storage_key()
     |> validate_required([:business_id, :storage_key, :content_type, :byte_size])
     |> validate_inclusion(:content_type, content_types())
     |> validate_byte_size()
     |> check_constraint(:storage_key, name: :library_media_source_check)
     |> unique_constraint(:storage_key)
     |> foreign_key_constraint(:business_id)
+  end
+
+  defp put_storage_key(changeset) do
+    business_id = get_field(changeset, :business_id)
+    id = get_field(changeset, :id)
+    extension = MediaType.extension(get_field(changeset, :content_type))
+    put_change(changeset, :storage_key, "businesses/#{business_id}/library-media/#{id}.#{extension}")
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

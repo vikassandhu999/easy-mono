@@ -12,6 +12,13 @@ defmodule Easy.Landing.Prospect do
   @statuses [:new, :reviewing, :won, :lost]
 
   @type t :: %__MODULE__{}
+  @type status :: :new | :reviewing | :won | :lost
+  @type status_counts :: %{
+          new: non_neg_integer(),
+          reviewing: non_neg_integer(),
+          won: non_neg_integer(),
+          lost: non_neg_integer()
+        }
 
   schema "prospects" do
     field :name, :string
@@ -36,6 +43,7 @@ defmodule Easy.Landing.Prospect do
   def application_changeset(business_id, landing_page_id, landing_program_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, [:name, :phone, :email, :instagram, :answers])
+    |> validate_string_lengths()
     |> put_change(:business_id, business_id)
     |> put_change(:landing_page_id, landing_page_id)
     |> put_change(:landing_program_id, landing_program_id)
@@ -51,6 +59,7 @@ defmodule Easy.Landing.Prospect do
   def update_changeset(prospect, attrs) do
     prospect
     |> cast(attrs, [:status, :notes])
+    |> validate_string_lengths()
     |> validate_required([:status])
     |> check_constraint(:status, name: :prospects_status_check)
   end
@@ -61,6 +70,12 @@ defmodule Easy.Landing.Prospect do
     |> change(%{status: :won})
     |> put_change(:client_id, client_id)
     |> foreign_key_constraint(:client_id, name: :prospects_client_business_id_fkey)
+  end
+
+  defp validate_string_lengths(changeset) do
+    Enum.reduce([:name, :phone, :email, :instagram, :notes], changeset, fn field, changeset ->
+      validate_length(changeset, field, max: 255, count: :codepoints)
+    end)
   end
 
   defp validate_contact(changeset) do
@@ -76,12 +91,36 @@ defmodule Easy.Landing.Prospect do
 
   defp present?(value), do: is_binary(value) and String.trim(value) != ""
 
+  # The coach can edit the prefilled fields, so request attrs win; the prospect fills the gaps.
+  @spec invitation_attrs(t(), map()) :: map()
+  def invitation_attrs(%__MODULE__{} = prospect, attrs) do
+    attrs = Map.new(attrs, fn {key, value} -> {to_string(key), value} end)
+    {default_first, default_last} = split_name(prospect.name)
+
+    %{
+      first_name: Map.get(attrs, "first_name") || default_first,
+      last_name: Map.get(attrs, "last_name") || default_last,
+      email: Map.get(attrs, "email") || prospect.email,
+      phone: Map.get(attrs, "phone") || prospect.phone
+    }
+  end
+
+  defp split_name(nil), do: {nil, nil}
+
+  defp split_name(name) do
+    case String.split(String.trim(name), ~r/\s+/, parts: 2) do
+      [first, last] -> {first, last}
+      [first] -> {first, nil}
+      _ -> {nil, nil}
+    end
+  end
+
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do
     from(p in query, where: p.business_id == ^business_id)
   end
 
-  @spec for_status(Ecto.Queryable.t(), atom() | String.t() | nil) :: Ecto.Query.t()
+  @spec for_status(Ecto.Queryable.t(), status() | String.t() | nil) :: Ecto.Query.t()
   def for_status(query \\ __MODULE__, status)
   def for_status(query, nil), do: query
   def for_status(query, ""), do: query
@@ -90,6 +129,18 @@ defmodule Easy.Landing.Prospect do
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do
     from(p in query, order_by: [desc: p.inserted_at, desc: p.id])
+  end
+
+  @spec select_status_counts(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def select_status_counts(query \\ __MODULE__) do
+    from(p in query,
+      select: %{
+        new: filter(count(p.id), p.status == :new),
+        reviewing: filter(count(p.id), p.status == :reviewing),
+        won: filter(count(p.id), p.status == :won),
+        lost: filter(count(p.id), p.status == :lost)
+      }
+    )
   end
 
   @spec include_details(Ecto.Queryable.t()) :: Ecto.Query.t()

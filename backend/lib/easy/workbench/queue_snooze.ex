@@ -11,6 +11,7 @@ defmodule Easy.Workbench.QueueSnooze do
   @foreign_key_type :binary_id
 
   @type t :: %__MODULE__{}
+  @type queue :: :quiet | :expiring
 
   schema "workbench_queue_snoozes" do
     field :queue, Ecto.Enum, values: [:quiet, :expiring]
@@ -26,9 +27,12 @@ defmodule Easy.Workbench.QueueSnooze do
   def insert_changeset(business_id, client_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, [:queue, :snoozed_until])
-    |> validate_required([:queue, :snoozed_until])
     |> put_change(:business_id, business_id)
     |> put_change(:client_id, client_id)
+    |> validate_required([:business_id, :client_id, :queue, :snoozed_until])
+    |> foreign_key_constraint(:business_id)
+    |> foreign_key_constraint(:client_id)
+    |> check_constraint(:queue, name: :workbench_queue_snoozes_queue_check)
     |> unique_constraint([:business_id, :client_id, :queue])
   end
 
@@ -36,7 +40,7 @@ defmodule Easy.Workbench.QueueSnooze do
   def for_business(query \\ __MODULE__, business_id),
     do: from(s in query, where: s.business_id == ^business_id)
 
-  @spec for_queue(Ecto.Queryable.t(), atom()) :: Ecto.Query.t()
+  @spec for_queue(Ecto.Queryable.t(), queue()) :: Ecto.Query.t()
   def for_queue(query \\ __MODULE__, queue), do: from(s in query, where: s.queue == ^queue)
 
   # A snooze in force: rows are never deleted, they simply expire, so

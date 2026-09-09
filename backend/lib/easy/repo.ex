@@ -3,9 +3,22 @@ defmodule Easy.Repo do
     otp_app: :easy,
     adapter: Ecto.Adapters.Postgres
 
+  import Ecto.Query, only: [distinct: 2, exclude: 2, select: 3, subquery: 1]
+
+  @spec count_unique(Ecto.Queryable.t(), atom()) :: non_neg_integer()
+  def count_unique(query, field_name \\ :id) do
+    query
+    |> exclude(:select)
+    |> select([row], field(row, ^field_name))
+    |> distinct(true)
+    |> subquery()
+    |> aggregate(:count)
+  end
+
   # One repeatable-read transaction for reads and writes that span several
   # queries. A writer that loses a serialization race gets a conflict, not a crash.
-  @spec snapshot((-> {:ok, term()} | {:error, term()})) :: {:ok, term()} | {:error, term()}
+  @spec snapshot((-> {:ok, value} | {:error, reason})) :: {:ok, value} | {:error, :conflict | reason}
+        when value: var, reason: var
   def snapshot(operation) do
     if in_transaction?() do
       operation.()

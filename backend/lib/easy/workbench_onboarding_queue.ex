@@ -9,18 +9,28 @@ defmodule Easy.WorkbenchOnboardingQueue do
 
   @follow_up_days 3
 
+  @type reason ::
+          %{
+            code: :invitation_follow_up_due,
+            invitation_id: String.t(),
+            sent_at: DateTime.t(),
+            follow_up_due_at: DateTime.t()
+          }
+          | %{code: :intake_overdue, assignment_id: String.t(), due_on: Date.t(), form_title: String.t()}
+  @type item :: %{client: Client.t(), reasons: [reason()]}
+  @type page :: %{count: non_neg_integer(), items: [item()]}
+
   @spec count(Ctx.t()) :: non_neg_integer()
   def count(%Ctx{} = ctx) do
     ctx
     |> facts(DateTime.utc_now(:second))
-    |> distinct_identity_count()
+    |> Repo.count_unique()
   end
 
-  @spec list(Ctx.t(), keyword()) :: %{count: non_neg_integer(), items: [map()]}
+  @spec list(Ctx.t(), keyword()) :: page()
   def list(%Ctx{} = ctx, opts) do
     now = DateTime.utc_now(:second)
     facts = facts(ctx, now)
-    {offset, limit} = pagination(opts)
 
     items =
       facts
@@ -28,9 +38,10 @@ defmodule Easy.WorkbenchOnboardingQueue do
         [client, assignment],
         asc:
           fragment(
-            "CASE WHEN ? IS NULL THEN ? + interval '3 days' ELSE ?::timestamp END",
+            "CASE WHEN ? IS NULL THEN ? + (? * interval '1 day') ELSE ?::timestamp END",
             client.joined_at,
             client.invitation_sent_at,
+            ^@follow_up_days,
             assignment.due_date
           ),
         asc: client.id
@@ -43,11 +54,11 @@ defmodule Easy.WorkbenchOnboardingQueue do
         form_title: template.name,
         sent_at: client.invitation_sent_at
       })
-      |> Easy.Utils.paginate(offset, limit)
+      |> Easy.Utils.paginate(opts)
       |> Repo.all()
       |> Enum.map(&to_item/1)
 
-    %{count: distinct_identity_count(facts), items: items}
+    %{count: Repo.count_unique(facts), items: items}
   end
 
   defp facts(%Ctx{} = ctx, now) do
@@ -97,14 +108,6 @@ defmodule Easy.WorkbenchOnboardingQueue do
     )
   end
 
-  defp distinct_identity_count(query) do
-    query
-    |> select([client], client.id)
-    |> distinct(true)
-    |> subquery()
-    |> Repo.aggregate(:count)
-  end
-
   defp to_item(%{client: client, invitation: true, sent_at: sent_at}) do
     %{
       client: client,
@@ -131,11 +134,5 @@ defmodule Easy.WorkbenchOnboardingQueue do
         }
       ]
     }
-  end
-
-  defp pagination(opts) do
-    offset = max(Keyword.get(opts, :offset, 0), 0)
-    limit = min(max(Keyword.get(opts, :limit, 20), 0), 100)
-    {offset, limit}
   end
 end

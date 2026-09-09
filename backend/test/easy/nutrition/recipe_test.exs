@@ -1,6 +1,64 @@
 defmodule Easy.Nutrition.RecipeTest do
   use Easy.SchemaCase, async: false
   alias Easy.Nutrition.Library
+  alias Easy.Nutrition.Recipe
+  alias Easy.Nutrition.RecipeIngredient
+
+  test "recipe identity is positional and its creator may be absent" do
+    business = insert(:business)
+    attrs = %{name: "Recipe", servings_count: 1, business_id: Ecto.UUID.generate(), creator_id: Ecto.UUID.generate()}
+
+    assert {:ok, recipe} = business.id |> Recipe.insert_changeset(nil, attrs) |> Repo.insert()
+    assert recipe.business_id == business.id
+    assert recipe.creator_id == nil
+
+    assert {:error, changeset} = nil |> Recipe.insert_changeset(nil, attrs) |> Repo.insert()
+    assert errors_on(changeset).business_id == ["can't be blank"]
+  end
+
+  test "recipe parent failures return changeset errors" do
+    business = insert(:business)
+
+    for {business_id, creator_id, field} <- [
+          {Ecto.UUID.generate(), nil, :business_id},
+          {business.id, Ecto.UUID.generate(), :creator_id}
+        ] do
+      assert {:error, changeset} =
+               business_id
+               |> Recipe.insert_changeset(creator_id, %{name: "Recipe", servings_count: 1})
+               |> Repo.insert()
+
+      assert errors_on(changeset)[field] == ["does not exist"]
+    end
+  end
+
+  test "recipe name limits count database characters on create and update" do
+    recipe = insert(:recipe)
+    name = String.duplicate("é", 128)
+
+    for changeset <- [
+          Recipe.insert_changeset(recipe.business_id, nil, %{name: name, servings_count: 1}),
+          Recipe.update_changeset(recipe, %{name: name})
+        ] do
+      assert errors_on(changeset).name == ["should be at most 255 character(s)"]
+    end
+  end
+
+  test "ingredient parent failures return changeset errors" do
+    recipe = insert(:recipe)
+    food = insert(:food, business: recipe.business)
+    attrs = %{food_id: food.id, portion: %{kind: :gram, grams: 100}}
+
+    for {business_id, recipe_id, field} <- [
+          {Ecto.UUID.generate(), recipe.id, :business_id},
+          {recipe.business_id, Ecto.UUID.generate(), :recipe_id}
+        ] do
+      assert {:error, changeset} =
+               business_id |> RecipeIngredient.insert_changeset(recipe_id, 0, attrs) |> Repo.insert()
+
+      assert errors_on(changeset)[field] == ["does not exist"]
+    end
+  end
 
   describe("copy_recipe/2") do
     test "uses distinguishable names and preserves the remaining scalar fields" do

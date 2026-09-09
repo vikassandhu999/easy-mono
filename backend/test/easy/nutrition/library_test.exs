@@ -2,8 +2,56 @@ defmodule Easy.Nutrition.LibraryTest do
   alias Easy.Nutrition.Portions
   use Easy.SchemaCase
 
-  alias Easy.Nutrition.{Food, Library, NutrientTotals}
+  alias Easy.Nutrition.{Food, Library, NutrientTotals, Recipe}
   alias Easy.Repo
+
+  for {factory, schema, operations} <- [
+        {:food, Food, [:get_food, :copy_food, :delete_food]},
+        {:recipe, Recipe, [:get_recipe, :copy_recipe, :delete_recipe]}
+      ] do
+    test "#{factory} reads, copies and deletes reject foreign and missing identities without mutations" do
+      coach = insert(:coach)
+      foreign_coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      foreign = insert(unquote(factory), business: foreign_coach.business, creator: foreign_coach)
+      before = Repo.get!(unquote(schema), foreign.id)
+      count = Repo.aggregate(unquote(schema), :count)
+
+      for operation <- unquote(operations), id <- [foreign.id, Ecto.UUID.generate()] do
+        assert {:error, :not_found} = apply(Library, operation, [ctx, id])
+      end
+
+      assert Repo.get!(unquote(schema), foreign.id) == before
+      assert Repo.aggregate(unquote(schema), :count) == count
+    end
+  end
+
+  test "unavailable media rejects food writes without changing metadata or revision" do
+    coach = insert(:coach)
+    ctx = trainer_ctx(coach)
+    media = insert(:library_media, business: coach.business)
+    hidden = insert(:library_media)
+    food = insert(:food, business: coach.business, creator: coach, media: media)
+    before = Repo.get!(Food, food.id)
+    count = Repo.aggregate(Food, :count)
+
+    for media_id <- [hidden.id, Ecto.UUID.generate()] do
+      attrs = params_for(:food_attrs) |> Map.put("media_id", media_id)
+      assert {:error, :not_found} = Library.create_food(ctx, attrs)
+
+      assert {:error, :not_found} =
+               Library.update_food(ctx, food.id, food.revision, %{"name" => "Rejected", "media_id" => media_id})
+
+      assert Repo.get!(Food, food.id) == before
+      assert Repo.aggregate(Food, :count) == count
+    end
+
+    assert {:ok, cleared} = Library.update_food(ctx, food.id, food.revision, %{"media_id" => nil})
+    assert cleared.media_id == nil
+    assert cleared.media == nil
+    assert cleared.name == food.name
+    assert cleared.revision == food.revision + 1
+  end
 
   describe "create_food/2" do
     test "stamps custom source, business ownership, and revision 1" do
@@ -83,6 +131,25 @@ defmodule Easy.Nutrition.LibraryTest do
   end
 
   describe "update_food/4" do
+    test "validates serving input before checking references and accepts string-keyed replacements" do
+      coach = insert(:coach)
+      food = insert(:food, business: coach.business, creator: coach)
+      ctx = trainer_ctx(coach)
+
+      assert {:error, changeset} = Library.update_food(ctx, food.id, food.revision, %{"serving_sizes" => "invalid"})
+      assert errors_on(changeset).serving_sizes == ["is invalid"]
+      assert Repo.get!(Food, food.id).revision == food.revision
+
+      attrs = %{
+        "serving_sizes" => [
+          %{"label" => "cup", "unit" => "cup", "amount" => 1.0, "weight_g" => 200.0, "is_default" => true}
+        ]
+      }
+
+      assert {:ok, updated} = Library.update_food(ctx, food.id, food.revision, attrs)
+      assert [%{label: "cup", weight_g: 200.0}] = updated.serving_sizes
+    end
+
     test "any coach in the business can update another coach's food" do
       business = insert(:business)
       creator = insert(:coach, business: business)
@@ -188,6 +255,20 @@ defmodule Easy.Nutrition.LibraryTest do
   end
 
   describe "list_foods/2" do
+    test "searches without searchable tokens retain newest-first pagination" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      older = insert(:food, business: coach.business, creator: coach, inserted_at: ~U[2025-01-01 00:00:00Z])
+      newer = insert(:food, business: coach.business, creator: coach, inserted_at: ~U[2025-01-02 00:00:00Z])
+
+      for search <- [nil, "", "  ", "!!!", " & : * "] do
+        assert {:ok, %{count: 2, foods: [first]}} = Library.list_foods(ctx, search: search, limit: 1)
+        assert first.id == newer.id
+        assert {:ok, %{count: 2, foods: [second]}} = Library.list_foods(ctx, search: search, limit: 1, offset: 1)
+        assert second.id == older.id
+      end
+    end
+
     test "does not list another business's foods" do
       coach = insert(:coach)
       insert(:food, business: coach.business, creator: coach, name: "Ours")
@@ -198,14 +279,15 @@ defmodule Easy.Nutrition.LibraryTest do
       assert food.name == "Ours"
     end
 
-    test "honors requested page sizes through the shared maximum" do
+    test "bounds pagination while preserving the visible count" do
       coach = insert(:coach)
-      insert_list(21, :food, business: coach.business, creator: coach)
+      ctx = trainer_ctx(coach)
+      insert_list(101, :food, business: coach.business, creator: coach)
 
-      assert {:ok, %{count: 21, foods: foods}} =
-               Library.list_foods(trainer_ctx(coach), limit: 100)
-
-      assert length(foods) == 21
+      assert {:ok, %{count: 101, foods: foods}} = Library.list_foods(ctx, limit: 500)
+      assert length(foods) == 100
+      assert {:ok, %{count: 101, foods: [_first]}} = Library.list_foods(ctx, offset: -5, limit: 1)
+      assert {:ok, %{count: 101, foods: []}} = Library.list_foods(ctx, limit: -1)
     end
   end
 

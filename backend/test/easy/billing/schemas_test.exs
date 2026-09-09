@@ -54,7 +54,7 @@ defmodule Easy.Billing.SchemasTest do
 
   test "awaiting_seat client is inactive and can be reactivated through update changeset" do
     client = insert(:client, status: :inactive, inactive_reason: :awaiting_seat)
-    changeset = Client.update_changeset(client, %{status: :active})
+    changeset = Client.update_changeset(client, Date.utc_today(), %{status: :active})
 
     assert changeset.valid?
     assert Ecto.Changeset.get_change(changeset, :status) == :active

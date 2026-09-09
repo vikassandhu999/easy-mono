@@ -30,7 +30,7 @@ defmodule Easy.LocalCalendarTest do
       user = insert(:user)
 
       changeset =
-        Business.insert_changeset(user, %{
+        Business.insert_changeset(user.id, %{
           name: "Calendar Gym",
           handle: "calendar-gym-#{System.unique_integer([:positive])}",
           timezone: "Not/AZone"
@@ -48,7 +48,7 @@ defmodule Easy.LocalCalendarTest do
       coach = insert(:coach)
 
       changeset =
-        Client.invite_changeset(coach, %{
+        Client.invite_changeset(coach.business_id, coach.id, DateTime.utc_now(:second), %{
           email: "calendar-#{System.unique_integer([:positive])}@test.com",
           first_name: "Local",
           last_name: "Date",

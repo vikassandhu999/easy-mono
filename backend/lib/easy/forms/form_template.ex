@@ -38,11 +38,9 @@ defmodule Easy.Forms.FormTemplate do
     %__MODULE__{}
     |> cast(attrs, [:name, :purpose, :sections, :status])
     |> put_change(:business_id, business_id)
-    |> validate_required([:business_id, :name, :purpose, :sections, :status])
-    |> validate_sections()
-    |> validate_service_type_questions()
+    |> validate_required([:business_id, :purpose])
+    |> validate_template()
     |> check_constraint(:purpose, name: :form_templates_purpose_check)
-    |> check_constraint(:status, name: :form_templates_status_check)
     |> foreign_key_constraint(:business_id)
   end
 
@@ -65,16 +63,42 @@ defmodule Easy.Forms.FormTemplate do
     |> check_constraint(:system_version, name: :form_templates_system_version_positive)
   end
 
+  @spec delete_changeset(t()) :: Ecto.Changeset.t()
+  def delete_changeset(template) do
+    template
+    |> change()
+    |> no_assoc_constraint(:form_assignments,
+      name: :form_assignments_template_business_id_fkey,
+      message: "has assignments"
+    )
+  end
+
   # Purpose is fixed at creation — it is deliberately not castable here.
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(template, attrs) do
     template
     |> cast(attrs, [:name, :sections, :status])
+    |> validate_template()
+  end
+
+  defp validate_template(changeset) do
+    changeset
     |> validate_required([:name, :sections, :status])
+    |> validate_length(:name, max: 255, count: :codepoints)
     |> validate_sections()
     |> validate_service_type_questions()
     |> check_constraint(:status, name: :form_templates_status_check)
   end
+
+  @spec default_intake_changeset(t(), boolean()) :: Ecto.Changeset.t()
+  def default_intake_changeset(template, default?) when is_boolean(default?) do
+    template
+    |> change(is_default_intake: default?)
+    |> unique_constraint(:is_default_intake, name: :form_templates_one_default_intake_index)
+  end
+
+  @spec oldest(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def oldest(query \\ __MODULE__), do: from(t in query, order_by: [asc: t.inserted_at, asc: t.id])
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do

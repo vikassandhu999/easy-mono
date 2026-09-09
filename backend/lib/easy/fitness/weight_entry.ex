@@ -31,16 +31,15 @@ defmodule Easy.Fitness.WeightEntry do
 
   # Changesets
 
-  @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(business_id, client_id, attrs) do
+  @spec insert_changeset(String.t(), String.t(), Date.t(), map()) :: Ecto.Changeset.t()
+  def insert_changeset(business_id, client_id, today, attrs) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
     |> put_change(:client_id, client_id)
     |> put_change(:business_id, business_id)
-    |> validate_required([:date, :value, :unit])
-    |> validate_change(:date, &validate_not_future/2)
-    |> validate_number(:value, greater_than: 0, less_than: 1000)
-    |> validate_length(:note, max: 500)
+    |> validate_required([:date])
+    |> validate_change(:date, &validate_not_future(&1, &2, today))
+    |> validate_measurement()
     |> unique_constraint([:client_id, :date],
       name: :weight_entries_client_id_date_index,
       message: "already logged for this date"
@@ -56,6 +55,12 @@ defmodule Easy.Fitness.WeightEntry do
   def update_changeset(entry, attrs) do
     entry
     |> cast(attrs, [:value, :unit, :note])
+    |> validate_measurement()
+  end
+
+  defp validate_measurement(changeset) do
+    changeset
+    |> validate_required([:value, :unit])
     |> validate_number(:value, greater_than: 0, less_than: 1000)
     |> validate_length(:note, max: 500)
   end
@@ -80,10 +85,11 @@ defmodule Easy.Fitness.WeightEntry do
     from(e in query, where: e.form_submission_id == ^submission_id)
   end
 
-  @spec since(Ecto.Queryable.t(), Date.t()) :: Ecto.Query.t()
-  def since(query \\ __MODULE__, date) do
-    from(e in query, where: e.date >= ^date)
-  end
+  @spec for_since(Ecto.Queryable.t(), Date.t() | nil | String.t()) :: Ecto.Queryable.t()
+  def for_since(query \\ __MODULE__, date)
+  def for_since(query, nil), do: query
+  def for_since(query, ""), do: query
+  def for_since(query, %Date{} = date), do: from(e in query, where: e.date >= ^date)
 
   @spec oldest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def oldest(query \\ __MODULE__) do
@@ -95,11 +101,12 @@ defmodule Easy.Fitness.WeightEntry do
     from(e in query, order_by: [desc: e.date, desc: e.inserted_at, desc: e.id])
   end
 
-  defp validate_not_future(field, %Date{} = date) do
-    if future?(date), do: [{field, "cannot be in the future"}], else: []
+  defp validate_not_future(field, %Date{} = date, today) do
+    if date_allowed?(date, today), do: [], else: [{field, "cannot be in the future"}]
   end
 
-  defp future?(%Date{} = date) do
-    Date.compare(date, Date.add(Date.utc_today(), 1)) == :gt
+  @spec date_allowed?(Date.t(), Date.t()) :: boolean()
+  def date_allowed?(%Date{} = date, %Date{} = today) do
+    Date.compare(date, Date.add(today, 1)) != :gt
   end
 end

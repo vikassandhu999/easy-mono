@@ -16,6 +16,7 @@ defmodule Easy.Forms.FormSubmission do
 
   @actors [:coach, :client, :system]
 
+  @type actor :: :coach | :client | :system
   @type t :: %__MODULE__{attachments: [Attachment.t()]}
 
   schema "form_submissions" do
@@ -35,7 +36,7 @@ defmodule Easy.Forms.FormSubmission do
     timestamps(type: :utc_datetime, updated_at: false)
   end
 
-  @spec insert_changeset(String.t(), String.t(), String.t(), atom(), binary() | nil, map()) :: Ecto.Changeset.t()
+  @spec insert_changeset(String.t(), String.t(), String.t(), actor(), binary() | nil, map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, client_id, form_assignment_id, submitted_by_type, submitted_by_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, [:question_snapshot, :answers, :submitted_at])
@@ -61,36 +62,27 @@ defmodule Easy.Forms.FormSubmission do
     )
   end
 
-  @spec validate_answers([map()], map()) ::
-          :ok | {:error, :unknown_answer_keys | :missing_required_answers | :invalid_answer_values}
-  def validate_answers(sections, answers) when is_list(sections) and is_map(answers) do
-    questions =
-      for %{"questions" => questions} <- sections,
-          is_list(questions),
-          %{"id" => id} = question <- questions,
-          is_binary(id),
-          do: question
-
-    known_ids = MapSet.new(questions, & &1["id"])
-
-    cond do
-      Enum.any?(Map.keys(answers), &(not MapSet.member?(known_ids, &1))) ->
-        {:error, :unknown_answer_keys}
-
-      Enum.any?(questions, &missing_required?(&1, answers)) ->
-        {:error, :missing_required_answers}
-
-      Enum.any?(questions, &invalid_value?(&1, answers)) ->
-        {:error, :invalid_answer_values}
-
-      true ->
-        :ok
-    end
-  end
-
   @spec for_assignment(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
   def for_assignment(query \\ __MODULE__, business_id, assignment_id) do
     from(s in query, where: s.business_id == ^business_id and s.form_assignment_id == ^assignment_id)
+  end
+
+  @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
+  def for_client(query \\ __MODULE__, business_id, client_id) do
+    from(s in query, where: s.business_id == ^business_id and s.client_id == ^client_id)
+  end
+
+  @spec include_form_assignment(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def include_form_assignment(query \\ __MODULE__) do
+    from(s in query,
+      join: assignment in FormAssignment,
+      on:
+        assignment.id == s.form_assignment_id and assignment.business_id == s.business_id and
+          assignment.client_id == s.client_id,
+      join: template in Easy.Forms.FormTemplate,
+      on: template.id == assignment.form_template_id and template.business_id == s.business_id,
+      preload: [form_assignment: {assignment, form_template: template}]
+    )
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
@@ -123,6 +115,15 @@ defmodule Easy.Forms.FormSubmission do
     )
   end
 
+  @spec awaiting_check_in_review(Ecto.Queryable.t(), Ctx.t()) :: Ecto.Query.t()
+  def awaiting_check_in_review(query \\ __MODULE__, %Ctx{} = ctx) do
+    query
+    |> for_business(ctx.business_id)
+    |> unreviewed()
+    |> for_check_ins()
+    |> for_visible_clients(ctx)
+  end
+
   @spec include_review_context(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def include_review_context(query \\ __MODULE__, business_id) do
     from([s, review_assignment: assignment, review_client: client] in query,
@@ -149,60 +150,4 @@ defmodule Easy.Forms.FormSubmission do
   def oldest(query \\ __MODULE__) do
     from(s in query, order_by: [asc: s.submitted_at, asc: s.id])
   end
-
-  defp missing_required?(%{"required" => true, "id" => id}, answers),
-    do: blank_answer?(Map.get(answers, id))
-
-  defp missing_required?(%{"type" => "service_type", "id" => id}, answers),
-    do: blank_answer?(Map.get(answers, id))
-
-  defp missing_required?(_question, _answers), do: false
-
-  defp blank_answer?(value), do: value in [nil, "", []]
-
-  defp invalid_value?(%{"id" => id} = question, answers) do
-    value = Map.get(answers, id)
-    not blank_answer?(value) and not valid_value?(question["type"], value, question)
-  end
-
-  defp valid_value?("text", value, _question), do: is_binary(value)
-  defp valid_value?("number", value, _question), do: is_number(value)
-  defp valid_value?("boolean", value, _question), do: is_boolean(value)
-
-  defp valid_value?("date", value, _question),
-    do: is_binary(value) and match?({:ok, _date}, Date.from_iso8601(value))
-
-  defp valid_value?("select", value, question),
-    do: is_binary(value) and value in question_options(question)
-
-  defp valid_value?("multi_select", value, question) do
-    options = question_options(question)
-    is_list(value) and value != [] and Enum.all?(value, &(is_binary(&1) and &1 in options))
-  end
-
-  defp valid_value?("rating", value, _question), do: is_integer(value) and value in 1..5
-
-  defp valid_value?("weight", value, _question),
-    do: is_number(value) and value > 0 and value < 1000
-
-  defp valid_value?("photo", value, _question) do
-    is_list(value) and value != [] and length(value) <= 4 and length(Enum.uniq(value)) == length(value) and
-      Enum.all?(value, &valid_uuid?/1)
-  end
-
-  defp valid_value?("service_type", %{"services" => services} = value, _question),
-    do: map_size(value) == 1 and services in [["training"], ["nutrition"], ["training", "nutrition"]]
-
-  defp valid_value?("service_type", %{services: services} = value, _question),
-    do: map_size(value) == 1 and services in [["training"], ["nutrition"], ["training", "nutrition"]]
-
-  defp valid_value?("service_type", _value, _question), do: false
-
-  defp valid_value?(_type, _value, _question), do: false
-
-  defp question_options(%{"options" => options}) when is_list(options), do: options
-  defp question_options(_question), do: []
-
-  defp valid_uuid?(value) when is_binary(value), do: match?({:ok, _uuid}, Ecto.UUID.cast(value))
-  defp valid_uuid?(_value), do: false
 end

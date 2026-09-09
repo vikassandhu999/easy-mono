@@ -6,66 +6,41 @@ defmodule Easy.Identity.Signup do
   alias Easy.Identity.Users
   alias Easy.Repo
 
-  @spec signup(map()) :: {:ok, User.t()} | {:error, any()}
+  @type error() :: :email_already_exists | :user_not_found | Ecto.Changeset.t()
+
+  @spec signup(map()) :: {:ok, User.t()} | {:error, error()}
   def signup(attrs) do
     otp = OtpGenerator.generate()
 
-    user_attrs =
-      Map.merge(attrs, %{
-        "confirmation_sent_at" => DateTime.utc_now(:second)
-      })
+    confirmation_sent_at = DateTime.utc_now(:second)
 
     result =
-      Repo.transaction(fn ->
-        with {:ok, user} <- Users.create(user_attrs),
+      Repo.transact(fn ->
+        with {:ok, user} <- Users.create(confirmation_sent_at, attrs),
              {:ok, _token} <- OneTimeTokens.create_token(user, :email_confirmation, otp) do
-          user
-        else
-          {:error, reason} -> Repo.rollback(reason)
+          {:ok, user}
         end
       end)
 
-    case result do
-      {:ok, user} ->
-        Mailer.send_otp(user.email, otp)
-        {:ok, user}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        handle_duplicate_email(changeset, otp)
-
-      {:error, _} = err ->
-        err
+    with {:ok, user} <- resolve_signup_result(result, otp) do
+      Mailer.send_otp(user.email, otp)
+      {:ok, user}
     end
   end
 
-  defp handle_duplicate_email(changeset, otp) do
-    email = Ecto.Changeset.get_field(changeset, :email)
-
+  defp resolve_signup_result({:error, %Ecto.Changeset{} = changeset}, otp) do
     if duplicate_email_error?(changeset) do
-      resend_confirmation_otp(changeset, email, otp)
+      email = Ecto.Changeset.get_field(changeset, :email)
+
+      with {:ok, user} <- Users.get_by_email(email) do
+        rotate_confirmation_otp(user, otp)
+      end
     else
       {:error, changeset}
     end
   end
 
-  defp resend_confirmation_otp(changeset, email, otp) do
-    with {:ok, user} <- Users.get_by_email(email),
-         false <- User.email_confirmed?(user),
-         {:ok, user} <- rotate_confirmation_otp(user, otp) do
-      Mailer.send_otp(email, otp)
-
-      {:ok, user}
-    else
-      true ->
-        {:error, :email_already_exists}
-
-      {:error, _} = err ->
-        err
-
-      _ ->
-        {:error, changeset}
-    end
-  end
+  defp resolve_signup_result(result, _otp), do: result
 
   defp duplicate_email_error?(%Ecto.Changeset{errors: errors}) do
     Enum.any?(errors, fn
@@ -75,13 +50,16 @@ defmodule Easy.Identity.Signup do
   end
 
   defp rotate_confirmation_otp(user, otp) do
-    Repo.transaction(fn ->
-      with {:ok, user} <- Users.touch_confirmation_sent_at(user),
-           _ <- OneTimeTokens.delete_user_tokens(user, :email_confirmation),
+    OneTimeTokens.with_issuance_lock(user.email, fn ->
+      with :ok <- OneTimeTokens.delete_user_tokens(user, :email_confirmation),
+           {:ok, user} <- Users.lock_by_id(user.id),
+           false <- User.email_confirmed?(user),
+           {:ok, user} <- Users.touch_confirmation_sent_at(user),
            {:ok, _} <- OneTimeTokens.create_token(user, :email_confirmation, otp) do
-        user
+        {:ok, user}
       else
-        {:error, reason} -> Repo.rollback(reason)
+        true -> {:error, :email_already_exists}
+        {:error, reason} -> {:error, reason}
       end
     end)
   end

@@ -49,11 +49,10 @@ IO.puts("clients missing a user (excluding pending): #{length(unlinked)}")
 
             {:error, _} ->
               with {:ok, user} <-
-                     Users.create(%{
+                     Users.create(DateTime.utc_now(:second), %{
                        "email" => client.email,
                        "first_name" => client.first_name || "",
-                       "last_name" => client.last_name || "",
-                       "confirmation_sent_at" => DateTime.utc_now(:second)
+                       "last_name" => client.last_name || ""
                      }) do
                 Users.confirm_user_email(user)
               end
@@ -61,7 +60,7 @@ IO.puts("clients missing a user (excluding pending): #{length(unlinked)}")
 
         case user_result do
           {:ok, user} ->
-            # A plain link, not Clients.accept_invite/3 — that function is the
+            # A plain link, not Easy.ClientInvitations.accept_invite/3 — that function is the
             # pending -> active transition and refuses a client that is already
             # active (`:race_lost`). Nothing here changes status or stage.
             client

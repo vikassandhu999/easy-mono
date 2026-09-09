@@ -5,6 +5,7 @@ defmodule Easy.Chat.Message do
   alias Easy.Chat.Conversation
   alias Easy.Chat.MessageAttachment
   alias Easy.Orgs.Business
+  alias Easy.Result
 
   import Ecto.Changeset
   import Ecto.Query
@@ -35,26 +36,85 @@ defmodule Easy.Chat.Message do
   @spec insert_changeset(String.t(), :coach | :client, String.t(), String.t(), map()) ::
           Ecto.Changeset.t()
   def insert_changeset(business_id, sender_type, sender_id, conversation_id, attrs) do
-    business_id
-    |> insert_changeset(sender_type, sender_id, conversation_id, nil, attrs)
-    |> validate_required([:body])
-  end
-
-  @spec insert_changeset(String.t(), :coach | :client, String.t(), String.t(), map() | nil, map()) ::
-          Ecto.Changeset.t()
-  def insert_changeset(business_id, sender_type, sender_id, conversation_id, embed, attrs) do
     %__MODULE__{}
     |> cast(attrs, [:body])
+    |> update_change(:body, &Easy.Utils.trim/1)
     |> put_change(:business_id, business_id)
     |> put_change(:conversation_id, conversation_id)
     |> put_change(:sender_type, sender_type)
     |> put_change(:sender_id, sender_id)
-    |> put_embed(embed)
     |> validate_required([:business_id, :conversation_id, :sender_type, :sender_id])
     |> validate_length(:body, max: 4000)
+    |> foreign_key_constraint(:business_id)
+    |> foreign_key_constraint(:conversation_id)
+    |> foreign_key_constraint(:conversation_id, name: :chat_messages_conversation_business_id_fkey)
+    |> check_constraint(:sender_type, name: :chat_messages_sender_type_check)
     |> check_constraint(:embed_type, name: :chat_messages_embed_type_check)
     |> check_constraint(:embed_id, name: :chat_messages_embed_complete_check)
   end
+
+  @spec attachment_ids(Ecto.Changeset.t()) :: {:ok, [String.t()]} | {:error, Ecto.Changeset.t()}
+  def attachment_ids(changeset) do
+    ids = Map.get(changeset.params || %{}, "attachment_ids", [])
+
+    cond do
+      not is_list(ids) ->
+        {:error, add_error(changeset, :attachment_ids, "is invalid")}
+
+      length(ids) > 4 ->
+        {:error, add_error(changeset, :attachment_ids, "should have at most 4 item(s)")}
+
+      true ->
+        with {:ok, ids} <- cast_attachment_ids(changeset, ids) do
+          validate_unique_attachment_ids(changeset, ids)
+        end
+    end
+  end
+
+  defp validate_unique_attachment_ids(changeset, ids) do
+    if length(Enum.uniq(ids)) == length(ids),
+      do: {:ok, ids},
+      else: {:error, add_error(changeset, :attachment_ids, "must be unique")}
+  end
+
+  defp cast_attachment_ids(changeset, ids) do
+    Result.traverse(ids, fn id ->
+      case Ecto.UUID.cast(id) do
+        {:ok, id} -> {:ok, id}
+        :error -> {:error, add_error(changeset, :attachment_ids, "is invalid")}
+      end
+    end)
+  end
+
+  @spec put_content(Ecto.Changeset.t(), [Attachment.t()], map() | nil) :: Ecto.Changeset.t()
+  def put_content(changeset, [], nil), do: validate_required(changeset, [:body])
+  def put_content(changeset, _attachments, embed), do: put_embed(changeset, embed)
+
+  @spec embed_reference(Ecto.Changeset.t()) :: {:ok, String.t() | nil} | {:error, :not_found | Ecto.Changeset.t()}
+  def embed_reference(changeset) do
+    embed = normalize_embed(Map.get(changeset.params || %{}, "embed"))
+
+    case {get_field(changeset, :sender_type), embed} do
+      {_, nil} ->
+        {:ok, nil}
+
+      {:client, _embed} ->
+        {:error, add_error(changeset, :embed, "is not allowed")}
+
+      {:coach, %{"type" => type, "id" => id}}
+      when type in [:form_submission, "form_submission"] and is_binary(id) ->
+        case Ecto.UUID.cast(id) do
+          {:ok, id} -> {:ok, id}
+          :error -> {:error, :not_found}
+        end
+
+      _ ->
+        {:error, add_error(changeset, :embed, "is invalid")}
+    end
+  end
+
+  defp normalize_embed(embed) when is_map(embed), do: Map.new(embed, fn {key, value} -> {to_string(key), value} end)
+  defp normalize_embed(embed), do: embed
 
   defp put_embed(changeset, nil), do: changeset
 
@@ -88,9 +148,29 @@ defmodule Easy.Chat.Message do
   defp put_embed_snapshot(changeset, snapshot) when is_map(snapshot), do: put_change(changeset, :embed_snapshot, snapshot)
   defp put_embed_snapshot(changeset, _snapshot), do: add_error(changeset, :embed_snapshot, "is invalid")
 
+  @spec preview(t(), [Attachment.t()]) :: String.t()
+  def preview(%__MODULE__{body: body}, _attachments) when is_binary(body),
+    do: String.slice(body, 0, 200)
+
+  def preview(%__MODULE__{embed_snapshot: %{"title" => title}}, _attachments),
+    do: "Shared #{title}"
+
+  def preview(_message, [_, _ | _] = attachments), do: "#{length(attachments)} attachments"
+  def preview(_message, [%Attachment{content_type: "image/" <> _} | _]), do: "Photo"
+  def preview(_message, [%Attachment{content_type: "video/" <> _} | _]), do: "Video"
+  def preview(_message, [%Attachment{content_type: "audio/" <> _} | _]), do: "Voice note"
+  def preview(_message, [_attachment | _]), do: "Attachment"
+
+  @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_business(query \\ __MODULE__, business_id),
+    do: from(m in query, where: m.business_id == ^business_id)
+
+  @spec for_ids(Ecto.Queryable.t(), [String.t()]) :: Ecto.Query.t()
+  def for_ids(query \\ __MODULE__, ids), do: from(m in query, where: m.id in ^ids)
+
   @spec for_conversation(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
   def for_conversation(query \\ __MODULE__, business_id, conversation_id),
-    do: from(m in query, where: m.business_id == ^business_id and m.conversation_id == ^conversation_id)
+    do: from(m in for_business(query, business_id), where: m.conversation_id == ^conversation_id)
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__), do: from(m in query, order_by: [desc: m.inserted_at, desc: m.id])
@@ -103,17 +183,37 @@ defmodule Easy.Chat.Message do
         :client -> {:coach, :client_last_read_at}
       end
 
-    from(m in query,
+    from(m in for_business(query, business_id),
       join: conversation in Conversation,
       on: conversation.id == m.conversation_id and conversation.business_id == m.business_id,
       where:
-        m.business_id == ^business_id and m.conversation_id in ^conversation_ids and
+        m.conversation_id in ^conversation_ids and
           m.sender_type == ^sender_type and
           (is_nil(field(conversation, ^cursor_field)) or
              m.inserted_at > field(conversation, ^cursor_field)),
       group_by: m.conversation_id,
       select: {m.conversation_id, count(m.id)}
     )
+  end
+
+  @spec waiting_counts(Ecto.Queryable.t(), String.t(), [{String.t(), DateTime.t()}]) :: Ecto.Query.t()
+  def waiting_counts(query \\ __MODULE__, business_id, pairs) do
+    waiting_sequence =
+      Enum.reduce(pairs, dynamic(false), fn {conversation_id, waiting_since}, predicate ->
+        dynamic(
+          [message],
+          ^predicate or
+            (message.conversation_id == ^conversation_id and
+               message.inserted_at >= ^waiting_since)
+        )
+      end)
+
+    query
+    |> for_business(business_id)
+    |> where([message], message.sender_type == :client)
+    |> where(^waiting_sequence)
+    |> group_by([message], message.conversation_id)
+    |> select([message], {message.conversation_id, count(message.id)})
   end
 
   @spec before_message(Ecto.Queryable.t(), t()) :: Ecto.Query.t()

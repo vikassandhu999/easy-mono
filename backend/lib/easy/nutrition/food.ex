@@ -9,6 +9,29 @@ defmodule Easy.Nutrition.Food do
   import Ecto.Query
 
   @type t() :: %__MODULE__{}
+  @type copy_attrs() :: %{
+          name: String.t() | nil,
+          brand: String.t() | nil,
+          category: String.t() | nil,
+          calories_per_100g: float() | nil,
+          protein_g_per_100g: float() | nil,
+          carbs_g_per_100g: float() | nil,
+          fat_g_per_100g: float() | nil,
+          fiber_g_per_100g: float() | nil,
+          sugar_g_per_100g: float() | nil,
+          allergens: [String.t()] | nil,
+          dietary_tags: [String.t()] | nil,
+          notes: String.t() | nil,
+          media_id: String.t() | nil,
+          serving_sizes: [serving_size_attrs()]
+        }
+  @type serving_size_attrs() :: %{
+          label: String.t() | nil,
+          amount: float() | nil,
+          unit: String.t() | nil,
+          weight_g: float() | nil,
+          is_default: boolean() | nil
+        }
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -57,6 +80,15 @@ defmodule Easy.Nutrition.Food do
     :media_id
   ]
 
+  @spec copy_attrs(t()) :: copy_attrs()
+  def copy_attrs(%__MODULE__{} = food) do
+    serving_sizes = Enum.map(food.serving_sizes, &Map.take(&1, [:label, :amount, :unit, :weight_g, :is_default]))
+
+    food
+    |> Map.take(@cast_fields)
+    |> Map.put(:serving_sizes, serving_sizes)
+  end
+
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, coach_id, attrs) do
     %__MODULE__{}
@@ -65,19 +97,20 @@ defmodule Easy.Nutrition.Food do
     |> put_change(:creator_id, coach_id)
     |> put_change(:source, :custom)
     |> put_change(:revision, 1)
-    |> validate_required([:name, :creator_id, :business_id])
-    |> validate_macros()
-    |> validate_enums()
-    |> foreign_key_constraint(:media_id)
-    |> check_constraint(:revision, name: :nutrition_foods_revision_positive)
-    |> cast_embed(:serving_sizes, with: &Nutrition.ServingSize.changeset/2)
-    |> validate_serving_sizes()
+    |> validate_required([:creator_id, :business_id])
+    |> validate_food()
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(food, attrs) do
     food
     |> cast(attrs, @cast_fields)
+    |> put_change(:revision, food.revision + 1)
+    |> validate_food()
+  end
+
+  defp validate_food(changeset) do
+    changeset
     |> validate_required([:name])
     |> validate_macros()
     |> validate_enums()

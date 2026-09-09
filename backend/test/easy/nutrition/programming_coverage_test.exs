@@ -3,10 +3,42 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
   use Easy.DataCase, async: true
 
   alias Easy.LocalCalendar
-  alias Easy.Nutrition.{Menu, Plan, Programming}
+  alias Easy.Nutrition.{Menu, Plan, PlanReader, Programming}
   alias Easy.QueryPlan
 
+  test "batch coverage accepts empty client collections" do
+    ctx = trainer_ctx(insert(:coach))
+
+    assert {:ok, %{}} == PlanReader.covering_plans_for_clients(ctx, %{})
+  end
+
   describe "Client Plan Coverage and lifecycle" do
+    test "coverage summary orders upcoming plans and handles an empty current window" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      ctx = trainer_ctx(coach)
+      today = local_today(client)
+
+      assert {:ok, %{date: ^today, current: nil, upcoming: []}} = PlanReader.get_coverage_for_client(ctx, client.id)
+
+      later = insert_client_plan(coach, client, start_date: Date.add(today, 10))
+      sooner = insert_client_plan(coach, client, start_date: Date.add(today, 1), end_date: Date.add(today, 9))
+      insert_client_plan(coach, client)
+      insert_client_plan(coach, client, start_date: today, archived_at: DateTime.utc_now(:second))
+      insert_client_plan(coach, client, start_date: Date.add(today, -2), end_date: Date.add(today, -1))
+
+      assert {:ok, %{date: ^today, current: nil, upcoming: upcoming}} = PlanReader.get_coverage_for_client(ctx, client.id)
+      assert Enum.map(upcoming, &{&1.id, &1.lifecycle}) == [{sooner.id, :upcoming}, {later.id, :upcoming}]
+
+      current = insert_client_plan(coach, client, start_date: today, end_date: today)
+
+      assert {:ok, %{date: ^today, current: selected, upcoming: upcoming}} =
+               PlanReader.get_coverage_for_client(ctx, client.id)
+
+      assert {selected.id, selected.lifecycle} == {current.id, :current}
+      assert Enum.map(upcoming, & &1.id) == [sooner.id, later.id]
+    end
+
     test "exports the canonical Client Plan lifecycle vocabulary" do
       assert Plan.lifecycles() == [:active, :incomplete, :upcoming, :current, :ended, :archived]
     end
@@ -25,11 +57,11 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
 
       plans =
         Enum.map([incomplete, upcoming, current, ended, archived], fn plan ->
-          {:ok, loaded} = Programming.get_plan(ctx, plan.id)
+          {:ok, loaded} = PlanReader.get_plan(ctx, plan.id)
           loaded
         end)
 
-      assert {:ok, %{current: selected, upcoming: [scheduled]}} = Programming.get_coverage_for_client(ctx, client.id)
+      assert {:ok, %{current: selected, upcoming: [scheduled]}} = PlanReader.get_coverage_for_client(ctx, client.id)
       assert selected.id == current.id
       assert scheduled.id == upcoming.id
       by_id = Map.new(plans, &{&1.id, &1})
@@ -131,7 +163,7 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
         })
 
       assert {:ok, %{plan: resolved, day_pattern: pattern, date: ~D[2026-08-15], weekday: :saturday}} =
-               Programming.resolve_client_coverage(client_ctx(client), ~D[2026-08-15])
+               PlanReader.resolve_client_coverage(client_ctx(client), ~D[2026-08-15])
 
       assert resolved.id == assigned.id
       assert pattern.id == hd(assigned.menu.day_patterns).id
@@ -144,15 +176,15 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
       plan = insert_client_plan(coach, client, start_date: ~D[2026-08-15], end_date: ~D[2026-08-17])
       ctx = client_ctx(client)
 
-      assert {:ok, nil} = Programming.resolve_client_coverage(ctx, ~D[2026-08-14])
-      assert {:ok, %{plan: %{id: id}}} = Programming.resolve_client_coverage(ctx, ~D[2026-08-15])
-      assert {:ok, %{plan: %{id: ^id}}} = Programming.resolve_client_coverage(ctx, ~D[2026-08-17])
-      assert {:ok, nil} = Programming.resolve_client_coverage(ctx, ~D[2026-08-18])
+      assert {:ok, nil} = PlanReader.resolve_client_coverage(ctx, ~D[2026-08-14])
+      assert {:ok, %{plan: %{id: id}}} = PlanReader.resolve_client_coverage(ctx, ~D[2026-08-15])
+      assert {:ok, %{plan: %{id: ^id}}} = PlanReader.resolve_client_coverage(ctx, ~D[2026-08-17])
+      assert {:ok, nil} = PlanReader.resolve_client_coverage(ctx, ~D[2026-08-18])
       assert id == plan.id
 
       open = insert_client_plan(coach, client, start_date: ~D[2026-09-01], end_date: nil)
-      assert {:ok, %{plan: %{id: open_id}}} = Programming.resolve_client_coverage(ctx, ~D[2026-09-01])
-      assert {:ok, %{plan: %{id: ^open_id}}} = Programming.resolve_client_coverage(ctx, ~D[2026-12-31])
+      assert {:ok, %{plan: %{id: open_id}}} = PlanReader.resolve_client_coverage(ctx, ~D[2026-09-01])
+      assert {:ok, %{plan: %{id: ^open_id}}} = PlanReader.resolve_client_coverage(ctx, ~D[2026-12-31])
       assert open_id == open.id
     end
 
@@ -170,7 +202,7 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
       insert_client_plan(coach, other_client, start_date: ~D[2026-08-01])
       insert_client_plan(other, other_business_client, start_date: ~D[2026-08-01])
 
-      assert {:ok, nil} = Programming.resolve_client_coverage(client_ctx(client), ~D[2026-08-15])
+      assert {:ok, nil} = PlanReader.resolve_client_coverage(client_ctx(client), ~D[2026-08-15])
     end
 
     test "client-self Coverage requires the trusted client id from Ctx" do
@@ -179,7 +211,7 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
       insert_client_plan(coach, client, start_date: ~D[2026-08-15])
       missing_client_ctx = %Easy.Ctx{business_id: coach.business_id, user_id: client.user_id}
 
-      assert {:error, :not_found} = Programming.resolve_client_coverage(missing_client_ctx, ~D[2026-08-15])
+      assert {:error, :not_found} = PlanReader.resolve_client_coverage(missing_client_ctx, ~D[2026-08-15])
     end
   end
 
@@ -191,14 +223,36 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
       plan = insert_client_plan(coach, client, start_date: ~D[2026-08-15], end_date: ~D[2026-08-15])
       ctx = trainer_ctx(coach)
 
-      assert {:ok, %{plan: %{id: id}}} = Programming.resolve_coverage_for_client(ctx, client.id, ~D[2026-08-15])
+      assert {:ok, %{plan: %{id: id}}} = PlanReader.resolve_coverage_for_client(ctx, client.id, ~D[2026-08-15])
       assert id == plan.id
-      assert {:ok, nil} = Programming.resolve_coverage_for_client(ctx, client.id, ~D[2026-08-16])
-      assert {:error, :not_found} = Programming.resolve_coverage_for_client(ctx, hidden.id, ~D[2026-08-15])
+      assert {:ok, nil} = PlanReader.resolve_coverage_for_client(ctx, client.id, ~D[2026-08-16])
+      assert {:error, :not_found} = PlanReader.resolve_coverage_for_client(ctx, hidden.id, ~D[2026-08-15])
     end
   end
 
-  describe "covering_plans_for_clients/3" do
+  describe "covering_plans_for_clients/2" do
+    test "selection and lifecycle use each supplied date rather than the current clock" do
+      coach = insert(:coach)
+      first_date = Date.add(Date.utc_today(), -30)
+      second_date = Date.add(first_date, 1)
+      first = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      second = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      uncovered = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      outsider = insert(:coach)
+      foreign = insert(:client, business: outsider.business, creator: outsider, assigned_coach: outsider)
+
+      first_plan = insert_client_plan(coach, first, start_date: first_date, end_date: first_date)
+      second_plan = insert_client_plan(coach, second, start_date: second_date, end_date: second_date)
+      insert_client_plan(coach, uncovered, start_date: first_date, end_date: first_date)
+      insert_client_plan(outsider, foreign, start_date: first_date, end_date: first_date)
+
+      dates = %{first.id => first_date, second.id => second_date, uncovered.id => second_date, foreign.id => first_date}
+
+      assert {:ok, plans} = PlanReader.covering_plans_for_clients(trainer_ctx(coach), dates)
+      assert Map.new(plans, fn {id, plan} -> {id, plan.id} end) == %{first.id => first_plan.id, second.id => second_plan.id}
+      assert Enum.all?(plans, fn {_id, plan} -> plan.lifecycle == :current end)
+    end
+
     test "loads a page of covering Client Plans in one query" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
@@ -215,7 +269,8 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
       insert_client_plan(coach, uncovered)
       ids = Enum.map(covered, &elem(&1, 0)) ++ [uncovered.id]
 
-      {result, queries} = QueryPlan.capture(fn -> Programming.covering_plans_for_clients(ctx, ids, today) end)
+      client_dates = Map.new(ids, &{&1, today})
+      {result, queries} = QueryPlan.capture(fn -> PlanReader.covering_plans_for_clients(ctx, client_dates) end)
 
       assert {:ok, plans} = result
       assert map_size(plans) == 3

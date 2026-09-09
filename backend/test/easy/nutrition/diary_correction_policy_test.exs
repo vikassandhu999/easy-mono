@@ -30,10 +30,10 @@ defmodule Easy.Nutrition.Diary.CorrectionPolicyTest do
     now = ~U[2026-08-25 18:45:00Z]
     business = %Business{timezone: "Pacific/Kiritimati"}
 
-    assert CorrectionPolicy.applied_timezone(%Client{timezone: "UTC", business: business}) ==
+    assert Client.applied_timezone(%Client{timezone: "UTC", business: business}) ==
              "UTC"
 
-    assert CorrectionPolicy.applied_timezone(%Client{timezone: "", business: business}) ==
+    assert Client.applied_timezone(%Client{timezone: "", business: business}) ==
              "Pacific/Kiritimati"
 
     assert CorrectionPolicy.local_today("Asia/Kolkata", now) == @today

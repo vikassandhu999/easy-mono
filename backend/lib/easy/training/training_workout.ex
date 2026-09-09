@@ -11,7 +11,6 @@ defmodule Easy.Training.TrainingWorkout do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
-  @days [:monday, :tuesday, :wednesday, :thursday, :friday, :saturday, :sunday]
 
   schema "training_workouts" do
     field :name, :string
@@ -25,12 +24,6 @@ defmodule Easy.Training.TrainingWorkout do
 
     timestamps(type: :utc_datetime)
   end
-
-  @spec days() :: [atom()]
-  def days, do: @days
-
-  @spec day_names() :: [String.t()]
-  def day_names, do: Enum.map(@days, &Atom.to_string/1)
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, plan_id, attrs) do

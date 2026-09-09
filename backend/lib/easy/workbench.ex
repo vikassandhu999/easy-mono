@@ -1,5 +1,5 @@
 defmodule Easy.Workbench do
-  alias Easy.Clients
+  alias Easy.ClientAccess
   alias Easy.Ctx
   alias Easy.Repo
   alias Easy.Workbench.QueueSnooze
@@ -16,11 +16,7 @@ defmodule Easy.Workbench do
              check_ins: non_neg_integer(),
              replies: non_neg_integer(),
              onboarding: non_neg_integer(),
-             programming: %{
-               all: non_neg_integer(),
-               training: non_neg_integer(),
-               nutrition: non_neg_integer()
-             },
+             programming: WorkbenchProgrammingQueue.counts(),
              expiring: non_neg_integer(),
              quiet: non_neg_integer()
            }}
@@ -36,54 +32,43 @@ defmodule Easy.Workbench do
      }}
   end
 
-  @spec list_onboarding_queue(Ctx.t(), keyword()) ::
-          {:ok, %{count: non_neg_integer(), items: [map()]}}
+  @spec list_onboarding_queue(Ctx.t(), keyword()) :: {:ok, WorkbenchOnboardingQueue.page()}
   def list_onboarding_queue(%Ctx{} = ctx, opts \\ []) do
     {:ok, ctx |> WorkbenchOnboardingQueue.list(opts) |> preload_client_businesses()}
   end
 
-  @spec list_check_in_queue(Ctx.t(), keyword()) ::
-          {:ok, %{count: non_neg_integer(), items: [map()]}}
+  @spec list_check_in_queue(Ctx.t(), keyword()) :: {:ok, WorkbenchCheckInQueue.page()}
   def list_check_in_queue(%Ctx{} = ctx, opts \\ []) do
     {:ok, ctx |> WorkbenchCheckInQueue.list(opts) |> preload_client_businesses()}
   end
 
-  @spec list_replies_queue(Ctx.t(), keyword()) ::
-          {:ok, %{count: non_neg_integer(), items: [map()]}}
+  @spec list_replies_queue(Ctx.t(), keyword()) :: {:ok, WorkbenchRepliesQueue.page()}
   def list_replies_queue(%Ctx{} = ctx, opts \\ []) do
     {:ok, WorkbenchRepliesQueue.list(ctx, opts)}
   end
 
   @spec list_programming_queue(Ctx.t(), keyword()) ::
-          {:ok, %{count: non_neg_integer(), items: [map()]}} | {:error, :invalid_service}
+          {:ok, WorkbenchProgrammingQueue.page()} | {:error, :invalid_service}
   def list_programming_queue(%Ctx{} = ctx, opts \\ []) do
     with {:ok, page} <- WorkbenchProgrammingQueue.list(ctx, opts) do
       {:ok, preload_client_businesses(page)}
     end
   end
 
-  @spec list_expiring_queue(Ctx.t(), keyword()) ::
-          {:ok, %{count: non_neg_integer(), items: [map()]}}
+  @spec list_expiring_queue(Ctx.t(), keyword()) :: {:ok, WorkbenchExpiringQueue.page()}
   def list_expiring_queue(%Ctx{} = ctx, opts \\ []) do
     {:ok, ctx |> WorkbenchExpiringQueue.list(opts) |> preload_client_businesses()}
   end
 
-  @spec list_quiet_queue(Ctx.t(), keyword()) ::
-          {:ok, %{count: non_neg_integer(), items: [map()]}}
+  @spec list_quiet_queue(Ctx.t(), keyword()) :: {:ok, WorkbenchQuietQueue.page()}
   def list_quiet_queue(%Ctx{} = ctx, opts \\ []) do
     {:ok, ctx |> WorkbenchQuietQueue.list(opts) |> preload_client_businesses()}
-  end
-
-  @spec programming_counts(Ctx.t()) ::
-          {:ok, %{all: non_neg_integer(), training: non_neg_integer(), nutrition: non_neg_integer()}}
-  def programming_counts(%Ctx{} = ctx) do
-    {:ok, WorkbenchProgrammingQueue.counts(ctx)}
   end
 
   @spec snooze_queue_for_client(Ctx.t(), String.t(), map()) ::
           {:ok, QueueSnooze.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def snooze_queue_for_client(%Ctx{} = ctx, client_id, attrs) do
-    with {:ok, client} <- Clients.authorize_client(ctx, client_id) do
+    with {:ok, client} <- ClientAccess.authorize_client(ctx, client_id) do
       ctx.business_id
       |> QueueSnooze.insert_changeset(client.id, attrs)
       |> Repo.insert(

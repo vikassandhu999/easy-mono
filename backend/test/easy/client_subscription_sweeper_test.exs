@@ -7,20 +7,23 @@ defmodule Easy.ClientSubscriptionSweeperTest do
 
   test "sweep deactivates only active clients past their end date" do
     business = insert(:business)
-    yesterday = Date.add(Date.utc_today(), -1)
-    tomorrow = Date.add(Date.utc_today(), 1)
+    today = Date.add(Date.utc_today(), 30)
+    yesterday = Date.add(today, -1)
+    tomorrow = Date.add(today, 1)
 
     expired = insert(:client, business: business, status: :active, subscription_ends_on: yesterday)
     current = insert(:client, business: business, status: :active, subscription_ends_on: tomorrow)
+    ending_today = insert(:client, business: business, status: :active, subscription_ends_on: today)
     dateless = insert(:client, business: business, status: :active)
 
     already_inactive =
       insert(:client, business: business, status: :inactive, inactive_reason: :manual, subscription_ends_on: yesterday)
 
-    assert {1, nil} = SubscriptionSweeper.sweep()
+    assert {1, nil} = SubscriptionSweeper.sweep(today)
 
     assert %{status: :inactive, inactive_reason: :subscription_expired} = Repo.get!(Client, expired.id)
     assert Repo.get!(Client, current.id).status == :active
+    assert Repo.get!(Client, ending_today.id).status == :active
     assert Repo.get!(Client, dateless.id).status == :active
     assert %{status: :inactive, inactive_reason: :manual} = Repo.get!(Client, already_inactive.id)
   end

@@ -1,46 +1,33 @@
 defmodule Easy.ClientSubscriptionSweeper do
-  use GenServer
-
-  import Ecto.Query
-
   alias Easy.Clients.Client
   alias Easy.Repo
+  alias Easy.Sweeper
   alias Easy.SweeperLock
 
   @day_ms 24 * 60 * 60 * 1000
   @lock_name "easy-client-subscription-sweeper"
 
   @spec start_link(keyword()) :: GenServer.on_start()
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+  def start_link(_opts) do
+    Sweeper.start_link(
+      name: __MODULE__,
+      sweep: fn -> SweeperLock.run(@lock_name, &sweep/0) end,
+      interval: @day_ms
+    )
   end
 
-  @impl true
-  @spec init(keyword()) :: {:ok, map()}
-  def init(_opts) do
-    send(self(), :sweep)
-    {:ok, %{}}
-  end
-
-  @impl true
-  @spec handle_info(:sweep, map()) :: {:noreply, map()}
-  def handle_info(:sweep, state) do
-    SweeperLock.run(@lock_name, &sweep/0)
-    Process.send_after(self(), :sweep, @day_ms)
-    {:noreply, state}
-  end
+  @spec child_spec(keyword()) :: Supervisor.child_spec()
+  def child_spec(opts), do: %{id: __MODULE__, start: {__MODULE__, :start_link, [opts]}}
 
   # Ends expired client coaching engagements (clients.subscription_ends_on). This
   # is unrelated to a business's Razorpay billing subscription (Easy.Billing).
   # Cross-tenant by design: the one system-wide job that ends expired engagements.
   # ponytail: UTC date boundary + 24h tick; Oban + business timezones if precision
   # ever matters.
-  @spec sweep() :: {non_neg_integer(), nil}
-  def sweep do
-    today = Date.utc_today()
-
+  @spec sweep(Date.t()) :: {non_neg_integer(), nil}
+  def sweep(today \\ Date.utc_today()) do
     Repo.update_all(
-      from(c in Client, where: c.status == :active and c.subscription_ends_on < ^today),
+      Client.expired_subscriptions(today),
       set: [
         status: :inactive,
         inactive_reason: :subscription_expired,

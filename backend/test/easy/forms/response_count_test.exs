@@ -1,7 +1,7 @@
 defmodule Easy.Forms.ResponseCountTest do
   use Easy.SchemaCase
 
-  alias Easy.Forms
+  alias Easy.Forms.Templates
 
   # The FM row reads `{Type} · {n} questions · {m} responses`. A submission belongs
   # to an ASSIGNMENT, not to the template, so the count walks both hops.
@@ -16,7 +16,7 @@ defmodule Easy.Forms.ResponseCountTest do
     end
 
     test "is zero for a form nobody has filled in", %{business: business, template: template} do
-      assert {:ok, templates} = Forms.list_form_templates(owner_ctx(business))
+      assert {:ok, templates} = Templates.list(owner_ctx(business))
       assert Enum.find(templates, &(&1.id == template.id)).response_count == 0
     end
 
@@ -30,7 +30,7 @@ defmodule Easy.Forms.ResponseCountTest do
         insert(:form_submission, business: business, client: client, form_assignment: assignment)
       end
 
-      assert {:ok, templates} = Forms.list_form_templates(owner_ctx(business))
+      assert {:ok, templates} = Templates.list(owner_ctx(business))
       assert Enum.find(templates, &(&1.id == template.id)).response_count == 3
     end
 
@@ -45,7 +45,7 @@ defmodule Easy.Forms.ResponseCountTest do
 
       insert(:form_submission, business: other_business, client: other_client, form_assignment: other_assignment)
 
-      assert {:ok, templates} = Forms.list_form_templates(owner_ctx(business))
+      assert {:ok, templates} = Templates.list(owner_ctx(business))
       assert Enum.find(templates, &(&1.id == template.id)).response_count == 0
     end
   end

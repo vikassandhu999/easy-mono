@@ -31,24 +31,40 @@ defmodule Easy.Orgs.Coach do
 
   # Changesets
 
-  @spec insert_changeset(map()) :: Ecto.Changeset.t()
-  def insert_changeset(attrs) do
+  @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
+  def insert_changeset(business_id, user_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, [:first_name, :last_name])
+    |> put_change(:business_id, business_id)
+    |> put_change(:user_id, user_id)
+    |> validate_required([:business_id, :user_id])
+    |> validate_profile()
+    |> unique_constraint(:user_id)
+    |> unique_constraint(:user_id, name: :coaches_user_id_business_id_index)
+    |> foreign_key_constraint(:user_id)
+    |> foreign_key_constraint(:business_id)
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(coach, attrs) do
     coach
     |> cast(attrs, [:first_name, :last_name, :phone])
+    |> validate_profile()
   end
 
-  @spec invite_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def invite_changeset(business_id, invited_by_id, attrs) do
+  @spec status_changeset(t(), :active | :inactive) :: Ecto.Changeset.t()
+  def status_changeset(coach, status) when status in [:active, :inactive] do
+    change(coach, status: status)
+  end
+
+  @spec invite_changeset(String.t(), String.t(), DateTime.t(), map()) :: Ecto.Changeset.t()
+  def invite_changeset(business_id, invited_by_id, sent_at, attrs) do
     %__MODULE__{}
     |> cast(attrs, [:email, :first_name, :last_name])
-    |> update_change(:email, &downcase/1)
+    |> validate_profile()
+    |> update_change(:email, &normalize_email/1)
     |> validate_required([:email])
+    |> validate_length(:email, max: 255, count: :codepoints)
     |> validate_format(
       :email,
       ~r/^[\w.!#$%&'*+=?^`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/
@@ -57,21 +73,37 @@ defmodule Easy.Orgs.Coach do
     |> put_change(:invited_by_id, invited_by_id)
     |> put_change(:status, :invited)
     |> put_change(:invitation_token, generate_token())
-    |> put_change(:invitation_sent_at, DateTime.utc_now(:second))
+    |> put_change(:invitation_sent_at, sent_at)
     |> unique_constraint(:email, name: :coaches_business_id_lower_email_index)
     |> unique_constraint(:user_id)
+    |> foreign_key_constraint(:business_id)
+    |> foreign_key_constraint(:invited_by_id)
   end
 
-  @spec resend_invite_changeset(t()) :: Ecto.Changeset.t()
-  def resend_invite_changeset(coach) do
+  @spec resend_invite_changeset(t(), DateTime.t()) :: Ecto.Changeset.t()
+  def resend_invite_changeset(coach, sent_at) do
     coach
     |> change()
     |> put_change(:invitation_token, generate_token())
-    |> put_change(:invitation_sent_at, DateTime.utc_now(:second))
+    |> put_change(:invitation_sent_at, sent_at)
   end
 
-  defp downcase(nil), do: nil
-  defp downcase(email), do: String.downcase(email)
+  @spec normalize_email(String.t() | nil) :: String.t() | nil
+  def normalize_email(nil), do: nil
+
+  def normalize_email(email) do
+    case String.trim(email) do
+      "" -> nil
+      trimmed -> String.downcase(trimmed)
+    end
+  end
+
+  defp validate_profile(changeset) do
+    changeset
+    |> validate_length(:first_name, max: 255, count: :codepoints)
+    |> validate_length(:last_name, max: 255, count: :codepoints)
+    |> validate_length(:phone, max: 255, count: :codepoints)
+  end
 
   defp generate_token do
     :crypto.strong_rand_bytes(24) |> Base.url_encode64(padding: false)
@@ -89,9 +121,33 @@ defmodule Easy.Orgs.Coach do
     from(c in query, where: c.status == :active)
   end
 
+  @spec inactive(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def inactive(query \\ __MODULE__), do: from(c in query, where: c.status == :inactive)
+
+  @spec invited(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def invited(query \\ __MODULE__), do: from(c in query, where: c.status == :invited)
+
   @spec for_user(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_user(query \\ __MODULE__, user_id) do
     from(c in query, where: c.user_id == ^user_id)
+  end
+
+  @spec for_invitation_token(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_invitation_token(query \\ __MODULE__, token) do
+    from(c in query, where: c.invitation_token == ^token)
+  end
+
+  @spec for_email(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_email(query \\ __MODULE__, email) do
+    from(c in query, where: fragment("lower(?)", c.email) == ^email)
+  end
+
+  @spec pending_invitation(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def pending_invitation(query \\ __MODULE__, coach_id) do
+    query
+    |> invited()
+    |> where([c], c.id == ^coach_id)
+    |> select([c], c)
   end
 
   @spec include_preloads(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
@@ -104,12 +160,12 @@ defmodule Easy.Orgs.Coach do
     from(c in query, order_by: [desc: c.inserted_at, desc: c.id])
   end
 
-  @spec invitation_expired?(t()) :: boolean()
-  def invitation_expired?(%__MODULE__{invitation_sent_at: nil}), do: false
+  @spec invitation_expired?(t(), DateTime.t()) :: boolean()
+  def invitation_expired?(%__MODULE__{invitation_sent_at: nil}, _now), do: false
 
-  def invitation_expired?(%__MODULE__{invitation_sent_at: sent_at}) do
+  def invitation_expired?(%__MODULE__{invitation_sent_at: sent_at}, now) do
     expires_at = DateTime.add(sent_at, @invitation_validity_days, :day)
-    DateTime.compare(DateTime.utc_now(), expires_at) == :gt
+    DateTime.compare(now, expires_at) == :gt
   end
 
   @spec full_name(t()) :: String.t()

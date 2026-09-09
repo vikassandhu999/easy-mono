@@ -3,7 +3,7 @@ defmodule Easy.Training.ExecutionTest do
 
   alias Easy.Ctx
   alias Easy.Repo
-  alias Easy.Training.{Execution, Programming}
+  alias Easy.Training.{Execution, PlanReader}
 
   setup do
     coach = insert(:coach)
@@ -27,7 +27,7 @@ defmodule Easy.Training.ExecutionTest do
       )
 
       assert {:ok, %{plan: resolved_plan, workout: resolved_workout}} =
-               Programming.resolve_client_startable_prescription(ctx.ctx, selected.id, Date.utc_today())
+               PlanReader.resolve_client_startable_prescription(ctx.ctx, selected.id, Date.utc_today())
 
       assert resolved_plan.id == plan.id
       assert resolved_workout.id == selected.id
@@ -50,10 +50,10 @@ defmodule Easy.Training.ExecutionTest do
       other_workout = insert(:workout, business: ctx.coach.business, plan: other_plan, position: 0)
 
       assert {:error, :not_found} =
-               Programming.resolve_client_startable_prescription(ctx.ctx, current_workout.id, Date.add(Date.utc_today(), -1))
+               PlanReader.resolve_client_startable_prescription(ctx.ctx, current_workout.id, Date.add(Date.utc_today(), -1))
 
       assert {:error, :not_found} =
-               Programming.resolve_client_startable_prescription(ctx.ctx, other_workout.id, Date.utc_today())
+               PlanReader.resolve_client_startable_prescription(ctx.ctx, other_workout.id, Date.utc_today())
     end
   end
 

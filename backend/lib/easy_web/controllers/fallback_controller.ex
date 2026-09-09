@@ -13,7 +13,7 @@ defmodule EasyWeb.FallbackController do
     conn
     |> put_status(error.status)
     |> put_view(json: ErrorJSON)
-    |> render(:"#{http_status}", %{app_error: Error.to_map(error)})
+    |> render("#{http_status}.json", %{app_error: Error.to_map(error)})
     |> halt()
   end
 
@@ -394,6 +394,10 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Error.unprocessable(%{fields: %{range: ["from and to must be provided together"]}})})
   end
 
+  def call(conn, {:error, :database_unavailable}) do
+    call(conn, {:error, Error.new(:service_unavailable, "Service is not ready", %{}, :service_unavailable)})
+  end
+
   def call(conn, {:error, :no_subscription}) do
     call(
       conn,
@@ -433,48 +437,11 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Error.unprocessable(changeset)})
   end
 
-  def call(conn, {:error, :invalid_schedule}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{schedule: ["must name every weekday"]}})})
-  end
-
-  def call(conn, {:error, :invalid_day}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{day: ["is invalid"]}})})
-  end
-
-  def call(conn, {:error, :invalid_element_ids}) do
-    call(
-      conn,
-      {:error, Error.unprocessable(%{fields: %{element_ids: ["must be exactly the workout's elements"]}})}
-    )
-  end
-
   def call(conn, {:error, :too_many_programs}) do
     call(
       conn,
       {:error, Error.unprocessable(%{fields: %{programs: ["a page can have at most 3 programs"]}})}
     )
-  end
-
-  def call(conn, {:error, :last_day}) do
-    conn
-    |> put_status(:conflict)
-    |> json(%{
-      error_code: "last_day",
-      error_message: "A plan must keep at least one day.",
-      error_detail: %{}
-    })
-    |> halt()
-  end
-
-  def call(conn, {:error, :max_options}) do
-    conn
-    |> put_status(:conflict)
-    |> json(%{
-      error_code: "max_options",
-      error_message: "A meal slot can hold at most 3 options.",
-      error_detail: %{}
-    })
-    |> halt()
   end
 
   def call(conn, {:error, :read_only_source}) do

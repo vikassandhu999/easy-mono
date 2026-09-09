@@ -45,8 +45,7 @@ defmodule Easy.Training.TrainingPerformedSet do
     :distance_value,
     :distance_unit,
     :rpe,
-    :notes,
-    :exercise_id
+    :notes
   ]
 
   @measurement_fields [
@@ -61,14 +60,37 @@ defmodule Easy.Training.TrainingPerformedSet do
     :notes
   ]
 
-  @spec insert_changeset(String.t(), String.t(), non_neg_integer(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(business_id, session_id, position, attrs) do
+  @spec exercise_reference(map()) :: {:ok, String.t() | nil} | {:error, Ecto.Changeset.t()}
+  def exercise_reference(attrs) do
+    {%{exercise_id: nil}, %{exercise_id: Ecto.UUID}}
+    |> cast(attrs, [:exercise_id])
+    |> apply_action(:validate)
+    |> case do
+      {:ok, set} -> {:ok, set.exercise_id}
+      error -> error
+    end
+  end
+
+  @spec insert_changeset(String.t(), String.t(), non_neg_integer(), TrainingExercise.t() | nil, map()) ::
+          Ecto.Changeset.t()
+  def insert_changeset(business_id, session_id, position, exercise, attrs) do
+    fields = if exercise, do: @create_fields -- [:exercise_name], else: @create_fields
+
     %__MODULE__{}
-    |> cast(attrs, @create_fields)
+    |> cast(attrs, fields)
     |> put_change(:training_session_id, session_id)
     |> put_change(:business_id, business_id)
     |> put_change(:position, position)
+    |> put_exercise(exercise)
     |> validate_fields()
+  end
+
+  defp put_exercise(changeset, nil), do: changeset
+
+  defp put_exercise(changeset, %TrainingExercise{} = exercise) do
+    changeset
+    |> put_change(:exercise_id, exercise.id)
+    |> put_change(:exercise_name, exercise.name)
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()

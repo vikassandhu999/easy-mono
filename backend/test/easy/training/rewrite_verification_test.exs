@@ -1,7 +1,7 @@
 defmodule Easy.Training.RewriteVerificationTest do
   use Easy.DataCase, async: true
 
-  alias Easy.Training.{Execution, Library, Programming}
+  alias Easy.Training.{Execution, Library, PerformedSets, PlanReader, Programming}
 
   test "Programming and Execution carry one Training design from Template to immutable history" do
     coach = insert(:coach)
@@ -53,7 +53,7 @@ defmodule Easy.Training.RewriteVerificationTest do
 
     assert dated.end_date == Date.add(today, 30)
 
-    assert {:ok, %{plan: coverage_plan, workout: scheduled}} = Programming.resolve_client_coverage(client_ctx, today)
+    assert {:ok, %{plan: coverage_plan, workout: scheduled}} = PlanReader.resolve_client_coverage(client_ctx, today)
     assert coverage_plan.id == dated.id
     assert scheduled.id == workout.id
 
@@ -63,7 +63,7 @@ defmodule Easy.Training.RewriteVerificationTest do
     snapshot = planned.prescription_snapshot
 
     assert {:ok, _set} =
-             Execution.create_client_performed_set(client_ctx, planned.id, %{
+             PerformedSets.create_client_performed_set(client_ctx, planned.id, %{
                exercise_id: squat.id,
                snapshot_exercise_ref: hd(workout.prescribed_exercises).id,
                reps: "5"
@@ -77,8 +77,8 @@ defmodule Easy.Training.RewriteVerificationTest do
     assert discarded.state == :discarded
 
     assert {:ok, _} = Programming.delete_plan(coach_ctx, dated.id, dated.revision)
-    assert {:ok, _} = Programming.delete_template(coach_ctx, programmed.id, programmed.revision)
-    assert {:ok, _} = Programming.delete_template(coach_ctx, duplicate.id, duplicate.revision)
+    assert {:ok, _} = Programming.delete_plan(coach_ctx, programmed.id, programmed.revision)
+    assert {:ok, _} = Programming.delete_plan(coach_ctx, duplicate.id, duplicate.revision)
     assert {:ok, _} = Library.delete_exercise(coach_ctx, squat.id)
 
     assert {:ok, history} = Execution.get_client_session(client_ctx, completed.id)

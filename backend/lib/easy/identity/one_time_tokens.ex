@@ -1,34 +1,37 @@
 defmodule Easy.Identity.OneTimeTokens do
-  alias Easy.Identity
+  alias Easy.Identity.OneTimeToken
+  alias Easy.Identity.User
   alias Easy.Repo
 
   import Ecto.Query
 
-  @spec create_token(Identity.User.t(), atom(), String.t()) ::
-          {:ok, Identity.OneTimeToken.t()}
-          | {:error, any()}
-  def create_token(user, token_type, otp) do
-    %{
-      token_type: token_type,
-      token_hash: generate_token_hash(user.email <> otp),
-      relates_to: user.email
-    }
-    |> then(&Identity.OneTimeToken.insert_changeset(user.id, &1))
-    |> Repo.insert()
+  @spec with_issuance_lock(String.t(), (-> {:ok, result} | {:error, error})) ::
+          {:ok, result} | {:error, error}
+        when result: var, error: var
+  def with_issuance_lock(email, fun) do
+    Repo.transact(fn ->
+      # Invitations may have neither a user nor an old token row to lock.
+      Repo.query!("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", ["easy:otp:" <> email])
+      fun.()
+    end)
   end
 
-  @spec get_by_hash(String.t(), atom()) ::
-          {:ok, Identity.OneTimeToken.t()}
-          | {:error, any()}
-  def get_by_hash(token_hash, token_type) do
+  @spec create_token(User.t(), OneTimeToken.token_type(), String.t()) ::
+          {:ok, OneTimeToken.t()}
+          | {:error, Ecto.Changeset.t()}
+  def create_token(user, token_type, otp) do
+    insert_token(user.id, token_type, generate_token_hash(user.email <> otp), user.email)
+  end
+
+  @spec lock_by_hash(String.t(), OneTimeToken.token_type()) ::
+          {:ok, OneTimeToken.t()}
+          | {:error, :token_not_found}
+  def lock_by_hash(token_hash, token_type) do
     query =
-      from(t in Identity.OneTimeToken,
-        where:
-          t.token_hash == ^token_hash and
-            t.token_type == ^token_type,
-        limit: 1,
-        preload: [:user]
-      )
+      OneTimeToken.matching_hash(token_hash, token_type)
+      |> OneTimeToken.include_user()
+      |> limit(1)
+      |> lock("FOR UPDATE")
 
     case Repo.one(query) do
       nil -> {:error, :token_not_found}
@@ -36,62 +39,47 @@ defmodule Easy.Identity.OneTimeTokens do
     end
   end
 
-  @spec delete(Identity.OneTimeToken.t()) ::
-          {:ok, Identity.OneTimeToken.t()} | {:error, Ecto.Changeset.t()}
+  @spec delete(OneTimeToken.t()) ::
+          {:ok, OneTimeToken.t()} | {:error, Ecto.Changeset.t()}
   def delete(token) do
     Repo.delete(token)
   end
 
-  @spec delete_user_tokens(Identity.User.t(), atom()) :: :ok
+  @spec delete_user_tokens(User.t(), OneTimeToken.token_type()) :: :ok
   def delete_user_tokens(user, token_type) do
-    Repo.delete_all(
-      from(t in Identity.OneTimeToken,
-        where: t.user_id == ^user.id and t.token_type == ^token_type
-      )
-    )
+    user.id
+    |> OneTimeToken.issued_to_user(token_type)
+    |> Repo.delete_all()
 
     :ok
   end
 
-  @spec delete_all_for_relates_to_and_type(String.t(), atom()) :: :ok
+  @spec delete_all_for_relates_to_and_type(String.t(), OneTimeToken.token_type()) :: :ok
   def delete_all_for_relates_to_and_type(relates_to, token_type) do
-    Repo.delete_all(
-      from(t in Identity.OneTimeToken,
-        where: t.relates_to == ^relates_to and t.token_type == ^token_type
-      )
-    )
+    relates_to
+    |> OneTimeToken.issued_for(token_type)
+    |> Repo.delete_all()
 
     :ok
   end
 
   @spec create_invitation_acceptance_token(String.t(), String.t(), String.t()) ::
-          {:ok, Identity.OneTimeToken.t()} | {:error, any()}
+          {:ok, OneTimeToken.t()} | {:error, Ecto.Changeset.t()}
   def create_invitation_acceptance_token(otp, email, invitation_token) do
-    %{
-      token_type: :invitation_acceptance,
-      token_hash: invitation_acceptance_hash(otp, email, invitation_token),
-      relates_to: email
-    }
-    |> then(&Identity.OneTimeToken.insert_changeset(nil, &1))
+    insert_token(nil, :invitation_acceptance, invitation_acceptance_hash(otp, email, invitation_token), email)
+  end
+
+  defp insert_token(user_id, token_type, token_hash, relates_to) do
+    attrs = %{token_type: token_type, token_hash: token_hash, relates_to: relates_to}
+
+    user_id
+    |> OneTimeToken.insert_changeset(attrs)
     |> Repo.insert()
   end
 
   @spec invitation_acceptance_hash(String.t(), String.t(), String.t()) :: String.t()
   def invitation_acceptance_hash(otp, email, invitation_token) do
     generate_token_hash(otp <> "|" <> email <> "|" <> invitation_token)
-  end
-
-  # How long any one-time code stays good — login, invitation acceptance, all of
-  # them. ONE constant on purpose: this was previously a local in an
-  # invitation-only helper, and the authentication path simply never got an
-  # equivalent, so login codes never expired at all. A per-type TTL is how that
-  # gap opened; if a type ever genuinely needs its own, make it an argument
-  # rather than a second function.
-  @otp_validity_minutes 10
-
-  @spec expired?(Identity.OneTimeToken.t()) :: boolean()
-  def expired?(%Identity.OneTimeToken{inserted_at: inserted_at}) do
-    NaiveDateTime.diff(NaiveDateTime.utc_now(), inserted_at, :minute) > @otp_validity_minutes
   end
 
   @spec generate_token_hash(String.t()) :: String.t()

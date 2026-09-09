@@ -52,4 +52,24 @@ defmodule Easy.Training.LibraryMediaTest do
 
     assert copy.media_id == media.id
   end
+
+  test "string-keyed media follows the same authorization and clearing rules" do
+    coach = insert(:coach)
+    ctx = trainer_ctx(coach)
+    media = insert(:library_media, business: coach.business)
+    hidden = insert(:library_media)
+
+    assert {:error, :not_found} =
+             Library.create_exercise(ctx, %{"name" => "Hidden media", "media_id" => hidden.id})
+
+    assert {:ok, exercise} =
+             Library.create_exercise(ctx, %{"name" => "Visible media", "media_id" => media.id})
+
+    assert exercise.media.id == media.id
+    assert {:error, :not_found} = Library.update_exercise(ctx, exercise.id, %{"media_id" => hidden.id})
+    assert {:ok, unchanged} = Library.get_exercise(ctx, exercise.id)
+    assert unchanged.media_id == media.id
+    assert {:ok, cleared} = Library.update_exercise(ctx, exercise.id, %{"media_id" => nil})
+    assert cleared.media == nil
+  end
 end

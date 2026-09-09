@@ -1,35 +1,37 @@
 defmodule Easy.CheckInSweeper do
-  use GenServer
-
-  alias Easy.Forms
+  alias Easy.CheckIns
+  alias Easy.Sweeper
   alias Easy.SweeperLock
 
   @day_ms 24 * 60 * 60 * 1000
   @lock_name "easy-check-in-sweeper"
 
+  @type counts :: %{
+          generated: non_neg_integer(),
+          inactive_advanced: non_neg_integer(),
+          due_reminders: non_neg_integer(),
+          due_skipped: non_neg_integer(),
+          overdue_reminders: non_neg_integer(),
+          overdue_skipped: non_neg_integer()
+        }
+
   @spec start_link(keyword()) :: GenServer.on_start()
-  def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
-
-  @impl true
-  @spec init(keyword()) :: {:ok, map()}
-  def init(_opts) do
-    send(self(), :sweep)
-    {:ok, %{}}
+  def start_link(_opts) do
+    Sweeper.start_link(
+      name: __MODULE__,
+      sweep: fn -> SweeperLock.run(@lock_name, &sweep/0) end,
+      interval: @day_ms
+    )
   end
 
-  @impl true
-  @spec handle_info(:sweep, map()) :: {:noreply, map()}
-  def handle_info(:sweep, state) do
-    SweeperLock.run(@lock_name, &sweep/0)
-    Process.send_after(self(), :sweep, @day_ms)
-    {:noreply, state}
-  end
+  @spec child_spec(keyword()) :: Supervisor.child_spec()
+  def child_spec(opts), do: %{id: __MODULE__, start: {__MODULE__, :start_link, [opts]}}
 
-  @spec sweep(Date.t()) :: map()
+  @spec sweep(Date.t()) :: counts()
   def sweep(today \\ Date.utc_today()) do
-    {generated, inactive_advanced} = Forms.generate_due_check_ins(today)
-    {due_reminders, due_skipped} = Forms.send_due_check_in_reminders(today)
-    {overdue_reminders, overdue_skipped} = Forms.send_overdue_check_in_reminders(today)
+    {generated, inactive_advanced} = CheckIns.generate_due_check_ins(today)
+    {due_reminders, due_skipped} = CheckIns.send_due_check_in_reminders(today)
+    {overdue_reminders, overdue_skipped} = CheckIns.send_overdue_check_in_reminders(today)
 
     %{
       generated: generated,

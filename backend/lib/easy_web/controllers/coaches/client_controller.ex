@@ -1,6 +1,7 @@
 defmodule EasyWeb.Coaches.ClientController do
   use EasyWeb, :typed_controller
 
+  alias Easy.ClientInvitations
   alias Easy.Clients
   alias EasyWeb.Types.Client, as: ClientType
   alias EasyWeb.Types.ClientIndex
@@ -15,7 +16,7 @@ defmodule EasyWeb.Coaches.ClientController do
 
   @spec invite(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def invite(conn, _params) do
-    with {:ok, client} <- Clients.invite_client(conn.assigns.ctx, conn.body_params) do
+    with {:ok, client} <- ClientInvitations.invite(conn.assigns.ctx, conn.body_params) do
       ok(conn, %{data: client})
     end
   end
@@ -42,7 +43,7 @@ defmodule EasyWeb.Coaches.ClientController do
   def delete(conn, _params) do
     client_id = conn.path_params["id"]
 
-    with {:ok, _deleted} <- Clients.revoke_invitation(conn.assigns.ctx, client_id) do
+    with {:ok, _deleted} <- ClientInvitations.revoke_invitation(conn.assigns.ctx, client_id) do
       ok(conn)
     end
   end
@@ -51,7 +52,7 @@ defmodule EasyWeb.Coaches.ClientController do
   def resend_invite(conn, _params) do
     client_id = conn.path_params["id"]
 
-    with {:ok, updated_client} <- Clients.resend_invitation(conn.assigns.ctx, client_id) do
+    with {:ok, updated_client} <- ClientInvitations.resend_invitation(conn.assigns.ctx, client_id) do
       ok(conn, %{data: updated_client})
     end
   end

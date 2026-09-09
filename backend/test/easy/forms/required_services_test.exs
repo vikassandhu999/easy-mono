@@ -4,9 +4,10 @@ defmodule Easy.Forms.RequiredServicesTest do
   import Swoosh.TestAssertions
 
   alias Easy.Clients
-  alias Easy.Forms
-  alias Easy.Forms.FormSubmission
+  alias Easy.FormAnswers
+  alias Easy.Forms.Assignments
   alias Easy.Forms.FormTemplate
+  alias Easy.Forms.Submissions
 
   @service_question %{
     "id" => "service-type",
@@ -74,23 +75,23 @@ defmodule Easy.Forms.RequiredServicesTest do
       sections = sections([@service_question])
 
       assert :ok =
-               FormSubmission.validate_answers(sections, %{
+               FormAnswers.validate(sections, %{
                  "service-type" => %{"services" => ["training"]}
                })
 
       assert :ok =
-               FormSubmission.validate_answers(sections, %{
+               FormAnswers.validate(sections, %{
                  "service-type" => %{"services" => ["nutrition"]}
                })
 
       assert :ok =
-               FormSubmission.validate_answers(sections, %{
+               FormAnswers.validate(sections, %{
                  "service-type" => %{"services" => ["training", "nutrition"]}
                })
 
       for invalid <- [nil, [], ["nutrition", "training"], ["training", "training"], ["physio"]] do
         assert {:error, reason} =
-                 FormSubmission.validate_answers(sections, %{
+                 FormAnswers.validate(sections, %{
                    "service-type" => %{"services" => invalid}
                  })
 
@@ -98,7 +99,7 @@ defmodule Easy.Forms.RequiredServicesTest do
       end
 
       assert {:error, :invalid_answer_values} =
-               FormSubmission.validate_answers(sections, %{
+               FormAnswers.validate(sections, %{
                  "service-type" => %{"services" => ["training"], "other" => true}
                })
     end
@@ -111,7 +112,7 @@ defmodule Easy.Forms.RequiredServicesTest do
       assignment = insert_assignment(client, template, :intake)
 
       assert {:ok, _submission} =
-               Forms.submit_client_form_assignment(client_ctx(client), assignment.id, %{
+               Submissions.submit_client_assignment(client_ctx(client), assignment.id, %{
                  answers: %{"service-type" => %{"services" => ["training", "nutrition"]}}
                })
 
@@ -124,7 +125,7 @@ defmodule Easy.Forms.RequiredServicesTest do
       assignment = insert_assignment(client, template, :intake)
 
       assert {:ok, _submission} =
-               Forms.submit_client_form_assignment(client_ctx(client), assignment.id, %{
+               Submissions.submit_client_assignment(client_ctx(client), assignment.id, %{
                  answers: %{}
                })
 
@@ -144,7 +145,7 @@ defmodule Easy.Forms.RequiredServicesTest do
       assignment = insert_assignment(client, template, :check_in)
 
       assert {:ok, _submission} =
-               Forms.submit_client_form_assignment(client_ctx(client), assignment.id, %{
+               Submissions.submit_client_assignment(client_ctx(client), assignment.id, %{
                  answers: %{"service-type" => %{"services" => ["training"]}}
                })
 
@@ -157,7 +158,7 @@ defmodule Easy.Forms.RequiredServicesTest do
       assignment = insert_assignment(client, template, :intake)
 
       assert {:ok, _submission} =
-               Forms.submit_client_form_assignment(client_ctx(client), assignment.id, %{
+               Submissions.submit_client_assignment(client_ctx(client), assignment.id, %{
                  answers: %{"service-type" => %{"services" => ["nutrition"]}}
                })
 
@@ -183,7 +184,7 @@ defmodule Easy.Forms.RequiredServicesTest do
         insert_assignment(client, first_template, :intake, status)
 
         assert {:error, :conflict} =
-                 Forms.assign_form_template_to_client(
+                 Assignments.assign_form_template_to_client(
                    owner_ctx(client.business),
                    client.id,
                    second_template.id,
@@ -202,7 +203,7 @@ defmodule Easy.Forms.RequiredServicesTest do
       before = Repo.reload(assignment)
 
       assert {:ok, reminded} =
-               Forms.send_intake_reminder(owner_ctx(client.business), assignment.id)
+               Assignments.send_intake_reminder(owner_ctx(client.business), assignment.id)
 
       assert reminded.id == assignment.id
 
@@ -223,10 +224,10 @@ defmodule Easy.Forms.RequiredServicesTest do
       other_business = insert(:business)
 
       assert {:error, :invalid_intake_assignment} =
-               Forms.send_intake_reminder(owner_ctx(client.business), assignment.id)
+               Assignments.send_intake_reminder(owner_ctx(client.business), assignment.id)
 
       assert {:error, :not_found} =
-               Forms.send_intake_reminder(owner_ctx(other_business), assignment.id)
+               Assignments.send_intake_reminder(owner_ctx(other_business), assignment.id)
 
       refute_email_sent()
     end
@@ -237,7 +238,7 @@ defmodule Easy.Forms.RequiredServicesTest do
       assignment = insert_assignment(client, intake, :intake)
 
       assert {:error, :reminder_email_missing} =
-               Forms.send_intake_reminder(owner_ctx(client.business), assignment.id)
+               Assignments.send_intake_reminder(owner_ctx(client.business), assignment.id)
 
       refute_email_sent()
     end

@@ -63,4 +63,34 @@ defmodule Easy.DefaultCheckIn do
 
   @spec system_version() :: pos_integer()
   def system_version, do: 2
+
+  @spec upgrade_sections([map()]) :: [map()]
+  def upgrade_sections(sections) do
+    photo_question =
+      sections()
+      |> Enum.flat_map(& &1["questions"])
+      |> Enum.find(&(&1["id"] == "progress-photos"))
+
+    if Enum.any?(sections, fn section ->
+         Enum.any?(Map.get(section, "questions", []), &(&1["id"] == "progress-photos"))
+       end) do
+      sections
+    else
+      append_question_to_body(sections, photo_question)
+    end
+  end
+
+  defp append_question_to_body(sections, question) do
+    if Enum.any?(sections, &(&1["title"] == "Body")) do
+      Enum.map(sections, fn
+        %{"title" => "Body"} = section ->
+          Map.update(section, "questions", [question], &(&1 ++ [question]))
+
+        section ->
+          section
+      end)
+    else
+      [%{"title" => "Body", "questions" => [question]} | sections]
+    end
+  end
 end

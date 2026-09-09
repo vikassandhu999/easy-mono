@@ -10,6 +10,14 @@ defmodule EasyWeb.Params.Signup do
     field :last_name, :string
   end
 
+  @type t() :: %__MODULE__{
+          email: String.t() | nil,
+          phone: String.t() | nil,
+          first_name: String.t() | nil,
+          last_name: String.t() | nil
+        }
+
+  @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(%EasyWeb.Params.Signup{} = signup, attrs) do
     signup
     |> cast(attrs, [

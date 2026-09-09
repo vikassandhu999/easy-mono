@@ -2,14 +2,17 @@ defmodule EasyWeb.TypedRouteAdapter do
   @behaviour EasyWeb.TypedRoute.Adapter
 
   alias Easy.Error
+  alias EasyWeb.TypedRoute.Adapter
   alias Plug.Conn
 
   @auth_pipelines MapSet.new([:require_user, :require_coach, :require_client])
 
   @impl EasyWeb.TypedRoute.Adapter
+  @spec enrich_routes(Adapter.routes(), list(), Macro.Env.t()) :: Adapter.routes()
   def enrich_routes(routes, _plugs, _env), do: routes
 
   @impl EasyWeb.TypedRoute.Adapter
+  @spec headers(map(), Adapter.route()) :: [Adapter.header_requirement()]
   def headers(route, _typed) do
     if Enum.any?(route.pipe_through || [], &MapSet.member?(@auth_pipelines, &1)) do
       [%{name: "Authorization", required?: false}]
@@ -19,6 +22,7 @@ defmodule EasyWeb.TypedRouteAdapter do
   end
 
   @impl EasyWeb.TypedRoute.Adapter
+  @spec reject(Conn.t(), map()) :: Conn.t()
   def reject(conn, fields) do
     error = Error.unprocessable(%{fields: fields})
 

@@ -7,6 +7,12 @@ defmodule Easy.WorkbenchQuietQueue do
   alias Easy.Repo
   alias Easy.Workbench.QueueSnooze
 
+  @type item :: %{
+          client: Client.t(),
+          reasons: [%{code: :missed_check_in, assignment_id: String.t(), due_on: Date.t()}]
+        }
+  @type page :: %{count: non_neg_integer(), items: [item()]}
+
   @spec count(Ctx.t()) :: non_neg_integer()
   def count(%Ctx{} = ctx) do
     ctx
@@ -14,10 +20,9 @@ defmodule Easy.WorkbenchQuietQueue do
     |> Repo.aggregate(:count, :client_id)
   end
 
-  @spec list(Ctx.t(), keyword()) :: %{count: non_neg_integer(), items: [map()]}
+  @spec list(Ctx.t(), keyword()) :: page()
   def list(%Ctx{} = ctx, opts) do
     facts = facts(ctx, Date.utc_today())
-    {offset, limit} = pagination(opts)
 
     items =
       facts
@@ -27,7 +32,7 @@ defmodule Easy.WorkbenchQuietQueue do
         assignment_id: assignment.assignment_id,
         due_on: assignment.due_on
       })
-      |> Easy.Utils.paginate(offset, limit)
+      |> Easy.Utils.paginate(opts)
       |> Repo.all()
       |> Enum.map(fn row ->
         %{
@@ -49,13 +54,12 @@ defmodule Easy.WorkbenchQuietQueue do
     latest_due = latest_due_assignments(ctx, today)
 
     active_snooze =
-      from(snooze in QueueSnooze,
-        where:
-          snooze.business_id == ^ctx.business_id and
-            snooze.client_id == parent_as(:quiet_assignment).client_id and
-            snooze.queue == :quiet and snooze.snoozed_until >= ^today,
-        select: 1
-      )
+      QueueSnooze
+      |> QueueSnooze.for_business(ctx.business_id)
+      |> QueueSnooze.for_queue(:quiet)
+      |> QueueSnooze.active(today)
+      |> where([snooze], snooze.client_id == parent_as(:quiet_assignment).client_id)
+      |> select(1)
 
     from(assignment in subquery(latest_due),
       as: :quiet_assignment,
@@ -75,22 +79,15 @@ defmodule Easy.WorkbenchQuietQueue do
       |> Client.visible_to(ctx)
       |> Client.for_status(:active)
 
-    from(assignment in FormAssignment,
+    assignments =
+      FormAssignment.for_business(ctx.business_id)
+      |> FormAssignment.latest_due_check_in_per_client(today)
+
+    from(assignment in assignments,
       join: client in subquery(visible_clients),
       on:
         client.id == assignment.client_id and
           client.business_id == assignment.business_id,
-      where:
-        assignment.business_id == ^ctx.business_id and
-          assignment.purpose == :check_in and
-          not is_nil(assignment.due_date) and assignment.due_date <= ^today,
-      distinct: assignment.client_id,
-      order_by: [
-        asc: assignment.client_id,
-        desc: assignment.due_date,
-        desc: assignment.inserted_at,
-        desc: assignment.id
-      ],
       select: %{
         client_id: assignment.client_id,
         assignment_id: assignment.id,
@@ -98,11 +95,5 @@ defmodule Easy.WorkbenchQuietQueue do
         status: assignment.status
       }
     )
-  end
-
-  defp pagination(opts) do
-    offset = max(Keyword.get(opts, :offset, 0), 0)
-    limit = min(max(Keyword.get(opts, :limit, 20), 0), 100)
-    {offset, limit}
   end
 end

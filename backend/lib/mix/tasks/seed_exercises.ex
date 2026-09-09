@@ -4,6 +4,7 @@ defmodule Mix.Tasks.SeedExercises do
   @shortdoc "Seeds muscles, equipment, and exercises from priv/repo/exercises.json"
 
   @impl Mix.Task
+  @spec run([String.t()]) :: {term(), keyword()}
   def run(_args) do
     Mix.Task.run("app.start")
 

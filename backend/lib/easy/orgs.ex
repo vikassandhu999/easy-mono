@@ -12,27 +12,25 @@ defmodule Easy.Orgs do
           {:ok, Business.t()} | {:error, :user_not_found | Ecto.Changeset.t()}
   def create_business(%Ctx{} = ctx, attrs) do
     with {:ok, user} <- Users.get_by_id(ctx.user_id) do
-      Repo.transaction(fn -> create_business_transaction(user, attrs) end)
+      Repo.transact(fn -> create_business_transaction(user, attrs) end)
     end
   end
 
   defp create_business_transaction(user, attrs) do
-    with {:ok, business} <- user |> Business.insert_changeset(attrs) |> Repo.insert(),
+    with {:ok, business} <- user.id |> Business.insert_changeset(attrs) |> Repo.insert(),
          {:ok, _} <- Coaches.create(user, business) do
-      business
-    else
-      {:error, reason} -> Repo.rollback(reason)
+      {:ok, %{business | owner: user}}
     end
   end
 
   @spec get_business(Ctx.t()) :: {:ok, Business.t()} | {:error, :not_found}
   def get_business(%Ctx{} = ctx) do
-    ctx.business_id
-    |> then(&Repo.get(Business, &1))
+    Business
+    |> Repo.get(ctx.business_id)
     |> ok_or_not_found()
   end
 
-  @spec update_business(Ctx.t(), map()) :: {:ok, Business.t()} | {:error, any()}
+  @spec update_business(Ctx.t(), map()) :: {:ok, Business.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_business(%Ctx{} = ctx, attrs) when is_map(attrs) do
     with {:ok, business} <- get_business(ctx) do
       business
@@ -45,28 +43,17 @@ defmodule Easy.Orgs do
           {:ok, Business.t()} | {:error, :not_found | :not_owner | Ecto.Changeset.t()}
   def update_dashboard_setup(%Ctx{owner?: false}, _attrs), do: {:error, :not_owner}
 
-  def update_dashboard_setup(
-        %Ctx{} = ctx,
-        %{dashboard_setup_hidden_reason: _reason} = attrs
-      ) do
-    Repo.transaction(fn ->
-      case lock_business(ctx.business_id) do
-        nil -> Repo.rollback(:not_found)
-        business -> persist_dashboard_setup(business, attrs)
-      end
-    end)
+  def update_dashboard_setup(%Ctx{} = ctx, attrs) do
+    with {:ok, attrs} <- Business.dashboard_setup_input(attrs) do
+      Repo.transact(fn -> update_locked_dashboard_setup(ctx.business_id, attrs) end)
+    end
   end
 
-  def update_dashboard_setup(%Ctx{}, _attrs) do
-    changeset =
-      %Business{}
-      |> Ecto.Changeset.change()
-      |> Ecto.Changeset.add_error(
-        :dashboard_setup_hidden_reason,
-        "must be present"
-      )
-
-    {:error, changeset}
+  defp update_locked_dashboard_setup(business_id, attrs) do
+    case lock_business(business_id) do
+      nil -> {:error, :not_found}
+      business -> persist_dashboard_setup(business, attrs)
+    end
   end
 
   defp lock_business(business_id) do
@@ -76,30 +63,11 @@ defmodule Easy.Orgs do
     |> Repo.one()
   end
 
-  defp persist_dashboard_setup(
-         %Business{dashboard_setup_hidden_reason: :completed} = business,
-         _attrs
-       ),
-       do: business
-
   defp persist_dashboard_setup(business, attrs) do
-    changeset = Business.update_changeset(business, attrs)
-    reason = Ecto.Changeset.get_field(changeset, :dashboard_setup_hidden_reason)
-
-    changeset
-    |> Ecto.Changeset.put_change(
-      :dashboard_setup_hidden_at,
-      dashboard_setup_hidden_at(reason)
-    )
+    business
+    |> Business.update_changeset(:dashboard_setup, DateTime.utc_now(:second), attrs)
     |> Repo.update()
-    |> case do
-      {:ok, updated_business} -> updated_business
-      {:error, changeset} -> Repo.rollback(changeset)
-    end
   end
-
-  defp dashboard_setup_hidden_at(nil), do: nil
-  defp dashboard_setup_hidden_at(_reason), do: DateTime.utc_now(:second)
 
   defp ok_or_not_found(nil), do: {:error, :not_found}
   defp ok_or_not_found(value), do: {:ok, value}

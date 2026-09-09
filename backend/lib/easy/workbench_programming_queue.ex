@@ -9,103 +9,110 @@ defmodule Easy.WorkbenchProgrammingQueue do
 
   @services [:all, :training, :nutrition]
 
-  @spec counts(Ctx.t()) :: %{all: non_neg_integer(), training: non_neg_integer(), nutrition: non_neg_integer()}
+  @type service :: :training | :nutrition
+  @type reason ::
+          %{code: :service_never_programmed, service: service()}
+          | %{code: :service_coverage_missing, service: service(), first_uncovered_on: Date.t()}
+          | %{
+              code: :service_coverage_ending_soon,
+              service: service(),
+              first_uncovered_on: Date.t(),
+              coverage_ends_on: Date.t()
+            }
+  @type item :: %{client: Client.t(), reasons: [reason()]}
+  @type page :: %{count: non_neg_integer(), items: [item()]}
+  @type counts :: %{all: non_neg_integer(), training: non_neg_integer(), nutrition: non_neg_integer()}
+
+  @spec counts(Ctx.t()) :: counts()
   def counts(%Ctx{} = ctx) do
     facts = service_facts(ctx, DateTime.utc_now())
 
     from(fact in subquery(facts),
       select: %{
         all: count(fact.client_id, :distinct),
-        training:
-          fragment(
-            "count(DISTINCT ?) FILTER (WHERE ? = 'training')",
-            fact.client_id,
-            fact.service
-          ),
-        nutrition:
-          fragment(
-            "count(DISTINCT ?) FILTER (WHERE ? = 'nutrition')",
-            fact.client_id,
-            fact.service
-          )
+        training: filter(count(fact.client_id, :distinct), fact.service == "training"),
+        nutrition: filter(count(fact.client_id, :distinct), fact.service == "nutrition")
       }
     )
     |> Repo.one()
   end
 
   @spec list(Ctx.t(), keyword()) ::
-          {:ok, %{count: non_neg_integer(), items: [map()]}} | {:error, :invalid_service}
+          {:ok, page()} | {:error, :invalid_service}
   def list(%Ctx{} = ctx, opts) do
     with {:ok, service} <- normalize_service(Keyword.get(opts, :service, :all)) do
       facts = ctx |> service_facts(DateTime.utc_now()) |> for_service(service)
-      {offset, limit} = pagination(opts)
 
       items =
-        from(fact in subquery(facts),
-          join: client in Client,
-          on: client.id == fact.client_id and client.business_id == ^ctx.business_id,
-          group_by: client.id,
-          order_by: [
-            asc: min(fact.priority),
-            asc_nulls_first:
-              fragment(
-                "CASE WHEN min(?) = 0 THEN NULL ELSE min(?) END",
-                fact.priority,
-                fact.first_uncovered_on
-              ),
-            asc:
-              fragment(
-                "(array_agg(? ORDER BY ?, ? NULLS FIRST, ?))[1]",
-                fact.service_rank,
-                fact.priority,
-                fact.first_uncovered_on,
-                fact.service_rank
-              ),
-            asc: client.id
-          ],
-          select: %{
-            client: client,
-            codes:
-              fragment(
-                "array_agg(? ORDER BY ?, ? NULLS FIRST, ?)",
-                fact.code,
-                fact.priority,
-                fact.first_uncovered_on,
-                fact.service_rank
-              ),
-            services:
-              fragment(
-                "array_agg(? ORDER BY ?, ? NULLS FIRST, ?)",
-                fact.service,
-                fact.priority,
-                fact.first_uncovered_on,
-                fact.service_rank
-              ),
-            first_uncovered_dates:
-              fragment(
-                "array_agg(? ORDER BY ?, ? NULLS FIRST, ?)",
-                fact.first_uncovered_on,
-                fact.priority,
-                fact.first_uncovered_on,
-                fact.service_rank
-              ),
-            coverage_end_dates:
-              fragment(
-                "array_agg(? ORDER BY ?, ? NULLS FIRST, ?)",
-                fact.coverage_ends_on,
-                fact.priority,
-                fact.first_uncovered_on,
-                fact.service_rank
-              )
-          },
-          offset: ^offset,
-          limit: ^limit
-        )
+        facts
+        |> item_query(ctx.business_id)
+        |> Easy.Utils.paginate(opts)
         |> Repo.all()
         |> Enum.map(&to_item/1)
 
-      {:ok, %{count: distinct_client_count(facts), items: items}}
+      {:ok, %{count: Repo.count_unique(facts, :client_id), items: items}}
     end
+  end
+
+  defp item_query(facts, business_id) do
+    from(fact in subquery(facts),
+      join: client in Client,
+      on: client.id == fact.client_id and client.business_id == ^business_id,
+      group_by: client.id,
+      order_by: [
+        asc: min(fact.priority),
+        asc_nulls_first:
+          fragment(
+            "CASE WHEN min(?) = 0 THEN NULL ELSE min(?) END",
+            fact.priority,
+            fact.first_uncovered_on
+          ),
+        asc:
+          fragment(
+            "(array_agg(? ORDER BY ?, ? NULLS FIRST, ?))[1]",
+            fact.service_rank,
+            fact.priority,
+            fact.first_uncovered_on,
+            fact.service_rank
+          ),
+        asc: client.id
+      ],
+      select: %{
+        client: client,
+        codes:
+          fragment(
+            "array_agg(? ORDER BY ?, ? NULLS FIRST, ?)",
+            fact.code,
+            fact.priority,
+            fact.first_uncovered_on,
+            fact.service_rank
+          ),
+        services:
+          fragment(
+            "array_agg(? ORDER BY ?, ? NULLS FIRST, ?)",
+            fact.service,
+            fact.priority,
+            fact.first_uncovered_on,
+            fact.service_rank
+          ),
+        first_uncovered_dates:
+          fragment(
+            "array_agg(? ORDER BY ?, ? NULLS FIRST, ?)",
+            fact.first_uncovered_on,
+            fact.priority,
+            fact.first_uncovered_on,
+            fact.service_rank
+          ),
+        coverage_end_dates:
+          fragment(
+            "array_agg(? ORDER BY ?, ? NULLS FIRST, ?)",
+            fact.coverage_ends_on,
+            fact.priority,
+            fact.first_uncovered_on,
+            fact.service_rank
+          )
+      }
+    )
   end
 
   @spec service_facts(Ctx.t(), DateTime.t()) :: Ecto.Query.t()
@@ -192,55 +199,34 @@ defmodule Easy.WorkbenchProgrammingQueue do
       |> Client.visible_to(ctx)
       |> Client.for_status(:active)
 
-    training =
-      from(client in visible,
-        join: business in Easy.Orgs.Business,
-        on: business.id == client.business_id,
-        where: fragment("? = ANY(?)", ^"training", client.required_services),
-        select: %{
-          business_id: client.business_id,
-          client_id: client.id,
-          today:
-            type(
-              fragment(
-                "(?::timestamp AT TIME ZONE 'UTC' AT TIME ZONE COALESCE(NULLIF(?, ''), NULLIF(?, ''), ?))::date",
-                type(^now, :utc_datetime),
-                client.timezone,
-                business.timezone,
-                ^Easy.LocalCalendar.default_timezone()
-              ),
-              :date
-            ),
-          service: type(^"training", :string),
-          service_rank: 0
-        }
-      )
-
-    nutrition =
-      from(client in visible,
-        join: business in Easy.Orgs.Business,
-        on: business.id == client.business_id,
-        where: fragment("? = ANY(?)", ^"nutrition", client.required_services),
-        select: %{
-          business_id: client.business_id,
-          client_id: client.id,
-          today:
-            type(
-              fragment(
-                "(?::timestamp AT TIME ZONE 'UTC' AT TIME ZONE COALESCE(NULLIF(?, ''), NULLIF(?, ''), ?))::date",
-                type(^now, :utc_datetime),
-                client.timezone,
-                business.timezone,
-                ^Easy.LocalCalendar.default_timezone()
-              ),
-              :date
-            ),
-          service: type(^"nutrition", :string),
-          service_rank: 1
-        }
-      )
-
+    training = service_clients(visible, now, "training", 0)
+    nutrition = service_clients(visible, now, "nutrition", 1)
     union_all(training, ^nutrition)
+  end
+
+  defp service_clients(visible, now, service, rank) do
+    from(client in visible,
+      join: business in Easy.Orgs.Business,
+      on: business.id == client.business_id,
+      where: fragment("? = ANY(?)", ^service, client.required_services),
+      select: %{
+        business_id: client.business_id,
+        client_id: client.id,
+        today:
+          type(
+            fragment(
+              "(?::timestamp AT TIME ZONE 'UTC' AT TIME ZONE COALESCE(NULLIF(?, ''), NULLIF(?, ''), ?))::date",
+              type(^now, :utc_datetime),
+              client.timezone,
+              business.timezone,
+              ^Easy.LocalCalendar.default_timezone()
+            ),
+            :date
+          ),
+        service: type(^service, :string),
+        service_rank: type(^rank, :integer)
+      }
+    )
   end
 
   defp assigned_plan_history(business_id) do
@@ -272,31 +258,17 @@ defmodule Easy.WorkbenchProgrammingQueue do
   end
 
   defp active_plan_intervals(business_id) do
-    covering_training_plans(business_id)
-    |> union_all(^active_nutrition_plans(business_id))
+    training = TrainingPlan.covering_intervals(business_id) |> service_intervals("training")
+    nutrition = Plan.covering_intervals(business_id) |> service_intervals("nutrition")
+    union_all(training, ^nutrition)
   end
 
-  defp covering_training_plans(business_id) do
-    from(plan in TrainingPlan,
-      where:
-        plan.business_id == ^business_id and plan.kind == :client_plan and is_nil(plan.archived_at) and
-          not is_nil(plan.start_date),
+  defp service_intervals(query, service) do
+    from(plan in query,
       select: %{
         business_id: plan.business_id,
         client_id: plan.client_id,
-        service: type(^"training", :string),
-        start_date: plan.start_date,
-        end_date: plan.end_date
-      }
-    )
-  end
-
-  defp active_nutrition_plans(business_id) do
-    from(plan in Plan.covering_intervals(business_id),
-      select: %{
-        business_id: plan.business_id,
-        client_id: plan.client_id,
-        service: type(^"nutrition", :string),
+        service: type(^service, :string),
         start_date: plan.start_date,
         end_date: plan.end_date
       }
@@ -307,15 +279,6 @@ defmodule Easy.WorkbenchProgrammingQueue do
 
   defp for_service(query, service) do
     from(fact in query, where: fact.service == ^Atom.to_string(service))
-  end
-
-  defp distinct_client_count(query) do
-    query
-    |> exclude(:select)
-    |> select([fact], fact.client_id)
-    |> distinct(true)
-    |> subquery()
-    |> Repo.aggregate(:count)
   end
 
   defp to_item(row) do
@@ -356,10 +319,4 @@ defmodule Easy.WorkbenchProgrammingQueue do
   defp normalize_service("training"), do: {:ok, :training}
   defp normalize_service("nutrition"), do: {:ok, :nutrition}
   defp normalize_service(_service), do: {:error, :invalid_service}
-
-  defp pagination(opts) do
-    offset = max(Keyword.get(opts, :offset, 0), 0)
-    limit = min(max(Keyword.get(opts, :limit, 20), 0), 100)
-    {offset, limit}
-  end
 end

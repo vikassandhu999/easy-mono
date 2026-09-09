@@ -12,6 +12,7 @@ defmodule Easy.Landing.LandingPage do
   @templates [:proof_first, :problem_fit, :coach_story]
   @statuses [:draft, :published]
   @max_questions 5
+  @max_programs 3
 
   @type t :: %__MODULE__{}
 
@@ -29,7 +30,7 @@ defmodule Easy.Landing.LandingPage do
     field :status, Ecto.Enum, values: @statuses, default: :draft
 
     belongs_to :business, Orgs.Business
-    has_many :programs, Easy.Landing.LandingProgram, preload_order: [asc: :position]
+    has_many :programs, Easy.Landing.LandingProgram, preload_order: [asc: :position, asc: :id]
 
     timestamps(type: :utc_datetime)
   end
@@ -47,6 +48,36 @@ defmodule Easy.Landing.LandingPage do
     :application_questions,
     :status
   ]
+
+  @spec program_inputs(map()) :: {:ok, [map()]} | {:error, :too_many_programs | Ecto.Changeset.t()}
+  def program_inputs(attrs) do
+    changeset = cast({%{programs: []}, %{programs: {:array, :map}}}, attrs, [:programs], empty_values: [])
+
+    case apply_action(changeset, :insert) do
+      {:ok, %{programs: programs}} when is_list(programs) ->
+        cond do
+          not Enum.all?(programs, &is_map/1) -> {:error, add_error(changeset, :programs, "is invalid")}
+          length(programs) > @max_programs -> {:error, :too_many_programs}
+          true -> {:ok, programs}
+        end
+
+      {:ok, _input} ->
+        {:error, add_error(changeset, :programs, "is invalid")}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  @spec application_program(t(), map()) :: Easy.Landing.LandingProgram.t() | nil
+  def application_program(%__MODULE__{programs: programs}, attrs) do
+    program_id =
+      {%{}, %{landing_program_id: Ecto.UUID}}
+      |> cast(attrs, [:landing_program_id])
+      |> get_field(:landing_program_id)
+
+    Enum.find(programs, &(&1.id == program_id))
+  end
 
   @spec insert_changeset(String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, attrs) do
@@ -98,6 +129,9 @@ defmodule Easy.Landing.LandingPage do
   def published(query \\ __MODULE__) do
     from(p in query, where: p.status == :published)
   end
+
+  @spec oldest(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def oldest(query \\ __MODULE__), do: from(p in query, order_by: [asc: p.inserted_at, asc: p.id])
 
   @spec include_programs(Ecto.Queryable.t()) :: Ecto.Query.t()
   def include_programs(query \\ __MODULE__), do: from(p in query, preload: [:programs])

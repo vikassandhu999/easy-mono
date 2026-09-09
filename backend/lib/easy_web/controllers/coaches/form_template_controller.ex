@@ -1,7 +1,7 @@
 defmodule EasyWeb.Coaches.FormTemplateController do
   use EasyWeb, :typed_controller
 
-  alias Easy.Forms
+  alias Easy.Forms.Templates
   alias EasyWeb.Types.FormTemplate
 
   typed(:index, ok: {200, data([FormTemplate.t()])})
@@ -16,7 +16,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
   def index(conn, _params) do
     ctx = conn.assigns.ctx
 
-    with {:ok, templates} <- Forms.list_form_templates(ctx) do
+    with {:ok, templates} <- Templates.list(ctx) do
       ok(conn, %{data: templates})
     end
   end
@@ -25,7 +25,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
   def create(conn, _params) do
     ctx = conn.assigns.ctx
 
-    with {:ok, template} <- Forms.create_form_template(ctx, conn.body_params) do
+    with {:ok, template} <- Templates.create(ctx, conn.body_params) do
       ok(conn, %{data: template})
     end
   end
@@ -34,7 +34,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
   def show(conn, %{"id" => id}) do
     ctx = conn.assigns.ctx
 
-    with {:ok, template} <- Forms.get_form_template(ctx, id) do
+    with {:ok, template} <- Templates.get(ctx, id) do
       ok(conn, %{data: template})
     end
   end
@@ -44,7 +44,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
     ctx = conn.assigns.ctx
     id = conn.path_params["id"]
 
-    with {:ok, template} <- Forms.update_form_template(ctx, id, conn.body_params) do
+    with {:ok, template} <- Templates.update(ctx, id, conn.body_params) do
       ok(conn, %{data: template})
     end
   end
@@ -54,7 +54,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
     ctx = conn.assigns.ctx
     id = conn.path_params["id"]
 
-    with {:ok, _template} <- Forms.delete_form_template(ctx, id) do
+    with {:ok, _template} <- Templates.delete(ctx, id) do
       ok(conn)
     end
   end
@@ -64,7 +64,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
     ctx = conn.assigns.ctx
     id = conn.path_params["id"]
 
-    with {:ok, template} <- Forms.set_default_intake_template(ctx, id) do
+    with {:ok, template} <- Templates.set_default_intake(ctx, id) do
       ok(conn, %{data: template})
     end
   end
@@ -74,7 +74,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
     ctx = conn.assigns.ctx
     id = conn.path_params["id"]
 
-    with {:ok, template} <- Forms.clear_default_intake_template(ctx, id) do
+    with {:ok, template} <- Templates.clear_default_intake(ctx, id) do
       ok(conn, %{data: template})
     end
   end

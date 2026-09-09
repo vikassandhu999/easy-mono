@@ -8,7 +8,7 @@ defmodule Easy.Training.PerformedSetConcurrencyTest do
   alias Easy.{Ctx, Repo}
   alias Easy.Identity.User
   alias Easy.Orgs.{Business, Coach}
-  alias Easy.Training.{Execution, TrainingExercise, TrainingPerformedSet, TrainingSession}
+  alias Easy.Training.{Execution, PerformedSets, TrainingExercise, TrainingPerformedSet, TrainingSession}
   alias Ecto.Adapters.SQL.Sandbox
 
   @append_count 8
@@ -41,7 +41,7 @@ defmodule Easy.Training.PerformedSetConcurrencyTest do
             :go -> :ok
           end
 
-          Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{
+          PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{
             exercise_id: ctx.exercise.id,
             reps: "10"
           })
@@ -68,19 +68,19 @@ defmodule Easy.Training.PerformedSetConcurrencyTest do
 
   test "an update waiting on session completion cannot change terminal history", ctx do
     assert_terminal_transition_wins(ctx, fn set ->
-      Execution.update_client_performed_set(ctx.ctx, set.id, %{reps: "12"})
+      PerformedSets.update_client_performed_set(ctx.ctx, set.id, %{reps: "12"})
     end)
   end
 
   test "a delete waiting on session completion cannot change terminal history", ctx do
     assert_terminal_transition_wins(ctx, fn set ->
-      Execution.delete_client_performed_set(ctx.ctx, set.id)
+      PerformedSets.delete_client_performed_set(ctx.ctx, set.id)
     end)
   end
 
   defp assert_terminal_transition_wins(ctx, mutation) do
     {:ok, set} =
-      Execution.create_client_performed_set(ctx.ctx, ctx.session.id, %{
+      PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{
         exercise_id: ctx.exercise.id,
         reps: "10"
       })
@@ -132,17 +132,15 @@ defmodule Easy.Training.PerformedSetConcurrencyTest do
     owner = insert_user!("performed-set-owner-#{suffix}@test.com")
 
     business =
-      owner
+      owner.id
       |> Business.insert_changeset(%{name: "Performed set concurrency", handle: "performed-set-#{suffix}"})
       |> Repo.insert!()
 
     coach_user = insert_user!("performed-set-coach-#{suffix}@test.com")
 
     coach =
-      %{first_name: "Performed", last_name: "Coach"}
-      |> Coach.insert_changeset()
-      |> put_change(:business_id, business.id)
-      |> put_change(:user_id, coach_user.id)
+      business.id
+      |> Coach.insert_changeset(coach_user.id, %{first_name: "Performed", last_name: "Coach"})
       |> put_change(:email, coach_user.email)
       |> Repo.insert!()
 

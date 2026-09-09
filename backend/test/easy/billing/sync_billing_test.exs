@@ -144,7 +144,7 @@ defmodule Easy.Billing.SyncBillingTest do
     assert {:error, :razorpay_error} = Billing.sync_billing(ctx_for(business))
   end
 
-  test "transaction failures are returned instead of stale billing data" do
+  test "invalid provider quantities return a provider error without updating billing" do
     business = insert(:business)
     insert(:business_billing, business: business, razorpay_subscription_id: "sub_sync")
 
@@ -154,8 +154,43 @@ defmodule Easy.Billing.SyncBillingTest do
       "quantity" => -1
     })
 
-    assert {:error, %Ecto.Changeset{}} = Billing.sync_billing(ctx_for(business))
+    assert {:error, :razorpay_error} = Billing.sync_billing(ctx_for(business))
     assert billing_for(business.id).paid_seats == 0
+  end
+
+  test "malformed and mismatched subscription responses leave billing and events unchanged" do
+    business = insert(:business)
+    insert(:business_billing, business: business, razorpay_subscription_id: "sub_sync", paid_seats: 0)
+
+    valid = %{"id" => "sub_sync", "status" => "active", "quantity" => 3}
+
+    for {field, value} <- [
+          {"id", "sub_someone_else"},
+          {"id", nil},
+          {"quantity", "3"},
+          {"quantity", 2_147_483_648},
+          {"current_end", "tomorrow"},
+          {"status", []}
+        ] do
+      stub_get("sub_sync", Map.put(valid, field, value))
+
+      assert {:error, :razorpay_error} = Billing.sync_billing(ctx_for(business))
+      assert billing_for(business.id).paid_seats == 0
+      assert billing_for(business.id).status == :free
+      assert events_for(business.id) == []
+    end
+  end
+
+  test "checkout rejects an invalid subscription before saving checkout identifiers" do
+    business = insert(:business)
+    insert(:business_billing, business: business)
+
+    for response <- [%{}, %{"id" => 42}, %{"id" => "sub_new", "plan_id" => []}] do
+      Req.Test.stub(Easy.Razorpay, fn conn -> Req.Test.json(conn, response) end)
+      assert {:error, :razorpay_error} = Billing.checkout(ctx_for(business), 3)
+      assert is_nil(billing_for(business.id).razorpay_subscription_id)
+      assert events_for(business.id) == []
+    end
   end
 
   test "sync then the real webhook for the same quantity is idempotent" do

@@ -156,7 +156,7 @@ defmodule EasyWeb.Coaches.CheckInScheduleControllerTest do
     conn = patch(conn, "/v1/coach/check-in-schedules/#{paused.id}", %{"active" => false})
     assert %{"data" => %{"active" => false}} = json_response(conn, 200)
 
-    assert {1, 0} = Easy.Forms.generate_due_check_ins(tomorrow)
+    assert {1, 0} = Easy.CheckIns.generate_due_check_ins(tomorrow)
 
     conn = get(recycle(conn), "/v1/coach/clients/#{client.id}/form-assignments")
     assert %{"data" => [assignment]} = json_response(conn, 200)

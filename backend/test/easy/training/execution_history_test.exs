@@ -3,9 +3,11 @@ defmodule Easy.Training.ExecutionHistoryTest do
   # Run this module synchronously so unrelated tests cannot pollute that mailbox.
   use Easy.DataCase, async: false
 
+  alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Repo
-  alias Easy.Training.{Execution, Library, Programming}
+  alias Easy.Training.{Execution, Library, PerformedSets, Programming}
+  alias Easy.Training.TrainingSession
 
   setup do
     coach = insert(:coach)
@@ -14,6 +16,34 @@ defmodule Easy.Training.ExecutionHistoryTest do
     coach_ctx = %Ctx{business_id: coach.business_id, user_id: coach.user_id, coach_id: coach.id}
 
     %{client: client, coach: coach, coach_ctx: coach_ctx, ctx: ctx}
+  end
+
+  test "session reads and mutations conceal other clients, tenants and missing identities", ctx do
+    assert {:ok, session} = Execution.start_client_session(ctx.ctx, nil, %{})
+    before = Repo.get!(TrainingSession, session.id)
+    client_before = Repo.get!(Client, ctx.client.id)
+    other_client = insert(:client, business: ctx.coach.business, creator: ctx.coach, assigned_coach: ctx.coach)
+    foreign = insert(:client)
+
+    other_ctx = %{ctx.ctx | client_id: other_client.id, user_id: other_client.user_id}
+    foreign_ctx = %Ctx{business_id: foreign.business_id, client_id: foreign.id, user_id: foreign.user_id}
+
+    cases = [
+      {other_ctx, session.id},
+      {foreign_ctx, session.id},
+      {%{ctx.ctx | business_id: foreign.business_id}, session.id},
+      {%{ctx.ctx | client_id: nil}, session.id},
+      {ctx.ctx, Ecto.UUID.generate()}
+    ]
+
+    for {actor, session_id} <- cases do
+      assert {:error, :not_found} = Execution.get_client_session(actor, session_id)
+      assert {:error, :not_found} = Execution.update_client_session(actor, session_id, %{notes: "Forbidden"})
+      assert {:error, :not_found} = Execution.complete_client_session(actor, session_id, %{notes: "Forbidden"})
+      assert {:error, :not_found} = Execution.discard_client_session(actor, session_id)
+      assert Repo.get!(TrainingSession, session.id) == before
+      assert Repo.get!(Client, ctx.client.id) == client_before
+    end
   end
 
   describe "update_client_session/3" do
@@ -119,15 +149,15 @@ defmodule Easy.Training.ExecutionHistoryTest do
       assert {:ok, session} = Execution.start_client_session(ctx.ctx, nil, %{})
 
       assert {:ok, set} =
-               Execution.create_client_performed_set(ctx.ctx, session.id, %{exercise_id: exercise.id, reps: "5"})
+               PerformedSets.create_client_performed_set(ctx.ctx, session.id, %{exercise_id: exercise.id, reps: "5"})
 
       assert {:ok, _} = Execution.complete_client_session(ctx.ctx, session.id, %{})
 
       assert {:error, :not_found} =
-               Execution.create_client_performed_set(ctx.ctx, session.id, %{exercise_id: exercise.id})
+               PerformedSets.create_client_performed_set(ctx.ctx, session.id, %{exercise_id: exercise.id})
 
-      assert {:error, :not_found} = Execution.update_client_performed_set(ctx.ctx, set.id, %{reps: "8"})
-      assert {:error, :not_found} = Execution.delete_client_performed_set(ctx.ctx, set.id)
+      assert {:error, :not_found} = PerformedSets.update_client_performed_set(ctx.ctx, set.id, %{reps: "8"})
+      assert {:error, :not_found} = PerformedSets.delete_client_performed_set(ctx.ctx, set.id)
     end
   end
 
@@ -233,7 +263,7 @@ defmodule Easy.Training.ExecutionHistoryTest do
       assert {:ok, session} = Execution.start_client_session(ctx.ctx, workout.id, %{})
 
       assert {:ok, _set} =
-               Execution.create_client_performed_set(ctx.ctx, session.id, %{
+               PerformedSets.create_client_performed_set(ctx.ctx, session.id, %{
                  exercise_id: exercise.id,
                  snapshot_exercise_ref: prescribed.id,
                  reps: "5"

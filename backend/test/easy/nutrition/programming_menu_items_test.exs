@@ -1,7 +1,7 @@
 defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
   use Easy.DataCase, async: true
 
-  alias Easy.Nutrition.{Library, Plan, Programming}
+  alias Easy.Nutrition.{Library, Plan, PlanReader, Programming}
 
   alias Easy.Repo
 
@@ -142,7 +142,7 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
                  ]
                })
 
-      assert {:ok, current} = Programming.get_template(ctx, template.id)
+      assert {:ok, current} = PlanReader.get_template(ctx, template.id)
 
       assert [%{portion: %{unit: "cup", label: "1 cup", grams: 30.0}}] =
                hd(current.menu.meals).meal_items
@@ -299,7 +299,7 @@ defmodule Easy.Nutrition.ProgrammingMenuItemsTest do
                  )
                )
 
-      assert {:ok, current} = Programming.get_template(ctx, template.id)
+      assert {:ok, current} = PlanReader.get_template(ctx, template.id)
       assert current.revision == 2
       assert [%{name: "Weighed"}] = current.menu.meals
     end

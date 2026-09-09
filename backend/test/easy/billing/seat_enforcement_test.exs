@@ -2,6 +2,7 @@ defmodule Easy.Billing.SeatEnforcementTest do
   use Easy.DataCase, async: true
 
   alias Easy.{Billing, Clients}
+  alias Easy.ClientInvitations
   alias Easy.Clients.Client
   alias Easy.Repo
 
@@ -51,7 +52,7 @@ defmodule Easy.Billing.SeatEnforcementTest do
     fill_free_seats(business)
 
     assert {:error, :seat_limit_reached} =
-             Clients.invite_client(ctx_for(business), params_for(:client_attrs))
+             ClientInvitations.invite(ctx_for(business), params_for(:client_attrs))
   end
 
   test "invite succeeds below the limit and a pending invite reserves a seat" do
@@ -59,11 +60,11 @@ defmodule Easy.Billing.SeatEnforcementTest do
     insert(:business_billing, business: business, free_seats: 2)
     insert(:client, business: business, status: :active)
 
-    assert {:ok, _client} = Clients.invite_client(ctx_for(business), params_for(:client_attrs))
+    assert {:ok, _client} = ClientInvitations.invite(ctx_for(business), params_for(:client_attrs))
     assert {:ok, %{used_seats: 2}} = Billing.get_billing(ctx_for(business))
 
     assert {:error, :seat_limit_reached} =
-             Clients.invite_client(ctx_for(business), params_for(:client_attrs))
+             ClientInvitations.invite(ctx_for(business), params_for(:client_attrs))
   end
 
   test "reactivation is blocked at the seat limit" do
@@ -108,22 +109,22 @@ defmodule Easy.Billing.SeatEnforcementTest do
 
   test "accept-invite becomes active when capacity exists" do
     business = insert(:business)
-    {:ok, invited} = Clients.invite_client(ctx_for(business), params_for(:client_attrs))
+    {:ok, invited} = ClientInvitations.invite(ctx_for(business), params_for(:client_attrs))
     user = insert(:user)
 
-    assert {:ok, %{status: :active}} = Clients.accept_invite(invited, user.id, invited.email)
+    assert {:ok, %{status: :active}} = ClientInvitations.accept_invite(invited, user.id, invited.email)
   end
 
   test "accept-invite becomes awaiting_seat when capacity does not exist" do
     business = insert(:business)
     insert(:business_billing, business: business, free_seats: 2)
-    {:ok, invited} = Clients.invite_client(ctx_for(business), params_for(:client_attrs))
+    {:ok, invited} = ClientInvitations.invite(ctx_for(business), params_for(:client_attrs))
     # Capacity disappears after the invite: fill both free seats over the pending one.
     fill_free_seats(business)
     user = insert(:user)
 
     assert {:ok, %{status: :inactive, inactive_reason: :awaiting_seat}} =
-             Clients.accept_invite(invited, user.id, invited.email)
+             ClientInvitations.accept_invite(invited, user.id, invited.email)
   end
 
   test "a charge activates the oldest awaiting_seat clients up to capacity" do
@@ -168,6 +169,6 @@ defmodule Easy.Billing.SeatEnforcementTest do
     assert Repo.get!(Client, extra.id).status == :active
     # ...but additions stay blocked:
     assert {:error, :seat_limit_reached} =
-             Clients.invite_client(ctx_for(business), params_for(:client_attrs))
+             ClientInvitations.invite(ctx_for(business), params_for(:client_attrs))
   end
 end

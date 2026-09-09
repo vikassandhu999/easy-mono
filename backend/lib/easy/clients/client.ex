@@ -11,7 +11,13 @@ defmodule Easy.Clients.Client do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
+  @expiring_soon_days 14
+
   @type t :: %__MODULE__{}
+  @type service :: :training | :nutrition
+  @type status :: :pending | :active | :inactive
+  @type stage :: :onboarding | :coaching
+  @type status_counts :: %{active: non_neg_integer(), pending: non_neg_integer(), inactive: non_neg_integer()}
 
   @statuses [:pending, :active, :inactive]
   @stages [:onboarding, :coaching]
@@ -86,28 +92,58 @@ defmodule Easy.Clients.Client do
 
   # Changesets
 
-  @spec invite_changeset(Orgs.Coach.t(), map()) :: Ecto.Changeset.t()
-  def invite_changeset(coach, attrs) do
+  @spec invite_changeset(String.t(), String.t(), DateTime.t(), map()) :: Ecto.Changeset.t()
+  def invite_changeset(business_id, coach_id, sent_at, attrs) do
     %__MODULE__{}
     |> cast(attrs, @invite_cast_fields)
+    |> validate_profile_lengths()
     |> normalize_required_services()
     |> validate_required_services_unique()
-    |> put_change(:business_id, coach.business_id)
-    |> validate_required([:business_id])
+    |> put_change(:business_id, business_id)
+    |> put_change(:creator_id, coach_id)
+    |> put_change(:assigned_coach_id, coach_id)
+    |> validate_required([:business_id, :creator_id, :assigned_coach_id])
     |> validate_email_or_phone()
     |> put_change(:status, :pending)
     |> put_change(:invitation_token, generate_token())
-    |> put_change(:invitation_sent_at, DateTime.utc_now(:second))
+    |> put_change(:invitation_sent_at, sent_at)
     |> LocalCalendar.stamp_timezone()
     |> unique_constraint(:email, name: :clients_business_id_email_index)
     |> check_constraint(:required_services, name: :clients_required_services_check)
-    |> put_assoc(:creator, coach)
+    |> foreign_key_constraint(:business_id)
+    |> foreign_key_constraint(:creator_id)
+    |> foreign_key_constraint(:assigned_coach_id)
   end
 
-  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(client, attrs) do
+  @spec resend_invite_changeset(t(), DateTime.t()) :: Ecto.Changeset.t()
+  def resend_invite_changeset(client, sent_at) do
+    change(client, invitation_sent_at: sent_at)
+  end
+
+  @spec delete_invitation_changeset(t()) :: Ecto.Changeset.t()
+  def delete_invitation_changeset(client) do
+    client
+    |> change()
+    |> foreign_key_constraint(:base,
+      name: :workout_sessions_client_id_fkey,
+      message: "client has activity records and cannot be revoked"
+    )
+  end
+
+  @spec reassign_changeset(t(), String.t()) :: Ecto.Changeset.t()
+  def reassign_changeset(client, coach_id) do
+    client
+    |> change()
+    |> put_change(:assigned_coach_id, coach_id)
+    |> validate_required([:assigned_coach_id])
+    |> foreign_key_constraint(:assigned_coach_id)
+  end
+
+  @spec update_changeset(t(), Date.t(), map()) :: Ecto.Changeset.t()
+  def update_changeset(client, today, attrs) do
     client
     |> cast(attrs, @update_cast_fields)
+    |> validate_profile_lengths()
     |> normalize_required_services()
     |> validate_required_services_unique()
     |> validate_required_services_edit(attrs)
@@ -117,7 +153,7 @@ defmodule Easy.Clients.Client do
     |> validate_status_transition(client.status)
     |> validate_subscription_dates()
     |> validate_stage_change()
-    |> validate_reactivation_dates(client.status)
+    |> validate_reactivation_dates(today)
     |> put_inactive_reason()
     |> unique_constraint(:email, name: :clients_business_id_email_index)
     |> check_constraint(:required_services, name: :clients_required_services_check)
@@ -249,15 +285,20 @@ defmodule Easy.Clients.Client do
     end
   end
 
+  @spec reactivation?(Ecto.Changeset.t()) :: boolean()
+  def reactivation?(%Ecto.Changeset{data: %__MODULE__{status: :inactive}} = changeset),
+    do: get_change(changeset, :status) == :active
+
+  def reactivation?(%Ecto.Changeset{}), do: false
+
   # Reactivating a client whose subscription already ended would be undone by the
   # next sweep — force the coach to extend or clear the dates in the same update.
-  defp validate_reactivation_dates(changeset, current_status) do
+  defp validate_reactivation_dates(changeset, today) do
     ends = get_field(changeset, :subscription_ends_on)
 
-    reactivating? = get_change(changeset, :status) == :active and current_status == :inactive
-    expired? = not is_nil(ends) and Date.compare(ends, Date.utc_today()) == :lt
+    expired? = not is_nil(ends) and Date.compare(ends, today) == :lt
 
-    if reactivating? and expired? do
+    if reactivation?(changeset) and expired? do
       add_error(changeset, :status, "subscription has ended; extend or clear the dates first")
     else
       changeset
@@ -276,6 +317,13 @@ defmodule Easy.Clients.Client do
   def self_update_changeset(client, attrs) do
     client
     |> cast(attrs, @self_update_cast_fields)
+    |> validate_profile_lengths()
+  end
+
+  defp validate_profile_lengths(changeset) do
+    Enum.reduce([:email, :first_name, :last_name, :phone, :notes], changeset, fn field, changeset ->
+      validate_length(changeset, field, max: 255, count: :codepoints)
+    end)
   end
 
   defp validate_email_or_phone(changeset) do
@@ -295,12 +343,59 @@ defmodule Easy.Clients.Client do
 
   # Queries
 
-  @spec invitation_expired?(t()) :: boolean()
-  def invitation_expired?(%__MODULE__{invitation_sent_at: nil}), do: false
+  @spec full_name(t()) :: String.t()
+  def full_name(%__MODULE__{first_name: first, last_name: last}) do
+    [first, last] |> Enum.filter(&is_binary/1) |> Enum.join(" ")
+  end
 
-  def invitation_expired?(%__MODULE__{invitation_sent_at: sent_at}) do
-    expires_at = DateTime.add(sent_at, @invitation_validity_days, :day)
-    DateTime.compare(DateTime.utc_now(), expires_at) == :gt
+  @spec expiring_soon(Ecto.Queryable.t(), Date.t()) :: Ecto.Query.t()
+  def expiring_soon(query \\ __MODULE__, today) do
+    horizon = Date.add(today, @expiring_soon_days)
+
+    from(client in for_status(query, :active),
+      where:
+        not is_nil(client.subscription_ends_on) and
+          client.subscription_ends_on >= ^today and client.subscription_ends_on <= ^horizon
+    )
+  end
+
+  @spec expired_subscriptions(Ecto.Queryable.t(), Date.t()) :: Ecto.Query.t()
+  def expired_subscriptions(query \\ __MODULE__, today) do
+    query
+    |> for_status(:active)
+    |> where([client], client.subscription_ends_on < ^today)
+  end
+
+  @spec applied_timezone(t()) :: String.t()
+  def applied_timezone(%__MODULE__{} = client) do
+    LocalCalendar.applied_timezone(client.timezone, business_timezone(client))
+  end
+
+  @spec local_date(t(), DateTime.t()) :: Date.t()
+  def local_date(%__MODULE__{} = client, %DateTime{} = now) do
+    LocalCalendar.to_local_date(now, applied_timezone(client))
+  end
+
+  defp business_timezone(%__MODULE__{business: %Orgs.Business{timezone: timezone}}), do: timezone
+  defp business_timezone(_client), do: nil
+
+  @spec put_expiring_flag(t(), Date.t()) :: t()
+  def put_expiring_flag(%__MODULE__{} = client, today) do
+    horizon = Date.add(today, @expiring_soon_days)
+
+    expiring_soon =
+      client.status == :active and not is_nil(client.subscription_ends_on) and
+        Date.compare(client.subscription_ends_on, today) != :lt and
+        Date.compare(client.subscription_ends_on, horizon) != :gt
+
+    %{client | expiring_soon: expiring_soon}
+  end
+
+  @spec invitation_expired?(t(), DateTime.t()) :: boolean()
+  def invitation_expired?(%__MODULE__{invitation_sent_at: nil}, _now), do: false
+
+  def invitation_expired?(%__MODULE__{} = client, now) do
+    DateTime.compare(now, invitation_expires_at(client)) == :gt
   end
 
   @spec invitation_expires_at(t()) :: DateTime.t() | nil
@@ -315,9 +410,47 @@ defmodule Easy.Clients.Client do
     from(c in query, where: c.user_id == ^user_id)
   end
 
+  @spec for_invitation_token(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_invitation_token(query \\ __MODULE__, token) do
+    from(client in query, where: client.invitation_token == ^token)
+  end
+
+  @spec active_elsewhere(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
+  def active_elsewhere(query \\ __MODULE__, user_id, business_id) do
+    query
+    |> for_user(user_id)
+    |> for_status(:active)
+    |> where([client], client.business_id != ^business_id)
+  end
+
+  @spec pending_invitation(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
+  def pending_invitation(query \\ __MODULE__, business_id, client_id) do
+    query
+    |> for_business(business_id)
+    |> for_status(:pending)
+    |> where([client], client.id == ^client_id)
+    |> select([client], client)
+  end
+
+  @spec select_status_counts(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def select_status_counts(query \\ __MODULE__) do
+    from(c in query,
+      select: %{
+        active: filter(count(c.id), c.status == :active),
+        pending: filter(count(c.id), c.status == :pending),
+        inactive: filter(count(c.id), c.status == :inactive)
+      }
+    )
+  end
+
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do
     from(c in query, where: c.business_id == ^business_id)
+  end
+
+  @spec assigned_to(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def assigned_to(query \\ __MODULE__, coach_id) do
+    from(client in query, where: client.assigned_coach_id == ^coach_id)
   end
 
   @spec visible_to(Ecto.Queryable.t(), Easy.Ctx.t()) :: Ecto.Query.t()
@@ -325,13 +458,13 @@ defmodule Easy.Clients.Client do
   def visible_to(query, %Easy.Ctx{owner?: true}), do: query
 
   def visible_to(query, %Easy.Ctx{coach_id: coach_id}) when not is_nil(coach_id) do
-    from(c in query, where: c.assigned_coach_id == ^coach_id)
+    assigned_to(query, coach_id)
   end
 
   def visible_to(query, %Easy.Ctx{}), do: from(c in query, where: false)
 
-  @spec accepted(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def accepted(query \\ __MODULE__) do
+  @spec active(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def active(query \\ __MODULE__) do
     from(c in query, where: c.status == :active)
   end
 
@@ -351,20 +484,26 @@ defmodule Easy.Clients.Client do
     )
   end
 
-  @spec for_status(Ecto.Queryable.t(), atom() | String.t() | nil) :: Ecto.Query.t()
+  @spec occupying_seat(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def occupying_seat(query \\ __MODULE__) do
+    from(client in query, where: client.status in [:active, :pending])
+  end
+
+  @spec awaiting_seat(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def awaiting_seat(query \\ __MODULE__) do
+    from(client in query, where: client.status == :inactive and client.inactive_reason == :awaiting_seat)
+  end
+
+  @spec for_status(Ecto.Queryable.t(), status() | String.t() | nil) :: Ecto.Query.t()
   def for_status(query \\ __MODULE__, status)
   def for_status(query, nil), do: query
   def for_status(query, ""), do: query
 
-  def for_status(query, status) when is_binary(status) do
+  def for_status(query, status) when is_binary(status) or is_atom(status) do
     from(c in query, where: c.status == ^status)
   end
 
-  def for_status(query, status) when is_atom(status) do
-    from(c in query, where: c.status == ^status)
-  end
-
-  @spec for_stage(Ecto.Queryable.t(), atom() | String.t() | nil) :: Ecto.Query.t()
+  @spec for_stage(Ecto.Queryable.t(), stage() | String.t() | nil) :: Ecto.Query.t()
   def for_stage(query \\ __MODULE__, stage)
   def for_stage(query, nil), do: query
   def for_stage(query, ""), do: query
@@ -373,6 +512,11 @@ defmodule Easy.Clients.Client do
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do
     from(c in query, order_by: [desc: c.inserted_at, desc: c.id])
+  end
+
+  @spec oldest(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def oldest(query \\ __MODULE__) do
+    from(c in query, order_by: [asc: c.inserted_at, asc: c.id])
   end
 
   @spec last_active_stamp(Ecto.Queryable.t(), String.t(), String.t(), DateTime.t()) :: Ecto.Query.t()
@@ -416,15 +560,6 @@ defmodule Easy.Clients.Client do
       where: u.email == ^email and c.status == ^:active
     )
   end
-
-  @spec build_invite_url(t()) :: String.t() | nil
-  def build_invite_url(%__MODULE__{status: :pending, invitation_token: token})
-      when is_binary(token) do
-    base_url = Application.get_env(:easy, :client_frontend_url, "http://localhost:1314")
-    "#{base_url}/invite/#{token}"
-  end
-
-  def build_invite_url(%__MODULE__{}), do: nil
 
   defp generate_token do
     :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)

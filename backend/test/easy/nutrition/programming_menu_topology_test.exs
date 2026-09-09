@@ -1,7 +1,7 @@
 defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
   use Easy.DataCase, async: true
 
-  alias Easy.Nutrition.{Library, Menu, Plan, Programming}
+  alias Easy.Nutrition.{Library, Menu, Plan, PlanReader, Programming}
   import Easy.Nutrition.ProgrammingMenuFixtures
 
   setup do
@@ -126,7 +126,7 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
   test "archive and revision conflicts retain the complete saved document", c do
     {:ok, saved} = Programming.replace_menu(c.ctx, c.plan.id, 1, menu(c.plan, meals: [meal_input("a", "A", [])]))
     assert {:error, %{action: :stale_revision}} = Programming.replace_menu(c.ctx, saved.id, 1, menu(saved, meals: []))
-    {:ok, archived} = Programming.archive_template(c.ctx, saved.id)
+    {:ok, archived} = Programming.archive_plan(c.ctx, saved.id)
     assert {:error, %Ecto.Changeset{}} = Programming.replace_menu(c.ctx, saved.id, 3, menu(saved, meals: []))
     assert Repo.get!(Plan, saved.id).menu == archived.menu
   end
@@ -134,7 +134,7 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
   test "Library names and nutrients change together without saving the menu", c do
     {:ok, saved} = Programming.replace_menu(c.ctx, c.plan.id, 1, menu(c.plan, meals: [meal_input("a", "A", [food_item("item", c.food.id, %{kind: :gram, grams: 50})])]))
     assert {:ok, _} = Library.update_food(c.ctx, c.food.id, c.food.revision, %{name: "Renamed", calories_per_100g: 901.25})
-    assert {:ok, read} = Programming.get_template(c.ctx, saved.id)
+    assert {:ok, read} = PlanReader.get_template(c.ctx, saved.id)
     assert [%{name: "Renamed", nutrients: %{calories: 450.625}}] = Menu.items(read.menu)
     assert {:ok, resaved} = Programming.replace_menu(c.ctx, read.id, read.revision, Menu.format(read.menu))
     assert hd(Menu.items(resaved.menu)).nutrients.calories == 450.625
@@ -149,7 +149,7 @@ defmodule Easy.Nutrition.ProgrammingMenuTopologyTest do
     {:ok, second} = Programming.replace_menu(c.ctx, second.id, second.revision, menu(second, meals: [larger]))
     {:ok, empty} = Programming.create_template(c.ctx, %{name: "Empty"})
 
-    assert {:ok, %{templates: plans}} = Programming.list_templates(c.ctx)
+    assert {:ok, %{templates: plans}} = PlanReader.list_templates(c.ctx)
     by_plan = Map.new(plans, &{&1.id, Menu.items(&1.menu)})
     assert [small] = by_plan[first.id]
     assert [large] = by_plan[second.id]

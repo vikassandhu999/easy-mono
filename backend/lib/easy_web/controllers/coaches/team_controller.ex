@@ -2,6 +2,7 @@ defmodule EasyWeb.Coaches.TeamController do
   use EasyWeb, :typed_controller
 
   alias Easy.Coaches
+  alias Easy.CoachInvitations
   alias EasyWeb.Types.TeamMember
 
   typed(:index, query: TeamMember.list_query(), ok: {200, data([TeamMember.t()])})
@@ -21,7 +22,7 @@ defmodule EasyWeb.Coaches.TeamController do
 
   @spec invite(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def invite(conn, _params) do
-    with {:ok, coach} <- Coaches.invite_trainer(conn.assigns.ctx, conn.body_params) do
+    with {:ok, coach} <- CoachInvitations.invite_trainer(conn.assigns.ctx, conn.body_params) do
       ok(conn, %{data: team_member(coach, false)})
     end
   end
@@ -30,7 +31,7 @@ defmodule EasyWeb.Coaches.TeamController do
   def resend_invite(conn, _params) do
     coach_id = conn.path_params["id"]
 
-    with {:ok, coach} <- Coaches.resend_invite(conn.assigns.ctx, coach_id) do
+    with {:ok, coach} <- CoachInvitations.resend_invite(conn.assigns.ctx, coach_id) do
       ok(conn, %{data: team_member(coach, false)})
     end
   end
@@ -39,7 +40,7 @@ defmodule EasyWeb.Coaches.TeamController do
   def revoke_invite(conn, _params) do
     coach_id = conn.path_params["id"]
 
-    with {:ok, coach} <- Coaches.revoke_invite(conn.assigns.ctx, coach_id) do
+    with {:ok, coach} <- CoachInvitations.revoke_invite(conn.assigns.ctx, coach_id) do
       ok(conn, %{data: team_member(coach, false)})
     end
   end

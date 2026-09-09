@@ -71,6 +71,17 @@ defmodule Easy.Billing.CheckoutTest do
     assert %{seats_to_add: ["must be less than or equal to 100"]} = errors_on(changeset)
   end
 
+  test "invalid seat increases return changeset errors before creating billing or contacting the provider" do
+    Req.Test.stub(Easy.Razorpay, fn _conn -> flunk("invalid checkout must not contact Razorpay") end)
+    business = insert(:business)
+
+    for value <- [nil, 0, -1, 1.5, "invalid", %{}] do
+      assert {:error, %Ecto.Changeset{valid?: false} = changeset} = Billing.checkout(ctx_for(business), value)
+      assert Map.has_key?(errors_on(changeset), :seats_to_add)
+      assert Repo.get_by(BusinessBilling, business_id: business.id) == nil
+    end
+  end
+
   test "buying seats activates the oldest awaiting_seat clients" do
     stub_razorpay()
     business = insert(:business)

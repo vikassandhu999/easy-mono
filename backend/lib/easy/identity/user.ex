@@ -20,15 +20,15 @@ defmodule Easy.Identity.User do
     timestamps(type: :utc_datetime)
   end
 
-  @spec insert_changeset(map()) :: Ecto.Changeset.t()
-  def insert_changeset(attrs) do
+  @spec insert_changeset(DateTime.t() | nil, map()) :: Ecto.Changeset.t()
+  def insert_changeset(confirmation_sent_at \\ nil, attrs) do
     %__MODULE__{}
     |> cast(attrs, [
       :email,
       :first_name,
-      :last_name,
-      :confirmation_sent_at
+      :last_name
     ])
+    |> put_change(:confirmation_sent_at, confirmation_sent_at)
     |> validate_required([:email])
     |> validate_format(
       :email,
@@ -39,25 +39,16 @@ defmodule Easy.Identity.User do
     |> unique_constraint(:email)
   end
 
-  @spec confirm_email(t()) :: Ecto.Changeset.t()
-  def confirm_email(%__MODULE__{} = user) do
+  @spec confirm_email(t(), DateTime.t()) :: Ecto.Changeset.t()
+  def confirm_email(%__MODULE__{} = user, confirmed_at) do
     user
-    |> change(%{email_confirmed_at: DateTime.utc_now(:second)})
+    |> change(%{email_confirmed_at: confirmed_at})
   end
 
-  @spec touch_confirmation_sent(t()) :: Ecto.Changeset.t()
-  def touch_confirmation_sent(%__MODULE__{} = user) do
+  @spec touch_confirmation_sent(t(), DateTime.t()) :: Ecto.Changeset.t()
+  def touch_confirmation_sent(%__MODULE__{} = user, sent_at) do
     user
-    |> change(%{confirmation_sent_at: DateTime.utc_now(:second)})
-  end
-
-  @spec confirmation_expired?(t()) :: boolean()
-  def confirmation_expired?(%__MODULE__{confirmation_sent_at: nil}), do: true
-
-  def confirmation_expired?(%__MODULE__{confirmation_sent_at: sent_at}) do
-    otp_validity_minutes = 10
-
-    DateTime.diff(DateTime.utc_now(:second), sent_at, :minute) > otp_validity_minutes
+    |> change(%{confirmation_sent_at: sent_at})
   end
 
   @spec email_confirmed?(t()) :: boolean()

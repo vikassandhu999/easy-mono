@@ -1,7 +1,7 @@
 defmodule EasyWeb.Coaches.CheckInReviewController do
   use EasyWeb, :typed_controller
 
-  alias Easy.Forms
+  alias Easy.Forms.Submissions
   alias EasyWeb.Types.{CheckInReview, FormSubmission}
 
   typed(:index, query: CheckInReview.list_query(), ok: {200, page(CheckInReview.t())})
@@ -17,7 +17,7 @@ defmodule EasyWeb.Coaches.CheckInReviewController do
     ]
 
     with {:ok, page} <-
-           Forms.list_unreviewed_check_in_submissions(conn.assigns.ctx, opts) do
+           Submissions.list_unreviewed_check_ins(conn.assigns.ctx, opts) do
       ok(conn, %{count: page.count, data: page.submissions})
     end
   end
@@ -25,7 +25,7 @@ defmodule EasyWeb.Coaches.CheckInReviewController do
   @spec review(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def review(conn, _params) do
     with {:ok, submission} <-
-           Forms.review_form_submission(conn.assigns.ctx, conn.path_params["id"]) do
+           Submissions.review(conn.assigns.ctx, conn.path_params["id"]) do
       ok(conn, %{data: submission})
     end
   end

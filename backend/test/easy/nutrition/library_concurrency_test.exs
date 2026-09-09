@@ -8,7 +8,8 @@ defmodule Easy.Nutrition.LibraryConcurrencyTest do
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Identity.User
-  alias Easy.Nutrition.{Diary, DiaryDay, DiarySlot, Food, Library, Menu, Plan, Programming, Recipe}
+  alias Easy.Nutrition.{Diary, DiaryDay, DiarySlot, Food, Library, Menu, NutrientTotals}
+  alias Easy.Nutrition.{Plan, PlanReader, Programming, Recipe}
   alias Easy.Nutrition.ProgrammingMenuFixtures
   alias Easy.Orgs.{Business, Coach}
   alias Easy.Repo
@@ -180,13 +181,13 @@ defmodule Easy.Nutrition.LibraryConcurrencyTest do
       )
 
     {:ok, saved} = Programming.replace_menu(c.ctx, plan.id, plan.revision, input)
-    reader = pause_read(fn -> Programming.get_template(c.ctx, plan.id) end, "nutrition_plans")
+    reader = pause_read(fn -> PlanReader.get_template(c.ctx, plan.id) end, "nutrition_plans")
     {:ok, _} = Programming.replace_menu(c.ctx, plan.id, saved.revision, ProgrammingMenuFixtures.menu(plan, meals: []))
     {:ok, _} = Library.delete_food(c.ctx, food.id)
     send(reader.pid, :resume)
     assert {:ok, read} = Task.await(reader)
     assert hd(Menu.items(read.menu)).nutrients.calories == 100.0
-    assert {:ok, current} = Programming.get_template(c.ctx, plan.id)
+    assert {:ok, current} = PlanReader.get_template(c.ctx, plan.id)
     assert Menu.items(current.menu) == []
   end
 
@@ -210,9 +211,9 @@ defmodule Easy.Nutrition.LibraryConcurrencyTest do
 
     send(reader.pid, :resume)
     assert {:ok, read} = Task.await(reader)
-    assert Library.recipe_nutrients(read).calories / read.servings_count == 100.0
+    assert NutrientTotals.from_recipe(read).calories / read.servings_count == 100.0
     assert {:ok, current} = Library.get_recipe(c.ctx, recipe.id)
-    assert Library.recipe_nutrients(current).calories / current.servings_count == 300.0
+    assert NutrientTotals.from_recipe(current).calories / current.servings_count == 300.0
   end
 
   test "Diary freezes a complete Recipe version while the coach edits its ingredients", c do
@@ -238,7 +239,7 @@ defmodule Easy.Nutrition.LibraryConcurrencyTest do
     send(save.pid, :resume)
     assert {:ok, day} = Task.await(save)
     assert day.summary.logged.calories == 100.0
-    assert {:ok, reread} = Diary.get_client_nutrition_day(ctx, Date.utc_today())
+    assert {:ok, %{nutrition_days: [reread]}} = Diary.list_client_nutrition_days(ctx, date: Date.utc_today())
     assert reread.summary.logged.calories == 100.0
   end
 

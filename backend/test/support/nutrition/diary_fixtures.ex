@@ -8,6 +8,23 @@ defmodule Easy.Nutrition.DiaryFixtures do
 
   import Easy.Factory
 
+  @spec get_client_nutrition_day(Ctx.t(), Date.t()) ::
+          {:ok, Easy.Nutrition.Day.t()} | {:error, Diary.DayAssembler.list_error()}
+  def get_client_nutrition_day(%Ctx{} = ctx, %Date{} = date) do
+    with {:ok, %{nutrition_days: [day]}} <- Diary.list_client_nutrition_days(ctx, date: date) do
+      {:ok, day}
+    end
+  end
+
+  @spec get_nutrition_day_for_client(Ctx.t(), String.t(), Date.t()) ::
+          {:ok, Easy.Nutrition.Day.t()} | {:error, Diary.DayAssembler.list_error()}
+  def get_nutrition_day_for_client(%Ctx{} = ctx, client_id, %Date{} = date) do
+    with {:ok, %{nutrition_days: [day]}} <-
+           Diary.list_nutrition_days_for_client(ctx, client_id, date: date) do
+      {:ok, day}
+    end
+  end
+
   @type covering_result() :: %{
           coach: Coach.t(),
           client: Client.t(),
@@ -60,7 +77,7 @@ defmodule Easy.Nutrition.DiaryFixtures do
 
   @spec live_planned_item_refs(Client.t(), Date.t()) :: [String.t()]
   def live_planned_item_refs(client, date) do
-    {:ok, day} = Diary.get_client_nutrition_day(client_ctx(client), date)
+    {:ok, day} = get_client_nutrition_day(client_ctx(client), date)
 
     day.slots
     |> hd()
@@ -101,7 +118,7 @@ defmodule Easy.Nutrition.DiaryFixtures do
 
   @spec save_extra(Ctx.t(), Date.t(), map()) :: tuple()
   def save_extra(ctx, date, attrs) do
-    with {:ok, day} <- Diary.get_client_nutrition_day(ctx, date) do
+    with {:ok, day} <- get_client_nutrition_day(ctx, date) do
       slot = Enum.find(day.slots, &(&1.meal_slot == attrs.meal_slot))
 
       draft =
@@ -129,7 +146,7 @@ defmodule Easy.Nutrition.DiaryFixtures do
 
   @spec save_planned_slot(Ctx.t(), Date.t(), map()) :: tuple()
   def save_planned_slot(ctx, date, attrs) do
-    with {:ok, day} <- Diary.get_client_nutrition_day(ctx, date) do
+    with {:ok, day} <- get_client_nutrition_day(ctx, date) do
       case Enum.find(day.slots, &(&1.meal_slot == attrs.meal_slot)) do
         nil -> {:error, :cannot_start_past_slot}
         slot -> Diary.save_client_nutrition_day(ctx, date, %{slots: [slot_draft(slot, true)]})
@@ -139,7 +156,7 @@ defmodule Easy.Nutrition.DiaryFixtures do
 
   @spec save_option(Ctx.t(), Date.t(), map()) :: tuple()
   def save_option(ctx, date, attrs) do
-    with {:ok, day} <- Diary.get_client_nutrition_day(ctx, date) do
+    with {:ok, day} <- get_client_nutrition_day(ctx, date) do
       case Enum.find(day.slots, &(&1.meal_slot == attrs.meal_slot)) do
         nil ->
           {:error, :not_found}

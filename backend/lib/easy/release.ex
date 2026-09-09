@@ -1,13 +1,13 @@
 defmodule Easy.Release do
   @app :easy
 
-  @spec migrate() :: {:ok, [term()]}
+  @spec migrate() :: {:ok, [[integer()]]}
   def migrate do
     load_app()
 
     migration_results =
       for repo <- repos() do
-        {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
+        run_with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
       end
 
     {:ok, migration_results}
@@ -19,11 +19,10 @@ defmodule Easy.Release do
 
     results =
       for repo <- repos() do
-        {:ok, _, _} =
-          Ecto.Migrator.with_repo(repo, fn _repo ->
-            seed_file = Path.join([:code.priv_dir(@app), "repo", "seeds.exs"])
-            eval_seed_file(seed_file)
-          end)
+        run_with_repo(repo, fn _repo ->
+          seed_file = Path.join([:code.priv_dir(@app), "repo", "seeds.exs"])
+          eval_seed_file(seed_file)
+        end)
       end
 
     {:ok, results}
@@ -36,8 +35,12 @@ defmodule Easy.Release do
   @spec rollback(module(), integer()) :: {:ok, [integer()]}
   def rollback(repo, version) do
     load_app()
-    {:ok, _, result} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))
-    {:ok, result}
+    {:ok, run_with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))}
+  end
+
+  defp run_with_repo(repo, operation) do
+    {:ok, result, _started_apps} = Ecto.Migrator.with_repo(repo, operation)
+    result
   end
 
   defp repos do

@@ -10,7 +10,7 @@ import Ecto.Query
 import Ecto.Changeset
 
 alias Easy.Ctx
-alias Easy.Nutrition.{Food, Plan, Programming}
+alias Easy.Nutrition.{Food, Plan, PlanReader, Programming}
 alias Easy.Repo
 
 plan_name = "NB fixture — Lean Bulk"
@@ -61,7 +61,7 @@ end
       |> put_change(:id, plan_id)
       |> Repo.insert!()
 
-    {:ok, seeded} = Programming.get_template(ctx, template.id)
+    {:ok, seeded} = PlanReader.get_template(ctx, template.id)
     seeded
   end)
 

@@ -38,7 +38,11 @@ defmodule Easy.Chat.Conversation do
     |> change()
     |> put_change(:business_id, business_id)
     |> put_change(:client_id, client_id)
+    |> validate_required([:business_id, :client_id])
     |> unique_constraint([:business_id, :client_id])
+    |> foreign_key_constraint(:business_id)
+    |> foreign_key_constraint(:client_id)
+    |> foreign_key_constraint(:client_id, name: :conversations_client_business_id_fkey)
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

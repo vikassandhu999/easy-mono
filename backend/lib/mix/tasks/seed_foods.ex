@@ -4,6 +4,7 @@ defmodule Mix.Tasks.SeedFoods do
   @shortdoc "Seeds the foods database from priv/repo/foods_database.csv"
 
   @impl Mix.Task
+  @spec run([String.t()]) :: {term(), keyword()}
   def run(_args) do
     Mix.Task.run("app.start")
 

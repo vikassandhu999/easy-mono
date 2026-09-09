@@ -39,6 +39,10 @@ defmodule EasyWeb.Router do
     get "/openapi", OpenApiSpex.Plug.RenderSpec, []
   end
 
+  scope "/", EasyWeb do
+    get "/ready", HealthController, :ready
+  end
+
   scope "/" do
     get "/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/openapi"
   end

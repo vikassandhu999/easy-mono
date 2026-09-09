@@ -21,8 +21,7 @@ defmodule Easy.Training.Library do
     |> ok_or_not_found()
   end
 
-  @spec get_owned_exercise(Ctx.t(), String.t()) :: exercise_result()
-  def get_owned_exercise(%Ctx{} = ctx, exercise_id) do
+  defp get_owned_exercise(%Ctx{} = ctx, exercise_id) do
     TrainingExercise
     |> TrainingExercise.for_business(ctx.business_id)
     |> TrainingExercise.include_muscles_and_equipment()
@@ -49,13 +48,12 @@ defmodule Easy.Training.Library do
   end
 
   @spec list_exercises(Ctx.t(), keyword()) ::
-          {:ok, %{count: integer(), exercises: [TrainingExercise.t()]}}
+          {:ok, %{count: non_neg_integer(), exercises: [TrainingExercise.t()]}}
   def list_exercises(%Ctx{} = ctx, opts \\ []) do
     search = String.trim(Keyword.get(opts, :search, "") || "")
     muscle_ids = Keyword.get(opts, :muscle_ids)
     equipment_ids = Keyword.get(opts, :equipment_ids)
-    offset = Keyword.get(opts, :offset, 0)
-    limit = min(Keyword.get(opts, :limit, 20), 20)
+    page_opts = Keyword.update(opts, :limit, 20, &min(&1, 20))
 
     base =
       TrainingExercise
@@ -67,7 +65,7 @@ defmodule Easy.Training.Library do
     exercises =
       base
       |> TrainingExercise.newest()
-      |> Utils.paginate(offset, limit)
+      |> Utils.paginate(page_opts)
       |> TrainingExercise.include_muscles_and_equipment()
       |> Repo.all()
 
@@ -103,50 +101,28 @@ defmodule Easy.Training.Library do
   @spec create_exercise(Ctx.t(), map()) ::
           {:ok, TrainingExercise.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_exercise(%Ctx{} = ctx, attrs) do
-    muscle_ids = attrs[:muscle_ids] || []
-    equipment_ids = attrs[:equipment_ids] || []
-
-    muscles = load_muscles(muscle_ids)
-    equipment = load_equipment(equipment_ids)
-
-    with :ok <- LibraryMedia.authorize_attach(ctx, attrs[:media_id]),
+    with :ok <- Ctx.ensure_coach(ctx),
+         {:ok, references} <- TrainingExercise.reference_input(attrs),
+         :ok <- LibraryMedia.authorize_attach(ctx, references.media_id),
+         {:ok, muscles} <- load_references(TrainingMuscle, references.muscle_ids || []),
+         {:ok, equipment} <- load_references(TrainingEquipment, references.equipment_ids || []),
          {:ok, exercise} <-
            ctx.business_id
-           |> TrainingExercise.insert_changeset(nil, attrs, muscles, equipment)
+           |> TrainingExercise.insert_changeset(ctx.coach_id, attrs, muscles, equipment)
            |> Repo.insert() do
       {:ok, Repo.preload(exercise, :media)}
     end
   end
 
-  @spec load_muscles([String.t()] | nil) :: [TrainingMuscle.t()] | nil
-  defp load_muscles(ids) when is_list(ids) do
-    ids = Enum.uniq(ids)
-
-    TrainingMuscle
-    |> where([m], m.id in ^ids)
-    |> Repo.all()
-  end
-
-  defp load_muscles(_ids), do: nil
-
-  @spec load_equipment([String.t()] | nil) :: [TrainingEquipment.t()] | nil
-  defp load_equipment(ids) when is_list(ids) do
-    ids = Enum.uniq(ids)
-
-    TrainingEquipment
-    |> where([m], m.id in ^ids)
-    |> Repo.all()
-  end
-
-  defp load_equipment(_ids), do: nil
-
   @spec update_exercise(Ctx.t(), String.t(), map()) ::
           {:ok, TrainingExercise.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_exercise(%Ctx{} = ctx, exercise_id, attrs) do
-    with {:ok, exercise} <- get_owned_exercise(ctx, exercise_id),
-         :ok <- LibraryMedia.authorize_attach(ctx, attrs[:media_id]),
-         muscles = load_muscles(attrs[:muscle_ids]),
-         equipment = load_equipment(attrs[:equipment_ids]),
+    with :ok <- Ctx.ensure_coach(ctx),
+         {:ok, exercise} <- get_owned_exercise(ctx, exercise_id),
+         {:ok, references} <- TrainingExercise.reference_input(attrs),
+         :ok <- LibraryMedia.authorize_attach(ctx, references.media_id),
+         {:ok, muscles} <- load_references(TrainingMuscle, references.muscle_ids),
+         {:ok, equipment} <- load_references(TrainingEquipment, references.equipment_ids),
          {:ok, updated} <-
            exercise
            |> TrainingExercise.update_changeset(attrs, muscles, equipment)
@@ -158,7 +134,8 @@ defmodule Easy.Training.Library do
   @spec delete_exercise(Ctx.t(), String.t()) ::
           {:ok, TrainingExercise.t()} | {:error, :not_found | :in_use | Ecto.Changeset.t()}
   def delete_exercise(%Ctx{} = ctx, exercise_id) do
-    with {:ok, exercise} <- get_owned_exercise(ctx, exercise_id),
+    with :ok <- Ctx.ensure_coach(ctx),
+         {:ok, exercise} <- get_owned_exercise(ctx, exercise_id),
          :ok <- ensure_exercise_not_in_use(ctx.business_id, exercise.id) do
       Repo.delete(exercise)
     end
@@ -180,23 +157,23 @@ defmodule Easy.Training.Library do
   @spec duplicate_exercise(Ctx.t(), String.t(), map()) ::
           {:ok, TrainingExercise.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def duplicate_exercise(%Ctx{} = ctx, exercise_id, attrs) do
-    with {:ok, exercise} <- get_exercise(ctx, exercise_id) do
-      attrs = %{
-        name: attrs[:name],
-        description: exercise.description,
-        instructions: exercise.instructions,
-        mechanics: exercise.mechanics,
-        force: exercise.force,
-        images: exercise.images || [],
-        media_id: exercise.media_id
-      }
-
+    with :ok <- Ctx.ensure_coach(ctx),
+         {:ok, exercise} <- get_exercise(ctx, exercise_id) do
       ctx.business_id
-      |> TrainingExercise.insert_changeset(nil, attrs, exercise.muscles, exercise.equipment)
+      |> TrainingExercise.copy_changeset(ctx.coach_id, exercise, attrs)
       |> Repo.insert()
       |> preload_exercise()
     end
   end
+
+  defp load_references(schema, ids) when is_list(ids) do
+    ids = Enum.uniq(ids)
+    records = schema |> where([record], record.id in ^ids) |> Repo.all()
+
+    if length(records) == length(ids), do: {:ok, records}, else: {:error, :not_found}
+  end
+
+  defp load_references(_schema, nil), do: {:ok, nil}
 
   defp preload_exercise({:ok, %TrainingExercise{} = exercise}) do
     {:ok, Repo.preload(exercise, [:muscles, :equipment, :media])}

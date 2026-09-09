@@ -9,6 +9,17 @@ defmodule Easy.Training.TrainingSession do
   import Ecto.Query
 
   @type t() :: %__MODULE__{}
+  @type kind() :: :planned | :freestyle
+  @type state() :: :active | :completed | :discarded
+  @type start() :: %{
+          required(:kind) => kind(),
+          required(:date) => Date.t(),
+          required(:started_at) => DateTime.t(),
+          optional(:snapshot_version) => pos_integer() | nil,
+          optional(:prescription_snapshot) => map() | nil,
+          optional(:source_plan_id) => String.t() | nil,
+          optional(:source_workout_id) => String.t() | nil
+        }
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -35,10 +46,10 @@ defmodule Easy.Training.TrainingSession do
     timestamps(type: :utc_datetime)
   end
 
-  @spec kinds() :: [atom()]
+  @spec kinds() :: [kind()]
   def kinds, do: @kinds
 
-  @spec states() :: [atom()]
+  @spec states() :: [state()]
   def states, do: @states
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
@@ -58,7 +69,7 @@ defmodule Easy.Training.TrainingSession do
     |> check_constraint(:started_at, name: :training_sessions_chronology_check)
   end
 
-  @spec insert_changeset(String.t(), String.t(), map(), map()) :: Ecto.Changeset.t()
+  @spec insert_changeset(String.t(), String.t(), start(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, client_id, start, attrs) when is_map(start) do
     %__MODULE__{}
     |> cast(attrs, [:notes, :soreness_rating])
@@ -98,7 +109,7 @@ defmodule Easy.Training.TrainingSession do
   def for_client(query \\ __MODULE__, business_id, client_id),
     do: from(session in query, where: session.business_id == ^business_id and session.client_id == ^client_id)
 
-  @spec for_state(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
+  @spec for_state(Ecto.Queryable.t(), state() | String.t() | nil) :: Ecto.Query.t()
   def for_state(query \\ __MODULE__, state)
   def for_state(query, nil), do: query
   def for_state(query, ""), do: query
@@ -119,15 +130,18 @@ defmodule Easy.Training.TrainingSession do
     from(session in query, preload: [performed_sets: ^set_query])
   end
 
-  @spec for_date_range(Ecto.Queryable.t(), Date.t(), Date.t()) :: Ecto.Query.t()
-  def for_date_range(query \\ __MODULE__, start_date, end_date),
-    do: from(session in query, where: session.date >= ^start_date and session.date <= ^end_date)
+  @spec for_date_range(Ecto.Queryable.t(), Date.t() | nil, Date.t() | nil) :: Ecto.Query.t()
+  def for_date_range(query \\ __MODULE__, start_date, end_date) do
+    query |> for_date_from(start_date) |> for_date_to(end_date)
+  end
 
-  @spec for_date_from(Ecto.Queryable.t(), Date.t()) :: Ecto.Query.t()
-  def for_date_from(query \\ __MODULE__, start_date),
-    do: from(session in query, where: session.date >= ^start_date)
+  @spec for_date_from(Ecto.Queryable.t(), Date.t() | nil) :: Ecto.Query.t()
+  def for_date_from(query \\ __MODULE__, start_date)
+  def for_date_from(query, nil), do: query
+  def for_date_from(query, start_date), do: from(session in query, where: session.date >= ^start_date)
 
-  @spec for_date_to(Ecto.Queryable.t(), Date.t()) :: Ecto.Query.t()
-  def for_date_to(query \\ __MODULE__, end_date),
-    do: from(session in query, where: session.date <= ^end_date)
+  @spec for_date_to(Ecto.Queryable.t(), Date.t() | nil) :: Ecto.Query.t()
+  def for_date_to(query \\ __MODULE__, end_date)
+  def for_date_to(query, nil), do: query
+  def for_date_to(query, end_date), do: from(session in query, where: session.date <= ^end_date)
 end

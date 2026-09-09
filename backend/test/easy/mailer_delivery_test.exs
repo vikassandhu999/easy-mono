@@ -14,6 +14,7 @@ defmodule Easy.MailerDeliveryTest do
 
       case email.subject do
         "reject" -> {:error, :provider_unavailable}
+        "large error" -> {:error, %{body: String.duplicate("x", 100_000)}}
         "raise" -> raise "provider exception"
         _ -> {:ok, %{id: "delivered"}}
       end
@@ -57,6 +58,43 @@ defmodule Easy.MailerDeliveryTest do
     capture_log(fn ->
       assert {:error, :provider_unavailable} = MailerDelivery.deliver_sync(email("reject"))
     end)
+  end
+
+  test "provider errors are bounded in logs without truncating the returned error" do
+    log =
+      capture_log(fn ->
+        assert {:error, %{body: body}} = MailerDelivery.deliver_sync(email("large error"))
+        assert byte_size(body) == 100_000
+      end)
+
+    assert log =~ "Failed to send email"
+    assert log =~ "recipient@example.test"
+    assert byte_size(log) < 5_000
+  end
+
+  test "delivery spans report duration and normalized outcomes without email metadata" do
+    handler = {__MODULE__, make_ref()}
+    prefix = [:easy, :mailer, :delivery]
+    events = [prefix ++ [:start], prefix ++ [:stop]]
+    :ok = :telemetry.attach_many(handler, events, &__MODULE__.capture_delivery_event/4, self())
+    on_exit(fn -> :telemetry.detach(handler) end)
+
+    for {subject, outcome} <- [{"success", :ok}, {"reject", :error}, {"raise", :error}] do
+      capture_log(fn -> MailerDelivery.deliver_sync(email(subject), metadata: %{private_value: "secret"}) end)
+
+      assert_receive {:telemetry_event, [:easy, :mailer, :delivery, :start], _, start_metadata}
+      assert Map.keys(start_metadata) == [:telemetry_span_context]
+
+      assert_receive {:telemetry_event, [:easy, :mailer, :delivery, :stop], %{duration: duration}, stop_metadata}
+      assert is_integer(duration) and duration >= 0
+      assert stop_metadata.outcome == outcome
+      assert stop_metadata.telemetry_span_context == start_metadata.telemetry_span_context
+      assert Enum.sort(Map.keys(stop_metadata)) == [:outcome, :telemetry_span_context]
+    end
+  end
+
+  def capture_delivery_event(event, measurements, metadata, test_pid) do
+    if self() == test_pid, do: send(test_pid, {:telemetry_event, event, measurements, metadata})
   end
 
   test "synchronous provider exceptions return an error rather than killing reminder work" do

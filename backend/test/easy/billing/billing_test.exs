@@ -32,6 +32,84 @@ defmodule Easy.BillingTest do
     Billing.handle_razorpay_webhook(body, signature, "evt_#{System.unique_integer([:positive])}")
   end
 
+  test "quantity updates change subscribed accounts and leave free or cancelled accounts untouched" do
+    for status <- [:free, :active, :past_due, :cancel_at_period_end, :cancelled] do
+      subscription_id = "sub_quantity_#{status}"
+      paid_seats = if status in [:free, :cancelled], do: 0, else: 2
+
+      billing =
+        insert(:business_billing,
+          status: status,
+          paid_seats: paid_seats,
+          razorpay_subscription_id: subscription_id
+        )
+
+      before = Repo.get!(BusinessBilling, billing.id)
+
+      body =
+        Jason.encode!(%{
+          "event" => "subscription.updated",
+          "payload" => %{"subscription" => %{"entity" => %{"id" => subscription_id, "quantity" => 4}}}
+        })
+
+      signature = :crypto.mac(:hmac, :sha256, @webhook_secret, body) |> Base.encode16(case: :lower)
+      assert :ok = Billing.handle_razorpay_webhook(body, signature, "evt_quantity_#{status}")
+      updated = Repo.get!(BusinessBilling, billing.id)
+      events = Repo.all(Event.for_business(billing.business_id))
+
+      if status in [:free, :cancelled] do
+        assert updated == before
+        assert events == []
+      else
+        assert updated.status == status
+        assert updated.paid_seats == 4
+        assert updated.free_seats == before.free_seats
+        assert [%{kind: :seats_added, seat_delta: 2}] = events
+      end
+    end
+  end
+
+  test "failure and cancellation notifications preserve unaffected states and avoid duplicate events" do
+    for event <- ["subscription.pending", "subscription.halted", "subscription.cancelled"],
+        status <- [:free, :active, :past_due, :cancel_at_period_end, :cancelled] do
+      subscription_id = "sub_#{event}_#{status}"
+      paid_seats = if status in [:free, :cancelled], do: 0, else: 2
+
+      billing =
+        insert(:business_billing,
+          status: status,
+          paid_seats: paid_seats,
+          razorpay_subscription_id: subscription_id
+        )
+
+      expected =
+        case {event, status} do
+          {"subscription.cancelled", :cancelled} -> {status, paid_seats, []}
+          {"subscription.cancelled", _} -> {:cancelled, 0, [:subscription_cancelled]}
+          {_, state} when state in [:active, :cancel_at_period_end] -> {:past_due, paid_seats, [:payment_failed]}
+          _ -> {status, paid_seats, []}
+        end
+
+      {expected_status, expected_seats, expected_events} = expected
+
+      for attempt <- 1..2 do
+        body =
+          Jason.encode!(%{
+            "event" => event,
+            "payload" => %{"subscription" => %{"entity" => %{"id" => subscription_id}}}
+          })
+
+        signature = :crypto.mac(:hmac, :sha256, @webhook_secret, body) |> Base.encode16(case: :lower)
+        assert :ok = Billing.handle_razorpay_webhook(body, signature, "#{subscription_id}_#{attempt}")
+        updated = Repo.get!(BusinessBilling, billing.id)
+        assert updated.status == expected_status
+        assert updated.paid_seats == expected_seats
+        assert updated.free_seats == billing.free_seats
+        assert Enum.map(Repo.all(Event.for_business(billing.business_id)), & &1.kind) == expected_events
+      end
+    end
+  end
+
   describe "grant_free_seats/2" do
     test "bumps free seats (creating the billing row) and the summary reflects it" do
       business = insert(:business)
@@ -45,7 +123,35 @@ defmodule Easy.BillingTest do
     end
   end
 
-  describe "seat_summary/1" do
+  describe "get_billing/1" do
+    test "keeps billing, client counts and recent events within the context business" do
+      businesses =
+        for {free, paid, used, waiting} <- [{3, 2, 2, 1}, {7, 4, 3, 2}] do
+          business = insert(:business)
+          insert(:business_billing, business: business, free_seats: free, paid_seats: paid)
+          insert_list(used, :client, business: business, status: :active)
+          insert_list(waiting, :client, business: business, status: :inactive, inactive_reason: :awaiting_seat)
+
+          event =
+            business.id
+            |> Event.insert_changeset(:seats_added, DateTime.utc_now(:second), %{seat_delta: paid})
+            |> Repo.insert!()
+
+          {business, event, free, paid, used, waiting}
+        end
+
+      for {business, event, free, paid, used, waiting} <- businesses do
+        assert {:ok, billing} = Billing.get_billing(ctx_for(business))
+        assert billing.free_seats == free
+        assert billing.paid_seats == paid
+        assert billing.seat_limit == free + paid
+        assert billing.used_seats == used
+        assert billing.available_seats == free + paid - used
+        assert billing.awaiting_seat_count == waiting
+        assert Enum.map(billing.recent_events, & &1.id) == [event.id]
+      end
+    end
+
     test "a new business has ten free seats and no billing row yet" do
       business = insert(:business)
 

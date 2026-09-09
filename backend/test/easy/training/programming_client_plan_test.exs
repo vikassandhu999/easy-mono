@@ -2,7 +2,30 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
   use Easy.DataCase, async: true
 
   alias Easy.Repo
+  alias Easy.Training.PlanReader
   alias Easy.Training.{Programming, TrainingPlan}
+
+  test "batch plan names respect each client's date and the tenant boundary" do
+    coach = insert(:coach)
+    first = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+    second = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+    uncovered = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+    outsider = insert(:coach)
+    foreign = insert(:client, business: outsider.business, creator: outsider, assigned_coach: outsider)
+    first_date = ~D[2026-01-01]
+    second_date = Date.add(first_date, 1)
+
+    insert_client_plan(coach, first, name: "First day", start_date: first_date, end_date: first_date)
+    insert_client_plan(coach, second, name: "Second day", start_date: second_date, end_date: second_date)
+    insert_client_plan(coach, uncovered, start_date: first_date, end_date: first_date)
+    insert_client_plan(outsider, foreign, start_date: first_date, end_date: first_date)
+    ctx = trainer_ctx(coach)
+    dates = %{first.id => first_date, second.id => second_date, uncovered.id => second_date, foreign.id => first_date}
+
+    assert {:ok, names} = PlanReader.current_plan_names_for_clients(ctx, dates)
+    assert names == %{first.id => "First day", second.id => "Second day"}
+    assert {:ok, %{}} = PlanReader.current_plan_names_for_clients(ctx, %{})
+  end
 
   describe "assign_template_to_client/4" do
     test "creates an independent Client Plan and advances onboarding atomically" do
@@ -149,9 +172,12 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
       archived = insert_client_plan(coach, client, archived_at: ~U[2026-08-15 12:00:00Z])
 
       assert {:ok, %{count: 1, plans: [listed]}} =
-               Programming.list_plans_for_client(ctx, client.id, archived: false)
+               PlanReader.list_plans_for_client(ctx, client.id, archived: false)
 
       assert listed.id == incomplete.id
+      assert listed.lifecycle == :incomplete
+      assert {:ok, loaded} = PlanReader.get_plan(ctx, archived.id)
+      assert loaded.lifecycle == :archived
       assert TrainingPlan.lifecycle(incomplete, ~D[2026-08-15]) == :incomplete
       assert TrainingPlan.lifecycle(%{incomplete | start_date: ~D[2026-08-20]}, ~D[2026-08-15]) == :upcoming
 
@@ -175,7 +201,7 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
       insert_client_plan(owner, client)
 
       assert {:error, :not_found} =
-               Programming.list_plans_for_client(trainer_ctx(colleague), client.id)
+               PlanReader.list_plans_for_client(trainer_ctx(colleague), client.id)
     end
 
     test "client-self lists only its unarchived Client Plans and can inspect their Prescription" do
@@ -193,8 +219,8 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
       current = insert_client_plan(coach, client, name: "Current", start_date: ~D[2026-08-01], end_date: today)
       upcoming = insert_client_plan(coach, client, name: "Upcoming", start_date: ~D[2026-09-01], end_date: ~D[2026-09-30])
       archived = insert_client_plan(coach, client, name: "Archived", archived_at: ~U[2026-08-15 12:00:00Z])
-      insert_client_plan(coach, other_client, name: "Other client", start_date: ~D[2026-10-01])
-      insert_client_plan(other_coach, other_business_client, name: "Other business", start_date: ~D[2026-10-01])
+      other_client_plan = insert_client_plan(coach, other_client, name: "Other client", start_date: ~D[2026-10-01])
+      foreign_plan = insert_client_plan(other_coach, other_business_client, name: "Other business", start_date: ~D[2026-10-01])
 
       workout = insert(:workout, business: coach.business, plan: current, name: "Lower", position: 3)
       exercise = insert(:exercise, business: coach.business, tracking_type: "weight_reps")
@@ -223,18 +249,20 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
       insert(:workout_schedule, business: coach.business, plan: current, workout: workout, weekday: :friday)
       ctx = client_ctx(client)
 
-      assert {:ok, %{count: 4, plans: plans}} = Programming.list_client_plans(ctx)
+      assert {:ok, %{count: 4, plans: plans}} = PlanReader.list_client_plans(ctx)
       assert MapSet.new(Enum.map(plans, & &1.id)) == MapSet.new([incomplete.id, ended.id, current.id, upcoming.id])
       refute Enum.any?(plans, &(&1.id == archived.id))
 
-      assert {:ok, inspected} = Programming.get_client_plan(ctx, current.id)
+      assert {:ok, inspected} = PlanReader.get_client_plan(ctx, current.id)
       assert [%{position: 3, prescribed_exercises: [%{position: 4, prescribed_sets: [set]}]}] = inspected.workouts
       assert set.notes == "Controlled"
       assert [%{weekday: :friday, training_workout_id: workout_id}] = inspected.workout_schedule
       assert workout_id == workout.id
 
-      for hidden_id <- [archived.id, insert(:training_plan, business: coach.business, creator: coach.user).id] do
-        assert {:error, :not_found} = Programming.get_client_plan(ctx, hidden_id)
+      template = insert(:training_plan, business: coach.business, creator: coach.user)
+
+      for hidden_id <- [archived.id, template.id, other_client_plan.id, foreign_plan.id] do
+        assert {:error, :not_found} = PlanReader.get_client_plan(ctx, hidden_id)
       end
     end
 
@@ -244,9 +272,9 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
       plan = insert_client_plan(coach, client)
       missing_client_ctx = %Easy.Ctx{business_id: coach.business_id, user_id: client.user_id}
 
-      assert {:error, :not_found} = Programming.list_client_plans(missing_client_ctx)
-      assert {:error, :not_found} = Programming.get_client_plan(missing_client_ctx, plan.id)
-      assert {:error, :not_found} = Programming.resolve_client_coverage(missing_client_ctx, ~D[2026-08-15])
+      assert {:error, :not_found} = PlanReader.list_client_plans(missing_client_ctx)
+      assert {:error, :not_found} = PlanReader.get_client_plan(missing_client_ctx, plan.id)
+      assert {:error, :not_found} = PlanReader.resolve_client_coverage(missing_client_ctx, ~D[2026-08-15])
     end
   end
 
@@ -259,7 +287,7 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
       insert(:workout_schedule, business: coach.business, plan: plan, workout: workout, weekday: :saturday)
 
       assert {:ok, %{plan: resolved, workout: guided, date: ~D[2026-08-15], weekday: :saturday}} =
-               Programming.resolve_client_coverage(client_ctx(client), ~D[2026-08-15])
+               PlanReader.resolve_client_coverage(client_ctx(client), ~D[2026-08-15])
 
       assert resolved.id == plan.id
       assert guided.id == workout.id
@@ -272,7 +300,7 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
       insert(:workout, business: coach.business, plan: plan, position: 0)
 
       assert {:ok, %{plan: resolved, workout: nil, weekday: :monday}} =
-               Programming.resolve_client_coverage(client_ctx(client), ~D[2026-08-17])
+               PlanReader.resolve_client_coverage(client_ctx(client), ~D[2026-08-17])
 
       assert resolved.id == plan.id
     end
@@ -293,7 +321,7 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
       insert_client_plan(coach, other_client, start_date: ~D[2026-08-01])
       insert_client_plan(other_coach, other_business_client, start_date: ~D[2026-08-01])
 
-      assert {:ok, nil} = Programming.resolve_client_coverage(client_ctx(client), ~D[2026-08-15])
+      assert {:ok, nil} = PlanReader.resolve_client_coverage(client_ctx(client), ~D[2026-08-15])
     end
   end
 

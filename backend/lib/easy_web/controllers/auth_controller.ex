@@ -1,9 +1,8 @@
 defmodule EasyWeb.AuthController do
-  alias Easy.Clients
-  alias Easy.Coaches
+  alias Easy.ClientInvitations
+  alias Easy.CoachInvitations
   alias Easy.Identity
   alias Easy.Identity.Invitations
-  alias Easy.Identity.OneTimeTokens
   alias Easy.Utils
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
@@ -196,11 +195,9 @@ defmodule EasyWeb.AuthController do
   @spec accept_invite_verify(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def accept_invite_verify(conn, _params) do
     params = stringify_keys(conn.body_params)
-    ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
-    user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
 
     with {:ok, auth_token} <-
-           Identity.verify_accept_invite(params, %{ip: ip, user_agent: user_agent}) do
+           Identity.verify_accept_invite(params, session_options(conn)) do
       conn
       |> put_status(200)
       |> json(auth_token)
@@ -209,14 +206,14 @@ defmodule EasyWeb.AuthController do
 
   @spec show_invitation(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show_invitation(conn, %{"token" => token}) do
-    with {:ok, body} <- Clients.invitation_preview(token) do
+    with {:ok, body} <- ClientInvitations.invitation_preview(token) do
       conn |> put_status(200) |> json(%{data: body})
     end
   end
 
   @spec show_trainer_invitation(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show_trainer_invitation(conn, %{"token" => token}) do
-    with {:ok, body} <- Coaches.invitation_preview(token) do
+    with {:ok, body} <- CoachInvitations.invitation_preview(token) do
       conn |> put_status(200) |> json(%{data: body})
     end
   end
@@ -235,11 +232,9 @@ defmodule EasyWeb.AuthController do
   @spec trainer_accept_invite_verify(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def trainer_accept_invite_verify(conn, _params) do
     params = stringify_keys(conn.body_params)
-    ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
-    user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
 
     with {:ok, auth_token} <-
-           Invitations.verify_accept_trainer_invite(params, %{ip: ip, user_agent: user_agent}) do
+           Invitations.verify_accept_trainer_invite(params, session_options(conn)) do
       conn
       |> put_status(200)
       |> json(auth_token)
@@ -255,26 +250,14 @@ defmodule EasyWeb.AuthController do
   end
 
   defp verify_token(conn, token_hash) do
-    ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
-    user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
-
-    case Easy.Identity.verify(token_hash, %{ip: ip, user_agent: user_agent, role: :guest}) do
-      {:ok, token} -> conn |> put_status(200) |> json(token)
-      {:error, :token_invalid} -> {:error, :token_invalid}
-      {:error, :token_expired} -> {:error, :token_expired}
+    with {:ok, token} <- Identity.verify(token_hash, session_options(conn)) do
+      conn |> put_status(200) |> json(token)
     end
   end
 
   defp verify_otp(conn, email, otp) do
-    ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
-    user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
-
-    token_hash = OneTimeTokens.generate_token_hash(email <> otp)
-
-    case Easy.Identity.verify(token_hash, %{ip: ip, user_agent: user_agent, role: :guest}) do
-      {:ok, token} -> conn |> put_status(200) |> json(token)
-      {:error, :token_invalid} -> {:error, :invalid_otp}
-      {:error, :token_expired} -> {:error, :otp_expired}
+    with {:ok, token} <- Identity.verify_otp(email, otp, session_options(conn)) do
+      conn |> put_status(200) |> json(token)
     end
   end
 
@@ -301,15 +284,11 @@ defmodule EasyWeb.AuthController do
   end
 
   defp refresh_token(conn, refresh_token, params) do
-    ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
-    user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
-
-    opts = %{
-      refresh_token: refresh_token,
-      ip: ip,
-      user_agent: user_agent,
-      role: Utils.safe_to_atom(params["role"], @allowed_roles)
-    }
+    opts =
+      session_options(conn, %{
+        refresh_token: refresh_token,
+        role: Utils.safe_to_atom(params["role"], @allowed_roles)
+      })
 
     with {:ok, auth_token} <- Identity.token(:refresh_token, opts) do
       conn
@@ -319,23 +298,25 @@ defmodule EasyWeb.AuthController do
   end
 
   defp otp_token(conn, email, otp, role) do
-    ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
-    user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
-
-    token_hash = OneTimeTokens.generate_token_hash(email <> otp)
-
-    opts = %{
-      token_hash: token_hash,
-      ip: ip,
-      user_agent: user_agent,
-      role: Utils.safe_to_atom(role, @allowed_roles)
-    }
+    opts =
+      session_options(conn, %{
+        email: email,
+        otp: otp,
+        role: Utils.safe_to_atom(role, @allowed_roles)
+      })
 
     with {:ok, auth_token} <- Identity.token(:otp, opts) do
       conn
       |> put_status(200)
       |> json(auth_token)
     end
+  end
+
+  defp session_options(conn, opts \\ %{}) do
+    Map.merge(opts, %{
+      ip: conn.remote_ip |> :inet.ntoa() |> to_string(),
+      user_agent: get_req_header(conn, "user-agent") |> List.first() || "unknown"
+    })
   end
 
   defp stringify_keys(params) do

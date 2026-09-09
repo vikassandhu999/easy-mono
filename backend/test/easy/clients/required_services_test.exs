@@ -1,20 +1,44 @@
 defmodule Easy.Clients.RequiredServicesTest do
   use Easy.SchemaCase, async: false
 
+  alias Easy.ClientAccount
+  alias Easy.ClientInvitations
   alias Easy.Clients
   alias Easy.Clients.Client
+  alias Easy.Ctx
+
+  test "client service updates require the loaded client to match the trusted context" do
+    client = insert(:client, required_services: [:training])
+    ctx = %Ctx{business_id: client.business_id, user_id: client.user_id, client_id: client.id}
+
+    for denied <- [
+          %{ctx | business_id: Ecto.UUID.generate()},
+          %{ctx | client_id: Ecto.UUID.generate()},
+          %{ctx | client_id: nil}
+        ] do
+      assert {:error, :not_found} = ClientAccount.update_client_required_services(denied, client, [:nutrition])
+    end
+
+    assert Repo.reload!(client).required_services == [:training]
+    assert {:ok, ^client} = ClientAccount.update_client_required_services(ctx, client, nil)
+    assert {:ok, updated} = ClientAccount.update_client_required_services(ctx, client, [:nutrition])
+    assert updated.required_services == [:nutrition]
+    assert Repo.reload!(client).required_services == [:nutrition]
+  end
 
   describe "required-services writes" do
     test "Invite may omit or clear services and normalizes the closed set" do
       coach = insert(:coach)
 
-      omitted = Client.invite_changeset(coach, params_for(:client_attrs))
+      omitted = Client.invite_changeset(coach.business_id, coach.id, DateTime.utc_now(:second), params_for(:client_attrs))
       assert omitted.valid?
       assert Ecto.Changeset.get_field(omitted, :required_services) == []
 
       empty =
         Client.invite_changeset(
-          coach,
+          coach.business_id,
+          coach.id,
+          DateTime.utc_now(:second),
           Map.put(params_for(:client_attrs), "required_services", [])
         )
 
@@ -23,7 +47,9 @@ defmodule Easy.Clients.RequiredServicesTest do
 
       both =
         Client.invite_changeset(
-          coach,
+          coach.business_id,
+          coach.id,
+          DateTime.utc_now(:second),
           Map.put(params_for(:client_attrs), "required_services", ["nutrition", "training"])
         )
 
@@ -34,12 +60,12 @@ defmodule Easy.Clients.RequiredServicesTest do
     test "a supplied coach edit is non-empty and normalizes Training before Nutrition" do
       client = %Client{status: :active, required_services: [:training]}
 
-      empty = Client.update_changeset(client, %{"required_services" => []})
+      empty = Client.update_changeset(client, Date.utc_today(), %{"required_services" => []})
       refute empty.valid?
       assert "must contain at least one service" in errors_on(empty).required_services
 
       both =
-        Client.update_changeset(client, %{
+        Client.update_changeset(client, Date.utc_today(), %{
           "required_services" => ["nutrition", "training"]
         })
 
@@ -47,7 +73,7 @@ defmodule Easy.Clients.RequiredServicesTest do
       assert Ecto.Changeset.get_change(both, :required_services) == [:training, :nutrition]
 
       empty_existing =
-        Client.update_changeset(%Client{status: :active, required_services: []}, %{
+        Client.update_changeset(%Client{status: :active, required_services: []}, Date.utc_today(), %{
           "required_services" => []
         })
 
@@ -59,11 +85,11 @@ defmodule Easy.Clients.RequiredServicesTest do
       client = %Client{status: :active, required_services: []}
 
       duplicate =
-        Client.update_changeset(client, %{
+        Client.update_changeset(client, Date.utc_today(), %{
           "required_services" => ["training", "training"]
         })
 
-      unknown = Client.update_changeset(client, %{"required_services" => ["physio"]})
+      unknown = Client.update_changeset(client, Date.utc_today(), %{"required_services" => ["physio"]})
 
       refute duplicate.valid?
       refute unknown.valid?
@@ -77,11 +103,13 @@ defmodule Easy.Clients.RequiredServicesTest do
 
       invite =
         Client.invite_changeset(
-          coach,
+          coach.business_id,
+          coach.id,
+          DateTime.utc_now(:second),
           Map.put(params_for(:client_attrs), "joined_at", joined_at)
         )
 
-      update = Client.update_changeset(%Client{status: :active}, %{"joined_at" => joined_at})
+      update = Client.update_changeset(%Client{status: :active}, Date.utc_today(), %{"joined_at" => joined_at})
       self_update = Client.self_update_changeset(%Client{}, %{"joined_at" => joined_at})
 
       refute Ecto.Changeset.get_change(invite, :joined_at)
@@ -99,7 +127,7 @@ defmodule Easy.Clients.RequiredServicesTest do
         |> params_for()
         |> Map.put("required_services", ["nutrition", "training"])
 
-      assert {:ok, invited} = Clients.invite_client(ctx, invite_attrs)
+      assert {:ok, invited} = ClientInvitations.invite(ctx, invite_attrs)
       assert invited.required_services == [:training, :nutrition]
 
       assert {:ok, updated} =

@@ -6,7 +6,11 @@ defmodule Easy.WorkbenchExpiringQueue do
   alias Easy.Repo
   alias Easy.Workbench.QueueSnooze
 
-  @renewal_window_days 14
+  @type item :: %{
+          client: Client.t(),
+          reasons: [%{code: :engagement_ending_soon, ends_on: Date.t()}]
+        }
+  @type page :: %{count: non_neg_integer(), items: [item()]}
 
   @spec count(Ctx.t()) :: non_neg_integer()
   def count(%Ctx{} = ctx) do
@@ -15,15 +19,14 @@ defmodule Easy.WorkbenchExpiringQueue do
     |> Repo.aggregate(:count, :id)
   end
 
-  @spec list(Ctx.t(), keyword()) :: %{count: non_neg_integer(), items: [map()]}
+  @spec list(Ctx.t(), keyword()) :: page()
   def list(%Ctx{} = ctx, opts) do
     facts = facts(ctx, Date.utc_today())
-    {offset, limit} = pagination(opts)
 
     items =
       facts
       |> order_by([client], asc: client.subscription_ends_on, asc: client.id)
-      |> Easy.Utils.paginate(offset, limit)
+      |> Easy.Utils.paginate(opts)
       |> Repo.all()
       |> Enum.map(fn client ->
         %{
@@ -38,35 +41,23 @@ defmodule Easy.WorkbenchExpiringQueue do
   end
 
   defp facts(%Ctx{} = ctx, today) do
-    horizon = Date.add(today, @renewal_window_days)
-
     active_snooze =
-      from(snooze in QueueSnooze,
-        where:
-          snooze.business_id == ^ctx.business_id and
-            snooze.client_id == parent_as(:expiring_client).id and
-            snooze.queue == :expiring and snooze.snoozed_until >= ^today,
-        select: 1
-      )
+      QueueSnooze
+      |> QueueSnooze.for_business(ctx.business_id)
+      |> QueueSnooze.for_queue(:expiring)
+      |> QueueSnooze.active(today)
+      |> where([snooze], snooze.client_id == parent_as(:expiring_client).id)
+      |> select(1)
 
     visible_clients =
       Client
       |> Client.for_business(ctx.business_id)
       |> Client.visible_to(ctx)
-      |> Client.for_status(:active)
+      |> Client.expiring_soon(today)
 
     from(client in visible_clients,
       as: :expiring_client,
-      where:
-        not is_nil(client.subscription_ends_on) and
-          client.subscription_ends_on >= ^today and client.subscription_ends_on <= ^horizon,
       where: not exists(subquery(active_snooze))
     )
-  end
-
-  defp pagination(opts) do
-    offset = max(Keyword.get(opts, :offset, 0), 0)
-    limit = min(max(Keyword.get(opts, :limit, 20), 0), 100)
-    {offset, limit}
   end
 end

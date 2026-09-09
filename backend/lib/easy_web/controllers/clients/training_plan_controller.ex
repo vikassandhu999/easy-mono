@@ -1,7 +1,7 @@
 defmodule EasyWeb.Clients.TrainingPlanController do
   use EasyWeb, :typed_controller
 
-  alias Easy.Training.Programming
+  alias Easy.Training.PlanReader
   alias EasyWeb.Types.{TrainingPlan, TrainingPlanCoverage}
 
   typed(:coverage,
@@ -16,7 +16,7 @@ defmodule EasyWeb.Clients.TrainingPlanController do
   def coverage(conn, _params) do
     date = Map.get(conn.query_params, "date", Date.utc_today())
 
-    with {:ok, coverage} <- Programming.resolve_client_coverage(conn.assigns.ctx, date) do
+    with {:ok, coverage} <- PlanReader.resolve_client_coverage(conn.assigns.ctx, date) do
       ok(conn, %{data: coverage})
     end
   end
@@ -26,7 +26,7 @@ defmodule EasyWeb.Clients.TrainingPlanController do
     params = conn.query_params
 
     with {:ok, %{plans: plans, count: count}} <-
-           Programming.list_client_plans(conn.assigns.ctx,
+           PlanReader.list_client_plans(conn.assigns.ctx,
              offset: Map.get(params, "offset", 0),
              limit: Map.get(params, "limit", 20)
            ) do
@@ -36,7 +36,7 @@ defmodule EasyWeb.Clients.TrainingPlanController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, _params) do
-    with {:ok, plan} <- Programming.get_client_plan(conn.assigns.ctx, conn.path_params["id"]) do
+    with {:ok, plan} <- PlanReader.get_client_plan(conn.assigns.ctx, conn.path_params["id"]) do
       ok(conn, %{data: plan})
     end
   end

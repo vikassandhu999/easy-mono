@@ -8,6 +8,7 @@ defmodule Easy.Training.WorkoutSchedule do
   import Ecto.Query
 
   @type t() :: %__MODULE__{}
+  @type weekday :: :monday | :tuesday | :wednesday | :thursday | :friday | :saturday | :sunday
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -23,8 +24,11 @@ defmodule Easy.Training.WorkoutSchedule do
     timestamps(type: :utc_datetime)
   end
 
-  @spec weekdays() :: [atom()]
+  @spec weekdays() :: [weekday()]
   def weekdays, do: @weekdays
+
+  @spec weekday_names() :: [String.t()]
+  def weekday_names, do: Enum.map(@weekdays, &Atom.to_string/1)
 
   @spec insert_changeset(String.t(), String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, plan_id, workout_id, attrs) do
@@ -56,11 +60,14 @@ defmodule Easy.Training.WorkoutSchedule do
 
   @spec by_weekday(Ecto.Queryable.t()) :: Ecto.Query.t()
   def by_weekday(query \\ __MODULE__) do
+    weekdays = weekday_names()
+
     from(row in query,
       order_by: [
         asc:
           fragment(
-            "array_position(ARRAY['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], ?)",
+            "array_position(?::text[], ?)",
+            ^weekdays,
             row.weekday
           ),
         asc: row.id

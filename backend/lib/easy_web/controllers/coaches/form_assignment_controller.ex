@@ -1,7 +1,8 @@
 defmodule EasyWeb.Coaches.FormAssignmentController do
   use EasyWeb, :typed_controller
 
-  alias Easy.Forms
+  alias Easy.Forms.Assignments
+  alias Easy.Forms.Submissions
   alias EasyWeb.Types.FormAssignment
 
   typed(:index, ok: {200, data([FormAssignment.t()])})
@@ -14,7 +15,7 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
   def index(conn, %{"client_id" => client_id}) do
     ctx = conn.assigns.ctx
 
-    with {:ok, assignments} <- Forms.list_form_assignments_for_client(ctx, client_id) do
+    with {:ok, assignments} <- Assignments.list_form_assignments_for_client(ctx, client_id) do
       ok(conn, %{data: assignments})
     end
   end
@@ -25,7 +26,7 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
     client_id = conn.path_params["client_id"]
     template_id = conn.body_params[:form_template_id]
 
-    with {:ok, assignment} <- Forms.assign_form_template_to_client(ctx, client_id, template_id, %{}) do
+    with {:ok, assignment} <- Assignments.assign_form_template_to_client(ctx, client_id, template_id, %{}) do
       ok(conn, %{data: assignment})
     end
   end
@@ -35,7 +36,7 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
     ctx = conn.assigns.ctx
     id = conn.path_params["id"]
 
-    with {:ok, submissions} <- Forms.list_form_submissions(ctx, id) do
+    with {:ok, submissions} <- Submissions.list(ctx, id) do
       ok(conn, %{data: submissions})
     end
   end
@@ -45,7 +46,7 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
     ctx = conn.assigns.ctx
     id = conn.path_params["id"]
 
-    with {:ok, assignment} <- Forms.update_form_assignment(ctx, id, conn.body_params) do
+    with {:ok, assignment} <- Assignments.update_form_assignment(ctx, id, conn.body_params) do
       ok(conn, %{data: assignment})
     end
   end
@@ -54,7 +55,7 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
   def remind(conn, _params) do
     id = conn.path_params["id"]
 
-    with {:ok, _assignment} <- Forms.send_intake_reminder(conn.assigns.ctx, id) do
+    with {:ok, _assignment} <- Assignments.send_intake_reminder(conn.assigns.ctx, id) do
       ok(conn)
     end
   end

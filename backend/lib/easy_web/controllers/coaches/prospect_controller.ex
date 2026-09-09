@@ -1,7 +1,7 @@
 defmodule EasyWeb.Coaches.ProspectController do
   use EasyWeb, :typed_controller
 
-  alias Easy.Landing
+  alias Easy.Prospects
   alias EasyWeb.Types.{Prospect, ProspectEnrollment, ProspectIndex}
 
   typed(:index, query: Prospect.list_query(), ok: {200, ProspectIndex.t()})
@@ -16,14 +16,14 @@ defmodule EasyWeb.Coaches.ProspectController do
       |> maybe_put(:offset, conn.query_params["offset"])
       |> maybe_put(:limit, conn.query_params["limit"])
 
-    with {:ok, result} <- Landing.list_prospects(conn.assigns.ctx, opts) do
+    with {:ok, result} <- Prospects.list_prospects(conn.assigns.ctx, opts) do
       ok(conn, %{data: result.prospects, count: result.count, summary: result.summary})
     end
   end
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
-    with {:ok, prospect} <- Landing.get_prospect(conn.assigns.ctx, id) do
+    with {:ok, prospect} <- Prospects.get_prospect(conn.assigns.ctx, id) do
       ok(conn, %{data: prospect})
     end
   end
@@ -32,7 +32,7 @@ defmodule EasyWeb.Coaches.ProspectController do
   def update(conn, _params) do
     id = conn.path_params["id"]
 
-    with {:ok, prospect} <- Landing.update_prospect(conn.assigns.ctx, id, conn.body_params) do
+    with {:ok, prospect} <- Prospects.update_prospect(conn.assigns.ctx, id, conn.body_params) do
       ok(conn, %{data: prospect})
     end
   end
@@ -41,7 +41,7 @@ defmodule EasyWeb.Coaches.ProspectController do
   def enroll(conn, _params) do
     id = conn.path_params["id"]
 
-    with {:ok, result} <- Landing.enroll_prospect(conn.assigns.ctx, id, conn.body_params) do
+    with {:ok, result} <- Prospects.enroll_prospect(conn.assigns.ctx, id, conn.body_params) do
       ok(conn, %{data: %{prospect: result.prospect, already_enrolled: result.already_enrolled}})
     end
   end

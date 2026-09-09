@@ -134,7 +134,7 @@ defmodule Easy.Nutrition.DiaryEntryCorrectionsTest do
     portion = %{kind: :serving, amount: 1, unit: "cup", label: "Cup"}
     {:ok, _day} = save_extra(ctx, today, %{meal_slot: :lunch, food_id: food.id, portion: portion})
     {:ok, _} = Library.delete_food(trainer_ctx(coach), food.id)
-    {:ok, day} = Diary.get_client_nutrition_day(ctx, today)
+    {:ok, day} = get_client_nutrition_day(ctx, today)
     slot = Enum.find(day.slots, &(&1.meal_slot == :lunch))
     draft = slot_draft(slot)
     [entry] = draft.entries

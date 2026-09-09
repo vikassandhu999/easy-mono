@@ -13,9 +13,11 @@ defmodule Easy.Forms.FormAssignment do
   @foreign_key_type :binary_id
 
   @purposes [:intake, :check_in]
-  @assignment_statuses [:assigned, :in_progress, :completed, :dismissed, :missed]
+  @open_statuses [:assigned, :in_progress]
+  @assignment_statuses @open_statuses ++ [:completed, :dismissed, :missed]
   @priorities [:high, :normal]
 
+  @type purpose :: :intake | :check_in
   @type t :: %__MODULE__{}
 
   schema "form_assignments" do
@@ -39,10 +41,12 @@ defmodule Easy.Forms.FormAssignment do
     timestamps(type: :utc_datetime)
   end
 
-  @spec insert_changeset(String.t(), String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(business_id, client_id, form_template_id, attrs) do
+  @spec insert_changeset(String.t(), String.t(), String.t(), purpose(), map()) :: Ecto.Changeset.t()
+  def insert_changeset(business_id, client_id, form_template_id, purpose, attrs) do
     %__MODULE__{}
-    |> cast(attrs, [:purpose, :priority, :status, :due_date, :completed_at])
+    |> cast(attrs, [:priority, :due_date])
+    |> put_change(:purpose, purpose)
+    |> put_change(:status, :assigned)
     |> put_change(:business_id, business_id)
     |> put_change(:client_id, client_id)
     |> put_change(:form_template_id, form_template_id)
@@ -58,17 +62,17 @@ defmodule Easy.Forms.FormAssignment do
   @spec insert_scheduled_changeset(String.t(), String.t(), String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_scheduled_changeset(business_id, client_id, form_template_id, check_in_schedule_id, attrs) do
     business_id
-    |> insert_changeset(client_id, form_template_id, attrs)
+    |> insert_changeset(client_id, form_template_id, :check_in, attrs)
     |> put_change(:check_in_schedule_id, check_in_schedule_id)
     |> foreign_key_constraint(:check_in_schedule_id, name: :form_assignments_schedule_business_id_fkey)
   end
 
-  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(assignment, attrs) do
+  @spec update_changeset(t(), DateTime.t(), map()) :: Ecto.Changeset.t()
+  def update_changeset(assignment, now, attrs) do
     assignment
     |> cast(attrs, [:priority, :status, :due_date])
     |> validate_required([:purpose, :priority, :status])
-    |> sync_completed_at()
+    |> sync_completed_at(now)
     |> check_constraint(:purpose, name: :form_assignments_purpose_check)
     |> check_constraint(:priority, name: :form_assignments_priority_check)
     |> check_constraint(:status, name: :form_assignments_status_check)
@@ -76,12 +80,12 @@ defmodule Easy.Forms.FormAssignment do
 
   # Keep completed_at consistent with status so a coach edit can't leave a "completed"
   # assignment with a nil completed_at (or a stale stamp after re-opening it).
-  defp sync_completed_at(changeset) do
+  defp sync_completed_at(changeset, now) do
     completed_at = get_field(changeset, :completed_at)
 
     case get_field(changeset, :status) do
       :completed when is_nil(completed_at) ->
-        put_change(changeset, :completed_at, DateTime.utc_now(:second))
+        put_change(changeset, :completed_at, now)
 
       :completed ->
         changeset
@@ -102,6 +106,32 @@ defmodule Easy.Forms.FormAssignment do
     |> check_constraint(:status, name: :form_assignments_status_check)
   end
 
+  @spec reminder_sent_changeset(t(), :due | :overdue, DateTime.t()) :: Ecto.Changeset.t()
+  def reminder_sent_changeset(assignment, :due, sent_at), do: change(assignment, due_reminder_sent_at: sent_at)
+  def reminder_sent_changeset(assignment, :overdue, sent_at), do: change(assignment, overdue_reminder_sent_at: sent_at)
+
+  @spec put_latest_submission(t() | nil) :: t() | nil
+  def put_latest_submission(nil), do: nil
+
+  def put_latest_submission(%__MODULE__{form_submissions: submissions} = assignment)
+      when is_list(submissions) do
+    latest_submission = List.first(submissions)
+
+    %{
+      assignment
+      | latest_submission: latest_submission,
+        latest_submission_reviewed_at: submission_reviewed_at(latest_submission)
+    }
+  end
+
+  def put_latest_submission(%__MODULE__{} = assignment), do: assignment
+
+  defp submission_reviewed_at(nil), do: nil
+  defp submission_reviewed_at(submission), do: submission.reviewed_at
+
+  @spec oldest(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def oldest(query \\ __MODULE__), do: from(a in query, order_by: [asc: a.inserted_at, asc: a.id])
+
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do
     from(a in query, where: a.business_id == ^business_id)
@@ -118,7 +148,52 @@ defmodule Easy.Forms.FormAssignment do
   end
 
   @spec open(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def open(query \\ __MODULE__), do: from(a in query, where: a.status in [:assigned, :in_progress])
+  def open(query \\ __MODULE__), do: from(a in query, where: a.status in @open_statuses)
+
+  @spec open?(t()) :: boolean()
+  def open?(%__MODULE__{status: status}), do: status in @open_statuses
+
+  @spec latest_due_check_in_per_client(Ecto.Queryable.t(), Date.t()) :: Ecto.Query.t()
+  def latest_due_check_in_per_client(query \\ __MODULE__, today) do
+    from(assignment in query,
+      where:
+        assignment.purpose == :check_in and
+          not is_nil(assignment.due_date) and assignment.due_date <= ^today,
+      distinct: assignment.client_id,
+      order_by: [
+        asc: assignment.client_id,
+        desc: assignment.due_date,
+        desc: assignment.inserted_at,
+        desc: assignment.id
+      ]
+    )
+  end
+
+  @spec pending_check_in_reminder(Ecto.Queryable.t(), :due | :overdue, Date.t()) :: Ecto.Query.t()
+  def pending_check_in_reminder(query \\ __MODULE__, type, today) do
+    query
+    |> open()
+    |> where([assignment], assignment.purpose == :check_in)
+    |> reminder_window(type, today)
+  end
+
+  defp reminder_window(query, :due, today) do
+    cutoff = Date.add(today, -2)
+
+    from(assignment in query,
+      where:
+        assignment.due_date <= ^today and assignment.due_date > ^cutoff and
+          is_nil(assignment.due_reminder_sent_at)
+    )
+  end
+
+  defp reminder_window(query, :overdue, today) do
+    cutoff = Date.add(today, -2)
+
+    from(assignment in query,
+      where: assignment.due_date <= ^cutoff and is_nil(assignment.overdue_reminder_sent_at)
+    )
+  end
 
   @spec include_form_template(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def include_form_template(query \\ __MODULE__, business_id) do

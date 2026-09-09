@@ -107,6 +107,33 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
   end
 
   describe "update_food/4" do
+    test "recipe ingredients pin serving identity but allow its weight to change" do
+      coach = insert(:coach)
+      ctx = trainer_ctx(coach)
+      serving = %{label: "cup", amount: 1.0, unit: "cup", weight_g: 200.0, is_default: true}
+      food = insert(:food, business: coach.business, creator: coach, serving_sizes: [serving])
+      recipe = insert(:recipe, business: coach.business, creator: coach)
+
+      insert(:recipe_ingredient,
+        business: coach.business,
+        recipe: recipe,
+        food: food,
+        portion: %{kind: :serving, amount: 1.0, unit: "cup", label: "cup"}
+      )
+
+      replacement = %{serving | label: "scoop", unit: "scoop"}
+
+      assert {:error, :in_use} =
+               Library.update_food(ctx, food.id, food.revision, %{serving_sizes: [replacement]})
+
+      assert [%{unit: "cup", weight_g: 200.0}] = Repo.get!(Food, food.id).serving_sizes
+
+      assert {:ok, updated} =
+               Library.update_food(ctx, food.id, food.revision, %{serving_sizes: [%{serving | weight_g: 210.0}]})
+
+      assert [%{unit: "cup", label: "cup", weight_g: 210.0}] = updated.serving_sizes
+    end
+
     test "rejects removing a serving used by a live Menu Item" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
@@ -122,12 +149,13 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
 
       put_food_on_menu(coach, food, portion: %{kind: :serving, amount: 1.0, unit: "cup", label: "cup"})
 
-      assert {:error, :in_use} =
-               Library.update_food(ctx, food.id, food.revision, %{
-                 serving_sizes: [
-                   %{label: "scoop", amount: 1.0, unit: "scoop", weight_g: 30.0, is_default: true}
-                 ]
-               })
+      replacement = %{
+        serving_sizes: [%{label: "scoop", amount: 1.0, unit: "scoop", weight_g: 30.0, is_default: true}]
+      }
+
+      for attrs <- [replacement, Jason.decode!(Jason.encode!(replacement))] do
+        assert {:error, :in_use} = Library.update_food(ctx, food.id, food.revision, attrs)
+      end
 
       assert [%{unit: "cup", weight_g: 200.0}] = Repo.get!(Food, food.id).serving_sizes
     end
@@ -198,6 +226,7 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
       food = insert(:food, business: other.business, creator: other)
 
       assert {:error, :not_found} = Library.get_food_impact(trainer_ctx(coach), food.id)
+      assert {:error, :not_found} = Library.get_food_impact(trainer_ctx(coach), Ecto.UUID.generate())
     end
   end
 
@@ -225,6 +254,8 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
       other_recipe = insert(:recipe, business: other.business, creator: other)
       put_recipe_on_menu(other, other_recipe, name: "Other Cut")
 
+      assert {:error, :not_found} = Library.get_recipe_impact(ctx, other_recipe.id)
+      assert {:error, :not_found} = Library.get_recipe_impact(ctx, Ecto.UUID.generate())
       assert {:ok, impact} = Library.get_recipe_impact(ctx, recipe.id)
       template_ids = Enum.map(impact.templates, & &1.id)
       assert template.id in template_ids

@@ -3,8 +3,8 @@ defmodule Easy.Training.ExerciseDeleteTest do
 
   alias Easy.Ctx
   alias Easy.Repo
-  alias Easy.Training.{Execution, PrescribedExercise, TrainingExercise}
   alias Easy.Training.Library
+  alias Easy.Training.{PerformedSets, PrescribedExercise, TrainingExercise}
   alias Easy.Training.TrainingPerformedSet
 
   # Deleting an exercise used to succeed and leave prescribed exercises pointing at
@@ -27,7 +27,7 @@ defmodule Easy.Training.ExerciseDeleteTest do
       session = insert(:workout_session, business: s.business, client: s.client)
 
       assert {:ok, set} =
-               Execution.create_client_performed_set(s.client_ctx, session.id, %{
+               PerformedSets.create_client_performed_set(s.client_ctx, session.id, %{
                  exercise_id: exercise.id,
                  exercise_name: "Back Squat",
                  set_type: :working,

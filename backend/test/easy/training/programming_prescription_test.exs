@@ -5,6 +5,49 @@ defmodule Easy.Training.ProgrammingPrescriptionTest do
   alias Easy.Training.{PrescribedExercise, Programming, TrainingPlan, TrainingWorkout, WorkoutSchedule}
 
   describe "replace_prescription/4" do
+    test "casts string-keyed nested input without accepting tenant or parent overrides" do
+      coach = insert(:coach)
+      template = insert(:training_plan, business: coach.business, creator: coach.user)
+      exercise = insert(:exercise, business: coach.business)
+      foreign_id = Ecto.UUID.generate()
+
+      attrs = %{
+        "workouts" => [
+          %{
+            "local_ref" => "lower",
+            "name" => "Lower",
+            "position" => "2",
+            "business_id" => foreign_id,
+            "training_plan_id" => foreign_id,
+            "prescribed_exercises" => [
+              %{
+                "local_ref" => "squat",
+                "exercise_id" => exercise.id,
+                "position" => "3",
+                "business_id" => foreign_id,
+                "training_workout_id" => foreign_id,
+                "prescribed_sets" => [%{"reps" => "5", "rest_seconds" => "60"}]
+              }
+            ]
+          }
+        ],
+        "schedule" => Enum.map(WorkoutSchedule.weekdays(), &%{"weekday" => to_string(&1), "workout_ref" => "lower"})
+      }
+
+      assert {:ok, replaced} = Programming.replace_prescription(trainer_ctx(coach), template.id, 1, attrs)
+      assert [workout] = replaced.workouts
+      assert workout.position == 2
+      assert workout.business_id == coach.business_id
+      assert workout.training_plan_id == template.id
+      assert [item] = workout.prescribed_exercises
+      assert item.position == 3
+      assert item.business_id == coach.business_id
+      assert item.training_workout_id == workout.id
+      assert [%{reps: "5", rest_seconds: 60}] = item.prescribed_sets
+      assert length(replaced.workout_schedule) == 7
+      assert Enum.all?(replaced.workout_schedule, &(&1.training_workout_id == workout.id))
+    end
+
     test "creates an explicitly ordered complete Prescription and resolves local references" do
       coach = insert(:coach)
       template = insert(:training_plan, business: coach.business, creator: coach.user)
@@ -254,6 +297,50 @@ defmodule Easy.Training.ProgrammingPrescriptionTest do
                })
 
       assert Repo.get!(TrainingWorkout, workout.id)
+    end
+
+    test "rejects malformed exercise collections before replacing existing prescription rows" do
+      coach = insert(:coach)
+      template = insert(:training_plan, business: coach.business, creator: coach.user)
+      workout = insert(:workout, business: coach.business, plan: template, position: 0)
+
+      for exercises <- [nil, %{}, [nil], ["invalid"], [42]] do
+        attrs = %{workouts: [workout_input("new", "New", 0, exercises)], schedule: schedule()}
+
+        assert {:error, changeset} =
+                 Programming.replace_prescription(trainer_ctx(coach), template.id, template.revision, attrs)
+
+        assert Keyword.has_key?(changeset.errors, :workouts)
+        assert Repo.get!(TrainingWorkout, workout.id).name == workout.name
+        assert Repo.get!(TrainingPlan, template.id).revision == template.revision
+      end
+    end
+
+    test "rejects malformed set collections without changing existing prescription rows" do
+      coach = insert(:coach)
+      template = insert(:training_plan, business: coach.business, creator: coach.user)
+      workout = insert(:workout, business: coach.business, plan: template, position: 0)
+      exercise = insert(:exercise, business: coach.business)
+      item = insert(:prescribed_exercise, business: coach.business, workout: workout, exercise: exercise, position: 0)
+
+      for sets <- [nil, %{}, [nil], ["invalid"], [42]] do
+        attrs = %{
+          workouts: [
+            persisted_workout_input(workout.id, "Changed", 0, [
+              persisted_exercise_input(item.id, exercise.id, 0, sets)
+            ])
+          ],
+          schedule: schedule()
+        }
+
+        assert {:error, %Ecto.Changeset{valid?: false} = changeset} =
+                 Programming.replace_prescription(trainer_ctx(coach), template.id, template.revision, attrs)
+
+        assert Keyword.has_key?(changeset.errors, :workouts)
+        assert Repo.get!(TrainingWorkout, workout.id).name == workout.name
+        assert Repo.get!(PrescribedExercise, item.id).prescribed_sets == item.prescribed_sets
+        assert Repo.get!(TrainingPlan, template.id).revision == template.revision
+      end
     end
 
     test "rejects duplicate local references, invalid positions, and duplicate weekdays atomically" do

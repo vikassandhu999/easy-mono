@@ -68,17 +68,15 @@ defmodule Easy.Training.ExecutionConcurrencyTest do
     owner = insert_user!("execution-owner-#{suffix}@test.com")
 
     business =
-      owner
+      owner.id
       |> Business.insert_changeset(%{name: "Execution concurrency", handle: "execution-#{suffix}"})
       |> Repo.insert!()
 
     coach_user = insert_user!("execution-coach-#{suffix}@test.com")
 
     coach =
-      %{first_name: "Execution", last_name: "Coach"}
-      |> Coach.insert_changeset()
-      |> put_change(:business_id, business.id)
-      |> put_change(:user_id, coach_user.id)
+      business.id
+      |> Coach.insert_changeset(coach_user.id, %{first_name: "Execution", last_name: "Coach"})
       |> put_change(:email, coach_user.email)
       |> Repo.insert!()
 

@@ -1,7 +1,18 @@
 defmodule Easy.Error do
   defexception [:code, :message, :detail, :status]
 
-  @type t :: %__MODULE__{}
+  @type t :: %__MODULE__{
+          code: atom() | String.t(),
+          message: String.t() | nil,
+          detail: map() | nil,
+          status: atom()
+        }
+  @type payload :: %{
+          code: atom() | String.t(),
+          message: String.t() | nil,
+          detail: map() | nil,
+          status: atom()
+        }
 
   @spec new(atom() | String.t(), String.t(), map() | nil, atom()) :: t()
   def new(code, message, detail \\ %{}, status \\ :bad_request) do
@@ -34,32 +45,16 @@ defmodule Easy.Error do
   end
 
   @spec unprocessable(Ecto.Changeset.t() | map() | String.t()) :: t()
-  def unprocessable(changeset_or_detail) do
-    data =
-      case changeset_or_detail do
-        %Ecto.Changeset{} = changeset ->
-          %{fields: traverse_errors(changeset)}
+  def unprocessable(%Ecto.Changeset{} = changeset) do
+    unprocessable(%{fields: traverse_errors(changeset)})
+  end
 
-        detail when is_map(detail) ->
-          detail
+  def unprocessable(detail) when is_map(detail) do
+    new(:invalid_input, "The data provided was invalid.", detail, :unprocessable_entity)
+  end
 
-        detail when is_binary(detail) ->
-          nil
-      end
-
-    message =
-      case changeset_or_detail do
-        %Ecto.Changeset{} -> "The data provided was invalid."
-        detail when is_map(detail) -> "The data provided was invalid."
-        detail when is_binary(detail) -> detail
-      end
-
-    new(
-      :invalid_input,
-      message,
-      data,
-      :unprocessable_entity
-    )
+  def unprocessable(message) when is_binary(message) do
+    new(:invalid_input, message, nil, :unprocessable_entity)
   end
 
   defp traverse_errors(changeset) do
@@ -70,7 +65,7 @@ defmodule Easy.Error do
     end)
   end
 
-  @spec to_map(t()) :: map()
+  @spec to_map(t()) :: payload()
   def to_map(%__MODULE__{} = error) do
     %{
       code: error.code,

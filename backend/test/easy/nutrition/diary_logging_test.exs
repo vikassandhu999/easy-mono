@@ -6,7 +6,7 @@ defmodule Easy.Nutrition.DiaryLoggingTest do
   test "one save logs planned intake and extras and returns direct rows" do
     %{client: client, food: food, today: today} = covering_setup(menu: :two_options)
     ctx = client_ctx(client)
-    {:ok, live} = Diary.get_client_nutrition_day(ctx, today)
+    {:ok, live} = get_client_nutrition_day(ctx, today)
     [slot] = live.slots
     assert slot.revision == 0
     draft = slot_draft(slot, true)
@@ -38,7 +38,7 @@ defmodule Easy.Nutrition.DiaryLoggingTest do
   test "a retry with an old slot revision conflicts, including after deletion" do
     %{client: client, today: today} = covering_setup()
     ctx = client_ctx(client)
-    {:ok, live} = Diary.get_client_nutrition_day(ctx, today)
+    {:ok, live} = get_client_nutrition_day(ctx, today)
     request = %{slots: Enum.map(live.slots, &slot_draft(&1, true))}
     {:ok, saved} = Diary.save_client_nutrition_day(ctx, today, request)
 
@@ -60,14 +60,14 @@ defmodule Easy.Nutrition.DiaryLoggingTest do
   test "whole-day save checks every revision before committing any slot" do
     %{client: client, today: today} = covering_setup(menu: :ordered)
     ctx = client_ctx(client)
-    {:ok, live} = Diary.get_client_nutrition_day(ctx, today)
+    {:ok, live} = get_client_nutrition_day(ctx, today)
     [breakfast, workout] = Enum.map(live.slots, &slot_draft(&1, true))
     {:ok, _} = Diary.save_client_nutrition_day(ctx, today, %{slots: [workout]})
 
     assert {:error, %Ecto.Changeset{action: :stale_revision}} =
              Diary.save_client_nutrition_day(ctx, today, %{slots: [breakfast, workout]})
 
-    {:ok, day} = Diary.get_client_nutrition_day(ctx, today)
+    {:ok, day} = get_client_nutrition_day(ctx, today)
     assert Enum.map(day.slots, & &1.revision) == [0, 1]
     assert Repo.aggregate(DiarySlot.for_client(client.business_id, client.id), :count) == 1
   end
@@ -75,7 +75,7 @@ defmodule Easy.Nutrition.DiaryLoggingTest do
   test "invalid final entry rolls back the complete save and permits a corrected request" do
     %{client: client, today: today} = covering_setup(menu: :ordered)
     ctx = client_ctx(client)
-    {:ok, live} = Diary.get_client_nutrition_day(ctx, today)
+    {:ok, live} = get_client_nutrition_day(ctx, today)
     drafts = Enum.map(live.slots, &slot_draft(&1, true))
 
     bad =
@@ -92,7 +92,7 @@ defmodule Easy.Nutrition.DiaryLoggingTest do
   test "duplicate slot names, entry identities and planned references are rejected" do
     %{client: client, today: today} = covering_setup()
     ctx = client_ctx(client)
-    {:ok, live} = Diary.get_client_nutrition_day(ctx, today)
+    {:ok, live} = get_client_nutrition_day(ctx, today)
     draft = slot_draft(hd(live.slots), true)
     [entry] = draft.entries
 
@@ -149,7 +149,7 @@ defmodule Easy.Nutrition.DiaryLoggingTest do
     reordered = %{draft | entries: Enum.reverse(draft.entries)}
 
     assert {:ok, saved} = Diary.save_client_nutrition_day(ctx, date, %{slots: [reordered]})
-    assert {:ok, loaded} = Diary.get_client_nutrition_day(ctx, date)
+    assert {:ok, loaded} = get_client_nutrition_day(ctx, date)
     assert loaded == saved
     assert Enum.map(hd(loaded.slots).rows, & &1.portion.grams) == [80.0, 20.0]
   end
@@ -167,7 +167,7 @@ defmodule Easy.Nutrition.DiaryLoggingTest do
     assert {:ok, saved} = Diary.save_client_nutrition_day(client_ctx(other), date, %{slots: [copy]})
     assert hd(hd(saved.slots).rows).entry_id == entry.id
     assert hd(hd(saved.slots).rows).portion.grams == 80.0
-    assert {:ok, ^original} = Diary.get_client_nutrition_day(client_ctx(client), date)
+    assert {:ok, ^original} = get_client_nutrition_day(client_ctx(client), date)
   end
 
   test "a new past slot has no reconstructed plan and observes the seven-day correction window" do

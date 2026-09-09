@@ -19,6 +19,7 @@ defmodule Mix.Tasks.TypedRoutes.Gen do
   ]
 
   @impl Mix.Task
+  @spec run([String.t()]) :: :ok
   def run(args) do
     Mix.Task.run("compile")
     Application.load(:easy)

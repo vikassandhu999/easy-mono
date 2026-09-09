@@ -1,7 +1,7 @@
 defmodule Easy.Nutrition.ProgrammingMenuDuplicationTest do
   use Easy.DataCase, async: true
 
-  alias Easy.Nutrition.{Library, Programming}
+  alias Easy.Nutrition.{Library, PlanReader, Programming}
 
   import Easy.Nutrition.ProgrammingMenuFixtures
 
@@ -46,7 +46,7 @@ defmodule Easy.Nutrition.ProgrammingMenuDuplicationTest do
       assert copy.menu == source.menu
       assert {:ok, _} = Library.update_food(ctx, food.id, food.revision, %{calories_per_100g: 999.0})
       assert {:ok, second_copy} = Programming.duplicate_template(ctx, source.id)
-      {:ok, live_source} = Programming.get_template(ctx, source.id)
+      {:ok, live_source} = PlanReader.get_template(ctx, source.id)
       assert second_copy.menu == live_source.menu
     end
   end

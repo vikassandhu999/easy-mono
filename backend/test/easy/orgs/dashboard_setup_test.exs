@@ -4,6 +4,60 @@ defmodule Easy.Orgs.DashboardSetupTest do
   alias Easy.Orgs
 
   describe "update_dashboard_setup/2" do
+    test "accepts string keys without editing business profile fields" do
+      business = insert(:business)
+
+      assert {:ok, updated} =
+               Orgs.update_dashboard_setup(owner_ctx(business), %{
+                 "dashboard_setup_hidden_reason" => "dismissed",
+                 "name" => "Unexpected rename"
+               })
+
+      assert updated.dashboard_setup_hidden_reason == :dismissed
+      assert updated.dashboard_setup_hidden_at
+      assert updated.name == business.name
+    end
+
+    test "atom-keyed setup writes cannot edit business profile fields" do
+      business = insert(:business)
+
+      assert {:ok, updated} =
+               Orgs.update_dashboard_setup(owner_ctx(business), %{
+                 dashboard_setup_hidden_reason: :dismissed,
+                 name: "Unexpected rename"
+               })
+
+      assert updated.name == business.name
+    end
+
+    test "general business updates cannot replace completed setup state" do
+      business = insert(:business)
+      ctx = owner_ctx(business)
+      {:ok, completed} = Orgs.update_dashboard_setup(ctx, %{dashboard_setup_hidden_reason: :completed})
+
+      assert {:ok, updated} =
+               Orgs.update_business(ctx, %{name: "Renamed", dashboard_setup_hidden_reason: :dismissed})
+
+      assert updated.name == "Renamed"
+      assert updated.dashboard_setup_hidden_reason == :completed
+      assert updated.dashboard_setup_hidden_at == completed.dashboard_setup_hidden_at
+    end
+
+    test "distinguishes missing and invalid reasons from an explicit reset" do
+      business = insert(:business)
+      ctx = owner_ctx(business)
+      {:ok, dismissed} = Orgs.update_dashboard_setup(ctx, %{dashboard_setup_hidden_reason: :dismissed})
+
+      for attrs <- [%{}, %{"dashboard_setup_hidden_reason" => "invalid"}] do
+        assert {:error, %Ecto.Changeset{}} = Orgs.update_dashboard_setup(ctx, attrs)
+        assert Repo.get!(Easy.Orgs.Business, business.id) == dismissed
+      end
+
+      assert {:ok, reset} = Orgs.update_dashboard_setup(ctx, %{"dashboard_setup_hidden_reason" => nil})
+      assert reset.dashboard_setup_hidden_reason == nil
+      assert reset.dashboard_setup_hidden_at == nil
+    end
+
     test "stores and clears a dismissed state for the business owner" do
       business = insert(:business)
       ctx = owner_ctx(business)

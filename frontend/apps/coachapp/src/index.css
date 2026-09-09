@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-secondary: var(--muted);
+  --color-secondary-foreground: var(--foreground);
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+}
+
+:root {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  color-scheme: light;
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.2 0 0);
+  --primary: oklch(0.25 0 0);
+  --primary-foreground: oklch(0.99 0 0);
+  --muted: oklch(0.95 0 0);
+  --muted-foreground: oklch(0.46 0 0);
+  --border: oklch(0.84 0 0);
+  --ring: oklch(0.55 0 0);
+  --destructive: oklch(0.5 0.19 25);
+}
+
+@layer base {
+  body {
+    margin: 0;
+  }
+  button,
+  input {
+    font: inherit;
+  }
+  [data-slot="button"],
+  [data-slot="input"] {
+    min-height: 2.75rem;
+  }
+  [data-slot="input"] {
+    padding-inline: 0.75rem;
+  }
+  button[data-pending] {
+    opacity: 0.65;
+  }
+  a:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 4px;
+    border-radius: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@utility text-link {
+  color: var(--foreground);
+  text-decoration-line: underline;
+  text-underline-offset: 4px;
+}

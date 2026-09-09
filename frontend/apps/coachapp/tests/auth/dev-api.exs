@@ -1,0 +1,13 @@
+if Mix.env() != :dev, do: raise("Run the auth browser API in MIX_ENV=dev")
+
+Logger.configure(level: :warning)
+Application.put_env(:easy, Easy.Repo, Keyword.put(Application.get_env(:easy, Easy.Repo), :database, "easy_coachapp_auth_dev"))
+Application.put_env(:easy, Easy.Mailer, adapter: Swoosh.Adapters.Local)
+Application.put_env(:easy, :start_client_subscription_sweeper, false)
+Application.put_env(:easy, :start_check_in_sweeper, false)
+Application.put_env(:easy, :frontend_url, "http://localhost:2022")
+Mix.Task.run("ecto.create", ["--quiet"])
+Mix.Task.run("ecto.migrate", ["--quiet"])
+Application.put_env(:easy, EasyWeb.Endpoint, Keyword.put(Application.get_env(:easy, EasyWeb.Endpoint), :server, true))
+{:ok, _} = Application.ensure_all_started(:easy)
+IO.puts("Auth browser API: localhost:4000, isolated database, local mail delivery")

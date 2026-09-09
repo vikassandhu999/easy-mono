@@ -1,0 +1,56 @@
+# Coach app rebuild
+
+Build one complete coaching task at a time. The first deliverable is authentication in `frontend/apps/coachapp`, using the Phoenix API and shadcn's React Aria base. Write the application code from scratch. The earlier app is evidence of API behavior, never an implementation template.
+
+## Product loop
+
+1. Pick a coach, a situation, and an outcome. Write: "When ___, I need to ___, so that ___." Record the device, frequency, information needed, and the costly mistake to prevent.
+2. Write a short screen brief before layout: entry, primary decision, action, successful exit, empty/loading/error states, and recovery after interruption. Identify what belongs on another screen.
+3. Explore two interaction approaches with realistic content. Choose based on the task, including keyboard and mobile behavior. Review the interaction before expanding scope.
+4. Build that vertical slice against the real API. Keep behavior beside its screen. Add a shared component only when it has a clear job; promote feature components when another real use demonstrates the same needs.
+5. Exercise the complete task at 375px and 1280px, including a failed request and recovery. Review with a target coach: can they finish unaided, what did they misunderstand, and where did they backtrack? Record results before choosing the next slice.
+
+Count completed coaching outcomes, avoidable mistakes, and requests for help. Set timing targets after observing the first usable version. A component count or number of finished screens is not a product success metric.
+
+## Suggested sequence
+
+- Authentication and a minimal signed-in destination.
+- One daily coaching task. Initial proposal: review a client's check-in, decide on a response, and finish the work. Confirm the first task with the product owner.
+- The client context that task actually needs.
+- Adjacent actions exposed by using that slice, such as changing a prescription.
+- Navigation and reusable patterns derived from the completed slices.
+
+Avoid a speculative dashboard, a large component kit, a complete sidebar, or parallel builds of unfinished screens. Backend vocabulary remains the contract; frontend layout and component choices are open for reconsideration.
+
+## Auth design
+
+Use email OTP, matching the backend. Include login, signup/email confirmation, resend, change email, trainer invitation preview/acceptance, business registration, persisted sessions, refresh, route protection, and local logout. No password or social-login flows are exposed by the auth contract.
+
+Use generated API types and React Hook Form's basic field rules. The backend validates business constraints and returns field errors. Do not add Zod or maintain a parallel schema layer. Validate persisted session and challenge data with small boundary checks.
+
+Keep public auth calls independent of stored credentials. Store one validated session record under an app-specific key. Share token refresh within a tab and serialize refresh between tabs. Preserve sessions on transport failures, throttling, and server errors. Clear credentials and query data on invalid sessions and explicit logout. Late requests must not restore a logged-out session.
+
+An unfinished signup must resume business setup. Guest sessions attempt coach promotion before offering registration, so a business created before an interrupted refresh does not get created again. Coach sessions validate through the profile endpoint. An invitation must not silently replace a signed-in account.
+
+Use explicit routes and a single OTP screen with a validated challenge in session storage, so reload works without putting email addresses or OTPs in the URL. Keep a single ordinary OTP input with paste and one-time-code autocomplete. Use labelled controls, visible focus, inline errors, pending actions, and an explicit resend action with cooldown. Do not show the development OTP in shipped UI.
+
+Install only shadcn primitives needed by auth. Use neutral tokens and a compact form surface. The signed-in destination identifies the account and supports logout; it makes no commitments about the future coaching workspace.
+
+## Implementation and verification
+
+- [x] Session and API foundation: `src/api/session.ts`, `client.ts`, `auth.ts`, `keys.ts`, `query-client.ts`, generated `schema.ts`. Test refresh sharing, rejected versus temporarily unavailable sessions, logout during refresh, and corrupt storage in `tests/auth/session.test.ts`.
+- [x] Auth routes and forms: `src/auth/`, `src/router.tsx`, `src/routes.ts`, minimal `src/app-shell.tsx`, and the necessary `src/ui/` primitives. Browser scenarios in `tests/auth/auth.browser.mjs` cover login, signup/setup, invitations, invalid OTP recovery, resend, reload, guards, and logout.
+- [x] Workspace integration: strict TypeScript, Tailwind, app-owned shadcn aliases, API generation, environment example, build/check scripts, and dev-server proxy.
+- [x] Verify typecheck, behavior checks, production build, and browser scenarios at both widths. Run successful login/signup against the local Phoenix server with local-only mail delivery; simulate network and expiry failures at the browser boundary.
+
+Verification: app build and Biome passed. Real API browser scenarios passed at 375px and 1280px, including invitations, interrupted setup, refresh failures, concurrent refresh, and logout during pending verification. Backend `mix precommit` passed with 1,617 tests and zero failures. The browser API uses the isolated `easy_coachapp_auth_dev` database and local mail delivery.
+
+Implementation stays in this working tree to preserve the user's initialized app. Deployment is outside this slice.
+
+## Sources
+
+- `backend/lib/easy_web/controllers/auth_controller.ex`: public auth operations.
+- `backend/lib/easy/identity/session_factory.ex`: guest/coach scope and membership checks.
+- `backend/lib/easy_web/router.ex`: protected business and coach routes.
+- [shadcn React Aria base](https://ui.shadcn.com/docs/changelog/2026-07-react-aria).
+- [React Aria forms](https://react-aria.adobe.com/forms).

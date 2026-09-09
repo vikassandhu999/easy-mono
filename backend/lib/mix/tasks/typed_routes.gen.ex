@@ -8,6 +8,11 @@ defmodule Mix.Tasks.TypedRoutes.Gen do
   @apps [
     %{
       name: :coach,
+      file: "apps/coachapp/src/api/schema.ts",
+      prefixes: ["/v1/coach", "/v1/businesses", "/v1/auth", "/v1/public", "/api"]
+    },
+    %{
+      name: :coach,
       file: "apps/coachapp-v2/src/api/schema.ts",
       prefixes: ["/v1/coach", "/v1/businesses", "/v1/auth", "/v1/public", "/api"]
     },

@@ -4,9 +4,13 @@
 default:
     @just --list
 
-# frontend: coach app dev server
+# frontend: live coach app (v2) dev server
 web:
     cd frontend && pnpm dev:coachapp
+
+# frontend: new coach app dev server
+coach:
+    cd frontend && pnpm dev:coachapp-next
 
 # frontend: client app dev server
 client:
@@ -69,6 +73,6 @@ api-docs: openapi
 # regenerate the OpenAPI spec + both app clients end-to-end
 # Both apps: openapi-typescript type schema (React Query hooks are hand-written).
 gen-api: openapi
-    cd frontend && pnpm --filter coachapp-v2 gen:api && pnpm --filter clientapp-v2 gen:api
+    cd frontend && pnpm --filter @easy/coachapp gen:api && pnpm --filter coachapp-v2 gen:api && pnpm --filter clientapp-v2 gen:api
     cd backend && mix typed_routes.gen
-    cd frontend && pnpm exec biome check --write apps/coachapp-v2/src/api/schema.ts apps/clientapp-v2/src/api/schema.ts
+    cd frontend && pnpm exec biome check --write apps/coachapp/src/api/schema.ts apps/coachapp-v2/src/api/schema.ts apps/clientapp-v2/src/api/schema.ts

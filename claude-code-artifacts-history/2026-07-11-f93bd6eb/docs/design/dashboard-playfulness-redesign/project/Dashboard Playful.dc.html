@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<meta name="design_doc_mode" content="canvas">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Inter", sans-serif; background: #EEF1F5; color: #18181B; -webkit-font-smoothing: antialiased; }
+  a { color: #0091FF; text-decoration: none; font-weight: 600; }
+  a:hover { color: #0072D6; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes wave { 0%,60%,100% { transform: rotate(0deg); } 15% { transform: rotate(16deg); } 30% { transform: rotate(-10deg); } 45% { transform: rotate(14deg); } }
+  @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+</style>
+</helmet>
+<div ref="{{ root }}" style="min-height:100%; padding:56px 64px 96px;">
+
+  <!-- ================= TURN 2 — CLIENTS PAGE (FOCUS) ================= -->
+  <section style="margin-bottom:92px;">
+    <header style="max-width:760px; margin:0 auto 44px; text-align:center; animation:fadeUp .5s both;">
+      <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:999px; background:#18181B; color:#fff; font-size:12px; font-weight:600; margin-bottom:20px;">
+        <span style="width:7px; height:7px; border-radius:50%; background:#0091FF;"></span>
+        Clients · Focus direction
+      </div>
+      <h1 style="font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; letter-spacing:-.02em; margin:0 0 12px;">The Clients page</h1>
+      <p style="font-size:16px; line-height:1.6; color:#52525B; margin:0;">Built in the <a href="#1b">1b — Focus</a> language you picked. The filter tabs and search are live — click a tab or type a name and both the desktop and phone update together. Rows stagger in on load and lift on hover.</p>
+    </header>
+
+    <div style="display:flex; justify-content:center;">
+      <div id="2a" style="display:flex; flex-direction:column; gap:22px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <span style="display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:12px; background:#18181B; color:#fff; font-weight:800; font-size:15px; font-family:'Space Grotesk',sans-serif;">2a</span>
+          <div>
+            <div style="font-size:19px; font-weight:800; letter-spacing:-.01em;">Clients — Focus</div>
+            <div style="font-size:13px; color:#71717A;">Live filter tabs · live search · staggered rows</div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:36px; align-items:flex-start;">
+          <!-- DESKTOP WINDOW -->
+          <div style="width:1160px; border-radius:22px; overflow:hidden; background:#fff; border:1px solid #E4E7EC; box-shadow:0 40px 80px -28px rgba(24,24,27,.32), 0 12px 28px -12px rgba(24,24,27,.16);">
+            <div style="height:40px; display:flex; align-items:center; gap:8px; padding:0 16px; background:#18181B; border-bottom:1px solid #26262A;">
+              <span style="width:11px;height:11px;border-radius:50%;background:#FF5F57;"></span>
+              <span style="width:11px;height:11px;border-radius:50%;background:#FEBC2E;"></span>
+              <span style="width:11px;height:11px;border-radius:50%;background:#28C840;"></span>
+              <div style="flex:1; text-align:center; font-size:12px; font-weight:500; color:#71717A;">app.coacheasy.com/clients</div>
+            </div>
+            <div style="display:flex; height:764px;">
+              <!-- SIDEBAR (Clients active) -->
+              <aside style="width:236px; flex-shrink:0; background:#18181B; color:#A1A1AA; display:flex; flex-direction:column; padding:0 14px;">
+                <div style="height:66px; display:flex; align-items:center; padding-left:8px;">
+                  <img src="assets/TextLogo.webp" alt="CoachEasy" style="height:22px; filter:brightness(0) invert(1);">
+                </div>
+                <nav style="display:flex; flex-direction:column; gap:3px; flex:1;">
+                  <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+                    Dashboard
+                  </div>
+                  <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; background:#0091FF; color:#fff; font-weight:600; font-size:14px; font-family:'Space Grotesk',sans-serif;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <span style="flex:1;">Clients</span>
+                    <span style="background:rgba(255,255,255,.22); color:#fff; font-size:11px; font-weight:700; padding:1px 8px; border-radius:99px;">3</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+                    <span style="flex:1;">Prospects</span>
+                    <span style="background:#0091FF; color:#fff; font-size:11px; font-weight:700; padding:1px 8px; border-radius:99px;">5</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
+                    <span style="flex:1;">Library</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="m9 18 6-6-6-6"/></svg>
+                  </div>
+                  <div style="flex:1;"></div>
+                  <div style="height:1px; background:#2A2A2E; margin:8px 0;"></div>
+                  <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; margin-bottom:14px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73"/></svg>
+                    Settings
+                  </div>
+                </nav>
+              </aside>
+
+              <!-- CONTENT -->
+              <main style="flex:1; display:flex; flex-direction:column; background:#fff; overflow:hidden;">
+                <!-- header -->
+                <div style="padding:34px 40px 0; animation:fadeUp .5s both .04s;">
+                  <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:24px;">
+                    <div>
+                      <div style="font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#0091FF; margin-bottom:8px;">Your roster</div>
+                      <h1 style="font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; letter-spacing:-.02em; margin:0; line-height:1;">Clients</h1>
+                      <p style="font-size:14px; color:#71717A; margin:11px 0 0;"><b style="color:#18181B;" data-countup="10">10</b> total · <b style="color:#16A34A;">5 active</b> · showing <b style="color:#18181B;">{{ cShown }}</b></p>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px; background:#18181B; color:#fff; padding:12px 18px; border-radius:13px; font-size:13.5px; font-weight:600; cursor:pointer; transition:transform .16s;" style-hover="transform:translateY(-2px);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Invite</div>
+                  </div>
+                </div>
+
+                <!-- toolbar -->
+                <div style="padding:22px 40px 18px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; animation:fadeUp .5s both .08s;">
+                  <div style="display:flex; align-items:center; gap:9px; width:280px; border:1.5px solid #ECEEF2; border-radius:12px; padding:10px 14px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    <input onInput="{{ onSearch }}" placeholder="Search clients" style="border:none; outline:none; background:transparent; font-family:inherit; font-size:14px; flex:1; min-width:0; color:#18181B;">
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+                      <button onClick="{{ t.onClick }}" style="display:inline-flex; align-items:center; gap:7px; height:36px; padding:0 15px; border:none; border-radius:10px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; {{ t.style }}">
+                        {{ t.label }}
+                        <span style="font-size:11px; font-weight:700; padding:0 6px; line-height:16px; border-radius:99px; background:{{ t.countBg }}; color:{{ t.countFg }};">{{ t.count }}</span>
+                      </button>
+                    </sc-for>
+                  </div>
+                </div>
+
+                <!-- list -->
+                <div style="flex:1; overflow-y:auto; padding:0 40px 40px;">
+                  <sc-if value="{{ cHasRows }}" hint-placeholder-val="{{ true }}">
+                    <div style="border:1.5px solid #ECEEF2; border-radius:18px; overflow:hidden;">
+                      <sc-for list="{{ rows }}" as="c" hint-placeholder-count="7">
+                        <div onClick="{{ c.onClick }}" style="display:flex; align-items:center; gap:14px; padding:14px 20px; border-bottom:1px solid #F1F4F8; cursor:pointer; transition:background .14s; animation:fadeUp .4s both;" style-hover="background:#FAFBFC;">
+                          <span style="width:42px; height:42px; border-radius:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; color:#fff; background:#18181B;">{{ c.initials }}</span>
+                          <div style="min-width:0; flex:1;">
+                            <div style="font-size:14.5px; font-weight:600;">{{ c.name }}</div>
+                            <div style="font-size:12.5px; color:#71717A;">{{ c.sub }}</div>
+                          </div>
+                          <sc-if value="{{ c.wa }}" hint-placeholder-val="{{ true }}">
+                            <span style="display:inline-flex; width:36px; height:36px; align-items:center; justify-content:center; border-radius:10px; color:#A1A1AA; transition:all .14s;" style-hover="background:#E9F9EF; color:#16A34A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></svg></span>
+                          </sc-if>
+                          <span style="font-size:11.5px; font-weight:700; padding:3px 10px; border-radius:99px; color:{{ c.chipFg }}; background:{{ c.chipBg }};">{{ c.statusLabel }}</span>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="#C4C4CC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="m9 18 6-6-6-6"/></svg>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ cNoRows }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-top:20px; border:1.5px dashed #E4E7EC; border-radius:18px; padding:56px 24px; text-align:center;">
+                      <div style="width:56px; height:56px; margin:0 auto 16px; border-radius:16px; background:#F4F6F8; display:flex; align-items:center; justify-content:center;"><svg viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="26" height="26"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
+                      <div style="font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700;">No one here yet</div>
+                      <p style="font-size:13.5px; color:#71717A; margin:8px 0 18px; max-width:280px; margin-left:auto; margin-right:auto;">No clients match this view. Try a different filter, or invite someone new to the roster.</p>
+                      <button onClick="{{ resetFilters }}" style="border:1.5px solid #ECEEF2; background:#fff; border-radius:11px; padding:9px 16px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;" style-hover="border-color:#18181B;">Clear filters</button>
+                    </div>
+                  </sc-if>
+                </div>
+              </main>
+            </div>
+          </div>
+
+          <!-- MOBILE FRAME -->
+          <div style="width:392px; flex-shrink:0; border-radius:46px; background:#101012; padding:11px; box-shadow:0 40px 80px -28px rgba(24,24,27,.4);">
+            <div style="border-radius:36px; overflow:hidden; background:#fff; height:812px; position:relative;">
+              <div style="height:48px; display:flex; align-items:center; justify-content:space-between; padding:0 26px; font-size:14px; font-weight:600;"><span>9:41</span><svg viewBox="0 0 24 24" width="16" height="16" fill="#18181B"><path d="M2 20h4v-8H2v8zm6 0h4V8H8v12zm6 0h4V4h-4v16zm6 0h2V2h-2v18z"/></svg></div>
+              <div style="padding:8px 18px 24px; overflow-y:auto; height:calc(812px - 48px - 74px);">
+                <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:16px;">
+                  <div>
+                    <div style="font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#0091FF; margin-bottom:5px;">Your roster</div>
+                    <h1 style="font-family:'Space Grotesk',sans-serif; font-size:26px; font-weight:700; letter-spacing:-.02em; margin:0; line-height:1;">Clients</h1>
+                  </div>
+                  <span style="display:inline-flex; width:40px; height:40px; align-items:center; justify-content:center; border-radius:12px; background:#18181B; color:#fff;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
+                </div>
+                <div style="display:flex; align-items:center; gap:9px; border:1.5px solid #ECEEF2; border-radius:12px; padding:10px 13px; margin-bottom:14px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                  <input onInput="{{ onSearch }}" placeholder="Search clients" style="border:none; outline:none; background:transparent; font-family:inherit; font-size:13.5px; flex:1; min-width:0;">
+                </div>
+                <div style="display:flex; gap:7px; overflow-x:auto; margin-bottom:16px; padding-bottom:2px;">
+                  <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+                    <button onClick="{{ t.onClick }}" style="flex-shrink:0; display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 13px; border:none; border-radius:9px; font-family:inherit; font-size:12.5px; font-weight:600; cursor:pointer; transition:all .15s; {{ t.style }}">{{ t.label }}<span style="font-size:10.5px; font-weight:700; padding:0 5px; line-height:15px; border-radius:99px; background:{{ t.countBg }}; color:{{ t.countFg }};">{{ t.count }}</span></button>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ cHasRows }}" hint-placeholder-val="{{ true }}">
+                  <div style="border:1.5px solid #ECEEF2; border-radius:16px; overflow:hidden;">
+                    <sc-for list="{{ rows }}" as="c" hint-placeholder-count="7">
+                      <div style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-bottom:1px solid #F1F4F8;">
+                        <span style="width:38px; height:38px; border-radius:11px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; color:#fff; background:#18181B;">{{ c.initials }}</span>
+                        <div style="min-width:0; flex:1;"><div style="font-size:13.5px; font-weight:600;">{{ c.name }}</div><div style="font-size:11.5px; color:#71717A; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ c.sub }}</div></div>
+                        <span style="font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:99px; color:{{ c.chipFg }}; background:{{ c.chipBg }}; white-space:nowrap;">{{ c.statusLabel }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ cNoRows }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:14px; border:1.5px dashed #E4E7EC; border-radius:16px; padding:40px 20px; text-align:center;">
+                    <div style="font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700;">No one here yet</div>
+                    <p style="font-size:12.5px; color:#71717A; margin:6px 0 0;">No clients match this view.</p>
+                  </div>
+                </sc-if>
+              </div>
+              <div style="position:absolute; bottom:0; left:0; right:0; height:74px; background:#18181B; display:flex; align-items:flex-start; justify-content:space-around; padding-top:10px;">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg><span style="font-size:10px;">Home</span></div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#0091FF;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span style="font-size:10px; font-weight:600;">Clients</span></div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span style="font-size:10px;">Prospects</span></div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg><span style="font-size:10px;">Library</span></div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73"/></svg><span style="font-size:10px;">Settings</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <header style="max-width:760px; margin:0 auto 52px; text-align:center; animation:fadeUp .5s both;">
+    <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:999px; background:#fff; border:1px solid #E4E7EC; font-size:12px; font-weight:600; color:#71717A; margin-bottom:20px;">
+      <span style="width:7px; height:7px; border-radius:50%; background:#0091FF;"></span>
+      CoachEasy · Dashboard redesign
+    </div>
+    <h1 style="font-size:34px; font-weight:800; letter-spacing:-.02em; margin:0 0 12px;">Two playful directions</h1>
+    <p style="font-size:16px; line-height:1.6; color:#52525B; margin:0;">Same clean UX, new personality. <a href="#1a">1a — Momentum</a> is warm, colorful and energetic. <a href="#1b">1b — Focus</a> is a sleek editorial bento. Numbers count up, cards spring on hover, and finishing a setup step throws confetti — try clicking an unchecked step.</p>
+  </header>
+
+  <div style="display:flex; flex-wrap:wrap; gap:64px; justify-content:center; align-items:flex-start;">
+
+    <!-- ============================= OPTION 1A — MOMENTUM ============================= -->
+    <div id="1a" style="display:flex; flex-direction:column; gap:22px;">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <span style="display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:12px; background:#0091FF; color:#fff; font-weight:800; font-size:15px;">1a</span>
+        <div>
+          <div style="font-size:19px; font-weight:800; letter-spacing:-.01em;">Momentum</div>
+          <div style="font-size:13px; color:#71717A;">Warm · colorful · energetic coach vibe</div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:36px; align-items:flex-start;">
+        <!-- DESKTOP WINDOW -->
+        <div style="width:1160px; border-radius:22px; overflow:hidden; background:#fff; border:1px solid #E4E7EC; box-shadow:0 40px 80px -28px rgba(24,24,27,.32), 0 12px 28px -12px rgba(24,24,27,.16);">
+          <div style="height:40px; display:flex; align-items:center; gap:8px; padding:0 16px; background:#F7F8FA; border-bottom:1px solid #ECEEF2;">
+            <span style="width:11px;height:11px;border-radius:50%;background:#FF5F57;"></span>
+            <span style="width:11px;height:11px;border-radius:50%;background:#FEBC2E;"></span>
+            <span style="width:11px;height:11px;border-radius:50%;background:#28C840;"></span>
+            <div style="flex:1; text-align:center; font-size:12px; font-weight:500; color:#A1A1AA;">app.coacheasy.com/dashboard</div>
+          </div>
+          <div style="display:flex; height:764px;">
+            <!-- SIDEBAR A -->
+            <aside style="width:248px; flex-shrink:0; background:#fff; border-right:1px solid #ECEEF2; display:flex; flex-direction:column; padding:0 14px;">
+              <div style="height:66px; display:flex; align-items:center; padding-left:8px;">
+                <img src="assets/TextLogo.webp" alt="CoachEasy" style="height:24px;">
+              </div>
+              <nav style="display:flex; flex-direction:column; gap:4px; flex:1;">
+                <div style="position:relative; display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:12px; background:#E9F5FF; color:#0091FF; font-weight:600; font-size:14px;">
+                  <span style="position:absolute; left:0; top:9px; bottom:9px; width:3.5px; border-radius:99px; background:#0091FF;"></span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+                  Dashboard
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:12px; color:#52525B; font-weight:500; font-size:14px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <span style="flex:1;">Clients</span>
+                  <span style="background:#0091FF; color:#fff; font-size:11px; font-weight:700; padding:1px 8px; border-radius:99px;">3</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:12px; color:#52525B; font-weight:500; font-size:14px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+                  <span style="flex:1;">Prospects</span>
+                  <span style="background:#0091FF; color:#fff; font-size:11px; font-weight:700; padding:1px 8px; border-radius:99px;">5</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; color:#52525B; font-weight:500; font-size:14px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
+                  <span style="flex:1;">Library</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="transform:rotate(90deg);"><path d="m9 18 6-6-6-6"/></svg>
+                </div>
+                <div style="margin-left:14px; padding-left:14px; border-left:1.5px solid #ECEEF2; display:flex; flex-direction:column; gap:1px;">
+                  <div style="display:flex; align-items:center; gap:11px; padding:8px 12px; border-radius:10px; color:#71717A; font-weight:500; font-size:13.5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="M6 7v10M4 9v6M18 7v10M20 9v6M7 12h10"/></svg>Exercises</div>
+                  <div style="display:flex; align-items:center; gap:11px; padding:8px 12px; border-radius:10px; color:#71717A; font-weight:500; font-size:13.5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="M8 3v7M6 3v3M10 3v3M8 10v11M16 3c1.5 1.5 1.5 5.5 0 7v11"/></svg>Foods</div>
+                  <div style="display:flex; align-items:center; gap:11px; padding:8px 12px; border-radius:10px; color:#71717A; font-weight:500; font-size:13.5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>Recipes</div>
+                  <div style="display:flex; align-items:center; gap:11px; padding:8px 12px; border-radius:10px; color:#71717A; font-weight:500; font-size:13.5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4M12 16h4M8 11h.01M8 16h.01"/></svg>Nutrition Plans</div>
+                  <div style="display:flex; align-items:center; gap:11px; padding:8px 12px; border-radius:10px; color:#71717A; font-weight:500; font-size:13.5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4M12 16h4M8 11h.01M8 16h.01"/></svg>Training Plans</div>
+                  <div style="display:flex; align-items:center; gap:11px; padding:8px 12px; border-radius:10px; color:#71717A; font-weight:500; font-size:13.5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>Check-ins</div>
+                </div>
+                <div style="flex:1;"></div>
+                <div style="height:1px; background:#ECEEF2; margin:8px 0;"></div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:12px; color:#52525B; font-weight:500; font-size:14px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Settings
+                </div>
+                <div style="height:14px;"></div>
+              </nav>
+            </aside>
+
+            <!-- CONTENT A -->
+            <main style="flex:1; overflow-y:auto; background:linear-gradient(180deg,#F8FBFF 0%,#FBFCFE 240px,#FBFCFE 100%); padding:34px 40px 48px;">
+              <!-- HERO -->
+              <div style="position:relative; overflow:hidden; border-radius:24px; background:linear-gradient(120deg,#0091FF 0%,#3B7BFF 55%,#6D5CF6 120%); color:#fff; padding:32px 34px; margin-bottom:26px; animation:fadeUp .5s both .04s;">
+                <div style="position:absolute; right:-40px; top:-40px; width:220px; height:220px; border-radius:50%; background:rgba(255,255,255,.10);"></div>
+                <div style="position:absolute; right:70px; bottom:-70px; width:150px; height:150px; border-radius:50%; background:rgba(255,255,255,.08);"></div>
+                <div style="position:relative; display:flex; align-items:flex-start; justify-content:space-between; gap:24px;">
+                  <div>
+                    <div style="display:flex; align-items:center; gap:10px; font-size:24px; font-weight:800; letter-spacing:-.01em;">
+                      Good morning, Jordan <span style="display:inline-block; transform-origin:70% 80%; animation:wave 2.6s ease-in-out .6s infinite;">👋</span>
+                    </div>
+                    <div style="font-size:14px; opacity:.9; margin-top:6px; font-weight:500;">Peak Performance Coaching · Tuesday, July 8</div>
+                    <div style="font-size:14.5px; opacity:.95; margin-top:16px; max-width:420px; line-height:1.5;">You've got <b>5 new prospects</b> and <b>3 pending invites</b> waiting. Let's turn them into clients. 💪</div>
+                  </div>
+                  <!-- setup ring -->
+                  <div data-gs="A-ring" style="flex-shrink:0; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.25); border-radius:18px; padding:16px 18px; display:flex; align-items:center; gap:14px; backdrop-filter:blur(4px);">
+                    <div style="position:relative; width:62px; height:62px;">
+                      <svg width="62" height="62" viewBox="0 0 80 80" style="transform:rotate(-90deg);">
+                        <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="9"/>
+                        <circle cx="40" cy="40" r="34" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-dasharray="213.6" stroke-dashoffset="{{ aRingOffset }}" style="transition:stroke-dashoffset .9s cubic-bezier(.3,.9,.3,1);"/>
+                      </svg>
+                      <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1;">
+                        <span style="font-size:19px; font-weight:800;">{{ aDone }}<span style="font-size:12px; opacity:.7;">/4</span></span>
+                      </div>
+                    </div>
+                    <div style="line-height:1.35;">
+                      <div style="font-size:13px; font-weight:700;">Get set up</div>
+                      <div style="font-size:12px; opacity:.85;">{{ aRemaining }} steps left</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- STATS -->
+              <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:30px;">
+                <div style="animation:fadeUp .5s both .10s; background:#fff; border:1px solid #EAF0F6; border-radius:18px; padding:18px; cursor:pointer; transition:transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s;" style-hover="transform:translateY(-4px); box-shadow:0 14px 26px -12px rgba(0,145,255,.35); border-color:#CDE7FF;">
+                  <span style="display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:11px; background:#E9F5FF; color:#0091FF; margin-bottom:14px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+                  <div style="font-size:30px; font-weight:800; letter-spacing:-.02em; line-height:1;" data-countup="24">24</div>
+                  <div style="font-size:13px; color:#71717A; margin-top:6px; font-weight:500;">Active clients</div>
+                </div>
+                <div style="animation:fadeUp .5s both .16s; background:#fff; border:1px solid #EAF0F6; border-radius:18px; padding:18px; cursor:pointer; transition:transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s;" style-hover="transform:translateY(-4px); box-shadow:0 14px 26px -12px rgba(245,158,11,.35); border-color:#FCE3B8;">
+                  <span style="display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:11px; background:#FEF3E2; color:#D97706; margin-bottom:14px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg></span>
+                  <div style="font-size:30px; font-weight:800; letter-spacing:-.02em; line-height:1;" data-countup="3">3</div>
+                  <div style="font-size:13px; color:#71717A; margin-top:6px; font-weight:500;">Pending invites</div>
+                </div>
+                <div style="animation:fadeUp .5s both .22s; background:#fff; border:1px solid #EAF0F6; border-radius:18px; padding:18px; cursor:pointer; transition:transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s;" style-hover="transform:translateY(-4px); box-shadow:0 14px 26px -12px rgba(124,92,252,.35); border-color:#DDD3FF;">
+                  <span style="display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:11px; background:#F0ECFF; color:#7C5CFC; margin-bottom:14px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></span>
+                  <div style="font-size:30px; font-weight:800; letter-spacing:-.02em; line-height:1;" data-countup="5">5</div>
+                  <div style="font-size:13px; color:#71717A; margin-top:6px; font-weight:500;">New prospects</div>
+                </div>
+                <div style="animation:fadeUp .5s both .28s; background:#fff; border:1px solid #EAF0F6; border-radius:18px; padding:18px; cursor:pointer; transition:transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s;" style-hover="transform:translateY(-4px); box-shadow:0 14px 26px -12px rgba(22,163,74,.35); border-color:#BFEBCF;">
+                  <span style="display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:11px; background:#E9F9EF; color:#16A34A; margin-bottom:14px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></svg></span>
+                  <div style="font-size:30px; font-weight:800; letter-spacing:-.02em; line-height:1;" data-countup="12">12</div>
+                  <div style="font-size:13px; color:#71717A; margin-top:6px; font-weight:500;">Clients won</div>
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns:1.35fr 1fr; gap:22px;">
+                <!-- NEEDS ATTENTION -->
+                <section style="animation:fadeUp .5s both .30s;">
+                  <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+                    <span style="display:inline-flex; width:22px; height:22px; align-items:center; justify-content:center; border-radius:7px; background:#FEE9EC; color:#F31260;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>
+                    <h3 style="font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#52525B; margin:0;">Needs your attention</h3>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:16px;">
+                    <div>
+                      <div style="font-size:12px; color:#A1A1AA; font-weight:600; margin:0 0 8px 4px;">New prospects to review</div>
+                      <div style="background:#fff; border:1px solid #EAF0F6; border-radius:16px; overflow:hidden;">
+                        <div style="display:flex; align-items:center; gap:12px; padding:13px 16px; border-bottom:1px solid #F1F4F8; cursor:pointer; transition:background .15s;" style-hover="background:#F8FBFF;">
+                          <span style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#0091FF,#6D5CF6); color:#fff; font-weight:700; font-size:15px; display:flex; align-items:center; justify-content:center;">M</span>
+                          <div style="flex:1; min-width:0;"><div style="font-size:14px; font-weight:600;">Maya Chen</div><div style="font-size:12.5px; color:#71717A;">12-Week Shred · applied 2h ago</div></div>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="m9 18 6-6-6-6"/></svg>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:12px; padding:13px 16px; cursor:pointer; transition:background .15s;" style-hover="background:#F8FBFF;">
+                          <span style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#F59E0B,#EC4899); color:#fff; font-weight:700; font-size:15px; display:flex; align-items:center; justify-content:center;">T</span>
+                          <div style="flex:1; min-width:0;"><div style="font-size:14px; font-weight:600;">Tom Rivera</div><div style="font-size:12.5px; color:#71717A;">General application · applied 5h ago</div></div>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="m9 18 6-6-6-6"/></svg>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <div style="font-size:12px; color:#A1A1AA; font-weight:600; margin:0 0 8px 4px;">Awaiting invite acceptance</div>
+                      <div style="background:#fff; border:1px solid #EAF0F6; border-radius:16px; overflow:hidden;">
+                        <div style="display:flex; align-items:center; gap:12px; padding:13px 16px; cursor:pointer; transition:background .15s;" style-hover="background:#F8FBFF;">
+                          <span style="width:38px; height:38px; border-radius:50%; background:#E9F5FF; color:#0091FF; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center;">SB</span>
+                          <div style="flex:1; min-width:0;"><div style="font-size:14px; font-weight:600;">Sarah Blake</div><div style="font-size:12.5px; color:#71717A;">sarah.blake@email.com</div></div>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="m9 18 6-6-6-6"/></svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- GETTING STARTED A -->
+                <section style="animation:fadeUp .5s both .36s;">
+                  <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+                    <span style="display:inline-flex; width:22px; height:22px; align-items:center; justify-content:center; border-radius:7px; background:#E9F5FF; color:#0091FF;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/></svg></span>
+                    <h3 style="font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#52525B; margin:0;">Finish setting up</h3>
+                  </div>
+                  <div style="background:#fff; border:1px solid #EAF0F6; border-radius:18px; padding:16px;">
+                    <div style="height:8px; border-radius:99px; background:#EEF2F7; overflow:hidden; margin-bottom:16px;">
+                      <div style="height:100%; border-radius:99px; background:linear-gradient(90deg,#0091FF,#6D5CF6); width:{{ aBarWidth }}; transition:width .9s cubic-bezier(.3,.9,.3,1);"></div>
+                    </div>
+                    <!-- step 0 done -->
+                    <div data-gs="A-0" style="display:flex; align-items:center; gap:12px; padding:9px 6px;">
+                      <span style="width:30px; height:30px; border-radius:50%; background:#E9F9EF; color:#16A34A; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M20 6 9 17l-5-5"/></svg></span>
+                      <span style="font-size:13.5px; font-weight:500; color:#A1A1AA; text-decoration:line-through;">Complete your profile</span>
+                    </div>
+                    <!-- step 1 done -->
+                    <div data-gs="A-1" style="display:flex; align-items:center; gap:12px; padding:9px 6px;">
+                      <span style="width:30px; height:30px; border-radius:50%; background:#E9F9EF; color:#16A34A; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M20 6 9 17l-5-5"/></svg></span>
+                      <span style="font-size:13.5px; font-weight:500; color:#A1A1AA; text-decoration:line-through;">Invite your first client</span>
+                    </div>
+                    <!-- step 2 toggle -->
+                    <div data-gs="A-2" onClick="{{ aComplete2 }}" style="display:flex; align-items:center; gap:12px; padding:9px 6px; border-radius:12px; cursor:pointer; transition:background .15s;" style-hover="background:#F8FBFF;">
+                      <sc-if value="{{ aStep2Done }}" hint-placeholder-val="{{ false }}"><span style="width:30px; height:30px; border-radius:50%; background:#E9F9EF; color:#16A34A; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M20 6 9 17l-5-5"/></svg></span></sc-if>
+                      <sc-if value="{{ aStep2Todo }}" hint-placeholder-val="{{ true }}"><span style="width:30px; height:30px; border-radius:50%; background:#F1F4F8; color:#71717A; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M6 7v10M4 9v6M18 7v10M20 9v6M7 12h10"/></svg></span></sc-if>
+                      <span style="flex:1; min-width:0;"><span style="display:block; font-size:13.5px; font-weight:600; color:{{ aStep2Color }}; text-decoration:{{ aStep2Deco }};">Build your first plan</span><sc-if value="{{ aStep2Todo }}" hint-placeholder-val="{{ true }}"><span style="display:block; font-size:11.5px; color:#A1A1AA;">Create a plan to assign to clients</span></sc-if></span>
+                      <sc-if value="{{ aStep2Todo }}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" fill="none" stroke="#0091FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></sc-if>
+                    </div>
+                    <!-- step 3 toggle -->
+                    <div data-gs="A-3" onClick="{{ aComplete3 }}" style="display:flex; align-items:center; gap:12px; padding:9px 6px; border-radius:12px; cursor:pointer; transition:background .15s;" style-hover="background:#F8FBFF;">
+                      <sc-if value="{{ aStep3Done }}" hint-placeholder-val="{{ false }}"><span style="width:30px; height:30px; border-radius:50%; background:#E9F9EF; color:#16A34A; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M20 6 9 17l-5-5"/></svg></span></sc-if>
+                      <sc-if value="{{ aStep3Todo }}" hint-placeholder-val="{{ true }}"><span style="width:30px; height:30px; border-radius:50%; background:#F1F4F8; color:#71717A; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><circle cx="12" cy="12" r="10"/><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20zM2 12h20"/></svg></span></sc-if>
+                      <span style="flex:1; min-width:0;"><span style="display:block; font-size:13.5px; font-weight:600; color:{{ aStep3Color }}; text-decoration:{{ aStep3Deco }};">Publish your landing page</span><sc-if value="{{ aStep3Todo }}" hint-placeholder-val="{{ true }}"><span style="display:block; font-size:11.5px; color:#A1A1AA;">Let prospects find and apply to you</span></sc-if></span>
+                      <sc-if value="{{ aStep3Todo }}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" fill="none" stroke="#0091FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></sc-if>
+                    </div>
+                  </div>
+
+                  <!-- QUICK ACTIONS A -->
+                  <div style="margin-top:22px;">
+                    <h3 style="font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#52525B; margin:0 0 12px;">Quick actions</h3>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                      <div style="display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:14px; background:#fff; border:1px solid #EAF0F6; font-size:13px; font-weight:600; cursor:pointer; transition:transform .16s cubic-bezier(.34,1.56,.64,1), border-color .16s;" style-hover="transform:translateY(-3px); border-color:#CDE7FF;"><span style="display:inline-flex; width:30px; height:30px; align-items:center; justify-content:center; border-radius:9px; background:#E9F5FF; color:#0091FF;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg></span>Invite client</div>
+                      <div style="display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:14px; background:#fff; border:1px solid #EAF0F6; font-size:13px; font-weight:600; cursor:pointer; transition:transform .16s cubic-bezier(.34,1.56,.64,1), border-color .16s;" style-hover="transform:translateY(-3px); border-color:#DDD3FF;"><span style="display:inline-flex; width:30px; height:30px; align-items:center; justify-content:center; border-radius:9px; background:#F0ECFF; color:#7C5CFC;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M6 7v10M4 9v6M18 7v10M20 9v6M7 12h10"/></svg></span>Training plan</div>
+                      <div style="display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:14px; background:#fff; border:1px solid #EAF0F6; font-size:13px; font-weight:600; cursor:pointer; transition:transform .16s cubic-bezier(.34,1.56,.64,1), border-color .16s;" style-hover="transform:translateY(-3px); border-color:#BFEBCF;"><span style="display:inline-flex; width:30px; height:30px; align-items:center; justify-content:center; border-radius:9px; background:#E9F9EF; color:#16A34A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M8 3v7M6 3v3M10 3v3M8 10v11M16 3c1.5 1.5 1.5 5.5 0 7v11"/></svg></span>Nutrition plan</div>
+                      <div style="display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:14px; background:#fff; border:1px solid #EAF0F6; font-size:13px; font-weight:600; cursor:pointer; transition:transform .16s cubic-bezier(.34,1.56,.64,1), border-color .16s;" style-hover="transform:translateY(-3px); border-color:#FCE3B8;"><span style="display:inline-flex; width:30px; height:30px; align-items:center; justify-content:center; border-radius:9px; background:#FEF3E2; color:#D97706;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="12" cy="12" r="10"/><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20zM2 12h20"/></svg></span>Landing page</div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </main>
+          </div>
+        </div>
+
+        <!-- MOBILE FRAME A -->
+        <div style="width:392px; flex-shrink:0; border-radius:46px; background:#101012; padding:11px; box-shadow:0 40px 80px -28px rgba(24,24,27,.4);">
+          <div style="border-radius:36px; overflow:hidden; background:linear-gradient(180deg,#F8FBFF,#FBFCFE); height:812px; position:relative;">
+            <div style="height:48px; display:flex; align-items:center; justify-content:space-between; padding:0 26px; font-size:14px; font-weight:600;"><span>9:41</span><span style="display:flex; gap:5px; align-items:center;"><svg viewBox="0 0 24 24" width="16" height="16" fill="#18181B"><path d="M2 20h4v-8H2v8zm6 0h4V8H8v12zm6 0h4V4h-4v16zm6 0h2V2h-2v18z"/></svg></span></div>
+            <div style="padding:8px 18px 24px; overflow-y:auto; height:calc(812px - 48px - 74px);">
+              <div style="position:relative; overflow:hidden; border-radius:22px; background:linear-gradient(120deg,#0091FF,#6D5CF6); color:#fff; padding:20px; margin-bottom:16px;">
+                <div style="font-size:20px; font-weight:800;">Morning, Jordan 👋</div>
+                <div style="font-size:12.5px; opacity:.9; margin-top:4px;">Peak Performance Coaching</div>
+                <div style="margin-top:14px; display:flex; align-items:center; gap:12px; background:rgba(255,255,255,.15); border-radius:14px; padding:10px 12px;">
+                  <div style="position:relative; width:44px; height:44px;"><svg width="44" height="44" viewBox="0 0 80 80" style="transform:rotate(-90deg);"><circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="10"/><circle cx="40" cy="40" r="34" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-dasharray="213.6" stroke-dashoffset="{{ aRingOffset }}" style="transition:stroke-dashoffset .9s;"/></svg><div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800;">{{ aDone }}/4</div></div>
+                  <div><div style="font-size:12.5px; font-weight:700;">Get set up</div><div style="font-size:11px; opacity:.85;">{{ aRemaining }} steps left</div></div>
+                </div>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px;">
+                <div style="background:#fff; border:1px solid #EAF0F6; border-radius:16px; padding:14px;"><span style="display:inline-flex; width:32px; height:32px; align-items:center; justify-content:center; border-radius:9px; background:#E9F5FF; color:#0091FF; margin-bottom:8px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span><div style="font-size:24px; font-weight:800;" data-countup="24">24</div><div style="font-size:11.5px; color:#71717A;">Active clients</div></div>
+                <div style="background:#fff; border:1px solid #EAF0F6; border-radius:16px; padding:14px;"><span style="display:inline-flex; width:32px; height:32px; align-items:center; justify-content:center; border-radius:9px; background:#F0ECFF; color:#7C5CFC; margin-bottom:8px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></span><div style="font-size:24px; font-weight:800;" data-countup="5">5</div><div style="font-size:11.5px; color:#71717A;">New prospects</div></div>
+              </div>
+              <div style="font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#71717A; margin-bottom:10px;">Needs attention</div>
+              <div style="background:#fff; border:1px solid #EAF0F6; border-radius:16px; overflow:hidden;">
+                <div style="display:flex; align-items:center; gap:11px; padding:12px 14px; border-bottom:1px solid #F1F4F8;"><span style="width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,#0091FF,#6D5CF6); color:#fff; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center;">M</span><div style="flex:1;"><div style="font-size:13.5px; font-weight:600;">Maya Chen</div><div style="font-size:11.5px; color:#71717A;">12-Week Shred</div></div><svg viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="2" width="15" height="15"><path d="m9 18 6-6-6-6"/></svg></div>
+                <div style="display:flex; align-items:center; gap:11px; padding:12px 14px;"><span style="width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,#F59E0B,#EC4899); color:#fff; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center;">T</span><div style="flex:1;"><div style="font-size:13.5px; font-weight:600;">Tom Rivera</div><div style="font-size:11.5px; color:#71717A;">General application</div></div><svg viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="2" width="15" height="15"><path d="m9 18 6-6-6-6"/></svg></div>
+              </div>
+            </div>
+            <div style="position:absolute; bottom:0; left:0; right:0; height:74px; background:#fff; border-top:1px solid #ECEEF2; display:flex; align-items:flex-start; justify-content:space-around; padding-top:10px;">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#0091FF;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg><span style="font-size:10px; font-weight:600;">Home</span></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#A1A1AA;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span style="font-size:10px;">Clients</span></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#A1A1AA;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span style="font-size:10px;">Prospects</span></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#A1A1AA;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg><span style="font-size:10px;">Library</span></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#A1A1AA;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73"/></svg><span style="font-size:10px;">Settings</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================= OPTION 1B — FOCUS ============================= -->
+    <div id="1b" style="display:flex; flex-direction:column; gap:22px;">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <span style="display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:12px; background:#18181B; color:#fff; font-weight:800; font-size:15px; font-family:'Space Grotesk',sans-serif;">1b</span>
+        <div>
+          <div style="font-size:19px; font-weight:800; letter-spacing:-.01em;">Focus</div>
+          <div style="font-size:13px; color:#71717A;">Sleek editorial bento · bold accent · confident type</div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:36px; align-items:flex-start;">
+        <!-- DESKTOP WINDOW B -->
+        <div style="width:1160px; border-radius:22px; overflow:hidden; background:#fff; border:1px solid #E4E7EC; box-shadow:0 40px 80px -28px rgba(24,24,27,.32), 0 12px 28px -12px rgba(24,24,27,.16);">
+          <div style="height:40px; display:flex; align-items:center; gap:8px; padding:0 16px; background:#18181B; border-bottom:1px solid #26262A;">
+            <span style="width:11px;height:11px;border-radius:50%;background:#FF5F57;"></span>
+            <span style="width:11px;height:11px;border-radius:50%;background:#FEBC2E;"></span>
+            <span style="width:11px;height:11px;border-radius:50%;background:#28C840;"></span>
+            <div style="flex:1; text-align:center; font-size:12px; font-weight:500; color:#71717A;">app.coacheasy.com/dashboard</div>
+          </div>
+          <div style="display:flex; height:764px;">
+            <!-- SIDEBAR B -->
+            <aside style="width:236px; flex-shrink:0; background:#18181B; color:#A1A1AA; display:flex; flex-direction:column; padding:0 14px;">
+              <div style="height:66px; display:flex; align-items:center; padding-left:8px;">
+                <img src="assets/TextLogo.webp" alt="CoachEasy" style="height:22px; filter:brightness(0) invert(1);">
+              </div>
+              <nav style="display:flex; flex-direction:column; gap:3px; flex:1;">
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; background:#0091FF; color:#fff; font-weight:600; font-size:14px; font-family:'Space Grotesk',sans-serif;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+                  Dashboard
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <span style="flex:1;">Clients</span>
+                  <span style="background:#0091FF; color:#fff; font-size:11px; font-weight:700; padding:1px 8px; border-radius:99px;">3</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+                  <span style="flex:1;">Prospects</span>
+                  <span style="background:#0091FF; color:#fff; font-size:11px; font-weight:700; padding:1px 8px; border-radius:99px;">5</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
+                  <span style="flex:1;">Library</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="m9 18 6-6-6-6"/></svg>
+                </div>
+                <div style="flex:1;"></div>
+                <div style="height:1px; background:#2A2A2E; margin:8px 0;"></div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; margin-bottom:14px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73"/></svg>
+                  Settings
+                </div>
+              </nav>
+            </aside>
+
+            <!-- CONTENT B -->
+            <main style="flex:1; overflow-y:auto; background:#fff; padding:36px 40px 48px;">
+              <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:28px; animation:fadeUp .5s both .04s;">
+                <div>
+                  <div style="font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#0091FF; margin-bottom:8px;">Tuesday · July 8</div>
+                  <h1 style="font-family:'Space Grotesk',sans-serif; font-size:38px; font-weight:700; letter-spacing:-.02em; margin:0; line-height:1;">Good morning, Jordan.</h1>
+                  <p style="font-size:14.5px; color:#71717A; margin:12px 0 0;">Peak Performance Coaching · 5 prospects and 3 invites need you today.</p>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px; background:#18181B; color:#fff; padding:12px 18px; border-radius:13px; font-size:13.5px; font-weight:600; cursor:pointer; transition:transform .16s;" style-hover="transform:translateY(-2px);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>Invite a client</div>
+              </div>
+
+              <!-- BENTO -->
+              <div style="display:grid; grid-template-columns:repeat(4,1fr); grid-auto-rows:minmax(0,auto); gap:14px;">
+                <!-- 4 stat cells -->
+                <div style="animation:fadeUp .5s both .08s; grid-column:span 1; border:1.5px solid #ECEEF2; border-radius:18px; padding:20px; cursor:pointer; transition:border-color .18s, transform .18s;" style-hover="border-color:#18181B; transform:translateY(-3px);">
+                  <div style="font-family:'Space Grotesk',sans-serif; font-size:44px; font-weight:700; letter-spacing:-.03em; line-height:1;" data-countup="24">24</div>
+                  <div style="display:flex; align-items:center; gap:6px; margin-top:10px;"><span style="font-size:12.5px; color:#52525B; font-weight:600;">Active clients</span></div>
+                  <div style="display:inline-flex; align-items:center; gap:3px; margin-top:8px; font-size:11px; font-weight:700; color:#16A34A; background:#E9F9EF; padding:2px 7px; border-radius:99px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></svg>+2</div>
+                </div>
+                <div style="animation:fadeUp .5s both .12s; grid-column:span 1; border:1.5px solid #ECEEF2; border-radius:18px; padding:20px; cursor:pointer; transition:border-color .18s, transform .18s;" style-hover="border-color:#18181B; transform:translateY(-3px);">
+                  <div style="font-family:'Space Grotesk',sans-serif; font-size:44px; font-weight:700; letter-spacing:-.03em; line-height:1;" data-countup="3">3</div>
+                  <div style="font-size:12.5px; color:#52525B; font-weight:600; margin-top:10px;">Pending invites</div>
+                  <div style="display:inline-flex; align-items:center; gap:3px; margin-top:8px; font-size:11px; font-weight:700; color:#D97706; background:#FEF3E2; padding:2px 7px; border-radius:99px;">Awaiting</div>
+                </div>
+                <div style="animation:fadeUp .5s both .16s; grid-column:span 1; border:1.5px solid #ECEEF2; border-radius:18px; padding:20px; cursor:pointer; transition:border-color .18s, transform .18s;" style-hover="border-color:#18181B; transform:translateY(-3px);">
+                  <div style="font-family:'Space Grotesk',sans-serif; font-size:44px; font-weight:700; letter-spacing:-.03em; line-height:1;" data-countup="5">5</div>
+                  <div style="font-size:12.5px; color:#52525B; font-weight:600; margin-top:10px;">New prospects</div>
+                  <div style="display:inline-flex; align-items:center; gap:3px; margin-top:8px; font-size:11px; font-weight:700; color:#0091FF; background:#E9F5FF; padding:2px 7px; border-radius:99px;">Review now</div>
+                </div>
+                <div style="animation:fadeUp .5s both .20s; grid-column:span 1; border:1.5px solid #ECEEF2; border-radius:18px; padding:20px; cursor:pointer; transition:border-color .18s, transform .18s;" style-hover="border-color:#18181B; transform:translateY(-3px);">
+                  <div style="font-family:'Space Grotesk',sans-serif; font-size:44px; font-weight:700; letter-spacing:-.03em; line-height:1;" data-countup="12">12</div>
+                  <div style="font-size:12.5px; color:#52525B; font-weight:600; margin-top:10px;">Clients won</div>
+                  <div style="display:inline-flex; align-items:center; gap:3px; margin-top:8px; font-size:11px; font-weight:700; color:#16A34A; background:#E9F9EF; padding:2px 7px; border-radius:99px;">This quarter</div>
+                </div>
+
+                <!-- needs attention (tall, span 2 cols x 2 rows) -->
+                <section style="animation:fadeUp .5s both .24s; grid-column:span 2; grid-row:span 2; border:1.5px solid #ECEEF2; border-radius:18px; padding:22px; display:flex; flex-direction:column;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                    <h3 style="font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700; margin:0;">Needs your attention</h3>
+                    <span style="font-size:12px; color:#0091FF; font-weight:600;">3 items</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:13px; padding:13px 0; border-bottom:1px solid #F1F4F8; cursor:pointer;" style-hover="opacity:.72;">
+                    <span style="width:40px; height:40px; border-radius:12px; background:#18181B; color:#fff; font-weight:700; font-size:15px; display:flex; align-items:center; justify-content:center;">M</span>
+                    <div style="flex:1;"><div style="font-size:14.5px; font-weight:600;">Maya Chen</div><div style="font-size:12.5px; color:#71717A;">New prospect · 12-Week Shred</div></div>
+                    <span style="font-size:11px; font-weight:700; color:#0091FF; background:#E9F5FF; padding:3px 9px; border-radius:99px;">2h ago</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:13px; padding:13px 0; border-bottom:1px solid #F1F4F8; cursor:pointer;" style-hover="opacity:.72;">
+                    <span style="width:40px; height:40px; border-radius:12px; background:#18181B; color:#fff; font-weight:700; font-size:15px; display:flex; align-items:center; justify-content:center;">T</span>
+                    <div style="flex:1;"><div style="font-size:14.5px; font-weight:600;">Tom Rivera</div><div style="font-size:12.5px; color:#71717A;">New prospect · General application</div></div>
+                    <span style="font-size:11px; font-weight:700; color:#0091FF; background:#E9F5FF; padding:3px 9px; border-radius:99px;">5h ago</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:13px; padding:13px 0; cursor:pointer;" style-hover="opacity:.72;">
+                    <span style="width:40px; height:40px; border-radius:12px; background:#F1F4F8; color:#52525B; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center;">SB</span>
+                    <div style="flex:1;"><div style="font-size:14.5px; font-weight:600;">Sarah Blake</div><div style="font-size:12.5px; color:#71717A;">Pending invite · sarah.blake@email.com</div></div>
+                    <span style="font-size:11px; font-weight:700; color:#D97706; background:#FEF3E2; padding:3px 9px; border-radius:99px;">Sent</span>
+                  </div>
+                  <div style="flex:1;"></div>
+                  <div style="margin-top:16px; display:flex; align-items:center; justify-content:center; gap:6px; padding:11px; border-radius:12px; background:#FAFBFC; border:1px dashed #E4E7EC; font-size:13px; font-weight:600; color:#71717A; cursor:pointer;" style-hover="background:#F4F6F8;">View all activity <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+                </section>
+
+                <!-- setup progress cell (span 2 cols x 2 rows) -->
+                <section style="animation:fadeUp .5s both .28s; grid-column:span 2; grid-row:span 2; border:1.5px solid #18181B; border-radius:18px; padding:22px; background:#18181B; color:#fff;">
+                  <div style="display:flex; align-items:center; gap:16px; margin-bottom:18px;">
+                    <div style="position:relative; width:60px; height:60px;">
+                      <svg width="60" height="60" viewBox="0 0 80 80" style="transform:rotate(-90deg);"><circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="9"/><circle cx="40" cy="40" r="34" fill="none" stroke="#0091FF" stroke-width="9" stroke-linecap="round" stroke-dasharray="213.6" stroke-dashoffset="{{ bRingOffset }}" style="transition:stroke-dashoffset .9s cubic-bezier(.3,.9,.3,1);"/></svg>
+                      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700;">{{ bDone }}/4</div>
+                    </div>
+                    <div><h3 style="font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700; margin:0;">Finish setting up</h3><p style="font-size:12.5px; color:#A1A1AA; margin:4px 0 0;">{{ bRemaining }} steps until you're live</p></div>
+                  </div>
+                  <div data-gs="B-0" style="display:flex; align-items:center; gap:12px; padding:10px 0; border-top:1px solid #2A2A2E;">
+                    <span style="width:26px; height:26px; border-radius:50%; background:#0091FF; color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    <span style="font-size:13.5px; color:#71717A; text-decoration:line-through;">Complete your profile</span>
+                  </div>
+                  <div data-gs="B-1" style="display:flex; align-items:center; gap:12px; padding:10px 0; border-top:1px solid #2A2A2E;">
+                    <span style="width:26px; height:26px; border-radius:50%; background:#0091FF; color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    <span style="font-size:13.5px; color:#71717A; text-decoration:line-through;">Invite your first client</span>
+                  </div>
+                  <div data-gs="B-2" onClick="{{ bComplete2 }}" style="display:flex; align-items:center; gap:12px; padding:10px 0; border-top:1px solid #2A2A2E; cursor:pointer;" style-hover="opacity:.85;">
+                    <sc-if value="{{ bStep2Done }}" hint-placeholder-val="{{ false }}"><span style="width:26px; height:26px; border-radius:50%; background:#0091FF; color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14"><path d="M20 6 9 17l-5-5"/></svg></span></sc-if>
+                    <sc-if value="{{ bStep2Todo }}" hint-placeholder-val="{{ true }}"><span style="width:26px; height:26px; border-radius:50%; border:2px solid #3F3F46; flex-shrink:0;"></span></sc-if>
+                    <span style="flex:1; font-size:13.5px; font-weight:600; color:{{ bStep2Color }}; text-decoration:{{ bStep2Deco }};">Build your first plan</span>
+                    <sc-if value="{{ bStep2Todo }}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" fill="none" stroke="#0091FF" stroke-width="2" width="16" height="16"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></sc-if>
+                  </div>
+                  <div data-gs="B-3" onClick="{{ bComplete3 }}" style="display:flex; align-items:center; gap:12px; padding:10px 0; border-top:1px solid #2A2A2E; cursor:pointer;" style-hover="opacity:.85;">
+                    <sc-if value="{{ bStep3Done }}" hint-placeholder-val="{{ false }}"><span style="width:26px; height:26px; border-radius:50%; background:#0091FF; color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14"><path d="M20 6 9 17l-5-5"/></svg></span></sc-if>
+                    <sc-if value="{{ bStep3Todo }}" hint-placeholder-val="{{ true }}"><span style="width:26px; height:26px; border-radius:50%; border:2px solid #3F3F46; flex-shrink:0;"></span></sc-if>
+                    <span style="flex:1; font-size:13.5px; font-weight:600; color:{{ bStep3Color }}; text-decoration:{{ bStep3Deco }};">Publish your landing page</span>
+                    <sc-if value="{{ bStep3Todo }}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" fill="none" stroke="#0091FF" stroke-width="2" width="16" height="16"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></sc-if>
+                  </div>
+                </section>
+
+                <!-- quick actions row (span 4) -->
+                <section style="animation:fadeUp .5s both .32s; grid-column:span 4; display:grid; grid-template-columns:repeat(4,1fr); gap:14px;">
+                  <div style="display:flex; align-items:center; gap:11px; padding:16px 18px; border-radius:16px; background:#F7F8FA; font-size:13.5px; font-weight:600; cursor:pointer; transition:background .16s, transform .16s;" style-hover="background:#EEF0F3; transform:translateY(-2px);"><svg viewBox="0 0 24 24" fill="none" stroke="#0091FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>Invite client</div>
+                  <div style="display:flex; align-items:center; gap:11px; padding:16px 18px; border-radius:16px; background:#F7F8FA; font-size:13.5px; font-weight:600; cursor:pointer; transition:background .16s, transform .16s;" style-hover="background:#EEF0F3; transform:translateY(-2px);"><svg viewBox="0 0 24 24" fill="none" stroke="#0091FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M6 7v10M4 9v6M18 7v10M20 9v6M7 12h10"/></svg>Training plan</div>
+                  <div style="display:flex; align-items:center; gap:11px; padding:16px 18px; border-radius:16px; background:#F7F8FA; font-size:13.5px; font-weight:600; cursor:pointer; transition:background .16s, transform .16s;" style-hover="background:#EEF0F3; transform:translateY(-2px);"><svg viewBox="0 0 24 24" fill="none" stroke="#0091FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M8 3v7M6 3v3M10 3v3M8 10v11M16 3c1.5 1.5 1.5 5.5 0 7v11"/></svg>Nutrition plan</div>
+                  <div style="display:flex; align-items:center; gap:11px; padding:16px 18px; border-radius:16px; background:#F7F8FA; font-size:13.5px; font-weight:600; cursor:pointer; transition:background .16s, transform .16s;" style-hover="background:#EEF0F3; transform:translateY(-2px);"><svg viewBox="0 0 24 24" fill="none" stroke="#0091FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><circle cx="12" cy="12" r="10"/><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20zM2 12h20"/></svg>Landing page</div>
+                </section>
+              </div>
+            </main>
+          </div>
+        </div>
+
+        <!-- MOBILE FRAME B -->
+        <div style="width:392px; flex-shrink:0; border-radius:46px; background:#101012; padding:11px; box-shadow:0 40px 80px -28px rgba(24,24,27,.4);">
+          <div style="border-radius:36px; overflow:hidden; background:#fff; height:812px; position:relative;">
+            <div style="height:48px; display:flex; align-items:center; justify-content:space-between; padding:0 26px; font-size:14px; font-weight:600;"><span>9:41</span><svg viewBox="0 0 24 24" width="16" height="16" fill="#18181B"><path d="M2 20h4v-8H2v8zm6 0h4V8H8v12zm6 0h4V4h-4v16zm6 0h2V2h-2v18z"/></svg></div>
+            <div style="padding:8px 18px 24px; overflow-y:auto; height:calc(812px - 48px - 74px);">
+              <div style="font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#0091FF; margin-bottom:6px;">Tuesday · July 8</div>
+              <h1 style="font-family:'Space Grotesk',sans-serif; font-size:26px; font-weight:700; letter-spacing:-.02em; margin:0 0 18px; line-height:1.05;">Good morning,<br>Jordan.</h1>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
+                <div style="border:1.5px solid #ECEEF2; border-radius:16px; padding:15px;"><div style="font-family:'Space Grotesk',sans-serif; font-size:32px; font-weight:700; line-height:1;" data-countup="24">24</div><div style="font-size:11.5px; color:#52525B; font-weight:600; margin-top:6px;">Active clients</div></div>
+                <div style="border:1.5px solid #ECEEF2; border-radius:16px; padding:15px;"><div style="font-family:'Space Grotesk',sans-serif; font-size:32px; font-weight:700; line-height:1;" data-countup="5">5</div><div style="font-size:11.5px; color:#52525B; font-weight:600; margin-top:6px;">New prospects</div></div>
+              </div>
+              <div style="border:1.5px solid #18181B; border-radius:16px; padding:16px; background:#18181B; color:#fff; margin-bottom:16px;">
+                <div style="display:flex; align-items:center; gap:12px;"><div style="position:relative; width:44px; height:44px;"><svg width="44" height="44" viewBox="0 0 80 80" style="transform:rotate(-90deg);"><circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="10"/><circle cx="40" cy="40" r="34" fill="none" stroke="#0091FF" stroke-width="10" stroke-linecap="round" stroke-dasharray="213.6" stroke-dashoffset="{{ bRingOffset }}" style="transition:stroke-dashoffset .9s;"/></svg><div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:700;">{{ bDone }}/4</div></div><div><div style="font-size:14px; font-weight:700; font-family:'Space Grotesk',sans-serif;">Finish setting up</div><div style="font-size:11.5px; color:#A1A1AA;">{{ bRemaining }} steps to go</div></div></div>
+              </div>
+              <div style="font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#71717A; margin-bottom:10px;">Needs attention</div>
+              <div style="display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid #F1F4F8;"><span style="width:38px; height:38px; border-radius:11px; background:#18181B; color:#fff; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center;">M</span><div style="flex:1;"><div style="font-size:13.5px; font-weight:600;">Maya Chen</div><div style="font-size:11.5px; color:#71717A;">12-Week Shred</div></div><span style="font-size:10.5px; font-weight:700; color:#0091FF; background:#E9F5FF; padding:2px 8px; border-radius:99px;">2h</span></div>
+              <div style="display:flex; align-items:center; gap:12px; padding:12px 0;"><span style="width:38px; height:38px; border-radius:11px; background:#18181B; color:#fff; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center;">T</span><div style="flex:1;"><div style="font-size:13.5px; font-weight:600;">Tom Rivera</div><div style="font-size:11.5px; color:#71717A;">General application</div></div><span style="font-size:10.5px; font-weight:700; color:#0091FF; background:#E9F5FF; padding:2px 8px; border-radius:99px;">5h</span></div>
+            </div>
+            <div style="position:absolute; bottom:0; left:0; right:0; height:74px; background:#18181B; display:flex; align-items:flex-start; justify-content:space-around; padding-top:10px;">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#0091FF;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg><span style="font-size:10px; font-weight:600;">Home</span></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span style="font-size:10px;">Clients</span></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span style="font-size:10px;">Prospects</span></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg><span style="font-size:10px;">Library</span></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73"/></svg><span style="font-size:10px;">Settings</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    ringGo: false,
+    a: [true, true, false, false],
+    b: [true, true, false, false],
+    cFilter: 'all',
+    cQuery: '',
+  };
+  rootRef = React.createRef();
+
+  CHIP = {
+    active: {label: 'Active', fg: '#16A34A', bg: '#E9F9EF'},
+    pending: {label: 'Pending', fg: '#52525B', bg: '#F1F4F8'},
+    inactive: {label: 'Inactive', fg: '#71717A', bg: '#F1F4F8'},
+    archived: {label: 'Archived', fg: '#A1A1AA', bg: '#F4F4F5'},
+  };
+
+  clients = [
+    {id: 1, name: 'Maya Chen', initials: 'MC', status: 'active', sub: 'Active · since Jan 2025', wa: true},
+    {id: 2, name: 'Leo Park', initials: 'LP', status: 'active', sub: 'Active · since Nov 2024', wa: true},
+    {id: 3, name: 'Sarah Blake', initials: 'SB', status: 'pending', sub: 'Invited · 2d ago', wa: true},
+    {id: 4, name: 'Aisha Khan', initials: 'AK', status: 'active', sub: 'Active · since Mar 2025', wa: true},
+    {id: 5, name: 'Tom Rivera', initials: 'TR', status: 'pending', sub: 'Invited · 5h ago', wa: false},
+    {id: 6, name: 'Diego Santos', initials: 'DS', status: 'active', sub: 'Active · since Feb 2025', wa: true},
+    {id: 7, name: 'Emma Wright', initials: 'EW', status: 'inactive', sub: 'Inactive · last seen 3w ago', wa: false},
+    {id: 8, name: 'Noah Bennett', initials: 'NB', status: 'active', sub: 'Active · since Dec 2024', wa: true},
+    {id: 9, name: 'Chloe Turner', initials: 'CT', status: 'inactive', sub: 'Inactive · last seen 6w ago', wa: false},
+    {id: 10, name: 'Ryan Cole', initials: 'RC', status: 'archived', sub: 'Archived', wa: false},
+  ];
+
+  setFilter(id) { this.setState({cFilter: id}); }
+  onSearch = (e) => { this.setState({cQuery: e.target.value.toLowerCase()}); };
+  resetFilters = () => {
+    const root = this.rootRef.current;
+    if (root) root.querySelectorAll('input').forEach((i) => { i.value = ''; });
+    this.setState({cFilter: 'all', cQuery: ''});
+  };
+
+  componentDidMount() {
+    this.animateCounts();
+    requestAnimationFrame(() => requestAnimationFrame(() => this.setState({ringGo: true})));
+  }
+
+  animateCounts() {
+    const root = this.rootRef.current;
+    if (!root) return;
+    root.querySelectorAll('[data-countup]').forEach((el) => {
+      const target = parseInt(el.getAttribute('data-countup'), 10) || 0;
+      const dur = 1150;
+      const start = performance.now();
+      const ease = (t) => 1 - Math.pow(1 - t, 3);
+      el.textContent = '0';
+      const tick = (now) => {
+        const t = Math.min(1, (now - start) / dur);
+        el.textContent = String(Math.round(ease(t) * target));
+        if (t < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+  }
+
+  complete(dir, i) {
+    const arr = [...this.state[dir]];
+    if (arr[i]) return;
+    arr[i] = true;
+    this.setState({[dir]: arr});
+    this.burst(dir, i);
+  }
+
+  burst(dir, i) {
+    const root = this.rootRef.current;
+    if (!root) return;
+    const anchor = root.querySelector('[data-gs="' + (dir === 'a' ? 'A' : 'B') + '-' + i + '"]');
+    if (!anchor) return;
+    const r = anchor.getBoundingClientRect();
+    let overlay = document.getElementById('__confetti_overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = '__confetti_overlay';
+      overlay.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:99999;overflow:hidden;';
+      document.body.appendChild(overlay);
+    }
+    const cx = r.left + 24;
+    const cy = r.top + r.height / 2;
+    const colors = ['#0091FF', '#16A34A', '#F59E0B', '#7C5CFC', '#EC4899', '#00C2A8'];
+    for (let k = 0; k < 30; k++) {
+      const p = document.createElement('div');
+      const size = 6 + Math.random() * 7;
+      p.style.cssText = 'position:absolute;left:' + cx + 'px;top:' + cy + 'px;width:' + size + 'px;height:' + (size * 0.62) + 'px;background:' + colors[k % colors.length] + ';border-radius:2px;will-change:transform,opacity;';
+      overlay.appendChild(p);
+      const ang = Math.random() * Math.PI * 2;
+      const dist = 70 + Math.random() * 170;
+      const dx = Math.cos(ang) * dist;
+      const dy = Math.sin(ang) * dist - 50;
+      const rot = Math.random() * 720 - 360;
+      p.animate(
+        [
+          {transform: 'translate(0,0) rotate(0deg)', opacity: 1},
+          {transform: 'translate(' + dx + 'px,' + (dy + 200) + 'px) rotate(' + rot + 'deg)', opacity: 0},
+        ],
+        {duration: 950 + Math.random() * 550, easing: 'cubic-bezier(.2,.7,.3,1)'}
+      ).onfinish = () => p.remove();
+    }
+  }
+
+  side(dir) {
+    const arr = this.state[dir];
+    const done = arr.filter(Boolean).length;
+    const total = arr.length;
+    const C = 213.63;
+    const offset = this.state.ringGo ? C * (1 - done / total) : C;
+    const mk = (i) => ({
+      done: arr[i],
+      todo: !arr[i],
+      color: arr[i] ? '#A1A1AA' : (dir === 'a' ? '#18181B' : '#FFFFFF'),
+      deco: arr[i] ? 'line-through' : 'none',
+      onClick: () => this.complete(dir, i),
+    });
+    return {done, remaining: total - done, offset, s2: mk(2), s3: mk(3), barWidth: (this.state.ringGo ? (done / total) * 100 : 0) + '%'};
+  }
+
+  clientRows() {
+    const f = this.state.cFilter;
+    const q = this.state.cQuery;
+    const counts = {all: this.clients.length, active: 0, pending: 0, inactive: 0, archived: 0};
+    this.clients.forEach((c) => { counts[c.status] = (counts[c.status] || 0) + 1; });
+    const rows = this.clients
+      .filter((c) => (f === 'all' || c.status === f) && (!q || c.name.toLowerCase().includes(q)))
+      .map((c) => {
+        const chip = this.CHIP[c.status];
+        return {...c, statusLabel: chip.label, chipFg: chip.fg, chipBg: chip.bg, onClick: () => {}};
+      });
+    const defs = [
+      {id: 'all', label: 'All'}, {id: 'active', label: 'Active'}, {id: 'pending', label: 'Pending'},
+      {id: 'inactive', label: 'Inactive'}, {id: 'archived', label: 'Archived'},
+    ];
+    const tabs = defs.map((t) => {
+      const on = f === t.id;
+      return {
+        id: t.id, label: t.label, count: counts[t.id],
+        onClick: () => this.setFilter(t.id),
+        style: on ? 'background:#18181B; color:#fff;' : 'background:#F4F6F8; color:#52525B;',
+        countBg: on ? 'rgba(255,255,255,.22)' : '#E4E7EC',
+        countFg: on ? '#fff' : '#71717A',
+      };
+    });
+    return {rows, tabs, shown: rows.length};
+  }
+
+  renderVals() {
+    const a = this.side('a');
+    const b = this.side('b');
+    const c = this.clientRows();
+    return {
+      rows: c.rows, tabs: c.tabs, cShown: c.shown,
+      cHasRows: c.rows.length > 0, cNoRows: c.rows.length === 0,
+      onSearch: this.onSearch, resetFilters: this.resetFilters,
+      root: this.rootRef,
+      aDone: a.done, aRemaining: a.remaining, aRingOffset: a.offset, aBarWidth: a.barWidth,
+      aStep2Done: a.s2.done, aStep2Todo: a.s2.todo, aStep2Color: a.s2.color, aStep2Deco: a.s2.deco, aComplete2: a.s2.onClick,
+      aStep3Done: a.s3.done, aStep3Todo: a.s3.todo, aStep3Color: a.s3.color, aStep3Deco: a.s3.deco, aComplete3: a.s3.onClick,
+      bDone: b.done, bRemaining: b.remaining, bRingOffset: b.offset,
+      bStep2Done: b.s2.done, bStep2Todo: b.s2.todo, bStep2Color: b.s2.color, bStep2Deco: b.s2.deco, bComplete2: b.s2.onClick,
+      bStep3Done: b.s3.done, bStep3Todo: b.s3.todo, bStep3Color: b.s3.color, bStep3Deco: b.s3.deco, bComplete3: b.s3.onClick,
+    };
+  }
+}
+</script>
+</body>
+</html>

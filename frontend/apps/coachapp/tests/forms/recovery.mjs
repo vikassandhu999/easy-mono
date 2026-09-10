@@ -4,19 +4,21 @@ import {signOut} from '../auth/browser-helpers.mjs';
 export async function checkRecovery({page, api, tokens, width, post, unique}) {
   await page.getByRole('link', {name: 'Forms', exact: true}).click();
   await expect(page.getByRole('heading', {name: 'Forms', exact: true})).toBeVisible();
-  await page.route('**/v1/coach/form-templates', (route) =>
+  await page.route('**/v1/coach/form-templates?*', (route) =>
     route.fulfill({status: 503, json: {error_code: 'unavailable'}}),
   );
   await page.reload();
   await expect(page.getByRole('alert')).toBeVisible();
-  await page.unroute('**/v1/coach/form-templates');
+  await page.unroute('**/v1/coach/form-templates?*');
   await page.getByRole('button', {name: 'Try again', exact: true}).click();
   await expect(page.getByRole('link', {name: /Weekly check-in/})).toBeVisible();
   // Empty response is a boundary fixture: the real API creates a built-in check-in.
-  await page.route('**/v1/coach/form-templates', (route) => route.fulfill({json: {data: []}}));
+  await page.route('**/v1/coach/form-templates?*', (route) =>
+    route.fulfill({json: {data: [], count: 0, next_cursor: null}}),
+  );
   await page.reload();
   await expect(page.getByText('Create your first form', {exact: true})).toBeVisible();
-  await page.unroute('**/v1/coach/form-templates');
+  await page.unroute('**/v1/coach/form-templates?*');
   await page.getByRole('link', {name: 'Create form', exact: true}).click();
   await page.getByRole('button', {name: 'Save form', exact: true}).click();
   await expect(page.getByLabel('Form name', {exact: true})).toHaveAttribute('aria-invalid', 'true');
@@ -97,7 +99,7 @@ export async function checkRecovery({page, api, tokens, width, post, unique}) {
     headers: {authorization: `Bearer ${tokens.access_token}`},
   });
   expect(update.ok()).toBe(true);
-  await page.getByRole('link', {name: /Weekly reflection/}).click();
+  await page.locator(`a[href="/forms/${checkIn.id}"]`).click();
   await expect(page.getByLabel('Form name', {exact: true})).toHaveValue('Updated elsewhere');
   await page.getByRole('link', {name: 'Forms', exact: true}).click();
   await page.getByRole('link', {name: 'Create form', exact: true}).click();

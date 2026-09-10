@@ -1,8 +1,9 @@
-import {useMutation, useQuery} from '@tanstack/react-query';
+import {useInfiniteQuery, useMutation, useQuery} from '@tanstack/react-query';
 import {call, client} from './client';
 import {formKeys} from './keys';
+import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
-import type {FormTemplate, FormTemplateCreate} from './schema';
+import type {FormTemplate, FormTemplateCreate, paths} from './schema';
 import {getSession} from './session';
 
 export type {
@@ -16,11 +17,19 @@ export type {
   FormTemplateSection,
 } from './schema';
 
-export function useFormTemplates() {
-  return useQuery({
-    queryKey: formKeys.list(),
-    queryFn: ({signal}) => call(client.GET('/v1/coach/form-templates', {signal})),
-    staleTime: 0,
+export type FormTemplateFilters = Pick<
+  NonNullable<paths['/v1/coach/form-templates']['get']['parameters']['query']>,
+  'search' | 'purpose'
+>;
+
+export function useFormTemplates(filters: FormTemplateFilters) {
+  return useInfiniteQuery({
+    queryKey: formKeys.infinite(filters),
+    queryFn: ({pageParam, signal}) =>
+      call(
+        client.GET('/v1/coach/form-templates', {params: {query: {...filters, cursor: pageParam, limit: 20}}, signal}),
+      ),
+    ...cursorPagination,
   });
 }
 
@@ -78,16 +87,11 @@ export function useDefaultIntake() {
   });
 }
 
-export function useClientFormAssignments(clientId: string) {
+export function useClientIntake(clientId: string) {
   return useQuery({
-    queryKey: formKeys.assignments(clientId),
+    queryKey: formKeys.intake(clientId),
     queryFn: ({signal}) =>
-      call(
-        client.GET('/v1/coach/clients/{client_id}/form-assignments', {
-          params: {path: {client_id: clientId}},
-          signal,
-        }),
-      ),
+      call(client.GET('/v1/coach/clients/{client_id}/intake', {params: {path: {client_id: clientId}}, signal})),
     staleTime: 0,
   });
 }
@@ -116,7 +120,7 @@ export function useReviewIntake(clientId: string, assignmentId: string) {
         throw new Error('Your session changed. Please try again.');
       }
       await Promise.all([
-        queryClient.invalidateQueries({queryKey: formKeys.assignments(clientId)}),
+        queryClient.invalidateQueries({queryKey: formKeys.intake(clientId)}),
         queryClient.invalidateQueries({queryKey: formKeys.submissions(assignmentId)}),
       ]);
       if (getSession()?.id !== sessionId) {

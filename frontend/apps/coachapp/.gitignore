@@ -2,3 +2,5 @@ dist/
 tests/auth/artifacts/
 tests/clients/artifacts/
 tests/forms/artifacts/
+
+tests/lists/artifacts/

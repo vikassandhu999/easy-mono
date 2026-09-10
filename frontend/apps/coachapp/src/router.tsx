@@ -1,5 +1,5 @@
 import {useSyncExternalStore} from 'react';
-import {createBrowserRouter, Link, Navigate, Outlet, useLocation} from 'react-router-dom';
+import {createBrowserRouter, Link, Navigate, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
 import {parseSession, sessionSnapshot, subscribeSession} from './api/session';
 import {AppShell} from './app-shell';
 import {AuthLayout} from './auth/auth-layout';
@@ -71,32 +71,52 @@ function NotFound() {
   );
 }
 
+function Root() {
+  return (
+    <>
+      <Outlet />
+      <ScrollRestoration
+        getKey={(location) =>
+          location.pathname === routes.forms || location.pathname === routes.home
+            ? location.pathname + location.search
+            : location.key
+        }
+      />
+    </>
+  );
+}
+
 export const router = createBrowserRouter([
   {
-    element: <Gate guest />,
-    children: [
-      {path: routes.login, element: <Login />},
-      {path: routes.signup, element: <Signup />},
-      {path: routes.verify, element: <Verify />},
-    ],
-  },
-  {path: routes.invitation, element: <Invitation />},
-  {
-    element: <Gate />,
+    element: <Root />,
     children: [
       {
-        element: <AppShell />,
+        element: <Gate guest />,
         children: [
-          {path: routes.home, element: <Clients />},
-          {path: routes.inviteClient, element: <InviteClient />},
-          {path: routes.client, element: <ClientOverview />},
-          {path: routes.forms, element: <Forms />},
-          {path: routes.createForm, element: <FormEditor key="new" />},
-          {path: routes.editForm, element: <FormEditor />},
+          {path: routes.login, element: <Login />},
+          {path: routes.signup, element: <Signup />},
+          {path: routes.verify, element: <Verify />},
         ],
       },
-      {path: routes.setup, element: <Setup />},
+      {path: routes.invitation, element: <Invitation />},
+      {
+        element: <Gate />,
+        children: [
+          {
+            element: <AppShell />,
+            children: [
+              {path: routes.home, element: <Clients />},
+              {path: routes.inviteClient, element: <InviteClient />},
+              {path: routes.client, element: <ClientOverview />},
+              {path: routes.forms, element: <Forms />},
+              {path: routes.createForm, element: <FormEditor key="new" />},
+              {path: routes.editForm, element: <FormEditor />},
+            ],
+          },
+          {path: routes.setup, element: <Setup />},
+        ],
+      },
+      {path: '*', element: <NotFound />},
     ],
   },
-  {path: '*', element: <NotFound />},
 ]);

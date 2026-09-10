@@ -82,3 +82,9 @@ Run `rtk just gen-api` at the repository root to regenerate the API types. The g
 The session has an app-specific storage key. Logout removes credentials and query data, retaining a token-free revision so late sign-in responses cannot restore a signed-out session. The backend exposes no logout/revocation endpoint, so this is local logout. Public verification never silently replaces an intervening session.
 
 Refresh is shared within a tab and uses Web Locks between tabs when available. A transport error preserves credentials. The API uses 403 for both invalid authentication and insufficient permissions, so protected requests refresh and retry once; a continuing permission error is shown without clearing the account.
+
+## Lists
+
+Forms and Clients share cursor pagination, server search and totals, a keyboard-accessible Load more fallback, and retry that preserves loaded rows. URL filters survive reload; loaded pages and scroll position survive returning from the form editor while cached. Question counts and intake selection come from the API. See the [list contract and verification notes](../../../../.scratch/coachapp-rebuild/lists.md).
+
+Run `pnpm test:lists` with the coach app and isolated browser API running. The scenarios exercise real API pagination and request failure recovery at 375px and 1280px.

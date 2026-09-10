@@ -2,10 +2,10 @@ import {expect} from '@playwright/test';
 
 export async function checkClientOverview({page, api, coachToken, clientToken, clientId, width}) {
   const coachHeaders = {authorization: `Bearer ${coachToken}`};
-  const assignmentPath = `/v1/coach/clients/${clientId}/form-assignments`;
+  const assignmentPath = `/v1/coach/clients/${clientId}/intake`;
   const assignmentsResponse = await api.get(assignmentPath, {headers: coachHeaders});
   expect(assignmentsResponse.ok()).toBe(true);
-  const assignment = (await assignmentsResponse.json()).data.find((item) => item.purpose === 'intake');
+  const assignment = (await assignmentsResponse.json()).data;
   await page.screenshot({path: `tests/clients/artifacts/overview-pending-${width}.png`, fullPage: true});
   await page.route(`**${assignmentPath}`, (route) =>
     route.fulfill({status: 503, json: {error_message: 'Unavailable'}}),
@@ -26,12 +26,12 @@ export async function checkClientOverview({page, api, coachToken, clientToken, c
   await expect(page.getByRole('heading', {name: 'Intake paused', exact: true})).toBeVisible();
   await expect(page.getByRole('heading', {name: 'Intake pending', exact: true})).toHaveCount(0);
   await page.unroute(`**${clientPath}`);
-  await page.route(`**${assignmentPath}`, (route) => route.fulfill({json: {data: []}}));
+  await page.route(`**${assignmentPath}`, (route) => route.fulfill({json: {data: null}}));
   await page.reload();
   await expect(page.getByRole('heading', {name: 'No intake assigned', exact: true})).toBeVisible();
   await page.unroute(`**${assignmentPath}`);
   await page.route(`**${assignmentPath}`, (route) =>
-    route.fulfill({json: {data: [{...assignment, status: 'dismissed'}]}}),
+    route.fulfill({json: {data: {...assignment, status: 'dismissed'}}}),
   );
   await page.reload();
   await expect(page.getByRole('heading', {name: 'Intake dismissed', exact: true})).toBeVisible();

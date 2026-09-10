@@ -105,6 +105,18 @@ defmodule Easy.Forms.FormTemplate do
     from(t in query, where: t.business_id == ^business_id)
   end
 
+  @spec for_search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
+  def for_search(query, search) when search in [nil, ""], do: query
+
+  def for_search(query, search) do
+    pattern = search |> String.trim() |> Easy.Search.like_pattern()
+    from(t in query, where: ilike(t.name, ^pattern))
+  end
+
+  @spec for_purpose(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
+  def for_purpose(query, nil), do: query
+  def for_purpose(query, purpose), do: from(t in query, where: t.purpose == ^purpose)
+
   @spec active_intake(Ecto.Queryable.t()) :: Ecto.Query.t()
   def active_intake(query \\ __MODULE__) do
     from(t in query, where: t.purpose == :intake and t.status == :active)

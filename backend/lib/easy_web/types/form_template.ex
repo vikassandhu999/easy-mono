@@ -50,10 +50,28 @@ defmodule EasyWeb.Types.FormTemplate do
           ],
           required(:status) => :active | :archived,
           required(:is_default_intake) => boolean(),
+          required(:question_count) => non_neg_integer(),
           required(:response_count) => non_neg_integer(),
           required(:inserted_at) => DateTime.t(),
           required(:updated_at) => DateTime.t()
         }
+
+  @type list_query :: %{
+          optional(:cursor) => String.t(),
+          optional(:limit) => pos_integer(),
+          optional(:search) => String.t(),
+          optional(:purpose) => :intake | :check_in
+        }
+
+  @spec format(Easy.Forms.FormTemplate.t() | map()) :: t()
+  def format(template) when is_map(template) do
+    count =
+      Enum.reduce(template.sections, 0, fn section, count ->
+        count + length(Map.get(section, "questions", Map.get(section, :questions, [])))
+      end)
+
+    template |> take() |> Map.put(:question_count, count)
+  end
 
   @type create :: %{
           required(:name) => String.t(),
@@ -66,5 +84,15 @@ defmodule EasyWeb.Types.FormTemplate do
           optional(:name) => String.t(),
           optional(:sections) => [EasyWeb.Types.FormTemplateSection.t()],
           optional(:status) => :active | :archived
+        }
+end
+
+defmodule EasyWeb.Types.FormTemplateIndex do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:data) => [EasyWeb.Types.FormTemplate.t()],
+          required(:count) => non_neg_integer(),
+          required(:next_cursor) => String.t() | nil
         }
 end

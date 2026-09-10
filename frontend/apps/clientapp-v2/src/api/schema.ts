@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 725104fe2fa253187eb9c17c369f002709e48a19e817c8c8669c957aa8330a31 */
+/* typed-routes:hash 737815fe0496f8f385e7944380b714c18541bdb3bd60315a1cd8fd8dc87141a9 */
 export type Attachment = {
   id: string;
   content_type:
@@ -251,6 +251,7 @@ export type FormTemplate = {
   sections: Array<{questions: Array<FormTemplateQuestion>; title?: string}>;
   status: 'active' | 'archived';
   is_default_intake: boolean;
+  question_count: number;
   response_count: number;
   inserted_at: string;
   updated_at: string;

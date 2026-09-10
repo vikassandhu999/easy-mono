@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 2b19ba809772d93d1ada5c1c94e01a6e4e17874e46e49266c72b6c945fba009f */
+/* typed-routes:hash 84a5cbbe98325fbd14403fa2a14c1691e88f90098a4eaa7b49bd15287b2b6f26 */
 export type Attachment = {
   id: string;
   content_type:
@@ -180,6 +180,7 @@ export type Client = {
 export type ClientIndex = {
   data: Array<Client>;
   count: number;
+  next_cursor: string | null;
   summary: {active: number; pending: number; inactive: number};
 };
 export type ClientInvite = {
@@ -191,6 +192,7 @@ export type ClientInvite = {
   required_services?: Array<'training' | 'nutrition'>;
 };
 export type ClientListQuery = {
+  cursor?: string;
   offset?: number;
   limit?: number;
   search?: string;
@@ -478,6 +480,7 @@ export type FormTemplate = {
   sections: Array<{questions: Array<FormTemplateQuestion>; title?: string}>;
   status: 'active' | 'archived';
   is_default_intake: boolean;
+  question_count: number;
   response_count: number;
   inserted_at: string;
   updated_at: string;
@@ -488,6 +491,8 @@ export type FormTemplateCreate = {
   sections: Array<FormTemplateSection>;
   status?: 'active' | 'archived';
 };
+export type FormTemplateIndex = {data: Array<FormTemplate>; count: number; next_cursor: string | null};
+export type FormTemplateListQuery = {cursor?: string; limit?: number; search?: string; purpose?: 'intake' | 'check_in'};
 export type FormTemplateQuestion =
   | {
       id: string;
@@ -1203,7 +1208,7 @@ export type WorkbenchSnooze = {queue: 'quiet' | 'expiring'; snoozed_until: strin
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash aeac41faa74441887a7b098673db39324301d94edbec3848bde744eacc413a79 */
+  /* typed-routes:hash 08ae4609caab55d8428426b5de78eeb435f4ff50d057862ce8c787e75f473eee */
   '/api/health': {
     get: {
       parameters: {
@@ -1462,6 +1467,19 @@ export interface paths {
       requestBody: {content: {'application/json': FormAssignmentCreate}};
       responses: {
         201: {content: {'application/json': {data: FormAssignment}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/intake': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: FormAssignment | null}}};
       };
     };
   };
@@ -1796,13 +1814,13 @@ export interface paths {
   '/v1/coach/form-templates': {
     get: {
       parameters: {
-        query?: never;
+        query?: FormTemplateListQuery;
         header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<FormTemplate>}}};
+        200: {content: {'application/json': FormTemplateIndex}};
       };
     };
     post: {

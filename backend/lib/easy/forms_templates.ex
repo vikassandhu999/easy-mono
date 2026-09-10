@@ -22,6 +22,51 @@ defmodule Easy.Forms.Templates do
     end
   end
 
+  # No cursor preserves the legacy full-list contract during the coachapp rebuild.
+  @spec list_page(Ctx.t(), keyword()) ::
+          {:ok, Easy.CursorPage.t(FormTemplate.t())}
+          | {:error, :cursor_required | :invalid_cursor | Ecto.Changeset.t()}
+  def list_page(%Ctx{} = ctx, opts \\ []) do
+    case Keyword.get(opts, :cursor) do
+      nil ->
+        list_legacy_page(ctx, opts)
+
+      cursor ->
+        list_cursor_page(ctx, cursor, opts)
+    end
+  end
+
+  defp list_legacy_page(ctx, opts) do
+    if pagination_requested?(opts) do
+      {:error, :cursor_required}
+    else
+      with {:ok, templates} <- list(ctx) do
+        {:ok, %{data: templates, count: length(templates), next_cursor: nil}}
+      end
+    end
+  end
+
+  defp pagination_requested?(opts) do
+    Enum.any?([:limit, :search, :purpose], &(not is_nil(Keyword.get(opts, &1))))
+  end
+
+  defp list_cursor_page(ctx, cursor, opts) do
+    base =
+      FormTemplate
+      |> FormTemplate.for_business(ctx.business_id)
+      |> FormTemplate.for_search(Keyword.get(opts, :search))
+      |> FormTemplate.for_purpose(Keyword.get(opts, :purpose))
+
+    limit = Easy.CursorPage.limit(opts)
+
+    with {:ok, query} <- Easy.CursorPage.query(base, cursor, limit),
+         {:ok, _template} <- get_or_create_default_check_in_template(ctx) do
+      count = Repo.aggregate(base, :count, :id)
+      rows = query |> FormTemplate.join_response_count(ctx.business_id) |> Repo.all()
+      {:ok, Easy.CursorPage.finish(rows, limit, count)}
+    end
+  end
+
   @spec create(Ctx.t(), map()) ::
           {:ok, FormTemplate.t()} | {:error, Ecto.Changeset.t()}
   def create(%Ctx{} = ctx, attrs) do

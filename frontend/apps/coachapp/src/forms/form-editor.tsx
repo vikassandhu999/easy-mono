@@ -16,6 +16,7 @@ import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FormError} from '../ui/form-error';
 import {setFormError} from '../ui/form-errors';
 import {FormField} from '../ui/form-field';
+import {useListLocation} from '../ui/list-location';
 import {NativeSelect, NativeSelectOption} from '../ui/native-select';
 import {FormActions, Page, PageHeader, StatusBadge, Surface} from '../ui/page';
 import {FormPreview} from './form-preview';
@@ -35,6 +36,7 @@ export function FormEditor() {
 
 function ExistingFormEditor({id}: {id: string}) {
   const query = useFormTemplate(id);
+  const {to: listLocation} = useListLocation(routes.forms);
   const [initialTemplate, setInitialTemplate] = useState<FormTemplate>();
   useEffect(() => {
     if (!initialTemplate && query.isSuccess && query.isFetchedAfterMount) {
@@ -46,7 +48,7 @@ function ExistingFormEditor({id}: {id: string}) {
       <Page>
         <PageHeader
           title="Edit form"
-          back={{to: routes.forms, label: 'Back to forms'}}
+          back={{to: listLocation, label: 'Back to forms'}}
         />
         <Surface>
           {query.isError ? (
@@ -74,6 +76,7 @@ function ExistingFormEditor({id}: {id: string}) {
 
 function Editor({template}: {template: FormTemplate | undefined}) {
   const navigate = useNavigate();
+  const {to: listLocation} = useListLocation(routes.forms);
   const save = useSaveFormTemplate();
   const setDefault = useSetDefaultIntake();
   const saved = useRef(false);
@@ -83,7 +86,11 @@ function Editor({template}: {template: FormTemplate | undefined}) {
       ? {
           name: template.name,
           purpose: template.purpose,
-          sections: template.sections,
+          sections: template.sections.map((section) => ({
+            ...section,
+            title: section.title ?? '',
+            questions: section.questions.map((question) => ({...question, required: question.required ?? false})),
+          })),
         }
       : {name: '', purpose: 'check_in', sections: [{title: '', questions: [newQuestion()]}]},
   });
@@ -126,7 +133,7 @@ function Editor({template}: {template: FormTemplate | undefined}) {
     try {
       await save.mutateAsync({...(template ? {id: template.id} : {}), body: {...body, name: body.name.trim()}});
       saved.current = true;
-      navigate(routes.forms, {state: {saved: body.name.trim()}});
+      navigate(listLocation, {state: {saved: body.name.trim()}});
     } catch (error) {
       setFormError(error, "We couldn't save your form. Your changes are still here. Please try again.", form.setError, [
         'name',
@@ -138,7 +145,7 @@ function Editor({template}: {template: FormTemplate | undefined}) {
       <PageHeader
         title={template ? 'Edit form' : 'Create form'}
         description="Build a form that helps you understand your client."
-        back={{to: routes.forms, label: 'Back to forms'}}
+        back={{to: listLocation, label: 'Back to forms'}}
       />
       <Dialog
         isOpen={blocker.state === 'blocked'}
@@ -302,7 +309,7 @@ function Editor({template}: {template: FormTemplate | undefined}) {
               <Button
                 variant="ghost"
                 isDisabled={pending}
-                onPress={() => navigate(routes.forms)}
+                onPress={() => navigate(listLocation)}
               >
                 Cancel
               </Button>

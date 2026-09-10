@@ -5,6 +5,7 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
   alias Easy.Forms.Submissions
   alias EasyWeb.Types.FormAssignment
 
+  typed(:intake, ok: {200, data(FormAssignment.t() | nil)})
   typed(:index, ok: {200, data([FormAssignment.t()])})
   typed(:create, body: FormAssignment.create(), ok: {201, data(FormAssignment.t())})
   typed(:update, body: FormAssignment.update(), ok: {200, data(FormAssignment.t())})
@@ -17,6 +18,13 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
 
     with {:ok, assignments} <- Assignments.list_form_assignments_for_client(ctx, client_id) do
       ok(conn, %{data: assignments})
+    end
+  end
+
+  @spec intake(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def intake(conn, _params) do
+    with {:ok, assignment} <- Assignments.get_intake_for_client(conn.assigns.ctx, conn.path_params["client_id"]) do
+      ok(conn, %{data: assignment})
     end
   end
 

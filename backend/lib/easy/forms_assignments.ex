@@ -81,6 +81,22 @@ defmodule Easy.Forms.Assignments do
     end
   end
 
+  @spec get_intake_for_client(Ctx.t(), String.t()) ::
+          {:ok, FormAssignment.t() | nil} | {:error, :not_found}
+  def get_intake_for_client(%Ctx{} = ctx, client_id) do
+    with :ok <- ClientAccess.authorize_client_id(ctx, client_id) do
+      assignment =
+        client_assignment_query(ctx, client_id)
+        |> where([a], a.purpose == :intake)
+        |> order_by([a], desc: a.inserted_at, desc: a.id)
+        |> limit(1)
+        |> Repo.one()
+        |> FormAssignment.put_latest_submission()
+
+      {:ok, assignment}
+    end
+  end
+
   @spec list_client_form_assignments(Ctx.t()) ::
           {:ok, [FormAssignment.t()]} | {:error, :not_found}
   def list_client_form_assignments(%Ctx{} = ctx) do

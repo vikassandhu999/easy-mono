@@ -844,6 +844,66 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert length(clients) == 2
     end
 
+    test "cursor pagination has a stable same-timestamp tie-break and excludes later inserts", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      inserted_at = DateTime.utc_now(:second)
+
+      clients =
+        for _ <- 1..3 do
+          insert(:client, creator: coach, business: business, inserted_at: inserted_at, updated_at: inserted_at)
+        end
+
+      first =
+        conn
+        |> get("/v1/coach/clients", %{"cursor" => "start", "limit" => "1"})
+        |> json_response(200)
+
+      assert %{"data" => [first_client], "count" => 3, "next_cursor" => cursor} = first
+      assert is_binary(cursor)
+
+      deleted = Enum.find(clients, &(&1.id != first_client["id"]))
+      Easy.Repo.delete!(deleted)
+
+      inserted_later =
+        insert(:client,
+          creator: coach,
+          business: business,
+          inserted_at: DateTime.add(inserted_at, 1),
+          updated_at: DateTime.add(inserted_at, 1)
+        )
+
+      second =
+        conn
+        |> recycle()
+        |> get("/v1/coach/clients", %{"cursor" => cursor, "limit" => "10"})
+        |> json_response(200)
+
+      assert %{"data" => remaining, "count" => 3, "next_cursor" => nil} = second
+      ids = [first_client | remaining] |> Enum.map(& &1["id"])
+
+      assert Enum.sort(ids) == Enum.sort(Enum.map(clients -- [deleted], & &1.id))
+      refute inserted_later.id in ids
+    end
+
+    test "rejects malformed cursors", %{conn: conn} do
+      conn = get(conn, "/v1/coach/clients?cursor=not-a-cursor")
+
+      assert %{"error_detail" => %{"fields" => %{"cursor" => ["is invalid"]}}} =
+               json_response(conn, 422)
+    end
+
+    test "rejects cursor pagination combined with offset or non-newest sorting", %{conn: conn} do
+      for params <- [%{"cursor" => "start", "offset" => "1"}, %{"cursor" => "start", "sort" => "last_active"}] do
+        conn = conn |> recycle() |> get("/v1/coach/clients", params)
+
+        assert %{"error_detail" => %{"fields" => %{"cursor" => ["cannot be combined with offset or sort"]}}} =
+                 json_response(conn, 422)
+      end
+    end
+
     test "does not return clients from another business", %{
       conn: conn,
       coach: coach,
@@ -858,6 +918,23 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert %{"data" => clients, "count" => 1} = json_response(conn, 200)
 
       assert length(clients) == 1
+    end
+
+    test "cursor pagination only returns clients assigned to the authenticated trainer", %{
+      coach: owner,
+      business: business
+    } do
+      trainer = insert(:coach, business: business)
+      other_trainer = insert(:coach, business: business)
+      mine = insert(:client, business: business, creator: trainer, assigned_coach: trainer)
+      insert(:client, business: business, creator: other_trainer, assigned_coach: other_trainer)
+
+      conn = build_conn() |> authenticate_coach(trainer)
+      conn = get(conn, "/v1/coach/clients", %{"cursor" => "start", "limit" => "10"})
+
+      assert %{"data" => [%{"id" => id}], "count" => 1} = json_response(conn, 200)
+      assert id == mine.id
+      refute owner.id == trainer.id
     end
 
     test "returns empty list when no clients exist", %{conn: conn} do

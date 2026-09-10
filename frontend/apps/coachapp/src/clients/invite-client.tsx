@@ -8,11 +8,13 @@ import {Button, buttonVariants} from '../ui/button';
 import {FormError} from '../ui/form-error';
 import {setFormError} from '../ui/form-errors';
 import {FormField} from '../ui/form-field';
+import {useListLocation} from '../ui/list-location';
 import {FormActions, Page, PageHeader, Surface} from '../ui/page';
 import {IntakePreview} from './intake-preview';
 
 export function InviteClient() {
   const navigate = useNavigate();
+  const listLocation = useListLocation(routes.home);
   const intake = useDefaultIntake();
   const invitation = useInviteClient();
   const form = useForm<Pick<ClientInvite, 'first_name' | 'last_name' | 'email'>>({
@@ -29,7 +31,7 @@ export function InviteClient() {
         last_name: values.last_name?.trim() || null,
         email: values.email?.trim() || null,
       });
-      navigate(generatePath(routes.client, {id: result.data.id}), {replace: true});
+      navigate(generatePath(routes.client, {id: result.data.id}), {replace: true, state: listLocation.state});
     } catch (error) {
       setFormError(error, "We couldn't send the invitation. Please try again.", form.setError, [
         'first_name',
@@ -44,7 +46,7 @@ export function InviteClient() {
       <PageHeader
         title="Invite client"
         description="Invite them to join you and complete their intake."
-        back={{to: routes.home, label: 'Back to clients'}}
+        back={{to: listLocation.to, label: 'Back to clients'}}
       />
       <form
         noValidate
@@ -120,7 +122,7 @@ export function InviteClient() {
           <FormActions>
             <Link
               className={buttonVariants({variant: 'ghost'})}
-              to={routes.home}
+              to={listLocation.to}
             >
               Cancel
             </Link>

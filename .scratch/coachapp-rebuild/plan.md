@@ -65,6 +65,10 @@ The client-detail route now continues through accepted, intake-pending, submitte
 
 The user selected Forms listing and creation as the next slice. The new `/forms` entry leads to a dedicated editor for Intake and Check-in forms, section/question ordering, required answers, choices, preview, and reopening saved forms. Active Intake forms can become the default used by future invitations. See [the Forms brief](forms.md) for boundaries and verification. The user requested direct execution without Superpowers during this slice.
 
+## Shared list foundation
+
+Before adding screens, the user requested reusable infinite scrolling and server-owned counts and business selections. Forms and Clients use the [shared list foundation](lists.md), including cursor queries, server filtering and totals, failure recovery, and return navigation. App guidance records the rule for future screens.
+
 ## Sources
 
 - `backend/lib/easy_web/controllers/auth_controller.ex`: public auth operations.

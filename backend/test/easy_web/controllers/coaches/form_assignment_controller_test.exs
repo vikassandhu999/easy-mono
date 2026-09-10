@@ -23,6 +23,42 @@ defmodule EasyWeb.Coaches.FormAssignmentControllerTest do
     end
   end
 
+  describe "GET /v1/coach/clients/:client_id/intake" do
+    test "returns the intake assignment or null when none exists", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client = insert(:client, business: business, creator: coach)
+
+      conn = get(conn, "/v1/coach/clients/#{client.id}/intake")
+      assert %{"data" => nil} = json_response(conn, 200)
+
+      template = insert(:form_template, business: business, purpose: :intake)
+
+      assignment =
+        insert(:form_assignment,
+          business: business,
+          client: client,
+          form_template: template,
+          purpose: :intake
+        )
+
+      conn = conn |> recycle() |> get("/v1/coach/clients/#{client.id}/intake")
+      assert %{"data" => %{"id" => id, "form_template" => template_data}} = json_response(conn, 200)
+      assert id == assignment.id
+      assert template_data["question_count"] == 1
+    end
+
+    test "does not expose another business's intake", %{conn: conn} do
+      other_coach = insert(:coach)
+      other_client = insert(:client, business: other_coach.business, creator: other_coach)
+
+      conn = get(conn, "/v1/coach/clients/#{other_client.id}/intake")
+      assert json_response(conn, 404)
+    end
+  end
+
   describe "POST /v1/coach/clients/:client_id/form-assignments" do
     test "assigns a form template to a client", %{conn: conn, coach: coach, business: business} do
       client = insert(:client, business: business, creator: coach)
@@ -40,6 +76,7 @@ defmodule EasyWeb.Coaches.FormAssignmentControllerTest do
       assert data["status"] == "assigned"
       assert data["form_template"]["id"] == template.id
       assert data["form_template"]["response_count"] == 0
+      assert data["form_template"]["question_count"] == 1
     end
 
     test "rejects unknown body fields", %{conn: conn, coach: coach, business: business} do

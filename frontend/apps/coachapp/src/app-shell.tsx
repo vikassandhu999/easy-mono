@@ -19,9 +19,8 @@ export function AppShell() {
   const profile = useProfile();
   const {pathname} = useLocation();
   const main = useRef<HTMLElement>(null);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Reset reading position and focus on route changes.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Move keyboard focus on route changes; ScrollRestoration owns the reading position.
   useEffect(() => {
-    window.scrollTo({top: 0});
     main.current?.focus({preventScroll: true});
   }, [pathname]);
   if (profile.isPending) {
@@ -104,7 +103,7 @@ export function AppShell() {
               <DropdownMenuGroup>
                 <DropdownMenuLabel>
                   <span className="block break-words text-sm font-semibold text-foreground">
-                    {[account.first_name, account.last_name].filter(Boolean).join(' ') || 'Your account'}
+                    {`${account.first_name ?? ''} ${account.last_name ?? ''}`.trim() || 'Your account'}
                   </span>
                   <span className="mt-1 block break-all text-sm font-normal">{account.email}</span>
                 </DropdownMenuLabel>

@@ -16,3 +16,11 @@ Download new shadcn primitives with the CLI only when a screen needs them; prese
 - Build: `pnpm -C apps/coachapp build`
 
 `coachapp-v2` on port 2021 is still the live product.
+
+## Lists and server-owned values
+
+Use resource `useInfiniteQuery` hooks with `api/pagination.ts`, filter-specific keys under `lists()`, and `ui/infinite-list.tsx`. Use `ui/list-search.tsx` for debounced URL search. Send search and filters to the API; follow its opaque `next_cursor` until null. Mutations invalidate the owning lists. Pass the query abort signal and retain loaded rows on next-page or refresh failures.
+
+Counts, aggregates, and business selections come from API fields or scoped endpoints. Never derive them by filtering, reducing, or sorting downloaded records. Local array operations are for rendering and unsaved form editing; loaded row length is only an empty/rendering check, never the result total. Add a server field when a screen needs a persisted derived value.
+
+Before adding a list, read `.scratch/coachapp-rebuild/lists.md`. Verify multiple pages, server totals, search beyond the first page, retry, and return navigation at 375px and 1280px.

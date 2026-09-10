@@ -98,6 +98,50 @@ defmodule Easy.Clients do
      }}
   end
 
+  @spec list_client_page(Ctx.t(), keyword()) ::
+          {:ok, Easy.CursorPage.t(Client.t()) | map()} | {:error, :cursor_incompatible | :invalid_cursor}
+  def list_client_page(%Ctx{} = ctx, opts \\ []) do
+    case Keyword.get(opts, :cursor) do
+      nil ->
+        with {:ok, result} <- list_clients(ctx, opts) do
+          {:ok, %{data: result.clients, count: result.count, summary: result.summary, next_cursor: nil}}
+        end
+
+      cursor ->
+        with :ok <- validate_cursor_options(opts) do
+          list_cursor_page(ctx, cursor, opts)
+        end
+    end
+  end
+
+  defp validate_cursor_options(opts) do
+    if Keyword.get(opts, :offset, 0) == 0 and Keyword.get(opts, :sort, :newest) == :newest do
+      :ok
+    else
+      {:error, :cursor_incompatible}
+    end
+  end
+
+  defp list_cursor_page(ctx, cursor, opts) do
+    visible = Client |> Client.for_business(ctx.business_id) |> Client.visible_to(ctx)
+    base = visible |> Client.search(Keyword.get(opts, :search, "")) |> Client.for_status(Keyword.get(opts, :status)) |> Client.for_stage(Keyword.get(opts, :stage))
+    limit = Easy.CursorPage.limit(opts)
+
+    with {:ok, query} <- Easy.CursorPage.query(base, cursor, limit) do
+      count = Repo.aggregate(base, :count, :id)
+
+      rows =
+        query
+        |> Client.include_preloads(ctx.business_id)
+        |> Repo.all()
+        |> Enum.map(&put_expiring_flag/1)
+        |> put_plan_names_for_clients(ctx, Keyword.get(opts, :include_plans, false))
+
+      page = Easy.CursorPage.finish(rows, limit, count)
+      {:ok, Map.put(page, :summary, visible |> Client.select_status_counts() |> Repo.one())}
+    end
+  end
+
   defp sort_clients(query, :last_active), do: Client.by_last_active(query)
   defp sort_clients(query, _newest), do: Client.newest(query)
 

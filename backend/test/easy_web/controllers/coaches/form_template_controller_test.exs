@@ -24,6 +24,7 @@ defmodule EasyWeb.Coaches.FormTemplateControllerTest do
       assert intake["purpose"] == "intake"
       assert intake["status"] == "active"
       assert intake["sections"] != []
+      assert intake["question_count"] > 0
       refute intake["id"] == foreign.id
 
       repeated = conn |> get("/v1/coach/form-templates/default-intake") |> json_response(200)
@@ -53,14 +54,27 @@ defmodule EasyWeb.Coaches.FormTemplateControllerTest do
         post(conn, "/v1/coach/form-templates", %{
           "name" => "Initial intake",
           "purpose" => "intake",
-          "sections" => [%{"title" => "Nutrition", "questions" => []}]
+          "sections" => [
+            %{
+              "title" => "Nutrition",
+              "questions" => [%{"id" => "goal", "label" => "Goal", "type" => "text"}]
+            }
+          ]
         })
 
       assert %{"data" => data} = json_response(conn, 201)
       assert data["name"] == "Initial intake"
       assert data["purpose"] == "intake"
-      assert data["sections"] == [%{"title" => "Nutrition", "questions" => []}]
+
+      assert data["sections"] == [
+               %{
+                 "title" => "Nutrition",
+                 "questions" => [%{"id" => "goal", "label" => "Goal", "type" => "text"}]
+               }
+             ]
+
       assert data["status"] == "active"
+      assert data["question_count"] == 1
     end
   end
 
@@ -80,8 +94,71 @@ defmodule EasyWeb.Coaches.FormTemplateControllerTest do
     test "rejects unknown query parameters", %{conn: conn} do
       conn = get(conn, "/v1/coach/form-templates?unexpected=true")
 
-      assert %{"error_detail" => %{"fields" => %{"$" => ["must be empty"]}}} =
+      assert %{"error_detail" => %{"fields" => %{"unexpected" => ["is unknown"]}}} =
                json_response(conn, 422)
+    end
+
+    test "paginates filtered templates, escapes literal wildcard searches, and keeps tenants isolated", %{
+      conn: conn,
+      business: business
+    } do
+      literal = insert(:form_template, business: business, name: "100% ready", purpose: :intake)
+      insert(:form_template, business: business, name: "100 ready", purpose: :intake)
+      insert(:form_template, name: "100% private", purpose: :intake)
+
+      first =
+        conn
+        |> get("/v1/coach/form-templates", %{
+          "cursor" => "start",
+          "limit" => "1",
+          "search" => "%",
+          "purpose" => "intake"
+        })
+        |> json_response(200)
+
+      assert %{"data" => [item], "count" => 1, "next_cursor" => nil} = first
+      assert item["id"] == literal.id
+      assert is_integer(item["question_count"])
+      assert item["response_count"] == 0
+    end
+
+    test "cursor bounds pages and defaults to twenty records", %{conn: conn, business: business} do
+      for index <- 1..105 do
+        insert(:form_template, business: business, name: "Paged #{index}", purpose: :intake)
+      end
+
+      first = conn |> get("/v1/coach/form-templates?cursor=start&limit=2&purpose=intake") |> json_response(200)
+      assert length(first["data"]) == 2
+      assert first["count"] == 105
+      assert is_binary(first["next_cursor"])
+      second = conn |> get("/v1/coach/form-templates", %{"cursor" => first["next_cursor"], "limit" => "2", "purpose" => "intake"}) |> json_response(200)
+      assert length(second["data"]) == 2
+      refute hd(first["data"])["id"] in Enum.map(second["data"], & &1["id"])
+      default = conn |> get("/v1/coach/form-templates?cursor=start&purpose=intake") |> json_response(200)
+      assert length(default["data"]) == 20
+      capped = conn |> get("/v1/coach/form-templates?cursor=start&limit=1000&purpose=intake") |> json_response(200)
+      assert length(capped["data"]) == 100
+      assert is_binary(capped["next_cursor"])
+
+      for invalid <- ["0", "-1"] do
+        assert conn |> get("/v1/coach/form-templates", %{"cursor" => "start", "limit" => invalid}) |> json_response(422)
+      end
+    end
+
+    test "rejects malformed cursors", %{conn: conn} do
+      conn = get(conn, "/v1/coach/form-templates?cursor=not-a-cursor")
+
+      assert %{"error_detail" => %{"fields" => %{"cursor" => ["is invalid"]}}} =
+               json_response(conn, 422)
+    end
+
+    test "requires a cursor for filters and limits", %{conn: conn} do
+      for params <- [%{"limit" => "1"}, %{"search" => "intake"}, %{"purpose" => "intake"}] do
+        conn = conn |> recycle_json() |> get("/v1/coach/form-templates", params)
+
+        assert %{"error_detail" => %{"fields" => %{"cursor" => ["is required with limit, search, or purpose"]}}} =
+                 json_response(conn, 422)
+      end
     end
   end
 

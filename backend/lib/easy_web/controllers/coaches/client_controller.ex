@@ -72,6 +72,7 @@ defmodule EasyWeb.Coaches.ClientController do
     params = conn.query_params
 
     opts = [
+      cursor: Map.get(params, "cursor"),
       search: Map.get(params, "search", ""),
       offset: Map.get(params, "offset", 0),
       limit: Map.get(params, "limit", 20),
@@ -81,9 +82,8 @@ defmodule EasyWeb.Coaches.ClientController do
       include_plans: Map.get(params, "include_plans", false)
     ]
 
-    with {:ok, %{clients: clients, count: count, summary: summary}} <-
-           Clients.list_clients(conn.assigns.ctx, opts) do
-      ok(conn, %{data: clients, count: count, summary: summary})
+    with {:ok, page} <- Clients.list_client_page(conn.assigns.ctx, opts) do
+      ok(conn, page)
     end
   end
 end

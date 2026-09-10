@@ -1,17 +1,21 @@
-import {useMutation, useQuery} from '@tanstack/react-query';
+import {useInfiniteQuery, useMutation, useQuery} from '@tanstack/react-query';
 import {call, client} from './client';
 import {clientKeys} from './keys';
+import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
-import type {Client, ClientInvite} from './schema';
+import type {Client, ClientInvite, paths} from './schema';
 import {getSession} from './session';
 
 export type {Client, ClientInvite} from './schema';
 
-export function useClients(offset: number) {
-  return useQuery({
-    queryKey: clientKeys.list(offset),
-    queryFn: ({signal}) => call(client.GET('/v1/coach/clients', {params: {query: {offset, limit: 20}}, signal})),
-    staleTime: 0,
+export type ClientFilters = Pick<NonNullable<paths['/v1/coach/clients']['get']['parameters']['query']>, 'search'>;
+
+export function useClients(filters: ClientFilters) {
+  return useInfiniteQuery({
+    queryKey: clientKeys.infinite(filters),
+    queryFn: ({pageParam, signal}) =>
+      call(client.GET('/v1/coach/clients', {params: {query: {...filters, cursor: pageParam, limit: 20}}, signal})),
+    ...cursorPagination,
   });
 }
 

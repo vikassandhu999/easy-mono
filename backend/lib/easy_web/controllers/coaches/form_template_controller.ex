@@ -3,8 +3,9 @@ defmodule EasyWeb.Coaches.FormTemplateController do
 
   alias Easy.Forms.Templates
   alias EasyWeb.Types.FormTemplate
+  alias EasyWeb.Types.FormTemplateIndex
 
-  typed(:index, ok: {200, data([FormTemplate.t()])})
+  typed(:index, query: FormTemplate.list_query(), ok: {200, FormTemplateIndex.t()})
   typed(:default_intake, ok: {200, data(FormTemplate.t())})
   typed(:create, body: FormTemplate.create(), ok: {201, data(FormTemplate.t())})
   typed(:show, ok: {200, data(FormTemplate.t())})
@@ -15,10 +16,18 @@ defmodule EasyWeb.Coaches.FormTemplateController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
+    params = conn.query_params
     ctx = conn.assigns.ctx
 
-    with {:ok, templates} <- Templates.list(ctx) do
-      ok(conn, %{data: templates})
+    opts = [
+      cursor: params["cursor"],
+      limit: params["limit"],
+      search: params["search"],
+      purpose: params["purpose"]
+    ]
+
+    with {:ok, page} <- Templates.list_page(ctx, opts) do
+      ok(conn, page)
     end
   end
 

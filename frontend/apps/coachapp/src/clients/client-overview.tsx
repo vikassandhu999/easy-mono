@@ -2,10 +2,11 @@ import {RefreshCw} from 'lucide-react';
 import {useParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
 import {useClient} from '../api/clients';
-import {useClientFormAssignments, useFormSubmissions} from '../api/forms';
+import {useClientIntake, useFormSubmissions} from '../api/forms';
 import {routes} from '../routes';
 import {Button} from '../ui/button';
 import {FormError} from '../ui/form-error';
+import {useListLocation} from '../ui/list-location';
 import {Page, PageHeader, Surface} from '../ui/page';
 import {ClientIntake} from './client-intake';
 import {ClientInvitation} from './client-invitation';
@@ -21,11 +22,10 @@ export function ClientOverview() {
 }
 
 function Overview({id}: {id: string}) {
+  const {to: listLocation} = useListLocation(routes.home);
   const client = useClient(id);
-  const assignments = useClientFormAssignments(id);
-  const intake = assignments.data?.data
-    .filter((assignment) => assignment.purpose === 'intake')
-    .toSorted((a, b) => b.inserted_at.localeCompare(a.inserted_at) || b.id.localeCompare(a.id))[0];
+  const assignments = useClientIntake(id);
+  const intake = assignments.data?.data;
   const submittedId = intake && (intake.latest_submission || intake.status === 'completed') ? intake.id : undefined;
   const submissions = useFormSubmissions(submittedId);
   const refresh = () => {
@@ -46,7 +46,7 @@ function Overview({id}: {id: string}) {
                 ? 'Client not found'
                 : "Couldn't load client"
           }
-          back={{to: routes.home, label: 'Back to clients'}}
+          back={{to: listLocation, label: 'Back to clients'}}
         />
         <Surface>
           {client.isPending ? (
@@ -76,7 +76,7 @@ function Overview({id}: {id: string}) {
     <Page>
       <PageHeader
         title={
-          [person.first_name, person.last_name].filter(Boolean).join(' ') || person.email || person.phone || 'Client'
+          `${person.first_name ?? ''} ${person.last_name ?? ''}`.trim() || person.email || person.phone || 'Client'
         }
         description={
           <>
@@ -84,7 +84,7 @@ function Overview({id}: {id: string}) {
             <span className="mt-1 block">{person.email || person.phone}</span>
           </>
         }
-        back={{to: routes.home, label: 'Back to clients'}}
+        back={{to: listLocation, label: 'Back to clients'}}
         actions={
           <Button
             variant="outline"

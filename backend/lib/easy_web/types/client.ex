@@ -61,6 +61,7 @@ defmodule EasyWeb.Types.Client do
   @type reassign :: %{required(:coach_id) => String.t()}
 
   @type list_query :: %{
+          optional(:cursor) => String.t(),
           optional(:offset) => integer(),
           optional(:limit) => integer(),
           optional(:search) => String.t(),
@@ -138,6 +139,7 @@ defmodule EasyWeb.Types.ClientIndex do
   @type t :: %{
           required(:data) => [EasyWeb.Types.Client.t()],
           required(:count) => non_neg_integer(),
+          required(:next_cursor) => String.t() | nil,
           required(:summary) => %{
             required(:active) => non_neg_integer(),
             required(:pending) => non_neg_integer(),

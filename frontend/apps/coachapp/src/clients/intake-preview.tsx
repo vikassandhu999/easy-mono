@@ -5,7 +5,6 @@ import {Dialog, DialogClose, DialogHeader, DialogTitle, DialogTrigger} from '../
 import {Surface} from '../ui/page';
 
 export function IntakePreview({template}: {template: FormTemplate}) {
-  const questions = template.sections.flatMap((section) => section.questions);
   return (
     <Surface>
       <div className="flex items-start gap-3">
@@ -18,7 +17,8 @@ export function IntakePreview({template}: {template: FormTemplate}) {
         <div className="min-w-0">
           <h2 className="section-title break-words">{template.name}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {questions.length} {questions.length === 1 ? 'question' : 'questions'} · Included automatically
+            {template.question_count} {template.question_count === 1 ? 'question' : 'questions'} · Included
+            automatically
           </p>
         </div>
       </div>

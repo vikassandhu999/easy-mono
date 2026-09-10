@@ -329,6 +329,18 @@ defmodule EasyWeb.FallbackController do
     )
   end
 
+  def call(conn, {:error, :invalid_cursor}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{cursor: ["is invalid"]}})})
+  end
+
+  def call(conn, {:error, :cursor_incompatible}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{cursor: ["cannot be combined with offset or sort"]}})})
+  end
+
+  def call(conn, {:error, :cursor_required}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{cursor: ["is required with limit, search, or purpose"]}})})
+  end
+
   def call(conn, {:error, :invalid_since}) do
     call(conn, {:error, Error.unprocessable(%{fields: %{since: ["is invalid"]}})})
   end

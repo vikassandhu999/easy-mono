@@ -1,5 +1,7 @@
 import type {ReactNode} from 'react';
 
+export {FormError} from '../ui/form-error';
+
 export function AuthLayout({title, description, children}: {title: string; description: string; children: ReactNode}) {
   return (
     <div className="min-h-dvh bg-background text-foreground">
@@ -16,15 +18,4 @@ export function AuthLayout({title, description, children}: {title: string; descr
       </main>
     </div>
   );
-}
-
-export function FormError({message}: {message: string | undefined}) {
-  return message ? (
-    <p
-      role="alert"
-      className="rounded-lg border border-destructive/25 bg-destructive/5 p-3 text-sm text-destructive"
-    >
-      {message}
-    </p>
-  ) : null;
 }

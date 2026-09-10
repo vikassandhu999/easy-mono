@@ -5,6 +5,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
   alias EasyWeb.Types.FormTemplate
 
   typed(:index, ok: {200, data([FormTemplate.t()])})
+  typed(:default_intake, ok: {200, data(FormTemplate.t())})
   typed(:create, body: FormTemplate.create(), ok: {201, data(FormTemplate.t())})
   typed(:show, ok: {200, data(FormTemplate.t())})
   typed(:update, body: FormTemplate.update(), ok: {200, data(FormTemplate.t())})
@@ -18,6 +19,13 @@ defmodule EasyWeb.Coaches.FormTemplateController do
 
     with {:ok, templates} <- Templates.list(ctx) do
       ok(conn, %{data: templates})
+    end
+  end
+
+  @spec default_intake(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def default_intake(conn, _params) do
+    with {:ok, template} <- Templates.get_default_intake(conn.assigns.ctx) do
+      ok(conn, %{data: template})
     end
   end
 

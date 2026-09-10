@@ -136,6 +136,7 @@ defmodule EasyWeb.Router do
     post "/team/:id/reactivate", TeamController, :reactivate
 
     get "/form-templates", FormTemplateController, :index
+    get "/form-templates/default-intake", FormTemplateController, :default_intake
     post "/form-templates", FormTemplateController, :create
     get "/form-templates/:id", FormTemplateController, :show
     patch "/form-templates/:id", FormTemplateController, :update

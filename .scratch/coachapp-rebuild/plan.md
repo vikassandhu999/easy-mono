@@ -15,7 +15,7 @@ Count completed coaching outcomes, avoidable mistakes, and requests for help. Se
 ## Suggested sequence
 
 - Authentication and a minimal signed-in destination.
-- One daily coaching task. Initial proposal: review a client's check-in, decide on a response, and finish the work. Confirm the first task with the product owner.
+- Invite a client and provide their intake. Selected by the product owner; see [the slice brief](invite-client.md). Use the business's default intake, with a preview before sending, then support returning to and resending the invitation. The client can accept and open their intake. Full onboarding includes plans, which are outside this slice.
 - The client context that task actually needs.
 - Adjacent actions exposed by using that slice, such as changing a prescription.
 - Navigation and reusable patterns derived from the completed slices.
@@ -46,6 +46,24 @@ Install only shadcn primitives needed by auth. Use neutral tokens and a compact 
 Verification: app build and Biome passed. Real API browser scenarios passed at 375px and 1280px, including invitations, interrupted setup, refresh failures, concurrent refresh, and logout during pending verification. Backend `mix precommit` passed with 1,617 tests and zero failures. The browser API uses the isolated `easy_coachapp_auth_dev` database and local mail delivery.
 
 Implementation stays in this working tree to preserve the user's initialized app. Deployment is outside this slice.
+
+## Client invitation slice
+
+Implemented the [approved invitation flow](invite-client.md): Clients entry, default intake preview, email invitation, persistent client detail, acceptance status, shareable link, and resend. The server resolves the preview through `GET /v1/coach/form-templates/default-intake`, using the same selection rule as client invitation creation. Generated API types were refreshed in both coach apps; coachapp-v2 has no handwritten changes.
+
+Verification on 2026-09-09: coach and client builds passed, and the existing coach auth browser suites passed. Real API invitation scenarios passed at 375px and 1280px using the isolated database and local mail delivery. They cover failed preview and send, required fields, resend failure/recovery, reload, list navigation, clipboard failure, client acceptance, and opening the intake from the client app. The client app's OTP label was connected to its input after this flow exposed the missing association.
+
+Independent review found a late invitation response could repopulate a different coach's cache and navigate to the prior client after an account switch. A real API regression reproduced the issue before the fix and passed afterward; the reviewer independently verified the fix. Invitation and resend mutations capture session identity and reject stale completions. Backend `mix precommit` passed 1,619 tests with zero failures. The client build reports vendor CSS minification and bundle-size warnings; its typecheck and checks pass.
+
+This is browser verification, not a target-coach usability review. That review remains part of choosing the next slice. Full onboarding includes plans; this slice completes invitation and intake access only. No commit or deployment was requested.
+
+## Client overview slice
+
+The client-detail route now continues through accepted, intake-pending, submitted, and reviewed states. The coach can read grouped snapshot answers and persist an intake review. See [the overview brief](client-overview.md) for scope and checks. Plan preparation is the next onboarding task; this screen does not imply that reviewing intake completes onboarding.
+
+## Forms slice
+
+The user selected Forms listing and creation as the next slice. The new `/forms` entry leads to a dedicated editor for Intake and Check-in forms, section/question ordering, required answers, choices, preview, and reopening saved forms. Active Intake forms can become the default used by future invitations. See [the Forms brief](forms.md) for boundaries and verification. The user requested direct execution without Superpowers during this slice.
 
 ## Sources
 

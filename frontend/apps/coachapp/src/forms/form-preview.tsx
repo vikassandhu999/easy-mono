@@ -1,0 +1,150 @@
+import {X} from 'lucide-react';
+import {useId} from 'react';
+import type {FormTemplateCreate, FormTemplateQuestion} from '../api/forms';
+import {Button} from '../ui/button';
+import {Checkbox} from '../ui/checkbox';
+import {Dialog, DialogClose, DialogHeader, DialogTitle, DialogTrigger} from '../ui/dialog';
+import {Input} from '../ui/input';
+import {NativeSelect, NativeSelectOption} from '../ui/native-select';
+import {Textarea} from '../ui/textarea';
+
+function PreviewAnswer({question}: {question: FormTemplateQuestion}) {
+  const id = useId();
+  const label = question.label.trim() || 'Untitled question';
+  const options = 'options' in question ? (question.options ?? []) : [];
+  const heading = (
+    <span>
+      {label}
+      {question.required && <span className="ml-1 text-muted-foreground">(required)</span>}
+    </span>
+  );
+  if (question.type === 'multi_select' || question.type === 'service_type') {
+    return (
+      <fieldset className="space-y-2">
+        <legend className="mb-2 text-sm font-medium">{heading}</legend>
+        {(question.type === 'service_type' ? ['Training', 'Nutrition'] : options).map((option, index) => (
+          <Checkbox key={`${index}-${option}`}>{option || 'Untitled choice'}</Checkbox>
+        ))}
+      </fieldset>
+    );
+  }
+  return (
+    <div className="grid gap-2">
+      <label
+        htmlFor={id}
+        className="text-sm font-medium"
+      >
+        {heading}
+      </label>
+      {question.type === 'text' ? (
+        <Textarea
+          id={id}
+          aria-label={label}
+          required={question.required ?? false}
+        />
+      ) : question.type === 'select' || question.type === 'boolean' || question.type === 'rating' ? (
+        <NativeSelect
+          id={id}
+          aria-label={label}
+          defaultValue=""
+          required={question.required ?? false}
+        >
+          <NativeSelectOption
+            value=""
+            disabled
+          >
+            Choose an answer
+          </NativeSelectOption>
+          {(question.type === 'boolean'
+            ? ['Yes', 'No']
+            : question.type === 'rating'
+              ? ['1', '2', '3', '4', '5']
+              : options
+          ).map((option, index) => (
+            <NativeSelectOption
+              key={`${index}-${option}`}
+              value={option}
+            >
+              {option || 'Untitled choice'}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+      ) : question.type === 'photo' ? (
+        <>
+          <Input
+            id={id}
+            aria-label={label}
+            type="file"
+            accept="image/*"
+          />
+          <p className="text-xs text-muted-foreground">Preview only. Photos are not uploaded.</p>
+        </>
+      ) : question.type === 'weight' ? (
+        <div className="grid grid-cols-[1fr_6rem] gap-2">
+          <Input
+            id={id}
+            aria-label={label}
+            type="number"
+            inputMode="decimal"
+            step="any"
+          />
+          <NativeSelect aria-label="Weight unit">
+            <NativeSelectOption value="kg">kg</NativeSelectOption>
+            <NativeSelectOption value="lb">lb</NativeSelectOption>
+          </NativeSelect>
+        </div>
+      ) : (
+        <Input
+          id={id}
+          aria-label={label}
+          type={question.type === 'date' ? 'date' : 'number'}
+          required={question.required ?? false}
+        />
+      )}
+    </div>
+  );
+}
+
+export function FormPreview({values}: {values: FormTemplateCreate}) {
+  return (
+    <DialogTrigger>
+      <Button variant="outline">Preview form</Button>
+      <Dialog showCloseButton={false}>
+        <DialogHeader>
+          <div className="min-w-0">
+            <DialogTitle>{values.name.trim() || 'Untitled form'}</DialogTitle>
+            <p className="mt-1 text-sm text-muted-foreground">Try the questions. Preview answers are not saved.</p>
+          </div>
+          <DialogClose
+            aria-label="Close preview"
+            size="icon-sm"
+          >
+            <X aria-hidden="true" />
+          </DialogClose>
+        </DialogHeader>
+        <div
+          className="dialog-body space-y-8"
+          role="region"
+          aria-label="Form questions"
+          // biome-ignore lint/a11y/noNoninteractiveTabindex: This scroll region must be reachable by keyboard.
+          tabIndex={0}
+        >
+          {values.sections.map((section, index) => (
+            <section
+              key={section.questions.map((question) => question.id).join(':') || `empty-${index}`}
+              className="space-y-5"
+            >
+              {section.title && <h3 className="section-title break-words">{section.title}</h3>}
+              {section.questions.map((question) => (
+                <PreviewAnswer
+                  key={question.id}
+                  question={question}
+                />
+              ))}
+            </section>
+          ))}
+        </div>
+      </Dialog>
+    </DialogTrigger>
+  );
+}

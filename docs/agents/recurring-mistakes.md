@@ -165,6 +165,7 @@ Severity of the rule isn't the point; recurrence is.
 | RM-218 | Shared form completion copy follows assignment purpose | Frontend | check-rm |
 | RM-219 | Mobile queue rows keep the actionable absolute fact visible | Frontend | check-rm |
 | RM-220 | Queue identity text stays inside its grid track | Frontend | check-rm |
+| RM-223 | Scrollable dialog content remains keyboard reachable | Frontend | test |
 | RM-221 | Filter-then-assert: parse while filtering instead | Frontend | review |
 | RM-222 | A UI key is narrowed into its vocabulary, never cast | Frontend | review |
 | RM-301 | Retiring an architecture artifact means grepping the docs | Docs | review |
@@ -1167,6 +1168,13 @@ own paint and the single-line label must own an explicit block-width truncation 
 by:** `just check-rm` pins `overflow-hidden` on the text column and the block/max-width truncation
 boundary on its label. **Verify by:** populate Expiring and Quiet with a long client name at 375px and
 require an ellipsis before the action group with no overlapping pixels.
+
+### RM-223 — Scrollable dialog content remains keyboard reachable
+An intake preview trapped focus correctly but only its Close button was keyboard reachable,
+so PageDown could not reveal the remaining questions. Give independently scrolling content
+a named, focusable region and a visible focus indicator. **Enforced by:** coachapp
+`tests/clients/mobile-layout.mjs` tabs into the region and uses PageDown and End to reach the
+last question. Setting `scrollTop` directly does not verify keyboard access.
 
 ## Deploy / ops
 

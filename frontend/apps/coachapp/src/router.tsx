@@ -8,6 +8,11 @@ import {Login} from './auth/login';
 import {Setup} from './auth/setup';
 import {Signup} from './auth/signup';
 import {Verify} from './auth/verify';
+import {ClientOverview} from './clients/client-overview';
+import {Clients} from './clients/clients';
+import {InviteClient} from './clients/invite-client';
+import {FormEditor} from './forms/form-editor';
+import {Forms} from './forms/forms';
 import {routes} from './routes';
 
 function Gate({guest = false}: {guest?: boolean}) {
@@ -79,7 +84,17 @@ export const router = createBrowserRouter([
   {
     element: <Gate />,
     children: [
-      {path: routes.home, element: <AppShell />},
+      {
+        element: <AppShell />,
+        children: [
+          {path: routes.home, element: <Clients />},
+          {path: routes.inviteClient, element: <InviteClient />},
+          {path: routes.client, element: <ClientOverview />},
+          {path: routes.forms, element: <Forms />},
+          {path: routes.createForm, element: <FormEditor key="new" />},
+          {path: routes.editForm, element: <FormEditor />},
+        ],
+      },
       {path: routes.setup, element: <Setup />},
     ],
   },

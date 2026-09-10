@@ -1,5 +1,6 @@
 import {mkdir} from 'node:fs/promises';
 import {chromium, expect} from '@playwright/test';
+import {expectAccount, signOut} from './browser-helpers.mjs';
 
 const baseURL = process.env.COACH_APP_URL || 'http://localhost:2022';
 const browser = await chromium.launch();
@@ -54,18 +55,18 @@ try {
   await expect(page.getByText('We could not reach the service. Please try again shortly.')).toBeVisible();
   await page.unroute('**/v1/auth/token');
   await page.getByRole('button', {name: 'Create business'}).click();
-  await expect(page.getByRole('heading', {name: "You're signed in"})).toBeVisible();
+  await expect(page.getByRole('heading', {name: 'Clients', exact: true})).toBeVisible();
   expect(businessesCreated).toBe(1);
   await page.unroute('**/v1/businesses');
-  await expect(page.getByText(email, {exact: true})).toBeVisible();
+  await expectAccount(page, email);
   await page.reload();
-  await expect(page.getByText(email, {exact: true})).toBeVisible();
+  await expectAccount(page, email);
   await page.setViewportSize({width: 1280, height: 900});
   await page.screenshot({path: 'tests/auth/artifacts/account-desktop.png', fullPage: true});
   const secondTab = await context.newPage();
   await secondTab.goto('/');
-  await expect(secondTab.getByText(email, {exact: true})).toBeVisible();
-  await page.getByRole('button', {name: 'Sign out', exact: true}).click();
+  await expectAccount(secondTab, email);
+  await signOut(page);
   await expect(secondTab.getByRole('heading', {name: 'Welcome back'})).toBeVisible();
   await secondTab.close();
   await page.getByLabel('Email', {exact: true}).fill(email);
@@ -84,7 +85,7 @@ try {
   await expect(page.getByText('A fresh code is on its way.')).toBeVisible();
   await page.getByLabel('Verification code').fill('123456');
   await page.getByRole('button', {name: 'Verify and continue'}).click();
-  await expect(page.getByText(email, {exact: true})).toBeVisible();
+  await expectAccount(page, email);
 
   const expire = () =>
     page.evaluate(() => {
@@ -93,7 +94,7 @@ try {
     });
   const peer = await context.newPage();
   await peer.goto('/');
-  await expect(peer.getByText(email, {exact: true})).toBeVisible();
+  await expectAccount(peer, email);
   let refreshes = 0;
   const countRefreshes = (request) => {
     if (request.url().endsWith('/v1/auth/token') && request.postDataJSON()?.grant_type === 'refresh_token') {
@@ -103,8 +104,8 @@ try {
   context.on('request', countRefreshes);
   await expire();
   await Promise.all([page.reload(), peer.reload()]);
-  await expect(page.getByText(email, {exact: true})).toBeVisible();
-  await expect(peer.getByText(email, {exact: true})).toBeVisible();
+  await expectAccount(page, email);
+  await expectAccount(peer, email);
   expect(refreshes).toBe(1);
   context.off('request', countRefreshes);
 
@@ -117,7 +118,7 @@ try {
   expect(await page.evaluate(() => localStorage.getItem('coachapp.auth.v1'))).not.toBeNull();
   await page.unroute('**/v1/auth/token');
   await page.getByRole('button', {name: 'Try again'}).click();
-  await expect(page.getByText(email, {exact: true})).toBeVisible();
+  await expectAccount(page, email);
 
   await page.evaluate(() => {
     const session = JSON.parse(localStorage.getItem('coachapp.auth.v1'));
@@ -134,7 +135,7 @@ try {
   });
   expect(forcedRefreshRecovered).toBe(true);
   await page.reload();
-  await expect(page.getByText(email, {exact: true})).toBeVisible();
+  await expectAccount(page, email);
 
   await page.route('**/v1/coach/me', (route) =>
     route.fulfill({status: 403, json: {error_code: 'unauthorized', error_message: 'Insufficient permissions'}}),
@@ -144,7 +145,7 @@ try {
   expect(await page.evaluate(() => localStorage.getItem('coachapp.auth.v1'))).not.toBeNull();
   await page.unroute('**/v1/coach/me');
   await page.getByRole('button', {name: 'Try again'}).click();
-  await expect(page.getByText(email, {exact: true})).toBeVisible();
+  await expectAccount(page, email);
 
   let refreshReceived = false;
   const releaseRefresh = Promise.withResolvers();
@@ -157,7 +158,7 @@ try {
   await expire();
   await page.reload();
   await expect.poll(() => refreshReceived).toBe(true);
-  await peer.getByRole('button', {name: 'Sign out', exact: true}).click();
+  await signOut(peer);
   releaseRefresh.resolve();
   await expect(page.getByRole('heading', {name: 'Welcome back'})).toBeVisible();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('coachapp.auth.v1'))?.tokens)).toBeUndefined();
@@ -184,8 +185,8 @@ try {
   await loginPeer.getByRole('button', {name: 'Continue with email'}).click();
   await loginPeer.getByLabel('Verification code').fill('123456');
   await loginPeer.getByRole('button', {name: 'Verify and continue'}).click();
-  await expect(loginPeer.getByText(email, {exact: true})).toBeVisible();
-  await loginPeer.getByRole('button', {name: 'Sign out', exact: true}).click();
+  await expectAccount(loginPeer, email);
+  await signOut(loginPeer);
   const verificationResponse = page.waitForResponse((response) => response.url().endsWith('/v1/auth/token'));
   releaseVerification.resolve();
   await verificationResponse;
@@ -206,7 +207,7 @@ try {
   await page.getByLabel('Verification code').fill('123456');
   await page.getByRole('button', {name: 'Verify and continue'}).click();
   await expect(page.getByRole('heading', {name: 'Your coaching business'})).toBeVisible();
-  await page.getByRole('button', {name: 'Sign out', exact: true}).click();
+  await signOut(page);
   await page.getByLabel('Email', {exact: true}).fill(unfinishedEmail);
   await page.getByRole('button', {name: 'Continue with email'}).click();
   await page.getByLabel('Verification code').fill('123456');

@@ -8,6 +8,8 @@
     "build": "tsc --noEmit -p tsconfig.app.json && pnpm run check && vite build",
     "check": "node ../../scripts/run-checks.mjs tests",
     "test:browser": "node tests/auth/auth.browser.mjs && node tests/auth/invitations.browser.mjs",
+    "test:forms": "node tests/forms/forms.browser.mjs",
+    "test:clients": "node tests/clients/invite.browser.mjs",
     "gen:api": "openapi-typescript ../../openapi/coach.openapi.json -o src/api/schema.ts",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "lint": "biome check --write .",

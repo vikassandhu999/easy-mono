@@ -1203,7 +1203,7 @@ export type WorkbenchSnooze = {queue: 'quiet' | 'expiring'; snoozed_until: strin
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash faf68623f3dab816d899e3e172fc291cbcd6cf32d0ecda08b76052ccea6f6470 */
+  /* typed-routes:hash aeac41faa74441887a7b098673db39324301d94edbec3848bde744eacc413a79 */
   '/api/health': {
     get: {
       parameters: {
@@ -1815,6 +1815,19 @@ export interface paths {
       requestBody: {content: {'application/json': FormTemplateCreate}};
       responses: {
         201: {content: {'application/json': {data: FormTemplate}}};
+      };
+    };
+  };
+  '/v1/coach/form-templates/default-intake': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: FormTemplate}}};
       };
     };
   };

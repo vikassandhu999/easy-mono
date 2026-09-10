@@ -16,6 +16,37 @@ defmodule EasyWeb.Coaches.FormTemplateControllerTest do
     %{conn: conn, coach: coach, business: coach.business}
   end
 
+  describe "GET /v1/coach/form-templates/default-intake" do
+    test "resolves a business intake before its first invitation and assigns that same form", %{conn: conn} do
+      foreign = insert(:form_template, purpose: :intake, is_default_intake: true)
+      preview = conn |> get("/v1/coach/form-templates/default-intake") |> json_response(200)
+      intake = preview["data"]
+      assert intake["purpose"] == "intake"
+      assert intake["status"] == "active"
+      assert intake["sections"] != []
+      refute intake["id"] == foreign.id
+
+      repeated = conn |> get("/v1/coach/form-templates/default-intake") |> json_response(200)
+      assert repeated["data"]["id"] == intake["id"]
+
+      invited = conn |> post("/v1/coach/clients/invite", %{"first_name" => "Alex", "phone" => "+919876543210"}) |> json_response(201)
+      assignments = conn |> get("/v1/coach/clients/#{invited["data"]["id"]}/form-assignments") |> json_response(200)
+      assert [%{"form_template_id" => template_id, "purpose" => "intake"}] = assignments["data"]
+      assert template_id == intake["id"]
+    end
+
+    test "uses the selected default and falls back when it is archived", %{conn: conn, business: business} do
+      fallback = insert(:form_template, business: business, purpose: :intake)
+      selected = insert(:form_template, business: business, purpose: :intake, is_default_intake: true)
+      response = conn |> get("/v1/coach/form-templates/default-intake") |> json_response(200)
+      assert response["data"]["id"] == selected.id
+
+      conn |> patch("/v1/coach/form-templates/#{selected.id}", %{"status" => "archived"}) |> json_response(200)
+      response = conn |> get("/v1/coach/form-templates/default-intake") |> json_response(200)
+      assert response["data"]["id"] == fallback.id
+    end
+  end
+
   describe "POST /v1/coach/form-templates" do
     test "creates a template", %{conn: conn} do
       conn =

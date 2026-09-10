@@ -2,6 +2,7 @@ import {execFileSync} from 'node:child_process';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {chromium, expect} from '@playwright/test';
+import {expectAccount} from './browser-helpers.mjs';
 
 execFileSync(
   'rtk',
@@ -43,10 +44,10 @@ try {
   await page.setViewportSize({width: 1280, height: 900});
   await page.getByLabel('Verification code').fill('123456');
   await page.getByRole('button', {name: 'Verify and continue'}).click();
-  await expect(page.getByRole('heading', {name: "You're signed in"})).toBeVisible();
-  await expect(page.getByText('Welcome to Invitation Coaching.')).toBeVisible();
+  await expect(page.getByRole('heading', {name: 'Clients', exact: true})).toBeVisible();
+  await expect(page.getByText('Invitation Coaching', {exact: true})).toBeVisible();
   await page.reload();
-  await expect(page.getByText(fixture.email, {exact: true})).toBeVisible();
+  await expectAccount(page, fixture.email);
   await page.goto(`/accept-invite?token=${fixture.token}`);
   await expect(page.getByRole('button', {name: 'Sign out to continue'})).toBeVisible();
   await page.getByRole('button', {name: 'Sign out to continue'}).click();

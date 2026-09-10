@@ -1,11 +1,29 @@
+import {LogOut, UserRound} from 'lucide-react';
+import {useEffect, useRef} from 'react';
+import {Link, matchPath, NavLink, Outlet, useLocation} from 'react-router-dom';
 import {useProfile} from './api/auth';
 import {errorMessage} from './api/client';
 import {clearSession} from './api/session';
 import {AuthLayout, FormError} from './auth/auth-layout';
+import {routes} from './routes';
 import {Button} from './ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 
 export function AppShell() {
   const profile = useProfile();
+  const {pathname} = useLocation();
+  const main = useRef<HTMLElement>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Reset reading position and focus on route changes.
+  useEffect(() => {
+    window.scrollTo({top: 0});
+    main.current?.focus({preventScroll: true});
+  }, [pathname]);
   if (profile.isPending) {
     return (
       <AuthLayout
@@ -49,23 +67,87 @@ export function AppShell() {
   }
   const account = profile.data.data;
   return (
-    <AuthLayout
-      title="You're signed in"
-      description={`Welcome to ${account.business.name}.`}
-    >
-      <div className="rounded-xl border border-border p-5">
-        <p className="font-medium">
-          {[account.first_name, account.last_name].filter(Boolean).join(' ') || 'Your account'}
-        </p>
-        <p className="mt-1 break-all text-sm text-muted-foreground">{account.email}</p>
-      </div>
-      <Button
-        variant="outline"
-        className="mt-6 w-full"
-        onPress={clearSession}
+    <div className="min-h-dvh bg-background text-foreground">
+      <a
+        href="#main-content"
+        className="skip-link"
       >
-        Sign out
-      </Button>
-    </AuthLayout>
+        Skip to content
+      </a>
+      <header className="app-header">
+        <div className="app-header-content">
+          <Link
+            to={routes.home}
+            className="app-brand"
+            aria-label="Easy clients"
+          >
+            easy<span className="sr-only"> Coach</span>
+          </Link>
+          <p
+            className="app-business"
+            title={account.business.name}
+          >
+            {account.business.name}
+          </p>
+          <DropdownMenuTrigger>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Your account"
+            >
+              <UserRound aria-hidden="true" />
+            </Button>
+            <DropdownMenu
+              aria-label="Your account"
+              placement="bottom end"
+            >
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>
+                  <span className="block break-words text-sm font-semibold text-foreground">
+                    {[account.first_name, account.last_name].filter(Boolean).join(' ') || 'Your account'}
+                  </span>
+                  <span className="mt-1 block break-all text-sm font-normal">{account.email}</span>
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                  onAction={clearSession}
+                  textValue="Sign out"
+                >
+                  <LogOut aria-hidden="true" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenu>
+          </DropdownMenuTrigger>
+        </div>
+      </header>
+      <nav
+        aria-label="Coaching"
+        className="app-navigation"
+      >
+        <NavLink
+          to={routes.home}
+          end
+          className={({isActive}) =>
+            isActive || matchPath(routes.client, pathname) ? 'app-navigation-link active' : 'app-navigation-link'
+          }
+        >
+          Clients
+        </NavLink>
+        <NavLink
+          to={routes.forms}
+          className={({isActive}) => (isActive ? 'app-navigation-link active' : 'app-navigation-link')}
+        >
+          Forms
+        </NavLink>
+      </nav>
+      <main
+        id="main-content"
+        ref={main}
+        tabIndex={-1}
+        className="app-main"
+      >
+        <Outlet />
+      </main>
+    </div>
   );
 }

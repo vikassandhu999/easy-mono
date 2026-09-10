@@ -1,8 +1,9 @@
 import {RefreshCw} from 'lucide-react';
-import {useParams} from 'react-router-dom';
+import {useLocation, useParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
 import {useClient} from '../api/clients';
 import {useClientIntake, useFormSubmissions} from '../api/forms';
+import {useClientTrainingPlans} from '../api/training-plans';
 import {routes} from '../routes';
 import {Button} from '../ui/button';
 import {FormError} from '../ui/form-error';
@@ -10,6 +11,7 @@ import {useListLocation} from '../ui/list-location';
 import {Page, PageHeader, Surface} from '../ui/page';
 import {ClientIntake} from './client-intake';
 import {ClientInvitation} from './client-invitation';
+import {ClientTrainingPlans} from './client-training-plans';
 
 export function ClientOverview() {
   const {id = ''} = useParams();
@@ -24,6 +26,8 @@ export function ClientOverview() {
 function Overview({id}: {id: string}) {
   const {to: listLocation} = useListLocation(routes.home);
   const client = useClient(id);
+  const trainingPlans = useClientTrainingPlans(id);
+  const notice: unknown = useLocation().state;
   const assignments = useClientIntake(id);
   const intake = assignments.data?.data;
   const submittedId = intake && (intake.latest_submission || intake.status === 'completed') ? intake.id : undefined;
@@ -31,6 +35,7 @@ function Overview({id}: {id: string}) {
   const refresh = () => {
     client.refetch();
     assignments.refetch();
+    trainingPlans.refetch();
     if (submittedId) {
       submissions.refetch();
     }
@@ -88,13 +93,27 @@ function Overview({id}: {id: string}) {
         actions={
           <Button
             variant="outline"
-            isPending={client.isFetching || assignments.isFetching || submissions.isFetching}
+            isPending={
+              client.isFetching || assignments.isFetching || submissions.isFetching || trainingPlans.isFetching
+            }
             onPress={refresh}
           >
             <RefreshCw aria-hidden="true" />
             Refresh status
           </Button>
         }
+      />
+      {notice !== null && typeof notice === 'object' && 'assigned' in notice && typeof notice.assigned === 'string' && (
+        <p
+          role="status"
+          className="rounded-xl bg-muted px-4 py-3 text-sm"
+        >
+          {notice.assigned} assigned.
+        </p>
+      )}
+      <ClientTrainingPlans
+        person={person}
+        query={trainingPlans}
       />
       <div className="grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:gap-8">
         <aside

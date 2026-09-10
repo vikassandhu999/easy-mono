@@ -15,7 +15,7 @@ export function PageHeader({
 }: {
   title: string;
   description?: ReactNode;
-  back?: {to: string; label: string};
+  back?: {to: string; label: string; state?: unknown};
   actions?: ReactNode;
 }) {
   return (
@@ -23,6 +23,7 @@ export function PageHeader({
       {back && (
         <Link
           to={back.to}
+          state={back.state}
           className="page-back"
         >
           <ArrowLeft

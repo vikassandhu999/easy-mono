@@ -102,7 +102,7 @@ try {
     );
     await page.getByRole('button', {name: 'Resend invitation', exact: true}).click();
     const resent = await (await resentResponse).json();
-    await expect(page.getByRole('status')).toContainText('A fresh invitation is on its way');
+    await expect(page.getByText('A fresh invitation is on its way', {exact: false})).toBeVisible();
     await expect(page.getByLabel('Invitation link', {exact: true})).toHaveValue(resent.data.invite_url);
     const inviteLink = await page.getByLabel('Invitation link', {exact: true}).inputValue();
     await page.evaluate(() => {

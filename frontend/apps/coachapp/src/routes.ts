@@ -2,6 +2,8 @@ export const routes = {
   home: '/',
   inviteClient: '/clients/invite',
   client: '/clients/:id',
+  assignTrainingPlan: '/clients/:id/training-plans/assign',
+  previewTrainingPlan: '/clients/:id/training-plans/assign/:templateId',
   forms: '/forms',
   createForm: '/forms/new',
   editForm: '/forms/:id',

@@ -1,6 +1,7 @@
 defmodule Easy.Training.PlanReader do
   alias Easy.ClientAccess
   alias Easy.Ctx
+  alias Easy.CursorPage
   alias Easy.Repo
   alias Easy.Training.{TrainingPlan, TrainingWorkout, WorkoutSchedule}
   alias Easy.Utils
@@ -40,6 +41,31 @@ defmodule Easy.Training.PlanReader do
 
       {count, plans} = plan_page(query, ctx.business_id, opts)
       {:ok, %{count: count, plans: plans}}
+    end
+  end
+
+  @spec list_template_page(Ctx.t(), keyword()) ::
+          {:ok, CursorPage.t(TrainingPlan.t())} | {:error, atom()}
+  def list_template_page(%Ctx{} = ctx, opts \\ []) do
+    with :ok <- Ctx.ensure_coach(ctx) do
+      ctx
+      |> template_query()
+      |> TrainingPlan.for_archived(Keyword.get(opts, :archived))
+      |> TrainingPlan.for_search(opts |> Keyword.get(:search, "") |> to_string() |> String.trim())
+      |> cursor_or_offset_page(ctx.business_id, opts)
+    end
+  end
+
+  @spec list_plan_page_for_client(Ctx.t(), String.t(), keyword()) ::
+          {:ok, CursorPage.t(TrainingPlan.t())} | {:error, atom()}
+  def list_plan_page_for_client(%Ctx{} = ctx, client_id, opts \\ []) do
+    with :ok <- Ctx.ensure_coach(ctx),
+         :ok <- ClientAccess.authorize_client_id(ctx, client_id) do
+      TrainingPlan
+      |> TrainingPlan.for_kind(:client_plan)
+      |> TrainingPlan.for_client(ctx.business_id, client_id)
+      |> TrainingPlan.for_archived(Keyword.get(opts, :archived))
+      |> cursor_or_offset_page(ctx.business_id, opts)
     end
   end
 
@@ -150,6 +176,37 @@ defmodule Easy.Training.PlanReader do
       |> Enum.reduce(%{}, fn plan, acc -> Map.put_new(acc, plan.client_id, plan.name) end)
 
     {:ok, names}
+  end
+
+  defp cursor_or_offset_page(query, business_id, opts) do
+    case Keyword.get(opts, :cursor) do
+      nil ->
+        {count, plans} = plan_page(query, business_id, opts)
+        {:ok, %{data: plans, count: count, next_cursor: nil}}
+
+      cursor ->
+        cursor_page(query, business_id, cursor, opts)
+    end
+  end
+
+  defp cursor_page(base, business_id, cursor, opts) do
+    limit = CursorPage.limit(opts)
+
+    with :ok <- compatible_cursor_options(opts),
+         {:ok, query} <- CursorPage.query(base, cursor, limit) do
+      plans =
+        query
+        |> TrainingPlan.include_workouts(business_id)
+        |> TrainingPlan.include_client(business_id)
+        |> Repo.all()
+        |> Enum.map(&with_lifecycle/1)
+
+      {:ok, CursorPage.finish(plans, limit, Repo.aggregate(base, :count, :id))}
+    end
+  end
+
+  defp compatible_cursor_options(opts) do
+    if Keyword.get(opts, :offset, 0) == 0, do: :ok, else: {:error, :cursor_incompatible}
   end
 
   defp plan_page(query, business_id, opts) do

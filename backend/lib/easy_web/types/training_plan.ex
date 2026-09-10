@@ -223,6 +223,7 @@ defmodule EasyWeb.Types.TrainingPlan do
           required(:client) => EasyWeb.Types.TrainingPlanClient.t() | nil,
           required(:creator_id) => String.t(),
           required(:source_template_id) => String.t() | nil,
+          required(:workout_count) => non_neg_integer(),
           required(:workouts) => [EasyWeb.Types.TrainingPlanWorkout.t()],
           required(:schedule) => EasyWeb.Types.TrainingSchedule.t(),
           required(:inserted_at) => DateTime.t(),
@@ -243,6 +244,7 @@ defmodule EasyWeb.Types.TrainingPlan do
         }
 
   @type assign :: %{
+          optional(:expected_revision) => pos_integer(),
           optional(:start_date) => Date.t() | nil,
           optional(:end_date) => Date.t() | nil
         }
@@ -254,8 +256,9 @@ defmodule EasyWeb.Types.TrainingPlan do
         }
 
   @type list_query :: %{
-          optional(:offset) => integer(),
-          optional(:limit) => integer(),
+          optional(:cursor) => String.t(),
+          optional(:offset) => non_neg_integer(),
+          optional(:limit) => pos_integer(),
           optional(:search) => String.t(),
           optional(:archived) => boolean()
         }
@@ -266,8 +269,9 @@ defmodule EasyWeb.Types.TrainingPlan do
         }
 
   @type client_scoped_list_query :: %{
-          optional(:offset) => integer(),
-          optional(:limit) => integer(),
+          optional(:cursor) => String.t(),
+          optional(:offset) => non_neg_integer(),
+          optional(:limit) => pos_integer(),
           optional(:status) => :active | :archived
         }
 
@@ -309,6 +313,7 @@ defmodule EasyWeb.Types.TrainingPlan do
       client: client,
       creator_id: creator_id,
       source_template_id: source_template_id,
+      workout_count: length(workouts),
       workouts: workouts,
       schedule: schedule,
       inserted_at: inserted_at,
@@ -333,6 +338,7 @@ defmodule EasyWeb.Types.TrainingPlan do
       client: format_client(plan),
       creator_id: plan.creator_id,
       source_template_id: plan.source_template_id,
+      workout_count: length(workouts),
       workouts: Enum.map(workouts, &format_workout(&1, schedule)),
       schedule: format_schedule(schedule),
       inserted_at: plan.inserted_at,
@@ -415,4 +421,14 @@ defmodule EasyWeb.Types.TrainingPlan do
 
     Map.new(WorkoutSchedule.weekday_names(), &{&1, scheduled[&1]})
   end
+end
+
+defmodule EasyWeb.Types.TrainingPlanIndex do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:data) => [EasyWeb.Types.TrainingPlan.t()],
+          required(:count) => non_neg_integer(),
+          required(:next_cursor) => String.t() | nil
+        }
 end

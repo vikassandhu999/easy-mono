@@ -1,9 +1,10 @@
 import {useEffect, useState} from 'react';
-import {useSearchParams} from 'react-router-dom';
+import {useLocation, useSearchParams} from 'react-router-dom';
 import {Input} from './input';
 
 export function ListSearch({label}: {label: string}) {
   const [params, setParams] = useSearchParams();
+  const {state} = useLocation();
   const search = params.get('search') ?? '';
   const [draft, setDraft] = useState({search, value: search});
   if (draft.search !== search) {
@@ -25,11 +26,11 @@ export function ListSearch({label}: {label: string}) {
           }
           return next;
         },
-        {replace: true, preventScrollReset: true},
+        {replace: true, preventScrollReset: true, state},
       );
     }, 300);
     return () => window.clearTimeout(timeout);
-  }, [draft, search, setParams]);
+  }, [draft, search, setParams, state]);
 
   return (
     <div className="grid gap-2">

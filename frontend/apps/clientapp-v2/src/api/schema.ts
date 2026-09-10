@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 737815fe0496f8f385e7944380b714c18541bdb3bd60315a1cd8fd8dc87141a9 */
+/* typed-routes:hash 4a73b736cd6072ad9fca1ffa3316337ca324b1678511612703f0c1286142607c */
 export type Attachment = {
   id: string;
   content_type:
@@ -592,6 +592,7 @@ export type TrainingPlan = {
   client: TrainingPlanClient | null;
   creator_id: string;
   source_template_id: string | null;
+  workout_count: number;
   workouts: Array<TrainingPlanWorkout>;
   schedule: TrainingSchedule;
   inserted_at: string;

@@ -164,7 +164,10 @@ defmodule Easy.Training.TrainingPlan do
     |> check_constraint(:revision, name: :training_plans_revision_check)
     |> check_constraint(:start_date, name: :training_plans_period_check)
     |> unique_constraint(:client_id, name: :training_plans_one_incomplete_client_plan_index)
-    |> exclusion_constraint(:start_date, name: :training_plans_no_overlapping_coverage)
+    |> exclusion_constraint(:start_date,
+      name: :training_plans_no_overlapping_coverage,
+      message: "overlaps an existing training plan; choose dates outside its period"
+    )
   end
 
   @spec validate_date_range(Ecto.Changeset.t()) :: Ecto.Changeset.t()

@@ -82,6 +82,119 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
       assert %{"error_detail" => %{"fields" => %{"client_id" => ["is unknown"]}}} =
                json_response(response, 422)
     end
+
+    test "cursor-paginates literal searches with stable ties and isolates archived and tenant templates", %{conn: conn} do
+      coach = insert(:coach)
+      inserted_at = DateTime.utc_now(:second)
+
+      templates =
+        for index <- 1..3 do
+          insert(:training_plan,
+            business: coach.business,
+            creator: coach.user,
+            name: "100%_ Paged #{index}",
+            inserted_at: inserted_at,
+            updated_at: inserted_at
+          )
+        end
+
+      archived =
+        insert(:training_plan,
+          business: coach.business,
+          creator: coach.user,
+          name: "100%_ Archived",
+          archived_at: inserted_at
+        )
+
+      insert(:training_plan, business: coach.business, creator: coach.user, name: "100xx Paged")
+      other = insert(:coach)
+      insert(:training_plan, business: other.business, creator: other.user, name: "100%_ Private")
+
+      conn = authenticate_coach(conn, coach)
+
+      first =
+        conn
+        |> get("/v1/coach/training-plans", %{
+          "cursor" => "start",
+          "limit" => "1",
+          "search" => "%_",
+          "archived" => "false"
+        })
+        |> json_response(200)
+
+      assert %{"data" => [first_template], "count" => 3, "next_cursor" => cursor} = first
+      assert is_binary(cursor)
+
+      second =
+        conn
+        |> recycle()
+        |> get("/v1/coach/training-plans", %{
+          "cursor" => cursor,
+          "limit" => "10",
+          "search" => "%_",
+          "archived" => "false"
+        })
+        |> json_response(200)
+
+      assert %{"data" => remaining, "count" => 3, "next_cursor" => nil} = second
+
+      assert Enum.sort([first_template | remaining] |> Enum.map(& &1["id"])) ==
+               Enum.sort(Enum.map(templates, & &1.id))
+
+      archived_response =
+        conn
+        |> recycle()
+        |> get("/v1/coach/training-plans", %{
+          "cursor" => "start",
+          "search" => "%_",
+          "archived" => "true"
+        })
+        |> json_response(200)
+
+      assert %{"data" => [%{"id" => archived_id}], "count" => 1, "next_cursor" => nil} = archived_response
+      assert archived_id == archived.id
+    end
+
+    test "cursor bounds template pages and rejects invalid cursors and offsets", %{conn: conn} do
+      coach = insert(:coach)
+
+      for index <- 1..105 do
+        insert(:training_plan, business: coach.business, creator: coach.user, name: "Page #{index}")
+      end
+
+      conn = authenticate_coach(conn, coach)
+
+      default = conn |> get("/v1/coach/training-plans", %{"cursor" => "start"}) |> json_response(200)
+      assert %{"data" => default_data, "count" => 105, "next_cursor" => default_cursor} = default
+      assert length(default_data) == 20
+      assert is_binary(default_cursor)
+
+      capped =
+        conn
+        |> recycle()
+        |> get("/v1/coach/training-plans", %{"cursor" => "start", "limit" => "1000"})
+        |> json_response(200)
+
+      assert %{"data" => capped_data, "count" => 105, "next_cursor" => capped_cursor} = capped
+      assert length(capped_data) == 100
+      assert is_binary(capped_cursor)
+
+      assert conn
+             |> recycle()
+             |> get("/v1/coach/training-plans", %{"cursor" => "not-a-cursor"})
+             |> json_response(422) ==
+               %{
+                 "error_code" => "invalid_input",
+                 "error_detail" => %{"fields" => %{"cursor" => ["is invalid"]}},
+                 "error_message" => "The data provided was invalid."
+               }
+
+      assert %{"error_detail" => %{"fields" => %{"cursor" => ["cannot be combined with offset or sort"]}}} =
+               conn
+               |> recycle()
+               |> get("/v1/coach/training-plans", %{"cursor" => "start", "offset" => "1"})
+               |> json_response(422)
+    end
   end
 
   describe "Training Template lifecycle" do
@@ -431,10 +544,21 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
 
       insert(:workout_schedule, business: coach.business, plan: template, workout: workout, weekday: :monday)
 
+      stale =
+        conn
+        |> authenticate_coach(coach)
+        |> post("/v1/coach/clients/#{client.id}/training-plans/#{template.id}/assign", %{
+          "expected_revision" => 2
+        })
+        |> json_response(409)
+
+      assert %{"error_code" => "stale_revision", "error_detail" => %{"current_revision" => 1}} = stale
+
       response =
         conn
         |> authenticate_coach(coach)
         |> post("/v1/coach/clients/#{client.id}/training-plans/#{template.id}/assign", %{
+          "expected_revision" => 1,
           "start_date" => nil,
           "end_date" => nil
         })
@@ -446,6 +570,7 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
                  "kind" => "client_plan",
                  "lifecycle" => "incomplete",
                  "revision" => 1,
+                 "workout_count" => 1,
                  "client_id" => client_id,
                  "source_template_id" => source_id,
                  "workouts" => [

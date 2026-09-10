@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 84a5cbbe98325fbd14403fa2a14c1691e88f90098a4eaa7b49bd15287b2b6f26 */
+/* typed-routes:hash 1e0b85a4d0f4fed1a7e82644297dc0a65b7340d56e1b67c7047667acc1617ae5 */
 export type Attachment = {
   id: string;
   content_type:
@@ -987,14 +987,20 @@ export type TrainingPlan = {
   client: TrainingPlanClient | null;
   creator_id: string;
   source_template_id: string | null;
+  workout_count: number;
   workouts: Array<TrainingPlanWorkout>;
   schedule: TrainingSchedule;
   inserted_at: string;
   updated_at: string;
 };
-export type TrainingPlanAssign = {start_date?: string | null; end_date?: string | null};
+export type TrainingPlanAssign = {expected_revision?: number; start_date?: string | null; end_date?: string | null};
 export type TrainingPlanClient = {id: string; first_name: string | null; last_name: string | null};
-export type TrainingPlanClientScopedListQuery = {offset?: number; limit?: number; status?: 'active' | 'archived'};
+export type TrainingPlanClientScopedListQuery = {
+  cursor?: string;
+  offset?: number;
+  limit?: number;
+  status?: 'active' | 'archived';
+};
 export type TrainingPlanCreate = {name: string; description?: string | null};
 export type TrainingPlanExercise = {
   id: string;
@@ -1021,7 +1027,14 @@ export type TrainingPlanExerciseInput = {
   position: number;
   prescribed_sets: Array<TrainingPlanPlannedSetInput>;
 };
-export type TrainingPlanListQuery = {offset?: number; limit?: number; search?: string; archived?: boolean};
+export type TrainingPlanIndex = {data: Array<TrainingPlan>; count: number; next_cursor: string | null};
+export type TrainingPlanListQuery = {
+  cursor?: string;
+  offset?: number;
+  limit?: number;
+  search?: string;
+  archived?: boolean;
+};
 export type TrainingPlanPlannedSet = {
   set_type: 'working' | 'warmup' | 'dropset' | null;
   reps: string | null;
@@ -1208,7 +1221,7 @@ export type WorkbenchSnooze = {queue: 'quiet' | 'expiring'; snoozed_until: strin
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 08ae4609caab55d8428426b5de78eeb435f4ff50d057862ce8c787e75f473eee */
+  /* typed-routes:hash bf947eb1e38f903de492fa7a9b1e66e5380a75aa0f64f7766b74d912eb6d266b */
   '/api/health': {
     get: {
       parameters: {
@@ -1532,7 +1545,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<TrainingPlan>; count: number}}};
+        200: {content: {'application/json': TrainingPlanIndex}};
       };
     };
   };
@@ -2515,7 +2528,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<TrainingPlan>; count: number}}};
+        200: {content: {'application/json': TrainingPlanIndex}};
       };
     };
     post: {

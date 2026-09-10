@@ -69,6 +69,10 @@ The user selected Forms listing and creation as the next slice. The new `/forms`
 
 Before adding screens, the user requested reusable infinite scrolling and server-owned counts and business selections. Forms and Clients use the [shared list foundation](lists.md), including cursor queries, server filtering and totals, failure recovery, and return navigation. App guidance records the rule for future screens.
 
+## Training-plan assignment slice
+
+The user selected assigning an existing training plan from Client Overview. The [assignment brief](assign-training-plan.md) records the list, full prescription preview, required start date and optional end date, saved Client Plan, stale-template recovery, and verification. Training lists reuse cursor pagination and server counts. Assignment creates an independent client copy and preserves the backend's overlap constraints. Training-template creation/editing remains the next slice.
+
 ## Sources
 
 - `backend/lib/easy_web/controllers/auth_controller.ex`: public auth operations.

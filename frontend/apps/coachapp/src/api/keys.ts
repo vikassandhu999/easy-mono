@@ -1,5 +1,6 @@
 import type {ClientFilters} from './clients';
 import type {FormTemplateFilters} from './forms';
+import type {TrainingPlanFilters} from './training-plans';
 
 export const authKeys = {
   all: ['auth'] as const,
@@ -30,4 +31,13 @@ export const formKeys = {
 export const attachmentKeys = {
   all: ['attachments'] as const,
   downloads: (ids: string[]) => [...attachmentKeys.all, 'downloads', ids] as const,
+};
+
+export const trainingPlanKeys = {
+  all: ['training-plans'] as const,
+  lists: () => [...trainingPlanKeys.all, 'list'] as const,
+  infinite: (filters: TrainingPlanFilters) => [...trainingPlanKeys.lists(), 'templates', 'infinite', filters] as const,
+  forClient: (clientId: string) => [...trainingPlanKeys.lists(), 'client', clientId, 'infinite'] as const,
+  details: () => [...trainingPlanKeys.all, 'detail'] as const,
+  detail: (id: string) => [...trainingPlanKeys.details(), id] as const,
 };

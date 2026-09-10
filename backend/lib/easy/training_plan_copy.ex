@@ -5,6 +5,7 @@ defmodule Easy.Training.PlanCopy do
   alias Easy.Orgs.Business
   alias Easy.Repo
   alias Easy.Result
+  alias Easy.Revision
   alias Easy.Training.{PrescribedExercise, TrainingPlan, TrainingWorkout, WorkoutSchedule}
 
   import Ecto.Query
@@ -35,8 +36,11 @@ defmodule Easy.Training.PlanCopy do
   end
 
   defp assign_visible_template(ctx, client_id, template_id, attrs) do
+    {expected_revision, attrs} = Map.pop(attrs, :expected_revision, :any)
+
     with :ok <- ClientAccess.authorize_client_id(ctx, client_id),
-         {:ok, template} <- load_copy_source(ctx, template_id) do
+         {:ok, template} <- load_copy_source(ctx, template_id),
+         :ok <- Revision.check(template, expected_revision) do
       assign_template_rows(ctx, client_id, template, attrs)
     end
   end

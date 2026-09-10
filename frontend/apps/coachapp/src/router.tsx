@@ -1,5 +1,5 @@
 import {useSyncExternalStore} from 'react';
-import {createBrowserRouter, Link, Navigate, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
+import {createBrowserRouter, Link, matchPath, Navigate, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
 import {parseSession, sessionSnapshot, subscribeSession} from './api/session';
 import {AppShell} from './app-shell';
 import {AuthLayout} from './auth/auth-layout';
@@ -8,6 +8,7 @@ import {Login} from './auth/login';
 import {Setup} from './auth/setup';
 import {Signup} from './auth/signup';
 import {Verify} from './auth/verify';
+import {AssignTrainingPlan} from './clients/assign-training-plan';
 import {ClientOverview} from './clients/client-overview';
 import {Clients} from './clients/clients';
 import {InviteClient} from './clients/invite-client';
@@ -77,7 +78,9 @@ function Root() {
       <Outlet />
       <ScrollRestoration
         getKey={(location) =>
-          location.pathname === routes.forms || location.pathname === routes.home
+          location.pathname === routes.forms ||
+          location.pathname === routes.home ||
+          matchPath(routes.assignTrainingPlan, location.pathname)
             ? location.pathname + location.search
             : location.key
         }
@@ -108,6 +111,8 @@ export const router = createBrowserRouter([
               {path: routes.home, element: <Clients />},
               {path: routes.inviteClient, element: <InviteClient />},
               {path: routes.client, element: <ClientOverview />},
+              {path: routes.assignTrainingPlan, element: <AssignTrainingPlan />},
+              {path: routes.previewTrainingPlan, element: <AssignTrainingPlan />},
               {path: routes.forms, element: <Forms />},
               {path: routes.createForm, element: <FormEditor key="new" />},
               {path: routes.editForm, element: <FormEditor />},

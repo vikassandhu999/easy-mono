@@ -10,6 +10,12 @@ Open Forms in the app navigation to search existing Intake and Check-in forms or
 
 Run `rtk pnpm -C frontend/apps/coachapp test:forms` from the repository root with the isolated API below running. The suite creates disposable accounts and verifies creation, editing, stable question IDs, section order, preview, failed requests and retries, default-intake invitation integration, unsaved navigation, and stale saves after an account change at 375px and 1280px. An empty-list response is a fixture because the real API supplies a built-in weekly check-in. Screenshots are written to ignored `tests/forms/artifacts/`. See [the Forms brief](../../../.scratch/coachapp-rebuild/forms.md).
 
+## Assign training plans
+
+Open a client and choose Assign training plan. Search active training templates, preview their workouts and weekly schedule, and choose a start date and optional end date. Assignment creates a separate Client Plan and returns to the overview, where its dates, lifecycle, and workouts remain available. Date overlaps are rejected. If a template changes while being reviewed, refresh the preview before assigning it. A lost assignment response includes a link to check the client's saved plans.
+
+Run `rtk pnpm -C frontend/apps/coachapp test:training` from the repository root with the isolated browser API and coach app running. The suite covers the real assignment flow, server search and cursor pages, recovery, client access, and pending-write navigation/account changes at 375px and 1280px. Screenshots go to ignored `tests/training/artifacts/`. See [the assignment brief](../../../.scratch/coachapp-rebuild/assign-training-plan.md). Template creation and editing are separate work.
+
 ## Mobile foundation
 
 Clients, Invite client, and Invitation detail share the compact app shell, `PageHeader`, `Surface`, status badges, and control styles. Phone layouts use 20px gutters, 16px input text, and controls at least 44px tall. The invite action bar stays at the bottom on phones; desktop uses inline actions and two columns. Intake previews use a scrolling bottom sheet on phones and a centered dialog on desktop. See the [foundation decisions](../../../.scratch/coachapp-rebuild/mobile-foundation.md).
@@ -73,7 +79,7 @@ The preview endpoint resolves the same default as invitation creation: the selec
 
 The overview also supports grouped intake answers and marking intake reviewed. It uses the saved question snapshot, preserving the questions the client actually answered even after a template edit. The suite submits through the real client API, tests false/zero/missing answers, exercises review failure and retry, and verifies persistence after reload. Supplemental response fixtures cover inactive/missing/dismissed intake, external review refresh, and photo-download recovery.
 
-Full onboarding includes the client's plans. Plan creation and choosing or editing forms remain separate work. See the [overview brief](../../../.scratch/coachapp-rebuild/client-overview.md).
+Full onboarding includes the client's plans. Training-plan assignment and Forms are available; training-template creation and editing remain separate work. See the [overview brief](../../../.scratch/coachapp-rebuild/client-overview.md).
 
 ## Contract and session decisions
 
@@ -85,6 +91,6 @@ Refresh is shared within a tab and uses Web Locks between tabs when available. A
 
 ## Lists
 
-Forms and Clients share cursor pagination, server search and totals, a keyboard-accessible Load more fallback, and retry that preserves loaded rows. URL filters survive reload; loaded pages and scroll position survive returning from the form editor while cached. Question counts and intake selection come from the API. See the [list contract and verification notes](../../../../.scratch/coachapp-rebuild/lists.md).
+Forms, Clients, and training plans share cursor pagination, server search and totals, a keyboard-accessible Load more fallback, and retry that preserves loaded rows. URL filters survive reload; loaded pages and scroll position survive returning from the form editor while cached. Question counts and intake selection come from the API. See the [list contract and verification notes](../../../.scratch/coachapp-rebuild/lists.md).
 
 Run `pnpm test:lists` with the coach app and isolated browser API running. The scenarios exercise real API pagination and request failure recovery at 375px and 1280px.

@@ -14,7 +14,8 @@
     "gen:api": "openapi-typescript ../../openapi/coach.openapi.json -o src/api/schema.ts",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "lint": "biome check --write .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:training": "node tests/training/assign.browser.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "5.101.4",

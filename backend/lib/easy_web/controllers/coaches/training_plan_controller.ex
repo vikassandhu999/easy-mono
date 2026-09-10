@@ -3,7 +3,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
 
   alias Easy.Training.PlanReader
   alias Easy.Training.Programming
-  alias EasyWeb.Types.{Revision, TrainingPlan}
+  alias EasyWeb.Types.{Revision, TrainingPlan, TrainingPlanIndex}
 
   typed(:create, body: TrainingPlan.create(), ok: {201, data(TrainingPlan.t())})
   typed(:show, ok: {200, data(TrainingPlan.t())})
@@ -17,7 +17,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   typed(:delete, query: Revision.t(), ok: {204, nil})
   typed(:archive, body: Revision.t(), ok: {200, data(TrainingPlan.t())})
   typed(:restore, body: Revision.t(), ok: {200, data(TrainingPlan.t())})
-  typed(:index, query: TrainingPlan.list_query(), ok: {200, page(TrainingPlan.t())})
+  typed(:index, query: TrainingPlan.list_query(), ok: {200, TrainingPlanIndex.t()})
   typed(:duplicate, ok: {201, data(TrainingPlan.t())})
   typed(:assign, body: TrainingPlan.assign(), ok: {201, data(TrainingPlan.t())})
 
@@ -100,14 +100,15 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   def index(conn, _params) do
     params = conn.query_params
 
-    with {:ok, %{templates: plans, count: count}} <-
-           PlanReader.list_templates(conn.assigns.ctx,
+    with {:ok, page} <-
+           PlanReader.list_template_page(conn.assigns.ctx,
+             cursor: Map.get(params, "cursor"),
              search: Map.get(params, "search", ""),
              archived: Map.get(params, "archived"),
              offset: Map.get(params, "offset", 0),
              limit: Map.get(params, "limit", 20)
            ) do
-      ok(conn, %{data: plans, count: count})
+      ok(conn, page)
     end
   end
 

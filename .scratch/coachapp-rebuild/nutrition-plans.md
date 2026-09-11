@@ -1,0 +1,27 @@
+# Create and assign nutrition plans
+
+When preparing a client's nutrition, the coach needs to set daily targets, assemble practical meal choices, and assign the plan with dates. The user selected creation and assignment after completing the training builder. Build only in the new coachapp; no legacy UI reference.
+
+## Screen brief
+
+Nutrition opens a searchable cursor-paged template library. New plan opens a worksheet with optional daily targets and an Everyday menu. Meals contain named foods or recipes with editable portions and notes. Add meal alternatives within a meal slot; create a day variation for different weekdays. Plan, day, meal, item and field typography supplies the hierarchy; no decorative meal cards. Day menus are selectable so only one is being edited at a time. A separate multi-step wizard was considered, but targets and meals need to remain available together while composing.
+
+Server preview resolves current food/recipe names and meal nutrients without persisting a draft. The frontend never computes nutrient totals or persisted counts. Save coordinates metadata and menu revisions, retains drafts on failure, and explicitly handles conflicts and uncertain creation. Existing templates reopen with every meal, alternative, day pattern and portion retained.
+
+Client Overview offers Assign nutrition plan. Select a template, review its targets and menu, set required start and optional inclusive end date, then assign an independent client copy. Revision checking prevents assigning a different template from the one reviewed. The server supplies current/upcoming coverage; overlapping dates remain a server validation error. Success returns to the client's saved coverage. Creating foods/recipes, nutrition logs and editing assigned copies are separate tasks.
+
+## Verification plan
+
+Real API browser flows at 375px and 1280px: cursor paging/search/retry, creation, foods/recipes and portions, alternatives/day variation/schedule, server preview, save/reload, stale/partial/lost-response recovery, assignment dates and overlap, copied-plan independence and client access. Backend router tests cover added contracts, authorization and invalid cursors. Build, Biome, check-rm and backend precommit are finish gates.
+
+## Implementation and checks
+
+The nutrition feature owns its worksheet and food/recipe picker. `api/nutrition-plans.ts` owns cursor queries, preview, revisioned saves and assignment invalidation. The shared nutrition preview renders API targets, portions and meal nutrients without aggregating them. Client Overview reads the server coverage endpoint and retains prior coverage during refresh failures.
+
+Nutrition plans, foods and recipes reuse `Easy.CursorPage`; existing offset consumers receive `next_cursor: null`. Tenant-leading cursor indexes support their ordering. The draft menu preview is read-only, tenant scoped, and validates menu topology and item portions. Assignment checks the observed template revision under its existing transaction lock. The API contract layer regenerated all consumers and passed 92 focused router tests, followed by the 41-test food controller suite with the cursor-search regression, including invalid cursors, tenant isolation, preview resolution and stale assignment. The final backend `mix precommit` passed 1,645 tests with zero failures.
+
+The nutrition browser suites passed at 375px and 1280px: list paging and retry, server search beyond the first page, food/recipe selection, portion changes, meal alternatives, independent day copies, exact server nutrient results, save/reload, partial metadata saves, revision conflicts, dates/overlap, client API access, copied targets, last-meal removal/Undo, preview retry, uncertain creation recovery without duplication, and account switching during a save. Screenshots were inspected at both widths. Physical-device testing and a target-coach usability session remain outside browser verification.
+
+Graph discovery timed out; bounded controller, context, schema and test source reads supplied the evidence. No legacy UI was inspected or copied. The coach build retains the existing bundle-size warning.
+
+The existing Client Overview/invitation suite also passed at 375px and 1280px, with shared mobile layout checks at 375, 390, 768 and 1280px. The client app typecheck passed after API regeneration. Food cursor searches explicitly replace the relevance ordering with cursor ordering; a router regression covers multi-page search without duplicate or missing rows.

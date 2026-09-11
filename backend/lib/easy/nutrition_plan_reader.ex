@@ -2,6 +2,7 @@ defmodule Easy.Nutrition.PlanReader do
   alias Easy.ClientAccess
   alias Easy.Clients.Client
   alias Easy.Ctx
+  alias Easy.CursorPage
   alias Easy.LocalCalendar
   alias Easy.Nutrition.{ItemResolver, Menu, Plan}
   alias Easy.Orgs.Business
@@ -36,6 +37,28 @@ defmodule Easy.Nutrition.PlanReader do
           |> Repo.all()
 
         resolve_page(query, templates, ctx, :templates)
+      end
+    end)
+  end
+
+  @spec list_template_page(Ctx.t(), keyword()) ::
+          {:ok, CursorPage.t(Plan.t())} | {:error, read_error() | :invalid_cursor}
+  def list_template_page(%Ctx{} = ctx, opts \\ []) do
+    Repo.snapshot(fn ->
+      query =
+        ctx
+        |> template_query()
+        |> Plan.for_archived(Keyword.get(opts, :archived))
+        |> Plan.for_search(opts |> Keyword.get(:search, "") |> to_string() |> String.trim())
+
+      limit = CursorPage.limit(opts)
+
+      with :ok <- Ctx.ensure_coach(ctx),
+           {:ok, page_query} <- CursorPage.query(query, Keyword.get(opts, :cursor), limit) do
+        rows = page_query |> Plan.join_assigned_client_count(ctx.business_id) |> Repo.all()
+        page = CursorPage.finish(rows, limit, Repo.aggregate(query, :count, :id))
+
+        resolve_cursor_page(page, ctx)
       end
     end)
   end
@@ -231,6 +254,12 @@ defmodule Easy.Nutrition.PlanReader do
 
     with {:ok, resolved} <- result do
       {:ok, Enum.map(plans, &%{&1 | menu: Menu.resolve(&1.menu, resolved)})}
+    end
+  end
+
+  defp resolve_cursor_page(page, ctx) do
+    with {:ok, plans} <- resolve_menus(page.data, ctx) do
+      {:ok, %{page | data: stamp_lifecycle(plans)}}
     end
   end
 

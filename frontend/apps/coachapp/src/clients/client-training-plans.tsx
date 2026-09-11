@@ -1,12 +1,12 @@
-import { generatePath, Link } from 'react-router-dom';
-import type { Client } from '../api/clients';
-import { useClientTrainingPlans } from '../api/training-plans';
-import { routes } from '../routes';
-import { buttonVariants } from '../ui/button';
-import { InfiniteList } from '../ui/infinite-list';
-import { useListLocation } from '../ui/list-location';
-import { StatusBadge, Surface } from '../ui/page';
-import { TrainingPlanPreview } from './training-plan-preview';
+import {generatePath, Link} from 'react-router-dom';
+import type {Client} from '../api/clients';
+import {useClientTrainingPlans} from '../api/training-plans';
+import {routes} from '../routes';
+import {buttonVariants} from '../ui/button';
+import {InfiniteList} from '../ui/infinite-list';
+import {useListLocation} from '../ui/list-location';
+import {StatusBadge, Surface} from '../ui/page';
+import {TrainingPlanPreview} from '../ui/training-plan-preview';
 
 const lifecycleLabels = {
   incomplete: 'Dates not set',
@@ -23,7 +23,7 @@ export function ClientTrainingPlans({
   person: Client;
   query: ReturnType<typeof useClientTrainingPlans>;
 }) {
-  const { state } = useListLocation(routes.home);
+  const {state} = useListLocation(routes.home);
   return (
     <section
       className="min-w-0 space-y-4"
@@ -32,9 +32,9 @@ export function ClientTrainingPlans({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="section-title">Training plans</h2>
         <Link
-          to={generatePath(routes.assignTrainingPlan, { id: person.id })}
+          to={generatePath(routes.assignTrainingPlan, {id: person.id})}
           state={state}
-          className={buttonVariants({ variant: 'outline' })}
+          className={buttonVariants({variant: 'outline'})}
         >
           Assign training plan
         </Link>
@@ -71,7 +71,14 @@ export function ClientTrainingPlans({
               )}
               <span className="block text-xs text-muted-foreground group-open:hidden">View workouts</span>
             </summary>
-            <div className="border-t border-border p-5">
+            <div className="space-y-4 border-t border-border p-5">
+              <Link
+                to={generatePath(routes.editClientTrainingPlan, {clientId: person.id, id: plan.id})}
+                state={state}
+                className={buttonVariants({variant: 'outline'})}
+              >
+                Personalize plan
+              </Link>
               <TrainingPlanPreview plan={plan} />
             </div>
           </details>

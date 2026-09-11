@@ -5,8 +5,9 @@ import {routes} from '../routes';
 import {buttonVariants} from '../ui/button';
 import {InfiniteList} from '../ui/infinite-list';
 import {ListSearch} from '../ui/list-search';
-import {NativeSelect, NativeSelectOption} from '../ui/native-select';
 import {Page, PageHeader, StatusBadge, Surface} from '../ui/page';
+import {SelectItem} from '../ui/select';
+import {SelectField} from '../ui/select-field';
 
 export function Forms() {
   const [params, setParams] = useSearchParams();
@@ -44,28 +45,29 @@ export function Forms() {
         <ListSearch label="Search forms" />
         <div className="grid gap-2">
           <label
+            id="form-purpose-filter-label"
             htmlFor="form-purpose-filter"
             className="text-sm font-medium"
           >
             Form purpose
           </label>
-          <NativeSelect
+          <SelectField
             id="form-purpose-filter"
             value={purpose ?? 'all'}
-            onChange={(event) => {
+            onChange={(selected) => {
               const next = new URLSearchParams(params);
-              if (event.target.value === 'all') {
+              if (selected === 'all') {
                 next.delete('purpose');
               } else {
-                next.set('purpose', event.target.value);
+                next.set('purpose', selected);
               }
               setParams(next, {preventScrollReset: true});
             }}
           >
-            <NativeSelectOption value="all">All forms</NativeSelectOption>
-            <NativeSelectOption value="intake">Intake</NativeSelectOption>
-            <NativeSelectOption value="check_in">Check-in</NativeSelectOption>
-          </NativeSelect>
+            <SelectItem id="all">All forms</SelectItem>
+            <SelectItem id="intake">Intake</SelectItem>
+            <SelectItem id="check_in">Check-in</SelectItem>
+          </SelectField>
         </div>
       </div>
       <InfiniteList

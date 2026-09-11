@@ -41,3 +41,34 @@ export const trainingPlanKeys = {
   details: () => [...trainingPlanKeys.all, 'detail'] as const,
   detail: (id: string) => [...trainingPlanKeys.details(), id] as const,
 };
+
+export const exerciseKeys = {
+  all: ['exercises'] as const,
+  lists: () => [...exerciseKeys.all, 'list'] as const,
+  infinite: (search: string) => [...exerciseKeys.lists(), 'infinite', {search}] as const,
+};
+
+export const nutritionKeys = {
+  all: ['nutrition'] as const,
+  lists: () => [...nutritionKeys.all, 'list'] as const,
+  infinite: (search: string) => [...nutritionKeys.lists(), 'templates', 'infinite', {search}] as const,
+  details: () => [...nutritionKeys.all, 'detail'] as const,
+  detail: (id: string) => [...nutritionKeys.details(), id] as const,
+  coverage: (clientId: string) => [...nutritionKeys.all, 'coverage', clientId] as const,
+};
+
+export const foodKeys = {
+  all: ['foods'] as const,
+  lists: () => [...foodKeys.all, 'list'] as const,
+  infinite: (search: string) => [...foodKeys.lists(), 'infinite', {search}] as const,
+  details: () => [...foodKeys.all, 'detail'] as const,
+  detail: (id: string) => [...foodKeys.details(), id] as const,
+};
+
+export const recipeKeys = {
+  all: ['recipes'] as const,
+  lists: () => [...recipeKeys.all, 'list'] as const,
+  infinite: (search: string) => [...recipeKeys.lists(), 'infinite', {search}] as const,
+  details: () => [...recipeKeys.all, 'detail'] as const,
+  detail: (id: string) => [...recipeKeys.details(), id] as const,
+};

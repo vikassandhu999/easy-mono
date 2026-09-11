@@ -1,5 +1,6 @@
 defmodule Easy.Training.Library do
   alias Easy.Ctx
+  alias Easy.CursorPage
   alias Easy.LibraryMedia
   alias Easy.Repo
   alias Easy.Training.PrescribedExercise
@@ -74,6 +75,37 @@ defmodule Easy.Training.Library do
        count: Repo.aggregate(base, :count, :id),
        exercises: exercises
      }}
+  end
+
+  @spec list_exercise_page(Ctx.t(), keyword()) ::
+          {:ok, CursorPage.t(TrainingExercise.t())} | {:error, atom()}
+  def list_exercise_page(%Ctx{} = ctx, opts \\ []) do
+    case Keyword.get(opts, :cursor) do
+      nil ->
+        with {:ok, %{exercises: exercises, count: count}} <- list_exercises(ctx, opts) do
+          {:ok, %{data: exercises, count: count, next_cursor: nil}}
+        end
+
+      cursor ->
+        cursor_exercise_page(ctx, cursor, opts)
+    end
+  end
+
+  defp cursor_exercise_page(ctx, cursor, opts) do
+    base =
+      TrainingExercise
+      |> TrainingExercise.for_business_or_system(ctx.business_id)
+      |> TrainingExercise.for_search(String.trim(Keyword.get(opts, :search, "") || ""))
+      |> TrainingExercise.for_muscle_ids(Keyword.get(opts, :muscle_ids))
+      |> TrainingExercise.for_equipment_ids(Keyword.get(opts, :equipment_ids))
+
+    limit = CursorPage.limit(opts)
+
+    with true <- Keyword.get(opts, :offset, 0) == 0 || {:error, :cursor_incompatible},
+         {:ok, query} <- CursorPage.query(base, cursor, limit) do
+      rows = query |> TrainingExercise.include_muscles_and_equipment() |> Repo.all()
+      {:ok, CursorPage.finish(rows, limit, Repo.aggregate(base, :count, :id))}
+    end
   end
 
   @spec list_muscles(String.t() | nil) :: {:ok, [TrainingMuscle.t()]}

@@ -2,13 +2,13 @@ defmodule EasyWeb.Coaches.FoodController do
   use EasyWeb, :typed_controller
 
   alias Easy.Nutrition.Library
-  alias EasyWeb.Types.Nutrition.Food
+  alias EasyWeb.Types.Nutrition.{Food, FoodIndex}
 
   typed(:create, body: Food.create(), ok: {201, data(Food.t())})
   typed(:show, ok: {200, data(Food.t())})
   typed(:update, body: Food.update(), ok: {200, data(Food.t())})
   typed(:delete, ok: {204, nil})
-  typed(:index, query: Food.list_query(), ok: {200, page(Food.t())})
+  typed(:index, query: Food.list_query(), ok: {200, FoodIndex.t()})
   typed(:categories, ok: {200, Food.category_list()})
   typed(:impact, ok: {200, Food.impact()})
   typed(:copy, ok: {201, data(Food.t())})
@@ -57,8 +57,14 @@ defmodule EasyWeb.Coaches.FoodController do
       limit: Map.get(params, "limit", 20)
     ]
 
-    with {:ok, %{count: count, foods: foods}} <- Library.list_foods(conn.assigns.ctx, opts) do
-      ok(conn, %{data: foods, count: count})
+    if Map.has_key?(params, "cursor") do
+      with {:ok, page} <- Library.list_food_page(conn.assigns.ctx, Keyword.put(opts, :cursor, params["cursor"])) do
+        ok(conn, page)
+      end
+    else
+      with {:ok, %{count: count, foods: foods}} <- Library.list_foods(conn.assigns.ctx, opts) do
+        ok(conn, %{data: foods, count: count, next_cursor: nil})
+      end
     end
   end
 

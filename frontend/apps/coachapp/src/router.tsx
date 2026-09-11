@@ -8,13 +8,22 @@ import {Login} from './auth/login';
 import {Setup} from './auth/setup';
 import {Signup} from './auth/signup';
 import {Verify} from './auth/verify';
+import {AssignNutritionPlan} from './clients/assign-nutrition-plan';
 import {AssignTrainingPlan} from './clients/assign-training-plan';
 import {ClientOverview} from './clients/client-overview';
 import {Clients} from './clients/clients';
 import {InviteClient} from './clients/invite-client';
+import {FoodEditor} from './foods/food-editor';
+import {Foods} from './foods/foods';
 import {FormEditor} from './forms/form-editor';
 import {Forms} from './forms/forms';
+import {NutritionPlanEditor} from './nutrition-plans/nutrition-plan-editor';
+import {NutritionPlans} from './nutrition-plans/nutrition-plans';
+import {RecipeEditor} from './recipes/recipe-editor';
+import {Recipes} from './recipes/recipes';
 import {routes} from './routes';
+import {TrainingPlanEditor} from './training-plans/training-plan-editor';
+import {TrainingPlans} from './training-plans/training-plans';
 
 function Gate({guest = false}: {guest?: boolean}) {
   const session = parseSession(useSyncExternalStore(subscribeSession, sessionSnapshot));
@@ -79,6 +88,11 @@ function Root() {
       <ScrollRestoration
         getKey={(location) =>
           location.pathname === routes.forms ||
+          location.pathname === routes.trainingPlans ||
+          location.pathname === routes.nutritionPlans ||
+          location.pathname === routes.foods ||
+          location.pathname === routes.recipes ||
+          matchPath(routes.assignNutritionPlan, location.pathname) ||
           location.pathname === routes.home ||
           matchPath(routes.assignTrainingPlan, location.pathname)
             ? location.pathname + location.search
@@ -113,6 +127,22 @@ export const router = createBrowserRouter([
               {path: routes.client, element: <ClientOverview />},
               {path: routes.assignTrainingPlan, element: <AssignTrainingPlan />},
               {path: routes.previewTrainingPlan, element: <AssignTrainingPlan />},
+              {path: routes.trainingPlans, element: <TrainingPlans />},
+              {path: routes.createTrainingPlan, element: <TrainingPlanEditor />},
+              {path: routes.editTrainingPlan, element: <TrainingPlanEditor />},
+              {path: routes.editClientTrainingPlan, element: <TrainingPlanEditor />},
+              {path: routes.nutritionPlans, element: <NutritionPlans />},
+              {path: routes.foods, element: <Foods />},
+              {path: routes.recipes, element: <Recipes />},
+              {path: routes.createRecipe, element: <RecipeEditor />},
+              {path: routes.recipe, element: <RecipeEditor />},
+              {path: routes.createFood, element: <FoodEditor />},
+              {path: routes.food, element: <FoodEditor />},
+              {path: routes.createNutritionPlan, element: <NutritionPlanEditor />},
+              {path: routes.editNutritionPlan, element: <NutritionPlanEditor />},
+              {path: routes.editClientNutritionPlan, element: <NutritionPlanEditor />},
+              {path: routes.assignNutritionPlan, element: <AssignNutritionPlan />},
+              {path: routes.previewNutritionPlan, element: <AssignNutritionPlan />},
               {path: routes.forms, element: <Forms />},
               {path: routes.createForm, element: <FormEditor key="new" />},
               {path: routes.editForm, element: <FormEditor />},

@@ -1,5 +1,6 @@
 import {expect} from '@playwright/test';
 import {signOut} from '../auth/browser-helpers.mjs';
+import {chooseOption, selectTrigger} from '../select-helpers.mjs';
 
 export async function checkRecovery({page, api, tokens, width, post, unique}) {
   await page.getByRole('link', {name: 'Forms', exact: true}).click();
@@ -24,14 +25,17 @@ export async function checkRecovery({page, api, tokens, width, post, unique}) {
   await expect(page.getByLabel('Form name', {exact: true})).toHaveAttribute('aria-invalid', 'true');
   await page.getByLabel('Form name', {exact: true}).fill('Weekly reflection');
   await page.getByLabel('Question', {exact: true}).fill('How was your energy?');
-  await page.getByLabel('Answer type', {exact: true}).selectOption('rating');
-  await expect(
-    page.getByLabel('Answer type', {exact: true}).getByRole('option', {name: 'Service type', exact: true}),
-  ).toHaveCount(0);
+  await chooseOption(selectTrigger(page, 'Answer type'), 'Rating (1–5)');
+  await selectTrigger(page, 'Answer type').click();
+  await expect(page.getByRole('option', {name: 'Service type', exact: true})).toHaveCount(0);
+  await page.keyboard.press('Escape');
   await page.getByRole('button', {name: 'Preview form', exact: true}).click();
-  await expect(page.getByRole('dialog').getByLabel('How was your energy?', {exact: true})).toBeVisible();
-  await expect(page.getByRole('dialog').getByRole('option', {name: '5', exact: true})).toHaveCount(1);
-  await expect(page.getByRole('dialog').getByRole('option', {name: '6', exact: true})).toHaveCount(0);
+  await selectTrigger(page.getByRole('dialog'), 'How was your energy?').click();
+  await expect(page.getByRole('option', {name: '5', exact: true})).toHaveCount(1);
+  await expect(page.getByRole('option', {name: '6', exact: true})).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('listbox')).toHaveCount(0);
+  await expect(selectTrigger(page.getByRole('dialog'), 'How was your energy?')).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('button', {name: 'Preview form', exact: true})).toBeFocused();
   await page.getByRole('link', {name: 'Forms', exact: true}).click();
@@ -46,7 +50,7 @@ export async function checkRecovery({page, api, tokens, width, post, unique}) {
   await expect(page.getByLabel('Section title', {exact: true}).first()).toHaveValue('Energy');
   await page.getByLabel('Section title', {exact: true}).nth(1).fill('Habits');
   await page.getByLabel('Question', {exact: true}).nth(1).fill('Which habits felt good?');
-  await page.getByLabel('Answer type', {exact: true}).nth(1).selectOption('multi_select');
+  await chooseOption(selectTrigger(page, 'Answer type').nth(1), 'Multiple choice');
   await page.getByLabel('Choices', {exact: true}).fill('Sleep\nWalking\nCooking');
   await expect(page.getByLabel('Section title', {exact: true}).first()).toHaveValue('Energy');
   await page.getByRole('button', {name: 'Move section 2 up', exact: true}).click();
@@ -74,7 +78,7 @@ export async function checkRecovery({page, api, tokens, width, post, unique}) {
     ['rating'],
   ]);
   await expect(page.getByRole('heading', {name: 'Forms', exact: true})).toBeVisible();
-  await page.getByLabel('Form purpose', {exact: true}).selectOption('check_in');
+  await chooseOption(selectTrigger(page, 'Form purpose'), 'Check-in');
   await expect(page.getByRole('link', {name: /Weekly reflection/})).toBeVisible();
   await expect(page.getByRole('link', {name: /Getting to know you/})).toHaveCount(0);
   await page.route(`**/v1/coach/form-templates/${checkIn.id}`, (route) =>
@@ -104,24 +108,24 @@ export async function checkRecovery({page, api, tokens, width, post, unique}) {
   await page.getByRole('link', {name: 'Forms', exact: true}).click();
   await page.getByRole('link', {name: 'Create form', exact: true}).click();
   await page.getByLabel('Form name', {exact: true}).fill('Service intake');
-  await page.getByLabel('Purpose', {exact: true}).selectOption('intake');
+  await chooseOption(selectTrigger(page, 'Purpose'), 'Intake');
   await page.getByRole('button', {name: 'Remove question 1', exact: true}).click();
   await page.getByRole('button', {name: 'Save form', exact: true}).click();
   await expect(page.getByRole('alert')).toContainText('Add at least one question');
   await page.getByRole('button', {name: 'Add question', exact: true}).click();
   await expect(page.getByRole('alert')).toHaveCount(0);
-  await page.getByLabel('Answer type', {exact: true}).selectOption('select');
-  await page.getByLabel('Answer type', {exact: true}).selectOption('service_type');
+  await chooseOption(selectTrigger(page, 'Answer type'), 'Single choice');
+  await chooseOption(selectTrigger(page, 'Answer type'), 'Service type');
   await expect(page.getByLabel('Question', {exact: true})).toHaveValue('Service type');
   await expect(page.getByLabel('Question', {exact: true})).toBeDisabled();
-  await expect(page.getByLabel('Answer type', {exact: true})).toBeDisabled();
+  await expect(selectTrigger(page, 'Answer type')).toBeDisabled();
   await expect(page.getByRole('checkbox', {name: 'Required answer', exact: true})).toBeChecked();
   await expect(page.getByRole('checkbox', {name: 'Required answer', exact: true})).toBeDisabled();
   await expect(page.getByLabel('Choices', {exact: true})).toHaveCount(0);
   await page.getByRole('button', {name: 'Add question', exact: true}).click();
-  await expect(
-    page.getByLabel('Answer type', {exact: true}).nth(1).getByRole('option', {name: 'Service type', exact: true}),
-  ).toBeDisabled();
+  await selectTrigger(page, 'Answer type').nth(1).click();
+  await expect(page.getByRole('option', {name: 'Service type', exact: true})).toBeDisabled();
+  await page.keyboard.press('Escape');
   await page.getByRole('button', {name: 'Remove question 2', exact: true}).click();
   const serviceResponse = page.waitForResponse(
     (response) =>
@@ -140,7 +144,7 @@ export async function checkRecovery({page, api, tokens, width, post, unique}) {
     await page.getByRole('button', {name: 'Save form', exact: true}).scrollIntoViewIfNeeded();
     await expect(page.getByRole('button', {name: 'Save form', exact: true})).toBeInViewport({ratio: 1});
     const badSizes = await page
-      .locator('input:not([type=checkbox]), select, textarea')
+      .locator('input:not([type=checkbox]):visible, [data-slot=select-trigger], textarea')
       .evaluateAll((inputs) => inputs.filter((input) => parseFloat(getComputedStyle(input).fontSize) < 16).length);
     expect(badSizes).toBe(0);
     await page.setViewportSize({width: 375, height: 900});

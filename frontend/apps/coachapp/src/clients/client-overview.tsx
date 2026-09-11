@@ -3,6 +3,7 @@ import {useLocation, useParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
 import {useClient} from '../api/clients';
 import {useClientIntake, useFormSubmissions} from '../api/forms';
+import {useNutritionCoverage} from '../api/nutrition-plans';
 import {useClientTrainingPlans} from '../api/training-plans';
 import {routes} from '../routes';
 import {Button} from '../ui/button';
@@ -11,6 +12,7 @@ import {useListLocation} from '../ui/list-location';
 import {Page, PageHeader, Surface} from '../ui/page';
 import {ClientIntake} from './client-intake';
 import {ClientInvitation} from './client-invitation';
+import {ClientNutritionPlans} from './client-nutrition-plans';
 import {ClientTrainingPlans} from './client-training-plans';
 
 export function ClientOverview() {
@@ -27,6 +29,7 @@ function Overview({id}: {id: string}) {
   const {to: listLocation} = useListLocation(routes.home);
   const client = useClient(id);
   const trainingPlans = useClientTrainingPlans(id);
+  const nutrition = useNutritionCoverage(id);
   const notice: unknown = useLocation().state;
   const assignments = useClientIntake(id);
   const intake = assignments.data?.data;
@@ -36,6 +39,7 @@ function Overview({id}: {id: string}) {
     client.refetch();
     assignments.refetch();
     trainingPlans.refetch();
+    nutrition.refetch();
     if (submittedId) {
       submissions.refetch();
     }
@@ -94,7 +98,11 @@ function Overview({id}: {id: string}) {
           <Button
             variant="outline"
             isPending={
-              client.isFetching || assignments.isFetching || submissions.isFetching || trainingPlans.isFetching
+              client.isFetching ||
+              assignments.isFetching ||
+              submissions.isFetching ||
+              trainingPlans.isFetching ||
+              nutrition.isFetching
             }
             onPress={refresh}
           >
@@ -103,6 +111,28 @@ function Overview({id}: {id: string}) {
           </Button>
         }
       />
+      {notice !== null &&
+        typeof notice === 'object' &&
+        'trainingPlanSaved' in notice &&
+        typeof notice.trainingPlanSaved === 'string' && (
+          <p
+            role="status"
+            className="text-sm"
+          >
+            {notice.trainingPlanSaved} saved for this client.
+          </p>
+        )}
+      {notice !== null &&
+        typeof notice === 'object' &&
+        'nutritionPlanSaved' in notice &&
+        typeof notice.nutritionPlanSaved === 'string' && (
+          <p
+            role="status"
+            className="text-sm"
+          >
+            {notice.nutritionPlanSaved} saved for this client.
+          </p>
+        )}
       {notice !== null && typeof notice === 'object' && 'assigned' in notice && typeof notice.assigned === 'string' && (
         <p
           role="status"
@@ -111,6 +141,10 @@ function Overview({id}: {id: string}) {
           {notice.assigned} assigned.
         </p>
       )}
+      <ClientNutritionPlans
+        person={person}
+        query={nutrition}
+      />
       <ClientTrainingPlans
         person={person}
         query={trainingPlans}

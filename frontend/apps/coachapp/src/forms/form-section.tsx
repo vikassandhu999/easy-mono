@@ -4,8 +4,9 @@ import type {FormTemplateCreate, FormTemplateQuestion} from '../api/forms';
 import {Button} from '../ui/button';
 import {Checkbox} from '../ui/checkbox';
 import {FormField} from '../ui/form-field';
-import {NativeSelect, NativeSelectOption} from '../ui/native-select';
 import {Surface} from '../ui/page';
+import {SelectItem} from '../ui/select';
+import {SelectField} from '../ui/select-field';
 import {Textarea} from '../ui/textarea';
 
 export const answerTypes = [
@@ -140,17 +141,18 @@ export function FormSection({
               />
               <div className="grid gap-2">
                 <label
+                  id={`${inputId}-label`}
                   htmlFor={inputId}
                   className="text-sm font-medium"
                 >
                   Answer type
                 </label>
-                <NativeSelect
+                <SelectField
                   id={inputId}
                   value={type}
-                  disabled={pending || type === 'service_type'}
-                  onChange={(event) => {
-                    const selected = answerTypes.find((answer) => answer.type === event.target.value);
+                  isDisabled={pending || type === 'service_type'}
+                  onChange={(value) => {
+                    const selected = answerTypes.find((answer) => answer.type === value);
                     if (!selected) {
                       return;
                     }
@@ -183,15 +185,15 @@ export function FormSection({
                         answer.type !== 'service_type' || values.purpose === 'intake' || type === 'service_type',
                     )
                     .map((answer) => (
-                      <NativeSelectOption
+                      <SelectItem
                         key={answer.type}
-                        value={answer.type}
-                        disabled={answer.type === 'service_type' && Boolean(hasService) && type !== 'service_type'}
+                        id={answer.type}
+                        isDisabled={answer.type === 'service_type' && Boolean(hasService) && type !== 'service_type'}
                       >
                         {answer.label}
-                      </NativeSelectOption>
+                      </SelectItem>
                     ))}
-                </NativeSelect>
+                </SelectField>
               </div>
               {(type === 'select' || type === 'multi_select') && (
                 <Controller

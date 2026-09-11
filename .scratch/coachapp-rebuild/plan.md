@@ -71,7 +71,31 @@ Before adding screens, the user requested reusable infinite scrolling and server
 
 ## Training-plan assignment slice
 
-The user selected assigning an existing training plan from Client Overview. The [assignment brief](assign-training-plan.md) records the list, full prescription preview, required start date and optional end date, saved Client Plan, stale-template recovery, and verification. Training lists reuse cursor pagination and server counts. Assignment creates an independent client copy and preserves the backend's overlap constraints. Training-template creation/editing remains the next slice.
+The user selected assigning an existing training plan from Client Overview. The [assignment brief](assign-training-plan.md) records the list, full prescription preview, required start date and optional end date, saved Client Plan, stale-template recovery, and verification. Training lists reuse cursor pagination and server counts. Assignment creates an independent client copy and preserves the backend's overlap constraints. Training-template creation and editing are implemented in the following slice.
+
+## Training template editor slice
+
+Training navigation opens a searchable template library. Creation starts with a workout worksheet: select exercises, edit shared set targets, create independent variations, and assign days in the same view. Metadata is editable in place. One Save plan action coordinates the existing metadata and prescription writes, retaining successful revisions for recovery. See [the template editor brief](training-templates.md) for recovery and verification.
+
+## Nutrition plan creation and assignment
+
+The user selected nutrition next. Nutrition navigation opens the template library and a worksheet for daily targets, meal choices, food/recipe portions and day variations. Client Overview links to template selection, full preview and dated assignment. The server resolves meal nutrients, list totals and client coverage. See [the nutrition slice](nutrition-plans.md) for scope and verification.
+
+## Personalize assigned training
+
+Continue from Client Overview into the assigned plan's worksheet. The route identifies the client, checks ownership, and saves the independent copy through the existing revisioned API. Template and client editing share one worksheet; route loading stays separate. See [the personalization brief](personalize-training.md) for scope and verification. Assigned nutrition personalization follows below.
+
+## Personalize assigned nutrition
+
+Client Overview opens current and upcoming nutrition copies in the shared meal worksheet. The screen identifies the client, preserves compact day variations and optional guidance, and saves targets and meals through the revisioned API. Client coverage refreshes after writes, and the reusable template stays independent. See [the nutrition personalization brief](personalize-nutrition.md) for recovery and verified scenarios. The next adjacent task is creating library foods and recipes when a plan needs an item that is missing.
+
+## Food library
+
+Nutrition plans links to the searchable Food library. Coaches can create foods, enter nutrition per 100 g, select supported allergen and dietary tags, and edit custom foods through the revisioned API. The meal picker uses the same food queries and reflects saved library changes. Shared system foods remain read-only. See [the food library plan](foods.md). Recipe creation follows below.
+
+## Recipe library
+
+Nutrition links to a searchable Recipe library and a single recipe worksheet. Coaches select several ingredients, edit gram or serving quantities, set recipe servings, and optionally add preparation notes and finished weight. Saved nutrition comes from the backend for the whole recipe; the meal builder resolves serving nutrition. See [the recipe slice](recipes.md) for recovery and verification. The next adjacent library task is creating and editing exercises used by training plans.
 
 ## Sources
 

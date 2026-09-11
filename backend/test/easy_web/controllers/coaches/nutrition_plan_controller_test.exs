@@ -91,6 +91,115 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       assert length(data) == 1
       assert hd(data)["client_id"] == nil
     end
+
+    test "paginates templates by cursor while preserving the legacy offset response", %{conn: conn} do
+      coach = insert(:coach)
+      conn = authenticate_coach(conn, coach)
+
+      for _ <- 1..3, do: insert(:plan, creator: coach, business: coach.business)
+
+      offset_response = conn |> get("/v1/coach/nutrition-plans") |> json_response(200)
+      assert %{"data" => [_ | _], "count" => 3, "next_cursor" => nil} = offset_response
+
+      first_page =
+        conn
+        |> get("/v1/coach/nutrition-plans", %{"cursor" => "start", "limit" => "2"})
+        |> json_response(200)
+
+      assert %{"data" => [_, _], "count" => 3, "next_cursor" => cursor} = first_page
+      assert is_binary(cursor)
+
+      assert %{"data" => [_], "count" => 3, "next_cursor" => nil} =
+               conn
+               |> get("/v1/coach/nutrition-plans", %{"cursor" => cursor, "limit" => "2"})
+               |> json_response(200)
+    end
+
+    test "rejects malformed cursors and does not leak templates through another tenant's cursor", %{conn: conn} do
+      coach = insert(:coach)
+      other_coach = insert(:coach)
+      own_template = insert(:plan, creator: coach, business: coach.business)
+      insert(:plan, creator: other_coach, business: other_coach.business)
+      insert(:plan, creator: other_coach, business: other_coach.business)
+      conn = authenticate_coach(conn, coach)
+
+      assert conn
+             |> get("/v1/coach/nutrition-plans", %{"cursor" => "not-a-cursor"})
+             |> json_response(422)
+
+      other_cursor =
+        build_conn()
+        |> authenticate_coach(other_coach)
+        |> get("/v1/coach/nutrition-plans", %{"cursor" => "start", "limit" => "1"})
+        |> json_response(200)
+        |> Map.fetch!("next_cursor")
+
+      assert %{"data" => templates, "count" => 1} =
+               conn
+               |> get("/v1/coach/nutrition-plans", %{"cursor" => other_cursor})
+               |> json_response(200)
+
+      assert Enum.all?(templates, &(&1["id"] == own_template.id))
+    end
+  end
+
+  describe "POST /v1/coach/nutrition-plans/preview-menu" do
+    test "returns a resolved menu without persisting a plan", %{conn: conn} do
+      coach = insert(:coach)
+      pattern_id = Ecto.UUID.generate()
+
+      menu = %{
+        "meals" => [],
+        "day_patterns" => [%{"id" => pattern_id, "name" => "Everyday", "slots" => []}],
+        "schedule" => Map.new(~w(monday tuesday wednesday thursday friday saturday sunday), &{&1, pattern_id})
+      }
+
+      response =
+        conn
+        |> authenticate_coach(coach)
+        |> post("/v1/coach/nutrition-plans/preview-menu", %{"menu" => menu})
+        |> json_response(200)
+
+      assert %{
+               "data" => %{
+                 "meals" => [],
+                 "day_patterns" => [%{"id" => ^pattern_id, "name" => "Everyday", "slots" => []}],
+                 "schedule" => %{"monday" => ^pattern_id, "sunday" => ^pattern_id}
+               }
+             } = response
+    end
+
+    test "conceals another tenant's food referenced by a preview", %{conn: conn} do
+      coach = insert(:coach)
+      other_coach = insert(:coach)
+      food = insert(:food, creator: other_coach, business: other_coach.business)
+      pattern_id = Ecto.UUID.generate()
+      meal_id = Ecto.UUID.generate()
+
+      menu = %{
+        "meals" => [
+          %{
+            "id" => meal_id,
+            "name" => "Lunch",
+            "meal_items" => [
+              %{
+                "id" => Ecto.UUID.generate(),
+                "kind" => "food",
+                "food_id" => food.id,
+                "portion" => %{"kind" => "gram", "grams" => 100}
+              }
+            ]
+          }
+        ],
+        "day_patterns" => [%{"id" => pattern_id, "name" => "Everyday", "slots" => [%{"meal_slot" => "lunch", "meal_ids" => [meal_id]}]}],
+        "schedule" => Map.new(~w(monday tuesday wednesday thursday friday saturday sunday), &{&1, pattern_id})
+      }
+
+      assert conn
+             |> authenticate_coach(coach)
+             |> post("/v1/coach/nutrition-plans/preview-menu", %{"menu" => menu})
+             |> json_response(404)
+    end
   end
 
   describe "Nutrition Template lifecycle" do
@@ -388,6 +497,38 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
   end
 
   describe "Nutrition Template Assignment" do
+    test "rejects a stale template revision and accepts the current revision", %{conn: conn} do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      template = insert(:plan, business: coach.business, creator: coach.user)
+      conn = authenticate_coach(conn, coach)
+
+      assert %{"data" => %{"revision" => 2}} =
+               conn
+               |> patch("/v1/coach/nutrition-plans/#{template.id}", %{
+                 "expected_revision" => 1,
+                 "name" => "Revised Template"
+               })
+               |> json_response(200)
+
+      assert %{"error_code" => "stale_revision", "error_detail" => %{"current_revision" => 2}} =
+               conn
+               |> post("/v1/coach/clients/#{client.id}/nutrition-plans/#{template.id}/assign", %{
+                 "expected_revision" => 1
+               })
+               |> json_response(409)
+
+      assert %{"data" => %{"client_id" => client_id, "source_template_id" => source_id}} =
+               conn
+               |> post("/v1/coach/clients/#{client.id}/nutrition-plans/#{template.id}/assign", %{
+                 "expected_revision" => 2
+               })
+               |> json_response(201)
+
+      assert client_id == client.id
+      assert source_id == template.id
+    end
+
     test "assigns a complete independent Client Plan and advances onboarding", %{conn: conn} do
       coach = insert(:coach)
       client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach, stage: :onboarding)

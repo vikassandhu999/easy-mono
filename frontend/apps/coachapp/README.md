@@ -14,7 +14,49 @@ Run `rtk pnpm -C frontend/apps/coachapp test:forms` from the repository root wit
 
 Open a client and choose Assign training plan. Search active training templates, preview their workouts and weekly schedule, and choose a start date and optional end date. Assignment creates a separate Client Plan and returns to the overview, where its dates, lifecycle, and workouts remain available. Date overlaps are rejected. If a template changes while being reviewed, refresh the preview before assigning it. A lost assignment response includes a link to check the client's saved plans.
 
-Run `rtk pnpm -C frontend/apps/coachapp test:training` from the repository root with the isolated browser API and coach app running. The suite covers the real assignment flow, server search and cursor pages, recovery, client access, and pending-write navigation/account changes at 375px and 1280px. Screenshots go to ignored `tests/training/artifacts/`. See [the assignment brief](../../../.scratch/coachapp-rebuild/assign-training-plan.md). Template creation and editing are separate work.
+Run `rtk pnpm -C frontend/apps/coachapp test:training` from the repository root with the isolated browser API and coach app running. The suite covers the real assignment flow, server search and cursor pages, recovery, client access, and pending-write navigation/account changes at 375px and 1280px. Screenshots go to ignored `tests/training/artifacts/`. See [the assignment brief](../../../.scratch/coachapp-rebuild/assign-training-plan.md). Templates can be created and edited from Training in the app navigation.
+
+## Build training templates
+
+Open Training and create a template to start a worksheet. Add exercises first; the worksheet creates Workout A with three empty sets per movement. The name and optional description stay editable in place. Selected exercises remain in an ordered tray across server searches.
+
+Plan titles lead the hierarchy, followed by bold workout titles, semibold exercise names, and smaller muted field labels. Extra space between exercises groups each name with its fields; secondary set actions use quieter text. Uniform sets share one editable prescription for sets, reps, load and rest. Vary sets & add details opens individual rows, warm-ups, drop sets and advanced targets. Collapsible workouts keep their movements and assigned days visible. Create a variation makes an independent copy; Replace movement explicitly offers keeping or resetting targets. Removed workouts, exercises and sets have Undo.
+
+The week stays in the worksheet: choose a day, then a workout or rest. Client view hides editing controls while showing the current draft. Save plan saves metadata and prescription through the existing revision-checked API. If metadata succeeds but the prescription fails, retry uses the saved revision. Unknown creation outcomes offer an in-place check for the created empty template, preserving the worksheet and avoiding duplicate creation when it is found. Failed saves retain the draft, stale revisions require explicit recovery, and navigation warns about unsaved changes. Drafts are not stored across reloads. Previously assigned client plans remain independent copies.
+
+Exercise search uses the shared cursor list with server-owned filtering and totals. Run `rtk pnpm -C frontend/apps/coachapp test:templates` with the isolated API and coach app running. The real API suites cover the worksheet, compact set editing, selection order, replacement, Undo, partial-save recovery, creation through assignment, pagination, validation, conflicts, lost responses, and session changes at 375px and 1280px. See [the template editor brief](../../../.scratch/coachapp-rebuild/training-templates.md).
+
+## Personalize assigned training
+
+Open a client's assigned plan and choose Personalize plan. The worksheet identifies the client and plan dates, then lets you adjust workouts, exercises, set targets and weekday scheduling. Save client plan updates that independent copy and returns to the client's overview. The reusable template keeps its prescription.
+
+Template and client editing share one worksheet and resource save hook. Route loading checks that the plan belongs to the client before opening the editor. Failed and partial saves retain the draft, stale revisions require explicit recovery, and unsaved navigation asks before discarding changes. Changing assignment dates is a separate task.
+
+Run `rtk pnpm -C frontend/apps/coachapp test:client-training` with the isolated API and coach app running. See [the personalization brief](../../../.scratch/coachapp-rebuild/personalize-training.md).
+
+## Create and assign nutrition plans
+
+Open Nutrition to create a reusable plan with optional daily calorie and macro targets. Start with the Everyday menu, add meals and food or recipe portions, and offer alternatives within a meal time. Create day variation copies its meals independently; assign menus to weekdays when needed. Preview meals resolves nutrition on the server before anything is saved. Unknown nutrient values remain explicit.
+
+Save retains the successful metadata revision if the menu write fails. A lost creation response offers an in-place check for the empty template, preserving the worksheet. Conflicting revisions require loading the saved version; unsaved navigation prompts before discarding changes. Client Overview offers Assign nutrition plan with a complete preview, start date and optional end date. The server checks the reviewed revision, rejects overlapping coverage, and returns independent current/upcoming client plans.
+
+Run `rtk pnpm -C frontend/apps/coachapp test:nutrition` with the isolated API running. The two real API browser suites cover creation, foods and recipes, portions, meal alternatives, independent day variations, server preview, persistence, cursor paging/search/retry, partial and lost-write recovery, validation, assignment and account isolation at 375px and 1280px. Creating library foods and recipes is a separate task. See [the slice brief](../../../.scratch/coachapp-rebuild/nutrition-plans.md).
+
+## Personalize assigned nutrition
+
+Open a client's current or upcoming nutrition plan and choose Personalize nutrition plan. The worksheet identifies the client and dates, then lets you change daily targets, meals, portions and day variations. Preview meals resolves nutrients on the server. Save client plan updates that copy and returns to refreshed client coverage with a saved message.
+
+The template and assigned-copy screens share one worksheet. Route loading checks ownership before editing, and archived plans are unavailable. Partial saves retain the successful revision and draft; conflicts or uncertain saves offer loading the saved version. Navigation protects unsaved edits. Assignment dates stay outside this worksheet.
+
+Run `rtk pnpm -C frontend/apps/coachapp test:client-nutrition` with the isolated browser API and coach app running. It covers current/upcoming copies, server preview, template independence, save recovery and session isolation at 375px and 1280px. See [the personalization brief](../../../.scratch/coachapp-rebuild/personalize-nutrition.md).
+
+## Food library
+
+Open Nutrition, then Food library. Search foods or create a food with nutrition per 100 g. Unknown values stay blank, and zero stays explicit. Optional details contain brand, category, supported allergen and dietary-tag checkboxes, and notes. Custom foods can be edited; shared system foods are read-only. Serving sizes and media survive edits even though this form does not edit them.
+
+The meal picker uses the same food resource hook. Food updates invalidate nutrition queries because recipes and meals resolve library nutrients. Revision conflicts retain edits and offer loading the saved version. Interrupted creation offers checking saved foods before a separate create. Search, loaded pages and return position use the shared list foundation.
+
+Run `rtk pnpm -C frontend/apps/coachapp test:foods` with the isolated API and coach app running. The browser flow covers creation, nullable nutrients, tags, editing, conflicts, lost responses, server paging/search/retry, return position, meal-plan integration and session isolation at 375px and 1280px. See [the food library plan](../../../.scratch/coachapp-rebuild/foods.md).
 
 ## Mobile foundation
 
@@ -79,7 +121,7 @@ The preview endpoint resolves the same default as invitation creation: the selec
 
 The overview also supports grouped intake answers and marking intake reviewed. It uses the saved question snapshot, preserving the questions the client actually answered even after a template edit. The suite submits through the real client API, tests false/zero/missing answers, exercises review failure and retry, and verifies persistence after reload. Supplemental response fixtures cover inactive/missing/dismissed intake, external review refresh, and photo-download recovery.
 
-Full onboarding includes the client's plans. Training-plan assignment and Forms are available; training-template creation and editing remain separate work. See the [overview brief](../../../.scratch/coachapp-rebuild/client-overview.md).
+Full onboarding includes the client's plans. Training templates, training-plan assignment, and Forms are available. See the [overview brief](../../../.scratch/coachapp-rebuild/client-overview.md).
 
 ## Contract and session decisions
 
@@ -91,6 +133,12 @@ Refresh is shared within a tab and uses Web Locks between tabs when available. A
 
 ## Lists
 
-Forms, Clients, and training plans share cursor pagination, server search and totals, a keyboard-accessible Load more fallback, and retry that preserves loaded rows. URL filters survive reload; loaded pages and scroll position survive returning from the form editor while cached. Question counts and intake selection come from the API. See the [list contract and verification notes](../../../.scratch/coachapp-rebuild/lists.md).
+Forms, Clients, training plans, and the exercise picker share cursor pagination, server search and totals, a keyboard-accessible Load more fallback, and retry that preserves loaded rows. URL filters survive reload; loaded pages and scroll position survive returning from the form editor while cached. Question counts and intake selection come from the API. See the [list contract and verification notes](../../../.scratch/coachapp-rebuild/lists.md).
 
 Run `pnpm test:lists` with the coach app and isolated browser API running. The scenarios exercise real API pagination and request failure recovery at 375px and 1280px.
+
+## Recipe library
+
+Nutrition → Recipe library supports cursor search, creation and revisioned editing. Add ingredients together, edit quantities beside each name, and remove with Undo. Preparation notes and finished weight are optional. Nutrition comes from the API for the whole saved recipe; unsaved edits hide those totals until saved. Existing recipe tags are preserved. Recipes can then be selected in meal plans.
+
+Run `rtk pnpm -C frontend/apps/coachapp test:recipes` from the repository root with the coach app and isolated browser API running. The suite checks the full recipe task, request recovery, pagination, food-update invalidation, meal reuse and session isolation at 375px and 1280px. See [the recipe brief](../../../.scratch/coachapp-rebuild/recipes.md).

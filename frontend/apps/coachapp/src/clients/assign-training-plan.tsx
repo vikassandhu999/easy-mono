@@ -14,7 +14,7 @@ import {InfiniteList} from '../ui/infinite-list';
 import {useListLocation} from '../ui/list-location';
 import {ListSearch} from '../ui/list-search';
 import {FormActions, Page, PageHeader, Surface} from '../ui/page';
-import {TrainingPlanPreview} from './training-plan-preview';
+import {TrainingPlanPreview} from '../ui/training-plan-preview';
 
 export function AssignTrainingPlan() {
   const {id = '', templateId} = useParams();

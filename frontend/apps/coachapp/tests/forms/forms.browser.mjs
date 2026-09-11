@@ -1,5 +1,6 @@
 import {mkdir} from 'node:fs/promises';
 import {chromium, expect, request} from '@playwright/test';
+import {chooseOption, selectTrigger} from '../select-helpers.mjs';
 import {checkRecovery} from './recovery.mjs';
 
 const baseURL = process.env.COACH_APP_URL || 'http://localhost:2022';
@@ -41,7 +42,14 @@ try {
     await expect(page.getByRole('link', {name: /Weekly check-in/})).toBeVisible();
     await page.getByRole('link', {name: 'Create form', exact: true}).click();
     await page.getByLabel('Form name', {exact: true}).fill('Getting to know you');
-    await page.getByLabel('Purpose', {exact: true}).selectOption('intake');
+    const purpose = selectTrigger(page, 'Purpose');
+    await purpose.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('listbox', {name: 'Purpose', exact: true})).toBeVisible();
+    await page.keyboard.press('Home');
+    await page.keyboard.press('Enter');
+    await expect(purpose).toHaveText('Intake');
+    await expect(purpose).toBeFocused();
     await page.getByLabel('Section title', {exact: true}).fill('Goals and preferences');
     await page.getByLabel('Question', {exact: true}).fill('What would you like to achieve?');
     await page.getByText('Required answer', {exact: true}).click();
@@ -49,15 +57,15 @@ try {
     await page.getByRole('button', {name: 'Add question', exact: true}).click();
     await page.getByLabel('Question', {exact: true}).nth(1).fill('Where do you train?');
     await page.getByLabel('Question', {exact: true}).nth(1).press('Tab');
-    await expect(page.getByLabel('Answer type', {exact: true}).nth(1)).toBeFocused();
-    await page.getByLabel('Answer type', {exact: true}).nth(1).selectOption('select');
-    await expect(page.getByLabel('Answer type', {exact: true}).nth(1)).toBeFocused();
+    await expect(selectTrigger(page, 'Answer type').nth(1)).toBeFocused();
+    await chooseOption(selectTrigger(page, 'Answer type').nth(1), 'Single choice');
+    await expect(selectTrigger(page, 'Answer type').nth(1)).toBeFocused();
     await page.getByLabel('Choices', {exact: true}).fill('Home\nGym\nOutdoors');
     await page.getByRole('button', {name: 'Move question 2 up', exact: true}).click();
     await expect(page.getByLabel('Question', {exact: true}).first()).toHaveValue('Where do you train?');
     await page.getByRole('button', {name: 'Preview form', exact: true}).click();
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByRole('dialog').getByLabel('Where do you train?', {exact: true})).toBeVisible();
+    await expect(selectTrigger(page.getByRole('dialog'), 'Where do you train?')).toBeVisible();
     await page.screenshot({path: `tests/forms/artifacts/preview-${width}.png`, fullPage: true});
     await page.getByRole('button', {name: 'Close preview', exact: true}).click();
     await page.route('**/v1/coach/form-templates', (route) =>
@@ -89,7 +97,7 @@ try {
     await expect(page.getByText('No matching forms', {exact: true})).toBeVisible();
     await page.getByLabel('Search forms', {exact: true}).fill('Getting to know you');
     await page.getByRole('link', {name: /Getting to know you/}).click();
-    await expect(page.getByLabel('Purpose', {exact: true})).toBeDisabled();
+    await expect(selectTrigger(page, 'Purpose')).toBeDisabled();
     await page.reload();
     await expect(page.getByLabel('Choices', {exact: true})).toHaveValue('Home\nGym\nOutdoors');
     await page.getByLabel('Question', {exact: true}).nth(1).fill('What does success look like?');

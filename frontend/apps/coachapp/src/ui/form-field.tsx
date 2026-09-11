@@ -3,6 +3,7 @@ import {FieldError, Text, TextField} from 'react-aria-components';
 import {type Control, Controller, type ControllerProps, type FieldPath, type FieldValues} from 'react-hook-form';
 import {Input} from './input';
 import {Label} from './label';
+import {Textarea} from './textarea';
 
 export function FormField<T extends FieldValues>({
   control,
@@ -10,6 +11,7 @@ export function FormField<T extends FieldValues>({
   label,
   description,
   rules,
+  multiline = false,
   isRequired = false,
   isDisabled = false,
   ...inputProps
@@ -18,6 +20,7 @@ export function FormField<T extends FieldValues>({
   name: FieldPath<T>;
   label: string;
   description?: string;
+  multiline?: boolean;
   isRequired?: boolean;
   isDisabled?: boolean;
   rules?: ControllerProps<T>['rules'];
@@ -46,10 +49,17 @@ export function FormField<T extends FieldValues>({
           isDisabled={isDisabled}
         >
           <Label>{label}</Label>
-          <Input
-            {...inputProps}
-            ref={field.ref}
-          />
+          {multiline ? (
+            <Textarea
+              maxLength={inputProps.maxLength}
+              ref={field.ref}
+            />
+          ) : (
+            <Input
+              {...inputProps}
+              ref={field.ref}
+            />
+          )}
           {description && (
             <Text
               slot="description"

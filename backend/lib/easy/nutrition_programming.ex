@@ -55,6 +55,17 @@ defmodule Easy.Nutrition.Programming do
     end)
   end
 
+  @spec preview_menu(Ctx.t(), map()) :: {:ok, Menu.formatted()} | {:error, PlanReader.read_error() | Ecto.Changeset.t()}
+  def preview_menu(%Ctx{} = ctx, attrs) do
+    Repo.snapshot(fn ->
+      with :ok <- Ctx.ensure_coach(ctx),
+           {:ok, menu} <- Menu.cast(attrs),
+           {:ok, resolved} <- ItemResolver.resolve(ctx, Menu.references(menu)) do
+        {:ok, menu |> Menu.resolve(resolved) |> Menu.format()}
+      end
+    end)
+  end
+
   # Assignment and duplication
 
   @spec duplicate_template(Ctx.t(), String.t()) ::

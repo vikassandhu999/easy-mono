@@ -1,5 +1,6 @@
 import {mkdir} from 'node:fs/promises';
 import {chromium, expect, request} from '@playwright/test';
+import {chooseOption, selectTrigger} from '../select-helpers.mjs';
 
 const api = await request.newContext({baseURL: 'http://localhost:4000'});
 const browser = await chromium.launch();
@@ -106,14 +107,14 @@ try {
     await page.reload();
     await expect(page.getByLabel('Search forms', {exact: true})).toHaveValue('Form 00');
     await expect(rows).toHaveCount(1);
-    await page.getByLabel('Form purpose', {exact: true}).selectOption('check_in');
+    await chooseOption(selectTrigger(page, 'Form purpose'), 'Check-in');
     await expect(page.getByText('No matching forms', {exact: true})).toBeVisible();
-    await page.getByLabel('Form purpose', {exact: true}).selectOption('intake');
+    await chooseOption(selectTrigger(page, 'Form purpose'), 'Intake');
     await expect(rows).toHaveCount(1);
     await rows.first().getByRole('link').click();
     await page.getByRole('button', {name: 'Cancel', exact: true}).click();
     await expect(page.getByLabel('Search forms', {exact: true})).toHaveValue('Form 00');
-    await expect(page.getByLabel('Form purpose', {exact: true})).toHaveValue('intake');
+    await expect(selectTrigger(page, 'Form purpose')).toHaveText('Intake');
 
     // A cancelled slow search must never replace newer results.
     const held = Promise.withResolvers();

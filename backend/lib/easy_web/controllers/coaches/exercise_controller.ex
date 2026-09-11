@@ -3,8 +3,9 @@ defmodule EasyWeb.Coaches.ExerciseController do
 
   alias Easy.Training.Library
   alias EasyWeb.Types.Training.Exercise
+  alias EasyWeb.Types.Training.ExerciseIndex
 
-  typed(:index, query: Exercise.list_query(), ok: {200, page(Exercise.t())})
+  typed(:index, query: Exercise.cursor_query(), ok: {200, ExerciseIndex.t()})
   typed(:show, ok: {200, data(Exercise.t())})
   typed(:create, body: Exercise.create(), ok: {201, data(Exercise.t())})
   typed(:update, body: Exercise.update(), ok: {200, data(Exercise.t())})
@@ -53,6 +54,7 @@ defmodule EasyWeb.Coaches.ExerciseController do
     params = conn.query_params
 
     opts = [
+      cursor: Map.get(params, "cursor"),
       offset: Map.get(params, "offset", 0),
       limit: Map.get(params, "limit", 20),
       search: Map.get(params, "search", ""),
@@ -60,9 +62,8 @@ defmodule EasyWeb.Coaches.ExerciseController do
       equipment_ids: Map.get(params, "equipment_ids")
     ]
 
-    with {:ok, %{exercises: exercises, count: count}} <-
-           Library.list_exercises(conn.assigns.ctx, opts) do
-      ok(conn, %{data: exercises, count: count})
+    with {:ok, page} <- Library.list_exercise_page(conn.assigns.ctx, opts) do
+      ok(conn, page)
     end
   end
 end

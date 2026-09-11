@@ -346,6 +346,48 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
       assert length(recipes) == 2
     end
 
+    test "paginates results with a cursor", %{conn: conn, coach: coach, business: business} do
+      for _ <- 1..3, do: insert(:recipe, creator: coach, business: business)
+
+      first_page =
+        conn
+        |> get("/v1/coach/nutrition-recipes", %{"cursor" => "start", "limit" => "2"})
+        |> json_response(200)
+
+      assert %{"data" => [_, _], "count" => 3, "next_cursor" => cursor} = first_page
+      assert is_binary(cursor)
+
+      assert %{"data" => [_], "count" => 3, "next_cursor" => nil} =
+               conn
+               |> get("/v1/coach/nutrition-recipes", %{"cursor" => cursor, "limit" => "2"})
+               |> json_response(200)
+    end
+
+    test "rejects malformed cursors and keeps cursor pages tenant-scoped", %{conn: conn, coach: coach, business: business} do
+      own_recipe = insert(:recipe, creator: coach, business: business)
+      other_coach = insert(:coach)
+      insert(:recipe, creator: other_coach, business: other_coach.business)
+      insert(:recipe, creator: other_coach, business: other_coach.business)
+
+      assert conn
+             |> get("/v1/coach/nutrition-recipes", %{"cursor" => "not-a-cursor"})
+             |> json_response(422)
+
+      other_cursor =
+        build_conn()
+        |> authenticate_coach(other_coach)
+        |> get("/v1/coach/nutrition-recipes", %{"cursor" => "start", "limit" => "1"})
+        |> json_response(200)
+        |> Map.fetch!("next_cursor")
+
+      assert %{"data" => recipes, "count" => 1} =
+               conn
+               |> get("/v1/coach/nutrition-recipes", %{"cursor" => other_cursor})
+               |> json_response(200)
+
+      assert Enum.all?(recipes, &(&1["id"] == own_recipe.id))
+    end
+
     test "does not return recipes from another business", %{
       conn: conn,
       coach: coach,

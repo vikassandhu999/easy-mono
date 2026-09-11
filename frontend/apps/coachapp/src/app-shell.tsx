@@ -138,6 +138,22 @@ export function AppShell() {
         >
           Forms
         </NavLink>
+        <NavLink
+          to={routes.trainingPlans}
+          className={({isActive}) => (isActive ? 'app-navigation-link active' : 'app-navigation-link')}
+        >
+          Training
+        </NavLink>
+        <NavLink
+          to={routes.nutritionPlans}
+          className={({isActive}) =>
+            isActive || pathname.startsWith(routes.foods) || pathname.startsWith(routes.recipes)
+              ? 'app-navigation-link active'
+              : 'app-navigation-link'
+          }
+        >
+          Nutrition
+        </NavLink>
       </nav>
       <main
         id="main-content"

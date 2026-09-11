@@ -180,6 +180,7 @@ defmodule EasyWeb.Router do
 
     get "/nutrition-plans", NutritionPlanController, :index
     post "/nutrition-plans", NutritionPlanController, :create
+    post "/nutrition-plans/preview-menu", NutritionPlanController, :preview_menu
     get "/nutrition-plans/:id", NutritionPlanController, :show
     patch "/nutrition-plans/:id", NutritionPlanController, :update
     delete "/nutrition-plans/:id", NutritionPlanController, :delete

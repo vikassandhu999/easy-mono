@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 1e0b85a4d0f4fed1a7e82644297dc0a65b7340d56e1b67c7047667acc1617ae5 */
+/* typed-routes:hash be53587a57eae3edb0e218176ec653c4c271b480c286077a2bb3e27d2a9f48af */
 export type Attachment = {
   id: string;
   content_type:
@@ -294,13 +294,15 @@ export type ExerciseCreate = {
   muscle_ids?: Array<string>;
   equipment_ids?: Array<string>;
 };
-export type ExerciseListQuery = {
+export type ExerciseCursorQuery = {
+  cursor?: string;
   offset?: number;
   limit?: number;
   search?: string;
   muscle_ids?: Array<string>;
   equipment_ids?: Array<string>;
 };
+export type ExerciseIndex = {data: Array<Exercise>; count: number; next_cursor: string | null};
 export type ExerciseMedia = {
   id: string;
   kind: 'image' | 'video';
@@ -365,7 +367,14 @@ export type FoodCreate = {
 export type FoodImpact = {
   data: {recipes: Array<FoodRecipeRef>; templates: Array<FoodPlanRef>; client_plans: Array<FoodPlanRef>};
 };
-export type FoodListQuery = {offset?: number; limit?: number; search?: string; categories?: Array<string>};
+export type FoodIndex = {data: Array<Food>; count: number; next_cursor: string | null};
+export type FoodListQuery = {
+  cursor?: string;
+  offset?: number;
+  limit?: number;
+  search?: string;
+  categories?: Array<string>;
+};
 export type FoodMedia = {
   id: string;
   kind: 'image' | 'video';
@@ -762,7 +771,7 @@ export type NutritionPlan = {
   inserted_at: string;
   updated_at: string;
 };
-export type NutritionPlanAssign = {start_date?: string | null; end_date?: string | null};
+export type NutritionPlanAssign = {expected_revision?: number; start_date?: string | null; end_date?: string | null};
 export type NutritionPlanClient = {id: string; first_name: string | null; last_name: string | null};
 export type NutritionPlanCreate = {
   name: string;
@@ -773,7 +782,15 @@ export type NutritionPlanCreate = {
   target_fat_g?: number | null;
   target_fiber_g?: number | null;
 };
-export type NutritionPlanListQuery = {offset?: number; limit?: number; search?: string; archived?: boolean};
+export type NutritionPlanIndex = {data: Array<NutritionPlan>; count: number; next_cursor: string | null};
+export type NutritionPlanListQuery = {
+  cursor?: string;
+  offset?: number;
+  limit?: number;
+  search?: string;
+  archived?: boolean;
+};
+export type NutritionPlanPreviewMenu = {menu: NutritionMenu};
 export type NutritionPlanReplaceMenu = {expected_revision: number; menu: NutritionMenu};
 export type NutritionPlanUpdate = {
   expected_revision: number;
@@ -882,9 +899,10 @@ export type RecipeCreate = {
   recipe_ingredients?: Array<RecipeIngredientInput>;
 };
 export type RecipeImpact = {data: {templates: Array<RecipePlanRef>; client_plans: Array<RecipePlanRef>}};
+export type RecipeIndex = {data: Array<Recipe>; count: number; next_cursor: string | null};
 export type RecipeIngredient = {food_id: string; food: Food | null; portion: NutritionPortion; position: number};
 export type RecipeIngredientInput = {food_id: string; portion: NutritionPortion};
-export type RecipeListQuery = {offset?: number; limit?: number; search?: string};
+export type RecipeListQuery = {cursor?: string; offset?: number; limit?: number; search?: string};
 export type RecipePlanRef = {id: string; name: string; client_id: string | null};
 export type RecipeUpdate = {
   expected_revision: number;
@@ -1221,7 +1239,7 @@ export type WorkbenchSnooze = {queue: 'quiet' | 'expiring'; snoozed_until: strin
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash bf947eb1e38f903de492fa7a9b1e66e5380a75aa0f64f7766b74d912eb6d266b */
+  /* typed-routes:hash bdc8eee25134d7967036d1d0bcdbcb2dd60a5b28d1fc6c52e4723cec883af3f1 */
   '/api/health': {
     get: {
       parameters: {
@@ -1995,7 +2013,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<Food>; count: number}}};
+        200: {content: {'application/json': FoodIndex}};
       };
     };
     post: {
@@ -2095,7 +2113,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<NutritionPlan>; count: number}}};
+        200: {content: {'application/json': NutritionPlanIndex}};
       };
     };
     post: {
@@ -2108,6 +2126,20 @@ export interface paths {
       requestBody: {content: {'application/json': NutritionPlanCreate}};
       responses: {
         201: {content: {'application/json': {data: NutritionPlan}}};
+      };
+    };
+  };
+  '/v1/coach/nutrition-plans/preview-menu': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': NutritionPlanPreviewMenu}};
+      responses: {
+        200: {content: {'application/json': {data: NutritionMenu}}};
       };
     };
   };
@@ -2209,7 +2241,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<Recipe>; count: number}}};
+        200: {content: {'application/json': RecipeIndex}};
       };
     };
     post: {
@@ -2434,13 +2466,13 @@ export interface paths {
   '/v1/coach/training-exercises': {
     get: {
       parameters: {
-        query?: ExerciseListQuery;
+        query?: ExerciseCursorQuery;
         header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<Exercise>; count: number}}};
+        200: {content: {'application/json': ExerciseIndex}};
       };
     };
     post: {

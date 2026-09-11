@@ -5,7 +5,8 @@ import {Button} from '../ui/button';
 import {Checkbox} from '../ui/checkbox';
 import {Dialog, DialogClose, DialogHeader, DialogTitle, DialogTrigger} from '../ui/dialog';
 import {Input} from '../ui/input';
-import {NativeSelect, NativeSelectOption} from '../ui/native-select';
+import {SelectItem} from '../ui/select';
+import {SelectField} from '../ui/select-field';
 import {Textarea} from '../ui/textarea';
 
 function PreviewAnswer({question}: {question: FormTemplateQuestion}) {
@@ -31,6 +32,7 @@ function PreviewAnswer({question}: {question: FormTemplateQuestion}) {
   return (
     <div className="grid gap-2">
       <label
+        id={`${id}-label`}
         htmlFor={id}
         className="text-sm font-medium"
       >
@@ -43,32 +45,32 @@ function PreviewAnswer({question}: {question: FormTemplateQuestion}) {
           required={question.required ?? false}
         />
       ) : question.type === 'select' || question.type === 'boolean' || question.type === 'rating' ? (
-        <NativeSelect
+        <SelectField
           id={id}
           aria-label={label}
           defaultValue=""
-          required={question.required ?? false}
+          isRequired={question.required ?? false}
         >
-          <NativeSelectOption
-            value=""
-            disabled
+          <SelectItem
+            id=""
+            isDisabled
           >
             Choose an answer
-          </NativeSelectOption>
+          </SelectItem>
           {(question.type === 'boolean'
             ? ['Yes', 'No']
             : question.type === 'rating'
               ? ['1', '2', '3', '4', '5']
               : options
           ).map((option, index) => (
-            <NativeSelectOption
+            <SelectItem
               key={`${index}-${option}`}
-              value={option}
+              id={String(index)}
             >
               {option || 'Untitled choice'}
-            </NativeSelectOption>
+            </SelectItem>
           ))}
-        </NativeSelect>
+        </SelectField>
       ) : question.type === 'photo' ? (
         <>
           <Input
@@ -88,10 +90,13 @@ function PreviewAnswer({question}: {question: FormTemplateQuestion}) {
             inputMode="decimal"
             step="any"
           />
-          <NativeSelect aria-label="Weight unit">
-            <NativeSelectOption value="kg">kg</NativeSelectOption>
-            <NativeSelectOption value="lb">lb</NativeSelectOption>
-          </NativeSelect>
+          <SelectField
+            aria-label="Weight unit"
+            defaultValue="kg"
+          >
+            <SelectItem id="kg">kg</SelectItem>
+            <SelectItem id="lb">lb</SelectItem>
+          </SelectField>
         </div>
       ) : (
         <Input

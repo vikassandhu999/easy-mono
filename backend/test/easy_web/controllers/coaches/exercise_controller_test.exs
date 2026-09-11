@@ -305,6 +305,84 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       refute with_legs.id in returned_ids
     end
 
+    test "traverses cursor pages within the matching coach library", %{conn: conn, business: business} do
+      search = "Cursor exercise #{Ecto.UUID.generate()}"
+
+      exercises =
+        for suffix <- ["Business", "System", "Second"] do
+          insert(:exercise,
+            business: if(suffix == "System", do: nil, else: business),
+            name: "#{search} #{suffix}"
+          )
+        end
+
+      other_coach = insert(:coach)
+
+      insert(:exercise,
+        business: other_coach.business,
+        name: "#{search} Private"
+      )
+
+      first =
+        conn
+        |> get("/v1/coach/training-exercises", %{"cursor" => "start", "limit" => "1", "search" => search})
+        |> json_response(200)
+
+      assert %{"data" => [first_exercise], "count" => 3, "next_cursor" => cursor} = first
+      assert is_binary(cursor)
+
+      second =
+        conn
+        |> recycle()
+        |> get("/v1/coach/training-exercises", %{"cursor" => cursor, "limit" => "10", "search" => search})
+        |> json_response(200)
+
+      assert %{"data" => remaining, "count" => 3, "next_cursor" => nil} = second
+
+      assert [first_exercise | remaining]
+             |> Enum.map(& &1["id"])
+             |> Enum.sort() == Enum.map(exercises, & &1.id) |> Enum.sort()
+    end
+
+    test "bounds cursor pages and rejects malformed or incompatible cursors", %{conn: conn, business: business} do
+      search = "Cursor bound #{Ecto.UUID.generate()}"
+
+      for index <- 1..105 do
+        insert(:exercise, business: business, name: "#{search} #{index}")
+      end
+
+      default =
+        conn
+        |> get("/v1/coach/training-exercises", %{"cursor" => "start", "search" => search})
+        |> json_response(200)
+
+      assert %{"data" => default_data, "count" => 105, "next_cursor" => default_cursor} = default
+      assert length(default_data) == 20
+      assert is_binary(default_cursor)
+
+      capped =
+        conn
+        |> recycle()
+        |> get("/v1/coach/training-exercises", %{"cursor" => "start", "limit" => "1000", "search" => search})
+        |> json_response(200)
+
+      assert %{"data" => capped_data, "count" => 105, "next_cursor" => capped_cursor} = capped
+      assert length(capped_data) == 100
+      assert is_binary(capped_cursor)
+
+      assert %{"error_detail" => %{"fields" => %{"cursor" => ["is invalid"]}}} =
+               conn
+               |> recycle()
+               |> get("/v1/coach/training-exercises", %{"cursor" => "not-a-cursor"})
+               |> json_response(422)
+
+      assert %{"error_detail" => %{"fields" => %{"cursor" => ["cannot be combined with offset or sort"]}}} =
+               conn
+               |> recycle()
+               |> get("/v1/coach/training-exercises", %{"cursor" => "start", "offset" => "1"})
+               |> json_response(422)
+    end
+
     test "returns 403 without a coach token" do
       conn = build_conn() |> get("/v1/coach/training-exercises")
       assert %{"error_code" => "unauthorized"} = json_response(conn, 403)

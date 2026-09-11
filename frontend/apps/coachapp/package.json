@@ -15,7 +15,13 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "lint": "biome check --write .",
     "preview": "vite preview",
-    "test:training": "node tests/training/assign.browser.mjs"
+    "test:training": "node tests/training/assign.browser.mjs",
+    "test:foods": "node tests/foods/foods.browser.mjs",
+    "test:client-nutrition": "node tests/nutrition/personalize.browser.mjs",
+    "test:client-training": "node tests/training/personalize.browser.mjs",
+    "test:nutrition": "node tests/nutrition/plans.browser.mjs && node tests/nutrition/recovery.browser.mjs",
+    "test:templates": "node tests/training/templates.browser.mjs && node tests/training/compact-sets.browser.mjs && node tests/training/workspace.browser.mjs",
+    "test:recipes": "node tests/recipes/recipes.browser.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "5.101.4",

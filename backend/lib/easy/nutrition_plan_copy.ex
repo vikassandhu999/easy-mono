@@ -6,6 +6,7 @@ defmodule Easy.Nutrition.PlanCopy do
   alias Easy.Nutrition.Plan
   alias Easy.Orgs.Business
   alias Easy.Repo
+  alias Easy.Revision
 
   import Ecto.Query
 
@@ -36,7 +37,8 @@ defmodule Easy.Nutrition.PlanCopy do
 
   defp assign_visible_template(ctx, client_id, template_id, attrs) do
     with :ok <- ClientAccess.authorize_client_id(ctx, client_id),
-         {:ok, template} <- get_locked_active_template(ctx, template_id) do
+         {:ok, template} <- get_locked_active_template(ctx, template_id),
+         :ok <- Revision.check(template, Map.get(attrs, :expected_revision, :any)) do
       copy_template_to_client(ctx, client_id, template, attrs)
     end
   end

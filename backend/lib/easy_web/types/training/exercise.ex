@@ -78,6 +78,15 @@ defmodule EasyWeb.Types.Training.Exercise do
           optional(:equipment_ids) => [String.t()]
         }
 
+  @type cursor_query :: %{
+          optional(:cursor) => String.t(),
+          optional(:offset) => non_neg_integer(),
+          optional(:limit) => pos_integer(),
+          optional(:search) => String.t(),
+          optional(:muscle_ids) => [String.t()],
+          optional(:equipment_ids) => [String.t()]
+        }
+
   @spec format(TrainingExercise.t()) :: t()
   def format(%TrainingExercise{} = exercise) do
     %{
@@ -108,4 +117,14 @@ defmodule EasyWeb.Types.Training.Exercise do
   defp format_enum(nil), do: nil
   defp format_enum(value) when is_atom(value), do: Atom.to_string(value)
   defp format_enum(value) when is_binary(value), do: value
+end
+
+defmodule EasyWeb.Types.Training.ExerciseIndex do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:data) => [EasyWeb.Types.Training.Exercise.t()],
+          required(:count) => non_neg_integer(),
+          required(:next_cursor) => String.t() | nil
+        }
 end

@@ -1,6 +1,6 @@
 import {Plus} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {FormProvider, useFieldArray, useForm, useWatch} from 'react-hook-form';
+import {Controller, FormProvider, useFieldArray, useForm, useWatch} from 'react-hook-form';
 import {useBeforeUnload, useBlocker, useNavigate, useParams} from 'react-router-dom';
 import {errorMessage} from '../api/client';
 import {
@@ -17,8 +17,9 @@ import {FormError} from '../ui/form-error';
 import {setFormError} from '../ui/form-errors';
 import {FormField} from '../ui/form-field';
 import {useListLocation} from '../ui/list-location';
-import {NativeSelect, NativeSelectOption} from '../ui/native-select';
 import {FormActions, Page, PageHeader, StatusBadge, Surface} from '../ui/page';
+import {SelectItem} from '../ui/select';
+import {SelectField} from '../ui/select-field';
 import {FormPreview} from './form-preview';
 import {FormSection, newQuestion} from './form-section';
 
@@ -207,24 +208,35 @@ function Editor({template}: {template: FormTemplate | undefined}) {
             />
             <div className="grid gap-2">
               <label
+                id="form-purpose-label"
                 htmlFor="form-purpose"
                 className="text-sm font-medium"
               >
                 Purpose
               </label>
-              <NativeSelect
-                id="form-purpose"
-                {...form.register('purpose')}
-                disabled={Boolean(template) || pending}
-              >
-                <NativeSelectOption value="intake">Intake</NativeSelectOption>
-                <NativeSelectOption
-                  value="check_in"
-                  disabled={Boolean(hasService)}
-                >
-                  Check-in
-                </NativeSelectOption>
-              </NativeSelect>
+              <Controller
+                control={form.control}
+                name="purpose"
+                render={({field}) => (
+                  <SelectField
+                    id="form-purpose"
+                    name={field.name}
+                    triggerRef={field.ref}
+                    value={field.value}
+                    onBlur={field.onBlur}
+                    onChange={field.onChange}
+                    isDisabled={Boolean(template) || pending}
+                  >
+                    <SelectItem id="intake">Intake</SelectItem>
+                    <SelectItem
+                      id="check_in"
+                      isDisabled={Boolean(hasService)}
+                    >
+                      Check-in
+                    </SelectItem>
+                  </SelectField>
+                )}
+              />
               <p className="text-sm text-muted-foreground">
                 {template
                   ? 'Purpose is fixed after the form is created.'

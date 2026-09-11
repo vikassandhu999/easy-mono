@@ -80,6 +80,7 @@ defmodule EasyWeb.Types.Nutrition.Recipe do
         }
 
   @type list_query :: %{
+          optional(:cursor) => String.t(),
           optional(:offset) => integer(),
           optional(:limit) => integer(),
           optional(:search) => String.t()
@@ -124,4 +125,14 @@ defmodule EasyWeb.Types.Nutrition.Recipe do
       position: ingredient.position
     }
   end
+end
+
+defmodule EasyWeb.Types.Nutrition.RecipeIndex do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:data) => [EasyWeb.Types.Nutrition.Recipe.t()],
+          required(:count) => non_neg_integer(),
+          required(:next_cursor) => String.t() | nil
+        }
 end

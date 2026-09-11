@@ -236,6 +236,95 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
       assert length(foods) == 2
     end
 
+    test "paginates results with a cursor", %{conn: conn, coach: coach, business: business} do
+      for _ <- 1..3, do: insert(:food, creator: coach, business: business)
+
+      first_page =
+        conn
+        |> get("/v1/coach/nutrition-foods", %{"cursor" => "start", "limit" => "2"})
+        |> json_response(200)
+
+      assert %{"data" => [_, _], "count" => 3, "next_cursor" => cursor} = first_page
+      assert is_binary(cursor)
+
+      assert %{"data" => [_], "count" => 3, "next_cursor" => nil} =
+               conn
+               |> get("/v1/coach/nutrition-foods", %{"cursor" => cursor, "limit" => "2"})
+               |> json_response(200)
+    end
+
+    test "cursor search pagination visits every relevance-ordered food exactly once", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      chicken =
+        insert(:food,
+          name: "Chicken",
+          creator: coach,
+          business: business,
+          inserted_at: ~U[2026-01-02 00:00:00Z]
+        )
+
+      chicken_breast =
+        insert(:food,
+          name: "Chicken Breast",
+          creator: coach,
+          business: business,
+          inserted_at: ~U[2026-01-01 00:00:00Z]
+        )
+
+      chicken_salad =
+        insert(:food,
+          name: "Chicken Salad",
+          creator: coach,
+          business: business,
+          inserted_at: ~U[2026-01-03 00:00:00Z]
+        )
+
+      first_page =
+        conn
+        |> get("/v1/coach/nutrition-foods", %{"search" => "chicken", "cursor" => "start", "limit" => "2"})
+        |> json_response(200)
+
+      assert %{"data" => first_foods, "count" => 3, "next_cursor" => cursor} = first_page
+      assert Enum.map(first_foods, & &1["id"]) == [chicken_salad.id, chicken.id]
+
+      assert %{"data" => second_foods, "count" => 3, "next_cursor" => nil} =
+               conn
+               |> get("/v1/coach/nutrition-foods", %{"search" => "chicken", "cursor" => cursor, "limit" => "2"})
+               |> json_response(200)
+
+      ids = Enum.map(first_foods ++ second_foods, & &1["id"])
+      assert ids == [chicken_salad.id, chicken.id, chicken_breast.id]
+      assert MapSet.new(ids) == MapSet.new([chicken.id, chicken_breast.id, chicken_salad.id])
+    end
+
+    test "rejects malformed cursors and keeps cursor pages tenant-scoped", %{conn: conn, coach: coach, business: business} do
+      own_food = insert(:food, creator: coach, business: business)
+      other_coach = insert(:coach)
+      insert(:food, creator: other_coach, business: other_coach.business)
+      insert(:food, creator: other_coach, business: other_coach.business)
+
+      assert conn
+             |> get("/v1/coach/nutrition-foods", %{"cursor" => "not-a-cursor"})
+             |> json_response(422)
+
+      other_cursor =
+        build_conn()
+        |> authenticate_coach(other_coach)
+        |> get("/v1/coach/nutrition-foods", %{"cursor" => "start", "limit" => "1"})
+        |> json_response(200)
+        |> Map.fetch!("next_cursor")
+
+      assert %{"data" => foods, "count" => 1} =
+               conn
+               |> get("/v1/coach/nutrition-foods", %{"cursor" => other_cursor})
+               |> json_response(200)
+
+      assert Enum.all?(foods, &(&1["id"] == own_food.id))
+    end
+
     test "uses a stable order for foods with matching timestamps", %{
       conn: conn,
       coach: coach,

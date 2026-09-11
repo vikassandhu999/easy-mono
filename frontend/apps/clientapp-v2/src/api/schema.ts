@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 4a73b736cd6072ad9fca1ffa3316337ca324b1678511612703f0c1286142607c */
+/* typed-routes:hash 838f1255fc3eadab945ca17fee3e437add5851e03e255b4081593b5c913a461c */
 export type Attachment = {
   id: string;
   content_type:
@@ -520,7 +520,7 @@ export type Recipe = {
   updated_at: string;
 };
 export type RecipeIngredient = {food_id: string; food: Food | null; portion: NutritionPortion; position: number};
-export type RecipeListQuery = {offset?: number; limit?: number; search?: string};
+export type RecipeListQuery = {cursor?: string; offset?: number; limit?: number; search?: string};
 export type Session = {
   id: string;
   kind: 'planned' | 'freestyle';

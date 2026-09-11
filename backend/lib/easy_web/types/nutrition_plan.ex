@@ -158,9 +158,12 @@ defmodule EasyWeb.Types.NutritionPlan do
         }
 
   @type assign :: %{
+          optional(:expected_revision) => pos_integer(),
           optional(:start_date) => Date.t() | nil,
           optional(:end_date) => Date.t() | nil
         }
+
+  @type preview_menu :: %{required(:menu) => EasyWeb.Types.NutritionMenu.t()}
 
   @type replace_menu :: %{
           required(:expected_revision) => pos_integer(),
@@ -168,6 +171,7 @@ defmodule EasyWeb.Types.NutritionPlan do
         }
 
   @type list_query :: %{
+          optional(:cursor) => String.t(),
           optional(:offset) => integer(),
           optional(:limit) => integer(),
           optional(:search) => String.t(),
@@ -212,6 +216,16 @@ defmodule EasyWeb.Types.NutritionPlan do
   defp format_client(%Plan{kind: :client_plan, client: %Client{} = client}) do
     %{id: client.id, first_name: client.first_name, last_name: client.last_name}
   end
+end
+
+defmodule EasyWeb.Types.NutritionPlanIndex do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:data) => [EasyWeb.Types.NutritionPlan.t()],
+          required(:count) => non_neg_integer(),
+          required(:next_cursor) => String.t() | nil
+        }
 end
 
 defmodule EasyWeb.Types.NutritionCoverage do

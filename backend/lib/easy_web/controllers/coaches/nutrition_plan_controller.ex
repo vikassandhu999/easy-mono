@@ -2,7 +2,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   use EasyWeb, :typed_controller
 
   alias Easy.Nutrition.{PlanReader, Programming}
-  alias EasyWeb.Types.NutritionPlan
+  alias EasyWeb.Types.{NutritionMenu, NutritionPlan, NutritionPlanIndex}
 
   typed(:create, body: NutritionPlan.create(), ok: {201, data(NutritionPlan.t())})
   typed(:show, ok: {200, data(NutritionPlan.t())})
@@ -10,12 +10,14 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   typed(:delete, ok: {204, nil})
   typed(:archive, ok: {200, data(NutritionPlan.t())})
   typed(:restore, ok: {200, data(NutritionPlan.t())})
-  typed(:index, query: NutritionPlan.list_query(), ok: {200, page(NutritionPlan.t())})
+  typed(:index, query: NutritionPlan.list_query(), ok: {200, NutritionPlanIndex.t()})
 
   typed(:replace_menu,
     body: NutritionPlan.replace_menu(),
     ok: {200, data(NutritionPlan.t())}
   )
+
+  typed(:preview_menu, body: NutritionPlan.preview_menu(), ok: {200, data(NutritionMenu.t())})
 
   typed(:duplicate, ok: {201, data(NutritionPlan.t())})
   typed(:assign, body: NutritionPlan.assign(), ok: {201, data(NutritionPlan.t())})
@@ -81,14 +83,33 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   def index(conn, _params) do
     params = conn.query_params
 
-    with {:ok, %{templates: plans, count: count}} <-
-           PlanReader.list_templates(conn.assigns.ctx,
-             search: Map.get(params, "search", ""),
-             archived: Map.get(params, "archived"),
-             offset: Map.get(params, "offset", 0),
-             limit: Map.get(params, "limit", 20)
-           ) do
-      ok(conn, %{data: plans, count: count})
+    if Map.has_key?(params, "cursor") do
+      with {:ok, page} <-
+             PlanReader.list_template_page(conn.assigns.ctx,
+               cursor: params["cursor"],
+               search: Map.get(params, "search", ""),
+               archived: Map.get(params, "archived"),
+               limit: Map.get(params, "limit", 20)
+             ) do
+        ok(conn, page)
+      end
+    else
+      with {:ok, %{templates: plans, count: count}} <-
+             PlanReader.list_templates(conn.assigns.ctx,
+               search: Map.get(params, "search", ""),
+               archived: Map.get(params, "archived"),
+               offset: Map.get(params, "offset", 0),
+               limit: Map.get(params, "limit", 20)
+             ) do
+        ok(conn, %{data: plans, count: count, next_cursor: nil})
+      end
+    end
+  end
+
+  @spec preview_menu(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def preview_menu(conn, _params) do
+    with {:ok, menu} <- Programming.preview_menu(conn.assigns.ctx, conn.body_params.menu) do
+      ok(conn, %{data: menu})
     end
   end
 

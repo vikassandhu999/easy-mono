@@ -1,6 +1,7 @@
 defmodule Easy.Nutrition.Library do
   alias Easy.CopyName
   alias Easy.Ctx
+  alias Easy.CursorPage
   alias Easy.Nutrition.{Food, FoodWriter, PlanReader, Recipe}
   alias Easy.Nutrition.RecipeWriter
   alias Easy.Repo
@@ -42,6 +43,38 @@ defmodule Easy.Nutrition.Library do
        count: Repo.aggregate(base, :count, :id),
        foods: base |> Food.newest() |> Utils.paginate(opts) |> Food.include_media() |> Repo.all()
      }}
+  end
+
+  @spec list_food_page(Ctx.t(), keyword()) :: {:ok, CursorPage.t(Food.t())} | {:error, :invalid_cursor | :conflict}
+  def list_food_page(%Ctx{} = ctx, opts) do
+    base =
+      Food
+      |> Food.for_business_or_system(ctx.business_id)
+      |> Food.search(String.trim(Keyword.get(opts, :search, "") || ""))
+      |> Food.for_categories(Keyword.get(opts, :categories))
+
+    cursor_page(base, opts, &Food.include_media/1)
+  end
+
+  @spec list_recipe_page(Ctx.t(), keyword()) :: {:ok, CursorPage.t(Recipe.t())} | {:error, :invalid_cursor | :conflict}
+  def list_recipe_page(%Ctx{} = ctx, opts) do
+    base =
+      Recipe
+      |> Recipe.for_business(ctx.business_id)
+      |> Recipe.search(String.trim(Keyword.get(opts, :search, "") || ""))
+
+    cursor_page(base, opts, &Recipe.include_ingredients(&1, ctx.business_id))
+  end
+
+  defp cursor_page(base, opts, preload) do
+    Repo.snapshot(fn ->
+      limit = CursorPage.limit(opts)
+
+      with {:ok, query} <- CursorPage.query(exclude(base, :order_by), Keyword.get(opts, :cursor), limit) do
+        rows = query |> preload.() |> Repo.all()
+        {:ok, CursorPage.finish(rows, limit, Repo.aggregate(base, :count, :id))}
+      end
+    end)
   end
 
   @spec list_food_categories(Ctx.t()) :: {:ok, [String.t()]}

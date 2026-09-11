@@ -120,6 +120,25 @@ defmodule Easy.Forms.CheckInSchedule do
   @spec active(Ecto.Queryable.t()) :: Ecto.Query.t()
   def active(query \\ __MODULE__), do: from(s in query, where: s.active)
 
+  @spec for_active(Ecto.Queryable.t(), boolean() | nil) :: Ecto.Query.t()
+  def for_active(query \\ __MODULE__, active)
+  def for_active(query, nil), do: query
+  def for_active(query, active), do: from(s in query, where: s.active == ^active)
+
+  @spec for_search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
+  def for_search(query \\ __MODULE__, search)
+  def for_search(query, nil), do: query
+
+  def for_search(query, search) do
+    pattern = search |> String.trim() |> Easy.Search.like_pattern()
+
+    from(s in query,
+      join: template in FormTemplate,
+      on: template.id == s.form_template_id and template.business_id == s.business_id,
+      where: ilike(template.name, ^pattern)
+    )
+  end
+
   @spec due_on_or_before(Ecto.Queryable.t(), Date.t()) :: Ecto.Query.t()
   def due_on_or_before(query \\ __MODULE__, date), do: from(s in query, where: s.next_due_on <= ^date)
 

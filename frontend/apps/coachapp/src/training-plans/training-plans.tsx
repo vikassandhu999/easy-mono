@@ -26,6 +26,12 @@ export function TrainingPlans() {
           </Link>
         }
       />
+      <Link
+        to={routes.exercises}
+        className="text-link w-fit"
+      >
+        Exercise library
+      </Link>
       <ListSearch label="Search training plans" />
       <InfiniteList
         query={query}

@@ -5,6 +5,7 @@ defmodule Easy.CheckIns do
   alias Easy.ClientAccess
   alias Easy.Clients.Client
   alias Easy.Ctx
+  alias Easy.CursorPage
   alias Easy.Forms.CheckInSchedule
   alias Easy.Forms.FormAssignment
   alias Easy.Forms.FormTemplate
@@ -18,15 +19,39 @@ defmodule Easy.CheckIns do
   @spec list_check_in_schedules_for_client(Ctx.t(), String.t()) ::
           {:ok, [CheckInSchedule.t()]} | {:error, :not_found}
   def list_check_in_schedules_for_client(%Ctx{} = ctx, client_id) do
+    with {:ok, page} <- list_check_in_schedule_page_for_client(ctx, client_id) do
+      {:ok, page.data}
+    end
+  end
+
+  @spec list_check_in_schedule_page_for_client(Ctx.t(), String.t(), keyword()) ::
+          {:ok, CursorPage.t(CheckInSchedule.t())} | {:error, atom()}
+  def list_check_in_schedule_page_for_client(%Ctx{} = ctx, client_id, opts \\ []) do
     with :ok <- ClientAccess.authorize_client_id(ctx, client_id) do
-      schedules =
+      base =
         CheckInSchedule
         |> CheckInSchedule.for_client(ctx.business_id, client_id)
-        |> CheckInSchedule.include_template(ctx.business_id)
-        |> CheckInSchedule.by_next_due()
-        |> Repo.all()
+        |> CheckInSchedule.for_search(Keyword.get(opts, :search))
+        |> CheckInSchedule.for_active(Keyword.get(opts, :active))
 
-      {:ok, schedules}
+      schedule_page(base, ctx.business_id, opts)
+    end
+  end
+
+  defp schedule_page(base, business_id, opts) do
+    count = Repo.aggregate(base, :count, :id)
+    limit = CursorPage.limit(opts)
+
+    case Keyword.get(opts, :cursor) do
+      nil ->
+        data = base |> CheckInSchedule.by_next_due() |> CheckInSchedule.include_template(business_id) |> Repo.all()
+        {:ok, %{data: data, count: count, next_cursor: nil}}
+
+      cursor ->
+        with {:ok, query} <- CursorPage.query(base, cursor, limit) do
+          rows = query |> CheckInSchedule.include_template(business_id) |> Repo.all()
+          {:ok, CursorPage.finish(rows, limit, count)}
+        end
     end
   end
 

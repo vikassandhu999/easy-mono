@@ -16,11 +16,11 @@ import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FormError} from '../ui/form-error';
 import {setFormError} from '../ui/form-errors';
 import {FormField} from '../ui/form-field';
+import {FormPreview} from '../ui/form-preview';
 import {useListLocation} from '../ui/list-location';
 import {FormActions, Page, PageHeader, StatusBadge, Surface} from '../ui/page';
 import {SelectItem} from '../ui/select';
 import {SelectField} from '../ui/select-field';
-import {FormPreview} from './form-preview';
 import {FormSection, newQuestion} from './form-section';
 
 export function FormEditor() {

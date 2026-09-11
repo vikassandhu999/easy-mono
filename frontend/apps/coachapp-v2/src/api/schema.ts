@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash be53587a57eae3edb0e218176ec653c4c271b480c286077a2bb3e27d2a9f48af */
+/* typed-routes:hash 0d547052c38179ee6db2f9cb63ee85307add57c98965cddbea5a3c00478427df */
 export type Attachment = {
   id: string;
   content_type:
@@ -144,6 +144,8 @@ export type CheckInScheduleCreate = {
   frequency: 'once' | 'weekly' | 'biweekly' | 'monthly';
   next_due_on: string;
 };
+export type CheckInScheduleIndex = {data: Array<CheckInSchedule>; count: number; next_cursor: string | null};
+export type CheckInScheduleListQuery = {cursor?: string; limit?: number; search?: string; active?: boolean};
 export type CheckInScheduleUpdate = {
   frequency?: 'once' | 'weekly' | 'biweekly' | 'monthly';
   next_due_on?: string;
@@ -1239,7 +1241,7 @@ export type WorkbenchSnooze = {queue: 'quiet' | 'expiring'; snoozed_until: strin
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash bdc8eee25134d7967036d1d0bcdbcb2dd60a5b28d1fc6c52e4723cec883af3f1 */
+  /* typed-routes:hash 5f13efc106911d3c95db1ec2e194ffbfa42d6bb229fc0781e40519b901be6051 */
   '/api/health': {
     get: {
       parameters: {
@@ -1441,13 +1443,13 @@ export interface paths {
   '/v1/coach/clients/{client_id}/check-in-schedules': {
     get: {
       parameters: {
-        query?: never;
+        query?: CheckInScheduleListQuery;
         header?: {Authorization?: string};
         path: {client_id: string};
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<CheckInSchedule>}}};
+        200: {content: {'application/json': CheckInScheduleIndex}};
       };
     };
     post: {

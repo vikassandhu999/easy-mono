@@ -95,7 +95,15 @@ Nutrition plans links to the searchable Food library. Coaches can create foods, 
 
 ## Recipe library
 
-Nutrition links to a searchable Recipe library and a single recipe worksheet. Coaches select several ingredients, edit gram or serving quantities, set recipe servings, and optionally add preparation notes and finished weight. Saved nutrition comes from the backend for the whole recipe; the meal builder resolves serving nutrition. See [the recipe slice](recipes.md) for recovery and verification. The next adjacent library task is creating and editing exercises used by training plans.
+Nutrition links to a searchable Recipe library and a single recipe worksheet. Coaches select several ingredients, edit gram or serving quantities, set recipe servings, and optionally add preparation notes and finished weight. Saved nutrition comes from the backend for the whole recipe; the meal builder resolves serving nutrition. See [the recipe slice](recipes.md) for recovery and verification. Exercise authoring follows below.
+
+## Exercise library
+
+Training links to a searchable Exercise library. Coaches create and edit movement names, instructions and optional equipment, muscles and classifications. Shared exercises are read-only; custom exercise changes refresh the training picker and plan queries. The editor sends only changed fields through the existing API and preserves unexposed media and tracking data. See [the exercise brief](exercises.md) for recovery, checks and the API's concurrency limitation.
+
+## Client check-in scheduling
+
+Client Overview → Manage check-ins opens a client-scoped schedule list. Choose and preview a Check-in form, set the first due date and repetition, then save. Existing schedules support cadence/date edits, stopping and deliberate resumption. Server search, totals and cursor pagination include inactive history. See [the scheduling brief](check-in-schedules.md) for recovery, compatibility and verification. Reviewing client check-in submissions is the next adjacent task.
 
 ## Sources
 

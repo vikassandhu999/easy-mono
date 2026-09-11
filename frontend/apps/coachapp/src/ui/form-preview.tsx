@@ -1,13 +1,13 @@
 import {X} from 'lucide-react';
 import {useId} from 'react';
 import type {FormTemplateCreate, FormTemplateQuestion} from '../api/forms';
-import {Button} from '../ui/button';
-import {Checkbox} from '../ui/checkbox';
-import {Dialog, DialogClose, DialogHeader, DialogTitle, DialogTrigger} from '../ui/dialog';
-import {Input} from '../ui/input';
-import {SelectItem} from '../ui/select';
-import {SelectField} from '../ui/select-field';
-import {Textarea} from '../ui/textarea';
+import {Button} from './button';
+import {Checkbox} from './checkbox';
+import {Dialog, DialogClose, DialogHeader, DialogTitle, DialogTrigger} from './dialog';
+import {Input} from './input';
+import {SelectItem} from './select';
+import {SelectField} from './select-field';
+import {Textarea} from './textarea';
 
 function PreviewAnswer({question}: {question: FormTemplateQuestion}) {
   const id = useId();

@@ -8,11 +8,15 @@ import {Login} from './auth/login';
 import {Setup} from './auth/setup';
 import {Signup} from './auth/signup';
 import {Verify} from './auth/verify';
+import {CheckInSchedules} from './check-ins/check-in-schedules';
+import {CreateCheckIn} from './check-ins/create-check-in';
 import {AssignNutritionPlan} from './clients/assign-nutrition-plan';
 import {AssignTrainingPlan} from './clients/assign-training-plan';
 import {ClientOverview} from './clients/client-overview';
 import {Clients} from './clients/clients';
 import {InviteClient} from './clients/invite-client';
+import {ExerciseEditor} from './exercises/exercise-editor';
+import {Exercises} from './exercises/exercises';
 import {FoodEditor} from './foods/food-editor';
 import {Foods} from './foods/foods';
 import {FormEditor} from './forms/form-editor';
@@ -89,10 +93,12 @@ function Root() {
         getKey={(location) =>
           location.pathname === routes.forms ||
           location.pathname === routes.trainingPlans ||
+          location.pathname === routes.exercises ||
           location.pathname === routes.nutritionPlans ||
           location.pathname === routes.foods ||
           location.pathname === routes.recipes ||
           matchPath(routes.assignNutritionPlan, location.pathname) ||
+          matchPath(routes.clientCheckIns, location.pathname) ||
           location.pathname === routes.home ||
           matchPath(routes.assignTrainingPlan, location.pathname)
             ? location.pathname + location.search
@@ -125,9 +131,14 @@ export const router = createBrowserRouter([
               {path: routes.home, element: <Clients />},
               {path: routes.inviteClient, element: <InviteClient />},
               {path: routes.client, element: <ClientOverview />},
+              {path: routes.clientCheckIns, element: <CheckInSchedules />},
+              {path: routes.createCheckIn, element: <CreateCheckIn />},
               {path: routes.assignTrainingPlan, element: <AssignTrainingPlan />},
               {path: routes.previewTrainingPlan, element: <AssignTrainingPlan />},
               {path: routes.trainingPlans, element: <TrainingPlans />},
+              {path: routes.exercises, element: <Exercises />},
+              {path: routes.createExercise, element: <ExerciseEditor />},
+              {path: routes.exercise, element: <ExerciseEditor />},
               {path: routes.createTrainingPlan, element: <TrainingPlanEditor />},
               {path: routes.editTrainingPlan, element: <TrainingPlanEditor />},
               {path: routes.editClientTrainingPlan, element: <TrainingPlanEditor />},

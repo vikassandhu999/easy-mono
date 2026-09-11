@@ -127,7 +127,12 @@ export function AppShell() {
           to={routes.home}
           end
           className={({isActive}) =>
-            isActive || matchPath(routes.client, pathname) ? 'app-navigation-link active' : 'app-navigation-link'
+            isActive ||
+            matchPath(routes.client, pathname) ||
+            matchPath(routes.clientCheckIns, pathname) ||
+            matchPath(routes.createCheckIn, pathname)
+              ? 'app-navigation-link active'
+              : 'app-navigation-link'
           }
         >
           Clients
@@ -140,7 +145,9 @@ export function AppShell() {
         </NavLink>
         <NavLink
           to={routes.trainingPlans}
-          className={({isActive}) => (isActive ? 'app-navigation-link active' : 'app-navigation-link')}
+          className={({isActive}) =>
+            isActive || pathname.startsWith(routes.exercises) ? 'app-navigation-link active' : 'app-navigation-link'
+          }
         >
           Training
         </NavLink>

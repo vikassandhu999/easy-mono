@@ -142,3 +142,15 @@ Run `pnpm test:lists` with the coach app and isolated browser API running. The s
 Nutrition → Recipe library supports cursor search, creation and revisioned editing. Add ingredients together, edit quantities beside each name, and remove with Undo. Preparation notes and finished weight are optional. Nutrition comes from the API for the whole saved recipe; unsaved edits hide those totals until saved. Existing recipe tags are preserved. Recipes can then be selected in meal plans.
 
 Run `rtk pnpm -C frontend/apps/coachapp test:recipes` from the repository root with the coach app and isolated browser API running. The suite checks the full recipe task, request recovery, pagination, food-update invalidation, meal reuse and session isolation at 375px and 1280px. See [the recipe brief](../../../.scratch/coachapp-rebuild/recipes.md).
+
+## Exercise library
+
+Training → Exercise library provides server search, cursor pagination, creation and editing. Names and coaching instructions stay visible; equipment, muscles and classifications are optional. Existing media and tracking data survive edits. Shared system exercises are read-only.
+
+Run `rtk pnpm -C frontend/apps/coachapp test:exercises` from the repository root with the coach app and isolated browser API running. The suite seeds equipment and muscle vocabulary in `easy_coachapp_auth_dev`, then exercises authoring, recovery, list navigation, training-plan reuse and session isolation at 375px and 1280px. Exercise updates send only changed fields; the existing API does not provide same-field concurrent-edit protection. See [the exercise brief](../../../.scratch/coachapp-rebuild/exercises.md).
+
+## Client check-in scheduling
+
+Client Overview → Manage check-ins supports selecting and previewing a form, choosing its first due date and repetition, editing future dates, and stopping or resuming generation. Scheduling starts with active clients. Stopping preserves existing check-ins and answers. Dates, capacity, counts and filtered results come from the API; inactive history uses cursor pagination. Submission review is a separate screen.
+
+Run `rtk pnpm -C frontend/apps/coachapp test:check-ins` from the repository root with the coach app and isolated browser API running. The suite checks scheduling, lost-response recovery, duplicate and capacity errors, preview, pagination, filtering and session isolation at 375px and 1280px. See [the scheduling brief](../../../.scratch/coachapp-rebuild/check-in-schedules.md).

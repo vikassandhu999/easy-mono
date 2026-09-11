@@ -1,3 +1,4 @@
+import type {ScheduleFilters} from './check-in-schedules';
 import type {ClientFilters} from './clients';
 import type {FormTemplateFilters} from './forms';
 import type {TrainingPlanFilters} from './training-plans';
@@ -46,6 +47,10 @@ export const exerciseKeys = {
   all: ['exercises'] as const,
   lists: () => [...exerciseKeys.all, 'list'] as const,
   infinite: (search: string) => [...exerciseKeys.lists(), 'infinite', {search}] as const,
+  details: () => [...exerciseKeys.all, 'detail'] as const,
+  detail: (id: string) => [...exerciseKeys.details(), id] as const,
+  relations: (kind: 'muscles' | 'equipment', search: string) =>
+    [...exerciseKeys.lists(), 'relations', kind, {search}] as const,
 };
 
 export const nutritionKeys = {
@@ -71,4 +76,12 @@ export const recipeKeys = {
   infinite: (search: string) => [...recipeKeys.lists(), 'infinite', {search}] as const,
   details: () => [...recipeKeys.all, 'detail'] as const,
   detail: (id: string) => [...recipeKeys.details(), id] as const,
+};
+
+export const checkInKeys = {
+  all: ['check-in-schedules'] as const,
+  lists: () => [...checkInKeys.all, 'list'] as const,
+  forClient: (clientId: string) => [...checkInKeys.lists(), clientId] as const,
+  infinite: (clientId: string, filters: ScheduleFilters) =>
+    [...checkInKeys.forClient(clientId), 'infinite', filters] as const,
 };

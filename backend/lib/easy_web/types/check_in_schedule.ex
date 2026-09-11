@@ -24,4 +24,21 @@ defmodule EasyWeb.Types.CheckInSchedule do
           optional(:next_due_on) => Date.t(),
           optional(:active) => boolean()
         }
+
+  @type list_query :: %{
+          optional(:cursor) => String.t(),
+          optional(:limit) => pos_integer(),
+          optional(:search) => String.t(),
+          optional(:active) => boolean()
+        }
+end
+
+defmodule EasyWeb.Types.CheckInScheduleIndex do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:data) => [EasyWeb.Types.CheckInSchedule.t()],
+          required(:count) => non_neg_integer(),
+          required(:next_cursor) => String.t() | nil
+        }
 end

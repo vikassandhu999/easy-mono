@@ -1,12 +1,12 @@
 import {RefreshCw} from 'lucide-react';
-import {useLocation, useParams} from 'react-router-dom';
+import {generatePath, Link, useLocation, useParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
 import {useClient} from '../api/clients';
 import {useClientIntake, useFormSubmissions} from '../api/forms';
 import {useNutritionCoverage} from '../api/nutrition-plans';
 import {useClientTrainingPlans} from '../api/training-plans';
 import {routes} from '../routes';
-import {Button} from '../ui/button';
+import {Button, buttonVariants} from '../ui/button';
 import {FormError} from '../ui/form-error';
 import {useListLocation} from '../ui/list-location';
 import {Page, PageHeader, Surface} from '../ui/page';
@@ -141,6 +141,21 @@ function Overview({id}: {id: string}) {
           {notice.assigned} assigned.
         </p>
       )}
+      <section
+        className="flex flex-wrap items-center justify-between gap-4"
+        aria-label="Client check-ins"
+      >
+        <div>
+          <h2 className="section-title">Check-ins</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Choose when this client shares progress updates.</p>
+        </div>
+        <Link
+          to={generatePath(routes.clientCheckIns, {id})}
+          className={buttonVariants({variant: 'outline'})}
+        >
+          Manage check-ins
+        </Link>
+      </section>
       <ClientNutritionPlans
         person={person}
         query={nutrition}

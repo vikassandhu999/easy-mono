@@ -3,16 +3,20 @@ defmodule EasyWeb.Coaches.CheckInScheduleController do
 
   alias Easy.CheckIns
   alias EasyWeb.Types.CheckInSchedule
+  alias EasyWeb.Types.CheckInScheduleIndex
 
-  typed(:index, ok: {200, data([CheckInSchedule.t()])})
+  typed(:index, query: CheckInSchedule.list_query(), ok: {200, CheckInScheduleIndex.t()})
   typed(:create, body: CheckInSchedule.create(), ok: {201, data(CheckInSchedule.t())})
   typed(:update, body: CheckInSchedule.update(), ok: {200, data(CheckInSchedule.t())})
   typed(:delete, ok: {204, nil})
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, %{"client_id" => client_id}) do
-    with {:ok, schedules} <- CheckIns.list_check_in_schedules_for_client(conn.assigns.ctx, client_id) do
-      ok(conn, %{data: schedules})
+    params = conn.query_params
+    opts = [cursor: params["cursor"], limit: params["limit"], search: params["search"], active: params["active"]]
+
+    with {:ok, page} <- CheckIns.list_check_in_schedule_page_for_client(conn.assigns.ctx, client_id, opts) do
+      ok(conn, page)
     end
   end
 

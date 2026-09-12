@@ -1,7 +1,9 @@
+import type {CheckInResponseFilters} from './check-in-responses';
 import type {ScheduleFilters} from './check-in-schedules';
 import type {ClientFilters} from './clients';
 import type {FormTemplateFilters} from './forms';
 import type {TrainingPlanFilters} from './training-plans';
+import type {SessionFilters} from './training-sessions';
 
 export const authKeys = {
   all: ['auth'] as const,
@@ -84,4 +86,21 @@ export const checkInKeys = {
   forClient: (clientId: string) => [...checkInKeys.lists(), clientId] as const,
   infinite: (clientId: string, filters: ScheduleFilters) =>
     [...checkInKeys.forClient(clientId), 'infinite', filters] as const,
+};
+
+export const checkInResponseKeys = {
+  all: ['check-in-responses'] as const,
+  lists: () => [...checkInResponseKeys.all, 'list'] as const,
+  infinite: (filters: CheckInResponseFilters) => [...checkInResponseKeys.lists(), 'infinite', filters] as const,
+  details: () => [...checkInResponseKeys.all, 'detail'] as const,
+  detail: (id: string) => [...checkInResponseKeys.details(), id] as const,
+};
+
+export const trainingSessionKeys = {
+  all: ['training-sessions'] as const,
+  lists: () => [...trainingSessionKeys.all, 'list'] as const,
+  infinite: (clientId: string, filters: SessionFilters) =>
+    [...trainingSessionKeys.lists(), clientId, 'infinite', filters] as const,
+  details: () => [...trainingSessionKeys.all, 'detail'] as const,
+  detail: (clientId: string, id: string) => [...trainingSessionKeys.details(), clientId, id] as const,
 };

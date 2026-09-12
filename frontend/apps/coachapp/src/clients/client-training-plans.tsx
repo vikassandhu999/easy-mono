@@ -31,13 +31,21 @@ export function ClientTrainingPlans({
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="section-title">Training plans</h2>
-        <Link
-          to={generatePath(routes.assignTrainingPlan, {id: person.id})}
-          state={state}
-          className={buttonVariants({variant: 'outline'})}
-        >
-          Assign training plan
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            to={generatePath(routes.trainingSessions, {clientId: person.id})}
+            className={buttonVariants({variant: 'outline'})}
+          >
+            View training history
+          </Link>
+          <Link
+            to={generatePath(routes.assignTrainingPlan, {id: person.id})}
+            state={state}
+            className={buttonVariants({variant: 'outline'})}
+          >
+            Assign training plan
+          </Link>
+        </div>
       </div>
       <InfiniteList
         query={query}

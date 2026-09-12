@@ -23,7 +23,9 @@
     "test:templates": "node tests/training/templates.browser.mjs && node tests/training/compact-sets.browser.mjs && node tests/training/workspace.browser.mjs",
     "test:recipes": "node tests/recipes/recipes.browser.mjs",
     "test:exercises": "node tests/exercises/exercises.browser.mjs",
-    "test:check-ins": "node tests/check-ins/schedules.browser.mjs"
+    "test:check-ins": "node tests/check-ins/schedules.browser.mjs",
+    "test:reviews": "node tests/check-ins/review.browser.mjs",
+    "test:training-history": "node tests/training/history.browser.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "5.101.4",

@@ -147,14 +147,24 @@ function Overview({id}: {id: string}) {
       >
         <div>
           <h2 className="section-title">Check-ins</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Choose when this client shares progress updates.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Read progress updates and manage when this client checks in.
+          </p>
         </div>
-        <Link
-          to={generatePath(routes.clientCheckIns, {id})}
-          className={buttonVariants({variant: 'outline'})}
-        >
-          Manage check-ins
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            to={generatePath(routes.clientCheckInResponses, {clientId: id})}
+            className={buttonVariants({variant: 'outline'})}
+          >
+            View responses
+          </Link>
+          <Link
+            to={generatePath(routes.clientCheckIns, {id})}
+            className={buttonVariants({variant: 'outline'})}
+          >
+            Manage check-ins
+          </Link>
+        </div>
       </section>
       <ClientNutritionPlans
         person={person}

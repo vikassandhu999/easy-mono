@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react';
 import {useLocation, useSearchParams} from 'react-router-dom';
 import {Input} from './input';
 
-export function ListSearch({label}: {label: string}) {
+export function ListSearch({label, placeholder = 'Search by name'}: {label: string; placeholder?: string}) {
   const [params, setParams] = useSearchParams();
   const {state} = useLocation();
   const search = params.get('search') ?? '';
@@ -45,7 +45,7 @@ export function ListSearch({label}: {label: string}) {
         type="search"
         value={draft.value}
         onChange={(event) => setDraft({search, value: event.target.value})}
-        placeholder="Search by name"
+        placeholder={placeholder}
       />
     </div>
   );

@@ -2,9 +2,9 @@ import {useState} from 'react';
 import {useAttachmentDownloads} from '../api/attachments';
 import {errorMessage} from '../api/client';
 import type {FormAssignmentAnswer, FormSubmission} from '../api/forms';
-import {Button} from '../ui/button';
-import {FormError} from '../ui/form-error';
-import {Surface} from '../ui/page';
+import {Button} from './button';
+import {FormError} from './form-error';
+import {Surface} from './page';
 
 function Answer({value}: {value: FormAssignmentAnswer | undefined}) {
   if (value === undefined || value === '' || (Array.isArray(value) && value.length === 0)) {
@@ -30,7 +30,7 @@ function Answer({value}: {value: FormAssignmentAnswer | undefined}) {
   );
 }
 
-function IntakePhotos({ids, label}: {ids: string[]; label: string}) {
+function SubmissionPhotos({ids, label}: {ids: string[]; label: string}) {
   const [opened, setOpened] = useState(false);
   const downloads = useAttachmentDownloads(ids, opened);
   if (!opened) {
@@ -83,7 +83,7 @@ function IntakePhotos({ids, label}: {ids: string[]; label: string}) {
   );
 }
 
-export function IntakeAnswers({submission}: {submission: FormSubmission}) {
+export function SubmissionAnswers({submission}: {submission: FormSubmission}) {
   return (
     <div
       role="region"
@@ -109,7 +109,7 @@ export function IntakeAnswers({submission}: {submission: FormSubmission}) {
                   <dt className="break-words text-sm text-muted-foreground">{question.label}</dt>
                   <dd className="mt-2 whitespace-pre-wrap break-words text-base leading-relaxed">
                     {question.type === 'photo' && Array.isArray(value) && value.length > 0 ? (
-                      <IntakePhotos
+                      <SubmissionPhotos
                         ids={value}
                         label={question.label}
                       />

@@ -76,6 +76,12 @@ function Schedules({clientId}: {clientId: string}) {
           ) : undefined
         }
       />
+      <Link
+        to={generatePath(routes.clientCheckInResponses, {clientId})}
+        className="text-link"
+      >
+        View submitted responses
+      </Link>
       {client.isError ? (
         <Surface>
           <FormError message={errorMessage(client.error, 'Could not load this client.')} />

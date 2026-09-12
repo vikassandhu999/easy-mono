@@ -93,6 +93,31 @@ defmodule Easy.Forms.FormSubmission do
   @spec unreviewed(Ecto.Queryable.t()) :: Ecto.Query.t()
   def unreviewed(query \\ __MODULE__), do: from(s in query, where: is_nil(s.reviewed_at))
 
+  @spec for_reviewed(Ecto.Queryable.t(), boolean() | nil) :: Ecto.Query.t()
+  def for_reviewed(query, nil), do: query
+  def for_reviewed(query, true), do: from(s in query, where: not is_nil(s.reviewed_at))
+  def for_reviewed(query, false), do: unreviewed(query)
+
+  @spec for_review_client(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
+  def for_review_client(query, nil), do: query
+  def for_review_client(query, client_id), do: from(s in query, where: s.client_id == ^client_id)
+
+  @spec for_review_search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
+  def for_review_search(query, search) when search in [nil, ""], do: query
+
+  def for_review_search(query, search) do
+    pattern = search |> String.trim() |> Easy.Search.like_pattern()
+
+    from([s, review_assignment: assignment, review_client: client] in query,
+      join: template in Easy.Forms.FormTemplate,
+      on: template.id == assignment.form_template_id and template.business_id == s.business_id,
+      where:
+        ilike(template.name, ^pattern) or
+          ilike(fragment("concat_ws(' ', ?, ?)", client.first_name, client.last_name), ^pattern) or
+          ilike(client.email, ^pattern)
+    )
+  end
+
   @spec for_check_ins(Ecto.Queryable.t()) :: Ecto.Query.t()
   def for_check_ins(query \\ __MODULE__) do
     from(s in query,

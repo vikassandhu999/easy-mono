@@ -8,6 +8,8 @@ import {Login} from './auth/login';
 import {Setup} from './auth/setup';
 import {Signup} from './auth/signup';
 import {Verify} from './auth/verify';
+import {CheckInResponse} from './check-ins/check-in-response';
+import {CheckInResponses, ClientCheckInResponses} from './check-ins/check-in-responses';
 import {CheckInSchedules} from './check-ins/check-in-schedules';
 import {CreateCheckIn} from './check-ins/create-check-in';
 import {AssignNutritionPlan} from './clients/assign-nutrition-plan';
@@ -28,6 +30,8 @@ import {Recipes} from './recipes/recipes';
 import {routes} from './routes';
 import {TrainingPlanEditor} from './training-plans/training-plan-editor';
 import {TrainingPlans} from './training-plans/training-plans';
+import {TrainingSession} from './training-sessions/training-session';
+import {TrainingSessions} from './training-sessions/training-sessions';
 
 function Gate({guest = false}: {guest?: boolean}) {
   const session = parseSession(useSyncExternalStore(subscribeSession, sessionSnapshot));
@@ -97,6 +101,9 @@ function Root() {
           location.pathname === routes.nutritionPlans ||
           location.pathname === routes.foods ||
           location.pathname === routes.recipes ||
+          location.pathname === routes.checkInResponses ||
+          matchPath(routes.clientCheckInResponses, location.pathname) ||
+          matchPath(routes.trainingSessions, location.pathname) ||
           matchPath(routes.assignNutritionPlan, location.pathname) ||
           matchPath(routes.clientCheckIns, location.pathname) ||
           location.pathname === routes.home ||
@@ -131,8 +138,14 @@ export const router = createBrowserRouter([
               {path: routes.home, element: <Clients />},
               {path: routes.inviteClient, element: <InviteClient />},
               {path: routes.client, element: <ClientOverview />},
+              {path: routes.trainingSessions, element: <TrainingSessions />},
+              {path: routes.trainingSession, element: <TrainingSession />},
               {path: routes.clientCheckIns, element: <CheckInSchedules />},
               {path: routes.createCheckIn, element: <CreateCheckIn />},
+              {path: routes.checkInResponses, element: <CheckInResponses />},
+              {path: routes.checkInResponse, element: <CheckInResponse />},
+              {path: routes.clientCheckInResponses, element: <ClientCheckInResponses />},
+              {path: routes.clientCheckInResponse, element: <CheckInResponse />},
               {path: routes.assignTrainingPlan, element: <AssignTrainingPlan />},
               {path: routes.previewTrainingPlan, element: <AssignTrainingPlan />},
               {path: routes.trainingPlans, element: <TrainingPlans />},

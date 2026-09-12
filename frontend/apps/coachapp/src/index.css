@@ -400,6 +400,7 @@
 @layer components {
   .app-navigation {
     display: flex;
+    overflow-x: auto;
     gap: 1.5rem;
     max-width: var(--page-width);
     margin-inline: auto;
@@ -408,6 +409,8 @@
   }
   .app-navigation-link {
     display: inline-flex;
+    flex-shrink: 0;
+    white-space: nowrap;
     min-height: 3rem;
     align-items: center;
     border-bottom: 2px solid transparent;

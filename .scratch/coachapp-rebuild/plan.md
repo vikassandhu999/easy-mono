@@ -4,6 +4,8 @@ Build one complete coaching task at a time. The first deliverable is authenticat
 
 ## Product loop
 
+The whole-app objective and remaining tasks are tracked in [the completion ledger](completion.md). Complete and verify each task without consulting the old app.
+
 1. Pick a coach, a situation, and an outcome. Write: "When ___, I need to ___, so that ___." Record the device, frequency, information needed, and the costly mistake to prevent.
 2. Write a short screen brief before layout: entry, primary decision, action, successful exit, empty/loading/error states, and recovery after interruption. Identify what belongs on another screen.
 3. Explore two interaction approaches with realistic content. Choose based on the task, including keyboard and mobile behavior. Review the interaction before expanding scope.
@@ -104,6 +106,10 @@ Training links to a searchable Exercise library. Coaches create and edit movemen
 ## Client check-in scheduling
 
 Client Overview → Manage check-ins opens a client-scoped schedule list. Choose and preview a Check-in form, set the first due date and repetition, then save. Existing schedules support cadence/date edits, stopping and deliberate resumption. Server search, totals and cursor pagination include inactive history. See [the scheduling brief](check-in-schedules.md) for recovery, compatibility and verification. Reviewing client check-in submissions is the next adjacent task.
+
+## Check-in review and history
+
+Check-ins navigation opens the review list across visible clients. Client Overview and schedules link to response history. Saved question snapshots, review timestamps and photo access stay on a dedicated reading page. Search, review filters, counts and cursors are server-owned. See [the review brief](check-in-review.md) for mobile/desktop verification. [Client training history](training-history.md) is next.
 
 ## Sources
 

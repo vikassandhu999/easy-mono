@@ -2,6 +2,7 @@ defmodule Easy.Training.Execution do
   alias Easy.ClientAccess
   alias Easy.ClientAccount
   alias Easy.Ctx
+  alias Easy.CursorPage
   alias Easy.Repo
   alias Easy.Training.{PlanReader, PrescriptionSnapshot, TrainingSession}
   alias Easy.Utils
@@ -99,6 +100,45 @@ defmodule Easy.Training.Execution do
     with :ok <- ClientAccess.authorize_client_id(ctx, client_id),
          {:ok, filters} <- history_filters(opts) do
       {:ok, paginated_sessions(ctx.business_id, client_id, filters)}
+    end
+  end
+
+  @spec list_session_page_for_client(Ctx.t(), String.t(), keyword()) ::
+          {:ok, CursorPage.t(TrainingSession.t())} | {:error, :not_found | :invalid_cursor | Ecto.Changeset.t()}
+  def list_session_page_for_client(%Ctx{} = ctx, client_id, opts \\ []) do
+    with :ok <- ClientAccess.authorize_client_id(ctx, client_id),
+         {:ok, filters} <- history_filters(opts),
+         :ok <- compatible_pagination(opts) do
+      base =
+        TrainingSession
+        |> TrainingSession.for_client(ctx.business_id, client_id)
+        |> TrainingSession.for_date_range(filters.from, filters.to)
+        |> TrainingSession.for_state(Keyword.get(opts, :state))
+        |> TrainingSession.for_search(Keyword.get(opts, :search))
+
+      session_page(base, ctx.business_id, filters, Keyword.get(opts, :cursor))
+    end
+  end
+
+  defp compatible_pagination(opts) do
+    if Keyword.get(opts, :cursor) && Keyword.has_key?(opts, :offset), do: {:error, :invalid_cursor}, else: :ok
+  end
+
+  defp session_page(base, business_id, filters, nil) do
+    rows =
+      base
+      |> TrainingSession.newest()
+      |> Utils.paginate(filters.offset, filters.limit)
+      |> TrainingSession.include_sets(business_id)
+      |> Repo.all()
+
+    {:ok, %{data: rows, count: Repo.aggregate(base, :count, :id), next_cursor: nil}}
+  end
+
+  defp session_page(base, business_id, filters, cursor) do
+    with {:ok, query} <- CursorPage.query(base, cursor, filters.limit) do
+      rows = query |> TrainingSession.include_sets(business_id) |> Repo.all()
+      {:ok, CursorPage.finish(rows, filters.limit, Repo.aggregate(base, :count, :id))}
     end
   end
 

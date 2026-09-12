@@ -2,18 +2,18 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
   use EasyWeb, :typed_controller
 
   alias Easy.Training.Execution
-  alias EasyWeb.Types.Training.Session
+  alias EasyWeb.Types.Training.{Session, SessionIndex}
 
-  typed(:index, query: Session.list_query(), ok: {200, page(Session.t())})
-  typed(:show, ok: {200, data(Session.t())})
+  typed(:index, path: %{client_id: Ecto.UUID.t()}, query: Session.coach_list_query(), ok: {200, SessionIndex.t()})
+  typed(:show, path: %{client_id: Ecto.UUID.t(), id: Ecto.UUID.t()}, ok: {200, data(Session.t())})
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
     client_id = conn.path_params["client_id"]
 
-    with {:ok, %{sessions: sessions, count: count}} <-
-           Execution.list_sessions_for_client(conn.assigns.ctx, client_id, history_opts(conn.query_params)) do
-      ok(conn, %{data: sessions, count: count})
+    with {:ok, page} <-
+           Execution.list_session_page_for_client(conn.assigns.ctx, client_id, history_opts(conn.query_params)) do
+      ok(conn, page)
     end
   end
 
@@ -31,8 +31,12 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
     [
       from: query["from"],
       to: query["to"],
-      offset: query["offset"] || 0,
-      limit: query["limit"] || 20
+      offset: query["offset"],
+      limit: query["limit"],
+      cursor: query["cursor"],
+      state: query["state"],
+      search: query["search"]
     ]
+    |> Enum.reject(fn {_key, value} -> is_nil(value) end)
   end
 end

@@ -48,6 +48,14 @@ defmodule EasyWeb.Types.CheckInReview do
           optional(:limit) => integer()
         }
 
+  @type history_query :: %{
+          optional(:cursor) => String.t(),
+          optional(:limit) => pos_integer(),
+          optional(:client_id) => Ecto.UUID.t(),
+          optional(:reviewed) => boolean(),
+          optional(:search) => String.t()
+        }
+
   @spec format(FormSubmissionSchema.t()) :: t()
   def format(
         %FormSubmissionSchema{
@@ -67,4 +75,14 @@ defmodule EasyWeb.Types.CheckInReview do
       form_assignment: form_assignment
     })
   end
+end
+
+defmodule EasyWeb.Types.CheckInSubmissionIndex do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:data) => [EasyWeb.Types.CheckInReview.t()],
+          required(:count) => non_neg_integer(),
+          required(:next_cursor) => String.t() | nil
+        }
 end

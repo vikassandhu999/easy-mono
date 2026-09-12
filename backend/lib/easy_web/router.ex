@@ -148,6 +148,8 @@ defmodule EasyWeb.Router do
     patch "/check-in-schedules/:id", CheckInScheduleController, :update
     delete "/check-in-schedules/:id", CheckInScheduleController, :delete
     get "/check-ins/review-queue", CheckInReviewController, :index
+    get "/check-ins/submissions", CheckInReviewController, :history
+    get "/check-ins/submissions/:id", CheckInReviewController, :show
     post "/form-submissions/:id/review", CheckInReviewController, :review
     get "/clients/:client_id/intake", FormAssignmentController, :intake
     get "/clients/:client_id/form-assignments", FormAssignmentController, :index

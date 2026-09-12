@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 0d547052c38179ee6db2f9cb63ee85307add57c98965cddbea5a3c00478427df */
+/* typed-routes:hash b7f5dde9398900e8da188a761bd20ac246b839c7541b2c91e51dbc1b1c2b3d80 */
 export type Attachment = {
   id: string;
   content_type:
@@ -127,6 +127,13 @@ export type CheckInReview = {
   client: {id: string; email: string | null; first_name: string | null; last_name: string | null};
   form_assignment: FormAssignment;
 };
+export type CheckInReviewHistoryQuery = {
+  cursor?: string;
+  limit?: number;
+  client_id?: string;
+  reviewed?: boolean;
+  search?: string;
+};
 export type CheckInReviewListQuery = {offset?: number; limit?: number};
 export type CheckInSchedule = {
   id: string;
@@ -151,6 +158,7 @@ export type CheckInScheduleUpdate = {
   next_due_on?: string;
   active?: boolean;
 };
+export type CheckInSubmissionIndex = {data: Array<CheckInReview>; count: number; next_cursor: string | null};
 export type Client = {
   id: string;
   local_date: string;
@@ -948,7 +956,16 @@ export type Session = {
   inserted_at: string;
   updated_at: string;
 };
-export type SessionListQuery = {from?: string; to?: string; offset?: number; limit?: number};
+export type SessionCoachListQuery = {
+  from?: string;
+  to?: string;
+  offset?: number;
+  limit?: number;
+  cursor?: string;
+  search?: string;
+  state?: 'active' | 'completed' | 'discarded';
+};
+export type SessionIndex = {data: Array<Session>; count: number; next_cursor: string | null};
 export type SessionPlannedSet = {
   set_type: 'working' | 'warmup' | 'dropset' | null;
   reps: string | null;
@@ -1241,7 +1258,7 @@ export type WorkbenchSnooze = {queue: 'quiet' | 'expiring'; snoozed_until: strin
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 5f13efc106911d3c95db1ec2e194ffbfa42d6bb229fc0781e40519b901be6051 */
+  /* typed-routes:hash 9bf288a026dc69f7303218283507a627c8292ccefa6a4a042df1474fe8bb8461 */
   '/api/health': {
     get: {
       parameters: {
@@ -1410,6 +1427,32 @@ export interface paths {
       };
       responses: {
         200: {content: {'application/json': {data: Array<CheckInReview>; count: number}}};
+      };
+    };
+  };
+  '/v1/coach/check-ins/submissions': {
+    get: {
+      parameters: {
+        query?: CheckInReviewHistoryQuery;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': CheckInSubmissionIndex}};
+      };
+    };
+  };
+  '/v1/coach/check-ins/submissions/{id}': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: CheckInReview}}};
       };
     };
   };
@@ -1586,13 +1629,13 @@ export interface paths {
   '/v1/coach/clients/{client_id}/training-sessions': {
     get: {
       parameters: {
-        query?: SessionListQuery;
+        query?: SessionCoachListQuery;
         header?: {Authorization?: string};
         path: {client_id: string};
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<Session>; count: number}}};
+        200: {content: {'application/json': SessionIndex}};
       };
     };
   };

@@ -108,6 +108,16 @@ defmodule EasyWeb.Types.Training.Session do
           optional(:limit) => integer()
         }
 
+  @type coach_list_query :: %{
+          optional(:from) => Date.t(),
+          optional(:to) => Date.t(),
+          optional(:offset) => non_neg_integer(),
+          optional(:limit) => pos_integer(),
+          optional(:cursor) => String.t(),
+          optional(:search) => String.t(),
+          optional(:state) => :active | :completed | :discarded
+        }
+
   @spec format(TrainingSession.t() | t()) :: t()
   def format(%TrainingSession{} = session) do
     %{
@@ -205,4 +215,14 @@ defmodule EasyWeb.Types.Training.Session do
   defp format_sets(sets) when is_list(sets), do: sets
 
   defp field(map, name) when is_map(map), do: Map.get(map, name, Map.get(map, Atom.to_string(name)))
+end
+
+defmodule EasyWeb.Types.Training.SessionIndex do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:data) => [EasyWeb.Types.Training.Session.t()],
+          required(:count) => non_neg_integer(),
+          required(:next_cursor) => String.t() | nil
+        }
 end

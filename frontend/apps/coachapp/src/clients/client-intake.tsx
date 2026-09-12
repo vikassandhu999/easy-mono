@@ -5,7 +5,7 @@ import {type FormAssignment, type useFormSubmissions, useReviewIntake} from '../
 import {Button} from '../ui/button';
 import {FormError} from '../ui/form-error';
 import {StatusBadge, Surface} from '../ui/page';
-import {IntakeAnswers} from './intake-answers';
+import {SubmissionAnswers} from '../ui/submission-answers';
 import {IntakePreview} from './intake-preview';
 
 type IntakeProps = {assignment: FormAssignment; person: Client; submissions: ReturnType<typeof useFormSubmissions>};
@@ -130,7 +130,7 @@ function SubmittedIntake({assignment, person, submissions}: IntakeProps) {
           </p>
         </div>
       </Surface>
-      <IntakeAnswers submission={submission} />
+      <SubmissionAnswers submission={submission} />
       <Surface className="space-y-4">
         {submission.reviewed_at ? (
           <div role="status">

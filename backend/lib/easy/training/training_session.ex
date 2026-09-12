@@ -119,6 +119,17 @@ defmodule Easy.Training.TrainingSession do
   def newest(query \\ __MODULE__),
     do: from(session in query, order_by: [desc: session.started_at, desc: session.id])
 
+  @spec for_search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
+  def for_search(query, search) when search in [nil, ""], do: query
+
+  def for_search(query, search) do
+    pattern = search |> String.trim() |> Easy.Search.like_pattern()
+
+    from(session in query,
+      where: ilike(fragment("coalesce(?->'workout'->>'name', 'Freestyle session')", session.prescription_snapshot), ^pattern)
+    )
+  end
+
   @spec include_sets(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def include_sets(query \\ __MODULE__, business_id) do
     set_query =

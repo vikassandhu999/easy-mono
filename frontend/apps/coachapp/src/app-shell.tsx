@@ -127,15 +127,18 @@ export function AppShell() {
           to={routes.home}
           end
           className={({isActive}) =>
-            isActive ||
-            matchPath(routes.client, pathname) ||
-            matchPath(routes.clientCheckIns, pathname) ||
-            matchPath(routes.createCheckIn, pathname)
+            isActive || matchPath({path: routes.client, end: false}, pathname)
               ? 'app-navigation-link active'
               : 'app-navigation-link'
           }
         >
           Clients
+        </NavLink>
+        <NavLink
+          to={routes.checkInResponses}
+          className={({isActive}) => (isActive ? 'app-navigation-link active' : 'app-navigation-link')}
+        >
+          Check-ins
         </NavLink>
         <NavLink
           to={routes.forms}

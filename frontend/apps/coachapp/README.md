@@ -154,3 +154,9 @@ Run `rtk pnpm -C frontend/apps/coachapp test:exercises` from the repository root
 Client Overview → Manage check-ins supports selecting and previewing a form, choosing its first due date and repetition, editing future dates, and stopping or resuming generation. Scheduling starts with active clients. Stopping preserves existing check-ins and answers. Dates, capacity, counts and filtered results come from the API; inactive history uses cursor pagination. Submission review is a separate screen.
 
 Run `rtk pnpm -C frontend/apps/coachapp test:check-ins` from the repository root with the coach app and isolated browser API running. The suite checks scheduling, lost-response recovery, duplicate and capacity errors, preview, pagination, filtering and session isolation at 375px and 1280px. See [the scheduling brief](../../../.scratch/coachapp-rebuild/check-in-schedules.md).
+
+## Check-in review
+
+Check-ins opens responses needing review across visible clients. Client Overview → View responses opens that client's history. Read saved question snapshots and answers, load progress photos, and mark a response reviewed. Reviewed responses remain available through the status filter. Search, totals and cursor pagination come from the API; list position survives opening a response and returning.
+
+Run `rtk pnpm -C frontend/apps/coachapp test:reviews` with the app and isolated browser API running. It covers the review task and the shared intake-answer regression at 375px and 1280px. See [the review brief](../../../.scratch/coachapp-rebuild/check-in-review.md). The remaining whole-app work is tracked in [the completion ledger](../../../.scratch/coachapp-rebuild/completion.md).

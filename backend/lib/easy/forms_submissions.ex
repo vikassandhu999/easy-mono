@@ -2,6 +2,7 @@ defmodule Easy.Forms.Submissions do
   alias Easy.ClientAccess
   alias Easy.ClientAccount
   alias Easy.Ctx
+  alias Easy.CursorPage
   alias Easy.FormAnswers
   alias Easy.Forms.FormAssignment
   alias Easy.Forms.FormSubmission
@@ -82,6 +83,44 @@ defmodule Easy.Forms.Submissions do
          {:ok, reviewed} <- review_form_submission_once(submission, ctx.user_id) do
       {:ok, Photos.attach_submission(ctx, reviewed)}
     end
+  end
+
+  @spec list_check_in_submissions(Ctx.t(), keyword()) ::
+          {:ok, CursorPage.t(FormSubmission.t())} | {:error, :invalid_cursor}
+  def list_check_in_submissions(%Ctx{} = ctx, opts \\ []) do
+    base =
+      visible_check_ins(ctx)
+      |> FormSubmission.for_review_client(Keyword.get(opts, :client_id))
+      |> FormSubmission.for_reviewed(Keyword.get(opts, :reviewed))
+      |> FormSubmission.for_review_search(Keyword.get(opts, :search))
+
+    limit = CursorPage.limit(opts)
+
+    with {:ok, query} <- CursorPage.query(base, Keyword.get(opts, :cursor) || "start", limit) do
+      rows =
+        query
+        |> FormSubmission.include_review_context(ctx.business_id)
+        |> Repo.all()
+        |> then(&Photos.attach_submissions(ctx, &1))
+
+      {:ok, CursorPage.finish(rows, limit, Repo.aggregate(base, :count, :id))}
+    end
+  end
+
+  @spec get_check_in_submission(Ctx.t(), String.t()) :: {:ok, FormSubmission.t()} | {:error, :not_found}
+  def get_check_in_submission(%Ctx{} = ctx, id) do
+    result = ctx |> visible_check_ins() |> FormSubmission.include_review_context(ctx.business_id) |> Repo.get(id)
+
+    with {:ok, submission} <- ok_or_not_found(result) do
+      {:ok, Photos.attach_submission(ctx, submission)}
+    end
+  end
+
+  defp visible_check_ins(ctx) do
+    FormSubmission
+    |> FormSubmission.for_business(ctx.business_id)
+    |> FormSubmission.for_check_ins()
+    |> FormSubmission.for_visible_clients(ctx)
   end
 
   defp submit_assignment_transaction(ctx, client, assignment, answers) do

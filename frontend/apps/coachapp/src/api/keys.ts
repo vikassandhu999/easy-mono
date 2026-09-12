@@ -4,6 +4,7 @@ import type {ClientFilters} from './clients';
 import type {FormTemplateFilters} from './forms';
 import type {TrainingPlanFilters} from './training-plans';
 import type {SessionFilters} from './training-sessions';
+import type {WeightProgressFilters} from './weight-progress';
 
 export const authKeys = {
   all: ['auth'] as const,
@@ -103,4 +104,17 @@ export const trainingSessionKeys = {
     [...trainingSessionKeys.lists(), clientId, 'infinite', filters] as const,
   details: () => [...trainingSessionKeys.all, 'detail'] as const,
   detail: (clientId: string, id: string) => [...trainingSessionKeys.details(), clientId, id] as const,
+};
+
+export const nutritionDayKeys = {
+  all: ['nutrition-days'] as const,
+  lists: () => [...nutritionDayKeys.all, 'list'] as const,
+  day: (clientId: string, date?: string) => [...nutritionDayKeys.lists(), clientId, {date: date ?? 'today'}] as const,
+};
+
+export const weightProgressKeys = {
+  all: ['weight-progress'] as const,
+  lists: () => [...weightProgressKeys.all, 'list'] as const,
+  infinite: (clientId: string, filters: WeightProgressFilters) =>
+    [...weightProgressKeys.lists(), clientId, 'infinite', filters] as const,
 };

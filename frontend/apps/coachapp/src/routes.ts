@@ -13,6 +13,8 @@ export const routes = {
   editClientTrainingPlan: '/clients/:clientId/training-plans/:id/edit',
   trainingSessions: '/clients/:clientId/training-sessions',
   trainingSession: '/clients/:clientId/training-sessions/:id',
+  nutritionHistory: '/clients/:clientId/nutrition-history',
+  weightProgress: '/clients/:clientId/weight-progress',
   exercises: '/training-exercises',
   createExercise: '/training-exercises/new',
   exercise: '/training-exercises/:id',

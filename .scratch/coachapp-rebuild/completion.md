@@ -17,8 +17,8 @@ This is an implementation ledger, not a claim of completion. Existing slices hav
 | Check-in schedules | Implemented | Final end-to-end regression with submitted answers |
 | Check-in review and history | Implemented and verified 2026-09-12 | Global/client history, frozen answers, review recovery, cursor lists and intake regression pass at 375px/1280px; see check-in-review.md |
 | Client training history | Implemented and verified 2026-09-12 | Frozen prescriptions, recorded sets and units, session states, date filters, cursor pagination and recovery pass at 375px/1280px; see training-history.md |
-| Client nutrition history | Pending | Nutrition Days, frozen guidance versus actual intake, date navigation |
-| Client progress | Pending | Weight history with source/date/unit clarity and empty states |
+| Client nutrition history | Implemented and verified 2026-09-12 | Daily intake, server totals, frozen meal guidance, date navigation, unknown/zero nutrients, recovery and account isolation pass at 375px/1280px; see nutrition-history.md |
+| Client progress | Implemented and verified 2026-09-12 | Server-owned weight trend, mixed units, form provenance, date filters, cursor history, recovery and account isolation pass at 375px/1280px; see weight-progress.md |
 | Conversations | Pending | Client thread and inbox, pagination, text/media sending, read/handled state, realtime updates, failed-send recovery |
 | Daily Workbench | Pending | API-owned queues/counts, onboarding/programming/expiry/quiet/review/reply actions and snooze; no frontend derivation |
 | Coach profile and business settings | Pending | Profile/timezone, business details and persisted preferences, owner permissions |

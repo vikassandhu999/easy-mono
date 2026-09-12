@@ -23,6 +23,7 @@ import {FoodEditor} from './foods/food-editor';
 import {Foods} from './foods/foods';
 import {FormEditor} from './forms/form-editor';
 import {Forms} from './forms/forms';
+import {NutritionHistory} from './nutrition-history/nutrition-history';
 import {NutritionPlanEditor} from './nutrition-plans/nutrition-plan-editor';
 import {NutritionPlans} from './nutrition-plans/nutrition-plans';
 import {RecipeEditor} from './recipes/recipe-editor';
@@ -32,6 +33,7 @@ import {TrainingPlanEditor} from './training-plans/training-plan-editor';
 import {TrainingPlans} from './training-plans/training-plans';
 import {TrainingSession} from './training-sessions/training-session';
 import {TrainingSessions} from './training-sessions/training-sessions';
+import {WeightProgress} from './weight-progress/weight-progress';
 
 function Gate({guest = false}: {guest?: boolean}) {
   const session = parseSession(useSyncExternalStore(subscribeSession, sessionSnapshot));
@@ -104,6 +106,7 @@ function Root() {
           location.pathname === routes.checkInResponses ||
           matchPath(routes.clientCheckInResponses, location.pathname) ||
           matchPath(routes.trainingSessions, location.pathname) ||
+          matchPath(routes.weightProgress, location.pathname) ||
           matchPath(routes.assignNutritionPlan, location.pathname) ||
           matchPath(routes.clientCheckIns, location.pathname) ||
           location.pathname === routes.home ||
@@ -140,6 +143,8 @@ export const router = createBrowserRouter([
               {path: routes.client, element: <ClientOverview />},
               {path: routes.trainingSessions, element: <TrainingSessions />},
               {path: routes.trainingSession, element: <TrainingSession />},
+              {path: routes.nutritionHistory, element: <NutritionHistory />},
+              {path: routes.weightProgress, element: <WeightProgress />},
               {path: routes.clientCheckIns, element: <CheckInSchedules />},
               {path: routes.createCheckIn, element: <CreateCheckIn />},
               {path: routes.checkInResponses, element: <CheckInResponses />},

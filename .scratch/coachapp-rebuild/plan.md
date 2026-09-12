@@ -109,7 +109,11 @@ Client Overview → Manage check-ins opens a client-scoped schedule list. Choose
 
 ## Check-in review and history
 
-Check-ins navigation opens the review list across visible clients. Client Overview and schedules link to response history. Saved question snapshots, review timestamps and photo access stay on a dedicated reading page. Search, review filters, counts and cursors are server-owned. See [the review brief](check-in-review.md) for mobile/desktop verification. [Client training history](training-history.md) is next.
+Check-ins navigation opens the review list across visible clients. Client Overview and schedules link to response history. Saved question snapshots, review timestamps and photo access stay on a dedicated reading page. Search, review filters, counts and cursors are server-owned. See [the review brief](check-in-review.md) for mobile/desktop verification.
+
+## Client activity history
+
+Client Overview links to [training history](training-history.md), with session states, recorded sets, frozen prescriptions and cursor pagination, and [nutrition history](nutrition-history.md), with a day reader, logged totals, recorded portions and meal guidance. Both preserve server-owned values, client scope and recovery. Client weight progress is next.
 
 ## Sources
 

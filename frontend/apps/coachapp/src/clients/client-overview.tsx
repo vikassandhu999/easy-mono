@@ -170,6 +170,21 @@ function Overview({id}: {id: string}) {
         person={person}
         query={nutrition}
       />
+      <section
+        aria-label="Client progress"
+        className="flex flex-wrap items-center justify-between gap-4"
+      >
+        <div>
+          <h2 className="section-title">Weight progress</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Review measurements, notes and the change over time.</p>
+        </div>
+        <Link
+          to={generatePath(routes.weightProgress, {clientId: id})}
+          className={buttonVariants({variant: 'outline'})}
+        >
+          View weight progress
+        </Link>
+      </section>
       <ClientTrainingPlans
         person={person}
         query={trainingPlans}

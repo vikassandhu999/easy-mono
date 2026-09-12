@@ -132,6 +132,9 @@ importers:
 
   apps/coachapp:
     dependencies:
+      '@easy/utils':
+        specifier: workspace:^
+        version: link:../../packages/utils
       '@tanstack/react-query':
         specifier: 5.101.4
         version: 5.101.4(react@19.2.8)

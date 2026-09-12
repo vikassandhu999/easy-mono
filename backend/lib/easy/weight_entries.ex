@@ -13,6 +13,7 @@ defmodule Easy.WeightEntries do
   alias Easy.Result
   alias Easy.WeightEntries.History
   alias Easy.WeightEntries.Input
+  alias Easy.WeightEntries.Progress
 
   @adherence_window_days 30
 
@@ -63,6 +64,14 @@ defmodule Easy.WeightEntries do
     with {:ok, client} <- ClientAccess.authorize_client(ctx, client_id),
          {:ok, since_date} <- Input.parse_since(since) do
       {:ok, weight_history(client, since_date)}
+    end
+  end
+
+  @spec get_progress_for_client(Ctx.t(), String.t(), keyword()) ::
+          {:ok, Progress.t()} | {:error, :not_found | :invalid_cursor | Ecto.Changeset.t()}
+  def get_progress_for_client(%Ctx{} = ctx, client_id, opts \\ []) do
+    with {:ok, client} <- ClientAccess.authorize_client(ctx, client_id) do
+      Progress.build(client, opts)
     end
   end
 

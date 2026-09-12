@@ -162,6 +162,7 @@ defmodule EasyWeb.Router do
     get "/clients/:client_id/training-plans", ClientTrainingPlanController, :index
     get "/clients/:client_id/nutrition-coverage", NutritionCoverageController, :show
     get "/clients/:client_id/weight_entries", ClientWeightEntryController, :index
+    get "/clients/:client_id/weight-progress", ClientWeightEntryController, :progress
 
     get "/nutrition-foods", FoodController, :index
     get "/nutrition-foods/categories", FoodController, :categories

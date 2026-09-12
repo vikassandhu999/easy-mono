@@ -24,13 +24,21 @@ export function ClientNutritionPlans({
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="section-title">Nutrition plans</h2>
-        <Link
-          to={generatePath(routes.assignNutritionPlan, {id: person.id})}
-          state={state}
-          className={buttonVariants({variant: 'outline'})}
-        >
-          Assign nutrition plan
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            to={generatePath(routes.nutritionHistory, {clientId: person.id})}
+            className={buttonVariants({variant: 'ghost'})}
+          >
+            View nutrition history
+          </Link>
+          <Link
+            to={generatePath(routes.assignNutritionPlan, {id: person.id})}
+            state={state}
+            className={buttonVariants({variant: 'outline'})}
+          >
+            Assign nutrition plan
+          </Link>
+        </div>
       </div>
       {!coverage && query.isPending && (
         <Surface>

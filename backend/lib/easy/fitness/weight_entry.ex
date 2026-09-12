@@ -91,6 +91,10 @@ defmodule Easy.Fitness.WeightEntry do
   def for_since(query, ""), do: query
   def for_since(query, %Date{} = date), do: from(e in query, where: e.date >= ^date)
 
+  @spec for_until(Ecto.Queryable.t(), Date.t() | nil) :: Ecto.Query.t()
+  def for_until(query, nil), do: query
+  def for_until(query, %Date{} = date), do: from(e in query, where: e.date <= ^date)
+
   @spec oldest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def oldest(query \\ __MODULE__) do
     from(e in query, order_by: [asc: e.date, asc: e.id])

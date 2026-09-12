@@ -160,3 +160,15 @@ Run `rtk pnpm -C frontend/apps/coachapp test:check-ins` from the repository root
 Check-ins opens responses needing review across visible clients. Client Overview → View responses opens that client's history. Read saved question snapshots and answers, load progress photos, and mark a response reviewed. Reviewed responses remain available through the status filter. Search, totals and cursor pagination come from the API; list position survives opening a response and returning.
 
 Run `rtk pnpm -C frontend/apps/coachapp test:reviews` with the app and isolated browser API running. It covers the review task and the shared intake-answer regression at 375px and 1280px. See [the review brief](../../../.scratch/coachapp-rebuild/check-in-review.md). The remaining whole-app work is tracked in [the completion ledger](../../../.scratch/coachapp-rebuild/completion.md).
+
+## Client activity history
+
+Client Overview links to training and nutrition history. Training history supports server search, date/state filters and cursor pages, with recorded sets and the frozen prescription on a session page. Nutrition history opens one date at a time, with logged totals beside targets, recorded portions and notes, and expandable meal guidance. Unknown nutrition and unrecorded food remain explicit.
+
+Run `rtk pnpm -C frontend/apps/coachapp test:training-history` and `rtk pnpm -C frontend/apps/coachapp test:nutrition-history` with the app and isolated API running. Both verify real client writes, coach reads, history after plan edits, request recovery and account isolation at 375px and 1280px. Nutrition tests accept `COACHAPP_API_URL` and `COACHAPP_URL` for alternate ports. See the [training brief](../../../.scratch/coachapp-rebuild/training-history.md) and [nutrition brief](../../../.scratch/coachapp-rebuild/nutrition-history.md).
+
+## Client weight progress
+
+Client Overview → View weight progress shows a 90-day trend, first/latest readings, change and goal. Choose dates and a trend unit to review another range. The API selects daily chart points, converts units, and supplies the summary independently of cursor pages. Measurement history preserves every reading's original unit, date, source and note.
+
+Run `rtk pnpm -C frontend/apps/coachapp test:weight-progress` with the app and isolated API running. It verifies real measurements and form answers, mixed units, date filters, pagination, recovery and account isolation at 375px and 1280px. Set `COACHAPP_API_URL` and `COACHAPP_URL` for alternate ports. See the [weight progress brief](../../../.scratch/coachapp-rebuild/weight-progress.md).

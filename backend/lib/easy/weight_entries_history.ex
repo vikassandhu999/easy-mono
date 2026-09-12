@@ -71,7 +71,8 @@ defmodule Easy.WeightEntries.History do
     }
   end
 
-  defp convert_value(value, unit, unit), do: Decimal.round(value, 2)
-  defp convert_value(value, :kg, :lbs), do: value |> Decimal.mult(@kg_to_lbs) |> Decimal.round(2)
-  defp convert_value(value, :lbs, :kg), do: value |> Decimal.div(@kg_to_lbs) |> Decimal.round(2)
+  @spec convert_value(Decimal.t(), unit(), unit()) :: Decimal.t()
+  def convert_value(value, unit, unit), do: Decimal.round(value, 2)
+  def convert_value(value, :kg, :lbs), do: value |> Decimal.mult(@kg_to_lbs) |> Decimal.round(2)
+  def convert_value(value, :lbs, :kg), do: value |> Decimal.div(@kg_to_lbs) |> Decimal.round(2)
 end

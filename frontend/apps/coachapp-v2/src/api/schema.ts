@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash b7f5dde9398900e8da188a761bd20ac246b839c7541b2c91e51dbc1b1c2b3d80 */
+/* typed-routes:hash d54fedd6a3071687e5aacdfca12568fcf6a5b719e05c87f7ef482e975a8cf35e */
 export type Attachment = {
   id: string;
   content_type:
@@ -1206,6 +1206,31 @@ export type WeightEntryIndex = {
   adherence: {logged_days: number; window_days: number};
 };
 export type WeightEntryListQuery = {since?: string};
+export type WeightProgress = {
+  data: Array<WeightEntry>;
+  count: number;
+  next_cursor: string | null;
+  from: string;
+  to: string;
+  unit: 'kg' | 'lbs';
+  goal: {value: string; unit: 'kg' | 'lbs'} | null;
+  summary: {
+    first_entry: WeightProgressMeasurement | null;
+    latest_entry: WeightProgressMeasurement | null;
+    total_change: number | null;
+    change_unit: 'kg' | 'lbs' | null;
+  };
+  chart: {min: number | null; max: number | null; points: Array<WeightProgressPoint>};
+};
+export type WeightProgressListQuery = {
+  from?: string;
+  to?: string;
+  unit?: 'kg' | 'lbs';
+  cursor?: string;
+  limit?: number;
+};
+export type WeightProgressMeasurement = {date: string; value: string; unit: 'kg' | 'lbs'};
+export type WeightProgressPoint = {id: string; date: string; value: number};
 export type Workbench = {
   check_ins: number;
   replies: number;
@@ -1258,7 +1283,7 @@ export type WorkbenchSnooze = {queue: 'quiet' | 'expiring'; snoozed_until: strin
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 9bf288a026dc69f7303218283507a627c8292ccefa6a4a042df1474fe8bb8461 */
+  /* typed-routes:hash 8255e4f39f61742e2a716feddd006e14f1fd56ff541a811cf2cb790b5fd31b61 */
   '/api/health': {
     get: {
       parameters: {
@@ -1663,6 +1688,19 @@ export interface paths {
       requestBody: {content: {'application/json': UploadCreate}};
       responses: {
         201: {content: {'application/json': {data: Upload}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/weight-progress': {
+    get: {
+      parameters: {
+        query?: WeightProgressListQuery;
+        header?: {Authorization?: string};
+        path: {client_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': WeightProgress}};
       };
     };
   };

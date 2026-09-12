@@ -63,6 +63,20 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
       assert json_response(conn, 404)
     end
 
+    test "conceals a client assigned to another trainer", ctx do
+      other_coach = insert(:coach, business: ctx.business)
+
+      other_client =
+        insert(:client,
+          creator: other_coach,
+          assigned_coach: other_coach,
+          business: ctx.business
+        )
+
+      conn = get(ctx.conn, "/v1/coach/clients/#{other_client.id}/nutrition-days")
+      assert json_response(conn, 404)
+    end
+
     test "rejects malformed range dates", ctx do
       conn =
         get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/nutrition-days", %{

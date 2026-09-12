@@ -25,9 +25,12 @@
     "test:exercises": "node tests/exercises/exercises.browser.mjs",
     "test:check-ins": "node tests/check-ins/schedules.browser.mjs",
     "test:reviews": "node tests/check-ins/review.browser.mjs",
-    "test:training-history": "node tests/training/history.browser.mjs"
+    "test:training-history": "node tests/training/history.browser.mjs",
+    "test:nutrition-history": "node tests/nutrition/history.browser.mjs",
+    "test:weight-progress": "node tests/weight-progress/progress.browser.mjs"
   },
   "dependencies": {
+    "@easy/utils": "workspace:^",
     "@tanstack/react-query": "5.101.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

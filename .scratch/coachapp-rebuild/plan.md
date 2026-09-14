@@ -189,3 +189,7 @@ Client overview and assigned builders now open client-scoped management. All ass
 ## Shared training targets
 
 Uniform working sets can receive duration, distance, effort and notes in one local edit. Batch additions accept the same targets; matching-set updates preserve individual extras. The prescription field audit and real API regressions cover save/reopen, validation, cancellation, failed-save recovery, zero and cleared values at both widths. See [the field audit](prescription-fields.md). Nutrition menu editing is next.
+
+## Nutrition portions and day-menu removal
+
+Meal items support server-provided portion choices and typed fractional quantities. Coaches can remove a day menu, choose replacement weekday assignments and Undo without reverting later edits. Shared meals remain intact. See [the menu-editing brief](menu-editing.md). Remaining menu ordering and full application journeys follow.

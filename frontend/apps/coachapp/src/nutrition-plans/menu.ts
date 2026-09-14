@@ -90,3 +90,46 @@ export function restoreMeal(
     ),
   };
 }
+
+export function removeDayMenu(menu: NutritionMenu, patternId: string, replacementId: string) {
+  const pattern = menu.day_patterns.find((day) => day.id === patternId);
+  if (!pattern || patternId === replacementId || !menu.day_patterns.some((day) => day.id === replacementId)) {
+    return null;
+  }
+  const day_patterns = menu.day_patterns.filter((day) => day.id !== patternId);
+  const remainingMeals = new Set(day_patterns.flatMap((day) => day.slots.flatMap((slot) => slot.meal_ids)));
+  const patternMeals = new Set(pattern.slots.flatMap((slot) => slot.meal_ids));
+  const removedMeals = menu.meals.filter((meal) => patternMeals.has(meal.id));
+  const days = weekdays.filter((day) => menu.schedule[day] === patternId);
+  const schedule = {...menu.schedule};
+  for (const day of days) {
+    schedule[day] = replacementId;
+  }
+  return {
+    menu: {...menu, day_patterns, schedule, meals: menu.meals.filter((meal) => remainingMeals.has(meal.id))},
+    removed: {pattern, index: menu.day_patterns.indexOf(pattern), meals: removedMeals, days, replacementId},
+  };
+}
+
+export function restoreDayMenu(
+  menu: NutritionMenu,
+  removed: NonNullable<ReturnType<typeof removeDayMenu>>['removed'],
+): NutritionMenu {
+  if (menu.day_patterns.some((day) => day.id === removed.pattern.id)) {
+    return menu;
+  }
+  const day_patterns = [...menu.day_patterns];
+  day_patterns.splice(removed.index, 0, removed.pattern);
+  const schedule = {...menu.schedule};
+  for (const day of removed.days) {
+    if (schedule[day] === removed.replacementId) {
+      schedule[day] = removed.pattern.id;
+    }
+  }
+  return {
+    ...menu,
+    day_patterns,
+    schedule,
+    meals: [...menu.meals, ...removed.meals.filter((meal) => !menu.meals.some((value) => value.id === meal.id))],
+  };
+}

@@ -273,3 +273,7 @@ Saved training and nutrition editors offer Manage template for copying, archive/
 ## Assigned plan dates and lifecycle
 
 Client overview links to All training/nutrition plans and Manage dates and access. Find previous plans, change their date range, archive/restore, or delete while retaining recorded activity. Run `rtk pnpm -C frontend/apps/coachapp test:client-plan-management` with API 4000 and app 2022, or set `COACH_API_URL` / `COACH_APP_URL`. See [the client-plan brief](../../../.scratch/coachapp-rebuild/client-plan-management.md).
+
+## Nutrition portions and day menus
+
+Meal rows keep inline quantities and offer Change portion for available gram or serving choices. Remove day menu asks for replacement weekdays and keeps shared meals. Item and day-menu removal have Undo; weekday choices made after removal stay intact when undoing. Run `rtk pnpm -C frontend/apps/coachapp test:menu-editing` with API 4000 and app 2022, or set `COACH_API_URL` / `COACH_APP_URL`. See [the menu-editing brief](../../../.scratch/coachapp-rebuild/menu-editing.md).

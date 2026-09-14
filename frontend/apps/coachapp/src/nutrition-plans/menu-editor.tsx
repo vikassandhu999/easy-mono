@@ -6,7 +6,9 @@ import {SelectItem} from '../ui/select';
 import {SelectField} from '../ui/select-field';
 import {Textarea} from '../ui/textarea';
 import {FoodPicker} from './food-picker';
-import {newMeal, removeMeal, restoreMeal, slotLabel, slots, weekdays} from './menu';
+import {newMeal, removeDayMenu, removeMeal, restoreDayMenu, restoreMeal, slotLabel, slots, weekdays} from './menu';
+import {PortionEditor} from './portion-editor';
+import {RemoveDayMenu} from './remove-day-menu';
 
 export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (menu: NutritionMenu) => void}) {
   const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -14,6 +16,9 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
   const pattern = menu.day_patterns.find((day) => day.id === active) ?? menu.day_patterns[0];
   const [newSlot, setNewSlot] = useState<(typeof slots)[number]>('breakfast');
   const [picking, setPicking] = useState<string | null>(null);
+  const [removingDay, setRemovingDay] = useState(false);
+  const [removedDay, setRemovedDay] = useState<NonNullable<ReturnType<typeof removeDayMenu>>['removed'] | null>(null);
+  const [removedItem, setRemovedItem] = useState<{mealId: string; item: NutritionMealItem; index: number} | null>(null);
   const [removed, setRemoved] = useState<{
     meal: NutritionMeal;
     patternId: string;
@@ -91,6 +96,25 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
           Create day variation
         </Button>
       </div>
+      {removedDay && (
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-2 text-sm"
+        >
+          <span>Removed {removedDay.pattern.name}.</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => {
+              onChange(restoreDayMenu(menu, removedDay));
+              setActive(removedDay.pattern.id);
+              setRemovedDay(null);
+            }}
+          >
+            Undo menu removal
+          </Button>
+        </div>
+      )}
       <details
         open={scheduleOpen}
         onToggle={(event) => setScheduleOpen(event.currentTarget.open)}
@@ -166,6 +190,38 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
           }
         />
       </label>
+      {menu.day_patterns.length > 1 && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onPress={() => setRemovingDay(true)}
+        >
+          Remove day menu
+        </Button>
+      )}
+      {removedItem && menu.meals.some((meal) => meal.id === removedItem.mealId) && (
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-2 text-sm"
+        >
+          <span>Removed {removedItem.item.name || 'meal item'}.</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => {
+              const meal = menu.meals.find((value) => value.id === removedItem.mealId);
+              if (meal && !meal.meal_items.some((item) => item.id === removedItem.item.id)) {
+                const meal_items = [...meal.meal_items];
+                meal_items.splice(removedItem.index, 0, removedItem.item);
+                updateMeal({...meal, meal_items});
+              }
+              setRemovedItem(null);
+            }}
+          >
+            Undo item removal
+          </Button>
+        </div>
+      )}
       {pattern.slots.length === 0 && (
         <p className="text-sm text-muted-foreground">
           Add the meals you want to offer. You can add alternatives for each meal time.
@@ -220,7 +276,7 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
                       Remove
                     </Button>
                   </div>
-                  {meal.meal_items.map((item) => (
+                  {meal.meal_items.map((item, itemIndex) => (
                     <FoodRow
                       key={item.id}
                       item={item}
@@ -230,9 +286,10 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
                           meal_items: meal.meal_items.map((value) => (value.id === next.id ? next : value)),
                         })
                       }
-                      onRemove={() =>
-                        updateMeal({...meal, meal_items: meal.meal_items.filter((value) => value.id !== item.id)})
-                      }
+                      onRemove={() => {
+                        setRemovedItem({mealId: meal.id, item, index: itemIndex});
+                        updateMeal({...meal, meal_items: meal.meal_items.filter((value) => value.id !== item.id)});
+                      }}
                     />
                   ))}
                   <Button
@@ -335,6 +392,24 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
           }}
         />
       )}
+      {removingDay && (
+        <RemoveDayMenu
+          menu={menu}
+          patternId={pattern.id}
+          onClose={() => setRemovingDay(false)}
+          onRemove={(replacementId) => {
+            const result = removeDayMenu(menu, pattern.id, replacementId);
+            if (result) {
+              onChange(result.menu);
+              setRemovedDay(result.removed);
+              setActive(replacementId);
+              setRemoved(null);
+              setRemovedItem(null);
+            }
+            setRemovingDay(false);
+          }}
+        />
+      )}
     </section>
   );
 }
@@ -348,13 +423,28 @@ function FoodRow({
   onRemove: () => void;
 }) {
   const portion = item.portion;
+  const [editing, setEditing] = useState(false);
+  const [quantityDraft, setQuantityDraft] = useState<{text: string; value: number} | null>(null);
+  const quantity = portion.kind === 'gram' ? portion.grams : portion.amount;
+  const invalidQuantity = !Number.isFinite(quantity) || quantity <= 0;
   return (
     <div
       className="grid grid-cols-[minmax(0,1fr)_6rem_2.75rem] items-center gap-2"
       role="group"
       aria-label={item.name || 'Meal item'}
     >
-      <p className="min-w-0 break-words text-sm font-medium">{item.name || 'Meal item'}</p>
+      <div className="min-w-0">
+        <p className="break-words text-sm font-medium">{item.name || 'Meal item'}</p>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="px-0 text-xs font-normal text-muted-foreground"
+          aria-label={`Change portion for ${item.name || 'meal item'}`}
+          onPress={() => setEditing(true)}
+        >
+          Change portion
+        </Button>
+      </div>
       <label
         id={`${`portion-${item.id}`}-label`}
         htmlFor={`portion-${item.id}`}
@@ -364,21 +454,27 @@ function FoodRow({
         <Input
           id={`portion-${item.id}`}
           aria-label={`${item.name} portion`}
-          type="number"
           inputMode="decimal"
-          min="0.01"
-          step="any"
-          value={(portion.kind === 'gram' ? portion.grams : portion.amount) || ''}
-          onChange={(event) =>
+          value={quantityDraft && Object.is(quantityDraft.value, quantity) ? quantityDraft.text : String(quantity)}
+          aria-invalid={invalidQuantity}
+          aria-describedby={invalidQuantity ? `portion-${item.id}-error` : undefined}
+          onChange={(event) => {
+            const value = Number(event.target.value);
+            setQuantityDraft({text: event.target.value, value});
             onChange({
               ...item,
-              portion:
-                portion.kind === 'gram'
-                  ? {...portion, grams: Number(event.target.value)}
-                  : {...portion, amount: Number(event.target.value)},
-            })
-          }
+              portion: portion.kind === 'gram' ? {...portion, grams: value} : {...portion, amount: value},
+            });
+          }}
         />
+        {invalidQuantity && (
+          <span
+            id={`portion-${item.id}-error`}
+            className="text-xs text-destructive"
+          >
+            Enter more than zero.
+          </span>
+        )}
       </label>
       <Button
         variant="ghost"
@@ -388,6 +484,17 @@ function FoodRow({
       >
         ×
       </Button>
+      {editing && (
+        <PortionEditor
+          item={item}
+          onClose={() => setEditing(false)}
+          onApply={(next) => {
+            setQuantityDraft(null);
+            onChange({...item, portion: next});
+            setEditing(false);
+          }}
+        />
+      )}
     </div>
   );
 }

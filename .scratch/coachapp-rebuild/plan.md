@@ -185,3 +185,7 @@ Saved template editors now open a dedicated management page for independent copy
 ## Client plan dates and lifecycle
 
 Client overview and assigned builders now open client-scoped management. All assigned plans keeps ended and archived plans reachable through server cursor search. Dates, archive/restore and deletion protect revisions, overlaps, independent templates and recorded activity. Local-day lifecycle labels respect client and business timezones. See [the client-plan management brief](client-plan-management.md) for mobile/desktop and backend verification. The next pass checks all prescription/menu fields and remaining application tasks.
+
+## Shared training targets
+
+Uniform working sets can receive duration, distance, effort and notes in one local edit. Batch additions accept the same targets; matching-set updates preserve individual extras. The prescription field audit and real API regressions cover save/reopen, validation, cancellation, failed-save recovery, zero and cleared values at both widths. See [the field audit](prescription-fields.md). Nutrition menu editing is next.

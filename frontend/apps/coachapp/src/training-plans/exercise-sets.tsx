@@ -6,7 +6,7 @@ import {SelectItem} from '../ui/select';
 import {SelectField} from '../ui/select-field';
 import {type DraftSet, newSet, type PrescriptionDraft, samePrescription, setSummary} from './prescription';
 import {SetEditor} from './set-editor';
-import {matchesTargets, SetPrescription, type SetTargets} from './set-prescription';
+import {matchesTargets, SetPrescription, type SetPrescriptionMode, type SetTargets} from './set-prescription';
 
 export function ExerciseSets({
   workoutIndex,
@@ -28,7 +28,7 @@ export function ExerciseSets({
   const [expanded, setExpanded] = useState(false);
   const [removed, setRemoved] = useState<{set: DraftSet; index: number} | null>(null);
   const [resized, setResized] = useState<DraftSet[] | null>(null);
-  const [composer, setComposer] = useState<{kind: 'add'} | {kind: 'matching'; source: DraftSet} | null>(null);
+  const [composer, setComposer] = useState<SetPrescriptionMode | null>(null);
   const errors = form.formState.errors.workouts?.[workoutIndex]?.prescribed_exercises?.[exerciseIndex]?.prescribed_sets;
   const open = expanded || !uniform || Boolean(errors);
   function updateShared(targets: Partial<SetTargets>) {
@@ -184,14 +184,24 @@ export function ExerciseSets({
                 {first.notes ? ` · ${first.notes}` : ''}
               </p>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="px-0 font-normal text-muted-foreground"
-              onPress={() => setExpanded(true)}
-            >
-              Vary sets & add details
-            </Button>
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="px-0 font-normal text-muted-foreground"
+                onPress={() => setComposer({kind: 'shared', source: {...first}})}
+              >
+                Duration, distance & effort
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="px-0 font-normal text-muted-foreground"
+                onPress={() => setExpanded(true)}
+              >
+                Vary sets & add details
+              </Button>
+            </div>
           </>
         )}
         {resized && (
@@ -320,20 +330,15 @@ export function ExerciseSets({
               );
             } else {
               form.getValues(path).forEach((set, index) => {
-                if (matchesTargets(set, composer.source)) {
-                  form.setValue(`${path}.${index}.reps`, targets.reps, {shouldDirty: true, shouldValidate: true});
-                  form.setValue(`${path}.${index}.load_value`, targets.load_value, {
-                    shouldDirty: true,
-                    shouldValidate: true,
-                  });
-                  form.setValue(`${path}.${index}.load_unit`, targets.load_unit, {
-                    shouldDirty: true,
-                    shouldValidate: true,
-                  });
-                  form.setValue(`${path}.${index}.rest_seconds`, targets.rest_seconds, {
-                    shouldDirty: true,
-                    shouldValidate: true,
-                  });
+                if (composer.kind === 'shared' || matchesTargets(set, composer.source)) {
+                  form.setValue(
+                    `${path}.${index}`,
+                    {...set, ...targets},
+                    {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    },
+                  );
                 }
               });
             }

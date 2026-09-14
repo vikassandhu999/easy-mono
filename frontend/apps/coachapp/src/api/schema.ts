@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 0fafaa6d78a87eb95f4836e553a38b8a79d73e35d2d38d9cb7a4ba4d0dcb6b50 */
+/* typed-routes:hash b7813078ae6fb4e6202560668e4ccbe2d7e174c8268daf4c6d327747f37b6073 */
 export type Attachment = {
   id: string;
   content_type:
@@ -891,6 +891,7 @@ export type NutritionPlan = {
 };
 export type NutritionPlanAssign = {expected_revision?: number; start_date?: string | null; end_date?: string | null};
 export type NutritionPlanClient = {id: string; first_name: string | null; last_name: string | null};
+export type NutritionPlanClientScopedListQuery = {cursor?: string; limit?: number; search?: string; archived?: boolean};
 export type NutritionPlanCreate = {
   name: string;
   description?: string | null;
@@ -1180,6 +1181,7 @@ export type TrainingPlan = {
 export type TrainingPlanAssign = {expected_revision?: number; start_date?: string | null; end_date?: string | null};
 export type TrainingPlanClient = {id: string; first_name: string | null; last_name: string | null};
 export type TrainingPlanClientScopedListQuery = {
+  search?: string;
   cursor?: string;
   offset?: number;
   limit?: number;
@@ -1454,7 +1456,7 @@ export type WorkbenchSnooze = {queue: 'quiet' | 'expiring'; snoozed_until: strin
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 50a478dc6308e59cfa1cc2e358dc08da8b629036ce67be1da0100aa22cacf5b6 */
+  /* typed-routes:hash b8976676fc2b1e30a09bdc2b41f444f3dc3cd5f0c03c17c4e8b40c4c4e65e7b5 */
   '/api/health': {
     get: {
       parameters: {
@@ -1804,6 +1806,19 @@ export interface paths {
       };
       responses: {
         200: {content: {'application/json': {data: Array<Day>}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/nutrition-plans': {
+    get: {
+      parameters: {
+        query?: NutritionPlanClientScopedListQuery;
+        header?: {Authorization?: string};
+        path: {client_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': NutritionPlanIndex}};
       };
     };
   };

@@ -26,6 +26,13 @@ export function ClientNutritionPlans({
         <h2 className="section-title">Nutrition plans</h2>
         <div className="flex flex-wrap gap-2">
           <Link
+            to={generatePath(routes.clientNutritionPlans, {clientId: person.id}) + '?status=all'}
+            state={state}
+            className={buttonVariants({variant: 'outline'})}
+          >
+            All nutrition plans
+          </Link>
+          <Link
             to={generatePath(routes.nutritionHistory, {clientId: person.id})}
             className={buttonVariants({variant: 'ghost'})}
           >
@@ -97,6 +104,13 @@ function Plan({plan, clientId}: {plan: NutritionPlan; clientId: string}) {
             className={buttonVariants({variant: 'outline'})}
           >
             Personalize nutrition plan
+          </Link>
+          <Link
+            to={generatePath(routes.manageClientNutritionPlan, {clientId, id: plan.id})}
+            state={state}
+            className={buttonVariants({variant: 'ghost'})}
+          >
+            Manage dates and access
           </Link>
           <NutritionPlanPreview plan={plan} />
         </div>

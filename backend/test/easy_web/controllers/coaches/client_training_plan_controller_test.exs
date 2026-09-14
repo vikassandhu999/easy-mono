@@ -76,7 +76,7 @@ defmodule EasyWeb.Coaches.ClientTrainingPlanControllerTest do
       assert %{"data" => [%{"status" => "active"}], "count" => 1} = json_response(conn, 200)
     end
 
-    test "paginates client plans with a cursor", ctx do
+    test "paginates client plans across three cursor pages", ctx do
       inserted_at = DateTime.utc_now(:second)
 
       plans =
@@ -109,14 +109,94 @@ defmodule EasyWeb.Coaches.ClientTrainingPlanControllerTest do
         |> recycle()
         |> get("/v1/coach/clients/#{ctx.client.id}/training-plans", %{
           "cursor" => cursor,
-          "limit" => "10"
+          "limit" => "1"
+        })
+        |> json_response(200)
+
+      assert %{"data" => [second_plan], "count" => 3, "next_cursor" => final_cursor} = second
+      assert is_binary(final_cursor)
+
+      third =
+        ctx.conn
+        |> recycle()
+        |> get("/v1/coach/clients/#{ctx.client.id}/training-plans", %{
+          "cursor" => final_cursor,
+          "limit" => "1"
+        })
+        |> json_response(200)
+
+      assert %{"data" => [third_plan], "count" => 3, "next_cursor" => nil} = third
+
+      assert Enum.sort([first_plan, second_plan, third_plan] |> Enum.map(& &1["id"])) ==
+               Enum.sort(Enum.map(plans, & &1.id))
+    end
+
+    test "searches literal text beyond the first page and filters archived plans", ctx do
+      inserted_at = DateTime.utc_now(:second)
+
+      active_plans =
+        for {suffix, day_offset} <- Enum.zip(["A", "B", "C"], [-9, -6, -3]) do
+          insert(:training_plan,
+            creator: ctx.coach.user,
+            business: ctx.business,
+            client: ctx.client,
+            kind: :client_plan,
+            name: "Strength 100% #{suffix}",
+            start_date: Date.add(Date.utc_today(), day_offset),
+            end_date: Date.add(Date.utc_today(), day_offset),
+            inserted_at: inserted_at,
+            updated_at: inserted_at
+          )
+        end
+
+      archived =
+        insert(:training_plan,
+          creator: ctx.coach.user,
+          business: ctx.business,
+          client: ctx.client,
+          kind: :client_plan,
+          name: "Strength 100% archived",
+          archived_at: inserted_at
+        )
+
+      first =
+        ctx.conn
+        |> get("/v1/coach/clients/#{ctx.client.id}/training-plans", %{
+          "cursor" => "start",
+          "limit" => "1",
+          "search" => "100%",
+          "status" => "active"
+        })
+        |> json_response(200)
+
+      assert %{"data" => [first_plan], "count" => 3, "next_cursor" => cursor} = first
+
+      second =
+        ctx.conn
+        |> recycle()
+        |> get("/v1/coach/clients/#{ctx.client.id}/training-plans", %{
+          "cursor" => cursor,
+          "limit" => "2",
+          "search" => "100%",
+          "status" => "active"
         })
         |> json_response(200)
 
       assert %{"data" => remaining, "count" => 3, "next_cursor" => nil} = second
 
       assert Enum.sort([first_plan | remaining] |> Enum.map(& &1["id"])) ==
-               Enum.sort(Enum.map(plans, & &1.id))
+               Enum.sort(Enum.map(active_plans, & &1.id))
+
+      assert %{"data" => [%{"id" => archived_id, "status" => "archived"}], "count" => 1} =
+               ctx.conn
+               |> recycle()
+               |> get("/v1/coach/clients/#{ctx.client.id}/training-plans", %{
+                 "search" => "100%",
+                 "status" => "archived"
+               })
+               |> json_response(200)
+
+      assert archived_id == archived.id
     end
 
     test "cursor pagination authorizes the client and keeps the server count", ctx do
@@ -166,6 +246,48 @@ defmodule EasyWeb.Coaches.ClientTrainingPlanControllerTest do
                json_response(conn, 422)
     end
 
+    test "rejects malformed cursor and limit query values", ctx do
+      for params <- [%{"cursor" => "invalid"}, %{"cursor" => "start", "limit" => "0"}, %{"cursor" => "start", "limit" => "-1"}] do
+        assert ctx.conn
+               |> recycle()
+               |> get("/v1/coach/clients/#{ctx.client.id}/training-plans", params)
+               |> json_response(422)
+      end
+    end
+
+    test "uses the business timezone when a client has no override in list and detail", _ctx do
+      now = DateTime.utc_now()
+      {timezone, local_today} = opposite_day_timezone(now)
+      business = insert(:business, timezone: timezone)
+      coach = insert(:coach, business: business)
+      client = insert(:client, creator: coach, business: business, timezone: "")
+
+      plan =
+        insert(:training_plan,
+          creator: coach.user,
+          business: business,
+          client: client,
+          kind: :client_plan,
+          start_date: local_today,
+          end_date: local_today
+        )
+
+      conn = build_conn() |> authenticate_coach(coach)
+
+      assert %{"data" => [%{"id" => plan_id, "lifecycle" => "current"}]} =
+               conn
+               |> get("/v1/coach/clients/#{client.id}/training-plans")
+               |> json_response(200)
+
+      assert plan_id == plan.id
+
+      assert %{"data" => %{"id" => ^plan_id, "lifecycle" => "current"}} =
+               conn
+               |> recycle()
+               |> get("/v1/coach/training-plans/#{plan.id}")
+               |> json_response(200)
+    end
+
     test "returns 404 for inaccessible clients", ctx do
       other_coach = insert(:coach)
       other_client = insert(:client, creator: other_coach, business: other_coach.business)
@@ -178,5 +300,14 @@ defmodule EasyWeb.Coaches.ClientTrainingPlanControllerTest do
              |> get("/v1/coach/clients/#{Ecto.UUID.generate()}/training-plans")
              |> json_response(404)
     end
+  end
+
+  defp opposite_day_timezone(now) do
+    utc_today = DateTime.to_date(now)
+
+    Enum.find_value(["Etc/GMT+12", "Pacific/Kiritimati"], fn timezone ->
+      local_today = Easy.LocalCalendar.to_local_date(now, timezone)
+      if local_today != utc_today, do: {timezone, local_today}
+    end)
   end
 end

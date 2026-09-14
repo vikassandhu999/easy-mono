@@ -181,3 +181,7 @@ Food editing now supports public photo/video uploads with draft replacement/remo
 ## Training and nutrition template management
 
 Saved template editors now open a dedicated management page for independent copying, archive/restore and confirmed deletion. Both libraries use server-owned Active/Archived/All cursor filters. Revision checks protect newer edits; interrupted operations recover without automatically repeating copies. Assigned client plans survive source-template maintenance. See [the management brief](plan-management.md) for verification. Client-plan coverage is next.
+
+## Client plan dates and lifecycle
+
+Client overview and assigned builders now open client-scoped management. All assigned plans keeps ended and archived plans reachable through server cursor search. Dates, archive/restore and deletion protect revisions, overlaps, independent templates and recorded activity. Local-day lifecycle labels respect client and business timezones. See [the client-plan management brief](client-plan-management.md) for mobile/desktop and backend verification. The next pass checks all prescription/menu fields and remaining application tasks.

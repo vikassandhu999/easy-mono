@@ -164,6 +164,7 @@ defmodule EasyWeb.Router do
 
     # Client-scoped plan lists
     get "/clients/:client_id/training-plans", ClientTrainingPlanController, :index
+    get "/clients/:client_id/nutrition-plans", ClientNutritionPlanController, :index
     get "/clients/:client_id/nutrition-coverage", NutritionCoverageController, :show
     get "/clients/:client_id/weight_entries", ClientWeightEntryController, :index
     get "/clients/:client_id/weight-progress", ClientWeightEntryController, :progress

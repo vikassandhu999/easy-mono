@@ -1,5 +1,6 @@
 defmodule Easy.Training.PlanReader do
   alias Easy.ClientAccess
+  alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.CursorPage
   alias Easy.Repo
@@ -65,6 +66,7 @@ defmodule Easy.Training.PlanReader do
       |> TrainingPlan.for_kind(:client_plan)
       |> TrainingPlan.for_client(ctx.business_id, client_id)
       |> TrainingPlan.for_archived(Keyword.get(opts, :archived))
+      |> TrainingPlan.for_search(opts |> Keyword.get(:search, "") |> to_string() |> String.trim())
       |> cursor_or_offset_page(ctx.business_id, opts)
     end
   end
@@ -254,6 +256,10 @@ defmodule Easy.Training.PlanReader do
 
   defp ok_or_not_found(nil), do: {:error, :not_found}
   defp ok_or_not_found(plan), do: {:ok, with_lifecycle(plan)}
+
+  defp with_lifecycle(%{client: %Client{} = client} = plan) do
+    %{plan | lifecycle: TrainingPlan.lifecycle(plan, Client.local_date(client, DateTime.utc_now()))}
+  end
 
   defp with_lifecycle(plan), do: %{plan | lifecycle: TrainingPlan.lifecycle(plan, Date.utc_today())}
 

@@ -33,6 +33,13 @@ export function ClientTrainingPlans({
         <h2 className="section-title">Training plans</h2>
         <div className="flex flex-wrap gap-3">
           <Link
+            to={generatePath(routes.clientTrainingPlans, {clientId: person.id}) + '?status=all'}
+            state={state}
+            className={buttonVariants({variant: 'outline'})}
+          >
+            All training plans
+          </Link>
+          <Link
             to={generatePath(routes.trainingSessions, {clientId: person.id})}
             className={buttonVariants({variant: 'outline'})}
           >
@@ -86,6 +93,13 @@ export function ClientTrainingPlans({
                 className={buttonVariants({variant: 'outline'})}
               >
                 Personalize plan
+              </Link>
+              <Link
+                to={generatePath(routes.manageClientTrainingPlan, {clientId: person.id, id: plan.id})}
+                state={state}
+                className={buttonVariants({variant: 'ghost'})}
+              >
+                Manage dates and access
               </Link>
               <TrainingPlanPreview plan={plan} />
             </div>

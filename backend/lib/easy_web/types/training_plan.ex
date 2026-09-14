@@ -269,6 +269,7 @@ defmodule EasyWeb.Types.TrainingPlan do
         }
 
   @type client_scoped_list_query :: %{
+          optional(:search) => String.t(),
           optional(:cursor) => String.t(),
           optional(:offset) => non_neg_integer(),
           optional(:limit) => pos_integer(),

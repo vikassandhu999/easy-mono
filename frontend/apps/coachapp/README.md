@@ -266,3 +266,8 @@ Food photo/video controls share their upload behavior with exercises. Ingredient
 ## Template management
 
 Saved training and nutrition editors offer Manage template for copying, archive/restore and confirmed deletion. Client copies remain independent. Both libraries support server-filtered Active/Archived/All views. Run `rtk pnpm -C frontend/apps/coachapp test:plan-management` against API 4000 and app 2022, or set `COACH_API_URL` / `COACH_APP_URL`. See [the management brief](../../../.scratch/coachapp-rebuild/plan-management.md) for recovery and verification.
+
+
+## Assigned plan dates and lifecycle
+
+Client overview links to All training/nutrition plans and Manage dates and access. Find previous plans, change their date range, archive/restore, or delete while retaining recorded activity. Run `rtk pnpm -C frontend/apps/coachapp test:client-plan-management` with API 4000 and app 2022, or set `COACH_API_URL` / `COACH_APP_URL`. See [the client-plan brief](../../../.scratch/coachapp-rebuild/client-plan-management.md).

@@ -130,6 +130,19 @@ export function TrainingPlanWorksheet({
           Manage template
         </Button>
       )}
+      {plan && context.kind === 'client' && (
+        <Button
+          variant="outline"
+          isDisabled={pending}
+          onPress={() =>
+            navigate(generatePath(routes.manageClientTrainingPlan, {id: plan.id, clientId: context.clientId}), {
+              state: listState,
+            })
+          }
+        >
+          Manage dates and access
+        </Button>
+      )}
       {clientPlan && plan && (
         <div className="space-y-1">
           <p className="font-semibold">

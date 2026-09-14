@@ -1,5 +1,6 @@
 import type {CheckInResponseFilters} from './check-in-responses';
 import type {ScheduleFilters} from './check-in-schedules';
+import type {ClientPlanFilters} from './client-plans';
 import type {ClientFilters} from './clients';
 import type {ConversationFilters} from './conversations';
 import type {FormTemplateFilters} from './forms';
@@ -48,6 +49,8 @@ export const trainingPlanKeys = {
   lists: () => [...trainingPlanKeys.all, 'list'] as const,
   infinite: (filters: TrainingPlanFilters) => [...trainingPlanKeys.lists(), 'templates', 'infinite', filters] as const,
   forClient: (clientId: string) => [...trainingPlanKeys.lists(), 'client', clientId, 'infinite'] as const,
+  clientPlans: (clientId: string, filters: ClientPlanFilters) =>
+    [...trainingPlanKeys.lists(), 'client-plans', clientId, filters] as const,
   details: () => [...trainingPlanKeys.all, 'detail'] as const,
   detail: (id: string) => [...trainingPlanKeys.details(), id] as const,
 };
@@ -69,6 +72,8 @@ export const nutritionKeys = {
   details: () => [...nutritionKeys.all, 'detail'] as const,
   detail: (id: string) => [...nutritionKeys.details(), id] as const,
   coverage: (clientId: string) => [...nutritionKeys.all, 'coverage', clientId] as const,
+  clientPlans: (clientId: string, filters: ClientPlanFilters) =>
+    [...nutritionKeys.lists(), 'client-plans', clientId, filters] as const,
 };
 
 export const foodKeys = {

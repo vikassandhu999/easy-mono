@@ -39,6 +39,8 @@ import {NutritionHistory} from './nutrition-history/nutrition-history';
 import {LibraryManagement} from './nutrition-library/library-management';
 import {NutritionPlanEditor} from './nutrition-plans/nutrition-plan-editor';
 import {NutritionPlans} from './nutrition-plans/nutrition-plans';
+import {ClientPlanManagement} from './plan-management/client-plan-management';
+import {ClientPlans} from './plan-management/client-plans';
 import {PlanManagement} from './plan-management/plan-management';
 import {RecipeEditor} from './recipes/recipe-editor';
 import {Recipes} from './recipes/recipes';
@@ -128,6 +130,10 @@ function Root() {
           location.pathname === routes.recipes ||
           matchPath(routes.manageTrainingPlan, location.pathname) ||
           matchPath(routes.manageNutritionPlan, location.pathname) ||
+          matchPath(routes.clientTrainingPlans, location.pathname) ||
+          matchPath(routes.manageClientTrainingPlan, location.pathname) ||
+          matchPath(routes.clientNutritionPlans, location.pathname) ||
+          matchPath(routes.manageClientNutritionPlan, location.pathname) ||
           matchPath(routes.manageFood, location.pathname) ||
           matchPath(routes.manageRecipe, location.pathname) ||
           location.pathname === routes.checkInResponses ||
@@ -202,6 +208,8 @@ export const router = createBrowserRouter([
               {path: routes.createExercise, element: <ExerciseEditor />},
               {path: routes.exercise, element: <ExerciseEditor />},
               {path: routes.createTrainingPlan, element: <TrainingPlanEditor />},
+              {path: routes.clientTrainingPlans, element: <ClientPlans resource="training" />},
+              {path: routes.manageClientTrainingPlan, element: <ClientPlanManagement resource="training" />},
               {path: routes.manageTrainingPlan, element: <PlanManagement resource="training" />},
               {path: routes.editTrainingPlan, element: <TrainingPlanEditor />},
               {path: routes.editClientTrainingPlan, element: <TrainingPlanEditor />},
@@ -215,6 +223,8 @@ export const router = createBrowserRouter([
               {path: routes.manageFood, element: <LibraryManagement resource="food" />},
               {path: routes.manageRecipe, element: <LibraryManagement resource="recipe" />},
               {path: routes.createNutritionPlan, element: <NutritionPlanEditor />},
+              {path: routes.clientNutritionPlans, element: <ClientPlans resource="nutrition" />},
+              {path: routes.manageClientNutritionPlan, element: <ClientPlanManagement resource="nutrition" />},
               {path: routes.manageNutritionPlan, element: <PlanManagement resource="nutrition" />},
               {path: routes.editNutritionPlan, element: <NutritionPlanEditor />},
               {path: routes.editClientNutritionPlan, element: <NutritionPlanEditor />},

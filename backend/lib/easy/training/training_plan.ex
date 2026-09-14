@@ -286,7 +286,7 @@ defmodule Easy.Training.TrainingPlan do
 
   @spec include_client(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def include_client(query \\ __MODULE__, business_id) do
-    client_query = Client.for_business(Client, business_id)
+    client_query = Client.for_business(Client, business_id) |> preload(:business)
     from(plan in query, preload: [client: ^client_query])
   end
 end

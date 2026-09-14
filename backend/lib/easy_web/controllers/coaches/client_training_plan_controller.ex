@@ -19,6 +19,7 @@ defmodule EasyWeb.Coaches.ClientTrainingPlanController do
              conn.assigns.ctx,
              conn.path_params["client_id"],
              cursor: Map.get(params, "cursor"),
+             search: Map.get(params, "search", ""),
              archived: if(status, do: status == :archived, else: nil),
              offset: Map.get(params, "offset", 0),
              limit: Map.get(params, "limit", 20)

@@ -169,6 +169,19 @@ export function NutritionPlanWorksheet({
           Manage template
         </Button>
       )}
+      {plan && context.kind === 'client' && (
+        <Button
+          variant="outline"
+          isDisabled={pending}
+          onPress={() =>
+            navigate(generatePath(routes.manageClientNutritionPlan, {id: plan.id, clientId: context.clientId}), {
+              state,
+            })
+          }
+        >
+          Manage dates and access
+        </Button>
+      )}
       {clientPlan && plan && (
         <p className="text-sm text-muted-foreground">
           {plan.start_date ?? 'Start date not set'} → {plan.end_date ?? 'No end date'}

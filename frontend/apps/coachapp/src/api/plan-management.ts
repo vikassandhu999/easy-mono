@@ -2,7 +2,7 @@ import {useMutation, useQuery} from '@tanstack/react-query';
 import {ApiError, call, client} from './client';
 import {clientKeys, exerciseKeys, foodKeys, nutritionKeys, recipeKeys, trainingPlanKeys, workbenchKeys} from './keys';
 import {queryClient} from './query-client';
-import type {TrainingPlan} from './schema';
+import type {paths, TrainingPlan} from './schema';
 import {getSession} from './session';
 
 export type PlanResource = 'training' | 'nutrition';
@@ -122,4 +122,49 @@ function invalidate(resource: PlanResource) {
         ]
       : [queryClient.invalidateQueries({queryKey: exerciseKeys.lists()})]),
   ]);
+}
+
+export type PlanDates = Pick<
+  NonNullable<paths['/v1/coach/nutrition-plans/{id}']['patch']['requestBody']>['content']['application/json'],
+  'start_date' | 'end_date'
+>;
+
+export function useUpdatePlanDates(resource: PlanResource) {
+  return useMutation({
+    onMutate: () => getSession()?.id,
+    mutationFn: async ({plan, dates}: {plan: PlanVersion; dates: PlanDates}) => {
+      const sessionId = getSession()?.id;
+      checkSession(sessionId);
+      const params = {path: {id: plan.id}};
+      const body = {...dates, expected_revision: plan.revision};
+      try {
+        const result =
+          resource === 'training'
+            ? await call(client.PATCH('/v1/coach/training-plans/{id}', {params, body}))
+            : await call(client.PATCH('/v1/coach/nutrition-plans/{id}', {params, body}));
+        checkSession(sessionId);
+        return result.data;
+      } catch (error) {
+        checkSession(sessionId);
+        if (uncertainPlanWrite(error)) {
+          const latest = await readPlan(resource, plan.id);
+          checkSession(sessionId);
+          if (latest.data.start_date === dates.start_date && latest.data.end_date === dates.end_date) {
+            return latest.data;
+          }
+        }
+        throw error;
+      }
+    },
+    onSuccess: async (_result, _input, sessionId) => {
+      checkSession(sessionId);
+      await invalidate(resource);
+      checkSession(sessionId);
+    },
+    onError: async (_error, _input, sessionId) => {
+      if (sessionId && getSession()?.id === sessionId) {
+        await invalidate(resource);
+      }
+    },
+  });
 }

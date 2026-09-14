@@ -180,6 +180,13 @@ defmodule EasyWeb.Types.NutritionPlan do
           optional(:archived) => boolean()
         }
 
+  @type client_scoped_list_query :: %{
+          optional(:cursor) => String.t(),
+          optional(:limit) => pos_integer(),
+          optional(:search) => String.t(),
+          optional(:archived) => boolean()
+        }
+
   @type client_list_query :: %{
           optional(:offset) => integer(),
           optional(:limit) => integer(),

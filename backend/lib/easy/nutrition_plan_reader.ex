@@ -5,7 +5,6 @@ defmodule Easy.Nutrition.PlanReader do
   alias Easy.CursorPage
   alias Easy.LocalCalendar
   alias Easy.Nutrition.{ItemResolver, Menu, Plan}
-  alias Easy.Orgs.Business
   alias Easy.Repo
   alias Easy.Utils
 
@@ -58,6 +57,28 @@ defmodule Easy.Nutrition.PlanReader do
         rows = page_query |> Plan.join_assigned_client_count(ctx.business_id) |> Repo.all()
         page = CursorPage.finish(rows, limit, Repo.aggregate(query, :count, :id))
 
+        resolve_cursor_page(page, ctx)
+      end
+    end)
+  end
+
+  @spec list_plan_page_for_client(Ctx.t(), String.t(), keyword()) ::
+          {:ok, CursorPage.t(Plan.t())} | {:error, read_error() | :invalid_cursor}
+  def list_plan_page_for_client(%Ctx{} = ctx, client_id, opts \\ []) do
+    Repo.snapshot(fn ->
+      query =
+        ctx
+        |> client_plan_query(client_id)
+        |> Plan.for_archived(Keyword.get(opts, :archived))
+        |> Plan.for_search(opts |> Keyword.get(:search, "") |> to_string() |> String.trim())
+
+      limit = CursorPage.limit(opts)
+
+      with :ok <- Ctx.ensure_coach(ctx),
+           :ok <- ClientAccess.authorize_client_id(ctx, client_id),
+           {:ok, page_query} <- CursorPage.query(query, Keyword.get(opts, :cursor, "start"), limit) do
+        rows = page_query |> Plan.include_client(ctx.business_id) |> Repo.all()
+        page = CursorPage.finish(rows, limit, Repo.aggregate(query, :count, :id))
         resolve_cursor_page(page, ctx)
       end
     end)
@@ -295,7 +316,7 @@ defmodule Easy.Nutrition.PlanReader do
     %{plan | lifecycle: Plan.lifecycle(plan, local_today_for(plan))}
   end
 
-  defp local_today_for(%Client{business: %Business{}} = client) do
+  defp local_today_for(%Client{} = client) do
     Client.local_date(client, DateTime.utc_now())
   end
 

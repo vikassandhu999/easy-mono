@@ -166,4 +166,14 @@ The exercise editor supports a photo/video demonstration and reference-photo rem
 
 ## Food and recipe management
 
-Saved food and recipe editors open usage management with server-counted categories, cursor search and links to dependent recipes and plans. Coaches can create independent copies or delete unused items with recovery for interrupted writes. Trainer visibility and deletion protection are enforced by the API. See [the management brief](nutrition-library-management.md). The next slice completes serving-size/media authoring and recipe dietary fields.
+Saved food and recipe editors open usage management with server-counted categories, cursor search and links to dependent recipes and plans. Coaches can create independent copies or delete unused items with recovery for interrupted writes. Trainer visibility and deletion protection are enforced by the API. See [the management brief](nutrition-library-management.md). Serving-size authoring and recipe dietary fields now follow below; food media authoring follows below.
+
+
+## Serving sizes and recipe tags
+
+Food editing groups a named serving with its amount, unit and total weight, plus a default choice and reversible removal. Recipe editing exposes manual allergen and dietary declarations through the shared food tag controls. Referenced servings stay protected by the API; recipe writes refresh food usage. See [the detail-authoring brief](nutrition-library-details.md) for browser verification. Food media follows below.
+
+
+## Food media
+
+Food editing now supports public photo/video uploads with draft replacement/removal and interrupted-write recovery. Both nutrition pickers load media on demand. Exercise and food uploads share the same validation, retry and cancellation controls. See [the food media brief](food-media.md) for real-storage verification. The next gap is plan lifecycle management: copying, archiving/restoring and deleting templates, followed by client coverage edits.

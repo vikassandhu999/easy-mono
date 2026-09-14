@@ -236,6 +236,17 @@ try {
     expect((await send('get', `/v1/coach/nutrition-recipes/${recipe.id}`, undefined, token)).data.name).toBe(
       recipe.name,
     );
+    // Recipe copies add food uses; return through the app to exercise retained caches.
+    await page.getByRole('link', {name: 'Nutrition', exact: true}).click();
+    await page.getByRole('link', {name: 'Food library', exact: true}).click();
+    await page.getByLabel('Search foods', {exact: true}).fill('Breakfast oats');
+    await page.getByRole('link', {name: /Breakfast oats/}).click();
+    await page.getByRole('button', {name: 'Manage food', exact: true}).click();
+    await expect(category).toContainText('Recipes (45)');
+    await page.getByRole('link', {name: 'Nutrition', exact: true}).click();
+    await page.getByRole('link', {name: 'Recipe library', exact: true}).click();
+    await page.getByLabel('Search recipes', {exact: true}).fill('Overnight oats for one');
+    await page.getByRole('link', {name: /Overnight oats for one/}).click();
     // Interrupted copy is reviewed explicitly; it never automatically retries POST.
     await page.getByRole('button', {name: 'Manage recipe', exact: true}).click();
     await page.getByRole('button', {name: 'Copy recipe', exact: true}).click();

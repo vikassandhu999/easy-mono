@@ -4,6 +4,7 @@ import type {NutritionMealItem} from '../api/nutrition-plans';
 import {type Recipe, useRecipes} from '../api/recipes';
 import {Button} from '../ui/button';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
+import {FoodMediaPreview} from '../ui/food-media-preview';
 import {InfiniteList} from '../ui/infinite-list';
 import {Input} from '../ui/input';
 import {portionLabel} from './menu';
@@ -20,41 +21,44 @@ export function FoodPicker({onAdd, onClose}: {onAdd: (items: NutritionMealItem[]
   function row(item: Food | Recipe) {
     const key = `${kind}:${item.id}`;
     return (
-      <div className="flex items-center gap-3 p-4">
-        <div className="min-w-0 flex-1">
-          <p className="break-words font-medium">{item.name}</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {portionLabel(item.default_portion)}
-            {'brand' in item && item.brand ? ` · ${item.brand}` : ''}
-          </p>
-          {item.allergens.length > 0 && (
-            <p className="mt-1 text-xs text-muted-foreground">Allergens: {item.allergens.join(', ')}</p>
-          )}
+      <div className="p-4">
+        <div className="flex items-start gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="break-words font-medium">{item.name}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {portionLabel(item.default_portion)}
+              {'brand' in item && item.brand ? ` · ${item.brand}` : ''}
+            </p>
+            {item.allergens.length > 0 && (
+              <p className="mt-1 text-xs text-muted-foreground">Allergens: {item.allergens.join(', ')}</p>
+            )}
+          </div>
+          <Button
+            variant="outline"
+            aria-label={`Select ${item.name}`}
+            aria-pressed={selected.has(key)}
+            onPress={() =>
+              setSelected((previous) => {
+                const next = new Map(previous);
+                if (next.has(key)) {
+                  next.delete(key);
+                } else {
+                  next.set(key, {
+                    id: crypto.randomUUID(),
+                    kind,
+                    name: item.name,
+                    ...(kind === 'food' ? {food_id: item.id} : {recipe_id: item.id}),
+                    portion: item.default_portion,
+                  });
+                }
+                return next;
+              })
+            }
+          >
+            {selected.has(key) ? 'Selected' : 'Select'}
+          </Button>
         </div>
-        <Button
-          variant="outline"
-          aria-label={`Select ${item.name}`}
-          aria-pressed={selected.has(key)}
-          onPress={() =>
-            setSelected((previous) => {
-              const next = new Map(previous);
-              if (next.has(key)) {
-                next.delete(key);
-              } else {
-                next.set(key, {
-                  id: crypto.randomUUID(),
-                  kind,
-                  name: item.name,
-                  ...(kind === 'food' ? {food_id: item.id} : {recipe_id: item.id}),
-                  portion: item.default_portion,
-                });
-              }
-              return next;
-            })
-          }
-        >
-          {selected.has(key) ? 'Selected' : 'Select'}
-        </Button>
+        {'media' in item && <FoodMediaPreview food={item} />}
       </div>
     );
   }

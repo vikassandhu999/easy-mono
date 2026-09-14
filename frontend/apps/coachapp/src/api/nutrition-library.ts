@@ -72,12 +72,18 @@ export function useCopyLibraryItem(resource: LibraryKind) {
     },
     onSuccess: async (_result, _id, sessionId) => {
       requireSession(sessionId);
-      await queryClient.invalidateQueries({queryKey: keys[resource].lists()});
+      await Promise.all([
+        queryClient.invalidateQueries({queryKey: keys[resource].lists()}),
+        ...(resource === 'recipe' ? [queryClient.invalidateQueries({queryKey: foodKeys.lists()})] : []),
+      ]);
       requireSession(sessionId);
     },
     onError: async (_error, _id, sessionId) => {
       if (sessionId && getSession()?.id === sessionId) {
-        await queryClient.invalidateQueries({queryKey: keys[resource].lists()});
+        await Promise.all([
+          queryClient.invalidateQueries({queryKey: keys[resource].lists()}),
+          ...(resource === 'recipe' ? [queryClient.invalidateQueries({queryKey: foodKeys.lists()})] : []),
+        ]);
       }
     },
   });

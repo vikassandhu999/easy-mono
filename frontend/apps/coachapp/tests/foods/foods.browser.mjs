@@ -54,6 +54,16 @@ try {
     await calories.fill('380');
     await page.getByLabel('Protein · g', {exact: true}).fill('13');
     await page.getByLabel('Fiber · g', {exact: true}).fill('0');
+    await page.getByRole('button', {name: 'Add serving size', exact: true}).click();
+    const sizes = page.getByRole('region', {name: 'Serving sizes', exact: true});
+    await save.click();
+    await expect(sizes.getByLabel('Serving name', {exact: true})).toBeFocused();
+    await sizes.getByLabel('Serving name', {exact: true}).fill('bowl');
+    await sizes.getByLabel('Unit', {exact: true}).fill('bowl');
+    await sizes.getByLabel('Weight · g', {exact: true}).fill('0');
+    await save.click();
+    await expect(page.getByText('Enter a number greater than zero.', {exact: true})).toBeVisible();
+    await sizes.getByLabel('Weight · g', {exact: true}).fill('40');
     await page.getByRole('link', {name: 'Back to foods', exact: true}).click();
     await page.getByRole('button', {name: 'Keep editing', exact: true}).click();
     await expect(page.getByRole('dialog', {includeHidden: true})).toHaveCount(0);
@@ -97,9 +107,9 @@ try {
     expect(food.fat_g_per_100g).toBeNull();
     expect(food.allergens).toEqual(['wheat']);
     expect(food.dietary_tags).toEqual(['vegan']);
-    // Unexposed portions must survive a metadata/nutrition edit.
+    // The new serving persists and survives a metadata/nutrition edit.
     const servings = [{label: 'bowl', amount: 1, unit: 'bowl', weight_g: 40, is_default: true}];
-    food = (await send('patch', endpoint, {expected_revision: food.revision, serving_sizes: servings}, token)).data;
+    expect(food.serving_sizes).toEqual(servings);
     await page.reload();
     await calories.fill('400');
     await page.route(`**${endpoint}`, (route) =>
@@ -219,6 +229,34 @@ try {
     await page.getByRole('button', {name: 'Back to editing', exact: true}).click();
     await page.getByRole('button', {name: 'Save nutrition plan', exact: true}).click();
     await expect(page).toHaveURL(/nutrition-plans\/[0-9a-f-]+$/);
+    // Default selection, removal and Undo stay in the draft until Save food.
+    await page.goto(`/nutrition-foods/${id}`);
+    await page.getByRole('button', {name: 'Add serving size', exact: true}).click();
+    const large = sizes.getByRole('group', {name: 'Serving 2', exact: true});
+    await large.getByLabel('Serving name', {exact: true}).fill('Large bowl');
+    await large.getByLabel('Amount', {exact: true}).fill('2');
+    await large.getByLabel('Unit', {exact: true}).fill('bowl');
+    await large.getByLabel('Weight · g', {exact: true}).fill('80');
+    await page.getByRole('button', {name: 'Make Large bowl the default serving', exact: true}).click();
+    await page.getByRole('button', {name: 'Remove Large bowl', exact: true}).click();
+    await expect(page.getByRole('button', {name: 'bowl is the default serving', exact: true})).toBeVisible();
+    await page.getByRole('button', {name: 'Undo removal', exact: true}).click();
+    await expect(page.getByRole('button', {name: 'Large bowl is the default serving', exact: true})).toBeVisible();
+    await save.click();
+    await expect(page.getByText('Food saved.', {exact: true})).toBeVisible();
+    await expect(page.getByRole('button', {name: 'Undo removal', exact: true})).toHaveCount(0);
+    food = (await send('get', endpoint, undefined, token)).data;
+    expect(food.default_portion).toMatchObject({kind: 'serving', label: 'Large bowl', amount: 2});
+    await sizes.scrollIntoViewIfNeeded();
+    await page.evaluate(() => document.activeElement?.blur());
+    await page.screenshot({path: `tests/foods/artifacts/servings-${width}.png`});
+    // A planned bowl portion cannot be removed; the draft can be restored.
+    await page.getByRole('button', {name: 'Remove bowl', exact: true}).click();
+    await save.click();
+    await expect(page.getByRole('alert')).toContainText('A recipe or plan uses a serving');
+    expect((await send('get', endpoint, undefined, token)).data.serving_sizes).toHaveLength(2);
+    await page.getByRole('button', {name: 'Undo removal', exact: true}).click();
+    await expect(sizes.getByLabel('Serving name', {exact: true}).first()).toHaveValue('bowl');
     if (width === 375) {
       await page.goto(`/nutrition-foods/${id}`);
       await calories.fill('420');

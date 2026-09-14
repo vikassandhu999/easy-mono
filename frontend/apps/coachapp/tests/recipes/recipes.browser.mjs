@@ -98,6 +98,10 @@ try {
     await page
       .getByLabel('Preparation instructions', {exact: true})
       .fill('Cook oats with water. Divide into bowls and top with blueberries.');
+    await page.getByText('Allergens and dietary tags', {exact: true}).click();
+    await page.getByText('wheat', {exact: true}).click();
+    await page.getByRole('checkbox', {name: 'vegan', exact: true}).focus();
+    await page.keyboard.press('Space');
     await page.getByRole('link', {name: 'Back to recipes', exact: true}).click();
     await page.getByRole('button', {name: 'Keep editing', exact: true}).click();
     await expect(page.getByRole('dialog', {includeHidden: true})).toHaveCount(0);
@@ -131,6 +135,8 @@ try {
     let recipe = (await send('get', endpoint, undefined, token)).data;
     expect(recipe.recipe_ingredients[0].portion).toMatchObject({kind: 'serving', amount: 2, unit: 'bowl'});
     expect(recipe.instructions).toContain('Divide into bowls');
+    expect(recipe.allergens).toEqual(['wheat']);
+    expect(recipe.dietary_tags).toEqual(['vegan']);
     recipe = (
       await send(
         'patch',
@@ -251,6 +257,32 @@ try {
     await page.getByRole('button', {name: 'Back to editing', exact: true}).click();
     await page.getByRole('button', {name: 'Save nutrition plan', exact: true}).click();
     await expect(page).toHaveURL(/nutrition-plans\/[0-9a-f-]+$/);
+    // Saved tags can be removed, survive failure and clear explicitly on retry.
+    await page.goto(`/nutrition-recipes/${id}`);
+    await page.getByText('Allergens and dietary tags', {exact: true}).click();
+    await expect(page.getByRole('checkbox', {name: 'wheat', exact: true})).toBeChecked();
+    await expect(page.getByRole('checkbox', {name: 'vegan', exact: true})).toBeChecked();
+    await page.getByText('wheat', {exact: true}).click();
+    await page.getByText('vegan', {exact: true}).click();
+    await page.route(`**${endpoint}`, (route) =>
+      route.request().method() === 'PATCH' ? route.fulfill({status: 503, json: {}}) : route.continue(),
+    );
+    await save.click();
+    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page.getByRole('checkbox', {name: 'wheat', exact: true})).not.toBeChecked();
+    expect((await send('get', endpoint, undefined, token)).data.allergens).toEqual(['wheat']);
+    await page.unroute(`**${endpoint}`);
+    await save.click();
+    await expect(page.getByText('Recipe saved.', {exact: true})).toBeVisible();
+    recipe = (await send('get', endpoint, undefined, token)).data;
+    expect(recipe.allergens).toEqual([]);
+    expect(recipe.dietary_tags).toEqual([]);
+    await page.getByText('Allergens and dietary tags', {exact: true}).scrollIntoViewIfNeeded();
+    await page.evaluate(() => document.activeElement?.blur());
+    await page.screenshot({path: `tests/recipes/artifacts/tags-${width}.png`});
+    await page.reload();
+    await page.getByText('Allergens and dietary tags', {exact: true}).click();
+    await expect(page.getByRole('checkbox', {name: 'vegan', exact: true})).not.toBeChecked();
     if (width === 375) {
       await page.goto(`/nutrition-recipes/${id}`);
       await servings.fill('4');

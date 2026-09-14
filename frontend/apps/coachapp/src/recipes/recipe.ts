@@ -12,6 +12,8 @@ export function fields(recipe?: Recipe) {
     cooked_weight_g: String(recipe?.cooked_weight_g ?? ''),
     description: recipe?.description ?? '',
     instructions: recipe?.instructions ?? '',
+    allergens: recipe?.allergens ?? [],
+    dietary_tags: recipe?.dietary_tags ?? [],
     ingredients: recipe?.recipe_ingredients.map((item) => ingredientDraft(item.food, item.food_id, item.portion)) ?? [],
   };
 }
@@ -23,6 +25,8 @@ export function body(values: RecipeFields): RecipeCreate {
     cooked_weight_g: values.cooked_weight_g.trim() ? Number(values.cooked_weight_g) : null,
     description: values.description.trim() || null,
     instructions: values.instructions.trim() || null,
+    allergens: values.allergens,
+    dietary_tags: values.dietary_tags,
     recipe_ingredients: values.ingredients.map(({food_id, portion, amount}) => ({
       food_id,
       portion: portion.kind === 'gram' ? {kind: 'gram', grams: Number(amount)} : {...portion, amount: Number(amount)},

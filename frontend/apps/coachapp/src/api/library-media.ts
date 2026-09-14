@@ -1,7 +1,9 @@
 import {useMutation} from '@tanstack/react-query';
 import {call, client} from './client';
-import type {LibraryMediaCreate} from './schema';
+import type {LibraryMedia, LibraryMediaCreate} from './schema';
 import {getSession} from './session';
+
+export type UploadedLibraryMedia = Pick<LibraryMedia, 'id' | 'kind' | 'url' | 'content_type' | 'byte_size'>;
 
 function contentType(type: string): LibraryMediaCreate['content_type'] | null {
   switch (type) {
@@ -34,7 +36,7 @@ export function useUploadLibraryMedia() {
       const sessionId = getSession()?.id;
       const type = contentType(file.type);
       if (!sessionId || !type || mediaFileError(file)) {
-        throw new Error('Choose a supported demonstration file.');
+        throw new Error('Choose a supported photo or video.');
       }
       const {data} = await call(
         client.POST('/v1/coach/library-media/uploads', {
@@ -53,13 +55,13 @@ export function useUploadLibraryMedia() {
         signal,
       });
       if (!response.ok) {
-        throw new Error('Could not upload the demonstration.');
+        throw new Error('Could not upload the file.');
       }
       signal.throwIfAborted();
       if (getSession()?.id !== sessionId) {
         throw new Error('Your session changed.');
       }
-      // Uploading prepares an unattached asset. Saving the exercise owns invalidation.
+      // Uploading prepares an unattached asset. Saving its library item owns invalidation.
       return {id: data.id, kind: data.kind, url: data.url, content_type: data.content_type, byte_size: data.byte_size};
     },
   });

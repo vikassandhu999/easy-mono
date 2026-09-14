@@ -2,16 +2,19 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {generatePath, useBeforeUnload, useBlocker, useNavigate, useParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
-import {type Food, type FoodCreate, useFood, useFoods, useSaveFood} from '../api/foods';
+import {type Food, useFood, useFoods, useSaveFood} from '../api/foods';
 import {routes} from '../routes';
 import {Button} from '../ui/button';
-import {Checkbox} from '../ui/checkbox';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FormError} from '../ui/form-error';
 import {FormField} from '../ui/form-field';
 import {InfiniteList} from '../ui/infinite-list';
 import {useListLocation} from '../ui/list-location';
+import {NutritionTags} from '../ui/nutrition-tags';
 import {FormActions, Page, PageHeader, Surface} from '../ui/page';
+import {body, fields} from './food';
+import {FoodMedia} from './food-media';
+import {FoodServings} from './food-servings';
 
 const nutrients = [
   ['calories_per_100g', 'Calories · kcal'],
@@ -21,61 +24,6 @@ const nutrients = [
   ['fiber_g_per_100g', 'Fiber · g'],
   ['sugar_g_per_100g', 'Sugar · g'],
 ] as const;
-const tagGroups = [
-  {
-    name: 'allergens',
-    label: 'Allergens',
-    options: ['dairy', 'egg', 'fish', 'shellfish', 'tree_nuts', 'peanuts', 'wheat', 'soy', 'sesame'],
-  },
-  {
-    name: 'dietary_tags',
-    label: 'Dietary tags',
-    options: [
-      'vegan',
-      'vegetarian',
-      'halal',
-      'kosher',
-      'gluten_free',
-      'dairy_free',
-      'low_fodmap',
-      'keto',
-      'high_protein',
-    ],
-  },
-] as const;
-function fields(food?: Food) {
-  return {
-    name: food?.name ?? '',
-    brand: food?.brand ?? '',
-    category: food?.category ?? '',
-    calories_per_100g: String(food?.calories_per_100g ?? ''),
-    protein_g_per_100g: String(food?.protein_g_per_100g ?? ''),
-    carbs_g_per_100g: String(food?.carbs_g_per_100g ?? ''),
-    fat_g_per_100g: String(food?.fat_g_per_100g ?? ''),
-    fiber_g_per_100g: String(food?.fiber_g_per_100g ?? ''),
-    sugar_g_per_100g: String(food?.sugar_g_per_100g ?? ''),
-    allergens: food?.allergens ?? [],
-    dietary_tags: food?.dietary_tags ?? [],
-    notes: food?.notes ?? '',
-  };
-}
-function body(values: ReturnType<typeof fields>): FoodCreate {
-  const number = (value: string) => (value.trim() ? Number(value) : null);
-  return {
-    name: values.name.trim(),
-    brand: values.brand.trim() || null,
-    category: values.category.trim() || null,
-    calories_per_100g: number(values.calories_per_100g),
-    protein_g_per_100g: number(values.protein_g_per_100g),
-    carbs_g_per_100g: number(values.carbs_g_per_100g),
-    fat_g_per_100g: number(values.fat_g_per_100g),
-    fiber_g_per_100g: number(values.fiber_g_per_100g),
-    sugar_g_per_100g: number(values.sugar_g_per_100g),
-    allergens: values.allergens,
-    dietary_tags: values.dietary_tags,
-    notes: values.notes.trim() || null,
-  };
-}
 export function FoodEditor() {
   const {id} = useParams();
   return id ? (
@@ -139,13 +87,14 @@ function Editor({initial}: {initial: Food | undefined}) {
   const [reload, setReload] = useState(false);
   const [reloading, setReloading] = useState(false);
   const [notice, setNotice] = useState('');
+  const [uploading, setUploading] = useState(false);
   const mounted = useRef(true);
   const leaving = useRef(false);
   const errorRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const {to, state} = useListLocation(routes.foods);
   const dirty = form.formState.isDirty;
-  const pending = form.formState.isSubmitting || reloading;
+  const pending = form.formState.isSubmitting || reloading || uploading;
   const readOnly = food?.source === 'system';
   useEffect(() => {
     mounted.current = true;
@@ -218,7 +167,7 @@ function Editor({initial}: {initial: Food | undefined}) {
           form.clearErrors();
           setNotice('');
           try {
-            const input = body(values);
+            const input = body(values, food);
             const result = await save.mutateAsync(
               food
                 ? {kind: 'update', id: food.id, body: {...input, expected_revision: food.revision}}
@@ -237,7 +186,7 @@ function Editor({initial}: {initial: Food | undefined}) {
             if (!mounted.current) {
               return;
             }
-            const stale = error instanceof ApiError && error.status === 409;
+            const stale = error instanceof ApiError && error.code === 'stale_revision';
             setConflict(stale);
             const unknownCreate = !food && (!(error instanceof ApiError) || error.status >= 500);
             setUncertain(unknownCreate);
@@ -246,10 +195,12 @@ function Editor({initial}: {initial: Food | undefined}) {
                 ? 'This food changed elsewhere. Your edits are still here. Load the saved version before editing again.'
                 : unknownCreate
                   ? 'Creation could not be confirmed. Check saved foods before trying again; your draft is still here.'
-                  : errorMessage(
-                      error,
-                      'The save could not be confirmed. Your edits are still here. Check the saved version before retrying.',
-                    ),
+                  : error instanceof ApiError && error.code === 'in_use'
+                    ? 'A recipe or plan uses a serving you removed or renamed. Keep that serving, or update its uses from Manage food before changing it.'
+                    : errorMessage(
+                        error,
+                        'The save could not be confirmed. Your edits are still here. Check the saved version before retrying.',
+                      ),
             });
           }
         })}
@@ -295,6 +246,11 @@ function Editor({initial}: {initial: Food | undefined}) {
               ))}
             </div>
           </section>
+          <FoodServings
+            key={food?.revision ?? 'new'}
+            form={form}
+            isDisabled={pending || readOnly}
+          />
           <details>
             <summary className="w-fit cursor-pointer py-2 font-medium">Brand, allergens and other details</summary>
             <div className="mt-3 space-y-4">
@@ -310,33 +266,11 @@ function Editor({initial}: {initial: Food | undefined}) {
                 label="Category"
                 maxLength={255}
               />
-              {tagGroups.map((group) => (
-                <fieldset
-                  key={group.name}
-                  className="space-y-2"
-                >
-                  <legend className="text-sm font-medium">{group.label}</legend>
-                  <div className="grid grid-cols-2 gap-x-4 sm:grid-cols-3">
-                    {group.options.map((option) => (
-                      <Checkbox
-                        key={option}
-                        isDisabled={pending || readOnly}
-                        isSelected={form.watch(group.name).includes(option)}
-                        onChange={(selected) => {
-                          const values = form.getValues(group.name);
-                          form.setValue(
-                            group.name,
-                            selected ? [...values, option] : values.filter((value) => value !== option),
-                            {shouldDirty: true},
-                          );
-                        }}
-                      >
-                        <span className="capitalize">{option.replaceAll('_', ' ')}</span>
-                      </Checkbox>
-                    ))}
-                  </div>
-                </fieldset>
-              ))}
+              <NutritionTags
+                value={{allergens: form.watch('allergens'), dietary_tags: form.watch('dietary_tags')}}
+                isDisabled={pending || readOnly}
+                onChange={(field, values) => form.setValue(field, values, {shouldDirty: true})}
+              />
               <FormField
                 control={form.control}
                 name="notes"
@@ -347,6 +281,14 @@ function Editor({initial}: {initial: Food | undefined}) {
             </div>
           </details>
         </fieldset>
+        <FoodMedia
+          key={food?.revision ?? 'new'}
+          media={form.watch('media')}
+          disabled={pending || readOnly}
+          readOnly={readOnly}
+          onBusy={setUploading}
+          onChange={(media) => form.setValue('media', media, {shouldDirty: true})}
+        />
         <div
           ref={errorRef}
           tabIndex={-1}

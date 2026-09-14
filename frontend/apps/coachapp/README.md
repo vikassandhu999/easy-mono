@@ -56,7 +56,7 @@ Run `rtk pnpm -C frontend/apps/coachapp test:client-nutrition` with the isolated
 
 ## Food library
 
-Open Nutrition, then Food library. Search foods or create a food with nutrition per 100 g. Unknown values stay blank, and zero stays explicit. Optional details contain brand, category, supported allergen and dietary-tag checkboxes, and notes. Custom foods can be edited; shared system foods are read-only. Serving sizes and media survive edits even though this form does not edit them.
+Open Nutrition, then Food library. Search foods or create a food with nutrition per 100 g. Unknown values stay blank, and zero stays explicit. Optional details contain brand, category, supported allergen and dietary-tag checkboxes, and notes. Custom foods can be edited; shared system foods are read-only. Serving sizes support names, amounts, units, weights, a default choice and removal with Undo. Referenced servings cannot be removed or renamed until their uses change. Photo/video uploads support preview, replacement, removal with Undo and recovery. Save food applies media changes; metadata-only saves preserve the existing attachment.
 
 The meal picker uses the same food resource hook. Food updates invalidate nutrition queries because recipes and meals resolve library nutrients. Revision conflicts retain edits and offer loading the saved version. Interrupted creation offers checking saved foods before a separate create. Search, loaded pages and return position use the shared list foundation.
 
@@ -143,7 +143,7 @@ Run `pnpm test:lists` with the coach app and isolated browser API running. The s
 
 ## Recipe library
 
-Nutrition → Recipe library supports cursor search, creation and revisioned editing. Add ingredients together, edit quantities beside each name, and remove with Undo. Preparation notes and finished weight are optional. Nutrition comes from the API for the whole saved recipe; unsaved edits hide those totals until saved. Existing recipe tags are preserved. Recipes can then be selected in meal plans.
+Nutrition → Recipe library supports cursor search, creation and revisioned editing. Add ingredients together, edit quantities beside each name, and remove with Undo. Preparation notes and finished weight are optional. Nutrition comes from the API for the whole saved recipe; unsaved edits hide those totals until saved. Allergens and dietary tags are editable in a separate disclosure; they remain manual declarations when ingredients change. Recipes can then be selected in meal plans.
 
 Run `rtk pnpm -C frontend/apps/coachapp test:recipes` from the repository root with the coach app and isolated browser API running. The suite checks the full recipe task, request recovery, pagination, food-update invalidation, meal reuse and session isolation at 375px and 1280px. See [the recipe brief](../../../.scratch/coachapp-rebuild/recipes.md).
 
@@ -255,3 +255,9 @@ Run `rtk pnpm -C frontend/apps/coachapp test:intake-follow-up` with API 44000 an
 Saved editors offer Manage food/recipe. See direct uses in recipes, plan templates and accessible client plans, search across cursor pages, then return from a linked editor to the same search. Copy creates an independent saved item; delete protects structural uses and retains logged nutrition. Interrupted writes have explicit recovery and account guards.
 
 Run `rtk pnpm -C frontend/apps/coachapp test:nutrition-library-management` with API 44000 and app 22022, or set `COACH_API_URL` / `COACH_APP_URL`. See [the management brief](../../../.scratch/coachapp-rebuild/nutrition-library-management.md).
+
+
+Serving-size and recipe-tag coverage runs in `test:foods` and `test:recipes`. The shared tag controls use the same supported vocabulary in both editors; explicit clearing, failed-save recovery and referenced portions are covered. See [the detail-authoring brief](../../../.scratch/coachapp-rebuild/nutrition-library-details.md).
+
+
+Food photo/video controls share their upload behavior with exercises. Ingredient and meal pickers load previews only when opened. Run `rtk pnpm -C frontend/apps/coachapp test:food-media` with API 4000, app 2022 and MinIO 9000; alternate API/app ports use `COACH_API_URL` / `COACH_APP_URL`. See [the food media brief](../../../.scratch/coachapp-rebuild/food-media.md).

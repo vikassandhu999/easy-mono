@@ -2,6 +2,7 @@ import {useEffect, useState} from 'react';
 import {type Food, useFoods} from '../api/foods';
 import {Button} from '../ui/button';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
+import {FoodMediaPreview} from '../ui/food-media-preview';
 import {InfiniteList} from '../ui/infinite-list';
 import {Input} from '../ui/input';
 
@@ -47,32 +48,35 @@ export function IngredientPicker({onAdd, onClose}: {onAdd: (foods: Food[]) => vo
           empty={<p>No matching foods. Try another name. New foods can be created in the Food library.</p>}
         >
           {(food) => (
-            <div className="flex items-center gap-3 p-4">
-              <div className="min-w-0 flex-1">
-                <p className="break-words font-semibold">{food.name}</p>
-                {food.brand && <p className="text-sm text-muted-foreground">{food.brand}</p>}
-                {food.allergens.length > 0 && (
-                  <p className="text-xs text-muted-foreground">Allergens: {food.allergens.join(', ')}</p>
-                )}
+            <div className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="break-words font-semibold">{food.name}</p>
+                  {food.brand && <p className="text-sm text-muted-foreground">{food.brand}</p>}
+                  {food.allergens.length > 0 && (
+                    <p className="text-xs text-muted-foreground">Allergens: {food.allergens.join(', ')}</p>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  aria-label={`Select ${food.name}`}
+                  aria-pressed={selected.has(food.id)}
+                  onPress={() =>
+                    setSelected((previous) => {
+                      const next = new Map(previous);
+                      if (next.has(food.id)) {
+                        next.delete(food.id);
+                      } else {
+                        next.set(food.id, food);
+                      }
+                      return next;
+                    })
+                  }
+                >
+                  {selected.has(food.id) ? 'Selected' : 'Select'}
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                aria-label={`Select ${food.name}`}
-                aria-pressed={selected.has(food.id)}
-                onPress={() =>
-                  setSelected((previous) => {
-                    const next = new Map(previous);
-                    if (next.has(food.id)) {
-                      next.delete(food.id);
-                    } else {
-                      next.set(food.id, food);
-                    }
-                    return next;
-                  })
-                }
-              >
-                {selected.has(food.id) ? 'Selected' : 'Select'}
-              </Button>
+              <FoodMediaPreview food={food} />
             </div>
           )}
         </InfiniteList>

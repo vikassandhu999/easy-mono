@@ -18,6 +18,7 @@
     "lint": "biome check --write .",
     "preview": "vite preview",
     "test:training": "node tests/training/assign.browser.mjs",
+    "test:food-media": "node tests/foods/media.browser.mjs",
     "test:foods": "node tests/foods/foods.browser.mjs",
     "test:client-nutrition": "node tests/nutrition/personalize.browser.mjs",
     "test:client-training": "node tests/training/personalize.browser.mjs",

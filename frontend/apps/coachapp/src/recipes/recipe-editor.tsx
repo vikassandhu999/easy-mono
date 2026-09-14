@@ -10,6 +10,7 @@ import {FormError} from '../ui/form-error';
 import {FormField} from '../ui/form-field';
 import {InfiniteList} from '../ui/infinite-list';
 import {useListLocation} from '../ui/list-location';
+import {NutritionTags} from '../ui/nutrition-tags';
 import {FormActions, Page, PageHeader, Surface} from '../ui/page';
 
 import {Ingredients} from './ingredients';
@@ -247,6 +248,20 @@ function Editor({initial}: {initial: Recipe | undefined}) {
                 label="Preparation instructions"
                 multiline
                 maxLength={10000}
+              />
+            </div>
+          </details>
+          <details>
+            <summary className="w-fit cursor-pointer py-2 font-medium">Allergens and dietary tags</summary>
+            <div className="mt-3 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Choose tags for the finished recipe after checking every ingredient. These are set by you and do not
+                update automatically when ingredients change.
+              </p>
+              <NutritionTags
+                value={{allergens: form.watch('allergens'), dietary_tags: form.watch('dietary_tags')}}
+                isDisabled={pending}
+                onChange={(field, values) => form.setValue(field, values, {shouldDirty: true})}
               />
             </div>
           </details>

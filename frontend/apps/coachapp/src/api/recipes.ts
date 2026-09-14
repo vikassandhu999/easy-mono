@@ -1,6 +1,6 @@
 import {useInfiniteQuery, useMutation, useQuery} from '@tanstack/react-query';
 import {call, client} from './client';
-import {nutritionKeys, recipeKeys} from './keys';
+import {foodKeys, nutritionKeys, recipeKeys} from './keys';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
 import type {RecipeCreate, RecipeUpdate} from './schema';
@@ -42,6 +42,7 @@ export function useSaveRecipe() {
       }
       await Promise.all([
         queryClient.invalidateQueries({queryKey: recipeKeys.all}),
+        queryClient.invalidateQueries({queryKey: foodKeys.lists()}),
         ...(input.kind === 'update' ? [queryClient.invalidateQueries({queryKey: nutritionKeys.all})] : []),
       ]);
       if (getSession()?.id !== sessionId) {
@@ -52,6 +53,7 @@ export function useSaveRecipe() {
       if (sessionId && getSession()?.id === sessionId) {
         await Promise.all([
           queryClient.invalidateQueries({queryKey: recipeKeys.all}),
+          queryClient.invalidateQueries({queryKey: foodKeys.lists()}),
           ...(input.kind === 'update' ? [queryClient.invalidateQueries({queryKey: nutritionKeys.all})] : []),
         ]);
       }

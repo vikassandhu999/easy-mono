@@ -1,8 +1,7 @@
-import {useEffect, useRef, useState} from 'react';
+import {useState} from 'react';
 import type {Exercise} from '../api/exercises';
-import {mediaFileError, useUploadLibraryMedia} from '../api/library-media';
 import {Button} from '../ui/button';
-import {FormError} from '../ui/form-error';
+import {LibraryMediaField} from '../ui/library-media-field';
 import {MediaPreview} from '../ui/media-preview';
 
 export function ExerciseMedia({
@@ -22,156 +21,36 @@ export function ExerciseMedia({
   onImagesChange: (images: string[]) => void;
   onBusy: (busy: boolean) => void;
 }) {
-  const upload = useUploadLibraryMedia();
-  const input = useRef<HTMLInputElement>(null);
-  const active = useRef<AbortController | null>(null);
-  const mounted = useRef(true);
-  const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
-  const [retryFile, setRetryFile] = useState<File | null>(null);
   const [removed, setRemoved] = useState<
     {kind: 'media'; value: NonNullable<Exercise['media']>} | {kind: 'image'; url: string; index: number} | null
   >(null);
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-      active.current?.abort();
-    };
-  }, []);
-  async function attach(file: File) {
-    const invalid = mediaFileError(file);
-    setError(invalid ?? '');
-    setNotice('');
-    setRetryFile(null);
-    if (invalid || active.current) {
-      return;
-    }
-    const controller = new AbortController();
-    active.current = controller;
-    onBusy(true);
-    try {
-      const uploaded = await upload.mutateAsync({file, signal: controller.signal});
-      if (mounted.current && !controller.signal.aborted) {
-        onChange(uploaded);
-        setRemoved(null);
-        setNotice('Upload finished.');
-      }
-    } catch {
-      if (mounted.current) {
-        if (controller.signal.aborted) {
-          setNotice('Upload cancelled. Your demonstration is unchanged.');
-        } else {
-          setError('Could not upload this file. Your demonstration is unchanged. Retry when connected.');
-          setRetryFile(file);
-        }
-      }
-    } finally {
-      active.current = null;
-      if (mounted.current) {
-        onBusy(false);
-      }
-    }
-  }
   return (
     <section
       aria-label="Exercise demonstration"
       className="space-y-3"
     >
       <h2 className="text-sm font-medium">Demonstration</h2>
-      {media && (
-        <MediaPreview
-          key={media.id}
-          kind={media.kind}
-          url={media.url}
-          label="Exercise demonstration"
-        />
-      )}
       {!media && images.length === 0 && readOnly && (
         <p className="text-sm text-muted-foreground">No demonstration added.</p>
       )}
-      {!readOnly && (
-        <>
-          <p className="text-sm text-muted-foreground">
-            JPG, PNG or WebP photos up to 15 MB. MP4 or WebM videos up to 50 MB. Demonstrations are public; keep private
-            client information out of them.
-          </p>
-          <input
-            ref={input}
-            type="file"
-            className="sr-only"
-            tabIndex={-1}
-            aria-label="Choose demonstration"
-            disabled={disabled}
-            accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              event.target.value = '';
-              if (file) {
-                attach(file);
-              }
-            }}
-          />
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              isDisabled={disabled}
-              onPress={() => input.current?.click()}
-            >
-              {media ? 'Replace demonstration' : 'Add photo or video'}
-            </Button>
-            {media && (
-              <Button
-                variant="ghost"
-                isDisabled={disabled}
-                onPress={() => {
-                  setRemoved({kind: 'media', value: media});
-                  onChange(null);
-                  setNotice('');
-                }}
-              >
-                Remove demonstration
-              </Button>
-            )}
-          </div>
-        </>
-      )}
-      {upload.isPending && (
-        <div className="flex flex-wrap items-center gap-3">
-          <p
-            role="status"
-            className="text-sm"
-          >
-            Uploading demonstration…
-          </p>
-          <Button
-            variant="outline"
-            onPress={() => active.current?.abort()}
-          >
-            Cancel upload
-          </Button>
-        </div>
-      )}
-      <FormError message={error} />
-      {retryFile && (
-        <Button
-          variant="outline"
-          isDisabled={disabled}
-          onPress={() => {
-            attach(retryFile);
-          }}
-        >
-          Retry upload
-        </Button>
-      )}
-      {notice && (
-        <p
-          role="status"
-          className="text-sm text-muted-foreground"
-        >
-          {notice}
-        </p>
-      )}
+      <LibraryMediaField
+        media={media}
+        noun="demonstration"
+        label="Exercise demonstration"
+        disabled={disabled}
+        readOnly={readOnly}
+        onBusy={onBusy}
+        onUpload={(uploaded) => {
+          setRemoved(null);
+          onChange(uploaded);
+        }}
+        onRemove={() => {
+          if (media) {
+            setRemoved({kind: 'media', value: media});
+            onChange(null);
+          }
+        }}
+      />
       {images.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-sm font-medium">Reference photos</h3>

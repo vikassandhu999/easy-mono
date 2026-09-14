@@ -63,6 +63,18 @@ defmodule Easy.Billing.CheckoutTest do
     assert [%{kind: :seats_added, seat_delta: 1} | _] = summary(ctx_for(business)).recent_events
   end
 
+  test "checkout rejects past-due and scheduled-for-cancellation subscriptions" do
+    stub_razorpay()
+
+    for status <- [:past_due, :cancel_at_period_end] do
+      business = insert(:business)
+      insert(:business_billing, business: business, status: status, razorpay_subscription_id: "sub_#{status}")
+
+      assert {:error, changeset} = Billing.checkout(ctx_for(business), 1)
+      assert %{status: ["is unavailable for this action"]} = errors_on(changeset)
+    end
+  end
+
   test "checkout rejects more than 100 seats before calling the provider" do
     stub_razorpay()
     business = insert(:business)
@@ -114,6 +126,18 @@ defmodule Easy.Billing.CheckoutTest do
     business = insert(:business)
 
     assert {:error, :no_subscription} = Billing.cancel(ctx_for(business))
+  end
+
+  test "cancel rejects subscriptions that are already scheduled or cancelled" do
+    stub_razorpay()
+
+    for status <- [:free, :cancel_at_period_end, :cancelled] do
+      business = insert(:business)
+      insert(:business_billing, business: business, status: status, razorpay_subscription_id: "sub_#{status}")
+
+      assert {:error, changeset} = Billing.cancel(ctx_for(business))
+      assert %{status: ["is unavailable for this action"]} = errors_on(changeset)
+    end
   end
 
   test "checkout with a stale subscription id on a free (never-paid) business starts a fresh checkout" do

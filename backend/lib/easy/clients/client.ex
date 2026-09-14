@@ -544,9 +544,14 @@ defmodule Easy.Clients.Client do
     )
   end
 
+  @spec for_assigned_coach(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
+  def for_assigned_coach(query, nil), do: query
+  def for_assigned_coach(query, coach_id), do: assigned_to(query, coach_id)
+
   @spec include_preloads(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def include_preloads(query \\ __MODULE__, _business_id) do
-    from(c in query, preload: [:user, :business, :creator])
+  def include_preloads(query \\ __MODULE__, business_id) do
+    coaches = Orgs.Coach.for_business(business_id)
+    from(c in query, preload: [:user, :business, :creator, assigned_coach: ^coaches])
   end
 
   # Deliberately global (no business_id): the product rule is one active coaching

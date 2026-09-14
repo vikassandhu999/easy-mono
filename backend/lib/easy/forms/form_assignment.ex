@@ -67,6 +67,20 @@ defmodule Easy.Forms.FormAssignment do
     |> foreign_key_constraint(:check_in_schedule_id, name: :form_assignments_schedule_business_id_fkey)
   end
 
+  @spec check_expected_status(t(), map()) :: :ok | {:error, :assignment_changed | Ecto.Changeset.t()}
+  def check_expected_status(assignment, attrs) do
+    types = %{expected_status: __schema__(:type, :status)}
+    changeset = cast({%{}, types}, attrs, [:expected_status])
+
+    with {:ok, input} <- apply_action(changeset, :update) do
+      case Map.fetch(input, :expected_status) do
+        :error -> :ok
+        {:ok, status} when status == assignment.status -> :ok
+        {:ok, _status} -> {:error, :assignment_changed}
+      end
+    end
+  end
+
   @spec update_changeset(t(), DateTime.t(), map()) :: Ecto.Changeset.t()
   def update_changeset(assignment, now, attrs) do
     assignment

@@ -20,7 +20,7 @@ defmodule Easy.CoachInvitations do
   def resend_invite(%Ctx{} = ctx, coach_id) do
     with :ok <- ensure_owner(ctx),
          {:ok, coach} <- get_invited_coach(ctx.business_id, coach_id) do
-      rotate_and_resend(coach)
+      rotate_and_resend(ctx.business_id, coach)
     end
   end
 
@@ -28,8 +28,12 @@ defmodule Easy.CoachInvitations do
           {:ok, Coach.t()} | {:error, :not_owner | :not_found | Ecto.Changeset.t()}
   def revoke_invite(%Ctx{} = ctx, coach_id) do
     with :ok <- ensure_owner(ctx),
-         {:ok, coach} <- get_invited_coach(ctx.business_id, coach_id) do
-      Repo.delete(coach)
+         {1, [coach]} <-
+           Repo.delete_all(Coach |> Coach.for_business(ctx.business_id) |> Coach.pending_invitation(coach_id)) do
+      {:ok, coach}
+    else
+      {0, _} -> {:error, :not_found}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -86,7 +90,7 @@ defmodule Easy.CoachInvitations do
     end
   end
 
-  defp match_existing_invite(_changeset, %Coach{status: :invited} = coach), do: rotate_and_resend(coach)
+  defp match_existing_invite(_changeset, %Coach{status: :invited} = coach), do: rotate_and_resend(coach.business_id, coach)
 
   defp match_existing_invite(_changeset, %Coach{status: status}) when status in [:active, :inactive],
     do: {:error, :already_on_team}
@@ -120,11 +124,13 @@ defmodule Easy.CoachInvitations do
     |> deliver_invite()
   end
 
-  defp rotate_and_resend(coach) do
-    coach
-    |> Coach.resend_invite_changeset(DateTime.utc_now(:second))
-    |> Repo.update()
-    |> deliver_invite()
+  defp rotate_and_resend(business_id, coach) do
+    attrs = Coach.resend_invite_changeset(coach, DateTime.utc_now(:second)).changes
+
+    case Repo.update_all(Coach |> Coach.for_business(business_id) |> Coach.pending_invitation(coach.id), set: Map.to_list(attrs)) do
+      {1, [updated]} -> deliver_invite({:ok, updated})
+      {0, _} -> {:error, :not_found}
+    end
   end
 
   defp deliver_invite({:ok, coach} = result) do

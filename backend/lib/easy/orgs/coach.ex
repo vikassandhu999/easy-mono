@@ -17,6 +17,7 @@ defmodule Easy.Orgs.Coach do
     field :first_name, :string
     field :last_name, :string
     field :phone, :string
+    field :assigned_client_count, :integer, virtual: true, default: 0
     field :email, :string
     field :status, Ecto.Enum, values: [:invited, :active, :inactive], default: :active
     field :invitation_token, :string
@@ -116,6 +117,40 @@ defmodule Easy.Orgs.Coach do
     from(c in query, where: c.business_id == ^business_id)
   end
 
+  @spec for_status(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
+  def for_status(query, nil), do: query
+  def for_status(query, status), do: from(coach in query, where: coach.status == ^status)
+
+  @spec search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
+  def search(query, search) when search in [nil, ""], do: query
+
+  def search(query, search) do
+    pattern = "%" <> (search |> String.trim() |> String.replace("\\", "\\\\") |> String.replace("%", "\\%") |> String.replace("_", "\\_")) <> "%"
+
+    from(coach in query,
+      left_join: user in assoc(coach, :user),
+      where: ilike(fragment("concat_ws(' ', ?, ?, coalesce(?, ?))", coach.first_name, coach.last_name, user.email, coach.email), ^pattern)
+    )
+  end
+
+  @spec include_client_counts(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def include_client_counts(query, business_id) do
+    coach_ids = from(coach in query, select: coach.id)
+
+    counts =
+      from(client in Easy.Clients.Client,
+        where: client.business_id == ^business_id,
+        where: client.assigned_coach_id in subquery(coach_ids),
+        group_by: client.assigned_coach_id,
+        select: %{coach_id: client.assigned_coach_id, count: count(client.id)}
+      )
+
+    from(coach in query, left_join: count in subquery(counts), on: count.coach_id == coach.id, select_merge: %{assigned_client_count: coalesce(count.count, 0)}, preload: [:user])
+  end
+
+  @spec for_id(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_id(query, id), do: from(coach in query, where: coach.id == ^id)
+
   @spec active(Ecto.Queryable.t()) :: Ecto.Query.t()
   def active(query \\ __MODULE__) do
     from(c in query, where: c.status == :active)
@@ -164,9 +199,14 @@ defmodule Easy.Orgs.Coach do
   def invitation_expired?(%__MODULE__{invitation_sent_at: nil}, _now), do: false
 
   def invitation_expired?(%__MODULE__{invitation_sent_at: sent_at}, now) do
-    expires_at = DateTime.add(sent_at, @invitation_validity_days, :day)
-    DateTime.compare(now, expires_at) == :gt
+    DateTime.compare(now, expires_at(sent_at)) == :gt
   end
+
+  @spec invitation_expires_at(t()) :: DateTime.t() | nil
+  def invitation_expires_at(%__MODULE__{status: :invited, invitation_sent_at: sent_at}) when not is_nil(sent_at), do: expires_at(sent_at)
+  def invitation_expires_at(%__MODULE__{}), do: nil
+
+  defp expires_at(sent_at), do: DateTime.add(sent_at, @invitation_validity_days, :day)
 
   @spec full_name(t()) :: String.t()
   def full_name(%__MODULE__{first_name: first, last_name: last}) do

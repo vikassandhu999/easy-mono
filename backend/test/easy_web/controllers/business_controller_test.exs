@@ -2,7 +2,6 @@ defmodule EasyWeb.BusinessControllerTest do
   use Easy.ConnCase
 
   alias Easy.Identity.Token
-  alias Ecto.UUID
 
   setup do
     owner_user = insert(:user)
@@ -45,6 +44,8 @@ defmodule EasyWeb.BusinessControllerTest do
       assert data["handle"] == "strong-coaching"
       assert data["about"] == nil
       assert data["default_weight_unit"] == "lbs"
+      assert data["timezone"] == "Asia/Kolkata"
+      assert data["whatsapp_number"] == nil
       assert data["dashboard_setup_hidden_at"] == nil
       assert data["dashboard_setup_hidden_reason"] == nil
       assert data["inserted_at"]
@@ -128,7 +129,9 @@ defmodule EasyWeb.BusinessControllerTest do
                  "id" => business.id,
                  "inserted_at" => DateTime.to_iso8601(business.inserted_at),
                  "name" => business.name,
-                 "updated_at" => DateTime.to_iso8601(business.updated_at)
+                 "timezone" => business.timezone,
+                 "updated_at" => DateTime.to_iso8601(business.updated_at),
+                 "whatsapp_number" => business.whatsapp_number
                }
              }
     end
@@ -158,7 +161,9 @@ defmodule EasyWeb.BusinessControllerTest do
         patch(conn, "/v1/businesses/me", %{
           "about" => "Strength and nutrition coaching",
           "default_weight_unit" => "lbs",
-          "name" => "Strong Coaching"
+          "name" => "Strong Coaching",
+          "timezone" => "Europe/London",
+          "whatsapp_number" => "+44 20 7946 0958"
         })
 
       assert %{"data" => data} = json_response(conn, 200)
@@ -167,6 +172,8 @@ defmodule EasyWeb.BusinessControllerTest do
       assert data["handle"] == business.handle
       assert data["about"] == "Strength and nutrition coaching"
       assert data["default_weight_unit"] == "lbs"
+      assert data["timezone"] == "Europe/London"
+      assert data["whatsapp_number"] == "+44 20 7946 0958"
       assert data["dashboard_setup_hidden_at"] == nil
       assert data["dashboard_setup_hidden_reason"] == nil
       assert data["inserted_at"] == DateTime.to_iso8601(business.inserted_at)
@@ -178,9 +185,53 @@ defmodule EasyWeb.BusinessControllerTest do
 
       assert json_response(conn, 422)
     end
+
+    test "rejects handle changes at the request boundary", %{business: business, owner_conn: conn} do
+      conn = patch(conn, "/v1/businesses/me", %{"handle" => "changed-handle"})
+
+      assert json_response(conn, 422)
+      assert Easy.Repo.get!(Easy.Orgs.Business, business.id).handle == business.handle
+    end
+
+    test "rejects a body business target", %{business: business, owner_conn: conn} do
+      foreign_business = insert(:business)
+
+      conn =
+        patch(conn, "/v1/businesses/me", %{
+          "business_id" => foreign_business.id,
+          "name" => "Attempted foreign update"
+        })
+
+      assert json_response(conn, 422)
+      assert Easy.Repo.get!(Easy.Orgs.Business, business.id).name == business.name
+      assert Easy.Repo.get!(Easy.Orgs.Business, foreign_business.id).name == foreign_business.name
+    end
+
+    test "rejects an invalid timezone without changing the business", %{business: business, owner_conn: conn} do
+      conn = patch(conn, "/v1/businesses/me", %{"timezone" => "Not/AZone"})
+
+      assert json_response(conn, 422)
+      assert Easy.Repo.get!(Easy.Orgs.Business, business.id).timezone == business.timezone
+    end
+
+    test "rejects trainer writes without changing the business", %{business: business, trainer_conn: conn} do
+      conn = patch(conn, "/v1/businesses/me", %{"name" => "Trainer changed this"})
+
+      assert json_response(conn, 403)
+      assert Easy.Repo.get!(Easy.Orgs.Business, business.id).name == business.name
+    end
+  end
+
+  describe "GET /v1/businesses/timezones" do
+    test "lists valid timezones", %{owner_conn: conn} do
+      assert %{"data" => %{"timezones" => timezones}} = json_response(get(conn, "/v1/businesses/timezones"), 200)
+      assert "Asia/Kolkata" in timezones
+    end
   end
 
   defp authenticate_user(conn, user) do
+    session = insert(:user_session, user: user, role: :guest)
+
     token =
       Joken.generate_and_sign!(
         Token.token_config(),
@@ -189,7 +240,7 @@ defmodule EasyWeb.BusinessControllerTest do
           coach_id: nil,
           is_owner: false,
           role: "guest",
-          session_id: UUID.generate(),
+          session_id: session.id,
           user_id: user.id
         },
         Token.signer()

@@ -18,6 +18,7 @@ defmodule Easy.Landing.LandingProgram do
     field :description, :string
     field :price_display, :string
     field :position, :integer, default: 0
+    field :archived_at, :utc_datetime
 
     belongs_to :business, Orgs.Business
     belongs_to :landing_page, Easy.Landing.LandingPage
@@ -35,9 +36,39 @@ defmodule Easy.Landing.LandingProgram do
     |> put_change(:landing_page_id, landing_page_id)
     |> put_change(:position, position)
     |> validate_required([:business_id, :landing_page_id, :name])
+    |> validate_copy_lengths()
     |> foreign_key_constraint(:business_id)
     |> foreign_key_constraint(:landing_page_id, name: :landing_programs_page_business_id_fkey)
   end
+
+  @spec update_changeset(t(), integer(), map()) :: Ecto.Changeset.t()
+  def update_changeset(program, position, attrs) do
+    program
+    |> cast(attrs, [:name, :audience, :promise, :description, :price_display])
+    |> put_change(:position, position)
+    |> validate_required([:name])
+    |> validate_copy_lengths()
+  end
+
+  defp validate_copy_lengths(changeset) do
+    Enum.reduce([:name, :audience, :promise, :description, :price_display], changeset, fn field, acc ->
+      validate_length(acc, field, max: 255)
+    end)
+  end
+
+  @spec input_id(map()) :: {:ok, String.t() | nil} | {:error, Ecto.Changeset.t()}
+  def input_id(attrs) do
+    {%{}, %{id: Ecto.UUID}}
+    |> cast(attrs, [:id])
+    |> apply_action(:update)
+    |> case do
+      {:ok, input} -> {:ok, Map.get(input, :id)}
+      error -> error
+    end
+  end
+
+  @spec active(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def active(query \\ __MODULE__), do: from(program in query, where: is_nil(program.archived_at))
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do

@@ -30,7 +30,9 @@ defmodule Easy.Orgs do
     |> ok_or_not_found()
   end
 
-  @spec update_business(Ctx.t(), map()) :: {:ok, Business.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  @spec update_business(Ctx.t(), map()) :: {:ok, Business.t()} | {:error, :not_owner | :not_found | Ecto.Changeset.t()}
+  def update_business(%Ctx{owner?: false}, _attrs), do: {:error, :not_owner}
+
   def update_business(%Ctx{} = ctx, attrs) when is_map(attrs) do
     with {:ok, business} <- get_business(ctx) do
       business

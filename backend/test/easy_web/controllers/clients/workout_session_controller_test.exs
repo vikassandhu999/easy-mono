@@ -154,12 +154,10 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
         state: :completed
       )
 
+      second_conn = build_conn() |> authenticate_client(ctx.client)
+
       {_conn, two_session_queries} =
-        capture_queries(fn ->
-          build_conn()
-          |> authenticate_client(ctx.client)
-          |> get("/v1/client/training-sessions")
-        end)
+        capture_queries(fn -> get(second_conn, "/v1/client/training-sessions") end)
 
       assert length(two_session_queries) == length(one_session_queries)
       assert Enum.count(one_session_queries, &client_identity_query?/1) == 1

@@ -1,6 +1,8 @@
 defmodule EasyWeb.Coaches.ClientControllerTest do
   use Easy.ConnCase
 
+  alias Easy.Orgs.Coach
+
   setup do
     coach = insert(:coach)
 
@@ -1190,6 +1192,7 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert %{"data" => data} = json_response(conn, 200)
       assert data["id"] == client.id
       assert data["assigned_coach_id"] == other_trainer.id
+      assert data["assigned_coach_name"] == Coach.full_name(other_trainer)
 
       updated = Easy.Repo.get!(Easy.Clients.Client, client.id)
       assert updated.assigned_coach_id == other_trainer.id
@@ -1219,6 +1222,58 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
         })
 
       assert json_response(conn, 422)
+    end
+  end
+
+  describe "client id validation and trainer visibility" do
+    test "rejects malformed client IDs before the context is called", %{conn: conn} do
+      for request <- [
+            fn conn -> get(conn, "/v1/coach/clients/not-a-uuid") end,
+            fn conn -> post(conn, "/v1/coach/clients/not-a-uuid/resend-invite") end,
+            fn conn -> patch(conn, "/v1/coach/clients/not-a-uuid", %{"notes" => "note"}) end,
+            fn conn -> delete(conn, "/v1/coach/clients/not-a-uuid") end,
+            fn conn ->
+              post(conn, "/v1/coach/clients/not-a-uuid/reassign", %{
+                "coach_id" => Ecto.UUID.generate()
+              })
+            end
+          ] do
+        assert json_response(request.(recycle(conn)), 422)
+      end
+    end
+
+    test "a trainer cannot update or revoke another trainer's client", %{business: business} do
+      trainer = insert(:coach, business: business)
+      other_trainer = insert(:coach, business: business)
+
+      active_client =
+        insert(:client,
+          business: business,
+          creator: other_trainer,
+          assigned_coach: other_trainer,
+          status: :active
+        )
+
+      pending_client =
+        insert(:client,
+          business: business,
+          creator: other_trainer,
+          assigned_coach: other_trainer,
+          status: :pending
+        )
+
+      conn = build_conn() |> authenticate_coach(trainer) |> put_req_header("content-type", "application/json")
+
+      assert conn
+             |> patch("/v1/coach/clients/#{active_client.id}", %{"notes" => "hidden"})
+             |> json_response(404)
+
+      assert conn
+             |> recycle()
+             |> delete("/v1/coach/clients/#{pending_client.id}")
+             |> json_response(404)
+
+      assert Easy.Repo.get(Easy.Clients.Client, pending_client.id)
     end
   end
 end

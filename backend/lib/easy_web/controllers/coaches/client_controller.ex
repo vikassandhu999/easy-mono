@@ -7,11 +7,17 @@ defmodule EasyWeb.Coaches.ClientController do
   alias EasyWeb.Types.ClientIndex
 
   typed(:invite, body: ClientType.invite(), ok: {201, data(ClientType.t())})
-  typed(:resend_invite, ok: {200, data(ClientType.t())})
-  typed(:show, ok: {200, data(ClientType.t())})
-  typed(:update, body: ClientType.update(), ok: {200, data(ClientType.t())})
-  typed(:delete, ok: {204, nil})
-  typed(:reassign, body: ClientType.reassign(), ok: {200, data(ClientType.t())})
+  typed(:resend_invite, path: %{id: Ecto.UUID.t()}, ok: {200, data(ClientType.t())})
+  typed(:show, path: %{id: Ecto.UUID.t()}, ok: {200, data(ClientType.t())})
+  typed(:update, path: %{id: Ecto.UUID.t()}, body: ClientType.update(), ok: {200, data(ClientType.t())})
+  typed(:delete, path: %{id: Ecto.UUID.t()}, ok: {204, nil})
+
+  typed(:reassign,
+    path: %{id: Ecto.UUID.t()},
+    body: ClientType.reassign(),
+    ok: {200, data(ClientType.t())}
+  )
+
   typed(:index, query: ClientType.list_query(), ok: {200, ClientIndex.t()})
 
   @spec invite(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -78,6 +84,7 @@ defmodule EasyWeb.Coaches.ClientController do
       limit: Map.get(params, "limit", 20),
       status: Map.get(params, "status"),
       stage: Map.get(params, "stage"),
+      assigned_coach_id: Map.get(params, "assigned_coach_id"),
       sort: Map.get(params, "sort", :newest),
       include_plans: Map.get(params, "include_plans", false)
     ]

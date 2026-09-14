@@ -241,6 +241,18 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Error.unprocessable(%{fields: %{form_template_id: ["has assignments"]}})})
   end
 
+  def call(conn, {:error, :form_template_scheduled}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{form_template_id: ["has check-in schedules; archive it instead"]}})})
+  end
+
+  def call(conn, {:error, :form_template_built_in}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{form_template_id: ["is built in; archive it instead"]}})})
+  end
+
+  def call(conn, {:error, :form_template_archived}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{form_template_id: ["is archived; choose an active form"]}})})
+  end
+
   def call(conn, {:error, :schedule_has_assignments}) do
     call(conn, {:error, Error.unprocessable(%{fields: %{schedule: ["has assignments"]}})})
   end
@@ -263,7 +275,7 @@ defmodule EasyWeb.FallbackController do
   end
 
   def call(conn, {:error, :invalid_check_in_template}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{form_template_id: ["must be a check-in template"]}})})
+    call(conn, {:error, Error.unprocessable(%{fields: %{form_template_id: ["must be an active check-in template"]}})})
   end
 
   def call(conn, {:error, :invalid_answers}) do
@@ -290,12 +302,16 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Error.unprocessable(%{fields: %{attachments: ["are invalid"]}})})
   end
 
+  def call(conn, {:error, :assignment_changed}) do
+    call(conn, {:error, Error.new(:assignment_changed, "This intake changed. Refresh before trying again.", %{}, :conflict)})
+  end
+
   def call(conn, {:error, :assignment_not_submittable}) do
     call(conn, {:error, Error.unprocessable(%{fields: %{status: ["cannot be submitted"]}})})
   end
 
   def call(conn, {:error, :invalid_intake_assignment}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{purpose: ["must be intake"]}})})
+    call(conn, {:error, Error.unprocessable(%{fields: %{purpose: ["must be an outstanding intake for an active client"]}})})
   end
 
   def call(conn, {:error, :invalid_service}) do

@@ -30,4 +30,37 @@ defmodule Easy.BillingDisabledTest do
 
     assert {:error, :billing_disabled} = Billing.checkout(Ctx.new(business.id, business.owner_id), 1)
   end
+
+  test "billing needs non-empty Razorpay credentials, a plan, and a price" do
+    razorpay_config = Application.get_env(:easy, Easy.Razorpay)
+    on_exit(fn -> Application.put_env(:easy, Easy.Razorpay, razorpay_config) end)
+
+    business = insert(:business)
+    ctx = Ctx.new(business.id, business.owner_id)
+
+    unavailable_configs = [
+      key_id: nil,
+      key_id: "",
+      key_secret: nil,
+      key_secret: "",
+      plan_id: nil,
+      plan_id: "",
+      seat_price_inr: nil
+    ]
+
+    for {key, value} <- unavailable_configs do
+      Application.put_env(:easy, Easy.Razorpay, Keyword.put(razorpay_config, key, value))
+
+      assert {:ok, summary} = Billing.get_billing(ctx)
+      assert summary.monthly_seat_price_inr == nil
+      assert summary.monthly_total_inr == nil
+      refute summary.billing_enabled
+      refute summary.can_add_seats
+      refute summary.can_cancel
+      refute summary.can_sync
+      assert {:error, :billing_disabled} = Billing.checkout(ctx, 1)
+      assert {:error, :billing_disabled} = Billing.cancel(ctx)
+      assert {:error, :billing_disabled} = Billing.sync_billing(ctx)
+    end
+  end
 end

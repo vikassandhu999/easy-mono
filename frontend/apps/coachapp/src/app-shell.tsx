@@ -1,6 +1,6 @@
-import {LogOut, UserRound} from 'lucide-react';
+import {Building2, CreditCard, Globe, LogOut, UserRound, UsersRound} from 'lucide-react';
 import {useEffect, useRef} from 'react';
-import {Link, matchPath, NavLink, Outlet, useLocation} from 'react-router-dom';
+import {Link, matchPath, NavLink, Outlet, useLocation, useNavigate} from 'react-router-dom';
 import {useProfile} from './api/auth';
 import {errorMessage} from './api/client';
 import {clearSession} from './api/session';
@@ -14,10 +14,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
+import {useTaskReturn} from './ui/list-location';
 
 export function AppShell() {
   const profile = useProfile();
+  const navigate = useNavigate();
   const {pathname} = useLocation();
+  const taskReturn = useTaskReturn();
   const main = useRef<HTMLElement>(null);
   // biome-ignore lint/correctness/useExhaustiveDependencies: Move keyboard focus on route changes; ScrollRestoration owns the reading position.
   useEffect(() => {
@@ -38,7 +41,7 @@ export function AppShell() {
       </AuthLayout>
     );
   }
-  if (profile.isError) {
+  if (!profile.data) {
     return (
       <AuthLayout
         title="Your account"
@@ -108,6 +111,43 @@ export function AppShell() {
                   <span className="mt-1 block break-all text-sm font-normal">{account.email}</span>
                 </DropdownMenuLabel>
                 <DropdownMenuItem
+                  onAction={() => navigate(routes.profileSettings)}
+                  textValue="Your profile"
+                >
+                  <UserRound aria-hidden="true" />
+                  Your profile
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onAction={() => navigate(routes.businessSettings)}
+                  textValue="Business settings"
+                >
+                  <Building2 aria-hidden="true" />
+                  Business settings
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onAction={() => navigate(routes.coachingPage)}
+                  textValue="Coaching page"
+                >
+                  <Globe aria-hidden="true" />
+                  Coaching page
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onAction={() => navigate(routes.billing)}
+                  textValue="Billing"
+                >
+                  <CreditCard aria-hidden="true" />
+                  Billing
+                </DropdownMenuItem>
+                {account.is_owner && (
+                  <DropdownMenuItem
+                    onAction={() => navigate(routes.team)}
+                    textValue="Team"
+                  >
+                    <UsersRound aria-hidden="true" />
+                    Team
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem
                   onAction={clearSession}
                   textValue="Sign out"
                 >
@@ -124,15 +164,38 @@ export function AppShell() {
         className="app-navigation"
       >
         <NavLink
+          to={routes.workbench}
+          className={({isActive}) => (isActive ? 'app-navigation-link active' : 'app-navigation-link')}
+        >
+          Workbench
+        </NavLink>
+        <NavLink
           to={routes.home}
           end
           className={({isActive}) =>
-            isActive || matchPath({path: routes.client, end: false}, pathname)
+            isActive ||
+            (matchPath({path: routes.client, end: false}, pathname) && !matchPath(routes.clientConversation, pathname))
               ? 'app-navigation-link active'
               : 'app-navigation-link'
           }
         >
           Clients
+        </NavLink>
+        <NavLink
+          to={routes.applications}
+          className={({isActive}) => (isActive ? 'app-navigation-link active' : 'app-navigation-link')}
+        >
+          Applications
+        </NavLink>
+        <NavLink
+          to={routes.conversations}
+          className={({isActive}) =>
+            isActive || matchPath(routes.clientConversation, pathname)
+              ? 'app-navigation-link active'
+              : 'app-navigation-link'
+          }
+        >
+          Messages
         </NavLink>
         <NavLink
           to={routes.checkInResponses}
@@ -171,6 +234,29 @@ export function AppShell() {
         tabIndex={-1}
         className="app-main"
       >
+        {profile.isError && (
+          <div className="mb-6 space-y-3">
+            <FormError message="Could not refresh your account details. Your work is still here." />
+            <Button
+              variant="outline"
+              isPending={profile.isFetching}
+              onPress={() => {
+                profile.refetch();
+              }}
+            >
+              Retry account details
+            </Button>
+          </div>
+        )}
+        {taskReturn && taskReturn.to !== pathname && (
+          <Link
+            to={taskReturn.to}
+            state={taskReturn.state}
+            className="page-back mb-6"
+          >
+            {taskReturn.label}
+          </Link>
+        )}
         <Outlet />
       </main>
     </div>

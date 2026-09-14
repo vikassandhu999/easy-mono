@@ -26,7 +26,7 @@ export function ClientOverview() {
 }
 
 function Overview({id}: {id: string}) {
-  const {to: listLocation} = useListLocation(routes.home);
+  const {to: listLocation, state: listState} = useListLocation(routes.home);
   const client = useClient(id);
   const trainingPlans = useClientTrainingPlans(id);
   const nutrition = useNutritionCoverage(id);
@@ -44,7 +44,7 @@ function Overview({id}: {id: string}) {
       submissions.refetch();
     }
   };
-  if (!client.isSuccess) {
+  if (!client.data) {
     return (
       <Page>
         <PageHeader
@@ -81,6 +81,70 @@ function Overview({id}: {id: string}) {
     );
   }
   const person = client.data.data;
+  const intakeSection = (
+    <div className="grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:gap-8">
+      <aside
+        className="min-w-0 space-y-6"
+        aria-label="Client summary"
+      >
+        <ClientInvitation person={person} />
+      </aside>
+      <section
+        className="min-w-0 space-y-5"
+        aria-label="Client intake"
+      >
+        {assignments.isPending ? (
+          <Surface>
+            <p
+              role="status"
+              className="py-8 text-muted-foreground"
+            >
+              Loading intake…
+            </p>
+          </Surface>
+        ) : assignments.isError && !intake ? (
+          <Surface className="space-y-4">
+            <h2 className="section-title">Intake unavailable</h2>
+            <FormError
+              message={errorMessage(assignments.error, "We couldn't load the assigned intake. Please try again.")}
+            />
+            <Button
+              variant="outline"
+              onPress={refresh}
+            >
+              Retry intake
+            </Button>
+          </Surface>
+        ) : intake ? (
+          <>
+            {assignments.isError && (
+              <div className="space-y-3">
+                <FormError message="Could not refresh this intake. The last loaded details are shown." />
+                <Button
+                  variant="outline"
+                  onPress={refresh}
+                >
+                  Retry intake
+                </Button>
+              </div>
+            )}
+            <ClientIntake
+              key={intake.id}
+              assignment={intake}
+              person={person}
+              submissions={submissions}
+              disabled={assignments.isError || client.isError}
+            />
+          </>
+        ) : (
+          <Surface>
+            <h2 className="section-title">No intake assigned</h2>
+            <p className="mt-2 text-sm text-muted-foreground">There is no intake form for this client yet.</p>
+          </Surface>
+        )}
+      </section>
+    </div>
+  );
   return (
     <Page>
       <PageHeader
@@ -95,22 +159,42 @@ function Overview({id}: {id: string}) {
         }
         back={{to: listLocation, label: 'Back to clients'}}
         actions={
-          <Button
-            variant="outline"
-            isPending={
-              client.isFetching ||
-              assignments.isFetching ||
-              submissions.isFetching ||
-              trainingPlans.isFetching ||
-              nutrition.isFetching
-            }
-            onPress={refresh}
-          >
-            <RefreshCw aria-hidden="true" />
-            Refresh status
-          </Button>
+          <>
+            <Link
+              to={generatePath(routes.clientProfile, {id})}
+              state={listState}
+              className={buttonVariants({variant: 'outline'})}
+            >
+              Client details
+            </Link>
+            <Button
+              variant="outline"
+              isPending={
+                client.isFetching ||
+                assignments.isFetching ||
+                submissions.isFetching ||
+                trainingPlans.isFetching ||
+                nutrition.isFetching
+              }
+              onPress={refresh}
+            >
+              <RefreshCw aria-hidden="true" />
+              Refresh status
+            </Button>
+          </>
         }
       />
+      {client.isError && (
+        <div className="space-y-3">
+          <FormError message="Could not refresh this client. The last loaded details are shown." />
+          <Button
+            variant="outline"
+            onPress={refresh}
+          >
+            Retry client
+          </Button>
+        </div>
+      )}
       {notice !== null &&
         typeof notice === 'object' &&
         'trainingPlanSaved' in notice &&
@@ -141,6 +225,7 @@ function Overview({id}: {id: string}) {
           {notice.assigned} assigned.
         </p>
       )}
+      {person.stage === 'onboarding' && intakeSection}
       <section
         className="flex flex-wrap items-center justify-between gap-4"
         aria-label="Client check-ins"
@@ -166,6 +251,23 @@ function Overview({id}: {id: string}) {
           </Link>
         </div>
       </section>
+      <section
+        className="flex flex-wrap items-center justify-between gap-4"
+        aria-label="Client messages"
+      >
+        <div>
+          <h2 className="section-title">Messages</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Check in, answer questions and keep the conversation going.
+          </p>
+        </div>
+        <Link
+          to={generatePath(routes.clientConversation, {clientId: id})}
+          className={buttonVariants({variant: 'outline'})}
+        >
+          Message client
+        </Link>
+      </section>
       <ClientNutritionPlans
         person={person}
         query={nutrition}
@@ -189,54 +291,7 @@ function Overview({id}: {id: string}) {
         person={person}
         query={trainingPlans}
       />
-      <div className="grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:gap-8">
-        <aside
-          className="min-w-0 space-y-6"
-          aria-label="Client summary"
-        >
-          <ClientInvitation person={person} />
-        </aside>
-        <section
-          className="min-w-0 space-y-5"
-          aria-label="Client intake"
-        >
-          {assignments.isPending ? (
-            <Surface>
-              <p
-                role="status"
-                className="py-8 text-muted-foreground"
-              >
-                Loading intake…
-              </p>
-            </Surface>
-          ) : assignments.isError ? (
-            <Surface className="space-y-4">
-              <h2 className="section-title">Intake unavailable</h2>
-              <FormError
-                message={errorMessage(assignments.error, "We couldn't load the assigned intake. Please try again.")}
-              />
-              <Button
-                variant="outline"
-                onPress={refresh}
-              >
-                Retry intake
-              </Button>
-            </Surface>
-          ) : intake ? (
-            <ClientIntake
-              key={intake.id}
-              assignment={intake}
-              person={person}
-              submissions={submissions}
-            />
-          ) : (
-            <Surface>
-              <h2 className="section-title">No intake assigned</h2>
-              <p className="mt-2 text-sm text-muted-foreground">There is no intake form for this client yet.</p>
-            </Surface>
-          )}
-        </section>
-      </div>
+      {person.stage !== 'onboarding' && intakeSection}
     </Page>
   );
 }

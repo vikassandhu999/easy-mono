@@ -7,6 +7,7 @@ defmodule EasyWeb.Types.LandingPage do
   @type t :: %{
           required(:id) => String.t(),
           required(:slug) => String.t(),
+          required(:revision) => pos_integer(),
           required(:template) => :proof_first | :problem_fit | :coach_story,
           required(:eyebrow) => String.t() | nil,
           required(:headline) => String.t(),
@@ -46,6 +47,7 @@ defmodule EasyWeb.Types.LandingPage do
 
   @type upsert :: %{
           required(:slug) => String.t(),
+          optional(:expected_revision) => non_neg_integer(),
           required(:template) => :proof_first | :problem_fit | :coach_story,
           required(:headline) => String.t(),
           required(:status) => :draft | :published,
@@ -70,6 +72,7 @@ defmodule EasyWeb.Types.LandingPage do
           ],
           optional(:programs) => [
             %{
+              optional(:id) => String.t(),
               required(:name) => String.t(),
               optional(:audience) => String.t() | nil,
               optional(:promise) => String.t() | nil,
@@ -80,7 +83,9 @@ defmodule EasyWeb.Types.LandingPage do
         }
 
   @type public :: %{
+          required(:id) => String.t(),
           required(:slug) => String.t(),
+          required(:revision) => pos_integer(),
           required(:template) => :proof_first | :problem_fit | :coach_story,
           required(:eyebrow) => String.t() | nil,
           required(:headline) => String.t(),
@@ -118,6 +123,9 @@ defmodule EasyWeb.Types.LandingPage do
         }
 
   @type application :: %{
+          optional(:landing_page_id) => String.t(),
+          optional(:request_id) => String.t(),
+          optional(:expected_revision) => pos_integer(),
           required(:name) => String.t(),
           optional(:phone) => String.t() | nil,
           optional(:email) => String.t() | nil,
@@ -139,6 +147,7 @@ defmodule EasyWeb.Types.LandingPage do
     %{
       id: page.id,
       slug: page.slug,
+      revision: page.revision,
       template: page.template,
       eyebrow: page.eyebrow,
       headline: page.headline,
@@ -158,7 +167,9 @@ defmodule EasyWeb.Types.LandingPage do
   @spec public(LandingPage.t(), Business.t()) :: public()
   def public(%LandingPage{} = page, %Business{} = business) do
     %{
+      id: page.id,
       slug: page.slug,
+      revision: page.revision,
       template: page.template,
       eyebrow: page.eyebrow,
       headline: page.headline,
@@ -179,7 +190,7 @@ defmodule EasyWeb.Types.LandingPage do
     %{
       id: prospect.id,
       name: prospect.name,
-      program_name: program_name(program),
+      program_name: submitted_program_name(prospect.submitted_program, program),
       business_name: business.name,
       whatsapp_number: business.whatsapp_number
     }
@@ -196,6 +207,9 @@ defmodule EasyWeb.Types.LandingPage do
       position: program.position
     }
   end
+
+  defp submitted_program_name(%{"name" => name}, _program), do: name
+  defp submitted_program_name(nil, program), do: program_name(program)
 
   defp program_name(%LandingProgram{name: name}), do: name
   defp program_name(nil), do: nil

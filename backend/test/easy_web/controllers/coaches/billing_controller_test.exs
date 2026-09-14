@@ -48,6 +48,62 @@ defmodule EasyWeb.Coaches.BillingControllerTest do
       assert %{"data" => %{"available_seats" => -1}} =
                conn |> get("/v1/coach/billing") |> json_response(200)
     end
+
+    test "shows controls to the owner and disables purchase or cancellation while cancellation is requested", %{
+      conn: conn,
+      business: business
+    } do
+      insert(:business_billing,
+        business: business,
+        paid_seats: 2,
+        status: :active,
+        razorpay_subscription_id: "sub_cancellation_requested",
+        cancellation_state: :requested,
+        cancellation_requested_at: DateTime.utc_now(:second)
+      )
+
+      assert %{
+               "data" => %{
+                 "is_owner" => true,
+                 "billing_enabled" => true,
+                 "can_add_seats" => false,
+                 "can_cancel" => false,
+                 "can_sync" => true,
+                 "cancellation_state" => "requested",
+                 "pending_checkout" => nil,
+                 "monthly_seat_price_inr" => 499,
+                 "monthly_total_inr" => 998
+               }
+             } = conn |> get("/v1/coach/billing") |> json_response(200)
+    end
+
+    test "hides owner-only controls from a trainer", %{business: business} do
+      insert(:business_billing,
+        business: business,
+        paid_seats: 2,
+        status: :active,
+        razorpay_subscription_id: "sub_trainer_visibility"
+      )
+
+      trainer = insert(:coach, business: business)
+
+      conn =
+        build_conn()
+        |> authenticate_coach(trainer)
+        |> put_req_header("content-type", "application/json")
+        |> get("/v1/coach/billing")
+
+      assert %{
+               "data" => %{
+                 "is_owner" => false,
+                 "billing_enabled" => true,
+                 "can_add_seats" => false,
+                 "can_cancel" => false,
+                 "can_sync" => false,
+                 "pending_checkout" => nil
+               }
+             } = json_response(conn, 200)
+    end
   end
 
   describe "POST /v1/coach/billing/checkout" do
@@ -58,6 +114,7 @@ defmodule EasyWeb.Coaches.BillingControllerTest do
         {%{seats_to_add: -1}, "seats_to_add", "is invalid"},
         {%{seats_to_add: "two"}, "seats_to_add", "is invalid"},
         {%{seats_to_add: 101}, "seats_to_add", "must be less than or equal to 100"},
+        {%{seats_to_add: 1, request_id: "not-a-uuid"}, "request_id", "must be a UUID"},
         {%{seats_to_add: 1, unexpected: true}, "unexpected", "is unknown"}
       ]
 
@@ -74,14 +131,16 @@ defmodule EasyWeb.Coaches.BillingControllerTest do
         Req.Test.json(req_conn, %{"id" => "sub_x", "plan_id" => "plan_test"})
       end)
 
+      request_id = Ecto.UUID.generate()
+
       conn =
         conn
         |> put_req_header("content-type", "application/json")
-        |> post("/v1/coach/billing/checkout", %{seats_to_add: 2})
+        |> post("/v1/coach/billing/checkout", %{seats_to_add: 2, request_id: request_id})
 
       assert %{"data" => data} = json_response(conn, 200)
       assert data["action"] == "checkout"
-      assert data["checkout"] == %{"key_id" => "rzp_test_key", "subscription_id" => "sub_x"}
+      assert %{"key_id" => "rzp_test_key", "request_id" => ^request_id, "subscription_id" => "sub_x"} = data["checkout"]
       assert data["billing"]["status"] == "free"
       assert data["billing"]["recent_events"] == nil
     end

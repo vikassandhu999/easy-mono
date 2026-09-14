@@ -1,0 +1,38 @@
+# Conversations
+
+When a client asks for help, a coach needs to understand the conversation and respond, so the client can keep moving. This is a frequent phone task and a desktop catch-up task. The costly mistakes are replying to the wrong client, losing a draft, sending a duplicate after a lost response, and treating an unread message as handled.
+
+Use a searchable inbox with All, Needs reply and Unread filters. Each row leads with the client's name, then the latest preview and time; unread and waiting states come from the API. Start a conversation from Client Overview. A dedicated thread keeps the client identity, messages and composer together. A permanent inbox/thread split was considered, but adds competing scrolling surfaces and collapses differently on phones. Start with a single reading surface at both widths.
+
+Message history reads oldest to newest, opening at the latest message. Older pages load above without moving the reading position. Incoming messages do not pull a coach away from older history; offer Jump to latest. Keep the composer multiline with an explicit Send action, draft preservation on failed requests, and navigation protection. Attachments are optional and show upload/retry state. A failed response with an uncertain send outcome requires checking recent messages before another deliberate send. Reading and marking handled stay separate. Mark handled uses the reviewed timestamp so a new client message cannot be cleared accidentally.
+
+Use server cursor pages for inbox and history, server search/status/counts, typed hooks and session guards. Realtime events only invalidate authorized HTTP queries; never trust pushed records to populate another client's cache. Refresh session before connecting, disconnect on account replacement, and refetch after reconnect. Connection trouble leaves history and drafts usable with explicit refresh/retry.
+
+Verify real client and coach messages, multiple inbox/history pages, search beyond page one, server status/counts, read/handled conflicts, multiline and empty sends, failed/lost writes, media upload/download recovery, live incoming updates, reconnect and account isolation at 375px/1280px. Media storage may use a local transport fixture while the API remains real. No real messages to existing users or real external delivery.
+
+Evidence: backend Chat, ChatMessages, Conversation/Message schemas, coach ConversationController and UploadController, generated conversation/upload types, InboxChannel and UserSocket. Graph tools are unavailable; these task-directed source reads establish the contract. The referenced type-system-discipline skill is missing from repo and user skill locations; the available TypeScript skill supplies the applicable type rules.
+
+
+## Implementation and verification
+
+The thread uses the official shadcn React Aria [Message](https://ui.shadcn.com/docs/components/aria/message), [Bubble](https://ui.shadcn.com/docs/components/aria/bubble), [Attachment](https://ui.shadcn.com/docs/components/aria/attachment) and [Message Scroller](https://ui.shadcn.com/docs/components/aria/message-scroller), installed through the CLI and styled with the app's tokens. The older-page loader sits outside MessageScrollerContent so the first message remains the prepend anchor. Keyboard Home exercises real scroll intent; assigning scrollTop does not test the primitive's user-scroll handling. Browser checks wait for the primitive's data-autoscrolling state to clear before scrolling, and keep the injected load failure active until the retry button has keyboard focus.
+
+Real API browser scenarios passed at 375px and 1280px on 2026-09-12: server search and status totals, opening a client thread, 45 messages across cursor pages, initial and older-page failures, preserved reading position on prepend and incoming replies, jump to latest, shared read state, handled conflicts, multiline and empty sends, draft navigation protection, lost-response recovery without duplicate sends, upload and download retries, and client overview navigation. The mobile scenario also replaces the account while history is in flight and checks cache isolation. Session refresh precedes the socket handshake; incoming messages update through authorized HTTP queries.
+
+App build, scoped Biome and `just check-rm` passed. Backend `mix precommit` passed with 1,681 tests and zero failures. Vite reports the app bundle-size warning. Media signing uses the real API, while browser routes simulate storage uploads/downloads; external storage delivery was not exercised.
+
+The completion checks on 2026-09-13 also pass at 375px and 1280px: intake and check-in response sharing, response-reader failure/retry, invalid response removal, read/handled updates across two tabs, missed replies after reconnect with the draft retained, microphone denial/retry, real recording and playback, re-record/discard, capture-track cleanup, and sending/playing recorded audio. The mobile account-replacement scenario holds both history and a successful send response and checks that neither repopulates the replacement account. Full-suite verification passed before the final composer button grouping; the focused response/voice/team suite checks that grouping at both widths.
+
+Final application audit still needs external storage delivery and device/browser media coverage beyond Chromium, including video and Safari recording. Photo and audio storage transport is simulated here; API authorization, metadata and signing are real. This browser verification does not replace a target-coach usability review.
+
+
+## Completing responses and voice notes
+
+A coach reading intake or a check-in can choose Discuss with client. The thread opens with that response attached to an unsent draft. The server resolves its title and answers within the authorized client; the coach can preview or remove it before Send. Received shared responses open the same reader without navigating away from a draft.
+
+Voice recording opens a focused dialog. Start requests microphone access; Stop exposes playback, Record again and Use voice note. Use adds an attachment to the draft. Discard releases the microphone and object URL. The recording stops at three minutes. Unsupported browsers and denied microphone access keep ordinary text and file attachments available. Browser verification uses Chromium's fake microphone and real MediaRecorder output, with local storage transport.
+
+The recorder checks supported output using [MediaRecorder.isTypeSupported](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/isTypeSupported_static) and waits for the stop event before creating the preview. Its cleanup releases capture tracks when the dialog unmounts.
+
+
+The browser suite uses Chromium's full headless mode (`channel: chromium`) for fake microphone capture; headless shell returned NotSupportedError before MediaRecorder started. Its reconnect fixture closes only the application socket. Closing Vite's development socket triggers a page reload and does not model chat reconnect. Temporary diagnostic logging was removed.

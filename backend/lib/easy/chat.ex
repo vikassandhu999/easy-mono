@@ -5,10 +5,44 @@ defmodule Easy.Chat do
   alias Easy.ClientAccess
   alias Easy.Clients.Client
   alias Easy.Coaches
+  alias Easy.ConversationPage
   alias Easy.Ctx
   alias Easy.Repo
+  alias Easy.WorkbenchPage
 
   import Ecto.Query
+
+  @spec list_conversation_page(Ctx.t(), keyword()) ::
+          {:ok, Easy.CursorPage.t(Conversation.t())} | {:error, :invalid_cursor}
+  def list_conversation_page(%Ctx{} = ctx, opts \\ []) do
+    base =
+      ctx
+      |> visible_conversations()
+      |> Conversation.for_client_search(opts[:search])
+      |> Conversation.for_status(opts[:status])
+
+    limit = Easy.CursorPage.limit(opts)
+
+    with {:ok, query} <- ConversationPage.query(base, opts[:cursor] || "start", limit) do
+      Repo.snapshot(fn ->
+        rows =
+          query
+          |> Conversation.include_client()
+          |> Repo.all()
+          |> attach_unread_counts(ctx.business_id, :coach)
+
+        {:ok, ConversationPage.finish(rows, limit, Repo.aggregate(base, :count))}
+      end)
+    end
+  end
+
+  @spec list_message_page(Ctx.t(), String.t(), keyword()) ::
+          {:ok, Easy.CursorPage.t(Message.t())} | {:error, :not_found | :invalid_cursor}
+  def list_message_page(%Ctx{} = ctx, conversation_id, opts \\ []) do
+    with {:ok, conversation} <- fetch_conversation(ctx, conversation_id) do
+      ChatMessages.list_message_page(ctx, conversation, opts)
+    end
+  end
 
   @spec list_conversations(Ctx.t(), keyword()) ::
           {:ok, %{count: non_neg_integer(), conversations: [Conversation.t()]}}
@@ -42,26 +76,43 @@ defmodule Easy.Chat do
   end
 
   @spec list_waiting_conversations(Ctx.t(), keyword()) ::
-          {:ok, %{count: non_neg_integer(), items: [waiting_conversation()]}}
+          {:ok, %{count: non_neg_integer(), items: [waiting_conversation()], next_cursor: String.t() | nil}}
+          | {:error, :cursor_incompatible | :invalid_cursor}
   def list_waiting_conversations(%Ctx{} = ctx, opts \\ []) do
-    query = waiting_conversations(ctx)
+    scope = %{"queue" => "replies", "search" => Keyword.get(opts, :search, "") || ""}
 
-    conversations =
-      query
-      |> Conversation.include_client()
-      |> Conversation.oldest()
-      |> Easy.Utils.paginate(opts)
-      |> Repo.all()
-      |> attach_unread_counts(ctx.business_id, :coach)
+    with {:ok, mode} <- WorkbenchPage.mode(opts, scope),
+         {:ok, position} <- decode_waiting_position(mode) do
+      query = ctx |> waiting_conversations() |> Conversation.for_client_search(opts[:search])
+      count = Repo.count_unique(query)
 
-    waiting_counts = waiting_message_counts(conversations, ctx.business_id)
+      page =
+        case mode do
+          :legacy ->
+            %{count: count, items: query |> Conversation.include_client() |> Conversation.oldest() |> Easy.Utils.paginate(opts) |> Repo.all(), next_cursor: nil}
 
-    items =
-      Enum.map(conversations, fn conversation ->
-        %{conversation: conversation, waiting_message_count: Map.get(waiting_counts, conversation.id, 0)}
-      end)
+          {:cursor, _cursor} ->
+            limit = WorkbenchPage.limit(opts)
 
-    {:ok, %{count: Repo.count_unique(query), items: items}}
+            query
+            |> after_waiting_position(position)
+            |> Conversation.include_client()
+            |> Conversation.oldest()
+            |> limit(^(limit + 1))
+            |> Repo.all()
+            |> WorkbenchPage.finish(limit, count, scope, &waiting_position_of/1)
+        end
+
+      conversations = attach_unread_counts(page.items, ctx.business_id, :coach)
+      waiting_counts = waiting_message_counts(conversations, ctx.business_id)
+
+      items =
+        Enum.map(conversations, fn conversation ->
+          %{conversation: conversation, waiting_message_count: Map.get(waiting_counts, conversation.id, 0)}
+        end)
+
+      {:ok, %{page | items: items}}
+    end
   end
 
   @spec get_conversation(Ctx.t(), String.t()) :: {:ok, Conversation.t()} | {:error, :not_found}
@@ -97,26 +148,32 @@ defmodule Easy.Chat do
     end
   end
 
-  @spec mark_read(Ctx.t(), String.t()) :: {:ok, Conversation.t()} | {:error, :not_found}
-  def mark_read(%Ctx{} = ctx, conversation_id) do
-    with {:ok, conversation} <- fetch_conversation(ctx, conversation_id) do
-      advance_read_cursor(conversation, :coach_last_read_at)
+  @spec mark_read(Ctx.t(), String.t(), DateTime.t() | nil) :: {:ok, Conversation.t()} | {:error, :not_found}
+  def mark_read(%Ctx{} = ctx, conversation_id, through \\ nil) do
+    with {:ok, conversation} <- fetch_conversation(ctx, conversation_id),
+         {:ok, updated} <- advance_read_cursor(conversation, :coach_last_read_at, :coach, through) do
+      broadcast_conversation_updated(conversation.business_id, conversation.id)
+      {:ok, updated}
     end
   end
 
   @spec mark_conversation_handled(Ctx.t(), String.t(), DateTime.t()) ::
           {:ok, :handled} | {:error, :not_found | :conflict}
   def mark_conversation_handled(%Ctx{} = ctx, conversation_id, expected_last_message_at) do
-    Repo.transact(fn ->
-      conversation =
-        ctx
-        |> visible_conversations()
-        |> where([conversation], conversation.id == ^conversation_id)
-        |> lock("FOR UPDATE")
-        |> Repo.one()
+    with {:ok, :handled} <-
+           Repo.transact(fn ->
+             conversation =
+               ctx
+               |> visible_conversations()
+               |> where([conversation], conversation.id == ^conversation_id)
+               |> lock("FOR UPDATE")
+               |> Repo.one()
 
-      handle_locked_conversation(conversation, expected_last_message_at)
-    end)
+             handle_locked_conversation(conversation, expected_last_message_at)
+           end) do
+      broadcast_conversation_updated(ctx.business_id, conversation_id)
+      {:ok, :handled}
+    end
   end
 
   @spec get_client_conversation(Ctx.t()) :: {:ok, Conversation.t()} | {:error, :not_found | Ecto.Changeset.t()}
@@ -145,13 +202,35 @@ defmodule Easy.Chat do
   @spec mark_client_read(Ctx.t()) :: {:ok, Conversation.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def mark_client_read(%Ctx{} = ctx) do
     with {:ok, conversation} <- client_conversation(ctx) do
-      advance_read_cursor(conversation, :client_last_read_at)
+      advance_read_cursor(conversation, :client_last_read_at, :client, nil)
     end
   end
 
   defp waiting_conversations(%Ctx{} = ctx) do
     ctx |> visible_conversations() |> Conversation.waiting()
   end
+
+  defp decode_waiting_position(:legacy), do: {:ok, nil}
+  defp decode_waiting_position({:cursor, nil}), do: {:ok, nil}
+
+  defp decode_waiting_position({:cursor, %{"waiting_since" => waiting_since, "id" => id}})
+       when is_binary(waiting_since) and is_binary(id) do
+    with {:ok, waiting_since, 0} <- DateTime.from_iso8601(waiting_since),
+         {:ok, id} <- Ecto.UUID.cast(id) do
+      {:ok, %{waiting_since: waiting_since, id: id}}
+    else
+      _ -> {:error, :invalid_cursor}
+    end
+  end
+
+  defp decode_waiting_position(_mode), do: {:error, :invalid_cursor}
+  defp after_waiting_position(query, nil), do: query
+
+  defp after_waiting_position(query, %{waiting_since: waiting_since, id: id}) do
+    Conversation.after_waiting(query, waiting_since, id)
+  end
+
+  defp waiting_position_of(conversation), do: %{"waiting_since" => DateTime.to_iso8601(conversation.waiting_since), "id" => conversation.id}
 
   defp visible_conversations(%Ctx{} = ctx) do
     Conversation
@@ -237,17 +316,52 @@ defmodule Easy.Chat do
     Enum.map(conversations, &Map.put(&1, :unread_count, Map.get(counts, &1.id, 0)))
   end
 
-  defp advance_read_cursor(conversation, field) do
+  defp advance_read_cursor(conversation, field, reader, through) do
+    conversation
+    |> read_cursor_update(field, through)
+    |> Repo.update_all([])
+
+    updated =
+      Conversation
+      |> Conversation.for_business(conversation.business_id)
+      |> Repo.get(conversation.id)
+
+    case updated do
+      nil ->
+        {:error, :not_found}
+
+      updated ->
+        {:ok,
+         updated
+         |> Map.put(:client, conversation.client)
+         |> attach_unread_count(conversation.business_id, reader)}
+    end
+  end
+
+  defp read_cursor_update(conversation, field, nil) do
     from(c in Conversation,
       where: c.id == ^conversation.id and c.business_id == ^conversation.business_id,
-      update: [set: [{^field, c.last_message_at}]],
-      select: c
+      update: [set: [{^field, c.last_message_at}]]
     )
-    |> Repo.update_all([])
-    |> case do
-      {1, [updated]} -> {:ok, %{updated | client: conversation.client, unread_count: 0}}
-      {0, []} -> {:error, :not_found}
-    end
+  end
+
+  defp read_cursor_update(conversation, field, through) do
+    from(c in Conversation,
+      where:
+        c.id == ^conversation.id and c.business_id == ^conversation.business_id and
+          not is_nil(c.last_message_at) and
+          (is_nil(field(c, ^field)) or
+             field(c, ^field) < fragment("LEAST(?, ?)", c.last_message_at, ^through)),
+      update: [set: [{^field, fragment("LEAST(?, ?)", c.last_message_at, ^through)}]]
+    )
+  end
+
+  defp broadcast_conversation_updated(business_id, conversation_id) do
+    Phoenix.PubSub.broadcast(
+      Easy.PubSub,
+      "inbox:business:#{business_id}",
+      {:conversation_updated, conversation_id}
+    )
   end
 
   defp handle_locked_conversation(nil, _expected_last_message_at), do: {:error, :not_found}

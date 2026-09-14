@@ -197,6 +197,43 @@ defmodule Easy.WorkbenchProgrammingQueueTest do
     assert {:error, :invalid_service} = Workbench.list_programming_queue(ctx.ctx, service: :mobility)
   end
 
+  test "cursor paging keeps the native priority order after an anchor is deleted", ctx do
+    first = insert_client(ctx, [:training])
+    second = insert_client(ctx, [:training])
+    third = insert_client(ctx, [:training])
+
+    assert {:ok, %{count: 3, items: [first_item], next_cursor: cursor}} =
+             Workbench.list_programming_queue(ctx.ctx, cursor: "start", limit: 1)
+
+    assert first_item.client.id == Enum.min([first.id, second.id, third.id])
+    assert is_binary(cursor)
+
+    Repo.delete!(first_item.client)
+
+    assert {:ok, %{count: 2, items: [next_item], next_cursor: _}} =
+             Workbench.list_programming_queue(ctx.ctx, cursor: cursor, limit: 1)
+
+    assert next_item.client.id == Enum.sort([first.id, second.id, third.id]) |> Enum.at(1)
+  end
+
+  test "search is escaped before the count and cursor page are calculated", ctx do
+    matching = insert_client(ctx, [:training], first_name: "100% Ready")
+    insert_client(ctx, [:training], first_name: "100 Percent Ready")
+
+    assert {:ok, %{count: 1, items: [item], next_cursor: nil}} =
+             Workbench.list_programming_queue(ctx.ctx, search: "100%", cursor: "start", limit: 1)
+
+    assert item.client.id == matching.id
+  end
+
+  test "rejects malformed cursors and cursor requests with a legacy offset", ctx do
+    assert {:error, :invalid_cursor} =
+             Workbench.list_programming_queue(ctx.ctx, cursor: "not-a-cursor")
+
+    assert {:error, :cursor_incompatible} =
+             Workbench.list_programming_queue(ctx.ctx, cursor: "start", offset: 1)
+  end
+
   test "is tenant-scoped, trainer-visible, and fail-closed", ctx do
     trainer = insert(:coach, business: ctx.business)
     other_trainer = insert(:coach, business: ctx.business)

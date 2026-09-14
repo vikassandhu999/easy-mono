@@ -81,6 +81,13 @@ defmodule Easy.Billing.SyncBillingTest do
     assert billing_for(business.id).status == :cancel_at_period_end
   end
 
+  test "scheduled quantity or plan changes are not a scheduled cancellation" do
+    business = insert(:business)
+    insert(:business_billing, business: business, status: :active, paid_seats: 2, razorpay_subscription_id: "sub_scheduled")
+    stub_get("sub_scheduled", %{"id" => "sub_scheduled", "quantity" => 2, "status" => "active", "has_scheduled_changes" => true})
+    assert {:ok, %{status: :active, paid_seats: 2}} = Billing.sync_billing(ctx_for(business))
+  end
+
   test "created status is a no-op" do
     business = insert(:business)
 
@@ -182,10 +189,9 @@ defmodule Easy.Billing.SyncBillingTest do
   end
 
   test "checkout rejects an invalid subscription before saving checkout identifiers" do
-    business = insert(:business)
-    insert(:business_billing, business: business)
-
     for response <- [%{}, %{"id" => 42}, %{"id" => "sub_new", "plan_id" => []}] do
+      business = insert(:business)
+      insert(:business_billing, business: business)
       Req.Test.stub(Easy.Razorpay, fn conn -> Req.Test.json(conn, response) end)
       assert {:error, :razorpay_error} = Billing.checkout(ctx_for(business), 3)
       assert is_nil(billing_for(business.id).razorpay_subscription_id)

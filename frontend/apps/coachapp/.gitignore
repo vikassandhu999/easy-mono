@@ -5,3 +5,15 @@ tests/forms/artifacts/
 
 tests/lists/artifacts/
 tests/training/artifacts/
+
+.env.local
+
+tests/workbench/artifacts/
+
+tests/settings/artifacts/
+
+tests/team/artifacts/
+
+tests/billing/artifacts/
+
+tests/acquisition/artifacts/*fixtures.json

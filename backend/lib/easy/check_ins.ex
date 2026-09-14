@@ -254,7 +254,7 @@ defmodule Easy.CheckIns do
     |> select([schedule], %{id: schedule.id})
   end
 
-  defp ensure_check_in_template(%FormTemplate{purpose: :check_in}), do: :ok
+  defp ensure_check_in_template(%FormTemplate{purpose: :check_in, status: :active}), do: :ok
   defp ensure_check_in_template(_template), do: {:error, :invalid_check_in_template}
 
   defp ensure_reactivation_within_cap(%Ecto.Changeset{data: schedule} = changeset) do

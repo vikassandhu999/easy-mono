@@ -3,6 +3,7 @@ defmodule Easy.Nutrition.Library do
   alias Easy.Ctx
   alias Easy.CursorPage
   alias Easy.Nutrition.{Food, FoodWriter, PlanReader, Recipe}
+  alias Easy.Nutrition.LibraryUsage
   alias Easy.Nutrition.RecipeWriter
   alias Easy.Repo
   alias Easy.Utils
@@ -18,6 +19,12 @@ defmodule Easy.Nutrition.Library do
         }
 
   # Foods
+
+  @spec list_food_usage(Ctx.t(), String.t(), keyword()) :: {:ok, map()} | {:error, atom()}
+  def list_food_usage(ctx, id, opts), do: LibraryUsage.page(ctx, :food, id, opts)
+
+  @spec list_recipe_usage(Ctx.t(), String.t(), keyword()) :: {:ok, map()} | {:error, atom()}
+  def list_recipe_usage(ctx, id, opts), do: LibraryUsage.page(ctx, :recipe, id, opts)
 
   @spec get_food(Ctx.t(), String.t()) :: {:ok, Food.t()} | {:error, :not_found}
   def get_food(%Ctx{} = ctx, food_id) do

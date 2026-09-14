@@ -17,6 +17,7 @@ defmodule Easy.Forms.FormTemplate do
 
   schema "form_templates" do
     field :name, :string
+    field :revision, :integer, default: 1
     field :purpose, Ecto.Enum, values: @purposes
     field :sections, {:array, :map}, default: []
     field :status, Ecto.Enum, values: @statuses, default: :active
@@ -29,6 +30,7 @@ defmodule Easy.Forms.FormTemplate do
 
     belongs_to :business, Orgs.Business
     has_many :form_assignments, Easy.Forms.FormAssignment
+    has_many :check_in_schedules, Easy.Forms.CheckInSchedule
 
     timestamps(type: :utc_datetime)
   end
@@ -58,6 +60,7 @@ defmodule Easy.Forms.FormTemplate do
   def system_content_changeset(template, sections, system_version) do
     template
     |> change(sections: sections, system_version: system_version)
+    |> put_change(:revision, template.revision + 1)
     |> validate_sections()
     |> validate_service_type_questions()
     |> check_constraint(:system_version, name: :form_templates_system_version_positive)
@@ -71,6 +74,10 @@ defmodule Easy.Forms.FormTemplate do
       name: :form_assignments_template_business_id_fkey,
       message: "has assignments"
     )
+    |> no_assoc_constraint(:check_in_schedules,
+      name: :check_in_schedules_template_business_id_fkey,
+      message: "has schedules"
+    )
   end
 
   # Purpose is fixed at creation — it is deliberately not castable here.
@@ -78,7 +85,22 @@ defmodule Easy.Forms.FormTemplate do
   def update_changeset(template, attrs) do
     template
     |> cast(attrs, [:name, :sections, :status])
+    |> put_change(:revision, template.revision + 1)
+    |> clear_archived_default()
     |> validate_template()
+  end
+
+  defp clear_archived_default(changeset) do
+    if get_field(changeset, :status) == :archived, do: put_change(changeset, :is_default_intake, false), else: changeset
+  end
+
+  @spec expected_revision(map()) :: {:ok, pos_integer() | :any} | {:error, Ecto.Changeset.t()}
+  def expected_revision(attrs) do
+    changeset = cast({%{}, %{expected_revision: :integer}}, attrs, [:expected_revision])
+
+    with {:ok, input} <- apply_action(changeset, :update) do
+      {:ok, Map.get(input, :expected_revision, :any)}
+    end
   end
 
   defp validate_template(changeset) do
@@ -88,12 +110,15 @@ defmodule Easy.Forms.FormTemplate do
     |> validate_sections()
     |> validate_service_type_questions()
     |> check_constraint(:status, name: :form_templates_status_check)
+    |> check_constraint(:is_default_intake, name: :form_templates_default_active_intake_check)
   end
 
   @spec default_intake_changeset(t(), boolean()) :: Ecto.Changeset.t()
   def default_intake_changeset(template, default?) when is_boolean(default?) do
     template
     |> change(is_default_intake: default?)
+    |> put_change(:revision, template.revision + 1)
+    |> check_constraint(:is_default_intake, name: :form_templates_default_active_intake_check)
     |> unique_constraint(:is_default_intake, name: :form_templates_one_default_intake_index)
   end
 
@@ -116,6 +141,10 @@ defmodule Easy.Forms.FormTemplate do
   @spec for_purpose(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
   def for_purpose(query, nil), do: query
   def for_purpose(query, purpose), do: from(t in query, where: t.purpose == ^purpose)
+
+  @spec for_status(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
+  def for_status(query, nil), do: query
+  def for_status(query, status), do: from(t in query, where: t.status == ^status)
 
   @spec active_intake(Ecto.Queryable.t()) :: Ecto.Query.t()
   def active_intake(query \\ __MODULE__) do

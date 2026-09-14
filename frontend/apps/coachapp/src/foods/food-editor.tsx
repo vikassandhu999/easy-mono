@@ -196,11 +196,25 @@ function Editor({initial}: {initial: Food | undefined}) {
             : 'Enter the values from a reliable food label or source.'
         }
         back={{to, label: 'Back to foods', state}}
+        actions={
+          food && (
+            <Button
+              variant="outline"
+              isDisabled={pending || conflict || uncertain}
+              onPress={() => navigate(generatePath(routes.manageFood, {id: food.id}), {state})}
+            >
+              Manage food
+            </Button>
+          )
+        }
       />
       <form
         noValidate
         className="has-mobile-actions min-w-0 space-y-6"
         onSubmit={form.handleSubmit(async (values) => {
+          if (readOnly || conflict || uncertain || pending) {
+            return;
+          }
           form.clearErrors();
           setNotice('');
           try {

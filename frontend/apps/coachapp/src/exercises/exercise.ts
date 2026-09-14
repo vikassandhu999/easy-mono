@@ -9,6 +9,8 @@ export function fields(exercise?: Exercise) {
     force: exercise?.force ?? null,
     muscles: exercise?.muscles ?? [],
     equipment: exercise?.equipment ?? [],
+    media: exercise?.media ?? null,
+    images: exercise?.images ?? [],
   };
 }
 export type ExerciseFields = ReturnType<typeof fields>;
@@ -21,6 +23,8 @@ export function body(values: ExerciseFields): ExerciseCreate {
     force: values.force,
     muscle_ids: values.muscles.map((item) => item.id),
     equipment_ids: values.equipment.map((item) => item.id),
+    media_id: values.media?.id ?? null,
+    images: values.images,
   };
 }
 // The API does not have revision preconditions. Limit updates to the coach's edited fields.
@@ -36,5 +40,9 @@ export function changes(values: ExerciseFields, saved: Exercise): ExerciseUpdate
     ...(input.force === saved.force ? {} : {force: input.force}),
     ...(sameIds(values.muscles, saved.muscles) ? {} : {muscle_ids: input.muscle_ids}),
     ...(sameIds(values.equipment, saved.equipment) ? {} : {equipment_ids: input.equipment_ids}),
+    ...(input.media_id === (saved.media?.id ?? null) ? {} : {media_id: input.media_id}),
+    ...(values.images.length === saved.images.length && values.images.every((url, index) => url === saved.images[index])
+      ? {}
+      : {images: input.images}),
   };
 }

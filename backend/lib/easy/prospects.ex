@@ -4,29 +4,42 @@ defmodule Easy.Prospects do
   alias Easy.ClientInvitations
   alias Easy.Clients.Client
   alias Easy.Ctx
+  alias Easy.CursorPage
   alias Easy.Landing.Prospect
   alias Easy.Repo
+  alias Easy.Revision
 
   @type enrollment :: %{prospect: Prospect.t(), client: Client.t(), already_enrolled: boolean()}
 
-  @spec list_prospects(Ctx.t(), keyword()) ::
-          {:ok, %{prospects: [Prospect.t()], count: non_neg_integer(), summary: Prospect.status_counts()}}
+  @spec list_prospects(Ctx.t(), keyword()) :: {:ok, map()} | {:error, :cursor_incompatible | :invalid_cursor}
   def list_prospects(%Ctx{} = ctx, opts \\ []) do
-    status = Keyword.get(opts, :status)
+    searched = Prospect |> Prospect.for_business(ctx.business_id) |> Prospect.search(Keyword.get(opts, :search))
+    filtered = Prospect.for_status(searched, Keyword.get(opts, :status))
 
-    base = Prospect |> Prospect.for_business(ctx.business_id) |> Prospect.for_status(status)
+    with {:ok, page} <- prospect_page(filtered, opts) do
+      {:ok, Map.put(page, :summary, searched |> Prospect.select_status_counts() |> Repo.one())}
+    end
+  end
 
-    {:ok,
-     %{
-       count: Repo.aggregate(base, :count, :id),
-       summary: Prospect |> Prospect.for_business(ctx.business_id) |> Prospect.select_status_counts() |> Repo.one(),
-       prospects:
-         base
-         |> Prospect.newest()
-         |> Easy.Utils.paginate(opts)
-         |> Prospect.include_details()
-         |> Repo.all()
-     }}
+  defp prospect_page(base, opts) do
+    case Keyword.get(opts, :cursor) do
+      nil ->
+        rows = base |> Prospect.newest() |> Easy.Utils.paginate(opts) |> Prospect.include_details() |> Repo.all()
+        {:ok, %{prospects: rows, count: Repo.aggregate(base, :count, :id), next_cursor: nil}}
+
+      cursor ->
+        with :ok <- cursor_options(opts),
+             limit = CursorPage.limit(opts),
+             {:ok, query} <- CursorPage.query(base, cursor, limit) do
+          rows = query |> Prospect.include_details() |> Repo.all()
+          page = CursorPage.finish(rows, limit, Repo.aggregate(base, :count, :id))
+          {:ok, %{prospects: page.data, count: page.count, next_cursor: page.next_cursor}}
+        end
+    end
+  end
+
+  defp cursor_options(opts) do
+    if Keyword.get(opts, :offset, 0) == 0, do: :ok, else: {:error, :cursor_incompatible}
   end
 
   @spec get_prospect(Ctx.t(), String.t()) :: {:ok, Prospect.t()} | {:error, :not_found}
@@ -41,8 +54,12 @@ defmodule Easy.Prospects do
   @spec update_prospect(Ctx.t(), String.t(), map()) ::
           {:ok, Prospect.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_prospect(%Ctx{} = ctx, id, attrs) do
-    with {:ok, prospect} <- get_prospect(ctx, id) do
-      prospect |> Prospect.update_changeset(attrs) |> Repo.update()
+    with {:ok, expected} <- Prospect.expected_revision(attrs) do
+      query = Prospect.for_business(ctx.business_id) |> Prospect.include_details()
+
+      Revision.locked(query, id, expected, fn prospect ->
+        prospect |> Prospect.update_changeset(attrs) |> Repo.update()
+      end)
     end
   end
 
@@ -72,7 +89,10 @@ defmodule Easy.Prospects do
         {:error, :not_found}
 
       %Prospect{client_id: nil} = prospect ->
-        invite_and_link(ctx, prospect, attrs)
+        with {:ok, expected} <- Prospect.expected_revision(attrs),
+             :ok <- Revision.check(prospect, expected) do
+          invite_and_link(ctx, prospect, attrs)
+        end
 
       prospect ->
         {:ok, %{prospect: prospect, client: prospect.client, already_enrolled: true}}

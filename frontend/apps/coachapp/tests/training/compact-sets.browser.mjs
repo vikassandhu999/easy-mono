@@ -2,7 +2,8 @@ import {mkdir} from 'node:fs/promises';
 import {chromium, expect, request} from '@playwright/test';
 import {chooseOption, selectTrigger} from '../select-helpers.mjs';
 
-const api = await request.newContext({baseURL: 'http://localhost:4000'});
+const appURL = process.env.COACH_APP_URL || 'http://localhost:2022';
+const api = await request.newContext({baseURL: process.env.COACH_API_URL || 'http://localhost:4000'});
 const browser = await chromium.launch();
 await mkdir('tests/training/artifacts', {recursive: true});
 async function send(method, path, data, token) {
@@ -25,7 +26,7 @@ try {
     const token = tokens.access_token;
     await send('post', '/v1/coach/training-exercises', {name: 'Goblet squat'}, token);
     const plan = (await send('post', '/v1/coach/training-plans', {name: 'Full body foundations'}, token)).data;
-    const context = await browser.newContext({baseURL: 'http://localhost:2022', viewport: {width, height: 900}});
+    const context = await browser.newContext({baseURL: appURL, viewport: {width, height: 900}});
     const page = await context.newPage();
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));

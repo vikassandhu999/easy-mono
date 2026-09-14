@@ -10,7 +10,7 @@ execFileSync(
   {cwd: fileURLToPath(new URL('../../../../../backend', import.meta.url)), stdio: 'pipe'},
 );
 
-const api = await request.newContext({baseURL: 'http://localhost:4000'});
+const api = await request.newContext({baseURL: process.env.COACH_API_URL || 'http://localhost:4000'});
 const browser = await chromium.launch();
 await mkdir('tests/exercises/artifacts', {recursive: true});
 async function send(method, path, data, token) {
@@ -36,7 +36,10 @@ try {
     const unique = `${Date.now()}-${width}`;
     const tokens = await account(unique);
     const token = tokens.access_token;
-    const context = await browser.newContext({baseURL: 'http://localhost:2022', viewport: {width, height: 900}});
+    const context = await browser.newContext({
+      baseURL: process.env.COACH_APP_URL || 'http://localhost:2022',
+      viewport: {width, height: 900},
+    });
     context.setDefaultTimeout(12000);
     const page = await context.newPage();
     const errors = [];

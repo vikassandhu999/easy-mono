@@ -2,15 +2,38 @@ defmodule EasyWeb.Coaches.ConversationController do
   use EasyWeb, :typed_controller
 
   alias Easy.Chat
-  alias EasyWeb.Types.{ChatMessage, ChatMessagePage, Conversation}
+  alias EasyWeb.Types.{ChatMessage, ChatMessageHistory, ChatMessagePage, Conversation, ConversationInbox}
+
+  typed(:inbox, query: Conversation.inbox_query(), ok: {200, ConversationInbox.t()})
+  typed(:history, path: %{id: Ecto.UUID.t()}, query: ChatMessage.history_query(), ok: {200, ChatMessageHistory.t()})
+
+  @spec inbox(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def inbox(conn, _params) do
+    params = conn.query_params
+    opts = [cursor: params["cursor"], limit: params["limit"], search: params["search"], status: params["status"]]
+    with {:ok, page} <- Chat.list_conversation_page(conn.assigns.ctx, opts), do: ok(conn, page)
+  end
+
+  @spec history(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def history(conn, _params) do
+    params = conn.query_params
+    opts = [cursor: params["cursor"], limit: params["limit"]]
+    with {:ok, page} <- Chat.list_message_page(conn.assigns.ctx, conn.path_params["id"], opts), do: ok(conn, page)
+  end
 
   typed(:index, query: Conversation.list_query(), ok: {200, page(Conversation.t())})
-  typed(:show_for_client, ok: {200, data(Conversation.t())})
-  typed(:show, ok: {200, data(Conversation.t())})
-  typed(:messages, query: ChatMessage.list_query(), ok: {200, ChatMessagePage.t()})
-  typed(:create_message, body: ChatMessage.coach_create(), ok: {201, data(ChatMessage.t())})
-  typed(:mark_read, ok: {200, data(Conversation.t())})
-  typed(:mark_handled, body: Conversation.mark_handled(), ok: {204, nil})
+  typed(:show_for_client, path: %{client_id: Ecto.UUID.t()}, ok: {200, data(Conversation.t())})
+  typed(:show, path: %{id: Ecto.UUID.t()}, ok: {200, data(Conversation.t())})
+  typed(:messages, path: %{id: Ecto.UUID.t()}, query: ChatMessage.list_query(), ok: {200, ChatMessagePage.t()})
+  typed(:create_message, path: %{id: Ecto.UUID.t()}, body: ChatMessage.coach_create(), ok: {201, data(ChatMessage.t())})
+
+  typed(:mark_read,
+    path: %{id: Ecto.UUID.t()},
+    query: Conversation.mark_read_query(),
+    ok: {200, data(Conversation.t())}
+  )
+
+  typed(:mark_handled, path: %{id: Ecto.UUID.t()}, body: Conversation.mark_handled(), ok: {204, nil})
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
@@ -64,7 +87,8 @@ defmodule EasyWeb.Coaches.ConversationController do
 
   @spec mark_read(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def mark_read(conn, _params) do
-    with {:ok, conversation} <- Chat.mark_read(conn.assigns.ctx, conn.path_params["id"]) do
+    with {:ok, conversation} <-
+           Chat.mark_read(conn.assigns.ctx, conn.path_params["id"], conn.query_params["through"]) do
       ok(conn, %{data: conversation})
     end
   end

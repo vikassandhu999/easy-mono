@@ -1,6 +1,6 @@
 import {useForm} from 'react-hook-form';
 import {generatePath, Link, useNavigate} from 'react-router-dom';
-import {errorMessage} from '../api/client';
+import {ApiError, errorMessage} from '../api/client';
 import {type ClientInvite, useInviteClient} from '../api/clients';
 import {useDefaultIntake} from '../api/forms';
 import {routes} from '../routes';
@@ -8,9 +8,9 @@ import {Button, buttonVariants} from '../ui/button';
 import {FormError} from '../ui/form-error';
 import {setFormError} from '../ui/form-errors';
 import {FormField} from '../ui/form-field';
+import {IntakePreview} from '../ui/intake-preview';
 import {useListLocation} from '../ui/list-location';
 import {FormActions, Page, PageHeader, Surface} from '../ui/page';
-import {IntakePreview} from './intake-preview';
 
 export function InviteClient() {
   const navigate = useNavigate();
@@ -85,6 +85,19 @@ export function InviteClient() {
             description="Their invitation will be sent here."
           />
           <FormError message={form.formState.errors.root?.message} />
+          {invitation.error instanceof ApiError && invitation.error.code === 'seat_limit_reached' && (
+            <p className="text-sm">
+              <Link
+                className="text-link"
+                to={routes.billing}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open billing in a new tab
+              </Link>{' '}
+              to check capacity. Your invitation stays here.
+            </p>
+          )}
         </Surface>
         <section className="space-y-4">
           <div>

@@ -41,6 +41,7 @@ defmodule EasyWeb.Types.FormTemplate do
   @type t :: %{
           required(:id) => String.t(),
           required(:name) => String.t(),
+          required(:revision) => pos_integer(),
           required(:purpose) => :intake | :check_in,
           required(:sections) => [
             %{
@@ -60,7 +61,8 @@ defmodule EasyWeb.Types.FormTemplate do
           optional(:cursor) => String.t(),
           optional(:limit) => pos_integer(),
           optional(:search) => String.t(),
-          optional(:purpose) => :intake | :check_in
+          optional(:purpose) => :intake | :check_in,
+          optional(:status) => :active | :archived
         }
 
   @spec format(Easy.Forms.FormTemplate.t() | map()) :: t()
@@ -81,9 +83,24 @@ defmodule EasyWeb.Types.FormTemplate do
         }
 
   @type update :: %{
+          optional(:expected_revision) => pos_integer(),
           optional(:name) => String.t(),
           optional(:sections) => [EasyWeb.Types.FormTemplateSection.t()],
           optional(:status) => :active | :archived
+        }
+
+  @type mutation_query :: %{optional(:expected_revision) => pos_integer()}
+end
+
+defmodule EasyWeb.Types.FormTemplateManagement do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:template) => EasyWeb.Types.FormTemplate.t(),
+          required(:assignment_count) => non_neg_integer(),
+          required(:schedule_count) => non_neg_integer(),
+          required(:active_schedule_count) => non_neg_integer(),
+          required(:delete_blocked_reason) => :assignments | :schedules | :built_in | nil
         }
 end
 

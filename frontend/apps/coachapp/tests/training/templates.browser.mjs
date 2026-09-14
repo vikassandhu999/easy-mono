@@ -2,7 +2,8 @@ import {mkdir} from 'node:fs/promises';
 import {chromium, expect, request} from '@playwright/test';
 import {chooseOption, selectTrigger} from '../select-helpers.mjs';
 
-const api = await request.newContext({baseURL: 'http://localhost:4000'});
+const appURL = process.env.COACH_APP_URL || 'http://localhost:2022';
+const api = await request.newContext({baseURL: process.env.COACH_API_URL || 'http://localhost:4000'});
 const browser = await chromium.launch();
 const errors = [];
 await mkdir('tests/training/artifacts', {recursive: true});
@@ -36,7 +37,7 @@ try {
     for (let index = 0; index < 43; index++) {
       await send('post', '/v1/coach/training-exercises', {name: `Exercise ${String(index).padStart(2, '0')}`}, token);
     }
-    const context = await browser.newContext({baseURL: 'http://localhost:2022', viewport: {width, height: 900}});
+    const context = await browser.newContext({baseURL: appURL, viewport: {width, height: 900}});
     context.setDefaultTimeout(10000);
     const page = await context.newPage();
     page.on('pageerror', (error) => errors.push(error.message));
@@ -304,7 +305,7 @@ try {
             .some((query) => JSON.stringify(query.state.data ?? '').includes(id));
         }, planId),
       ).toBe(false);
-      await expect(page).toHaveURL('http://localhost:2022/training-plans');
+      await expect(page).toHaveURL(`${appURL}/training-plans`);
     }
     await context.close();
     console.log(`Template creation, exercise paging, editing, revision recovery and assignment passed at ${width}px.`);

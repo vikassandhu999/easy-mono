@@ -4,14 +4,36 @@ import {useClients} from '../api/clients';
 import {routes} from '../routes';
 import {buttonVariants} from '../ui/button';
 import {InfiniteList} from '../ui/infinite-list';
+import {Label} from '../ui/label';
 import {ListSearch} from '../ui/list-search';
 import {Page, PageHeader, StatusBadge, Surface} from '../ui/page';
+import {SelectItem} from '../ui/select';
+import {SelectField} from '../ui/select-field';
 
 export function Clients() {
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const location = useLocation();
   const search = params.get('search')?.trim() ?? '';
-  const clients = useClients({search});
+  const statusValue = params.get('status');
+  const status =
+    statusValue === 'active' || statusValue === 'pending' || statusValue === 'inactive' ? statusValue : undefined;
+  const stageValue = params.get('stage');
+  const stage = stageValue === 'onboarding' || stageValue === 'coaching' ? stageValue : undefined;
+  const clients = useClients({search, ...(status ? {status} : {}), ...(stage ? {stage} : {})});
+  function changeFilter(name: string, value: string) {
+    setParams(
+      (previous) => {
+        const next = new URLSearchParams(previous);
+        if (value === 'all') {
+          next.delete(name);
+        } else {
+          next.set(name, value);
+        }
+        return next;
+      },
+      {replace: true},
+    );
+  }
   return (
     <Page>
       <PageHeader
@@ -28,7 +50,44 @@ export function Clients() {
           </Link>
         }
       />
-      <ListSearch label="Search clients" />
+      <div className="grid items-end gap-4 sm:grid-cols-[minmax(0,1fr)_10rem_10rem]">
+        <ListSearch label="Search clients" />
+        <div className="grid gap-2">
+          <Label
+            id="client-status-label"
+            htmlFor="client-status"
+          >
+            Status
+          </Label>
+          <SelectField
+            id="client-status"
+            value={status ?? 'all'}
+            onChange={(value) => changeFilter('status', value)}
+          >
+            <SelectItem id="all">All clients</SelectItem>
+            <SelectItem id="active">Active</SelectItem>
+            <SelectItem id="pending">Invited</SelectItem>
+            <SelectItem id="inactive">Inactive</SelectItem>
+          </SelectField>
+        </div>
+        <div className="grid gap-2">
+          <Label
+            id="roster-stage-label"
+            htmlFor="roster-stage"
+          >
+            Stage
+          </Label>
+          <SelectField
+            id="roster-stage"
+            value={stage ?? 'all'}
+            onChange={(value) => changeFilter('stage', value)}
+          >
+            <SelectItem id="all">All stages</SelectItem>
+            <SelectItem id="onboarding">Onboarding</SelectItem>
+            <SelectItem id="coaching">Coaching</SelectItem>
+          </SelectField>
+        </div>
+      </div>
       <InfiniteList
         query={clients}
         label="clients"
@@ -41,10 +100,12 @@ export function Clients() {
                 aria-hidden="true"
               />
             </div>
-            <h2 className="text-xl font-semibold">{search ? 'No matching clients' : 'Invite your first client'}</h2>
+            <h2 className="text-xl font-semibold">
+              {search || status || stage ? 'No matching clients' : 'Invite your first client'}
+            </h2>
             <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-              {search
-                ? 'Try a different name or email.'
+              {search || status || stage
+                ? 'Try a different search or filter.'
                 : "They'll receive an invitation to join you and complete their intake form."}
             </p>
           </Surface>
@@ -72,8 +133,8 @@ export function Clients() {
                 </p>
                 <p className="mt-1 truncate text-sm text-muted-foreground">{client.email || client.phone}</p>
               </div>
-              <StatusBadge tone={client.joined_at ? 'positive' : 'neutral'}>
-                {client.joined_at ? 'Invitation accepted' : client.status === 'pending' ? 'Invited' : 'Inactive'}
+              <StatusBadge tone={client.status === 'active' ? 'positive' : 'neutral'}>
+                {client.status === 'active' ? 'Active' : client.status === 'pending' ? 'Invited' : 'Inactive'}
               </StatusBadge>
             </div>
             <ChevronRight

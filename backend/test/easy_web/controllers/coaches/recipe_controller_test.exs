@@ -467,6 +467,56 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
   end
 
   describe "GET /v1/coach/nutrition-recipes/:id/impact" do
+    test "hides unassigned client plan references from trainers while owners can see them" do
+      owner_user = insert(:user)
+      business = insert(:business, owner: owner_user)
+      owner = insert(:coach, business: business, user: owner_user)
+      trainer = insert(:coach, business: business)
+      other_trainer = insert(:coach, business: business)
+      recipe = insert(:recipe, creator: trainer, business: business)
+      visible_client = insert(:client, business: business, creator: trainer, assigned_coach: trainer)
+      hidden_client = insert(:client, business: business, creator: other_trainer, assigned_coach: other_trainer)
+
+      visible_plan = insert(:plan, business: business, creator: trainer.user, client: visible_client, name: "Visible plan")
+      hidden_plan = insert(:plan, business: business, creator: other_trainer.user, client: hidden_client, name: "Hidden plan")
+      item = recipe_item("impact-visibility-item", recipe.id, %{kind: :serving, amount: 1, unit: "serving", label: nil})
+
+      assert {:ok, _} =
+               Programming.replace_menu(
+                 DataCase.trainer_ctx(trainer),
+                 visible_plan.id,
+                 visible_plan.revision,
+                 menu(visible_plan, meals: [meal_input("visible-impact-meal", "Meal", [item])])
+               )
+
+      assert {:ok, _} =
+               Programming.replace_menu(
+                 DataCase.trainer_ctx(other_trainer),
+                 hidden_plan.id,
+                 hidden_plan.revision,
+                 menu(hidden_plan, meals: [meal_input("hidden-impact-meal", "Meal", [item])])
+               )
+
+      trainer_response =
+        build_conn()
+        |> authenticate_coach(trainer)
+        |> get("/v1/coach/nutrition-recipes/#{recipe.id}/impact")
+        |> json_response(200)
+
+      assert %{"data" => %{"client_plans" => [%{"id" => visible_plan_id, "name" => "Visible plan"}]}} = trainer_response
+      assert visible_plan_id == visible_plan.id
+      refute inspect(trainer_response) =~ hidden_plan.id
+
+      owner_response =
+        build_conn()
+        |> authenticate_coach(owner)
+        |> get("/v1/coach/nutrition-recipes/#{recipe.id}/impact")
+        |> json_response(200)
+
+      assert %{"data" => %{"client_plans" => owner_plans}} = owner_response
+      assert MapSet.new(Enum.map(owner_plans, & &1["id"])) == MapSet.new([visible_plan.id, hidden_plan.id])
+    end
+
     test "returns plan buckets for structural Menu usage", %{
       conn: conn,
       coach: coach,
@@ -501,6 +551,118 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
 
       conn = get(conn, "/v1/coach/nutrition-recipes/#{recipe.id}/impact")
       assert json_response(conn, 404)
+    end
+  end
+
+  describe "GET /v1/coach/nutrition-recipes/:id/usage" do
+    test "lists matching template references with pagination and search", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      recipe = insert(:recipe, creator: coach, business: business, name: "Dal")
+      cut = insert(:plan, business: business, creator: coach.user, kind: :template, name: "Cut plan")
+      bulk = insert(:plan, business: business, creator: coach.user, kind: :template, name: "Bulk plan")
+
+      item = recipe_item("recipe-usage-item", recipe.id, %{kind: :serving, amount: 1, unit: "serving", label: nil})
+      assert {:ok, _} = Programming.replace_menu(DataCase.trainer_ctx(coach), cut.id, cut.revision, menu(cut, meals: [meal_input("cut-usage-meal", "Meal", [item])]))
+      assert {:ok, _} = Programming.replace_menu(DataCase.trainer_ctx(coach), bulk.id, bulk.revision, menu(bulk, meals: [meal_input("bulk-usage-meal", "Meal", [item])]))
+
+      response =
+        conn
+        |> get("/v1/coach/nutrition-recipes/#{recipe.id}/usage", %{"kind" => "templates", "search" => "Cut", "cursor" => "start"})
+        |> json_response(200)
+
+      assert %{
+               "item" => %{"id" => recipe_id, "name" => "Dal", "read_only" => false},
+               "counts" => %{"recipes" => 0, "templates" => 2, "client_plans" => 0},
+               "delete_blocked_reason" => "in_use",
+               "count" => 1,
+               "next_cursor" => nil,
+               "data" => [
+                 %{"id" => plan_id, "name" => "Cut plan", "client_id" => nil, "kind" => "template", "inserted_at" => _}
+               ]
+             } = response
+
+      assert recipe_id == recipe.id
+      assert plan_id == cut.id
+    end
+
+    test "does not expose another business's recipe", %{conn: conn} do
+      other = insert(:coach)
+      recipe = insert(:recipe, creator: other, business: other.business)
+
+      assert conn
+             |> get("/v1/coach/nutrition-recipes/#{recipe.id}/usage", %{"cursor" => "start"})
+             |> json_response(404)
+    end
+
+    test "pages template references without duplicates and keeps counts stable", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      recipe = insert(:recipe, creator: coach, business: business)
+
+      plans =
+        for name <- ["First template", "Second template", "Third template"] do
+          insert(:plan, business: business, creator: coach.user, kind: :template, name: name)
+        end
+
+      for {plan, index} <- Enum.with_index(plans) do
+        item = recipe_item("usage-page-item-#{index}", recipe.id, %{kind: :serving, amount: 1, unit: "serving", label: nil})
+
+        assert {:ok, _} =
+                 Programming.replace_menu(
+                   DataCase.trainer_ctx(coach),
+                   plan.id,
+                   plan.revision,
+                   menu(plan, meals: [meal_input("usage-page-meal-#{index}", "Meal", [item])])
+                 )
+      end
+
+      first_page =
+        conn
+        |> get("/v1/coach/nutrition-recipes/#{recipe.id}/usage", %{"kind" => "templates", "cursor" => "start", "limit" => "2"})
+        |> json_response(200)
+
+      assert %{"count" => 3, "data" => first_data, "next_cursor" => cursor} = first_page
+      assert is_binary(cursor)
+
+      second_page =
+        build_conn()
+        |> authenticate_coach(coach)
+        |> get("/v1/coach/nutrition-recipes/#{recipe.id}/usage", %{"kind" => "templates", "cursor" => cursor, "limit" => "2"})
+        |> json_response(200)
+
+      assert %{"count" => 3, "data" => second_data, "next_cursor" => nil} = second_page
+      ids = Enum.map(first_data ++ second_data, & &1["id"])
+      assert MapSet.new(ids) == MapSet.new(Enum.map(plans, & &1.id))
+      assert length(ids) == 3
+    end
+
+    test "search treats percent as a literal", %{conn: conn, coach: coach, business: business} do
+      recipe = insert(:recipe, creator: coach, business: business)
+      literal = insert(:plan, business: business, creator: coach.user, kind: :template, name: "Cut 100%")
+      wildcard = insert(:plan, business: business, creator: coach.user, kind: :template, name: "Cut 100x")
+      item = recipe_item("literal-search-item", recipe.id, %{kind: :serving, amount: 1, unit: "serving", label: nil})
+
+      for {plan, ref} <- [{literal, "literal-search-meal"}, {wildcard, "wildcard-search-meal"}] do
+        assert {:ok, _} =
+                 Programming.replace_menu(
+                   DataCase.trainer_ctx(coach),
+                   plan.id,
+                   plan.revision,
+                   menu(plan, meals: [meal_input(ref, "Meal", [item])])
+                 )
+      end
+
+      assert %{"count" => 1, "data" => [%{"id" => plan_id, "name" => "Cut 100%"}]} =
+               conn
+               |> get("/v1/coach/nutrition-recipes/#{recipe.id}/usage", %{"kind" => "templates", "search" => "100%", "cursor" => "start"})
+               |> json_response(200)
+
+      assert plan_id == literal.id
     end
   end
 end

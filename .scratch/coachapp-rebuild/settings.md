@@ -1,0 +1,17 @@
+# Profile and business settings
+
+When my contact details or business preferences change, I need to update them once so that my team and future clients have the right information. This is an occasional task, often on a phone. The costly mistake is changing business-wide data while intending to edit a personal profile.
+
+The account menu opens Your profile or Business settings. Both pages share a short two-link navigation. Personal names and phone are editable; sign-in email is readable account information. Business details and defaults have a separate owner-only save action. Trainers can read business settings with an explanation of who can change them.
+
+A combined settings worksheet would make it easy to confuse the two scopes and create partial saves across endpoints. Separate pages keep each save atomic, give each form a clear title, and work with a single column on mobile. Desktop pairs short name fields but keeps the same reading order. Use the existing shadcn controls and visible labels.
+
+Business settings include name, about, WhatsApp contact, weight unit and default time zone. The immutable handle is readable. Time zone choices come from the server's supported reference list. A changed business time zone applies to subsequent client invitations; earlier client calendars and frozen nutrition history retain their own time zones. Personal coach time zones are not a persisted domain concept; do not invent a disconnected preference.
+
+Only changed fields are sent. Success refreshes the account header and relevant cached preferences. Interrupted saves keep the draft and allow an idempotent retry. Navigation with unsaved changes offers Keep editing or Discard and leave; a pending save cannot be abandoned through that confirmation. An account change rejects late completions. Failed loading has a retry; trainers cannot submit business edits through either business or profile endpoints.
+
+Verified on 2026-09-13 against the isolated real Phoenix API at 375px and 1280px: account-menu entry, profile/header persistence, changed-field profile writes, owner business edits and defaults, read-only trainer view, trainer personal edits, required-name and real server time-zone validation, initial business/time-zone load failure and retry, failed profile saves, lost business-save responses and idempotent retry, discard/keep-editing navigation, blocked departure during a save, and late business responses after switching to a different business. Account refresh failure retains the open draft and has a working retry. Screenshots of both forms and the trainer business view were inspected at both widths; this is browser verification, not a target-coach usability study.
+
+Frontend build, scoped Biome, `just check-rm`, and `git diff --check` passed. Auth and invitation browser regressions passed after the shared app-shell recovery fix. The API contract agent regenerated schemas and passed the focused backend tests and full `mix precommit` (1,697 tests, zero failures). Backend tests also cover immutable handles, cross-tenant body targeting, trainer business-field writes through both routes, atomic profile/business rollback, and future invitation time-zone inheritance without changing earlier clients.
+
+Time-zone choices use the shadcn Select and the server's finite reference list. Client-specific calendar preferences and broader calendar behavior remain part of the full application audit. Team management is the next slice. Changes are uncommitted.

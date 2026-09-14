@@ -32,11 +32,13 @@ defmodule Easy.ClientInvitations do
   def create(%Ctx{} = ctx, attrs) do
     with {:ok, coach} <- Coaches.get_coach(ctx),
          changeset = Client.invite_changeset(coach.business_id, coach.id, DateTime.utc_now(:second), attrs),
+         changeset = Easy.LocalCalendar.stamp_timezone(changeset, coach.business.timezone),
          email = get_field(changeset, :email),
          :ok <- validate_not_self_invite(coach, email),
          :ok <- validate_email_has_no_active_client(email),
          {:ok, client} <- reserve_and_create(ctx, changeset) do
-      {:ok, Repo.preload(client, [:user, :business, :creator], force: true)}
+      coaches = Coach.for_business(ctx.business_id)
+      {:ok, Repo.preload(client, [:user, :business, :creator, assigned_coach: coaches], force: true)}
     end
   end
 
@@ -70,7 +72,8 @@ defmodule Easy.ClientInvitations do
     with {:ok, client} <- ClientAccess.authorize_client(ctx, client_id),
          {:ok, coach} <- Coaches.get_coach(ctx),
          {:ok, updated_client} <- resend_client_invitation(client, coach) do
-      {:ok, Repo.preload(updated_client, [:user, :business, :creator], force: true)}
+      coaches = Coach.for_business(ctx.business_id)
+      {:ok, Repo.preload(updated_client, [:user, :business, :creator, assigned_coach: coaches], force: true)}
     end
   end
 

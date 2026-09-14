@@ -3,6 +3,7 @@ defmodule EasyWeb.Coaches.FoodController do
 
   alias Easy.Nutrition.Library
   alias EasyWeb.Types.Nutrition.{Food, FoodIndex}
+  alias EasyWeb.Types.Nutrition.LibraryUsage
 
   typed(:create, body: Food.create(), ok: {201, data(Food.t())})
   typed(:show, ok: {200, data(Food.t())})
@@ -12,6 +13,17 @@ defmodule EasyWeb.Coaches.FoodController do
   typed(:categories, ok: {200, Food.category_list()})
   typed(:impact, ok: {200, Food.impact()})
   typed(:copy, ok: {201, data(Food.t())})
+  typed(:usage, query: LibraryUsage.query(), ok: {200, LibraryUsage.t()})
+
+  @spec usage(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def usage(conn, _params) do
+    params = conn.query_params
+    opts = [kind: params["kind"], search: params["search"], cursor: params["cursor"], limit: params["limit"]]
+
+    with {:ok, page} <- Library.list_food_usage(conn.assigns.ctx, conn.path_params["id"], opts) do
+      ok(conn, page)
+    end
+  end
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do

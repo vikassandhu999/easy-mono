@@ -51,7 +51,11 @@ defmodule Easy.LandingTest do
       assert result.prospect.business_id == ctx.business_id
     end
 
-    for program_id <- [nil, "invalid", Ecto.UUID.generate(), other_program.id] do
+    for program_id <- ["invalid", Ecto.UUID.generate(), other_program.id] do
+      assert {:error, %Ecto.Changeset{}} = Landing.submit_application(page.slug, %{attrs | landing_program_id: program_id})
+    end
+
+    for program_id <- [nil] do
       assert {:ok, %{program: nil, prospect: prospect}} =
                Landing.submit_application(page.slug, %{attrs | landing_program_id: program_id})
 
@@ -105,5 +109,27 @@ defmodule Easy.LandingTest do
     assert {:ok, restored} = Landing.get_landing_page(ctx)
     assert restored.headline == original.headline
     assert restored.programs == original.programs
+  end
+
+  test "malformed nested content and overlong copy return changeset errors" do
+    ctx = insert(:coach) |> trainer_ctx()
+    attrs = %{slug: "validate-page", template: :coach_story, headline: "Coaching"}
+
+    for invalid <- [
+          %{application_questions: [nil]},
+          %{proof_points: [nil]},
+          %{application_questions: nil},
+          %{proof_points: nil},
+          %{fit_points: nil},
+          %{proof_points: [%{value: "5 years"}]},
+          %{headline: String.duplicate("a", 256)},
+          %{fit_points: [""]},
+          %{application_questions: [%{id: "__proto__", label: "Question", type: :long_text}]},
+          %{programs: [%{name: String.duplicate("a", 256)}]}
+        ] do
+      assert {:error, %Ecto.Changeset{}} = Landing.upsert_landing_page(ctx, Map.merge(attrs, invalid))
+    end
+
+    assert {:ok, nil} = Landing.get_landing_page(ctx)
   end
 end

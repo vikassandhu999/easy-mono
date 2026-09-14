@@ -32,37 +32,42 @@ defmodule Easy.Workbench do
      }}
   end
 
-  @spec list_onboarding_queue(Ctx.t(), keyword()) :: {:ok, WorkbenchOnboardingQueue.page()}
+  @spec list_onboarding_queue(Ctx.t(), keyword()) ::
+          {:ok, WorkbenchOnboardingQueue.page()} | {:error, :cursor_incompatible | :invalid_cursor}
   def list_onboarding_queue(%Ctx{} = ctx, opts \\ []) do
-    {:ok, ctx |> WorkbenchOnboardingQueue.list(opts) |> preload_client_businesses()}
+    with {:ok, page} <- WorkbenchOnboardingQueue.list(ctx, opts), do: {:ok, preload_client_businesses(page)}
   end
 
-  @spec list_check_in_queue(Ctx.t(), keyword()) :: {:ok, WorkbenchCheckInQueue.page()}
+  @spec list_check_in_queue(Ctx.t(), keyword()) ::
+          {:ok, WorkbenchCheckInQueue.page()} | {:error, :cursor_incompatible | :invalid_cursor}
   def list_check_in_queue(%Ctx{} = ctx, opts \\ []) do
-    {:ok, ctx |> WorkbenchCheckInQueue.list(opts) |> preload_client_businesses()}
+    with {:ok, page} <- WorkbenchCheckInQueue.list(ctx, opts), do: {:ok, preload_client_businesses(page)}
   end
 
-  @spec list_replies_queue(Ctx.t(), keyword()) :: {:ok, WorkbenchRepliesQueue.page()}
+  @spec list_replies_queue(Ctx.t(), keyword()) ::
+          {:ok, WorkbenchRepliesQueue.page()} | {:error, :cursor_incompatible | :invalid_cursor}
   def list_replies_queue(%Ctx{} = ctx, opts \\ []) do
-    {:ok, WorkbenchRepliesQueue.list(ctx, opts)}
+    WorkbenchRepliesQueue.list(ctx, opts)
   end
 
   @spec list_programming_queue(Ctx.t(), keyword()) ::
-          {:ok, WorkbenchProgrammingQueue.page()} | {:error, :invalid_service}
+          {:ok, WorkbenchProgrammingQueue.page()} | {:error, :cursor_incompatible | :invalid_cursor | :invalid_service}
   def list_programming_queue(%Ctx{} = ctx, opts \\ []) do
     with {:ok, page} <- WorkbenchProgrammingQueue.list(ctx, opts) do
       {:ok, preload_client_businesses(page)}
     end
   end
 
-  @spec list_expiring_queue(Ctx.t(), keyword()) :: {:ok, WorkbenchExpiringQueue.page()}
+  @spec list_expiring_queue(Ctx.t(), keyword()) ::
+          {:ok, WorkbenchExpiringQueue.page()} | {:error, :cursor_incompatible | :invalid_cursor}
   def list_expiring_queue(%Ctx{} = ctx, opts \\ []) do
-    {:ok, ctx |> WorkbenchExpiringQueue.list(opts) |> preload_client_businesses()}
+    with {:ok, page} <- WorkbenchExpiringQueue.list(ctx, opts), do: {:ok, preload_client_businesses(page)}
   end
 
-  @spec list_quiet_queue(Ctx.t(), keyword()) :: {:ok, WorkbenchQuietQueue.page()}
+  @spec list_quiet_queue(Ctx.t(), keyword()) ::
+          {:ok, WorkbenchQuietQueue.page()} | {:error, :cursor_incompatible | :invalid_cursor}
   def list_quiet_queue(%Ctx{} = ctx, opts \\ []) do
-    {:ok, ctx |> WorkbenchQuietQueue.list(opts) |> preload_client_businesses()}
+    with {:ok, page} <- WorkbenchQuietQueue.list(ctx, opts), do: {:ok, preload_client_businesses(page)}
   end
 
   @spec snooze_queue_for_client(Ctx.t(), String.t(), map()) ::

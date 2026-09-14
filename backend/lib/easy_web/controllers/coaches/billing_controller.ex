@@ -18,7 +18,8 @@ defmodule EasyWeb.Coaches.BillingController do
 
   @spec checkout(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def checkout(conn, _params) do
-    with {:ok, result} <- BillingContext.checkout(conn.assigns.ctx, conn.body_params[:seats_to_add]) do
+    with {:ok, result} <-
+           BillingContext.checkout(conn.assigns.ctx, conn.body_params[:seats_to_add], conn.body_params[:request_id]) do
       ok(conn, %{data: result})
     end
   end

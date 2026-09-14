@@ -89,6 +89,23 @@ defmodule Easy.Chat.Conversation do
     )
   end
 
+  @spec for_status(Ecto.Queryable.t(), :all | :waiting | :unread | nil) :: Ecto.Query.t()
+  def for_status(query, status) when status in [nil, :all], do: query
+  def for_status(query, :waiting), do: waiting(query)
+
+  def for_status(query, :unread) do
+    from(c in query,
+      where:
+        fragment(
+          "EXISTS (SELECT 1 FROM chat_messages m WHERE m.business_id = ? AND m.conversation_id = ? AND m.sender_type = 'client' AND (? IS NULL OR m.inserted_at > ?))",
+          c.business_id,
+          c.id,
+          c.coach_last_read_at,
+          c.coach_last_read_at
+        )
+    )
+  end
+
   @spec recent(Ecto.Queryable.t()) :: Ecto.Query.t()
   def recent(query \\ __MODULE__),
     do: from(c in query, order_by: [desc_nulls_last: c.last_message_at, desc: c.inserted_at, desc: c.id])
@@ -97,6 +114,13 @@ defmodule Easy.Chat.Conversation do
   @spec oldest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def oldest(query \\ __MODULE__),
     do: from(c in query, order_by: [asc: c.waiting_since, asc: c.id])
+
+  @spec after_waiting(Ecto.Queryable.t(), DateTime.t(), String.t()) :: Ecto.Query.t()
+  def after_waiting(query \\ __MODULE__, waiting_since, id) do
+    from(c in query,
+      where: c.waiting_since > ^waiting_since or (c.waiting_since == ^waiting_since and c.id > ^id)
+    )
+  end
 
   @spec include_client(Ecto.Queryable.t()) :: Ecto.Query.t()
   def include_client(query \\ __MODULE__), do: from(c in query, preload: [:client])

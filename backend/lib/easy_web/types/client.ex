@@ -4,6 +4,7 @@ defmodule EasyWeb.Types.Client do
   alias Easy.AppLinks
   alias Easy.Clients.Client, as: ClientSchema
   alias Easy.Identity.User
+  alias Easy.Orgs.Coach
 
   @type t :: %{
           required(:id) => String.t(),
@@ -27,6 +28,7 @@ defmodule EasyWeb.Types.Client do
           required(:training_plan_name) => String.t() | nil,
           required(:nutrition_plan_name) => String.t() | nil,
           required(:assigned_coach_id) => String.t() | nil,
+          required(:assigned_coach_name) => String.t() | nil,
           required(:invite_url) => String.t() | nil,
           required(:invitation_sent_at) => DateTime.t() | nil,
           required(:invitation_expires_at) => DateTime.t() | nil,
@@ -58,7 +60,7 @@ defmodule EasyWeb.Types.Client do
           optional(:required_services) => [:training | :nutrition]
         }
 
-  @type reassign :: %{required(:coach_id) => String.t()}
+  @type reassign :: %{required(:coach_id) => Ecto.UUID.t()}
 
   @type list_query :: %{
           optional(:cursor) => String.t(),
@@ -68,7 +70,8 @@ defmodule EasyWeb.Types.Client do
           optional(:status) => :active | :pending | :inactive,
           optional(:stage) => :onboarding | :coaching,
           optional(:sort) => :newest | :last_active,
-          optional(:include_plans) => boolean()
+          optional(:include_plans) => boolean(),
+          optional(:assigned_coach_id) => Ecto.UUID.t()
         }
 
   @spec format(ClientSchema.t()) :: t()
@@ -95,6 +98,7 @@ defmodule EasyWeb.Types.Client do
       training_plan_name: client.training_plan_name,
       nutrition_plan_name: client.nutrition_plan_name,
       assigned_coach_id: client.assigned_coach_id,
+      assigned_coach_name: assigned_coach_name(client),
       invite_url: invite_url(client),
       invitation_sent_at: pending_only(client, client.invitation_sent_at),
       invitation_expires_at: pending_only(client, ClientSchema.invitation_expires_at(client)),
@@ -102,6 +106,9 @@ defmodule EasyWeb.Types.Client do
       updated_at: client.updated_at
     }
   end
+
+  defp assigned_coach_name(%ClientSchema{assigned_coach: %Coach{} = coach}), do: Coach.full_name(coach)
+  defp assigned_coach_name(_client), do: nil
 
   defp display_first_name(%ClientSchema{user: %User{first_name: name}, first_name: fallback})
        when name in [nil, ""],

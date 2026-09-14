@@ -20,6 +20,8 @@ defmodule Easy.Billing.BusinessBilling do
     field :razorpay_subscription_id, :string
     field :razorpay_plan_id, :string
     field :current_period_end, :utc_datetime
+    field :cancellation_state, Ecto.Enum, values: [:requested, :unknown, :accepted]
+    field :cancellation_requested_at, :utc_datetime
 
     belongs_to :business, Easy.Orgs.Business
 
@@ -74,7 +76,9 @@ defmodule Easy.Billing.BusinessBilling do
       :status,
       :razorpay_subscription_id,
       :razorpay_plan_id,
-      :current_period_end
+      :current_period_end,
+      :cancellation_state,
+      :cancellation_requested_at
     ])
     |> validate_seats()
     |> validate_length(:razorpay_subscription_id, max: 255, count: :codepoints)

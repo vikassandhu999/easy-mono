@@ -104,6 +104,63 @@ defmodule EasyWeb.Types.FormSubmission do
   end
 end
 
+defmodule EasyWeb.Types.FormSubmissionDetail do
+  use EasyWeb.Type
+
+  alias Easy.Forms.FormAssignment
+  alias Easy.Forms.FormSubmission, as: FormSubmissionSchema
+  alias EasyWeb.Types.FormSubmission, as: FormSubmissionType
+
+  @type t :: %{
+          required(:id) => String.t(),
+          required(:form_assignment_id) => String.t(),
+          required(:question_snapshot) => [EasyWeb.Types.FormSnapshotSection.t()],
+          required(:answers) => %{String.t() => EasyWeb.Types.FormAssignmentAnswer.t()},
+          required(:submitted_by_type) => :coach | :client | :system,
+          required(:submitted_at) => DateTime.t(),
+          required(:reviewed_at) => DateTime.t() | nil,
+          required(:reviewed_by_id) => String.t() | nil,
+          required(:attachments) => [
+            %{
+              required(:id) => String.t(),
+              required(:content_type) =>
+                :"image/jpeg"
+                | :"image/png"
+                | :"image/webp"
+                | :"image/heic"
+                | :"video/mp4"
+                | :"video/webm"
+                | :"video/quicktime"
+                | :"audio/webm"
+                | :"audio/mp4"
+                | :"audio/mpeg",
+              required(:byte_size) => pos_integer(),
+              required(:duration_ms) => non_neg_integer() | nil
+            }
+          ],
+          required(:inserted_at) => DateTime.t(),
+          required(:form_assignment) => %{
+            required(:id) => String.t(),
+            required(:purpose) => :intake | :check_in,
+            required(:form_template) => %{
+              required(:id) => String.t(),
+              required(:name) => String.t()
+            }
+          }
+        }
+
+  @spec format(FormSubmissionSchema.t()) :: t()
+  def format(%FormSubmissionSchema{form_assignment: %FormAssignment{} = assignment} = submission) do
+    submission
+    |> FormSubmissionType.format()
+    |> Map.put(:form_assignment, %{
+      id: assignment.id,
+      purpose: assignment.purpose,
+      form_template: %{id: assignment.form_template.id, name: assignment.form_template.name}
+    })
+  end
+end
+
 defmodule EasyWeb.Types.FormAssignment do
   use EasyWeb.Type
 
@@ -131,6 +188,7 @@ defmodule EasyWeb.Types.FormAssignment do
   @type create :: %{required(:form_template_id) => String.t()}
 
   @type update :: %{
+          optional(:expected_status) => :assigned | :in_progress | :completed | :dismissed | :missed,
           optional(:priority) => :high | :normal,
           optional(:status) => :assigned | :in_progress | :completed | :dismissed | :missed,
           optional(:due_date) => Date.t() | nil

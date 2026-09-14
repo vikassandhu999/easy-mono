@@ -6,6 +6,7 @@ defmodule Easy.WorkbenchProgrammingQueue do
   alias Easy.Nutrition.Plan
   alias Easy.Repo
   alias Easy.Training.TrainingPlan
+  alias Easy.WorkbenchPage
 
   @services [:all, :training, :nutrition]
 
@@ -20,7 +21,7 @@ defmodule Easy.WorkbenchProgrammingQueue do
               coverage_ends_on: Date.t()
             }
   @type item :: %{client: Client.t(), reasons: [reason()]}
-  @type page :: %{count: non_neg_integer(), items: [item()]}
+  @type page :: %{count: non_neg_integer(), items: [item()], next_cursor: String.t() | nil}
   @type counts :: %{all: non_neg_integer(), training: non_neg_integer(), nutrition: non_neg_integer()}
 
   @spec counts(Ctx.t()) :: counts()
@@ -38,20 +39,43 @@ defmodule Easy.WorkbenchProgrammingQueue do
   end
 
   @spec list(Ctx.t(), keyword()) ::
-          {:ok, page()} | {:error, :invalid_service}
+          {:ok, page()} | {:error, :cursor_incompatible | :invalid_cursor | :invalid_service}
   def list(%Ctx{} = ctx, opts) do
     with {:ok, service} <- normalize_service(Keyword.get(opts, :service, :all)) do
-      facts = ctx |> service_facts(DateTime.utc_now()) |> for_service(service)
-
-      items =
-        facts
-        |> item_query(ctx.business_id)
-        |> Easy.Utils.paginate(opts)
-        |> Repo.all()
-        |> Enum.map(&to_item/1)
-
-      {:ok, %{count: Repo.count_unique(facts, :client_id), items: items}}
+      list_page(ctx, opts, service)
     end
+  end
+
+  defp list_page(ctx, opts, service) do
+    scope = %{
+      "queue" => "programming",
+      "search" => Keyword.get(opts, :search, "") || "",
+      "service" => Atom.to_string(service)
+    }
+
+    with {:ok, mode} <- WorkbenchPage.mode(opts, scope),
+         {:ok, position} <- decode_position(mode) do
+      facts = ctx |> service_facts(DateTime.utc_now(), opts[:search]) |> for_service(service)
+      count = Repo.count_unique(facts, :client_id)
+      {:ok, page(mode, facts, ctx.business_id, opts, position, count, scope)}
+    end
+  end
+
+  defp page(:legacy, facts, business_id, opts, _position, count, _scope) do
+    items = facts |> item_query(business_id) |> Easy.Utils.paginate(opts) |> Repo.all() |> Enum.map(&to_item/1)
+    %{count: count, items: items, next_cursor: nil}
+  end
+
+  defp page({:cursor, _cursor}, facts, business_id, opts, position, count, scope) do
+    limit = WorkbenchPage.limit(opts)
+
+    facts
+    |> item_query(business_id)
+    |> after_position(position)
+    |> limit(^(limit + 1))
+    |> Repo.all()
+    |> WorkbenchPage.finish(limit, count, scope, &position_of/1)
+    |> Map.update!(:items, fn items -> Enum.map(items, &to_item/1) end)
   end
 
   defp item_query(facts, business_id) do
@@ -79,6 +103,21 @@ defmodule Easy.WorkbenchProgrammingQueue do
       ],
       select: %{
         client: client,
+        priority: min(fact.priority),
+        first_uncovered_on:
+          fragment(
+            "CASE WHEN min(?) = 0 THEN NULL ELSE min(?) END",
+            fact.priority,
+            fact.first_uncovered_on
+          ),
+        service_rank:
+          fragment(
+            "(array_agg(? ORDER BY ?, ? NULLS FIRST, ?))[1]",
+            fact.service_rank,
+            fact.priority,
+            fact.first_uncovered_on,
+            fact.service_rank
+          ),
         codes:
           fragment(
             "array_agg(? ORDER BY ?, ? NULLS FIRST, ?)",
@@ -115,9 +154,9 @@ defmodule Easy.WorkbenchProgrammingQueue do
     )
   end
 
-  @spec service_facts(Ctx.t(), DateTime.t()) :: Ecto.Query.t()
-  def service_facts(%Ctx{} = ctx, now) do
-    status = service_status(ctx, now)
+  @spec service_facts(Ctx.t(), DateTime.t(), String.t() | nil) :: Ecto.Query.t()
+  def service_facts(%Ctx{} = ctx, now, search \\ nil) do
+    status = service_status(ctx, now, search)
 
     from(service in subquery(status),
       where: not service.has_history or not is_nil(service.first_uncovered_on),
@@ -152,8 +191,8 @@ defmodule Easy.WorkbenchProgrammingQueue do
     )
   end
 
-  defp service_status(%Ctx{} = ctx, now) do
-    required = required_service_clients(ctx, now)
+  defp service_status(%Ctx{} = ctx, now, search) do
+    required = required_service_clients(ctx, now, search)
     history = assigned_plan_history(ctx.business_id)
     intervals = active_plan_intervals(ctx.business_id)
 
@@ -192,12 +231,13 @@ defmodule Easy.WorkbenchProgrammingQueue do
     )
   end
 
-  defp required_service_clients(%Ctx{} = ctx, now) do
+  defp required_service_clients(%Ctx{} = ctx, now, search) do
     visible =
       Client
       |> Client.for_business(ctx.business_id)
       |> Client.visible_to(ctx)
       |> Client.for_status(:active)
+      |> Client.search(search)
 
     training = service_clients(visible, now, "training", 0)
     nutrition = service_clients(visible, now, "nutrition", 1)
@@ -313,6 +353,94 @@ defmodule Easy.WorkbenchProgrammingQueue do
 
   defp service_atom("training"), do: :training
   defp service_atom("nutrition"), do: :nutrition
+
+  defp decode_position(:legacy), do: {:ok, nil}
+  defp decode_position({:cursor, nil}), do: {:ok, nil}
+
+  defp decode_position({:cursor, %{"priority" => priority, "first_uncovered_on" => date, "service_rank" => rank, "id" => id}})
+       when is_integer(priority) and is_integer(rank) and is_binary(id) do
+    with {:ok, id} <- Ecto.UUID.cast(id),
+         {:ok, date} <- decode_date(date) do
+      {:ok, %{priority: priority, first_uncovered_on: date, service_rank: rank, id: id}}
+    else
+      _ -> {:error, :invalid_cursor}
+    end
+  end
+
+  defp decode_position(_mode), do: {:error, :invalid_cursor}
+
+  defp decode_date(nil), do: {:ok, nil}
+  defp decode_date(date) when is_binary(date), do: Date.from_iso8601(date)
+  defp decode_date(_date), do: {:error, :invalid_cursor}
+
+  defp after_position(query, nil), do: query
+
+  defp after_position(query, %{priority: priority, first_uncovered_on: nil, service_rank: service_rank, id: id}) do
+    having(
+      query,
+      [fact, client],
+      min(fact.priority) > ^priority or
+        (min(fact.priority) == ^priority and
+           (fragment(
+              "(array_agg(? ORDER BY ?, ? NULLS FIRST, ?))[1]",
+              fact.service_rank,
+              fact.priority,
+              fact.first_uncovered_on,
+              fact.service_rank
+            ) > ^service_rank or
+              (fragment(
+                 "(array_agg(? ORDER BY ?, ? NULLS FIRST, ?))[1]",
+                 fact.service_rank,
+                 fact.priority,
+                 fact.first_uncovered_on,
+                 fact.service_rank
+               ) == ^service_rank and
+                 client.id > ^id)))
+    )
+  end
+
+  defp after_position(query, %{priority: priority, first_uncovered_on: date, service_rank: service_rank, id: id}) do
+    having(
+      query,
+      [fact, client],
+      min(fact.priority) > ^priority or
+        (min(fact.priority) == ^priority and
+           (fragment(
+              "CASE WHEN min(?) = 0 THEN NULL ELSE min(?) END",
+              fact.priority,
+              fact.first_uncovered_on
+            ) > ^date or
+              (fragment(
+                 "CASE WHEN min(?) = 0 THEN NULL ELSE min(?) END",
+                 fact.priority,
+                 fact.first_uncovered_on
+               ) == ^date and
+                 (fragment(
+                    "(array_agg(? ORDER BY ?, ? NULLS FIRST, ?))[1]",
+                    fact.service_rank,
+                    fact.priority,
+                    fact.first_uncovered_on,
+                    fact.service_rank
+                  ) > ^service_rank or
+                    (fragment(
+                       "(array_agg(? ORDER BY ?, ? NULLS FIRST, ?))[1]",
+                       fact.service_rank,
+                       fact.priority,
+                       fact.first_uncovered_on,
+                       fact.service_rank
+                     ) == ^service_rank and
+                       client.id > ^id)))))
+    )
+  end
+
+  defp position_of(row) do
+    %{
+      "priority" => row.priority,
+      "first_uncovered_on" => if(row.first_uncovered_on, do: Date.to_iso8601(row.first_uncovered_on)),
+      "service_rank" => row.service_rank,
+      "id" => row.client.id
+    }
+  end
 
   defp normalize_service(service) when service in @services, do: {:ok, service}
   defp normalize_service("all"), do: {:ok, :all}

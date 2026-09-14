@@ -1,6 +1,6 @@
 import {useInfiniteQuery, useMutation, useQuery} from '@tanstack/react-query';
 import {call, client} from './client';
-import {clientKeys, nutritionKeys} from './keys';
+import {clientKeys, nutritionKeys, workbenchKeys} from './keys';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
 import type {paths} from './schema';
@@ -115,6 +115,7 @@ export function useSaveNutritionPlan(clientId?: string) {
 }
 function invalidateClientNutrition(clientId: string) {
   return Promise.all([
+    queryClient.invalidateQueries({queryKey: workbenchKeys.all}),
     queryClient.invalidateQueries({queryKey: nutritionKeys.coverage(clientId)}),
     queryClient.invalidateQueries({queryKey: clientKeys.detail(clientId)}),
     queryClient.invalidateQueries({queryKey: clientKeys.lists()}),

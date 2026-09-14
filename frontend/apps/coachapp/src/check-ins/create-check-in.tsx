@@ -306,7 +306,7 @@ function Create({clientId}: {clientId: string}) {
 function ChooseForm({onClose, onChoose}: {onClose: () => void; onChoose: (value: FormTemplate) => void}) {
   const [draft, setDraft] = useState('');
   const [search, setSearch] = useState('');
-  const query = useFormTemplates({purpose: 'check_in', search});
+  const query = useFormTemplates({purpose: 'check_in', status: 'active', search});
   useEffect(() => {
     const timer = setTimeout(() => setSearch(draft.trim()), 300);
     return () => clearTimeout(timer);

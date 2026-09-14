@@ -5,6 +5,7 @@ import type {Exercise} from '../api/exercises';
 import {Button} from '../ui/button';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {DropdownMenu, DropdownMenuItem, DropdownMenuTrigger} from '../ui/dropdown-menu';
+import {ExercisePreview} from '../ui/exercise-preview';
 import {Input} from '../ui/input';
 import {Surface} from '../ui/page';
 import {ExercisePicker} from './exercise-picker';
@@ -263,6 +264,10 @@ function ExerciseEditor({
           />
         )}
       </div>
+      <ExercisePreview
+        id={exercise.exercise_id}
+        name={exercise.name}
+      />
       <ExerciseSets
         workoutIndex={workoutIndex}
         exerciseIndex={index}

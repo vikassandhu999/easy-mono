@@ -15,6 +15,8 @@ import {FormActions, Page, PageHeader, Surface} from '../ui/page';
 import {SelectItem} from '../ui/select';
 import {SelectField} from '../ui/select-field';
 import {body, changes, fields} from './exercise';
+import {ExerciseAction} from './exercise-action';
+import {ExerciseMedia} from './exercise-media';
 import {ExerciseRelations} from './exercise-relations';
 
 export function ExerciseEditor() {
@@ -79,6 +81,9 @@ function Editor({initial}: {initial: Exercise | undefined}) {
   const [reload, setReload] = useState(false);
   const [reloading, setReloading] = useState(false);
   const [notice, setNotice] = useState('');
+  const [action, setAction] = useState<'copy' | 'delete' | null>(null);
+  const [managing, setManaging] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const mounted = useRef(true);
   const leaving = useRef(false);
   const errorRef = useRef<HTMLDivElement>(null);
@@ -86,7 +91,7 @@ function Editor({initial}: {initial: Exercise | undefined}) {
   const navigate = useNavigate();
   const {to, state} = useListLocation(routes.exercises);
   const dirty = form.formState.isDirty;
-  const pending = form.formState.isSubmitting || reloading;
+  const pending = form.formState.isSubmitting || reloading || managing || uploading;
   const readOnly = exercise?.source === 'system';
   useEffect(() => {
     mounted.current = true;
@@ -149,7 +154,35 @@ function Editor({initial}: {initial: Exercise | undefined}) {
             : 'Name the movement and explain how you want clients to perform it.'
         }
         back={{to, label: 'Back to exercises', state}}
+        actions={
+          exercise && (
+            <Button
+              variant="outline"
+              isDisabled={dirty || pending || query.isError}
+              onPress={() => setAction('copy')}
+            >
+              Copy exercise
+            </Button>
+          )
+        }
       />
+      {exercise && dirty && (
+        <p className="text-sm text-muted-foreground">Save your changes before copying or deleting this exercise.</p>
+      )}
+      {exercise && query.isError && (
+        <div className="space-y-3">
+          <FormError message="Could not refresh this exercise. Your edits are still here. Retry before copying or deleting it." />
+          <Button
+            variant="outline"
+            isPending={query.isFetching}
+            onPress={() => {
+              query.refetch();
+            }}
+          >
+            Retry exercise
+          </Button>
+        </div>
+      )}
       <form
         noValidate
         className="has-mobile-actions min-w-0 space-y-6"
@@ -218,6 +251,21 @@ function Editor({initial}: {initial: Exercise | undefined}) {
             multiline
             maxLength={10000}
           />
+        </fieldset>
+        <ExerciseMedia
+          media={form.watch('media')}
+          images={form.watch('images')}
+          disabled={pending || readOnly}
+          readOnly={readOnly}
+          onBusy={setUploading}
+          onChange={(value) => form.setValue('media', value, {shouldDirty: true})}
+          onImagesChange={(value) => form.setValue('images', value, {shouldDirty: true})}
+        />
+        <fieldset
+          disabled={pending || readOnly}
+          className="min-w-0"
+        >
+          <legend className="sr-only">Additional exercise details</legend>
           <details ref={detailsRef}>
             <summary className="w-fit cursor-pointer py-2 font-medium">Equipment, muscles and other details</summary>
             <div className="mt-4 space-y-6">
@@ -347,6 +395,21 @@ function Editor({initial}: {initial: Exercise | undefined}) {
             {dirty ? 'Unsaved changes' : exercise ? 'All changes saved' : 'New exercise'}
           </p>
         )}
+        {exercise && !readOnly && (
+          <details>
+            <summary className="w-fit cursor-pointer py-2 text-sm text-muted-foreground">Remove from library</summary>
+            <div className="mt-3 space-y-3">
+              <p className="text-sm text-muted-foreground">Only exercises unused by training plans can be deleted.</p>
+              <Button
+                variant="destructive"
+                isDisabled={dirty || pending || query.isError}
+                onPress={() => setAction('delete')}
+              >
+                Delete exercise
+              </Button>
+            </div>
+          </details>
+        )}
         <FormActions>
           <Button
             variant="ghost"
@@ -366,6 +429,28 @@ function Editor({initial}: {initial: Exercise | undefined}) {
           )}
         </FormActions>
       </form>
+      {exercise && action && (
+        <ExerciseAction
+          action={action}
+          exercise={exercise}
+          onClose={() => setAction(null)}
+          onBusy={setManaging}
+          onCopied={(saved) => {
+            setAction(null);
+            setManaging(false);
+            if (saved.id === exercise.id) {
+              resetExercise(saved);
+              return;
+            }
+            leaving.current = true;
+            navigate(generatePath(routes.exercise, {id: saved.id}), {state});
+          }}
+          onDeleted={() => {
+            leaving.current = true;
+            navigate(to, {replace: true, state: {...state, deleted: exercise.name}});
+          }}
+        />
+      )}
       {checking && (
         <CreationRecovery
           name={form.getValues('name')}

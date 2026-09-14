@@ -47,7 +47,7 @@ try {
     await save.click();
     await expect(name).toBeFocused();
     await expect(page.getByText('Enter a food name.', {exact: true})).toBeVisible();
-    await name.fill('Rolled oats');
+    await name.fill('Everyday pantry rolled oats');
     await calories.fill('-1');
     await save.click();
     await expect(page.getByText('Enter zero or a positive number.', {exact: true})).toBeVisible();
@@ -123,7 +123,7 @@ try {
     await expect(page.getByRole('dialog', {includeHidden: true})).toHaveCount(0);
     await expect(name).toHaveValue('Oats updated elsewhere');
     await expect(calories).toHaveValue('400');
-    await name.fill('Rolled oats');
+    await name.fill('Everyday pantry rolled oats');
     await save.click();
     await expect(page.getByText('Food saved.', {exact: true})).toBeVisible();
     await page.evaluate(() => {
@@ -191,17 +191,17 @@ try {
     await page.getByRole('link', {name: 'Back to foods', exact: true}).click();
     await expect(rows).toHaveCount(40);
     await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(scroll - 150);
-    await page.getByLabel('Search foods', {exact: true}).fill('Rolled oats');
+    await page.getByLabel('Search foods', {exact: true}).fill('Everyday pantry rolled oats');
     await expect(rows).toHaveCount(1);
     await expect(rows).toContainText('400 kcal per 100 g');
     await rows.getByRole('link').click();
     await page.getByRole('link', {name: 'Back to foods', exact: true}).click();
-    await expect(page.getByLabel('Search foods', {exact: true})).toHaveValue('Rolled oats');
+    await expect(page.getByLabel('Search foods', {exact: true})).toHaveValue('Everyday pantry rolled oats');
     await page.reload();
     await expect(rows).toHaveCount(1);
     await page.getByLabel('Search foods', {exact: true}).fill('no-such-food');
     await expect(page.getByText('No matching foods', {exact: true})).toBeVisible();
-    await page.getByLabel('Search foods', {exact: true}).fill('Rolled oats');
+    await page.getByLabel('Search foods', {exact: true}).fill('Everyday pantry rolled oats');
     await expect(rows).toHaveCount(1);
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({path: `tests/foods/artifacts/library-${width}.png`, fullPage: true});
@@ -211,8 +211,8 @@ try {
     await page.getByLabel('Plan name', {exact: true}).fill('Breakfast plan');
     await page.getByRole('button', {name: 'Add meal', exact: true}).click();
     await page.getByRole('button', {name: 'Add foods or recipes', exact: true}).click();
-    await page.getByLabel('Search foods', {exact: true}).fill('Rolled oats');
-    await page.getByRole('button', {name: 'Select Rolled oats', exact: true}).click();
+    await page.getByLabel('Search foods', {exact: true}).fill('Everyday pantry rolled oats');
+    await page.getByRole('button', {name: 'Select Everyday pantry rolled oats', exact: true}).click();
     await page.getByRole('button', {name: 'Add 1 item', exact: true}).click();
     await page.getByRole('button', {name: 'Preview meals', exact: true}).click();
     await expect(page.getByRole('dialog', {name: 'Meal preview', exact: true})).toContainText('160 kcal');

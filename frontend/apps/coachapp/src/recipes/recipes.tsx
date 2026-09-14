@@ -7,7 +7,12 @@ import {ListSearch} from '../ui/list-search';
 import {Page, PageHeader, Surface} from '../ui/page';
 export function Recipes() {
   const [params] = useSearchParams();
-  const {search} = useLocation();
+  const {search, state: locationState} = useLocation();
+  const state: unknown = locationState;
+  const deleted =
+    state && typeof state === 'object' && 'deleted' in state && typeof state.deleted === 'string'
+      ? state.deleted
+      : null;
   const query = useRecipes(params.get('search')?.trim() ?? '');
   return (
     <Page>
@@ -25,6 +30,14 @@ export function Recipes() {
           </Link>
         }
       />
+      {deleted && (
+        <p
+          role="status"
+          className="text-sm"
+        >
+          {deleted} deleted.
+        </p>
+      )}
       <ListSearch label="Search recipes" />
       <InfiniteList
         query={query}

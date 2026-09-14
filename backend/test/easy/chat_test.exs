@@ -641,6 +641,21 @@ defmodule Easy.ChatTest do
       assert Repo.reload(conversation).coach_last_read_at == cursor
     end
 
+    test "coach read and handled actions broadcast inbox updates after success", %{coach: coach, client: client} do
+      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+      assert {:ok, message} = Chat.send_client_message(client_ctx(client), %{body: "please review"})
+      Phoenix.PubSub.subscribe(Easy.PubSub, "inbox:business:#{coach.business_id}")
+
+      assert {:ok, _read} = Chat.mark_read(coach_ctx(coach), conversation.id)
+      assert_receive {:conversation_updated, conversation_id}
+      assert conversation_id == conversation.id
+
+      assert {:ok, :handled} =
+               Chat.mark_conversation_handled(coach_ctx(coach), conversation.id, message.inserted_at)
+
+      assert_receive {:conversation_updated, ^conversation_id}
+    end
+
     test "mark handled returns conflict for a newer waiting message", %{coach: coach, client: client} do
       {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
       assert {:ok, first} = Chat.send_client_message(client_ctx(client), %{body: "first"})

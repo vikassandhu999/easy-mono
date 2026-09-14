@@ -72,6 +72,13 @@ defmodule Easy.Training.TrainingExercise do
     timestamps(type: :utc_datetime)
   end
 
+  @spec delete_changeset(t()) :: Changeset.t()
+  def delete_changeset(exercise) do
+    exercise
+    |> change()
+    |> foreign_key_constraint(:id, name: :training_prescribed_exercises_exercise_id_fkey)
+  end
+
   @spec tracking_types() :: [tracking_type()]
   def tracking_types, do: @tracking_types
 

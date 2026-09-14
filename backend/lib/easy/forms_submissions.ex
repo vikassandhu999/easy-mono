@@ -10,6 +10,8 @@ defmodule Easy.Forms.Submissions do
   alias Easy.Repo
   alias Easy.WeightEntries
 
+  import Ecto.Query
+
   @type submit_error ::
           :not_found | :assignment_not_submittable | FormAnswers.validation_error() | Ecto.Changeset.t()
 
@@ -124,8 +126,22 @@ defmodule Easy.Forms.Submissions do
   end
 
   defp submit_assignment_transaction(ctx, client, assignment, answers) do
-    with {:ok, submission} <- Repo.transact(fn -> submit_assignment(ctx, client, assignment, answers) end) do
+    with {:ok, submission} <- Repo.transact(fn -> submit_locked_assignment(ctx, client, assignment, answers) end) do
       {:ok, Photos.attach_submission(ctx, submission)}
+    end
+  end
+
+  defp submit_locked_assignment(ctx, client, assignment, answers) do
+    locked =
+      FormAssignment
+      |> FormAssignment.for_client(ctx.business_id, client.id)
+      |> where([a], a.id == ^assignment.id)
+      |> lock("FOR UPDATE")
+      |> Repo.one()
+
+    with {:ok, current} <- ok_or_not_found(locked),
+         :ok <- ensure_assignment_submittable(current) do
+      submit_assignment(ctx, client, %{current | form_template: assignment.form_template}, answers)
     end
   end
 

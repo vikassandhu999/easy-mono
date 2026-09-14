@@ -12,6 +12,32 @@ defmodule Easy.ChatMessages do
 
   @type page :: %{messages: [Message.t()], has_more: boolean()}
 
+  @spec list_message_page(Ctx.t(), Conversation.t(), keyword()) ::
+          {:ok, Easy.CursorPage.t(Message.t())} | {:error, :invalid_cursor}
+  def list_message_page(ctx, conversation, opts) do
+    base = Message.for_conversation(ctx.business_id, conversation.id)
+    limit = Easy.CursorPage.limit(opts)
+
+    with {:ok, query} <- Easy.CursorPage.query(base, opts[:cursor] || "start", limit) do
+      Repo.snapshot(fn ->
+        summary =
+          from(message in base,
+            select: %{count: count(message.id), latest_message_at: max(message.inserted_at)}
+          )
+          |> Repo.one()
+
+        page = Easy.CursorPage.finish(Repo.all(query), limit, summary.count)
+        ids = Enum.map(page.data, & &1.id)
+
+        {:ok,
+         Map.merge(page, %{
+           data: load_messages_with_attachments(ids, ctx.business_id),
+           latest_message_at: summary.latest_message_at
+         })}
+      end)
+    end
+  end
+
   @spec list_messages(Ctx.t(), Conversation.t(), keyword()) :: {:ok, page()}
   def list_messages(%Ctx{business_id: business_id}, %Conversation{id: conversation_id}, opts \\ []) do
     limit = min(max(Keyword.get(opts, :limit, 20), 1), 100)

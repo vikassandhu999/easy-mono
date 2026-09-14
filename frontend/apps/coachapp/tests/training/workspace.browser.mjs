@@ -2,7 +2,8 @@ import {mkdir} from 'node:fs/promises';
 import {chromium, expect, request} from '@playwright/test';
 import {chooseOption, selectTrigger} from '../select-helpers.mjs';
 
-const api = await request.newContext({baseURL: 'http://localhost:4000'});
+const appURL = process.env.COACH_APP_URL || 'http://localhost:2022';
+const api = await request.newContext({baseURL: process.env.COACH_API_URL || 'http://localhost:4000'});
 const browser = await chromium.launch();
 await mkdir('tests/training/artifacts', {recursive: true});
 async function send(method, path, data, token) {
@@ -45,7 +46,7 @@ try {
     for (const name of ['Goblet squat', 'Lat pulldown', 'Dumbbell press', 'Front squat']) {
       await send('post', '/v1/coach/training-exercises', {name, instructions: `Instructions for ${name}.`}, token);
     }
-    const context = await browser.newContext({baseURL: 'http://localhost:2022', viewport: {width, height: 900}});
+    const context = await browser.newContext({baseURL: appURL, viewport: {width, height: 900}});
     context.setDefaultTimeout(10000);
     const page = await context.newPage();
     const errors = [];

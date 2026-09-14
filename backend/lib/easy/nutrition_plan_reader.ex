@@ -208,8 +208,15 @@ defmodule Easy.Nutrition.PlanReader do
 
   @spec library_usage(Ctx.t(), :food | :recipe, String.t()) :: [usage()]
   def library_usage(%Ctx{} = ctx, kind, id) do
+    visible_clients =
+      Client
+      |> Client.for_business(ctx.business_id)
+      |> Client.visible_to(ctx)
+      |> select([client], client.id)
+
     Plan.for_business(ctx.business_id)
     |> Plan.for_menu_item(kind, id)
+    |> where([plan], plan.kind == :template or plan.client_id in subquery(visible_clients))
     |> order_by([p], asc: p.name, asc: p.id)
     |> select([p], %{id: p.id, name: p.name, client_id: p.client_id, kind: p.kind})
     |> Repo.all()

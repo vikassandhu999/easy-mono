@@ -1,6 +1,7 @@
 defmodule Easy.Landing.LandingPage do
   use Ecto.Schema
 
+  alias Easy.LandingApplicationQuestions
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -18,6 +19,7 @@ defmodule Easy.Landing.LandingPage do
 
   schema "landing_pages" do
     field :slug, :string
+    field :revision, :integer, default: 1
     field :template, Ecto.Enum, values: @templates
     field :eyebrow, :string
     field :headline, :string
@@ -30,7 +32,10 @@ defmodule Easy.Landing.LandingPage do
     field :status, Ecto.Enum, values: @statuses, default: :draft
 
     belongs_to :business, Orgs.Business
-    has_many :programs, Easy.Landing.LandingProgram, preload_order: [asc: :position, asc: :id]
+
+    has_many :programs, Easy.Landing.LandingProgram,
+      where: [archived_at: nil],
+      preload_order: [asc: :position, asc: :id]
 
     timestamps(type: :utc_datetime)
   end
@@ -69,20 +74,28 @@ defmodule Easy.Landing.LandingPage do
     end
   end
 
-  @spec application_program(t(), map()) :: Easy.Landing.LandingProgram.t() | nil
+  @spec application_program(t(), map()) :: {:ok, Easy.Landing.LandingProgram.t() | nil} | {:error, Ecto.Changeset.t()}
   def application_program(%__MODULE__{programs: programs}, attrs) do
-    program_id =
-      {%{}, %{landing_program_id: Ecto.UUID}}
-      |> cast(attrs, [:landing_program_id])
-      |> get_field(:landing_program_id)
+    input = cast({%{}, %{landing_program_id: Ecto.UUID}}, attrs, [:landing_program_id])
 
-    Enum.find(programs, &(&1.id == program_id))
+    with {:ok, fields} <- apply_action(input, :insert) do
+      find_application_program(programs, Map.get(fields, :landing_program_id), input)
+    end
+  end
+
+  defp find_application_program(_programs, nil, _input), do: {:ok, nil}
+
+  defp find_application_program(programs, id, input) do
+    case Enum.find(programs, &(&1.id == id)) do
+      nil -> {:error, add_error(input, :landing_program_id, "is no longer available on this page")}
+      program -> {:ok, program}
+    end
   end
 
   @spec insert_changeset(String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, attrs) do
     %__MODULE__{}
-    |> cast(attrs, @editable)
+    |> cast(attrs, @editable, empty_values: [])
     |> put_change(:business_id, business_id)
     |> validate_required([:business_id, :slug, :template, :headline, :status])
     |> common_validations()
@@ -92,17 +105,28 @@ defmodule Easy.Landing.LandingPage do
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(page, attrs) do
     page
-    |> cast(attrs, @editable)
+    |> cast(attrs, @editable, empty_values: [])
+    |> put_change(:revision, page.revision + 1)
     |> validate_required([:slug, :template, :headline, :status])
     |> common_validations()
   end
 
   defp common_validations(changeset) do
     changeset
+    |> validate_copy_lengths()
     |> update_change(:slug, &normalize_slug/1)
     |> validate_format(:slug, ~r/^[a-z0-9]+(?:-[a-z0-9]+)*$/, message: "may only contain lowercase letters, numbers and hyphens")
     |> validate_length(:slug, min: 3, max: 60)
     |> validate_length(:application_questions, max: @max_questions, message: "can have at most #{@max_questions} questions")
+    |> nonnull_collection(:application_questions)
+    |> nonnull_collection(:proof_points)
+    |> nonnull_collection(:fit_points)
+    |> validate_length(:proof_points, max: 6)
+    |> validate_length(:fit_points, max: 8)
+    |> validate_change(:proof_points, &validate_proof/2)
+    |> validate_change(:fit_points, &validate_fit/2)
+    |> LandingApplicationQuestions.validate_questions()
+    |> validate_format(:hero_image_url, ~r/^https?:\/\/[^\s]+$/i, message: "must be an http or https address")
     |> unique_constraint(:slug)
     |> unique_constraint(:status,
       name: :landing_pages_one_published_per_business,
@@ -110,6 +134,35 @@ defmodule Easy.Landing.LandingPage do
     )
     |> check_constraint(:template, name: :landing_pages_template_check)
     |> check_constraint(:status, name: :landing_pages_status_check)
+  end
+
+  defp validate_copy_lengths(changeset) do
+    Enum.reduce([:eyebrow, :headline, :subheadline, :coach_intro, :hero_image_url], changeset, fn field, acc ->
+      validate_length(acc, field, max: 255)
+    end)
+  end
+
+  defp validate_proof(field, points) do
+    if Enum.all?(points, &valid_proof?/1), do: [], else: [{field, "each fact needs a value and label of up to 255 characters"}]
+  end
+
+  defp valid_proof?(point) when is_map(point) do
+    {%{}, %{label: :string, value: :string}}
+    |> cast(point, [:label, :value])
+    |> validate_required([:label, :value])
+    |> validate_length(:label, max: 255)
+    |> validate_length(:value, max: 255)
+    |> Map.fetch!(:valid?)
+  end
+
+  defp valid_proof?(_point), do: false
+
+  defp validate_fit(field, points) do
+    if Enum.all?(points, &(String.trim(&1) != "" and String.length(&1) <= 255)), do: [], else: [{field, "each point needs text of up to 255 characters"}]
+  end
+
+  defp nonnull_collection(changeset, field) do
+    if is_nil(get_field(changeset, field)), do: add_error(changeset, field, "must be a list"), else: changeset
   end
 
   defp normalize_slug(nil), do: nil

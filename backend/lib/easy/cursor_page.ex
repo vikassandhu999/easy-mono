@@ -26,7 +26,7 @@ defmodule Easy.CursorPage do
 
   defp after_position(query, {inserted_at, id}) do
     from(row in query,
-      where: fragment("(?, ?) < (?, ?)", row.inserted_at, row.id, type(^inserted_at, :utc_datetime), type(^id, :binary_id))
+      where: fragment("(?, ?) < (?, ?)", row.inserted_at, row.id, type(^inserted_at, :utc_datetime_usec), type(^id, :binary_id))
     )
   end
 

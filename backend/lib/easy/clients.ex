@@ -4,9 +4,9 @@ defmodule Easy.Clients do
   alias Easy.Billing
   alias Easy.ClientAccess
   alias Easy.Clients.Client
-  alias Easy.Coaches
   alias Easy.Ctx
   alias Easy.Nutrition.PlanReader
+  alias Easy.Orgs.Coach
   alias Easy.Repo
   alias Easy.Training.PlanReader, as: TrainingPlanReader
 
@@ -55,14 +55,8 @@ defmodule Easy.Clients do
   @spec reassign_client(Ctx.t(), String.t(), String.t()) ::
           {:ok, Client.t()} | {:error, :not_owner | :not_found | :coach_not_active | Ecto.Changeset.t()}
   def reassign_client(%Ctx{} = ctx, client_id, coach_id) do
-    with :ok <- ensure_owner(ctx),
-         {:ok, coach} <- get_active_coach(ctx, coach_id),
-         {:ok, client} <- ClientAccess.authorize_client(ctx, client_id),
-         {:ok, updated_client} <-
-           client
-           |> Client.reassign_changeset(coach.id)
-           |> Repo.update() do
-      preload_client(updated_client)
+    with :ok <- ensure_owner(ctx) do
+      Repo.transact(fn -> reassign_to_locked_coach(ctx, client_id, coach_id) end)
     end
   end
 
@@ -75,7 +69,7 @@ defmodule Easy.Clients do
     sort = Keyword.get(opts, :sort, :newest)
     include_plans? = Keyword.get(opts, :include_plans, false)
 
-    visible = Client |> Client.for_business(ctx.business_id) |> Client.visible_to(ctx)
+    visible = Client |> Client.for_business(ctx.business_id) |> Client.visible_to(ctx) |> Client.for_assigned_coach(Keyword.get(opts, :assigned_coach_id))
 
     base =
       visible
@@ -123,7 +117,7 @@ defmodule Easy.Clients do
   end
 
   defp list_cursor_page(ctx, cursor, opts) do
-    visible = Client |> Client.for_business(ctx.business_id) |> Client.visible_to(ctx)
+    visible = Client |> Client.for_business(ctx.business_id) |> Client.visible_to(ctx) |> Client.for_assigned_coach(Keyword.get(opts, :assigned_coach_id))
     base = visible |> Client.search(Keyword.get(opts, :search, "")) |> Client.for_status(Keyword.get(opts, :status)) |> Client.for_stage(Keyword.get(opts, :stage))
     limit = Easy.CursorPage.limit(opts)
 
@@ -191,7 +185,7 @@ defmodule Easy.Clients do
   defp preload_client(%Client{} = client) do
     client =
       client
-      |> Repo.preload([:user, :business, :creator], force: true)
+      |> Repo.preload([:user, :business, :creator, assigned_coach: Coach.for_business(client.business_id)], force: true)
       |> put_expiring_flag()
 
     {:ok, client}
@@ -200,10 +194,23 @@ defmodule Easy.Clients do
   defp ensure_owner(%Ctx{owner?: true}), do: :ok
   defp ensure_owner(%Ctx{}), do: {:error, :not_owner}
 
-  defp get_active_coach(%Ctx{} = ctx, coach_id) do
-    case Coaches.get_active_coach(ctx, coach_id) do
-      {:ok, coach} -> {:ok, coach}
-      {:error, :not_found} -> {:error, :coach_not_active}
+  defp reassign_to_locked_coach(ctx, client_id, coach_id) do
+    with {:ok, coach} <- get_active_coach_for_update(ctx, coach_id),
+         {:ok, client} <- ClientAccess.authorize_client(ctx, client_id),
+         {:ok, updated_client} <- client |> Client.reassign_changeset(coach.id) |> Repo.update() do
+      preload_client(updated_client)
+    end
+  end
+
+  defp get_active_coach_for_update(%Ctx{} = ctx, coach_id) do
+    Coach
+    |> Coach.for_business(ctx.business_id)
+    |> Coach.active()
+    |> lock("FOR UPDATE")
+    |> Repo.get(coach_id)
+    |> case do
+      nil -> {:error, :coach_not_active}
+      coach -> {:ok, coach}
     end
   end
 end

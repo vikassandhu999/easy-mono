@@ -26,7 +26,7 @@ defmodule Easy.ProspectsTest do
     for field <- [:name, :phone, :email, :instagram] do
       attrs = %{name: "Applicant", email: "applicant@example.test"} |> Map.put(field, too_long)
       assert {:error, changeset} = Landing.submit_application(page.slug, attrs)
-      assert errors_on(changeset)[field] == ["should be at most 255 character(s)"]
+      assert "should be at most 255 character(s)" in errors_on(changeset)[field]
     end
 
     assert {:ok, %{count: 0}} = Prospects.list_prospects(ctx)

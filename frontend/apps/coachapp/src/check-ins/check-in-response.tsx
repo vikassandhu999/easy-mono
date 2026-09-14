@@ -129,6 +129,12 @@ function Response({id, clientId}: {id: string; clientId?: string}) {
           <FormError message="Could not refresh this response. Showing the previously loaded answers." />
         )}
       </div>
+      <Link
+        to={`${generatePath(routes.clientConversation, {clientId: person.id})}?response=${encodeURIComponent(submission.id)}`}
+        className={buttonVariants({variant: 'outline'})}
+      >
+        Discuss with client
+      </Link>
       <SubmissionAnswers submission={submission} />
       <Surface className="space-y-4">
         {submission.reviewed_at ? (

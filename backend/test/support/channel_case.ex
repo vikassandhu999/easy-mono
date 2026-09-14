@@ -27,11 +27,21 @@ defmodule Easy.ChannelCase do
   def coach_token(coach) do
     business = Repo.get!(Business, coach.business_id)
 
+    session =
+      Easy.Factory.insert(:user_session,
+        user_id: coach.user_id,
+        user: nil,
+        business_id: coach.business_id,
+        coach_id: coach.id,
+        role: :coach,
+        is_owner: business.owner_id == coach.user_id
+      )
+
     Joken.generate_and_sign!(
       Token.token_config(),
       %{
         user_id: coach.user_id,
-        session_id: Ecto.UUID.generate(),
+        session_id: session.id,
         role: "coach",
         business_id: coach.business_id,
         coach_id: coach.id,
@@ -43,11 +53,13 @@ defmodule Easy.ChannelCase do
 
   @spec client_token(Client.t()) :: String.t()
   def client_token(client) do
+    session = Easy.Factory.insert(:user_session, user_id: client.user_id, user: nil, business_id: client.business_id, role: :client)
+
     Joken.generate_and_sign!(
       Token.token_config(),
       %{
         user_id: client.user_id,
-        session_id: Ecto.UUID.generate(),
+        session_id: session.id,
         role: "client",
         business_id: client.business_id
       },

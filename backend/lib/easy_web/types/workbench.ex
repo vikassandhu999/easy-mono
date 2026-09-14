@@ -201,13 +201,53 @@ defmodule EasyWeb.Types.Workbench do
 
   @type list_query :: %{
           optional(:offset) => integer(),
+          optional(:cursor) => String.t(),
+          optional(:search) => String.t(),
           optional(:limit) => integer()
         }
 
   @type programming_query :: %{
           optional(:offset) => integer(),
+          optional(:cursor) => String.t(),
+          optional(:search) => String.t(),
           optional(:limit) => integer(),
           optional(:service) => :all | :training | :nutrition
+        }
+
+  @type onboarding_page :: %{
+          required(:data) => [EasyWeb.Types.WorkbenchOnboardingQueueItem.t()],
+          required(:count) => non_neg_integer(),
+          required(:next_cursor) => String.t() | nil
+        }
+
+  @type programming_page :: %{
+          required(:data) => [EasyWeb.Types.WorkbenchProgrammingQueueItem.t()],
+          required(:count) => non_neg_integer(),
+          required(:next_cursor) => String.t() | nil
+        }
+
+  @type expiring_page :: %{
+          required(:data) => [EasyWeb.Types.WorkbenchExpiringQueueItem.t()],
+          required(:count) => non_neg_integer(),
+          required(:next_cursor) => String.t() | nil
+        }
+
+  @type quiet_page :: %{
+          required(:data) => [EasyWeb.Types.WorkbenchQuietQueueItem.t()],
+          required(:count) => non_neg_integer(),
+          required(:next_cursor) => String.t() | nil
+        }
+
+  @type check_in_page :: %{
+          required(:data) => [EasyWeb.Types.WorkbenchCheckInQueueItem.t()],
+          required(:count) => non_neg_integer(),
+          required(:next_cursor) => String.t() | nil
+        }
+
+  @type replies_page :: %{
+          required(:data) => [EasyWeb.Types.WorkbenchRepliesQueueItem.t()],
+          required(:count) => non_neg_integer(),
+          required(:next_cursor) => String.t() | nil
         }
 
   @type snooze :: %{

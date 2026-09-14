@@ -1,4 +1,5 @@
 import type {TrainingPlan, TrainingPlanPlannedSet} from '../api/training-plans';
+import {ExercisePreview} from './exercise-preview';
 
 export function TrainingPlanPreview({plan}: {plan: TrainingPlan}) {
   return (
@@ -35,6 +36,10 @@ export function TrainingPlanPreview({plan}: {plan: TrainingPlan}) {
                 aria-label={element.exercise.name}
               >
                 <h3 className="break-words font-medium">{element.exercise.name}</h3>
+                <ExercisePreview
+                  id={element.exercise_id}
+                  name={element.exercise.name}
+                />
                 {element.planned_sets.length === 0 && (
                   <p className="text-sm text-muted-foreground">No sets prescribed.</p>
                 )}

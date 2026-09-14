@@ -104,8 +104,9 @@ defmodule EasyWeb.Coaches.ProfileControllerTest do
     end
 
     test "updates business name in the same call" do
-      business = insert(:business, name: "Old Business")
-      coach = insert(:coach, business: business)
+      owner = insert(:user)
+      business = insert(:business, owner: owner, name: "Old Business")
+      coach = insert(:coach, business: business, user: owner)
 
       conn =
         build_conn()
@@ -123,6 +124,66 @@ defmodule EasyWeb.Coaches.ProfileControllerTest do
       # Verify in DB
       reloaded = Easy.Repo.get!(Easy.Orgs.Business, business.id)
       assert reloaded.name == "New Business Name"
+    end
+
+    test "rejects mixed personal and business edits from a trainer without partial updates" do
+      business = insert(:business, name: "Original")
+      trainer = insert(:coach, business: business, first_name: "Before")
+
+      conn =
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> authenticate_coach(trainer)
+        |> patch("/v1/coach/me", %{"first_name" => "After", "business_name" => "Changed"})
+
+      assert json_response(conn, 403)
+      assert Easy.Repo.get!(Easy.Orgs.Coach, trainer.id).first_name == "Before"
+      assert Easy.Repo.get!(Easy.Orgs.Business, business.id).name == "Original"
+    end
+
+    test "treats a null whatsapp number as a business edit for trainer authorization" do
+      business = insert(:business, whatsapp_number: "+91 99999 11111")
+      trainer = insert(:coach, business: business)
+
+      conn =
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> authenticate_coach(trainer)
+        |> patch("/v1/coach/me", %{"whatsapp_number" => nil})
+
+      assert json_response(conn, 403)
+      assert Easy.Repo.get!(Easy.Orgs.Business, business.id).whatsapp_number == "+91 99999 11111"
+    end
+
+    test "rejects a body business target" do
+      coach = insert(:coach)
+      foreign_business = insert(:business)
+
+      conn =
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> authenticate_coach(coach)
+        |> patch("/v1/coach/me", %{"business_id" => foreign_business.id, "first_name" => "Attempted foreign update"})
+
+      assert json_response(conn, 422)
+      assert Easy.Repo.get!(Easy.Orgs.Coach, coach.id).first_name == coach.first_name
+      assert Easy.Repo.get!(Easy.Orgs.Business, foreign_business.id).name == foreign_business.name
+    end
+
+    test "rolls back the personal edit when the business edit is invalid" do
+      owner = insert(:user)
+      business = insert(:business, owner: owner, name: "Original")
+      coach = insert(:coach, business: business, user: owner, first_name: "Before")
+
+      conn =
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> authenticate_coach(coach)
+        |> patch("/v1/coach/me", %{"first_name" => "After", "business_name" => nil})
+
+      assert json_response(conn, 422)
+      assert Easy.Repo.get!(Easy.Orgs.Coach, coach.id).first_name == "Before"
+      assert Easy.Repo.get!(Easy.Orgs.Business, business.id).name == "Original"
     end
 
     test "partial update works (only phone)" do

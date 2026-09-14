@@ -1,8 +1,8 @@
 import {Plus} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {Controller, FormProvider, useFieldArray, useForm, useWatch} from 'react-hook-form';
-import {useBeforeUnload, useBlocker, useNavigate, useParams} from 'react-router-dom';
-import {errorMessage} from '../api/client';
+import {generatePath, Link, useBeforeUnload, useBlocker, useNavigate, useParams} from 'react-router-dom';
+import {ApiError, errorMessage} from '../api/client';
 import {
   type FormTemplate,
   type FormTemplateCreate,
@@ -11,7 +11,7 @@ import {
   useSetDefaultIntake,
 } from '../api/forms';
 import {routes} from '../routes';
-import {Button} from '../ui/button';
+import {Button, buttonVariants} from '../ui/button';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FormError} from '../ui/form-error';
 import {setFormError} from '../ui/form-errors';
@@ -72,27 +72,40 @@ function ExistingFormEditor({id}: {id: string}) {
       </Page>
     );
   }
-  return <Editor template={query.data?.data ?? initialTemplate} />;
+  return (
+    <>
+      {query.isError && (
+        <div className="mb-4 space-y-3">
+          <FormError message="Could not refresh this form. Your draft is still here." />
+          <Button
+            variant="outline"
+            onPress={() => {
+              query.refetch();
+            }}
+          >
+            Retry form
+          </Button>
+        </div>
+      )}
+      <Editor template={query.data?.data ?? initialTemplate} />
+    </>
+  );
 }
 
 function Editor({template}: {template: FormTemplate | undefined}) {
   const navigate = useNavigate();
-  const {to: listLocation} = useListLocation(routes.forms);
+  const {to: listLocation, state: listState} = useListLocation(routes.forms);
   const save = useSaveFormTemplate();
   const setDefault = useSetDefaultIntake();
   const saved = useRef(false);
+  const [revision, setRevision] = useState(template?.revision);
+  const [stale, setStale] = useState(false);
+  const [reload, setReload] = useState(false);
+  const query = useFormTemplate(template?.id);
   const errorSummary = useRef<HTMLDivElement>(null);
   const form = useForm<FormTemplateCreate>({
     defaultValues: template
-      ? {
-          name: template.name,
-          purpose: template.purpose,
-          sections: template.sections.map((section) => ({
-            ...section,
-            title: section.title ?? '',
-            questions: section.questions.map((question) => ({...question, required: question.required ?? false})),
-          })),
-        }
+      ? editableForm(template)
       : {name: '', purpose: 'check_in', sections: [{title: '', questions: [newQuestion()]}]},
   });
   const sections = useFieldArray({control: form.control, name: 'sections', keyName: '_key'});
@@ -110,16 +123,16 @@ function Editor({template}: {template: FormTemplate | undefined}) {
   }, [form.formState.errors.root]);
   const pending = form.formState.isSubmitting || setDefault.isPending;
   const dirty = form.formState.isDirty;
-  const blocker = useBlocker(useCallback(() => dirty && !saved.current, [dirty]));
+  const blocker = useBlocker(useCallback(() => (dirty || pending) && !saved.current, [dirty, pending]));
   useBeforeUnload(
     useCallback(
       (event) => {
-        if (dirty && !saved.current) {
+        if ((dirty || pending) && !saved.current) {
           event.preventDefault();
           event.returnValue = '';
         }
       },
-      [dirty],
+      [dirty, pending],
     ),
   );
   const hasService = values.sections?.some((section) =>
@@ -132,10 +145,15 @@ function Editor({template}: {template: FormTemplate | undefined}) {
       return;
     }
     try {
-      await save.mutateAsync({...(template ? {id: template.id} : {}), body: {...body, name: body.name.trim()}});
+      await save.mutateAsync({
+        ...(template ? {id: template.id} : {}),
+        ...(revision ? {expectedRevision: revision} : {}),
+        body: {...body, name: body.name.trim()},
+      });
       saved.current = true;
       navigate(listLocation, {state: {saved: body.name.trim()}});
     } catch (error) {
+      setStale(error instanceof ApiError && error.code === 'stale_revision');
       setFormError(error, "We couldn't save your form. Your changes are still here. Please try again.", form.setError, [
         'name',
       ]);
@@ -147,6 +165,17 @@ function Editor({template}: {template: FormTemplate | undefined}) {
         title={template ? 'Edit form' : 'Create form'}
         description="Build a form that helps you understand your client."
         back={{to: listLocation, label: 'Back to forms'}}
+        actions={
+          template && (
+            <Link
+              to={generatePath(routes.manageForm, {id: template.id})}
+              state={listState}
+              className={buttonVariants({variant: 'outline'})}
+            >
+              Manage form
+            </Link>
+          )
+        }
       />
       <Dialog
         isOpen={blocker.state === 'blocked'}
@@ -255,10 +284,11 @@ function Editor({template}: {template: FormTemplate | undefined}) {
                     variant="outline"
                     className="w-full"
                     isPending={setDefault.isPending}
-                    isDisabled={dirty || pending}
+                    isDisabled={dirty || pending || stale || template.revision !== revision}
                     onPress={async () => {
                       try {
-                        await setDefault.mutateAsync(template.id);
+                        const result = await setDefault.mutateAsync(template);
+                        setRevision(result.data.revision);
                       } catch {
                         /* Mutation error is shown below. */
                       }
@@ -311,6 +341,18 @@ function Editor({template}: {template: FormTemplate | undefined}) {
             </Button>
           </div>
           <div className="lg:col-span-2">
+            {template && (stale || template.revision !== revision) && (
+              <div className="mb-5 space-y-3">
+                <FormError message="This form changed elsewhere. Load the saved version before saving your draft." />
+                <Button
+                  variant="outline"
+                  isDisabled={pending}
+                  onPress={() => setReload(true)}
+                >
+                  Load saved form
+                </Button>
+              </div>
+            )}
             <div
               className="mb-4"
               ref={errorSummary}
@@ -328,7 +370,7 @@ function Editor({template}: {template: FormTemplate | undefined}) {
               <Button
                 type="submit"
                 isPending={form.formState.isSubmitting}
-                isDisabled={setDefault.isPending}
+                isDisabled={setDefault.isPending || stale || Boolean(template && template.revision !== revision)}
               >
                 Save form
               </Button>
@@ -336,6 +378,57 @@ function Editor({template}: {template: FormTemplate | undefined}) {
           </div>
         </form>
       </FormProvider>
+      <Dialog
+        isOpen={reload}
+        onOpenChange={setReload}
+        isDismissable={!query.isFetching}
+        isKeyboardDismissDisabled={query.isFetching}
+        showCloseButton={!query.isFetching}
+      >
+        <DialogHeader>
+          <DialogTitle>Replace your unsaved form?</DialogTitle>
+        </DialogHeader>
+        <div className="dialog-body space-y-5">
+          <p>Your draft will be replaced with the latest saved questions and details.</p>
+          {query.isError && <FormError message="Could not load the saved form. Your draft is still here." />}
+          <div className="flex flex-wrap gap-3">
+            <Button
+              variant="outline"
+              isDisabled={query.isFetching}
+              onPress={() => setReload(false)}
+            >
+              Keep editing
+            </Button>
+            <Button
+              isPending={query.isFetching}
+              onPress={async () => {
+                const result = await query.refetch();
+                if (result.data && !result.isError) {
+                  const current = result.data.data;
+                  form.reset(editableForm(current));
+                  setRevision(current.revision);
+                  setStale(false);
+                  setReload(false);
+                }
+              }}
+            >
+              Load latest form
+            </Button>
+          </div>
+        </div>
+      </Dialog>
     </Page>
   );
+}
+
+function editableForm(template: FormTemplate): FormTemplateCreate {
+  return {
+    name: template.name,
+    purpose: template.purpose,
+    sections: template.sections.map((section) => ({
+      ...section,
+      title: section.title ?? '',
+      questions: section.questions.map((question) => ({...question, required: question.required ?? false})),
+    })),
+  };
 }

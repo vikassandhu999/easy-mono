@@ -113,7 +113,23 @@ Check-ins navigation opens the review list across visible clients. Client Overvi
 
 ## Client activity history
 
-Client Overview links to [training history](training-history.md), with session states, recorded sets, frozen prescriptions and cursor pagination, and [nutrition history](nutrition-history.md), with a day reader, logged totals, recorded portions and meal guidance. Both preserve server-owned values, client scope and recovery. Client weight progress is next.
+Client Overview links to [training history](training-history.md), with session states, recorded sets, frozen prescriptions and cursor pagination, and [nutrition history](nutrition-history.md), with a day reader, logged totals, recorded portions and meal guidance. Both preserve server-owned values, client scope and recovery. [Client weight progress](weight-progress.md) adds the server-owned trend and cursor history.
+
+## Conversations
+
+Messages opens the server-filtered inbox, and Client Overview links to the client thread. shadcn Message, Bubble, Attachment and Message Scroller provide the conversation UI. See [the conversations brief](conversations.md) for verified history, sending and recovery flows and the remaining full-app work.
+
+## Client profile and access
+
+Client Overview → Client details provides contact, coaching services, engagement dates and weight goal editing. Access actions have separate confirmations, with expired-date recovery and pending invitation revocation. The roster filters status and stage on the server. See [the client management brief](client-management.md). Team-backed coach reassignment remains with Team; the Daily Workbench is the next coaching task.
+
+## Daily Workbench
+
+Workbench connects six server-owned queues to the completed task screens. Mobile uses a compact shadcn queue selector; desktop keeps the six choices visible. Native priority keysets, literal search, service filtering and counts stay in the backend. Snooze and task return navigation complete the session loop. See [the Workbench brief](workbench.md) for scope and verification.
+
+## Profile and business settings
+
+The account menu opens personal profile editing and owner-only business settings. Each page has one save action, changed-field patches and draft recovery. Business defaults include the weight unit and a server-validated time zone for future client invitations. Trainers can read business settings and edit their own profile. See [the settings brief](settings.md) for permission, failure-recovery and account-isolation verification. Team management follows.
 
 ## Sources
 
@@ -122,3 +138,32 @@ Client Overview links to [training history](training-history.md), with session s
 - `backend/lib/easy_web/router.ex`: protected business and coach routes.
 - [shadcn React Aria base](https://ui.shadcn.com/docs/changelog/2026-07-react-aria).
 - [React Aria forms](https://react-aria.adobe.com/forms).
+
+## Team and client reassignment
+
+The account menu opens Team for owners. Search names or email, filter by status, and open a coach to manage their invitation or access and see their assigned clients. Client details provides Change coach with active candidates and a named confirmation. Deactivation transfers clients to the owner and revokes sessions; reactivation restores eligibility without moving clients back. See [the team brief](team.md) for recovery, concurrent writes and mobile/desktop verification. Billing verification is complete, including interrupted provider work and the invitation capacity link; see the billing brief for the operator recovery path.
+
+## Coaching page and applications
+
+The account menu opens Coaching page for authoring, preview, publication and anonymous applications. Applications in the main navigation provides the server-filtered inbox, original answers, review notes/status and enrollment through the client invitation flow. The mobile and desktop journeys cover paging, concurrent edits, lost responses, intake preview and capacity recovery. The authoring and visitor audit also covers all layouts, long copy, ordering, refresh failures, stale forms and receipt recovery after an address change. See [the acquisition brief](acquisition.md) for verification. Forms lifecycle management follows as part of completing library actions.
+
+## Form lifecycle management
+
+Saved form editors now link to a dedicated management page with server usage counts, archive/restore, unused deletion and explicit/automatic intake selection. The Forms list has server-owned Active/Archived/All filters. Revision checks protect concurrent maintenance and authoring; archived forms leave new selections while existing assignments and recurring schedules continue. See [the management brief](form-management.md) for mobile/desktop recovery checks and backend verification.
+
+## Intake follow-up
+
+Onboarding clients now show intake and invitation context before activity sections. Outstanding intake has a reminder action and a compact follow-up dialog for due date/priority; dismiss and reopen explain their consequences. Status-checked writes and row locks protect concurrent client submission, and mutations refresh Workbench and client reads. See [the follow-up brief](intake-follow-up.md) for recipient/uncertain-delivery behavior and real API/browser verification.
+
+## Exercise copying and deletion
+
+Saved exercise editors offer an independent copy with a name confirmation and a quieter removal section. The server blocks deletion through the prescription foreign key; logged history survives. Interrupted copies require explicit saved-result review, while deletion can confirm absence by reading the same resource. See [the management brief](exercise-management.md) for normal and isolated mobile/desktop verification. Media editing follows.
+
+## Exercise demonstrations
+
+The exercise editor supports a photo/video demonstration and reference-photo removal with Undo. Uploading prepares the file; Save exercise applies the draft. The picker loads media when details open, and workout authoring and plan previews have an on-demand movement reader. Real storage/playback, interruption recovery and training regressions pass at both widths; see [the media brief](exercise-media.md). The next library task is food and recipe copying/deletion and completing their editable fields.
+
+
+## Food and recipe management
+
+Saved food and recipe editors open usage management with server-counted categories, cursor search and links to dependent recipes and plans. Coaches can create independent copies or delete unused items with recovery for interrupted writes. Trainer visibility and deletion protection are enforced by the API. See [the management brief](nutrition-library-management.md). The next slice completes serving-size/media authoring and recipe dietary fields.

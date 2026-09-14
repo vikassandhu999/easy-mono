@@ -22,7 +22,7 @@ config :easy, Easy.Repo,
 config :easy, EasyWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {0, 0, 0, 0}, port: 4000],
+  http: [ip: {0, 0, 0, 0}, port: String.to_integer(System.get_env("PORT") || "4000")],
   check_origin: false,
   code_reloader: true,
   debug_errors: false,
@@ -46,9 +46,13 @@ config :phoenix, :plug_init_mode, :runtime
 # Resend uses the same HTTP client in development and production.
 config :swoosh, :api_client, Swoosh.ApiClient.Req
 
-config :easy, Easy.Mailer,
-  adapter: Swoosh.Adapters.Resend,
-  api_key: System.get_env("RESEND_API_KEY", "")
+case System.get_env("RESEND_API_KEY") do
+  key when is_binary(key) and key != "" ->
+    config :easy, Easy.Mailer, adapter: Swoosh.Adapters.Resend, api_key: key
+
+  _ ->
+    config :easy, Easy.Mailer, adapter: Swoosh.Adapters.Local
+end
 
 # Authentication and JWT configuration for development
 config :easy, :jwt_secret, "dev-secret-key-minimum-32-characters-long-for-hs256"

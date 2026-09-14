@@ -8,6 +8,11 @@ import {Page, PageHeader, Surface} from '../ui/page';
 export function Exercises() {
   const [params] = useSearchParams();
   const {search} = useLocation();
+  const state: unknown = useLocation().state;
+  const deleted =
+    state && typeof state === 'object' && 'deleted' in state && typeof state.deleted === 'string'
+      ? state.deleted
+      : null;
   const query = useExercises(params.get('search')?.trim() ?? '');
   return (
     <Page>
@@ -26,6 +31,14 @@ export function Exercises() {
         }
       />
       <ListSearch label="Search exercises" />
+      {deleted && (
+        <p
+          role="status"
+          className="break-words text-sm"
+        >
+          {deleted} deleted.
+        </p>
+      )}
       <InfiniteList
         query={query}
         label="exercises"

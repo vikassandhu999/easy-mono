@@ -101,6 +101,16 @@ defmodule Easy.WorkbenchLifecycleCommunicationQueuesTest do
              ]
 
       refute fresh.id in Enum.map([intake_item, invitation_item], & &1.client.id)
+
+      assert {:ok, %{items: [cursor_first], next_cursor: cursor}} =
+               Workbench.list_onboarding_queue(owner_ctx(business), cursor: "start", limit: 1)
+
+      assert cursor_first.client.id == intake.id
+
+      assert {:ok, %{items: [cursor_second], next_cursor: nil}} =
+               Workbench.list_onboarding_queue(owner_ctx(business), cursor: cursor, limit: 1)
+
+      assert cursor_second.client.id == invitation.id
     end
 
     test "resending, completing, and dismissing drain work while pagination preserves the total" do
@@ -237,6 +247,14 @@ defmodule Easy.WorkbenchLifecycleCommunicationQueuesTest do
                  }
                ]
       end)
+
+      assert {:ok, %{items: [cursor_first], next_cursor: cursor}} =
+               Workbench.list_check_in_queue(owner_ctx(business), cursor: "start", limit: 1)
+
+      assert {:ok, %{items: [cursor_second], next_cursor: nil}} =
+               Workbench.list_check_in_queue(owner_ctx(business), cursor: cursor, limit: 1)
+
+      assert [cursor_first.submission.id, cursor_second.submission.id] == Enum.sort(Enum.map(submissions, & &1.id))
     end
 
     test "keeps count/list parity across pagination and trainer visibility" do
@@ -297,6 +315,16 @@ defmodule Easy.WorkbenchLifecycleCommunicationQueuesTest do
       assert first.waiting_message_count == 0
       assert second.conversation.id == later.id
       assert second.client_status == :active
+
+      assert {:ok, %{items: [cursor_first], next_cursor: cursor}} =
+               Workbench.list_replies_queue(owner_ctx(business), cursor: "start", limit: 1)
+
+      assert cursor_first.conversation.id == waiting.id
+
+      assert {:ok, %{items: [cursor_second], next_cursor: nil}} =
+               Workbench.list_replies_queue(owner_ctx(business), cursor: cursor, limit: 1)
+
+      assert cursor_second.conversation.id == later.id
 
       insert(:chat_message,
         conversation: waiting,

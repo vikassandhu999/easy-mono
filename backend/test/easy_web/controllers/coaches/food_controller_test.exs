@@ -517,6 +517,56 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
   end
 
   describe "GET /v1/coach/nutrition-foods/:id/impact" do
+    test "hides unassigned client plan references from trainers while owners can see them" do
+      owner_user = insert(:user)
+      business = insert(:business, owner: owner_user)
+      owner = insert(:coach, business: business, user: owner_user)
+      trainer = insert(:coach, business: business)
+      other_trainer = insert(:coach, business: business)
+      food = insert(:food, creator: trainer, business: business)
+      visible_client = insert(:client, business: business, creator: trainer, assigned_coach: trainer)
+      hidden_client = insert(:client, business: business, creator: other_trainer, assigned_coach: other_trainer)
+
+      visible_plan = insert(:plan, business: business, creator: trainer.user, client: visible_client, name: "Visible plan")
+      hidden_plan = insert(:plan, business: business, creator: other_trainer.user, client: hidden_client, name: "Hidden plan")
+      item = food_item("impact-visibility-item", food.id, %{kind: :gram, grams: 100})
+
+      assert {:ok, _} =
+               Programming.replace_menu(
+                 DataCase.trainer_ctx(trainer),
+                 visible_plan.id,
+                 visible_plan.revision,
+                 menu(visible_plan, meals: [meal_input("visible-impact-meal", "Meal", [item])])
+               )
+
+      assert {:ok, _} =
+               Programming.replace_menu(
+                 DataCase.trainer_ctx(other_trainer),
+                 hidden_plan.id,
+                 hidden_plan.revision,
+                 menu(hidden_plan, meals: [meal_input("hidden-impact-meal", "Meal", [item])])
+               )
+
+      trainer_response =
+        build_conn()
+        |> authenticate_coach(trainer)
+        |> get("/v1/coach/nutrition-foods/#{food.id}/impact")
+        |> json_response(200)
+
+      assert %{"data" => %{"client_plans" => [%{"id" => visible_plan_id, "name" => "Visible plan"}]}} = trainer_response
+      assert visible_plan_id == visible_plan.id
+      refute inspect(trainer_response) =~ hidden_plan.id
+
+      owner_response =
+        build_conn()
+        |> authenticate_coach(owner)
+        |> get("/v1/coach/nutrition-foods/#{food.id}/impact")
+        |> json_response(200)
+
+      assert %{"data" => %{"client_plans" => owner_plans}} = owner_response
+      assert MapSet.new(Enum.map(owner_plans, & &1["id"])) == MapSet.new([visible_plan.id, hidden_plan.id])
+    end
+
     test "returns recipes and plan buckets for structural usage", %{
       conn: conn,
       coach: coach,
@@ -563,6 +613,142 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
 
       conn = get(conn, "/v1/coach/nutrition-foods/#{food.id}/impact")
       assert json_response(conn, 404)
+    end
+  end
+
+  describe "GET /v1/coach/nutrition-foods/:id/usage" do
+    test "lists a food's recipe references once and returns usage metadata", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      food = insert(:food, creator: coach, business: business, name: "Yogurt")
+      recipe = insert(:recipe, creator: coach, business: business, name: "Lassi")
+
+      for {grams, position} <- Enum.with_index([100.0, 200.0]) do
+        insert(:recipe_ingredient,
+          business: business,
+          recipe: recipe,
+          food: food,
+          portion: %{kind: :gram, grams: grams},
+          position: position
+        )
+      end
+
+      template = insert(:plan, business: business, creator: coach.user, kind: :template, name: "Cut")
+      item = food_item("usage-item", food.id, %{kind: :gram, grams: 100})
+      assert {:ok, _} = Programming.replace_menu(DataCase.trainer_ctx(coach), template.id, template.revision, menu(template, meals: [meal_input("usage-meal", "Meal", [item])]))
+
+      response =
+        conn
+        |> get("/v1/coach/nutrition-foods/#{food.id}/usage", %{"kind" => "recipes", "cursor" => "start"})
+        |> json_response(200)
+
+      assert %{
+               "item" => %{"id" => food_id, "name" => "Yogurt", "read_only" => false},
+               "counts" => %{"recipes" => 1, "templates" => 1, "client_plans" => 0},
+               "delete_blocked_reason" => "in_use",
+               "count" => 1,
+               "next_cursor" => nil,
+               "data" => [
+                 %{"id" => recipe_id, "name" => "Lassi", "client_id" => nil, "kind" => "recipe", "inserted_at" => _}
+               ]
+             } = response
+
+      assert food_id == food.id
+      assert recipe_id == recipe.id
+    end
+
+    test "hides unassigned client plans while retaining their delete protection", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      food = insert(:food, creator: coach, business: business)
+      visible_client = insert(:client, business: business, creator: coach, assigned_coach: coach)
+      other_coach = insert(:coach, business: business)
+      hidden_client = insert(:client, business: business, creator: other_coach, assigned_coach: other_coach)
+
+      visible_plan = insert(:plan, business: business, creator: coach.user, client: visible_client, name: "Visible plan")
+      hidden_plan = insert(:plan, business: business, creator: other_coach.user, client: hidden_client, name: "Hidden plan")
+      item = food_item("client-usage-item", food.id, %{kind: :gram, grams: 100})
+
+      assert {:ok, _} =
+               Programming.replace_menu(
+                 DataCase.trainer_ctx(coach),
+                 visible_plan.id,
+                 visible_plan.revision,
+                 menu(visible_plan, meals: [meal_input("visible-usage-meal", "Meal", [item])])
+               )
+
+      assert {:ok, _} =
+               Programming.replace_menu(
+                 DataCase.trainer_ctx(other_coach),
+                 hidden_plan.id,
+                 hidden_plan.revision,
+                 menu(hidden_plan, meals: [meal_input("hidden-usage-meal", "Meal", [item])])
+               )
+
+      response =
+        conn
+        |> get("/v1/coach/nutrition-foods/#{food.id}/usage", %{"kind" => "client_plans", "cursor" => "start"})
+        |> json_response(200)
+
+      assert %{
+               "counts" => %{"client_plans" => 1},
+               "delete_blocked_reason" => "in_use",
+               "count" => 1,
+               "data" => [
+                 %{"id" => plan_id, "name" => "Visible plan", "client_id" => client_id, "kind" => "client_plan"}
+               ]
+             } = response
+
+      assert plan_id == visible_plan.id
+      assert client_id == visible_client.id
+      refute inspect(response) =~ hidden_plan.id
+      refute inspect(response) =~ hidden_client.id
+    end
+
+    test "does not expose another business's food", %{conn: conn} do
+      other = insert(:coach)
+      food = insert(:food, creator: other, business: other.business)
+
+      assert conn
+             |> get("/v1/coach/nutrition-foods/#{food.id}/usage", %{"cursor" => "start"})
+             |> json_response(404)
+    end
+
+    test "validates query values and reports a shared food as read-only", %{coach: coach} do
+      food = insert(:food, business: nil, creator: nil, source: :system, name: "Shared oats")
+
+      for params <- [
+            %{"cursor" => "not-a-cursor"},
+            %{"kind" => "plans"},
+            %{"limit" => "-1"},
+            %{"unknown" => "value"}
+          ] do
+        assert build_conn()
+               |> authenticate_coach(coach)
+               |> get("/v1/coach/nutrition-foods/#{food.id}/usage", params)
+               |> json_response(422)
+      end
+
+      assert %{"data" => [], "count" => 0, "next_cursor" => nil} =
+               build_conn()
+               |> authenticate_coach(coach)
+               |> get("/v1/coach/nutrition-foods/#{food.id}/usage", %{"cursor" => "start", "limit" => "101"})
+               |> json_response(200)
+
+      assert %{
+               "item" => %{"id" => food_id, "name" => "Shared oats", "read_only" => true},
+               "delete_blocked_reason" => "shared_food"
+             } =
+               build_conn()
+               |> authenticate_coach(coach)
+               |> get("/v1/coach/nutrition-foods/#{food.id}/usage", %{"cursor" => "start"})
+               |> json_response(200)
+
+      assert food_id == food.id
     end
   end
 

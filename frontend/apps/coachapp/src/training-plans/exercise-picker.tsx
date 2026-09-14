@@ -3,6 +3,7 @@ import {useEffect, useState} from 'react';
 import {type Exercise, useExercises} from '../api/exercises';
 import {Button} from '../ui/button';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
+import {ExerciseDemonstration} from '../ui/exercise-preview';
 import {InfiniteList} from '../ui/infinite-list';
 import {Input} from '../ui/input';
 export function ExercisePicker({
@@ -87,17 +88,10 @@ export function ExercisePicker({
                 {exercise.description && (
                   <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{exercise.description}</p>
                 )}
-                {(exercise.instructions || exercise.equipment.length > 0) && (
-                  <details className="mt-2 text-sm">
-                    <summary className="cursor-pointer py-2 text-muted-foreground">Exercise details</summary>
-                    {exercise.equipment.length > 0 && (
-                      <p className="mt-1">{exercise.equipment.map((item) => item.name).join(', ')}</p>
-                    )}
-                    {exercise.instructions && (
-                      <p className="mt-2 whitespace-pre-wrap text-muted-foreground">{exercise.instructions}</p>
-                    )}
-                  </details>
-                )}
+                {(exercise.instructions ||
+                  exercise.equipment.length > 0 ||
+                  exercise.media ||
+                  exercise.images.length > 0) && <PickerDetails exercise={exercise} />}
               </div>
               <Button
                 variant="outline"
@@ -198,5 +192,24 @@ export function ExercisePicker({
         </div>
       </div>
     </Dialog>
+  );
+}
+
+function PickerDetails({exercise}: {exercise: Exercise}) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <details
+      className="mt-2 text-sm"
+      onToggle={(event) => setExpanded(event.currentTarget.open)}
+    >
+      <summary className="cursor-pointer py-2 text-muted-foreground">Exercise details</summary>
+      {expanded && <ExerciseDemonstration exercise={exercise} />}
+      {exercise.equipment.length > 0 && (
+        <p className="mt-1">{exercise.equipment.map((item) => item.name).join(', ')}</p>
+      )}
+      {exercise.instructions && (
+        <p className="mt-2 whitespace-pre-wrap text-muted-foreground">{exercise.instructions}</p>
+      )}
+    </details>
   );
 }

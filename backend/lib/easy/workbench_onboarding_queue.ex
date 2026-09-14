@@ -6,6 +6,7 @@ defmodule Easy.WorkbenchOnboardingQueue do
   alias Easy.Forms.FormAssignment
   alias Easy.Forms.FormTemplate
   alias Easy.Repo
+  alias Easy.WorkbenchPage
 
   @follow_up_days 3
 
@@ -18,7 +19,7 @@ defmodule Easy.WorkbenchOnboardingQueue do
           }
           | %{code: :intake_overdue, assignment_id: String.t(), due_on: Date.t(), form_title: String.t()}
   @type item :: %{client: Client.t(), reasons: [reason()]}
-  @type page :: %{count: non_neg_integer(), items: [item()]}
+  @type page :: %{count: non_neg_integer(), items: [item()], next_cursor: String.t() | nil}
 
   @spec count(Ctx.t()) :: non_neg_integer()
   def count(%Ctx{} = ctx) do
@@ -27,41 +28,37 @@ defmodule Easy.WorkbenchOnboardingQueue do
     |> Repo.count_unique()
   end
 
-  @spec list(Ctx.t(), keyword()) :: page()
+  @spec list(Ctx.t(), keyword()) :: {:ok, page()} | {:error, :cursor_incompatible | :invalid_cursor}
   def list(%Ctx{} = ctx, opts) do
     now = DateTime.utc_now(:second)
-    facts = facts(ctx, now)
+    scope = %{"queue" => "onboarding", "search" => Keyword.get(opts, :search, "") || ""}
 
-    items =
-      facts
-      |> order_by(
-        [client, assignment],
-        asc:
-          fragment(
-            "CASE WHEN ? IS NULL THEN ? + (? * interval '1 day') ELSE ?::timestamp END",
-            client.joined_at,
-            client.invitation_sent_at,
-            ^@follow_up_days,
-            assignment.due_date
-          ),
-        asc: client.id
-      )
-      |> select([client, assignment, template], %{
-        client: client,
-        invitation: is_nil(client.joined_at),
-        assignment_id: assignment.id,
-        due_on: assignment.due_date,
-        form_title: template.name,
-        sent_at: client.invitation_sent_at
-      })
-      |> Easy.Utils.paginate(opts)
-      |> Repo.all()
-      |> Enum.map(&to_item/1)
-
-    %{count: Repo.count_unique(facts), items: items}
+    with {:ok, mode} <- WorkbenchPage.mode(opts, scope),
+         {:ok, position} <- decode_position(mode) do
+      facts = facts(ctx, now, opts[:search])
+      count = Repo.count_unique(facts)
+      {:ok, page(mode, facts, opts, position, count, scope)}
+    end
   end
 
-  defp facts(%Ctx{} = ctx, now) do
+  defp page(:legacy, facts, opts, _position, count, _scope) do
+    items = facts |> ordered() |> Easy.Utils.paginate(opts) |> Repo.all() |> Enum.map(&to_item/1)
+    %{count: count, items: items, next_cursor: nil}
+  end
+
+  defp page({:cursor, _cursor}, facts, opts, position, count, scope) do
+    limit = WorkbenchPage.limit(opts)
+
+    facts
+    |> after_position(position)
+    |> ordered()
+    |> limit(^(limit + 1))
+    |> Repo.all()
+    |> WorkbenchPage.finish(limit, count, scope, &position_of/1)
+    |> Map.update!(:items, fn items -> Enum.map(items, &to_item/1) end)
+  end
+
+  defp facts(%Ctx{} = ctx, now, search \\ nil) do
     today = DateTime.to_date(now)
     invitation_cutoff = DateTime.add(now, -@follow_up_days, :day)
 
@@ -69,6 +66,7 @@ defmodule Easy.WorkbenchOnboardingQueue do
       Client
       |> Client.for_business(ctx.business_id)
       |> Client.visible_to(ctx)
+      |> Client.search(search)
 
     from(client in visible_clients,
       left_join: assignment in FormAssignment,
@@ -83,6 +81,77 @@ defmodule Easy.WorkbenchOnboardingQueue do
       where: ^onboarding_member(invitation_cutoff, today)
     )
   end
+
+  defp ordered(query) do
+    query
+    |> order_by(
+      [client, assignment],
+      asc:
+        fragment(
+          "CASE WHEN ? IS NULL THEN ? + (? * interval '1 day') ELSE ?::timestamp END",
+          client.joined_at,
+          client.invitation_sent_at,
+          ^@follow_up_days,
+          assignment.due_date
+        ),
+      asc: client.id
+    )
+    |> select([client, assignment, template], %{
+      client: client,
+      invitation: is_nil(client.joined_at),
+      assignment_id: assignment.id,
+      due_on: assignment.due_date,
+      form_title: template.name,
+      sent_at: client.invitation_sent_at,
+      sort_due_at:
+        fragment(
+          "CASE WHEN ? IS NULL THEN ? + (? * interval '1 day') ELSE ?::timestamp END",
+          client.joined_at,
+          client.invitation_sent_at,
+          ^@follow_up_days,
+          assignment.due_date
+        )
+    })
+  end
+
+  defp decode_position(:legacy), do: {:ok, nil}
+  defp decode_position({:cursor, nil}), do: {:ok, nil}
+
+  defp decode_position({:cursor, %{"due_at" => due_at, "id" => id}}) when is_binary(due_at) and is_binary(id) do
+    with {:ok, due_at} <- NaiveDateTime.from_iso8601(due_at),
+         {:ok, id} <- Ecto.UUID.cast(id) do
+      {:ok, %{due_at: due_at, id: id}}
+    else
+      _ -> {:error, :invalid_cursor}
+    end
+  end
+
+  defp decode_position(_mode), do: {:error, :invalid_cursor}
+
+  defp after_position(query, nil), do: query
+
+  defp after_position(query, %{due_at: due_at, id: id}) do
+    where(
+      query,
+      [client, assignment],
+      fragment(
+        "CASE WHEN ? IS NULL THEN ? + (? * interval '1 day') ELSE ?::timestamp END",
+        client.joined_at,
+        client.invitation_sent_at,
+        ^@follow_up_days,
+        assignment.due_date
+      ) > ^due_at or
+        (fragment(
+           "CASE WHEN ? IS NULL THEN ? + (? * interval '1 day') ELSE ?::timestamp END",
+           client.joined_at,
+           client.invitation_sent_at,
+           ^@follow_up_days,
+           assignment.due_date
+         ) == ^due_at and client.id > ^id)
+    )
+  end
+
+  defp position_of(row), do: %{"due_at" => NaiveDateTime.to_iso8601(row.sort_due_at), "id" => row.client.id}
 
   defp onboarding_member(invitation_cutoff, today) do
     dynamic(

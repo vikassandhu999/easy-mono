@@ -50,9 +50,10 @@ defmodule Easy.Orgs.Business do
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(business, attrs) do
     business
-    |> cast(attrs, [:name, :about, :whatsapp_number, :default_weight_unit])
+    |> cast(attrs, [:name, :about, :whatsapp_number, :default_weight_unit, :timezone])
     |> validate_profile()
     |> validate_length(:whatsapp_number, max: 255, count: :codepoints)
+    |> LocalCalendar.validate_timezone()
   end
 
   @spec dashboard_setup_input(map()) :: {:ok, map()} | {:error, Ecto.Changeset.t()}

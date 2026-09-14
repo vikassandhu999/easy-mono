@@ -38,6 +38,13 @@ export async function call<T>(request: Promise<{data?: T; error?: unknown; respo
   return data;
 }
 
+export async function callEmpty(request: Promise<{error?: unknown; response: Response}>): Promise<void> {
+  const {error, response} = await request;
+  if (!response.ok) {
+    throw new ApiError(response.status, error);
+  }
+}
+
 const baseUrl = import.meta.env.VITE_API_BASE_URL || window.location.origin;
 export const publicClient = createClient<paths>({baseUrl});
 export const client = createClient<paths>({baseUrl});

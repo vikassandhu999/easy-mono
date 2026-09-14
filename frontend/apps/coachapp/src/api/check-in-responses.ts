@@ -1,6 +1,6 @@
 import {useInfiniteQuery, useMutation, useQuery} from '@tanstack/react-query';
 import {call, client} from './client';
-import {checkInResponseKeys, formKeys} from './keys';
+import {checkInResponseKeys, formKeys, workbenchKeys} from './keys';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
 import type {paths} from './schema';
@@ -37,6 +37,7 @@ export function useCheckInResponse(id: string) {
 export function useReviewCheckIn(id: string) {
   async function refresh() {
     await Promise.all([
+      queryClient.invalidateQueries({queryKey: workbenchKeys.all}),
       queryClient.invalidateQueries({queryKey: checkInResponseKeys.all}),
       queryClient.invalidateQueries({queryKey: formKeys.all}),
     ]);

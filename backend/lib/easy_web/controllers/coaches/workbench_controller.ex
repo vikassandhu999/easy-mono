@@ -3,26 +3,20 @@ defmodule EasyWeb.Coaches.WorkbenchController do
 
   alias Easy.Workbench
   alias EasyWeb.Types.Workbench, as: WorkbenchType
-  alias EasyWeb.Types.WorkbenchCheckInQueueItem
-  alias EasyWeb.Types.WorkbenchExpiringQueueItem
-  alias EasyWeb.Types.WorkbenchOnboardingQueueItem
-  alias EasyWeb.Types.WorkbenchProgrammingQueueItem
-  alias EasyWeb.Types.WorkbenchQuietQueueItem
-  alias EasyWeb.Types.WorkbenchRepliesQueueItem
 
   typed(:index, ok: {200, data(WorkbenchType.t())})
-  typed(:onboarding, query: WorkbenchType.list_query(), ok: {200, page(WorkbenchOnboardingQueueItem.t())})
+  typed(:onboarding, query: WorkbenchType.list_query(), ok: {200, WorkbenchType.onboarding_page()})
 
   typed(:programming,
     query: WorkbenchType.programming_query(),
-    ok: {200, page(WorkbenchProgrammingQueueItem.t())}
+    ok: {200, WorkbenchType.programming_page()}
   )
 
-  typed(:expiring, query: WorkbenchType.list_query(), ok: {200, page(WorkbenchExpiringQueueItem.t())})
-  typed(:quiet, query: WorkbenchType.list_query(), ok: {200, page(WorkbenchQuietQueueItem.t())})
-  typed(:check_ins, query: WorkbenchType.list_query(), ok: {200, page(WorkbenchCheckInQueueItem.t())})
-  typed(:replies, query: WorkbenchType.list_query(), ok: {200, page(WorkbenchRepliesQueueItem.t())})
-  typed(:snooze, path: %{id: String.t()}, body: WorkbenchType.snooze(), ok: {204, nil})
+  typed(:expiring, query: WorkbenchType.list_query(), ok: {200, WorkbenchType.expiring_page()})
+  typed(:quiet, query: WorkbenchType.list_query(), ok: {200, WorkbenchType.quiet_page()})
+  typed(:check_ins, query: WorkbenchType.list_query(), ok: {200, WorkbenchType.check_in_page()})
+  typed(:replies, query: WorkbenchType.list_query(), ok: {200, WorkbenchType.replies_page()})
+  typed(:snooze, path: %{id: Ecto.UUID.t()}, body: WorkbenchType.snooze(), ok: {204, nil})
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
@@ -34,7 +28,7 @@ defmodule EasyWeb.Coaches.WorkbenchController do
   @spec onboarding(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def onboarding(conn, _params) do
     with {:ok, page} <- Workbench.list_onboarding_queue(conn.assigns.ctx, pagination_opts(conn.query_params)) do
-      ok(conn, %{data: page.items, count: page.count})
+      ok(conn, %{data: page.items, count: page.count, next_cursor: Map.get(page, :next_cursor)})
     end
   end
 
@@ -43,35 +37,35 @@ defmodule EasyWeb.Coaches.WorkbenchController do
     opts = Keyword.put(pagination_opts(conn.query_params), :service, conn.query_params["service"] || :all)
 
     with {:ok, page} <- Workbench.list_programming_queue(conn.assigns.ctx, opts) do
-      ok(conn, %{data: page.items, count: page.count})
+      ok(conn, %{data: page.items, count: page.count, next_cursor: Map.get(page, :next_cursor)})
     end
   end
 
   @spec expiring(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def expiring(conn, _params) do
     with {:ok, page} <- Workbench.list_expiring_queue(conn.assigns.ctx, pagination_opts(conn.query_params)) do
-      ok(conn, %{data: page.items, count: page.count})
+      ok(conn, %{data: page.items, count: page.count, next_cursor: Map.get(page, :next_cursor)})
     end
   end
 
   @spec quiet(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def quiet(conn, _params) do
     with {:ok, page} <- Workbench.list_quiet_queue(conn.assigns.ctx, pagination_opts(conn.query_params)) do
-      ok(conn, %{data: page.items, count: page.count})
+      ok(conn, %{data: page.items, count: page.count, next_cursor: Map.get(page, :next_cursor)})
     end
   end
 
   @spec check_ins(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def check_ins(conn, _params) do
     with {:ok, page} <- Workbench.list_check_in_queue(conn.assigns.ctx, pagination_opts(conn.query_params)) do
-      ok(conn, %{data: page.items, count: page.count})
+      ok(conn, %{data: page.items, count: page.count, next_cursor: Map.get(page, :next_cursor)})
     end
   end
 
   @spec replies(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def replies(conn, _params) do
     with {:ok, page} <- Workbench.list_replies_queue(conn.assigns.ctx, pagination_opts(conn.query_params)) do
-      ok(conn, %{data: page.items, count: page.count})
+      ok(conn, %{data: page.items, count: page.count, next_cursor: Map.get(page, :next_cursor)})
     end
   end
 
@@ -88,7 +82,7 @@ defmodule EasyWeb.Coaches.WorkbenchController do
   end
 
   defp pagination_opts(query) do
-    [offset: query["offset"], limit: query["limit"]]
+    [offset: query["offset"], limit: query["limit"], cursor: query["cursor"], search: query["search"]]
     |> Enum.reject(fn {_key, value} -> is_nil(value) end)
   end
 end

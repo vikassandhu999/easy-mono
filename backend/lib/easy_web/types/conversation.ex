@@ -25,6 +25,15 @@ defmodule EasyWeb.Types.Conversation do
 
   @type mark_handled :: %{required(:expected_last_message_at) => DateTime.t()}
 
+  @type mark_read_query :: %{optional(:through) => DateTime.t()}
+
+  @type inbox_query :: %{
+          optional(:cursor) => String.t(),
+          optional(:limit) => pos_integer(),
+          optional(:search) => String.t(),
+          optional(:status) => :all | :waiting | :unread
+        }
+
   @spec format(ChatConversation.t()) :: t()
   def format(%ChatConversation{client: %Client{} = client} = conversation) do
     %{
@@ -40,4 +49,14 @@ defmodule EasyWeb.Types.Conversation do
       updated_at: conversation.updated_at
     }
   end
+end
+
+defmodule EasyWeb.Types.ConversationInbox do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:data) => [EasyWeb.Types.Conversation.t()],
+          required(:count) => non_neg_integer(),
+          required(:next_cursor) => String.t() | nil
+        }
 end

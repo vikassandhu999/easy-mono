@@ -3,13 +3,19 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
 
   alias Easy.Forms.Assignments
   alias Easy.Forms.Submissions
-  alias EasyWeb.Types.FormAssignment
+  alias EasyWeb.Types.{FormAssignment, FormSubmissionDetail}
 
   typed(:intake, ok: {200, data(FormAssignment.t() | nil)})
   typed(:index, ok: {200, data([FormAssignment.t()])})
   typed(:create, body: FormAssignment.create(), ok: {201, data(FormAssignment.t())})
   typed(:update, body: FormAssignment.update(), ok: {200, data(FormAssignment.t())})
   typed(:submissions, ok: {200, data([FormAssignment.submission()])})
+
+  typed(:submission,
+    path: %{client_id: Ecto.UUID.t(), id: Ecto.UUID.t()},
+    ok: {200, data(FormSubmissionDetail.t())}
+  )
+
   typed(:remind, ok: {204, nil})
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -46,6 +52,14 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
 
     with {:ok, submissions} <- Submissions.list(ctx, id) do
       ok(conn, %{data: submissions})
+    end
+  end
+
+  @spec submission(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def submission(conn, _params) do
+    with {:ok, submission} <-
+           Submissions.get_for_client(conn.assigns.ctx, conn.path_params["client_id"], conn.path_params["id"]) do
+      ok(conn, %{data: submission})
     end
   end
 

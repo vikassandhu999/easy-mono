@@ -4,19 +4,35 @@ defmodule EasyWeb.Coaches.TeamController do
   alias Easy.Coaches
   alias Easy.CoachInvitations
   alias EasyWeb.Types.TeamMember
+  alias EasyWeb.Types.TeamMemberIndex
 
-  typed(:index, query: TeamMember.list_query(), ok: {200, data([TeamMember.t()])})
+  typed(:index, query: TeamMember.list_query(), ok: {200, TeamMemberIndex.t()})
+  typed(:show, path: %{id: Ecto.UUID.t()}, ok: {200, data(TeamMember.t())})
   typed(:invite, body: TeamMember.invite(), ok: {200, data(TeamMember.t())})
-  typed(:resend_invite, ok: {200, data(TeamMember.t())})
-  typed(:revoke_invite, ok: {200, data(TeamMember.t())})
-  typed(:deactivate, ok: {200, data(TeamMember.t())})
-  typed(:reactivate, ok: {200, data(TeamMember.t())})
+  typed(:resend_invite, path: %{id: Ecto.UUID.t()}, ok: {200, data(TeamMember.t())})
+  typed(:revoke_invite, path: %{id: Ecto.UUID.t()}, ok: {200, data(TeamMember.t())})
+  typed(:deactivate, path: %{id: Ecto.UUID.t()}, ok: {200, data(TeamMember.t())})
+  typed(:reactivate, path: %{id: Ecto.UUID.t()}, ok: {200, data(TeamMember.t())})
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
-    with {:ok, %{coaches: coaches, owner_id: owner_id}} <- Coaches.list_team(conn.assigns.ctx) do
-      team = Enum.map(coaches, &team_member(&1, &1.user_id == owner_id))
-      ok(conn, %{data: team})
+    opts = [
+      cursor: conn.query_params["cursor"],
+      limit: conn.query_params["limit"],
+      search: conn.query_params["search"],
+      status: conn.query_params["status"]
+    ]
+
+    with {:ok, page} <- Coaches.list_team(conn.assigns.ctx, opts) do
+      team = Enum.map(page.coaches, &team_member(&1, &1.user_id == page.owner_id))
+      ok(conn, %{data: team, count: page.count, next_cursor: page.next_cursor})
+    end
+  end
+
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def show(conn, _params) do
+    with {:ok, coach} <- Coaches.get_team_member(conn.assigns.ctx, conn.path_params["id"]) do
+      ok(conn, %{data: team_member(coach, coach.user_id == conn.assigns.ctx.user_id)})
     end
   end
 

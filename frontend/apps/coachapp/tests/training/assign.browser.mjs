@@ -1,7 +1,8 @@
 import {mkdir} from 'node:fs/promises';
 import {chromium, expect, request} from '@playwright/test';
 
-const api = await request.newContext({baseURL: 'http://localhost:4000'});
+const appURL = process.env.COACH_APP_URL || 'http://localhost:2022';
+const api = await request.newContext({baseURL: process.env.COACH_API_URL || 'http://localhost:4000'});
 const browser = await chromium.launch();
 const errors = [];
 await mkdir('tests/training/artifacts', {recursive: true});
@@ -116,7 +117,7 @@ try {
     const clientPath = `/clients/${person.id}`;
     const choosePath = `${clientPath}/training-plans/assign`;
     const assignedPath = `/v1/coach/clients/${person.id}/training-plans`;
-    const context = await browser.newContext({baseURL: 'http://localhost:2022', viewport: {width, height: 900}});
+    const context = await browser.newContext({baseURL: appURL, viewport: {width, height: 900}});
     context.setDefaultTimeout(15000);
     const page = await context.newPage();
     page.on('pageerror', (error) => errors.push(error.message));
@@ -341,7 +342,7 @@ try {
       await expect(page.getByText('Invite your first client', {exact: true})).toBeVisible();
       finish.resolve();
       await page.waitForLoadState('networkidle');
-      await expect(page).toHaveURL('http://localhost:2022/');
+      await expect(page).toHaveURL(`${appURL}/`);
       expect(
         await page.evaluate(async (id) => {
           const {queryClient} = await import('/src/api/query-client.ts');

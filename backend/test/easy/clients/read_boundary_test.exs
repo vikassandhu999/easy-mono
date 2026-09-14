@@ -328,6 +328,18 @@ defmodule Easy.Clients.ReadBoundaryTest do
       assert {:ok, client} = ClientInvitations.invite(trainer_ctx(trainer), params_for(:client_attrs))
       assert client.assigned_coach_id == trainer.id
     end
+
+    test "new invitations inherit the current business timezone without changing earlier clients" do
+      business = insert(:business, timezone: "Asia/Kolkata")
+      trainer = insert(:coach, business: business)
+      earlier = insert(:client, business: business, creator: trainer, timezone: "Asia/Kolkata")
+
+      {:ok, _business} = Easy.Orgs.update_business(owner_ctx(business), %{timezone: "Europe/London"})
+
+      assert {:ok, invited} = ClientInvitations.invite(trainer_ctx(trainer), params_for(:client_attrs))
+      assert invited.timezone == "Europe/London"
+      assert Repo.get!(Client, earlier.id).timezone == "Asia/Kolkata"
+    end
   end
 
   describe "reassign_client/3" do

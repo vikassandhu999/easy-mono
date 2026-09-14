@@ -14,7 +14,9 @@ export function Forms() {
   const search = params.get('search')?.trim() ?? '';
   const selectedPurpose = params.get('purpose');
   const purpose = selectedPurpose === 'intake' || selectedPurpose === 'check_in' ? selectedPurpose : undefined;
-  const query = useFormTemplates({search, ...(purpose ? {purpose} : {})});
+  const selectedStatus = params.get('status');
+  const status = selectedStatus === 'all' ? undefined : selectedStatus === 'archived' ? 'archived' : 'active';
+  const query = useFormTemplates({search, ...(purpose ? {purpose} : {}), ...(status ? {status} : {})});
   const location = useLocation();
   const notice: unknown = location.state;
   return (
@@ -41,7 +43,15 @@ export function Forms() {
           {notice.saved} saved.
         </p>
       )}
-      <div className="grid gap-4 sm:grid-cols-[1fr_12rem]">
+      {notice !== null && typeof notice === 'object' && 'deleted' in notice && typeof notice.deleted === 'string' && (
+        <p
+          role="status"
+          className="rounded-xl bg-muted px-4 py-3 text-sm"
+        >
+          {notice.deleted} deleted.
+        </p>
+      )}
+      <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem_10rem]">
         <ListSearch label="Search forms" />
         <div className="grid gap-2">
           <label
@@ -69,6 +79,28 @@ export function Forms() {
             <SelectItem id="check_in">Check-in</SelectItem>
           </SelectField>
         </div>
+        <div className="grid gap-2">
+          <label
+            id="form-status-filter-label"
+            htmlFor="form-status-filter"
+            className="text-sm font-medium"
+          >
+            Status
+          </label>
+          <SelectField
+            id="form-status-filter"
+            value={status ?? 'all'}
+            onChange={(value) => {
+              const next = new URLSearchParams(params);
+              next.set('status', value);
+              setParams(next);
+            }}
+          >
+            <SelectItem id="active">Active</SelectItem>
+            <SelectItem id="archived">Archived</SelectItem>
+            <SelectItem id="all">All statuses</SelectItem>
+          </SelectField>
+        </div>
       </div>
       <InfiniteList
         query={query}
@@ -76,11 +108,19 @@ export function Forms() {
         singular="form"
         empty={
           <Surface className="space-y-2 py-10 text-center">
-            <h2 className="section-title">{search || purpose ? 'No matching forms' : 'Create your first form'}</h2>
+            <h2 className="section-title">
+              {status === 'archived'
+                ? 'No archived forms'
+                : search || purpose
+                  ? 'No matching forms'
+                  : 'Create your first form'}
+            </h2>
             <p className="text-sm text-muted-foreground">
-              {search || purpose
-                ? 'Try a different name or purpose.'
-                : 'Prepare an intake or check-in for your clients.'}
+              {status === 'archived'
+                ? 'Archived forms stay available here to review or restore.'
+                : search || purpose
+                  ? 'Try a different name or purpose.'
+                  : 'Prepare an intake or check-in for your clients.'}
             </p>
           </Surface>
         }

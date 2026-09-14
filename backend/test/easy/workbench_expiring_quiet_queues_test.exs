@@ -111,6 +111,16 @@ defmodule Easy.WorkbenchExpiringQuietQueuesTest do
                Workbench.list_expiring_queue(trainer_ctx, offset: 1, limit: 1)
 
       assert second.client.id == List.last(expected_ids)
+
+      assert {:ok, %{items: [cursor_first], next_cursor: cursor}} =
+               Workbench.list_expiring_queue(trainer_ctx, cursor: "start", limit: 1)
+
+      assert cursor_first.client.id == hd(expected_ids)
+
+      assert {:ok, %{items: [cursor_second], next_cursor: nil}} =
+               Workbench.list_expiring_queue(trainer_ctx, cursor: cursor, limit: 1)
+
+      assert cursor_second.client.id == List.last(expected_ids)
     end
   end
 
@@ -243,6 +253,16 @@ defmodule Easy.WorkbenchExpiringQuietQueuesTest do
                Workbench.list_quiet_queue(trainer_ctx, offset: 1, limit: 1)
 
       assert second.client.id == List.last(expected_ids)
+
+      assert {:ok, %{items: [cursor_first], next_cursor: cursor}} =
+               Workbench.list_quiet_queue(trainer_ctx, cursor: "start", limit: 1)
+
+      assert cursor_first.client.id == hd(expected_ids)
+
+      assert {:ok, %{items: [cursor_second], next_cursor: nil}} =
+               Workbench.list_quiet_queue(trainer_ctx, cursor: cursor, limit: 1)
+
+      assert cursor_second.client.id == List.last(expected_ids)
 
       malformed = Ctx.new(ctx.business.id, Ecto.UUID.generate(), nil, false)
       assert {:ok, %{count: 0, items: []}} = Workbench.list_quiet_queue(malformed)

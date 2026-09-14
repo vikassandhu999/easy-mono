@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 838f1255fc3eadab945ca17fee3e437add5851e03e255b4081593b5c913a461c */
+/* typed-routes:hash dc58a4e67c6c11c4d247036ec5fda1cdf316067c4fe2bfee11e4912d09401320 */
 export type Attachment = {
   id: string;
   content_type:
@@ -247,6 +247,7 @@ export type FormSubmissionEmbedSnapshot = {form_assignment_id: string; title: st
 export type FormTemplate = {
   id: string;
   name: string;
+  revision: number;
   purpose: 'intake' | 'check_in';
   sections: Array<{questions: Array<FormTemplateQuestion>; title?: string}>;
   status: 'active' | 'archived';
@@ -267,6 +268,9 @@ export type FormTemplateQuestion =
   | {id: string; label: string; type: 'service_type'; required?: boolean};
 export type Health = {status: string; service: string; timestamp: string; version: string};
 export type LandingPageApplication = {
+  landing_page_id?: string;
+  request_id?: string;
+  expected_revision?: number;
   name: string;
   phone?: string | null;
   email?: string | null;
@@ -282,7 +286,9 @@ export type LandingPageApplicationResult = {
   whatsapp_number: string | null;
 };
 export type LandingPagePublic = {
+  id: string;
   slug: string;
+  revision: number;
   template: 'proof_first' | 'problem_fit' | 'coach_story';
   eyebrow: string | null;
   headline: string;

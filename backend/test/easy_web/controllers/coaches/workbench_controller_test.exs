@@ -106,6 +106,14 @@ defmodule EasyWeb.Coaches.WorkbenchControllerTest do
                json_response(conn, 422)
     end
 
+    test "returns validation errors for malformed and incompatible cursors", %{conn: conn} do
+      malformed = get(conn, "/v1/coach/workbench/queues/onboarding?cursor=not-a-cursor")
+      assert json_response(malformed, 422)
+
+      incompatible = get(conn, "/v1/coach/workbench/queues/onboarding?cursor=start&offset=1")
+      assert json_response(incompatible, 422)
+    end
+
     test "returns reason-bearing items with the total before pagination", %{
       conn: conn,
       business: business,
@@ -439,7 +447,7 @@ defmodule EasyWeb.Coaches.WorkbenchControllerTest do
 
     assert MapSet.new(Map.keys(item["client"])) ==
              MapSet.new(
-               ~w(assigned_coach_id email expiring_soon first_name goal_weight_unit goal_weight_value id inactive_reason inserted_at invitation_expires_at invitation_sent_at invite_url joined_at last_active_at last_name local_date notes nutrition_plan_name phone required_services stage status subscription_ends_on subscription_started_on training_plan_name updated_at)
+               ~w(assigned_coach_id assigned_coach_name email expiring_soon first_name goal_weight_unit goal_weight_value id inactive_reason inserted_at invitation_expires_at invitation_sent_at invite_url joined_at last_active_at last_name local_date notes nutrition_plan_name phone required_services stage status subscription_ends_on subscription_started_on training_plan_name updated_at)
              )
 
     assert hd(item["reasons"])["code"] == reason_code

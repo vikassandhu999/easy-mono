@@ -234,6 +234,79 @@ defmodule EasyWeb.Coaches.FormAssignmentControllerTest do
     end
   end
 
+  describe "GET /v1/coach/clients/:client_id/form-submissions/:id" do
+    test "returns intake and check-in responses with their authoritative form titles", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client = insert(:client, business: business, creator: coach)
+
+      for {purpose, name} <- [{:intake, "Health intake"}, {:check_in, "Weekly check-in"}] do
+        template = insert(:form_template, business: business, purpose: purpose, name: name)
+
+        assignment =
+          insert(:form_assignment,
+            business: business,
+            client: client,
+            form_template: template,
+            purpose: purpose
+          )
+
+        submission = insert(:form_submission, business: business, client: client, form_assignment: assignment)
+
+        response =
+          conn
+          |> recycle()
+          |> get("/v1/coach/clients/#{client.id}/form-submissions/#{submission.id}")
+          |> json_response(200)
+
+        assert %{
+                 "data" => %{
+                   "id" => submission_id,
+                   "form_assignment" => %{
+                     "id" => assignment_id,
+                     "purpose" => returned_purpose,
+                     "form_template" => %{"id" => template_id, "name" => returned_name}
+                   }
+                 }
+               } = response
+
+        assert submission_id == submission.id
+        assert assignment_id == assignment.id
+        assert template_id == template.id
+        assert returned_purpose == Atom.to_string(purpose)
+        assert returned_name == name
+      end
+    end
+
+    test "requires the requested client to be visible and own the submission", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client = insert(:client, business: business, creator: coach)
+      other_client = insert(:client, business: business, creator: coach)
+      template = insert(:form_template, business: business)
+      assignment = insert(:form_assignment, business: business, client: client, form_template: template)
+      submission = insert(:form_submission, business: business, client: client, form_assignment: assignment)
+      trainer = insert(:coach, business: business)
+
+      wrong_client = get(conn, "/v1/coach/clients/#{other_client.id}/form-submissions/#{submission.id}")
+      hidden = build_conn() |> authenticate_coach(trainer) |> get("/v1/coach/clients/#{client.id}/form-submissions/#{submission.id}")
+
+      assert json_response(wrong_client, 404)
+      assert json_response(hidden, 404)
+    end
+
+    test "validates client and submission UUIDs", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, business: business, creator: coach)
+
+      assert json_response(get(conn, "/v1/coach/clients/not-a-uuid/form-submissions/#{Ecto.UUID.generate()}"), 422)
+      assert json_response(get(conn, "/v1/coach/clients/#{client.id}/form-submissions/not-a-uuid"), 422)
+    end
+  end
+
   describe "POST /v1/coach/form-assignments/:id/remind" do
     test "sends an Intake reminder without changing the assignment or queue membership", %{
       conn: conn,
@@ -290,7 +363,7 @@ defmodule EasyWeb.Coaches.FormAssignmentControllerTest do
 
       remind_conn = post(conn, "/v1/coach/form-assignments/#{assignment.id}/remind")
 
-      assert %{"error_detail" => %{"fields" => %{"purpose" => ["must be intake"]}}} =
+      assert %{"error_detail" => %{"fields" => %{"purpose" => ["must be an outstanding intake for an active client"]}}} =
                json_response(remind_conn, 422)
     end
 

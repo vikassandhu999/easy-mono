@@ -38,8 +38,19 @@ defmodule Easy.Billing.TransactionTest do
 
       assert {:error, %Ecto.Changeset{}} = result
       assert_received {:provider_called, _, _}
-      assert Repo.get!(BusinessBilling, billing.id) == before
-      refute Repo.exists?(Event.for_business(business.id))
+      after_failure = Repo.get!(BusinessBilling, billing.id)
+
+      if unquote(operation) == :cancel do
+        recovery_fields = [:cancellation_state, :cancellation_requested_at, :updated_at]
+        assert Map.drop(after_failure, recovery_fields) == Map.drop(before, recovery_fields)
+        assert after_failure.cancellation_state == :accepted
+        Repo.query!("DROP TRIGGER reject_test_billing_event ON billing_events")
+        assert {:ok, %{status: :cancel_at_period_end, cancellation_state: nil}} = Billing.cancel(ctx)
+        refute_received {:provider_called, _, _}
+      else
+        assert after_failure == before
+        refute Repo.exists?(Event.for_business(business.id))
+      end
     end
   end
 

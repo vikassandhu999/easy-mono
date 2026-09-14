@@ -85,6 +85,7 @@ defmodule EasyWeb.Router do
 
     pipe_through :require_coach
     get "/me", BusinessController, :show
+    get "/timezones", BusinessController, :timezones
     patch "/me", BusinessController, :update
     patch "/me/dashboard-setup", BusinessController, :update_dashboard_setup
   end
@@ -129,6 +130,7 @@ defmodule EasyWeb.Router do
     post "/library-media/uploads", LibraryMediaController, :create
 
     get "/team", TeamController, :index
+    get "/team/:id", TeamController, :show
     post "/team/invite", TeamController, :invite
     post "/team/:id/resend-invite", TeamController, :resend_invite
     delete "/team/:id", TeamController, :revoke_invite
@@ -139,6 +141,7 @@ defmodule EasyWeb.Router do
     get "/form-templates/default-intake", FormTemplateController, :default_intake
     post "/form-templates", FormTemplateController, :create
     get "/form-templates/:id", FormTemplateController, :show
+    get "/form-templates/:id/management", FormTemplateController, :management
     patch "/form-templates/:id", FormTemplateController, :update
     delete "/form-templates/:id", FormTemplateController, :delete
     put "/form-templates/:id/default-intake", FormTemplateController, :set_default_intake
@@ -153,6 +156,7 @@ defmodule EasyWeb.Router do
     post "/form-submissions/:id/review", CheckInReviewController, :review
     get "/clients/:client_id/intake", FormAssignmentController, :intake
     get "/clients/:client_id/form-assignments", FormAssignmentController, :index
+    get "/clients/:client_id/form-submissions/:id", FormAssignmentController, :submission
     post "/clients/:client_id/form-assignments", FormAssignmentController, :create
     get "/form-assignments/:id/submissions", FormAssignmentController, :submissions
     patch "/form-assignments/:id", FormAssignmentController, :update
@@ -171,6 +175,7 @@ defmodule EasyWeb.Router do
     patch "/nutrition-foods/:id", FoodController, :update
     delete "/nutrition-foods/:id", FoodController, :delete
     get "/nutrition-foods/:id/impact", FoodController, :impact
+    get "/nutrition-foods/:id/usage", FoodController, :usage
     post "/nutrition-foods/:id/copy", FoodController, :copy
 
     get "/nutrition-recipes", RecipeController, :index
@@ -179,6 +184,7 @@ defmodule EasyWeb.Router do
     patch "/nutrition-recipes/:id", RecipeController, :update
     delete "/nutrition-recipes/:id", RecipeController, :delete
     get "/nutrition-recipes/:id/impact", RecipeController, :impact
+    get "/nutrition-recipes/:id/usage", RecipeController, :usage
     post "/nutrition-recipes/:id/copy", RecipeController, :copy
 
     get "/nutrition-plans", NutritionPlanController, :index
@@ -222,6 +228,8 @@ defmodule EasyWeb.Router do
 
     # Chat
     get "/conversations", ConversationController, :index
+    get "/conversation-inbox", ConversationController, :inbox
+    get "/conversations/:id/history", ConversationController, :history
     get "/conversations/:id", ConversationController, :show
     get "/conversations/:id/messages", ConversationController, :messages
     post "/conversations/:id/messages", ConversationController, :create_message

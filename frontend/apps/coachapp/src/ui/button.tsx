@@ -7,13 +7,13 @@ import {
 } from 'react-aria-components';
 import {cn} from './cn';
 
-const buttonVariants = cva(
+const buttonStyles = cva(
   'group/button inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-transparent text-sm font-semibold whitespace-nowrap outline-none transition-colors select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-[18px]',
   {
     variants: {
       variant: {
         default: 'bg-primary text-primary-foreground hover:bg-primary/90 pressed:bg-primary/80',
-        outline: 'border-border bg-surface hover:bg-muted pressed:bg-muted',
+        outline: 'border-border bg-surface text-foreground hover:bg-muted pressed:bg-muted',
         secondary: 'bg-muted hover:bg-border/60 pressed:bg-border/80',
         ghost: 'hover:bg-muted pressed:bg-muted',
         destructive: 'bg-destructive/10 text-destructive hover:bg-destructive/15',
@@ -33,6 +33,8 @@ const buttonVariants = cva(
     defaultVariants: {variant: 'default', size: 'default'},
   },
 );
+
+const buttonVariants = (props?: Parameters<typeof buttonStyles>[0]) => cn(buttonStyles(props));
 
 function Button({
   className,

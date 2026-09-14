@@ -45,7 +45,16 @@ defmodule Easy.RazorpayTest do
     end)
 
     assert Razorpay.create_subscription(3) ==
-             {:ok, %{id: "sub_123", plan_id: "plan_test", quantity: 3, status: "created", current_period_end: period_end}}
+             {:ok,
+              %{
+                id: "sub_123",
+                plan_id: "plan_test",
+                quantity: 3,
+                status: "created",
+                current_period_end: period_end,
+                has_scheduled_changes: false,
+                checkout_request_id: nil
+              }}
   end
 
   test "non-2xx normalizes to :razorpay_error" do

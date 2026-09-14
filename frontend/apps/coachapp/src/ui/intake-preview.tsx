@@ -1,8 +1,8 @@
 import {FileText, X} from 'lucide-react';
 import type {FormTemplate} from '../api/forms';
-import {Button} from '../ui/button';
-import {Dialog, DialogClose, DialogHeader, DialogTitle, DialogTrigger} from '../ui/dialog';
-import {Surface} from '../ui/page';
+import {Button} from './button';
+import {Dialog, DialogClose, DialogHeader, DialogTitle, DialogTrigger} from './dialog';
+import {Surface} from './page';
 
 export function IntakePreview({template}: {template: FormTemplate}) {
   return (

@@ -1,5 +1,5 @@
 import {useInfiniteQuery, useMutation, useQuery} from '@tanstack/react-query';
-import {call, client} from './client';
+import {ApiError, call, callEmpty, client} from './client';
 import {exerciseKeys, trainingPlanKeys} from './keys';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
@@ -67,4 +67,60 @@ export function useExerciseRelations(kind: 'muscles' | 'equipment', search: stri
         ? call(client.GET('/v1/coach/training-muscles', {params: {query: {search}}, signal}))
         : call(client.GET('/v1/coach/training-equipment', {params: {query: {search}}, signal})),
   });
+}
+
+export function useCopyExercise() {
+  return useMutation({
+    onMutate: () => getSession()?.id,
+    mutationFn: ({id, name}: {id: string; name: string}) =>
+      call(client.POST('/v1/coach/training-exercises/{id}/copy', {params: {path: {id}}, body: {name}})),
+    onSuccess: async (_result, _input, sessionId) => {
+      requireSession(sessionId);
+      await queryClient.invalidateQueries({queryKey: exerciseKeys.lists()});
+      requireSession(sessionId);
+    },
+    onError: async (_error, _input, sessionId) => {
+      if (sessionId && getSession()?.id === sessionId) {
+        await queryClient.invalidateQueries({queryKey: exerciseKeys.lists()});
+      }
+    },
+  });
+}
+
+export function useDeleteExercise() {
+  return useMutation({
+    onMutate: () => getSession()?.id,
+    mutationFn: async (id: string) => {
+      const sessionId = getSession()?.id;
+      try {
+        await callEmpty(client.DELETE('/v1/coach/training-exercises/{id}', {params: {path: {id}}}));
+      } catch (error) {
+        requireSession(sessionId);
+        if (error instanceof ApiError && error.status < 500 && error.status !== 404) {
+          throw error;
+        }
+        // A lost response can follow a committed deletion. Only absence confirms it.
+        const result = await client.GET('/v1/coach/training-exercises/{id}', {params: {path: {id}}});
+        requireSession(sessionId);
+        if (result.response.status !== 404) {
+          throw error;
+        }
+      }
+    },
+    onSuccess: async (_result, id, sessionId) => {
+      requireSession(sessionId);
+      queryClient.removeQueries({queryKey: exerciseKeys.detail(id)});
+      await Promise.all([
+        queryClient.invalidateQueries({queryKey: exerciseKeys.lists()}),
+        queryClient.invalidateQueries({queryKey: trainingPlanKeys.all}),
+      ]);
+      requireSession(sessionId);
+    },
+  });
+}
+
+function requireSession(sessionId: string | undefined) {
+  if (!sessionId || getSession()?.id !== sessionId) {
+    throw new Error('Your session changed. Please try again.');
+  }
 }

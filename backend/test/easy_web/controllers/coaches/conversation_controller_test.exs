@@ -1,6 +1,11 @@
 defmodule EasyWeb.Coaches.ConversationControllerTest do
   use Easy.ConnCase
 
+  alias Easy.Chat.Conversation, as: ChatConversation
+  alias Easy.Repo
+
+  import Ecto.Query
+
   setup do
     coach = insert(:coach)
     client = insert(:client, business: coach.business, creator: coach)
@@ -217,19 +222,200 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
     end
   end
 
+  test "validates conversation and client UUIDs before context access", %{conn: conn} do
+    assert json_response(get(conn, "/v1/coach/clients/not-a-uuid/conversation"), 422)
+    assert json_response(get(conn, "/v1/coach/conversations/not-a-uuid"), 422)
+    assert json_response(get(conn, "/v1/coach/conversations/not-a-uuid/messages"), 422)
+    assert json_response(post(conn, "/v1/coach/conversations/not-a-uuid/messages", %{"body" => "hello"}), 422)
+    assert json_response(post(conn, "/v1/coach/conversations/not-a-uuid/read", %{}), 422)
+
+    assert json_response(
+             post(conn, "/v1/coach/conversations/not-a-uuid/mark-handled", %{
+               "expected_last_message_at" => DateTime.to_iso8601(DateTime.utc_now(:microsecond))
+             }),
+             422
+           )
+  end
+
   describe "POST /v1/coach/conversations/:id/read" do
     test "zeroes unread", %{conn: conn, coach: coach, client: client} do
       conversation = insert(:conversation, business: coach.business, client: client)
 
-      insert(:chat_message,
-        business: coach.business,
-        conversation: conversation,
-        sender_type: :client,
-        sender_id: client.id
-      )
+      message =
+        insert(:chat_message,
+          business: coach.business,
+          conversation: conversation,
+          sender_type: :client,
+          sender_id: client.id
+        )
+
+      set_conversation_activity(conversation, message.inserted_at)
 
       read_conn = post(conn, "/v1/coach/conversations/#{conversation.id}/read")
       assert %{"data" => %{"unread_count" => 0}} = json_response(read_conn, 200)
+    end
+
+    test "reads only through the observed message and leaves a later client message unread", %{
+      conn: conn,
+      coach: coach,
+      client: client
+    } do
+      conversation = insert(:conversation, business: coach.business, client: client)
+      observed_at = ~U[2026-09-12 10:00:00.123456Z]
+      later_at = ~U[2026-09-12 10:00:01.123456Z]
+
+      insert_client_message(conversation, client, inserted_at: observed_at)
+      insert_client_message(conversation, client, inserted_at: later_at)
+      set_conversation_activity(conversation, later_at)
+
+      read_conn =
+        post(
+          conn,
+          "/v1/coach/conversations/#{conversation.id}/read?through=#{DateTime.to_iso8601(observed_at)}",
+          %{}
+        )
+
+      assert %{"data" => %{"unread_count" => 1}} = json_response(read_conn, 200)
+    end
+  end
+
+  describe "GET /v1/coach/conversation-inbox" do
+    test "includes conversations without messages", %{conn: conn, coach: coach, client: client} do
+      conversation = insert(:conversation, business: coach.business, client: client)
+
+      assert %{
+               "count" => 1,
+               "data" => [
+                 %{"id" => id, "last_message_at" => nil, "last_message_preview" => nil, "last_message_role" => nil}
+               ],
+               "next_cursor" => nil
+             } = json_response(get(conn, "/v1/coach/conversation-inbox"), 200)
+
+      assert id == conversation.id
+    end
+
+    test "filters waiting and unread conversations with filtered counts", %{conn: conn, coach: coach, client: client} do
+      waiting = insert(:conversation, business: coach.business, client: client)
+      unread_client = insert(:client, business: coach.business, creator: coach)
+      unread = insert(:conversation, business: coach.business, client: unread_client)
+      normal_client = insert(:client, business: coach.business, creator: coach)
+      normal = insert(:conversation, business: coach.business, client: normal_client)
+      timestamp = ~U[2026-09-12 10:00:00.123456Z]
+
+      insert_client_message(waiting, client, inserted_at: timestamp)
+      insert_client_message(unread, unread_client, inserted_at: timestamp)
+      set_conversation_activity(waiting, timestamp, waiting_since: timestamp)
+      set_conversation_activity(unread, timestamp)
+
+      assert %{"count" => 1, "data" => [%{"id" => waiting_id}]} =
+               json_response(get(conn, "/v1/coach/conversation-inbox", %{"status" => "waiting"}), 200)
+
+      assert waiting_id == waiting.id
+
+      assert %{"count" => 2, "data" => unread_data} =
+               json_response(get(conn, "/v1/coach/conversation-inbox", %{"status" => "unread"}), 200)
+
+      assert Enum.map(unread_data, & &1["id"]) |> Enum.sort() == Enum.sort([waiting.id, unread.id])
+
+      assert %{"count" => 3, "data" => all_data} =
+               json_response(get(conn, "/v1/coach/conversation-inbox", %{"status" => "all"}), 200)
+
+      assert Enum.map(all_data, & &1["id"]) |> Enum.sort() == Enum.sort([waiting.id, unread.id, normal.id])
+    end
+
+    test "treats search wildcards as literal characters", %{conn: conn, coach: coach} do
+      match = insert(:client, business: coach.business, creator: coach, first_name: "Percent%", last_name: "Person")
+      other = insert(:client, business: coach.business, creator: coach, first_name: "Regular", last_name: "Person")
+      conversation = insert(:conversation, business: coach.business, client: match)
+      insert(:conversation, business: coach.business, client: other)
+
+      assert %{"count" => 1, "data" => [%{"id" => id}]} =
+               json_response(get(conn, "/v1/coach/conversation-inbox", %{"search" => "%"}), 200)
+
+      assert id == conversation.id
+    end
+
+    test "does not expose other tenants or unassigned trainer conversations", %{coach: coach, client: client} do
+      conversation = insert(:conversation, business: coach.business, client: client)
+      trainer = insert(:coach, business: coach.business)
+      other_coach = insert(:coach)
+      other_client = insert(:client, business: other_coach.business, creator: other_coach)
+      other_conversation = insert(:conversation, business: other_coach.business, client: other_client)
+      trainer_conn = build_conn() |> authenticate_coach(trainer)
+      owner_conn = build_conn() |> authenticate_coach(coach)
+
+      assert %{"count" => 0, "data" => []} = json_response(get(trainer_conn, "/v1/coach/conversation-inbox"), 200)
+      assert json_response(get(trainer_conn, "/v1/coach/conversations/#{conversation.id}/history"), 404)
+      assert json_response(get(owner_conn, "/v1/coach/conversations/#{other_conversation.id}/history"), 404)
+    end
+
+    test "rejects invalid cursor, status, and limits", %{conn: conn} do
+      assert json_response(get(conn, "/v1/coach/conversation-inbox", %{"cursor" => "not-a-cursor"}), 422)
+      assert json_response(get(conn, "/v1/coach/conversation-inbox", %{"status" => "new"}), 422)
+      assert json_response(get(conn, "/v1/coach/conversation-inbox", %{"limit" => "0"}), 422)
+    end
+  end
+
+  describe "GET /v1/coach/conversations/:id/history" do
+    test "keeps the latest message timestamp across pages and returns nil for an empty conversation", %{
+      conn: conn,
+      coach: coach,
+      client: client
+    } do
+      conversation = insert(:conversation, business: coach.business, client: client)
+      older_at = ~U[2026-09-12 10:00:00.123456Z]
+      latest_at = ~U[2026-09-12 10:01:00.123456Z]
+
+      insert_client_message(conversation, client, inserted_at: older_at)
+      insert_client_message(conversation, client, inserted_at: latest_at)
+
+      first = get(conn, "/v1/coach/conversations/#{conversation.id}/history", %{"limit" => "1"})
+
+      assert %{"latest_message_at" => latest, "next_cursor" => cursor} = json_response(first, 200)
+      assert latest == DateTime.to_iso8601(latest_at)
+
+      second =
+        get(conn, "/v1/coach/conversations/#{conversation.id}/history", %{
+          "limit" => "1",
+          "cursor" => cursor
+        })
+
+      assert %{"latest_message_at" => ^latest} = json_response(second, 200)
+
+      empty_client = insert(:client, business: coach.business, creator: coach)
+      empty = insert(:conversation, business: coach.business, client: empty_client)
+
+      assert %{"count" => 0, "data" => [], "latest_message_at" => nil, "next_cursor" => nil} =
+               json_response(get(conn, "/v1/coach/conversations/#{empty.id}/history"), 200)
+    end
+
+    test "keeps same-microsecond rows paginable after deleting the cursor anchor", %{
+      conn: conn,
+      coach: coach,
+      client: client
+    } do
+      conversation = insert(:conversation, business: coach.business, client: client)
+      timestamp = ~U[2026-09-12 10:00:00.123456Z]
+
+      for _ <- 1..3 do
+        insert_client_message(conversation, client, inserted_at: timestamp)
+      end
+
+      first = get(conn, "/v1/coach/conversations/#{conversation.id}/history", %{"limit" => "1"})
+      assert %{"count" => 3, "data" => [%{"id" => first_id}], "next_cursor" => cursor} = json_response(first, 200)
+      Repo.delete!(Repo.get!(Easy.Chat.Message, first_id))
+
+      second = get(conn, "/v1/coach/conversations/#{conversation.id}/history", %{"limit" => "1", "cursor" => cursor})
+      assert %{"count" => 2, "data" => [%{"id" => second_id}]} = json_response(second, 200)
+      assert second_id != first_id
+    end
+
+    test "rejects an invalid UUID, cursor, and limit", %{conn: conn, coach: coach, client: client} do
+      conversation = insert(:conversation, business: coach.business, client: client)
+
+      assert json_response(get(conn, "/v1/coach/conversations/not-a-uuid/history"), 422)
+      assert json_response(get(conn, "/v1/coach/conversations/#{conversation.id}/history", %{"cursor" => "bad"}), 422)
+      assert json_response(get(conn, "/v1/coach/conversations/#{conversation.id}/history", %{"limit" => "0"}), 422)
     end
   end
 
@@ -308,5 +494,29 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
   test "requires authentication" do
     conn = build_conn() |> get("/v1/coach/conversations")
     assert json_response(conn, 403)
+  end
+
+  defp insert_client_message(conversation, client, attrs) do
+    insert(
+      :chat_message,
+      Keyword.merge(
+        [
+          business: conversation.business,
+          conversation: conversation,
+          sender_type: :client,
+          sender_id: client.id
+        ],
+        attrs
+      )
+    )
+  end
+
+  defp set_conversation_activity(conversation, timestamp, attrs \\ []) do
+    updates = Keyword.merge([last_message_at: timestamp], attrs)
+
+    Repo.update_all(
+      from(item in ChatConversation, where: item.id == ^conversation.id),
+      set: updates
+    )
   end
 end

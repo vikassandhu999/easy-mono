@@ -12,12 +12,13 @@ defmodule EasyWeb.Coaches.ProspectController do
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
     opts =
-      [status: conn.query_params["status"]]
+      [status: conn.query_params["status"], search: conn.query_params["search"]]
+      |> maybe_put(:cursor, conn.query_params["cursor"])
       |> maybe_put(:offset, conn.query_params["offset"])
       |> maybe_put(:limit, conn.query_params["limit"])
 
     with {:ok, result} <- Prospects.list_prospects(conn.assigns.ctx, opts) do
-      ok(conn, %{data: result.prospects, count: result.count, summary: result.summary})
+      ok(conn, %{data: result.prospects, count: result.count, summary: result.summary, next_cursor: result.next_cursor})
     end
   end
 

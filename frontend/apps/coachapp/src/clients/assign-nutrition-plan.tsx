@@ -15,12 +15,14 @@ import {FormError} from '../ui/form-error';
 import {setFormError} from '../ui/form-errors';
 import {FormField} from '../ui/form-field';
 import {InfiniteList} from '../ui/infinite-list';
+import {useListLocation} from '../ui/list-location';
 import {ListSearch} from '../ui/list-search';
 import {NutritionPlanPreview} from '../ui/nutrition-plan-preview';
 import {FormActions, Page, PageHeader, Surface} from '../ui/page';
 
 export function AssignNutritionPlan() {
   const {id = '', templateId} = useParams();
+  const {state} = useListLocation(routes.home);
   const client = useClient(id);
   const back = generatePath(routes.client, {id});
   const name = client.data
@@ -31,7 +33,7 @@ export function AssignNutritionPlan() {
       <PageHeader
         title={`Nutrition for ${name}`}
         description="Choose a plan and when it should begin."
-        back={{to: back, label: 'Back to client'}}
+        back={{to: back, state, label: 'Back to client'}}
       />
       {client.isError ? (
         <Surface>
@@ -62,6 +64,7 @@ export function AssignNutritionPlan() {
   );
 }
 function Choose({clientId}: {clientId: string}) {
+  const {state} = useListLocation(routes.home);
   const [params] = useSearchParams();
   const {search} = useLocation();
   const query = useNutritionTemplates(params.get('search') ?? '');
@@ -90,7 +93,7 @@ function Choose({clientId}: {clientId: string}) {
         {(plan) => (
           <Link
             to={generatePath(routes.previewNutritionPlan, {id: clientId, templateId: plan.id})}
-            state={{nutritionSearch: search}}
+            state={{...state, nutritionSearch: search}}
             className="block space-y-1 px-5 py-4 hover:bg-muted/50"
           >
             <p className="font-semibold">{plan.name}</p>
@@ -105,6 +108,7 @@ function Choose({clientId}: {clientId: string}) {
   );
 }
 function Preview({clientId, templateId, name}: {clientId: string; templateId: string; name: string}) {
+  const {state: taskState} = useListLocation(routes.home);
   const query = useNutritionPlan(templateId);
   const [plan, setPlan] = useState<NutritionPlan>();
   const [stale, setStale] = useState(false);
@@ -165,6 +169,7 @@ function Preview({clientId, templateId, name}: {clientId: string; templateId: st
     <>
       <Link
         to={choose}
+        state={taskState}
         className="page-back"
       >
         Choose another plan
@@ -185,7 +190,10 @@ function Preview({clientId, templateId, name}: {clientId: string; templateId: st
               expected_revision: plan.revision,
             });
             if (mounted.current) {
-              navigate(generatePath(routes.client, {id: clientId}), {replace: true, state: {assigned: plan.name}});
+              navigate(generatePath(routes.client, {id: clientId}), {
+                replace: true,
+                state: {...taskState, assigned: plan.name},
+              });
             }
           } catch (error) {
             if (!mounted.current) {
@@ -244,6 +252,7 @@ function Preview({clientId, templateId, name}: {clientId: string; templateId: st
           {form.formState.errors.root && (
             <Link
               to={generatePath(routes.client, {id: clientId})}
+              state={taskState}
               className={buttonVariants({variant: 'outline'})}
             >
               Check client plans

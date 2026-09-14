@@ -11,8 +11,9 @@ export async function checkClientOverview({page, api, coachToken, clientToken, c
     route.fulfill({status: 503, json: {error_message: 'Unavailable'}}),
   );
   await page.getByRole('button', {name: 'Refresh status', exact: true}).click();
-  await expect(page.getByRole('heading', {name: 'Intake unavailable', exact: true})).toBeVisible();
-  await expect(page.getByText('Intake pending', {exact: true})).toHaveCount(0);
+  await expect(page.getByRole('button', {name: 'Retry intake', exact: true})).toBeVisible();
+  await expect(page.getByText('Intake pending', {exact: true})).toBeVisible();
+  await expect(page.getByRole('button', {name: 'Manage intake', exact: true})).toBeDisabled();
   await page.unroute(`**${assignmentPath}`);
   await page.getByRole('button', {name: 'Retry intake', exact: true}).click();
   await expect(page.getByRole('heading', {name: 'Intake pending', exact: true})).toBeVisible();

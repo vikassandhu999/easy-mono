@@ -1,22 +1,31 @@
 import {Check, ClipboardList} from 'lucide-react';
+import {generatePath, Link} from 'react-router-dom';
 import {errorMessage} from '../api/client';
 import type {Client} from '../api/clients';
 import {type FormAssignment, type useFormSubmissions, useReviewIntake} from '../api/forms';
-import {Button} from '../ui/button';
+import {routes} from '../routes';
+import {Button, buttonVariants} from '../ui/button';
 import {FormError} from '../ui/form-error';
+import {IntakePreview} from '../ui/intake-preview';
 import {StatusBadge, Surface} from '../ui/page';
 import {SubmissionAnswers} from '../ui/submission-answers';
-import {IntakePreview} from './intake-preview';
+import {IntakeFollowUp} from './intake-follow-up';
 
-type IntakeProps = {assignment: FormAssignment; person: Client; submissions: ReturnType<typeof useFormSubmissions>};
+type IntakeProps = {
+  assignment: FormAssignment;
+  person: Client;
+  submissions: ReturnType<typeof useFormSubmissions>;
+  disabled?: boolean;
+};
 
-export function ClientIntake({assignment, person, submissions}: IntakeProps) {
+export function ClientIntake({assignment, person, submissions, disabled = false}: IntakeProps) {
   if (assignment.latest_submission || assignment.status === 'completed') {
     return (
       <SubmittedIntake
         assignment={assignment}
         person={person}
         submissions={submissions}
+        disabled={disabled}
       />
     );
   }
@@ -53,16 +62,21 @@ export function ClientIntake({assignment, person, submissions}: IntakeProps) {
           <p className="mt-3 text-sm font-medium">Your client has started their intake.</p>
         )}
         {assignment.status === 'missed' && <p className="mt-3 text-sm font-medium">The intake due date has passed.</p>}
+        <IntakeFollowUp
+          assignment={assignment}
+          person={person}
+          disabled={disabled}
+        />
       </Surface>
       <IntakePreview template={assignment.form_template} />
     </>
   );
 }
 
-function SubmittedIntake({assignment, person, submissions}: IntakeProps) {
+function SubmittedIntake({assignment, person, submissions, disabled = false}: IntakeProps) {
   const review = useReviewIntake(person.id, assignment.id);
   const submission = submissions.data?.data[0];
-  if (submissions.isPending || submissions.isError || !submission) {
+  if (!submission) {
     return (
       <Surface className="space-y-4">
         <h2 className="section-title">Intake submitted</h2>
@@ -130,6 +144,25 @@ function SubmittedIntake({assignment, person, submissions}: IntakeProps) {
           </p>
         </div>
       </Surface>
+      <Link
+        to={`${generatePath(routes.clientConversation, {clientId: person.id})}?response=${encodeURIComponent(submission.id)}`}
+        className={buttonVariants({variant: 'outline'})}
+      >
+        Discuss intake with client
+      </Link>
+      {submissions.isError && (
+        <div className="space-y-3">
+          <FormError message="Could not refresh these answers. The last loaded submission is shown." />
+          <Button
+            variant="outline"
+            onPress={() => {
+              submissions.refetch();
+            }}
+          >
+            Retry answers
+          </Button>
+        </div>
+      )}
       <SubmissionAnswers submission={submission} />
       <Surface className="space-y-4">
         {submission.reviewed_at ? (
@@ -169,6 +202,7 @@ function SubmittedIntake({assignment, person, submissions}: IntakeProps) {
             <Button
               className="w-full sm:w-auto"
               isPending={review.isPending}
+              isDisabled={disabled || submissions.isError}
               onPress={markReviewed}
             >
               <Check aria-hidden="true" />

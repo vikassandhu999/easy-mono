@@ -132,6 +132,17 @@ function Editor({initial}: {initial: Recipe | undefined}) {
             : 'Bring ingredients together into a recipe you can reuse.'
         }
         back={{to, label: 'Back to recipes', state}}
+        actions={
+          recipe && (
+            <Button
+              variant="outline"
+              isDisabled={pending || conflict || uncertain}
+              onPress={() => navigate(generatePath(routes.manageRecipe, {id: recipe.id}), {state})}
+            >
+              Manage recipe
+            </Button>
+          )
+        }
       />
       <form
         noValidate

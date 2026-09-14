@@ -8,7 +8,7 @@ defmodule Easy.Forms.Assignments do
   import Ecto.Query
 
   @spec assign_default_intake_to_client(Ctx.t(), String.t()) ::
-          {:ok, FormAssignment.t()} | {:error, :not_found | :conflict | Ecto.Changeset.t()}
+          {:ok, FormAssignment.t()} | {:error, :not_found | :conflict | :form_template_archived | Ecto.Changeset.t()}
   def assign_default_intake_to_client(%Ctx{} = ctx, client_id) do
     with {:ok, template} <- Templates.get_default_intake(ctx) do
       assign_form_template_to_client(ctx, client_id, template.id, %{})
@@ -16,13 +16,17 @@ defmodule Easy.Forms.Assignments do
   end
 
   @spec assign_form_template_to_client(Ctx.t(), String.t(), String.t(), map()) ::
-          {:ok, FormAssignment.t()} | {:error, :not_found | :conflict | Ecto.Changeset.t()}
+          {:ok, FormAssignment.t()} | {:error, :not_found | :conflict | :form_template_archived | Ecto.Changeset.t()}
   def assign_form_template_to_client(%Ctx{} = ctx, client_id, template_id, attrs) do
     with {:ok, template} <- Templates.get(ctx, template_id),
+         :ok <- ensure_active_template(template),
          {:ok, client} <- ClientAccess.authorize_client(ctx, client_id) do
       create_form_assignment(ctx, client, template, attrs)
     end
   end
+
+  defp ensure_active_template(%FormTemplate{status: :active}), do: :ok
+  defp ensure_active_template(_template), do: {:error, :form_template_archived}
 
   defp create_form_assignment(ctx, client, %FormTemplate{purpose: :intake} = template, attrs) do
     Repo.transact(fn -> create_intake_assignment(ctx, client, template, attrs) end)
@@ -113,11 +117,27 @@ defmodule Easy.Forms.Assignments do
   end
 
   @spec update_form_assignment(Ctx.t(), String.t(), map()) ::
-          {:ok, FormAssignment.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, FormAssignment.t()} | {:error, :not_found | :assignment_changed | Ecto.Changeset.t()}
   def update_form_assignment(%Ctx{} = ctx, assignment_id, attrs) do
     with {:ok, assignment} <- get_form_assignment(ctx.business_id, assignment_id),
          :ok <- ClientAccess.authorize_client_id(ctx, assignment.client_id) do
-      assignment |> FormAssignment.update_changeset(DateTime.utc_now(:second), attrs) |> Repo.update()
+      Repo.transact(fn -> update_locked_assignment(ctx, assignment_id, attrs) end)
+    end
+  end
+
+  defp update_locked_assignment(ctx, assignment_id, attrs) do
+    locked =
+      FormAssignment
+      |> FormAssignment.for_business(ctx.business_id)
+      |> where([a], a.id == ^assignment_id)
+      |> lock("FOR UPDATE")
+      |> Repo.one()
+
+    with {:ok, current} <- ok_or_not_found(locked),
+         :ok <- FormAssignment.check_expected_status(current, attrs),
+         {:ok, _updated} <-
+           current |> FormAssignment.update_changeset(DateTime.utc_now(:second), attrs) |> Repo.update() do
+      get_form_assignment(ctx.business_id, assignment_id)
     end
   end
 
@@ -140,7 +160,8 @@ defmodule Easy.Forms.Assignments do
     with {:ok, assignment} <- get_form_assignment(ctx.business_id, assignment_id),
          {:ok, client} <- ClientAccess.authorize_client(ctx, assignment.client_id),
          :ok <- ensure_intake_assignment(assignment),
-         :ok <- ensure_reminder_email(client) do
+         :ok <- ensure_reminder_email(client),
+         :ok <- ensure_reminder_access(client) do
       name = Client.full_name(client)
       email = Easy.Emails.intake_reminder_email(client.email, name, assignment.id)
 
@@ -149,11 +170,16 @@ defmodule Easy.Forms.Assignments do
     end
   end
 
-  defp ensure_intake_assignment(%FormAssignment{purpose: :intake}), do: :ok
+  defp ensure_intake_assignment(%FormAssignment{purpose: :intake, status: status})
+       when status in [:assigned, :in_progress, :missed], do: :ok
+
   defp ensure_intake_assignment(%FormAssignment{}), do: {:error, :invalid_intake_assignment}
 
   defp ensure_reminder_email(%Client{email: email}) when is_binary(email) and email != "", do: :ok
   defp ensure_reminder_email(%Client{}), do: {:error, :reminder_email_missing}
+
+  defp ensure_reminder_access(%Client{status: :active}), do: :ok
+  defp ensure_reminder_access(_client), do: {:error, :invalid_intake_assignment}
 
   defp client_assignment_query(%Ctx{} = ctx, client_id) do
     FormAssignment

@@ -22,7 +22,21 @@ defmodule EasyWeb.Types.BillingCheckoutPayload do
 
   @type t :: %{
           required(:key_id) => String.t(),
-          required(:subscription_id) => String.t()
+          required(:subscription_id) => String.t(),
+          required(:request_id) => Ecto.UUID.t()
+        }
+end
+
+defmodule EasyWeb.Types.PendingBillingCheckout do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:key_id) => String.t(),
+          required(:subscription_id) => String.t() | nil,
+          required(:request_id) => Ecto.UUID.t(),
+          required(:target_quantity) => pos_integer(),
+          required(:status) => :pending | :unknown,
+          required(:kind) => :create | :update
         }
 end
 
@@ -37,13 +51,20 @@ defmodule EasyWeb.Types.Billing do
           required(:used_seats) => non_neg_integer(),
           required(:available_seats) => integer(),
           required(:awaiting_seat_count) => non_neg_integer(),
-          required(:monthly_seat_price_inr) => non_neg_integer(),
+          required(:monthly_seat_price_inr) => non_neg_integer() | nil,
+          required(:monthly_total_inr) => non_neg_integer() | nil,
+          required(:billing_enabled) => boolean(),
+          required(:can_add_seats) => boolean(),
+          required(:can_cancel) => boolean(),
+          required(:can_sync) => boolean(),
+          required(:cancellation_state) => :requested | :unknown | :accepted | nil,
+          required(:pending_checkout) => EasyWeb.Types.PendingBillingCheckout.t() | nil,
           required(:current_period_end) => DateTime.t() | nil,
           required(:is_owner) => boolean(),
           required(:recent_events) => [EasyWeb.Types.BillingEvent.t()] | nil
         }
 
-  @type checkout :: %{required(:seats_to_add) => pos_integer()}
+  @type checkout :: %{required(:seats_to_add) => pos_integer(), optional(:request_id) => Ecto.UUID.t()}
 
   @spec format(map()) :: t()
   def format(%{recent_events: events} = billing) when is_list(events),
@@ -64,6 +85,13 @@ defmodule EasyWeb.Types.Billing do
       available_seats: billing.available_seats,
       awaiting_seat_count: billing.awaiting_seat_count,
       monthly_seat_price_inr: billing.monthly_seat_price_inr,
+      monthly_total_inr: billing.monthly_total_inr,
+      billing_enabled: billing.billing_enabled,
+      can_add_seats: billing.can_add_seats,
+      can_cancel: billing.can_cancel,
+      can_sync: billing.can_sync,
+      cancellation_state: billing.cancellation_state,
+      pending_checkout: billing.pending_checkout,
       current_period_end: billing.current_period_end,
       is_owner: billing.is_owner,
       recent_events: recent_events

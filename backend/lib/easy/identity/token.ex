@@ -38,6 +38,14 @@ defmodule Easy.Identity.Token do
     token
   end
 
+  @spec authenticate_access_token(term()) :: {:ok, claims()} | {:error, :invalid_token}
+  def authenticate_access_token(token) do
+    with {:ok, claims} <- verify_access_token(token),
+         :ok <- Identity.UserSessions.validate_access(claims) do
+      {:ok, claims}
+    end
+  end
+
   @spec verify_access_token(term()) :: {:ok, claims()} | {:error, :invalid_token}
   def verify_access_token(token) when is_binary(token) do
     case Joken.verify_and_validate(token_config(), token, signer()) do

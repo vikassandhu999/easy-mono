@@ -3,7 +3,6 @@ defmodule Easy.Training.Library do
   alias Easy.CursorPage
   alias Easy.LibraryMedia
   alias Easy.Repo
-  alias Easy.Training.PrescribedExercise
   alias Easy.Training.TrainingEquipment
   alias Easy.Training.TrainingExercise
   alias Easy.Training.TrainingMuscle
@@ -167,23 +166,16 @@ defmodule Easy.Training.Library do
           {:ok, TrainingExercise.t()} | {:error, :not_found | :in_use | Ecto.Changeset.t()}
   def delete_exercise(%Ctx{} = ctx, exercise_id) do
     with :ok <- Ctx.ensure_coach(ctx),
-         {:ok, exercise} <- get_owned_exercise(ctx, exercise_id),
-         :ok <- ensure_exercise_not_in_use(ctx.business_id, exercise.id) do
-      Repo.delete(exercise)
+         {:ok, exercise} <- get_owned_exercise(ctx, exercise_id) do
+      Repo.transact(fn -> delete_unused_exercise(exercise) end)
     end
   end
 
-  # A Prescribed Exercise without a library exercise cannot render, so a reference
-  # from a Prescription blocks deletion. Performed Sets freeze `exercise_name`, so
-  # their live reference can be cleared without damaging history.
-  defp ensure_exercise_not_in_use(business_id, exercise_id) do
-    if Repo.exists?(
-         from(e in PrescribedExercise.for_business(business_id),
-           where: e.exercise_id == ^exercise_id
-         )
-       ),
-       do: {:error, :in_use},
-       else: :ok
+  defp delete_unused_exercise(exercise) do
+    case exercise |> TrainingExercise.delete_changeset() |> Repo.delete() do
+      {:ok, deleted} -> {:ok, deleted}
+      {:error, %Ecto.Changeset{}} -> {:error, :in_use}
+    end
   end
 
   @spec duplicate_exercise(Ctx.t(), String.t(), map()) ::

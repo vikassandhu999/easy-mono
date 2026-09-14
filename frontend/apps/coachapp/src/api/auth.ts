@@ -2,8 +2,11 @@ import {useMutation, useQuery} from '@tanstack/react-query';
 import {ApiError, call, client, publicClient, refreshSession} from './client';
 import {authKeys} from './keys';
 import {queryClient} from './query-client';
-import type {components, paths} from './schema';
+import type {CoachProfileUpdate, components, paths} from './schema';
 import {getSession, saveSession, sessionSnapshot} from './session';
+
+export type {CoachProfile as Profile} from './schema';
+export type ProfileUpdate = Pick<CoachProfileUpdate, 'first_name' | 'last_name' | 'phone'>;
 
 export type SignupRequest = components['schemas']['SignupRequest'];
 export type VerifyRequest = Extract<components['schemas']['VerifyRequest'], {email: string}>;
@@ -132,4 +135,21 @@ export function useCreateBusiness() {
 
 export function useProfile() {
   return useQuery({queryKey: authKeys.profile(), queryFn: ({signal}) => call(client.GET('/v1/coach/me', {signal}))});
+}
+
+export function useUpdateProfile() {
+  return useMutation({
+    onMutate: () => getSession()?.id,
+    mutationFn: (body: ProfileUpdate) => call(client.PATCH('/v1/coach/me', {body})),
+    onSuccess: async (result, _input, sessionId) => {
+      if (!sessionId || getSession()?.id !== sessionId) {
+        throw new Error('Your session changed. Please try again.');
+      }
+      queryClient.setQueryData(authKeys.profile(), result);
+      await queryClient.invalidateQueries({queryKey: authKeys.profile()});
+      if (!sessionId || getSession()?.id !== sessionId) {
+        throw new Error('Your session changed. Please try again.');
+      }
+    },
+  });
 }

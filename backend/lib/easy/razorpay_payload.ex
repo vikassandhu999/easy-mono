@@ -9,7 +9,9 @@ defmodule Easy.Razorpay.Payload do
           plan_id: String.t() | nil,
           status: String.t() | nil,
           quantity: non_neg_integer() | nil,
-          current_period_end: DateTime.t() | nil
+          current_period_end: DateTime.t() | nil,
+          has_scheduled_changes: boolean(),
+          checkout_request_id: Ecto.UUID.t() | nil
         }
   @type payment :: %{amount_paid: non_neg_integer() | nil, currency: String.t() | nil}
   @type webhook :: %{event: String.t(), subscription: subscription() | nil, payment: payment() | nil}
@@ -40,9 +42,20 @@ defmodule Easy.Razorpay.Payload do
       plan_id: subscription["plan_id"],
       status: subscription["status"],
       quantity: subscription["quantity"],
-      current_period_end: period_end(subscription["current_end"])
+      current_period_end: period_end(subscription["current_end"]),
+      has_scheduled_changes: subscription["has_scheduled_changes"] == true,
+      checkout_request_id: checkout_request_id(subscription["notes"])
     }
   end
+
+  defp checkout_request_id(%{"checkout_request_id" => request_id}) do
+    case Ecto.UUID.cast(request_id) do
+      {:ok, request_id} -> request_id
+      :error -> nil
+    end
+  end
+
+  defp checkout_request_id(_notes), do: nil
 
   defp payment_values(payment) do
     %{amount_paid: payment["amount"] && div(payment["amount"], 100), currency: payment["currency"]}
@@ -63,7 +76,8 @@ defmodule Easy.Razorpay.Payload do
       optional_string?(subscription["plan_id"]) and
       optional_string?(subscription["status"]) and
       optional_nonnegative_integer?(subscription["quantity"], @max_integer) and
-      valid_period_end?(subscription["current_end"])
+      valid_period_end?(subscription["current_end"]) and
+      optional_boolean?(subscription["has_scheduled_changes"])
   end
 
   def valid_subscription?(_subscription), do: false
@@ -94,6 +108,9 @@ defmodule Easy.Razorpay.Payload do
 
   defp optional_nonnegative_integer?(nil, _maximum), do: true
   defp optional_nonnegative_integer?(value, maximum), do: is_integer(value) and value >= 0 and value <= maximum
+
+  defp optional_boolean?(nil), do: true
+  defp optional_boolean?(value), do: is_boolean(value)
 
   defp valid_period_end?(nil), do: true
   defp valid_period_end?(value) when is_integer(value), do: match?({:ok, _}, DateTime.from_unix(value))

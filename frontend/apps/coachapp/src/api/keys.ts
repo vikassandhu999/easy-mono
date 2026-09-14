@@ -1,10 +1,13 @@
 import type {CheckInResponseFilters} from './check-in-responses';
 import type {ScheduleFilters} from './check-in-schedules';
 import type {ClientFilters} from './clients';
+import type {ConversationFilters} from './conversations';
 import type {FormTemplateFilters} from './forms';
+import type {TeamFilters} from './team';
 import type {TrainingPlanFilters} from './training-plans';
 import type {SessionFilters} from './training-sessions';
 import type {WeightProgressFilters} from './weight-progress';
+import type {WorkbenchFilters, WorkbenchQueue} from './workbench';
 
 export const authKeys = {
   all: ['auth'] as const,
@@ -28,8 +31,10 @@ export const formKeys = {
   infinite: (filters: FormTemplateFilters) => [...formKeys.lists(), 'templates', 'infinite', filters] as const,
   details: () => [...formKeys.all, 'detail'] as const,
   detail: (id: string) => [...formKeys.details(), id] as const,
+  management: (id: string) => [...formKeys.detail(id), 'management'] as const,
   intake: (clientId: string) => [...formKeys.all, 'intake', clientId] as const,
   submissions: (assignmentId: string) => [...formKeys.lists(), 'submissions', {assignmentId}] as const,
+  submission: (clientId: string, id: string) => [...formKeys.details(), 'submission', clientId, id] as const,
 };
 
 export const attachmentKeys = {
@@ -71,6 +76,8 @@ export const foodKeys = {
   infinite: (search: string) => [...foodKeys.lists(), 'infinite', {search}] as const,
   details: () => [...foodKeys.all, 'detail'] as const,
   detail: (id: string) => [...foodKeys.details(), id] as const,
+  usage: (id: string, kind: string, search: string) => [...foodKeys.lists(), 'usage', id, {kind, search}] as const,
+  copyCandidates: (search: string) => [...foodKeys.lists(), 'copy-candidates', {search}] as const,
 };
 
 export const recipeKeys = {
@@ -79,6 +86,8 @@ export const recipeKeys = {
   infinite: (search: string) => [...recipeKeys.lists(), 'infinite', {search}] as const,
   details: () => [...recipeKeys.all, 'detail'] as const,
   detail: (id: string) => [...recipeKeys.details(), id] as const,
+  usage: (id: string, kind: string, search: string) => [...recipeKeys.lists(), 'usage', id, {kind, search}] as const,
+  copyCandidates: (search: string) => [...recipeKeys.lists(), 'copy-candidates', {search}] as const,
 };
 
 export const checkInKeys = {
@@ -117,4 +126,51 @@ export const weightProgressKeys = {
   lists: () => [...weightProgressKeys.all, 'list'] as const,
   infinite: (clientId: string, filters: WeightProgressFilters) =>
     [...weightProgressKeys.lists(), clientId, 'infinite', filters] as const,
+};
+
+export const conversationKeys = {
+  all: ['conversations'] as const,
+  lists: () => [...conversationKeys.all, 'list'] as const,
+  infinite: (filters: ConversationFilters) => [...conversationKeys.lists(), 'infinite', filters] as const,
+  details: () => [...conversationKeys.all, 'detail'] as const,
+  forClient: (clientId: string) => [...conversationKeys.details(), 'client', clientId] as const,
+  history: (id: string) => [...conversationKeys.lists(), 'history', id] as const,
+};
+
+export const workbenchKeys = {
+  all: ['workbench'] as const,
+  counts: () => [...workbenchKeys.all, 'counts'] as const,
+  lists: () => [...workbenchKeys.all, 'list'] as const,
+  infinite: (queue: WorkbenchQueue, filters: WorkbenchFilters) =>
+    [...workbenchKeys.lists(), queue, 'infinite', filters] as const,
+};
+
+export const businessKeys = {
+  all: ['business'] as const,
+  detail: () => [...businessKeys.all, 'detail'] as const,
+  timezones: () => [...businessKeys.all, 'timezones'] as const,
+};
+
+export const teamKeys = {
+  all: ['team'] as const,
+  lists: () => [...teamKeys.all, 'list'] as const,
+  infinite: (filters: TeamFilters) => [...teamKeys.lists(), 'infinite', filters] as const,
+  details: () => [...teamKeys.all, 'detail'] as const,
+  detail: (id: string) => [...teamKeys.details(), id] as const,
+};
+
+export const billingKeys = {all: ['billing'] as const, detail: () => ['billing', 'detail'] as const};
+
+export const landingPageKeys = {
+  all: ['landing-page'],
+  detail: () => ['landing-page', 'detail'],
+  public: (slug: string) => ['landing-page', 'public', slug],
+};
+
+export const prospectKeys = {
+  all: ['prospects'] as const,
+  lists: () => ['prospects', 'list'] as const,
+  infinite: (filters: object) => ['prospects', 'list', 'infinite', filters] as const,
+  details: () => ['prospects', 'detail'] as const,
+  detail: (id: string) => ['prospects', 'detail', id] as const,
 };

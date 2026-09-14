@@ -135,6 +135,9 @@ importers:
       '@easy/utils':
         specifier: workspace:^
         version: link:../../packages/utils
+      '@shadcn/react':
+        specifier: ^0.3.1
+        version: 0.3.1(@types/react@19.2.18)(react@19.2.8)
       '@tanstack/react-query':
         specifier: 5.101.4
         version: 5.101.4(react@19.2.8)
@@ -150,6 +153,9 @@ importers:
       openapi-fetch:
         specifier: 0.17.0
         version: 0.17.0
+      phoenix:
+        specifier: 1.8.9
+        version: 1.8.9
       react:
         specifier: ^19.2.8
         version: 19.2.8
@@ -181,6 +187,9 @@ importers:
       '@types/node':
         specifier: ^24.13.3
         version: 24.13.3
+      '@types/phoenix':
+        specifier: 1.6.7
+        version: 1.6.7
       '@types/react':
         specifier: ^19.2.18
         version: 19.2.18
@@ -2327,6 +2336,17 @@ packages:
 
   '@rushstack/ts-command-line@5.0.2':
     resolution: {integrity: sha512-+AkJDbu1GFMPIU8Sb7TLVXDv/Q7Mkvx+wAjEl8XiXVVq+p1FmWW6M3LYpJMmoHNckSofeMecgWg5lfMwNAAsEQ==}
+
+  '@shadcn/react@0.3.1':
+    resolution: {integrity: sha512-2gOR0HDMtWeRsCZfNDaU0YDFdgH3zsDQ6lz67Fv/y/qjY9y+R8kJqAn6q56phqv7/zHi0wqURjntrNO9zL7vnQ==}
+    peerDependencies:
+      '@types/react': '>=19'
+      react: '>=19'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      react:
+        optional: true
 
   '@spectrum-icons/ui@3.7.0':
     resolution: {integrity: sha512-86iQSDfJb3Ama1WSJ/mEiFy4DJT7e/v4pSmEuX4aKKMzbNYft+O40N18S2POUnmblrb7MQneLC/pgIp1SDBwEQ==}
@@ -6950,6 +6970,11 @@ snapshots:
       string-argv: 0.3.2
     transitivePeerDependencies:
       - '@types/node'
+
+  '@shadcn/react@0.3.1(@types/react@19.2.18)(react@19.2.8)':
+    optionalDependencies:
+      '@types/react': 19.2.18
+      react: 19.2.8
 
   '@spectrum-icons/ui@3.7.0(@adobe/react-spectrum@3.47.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
     dependencies:

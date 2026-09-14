@@ -533,7 +533,7 @@ defmodule Easy.FormsTest do
       chosen = insert(:form_template, business: client.business, purpose: :intake)
 
       assert {:ok, _template} = Templates.set_default_intake(ctx, chosen.id)
-      chosen |> Ecto.Changeset.change(status: :archived) |> Repo.update!()
+      assert {:ok, %{is_default_intake: false}} = Templates.update(ctx, chosen.id, %{status: :archived})
 
       assert {:ok, assignment} = Assignments.assign_default_intake_to_client(ctx, client.id)
       assert assignment.form_template_id == oldest.id

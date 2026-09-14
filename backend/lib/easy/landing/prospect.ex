@@ -22,10 +22,15 @@ defmodule Easy.Landing.Prospect do
 
   schema "prospects" do
     field :name, :string
+    field :revision, :integer, default: 1
     field :phone, :string
     field :email, :string
     field :instagram, :string
     field :answers, :map, default: %{}
+    field :application_request_id, Ecto.UUID
+    field :application_fingerprint, :binary
+    field :submitted_program, :map
+    field :submitted_questions, {:array, :map}, default: []
     field :status, Ecto.Enum, values: @statuses, default: :new
     field :notes, :string
 
@@ -50,8 +55,29 @@ defmodule Easy.Landing.Prospect do
     |> put_change(:status, :new)
     |> validate_required([:business_id, :landing_page_id, :name])
     |> validate_contact()
+    |> validate_format(:email, ~r/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
     |> foreign_key_constraint(:business_id)
     |> foreign_key_constraint(:landing_program_id, name: :prospects_program_business_id_fkey)
+  end
+
+  @spec application_request(map()) :: {:ok, map()} | {:error, Ecto.Changeset.t()}
+  def application_request(attrs) do
+    types = %{
+      request_id: Ecto.UUID,
+      landing_page_id: Ecto.UUID,
+      expected_revision: :integer,
+      name: :string,
+      phone: :string,
+      email: :string,
+      instagram: :string,
+      landing_program_id: :string,
+      answers: :map
+    }
+
+    with {:ok, fields} <- cast({%{}, types}, attrs, Map.keys(types)) |> apply_action(:insert) do
+      fingerprint = :crypto.hash(:sha256, :erlang.term_to_binary(Map.delete(fields, :request_id), [:deterministic]))
+      {:ok, %{id: Map.get(fields, :request_id), page_id: Map.get(fields, :landing_page_id), fingerprint: fingerprint}}
+    end
   end
 
   # Coach edits: status + notes only.
@@ -59,17 +85,35 @@ defmodule Easy.Landing.Prospect do
   def update_changeset(prospect, attrs) do
     prospect
     |> cast(attrs, [:status, :notes])
+    |> put_change(:revision, prospect.revision + 1)
+    |> validate_enrolled_status(prospect.client_id)
     |> validate_string_lengths()
     |> validate_required([:status])
     |> check_constraint(:status, name: :prospects_status_check)
+    |> check_constraint(:status, name: :prospects_enrolled_status_check)
   end
 
   @spec enroll_changeset(t(), String.t()) :: Ecto.Changeset.t()
   def enroll_changeset(prospect, client_id) do
     prospect
-    |> change(%{status: :won})
+    |> change(%{status: :won, revision: prospect.revision + 1})
     |> put_change(:client_id, client_id)
     |> foreign_key_constraint(:client_id, name: :prospects_client_business_id_fkey)
+  end
+
+  defp validate_enrolled_status(changeset, nil), do: changeset
+
+  defp validate_enrolled_status(changeset, _client_id) do
+    validate_inclusion(changeset, :status, [:won], message: "an enrolled application stays accepted")
+  end
+
+  @spec expected_revision(map()) :: {:ok, pos_integer() | :any} | {:error, Ecto.Changeset.t()}
+  def expected_revision(attrs) do
+    changeset = cast({%{}, %{expected_revision: :integer}}, attrs, [:expected_revision])
+
+    with {:ok, input} <- apply_action(changeset, :update) do
+      {:ok, Map.get(input, :expected_revision, :any)}
+    end
   end
 
   defp validate_string_lengths(changeset) do
@@ -125,6 +169,21 @@ defmodule Easy.Landing.Prospect do
   def for_status(query, nil), do: query
   def for_status(query, ""), do: query
   def for_status(query, status), do: from(p in query, where: p.status == ^status)
+
+  @spec search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
+  def search(query, term) when term in [nil, ""], do: query
+
+  def search(query, term) do
+    pattern = term |> String.trim() |> Easy.Search.like_pattern()
+
+    from(prospect in query,
+      where:
+        ilike(
+          fragment("concat_ws(' ', ?, ?, ?, ?, ?)", prospect.name, prospect.email, prospect.phone, prospect.instagram, fragment("?->>'name'", prospect.submitted_program)),
+          ^pattern
+        )
+    )
+  end
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do

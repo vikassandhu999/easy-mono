@@ -7,9 +7,24 @@ defmodule EasyWeb.Types.Prospect do
   @type t :: %{
           required(:id) => String.t(),
           required(:name) => String.t(),
+          required(:revision) => pos_integer(),
+          required(:enrollment_defaults) => %{
+            required(:first_name) => String.t() | nil,
+            required(:last_name) => String.t() | nil,
+            required(:email) => String.t() | nil,
+            required(:phone) => String.t() | nil
+          },
+          required(:answer_rows) => [
+            %{
+              required(:question_id) => String.t(),
+              required(:label) => String.t(),
+              required(:value) => String.t() | nil
+            }
+          ],
           required(:phone) => String.t() | nil,
           required(:email) => String.t() | nil,
           required(:instagram) => String.t() | nil,
+          required(:submitted_questions) => [%{String.t() => EasyWeb.TypedRoute.Types.json()}],
           required(:answers) => %{String.t() => EasyWeb.TypedRoute.Types.json()},
           required(:status) => :new | :reviewing | :won | :lost,
           required(:notes) => String.t() | nil,
@@ -33,11 +48,13 @@ defmodule EasyWeb.Types.Prospect do
         }
 
   @type update :: %{
+          optional(:expected_revision) => pos_integer(),
           required(:status) => :new | :reviewing | :won | :lost,
           optional(:notes) => String.t() | nil
         }
 
   @type enroll :: %{
+          optional(:expected_revision) => pos_integer(),
           optional(:first_name) => String.t() | nil,
           optional(:last_name) => String.t() | nil,
           optional(:email) => String.t() | nil,
@@ -45,7 +62,9 @@ defmodule EasyWeb.Types.Prospect do
         }
 
   @type list_query :: %{
-          optional(:status) => String.t(),
+          optional(:status) => :new | :reviewing | :won | :lost,
+          optional(:search) => String.t(),
+          optional(:cursor) => String.t(),
           optional(:offset) => integer(),
           optional(:limit) => integer()
         }
@@ -55,14 +74,18 @@ defmodule EasyWeb.Types.Prospect do
     %{
       id: prospect.id,
       name: prospect.name,
+      revision: prospect.revision,
+      enrollment_defaults: Prospect.invitation_attrs(prospect, %{}),
+      answer_rows: Easy.ProspectAnswers.rows(prospect),
       phone: prospect.phone,
       email: prospect.email,
       instagram: prospect.instagram,
       answers: prospect.answers,
+      submitted_questions: prospect.submitted_questions,
       status: prospect.status,
       notes: prospect.notes,
       landing_page_slug: page_slug(prospect.landing_page),
-      program: program(prospect.landing_program),
+      program: submitted_program(prospect),
       client: client(prospect.client),
       inserted_at: prospect.inserted_at,
       updated_at: prospect.updated_at
@@ -71,6 +94,9 @@ defmodule EasyWeb.Types.Prospect do
 
   defp page_slug(%LandingPage{slug: slug}), do: slug
   defp page_slug(nil), do: nil
+
+  defp submitted_program(%Prospect{submitted_program: %{"id" => id, "name" => name}}), do: %{id: id, name: name}
+  defp submitted_program(prospect), do: program(prospect.landing_program)
 
   defp program(%LandingProgram{} = program), do: %{id: program.id, name: program.name}
   defp program(nil), do: nil
@@ -88,6 +114,7 @@ defmodule EasyWeb.Types.ProspectIndex do
   @type t :: %{
           required(:data) => [EasyWeb.Types.Prospect.t()],
           required(:count) => non_neg_integer(),
+          required(:next_cursor) => String.t() | nil,
           required(:summary) => %{
             required(:new) => non_neg_integer(),
             required(:reviewing) => non_neg_integer(),

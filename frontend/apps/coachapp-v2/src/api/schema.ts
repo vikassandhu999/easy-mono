@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash d54fedd6a3071687e5aacdfca12568fcf6a5b719e05c87f7ef482e975a8cf35e */
+/* typed-routes:hash 88b900d3aa70159aa8e46424a68f2459642d12c790e17b7b66af96baed3bd920 */
 export type Attachment = {
   id: string;
   content_type:
@@ -29,13 +29,20 @@ export type Billing = {
   used_seats: number;
   available_seats: number;
   awaiting_seat_count: number;
-  monthly_seat_price_inr: number;
+  monthly_seat_price_inr: number | null;
+  monthly_total_inr: number | null;
+  billing_enabled: boolean;
+  can_add_seats: boolean;
+  can_cancel: boolean;
+  can_sync: boolean;
+  cancellation_state: 'requested' | 'unknown' | 'accepted' | null;
+  pending_checkout: PendingBillingCheckout | null;
   current_period_end: string | null;
   is_owner: boolean;
   recent_events: Array<BillingEvent> | null;
 };
-export type BillingCheckout = {seats_to_add: number};
-export type BillingCheckoutPayload = {key_id: string; subscription_id: string};
+export type BillingCheckout = {seats_to_add: number; request_id?: string};
+export type BillingCheckoutPayload = {key_id: string; subscription_id: string; request_id: string};
 export type BillingCheckoutResult = {
   action: 'checkout' | 'updated';
   checkout: BillingCheckoutPayload | null;
@@ -61,16 +68,20 @@ export type Business = {
   handle: string;
   about: string | null;
   default_weight_unit: 'kg' | 'lbs';
+  timezone: string;
+  whatsapp_number: string | null;
   dashboard_setup_hidden_at: string | null;
   dashboard_setup_hidden_reason: 'dismissed' | 'completed' | null;
   inserted_at: string;
   updated_at: string;
 };
 export type BusinessCreate = {name: string; handle: string; about?: string | null; default_weight_unit?: 'kg' | 'lbs'};
+export type BusinessTimezoneOptions = {timezones: Array<string>};
 export type BusinessUpdate = {
   name?: string;
-  handle?: string;
   about?: string | null;
+  timezone?: string;
+  whatsapp_number?: string | null;
   default_weight_unit?: 'kg' | 'lbs';
 };
 export type BusinessUpdateDashboardSetup = {dashboard_setup_hidden_reason: 'dismissed' | 'completed' | null};
@@ -91,6 +102,13 @@ export type ChatMessageCoachCreate = {
 };
 export type ChatMessageEmbed = {type: 'form_submission'; id: string; snapshot: FormSubmissionEmbedSnapshot};
 export type ChatMessageEmbedRequest = {type: 'form_submission'; id: string};
+export type ChatMessageHistory = {
+  data: Array<ChatMessage>;
+  count: number;
+  next_cursor: string | null;
+  latest_message_at: string | null;
+};
+export type ChatMessageHistoryQuery = {cursor?: string; limit?: number};
 export type ChatMessageListQuery = {before?: string; limit?: number};
 export type ChatMessagePage = {data: Array<ChatMessage>; has_more: boolean};
 export type CheckInAwaitingReviewReason = {
@@ -181,6 +199,7 @@ export type Client = {
   training_plan_name: string | null;
   nutrition_plan_name: string | null;
   assigned_coach_id: string | null;
+  assigned_coach_name: string | null;
   invite_url: string | null;
   invitation_sent_at: string | null;
   invitation_expires_at: string | null;
@@ -210,6 +229,7 @@ export type ClientListQuery = {
   stage?: 'onboarding' | 'coaching';
   sort?: 'newest' | 'last_active';
   include_plans?: boolean;
+  assigned_coach_id?: string;
 };
 export type ClientReassign = {coach_id: string};
 export type ClientUpdate = {
@@ -261,8 +281,16 @@ export type Conversation = {
   inserted_at: string;
   updated_at: string;
 };
+export type ConversationInbox = {data: Array<Conversation>; count: number; next_cursor: string | null};
+export type ConversationInboxQuery = {
+  cursor?: string;
+  limit?: number;
+  search?: string;
+  status?: 'all' | 'waiting' | 'unread';
+};
 export type ConversationListQuery = {offset?: number; limit?: number; search?: string};
 export type ConversationMarkHandled = {expected_last_message_at: string};
+export type ConversationMarkReadQuery = {through?: string};
 export type Day = {
   date: string;
   plan_id: string | null;
@@ -442,6 +470,7 @@ export type FormAssignmentAnswer = string | number | boolean | Array<string> | {
 export type FormAssignmentCreate = {form_template_id: string};
 export type FormAssignmentSubmission = FormSubmission;
 export type FormAssignmentUpdate = {
+  expected_status?: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
   priority?: 'high' | 'normal';
   status?: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
   due_date?: string | null;
@@ -491,10 +520,39 @@ export type FormSubmission = {
   }>;
   inserted_at: string;
 };
+export type FormSubmissionDetail = {
+  id: string;
+  form_assignment_id: string;
+  question_snapshot: Array<FormSnapshotSection>;
+  answers: {[key: string]: FormAssignmentAnswer};
+  submitted_by_type: 'coach' | 'client' | 'system';
+  submitted_at: string;
+  reviewed_at: string | null;
+  reviewed_by_id: string | null;
+  attachments: Array<{
+    id: string;
+    content_type:
+      | 'image/jpeg'
+      | 'image/png'
+      | 'image/webp'
+      | 'image/heic'
+      | 'video/mp4'
+      | 'video/webm'
+      | 'video/quicktime'
+      | 'audio/webm'
+      | 'audio/mp4'
+      | 'audio/mpeg';
+    byte_size: number;
+    duration_ms: number | null;
+  }>;
+  inserted_at: string;
+  form_assignment: {id: string; purpose: 'intake' | 'check_in'; form_template: {id: string; name: string}};
+};
 export type FormSubmissionEmbedSnapshot = {form_assignment_id: string; title: string; submitted_at: string};
 export type FormTemplate = {
   id: string;
   name: string;
+  revision: number;
   purpose: 'intake' | 'check_in';
   sections: Array<{questions: Array<FormTemplateQuestion>; title?: string}>;
   status: 'active' | 'archived';
@@ -511,7 +569,21 @@ export type FormTemplateCreate = {
   status?: 'active' | 'archived';
 };
 export type FormTemplateIndex = {data: Array<FormTemplate>; count: number; next_cursor: string | null};
-export type FormTemplateListQuery = {cursor?: string; limit?: number; search?: string; purpose?: 'intake' | 'check_in'};
+export type FormTemplateListQuery = {
+  cursor?: string;
+  limit?: number;
+  search?: string;
+  purpose?: 'intake' | 'check_in';
+  status?: 'active' | 'archived';
+};
+export type FormTemplateManagement = {
+  template: FormTemplate;
+  assignment_count: number;
+  schedule_count: number;
+  active_schedule_count: number;
+  delete_blocked_reason: 'assignments' | 'schedules' | 'built_in' | null;
+};
+export type FormTemplateMutationQuery = {expected_revision?: number};
 export type FormTemplateQuestion =
   | {
       id: string;
@@ -522,7 +594,12 @@ export type FormTemplateQuestion =
     }
   | {id: string; label: string; type: 'service_type'; required?: boolean};
 export type FormTemplateSection = {questions: Array<FormTemplateQuestion>; title?: string};
-export type FormTemplateUpdate = {name?: string; sections?: Array<FormTemplateSection>; status?: 'active' | 'archived'};
+export type FormTemplateUpdate = {
+  expected_revision?: number;
+  name?: string;
+  sections?: Array<FormTemplateSection>;
+  status?: 'active' | 'archived';
+};
 export type Health = {status: string; service: string; timestamp: string; version: string};
 export type IntakeOverdueReason = {code: 'intake_overdue'; assignment_id: string; due_on: string; form_title: string};
 export type InvitationFollowUpDueReason = {
@@ -534,6 +611,7 @@ export type InvitationFollowUpDueReason = {
 export type LandingPage = {
   id: string;
   slug: string;
+  revision: number;
   template: 'proof_first' | 'problem_fit' | 'coach_story';
   eyebrow: string | null;
   headline: string;
@@ -562,6 +640,9 @@ export type LandingPage = {
   updated_at: string;
 };
 export type LandingPageApplication = {
+  landing_page_id?: string;
+  request_id?: string;
+  expected_revision?: number;
   name: string;
   phone?: string | null;
   email?: string | null;
@@ -577,7 +658,9 @@ export type LandingPageApplicationResult = {
   whatsapp_number: string | null;
 };
 export type LandingPagePublic = {
+  id: string;
   slug: string;
+  revision: number;
   template: 'proof_first' | 'problem_fit' | 'coach_story';
   eyebrow: string | null;
   headline: string;
@@ -606,6 +689,7 @@ export type LandingPagePublic = {
 };
 export type LandingPageUpsert = {
   slug: string;
+  expected_revision?: number;
   template: 'proof_first' | 'problem_fit' | 'coach_story';
   headline: string;
   status: 'draft' | 'published';
@@ -622,6 +706,7 @@ export type LandingPageUpsert = {
     options?: Array<string>;
   }>;
   programs?: Array<{
+    id?: string;
     name: string;
     audience?: string | null;
     promise?: string | null;
@@ -643,6 +728,29 @@ export type LibraryMedia = {
 export type LibraryMediaCreate = {
   content_type: 'image/jpeg' | 'image/png' | 'image/webp' | 'video/mp4' | 'video/webm';
   byte_size: number;
+};
+export type LibraryUsage = {
+  item: LibraryUsageItem;
+  counts: LibraryUsageCounts;
+  delete_blocked_reason: 'shared_food' | 'in_use' | null;
+  data: Array<LibraryUsageReference>;
+  count: number;
+  next_cursor: string | null;
+};
+export type LibraryUsageCounts = {recipes: number; templates: number; client_plans: number};
+export type LibraryUsageItem = {id: string; name: string; read_only: boolean};
+export type LibraryUsageQuery = {
+  kind?: 'recipes' | 'templates' | 'client_plans';
+  search?: string;
+  cursor?: string;
+  limit?: number;
+};
+export type LibraryUsageReference = {
+  id: string;
+  name: string;
+  client_id: string | null;
+  kind: 'recipe' | 'template' | 'client_plan';
+  inserted_at: string;
 };
 export type MissedCheckInReason = {code: 'missed_check_in'; assignment_id: string; due_on: string};
 export type Muscle = {id: string; name: string; description: string | null};
@@ -826,6 +934,14 @@ export type NutritionWeekSchedule = {
   saturday: string;
   sunday: string;
 };
+export type PendingBillingCheckout = {
+  key_id: string;
+  subscription_id: string | null;
+  request_id: string;
+  target_quantity: number;
+  status: 'pending' | 'unknown';
+  kind: 'create' | 'update';
+};
 export type PerformedSet = {
   id: string;
   exercise_name: string;
@@ -849,9 +965,18 @@ export type PerformedSet = {
 export type Prospect = {
   id: string;
   name: string;
+  revision: number;
+  enrollment_defaults: {
+    first_name: string | null;
+    last_name: string | null;
+    email: string | null;
+    phone: string | null;
+  };
+  answer_rows: Array<{question_id: string; label: string; value: string | null}>;
   phone: string | null;
   email: string | null;
   instagram: string | null;
+  submitted_questions: Array<{[key: string]: unknown}>;
   answers: {[key: string]: unknown};
   status: 'new' | 'reviewing' | 'won' | 'lost';
   notes: string | null;
@@ -867,6 +992,7 @@ export type Prospect = {
   updated_at: string;
 };
 export type ProspectEnroll = {
+  expected_revision?: number;
   first_name?: string | null;
   last_name?: string | null;
   email?: string | null;
@@ -876,10 +1002,21 @@ export type ProspectEnrollment = {data: {prospect: Prospect; already_enrolled: b
 export type ProspectIndex = {
   data: Array<Prospect>;
   count: number;
+  next_cursor: string | null;
   summary: {new: number; reviewing: number; won: number; lost: number};
 };
-export type ProspectListQuery = {status?: string; offset?: number; limit?: number};
-export type ProspectUpdate = {status: 'new' | 'reviewing' | 'won' | 'lost'; notes?: string | null};
+export type ProspectListQuery = {
+  status?: 'new' | 'reviewing' | 'won' | 'lost';
+  search?: string;
+  cursor?: string;
+  offset?: number;
+  limit?: number;
+};
+export type ProspectUpdate = {
+  expected_revision?: number;
+  status: 'new' | 'reviewing' | 'won' | 'lost';
+  notes?: string | null;
+};
 export type Recipe = {
   id: string;
   name: string;
@@ -1005,10 +1142,19 @@ export type TeamMember = {
   email: string | null;
   status: 'invited' | 'active' | 'inactive';
   is_owner: boolean;
+  assigned_client_count: number;
+  invitation_expires_at: string | null;
+  invitation_expired: boolean;
   invitation_sent_at: string | null;
 };
+export type TeamMemberIndex = {data: Array<TeamMember>; count: number; next_cursor: string | null};
 export type TeamMemberInvite = {email: string; first_name?: string | null; last_name?: string | null};
-export type TeamMemberListQuery = {};
+export type TeamMemberListQuery = {
+  cursor?: string;
+  limit?: number;
+  search?: string;
+  status?: 'active' | 'invited' | 'inactive';
+};
 export type TrainingPlan = {
   id: string;
   kind: 'template' | 'client_plan';
@@ -1247,6 +1393,7 @@ export type WorkbenchCheckInAssignment = {
   status: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
   due_date: string | null;
 };
+export type WorkbenchCheckInPage = {data: Array<WorkbenchCheckInQueueItem>; count: number; next_cursor: string | null};
 export type WorkbenchCheckInQueueItem = {
   submission: WorkbenchCheckInSubmission;
   client: Client;
@@ -1259,19 +1406,42 @@ export type WorkbenchCheckInSubmission = {
   submitted_at: string;
   reviewed_at: string | null;
 };
+export type WorkbenchExpiringPage = {
+  data: Array<WorkbenchExpiringQueueItem>;
+  count: number;
+  next_cursor: string | null;
+};
 export type WorkbenchExpiringQueueItem = {client: Client; reasons: Array<EngagementEndingSoonReason>};
-export type WorkbenchListQuery = {offset?: number; limit?: number};
+export type WorkbenchListQuery = {offset?: number; cursor?: string; search?: string; limit?: number};
+export type WorkbenchOnboardingPage = {
+  data: Array<WorkbenchOnboardingQueueItem>;
+  count: number;
+  next_cursor: string | null;
+};
 export type WorkbenchOnboardingQueueItem = {
   client: Client;
   reasons: Array<InvitationFollowUpDueReason | IntakeOverdueReason>;
 };
 export type WorkbenchProgrammingCounts = {all: number; training: number; nutrition: number};
-export type WorkbenchProgrammingQuery = {offset?: number; limit?: number; service?: 'all' | 'training' | 'nutrition'};
+export type WorkbenchProgrammingPage = {
+  data: Array<WorkbenchProgrammingQueueItem>;
+  count: number;
+  next_cursor: string | null;
+};
+export type WorkbenchProgrammingQuery = {
+  offset?: number;
+  cursor?: string;
+  search?: string;
+  limit?: number;
+  service?: 'all' | 'training' | 'nutrition';
+};
 export type WorkbenchProgrammingQueueItem = {
   client: Client;
   reasons: Array<ServiceNeverProgrammedReason | ServiceCoverageMissingReason | ServiceCoverageEndingSoonReason>;
 };
+export type WorkbenchQuietPage = {data: Array<WorkbenchQuietQueueItem>; count: number; next_cursor: string | null};
 export type WorkbenchQuietQueueItem = {client: Client; reasons: Array<MissedCheckInReason>};
+export type WorkbenchRepliesPage = {data: Array<WorkbenchRepliesQueueItem>; count: number; next_cursor: string | null};
 export type WorkbenchRepliesQueueItem = {
   conversation: Conversation;
   waiting_message_count: number;
@@ -1283,7 +1453,7 @@ export type WorkbenchSnooze = {queue: 'quiet' | 'expiring'; snoozed_until: strin
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 8255e4f39f61742e2a716feddd006e14f1fd56ff541a811cf2cb790b5fd31b61 */
+  /* typed-routes:hash 37169a0aae23deb343a8b7906c32982e1dd503155ace4b4e8e0399a0aded8030 */
   '/api/health': {
     get: {
       parameters: {
@@ -1347,6 +1517,19 @@ export interface paths {
       requestBody: {content: {'application/json': BusinessUpdateDashboardSetup}};
       responses: {
         200: {content: {'application/json': {data: Business}}};
+      };
+    };
+  };
+  '/v1/businesses/timezones': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: BusinessTimezoneOptions}}};
       };
     };
   };
@@ -1568,6 +1751,19 @@ export interface paths {
       requestBody: {content: {'application/json': FormAssignmentCreate}};
       responses: {
         201: {content: {'application/json': {data: FormAssignment}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/form-submissions/{id}': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: FormSubmissionDetail}}};
       };
     };
   };
@@ -1794,6 +1990,19 @@ export interface paths {
       };
     };
   };
+  '/v1/coach/conversation-inbox': {
+    get: {
+      parameters: {
+        query?: ConversationInboxQuery;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': ConversationInbox}};
+      };
+    };
+  };
   '/v1/coach/conversations': {
     get: {
       parameters: {
@@ -1817,6 +2026,19 @@ export interface paths {
       };
       responses: {
         200: {content: {'application/json': {data: Conversation}}};
+      };
+    };
+  };
+  '/v1/coach/conversations/{id}/history': {
+    get: {
+      parameters: {
+        query?: ChatMessageHistoryQuery;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': ChatMessageHistory}};
       };
     };
   };
@@ -1862,7 +2084,7 @@ export interface paths {
   '/v1/coach/conversations/{id}/read': {
     post: {
       parameters: {
-        query?: never;
+        query?: ConversationMarkReadQuery;
         header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
@@ -1966,7 +2188,7 @@ export interface paths {
   '/v1/coach/form-templates/{id}': {
     delete: {
       parameters: {
-        query?: never;
+        query?: FormTemplateMutationQuery;
         header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
@@ -2002,7 +2224,7 @@ export interface paths {
   '/v1/coach/form-templates/{id}/default-intake': {
     delete: {
       parameters: {
-        query?: never;
+        query?: FormTemplateMutationQuery;
         header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
@@ -2013,13 +2235,26 @@ export interface paths {
     };
     put: {
       parameters: {
-        query?: never;
+        query?: FormTemplateMutationQuery;
         header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
       responses: {
         200: {content: {'application/json': {data: FormTemplate}}};
+      };
+    };
+  };
+  '/v1/coach/form-templates/{id}/management': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: FormTemplateManagement}}};
       };
     };
   };
@@ -2184,6 +2419,19 @@ export interface paths {
       };
       responses: {
         200: {content: {'application/json': FoodImpact}};
+      };
+    };
+  };
+  '/v1/coach/nutrition-foods/{id}/usage': {
+    get: {
+      parameters: {
+        query?: LibraryUsageQuery;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': LibraryUsage}};
       };
     };
   };
@@ -2402,6 +2650,19 @@ export interface paths {
       };
     };
   };
+  '/v1/coach/nutrition-recipes/{id}/usage': {
+    get: {
+      parameters: {
+        query?: LibraryUsageQuery;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': LibraryUsage}};
+      };
+    };
+  };
   '/v1/coach/prospects': {
     get: {
       parameters: {
@@ -2463,7 +2724,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<TeamMember>}}};
+        200: {content: {'application/json': TeamMemberIndex}};
       };
     };
   };
@@ -2483,6 +2744,17 @@ export interface paths {
   };
   '/v1/coach/team/{id}': {
     delete: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: TeamMember}}};
+      };
+    };
+    get: {
       parameters: {
         query?: never;
         header?: {Authorization?: string};
@@ -2772,7 +3044,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<WorkbenchCheckInQueueItem>; count: number}}};
+        200: {content: {'application/json': WorkbenchCheckInPage}};
       };
     };
   };
@@ -2785,7 +3057,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<WorkbenchExpiringQueueItem>; count: number}}};
+        200: {content: {'application/json': WorkbenchExpiringPage}};
       };
     };
   };
@@ -2798,7 +3070,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<WorkbenchOnboardingQueueItem>; count: number}}};
+        200: {content: {'application/json': WorkbenchOnboardingPage}};
       };
     };
   };
@@ -2811,7 +3083,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<WorkbenchProgrammingQueueItem>; count: number}}};
+        200: {content: {'application/json': WorkbenchProgrammingPage}};
       };
     };
   };
@@ -2824,7 +3096,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<WorkbenchQuietQueueItem>; count: number}}};
+        200: {content: {'application/json': WorkbenchQuietPage}};
       };
     };
   };
@@ -2837,7 +3109,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<WorkbenchRepliesQueueItem>; count: number}}};
+        200: {content: {'application/json': WorkbenchRepliesPage}};
       };
     };
   };

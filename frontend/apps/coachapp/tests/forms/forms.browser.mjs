@@ -110,14 +110,14 @@ try {
     expect(saved.sections[0].questions.map((q) => q.id)).toEqual(created.sections[0].questions.map((q) => q.id));
     expect(saved.sections[0].questions[1].label).toBe('What does success look like?');
     await page.getByRole('link', {name: /Getting to know you/}).click();
-    await page.route('**/default-intake', (route) =>
+    await page.route('**/default-intake*', (route) =>
       route.request().method() === 'PUT'
         ? route.fulfill({status: 503, json: {error_code: 'unavailable', error_message: 'Unavailable'}})
         : route.continue(),
     );
     await page.getByRole('button', {name: 'Use as default intake', exact: true}).click();
     await expect(page.getByRole('alert')).toBeVisible();
-    await page.unroute('**/default-intake');
+    await page.unroute('**/default-intake*');
     await page.getByRole('button', {name: 'Use as default intake', exact: true}).click();
     await expect(page.getByText('Default intake', {exact: true})).toBeVisible();
     await page.getByRole('link', {name: 'Clients', exact: true}).click();

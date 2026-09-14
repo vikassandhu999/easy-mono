@@ -6,14 +6,16 @@ defmodule Easy.Razorpay do
   # total_count is mandatory for Razorpay subscriptions; 120 monthly cycles = 10y.
   @total_count 120
 
-  @spec create_subscription(pos_integer()) :: {:ok, Payload.subscription()} | {:error, :razorpay_error}
-  def create_subscription(quantity) do
+  @spec create_subscription(pos_integer(), Ecto.UUID.t() | nil) ::
+          {:ok, Payload.subscription()} | {:error, :razorpay_error}
+  def create_subscription(quantity, request_id \\ nil) do
     request(:post, "/subscriptions",
       json: %{
         plan_id: config(:plan_id),
         quantity: quantity,
         total_count: @total_count,
-        customer_notify: 1
+        customer_notify: 1,
+        notes: if(request_id, do: %{checkout_request_id: request_id}, else: %{})
       }
     )
   end
@@ -66,6 +68,8 @@ defmodule Easy.Razorpay do
       method: method,
       base_url: "https://api.razorpay.com/v1",
       url: path,
+      receive_timeout: 15_000,
+      retry: false,
       auth: {:basic, "#{config(:key_id)}:#{config(:key_secret)}"}
     ]
     |> Keyword.merge(opts)

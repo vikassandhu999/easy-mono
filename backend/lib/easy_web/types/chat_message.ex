@@ -76,6 +76,8 @@ defmodule EasyWeb.Types.ChatMessage do
           optional(:embed) => EasyWeb.Types.ChatMessageEmbedRequest.t() | nil
         }
 
+  @type history_query :: %{optional(:cursor) => String.t(), optional(:limit) => pos_integer()}
+
   @type client_create :: %{
           optional(:body) => String.t() | nil,
           optional(:attachment_ids) => [String.t()]
@@ -114,5 +116,16 @@ defmodule EasyWeb.Types.ChatMessagePage do
   @type t :: %{
           required(:data) => [EasyWeb.Types.ChatMessage.t()],
           required(:has_more) => boolean()
+        }
+end
+
+defmodule EasyWeb.Types.ChatMessageHistory do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:data) => [EasyWeb.Types.ChatMessage.t()],
+          required(:count) => non_neg_integer(),
+          required(:next_cursor) => String.t() | nil,
+          required(:latest_message_at) => DateTime.t() | nil
         }
 end

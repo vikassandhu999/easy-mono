@@ -64,7 +64,7 @@ export function AssignTrainingPlan() {
 function ChoosePlan({person}: {person: Client}) {
   const [params] = useSearchParams();
   const search = params.get('search')?.trim() ?? '';
-  const plans = useTrainingTemplates({search});
+  const plans = useTrainingTemplates({search, archived: false});
   const location = useLocation();
   const {state} = useListLocation(routes.home);
   const name = `${person.first_name ?? ''} ${person.last_name ?? ''}`.trim() || person.email || 'this client';

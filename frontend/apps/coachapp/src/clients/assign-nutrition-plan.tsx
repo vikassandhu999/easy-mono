@@ -67,7 +67,7 @@ function Choose({clientId}: {clientId: string}) {
   const {state} = useListLocation(routes.home);
   const [params] = useSearchParams();
   const {search} = useLocation();
-  const query = useNutritionTemplates(params.get('search') ?? '');
+  const query = useNutritionTemplates({search: params.get('search') ?? '', archived: false});
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">

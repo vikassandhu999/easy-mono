@@ -261,3 +261,8 @@ Serving-size and recipe-tag coverage runs in `test:foods` and `test:recipes`. Th
 
 
 Food photo/video controls share their upload behavior with exercises. Ingredient and meal pickers load previews only when opened. Run `rtk pnpm -C frontend/apps/coachapp test:food-media` with API 4000, app 2022 and MinIO 9000; alternate API/app ports use `COACH_API_URL` / `COACH_APP_URL`. See [the food media brief](../../../.scratch/coachapp-rebuild/food-media.md).
+
+
+## Template management
+
+Saved training and nutrition editors offer Manage template for copying, archive/restore and confirmed deletion. Client copies remain independent. Both libraries support server-filtered Active/Archived/All views. Run `rtk pnpm -C frontend/apps/coachapp test:plan-management` against API 4000 and app 2022, or set `COACH_API_URL` / `COACH_APP_URL`. See [the management brief](../../../.scratch/coachapp-rebuild/plan-management.md) for recovery and verification.

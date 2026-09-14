@@ -30,13 +30,18 @@ type Write =
   | {kind: 'details'; id: string; body: NutritionDetails & {expected_revision: number}}
   | {kind: 'menu'; id: string; body: NutritionMenuBody};
 
-export function useNutritionTemplates(search: string) {
+export type NutritionPlanFilters = Pick<
+  NonNullable<paths['/v1/coach/nutrition-plans']['get']['parameters']['query']>,
+  'search' | 'archived'
+>;
+
+export function useNutritionTemplates(filters: NutritionPlanFilters) {
   return useInfiniteQuery({
-    queryKey: nutritionKeys.infinite(search),
+    queryKey: nutritionKeys.infinite(filters),
     queryFn: async ({pageParam, signal}) => {
       const page = await call(
         client.GET('/v1/coach/nutrition-plans', {
-          params: {query: {search, archived: false, cursor: pageParam, limit: 20}},
+          params: {query: {...filters, cursor: pageParam, limit: 20}},
           signal,
         }),
       );

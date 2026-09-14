@@ -160,6 +160,15 @@ export function NutritionPlanWorksheet({
         }
         back={{to, label: clientPlan ? 'Back to client' : 'Back to nutrition plans', state}}
       />
+      {plan && !clientPlan && (
+        <Button
+          variant="outline"
+          isDisabled={pending}
+          onPress={() => navigate(generatePath(routes.manageNutritionPlan, {id: plan.id}), {state})}
+        >
+          Manage template
+        </Button>
+      )}
       {clientPlan && plan && (
         <p className="text-sm text-muted-foreground">
           {plan.start_date ?? 'Start date not set'} → {plan.end_date ?? 'No end date'}
@@ -492,7 +501,7 @@ function Recovery({
   onUse: (plan: NutritionPlan) => void;
   onNew: () => void;
 }) {
-  const query = useNutritionTemplates(name.trim());
+  const query = useNutritionTemplates({search: name.trim(), archived: false});
   const [id, setId] = useState('');
   const detail = useNutritionPlan(id);
   const plan = detail.data?.data;

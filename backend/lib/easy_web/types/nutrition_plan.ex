@@ -163,6 +163,8 @@ defmodule EasyWeb.Types.NutritionPlan do
           optional(:end_date) => Date.t() | nil
         }
 
+  @type lifecycle_query :: %{optional(:expected_revision) => pos_integer()}
+
   @type preview_menu :: %{required(:menu) => EasyWeb.Types.NutritionMenu.t()}
 
   @type replace_menu :: %{

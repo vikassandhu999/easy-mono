@@ -5,11 +5,14 @@ import {routes} from '../routes';
 import {buttonVariants} from '../ui/button';
 import {InfiniteList} from '../ui/infinite-list';
 import {ListSearch} from '../ui/list-search';
-import {Page, PageHeader, Surface} from '../ui/page';
+import {Page, PageHeader, StatusBadge, Surface} from '../ui/page';
+import {PlanStatusFilter, usePlanStatus} from '../ui/plan-status-filter';
 export function TrainingPlans() {
   const [params] = useSearchParams();
-  const {search} = useLocation();
-  const query = useTrainingTemplates({search: params.get('search') ?? ''});
+  const {search, state: locationState} = useLocation();
+  const notice: unknown = locationState;
+  const archived = usePlanStatus();
+  const query = useTrainingTemplates({search: params.get('search') ?? '', ...(archived !== null ? {archived} : {})});
   return (
     <Page>
       <PageHeader
@@ -32,7 +35,18 @@ export function TrainingPlans() {
       >
         Exercise library
       </Link>
-      <ListSearch label="Search training plans" />
+      <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
+        <ListSearch label="Search training plans" />
+        <PlanStatusFilter />
+      </div>
+      {notice !== null && typeof notice === 'object' && 'deleted' in notice && typeof notice.deleted === 'string' && (
+        <p
+          role="status"
+          className="rounded-xl bg-muted p-4 text-sm"
+        >
+          {notice.deleted} deleted.
+        </p>
+      )}
       <InfiniteList
         query={query}
         label="training templates"
@@ -40,24 +54,33 @@ export function TrainingPlans() {
         empty={
           <Surface>
             <h2 className="section-title">
-              {params.get('search') ? 'No matching templates' : 'Create your first training template'}
+              {archived
+                ? 'No archived templates'
+                : params.get('search')
+                  ? 'No matching templates'
+                  : 'Create your first training template'}
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              {params.get('search')
-                ? 'Try a different name.'
-                : 'Build workouts and a weekly schedule to reuse with clients.'}
+              {archived
+                ? 'Archived templates stay here to review or restore.'
+                : params.get('search')
+                  ? 'Try a different name.'
+                  : 'Build workouts and a weekly schedule to reuse with clients.'}
             </p>
           </Surface>
         }
       >
         {(plan) => (
           <Link
-            to={generatePath(routes.editTrainingPlan, {id: plan.id})}
+            to={generatePath(plan.status === 'archived' ? routes.manageTrainingPlan : routes.editTrainingPlan, {
+              id: plan.id,
+            })}
             state={{listSearch: search}}
             className="flex min-h-20 items-center gap-4 px-5 py-4 hover:bg-muted/50 focus-visible:-outline-offset-4"
           >
             <div className="min-w-0 flex-1">
               <p className="break-words font-semibold">{plan.name}</p>
+              {plan.status === 'archived' && <StatusBadge>Archived</StatusBadge>}
               <p className="mt-1 text-sm text-muted-foreground">
                 {plan.workout_count} {plan.workout_count === 1 ? 'workout' : 'workouts'}
               </p>

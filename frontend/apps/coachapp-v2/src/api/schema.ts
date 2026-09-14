@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 88b900d3aa70159aa8e46424a68f2459642d12c790e17b7b66af96baed3bd920 */
+/* typed-routes:hash 0fafaa6d78a87eb95f4836e553a38b8a79d73e35d2d38d9cb7a4ba4d0dcb6b50 */
 export type Attachment = {
   id: string;
   content_type:
@@ -901,6 +901,7 @@ export type NutritionPlanCreate = {
   target_fiber_g?: number | null;
 };
 export type NutritionPlanIndex = {data: Array<NutritionPlan>; count: number; next_cursor: string | null};
+export type NutritionPlanLifecycleQuery = {expected_revision?: number};
 export type NutritionPlanListQuery = {
   cursor?: string;
   offset?: number;
@@ -1453,7 +1454,7 @@ export type WorkbenchSnooze = {queue: 'quiet' | 'expiring'; snoozed_until: strin
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 37169a0aae23deb343a8b7906c32982e1dd503155ace4b4e8e0399a0aded8030 */
+  /* typed-routes:hash 50a478dc6308e59cfa1cc2e358dc08da8b629036ce67be1da0100aa22cacf5b6 */
   '/api/health': {
     get: {
       parameters: {
@@ -2477,7 +2478,7 @@ export interface paths {
   '/v1/coach/nutrition-plans/{id}': {
     delete: {
       parameters: {
-        query?: never;
+        query?: NutritionPlanLifecycleQuery;
         header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
@@ -2513,7 +2514,7 @@ export interface paths {
   '/v1/coach/nutrition-plans/{id}/archive': {
     post: {
       parameters: {
-        query?: never;
+        query?: NutritionPlanLifecycleQuery;
         header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
@@ -2553,7 +2554,7 @@ export interface paths {
   '/v1/coach/nutrition-plans/{id}/restore': {
     post: {
       parameters: {
-        query?: never;
+        query?: NutritionPlanLifecycleQuery;
         header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;

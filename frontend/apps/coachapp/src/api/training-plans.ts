@@ -9,7 +9,7 @@ import {getSession} from './session';
 export type {TrainingPlan, TrainingPlanPlannedSet} from './schema';
 export type TrainingPlanFilters = Pick<
   NonNullable<paths['/v1/coach/training-plans']['get']['parameters']['query']>,
-  'search'
+  'search' | 'archived'
 >;
 type Assignment = NonNullable<
   paths['/v1/coach/clients/{client_id}/training-plans/{id}/assign']['post']['requestBody']
@@ -21,7 +21,7 @@ export function useTrainingTemplates(filters: TrainingPlanFilters) {
     queryFn: ({pageParam, signal}) =>
       call(
         client.GET('/v1/coach/training-plans', {
-          params: {query: {...filters, archived: false, cursor: pageParam, limit: 20}},
+          params: {query: {...filters, cursor: pageParam, limit: 20}},
           signal,
         }),
       ),

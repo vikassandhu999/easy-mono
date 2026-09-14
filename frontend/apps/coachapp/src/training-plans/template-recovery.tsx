@@ -15,7 +15,7 @@ export function TemplateRecovery({
   onUse: (plan: TrainingPlan) => void;
   onClose: () => void;
 }) {
-  const templates = useTrainingTemplates({search: name.trim()});
+  const templates = useTrainingTemplates({search: name.trim(), archived: false});
   const [selected, setSelected] = useState('');
   const detail = useTrainingPlan(selected);
   const plan = detail.data?.data;

@@ -39,6 +39,7 @@ import {NutritionHistory} from './nutrition-history/nutrition-history';
 import {LibraryManagement} from './nutrition-library/library-management';
 import {NutritionPlanEditor} from './nutrition-plans/nutrition-plan-editor';
 import {NutritionPlans} from './nutrition-plans/nutrition-plans';
+import {PlanManagement} from './plan-management/plan-management';
 import {RecipeEditor} from './recipes/recipe-editor';
 import {Recipes} from './recipes/recipes';
 import {routes} from './routes';
@@ -125,6 +126,8 @@ function Root() {
           location.pathname === routes.nutritionPlans ||
           location.pathname === routes.foods ||
           location.pathname === routes.recipes ||
+          matchPath(routes.manageTrainingPlan, location.pathname) ||
+          matchPath(routes.manageNutritionPlan, location.pathname) ||
           matchPath(routes.manageFood, location.pathname) ||
           matchPath(routes.manageRecipe, location.pathname) ||
           location.pathname === routes.checkInResponses ||
@@ -199,6 +202,7 @@ export const router = createBrowserRouter([
               {path: routes.createExercise, element: <ExerciseEditor />},
               {path: routes.exercise, element: <ExerciseEditor />},
               {path: routes.createTrainingPlan, element: <TrainingPlanEditor />},
+              {path: routes.manageTrainingPlan, element: <PlanManagement resource="training" />},
               {path: routes.editTrainingPlan, element: <TrainingPlanEditor />},
               {path: routes.editClientTrainingPlan, element: <TrainingPlanEditor />},
               {path: routes.nutritionPlans, element: <NutritionPlans />},
@@ -211,6 +215,7 @@ export const router = createBrowserRouter([
               {path: routes.manageFood, element: <LibraryManagement resource="food" />},
               {path: routes.manageRecipe, element: <LibraryManagement resource="recipe" />},
               {path: routes.createNutritionPlan, element: <NutritionPlanEditor />},
+              {path: routes.manageNutritionPlan, element: <PlanManagement resource="nutrition" />},
               {path: routes.editNutritionPlan, element: <NutritionPlanEditor />},
               {path: routes.editClientNutritionPlan, element: <NutritionPlanEditor />},
               {path: routes.assignNutritionPlan, element: <AssignNutritionPlan />},

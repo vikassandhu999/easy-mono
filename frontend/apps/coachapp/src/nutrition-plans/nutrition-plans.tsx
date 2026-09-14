@@ -4,11 +4,14 @@ import {routes} from '../routes';
 import {buttonVariants} from '../ui/button';
 import {InfiniteList} from '../ui/infinite-list';
 import {ListSearch} from '../ui/list-search';
-import {Page, PageHeader, Surface} from '../ui/page';
+import {Page, PageHeader, StatusBadge, Surface} from '../ui/page';
+import {PlanStatusFilter, usePlanStatus} from '../ui/plan-status-filter';
 export function NutritionPlans() {
   const [params] = useSearchParams();
-  const {search} = useLocation();
-  const query = useNutritionTemplates(params.get('search') ?? '');
+  const {search, state: locationState} = useLocation();
+  const notice: unknown = locationState;
+  const archived = usePlanStatus();
+  const query = useNutritionTemplates({search: params.get('search') ?? '', ...(archived !== null ? {archived} : {})});
   return (
     <Page>
       <PageHeader
@@ -38,7 +41,18 @@ export function NutritionPlans() {
           Recipe library
         </Link>
       </div>
-      <ListSearch label="Search nutrition plans" />
+      <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
+        <ListSearch label="Search nutrition plans" />
+        <PlanStatusFilter />
+      </div>
+      {notice !== null && typeof notice === 'object' && 'deleted' in notice && typeof notice.deleted === 'string' && (
+        <p
+          role="status"
+          className="rounded-xl bg-muted p-4 text-sm"
+        >
+          {notice.deleted} deleted.
+        </p>
+      )}
       <InfiniteList
         query={query}
         label="nutrition templates"
@@ -46,23 +60,32 @@ export function NutritionPlans() {
         empty={
           <Surface>
             <h2 className="section-title">
-              {params.get('search') ? 'No matching nutrition plans' : 'Create your first nutrition plan'}
+              {archived
+                ? 'No archived templates'
+                : params.get('search')
+                  ? 'No matching nutrition plans'
+                  : 'Create your first nutrition plan'}
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              {params.get('search')
-                ? 'Try a different name.'
-                : 'Start with targets, add meals, and reuse the plan with clients.'}
+              {archived
+                ? 'Archived templates stay here to review or restore.'
+                : params.get('search')
+                  ? 'Try a different name.'
+                  : 'Start with targets, add meals, and reuse the plan with clients.'}
             </p>
           </Surface>
         }
       >
         {(plan) => (
           <Link
-            to={generatePath(routes.editNutritionPlan, {id: plan.id})}
+            to={generatePath(plan.lifecycle === 'archived' ? routes.manageNutritionPlan : routes.editNutritionPlan, {
+              id: plan.id,
+            })}
             state={{listSearch: search}}
             className="block space-y-1 px-5 py-4 hover:bg-muted/50 focus-visible:-outline-offset-4"
           >
             <p className="break-words font-semibold">{plan.name}</p>
+            {plan.lifecycle === 'archived' && <StatusBadge>Archived</StatusBadge>}
             <p className="text-sm text-muted-foreground">
               {plan.target_calories === null ? 'No calorie target' : `${plan.target_calories} kcal target`} ·{' '}
               {plan.assigned_client_count} {plan.assigned_client_count === 1 ? 'client' : 'clients'}

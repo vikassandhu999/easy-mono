@@ -121,6 +121,15 @@ export function TrainingPlanWorksheet({
         />
         {backLabel}
       </Link>
+      {plan && !clientPlan && (
+        <Button
+          variant="outline"
+          isDisabled={pending}
+          onPress={() => navigate(generatePath(routes.manageTrainingPlan, {id: plan.id}), {state: listState})}
+        >
+          Manage template
+        </Button>
+      )}
       {clientPlan && plan && (
         <div className="space-y-1">
           <p className="font-semibold">

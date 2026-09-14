@@ -177,3 +177,7 @@ Food editing groups a named serving with its amount, unit and total weight, plus
 ## Food media
 
 Food editing now supports public photo/video uploads with draft replacement/removal and interrupted-write recovery. Both nutrition pickers load media on demand. Exercise and food uploads share the same validation, retry and cancellation controls. See [the food media brief](food-media.md) for real-storage verification. The next gap is plan lifecycle management: copying, archiving/restoring and deleting templates, followed by client coverage edits.
+
+## Training and nutrition template management
+
+Saved template editors now open a dedicated management page for independent copying, archive/restore and confirmed deletion. Both libraries use server-owned Active/Archived/All cursor filters. Revision checks protect newer edits; interrupted operations recover without automatically repeating copies. Assigned client plans survive source-template maintenance. See [the management brief](plan-management.md) for verification. Client-plan coverage is next.

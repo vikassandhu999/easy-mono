@@ -27,22 +27,22 @@ defmodule Easy.Nutrition.Programming do
     mutate_plan(ctx, plan_id, expected_revision, &update_active(&1, attrs))
   end
 
-  @spec archive_plan(Ctx.t(), String.t()) ::
+  @spec archive_plan(Ctx.t(), String.t(), pos_integer() | :any) ::
           {:ok, Plan.t()} | {:error, PlanReader.read_error() | Ecto.Changeset.t()}
-  def archive_plan(%Ctx{} = ctx, plan_id) do
-    mutate_plan(ctx, plan_id, :any, &archive/1)
+  def archive_plan(%Ctx{} = ctx, plan_id, expected_revision \\ :any) do
+    mutate_plan(ctx, plan_id, expected_revision, &archive/1)
   end
 
-  @spec restore_plan(Ctx.t(), String.t()) ::
+  @spec restore_plan(Ctx.t(), String.t(), pos_integer() | :any) ::
           {:ok, Plan.t()} | {:error, PlanReader.read_error() | Ecto.Changeset.t()}
-  def restore_plan(%Ctx{} = ctx, plan_id) do
-    mutate_plan(ctx, plan_id, :any, &restore/1)
+  def restore_plan(%Ctx{} = ctx, plan_id, expected_revision \\ :any) do
+    mutate_plan(ctx, plan_id, expected_revision, &restore/1)
   end
 
-  @spec delete_plan(Ctx.t(), String.t()) ::
+  @spec delete_plan(Ctx.t(), String.t(), pos_integer() | :any) ::
           {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def delete_plan(%Ctx{} = ctx, plan_id) do
-    mutate_plan(ctx, plan_id, :any, &Repo.delete/1, reload?: false)
+  def delete_plan(%Ctx{} = ctx, plan_id, expected_revision \\ :any) do
+    mutate_plan(ctx, plan_id, expected_revision, &Repo.delete/1, reload?: false)
   end
 
   # Menu replacement

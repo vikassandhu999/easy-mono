@@ -244,13 +244,72 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       restore_conn = post(conn, "/v1/coach/nutrition-plans/#{template.id}/restore")
       assert %{"data" => %{"lifecycle" => "active", "revision" => 4}} = json_response(restore_conn, 200)
 
-      obsolete_revision = delete(conn, "/v1/coach/nutrition-plans/#{template.id}?expected_revision=4")
-      assert json_response(obsolete_revision, 422)
-
       delete_conn = delete(conn, "/v1/coach/nutrition-plans/#{template.id}")
 
       assert response(delete_conn, 204) == ""
       assert Repo.get(Plan, template.id) == nil
+    end
+
+    test "accepts lifecycle revision queries and rejects stale or malformed values", %{conn: conn} do
+      coach = insert(:coach)
+      template = insert(:plan, business: coach.business, creator: coach.user)
+      conn = authenticate_coach(conn, coach)
+
+      stale_archive =
+        post(conn, "/v1/coach/nutrition-plans/#{template.id}/archive?expected_revision=2")
+
+      assert %{
+               "error_code" => "stale_revision",
+               "error_detail" => %{"current_revision" => 1}
+             } = json_response(stale_archive, 409)
+
+      archive =
+        post(conn, "/v1/coach/nutrition-plans/#{template.id}/archive?expected_revision=1")
+
+      assert %{"data" => %{"lifecycle" => "archived", "revision" => 2}} =
+               json_response(archive, 200)
+
+      malformed_restore =
+        post(conn, "/v1/coach/nutrition-plans/#{template.id}/restore?expected_revision=invalid")
+
+      assert %{"error_detail" => %{"fields" => %{"expected_revision" => [_ | _]}}} =
+               json_response(malformed_restore, 422)
+
+      for revision <- [0, -1] do
+        invalid_restore =
+          post(conn, "/v1/coach/nutrition-plans/#{template.id}/restore?expected_revision=#{revision}")
+
+        assert %{"error_detail" => %{"fields" => %{"expected_revision" => [_ | _]}}} =
+                 json_response(invalid_restore, 422)
+      end
+
+      stale_restore =
+        post(conn, "/v1/coach/nutrition-plans/#{template.id}/restore?expected_revision=1")
+
+      assert %{
+               "error_code" => "stale_revision",
+               "error_detail" => %{"current_revision" => 2}
+             } = json_response(stale_restore, 409)
+
+      restore =
+        post(conn, "/v1/coach/nutrition-plans/#{template.id}/restore?expected_revision=2")
+
+      assert %{"data" => %{"lifecycle" => "active", "revision" => 3}} = json_response(restore, 200)
+
+      stale_delete = delete(conn, "/v1/coach/nutrition-plans/#{template.id}?expected_revision=2")
+
+      assert %{
+               "error_code" => "stale_revision",
+               "error_detail" => %{"current_revision" => 3}
+             } = json_response(stale_delete, 409)
+
+      name = template.name
+
+      assert %Plan{name: ^name, revision: 3, archived_at: nil, menu: %{meals: []}} =
+               Repo.get(Plan, template.id)
+
+      delete_conn = delete(conn, "/v1/coach/nutrition-plans/#{template.id}?expected_revision=3")
+      assert response(delete_conn, 204) == ""
     end
 
     test "conceals another business Template for every lifecycle operation", %{conn: conn} do

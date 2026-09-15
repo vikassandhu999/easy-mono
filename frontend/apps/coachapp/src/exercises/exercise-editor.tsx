@@ -1,4 +1,5 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {flushSync} from 'react-dom';
 import {Controller, useForm} from 'react-hook-form';
 import {generatePath, useBeforeUnload, useBlocker, useNavigate, useParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
@@ -87,6 +88,7 @@ function Editor({initial}: {initial: Exercise | undefined}) {
   const mounted = useRef(true);
   const leaving = useRef(false);
   const errorRef = useRef<HTMLDivElement>(null);
+  const noticeRef = useRef<HTMLParagraphElement>(null);
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const navigate = useNavigate();
   const {to, state} = useListLocation(routes.exercises);
@@ -136,6 +138,11 @@ function Editor({initial}: {initial: Exercise | undefined}) {
       [dirty, pending],
     ),
   );
+  useEffect(() => {
+    if (notice) {
+      noticeRef.current?.focus();
+    }
+  }, [notice]);
   function resetExercise(saved: Exercise) {
     setExercise(saved);
     form.reset(fields(saved));
@@ -231,7 +238,7 @@ function Editor({initial}: {initial: Exercise | undefined}) {
         })}
       >
         <fieldset
-          disabled={pending || readOnly}
+          disabled={pending || readOnly || uncertain}
           className="min-w-0 space-y-6"
         >
           <legend className="sr-only">Exercise information</legend>
@@ -255,14 +262,14 @@ function Editor({initial}: {initial: Exercise | undefined}) {
         <ExerciseMedia
           media={form.watch('media')}
           images={form.watch('images')}
-          disabled={pending || readOnly}
+          disabled={pending || readOnly || uncertain}
           readOnly={readOnly}
           onBusy={setUploading}
           onChange={(value) => form.setValue('media', value, {shouldDirty: true})}
           onImagesChange={(value) => form.setValue('images', value, {shouldDirty: true})}
         />
         <fieldset
-          disabled={pending || readOnly}
+          disabled={pending || readOnly || uncertain}
           className="min-w-0"
         >
           <legend className="sr-only">Additional exercise details</legend>
@@ -273,13 +280,13 @@ function Editor({initial}: {initial: Exercise | undefined}) {
                 <ExerciseRelations
                   kind="equipment"
                   value={form.watch('equipment')}
-                  disabled={pending || readOnly}
+                  disabled={pending || readOnly || uncertain}
                   onChange={(value) => form.setValue('equipment', value, {shouldDirty: true})}
                 />
                 <ExerciseRelations
                   kind="muscles"
                   value={form.watch('muscles')}
-                  disabled={pending || readOnly}
+                  disabled={pending || readOnly || uncertain}
                   onChange={(value) => form.setValue('muscles', value, {shouldDirty: true})}
                 />
               </div>
@@ -295,7 +302,7 @@ function Editor({initial}: {initial: Exercise | undefined}) {
                 <Controller
                   control={form.control}
                   name="mechanics"
-                  render={({field}) => (
+                  render={({field, fieldState}) => (
                     <div className="grid gap-2">
                       <span
                         id="mechanics-label"
@@ -305,8 +312,10 @@ function Editor({initial}: {initial: Exercise | undefined}) {
                       </span>
                       <SelectField
                         id="mechanics"
+                        isInvalid={Boolean(fieldState.error)}
+                        {...(fieldState.error ? {'aria-describedby': 'mechanics-error'} : {})}
                         value={field.value ?? 'none'}
-                        isDisabled={pending || readOnly}
+                        isDisabled={pending || readOnly || uncertain}
                         triggerRef={field.ref}
                         onBlur={field.onBlur}
                         onChange={(value) => {
@@ -322,13 +331,18 @@ function Editor({initial}: {initial: Exercise | undefined}) {
                         <SelectItem id="isolation">Isolation</SelectItem>
                         <SelectItem id="isometric">Isometric</SelectItem>
                       </SelectField>
+                      {fieldState.error && (
+                        <div id="mechanics-error">
+                          <FormError message={fieldState.error.message} />
+                        </div>
+                      )}
                     </div>
                   )}
                 />
                 <Controller
                   control={form.control}
                   name="force"
-                  render={({field}) => (
+                  render={({field, fieldState}) => (
                     <div className="grid gap-2">
                       <span
                         id="force-label"
@@ -338,8 +352,10 @@ function Editor({initial}: {initial: Exercise | undefined}) {
                       </span>
                       <SelectField
                         id="force"
+                        isInvalid={Boolean(fieldState.error)}
+                        {...(fieldState.error ? {'aria-describedby': 'force-error'} : {})}
                         value={field.value ?? 'none'}
-                        isDisabled={pending || readOnly}
+                        isDisabled={pending || readOnly || uncertain}
                         triggerRef={field.ref}
                         onBlur={field.onBlur}
                         onChange={(value) => {
@@ -355,6 +371,11 @@ function Editor({initial}: {initial: Exercise | undefined}) {
                         <SelectItem id="pull">Pull</SelectItem>
                         <SelectItem id="static">Static</SelectItem>
                       </SelectField>
+                      {fieldState.error && (
+                        <div id="force-error">
+                          <FormError message={fieldState.error.message} />
+                        </div>
+                      )}
                     </div>
                   )}
                 />
@@ -386,7 +407,15 @@ function Editor({initial}: {initial: Exercise | undefined}) {
             </Button>
           )}
         </div>
-        {notice && !dirty && <p role="status">{notice}</p>}
+        {notice && !dirty && (
+          <p
+            ref={noticeRef}
+            tabIndex={-1}
+            role="status"
+          >
+            {notice}
+          </p>
+        )}
         {!readOnly && (
           <p
             role="status"
@@ -460,9 +489,12 @@ function Editor({initial}: {initial: Exercise | undefined}) {
             navigate(generatePath(routes.exercise, {id: saved.id}), {replace: true, state});
           }}
           onRetry={() => {
-            setChecking(false);
-            setUncertain(false);
-            form.clearErrors('root');
+            flushSync(() => {
+              setChecking(false);
+              setUncertain(false);
+              form.clearErrors('root');
+            });
+            form.setFocus('name');
           }}
         />
       )}

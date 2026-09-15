@@ -86,6 +86,29 @@ try {
     await musclesDialog.getByText('Quadriceps', {exact: true}).click();
     await musclesDialog.getByRole('button', {name: 'Use selection', exact: true}).click();
     await expect(page.getByRole('dialog', {includeHidden: true})).toHaveCount(0);
+    // Classification errors must reveal the optional section and explain the focused field.
+    for (const [field, label] of [
+      ['mechanics', 'Movement type'],
+      ['force', 'Force'],
+    ]) {
+      await details.click();
+      await page.route('**/v1/coach/training-exercises', (route) =>
+        route.fulfill({
+          status: 422,
+          json: {
+            error_code: 'invalid_input',
+            error_detail: {fields: {[field]: ['Choose a supported classification.']}},
+          },
+        }),
+      );
+      await save.click();
+      await expect(selectTrigger(page, label)).toBeFocused();
+      await expect(page.getByText('Choose a supported classification.', {exact: true})).toBeVisible();
+      await expect(selectTrigger(page, label).locator('..')).toHaveAttribute('data-invalid', 'true');
+      await expect(selectTrigger(page, label)).toHaveAccessibleDescription('Choose a supported classification.');
+      await page.screenshot({path: `tests/exercises/artifacts/validation-${field}-${width}.png`});
+      await page.unroute('**/v1/coach/training-exercises');
+    }
     await page.getByRole('link', {name: 'Back to exercises', exact: true}).click();
     await page.getByRole('button', {name: 'Keep editing', exact: true}).click();
     await expect(page.getByRole('dialog', {includeHidden: true})).toHaveCount(0);
@@ -118,7 +141,7 @@ try {
     await expect(instructions).toHaveValue('Keep your whole foot on the floor. Stand tall.');
     await page.unroute(`**${endpoint}`);
     await save.click();
-    await expect(page.getByText('Exercise saved.', {exact: true})).toBeVisible();
+    await expect(page.getByText('Exercise saved.', {exact: true})).toBeFocused();
     exercise = (await send('get', endpoint, undefined, token)).data;
     expect(exercise.description).toBe('Changed by another coach');
     expect(exercise.images).toEqual(['https://example.test/squat.png']);
@@ -126,7 +149,7 @@ try {
     await expect(page.getByLabel('Short description', {exact: true})).toHaveValue('Changed by another coach');
     await page.getByLabel('Short description', {exact: true}).fill('A squat with a dumbbell held at chest height.');
     await save.click();
-    await expect(page.getByText('Exercise saved.', {exact: true})).toBeVisible();
+    await expect(page.getByText('Exercise saved.', {exact: true})).toBeFocused();
     await expect(name).toBeEnabled();
     await page.evaluate(() => {
       document.activeElement?.blur();
@@ -142,7 +165,7 @@ try {
     await expect(page.getByRole('dialog', {includeHidden: true})).toHaveCount(0);
     await page.getByLabel('Short description', {exact: true}).fill('');
     await save.click();
-    await expect(page.getByText('Exercise saved.', {exact: true})).toBeVisible();
+    await expect(page.getByText('Exercise saved.', {exact: true})).toBeFocused();
     exercise = (await send('get', endpoint, undefined, token)).data;
     expect(exercise.muscles).toEqual([]);
     expect(exercise.force).toBeNull();
@@ -162,13 +185,26 @@ try {
     await expect(page.getByRole('alert')).toBeVisible();
     await expect(instructions).toHaveValue('Temporary draft');
     await page.unroute(`**${endpoint}`);
-    await page.getByRole('button', {name: 'Review saved version', exact: true}).click();
+    await expect(page.locator('form').getByRole('alert').locator('..')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Review saved version', exact: true})).toBeFocused();
+    await page.keyboard.press('Enter');
+    await page.route(`**${endpoint}`, (route) => route.fulfill({status: 503, json: {}}));
     await page.getByRole('button', {name: 'Load saved exercise', exact: true}).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.locator('form').getByRole('alert').locator('..')).toBeFocused();
+    await expect(instructions).toHaveValue('Temporary draft');
+    await page.unroute(`**${endpoint}`);
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Review saved version', exact: true})).toBeFocused();
+    await page.keyboard.press('Enter');
+    await page.getByRole('button', {name: 'Load saved exercise', exact: true}).click();
+    await expect(page.getByText('Saved version loaded.', {exact: true})).toBeFocused();
     await expect(page.getByRole('dialog', {includeHidden: true})).toHaveCount(0);
     await expect(save).toBeDisabled();
     await instructions.fill('Keep your whole foot on the floor. Stand tall.');
     await save.click();
-    await expect(page.getByText('Exercise saved.', {exact: true})).toBeVisible();
+    await expect(page.getByText('Exercise saved.', {exact: true})).toBeFocused();
     const shared = {...(await send('get', endpoint, undefined, token)).data, source: 'system'};
     await page.route(`**${endpoint}`, (route) => route.fulfill({json: {data: shared}}));
     await page.reload();
@@ -188,6 +224,28 @@ try {
     await save.click();
     await expect(page.getByText('has already been taken', {exact: true})).toBeVisible();
     await expect(name).toBeFocused();
+    await name.fill('Unconfirmed press');
+    let unknownAttempts = 0;
+    await page.route('**/v1/coach/training-exercises', (route) => {
+      unknownAttempts += 1;
+      return route.fulfill({status: 503, json: {}});
+    });
+    await save.click();
+    await expect(page.getByRole('button', {name: 'Check saved exercises', exact: true})).toBeVisible();
+    await expect(name).toBeDisabled();
+    await expect(instructions).toBeDisabled();
+    await page.unroute('**/v1/coach/training-exercises');
+    await page.getByRole('button', {name: 'Check saved exercises', exact: true}).click();
+    await expect(page.getByText('No matching exercises found.', {exact: true})).toBeVisible();
+    await page.getByRole('button', {name: 'Return to draft', exact: true}).click();
+    await expect(name).toHaveValue('Unconfirmed press');
+    await expect(name).toBeDisabled();
+    await page.getByRole('button', {name: 'Check saved exercises', exact: true}).click();
+    await page.getByRole('button', {name: 'Create a separate exercise', exact: true}).click();
+    await expect(name).toBeEnabled();
+    await expect(name).toBeFocused();
+    await expect(name).toHaveValue('Unconfirmed press');
+    expect(unknownAttempts).toBe(1);
     await name.fill('Split squat');
     let creates = 0;
     await page.route('**/v1/coach/training-exercises', async (route) => {

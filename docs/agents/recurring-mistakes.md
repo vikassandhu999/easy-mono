@@ -708,6 +708,10 @@ control render and announce its React Hook Form error. **Gated:** the client sel
 covers ordered, reversed, and open-ended date pairs. **Verify by:** submit a reversed pair,
 assert the named end-date error appears without a PATCH, then restore the valid dates.
 
+Exercise classification selects apply the same rule: show the server field message and
+associate it with the trigger. `tests/exercises/exercises.browser.mjs` submits from a
+closed optional section and verifies the message, focus and accessible description.
+
 ### RM-161 — Feature pickers use the canonical button primitive
 The client plan picker built its close, row, and create actions from styled raw buttons,
 bypassing the app's press, focus, pending, and disabled contracts. Every feature action
@@ -1247,6 +1251,10 @@ Team invitations require the same recovery even though email uniqueness prevents
 member: retrying rotates the pending invitation link and sends another email. The Team
 recovery suite requires one invite request, unchanged sent time, lookup retry, saved-member
 navigation and explicit retry after an empty lookup.
+
+Exercise creation must also keep the uncertain draft fixed, so renaming cannot change
+which saved record is searched for. Its authoring suite checks the locked fields, empty
+lookup, deliberate separate-creation focus and one-write saved-result recovery.
 
 ### RM-228 — Wrapping must constrain intrinsic width as well as visible text
 A long intake title widened the Workbench even after ordinary word wrapping kept the

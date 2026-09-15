@@ -15,3 +15,8 @@ Verify with real client diary writes, coach reads, edits to source food and assi
 Verified 2026-09-12: `test:nutrition-history` passes at 375px and 1280px against the isolated API. Tests use a browser timezone different from the client's timezone and read today's date from the server. Real client writes cover planned, swapped, extra and recipe entries, past records, notes and portions. Food/menu/target edits preserve recorded guidance and targets. Unknown and zero nutrients, empty/future days, URL reload, date validation, refresh failure/retry and account replacement during a pending response pass. Screenshots were inspected at both widths. Build, Biome and `just check-rm` pass. Backend `mix precommit` passes 1,661 tests, including an added trainer-isolation regression. No public API shape changed.
 
 The test supports `COACHAPP_API_URL` and `COACHAPP_URL` for alternate local ports. This run used API port 44000 and Vite port 22022 because another app occupies port 4000. The Vite instance used `VITE_API_BASE_URL=http://127.0.0.1:44000`.
+
+
+## Current route audit — 2026-09-15
+
+Long saved meal-option names now wrap inside expanded guidance. The real-data probe fails before the fix and passes afterward at 375px/1280px. The full nutrition-history suite also passes recorded/server totals, frozen guidance, client-timezone dates, validation, recovery and account isolation. Build, scoped Biome, repository checks and full backend precommit pass (1,778 tests, zero failures). The existing bundle-size warning remains. Full application coverage is tracked separately in ui-audit-coachapp-2026-09-15.md.

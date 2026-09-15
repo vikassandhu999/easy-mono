@@ -175,7 +175,7 @@ function History({clientId}: {clientId: string}) {
                   </time>
                 </div>
                 {session.kind === 'planned' && session.prescription_snapshot && (
-                  <p className="mt-2 break-words text-sm text-muted-foreground">
+                  <p className="mt-2 wrap-anywhere text-sm text-muted-foreground">
                     {session.prescription_snapshot.plan.name}
                   </p>
                 )}

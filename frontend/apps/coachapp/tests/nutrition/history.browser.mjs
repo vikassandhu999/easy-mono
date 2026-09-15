@@ -141,6 +141,7 @@ try {
         token,
       )
     ).data;
+    const longMealName = 'TestBreakfastOption'.repeat(8);
     const patternId = crypto.randomUUID();
     const breakfastId = crypto.randomUUID();
     const lunchId = crypto.randomUUID();
@@ -149,7 +150,7 @@ try {
       meals: [
         {
           id: breakfastId,
-          name: 'Oats and berries',
+          name: longMealName,
           meal_items: [
             {id: crypto.randomUUID(), kind: 'food', food_id: oats.id, portion: {kind: 'gram', grams: 50}},
             {id: crypto.randomUUID(), kind: 'food', food_id: berries.id, portion: {kind: 'gram', grams: 100}},
@@ -283,6 +284,10 @@ try {
     await expect(
       breakfastRegion.getByText('Guidance saved when your client first recorded this meal.', {exact: true}),
     ).toBeVisible();
+    const guidanceName = breakfastRegion.getByRole('heading', {name: longMealName, exact: true});
+    await expect(guidanceName).toBeVisible();
+    expect(await guidanceName.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await dinnerRegion.getByText('View meal guidance', {exact: true}).click();
     await expect(
       dinnerRegion.getByText('Current guidance. This meal has not been recorded.', {exact: true}),

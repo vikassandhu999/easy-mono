@@ -13,3 +13,8 @@ Verify real client measurements and form submissions, mixed units, same-day read
 Source evidence: `weight_entries.ex`, `weight_entries_history.ex`, `fitness/weight_entry.ex`, coach ClientWeightEntryController, client WeightEntryController, `types/weight_entry.ex`, and the coach controller tests. Graph tools remain unavailable; task-directed source reads are the evidence.
 
 Verified 2026-09-12: the browser suite passes at 375px and 1280px with real client measurements and form submissions, mixed units, empty and constant trends, pagination and retries, return position, date validation, reload, deletion refresh and account isolation. Screenshots are in `frontend/apps/coachapp/tests/weight-progress/artifacts/`. The API tests cover same-day ordering and daily chart selection, deleted cursor anchors, date and unit validation, and tenant/trainer isolation.
+
+
+## Current route audit — 2026-09-15
+
+The complete weight-progress suite passes again against normal API 4000/app 2022 at 375px/1280px, including server chart/totals, mixed units, form provenance, date filters, cursor history, recovery and account isolation. No production change was needed. Build, scoped Biome, repository checks and full backend precommit pass (1,778 tests, zero failures). The existing bundle-size warning remains. Full application coverage is tracked separately in ui-audit-coachapp-2026-09-15.md.

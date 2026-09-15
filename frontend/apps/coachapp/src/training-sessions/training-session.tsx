@@ -192,7 +192,7 @@ function SessionRecord({clientId, id}: {clientId: string; id: string}) {
         <details className="group border-t border-border pt-5">
           <summary className="min-h-12 cursor-pointer font-semibold">View original prescription</summary>
           <div className="mt-4 space-y-6">
-            <p className="text-sm text-muted-foreground">
+            <p className="wrap-anywhere text-sm text-muted-foreground">
               {snapshot.plan.name} · Targets saved when this session began.
             </p>
             {snapshot.workout.exercises.length === 0 && (

@@ -1234,6 +1234,8 @@ paragraph's contents inside its own box. Use wrapping that participates in intri
 when text can determine a flex/grid child's minimum width. **Verify by:** assert both the
 text element's scroll width and the document width, using an unbroken title at 375px/1280px.
 Coachapp `test:workbench` covers the title, trailing due date and resulting task actions.
+`test:nutrition-history` and `test:training-history` cover long saved meal and plan names
+inside the expanded original guidance, including after reload.
 
 ### RM-229 — A snooze confirmation must correspond to time actually hidden
 The snooze endpoint accepts expired dates, so the editor reported success for yesterday

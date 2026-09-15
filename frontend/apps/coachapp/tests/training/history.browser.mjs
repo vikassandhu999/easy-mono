@@ -97,7 +97,8 @@ try {
         ...(weekday === 'monday' ? {workout_ref: 'full-body'} : {}),
       })),
     };
-    let template = (await send('post', '/v1/coach/training-plans', {name: 'Build consistency'}, token)).data;
+    const longPlanName = 'TestTrainingPlan'.repeat(10);
+    let template = (await send('post', '/v1/coach/training-plans', {name: longPlanName}, token)).data;
     template = (
       await send(
         'put',
@@ -188,6 +189,10 @@ try {
     await expect(page.getByText('2 / 5', {exact: true})).toBeVisible();
     await page.getByText('View original prescription', {exact: true}).click();
     await expect(page.getByText('8–10 reps · 12.5 kg · RPE 7', {exact: true})).toBeVisible();
+    const savedPlan = page.getByText(`${longPlanName} · Targets saved when this session began.`, {exact: true});
+    await expect(savedPlan).toBeVisible();
+    expect(await savedPlan.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await expect(page.getByText('Working · Rest 90 sec', {exact: true})).toBeVisible();
     await expect(page.getByText('Warm-up · Rest 0 sec', {exact: true})).toBeVisible();
     // Library and plan edits must not rewrite the recorded exercise or prescription.

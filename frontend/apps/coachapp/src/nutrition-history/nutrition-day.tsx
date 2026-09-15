@@ -163,7 +163,7 @@ export function MealRecord({slot}: {slot: NutritionDaySlot}) {
                 className="space-y-3"
               >
                 <div className="flex flex-wrap items-baseline gap-2">
-                  <h3 className="break-words font-semibold">{option.meal_name || 'Meal option'}</h3>
+                  <h3 className="wrap-anywhere font-semibold">{option.meal_name || 'Meal option'}</h3>
                   {option.meal_id === slot.meal_id && (
                     <span className="text-xs text-muted-foreground">Selected meal</span>
                   )}

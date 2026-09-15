@@ -28,10 +28,10 @@ Inventory comes from the current router, not the navigation. Earlier slice evide
 | /clients/:id/profile | Coach | 375 / 1280 | Contact/services/stage/dates/goal, ownership, changed fields, save/lost response, dirty navigation, lifecycle, invalid ID and account changes | Passed profile/lifecycle suite | |
 | /messages | Coach | 375 / 1280 | Server search/status totals, cursor pages, empty/loading/error/retry, return filters and live updates | Passed listed states | CHAT-01 |
 | /clients/:clientId/conversation | Coach | 375 / 1280 | Cursor history/anchors, live read/handled conflicts, draft/uncertain-send recovery, response sharing, reconnect, photo/audio/video real storage and retries, account isolation | Passed listed states | CHAT-01 |
-| /clients/:clientId/training-sessions | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /clients/:clientId/training-sessions/:id | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /clients/:clientId/nutrition-history | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /clients/:clientId/weight-progress | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
+| /clients/:clientId/training-sessions | Coach | 375 / 1280 | Real session states, cursor pages/counts/search, date validation/focus, retained refresh/next-page recovery, saved list position and long plan names | Passed listed states | HISTORY-01 |
+| /clients/:clientId/training-sessions/:id | Coach | 375 / 1280 | Recorded units/sets, frozen prescription after library edits, empty work, missing/failed/retried detail, retained refresh, long saved plan names | Passed listed states | HISTORY-01 |
+| /clients/:clientId/nutrition-history | Coach | 375 / 1280 | Real recorded totals, missing/zero nutrients, frozen guidance, long meal names, date validation/focus/reload, client timezone, retained refresh and account isolation | Passed listed states | HISTORY-02 |
+| /clients/:clientId/weight-progress | Coach | 375 / 1280 | Server trend/totals, mixed units, form provenance, cursor pages, empty/single/constant trend, dates, retry and account isolation | Passed listed states |  |
 | /clients/:id/check-ins | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /clients/:id/check-ins/new | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /check-ins | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
@@ -146,3 +146,12 @@ Coach build, scoped Biome, repository checks and full backend precommit pass (1,
 CHAT-01 is a test coverage defect: the previous suite intercepted a fixed fake-storage address. Against the normal API, a real upload reached Ready to send while the test incorrectly expected Upload failed. The corrected helper obtains the signed destination from the real API, injects only the selected failed request, and lets successful storage operations continue. The full suite passes at both widths, including byte-for-byte photo/audio/video downloads, audio/video playback and a real-storage read retry. No production code change was required.
 
 Current evidence: tests/conversations/artifacts/video-{375,1280}.png and the complete conversation test output. Existing timestamp-dependent screenshots were inspected without changing their tracked baselines. Build, Biome, repository rules and backend precommit pass (1,778 tests, zero failures). Disposable conversation fixtures and storage objects remain in their own test businesses. Deployed storage, physical-device/Safari media and target-coach usability remain unverified; other route rows retain their current coverage limits.
+
+
+## Client history and progress verification
+
+HISTORY-01 — A long unbroken saved training-plan name overflowed the original-prescription text and widened the history list. Both failures were reproduced against the real saved record. Wrapping now constrains the text’s intrinsic width in the session detail and list. The expanded training-history suite passes at 375px/1280px, including reopening the frozen prescription after template/library edits and returning to the filtered list.
+
+HISTORY-02 — A long unbroken meal-option name widened expanded nutrition guidance. The real-data probe fails before the wrapping change and passes at both widths afterward. Recorded intake, server totals, frozen guidance, date navigation/validation, failure recovery and account isolation remain covered by the complete nutrition-history suite. These are objective layout fixes; persisted data and the public API are unchanged. RM-228 now names both history regressions.
+
+Weight progress also passes its current real-API suite at both widths: server chart/totals, mixed units, form provenance, cursor history, dates, recovery and account isolation. Build, scoped Biome, repository rules and full backend precommit pass (1,778 tests, zero failures). The existing bundle-size warning remains. Screenshots: tests/training/artifacts/history-{session,list}-{375,1280}.png and tests/nutrition/artifacts/history-{375,1280}.png. Existing disposable-account fixtures remain; these suites do not delete their historical records.

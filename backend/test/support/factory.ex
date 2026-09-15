@@ -547,5 +547,5 @@ defmodule Easy.Factory do
     }
   end
 
-  defp unique_test_email(prefix, n), do: "#{prefix}-#{n}-#{System.unique_integer([:positive])}@test.com"
+  defp unique_test_email(prefix, n), do: "#{prefix}-#{n}-#{Ecto.UUID.generate()}@test.com"
 end

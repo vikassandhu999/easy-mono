@@ -6,7 +6,14 @@ violation, the job isn't done when the instance is fixed — add (or update) the
 
 **How to use**
 - Before finishing, read only the section that matches the files you touched
-  (`## Backend`, `## Frontend`, `## Deploy / ops`, `## Docs`). Do not read the
+  (`## Backend`, `### RM-230 — Persisted fixture identities must survive a new VM
+System.unique_integer is unique only within one runtime. A subsequent test process can
+reuse a generated email already stored in a local test database and fail an unrelated
+controller setup. Factory emails use UUIDs so repeated runs do not collide with retained
+fixtures. **Verify by:** run client_controller_test.exs and full mix precommit against the
+existing test database; do not delete retained records to make the tests pass.
+
+## Frontend`, `## Deploy / ops`, `## Docs`). Do not read the
   other sections. Do not load this file at session start. Use the index to jump
   to a single id.
 - When you find a NEW recurring mistake, add an entry: the rule, why, and **how it's

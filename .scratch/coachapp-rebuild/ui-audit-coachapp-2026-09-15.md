@@ -34,10 +34,10 @@ Inventory comes from the current router, not the navigation. Earlier slice evide
 | /clients/:clientId/weight-progress | Coach | 375 / 1280 | Server trend/totals, mixed units, form provenance, cursor pages, empty/single/constant trend, dates, retry and account isolation | Passed listed states |  |
 | /clients/:id/check-ins | Coach | 375 / 1280 | Real edit/stop/resume, long names/confirmation, server search/counts/cursor pages, recovery and account isolation | Passed listed states | CHECKIN-01, CHECKIN-02 |
 | /clients/:id/check-ins/new | Coach | 375 / 1280 | Form search/preview, long names, validation/draft protection, keyboard saved-result lookup/retry, empty-lookup focus restoration, uncertain leave warning, duplicate/capacity errors, real client-app answer/review | Passed listed states | CHECKIN-01, CHECKIN-02 |
-| /check-ins | Coach | 375 / 1280 | Server search/status/counts, cursor pages and recovery | Passed existing suite; expanded audit pending | |
-| /check-ins/responses/:id | Coach | 375 / 1280 | Frozen answers, review/retry, persisted review and account isolation | Passed existing suite; expanded audit pending | |
-| /clients/:clientId/check-in-responses | Coach | 375 / 1280 | Client-scoped history, server search/counts/cursor pages, navigation and recovery | Passed existing suite; expanded audit pending | |
-| /clients/:clientId/check-in-responses/:id | Coach | 375 / 1280 | Client-scoped frozen answers, review/retry and persisted review | Passed existing suite; expanded audit pending | |
+| /check-ins | Coach | 375 / 1280 | Server search/status/counts, cursor pages and recovery | Passed listed states | |
+| /check-ins/responses/:id | Coach | 375 / 1280 | Frozen answers, review/retry, persisted review and account isolation, actual photo signing/storage recovery and decoding | Passed listed states | PHOTO-01 |
+| /clients/:clientId/check-in-responses | Coach | 375 / 1280 | Client-scoped history, server search/counts/cursor pages, navigation and recovery | Passed listed states | |
+| /clients/:clientId/check-in-responses/:id | Coach | 375 / 1280 | Client-scoped frozen answers, review/retry and persisted review, actual photo signing/storage recovery and decoding | Passed listed states | PHOTO-01 |
 | /clients/:id/training-plans/assign | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /clients/:id/training-plans/assign/:templateId | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /training-plans | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
@@ -169,3 +169,10 @@ CHECKIN-01 — Returning from an empty saved-schedule lookup left keyboard focus
 CHECKIN-02 — Long form names overflowed authoring, saved-result lookup and the stop confirmation. Source-local wrapping fixes pass the same real-data probes. List, edit and resume flows remain usable with that long name. The full scheduling suite passes both widths, including failed lookup/retry and focus containment after the result loads. Screenshot: tests/check-ins/artifacts/saved-recovery-{375,1280}.png. The earlier full-page screenshot suggested focus had escaped; an explicit focus-containment assertion passes at both widths, so no dialog primitive change was made.
 
 Build, Biome, repository rules and full backend precommit pass. Precommit first exposed a users_email_index collision in retained test fixtures; UUID-based factory emails fix the runtime-restart collision without deleting stored records. Client-controller tests pass 81 tests and full precommit passes 1,778 tests. The response reader’s expanded audit remains the next step.
+
+
+## Response photo verification
+
+PHOTO-01 — A successful download-URL response followed by a failed storage GET left a broken image without an error message. The real-upload/submission probe fails before the change. SubmissionPhoto now presents a delivery error; Reload photos refreshes the signed response and resets the failed image, including when the URL is unchanged.
+
+The full review suite passes at both widths with actual client uploads, submitted attachment IDs, metadata failure/retry, storage failure/reload, image decoding and byte-for-byte downloads. The same saved photo opens in the conversation preview. Client intake also uses real uploaded/submitted photos; the invitation/intake regression passes at both widths. Build, scoped Biome, repository rules and full backend precommit pass (1,778 tests, zero failures). Evidence: tests/check-ins/artifacts/photo-response-{375,1280}.png. Disposable records/media remain, and deployed storage and physical-device coverage remain outside this local test.

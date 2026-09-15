@@ -26,3 +26,8 @@ No API contract change. Review invalidates both assignment and submission querie
 The real API browser suite covers invitation acceptance, intake submission, question-snapshot preservation after template edits, grouped answers, failed assignment/answer/review requests and recovery, and persisted review at 375px and 1280px. Supplemental response fixtures exercise inactive, dismissed, absent-intake, coaching-stage copy, external review refresh, and photo-download recovery. Media storage itself is external to this local test.
 
 Review found inactive access was initially described as ready and missing detail-endpoint plan names were being treated as absent plans. Both were corrected with supported client state and protected by browser assertions.
+
+
+## Real intake photo verification — 2026-09-15
+
+The intake regression now uploads a real photo as the client and includes its attachment ID in the submitted answer. The coach recovers a failed signing request, loads the original image and verifies downloaded bytes. This replaces the former synthetic photo response and data URL. Both the invitation/intake and check-in review suites pass at 375px/1280px against normal API/app and local storage. The shared reader also exposes storage image failures, verified through the check-in response journey.

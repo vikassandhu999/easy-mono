@@ -13,7 +13,15 @@ controller setup. Factory emails use UUIDs so repeated runs do not collide with 
 fixtures. **Verify by:** run client_controller_test.exs and full mix precommit against the
 existing test database; do not delete retained records to make the tests pass.
 
-## Frontend`, `## Deploy / ops`, `## Docs`). Do not read the
+## Frontend`, `### RM-231 — Successful signing does not prove a photo loaded
+A response reader displayed a broken image when storage rejected a valid signed URL.
+Handle image load failure visibly and reset that failure when Reload obtains a new
+response, even if the signed URL is unchanged. **Verify by:** coachapp `test:reviews`
+uploads real client photos, submits real answers, injects a storage GET failure, requires
+an error message, then reloads and compares downloaded bytes. Intake and conversation
+previews exercise the same reader.
+
+## Deploy / ops`, `## Docs`). Do not read the
   other sections. Do not load this file at session start. Use the index to jump
   to a single id.
 - When you find a NEW recurring mistake, add an entry: the rule, why, and **how it's

@@ -209,33 +209,92 @@ try {
     await page.getByRole('link', {name: 'Manage schedules', exact: true}).click();
     await page.getByRole('link', {name: 'View submitted responses', exact: true}).click();
     await expect(page.getByRole('heading', {name: 'Responses from Alex Morgan', exact: true})).toBeVisible();
-    // Photo recovery uses a response fixture; upload storage is an external boundary.
-    const detailPath = `${endpoint}/${first.id}`;
-    const photoId = crypto.randomUUID();
-    await page.route(`**${detailPath}`, async (route) => {
-      const response = await route.fetch();
-      const body = await response.json();
-      body.data.question_snapshot.push({
-        title: 'Progress photo',
-        questions: [{id: 'photo', type: 'photo', label: 'This week’s photo'}],
-      });
-      body.data.answers.photo = [photoId];
-      return route.fulfill({response, json: body});
+    // A real client upload and submitted answer must remain readable by the coach.
+    const photoBytes = Buffer.from(
+      await page.evaluate(() => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 80;
+        canvas.height = 80;
+        const paint = canvas.getContext('2d');
+        paint.fillStyle = '#247560';
+        paint.fillRect(0, 0, 80, 80);
+        return canvas.toDataURL('image/png').split(',')[1];
+      }),
+      'base64',
+    );
+    const upload = (
+      await send(
+        'post',
+        '/v1/client/uploads',
+        {
+          content_type: 'image/png',
+          byte_size: photoBytes.byteLength,
+        },
+        clientTokens.access_token,
+      )
+    ).data;
+    const stored = await api.put(upload.upload_url, {headers: upload.upload_headers, data: photoBytes});
+    expect(stored.ok()).toBe(true);
+    const photoQuestion = crypto.randomUUID();
+    const photoForm = (
+      await send(
+        'post',
+        '/v1/coach/form-templates',
+        {
+          name: 'Test progress photo',
+          purpose: 'check_in',
+          sections: [
+            {
+              title: 'Progress photo',
+              questions: [{id: photoQuestion, type: 'photo', label: 'This week’s photo', required: true}],
+            },
+          ],
+        },
+        token,
+      )
+    ).data;
+    const photoResponse = await submit(photoForm, person, token, clientTokens.access_token, {
+      [photoQuestion]: [upload.id],
     });
-    await page.goto(`/check-ins/responses/${first.id}`);
-    await page.route('**/v1/coach/attachments/download-urls', (route) => route.fulfill({status: 503, json: {}}));
+    await page.goto(`/check-ins/responses/${photoResponse.id}`);
+    const downloadsPath = '**/v1/coach/attachments/download-urls';
+    await page.route(downloadsPath, (route) => route.fulfill({status: 503, json: {}}));
     await page.getByRole('button', {name: 'Load photo', exact: true}).click();
     await expect(page.getByRole('alert')).toBeVisible();
-    await page.unroute('**/v1/coach/attachments/download-urls');
-    await page.route('**/v1/coach/attachments/download-urls', (route) =>
-      route.fulfill({
-        json: {data: [{id: photoId, download_url: 'data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA='}]},
-      }),
-    );
+    await page.unroute(downloadsPath);
+    let failPhoto = true;
+    await page.route(downloadsPath, async (route) => {
+      const response = await route.fetch();
+      expect(response.ok()).toBe(true);
+      const {data} = await response.json();
+      await page.route(data[0].download_url, (storage) => {
+        if (failPhoto) {
+          failPhoto = false;
+          return storage.fulfill({status: 503, body: ''});
+        }
+        return storage.continue();
+      });
+      return route.fulfill({response});
+    });
     await page.getByRole('button', {name: 'Reload photos', exact: true}).click();
-    await expect(page.getByRole('link', {name: /Open photo 1/})).toBeVisible();
-    await page.unroute(`**${detailPath}`);
-    await page.unroute('**/v1/coach/attachments/download-urls');
+    await expect(page.getByRole('alert')).toContainText('Photo 1 could not be loaded');
+    await page.getByRole('button', {name: 'Reload photos', exact: true}).click();
+    const photo = page.getByRole('img', {name: 'This week’s photo, 1', exact: true});
+    await expect(photo).toBeVisible();
+    await expect.poll(() => photo.evaluate((node) => node.naturalWidth)).toBe(80);
+    const downloaded = await api.get(await photo.getAttribute('src'));
+    expect(downloaded.ok()).toBe(true);
+    expect(await downloaded.body()).toEqual(photoBytes);
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    await page.screenshot({path: `tests/check-ins/artifacts/photo-response-${width}.png`, fullPage: true});
+    await page.unroute(downloadsPath);
+    await page.getByRole('link', {name: 'Discuss with client', exact: true}).click();
+    const attached = page.getByRole('group', {name: 'Attached form response', exact: true});
+    await attached.getByRole('button', {name: /Test progress photo/}).click();
+    await page.getByRole('button', {name: 'Load photo', exact: true}).click();
+    await expect.poll(() => photo.evaluate((node) => node.naturalWidth)).toBe(80);
+    await page.getByRole('button', {name: 'Back to conversation', exact: true}).click();
+    await page.getByRole('button', {name: 'Remove shared response', exact: true}).click();
     await page.goto(`/check-ins/responses/${crypto.randomUUID()}`);
     await expect(page.getByRole('heading', {name: 'Response not found', exact: true})).toBeVisible();
     await page.getByRole('link', {name: 'Return to responses', exact: true}).click();

@@ -40,12 +40,33 @@ export async function checkClientOverview({page, api, coachToken, clientToken, c
   await page.reload();
   await expect(page.getByRole('heading', {name: 'Intake pending', exact: true})).toBeVisible();
 
+  const photoBytes = Buffer.from(
+    await page.evaluate(() => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 80;
+      canvas.height = 80;
+      const paint = canvas.getContext('2d');
+      paint.fillStyle = '#247560';
+      paint.fillRect(0, 0, 80, 80);
+      return canvas.toDataURL('image/png').split(',')[1];
+    }),
+    'base64',
+  );
+  const signed = await api.post('/v1/client/uploads', {
+    headers: {authorization: `Bearer ${clientToken}`},
+    data: {content_type: 'image/png', byte_size: photoBytes.byteLength},
+  });
+  expect(signed.status()).toBe(201);
+  const upload = (await signed.json()).data;
+  const stored = await api.put(upload.upload_url, {headers: upload.upload_headers, data: photoBytes});
+  expect(stored.ok()).toBe(true);
   const templatePath = `/v1/coach/form-templates/${assignment.form_template_id}`;
   const sections = [
     ...assignment.form_template.sections,
     {
       title: 'Additional context',
       questions: [
+        {id: 'photo', label: 'Starting position', type: 'photo'},
         {id: 'consent', label: 'Have you worked with a coach before?', type: 'boolean'},
         {id: 'preferences', label: 'Preferred training days', type: 'multi_select', options: ['Monday', 'Friday']},
         {id: 'services', label: 'Coaching support', type: 'service_type', required: true},
@@ -57,6 +78,9 @@ export async function checkClientOverview({page, api, coachToken, clientToken, c
     sections
       .flatMap((section) => section.questions)
       .flatMap((question) => {
+        if (question.id === 'photo') {
+          return [[question.id, [upload.id]]];
+        }
         if (question.id === 'target-weight') {
           return [[question.id, 0]];
         }
@@ -136,23 +160,7 @@ export async function checkClientOverview({page, api, coachToken, clientToken, c
   await page.getByRole('button', {name: 'Refresh status', exact: true}).click();
   await expect(page.getByRole('heading', {name: 'Intake reviewed', exact: true})).toBeVisible();
 
-  // Media storage is external: exercise its UI boundary with a signed-URL response fixture.
-  const photoId = 'd2cef5e4-c1b2-4d79-8b63-8f5664305ed3';
-  await page.route(`**${submissionsPath}`, (route) =>
-    route.fulfill({
-      json: {
-        data: [
-          {
-            ...submitted,
-            question_snapshot: [
-              {title: 'Photos', questions: [{id: 'photo', label: 'Starting position', type: 'photo'}]},
-            ],
-            answers: {photo: [photoId]},
-          },
-        ],
-      },
-    }),
-  );
+  // Read the client’s actual saved photo and recover a failed signing request.
   await page.route('**/v1/coach/attachments/download-urls', (route) =>
     route.fulfill({status: 503, json: {error_message: 'Unavailable'}}),
   );
@@ -160,23 +168,14 @@ export async function checkClientOverview({page, api, coachToken, clientToken, c
   await page.getByRole('button', {name: 'Load photo', exact: true}).click();
   await expect(page.getByRole('alert')).toBeVisible();
   await page.unroute('**/v1/coach/attachments/download-urls');
-  await page.route('**/v1/coach/attachments/download-urls', (route) =>
-    route.fulfill({
-      json: {
-        data: [
-          {
-            id: photoId,
-            download_url:
-              'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6wX8AAAAASUVORK5CYII=',
-            download_url_expires_at: new Date(Date.now() + 60_000).toISOString(),
-          },
-        ],
-      },
-    }),
-  );
   await page.getByRole('button', {name: 'Reload photos', exact: true}).click();
   await expect(page.getByRole('link', {name: /Open photo 1/})).toBeVisible();
-  await expect(page.getByRole('img', {name: 'Starting position, 1', exact: true})).toBeVisible();
+  const photo = page.getByRole('img', {name: 'Starting position, 1', exact: true});
+  await expect(photo).toBeVisible();
+  await expect.poll(() => photo.evaluate((node) => node.naturalWidth)).toBe(80);
+  const downloaded = await api.get(await photo.getAttribute('src'));
+  expect(downloaded.ok()).toBe(true);
+  expect(await downloaded.body()).toEqual(photoBytes);
   await page.unroute('**/v1/coach/attachments/download-urls');
   await page.unroute(`**${submissionsPath}`);
   await page.reload();

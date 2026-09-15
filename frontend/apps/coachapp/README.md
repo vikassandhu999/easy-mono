@@ -129,7 +129,7 @@ The same suite checks responsive layout at 375px, 390px, 768px, and 1280px, incl
 
 The preview endpoint resolves the same default as invitation creation: the selected active intake, the oldest active intake as a fallback, or a server-created standard Intake. Resending renews the invitation expiry and keeps its link. Email delivery is asynchronous; invitation creation does not confirm delivery to an inbox.
 
-The overview also supports grouped intake answers and marking intake reviewed. It uses the saved question snapshot, preserving the questions the client actually answered even after a template edit. The suite submits through the real client API, tests false/zero/missing answers, exercises review failure and retry, and verifies persistence after reload. Supplemental response fixtures cover inactive/missing/dismissed intake, external review refresh, and photo-download recovery.
+The overview also supports grouped intake answers and marking intake reviewed. It uses the saved question snapshot, preserving the questions the client actually answered even after a template edit. The suite submits through the real client API, tests false/zero/missing answers, exercises review failure and retry, and verifies persistence after reload. Supplemental response fixtures cover inactive/missing/dismissed intake and external review refresh. Intake photos use real client uploads and stored answers; signing retry and downloaded bytes are verified against the API’s configured storage service.
 
 Full onboarding includes the client's plans. Training templates, training-plan assignment, and Forms are available. See the [overview brief](../../../.scratch/coachapp-rebuild/client-overview.md).
 
@@ -173,7 +173,7 @@ Run `rtk pnpm -C frontend/apps/coachapp test:check-ins` from the repository root
 
 Check-ins opens responses needing review across visible clients. Client Overview → View responses opens that client's history. Read saved question snapshots and answers, load progress photos, and mark a response reviewed. Reviewed responses remain available through the status filter. Search, totals and cursor pagination come from the API; list position survives opening a response and returning.
 
-Run `rtk pnpm -C frontend/apps/coachapp test:reviews` with the app and isolated browser API running. It covers the review task and the shared intake-answer regression at 375px and 1280px. See [the review brief](../../../.scratch/coachapp-rebuild/check-in-review.md). The remaining whole-app work is tracked in [the completion ledger](../../../.scratch/coachapp-rebuild/completion.md).
+Run `rtk pnpm -C frontend/apps/coachapp test:reviews` with API 4000, coach app 2022 and configured local storage running. It covers review and intake answers at 375px and 1280px, including actual client photo uploads, saved answers, signing/storage failure recovery, byte comparison and conversation previews. The invitation suite also requires storage for its intake-photo regression. See [the review brief](../../../.scratch/coachapp-rebuild/check-in-review.md). The remaining whole-app work is tracked in [the completion ledger](../../../.scratch/coachapp-rebuild/completion.md).
 
 ## Client activity history
 

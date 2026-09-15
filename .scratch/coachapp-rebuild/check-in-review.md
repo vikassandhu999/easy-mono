@@ -19,3 +19,12 @@ Implemented `/check-ins`, stable response detail URLs, and client history/detail
 Mobile and desktop reader/history screenshots were inspected. Mobile navigation now scrolls horizontally without wrapping labels. App build, Biome, `just check-rm` and whitespace checks pass. Vite retains its existing large-bundle warning. Backend `mix precommit` passes 1,655 tests with zero failures, including 10 focused review-controller cases. These checks establish the implemented task, not completion of the whole application or a physical-device/target-coach usability study.
 
 Graph tools were unavailable; the CLI query returned `backend_timeout`. Discovery used bounded source reads and searches, with no graph completeness claim. The existing review write remains idempotent on repeated requests; this slice does not claim to change its simultaneous-review attribution behavior.
+
+
+## Real photo delivery audit — 2026-09-15
+
+The response reader now reports image delivery failures and allows Reload photos to retry them. Previously, a real saved photo with a failed storage GET displayed a broken image without an error; the new probe reproduced that state before the fix. A successful signed-URL refresh remounts photo state so a repeated URL can retry too.
+
+The full review suite passes at 375px/1280px against normal API 4000, app 2022 and real local storage. It creates client uploads and photo answers through the API, verifies signing failure/retry, storage failure/reload, image decoding and downloaded bytes, then opens the saved photo through Discuss with client. The shared intake regression also uses a real upload and submitted photo answer. The full invitation/intake suite passes at both widths after removing its simulated photo transport.
+
+All three SubmissionAnswers consumers are covered: check-in response, client intake and conversation preview. No API contract changed. Build, scoped Biome, repository rules and full backend precommit pass (1,778 tests, zero failures). Screenshots: tests/check-ins/artifacts/photo-response-{375,1280}.png. Existing fixture accounts, forms, submissions and storage objects remain in their disposable businesses. Deployed-storage and physical-device checks remain separate from this local Chromium evidence.

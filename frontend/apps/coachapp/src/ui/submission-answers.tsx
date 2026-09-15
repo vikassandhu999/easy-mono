@@ -52,21 +52,12 @@ function SubmissionPhotos({ids, label}: {ids: string[]; label: string}) {
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {downloads.data.data.map((photo, index) => (
-            <a
-              key={photo.id}
-              href={photo.download_url}
-              target="_blank"
-              rel="noreferrer"
-              className="block rounded-xl border border-border p-2"
-            >
-              <img
-                src={photo.download_url}
-                alt={`${label}, ${index + 1}`}
-                loading="lazy"
-                className="max-h-72 w-full rounded-lg object-contain"
-              />
-              <span className="mt-2 block px-1 text-sm underline">Open photo {index + 1}</span>
-            </a>
+            <SubmissionPhoto
+              key={`${photo.id}:${downloads.dataUpdatedAt}`}
+              url={photo.download_url}
+              label={label}
+              position={index + 1}
+            />
           ))}
         </div>
       )}
@@ -79,6 +70,34 @@ function SubmissionPhotos({ids, label}: {ids: string[]; label: string}) {
       >
         Reload photos
       </Button>
+    </div>
+  );
+}
+
+// A new URL response resets image failures, including when the signed URL is unchanged.
+function SubmissionPhoto({url, label, position}: {url: string; label: string; position: number}) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <div className="space-y-3">
+      {failed && <FormError message={`Photo ${position} could not be loaded. Reload photos to try again.`} />}
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="block rounded-xl border border-border p-2"
+      >
+        {!failed && (
+          // biome-ignore lint/a11y/noNoninteractiveElementInteractions: An image load failure exposes recovery text; this is not a user interaction handler.
+          <img
+            src={url}
+            alt={`${label}, ${position}`}
+            loading="lazy"
+            className="max-h-72 w-full rounded-lg object-contain"
+            onError={() => setFailed(true)}
+          />
+        )}
+        <span className="mt-2 block px-1 text-sm underline">Open photo {position}</span>
+      </a>
     </div>
   );
 }

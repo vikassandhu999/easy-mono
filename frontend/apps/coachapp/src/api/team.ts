@@ -44,6 +44,11 @@ export function useInviteCoach() {
     onMutate: () => getSession()?.id,
     mutationFn: (body: TeamMemberInvite) => call(client.POST('/v1/coach/team/invite', {body})),
     onSuccess: (result, _input, sessionId) => refreshTeam(result, sessionId),
+    onError: async (_error, _body, sessionId) => {
+      if (sessionId && sessionId === getSession()?.id) {
+        await queryClient.invalidateQueries({queryKey: teamKeys.all});
+      }
+    },
   });
 }
 async function changeAccess(action: TeamAction) {

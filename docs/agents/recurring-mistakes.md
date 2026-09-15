@@ -1223,6 +1223,11 @@ Forms creation had the same defect. Its saved-result lookup includes question pr
 `test:form-creation-recovery` requires a subsequent edit to keep the server count at one.
 Recovery errors receive focus, and returning to retry focuses a re-enabled form field.
 
+Team invitations require the same recovery even though email uniqueness prevents a second
+member: retrying rotates the pending invitation link and sends another email. The Team
+recovery suite requires one invite request, unchanged sent time, lookup retry, saved-member
+navigation and explicit retry after an empty lookup.
+
 ### RM-228 — Wrapping must constrain intrinsic width as well as visible text
 A long intake title widened the Workbench even after ordinary word wrapping kept the
 paragraph's contents inside its own box. Use wrapping that participates in intrinsic sizing

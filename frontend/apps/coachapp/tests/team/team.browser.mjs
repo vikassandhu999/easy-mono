@@ -164,6 +164,9 @@ try {
     await expect(page.getByRole('alert')).toBeVisible();
     await expect(page.getByLabel('Email', {exact: true})).toHaveValue(`morgan-${suffix}@example.test`);
     await page.unroute('**/v1/coach/team/invite');
+    await page.getByRole('button', {name: 'Check Team', exact: true}).click();
+    await expect(page.getByText('No matching coaches found.', {exact: true})).toBeVisible();
+    await page.getByRole('button', {name: 'Return and retry', exact: true}).click();
     await page.getByRole('button', {name: 'Send invitation', exact: true}).click();
     await expect(page.getByRole('heading', {name: 'Morgan Vale', exact: true})).toBeVisible();
     const invitedId = new URL(page.url()).pathname.split('/').at(-1);

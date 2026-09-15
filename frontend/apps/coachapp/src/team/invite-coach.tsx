@@ -1,16 +1,20 @@
-import {useCallback, useRef} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
+import {flushSync} from 'react-dom';
 import {useForm} from 'react-hook-form';
 import {generatePath, Link, useBeforeUnload, useBlocker, useNavigate} from 'react-router-dom';
-import {type TeamMemberInvite, useInviteCoach} from '../api/team';
+import {ApiError} from '../api/client';
+import {type TeamMemberInvite, useInviteCoach, useTeam} from '../api/team';
 import {routes} from '../routes';
 import {Button, buttonVariants} from '../ui/button';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FormError} from '../ui/form-error';
 import {setFormError} from '../ui/form-errors';
 import {FormField} from '../ui/form-field';
+import {InfiniteList} from '../ui/infinite-list';
 import {useListLocation} from '../ui/list-location';
 import {OwnerOnly} from '../ui/owner-only';
 import {FormActions, Page, PageHeader, Surface} from '../ui/page';
+import {coachName, coachStatus} from './team-labels';
 
 export function InviteCoach() {
   const list = useListLocation(routes.team);
@@ -35,8 +39,34 @@ function InvitationForm() {
   const form = useForm<TeamMemberInvite>({defaultValues: {first_name: '', last_name: '', email: ''}});
   const mutation = useInviteCoach();
   const completed = useRef(false);
+  const mounted = useRef(true);
+  const errorRef = useRef<HTMLDivElement>(null);
+  const [uncertainEmail, setUncertainEmail] = useState('');
+  const [checking, setChecking] = useState(false);
   const pending = form.formState.isSubmitting;
+  const locked = pending || Boolean(uncertainEmail);
   const dirty = form.formState.isDirty;
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (pending) {
+      return;
+    }
+    const errors = form.formState.errors;
+    if (errors.email) {
+      form.setFocus('email');
+    } else if (errors.first_name) {
+      form.setFocus('first_name');
+    } else if (errors.last_name) {
+      form.setFocus('last_name');
+    } else if (errors.root) {
+      errorRef.current?.focus();
+    }
+  }, [pending, form.formState.errors, form.setFocus]);
   const blocker = useBlocker(() => !completed.current && (dirty || pending));
   useBeforeUnload(
     useCallback(
@@ -50,6 +80,9 @@ function InvitationForm() {
     ),
   );
   const submit = form.handleSubmit(async (values) => {
+    if (pending || uncertainEmail) {
+      return;
+    }
     form.clearErrors();
     try {
       const result = await mutation.mutateAsync({
@@ -57,12 +90,26 @@ function InvitationForm() {
         first_name: values.first_name?.trim() || null,
         last_name: values.last_name?.trim() || null,
       });
+      if (!mounted.current) {
+        return;
+      }
       completed.current = true;
       navigate(generatePath(routes.teamMember, {id: result.data.id}), {state: {...list.state, invited: true}});
     } catch (error) {
+      if (!mounted.current) {
+        return;
+      }
+      if (!(error instanceof ApiError) || error.status >= 500) {
+        setUncertainEmail(values.email.trim());
+        form.setError('root', {
+          message:
+            'The invitation could not be confirmed. Check Team before trying again; sending again replaces the earlier invitation link.',
+        });
+        return;
+      }
       setFormError(
         error,
-        'Could not confirm the invitation. Your details are still here. You can check Team before trying again.',
+        'Could not send the invitation. Your details are still here. Please try again.',
         form.setError,
         ['email', 'first_name', 'last_name'],
       );
@@ -83,7 +130,7 @@ function InvitationForm() {
             type="email"
             isRequired
             maxLength={255}
-            isDisabled={pending}
+            isDisabled={locked}
           />
           <div className="grid items-start gap-5 sm:grid-cols-2">
             <FormField
@@ -91,21 +138,35 @@ function InvitationForm() {
               name="first_name"
               label="First name"
               maxLength={255}
-              isDisabled={pending}
+              isDisabled={locked}
             />
             <FormField
               control={form.control}
               name="last_name"
               label="Last name"
               maxLength={255}
-              isDisabled={pending}
+              isDisabled={locked}
             />
           </div>
           <p className="text-sm text-muted-foreground">
             Coaches work with the clients assigned to them. You can assign clients after they accept.
           </p>
         </Surface>
-        <FormError message={form.formState.errors.root?.message} />
+        <div
+          ref={errorRef}
+          tabIndex={-1}
+          className="space-y-3"
+        >
+          <FormError message={form.formState.errors.root?.message} />
+          {uncertainEmail && (
+            <Button
+              variant="outline"
+              onPress={() => setChecking(true)}
+            >
+              Check Team
+            </Button>
+          )}
+        </div>
         <FormActions>
           <Link
             to={list.to}
@@ -117,11 +178,30 @@ function InvitationForm() {
           <Button
             type="submit"
             isPending={pending}
+            isDisabled={Boolean(uncertainEmail)}
           >
             Send invitation
           </Button>
         </FormActions>
       </form>
+      {checking && (
+        <SavedCoaches
+          email={uncertainEmail}
+          onClose={() => setChecking(false)}
+          onOpen={(id) => {
+            completed.current = true;
+            navigate(generatePath(routes.teamMember, {id}), {replace: true, state: list.state});
+          }}
+          onRetry={() => {
+            flushSync(() => {
+              setChecking(false);
+              setUncertainEmail('');
+              form.clearErrors('root');
+            });
+            form.setFocus('email');
+          }}
+        />
+      )}
       <Dialog
         isOpen={blocker.state === 'blocked'}
         onOpenChange={(open) => {
@@ -134,9 +214,16 @@ function InvitationForm() {
           <DialogTitle>Leave this invitation?</DialogTitle>
         </DialogHeader>
         <div className="dialog-body space-y-4">
-          <p>The details you entered will be discarded.</p>
+          <p>
+            {pending
+              ? 'Please wait while the invitation is sending.'
+              : uncertainEmail
+                ? 'The invitation may already have been sent. Leaving discards your details, but does not revoke a sent invitation.'
+                : 'The details you entered will be discarded.'}
+          </p>
           <div className="flex flex-wrap gap-3">
             <Button
+              autoFocus
               onPress={() => {
                 if (blocker.state === 'blocked') {
                   blocker.reset();
@@ -160,5 +247,77 @@ function InvitationForm() {
         </div>
       </Dialog>
     </>
+  );
+}
+
+function SavedCoaches({
+  email,
+  onClose,
+  onOpen,
+  onRetry,
+}: {
+  email: string;
+  onClose: () => void;
+  onOpen: (id: string) => void;
+  onRetry: () => void;
+}) {
+  const query = useTeam({search: email});
+  return (
+    <Dialog
+      isOpen
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <DialogHeader>
+        <DialogTitle>Check Team</DialogTitle>
+      </DialogHeader>
+      <div className="dialog-body space-y-4">
+        <p>Look for the coach you just invited. Open their details to check their invitation or access.</p>
+        <InfiniteList
+          query={query}
+          label="matching coaches"
+          singular="matching coach"
+          empty={<p>No matching coaches found.</p>}
+        >
+          {(coach) => (
+            <div className="space-y-3 p-4">
+              <div className="wrap-anywhere">
+                <p className="font-semibold">{coachName(coach)}</p>
+                <p className="text-sm text-muted-foreground">{coach.email}</p>
+                <p className="text-sm text-muted-foreground">{coachStatus(coach)}</p>
+              </div>
+              <Button
+                variant="outline"
+                onPress={() => onOpen(coach.id)}
+              >
+                View coach
+              </Button>
+            </div>
+          )}
+        </InfiniteList>
+        {query.isSuccess && !query.isPaused && !query.isFetching && !query.hasNextPage && (
+          <>
+            <p className="text-sm text-muted-foreground">
+              If none matches this invitation, return to your details and try sending again.
+            </p>
+            <Button
+              variant="outline"
+              onPress={onRetry}
+            >
+              Return and retry
+            </Button>
+          </>
+        )}
+        <Button
+          variant="ghost"
+          onPress={onClose}
+        >
+          Keep my details
+        </Button>
+      </div>
+    </Dialog>
   );
 }

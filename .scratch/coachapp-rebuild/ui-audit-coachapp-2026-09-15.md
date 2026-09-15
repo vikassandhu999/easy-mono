@@ -18,7 +18,7 @@ Inventory comes from the current router, not the navigation. Earlier slice evide
 | /applications/:id | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /applications/:id/enroll | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /coaching-page/edit | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /team/invite | Owner | 375 / 1280 | Validation, dirty navigation, send/retry and delayed account replacement | Partial; unconfirmed creation recovery pending | |
+| /team/invite | Owner | 375 / 1280 | Field validation/focus, dirty/pending navigation, uncertain send, lookup/empty retry, saved-member recovery, filter return and account replacement | Passed listed states | TEAM-01 |
 | /team/:id | Owner / trainer denied | 375 / 1280 | Expired/pending/active/inactive, resend/revoke, concurrent acceptance, deactivate/reactivate, client transfer and return | Passed listed states | |
 | /clients/:id/coach | Owner / trainer denied | 375 / 1280 | Active-coach search, current/disabled choices, confirmation, failed assignment/retry and resulting visibility | Passed listed states | |
 | /settings/profile | Owner / trainer | 375 / 1280 | Saved profile/header, changed fields, failure/retry, draft retention, unsaved navigation | Passed settings regression; full keyboard sweep pending |  |
@@ -76,6 +76,8 @@ Inventory comes from the current router, not the navigation. Earlier slice evide
 
 ## Findings
 
+- TEAM-01 — After a lost invitation response, Send invitation remained available and retried the create endpoint, which rotates an existing pending invitation link. Classification: behavioral. Fixed in team/invite-coach.tsx and api/team.ts. The real lost-response probe fails against the prior screen and passes afterward at both widths. Check Team retains the submitted identity, uses server search/counts and opens the saved member without another send. An empty lookup permits a deliberate retry. Field errors and recovery receive focus; pending navigation cannot discard the in-flight attempt.
+
 - WB-01 — A long unbroken intake title widened Workbench beyond the viewport. Classification: objective visual defect. Fixed in workbench/workbench-task.tsx with wrapping that also allows intrinsic layout width to shrink. The pre-fix probe fails document-width checks; the same long-title fixture passes at 375px/1280px afterward. Screenshots: tests/workbench/artifacts/getting-started-{375,1280}.png.
 - WB-02 — Snoozing through yesterday reported success while leaving the task visible. Classification: behavioral. The backend permits expired snoozes and evaluates both snoozable queues against UTC today; the snooze editor now requires today or later. The pre-fix browser captured success through yesterday with the task still present. The corrected flow shows a field message, keeps date focus and sends no PUT, then completes a valid snooze. The public API remains unchanged.
 
@@ -129,3 +131,11 @@ Full Forms authoring/recovery and lifecycle/management suites pass at both width
 Workbench passes at 375px/1280px with all six real queues, two cursor pages per queue, server counts/search, completed review/reply/assignment/engagement tasks, summary failure/recovery, retained queue rows, independent snoozes and account isolation. Long-title and expired-date probes fail before their respective fixes and pass afterward. Team's current suite passes both widths on the isolated API/app, including permissions, stale acceptance, invitation/access recovery and client reassignment; unconfirmed invitation creation remains explicitly pending.
 
 Coach build, scoped Biome, repository rules and full backend precommit pass (1,778 tests, zero failures). Workbench runs against normal API 4000/app 2022; Team uses isolated API 44000/app 22022 and its own fixture database. Fixtures remain in disposable test accounts, as in the existing suites. Full application coverage remains open.
+
+## Team invitation recovery verification
+
+The focused suite passes at 375px/1280px on normal API 4000/app 2022, including real owner-email rejection, pending navigation, lost response, failed lookup/retry, retained details, unchanged sent time, exactly one invite request for saved-member recovery, reload/filter return and normal creation after an empty lookup. The full Team regression passes on isolated API 44000/app 22022, including roles and account replacement.
+
+The pre-fix control uses the committed screen source and fails because Send invitation remains enabled after a real successful creation whose response was lost. The corrected test also checks focus and dialog bounds. Screenshots are tests/team/artifacts/invitation-recovery-{375,1280}.png. Focused fixtures are revoked on completion; the interrupted harness fixture was separately found by its exact test email and revoked. Disposable accounts and the pre-existing lifecycle suite's fixtures remain.
+
+Coach build, scoped Biome, repository checks and full backend precommit pass (1,778 tests, zero failures). The existing bundle-size warning remains. The full application audit stays open.

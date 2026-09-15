@@ -232,6 +232,8 @@ Set `COACHAPP_API_PROXY=http://127.0.0.1:4000` in the app's ignored `.env.local`
 
 Owners can open Team from the account menu to invite coaches, resend or revoke pending invitations, and deactivate or reactivate accepted coaches. Each member page shows their assigned clients. Client details → Change coach offers active team members with server-owned client counts. Deactivation transfers clients to the owner and revokes HTTP/socket access; reactivation requires a fresh login and leaves assignments with the owner.
 
+An unconfirmed coach invitation retains the details and offers **Check Team** before retrying. Open the saved coach to inspect their invitation or access. Sending again replaces an earlier invitation link, so retry remains deliberate. `test:team-invitation-recovery` runs the focused real-API journey on normal API 4000/app 2022 by default, or uses `COACHAPP_API_URL` and `COACHAPP_URL`. It is also included in `test:team` and removes its pending invitations during cleanup.
+
 Run `rtk proxy env COACHAPP_API_URL=http://127.0.0.1:44000 COACHAPP_URL=http://localhost:22022 pnpm -C frontend/apps/coachapp test:team` with the isolated services running. It verifies paging, search, access changes, invitation and assignment recovery, and account isolation at 375px and 1280px. See [the team brief](../../../.scratch/coachapp-rebuild/team.md).
 
 ## Billing

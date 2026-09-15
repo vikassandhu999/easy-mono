@@ -66,7 +66,8 @@ try {
     const unique = `${Date.now()}-${width}`;
     const tokens = await account(unique);
     const token = tokens.access_token;
-    const _weekly = await template('Weekly progress', token);
+    const weeklyName = 'TestWeeklyProgress'.repeat(8);
+    const _weekly = await template(weeklyName, token);
     const _recovery = await template('Recovery check-in', token);
     const once = await template('One-time reflection', token);
     const extra = await template('Extra check-in', token);
@@ -126,13 +127,11 @@ try {
     await page.unroute('**/v1/coach/form-templates?*');
     await picker.getByRole('button', {name: 'Retry loading more', exact: true}).click();
     await expect(formRows).toHaveCount(40);
-    await picker.getByLabel('Search check-in forms', {exact: true}).fill('Weekly progress');
-    await picker.getByRole('button', {name: 'Choose Weekly progress', exact: true}).click();
+    await picker.getByLabel('Search check-in forms', {exact: true}).fill(weeklyName);
+    await picker.getByRole('button', {name: `Choose ${weeklyName}`, exact: true}).click();
     await expect(page.getByRole('dialog', {includeHidden: true})).toHaveCount(0);
     await page.getByRole('button', {name: 'Preview form', exact: true}).click();
-    await expect(page.getByRole('dialog', {name: 'Weekly progress', exact: true})).toContainText(
-      'What went well this week?',
-    );
+    await expect(page.getByRole('dialog', {name: weeklyName, exact: true})).toContainText('What went well this week?');
     await page.getByRole('button', {name: 'Close preview', exact: true}).click();
     await expect(page.getByRole('dialog', {includeHidden: true})).toHaveCount(0);
     await page.getByRole('link', {name: 'Back to check-ins', exact: true}).click();
@@ -158,16 +157,33 @@ try {
     await expect(page.getByRole('button', {name: 'Check saved schedules', exact: true})).toBeVisible();
     await expect(save).toBeDisabled();
     await page.unroute(`**${endpoint}`);
-    await page.getByRole('button', {name: 'Check saved schedules', exact: true}).click();
+    await expect(page.getByRole('alert').locator('..')).toBeFocused();
+    await page.keyboard.press('Tab');
+    const checkSaved = page.getByRole('button', {name: 'Check saved schedules', exact: true});
+    await expect(checkSaved).toBeFocused();
+    await page.route(`**${endpoint}?*`, (route) => route.fulfill({status: 503, json: {}}));
+    await page.keyboard.press('Enter');
+    const saved = page.getByRole('dialog', {name: 'Check saved schedules', exact: true});
+    await expect(saved.getByRole('button', {name: 'Try again', exact: true})).toBeVisible();
+    await expect(saved.getByRole('button', {name: 'Return and retry', exact: true})).toHaveCount(0);
+    await page.unroute(`**${endpoint}?*`);
+    await saved.getByRole('button', {name: 'Try again', exact: true}).click();
+    await expect(saved.getByText('1 matching schedule', {exact: true})).toBeVisible();
+    await expect.poll(() => saved.evaluate((node) => node.contains(document.activeElement))).toBe(true);
+    const savedName = saved.getByText(weeklyName, {exact: true});
+    expect(await savedName.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+    expect(await saved.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+    await page.screenshot({path: `tests/check-ins/artifacts/saved-recovery-${width}.png`, fullPage: true});
     await page.getByRole('button', {name: 'View saved schedules', exact: true}).click();
     await expect(page).toHaveURL(path);
     expect(creates).toBe(1);
     const schedule = (await send('get', endpoint, undefined, token)).data[0];
     expect(schedule.frequency).toBe('weekly');
     expect(schedule.next_due_on).toBe(dateAfter(7));
-    const row = page.getByRole('article', {name: 'Weekly progress', exact: true});
+    const row = page.getByRole('article', {name: weeklyName, exact: true});
     await row.getByRole('button', {name: 'Edit schedule', exact: true}).click();
     const edit = page.getByRole('dialog', {name: 'Edit schedule', exact: true});
+    expect(await edit.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
     await edit.getByLabel('Next due date', {exact: true}).fill(dateAfter(14));
     await chooseOption(selectTrigger(edit, 'Repeat'), 'Every 2 weeks');
     await edit.getByRole('button', {name: 'Cancel', exact: true}).click();
@@ -184,6 +200,10 @@ try {
     await expect(row).toContainText('Every 2 weeks');
     await row.getByRole('button', {name: 'Stop scheduling', exact: true}).click();
     const stop = page.getByRole('dialog', {name: 'Stop scheduling this check-in?', exact: true});
+    expect(await stop.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+    expect(
+      await stop.getByText(weeklyName, {exact: true}).evaluate((node) => node.scrollWidth <= node.clientWidth),
+    ).toBe(true);
     await page.route(`**${updatePath}`, (route) => route.fulfill({status: 503, json: {}}));
     await stop.getByRole('button', {name: 'Stop scheduling', exact: true}).click();
     await expect(stop.getByRole('alert')).toBeVisible();
@@ -197,6 +217,7 @@ try {
     await expect(row).toBeVisible();
     await row.getByRole('button', {name: 'Resume schedule', exact: true}).click();
     const resume = page.getByRole('dialog', {name: 'Resume schedule', exact: true});
+    expect(await resume.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
     await resume.getByRole('button', {name: 'Resume schedule', exact: true}).click();
     await expect(resume.getByLabel('Next due date', {exact: true})).toBeFocused();
     await resume.getByLabel('Next due date', {exact: true}).fill(dateAfter(21));
@@ -206,12 +227,28 @@ try {
     await chooseOption(selectTrigger(page, 'Show'), 'All schedules');
     await expect(row).toContainText('Every month');
     await page.getByRole('link', {name: 'Schedule check-in', exact: true}).click();
-    await chooseForm(page, 'Weekly progress');
+    await chooseForm(page, weeklyName);
     await date.fill(dateAfter(5));
     await save.click();
     await expect(page.getByRole('alert')).toContainText('already has an active schedule');
     await expect(page.getByRole('button', {name: 'Change form', exact: true})).toBeFocused();
     await chooseForm(page, 'Recovery check-in');
+    await page.route(`**${endpoint}`, (route) => route.fulfill({status: 503, json: {}}));
+    await save.click();
+    await expect(checkSaved).toBeVisible();
+    await expect(save).toBeDisabled();
+    await expect(date).toBeDisabled();
+    await page.unroute(`**${endpoint}`);
+    await page.getByRole('link', {name: 'Back to check-ins', exact: true}).click();
+    await expect(page.getByRole('dialog')).toContainText('will not remove a schedule that was already saved');
+    await page.getByRole('button', {name: 'Keep editing', exact: true}).click();
+    await page.getByRole('button', {name: 'Check saved schedules', exact: true}).click();
+    await expect(saved.getByText('No matching schedules found.', {exact: true})).toBeVisible();
+    await saved.getByRole('button', {name: 'Return and retry', exact: true}).click();
+    await expect(saved).toHaveCount(0);
+    await expect(date).toBeFocused();
+    await expect(date).toHaveValue(dateAfter(5));
+    await expect(page.getByRole('region', {name: 'Check-in form', exact: true})).toContainText('Recovery check-in');
     await save.click();
     await expect(page).toHaveURL(path);
     // A one-time due schedule creates an assignment immediately and stops future generation.
@@ -320,7 +357,7 @@ try {
     await page.getByRole('link', {name: 'Back to check-ins', exact: true}).click();
     await expect(rows).toHaveCount(40);
     await expect.poll(() => page.evaluate(() => scrollY)).toBe(scroll);
-    await page.getByLabel('Search schedules', {exact: true}).fill('Weekly progress');
+    await page.getByLabel('Search schedules', {exact: true}).fill(weeklyName);
     await expect(rows).toHaveCount(1);
     await expect(row).toContainText(dateAfter(21));
     await page.reload();

@@ -31,3 +31,12 @@ This journey passes with the coach at 375px and 1280px and the client at 375px, 
 Run `pnpm test:check-ins` from the coachapp directory with the API on 4000, coach app on 2022 and client app on 1314. The suite creates disposable accounts and forms in the development database; it submits and reviews their check-ins through the browser.
 
 Coach build, scoped Biome, `just check-rm` and whitespace checks pass. Full backend `mix precommit` passes with 1,778 tests and zero failures. The existing Vite bundle-size warning remains. The reviewed-response screenshots were inspected at both coach widths.
+
+
+## Scheduling recovery audit — 2026-09-15
+
+Return and retry now restores focus to First due date after the draft controls are re-enabled. The unchanged probe failed with the date inactive before the fix and passes at both widths afterward. An unconfirmed-save leave warning now explains that leaving does not remove a schedule that may already have been saved.
+
+Long form names wrap in the authoring screen, schedule list, saved-result lookup and stop confirmation. The authoring, saved-result and stop-confirmation probes each reproduced overflow before their fixes. The extended real-API suite passes at 375px/1280px: keyboard entry into saved-result lookup, failed lookup/retry, focus retained inside the dialog after loading, exactly one creation after a lost response, empty lookup and deliberate retry with choices retained, edit/stop/resume, and the client-app submission/review journey.
+
+Screenshots are tests/check-ins/artifacts/saved-recovery-{375,1280}.png. Build, scoped Biome and repository rules pass. Full backend precommit passes 1,778 tests after correcting factory emails that could collide with retained fixtures across runtime restarts; the focused controller suite passes 81 tests. The existing bundle-size warning remains. No public API change was needed. Fixtures remain confined to the disposable test businesses used by the existing suite.

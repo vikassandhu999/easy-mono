@@ -32,12 +32,12 @@ Inventory comes from the current router, not the navigation. Earlier slice evide
 | /clients/:clientId/training-sessions/:id | Coach | 375 / 1280 | Recorded units/sets, frozen prescription after library edits, empty work, missing/failed/retried detail, retained refresh, long saved plan names | Passed listed states | HISTORY-01 |
 | /clients/:clientId/nutrition-history | Coach | 375 / 1280 | Real recorded totals, missing/zero nutrients, frozen guidance, long meal names, date validation/focus/reload, client timezone, retained refresh and account isolation | Passed listed states | HISTORY-02 |
 | /clients/:clientId/weight-progress | Coach | 375 / 1280 | Server trend/totals, mixed units, form provenance, cursor pages, empty/single/constant trend, dates, retry and account isolation | Passed listed states |  |
-| /clients/:id/check-ins | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /clients/:id/check-ins/new | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /check-ins | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /check-ins/responses/:id | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /clients/:clientId/check-in-responses | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /clients/:clientId/check-in-responses/:id | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
+| /clients/:id/check-ins | Coach | 375 / 1280 | Real edit/stop/resume, long names/confirmation, server search/counts/cursor pages, recovery and account isolation | Passed listed states | CHECKIN-01, CHECKIN-02 |
+| /clients/:id/check-ins/new | Coach | 375 / 1280 | Form search/preview, long names, validation/draft protection, keyboard saved-result lookup/retry, empty-lookup focus restoration, uncertain leave warning, duplicate/capacity errors, real client-app answer/review | Passed listed states | CHECKIN-01, CHECKIN-02 |
+| /check-ins | Coach | 375 / 1280 | Server search/status/counts, cursor pages and recovery | Passed existing suite; expanded audit pending | |
+| /check-ins/responses/:id | Coach | 375 / 1280 | Frozen answers, review/retry, persisted review and account isolation | Passed existing suite; expanded audit pending | |
+| /clients/:clientId/check-in-responses | Coach | 375 / 1280 | Client-scoped history, server search/counts/cursor pages, navigation and recovery | Passed existing suite; expanded audit pending | |
+| /clients/:clientId/check-in-responses/:id | Coach | 375 / 1280 | Client-scoped frozen answers, review/retry and persisted review | Passed existing suite; expanded audit pending | |
 | /clients/:id/training-plans/assign | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /clients/:id/training-plans/assign/:templateId | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /training-plans | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
@@ -155,3 +155,17 @@ HISTORY-01 — A long unbroken saved training-plan name overflowed the original-
 HISTORY-02 — A long unbroken meal-option name widened expanded nutrition guidance. The real-data probe fails before the wrapping change and passes at both widths afterward. Recorded intake, server totals, frozen guidance, date navigation/validation, failure recovery and account isolation remain covered by the complete nutrition-history suite. These are objective layout fixes; persisted data and the public API are unchanged. RM-228 now names both history regressions.
 
 Weight progress also passes its current real-API suite at both widths: server chart/totals, mixed units, form provenance, cursor history, dates, recovery and account isolation. Build, scoped Biome, repository rules and full backend precommit pass (1,778 tests, zero failures). The existing bundle-size warning remains. Screenshots: tests/training/artifacts/history-{session,list}-{375,1280}.png and tests/nutrition/artifacts/history-{375,1280}.png. Existing disposable-account fixtures remain; these suites do not delete their historical records.
+
+
+## Check-in audit in progress
+
+After the history checkpoint, the current schedule and response-review suites both pass at 375px/1280px against normal API 4000/app 2022. Scheduling includes real client-app submission and persisted coach review; the response suite repeats client overview/intake review as well. Logs: /tmp/coachapp-check-ins-current.log and /tmp/coachapp-reviews-current.log. Timestamp-dependent screenshots are archived in /tmp/coachapp-check-in-audit-2026-09-15 before restoring tracked baselines. The next pass expands edge-state coverage; these rows do not claim that pass is complete.
+
+
+## Scheduling recovery verification
+
+CHECKIN-01 — Returning from an empty saved-schedule lookup left keyboard focus outside the draft. The test failed with First due date inactive; the retry now re-enables the draft before focusing that field. The form/date choices are retained and a deliberate save succeeds. Leaving an unconfirmed attempt now explains that a previously saved schedule remains on the server.
+
+CHECKIN-02 — Long form names overflowed authoring, saved-result lookup and the stop confirmation. Source-local wrapping fixes pass the same real-data probes. List, edit and resume flows remain usable with that long name. The full scheduling suite passes both widths, including failed lookup/retry and focus containment after the result loads. Screenshot: tests/check-ins/artifacts/saved-recovery-{375,1280}.png. The earlier full-page screenshot suggested focus had escaped; an explicit focus-containment assertion passes at both widths, so no dialog primitive change was made.
+
+Build, Biome, repository rules and full backend precommit pass. Precommit first exposed a users_email_index collision in retained test fixtures; UUID-based factory emails fix the runtime-restart collision without deleting stored records. Client-controller tests pass 81 tests and full precommit passes 1,778 tests. The response reader’s expanded audit remains the next step.

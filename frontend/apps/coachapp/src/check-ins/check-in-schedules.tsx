@@ -159,7 +159,7 @@ function Schedules({clientId}: {clientId: string}) {
                 aria-label={schedule.form_template.name}
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <h2 className="break-words text-lg font-semibold">{schedule.form_template.name}</h2>
+                  <h2 className="wrap-anywhere text-lg font-semibold">{schedule.form_template.name}</h2>
                   <span className="text-sm text-muted-foreground">{schedule.active ? 'Active' : 'Stopped'}</span>
                 </div>
                 <p className="text-sm">
@@ -456,7 +456,7 @@ function StopSchedule({
         <DialogTitle>Stop scheduling this check-in?</DialogTitle>
       </DialogHeader>
       <div className="dialog-body space-y-4">
-        <p className="font-semibold">{schedule.form_template.name}</p>
+        <p className="wrap-anywhere font-semibold">{schedule.form_template.name}</p>
         <p>
           No new check-ins will be generated. Your client can still answer existing check-ins, and you can resume this
           schedule later.

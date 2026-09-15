@@ -1,4 +1,5 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {flushSync} from 'react-dom';
 import {useForm} from 'react-hook-form';
 import {generatePath, Link, useBeforeUnload, useBlocker, useNavigate, useParams} from 'react-router-dom';
 import {useCheckInSchedules, useSaveCheckInSchedule} from '../api/check-in-schedules';
@@ -170,7 +171,7 @@ function Create({clientId}: {clientId: string}) {
             <h2 className="section-title">Check-in form</h2>
             {template ? (
               <div>
-                <p className="break-words text-lg font-semibold">{template.name}</p>
+                <p className="wrap-anywhere text-lg font-semibold">{template.name}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {template.question_count} {template.question_count === 1 ? 'question' : 'questions'}
                 </p>
@@ -255,9 +256,12 @@ function Create({clientId}: {clientId: string}) {
           onClose={() => setChecking(false)}
           onUse={() => finish('Review your saved check-in schedules.')}
           onRetry={() => {
-            setChecking(false);
-            setUncertain(false);
-            form.clearErrors('root');
+            flushSync(() => {
+              setChecking(false);
+              setUncertain(false);
+              form.clearErrors('root');
+            });
+            form.setFocus('next_due_on');
           }}
         />
       )}
@@ -270,10 +274,14 @@ function Create({clientId}: {clientId: string}) {
         }}
       >
         <DialogHeader>
-          <DialogTitle>Leave without saving?</DialogTitle>
+          <DialogTitle>{uncertain ? 'Leave this schedule?' : 'Leave without saving?'}</DialogTitle>
         </DialogHeader>
         <div className="dialog-body space-y-4">
-          <p>Your unsaved schedule will be lost.</p>
+          <p>
+            {uncertain
+              ? 'The save could not be confirmed. Leaving will discard these choices, but it will not remove a schedule that was already saved.'
+              : 'Your unsaved schedule will be lost.'}
+          </p>
           <div className="flex gap-3">
             <Button
               autoFocus
@@ -294,7 +302,7 @@ function Create({clientId}: {clientId: string}) {
                 }
               }}
             >
-              Discard changes
+              {uncertain ? 'Leave schedule' : 'Discard changes'}
             </Button>
           </div>
         </div>
@@ -412,7 +420,7 @@ function SavedSchedules({
         >
           {(schedule) => (
             <div className="space-y-2 p-4">
-              <p className="font-semibold">{schedule.form_template.name}</p>
+              <p className="wrap-anywhere font-semibold">{schedule.form_template.name}</p>
               <p className="text-sm">
                 {frequencyLabels[schedule.frequency]} · {schedule.next_due_on} ·{' '}
                 {schedule.active ? 'Active' : 'Stopped'}

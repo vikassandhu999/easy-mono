@@ -1242,7 +1242,8 @@ when text can determine a flex/grid child's minimum width. **Verify by:** assert
 text element's scroll width and the document width, using an unbroken title at 375px/1280px.
 Coachapp `test:workbench` covers the title, trailing due date and resulting task actions.
 `test:nutrition-history` and `test:training-history` cover long saved meal and plan names
-inside the expanded original guidance, including after reload.
+inside the expanded original guidance, including after reload. `test:check-ins` also
+covers long selected form names, saved-result lookup and the stop-scheduling confirmation.
 
 ### RM-229 — A snooze confirmation must correspond to time actually hidden
 The snooze endpoint accepts expired dates, so the editor reported success for yesterday

@@ -114,12 +114,28 @@ try {
     await capture(publicPage, 'public-page', width);
     await publicPage.getByRole('button', {name: 'Apply for Personal strength coaching', exact: true}).click();
     await publicPage.getByLabel('Your name', {exact: true}).fill('Priya Sharma');
+    await publicPage.getByRole('button', {name: 'Send application', exact: true}).click();
+    await expect(publicPage.getByLabel('Email', {exact: true})).toBeFocused();
+    await expect(
+      publicPage.getByText('Enter your email or phone so the coach can reach you.', {exact: true}),
+    ).toBeVisible();
     await publicPage.getByLabel('Email', {exact: true}).fill(`priya-${width}@example.test`);
     await publicPage
       .getByLabel('What would you like help with? (optional)', {exact: true})
       .fill('I want to feel stronger and build a consistent routine.');
     await chooseOption(selectTrigger(publicPage, 'When would you like to start? (optional)'), 'Next month');
     await publicPage.getByLabel('What should I call you? (optional)', {exact: true}).fill('Priya');
+    await publicPage.route('**/applications', (route) =>
+      route.fulfill({
+        status: 422,
+        json: {error_code: 'invalid_input', error_detail: {fields: {instagram: ['Check your Instagram username.']}}},
+      }),
+    );
+    await publicPage.getByRole('button', {name: 'Send application', exact: true}).click();
+    await expect(publicPage.getByLabel('Instagram username', {exact: true})).toBeFocused();
+    await expect(publicPage.getByText('Check your Instagram username.', {exact: true})).toBeVisible();
+    await publicPage.getByLabel('Instagram username', {exact: true}).fill('priya');
+    await publicPage.unroute('**/applications');
     await capture(publicPage, 'application', width);
     let lost = false;
     await publicPage.route('**/applications', async (route) => {
@@ -134,6 +150,10 @@ try {
     });
     await publicPage.getByRole('button', {name: 'Send application', exact: true}).click();
     await expect(publicPage.getByRole('button', {name: 'Retry application', exact: true})).toBeVisible();
+    await expect(publicPage.getByRole('dialog').getByRole('alert')).toBeFocused();
+    await publicPage.keyboard.press('Tab');
+    await expect(publicPage.getByRole('button', {name: 'Retry application', exact: true})).toBeFocused();
+    await publicPage.screenshot({path: `tests/acquisition/artifacts/public-recovery-${width}.png`});
     expect(
       await publicPage.evaluate(
         (slug) => JSON.parse(sessionStorage.getItem(`easy:coaching-application:${slug}`)).landing_page_id,
@@ -149,10 +169,18 @@ try {
       )
     ).data;
     await publicPage.reload();
+    await publicPage.route('**/applications', (route) =>
+      route.fulfill({status: 503, json: {error_code: 'unavailable'}}),
+    );
+    await publicPage.getByRole('button', {name: 'Check application', exact: true}).click();
+    await expect(publicPage.getByRole('alert')).toBeFocused();
+    await publicPage.keyboard.press('Tab');
+    await expect(publicPage.getByRole('button', {name: 'Check application', exact: true})).toBeFocused();
+    await publicPage.unroute('**/applications');
     await publicPage.getByRole('button', {name: 'Check application', exact: true}).click();
     await expect(
       publicPage.getByRole('heading', {name: 'Your application is with the coach', exact: true}),
-    ).toBeVisible();
+    ).toBeFocused();
     await send('put', '/v1/coach/landing-page', {...pageInput(renamed, 'published'), slug}, tokens.access_token);
     await page.reload();
     let prospects = await send('get', '/v1/coach/prospects', undefined, tokens.access_token);
@@ -205,16 +233,21 @@ try {
     );
     await publicPage.getByRole('button', {name: 'Send application', exact: true}).click();
     await expect(publicPage.getByRole('button', {name: 'Review updated page', exact: true})).toBeVisible();
+    await expect(publicPage.getByRole('dialog').getByRole('alert')).toBeFocused();
     await publicPage.route(`**/v1/public/landing-pages/${slug}`, (route) =>
       route.fulfill({status: 503, json: {error_code: 'unavailable'}}),
     );
     await publicPage.getByRole('button', {name: 'Review updated page', exact: true}).click();
     await expect(
       publicPage.getByText('Could not load the updated page. Your answers are still here.', {exact: true}),
-    ).toBeVisible();
+    ).toBeFocused();
+    await publicPage.keyboard.press('Tab');
+    await expect(publicPage.getByRole('button', {name: 'Review updated page', exact: true})).toBeFocused();
     await publicPage.unroute(`**/v1/public/landing-pages/${slug}`);
     await publicPage.getByRole('button', {name: 'Review updated page', exact: true}).click();
     await expect(publicPage.getByLabel('Your name', {exact: true})).toHaveValue('Asha Rao');
+    await expect(selectTrigger(publicPage, 'Interested in')).toBeFocused();
+    await expect(publicPage.getByRole('dialog').getByRole('alert')).toHaveCount(0);
     await expect(publicPage.getByLabel('What would you like help with? (optional)', {exact: true})).toHaveValue(
       'Retain this goal while I review the updated questions.',
     );
@@ -225,7 +258,7 @@ try {
     await publicPage.getByRole('button', {name: 'Send application', exact: true}).click();
     await expect(
       publicPage.getByRole('heading', {name: 'Your application is with the coach', exact: true}),
-    ).toBeVisible();
+    ).toBeFocused();
     expect((await send('get', '/v1/coach/prospects', undefined, tokens.access_token)).count).toBe(2);
     await page.getByLabel('What can you help people achieve?', {exact: true}).fill('Unsaved change');
     await page.getByRole('link', {name: 'Coaching page', exact: true}).click();

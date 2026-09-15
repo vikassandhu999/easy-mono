@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {useParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
@@ -150,6 +150,48 @@ function ApplicationForm({
       answers,
     },
   });
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const refreshErrorRef = useRef<HTMLParagraphElement>(null);
+  const instagramRef = useRef<HTMLDetailsElement>(null);
+  const errors = form.formState.errors;
+  const summaryError = [
+    error,
+    errors.root?.message,
+    errors.landing_program_id?.message,
+    typeof errors.answers?.message === 'string' ? errors.answers.message : undefined,
+  ]
+    .join(' ')
+    .trim();
+  const pending = form.formState.isSubmitting || apply.isPending;
+  useEffect(() => {
+    if (pending) {
+      return;
+    }
+    if (confirmed) {
+      titleRef.current?.focus();
+    } else if (summaryError) {
+      errorRef.current?.focus();
+    } else if (!savedRequest) {
+      if (errors.name) {
+        form.setFocus('name');
+      } else if (errors.email) {
+        form.setFocus('email');
+      } else if (errors.phone) {
+        form.setFocus('phone');
+      } else if (errors.instagram) {
+        if (instagramRef.current) {
+          instagramRef.current.open = true;
+        }
+        form.setFocus('instagram');
+      }
+    }
+  }, [pending, confirmed, summaryError, savedRequest, errors, form.setFocus]);
+  useEffect(() => {
+    if (stale && currentPage.isError && !currentPage.isFetching) {
+      refreshErrorRef.current?.focus();
+    }
+  }, [stale, currentPage.isError, currentPage.isFetching]);
   const send = async (body: LandingPageApplication & {request_id: string}) => {
     setError('');
     form.clearErrors();
@@ -215,7 +257,12 @@ function ApplicationForm({
       showCloseButton={!apply.isPending}
     >
       <DialogHeader>
-        <DialogTitle>{confirmed ? 'Your application is with the coach' : 'Apply for coaching'}</DialogTitle>
+        <DialogTitle
+          ref={titleRef}
+          tabIndex={-1}
+        >
+          {confirmed ? 'Your application is with the coach' : 'Apply for coaching'}
+        </DialogTitle>
       </DialogHeader>
       <div className="dialog-body space-y-5">
         {confirmed ? (
@@ -239,7 +286,11 @@ function ApplicationForm({
               Your submission has not been confirmed yet. Retry to check the same application; this won’t create a
               duplicate.
             </p>
-            <FormError message={error} />
+            <FormError
+              ref={errorRef}
+              tabIndex={-1}
+              message={summaryError}
+            />
             <Button
               isPending={apply.isPending}
               onPress={() => send(savedRequest)}
@@ -366,7 +417,10 @@ function ApplicationForm({
                   </div>
                 ) : null,
               )}
-              <details className="space-y-3">
+              <details
+                ref={instagramRef}
+                className="space-y-3"
+              >
                 <summary className="cursor-pointer text-sm font-medium">Add Instagram (optional)</summary>
                 <FormField
                   control={form.control}
@@ -376,21 +430,23 @@ function ApplicationForm({
                 />
               </details>
             </fieldset>
-            <FormError message={error} />
-            <FormError message={form.formState.errors.root?.message} />
-            <FormError message={form.formState.errors.landing_program_id?.message} />
             <FormError
-              message={
-                typeof form.formState.errors.answers?.message === 'string'
-                  ? form.formState.errors.answers.message
-                  : undefined
-              }
+              ref={errorRef}
+              tabIndex={-1}
+              message={summaryError}
             />
             {stale ? (
               <div className="space-y-3">
                 <p className="text-sm">
                   The coach has updated this page. Review the latest programs and questions before applying.
                 </p>
+                {currentPage.isError && (
+                  <FormError
+                    ref={refreshErrorRef}
+                    tabIndex={-1}
+                    message="Could not load the updated page. Your answers are still here."
+                  />
+                )}
                 <Button
                   variant="outline"
                   isPending={currentPage.isFetching}
@@ -409,6 +465,8 @@ function ApplicationForm({
                       setPage(result.data.data);
                       form.setValue('answers', updated);
                       form.setValue('landing_program_id', '');
+                      form.clearErrors();
+                      form.setFocus('landing_program_id');
                       setStale(false);
                       setError('');
                     }
@@ -416,9 +474,6 @@ function ApplicationForm({
                 >
                   Review updated page
                 </Button>
-                {currentPage.isError && (
-                  <FormError message="Could not load the updated page. Your answers are still here." />
-                )}
               </div>
             ) : (
               <Button
@@ -439,9 +494,24 @@ function ApplicationRecovery({slug, request}: {slug: string; request: LandingPag
   const apply = useApplyForCoaching(slug);
   const [confirmed, setConfirmed] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (!apply.isPending) {
+      if (confirmed) {
+        titleRef.current?.focus();
+      } else if (error) {
+        errorRef.current?.focus();
+      }
+    }
+  }, [apply.isPending, confirmed, error]);
   return (
     <div className="mx-auto max-w-xl space-y-5 px-5 py-16">
-      <h1 className="text-3xl font-semibold">
+      <h1
+        ref={titleRef}
+        tabIndex={-1}
+        className="text-3xl font-semibold"
+      >
         {confirmed ? 'Your application is with the coach' : 'Check your application'}
       </h1>
       <p>
@@ -449,7 +519,11 @@ function ApplicationRecovery({slug, request}: {slug: string; request: LandingPag
           ? `${confirmed} will contact you using the details you provided. You can close this page.`
           : 'Your previous submission is awaiting confirmation. Check the same application without sending another.'}
       </p>
-      <FormError message={error} />
+      <FormError
+        ref={errorRef}
+        tabIndex={-1}
+        message={error}
+      />
       {!confirmed && (
         <Button
           isPending={apply.isPending}

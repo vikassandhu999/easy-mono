@@ -25,3 +25,11 @@ Execute inline in the current working tree, following the rebuild's recorded wor
 - [x] Verify complete browser scenarios at 375px and 1280px, real client acceptance and intake access, existing auth regression suites, app build/Biome, frontend boundary checks, and backend `mix precommit`. Record results in the rebuild plan and README.
 
 Verification and independent-review results are recorded in [the rebuild plan](plan.md#client-invitation-slice).
+
+## Invitation recovery audit — 2026-09-15
+
+When a send is interrupted, the coach needs to find the saved invitation without losing entered details or blindly sending again. Direct roster navigation would require leaving the draft; a focused saved-client dialog keeps it available and uses the existing server search/cursor list. Counts and matching remain server-owned.
+
+Unsent drafts now warn before route navigation and reload. A pending request prevents in-app discard. After a transport/server error, details remain locked until the coach checks saved clients; lookup failures have Retry, saved results open the existing client, and a completed lookup permits returning to retry. Leaving an uncertain result explains that it cannot cancel a sent invitation. Session guards and mounted checks prevent delayed results from navigating a different account.
+
+The pre-fix browser probe demonstrated Cancel losing the draft without a warning. The recovery suite then passes at 375px and 1280px: keep/discard, dismissed reload, pending navigation, failed lookup, explicit retry, real creation followed by a lost response, saved-client recovery, one server-counted client and roster filter preservation. Its created clients are deleted in cleanup; disposable accounts remain. Existing invitation, real client acceptance and intake review regressions also pass at both widths.

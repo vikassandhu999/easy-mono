@@ -1209,6 +1209,16 @@ identity information or introducing document-wide scrolling. **Verify by:** use 
 long email, assert document scroll width does not exceed the viewport, and inspect the
 complete readable address. Covered by coachapp `test:auth-accessibility` at 375px/1280px.
 
+### RM-227 — Interrupted creation keeps the draft and offers saved-result recovery
+Invite client discarded entered details on navigation and allowed blind retry after a lost
+response. Guard dirty and pending navigation, retain the submitted identity when the outcome
+is unknown, and offer a server-scoped saved-result lookup before an explicit retry. Failed
+writes invalidate affected lists because the server may have committed. Leaving the draft
+must not imply canceling a completed action. **Verify by:** coachapp `test:invitation-recovery`
+holds a send, cancels reload, fails a lookup, then commits a real invitation while losing its
+response and requires recovery to the single saved client at 375px/1280px. Guard presence
+alone cannot prove these outcomes; this rule uses the browser regression rather than grep.
+
 ## Deploy / ops
 
 ### RM-221 — Filter-then-assert: parse WHILE filtering, don't assert afterwards

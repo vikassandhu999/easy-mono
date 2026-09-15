@@ -107,7 +107,7 @@ Protected deep links keep their destination, filters and fragment through sign-i
 
 ## Test client invitations
 
-Use the same isolated API and coach app described above. Start the client app from the repository root:
+Use the normal API on 4000 and coach app on 2022. Start the client app from the repository root:
 
 ```sh
 rtk pnpm -C frontend/apps/clientapp-v2 dev
@@ -119,7 +119,9 @@ Then run:
 rtk pnpm -C frontend/apps/coachapp test:clients
 ```
 
-This suite creates disposable coaches and clients in `easy_coachapp_auth_dev` with local mail delivery. At 375px and 1280px it checks the default intake preview, field validation, request failures and recovery, invitation creation, reload, resend, clipboard failure, return from the client list, and acceptance through the client app. It opens the assigned intake through the client's home screen. A delayed-response regression checks that changing coach accounts cannot restore the previous account's client data or navigate to that client. Screenshots are in ignored `tests/clients/artifacts/`.
+This suite creates disposable coaches and clients in the configured development database. At 375px and 1280px it checks the default intake preview, field validation, request failures and recovery, invitation creation, reload, resend, clipboard failure, return from the client list, and acceptance through the client app. It opens the assigned intake through the client's home screen. A delayed-response regression checks that changing coach accounts cannot restore the previous account's client data or navigate to that client. Screenshots are in ignored `tests/clients/artifacts/`.
+
+An unfinished invitation warns before navigation or reload. While sending, in-app navigation waits for the request. A lost response retains the details and offers **Check saved clients** with server search and totals; open the saved client or deliberately return to retry after reviewing the results. This does not confirm email delivery. `test:invitation-recovery` runs these recovery scenarios independently at both widths and removes the clients it creates.
 
 The same suite checks responsive layout at 375px, 390px, 768px, and 1280px, including touch targets, input text size, dialog scrolling and focus return, account-menu keyboard behavior, and field visibility above the action bar in a 480px-tall viewport. These are browser checks; physical-device keyboards and safe-area behavior still need device testing.
 

@@ -76,10 +76,13 @@ try {
     );
     await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
     await page.getByRole('button', {name: 'Send invitation', exact: true}).click();
-    await expect(page.getByRole('alert')).toContainText('Please try again');
+    await expect(page.getByRole('alert')).toContainText('could not be confirmed');
     await expect(page.getByRole('alert')).toBeInViewport({ratio: 1});
     await expect(page.getByLabel('Email', {exact: true})).toHaveValue(clientEmail);
     await page.unroute('**/v1/coach/clients/invite');
+    await page.getByRole('button', {name: 'Check saved clients', exact: true}).click();
+    await expect(page.getByText('No matching clients found.', {exact: true})).toBeVisible();
+    await page.getByRole('button', {name: 'Return and retry', exact: true}).click();
     await page.getByRole('button', {name: 'Send invitation', exact: true}).click();
     await expect(page.getByRole('heading', {name: 'Alex Morgan', exact: true})).toBeVisible();
     await expect(page.getByText('Waiting for acceptance', {exact: true})).toBeVisible();

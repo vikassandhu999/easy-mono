@@ -50,6 +50,15 @@ export function useInviteClient() {
     onMutate: () => getSession()?.id,
     mutationFn: (body: ClientInvite) => call(client.POST('/v1/coach/clients/invite', {body})),
     onSuccess: updateClient,
+    onError: async (_error, _input, sessionId) => {
+      if (sessionId && getSession()?.id === sessionId) {
+        await Promise.all([
+          queryClient.invalidateQueries({queryKey: clientKeys.lists()}),
+          queryClient.invalidateQueries({queryKey: workbenchKeys.all}),
+          queryClient.invalidateQueries({queryKey: billingKeys.all}),
+        ]);
+      }
+    },
   });
 }
 

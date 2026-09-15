@@ -9,7 +9,7 @@ Inventory comes from the current router, not the navigation. Earlier slice evide
 | /verify | Public | 375 / 1280 | OTP validation/retry/resend, long email, keyboard focus, real confirmation link and used-link fallback | Passed listed states; expired-link UI case remains | NAV-01, A11Y-02, LAYOUT-01 |
 | /accept-invite | Public / signed-in guard | 375 / 1280 | Missing, revoked, expired, accepted, reload, invalid OTP, account guard | Passed existing flow; full state sweep at each width pending |  |
 | /coaching/:slug | Public | 375 / 1280 | Pending | Unverified | |
-| / | Coach | 375 / 1280 | Post-login, explicit logout, profile recovery, cross-tab session handling | Partial; roster audit pending | NAV-01 |
+| / | Coach | 375 / 1280 | Post-login, explicit logout, profile recovery, sessions, roster status/stage filters, invitation return and saved-client refresh | Partial; cursor list sweep pending | NAV-01 |
 | /workbench | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /team | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /billing | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
@@ -23,9 +23,9 @@ Inventory comes from the current router, not the navigation. Earlier slice evide
 | /clients/:id/coach | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /settings/profile | Owner / trainer | 375 / 1280 | Saved profile/header, changed fields, failure/retry, draft retention, unsaved navigation | Passed settings regression; full keyboard sweep pending |  |
 | /settings/business | Owner / trainer read-only | 375 / 1280 | Preferences, validation, load/save/refresh failures, lost response, discard, late-account isolation | Passed settings regression; full keyboard sweep pending |  |
-| /clients/invite | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /clients/:id | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /clients/:id/profile | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
+| /clients/invite | Coach | 375 / 1280 | Intake loading/error/preview, validation, send/retry, dirty and pending navigation, reload warning, lost-response lookup, session isolation | Passed listed states | INV-01 |
+| /clients/:id | Coach | 375 / 1280 | Pending/accepted invitation, resend/copy recovery, intake pending/submitted/reviewed, snapshot answers, reload and return | Passed listed states; follow-up regression pending | |
+| /clients/:id/profile | Coach | 375 / 1280 | Contact/services/stage/dates/goal, ownership, changed fields, save/lost response, dirty navigation, lifecycle, invalid ID and account changes | Passed profile/lifecycle suite | |
 | /messages | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /clients/:clientId/conversation | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /clients/:clientId/training-sessions | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
@@ -76,6 +76,8 @@ Inventory comes from the current router, not the navigation. Earlier slice evide
 
 ## Findings
 
+- INV-01 — Invite client discarded entered details on navigation and offered a blind retry after an unconfirmed send. Classification: behavioral. Fixed in clients/invite-client.tsx and api/clients.ts. The pre-fix Cancel probe fails because it reaches the roster without a warning. The same journey now passes, together with dismissed reload, held-request navigation, failed lookup/retry and real saved-client recovery after a lost response, at 375px and 1280px. Search and counts come from the API; no downloaded-client filtering is used. Screenshots: tests/clients/artifacts/invitation-recovery-{375,1280}.png.
+
 - NAV-01 — Protected deep links lose their destination during sign-in. Source: Gate redirects to /login and Verify returns to /. Reproduction: tests/auth/deep-links.browser.mjs exercises a saved form URL through login, reload and Change email. Classification: behavioral. Status: fixed in src/auth/return-to.ts, auth screens, router.tsx and app-shell.tsx. The pre-fix browser probe reached / instead of the saved form; the same journey now passes at 375px and 1280px, including reload, email change, separate tabs, session expiry, explicit logout and business setup.
 
 - A11Y-01 — Auth submit buttons had an empty accessible name while pending. Classification: accessibility. Fixed in src/ui/submit-button.tsx by keeping a text action label independent of the spinner. The held-request probe fails before the change and passes afterward at both widths; disabled behavior, request count and geometry are unchanged.
@@ -108,3 +110,7 @@ The full route audit remains open. Partial rows above record exactly what this c
 The complete pnpm test:browser command passes, including the new accessibility journey, existing auth recovery, team invitations and deep links. The settings suite also passes at both widths after the shared shell focus change. Coach build, scoped Biome, just check-rm and whitespace checks pass. Full backend precommit passes 1,778 tests with zero failures. The existing Vite bundle-size warning remains.
 
 The pre-fix probe recorded 14 failures across both widths (pending action name, route/readiness focus and long-email overflow). The unchanged probes pass after the shared fixes. The extended journey adds real keyboard signup, validation, confirmation-token consumption, keyboard sign-out and recovery from a used link. Disposable accounts/businesses remain; this flow creates no client or form records.
+
+## Verification for invitation recovery
+
+The client profile/lifecycle, existing invitation/acceptance/intake and focused recovery suites pass at both widths. The recovery suite deletes its created clients; earlier regression suites retain their disposable account fixtures as before. Coach build, scoped Biome, repository rules and whitespace checks pass. Full backend precommit passes 1,778 tests with zero failures. The existing Vite bundle-size warning remains. Full route coverage remains open.

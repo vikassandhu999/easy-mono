@@ -1278,6 +1278,8 @@ Billing applies the same rule across page and confirmation errors. Its browser s
 requires Add seats to focus the mounted quantity and associate invalid values with an
 explicit whole-number range; disabling the next action alone does not explain recovery.
 
+Application review/enrollment also exercise this sequence in `tests/acquisition/prospects.browser.mjs`: stale writes, failed saved-review reloads, server field errors, unconfirmed enrollment, and the successful result. Focus result transitions by stable identity, so a background refresh of the same record does not interrupt the user.
+
 ## Deploy / ops
 
 ### RM-221 — Filter-then-assert: parse WHILE filtering, don't assert afterwards

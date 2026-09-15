@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {generatePath, Link, useParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
@@ -70,6 +70,33 @@ function Enrollment({application}: {application: Prospect}) {
     },
   });
   const pending = form.formState.isSubmitting || enroll.isPending;
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const enrolledRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (pending) {
+      return;
+    }
+    const errors = form.formState.errors;
+    if (errors.root) {
+      errorRef.current?.focus();
+    } else if (!uncertain) {
+      if (errors.first_name) {
+        form.setFocus('first_name');
+      } else if (errors.last_name) {
+        form.setFocus('last_name');
+      } else if (errors.email) {
+        form.setFocus('email');
+      } else if (errors.phone) {
+        form.setFocus('phone');
+      }
+    }
+  }, [pending, uncertain, form.formState.errors, form.setFocus]);
+  const enrolledId = application.client?.id;
+  useEffect(() => {
+    if (enrolledId) {
+      enrolledRef.current?.focus();
+    }
+  }, [enrolledId]);
   const send = async (body: ProspectEnroll) => {
     form.clearErrors();
     setStale(false);
@@ -108,7 +135,13 @@ function Enrollment({application}: {application: Prospect}) {
   if (application.client) {
     return (
       <Surface className="max-w-2xl space-y-5">
-        <h2 className="text-xl font-semibold">Enrolled as a client</h2>
+        <h2
+          ref={enrolledRef}
+          tabIndex={-1}
+          className="text-xl font-semibold"
+        >
+          Enrolled as a client
+        </h2>
         <p>Their client profile is ready. Open it to manage the invitation, intake and coaching plans.</p>
         <div className="flex flex-wrap gap-3">
           <Link
@@ -178,7 +211,11 @@ function Enrollment({application}: {application: Prospect}) {
             maxLength={255}
             isDisabled={pending || Boolean(uncertain)}
           />
-          <FormError message={form.formState.errors.root?.message} />
+          <FormError
+            ref={errorRef}
+            tabIndex={-1}
+            message={form.formState.errors.root?.message}
+          />
           {uncertain && (
             <div className="space-y-3">
               <p className="text-sm">
@@ -207,6 +244,7 @@ function Enrollment({application}: {application: Prospect}) {
                     setRevision(result.data.data.revision);
                     setStale(false);
                     form.clearErrors('root');
+                    form.setFocus('first_name');
                   }
                 }}
               >

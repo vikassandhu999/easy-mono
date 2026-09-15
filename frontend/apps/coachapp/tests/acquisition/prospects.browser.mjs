@@ -134,10 +134,27 @@ try {
     await page.getByLabel('Private notes', {exact: true}).fill('My older draft.');
     await page.getByRole('button', {name: 'Save review', exact: true}).click();
     await expect(page.getByRole('button', {name: 'Load saved review', exact: true})).toBeVisible();
+    await expect(page.locator('form').getByRole('alert')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Load saved review', exact: true})).toBeFocused();
     await expect(page.getByLabel('Private notes', {exact: true})).toHaveValue('My older draft.');
     await page.getByRole('button', {name: 'Load saved review', exact: true}).click();
+    await page.route(`**/v1/coach/prospects/${target.id}`, (route) =>
+      route.fulfill({status: 503, json: {error_code: 'unavailable'}}),
+    );
     await page.getByRole('button', {name: 'Load review', exact: true}).click();
+    const reloadDialog = page.getByRole('dialog', {name: 'Load the saved review?', exact: true});
+    await expect(reloadDialog.getByRole('alert')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(reloadDialog.getByRole('button', {name: 'Keep editing', exact: true})).toBeFocused();
+    await expect(page.getByLabel('Private notes', {exact: true})).toHaveValue('My older draft.');
+    await page.screenshot({path: `tests/acquisition/artifacts/review-recovery-${width}.png`});
+    await page.unroute(`**/v1/coach/prospects/${target.id}`);
+    await page.keyboard.press('Tab');
+    await expect(reloadDialog.getByRole('button', {name: 'Load review', exact: true})).toBeFocused();
+    await page.keyboard.press('Enter');
     await expect(page.getByLabel('Private notes', {exact: true})).toHaveValue('Saved by another coach.');
+    await expect(page.getByText('Saved review loaded.', {exact: true})).toBeFocused();
     await page.getByLabel('Private notes', {exact: true}).fill('Unsaved note');
     await page.getByRole('link', {name: 'Enroll as client', exact: true}).click();
     await expect(page.getByRole('dialog', {name: 'Leave your changes?', exact: true})).toBeVisible();
@@ -174,6 +191,19 @@ try {
     await page.getByRole('button', {name: 'Preview intake', exact: true}).click();
     await expect(page.getByRole('region', {name: 'Intake questions'})).toBeVisible();
     await page.getByRole('button', {name: 'Close preview', exact: true}).click();
+    // Field validation arrives while the form is pending; focus waits for the input to re-enable.
+    const originalEmail = await page.getByLabel('Email', {exact: true}).inputValue();
+    await page.route(`**/v1/coach/prospects/${target.id}/enroll`, (route) =>
+      route.fulfill({
+        status: 422,
+        json: {error_code: 'invalid_input', error_detail: {fields: {email: ['Check this email address.']}}},
+      }),
+    );
+    await page.getByRole('button', {name: 'Send invitation', exact: true}).click();
+    await expect(page.getByLabel('Email', {exact: true})).toBeFocused();
+    await expect(page.getByLabel('Email', {exact: true})).toHaveValue(originalEmail);
+    await expect(page.getByText('Check this email address.', {exact: true})).toBeVisible();
+    await page.unroute(`**/v1/coach/prospects/${target.id}/enroll`);
     const beforeEnrollment = (await send('get', `/v1/coach/prospects/${target.id}`, undefined, tokens.access_token))
       .data;
     await send(
@@ -184,8 +214,12 @@ try {
     );
     await page.getByRole('button', {name: 'Send invitation', exact: true}).click();
     await expect(page.getByRole('button', {name: 'Refresh application', exact: true})).toBeVisible();
+    await expect(page.locator('form').getByRole('alert')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Refresh application', exact: true})).toBeFocused();
     await expect(page.getByLabel('First name', {exact: true})).toHaveValue('Priya');
     await page.getByRole('button', {name: 'Refresh application', exact: true}).click();
+    await expect(page.getByLabel('First name', {exact: true})).toBeFocused();
     await expect(page.getByRole('button', {name: 'Send invitation', exact: true})).toBeEnabled();
     await capture(page, 'enrollment', width);
     let lostEnrollment = false;
@@ -200,11 +234,24 @@ try {
     );
     await page.getByRole('button', {name: 'Send invitation', exact: true}).click();
     await expect(page.getByRole('button', {name: 'Check enrollment', exact: true})).toBeVisible();
+    await expect(page.locator('form').getByRole('alert')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Check enrollment', exact: true})).toBeFocused();
     await expect(page.getByLabel('First name', {exact: true})).toBeDisabled();
+    await page.screenshot({path: `tests/acquisition/artifacts/enrollment-recovery-${width}.png`});
     await page.unroute(`**/v1/coach/prospects/${target.id}/enroll`);
     await page.unroute(`**/v1/coach/prospects/${target.id}`);
     await page.getByRole('button', {name: 'Check enrollment', exact: true}).click();
     await expect(page.getByRole('heading', {name: 'Enrolled as a client', exact: true})).toBeVisible();
+    await expect(page.getByRole('heading', {name: 'Enrolled as a client', exact: true})).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('link', {name: 'View client', exact: true})).toBeFocused();
+    await page.evaluate(async (id) => {
+      const {queryClient} = await import('/src/api/query-client.ts');
+      const {prospectKeys} = await import('/src/api/keys.ts');
+      await queryClient.invalidateQueries({queryKey: prospectKeys.detail(id)});
+    }, target.id);
+    await expect(page.getByRole('link', {name: 'View client', exact: true})).toBeFocused();
     const enrolled = (await send('get', `/v1/coach/prospects/${target.id}`, undefined, tokens.access_token)).data;
     expect(enrolled.status).toBe('won');
     expect(enrolled.client.first_name).toBe('Priya');
@@ -224,6 +271,9 @@ try {
     await page.goto(`/applications/${third.id}/enroll`);
     await page.getByRole('button', {name: 'Send invitation', exact: true}).click();
     await expect(page.getByRole('link', {name: 'Open billing in a new tab', exact: true})).toBeVisible();
+    await expect(page.locator('form').getByRole('alert')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('link', {name: 'Open billing in a new tab', exact: true})).toBeFocused();
     await expect(page.getByLabel('First name', {exact: true})).toHaveValue('Applicant');
     const popupPromise = context.waitForEvent('page');
     await page.getByRole('link', {name: 'Open billing in a new tab', exact: true}).click();

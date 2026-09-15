@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {generatePath, Link, useParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
@@ -80,6 +80,29 @@ function ApplicationReader({application}: {application: Prospect}) {
   const [stale, setStale] = useState(false);
   const form = useForm({defaultValues: {status: application.status, notes: application.notes ?? ''}});
   const pending = form.formState.isSubmitting;
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const noticeRef = useRef<HTMLParagraphElement>(null);
+  const reloadErrorRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (pending || reload) {
+      return;
+    }
+    const errors = form.formState.errors;
+    if (errors.root) {
+      errorRef.current?.focus();
+    } else if (errors.status) {
+      form.setFocus('status');
+    } else if (errors.notes) {
+      form.setFocus('notes');
+    } else if (notice) {
+      noticeRef.current?.focus();
+    }
+  }, [pending, reload, notice, form.formState.errors, form.setFocus]);
+  useEffect(() => {
+    if (reload && query.isError && !query.isFetching) {
+      reloadErrorRef.current?.focus();
+    }
+  }, [reload, query.isError, query.isFetching]);
   const submit = form.handleSubmit(async (values) => {
     form.clearErrors();
     setNotice('');
@@ -253,9 +276,15 @@ function ApplicationReader({application}: {application: Prospect}) {
               maxLength={255}
               isDisabled={pending}
             />
-            <FormError message={form.formState.errors.root?.message} />
+            <FormError
+              ref={errorRef}
+              tabIndex={-1}
+              message={form.formState.errors.root?.message}
+            />
             {notice && (
               <p
+                ref={noticeRef}
+                tabIndex={-1}
                 role="status"
                 className="text-sm"
               >
@@ -315,6 +344,13 @@ function ApplicationReader({application}: {application: Prospect}) {
         </DialogHeader>
         <div className="dialog-body space-y-5">
           <p>This will replace your unsaved status and notes with the latest saved version.</p>
+          {query.isError && (
+            <FormError
+              ref={reloadErrorRef}
+              tabIndex={-1}
+              message="Could not load the saved review. Your changes are still here."
+            />
+          )}
           <div className="flex flex-wrap gap-3">
             <Button
               variant="outline"
@@ -339,7 +375,6 @@ function ApplicationReader({application}: {application: Prospect}) {
               Load review
             </Button>
           </div>
-          {query.isError && <FormError message="Could not load the saved review. Your changes are still here." />}
         </div>
       </Dialog>
     </Page>

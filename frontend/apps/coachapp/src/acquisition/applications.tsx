@@ -92,7 +92,7 @@ export function Applications() {
       >
         {(application) => (
           <Link
-            className="flex items-center gap-4 p-5 hover:bg-muted/50"
+            className="flex items-center gap-4 p-5 hover:bg-muted/50 focus-visible:-outline-offset-4"
             to={generatePath(routes.application, {id: application.id})}
             state={{listSearch: location.search}}
           >

@@ -76,3 +76,8 @@ The original missing-contact probe failed. The expanded acquisition browser suit
 Validation opens collapsed supporting sections and focuses the invalid input. Form-level save errors lead to the recovery controls; failed saved-page reloads keep the draft and focus the error inside the confirmation. Save/load/offline results receive focus. Copy-link failures can be retried without leaving an obsolete error, and successful copying keeps focus on its button. Failed offline requests leave the public page live until the deliberate retry succeeds.
 
 Adding a program exposed a separate feedback issue: Draft saved stayed visible while the draft was dirty. Saved feedback now follows dirty state for typing and array actions. Both the hidden-validation and dirty-notice probes failed before their fixes. The expanded acquisition suite and authoring/layout regression pass at 375px/1280px; build, Biome, repository checks and backend precommit pass (1,778 tests). This remains local Chromium verification, with target-coach and physical-device reviews outstanding.
+
+
+## Inbox keyboard audit, 2026-09-15
+
+The inbox supports keyboard search/status selection, empty results, failed initial loads, paging and refresh recovery, and opening an applicant with list context preserved. Screenshot review caught a clipped focus outline on application rows; a local inward outline makes focus visible inside the list. The original outline probe fails, and the corrected full prospects suite passes at 375px/1280px, including review/enrollment, trainer access and account isolation. App build, scoped Biome, repository checks and backend precommit pass (1,778 tests).

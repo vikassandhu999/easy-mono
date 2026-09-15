@@ -175,6 +175,7 @@ Severity of the rule isn't the point; recurrence is.
 | RM-231 | Signed URLs can still fail image delivery | Frontend | test |
 | RM-232 | Focus server errors after pending controls re-enable | Frontend | test |
 | RM-233 | Saved feedback follows actual draft state | Frontend | test |
+| RM-234 | Focus outlines must survive container clipping | Frontend | browser test |
 
 ---
 
@@ -1291,6 +1292,13 @@ Draft saved visible over unsaved content. Render saved feedback from the form's 
 state; field-array append, remove and move actions also change the draft. **Verify by:**
 coachapp `tests/acquisition/acquisition.browser.mjs` saves a draft, adds a program and
 requires the saved notice to disappear before removing that program and publishing.
+
+### RM-234 — Focus outlines must survive container clipping
+A keyboard-focused application row had a valid outline, but the list's overflow clipping
+hid it. Place the outline inside a full-width row when its container clips overflow.
+An active-element assertion alone does not establish visible focus. **Verify by:**
+coachapp `tests/acquisition/prospects.browser.mjs` reaches the row with Tab, requires
+`:focus-visible` and an inward outline, and captures screenshots at both widths.
 
 ## Deploy / ops
 

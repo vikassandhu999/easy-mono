@@ -28,6 +28,15 @@ async function session(page, tokens) {
     saveSession(tokens);
   }, tokens);
 }
+async function tabTo(page, target) {
+  for (let step = 0; step < 60; step += 1) {
+    if (await target.evaluate((node) => node === document.activeElement)) {
+      return;
+    }
+    await page.keyboard.press('Tab');
+  }
+  await expect(target).toBeFocused();
+}
 async function capture(page, name, width) {
   await page.getByRole('heading', {level: 1}).click();
   await page.evaluate(() => window.scrollTo(0, 0));
@@ -57,7 +66,8 @@ try {
     await page.goto('/applications');
     await expect(page.getByRole('button', {name: 'Try again', exact: true})).toBeVisible();
     await page.unroute('**/v1/coach/prospects?**');
-    await page.getByRole('button', {name: 'Try again', exact: true}).click();
+    await tabTo(page, page.getByRole('button', {name: 'Try again', exact: true}));
+    await page.keyboard.press('Enter');
     await expect(page.getByRole('status').filter({hasText: /^46 applications/})).toBeVisible();
     const rows = page.getByRole('list', {name: 'applications', exact: true}).getByRole('listitem');
     await expect(rows).toHaveCount(20);
@@ -66,13 +76,16 @@ try {
         ? route.fulfill({status: 503, json: {error_code: 'unavailable'}})
         : route.continue(),
     );
-    await page.getByRole('button', {name: 'Load more', exact: true}).click();
+    await tabTo(page, page.getByRole('button', {name: 'Load more', exact: true}));
+    await page.keyboard.press('Enter');
     await expect(page.getByRole('button', {name: 'Retry loading more', exact: true})).toBeVisible();
     await expect(rows).toHaveCount(20);
     await page.unroute('**/v1/coach/prospects?**');
-    await page.getByRole('button', {name: 'Retry loading more', exact: true}).click();
+    await expect(page.getByRole('button', {name: 'Retry loading more', exact: true})).toBeFocused();
+    await page.keyboard.press('Enter');
     await expect(rows).toHaveCount(40);
-    await page.getByRole('button', {name: 'Load more', exact: true}).click();
+    await expect(page.getByRole('button', {name: 'Load more', exact: true})).toBeFocused();
+    await page.keyboard.press('Enter');
     await expect(rows).toHaveCount(46);
     expect(
       new Set(await rows.getByRole('link').evaluateAll((links) => links.map((link) => link.getAttribute('href')))).size,
@@ -80,14 +93,36 @@ try {
     await page.route('**/v1/coach/prospects?**', (route) =>
       route.fulfill({status: 503, json: {error_code: 'unavailable'}}),
     );
-    await page.getByRole('button', {name: 'Refresh applications', exact: true}).click();
+    await tabTo(page, page.getByRole('button', {name: 'Refresh applications', exact: true}));
+    await page.keyboard.press('Enter');
     await expect(page.getByRole('button', {name: 'Retry refresh', exact: true})).toBeVisible();
     await expect(rows).toHaveCount(46);
     await page.unroute('**/v1/coach/prospects?**');
-    await page.getByRole('button', {name: 'Retry refresh', exact: true}).click();
+    await tabTo(page, page.getByRole('button', {name: 'Retry refresh', exact: true}));
+    await page.keyboard.press('Enter');
     await expect(page.getByRole('button', {name: 'Retry refresh', exact: true})).toHaveCount(0);
+    const searchInput = page.getByLabel('Search applications', {exact: true});
+    await tabTo(page, searchInput);
+    await page.keyboard.press('Tab');
+    const statusFilter = selectTrigger(page, 'Status');
+    await expect(statusFilter).toBeFocused();
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('End');
+    await page.keyboard.press('Enter');
+    await expect(statusFilter).toContainText('Closed (0)');
+    await expect(statusFilter).toBeFocused();
+    await expect(page.getByRole('heading', {name: 'No applications here', exact: true})).toBeVisible();
+    await expect(page).toHaveURL(/status=lost/);
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Home');
+    await page.keyboard.press('Enter');
+    await expect(statusFilter).toContainText('All applications');
+    await expect(rows).toHaveCount(20);
+    await page.keyboard.press('Shift+Tab');
+    await expect(searchInput).toBeFocused();
     await page.getByLabel('Search applications', {exact: true}).fill('No such applicant');
     await expect(page.getByRole('heading', {name: 'No matching applications', exact: true})).toBeVisible();
+    await expect(searchInput).toBeFocused();
     await page.getByLabel('Search applications', {exact: true}).fill('Later Applicant');
     await expect(rows).toHaveCount(1);
     await expect(page.getByRole('status').filter({hasText: /^1 application$/})).toBeVisible();
@@ -98,7 +133,21 @@ try {
     await page.route(`**/v1/coach/prospects/${target.id}`, (route) =>
       route.fulfill({status: 503, json: {error_code: 'unavailable'}}),
     );
-    await rows.getByRole('link').click();
+    await tabTo(page, rows.getByRole('link'));
+    await page.screenshot({path: `tests/acquisition/artifacts/inbox-keyboard-${width}.png`});
+    // The list clips overflow, so the focused row's outline must fit inside it.
+    const focusRing = await rows.getByRole('link').evaluate((node) => {
+      const style = getComputedStyle(node);
+      return {
+        visible: node.matches(':focus-visible'),
+        width: Number.parseFloat(style.outlineWidth),
+        offset: Number.parseFloat(style.outlineOffset),
+      };
+    });
+    expect(focusRing.visible).toBe(true);
+    expect(focusRing.width).toBeGreaterThan(0);
+    expect(focusRing.offset).toBeLessThanOrEqual(-focusRing.width);
+    await page.keyboard.press('Enter');
     await expect(page.getByRole('button', {name: 'Try again', exact: true})).toBeVisible();
     await page.unroute(`**/v1/coach/prospects/${target.id}`);
     await page.getByRole('button', {name: 'Try again', exact: true}).click();
@@ -351,7 +400,7 @@ try {
     );
     await scrollingContext.close();
     console.log(
-      `Applications ${width}: 46 rows, paging retry, remote search, review recovery/revisions, intake preview, lost enrollment recovery, seat limits and account isolation passed.`,
+      `Applications ${width}: 46 rows, keyboard paging/retry and status/search, review recovery/revisions, intake preview, lost enrollment recovery, seat limits and account isolation passed.`,
     );
   }
 } finally {

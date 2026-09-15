@@ -1274,6 +1274,10 @@ in the keyboard sequence without moving focus outside the dialog. **Verify by:**
 `test:client-plan-management` checks overlap/stale date errors and restore conflicts;
 `test:plan-management` checks stale template confirmation and Close and review, at both widths.
 
+Billing applies the same rule across page and confirmation errors. Its browser suite also
+requires Add seats to focus the mounted quantity and associate invalid values with an
+explicit whole-number range; disabling the next action alone does not explain recovery.
+
 ## Deploy / ops
 
 ### RM-221 — Filter-then-assert: parse WHILE filtering, don't assert afterwards

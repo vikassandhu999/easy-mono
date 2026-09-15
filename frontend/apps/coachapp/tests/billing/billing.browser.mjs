@@ -96,19 +96,36 @@ try {
     readFailure = false;
     await page.getByRole('button', {name: 'Refresh billing', exact: true}).click();
     await expect(page.getByRole('button', {name: 'Add seats', exact: true})).toBeEnabled();
-    await page.getByRole('button', {name: 'Add seats', exact: true}).click();
+    await page.getByRole('button', {name: 'Add seats', exact: true}).press('Enter');
+    await expect(page.getByLabel('Seats to add', {exact: true})).toBeFocused();
     await page.getByLabel('Seats to add', {exact: true}).fill('0');
+    await expect(page.getByRole('alert')).toContainText('Enter a whole number from 1 to 100.');
+    await expect(page.getByLabel('Seats to add', {exact: true})).toHaveAttribute('aria-invalid', 'true');
+    await page.screenshot({path: `tests/billing/artifacts/seat-validation-${width}.png`});
     await expect(page.getByRole('button', {name: 'Review seat change', exact: true})).toBeDisabled();
     await page.getByLabel('Seats to add', {exact: true}).fill('3');
     await page.getByRole('button', {name: 'Review seat change', exact: true}).click();
     await expect(page.getByRole('dialog')).toContainText('Add 3 client seats');
-    await page.getByRole('button', {name: 'Keep current plan', exact: true}).click();
+    // A rejected confirmation keeps its error and recovery action in the keyboard sequence.
+    await page.route('**/v1/coach/billing/checkout', (route) =>
+      route.fulfill({status: 422, json: {error_code: 'invalid_input'}}),
+    );
+    await page.getByRole('button', {name: 'Continue to payment', exact: true}).click();
+    await expect(page.getByRole('dialog').getByRole('alert')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Keep current plan', exact: true})).toBeFocused();
+    await page.screenshot({path: `tests/billing/artifacts/confirmation-error-${width}.png`});
+    await page.keyboard.press('Enter');
+    await page.unroute('**/v1/coach/billing/checkout');
     await expect(page.getByLabel('Seats to add', {exact: true})).toHaveValue('3');
     await page.getByRole('button', {name: 'Review seat change', exact: true}).click();
     await page.route('https://checkout.razorpay.com/v1/checkout.js', (route) => route.abort());
     const before = provider.calls.filter((call) => call.method === 'POST' && call.path === '/v1/subscriptions').length;
     await page.getByRole('button', {name: 'Continue to payment', exact: true}).click();
     await expect(page.getByRole('alert')).toContainText('Could not open payment checkout');
+    await expect(page.getByRole('alert')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Open payment checkout', exact: true})).toBeFocused();
     expect(provider.calls.filter((call) => call.method === 'POST' && call.path === '/v1/subscriptions')).toHaveLength(
       before + 1,
     );
@@ -151,6 +168,7 @@ try {
     });
     await page.getByRole('button', {name: 'Confirm seat change', exact: true}).click();
     await expect(page.getByText(/result of your last change is not confirmed/)).toBeVisible();
+    await expect(page.getByRole('alert')).toBeFocused();
     await page.unroute('**/v1/coach/billing/checkout');
     await page.getByRole('button', {name: 'Check payment status', exact: true}).click();
     await expect(page.getByText('2 free seats · 5 paid seats', {exact: true})).toBeVisible();
@@ -173,6 +191,7 @@ try {
     });
     await page.getByRole('button', {name: 'Schedule cancellation', exact: true}).click();
     await expect(page.getByText(/result of your last change is not confirmed/)).toBeVisible();
+    await expect(page.getByRole('alert')).toBeFocused();
     await page.unroute('**/v1/coach/billing/cancel');
     await page.getByRole('button', {name: 'Check payment status', exact: true}).click();
     await expect(page.getByText('Cancellation scheduled', {exact: true}).first()).toBeVisible();
@@ -222,6 +241,7 @@ try {
     });
     await page.getByRole('button', {name: 'Continue to payment', exact: true}).click();
     await expect(page.getByText(/result of your last change is not confirmed/)).toBeVisible();
+    await expect(page.getByRole('alert')).toBeFocused();
     await page.unroute('**/v1/coach/billing/checkout');
     await page.reload();
     await page.getByRole('button', {name: 'Open payment checkout', exact: true}).click();

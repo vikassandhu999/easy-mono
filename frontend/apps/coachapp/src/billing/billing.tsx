@@ -256,6 +256,8 @@ function BillingActions({billing, stale}: {billing: Billing; stale: boolean}) {
   const [uncertain, setUncertain] = useState(Boolean(savedRequest));
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const dialogErrorRef = useRef<HTMLParagraphElement>(null);
   const alive = useRef(true);
   const hosted = useRef<Awaited<ReturnType<typeof prepareCheckout>> | null>(null);
   useEffect(() => {
@@ -268,6 +270,11 @@ function BillingActions({billing, stale}: {billing: Billing; stale: boolean}) {
   const seats = Number(quantity);
   const valid = Number.isInteger(seats) && seats >= 1 && seats <= 100;
   const busy = checkout.isPending || action.isPending || opening;
+  useEffect(() => {
+    if (error && !busy) {
+      (confirm ? dialogErrorRef : errorRef).current?.focus();
+    }
+  }, [error, busy, confirm]);
   async function checkStatus() {
     if (savedRequest) {
       await retrySavedChange();
@@ -414,7 +421,13 @@ function BillingActions({billing, stale}: {billing: Billing; stale: boolean}) {
   return (
     <div className="space-y-5">
       {message && <p role="status">{message}</p>}
-      {!confirm && <FormError message={error || undefined} />}
+      {!confirm && (
+        <FormError
+          ref={errorRef}
+          tabIndex={-1}
+          message={error || undefined}
+        />
+      )}
       {billing.cancellation_state && (
         <p role="status">
           {billing.cancellation_state === 'requested' && !billing.can_cancel
@@ -489,6 +502,9 @@ function BillingActions({billing, stale}: {billing: Billing; stale: boolean}) {
               </label>
               <Input
                 id="seat-count"
+                autoFocus
+                aria-invalid={!valid}
+                aria-describedby={!valid ? 'seat-count-error' : undefined}
                 type="number"
                 min={1}
                 max={100}
@@ -498,6 +514,15 @@ function BillingActions({billing, stale}: {billing: Billing; stale: boolean}) {
                 onChange={(event) => setQuantity(event.target.value)}
               />
             </div>
+            {!valid && (
+              <p
+                id="seat-count-error"
+                role="alert"
+                className="text-sm text-destructive"
+              >
+                Enter a whole number from 1 to 100.
+              </p>
+            )}
             {billing.monthly_seat_price_inr !== null && (
               <p className="text-sm">
                 {money(billing.monthly_seat_price_inr)} per seat / month
@@ -603,7 +628,11 @@ function BillingActions({billing, stale}: {billing: Billing; stale: boolean}) {
               </p>
             </>
           )}
-          <FormError message={error || undefined} />
+          <FormError
+            ref={dialogErrorRef}
+            tabIndex={-1}
+            message={error || undefined}
+          />
           <div className="flex flex-wrap gap-3">
             <Button
               variant="outline"

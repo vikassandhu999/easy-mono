@@ -283,6 +283,49 @@ try {
     await expect(page.getByText(`${recovered.name} deleted.`, {exact: true})).toBeVisible();
     await page.unroute(`**/v1/coach/nutrition-recipes/${recovered.id}`);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    // After reviewing saved copies, keyboard users can deliberately resume either library action.
+    for (const [resource, id] of [
+      ['food', food.id],
+      ['recipe', recipe.id],
+    ]) {
+      await page.goto(`/nutrition-${resource}s/${id}/manage`);
+      await page.getByRole('button', {name: `Copy ${resource}`, exact: true}).click();
+      let attempts = 0;
+      const copyEndpoint = `**/v1/coach/nutrition-${resource}s/*/copy`;
+      await page.route(copyEndpoint, (route) => {
+        attempts++;
+        return route.fulfill({status: 503, json: {}});
+      });
+      await dialog.getByRole('button', {name: 'Create copy', exact: true}).click();
+      await expect(dialog.getByRole('alert')).toContainText('copy could not be confirmed');
+      await dialog.getByRole('button', {name: 'Create a separate copy', exact: true}).press('Enter');
+      const createCopy = dialog.getByRole('button', {name: 'Create copy', exact: true});
+      await expect(createCopy).toBeFocused();
+      expect(attempts).toBe(1);
+      await page.unroute(copyEndpoint);
+      let retriedCopies = 0;
+      await page.route(copyEndpoint, (route) => {
+        retriedCopies++;
+        return route.continue();
+      });
+      await page.screenshot({path: `tests/nutrition-library/artifacts/copy-retry-${resource}-${width}.png`});
+      const response = page.waitForResponse(
+        (response) =>
+          response.url().endsWith(`/nutrition-${resource}s/${id}/copy`) && response.request().method() === 'POST',
+      );
+      await page.keyboard.press('Enter');
+      const saved = await response;
+      expect(saved.status()).toBe(201);
+      const separateCopy = (await saved.json()).data;
+      await expect(page).toHaveURL(`${baseURL}/nutrition-${resource}s/${separateCopy.id}`);
+      expect(separateCopy.id).not.toBe(id);
+      expect(retriedCopies).toBe(1);
+      expect((await send('get', `/v1/coach/nutrition-${resource}s/${separateCopy.id}`, undefined, token)).data.id).toBe(
+        separateCopy.id,
+      );
+      await page.unroute(copyEndpoint);
+      await send('delete', `/v1/coach/nutrition-${resource}s/${separateCopy.id}`, undefined, token);
+    }
     // Shared-food controls are read-only; backend tests cover the system-food write boundary.
     const sharedEndpoint = `/v1/coach/nutrition-foods/${food.id}`;
     await page.route(`**${sharedEndpoint}`, (route) => route.fulfill({json: {data: {...food, source: 'system'}}}));

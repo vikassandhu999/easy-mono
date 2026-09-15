@@ -1232,6 +1232,9 @@ alone cannot prove these outcomes; this rule uses the browser regression rather 
 Forms creation had the same defect. Its saved-result lookup includes question previews;
 `test:form-creation-recovery` requires a subsequent edit to keep the server count at one.
 Recovery errors receive focus, and returning to retry focuses a re-enabled form field.
+Food/recipe copy recovery must similarly focus the restored Create copy action after its
+recovery panel unmounts. `test:nutrition-library-management` checks focus and a deliberate
+keyboard retry; the return action itself must not send another copy request.
 
 Team invitations require the same recovery even though email uniqueness prevents a second
 member: retrying rotates the pending invitation link and sends another email. The Team

@@ -1,4 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
+import {flushSync} from 'react-dom';
 import {ApiError, errorMessage} from '../api/client';
 import {
   type LibraryKind,
@@ -36,6 +37,7 @@ export function LibraryAction({
   const [error, setError] = useState('');
   const mounted = useRef(true);
   const errorRef = useRef<HTMLDivElement>(null);
+  const submitRef = useRef<HTMLButtonElement>(null);
   const inUse = remove.error instanceof ApiError && remove.error.code === 'in_use';
   useEffect(() => {
     mounted.current = true;
@@ -121,8 +123,11 @@ export function LibraryAction({
             item={item}
             onUse={onCopied}
             onRetry={() => {
-              setUncertain(false);
-              setError('');
+              flushSync(() => {
+                setUncertain(false);
+                setError('');
+              });
+              submitRef.current?.focus();
             }}
           />
         )}
@@ -136,6 +141,7 @@ export function LibraryAction({
           </Button>
           {!uncertain && (
             <Button
+              ref={submitRef}
               variant={action === 'copy' ? 'default' : 'destructive'}
               isPending={pending}
               isDisabled={inUse}

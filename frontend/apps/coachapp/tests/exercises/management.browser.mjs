@@ -84,6 +84,24 @@ try {
     await page.getByRole('button', {name: 'Save exercise', exact: true}).click();
     await expect(page.getByText('Exercise saved.', {exact: true})).toBeVisible();
     expect((await send('get', endpoint, undefined, token)).data.instructions).toBe(source.instructions);
+    // Returning from saved-copy review restores the editable name before a deliberate retry.
+    await copy.click();
+    const retryName = dialog.getByLabel('Name for the copy', {exact: true});
+    await retryName.fill('Test separate exercise copy');
+    let failedCopies = 0;
+    await page.route('**/v1/coach/training-exercises/*/copy', (route) => {
+      failedCopies++;
+      return route.fulfill({status: 503, json: {}});
+    });
+    await dialog.getByRole('button', {name: 'Create copy', exact: true}).click();
+    await expect(dialog.getByText('No matching exercises found.', {exact: true})).toBeVisible();
+    await dialog.getByRole('button', {name: 'Create a separate copy', exact: true}).press('Enter');
+    await expect(retryName).toBeEnabled();
+    await expect(retryName).toBeFocused();
+    await expect(retryName).toHaveValue('Test separate exercise copy');
+    expect(failedCopies).toBe(1);
+    await page.unroute('**/v1/coach/training-exercises/*/copy');
+    await dialog.getByRole('button', {name: 'Cancel', exact: true}).click();
     // Lost copy responses require review; no automatic POST retry.
     await copy.click();
     await dialog.getByLabel('Name for the copy', {exact: true}).fill('Goblet squat recovered');

@@ -80,7 +80,7 @@ try {
     ).data;
     const invitation_token = new URL(person.invite_url).pathname.split('/').at(-1);
     await send('post', '/v1/auth/accept-invite', {email, invitation_token});
-    await send('post', '/v1/auth/accept-invite/verify', {email, invitation_token, otp: '123456'});
+    const clientTokens = await send('post', '/v1/auth/accept-invite/verify', {email, invitation_token, otp: '123456'});
     const endpoint = `/v1/coach/clients/${person.id}/check-in-schedules`;
     const path = `/clients/${person.id}/check-ins`;
     const context = await browser.newContext({baseURL: 'http://localhost:2022', viewport: {width, height: 900}});
@@ -225,9 +225,52 @@ try {
     await expect(oneTime).toContainText('Stopped');
     await expect(oneTime).not.toContainText('Completed');
     const assignments = (await send('get', `/v1/coach/clients/${person.id}/form-assignments`, undefined, token)).data;
-    expect(
-      assignments.some((assignment) => assignment.form_template.id === once.id && assignment.purpose === 'check_in'),
-    ).toBe(true);
+    const assignment = assignments.find((item) => item.form_template.id === once.id && item.purpose === 'check_in');
+    expect(assignment).toBeDefined();
+    // Follow the generated assignment through the real client app and back to the coach.
+    const clientContext = await browser.newContext({
+      baseURL: 'http://localhost:1314',
+      viewport: {width: 375, height: 900},
+    });
+    clientContext.setDefaultTimeout(12000);
+    const clientPage = await clientContext.newPage();
+    clientPage.on('pageerror', (error) => errors.push(error.message));
+    await clientPage.goto('/login');
+    await clientPage.evaluate(async (tokens) => {
+      const {setTokens} = await import('/src/api/authStorage.ts');
+      setTokens(tokens);
+    }, clientTokens);
+    await clientPage.goto('/check-ins');
+    await clientPage.getByRole('button', {name: /One-time reflection/}).click();
+    await expect(clientPage).toHaveURL(`/check-ins/${assignment.id}`);
+    const submit = clientPage.getByRole('button', {name: 'Submit check-in', exact: true});
+    await submit.click();
+    await expect(clientPage.getByText('Please answer all required questions.', {exact: true})).toBeVisible();
+    const answer = clientPage.getByRole('textbox', {name: /What went well this week/});
+    const reflection = 'I made time for three walks and slept better.';
+    await answer.fill(reflection);
+    const submitPath = `/v1/client/form-assignments/${assignment.id}/submit`;
+    await clientPage.route(`**${submitPath}`, (route) => route.fulfill({status: 503, json: {}}));
+    await submit.click();
+    await expect(clientPage.getByText("Couldn't submit. Please try again.", {exact: true})).toBeVisible();
+    await expect(answer).toHaveValue(reflection);
+    await clientPage.unroute(`**${submitPath}`);
+    await submit.click();
+    await expect(clientPage).toHaveURL('/check-ins');
+    await expect(clientPage.getByRole('button', {name: /One-time reflection/})).toContainText('Completed');
+    await page.getByRole('link', {name: 'View submitted responses', exact: true}).click();
+    await page.getByRole('link', {name: 'Read One-time reflection', exact: true}).click();
+    await expect(page.getByRole('region', {name: 'Submitted answers', exact: true})).toContainText(reflection);
+    await page.getByRole('button', {name: 'Mark reviewed', exact: true}).click();
+    await expect(page.getByRole('heading', {name: 'Review saved', exact: true})).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole('heading', {name: 'Review saved', exact: true})).toBeVisible();
+    await page.screenshot({path: `tests/check-ins/artifacts/one-time-reviewed-${width}.png`, fullPage: true});
+    await clientPage.reload();
+    await expect(clientPage.getByRole('button', {name: /One-time reflection/})).toContainText('Reviewed');
+    await clientContext.close();
+    await page.goto(path);
+    await expect(oneTime).toContainText('Stopped');
     const third = (
       await send('post', endpoint, {form_template_id: extra.id, next_due_on: dateAfter(5), frequency: 'weekly'}, token)
     ).data;

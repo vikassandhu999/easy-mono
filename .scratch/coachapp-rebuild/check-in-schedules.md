@@ -21,3 +21,13 @@ The existing Forms browser suite passes at both widths after promoting its previ
 The list endpoint adds `count` and `next_cursor`. Requests without a cursor retain their full list and original due-date order; cursor requests use the shared stable newest-first order. A tenant/client cursor index was applied to the isolated browser database. API schemas were regenerated through the same export/split/generation steps as `just gen-api`, using an isolated build after the development compiler lock stalled the normal command. Only generated schema output changed in coachapp-v2.
 
 Graph MCP tools were unavailable, and the CLI graph lookup timed out. Discovery used bounded reads of the relevant backend contexts, schemas, controller, tests and new-app sources; no graph completeness claim is made. Browser checks do not substitute for a coach usability session or physical-device keyboard testing. Schedule updates retain the API's existing concurrency limitation described above.
+
+## End-to-end audit — 2026-09-15
+
+The schedule browser suite now follows an immediately due One time schedule through the real client app on port 1314. The client opens the generated form, encounters required-answer validation, retains an answer after a failed submission, retries successfully and sees the completed check-in in history. The coach opens submitted responses from the schedule list, reads the answer and marks it reviewed. Reload preserves the review in the coach app and shows Reviewed in the client app. The schedule remains Stopped: generation status is independent of answer and review status.
+
+This journey passes with the coach at 375px and 1280px and the client at 375px, together with the existing cadence, cursor, search, capacity, recovery and session-isolation scenarios. The existing screens complete the task without an additional one-off assignment screen. No application or API changes were needed. Screenshots are in `frontend/apps/coachapp/tests/check-ins/artifacts/one-time-reviewed-*.png`.
+
+Run `pnpm test:check-ins` from the coachapp directory with the API on 4000, coach app on 2022 and client app on 1314. The suite creates disposable accounts and forms in the development database; it submits and reviews their check-ins through the browser.
+
+Coach build, scoped Biome, `just check-rm` and whitespace checks pass. Full backend `mix precommit` passes with 1,778 tests and zero failures. The existing Vite bundle-size warning remains. The reviewed-response screenshots were inspected at both coach widths.

@@ -1286,6 +1286,8 @@ Public application validation includes conditionally hidden fields: open their s
 
 Settings use the same field-reference approach for text inputs and shadcn selects; `tests/settings/settings.browser.mjs` checks server time-zone rejection, root errors and focused save/discard results.
 
+Plan assignment applies this to server date conflicts and stale-preview reloads: wait for editable fields, focus failed refresh feedback before retry, and focus the updated prescription after refresh. Training and nutrition browser suites verify these transitions and uncertain-write lookup.
+
 ### RM-233 — Saved feedback follows actual draft state
 An editor cleared its saved notice only on DOM change events, so adding a program left
 Draft saved visible over unsaved content. Render saved feedback from the form's dirty
@@ -1298,7 +1300,8 @@ A keyboard-focused application row had a valid outline, but the list's overflow 
 hid it. Place the outline inside a full-width row when its container clips overflow.
 An active-element assertion alone does not establish visible focus. **Verify by:**
 coachapp `tests/acquisition/prospects.browser.mjs` reaches the row with Tab, requires
-`:focus-visible` and an inward outline, and captures screenshots at both widths.
+`:focus-visible` and an inward outline, and captures screenshots at both widths. Nutrition
+assignment verifies the same clipped-row case in `tests/nutrition/plans.browser.mjs`.
 
 ## Deploy / ops
 

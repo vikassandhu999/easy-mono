@@ -186,10 +186,12 @@ try {
     await expect(page.getByText('12.5 kg', {exact: true})).toBeVisible();
     await page.getByRole('button', {name: 'Assign plan', exact: true}).click();
     await expect(page.getByText('Enter start date.', {exact: true})).toBeVisible();
+    await expect(page.getByLabel('Start date', {exact: true})).toBeFocused();
     await page.getByLabel('Start date', {exact: true}).fill(dateAfter(0));
     await page.getByLabel('End date', {exact: true}).fill(dateAfter(-1));
     await page.getByRole('button', {name: 'Assign plan', exact: true}).click();
     await expect(page.getByText('End date must be on or after the start date.', {exact: true})).toBeVisible();
+    await expect(page.getByLabel('End date', {exact: true})).toBeFocused();
     await page.getByLabel('End date', {exact: true}).fill(dateAfter(28));
     await send(
       'patch',
@@ -203,7 +205,22 @@ try {
     await page.getByRole('button', {name: 'Assign plan', exact: true}).click();
     await expect(page.getByText(/This template changed while you were reviewing it/)).toBeVisible();
     await expect(page.getByRole('button', {name: 'Assign plan', exact: true})).toBeDisabled();
-    await page.getByRole('button', {name: 'Refresh preview', exact: true}).click();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Refresh preview', exact: true})).toBeFocused();
+    await page.route(`**/v1/coach/training-plans/${templates[0].id}`, (route) =>
+      route.fulfill({status: 503, json: {error_message: 'Refresh unavailable'}}),
+    );
+    await page.keyboard.press('Enter');
+    await expect(page.getByText('The preview could not be refreshed. Try again.', {exact: true})).toBeFocused();
+    await expect(page.getByLabel('Start date', {exact: true})).toHaveValue(dateAfter(0));
+    await expect(page.getByLabel('End date', {exact: true})).toHaveValue(dateAfter(28));
+    await expect(page.getByRole('button', {name: 'Assign plan', exact: true})).toBeDisabled();
+    await page.screenshot({path: `tests/training/artifacts/assignment-refresh-${width}.png`});
+    await page.unroute(`**/v1/coach/training-plans/${templates[0].id}`);
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Refresh preview', exact: true})).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('heading', {name: 'Plan preview', exact: true})).toBeFocused();
     await expect(
       page.getByText('Reviewed revision: keep two recovery days between workouts.', {exact: true}),
     ).toBeVisible();

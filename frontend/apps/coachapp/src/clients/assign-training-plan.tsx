@@ -125,6 +125,8 @@ function Preview({person, templateId}: {person: Client; templateId: string}) {
   const clientPath = generatePath(routes.client, {id: person.id});
   const mounted = useRef(true);
   const errorSummary = useRef<HTMLDivElement>(null);
+  const refreshError = useRef<HTMLParagraphElement>(null);
+  const previewHeading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -149,6 +151,11 @@ function Preview({person, templateId}: {person: Client; templateId: string}) {
     }
   }, [pending, assignment.isError, errors.start_date, errors.end_date, form.setFocus]);
   const stale = assignment.error instanceof ApiError && assignment.error.code === 'stale_revision';
+  useEffect(() => {
+    if (stale && query.isError && !query.isFetching) {
+      refreshError.current?.focus();
+    }
+  }, [stale, query.isError, query.isFetching]);
   const uncertain = assignment.isError && (!(assignment.error instanceof ApiError) || assignment.error.status >= 500);
   const available = plan?.kind === 'template' && plan.status === 'active';
   const name = `${person.first_name ?? ''} ${person.last_name ?? ''}`.trim() || person.email || 'this client';
@@ -206,7 +213,13 @@ function Preview({person, templateId}: {person: Client; templateId: string}) {
           className="has-mobile-actions grid items-start gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] md:gap-8"
         >
           <Surface className="min-w-0 space-y-4">
-            <h2 className="section-title">Plan preview</h2>
+            <h2
+              ref={previewHeading}
+              tabIndex={-1}
+              className="section-title"
+            >
+              Plan preview
+            </h2>
             <TrainingPlanPreview plan={plan} />
           </Surface>
           <Surface className="min-w-0 space-y-5">
@@ -255,20 +268,27 @@ function Preview({person, templateId}: {person: Client; templateId: string}) {
               {stale ? (
                 <div className="space-y-3">
                   <FormError message="This template changed while you were reviewing it. Refresh the preview and review the changes before assigning." />
+                  {query.isError && (
+                    <FormError
+                      ref={refreshError}
+                      tabIndex={-1}
+                      message="The preview could not be refreshed. Try again."
+                    />
+                  )}
                   <Button
                     variant="outline"
                     isPending={query.isFetching}
                     onPress={async () => {
                       const result = await query.refetch();
-                      if (result.isSuccess) {
+                      if (mounted.current && result.isSuccess) {
                         assignment.reset();
                         form.clearErrors();
+                        previewHeading.current?.focus();
                       }
                     }}
                   >
                     Refresh preview
                   </Button>
-                  {query.isError && <FormError message="The preview could not be refreshed. Try again." />}
                 </div>
               ) : (
                 <FormError message={form.formState.errors.root?.message} />

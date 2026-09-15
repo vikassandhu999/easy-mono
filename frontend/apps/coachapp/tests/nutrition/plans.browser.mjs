@@ -212,14 +212,35 @@ try {
     await page.goto(`/clients/${person.id}`);
     await page.getByRole('link', {name: 'Assign nutrition plan', exact: true}).click();
     await page.getByLabel('Search nutrition plans').fill('Balanced everyday');
-    await page.getByRole('link', {name: /Balanced everyday/}).click();
+    const selectedTemplate = page.getByRole('list', {name: 'nutrition templates'}).getByRole('link');
+    await expect(selectedTemplate).toHaveCount(1);
+    await page.getByLabel('Search nutrition plans').focus();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Refresh nutrition templates', exact: true})).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(selectedTemplate).toBeFocused();
+    const rowFocus = await selectedTemplate.evaluate((node) => {
+      const style = getComputedStyle(node);
+      return {
+        visible: node.matches(':focus-visible'),
+        width: Number.parseFloat(style.outlineWidth),
+        offset: Number.parseFloat(style.outlineOffset),
+      };
+    });
+    expect(rowFocus.visible).toBe(true);
+    expect(rowFocus.width).toBeGreaterThan(0);
+    expect(rowFocus.offset).toBeLessThanOrEqual(-rowFocus.width);
+    await page.screenshot({path: `tests/nutrition/artifacts/assignment-choice-${width}.png`});
+    await page.keyboard.press('Enter');
     await expect(page.getByRole('heading', {name: 'Balanced everyday', exact: true})).toBeVisible();
     await page.getByRole('button', {name: 'Assign nutrition plan', exact: true}).click();
     await expect(page.getByText('Enter start date.', {exact: true})).toBeVisible();
+    await expect(page.getByLabel('Start date', {exact: true})).toBeFocused();
     await page.getByLabel('Start date', {exact: true}).fill(dateAfter(0));
     await page.getByLabel('End date', {exact: true}).fill(dateAfter(-1));
     await page.getByRole('button', {name: 'Assign nutrition plan', exact: true}).click();
     await expect(page.getByText('End date must be on or after the start date.', {exact: true})).toBeVisible();
+    await expect(page.getByLabel('End date', {exact: true})).toBeFocused();
     await page.getByLabel('End date', {exact: true}).fill(dateAfter(14));
     saved = (await send('get', `/v1/coach/nutrition-plans/${planId}`, undefined, token)).data;
     await send(
@@ -230,7 +251,25 @@ try {
     );
     await page.getByRole('button', {name: 'Assign nutrition plan', exact: true}).click();
     await expect(page.getByRole('alert')).toContainText('changed');
-    await page.getByRole('button', {name: 'Refresh preview', exact: true}).click();
+    await expect(page.locator('form').getByRole('alert').locator('..')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Refresh preview', exact: true})).toBeFocused();
+    await page.route(`**/v1/coach/nutrition-plans/${planId}`, (route) =>
+      route.fulfill({status: 503, json: {error_message: 'Refresh unavailable'}}),
+    );
+    await page.keyboard.press('Enter');
+    await expect(page.locator('form').getByRole('alert')).toBeVisible();
+    await expect(page.locator('form').getByRole('alert').locator('..')).toBeFocused();
+    await expect(page.getByLabel('Start date', {exact: true})).toHaveValue(dateAfter(0));
+    await expect(page.getByLabel('End date', {exact: true})).toHaveValue(dateAfter(14));
+    await expect(page.getByRole('button', {name: 'Assign nutrition plan', exact: true})).toBeDisabled();
+    await page.screenshot({path: `tests/nutrition/artifacts/assignment-refresh-${width}.png`});
+    await page.unroute(`**/v1/coach/nutrition-plans/${planId}`);
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Refresh preview', exact: true})).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('heading', {name: 'Balanced everyday', exact: true})).toBeFocused();
+    await expect(page.getByText('New guidance', {exact: true})).toBeVisible();
     await page.getByRole('button', {name: 'Assign nutrition plan', exact: true}).click();
     await expect(page).toHaveURL(new RegExp(`/clients/${person.id}$`));
     await expect(page.getByRole('status').filter({hasText: 'Balanced everyday assigned.'})).toBeVisible();
@@ -257,6 +296,7 @@ try {
     await page.getByLabel('Start date', {exact: true}).fill(dateAfter(2));
     await page.getByRole('button', {name: 'Assign nutrition plan', exact: true}).click();
     await expect(page.getByText(/overlaps another Client Plan/)).toBeVisible();
+    await expect(page.getByLabel('Start date', {exact: true})).toBeFocused();
     await page.getByLabel('Start date', {exact: true}).fill(dateAfter(15));
     await page.getByRole('button', {name: 'Assign nutrition plan', exact: true}).click();
     await expect(page).toHaveURL(new RegExp(`/clients/${person.id}$`));
@@ -271,6 +311,28 @@ try {
       fullPage: true,
       animations: 'disabled',
     });
+    // A saved assignment whose response is lost can be reviewed without another write.
+    await page.goto(`/clients/${person.id}/nutrition-plans/assign/${planId}`);
+    await page.getByLabel('Start date', {exact: true}).fill(dateAfter(-14));
+    await page.getByLabel('End date', {exact: true}).fill(dateAfter(-1));
+    const assignRoute = `**/v1/coach/clients/${person.id}/nutrition-plans/${planId}/assign`;
+    let assignmentWrites = 0;
+    await page.route(assignRoute, async (route) => {
+      assignmentWrites += 1;
+      const response = await route.fetch();
+      expect(response.status()).toBe(201);
+      await route.fulfill({status: 503, json: {error_message: 'Response lost'}});
+    });
+    await page.getByRole('button', {name: 'Assign nutrition plan', exact: true}).click();
+    await expect(page.locator('form').getByRole('alert').locator('..')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('link', {name: 'Check client plans', exact: true})).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(new RegExp(`/clients/${person.id}$`));
+    await page.unroute(assignRoute);
+    const assigned = await send('get', `/v1/coach/clients/${person.id}/nutrition-plans`, undefined, token);
+    expect(assigned.count).toBe(3);
+    expect(assignmentWrites).toBe(1);
     expect(errors).toEqual([]);
     console.log(
       `Nutrition creation, meals, alternatives, variations, preview, recovery and assignment passed at ${width}px.`,

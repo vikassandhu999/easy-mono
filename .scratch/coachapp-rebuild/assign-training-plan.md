@@ -25,3 +25,8 @@ The existing Clients/intake suite and shared-list suite pass. Coach build, Biome
 The coach build retains its bundle-size warning (638 kB uncompressed JS). Browser checks do not replace target-coach usability review or physical-device testing. No production deployment or commit was performed.
 
 Graph lookup was unavailable: cbm status and training-plan search timed out. The implementation and contract review used bounded router, controller, context, schema, and test source reads; no graph completeness claim is made.
+
+
+## Current assignment audit, 2026-09-15
+
+The full assignment suite passes at 375px/1280px. Added keyboard checks cover required/reversed dates, a stale template followed by a failed refresh, retained dates and successful refresh. Failed refreshes focus their error before the retry action; successful refreshes focus the updated prescription for review. The original failed-refresh focus probe fails. Existing paging/search/return, overlap, unavailable-template, interrupted-write, account-change and client-copy checks remain green. Build, Biome, repository checks and backend precommit pass (1,778 tests).

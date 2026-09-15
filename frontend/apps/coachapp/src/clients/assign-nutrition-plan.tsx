@@ -94,7 +94,7 @@ function Choose({clientId}: {clientId: string}) {
           <Link
             to={generatePath(routes.previewNutritionPlan, {id: clientId, templateId: plan.id})}
             state={{...state, nutritionSearch: search}}
-            className="block space-y-1 px-5 py-4 hover:bg-muted/50"
+            className="block space-y-1 px-5 py-4 hover:bg-muted/50 focus-visible:-outline-offset-4"
           >
             <p className="font-semibold">{plan.name}</p>
             <p className="text-sm text-muted-foreground">
@@ -117,6 +117,9 @@ function Preview({clientId, templateId, name}: {clientId: string; templateId: st
   const navigate = useNavigate();
   const mounted = useRef(true);
   const errorRef = useRef<HTMLDivElement>(null);
+  const previewHeading = useRef<HTMLHeadingElement>(null);
+  const {errors, isSubmitting: pending} = form.formState;
+  const uncertain = save.isError && (!(save.error instanceof ApiError) || save.error.status >= 500);
   const state: unknown = useLocation().state;
   const search =
     state &&
@@ -139,11 +142,18 @@ function Preview({clientId, templateId, name}: {clientId: string; templateId: st
     }
   }, [plan, query.isSuccess, query.isFetchedAfterMount, query.data]);
   useEffect(() => {
-    if (form.formState.errors.root) {
+    if (pending) {
+      return;
+    }
+    if (errors.start_date) {
+      form.setFocus('start_date');
+    } else if (errors.end_date) {
+      form.setFocus('end_date');
+    } else if (errors.root) {
       errorRef.current?.focus();
       errorRef.current?.scrollIntoView({block: 'center'});
     }
-  }, [form.formState.errors.root]);
+  }, [pending, errors.start_date, errors.end_date, errors.root, form.setFocus]);
   if (!plan) {
     return (
       <Surface>
@@ -175,7 +185,13 @@ function Preview({clientId, templateId, name}: {clientId: string; templateId: st
         Choose another plan
       </Link>
       <Surface className="space-y-6">
-        <h2 className="text-xl font-bold">{plan.name}</h2>
+        <h2
+          ref={previewHeading}
+          tabIndex={-1}
+          className="text-xl font-bold"
+        >
+          {plan.name}
+        </h2>
         <NutritionPlanPreview plan={plan} />
       </Surface>
       <form
@@ -249,7 +265,7 @@ function Preview({clientId, templateId, name}: {clientId: string; templateId: st
           className="space-y-3"
         >
           <FormError message={form.formState.errors.root?.message} />
-          {form.formState.errors.root && (
+          {errors.root && uncertain && (
             <Link
               to={generatePath(routes.client, {id: clientId})}
               state={taskState}
@@ -272,6 +288,7 @@ function Preview({clientId, templateId, name}: {clientId: string; templateId: st
                   setPlan(result.data.data);
                   setStale(false);
                   form.clearErrors('root');
+                  previewHeading.current?.focus();
                 }
               }}
             >

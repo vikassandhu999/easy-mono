@@ -25,3 +25,10 @@ The nutrition browser suites passed at 375px and 1280px: list paging and retry, 
 Graph discovery timed out; bounded controller, context, schema and test source reads supplied the evidence. No legacy UI was inspected or copied. The coach build retains the existing bundle-size warning.
 
 The existing Client Overview/invitation suite also passed at 375px and 1280px, with shared mobile layout checks at 375, 390, 768 and 1280px. The client app typecheck passed after API regeneration. Food cursor searches explicitly replace the relevance ordering with cursor ordering; a router regression covers multi-page search without duplicate or missing rows.
+
+
+## Assignment recovery audit, 2026-09-15
+
+Server overlap validation now waits for date inputs to re-enable before focusing Start date. Stale templates lead directly to Refresh preview; failed refreshes retain dates and offer keyboard retry, while successful refreshes focus the updated prescription. Unconfirmed assignments retain Check client plans. A real saved assignment with a lost response was recovered with one write and three server-counted client plans. Selection rows now keep their keyboard outline inside the clipped list.
+
+The original overlap-focus and row-outline probes fail; the expanded nutrition suite passes at 375px/1280px, including authoring, server nutrition, independent client copies and assignment recovery. Build, Biome, repository checks and backend precommit pass (1,778 tests). Expanded nutrition assignment-list states remain in the route worklist.

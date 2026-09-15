@@ -9,26 +9,38 @@ import {FormField} from '../ui/form-field';
 import {SubmitButton} from '../ui/submit-button';
 import {AuthLayout, FormError} from './auth-layout';
 import {type Challenge, getChallenge, saveChallenge} from './challenge';
+import {authPath, getReturnTo} from './return-to';
 
 export function Verify() {
   const [params] = useSearchParams();
+  const returnTo = getReturnTo(params.toString());
   const token = params.get('token');
   const challenge = getChallenge();
   if (token) {
-    return <VerifyLink token={token} />;
+    return (
+      <VerifyLink
+        token={token}
+        returnTo={returnTo}
+      />
+    );
   }
   if (!challenge) {
     return (
       <Navigate
-        to={routes.login}
+        to={authPath(routes.login, returnTo)}
         replace
       />
     );
   }
-  return <VerifyCode initial={challenge} />;
+  return (
+    <VerifyCode
+      initial={challenge}
+      returnTo={returnTo}
+    />
+  );
 }
 
-function VerifyCode({initial}: {initial: Challenge}) {
+function VerifyCode({initial, returnTo}: {initial: Challenge; returnTo: string}) {
   const [challenge, setChallenge] = useState(initial);
   const [clock, setClock] = useState(Date.now());
   const [notice, setNotice] = useState('');
@@ -53,7 +65,7 @@ function VerifyCode({initial}: {initial: Challenge}) {
       } else {
         await verify.mutateAsync({kind: challenge.kind, body});
       }
-      navigate(routes.home, {replace: true});
+      navigate(returnTo, {replace: true});
     } catch (error) {
       form.setError(
         'otp',
@@ -85,7 +97,9 @@ function VerifyCode({initial}: {initial: Challenge}) {
   };
 
   const changeEmail =
-    challenge.kind === 'invite' ? `${routes.invitation}?token=${encodeURIComponent(challenge.token)}` : routes.login;
+    challenge.kind === 'invite'
+      ? `${routes.invitation}?token=${encodeURIComponent(challenge.token)}`
+      : authPath(routes.login, returnTo);
 
   return (
     <AuthLayout
@@ -138,13 +152,13 @@ function VerifyCode({initial}: {initial: Challenge}) {
   );
 }
 
-function VerifyLink({token}: {token: string}) {
+function VerifyLink({token, returnTo}: {token: string; returnTo: string}) {
   const mutation = useVerify();
   const navigate = useNavigate();
   const verify = async () => {
     try {
       await mutation.mutateAsync({kind: 'link', token});
-      navigate(routes.home, {replace: true});
+      navigate(returnTo, {replace: true});
     } catch {
       // The mutation state keeps verification failures visible for recovery.
     }
@@ -171,7 +185,7 @@ function VerifyLink({token}: {token: string}) {
         </Button>
         <Link
           className="text-link block text-center text-sm"
-          to={routes.login}
+          to={authPath(routes.login, returnTo)}
         >
           Sign in with a code
         </Link>

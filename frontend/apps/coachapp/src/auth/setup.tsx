@@ -1,5 +1,6 @@
+import {flushSync} from 'react-dom';
 import {useForm} from 'react-hook-form';
-import {Navigate, useNavigate} from 'react-router-dom';
+import {Navigate, useLocation, useNavigate} from 'react-router-dom';
 import {type BusinessInput, useCreateBusiness, useSetup} from '../api/auth';
 import {clearSession} from '../api/session';
 import {routes} from '../routes';
@@ -8,16 +9,18 @@ import {setFormError} from '../ui/form-errors';
 import {FormField} from '../ui/form-field';
 import {SubmitButton} from '../ui/submit-button';
 import {AuthLayout, FormError} from './auth-layout';
+import {getReturnTo} from './return-to';
 
 export function Setup() {
   const setup = useSetup();
   const mutation = useCreateBusiness();
   const navigate = useNavigate();
+  const returnTo = getReturnTo(useLocation().search);
   const form = useForm<BusinessInput>({defaultValues: {name: '', handle: ''}});
   const submit = form.handleSubmit(async (data) => {
     try {
       await mutation.mutateAsync(data);
-      navigate(routes.home, {replace: true});
+      navigate(returnTo, {replace: true});
     } catch (error) {
       setFormError(error, 'We could not finish setup. Please try again.', form.setError, ['name', 'handle']);
     }
@@ -25,7 +28,7 @@ export function Setup() {
   if (setup.data === true) {
     return (
       <Navigate
-        to={routes.home}
+        to={returnTo}
         replace
       />
     );
@@ -81,7 +84,10 @@ export function Setup() {
       <Button
         variant="link"
         className="mt-6"
-        onPress={clearSession}
+        onPress={() => {
+          flushSync(clearSession);
+          navigate(routes.login, {replace: true, flushSync: true});
+        }}
         isDisabled={form.formState.isSubmitting}
       >
         Sign out

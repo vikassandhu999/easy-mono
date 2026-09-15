@@ -88,22 +88,20 @@ Open http://localhost:2022. Vite proxies `/v1` to the local API on port 4000. Fo
 
 ## Test authentication locally
 
-Start an API instance for browser tests from `backend/`, with port 4000 available:
-
-```sh
-rtk proxy mix run --no-start --no-halt ../frontend/apps/coachapp/tests/auth/dev-api.exs
-```
-
-This script creates/migrates `easy_coachapp_auth_dev`, disables background sweepers, and uses local email delivery. It uses the configured local Postgres credentials. Start the app, then run from `frontend/`:
+With the normal development API on 4000 and coach app on 2022, run from `frontend/`:
 
 ```sh
 rtk pnpm -C apps/coachapp build
 rtk pnpm -C apps/coachapp test:browser
 ```
 
-Browser tests create disposable accounts in that database. They exercise the real Phoenix API and inject transport failures for recovery checks. The concurrency regression uses a Vite module import, so run the browser suite against the development server. Screenshots and invitation fixtures are written to ignored `tests/auth/artifacts/`. Development OTP is `123456`; the app does not display or hardcode it.
+Browser tests create disposable accounts in the API's development database. Invitation fixtures use the backend's configured database by default; set `AUTH_TEST_DATABASE` when targeting an isolated instance. They exercise the real Phoenix API and inject transport failures for recovery checks. The concurrency regression uses a Vite module import, so run the browser suite against the development server. Screenshots and invitation fixtures are written to ignored `tests/auth/artifacts/`. Development OTP is `123456`; the app does not display or hardcode it.
+
+For an isolated run, `tests/auth/dev-api.exs` creates/migrates `easy_coachapp_auth_dev` and uses local mail. Start it from `backend/` with `PORT=44000`, and start a second Vite instance on 22022 with `COACHAPP_API_PROXY=http://127.0.0.1:44000`. Run the auth suite with `COACH_APP_URL=http://localhost:22022`, `API_URL=http://127.0.0.1:44000` and `AUTH_TEST_DATABASE=easy_coachapp_auth_dev` so its browser, API requests and fixtures all use that instance.
 
 Verified flows include wrong-code recovery, resend/change-email, unconfirmed signup recovery, business creation followed by failed scope upgrade, concurrent refresh, corrupted access tokens, rejected refresh sessions, permission errors, logout during refresh/verification, and invitation acceptance/expiry/revocation. Mobile is 375px; desktop is 1280px.
+
+Protected deep links keep their destination, filters and fragment through sign-in, email changes, reload and business setup. Return addresses are validated against protected app routes. Each tab retains its own destination; explicit logout starts a fresh sign-in. `test:deep-links` runs that journey independently and is included in `test:browser`.
 
 ## Test client invitations
 
@@ -163,7 +161,7 @@ Run `rtk pnpm -C frontend/apps/coachapp test:exercises` from the repository root
 
 Client Overview → Manage check-ins supports selecting and previewing a form, choosing its first due date and repetition, editing future dates, and stopping or resuming generation. Scheduling starts with active clients. Stopping preserves existing check-ins and answers. Dates, capacity, counts and filtered results come from the API; inactive history uses cursor pagination. Submission review is a separate screen.
 
-Run `rtk pnpm -C frontend/apps/coachapp test:check-ins` from the repository root with the coach app and isolated browser API running. The suite checks scheduling, lost-response recovery, duplicate and capacity errors, preview, pagination, filtering and session isolation at 375px and 1280px. See [the scheduling brief](../../../.scratch/coachapp-rebuild/check-in-schedules.md).
+Run `rtk pnpm -C frontend/apps/coachapp test:check-ins` from the repository root with the API on 4000, coach app on 2022 and client app on 1314. The suite checks scheduling, lost-response recovery, duplicate and capacity errors, preview, pagination, filtering and session isolation at 375px and 1280px. It follows a one-time check-in through client submission, failed-submit retry and coach review. See [the scheduling brief](../../../.scratch/coachapp-rebuild/check-in-schedules.md).
 
 ## Check-in review
 

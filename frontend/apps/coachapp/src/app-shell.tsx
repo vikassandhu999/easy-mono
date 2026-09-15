@@ -1,5 +1,6 @@
 import {Building2, CreditCard, Globe, LogOut, UserRound, UsersRound} from 'lucide-react';
 import {useEffect, useRef} from 'react';
+import {flushSync} from 'react-dom';
 import {Link, matchPath, NavLink, Outlet, useLocation, useNavigate} from 'react-router-dom';
 import {useProfile} from './api/auth';
 import {errorMessage} from './api/client';
@@ -22,6 +23,11 @@ export function AppShell() {
   const {pathname} = useLocation();
   const taskReturn = useTaskReturn();
   const main = useRef<HTMLElement>(null);
+  const signOut = () => {
+    // Unmount the old session's draft blockers before starting a fresh sign-in.
+    flushSync(clearSession);
+    navigate(routes.login, {replace: true, flushSync: true});
+  };
   // biome-ignore lint/correctness/useExhaustiveDependencies: Move keyboard focus on route changes; ScrollRestoration owns the reading position.
   useEffect(() => {
     main.current?.focus({preventScroll: true});
@@ -59,7 +65,7 @@ export function AppShell() {
           </Button>
           <Button
             variant="ghost"
-            onPress={clearSession}
+            onPress={signOut}
           >
             Sign out
           </Button>
@@ -148,7 +154,7 @@ export function AppShell() {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem
-                  onAction={clearSession}
+                  onAction={signOut}
                   textValue="Sign out"
                 >
                   <LogOut aria-hidden="true" />

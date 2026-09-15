@@ -1176,6 +1176,16 @@ a named, focusable region and a visible focus indicator. **Enforced by:** coacha
 `tests/clients/mobile-layout.mjs` tabs into the region and uses PageDown and End to reach the
 last question. Setting `scrollTop` directly does not verify keyboard access.
 
+### RM-224 — Authentication preserves the requested task through every intermediate route
+A signed-out coach opening a saved form was returned to Clients after verification. Carry a
+validated internal destination through login, signup, email changes, verification and business
+setup, preserving query filters and fragments across reloads. Reject external addresses and
+auth-route loops at one boundary. Explicit logout starts a fresh login; an expired session
+retains its interrupted task. **Verify by:** `pnpm test:deep-links` in coachapp exercises the
+complete journey at 375px and 1280px, including separate tabs and business setup. The return
+address boundary cases also run in the app's regular behavior checks. Text matching cannot
+prove these navigation outcomes, so this rule is gated by executable tests rather than grep.
+
 ## Deploy / ops
 
 ### RM-221 — Filter-then-assert: parse WHILE filtering, don't assert afterwards

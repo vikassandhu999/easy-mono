@@ -11,6 +11,7 @@ import {AppShell} from './app-shell';
 import {AuthLayout} from './auth/auth-layout';
 import {Invitation} from './auth/invitation';
 import {Login} from './auth/login';
+import {authPath, getReturnTo} from './auth/return-to';
 import {Setup} from './auth/setup';
 import {Signup} from './auth/signup';
 import {Verify} from './auth/verify';
@@ -62,7 +63,7 @@ function Gate({guest = false}: {guest?: boolean}) {
   if (guest) {
     return session ? (
       <Navigate
-        to={routes.home}
+        to={getReturnTo(location.search)}
         replace
       />
     ) : (
@@ -72,7 +73,7 @@ function Gate({guest = false}: {guest?: boolean}) {
   if (!session) {
     return (
       <Navigate
-        to={routes.login}
+        to={authPath(routes.login, location.pathname + location.search + location.hash)}
         replace
       />
     );
@@ -80,7 +81,7 @@ function Gate({guest = false}: {guest?: boolean}) {
   if (session.tokens.scope !== 'coach' && location.pathname !== routes.setup) {
     return (
       <Navigate
-        to={routes.setup}
+        to={authPath(routes.setup, location.pathname + location.search + location.hash)}
         replace
       />
     );
@@ -88,7 +89,7 @@ function Gate({guest = false}: {guest?: boolean}) {
   if (session.tokens.scope === 'coach' && location.pathname === routes.setup) {
     return (
       <Navigate
-        to={routes.home}
+        to={getReturnTo(location.search)}
         replace
       />
     );

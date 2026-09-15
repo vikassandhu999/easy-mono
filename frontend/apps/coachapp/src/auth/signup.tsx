@@ -1,5 +1,5 @@
 import {useForm} from 'react-hook-form';
-import {Link, useNavigate} from 'react-router-dom';
+import {Link, useLocation, useNavigate} from 'react-router-dom';
 import {type SignupRequest, useSignup} from '../api/auth';
 import {routes} from '../routes';
 import {setFormError} from '../ui/form-errors';
@@ -7,9 +7,11 @@ import {FormField} from '../ui/form-field';
 import {SubmitButton} from '../ui/submit-button';
 import {AuthLayout, FormError} from './auth-layout';
 import {getChallenge, saveChallenge} from './challenge';
+import {authPath, getReturnTo} from './return-to';
 
 export function Signup() {
   const navigate = useNavigate();
+  const returnTo = getReturnTo(useLocation().search);
   const mutation = useSignup();
   const form = useForm<SignupRequest>({
     defaultValues: {email: getChallenge()?.email ?? '', first_name: '', last_name: ''},
@@ -18,7 +20,7 @@ export function Signup() {
     try {
       await mutation.mutateAsync(data);
       saveChallenge({kind: 'signup', email: data.email, sentAt: Date.now()});
-      navigate(routes.verify);
+      navigate(authPath(routes.verify, returnTo));
     } catch (error) {
       setFormError(error, 'We could not create your account. Please try again.', form.setError, [
         'email',
@@ -64,7 +66,7 @@ export function Signup() {
         Already have an account?{' '}
         <Link
           className="text-link"
-          to={routes.login}
+          to={authPath(routes.login, returnTo)}
         >
           Sign in
         </Link>

@@ -1,13 +1,13 @@
 import {LoaderCircle} from 'lucide-react';
-import type {ReactNode} from 'react';
 import {Button} from './button';
 
-export function SubmitButton({pending, children}: {pending: boolean; children: ReactNode}) {
+export function SubmitButton({pending, children}: {pending: boolean; children: string}) {
   return (
     <Button
       type="submit"
       className="relative w-full"
       isPending={pending}
+      aria-label={children}
     >
       <span className={pending ? 'invisible' : undefined}>{children}</span>
       {pending && (

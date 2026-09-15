@@ -23,15 +23,16 @@ export function AppShell() {
   const {pathname} = useLocation();
   const taskReturn = useTaskReturn();
   const main = useRef<HTMLElement>(null);
+  const accountReady = Boolean(profile.data);
   const signOut = () => {
     // Unmount the old session's draft blockers before starting a fresh sign-in.
     flushSync(clearSession);
     navigate(routes.login, {replace: true, flushSync: true});
   };
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Move keyboard focus on route changes; ScrollRestoration owns the reading position.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Focus when the route or its loaded account becomes available; preserve focus on background refreshes.
   useEffect(() => {
     main.current?.focus({preventScroll: true});
-  }, [pathname]);
+  }, [pathname, accountReady]);
   if (profile.isPending) {
     return (
       <AuthLayout

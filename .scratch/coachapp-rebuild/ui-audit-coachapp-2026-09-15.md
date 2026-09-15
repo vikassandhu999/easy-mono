@@ -4,9 +4,9 @@ Inventory comes from the current router, not the navigation. Earlier slice evide
 
 | Route | Role | Viewport | States covered in this audit | Result | Findings |
 | --- | --- | --- | --- | --- | --- |
-| /login | Public | 375 / 1280 | Code request, validation, reload, email change, safe return addresses, separate tabs | Passed scoped auth flow; full keyboard/visual sweep pending | NAV-01 |
-| /signup | Public | 375 / 1280 | Signup, reload, requested destination through setup; existing recovery regression | Passed scoped auth flow; full keyboard/visual sweep pending | NAV-01 |
-| /verify | Public | 375 / 1280 | OTP failure/retry, resend, reload, code verification, late-session isolation | Passed OTP flow; magic-link route sweep pending | NAV-01 |
+| /login | Public | 375 / 1280 | Code request/retry, validation, keyboard focus/ring, pending name/disabled/geometry, safe returns, separate tabs | Passed listed states | NAV-01, A11Y-01, A11Y-02 |
+| /signup | Public | 375 / 1280 | Keyboard creation, empty and partial validation, route focus, signup/setup and recovery regressions | Passed listed states | NAV-01, A11Y-02 |
+| /verify | Public | 375 / 1280 | OTP validation/retry/resend, long email, keyboard focus, real confirmation link and used-link fallback | Passed listed states; expired-link UI case remains | NAV-01, A11Y-02, LAYOUT-01 |
 | /accept-invite | Public / signed-in guard | 375 / 1280 | Missing, revoked, expired, accepted, reload, invalid OTP, account guard | Passed existing flow; full state sweep at each width pending |  |
 | /coaching/:slug | Public | 375 / 1280 | Pending | Unverified | |
 | / | Coach | 375 / 1280 | Post-login, explicit logout, profile recovery, cross-tab session handling | Partial; roster audit pending | NAV-01 |
@@ -71,12 +71,16 @@ Inventory comes from the current router, not the navigation. Earlier slice evide
 | /forms/new | Coach | 375 / 1280 | Entry after signup and business setup | Partial; editor audit pending | NAV-01 |
 | /forms/:id | Coach | 375 / 1280 | Saved-record deep link, query/fragment retention, reload, logout | Partial; editor audit pending | NAV-01 |
 | /forms/:id/manage | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /register-business | Guest | 375 / 1280 | Create, failed promotion/retry, reload, return to requested screen | Passed scoped auth flow; full keyboard/visual sweep pending | NAV-01 |
-| * | Public | 375 / 1280 | Pending | Unverified | |
+| /register-business | Guest | 375 / 1280 | Keyboard creation, validation, failed promotion/retry, reload, main focus, requested destination | Passed listed states | NAV-01, A11Y-02 |
+| * | Public | 375 / 1280 | Unknown address, main focus, keyboard return to account | Passed | A11Y-02 |
 
 ## Findings
 
 - NAV-01 — Protected deep links lose their destination during sign-in. Source: Gate redirects to /login and Verify returns to /. Reproduction: tests/auth/deep-links.browser.mjs exercises a saved form URL through login, reload and Change email. Classification: behavioral. Status: fixed in src/auth/return-to.ts, auth screens, router.tsx and app-shell.tsx. The pre-fix browser probe reached / instead of the saved form; the same journey now passes at 375px and 1280px, including reload, email change, separate tabs, session expiry, explicit logout and business setup.
+
+- A11Y-01 — Auth submit buttons had an empty accessible name while pending. Classification: accessibility. Fixed in src/ui/submit-button.tsx by keeping a text action label independent of the spinner. The held-request probe fails before the change and passes afterward at both widths; disabled behavior, request count and geometry are unchanged.
+- A11Y-02 — Auth routes and the account shell after profile loading left keyboard focus on the body. Classification: accessibility. Fixed in src/auth/auth-layout.tsx and src/app-shell.tsx. The main region receives focus when a new screen or its initial data becomes available; unchanged background data does not retrigger it. Before/after probes cover login, verify, setup, the signed-in destination and unknown routes.
+- LAYOUT-01 — Long verification emails expanded document width beyond the viewport. Classification: objective visual defect. Fixed by allowing long words to wrap in AuthLayout. The same long-address probe fails before the change and passes afterward at 375px/1280px. Current screenshots: tests/auth/artifacts/verify-long-email-375.png and verify-long-email-1280.png.
 
 ## Calendar ownership
 
@@ -98,3 +102,9 @@ Fixture forms are deleted by the browser suite. Disposable account/business reco
 - Fixture form deletion succeeds in the deep-link suite. Generated auth/settings screenshots and fixture manifests remain ignored local evidence.
 
 The full route audit remains open. Partial rows above record exactly what this checkpoint proves; unverified rows are the next worklist.
+
+## Verification for auth accessibility
+
+The complete pnpm test:browser command passes, including the new accessibility journey, existing auth recovery, team invitations and deep links. The settings suite also passes at both widths after the shared shell focus change. Coach build, scoped Biome, just check-rm and whitespace checks pass. Full backend precommit passes 1,778 tests with zero failures. The existing Vite bundle-size warning remains.
+
+The pre-fix probe recorded 14 failures across both widths (pending action name, route/readiness focus and long-email overflow). The unchanged probes pass after the shared fixes. The extended journey adds real keyboard signup, validation, confirmation-token consumption, keyboard sign-out and recovery from a used link. Disposable accounts/businesses remain; this flow creates no client or form records.

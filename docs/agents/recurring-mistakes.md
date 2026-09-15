@@ -999,6 +999,12 @@ accessibility tree, so below `sm` the button had NO name (the a11y snapshot show
 breakpoint carries a constant `aria-label`. Gated in `scripts/check-rm.sh`. **Verify by:**
 a11y snapshot at 375px — every button row must carry a name.
 
+The same rule applies to pending states. Auth submit buttons kept their geometry by making
+the text invisible, which also removed their accessible name. The shared SubmitButton now
+requires a text label and supplies it independently of the visual spinner. **Verify by:**
+hold a real request pending and assert the same action name, disabled state and dimensions;
+`coachapp test:auth-accessibility` exercises this with keyboard input.
+
 ### RM-182 — A submit control far from its validation message scrolls it into view
 The form builder's Save lives in the sticky header while its validation message renders at
 the form's bottom; on a tall desktop form a failed save painted the error at y≈2000 in an
@@ -1185,6 +1191,23 @@ retains its interrupted task. **Verify by:** `pnpm test:deep-links` in coachapp 
 complete journey at 375px and 1280px, including separate tabs and business setup. The return
 address boundary cases also run in the app's regular behavior checks. Text matching cannot
 prove these navigation outcomes, so this rule is gated by executable tests rather than grep.
+
+### RM-225 — Route focus waits for the destination content to mount
+An account shell focused its main region only when the pathname changed. On first entry,
+the profile was still loading, so the main ref was absent and focus never moved when the
+real screen appeared. Auth transitions also left focus on the document body. Focus the
+destination region on route entry and initial data readiness; stable background refreshes
+and form validation must preserve the current field focus. **Verify by:** keyboard-navigate
+through signup, verification and account loading, then verify failed submits focus their
+field and settings refreshes retain drafts. Covered by coachapp auth accessibility and
+settings browser suites; a source grep cannot prove mounted focus behavior.
+
+### RM-226 — Account identity text must wrap inside its page width
+A valid long email in the verification description expanded the page beyond both mobile
+and desktop viewports. Shared text containers allow long words to wrap instead of clipping
+identity information or introducing document-wide scrolling. **Verify by:** use a valid
+long email, assert document scroll width does not exceed the viewport, and inspect the
+complete readable address. Covered by coachapp `test:auth-accessibility` at 375px/1280px.
 
 ## Deploy / ops
 

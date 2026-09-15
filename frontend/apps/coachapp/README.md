@@ -103,6 +103,8 @@ Verified flows include wrong-code recovery, resend/change-email, unconfirmed sig
 
 Protected deep links keep their destination, filters and fragment through sign-in, email changes, reload and business setup. Return addresses are validated against protected app routes. Each tab retains its own destination; explicit logout starts a fresh sign-in. `test:deep-links` runs that journey independently and is included in `test:browser`.
 
+`test:auth-accessibility` covers real Tab/Enter navigation, validation focus, pending action names and geometry, long email wrapping, confirmation-link use and recovery after reuse, account loading and the unknown-route return link at both widths. It creates disposable accounts through the UI and is included in `test:browser`. Auth content receives focus when its screen changes; background refreshes preserve field focus.
+
 ## Test client invitations
 
 Use the same isolated API and coach app described above. Start the client app from the repository root:

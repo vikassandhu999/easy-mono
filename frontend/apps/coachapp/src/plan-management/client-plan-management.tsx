@@ -108,6 +108,8 @@ function ClientPlanDetails({
   const [notice, setNotice] = useState('');
   const mounted = useRef(true);
   const noticeElement = useRef<HTMLParagraphElement>(null);
+  const errorElement = useRef<HTMLParagraphElement>(null);
+  const actionErrorElement = useRef<HTMLParagraphElement>(null);
   const leaving = useRef(false);
   const navigate = useNavigate();
   const listRoute = resource === 'training' ? routes.clientTrainingPlans : routes.clientNutritionPlans;
@@ -117,6 +119,23 @@ function ClientPlanDetails({
   const pending = form.formState.isSubmitting || manage.isPending || reloading;
   const archived = plan.lifecycle === 'archived';
   const name = `${plan.client?.first_name ?? ''} ${plan.client?.last_name ?? ''}`.trim() || 'Client';
+  useEffect(() => {
+    if (pending || dialog) {
+      return;
+    }
+    if (form.formState.errors.root) {
+      errorElement.current?.focus();
+    } else if (form.formState.errors.start_date) {
+      form.setFocus('start_date');
+    } else if (form.formState.errors.end_date) {
+      form.setFocus('end_date');
+    }
+  }, [pending, dialog, form.formState.errors, form.setFocus]);
+  useEffect(() => {
+    if (actionError && dialog && !pending) {
+      actionErrorElement.current?.focus();
+    }
+  }, [actionError, dialog, pending]);
   useEffect(() => {
     if (notice && !pending && !dirty) {
       noticeElement.current?.focus({preventScroll: true});
@@ -327,7 +346,11 @@ function ClientPlanDetails({
           />
         </fieldset>
         {archived && <p className="text-sm text-muted-foreground">Restore this plan to change its dates.</p>}
-        <FormError message={form.formState.errors.root?.message} />
+        <FormError
+          ref={errorElement}
+          tabIndex={-1}
+          message={form.formState.errors.root?.message}
+        />
         <div className="flex flex-wrap gap-2">
           {!archived && (
             <Button
@@ -412,7 +435,11 @@ function ClientPlanDetails({
                 {explanations[dialog]}
               </DialogDescription>
             </DialogHeader>
-            <FormError message={actionError} />
+            <FormError
+              ref={actionErrorElement}
+              tabIndex={-1}
+              message={actionError}
+            />
             <DialogFooter>
               <Button
                 variant="outline"

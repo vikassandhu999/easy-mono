@@ -6,22 +6,7 @@ violation, the job isn't done when the instance is fixed — add (or update) the
 
 **How to use**
 - Before finishing, read only the section that matches the files you touched
-  (`## Backend`, `### RM-230 — Persisted fixture identities must survive a new VM
-System.unique_integer is unique only within one runtime. A subsequent test process can
-reuse a generated email already stored in a local test database and fail an unrelated
-controller setup. Factory emails use UUIDs so repeated runs do not collide with retained
-fixtures. **Verify by:** run client_controller_test.exs and full mix precommit against the
-existing test database; do not delete retained records to make the tests pass.
-
-## Frontend`, `### RM-231 — Successful signing does not prove a photo loaded
-A response reader displayed a broken image when storage rejected a valid signed URL.
-Handle image load failure visibly and reset that failure when Reload obtains a new
-response, even if the signed URL is unchanged. **Verify by:** coachapp `test:reviews`
-uploads real client photos, submits real answers, injects a storage GET failure, requires
-an error message, then reloads and compares downloaded bytes. Intake and conversation
-previews exercise the same reader.
-
-## Deploy / ops`, `## Docs`). Do not read the
+  (`## Backend`, `## Frontend`, `## Deploy / ops`, `## Docs`). Do not read the
   other sections. Do not load this file at session start. Use the index to jump
   to a single id.
 - When you find a NEW recurring mistake, add an entry: the rule, why, and **how it's
@@ -186,6 +171,9 @@ Severity of the rule isn't the point; recurrence is.
 | RM-301 | Retiring an architecture artifact means grepping the docs | Docs | review |
 | RM-302 | Never vendor a plugin skill into `.claude/skills/` | Docs | check-rm |
 | RM-303 | The `superpowers` plugin is retired | Docs | check-rm |
+| RM-230 | Fixture emails survive runtime restarts | Backend | test |
+| RM-231 | Signed URLs can still fail image delivery | Frontend | test |
+| RM-232 | Focus server errors after pending controls re-enable | Frontend | test |
 
 ---
 
@@ -394,6 +382,13 @@ conflicting Diary saves roll back and can be retried. Joining an existing transa
 does not upgrade its isolation level.
 
 ---
+
+### RM-230 — Persisted fixture identities must survive a new VM
+System.unique_integer is unique only within one runtime. A subsequent test process can
+reuse a generated email already stored in a local test database and fail an unrelated
+controller setup. Factory emails use UUIDs so repeated runs do not collide with retained
+fixtures. **Verify by:** run client_controller_test.exs and full mix precommit against the
+existing test database; do not delete retained records to make the tests pass.
 
 ## Frontend
 
@@ -1259,6 +1254,22 @@ while the task remained visible. The action editor rejects dates before the queu
 day, retaining the date and field focus. This does not change historical API data handling.
 **Verify by:** coachapp `test:workbench` submits yesterday, requires a visible error and no
 PUT, then submits a valid date and requires the task to leave the queue.
+
+### RM-231 — Successful signing does not prove a photo loaded
+A response reader displayed a broken image when storage rejected a valid signed URL.
+Handle image load failure visibly and reset that failure when Reload obtains a new
+response, even if the signed URL is unchanged. **Verify by:** coachapp `test:reviews`
+uploads real client photos, submits real answers, injects a storage GET failure, requires
+an error message, then reloads and compares downloaded bytes. Intake and conversation
+previews exercise the same reader.
+
+### RM-232 — Focus server errors after pending controls are re-enabled
+A plan-date overlap attached its error while the date fields were disabled, so the
+requested focus was lost. Wait for pending state to finish before focusing an invalid
+field or root error. Rejected confirmation actions must expose their recovery action
+in the keyboard sequence without moving focus outside the dialog. **Verify by:** coachapp
+`test:client-plan-management` checks overlap/stale date errors and restore conflicts;
+`test:plan-management` checks stale template confirmation and Close and review, at both widths.
 
 ## Deploy / ops
 

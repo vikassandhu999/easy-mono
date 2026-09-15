@@ -38,19 +38,19 @@ Inventory comes from the current router, not the navigation. Earlier slice evide
 | /check-ins/responses/:id | Coach | 375 / 1280 | Frozen answers, review/retry, persisted review and account isolation, actual photo signing/storage recovery and decoding | Passed listed states | PHOTO-01 |
 | /clients/:clientId/check-in-responses | Coach | 375 / 1280 | Client-scoped history, server search/counts/cursor pages, navigation and recovery | Passed listed states | |
 | /clients/:clientId/check-in-responses/:id | Coach | 375 / 1280 | Client-scoped frozen answers, review/retry and persisted review, actual photo signing/storage recovery and decoding | Passed listed states | PHOTO-01 |
-| /clients/:id/training-plans/assign | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /clients/:id/training-plans/assign/:templateId | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /training-plans | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
+| /clients/:id/training-plans/assign | Coach | 375 / 1280 | Template cursor selection, preview, revision/date recovery, assignment and client access | Passed existing suites; expanded audit pending | |
+| /clients/:id/training-plans/assign/:templateId | Coach | 375 / 1280 | Template cursor selection, preview, revision/date recovery, assignment and client access | Passed existing suites; expanded audit pending | |
+| /training-plans | Coach | 375 / 1280 | Template creation/editing, exercise cursor pages, compact sets, shared targets, variations, replacement/Undo, hidden validation and interrupted-save recovery, lifecycle/status filters, three cursor pages and return navigation | Passed listed states | |
 | /training-exercises | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /training-exercises/new | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /training-exercises/:id | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /training-plans/new | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /clients/:clientId/training-plans | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /clients/:clientId/training-plans/:id/manage | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /training-plans/:id/manage | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /training-plans/:id | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /clients/:clientId/training-plans/:id/edit | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /nutrition-plans | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
+| /training-plans/new | Coach | 375 / 1280 | Template creation/editing, exercise cursor pages, compact sets, shared targets, variations, replacement/Undo, hidden validation and interrupted-save recovery | Passed existing suites; expanded audit pending | |
+| /clients/:clientId/training-plans | Coach | 375 / 1280 | Client personalization, independent copy, recovery and route ownership, lifecycle/status filters, three cursor pages and return navigation | Passed listed states | |
+| /clients/:clientId/training-plans/:id/manage | Coach | 375 / 1280 | Dates, overlap/stale error focus, retained drafts, saved-date reload, archive/restore conflict, deletion preserves recorded history, session isolation | Passed listed states | PLAN-01 |
+| /training-plans/:id/manage | Coach | 375 / 1280 | Independent copy, archive/restore/delete, stale/lost-write recovery, assigned-copy survival, error focus and keyboard recovery, failed reads and account isolation | Passed listed states | PLAN-01 |
+| /training-plans/:id | Coach | 375 / 1280 | Template creation/editing, exercise cursor pages, compact sets, shared targets, variations, replacement/Undo, hidden validation and interrupted-save recovery | Passed existing suites; expanded audit pending | |
+| /clients/:clientId/training-plans/:id/edit | Coach | 375 / 1280 | Client personalization, independent copy, recovery and route ownership | Passed existing suites; expanded audit pending | |
+| /nutrition-plans | Coach | 375 / 1280 | Creation/editing, meals/alternatives/day menus, portions, server nutrition, validation/Undo, ordering, preview and interrupted-save recovery, lifecycle/status filters, three cursor pages and return navigation | Passed listed states | |
 | /nutrition-foods | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /nutrition-recipes | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /nutrition-recipes/new | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
@@ -59,14 +59,14 @@ Inventory comes from the current router, not the navigation. Earlier slice evide
 | /nutrition-foods/:id | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /nutrition-foods/:id/manage | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /nutrition-recipes/:id/manage | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /nutrition-plans/new | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /clients/:clientId/nutrition-plans | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /clients/:clientId/nutrition-plans/:id/manage | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /nutrition-plans/:id/manage | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /nutrition-plans/:id | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /clients/:clientId/nutrition-plans/:id/edit | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /clients/:id/nutrition-plans/assign | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /clients/:id/nutrition-plans/assign/:templateId | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
+| /nutrition-plans/new | Coach | 375 / 1280 | Creation/editing, meals/alternatives/day menus, portions, server nutrition, validation/Undo, ordering, preview and interrupted-save recovery | Passed existing suites; expanded audit pending | |
+| /clients/:clientId/nutrition-plans | Coach | 375 / 1280 | Client nutrition editing, independent copies, variations, preview, coverage and recovery, lifecycle/status filters, three cursor pages and return navigation | Passed listed states | |
+| /clients/:clientId/nutrition-plans/:id/manage | Coach | 375 / 1280 | Dates, overlap/stale error focus, retained drafts, saved-date reload, archive/restore conflict, deletion preserves recorded history, session isolation | Passed listed states | PLAN-01 |
+| /nutrition-plans/:id/manage | Coach | 375 / 1280 | Independent copy, archive/restore/delete, stale/lost-write recovery, assigned-copy survival, error focus and keyboard recovery, failed reads and account isolation | Passed listed states | PLAN-01 |
+| /nutrition-plans/:id | Coach | 375 / 1280 | Creation/editing, meals/alternatives/day menus, portions, server nutrition, validation/Undo, ordering, preview and interrupted-save recovery | Passed existing suites; expanded audit pending | |
+| /clients/:clientId/nutrition-plans/:id/edit | Coach | 375 / 1280 | Client nutrition editing, independent copies, variations, preview, coverage and recovery | Passed existing suites; expanded audit pending | |
+| /clients/:id/nutrition-plans/assign | Coach | 375 / 1280 | Template preview, assignment and recovery through full nutrition suite | Passed existing suites; expanded audit pending | |
+| /clients/:id/nutrition-plans/assign/:templateId | Coach | 375 / 1280 | Template preview, assignment and recovery through full nutrition suite | Passed existing suites; expanded audit pending | |
 | /forms | Coach | 375 / 1280 | Deep links, cursor pages, server totals/search/status/purpose, retry, search races, offline and observer-free loading, return scroll | Passed listed states | NAV-01 |
 | /forms/new | Coach | 375 / 1280 | Create, sections/questions/order, required/choice validation, preview, failed save, saved-result lookup and retained draft | Passed listed states | NAV-01, FORM-01 |
 | /forms/:id | Coach | 375 / 1280 | Saved-record deep link, reload, edits, purpose lock, default intake, stale revisions, dirty navigation and account isolation | Passed listed states | NAV-01 |
@@ -176,3 +176,19 @@ Build, Biome, repository rules and full backend precommit pass. Precommit first 
 PHOTO-01 — A successful download-URL response followed by a failed storage GET left a broken image without an error message. The real-upload/submission probe fails before the change. SubmissionPhoto now presents a delivery error; Reload photos refreshes the signed response and resets the failed image, including when the URL is unchanged.
 
 The full review suite passes at both widths with actual client uploads, submitted attachment IDs, metadata failure/retry, storage failure/reload, image decoding and byte-for-byte downloads. The same saved photo opens in the conversation preview. Client intake also uses real uploaded/submitted photos; the invitation/intake regression passes at both widths. Build, scoped Biome, repository rules and full backend precommit pass (1,778 tests, zero failures). Evidence: tests/check-ins/artifacts/photo-response-{375,1280}.png. Disposable records/media remain, and deployed storage and physical-device coverage remain outside this local test.
+
+
+## Plan audit in progress
+
+After the response-photo checkpoint, the complete training-template command (authoring, compact sets, shared targets and worksheet), training assignment, full nutrition-builder command (authoring, recovery, menu editing and ordering), and both client-personalization suites pass at 375px/1280px. Training templates and assignment use isolated API 44000/app 22022; nutrition and personalization use normal API 4000/app 2022. No production change was needed for these current regression runs.
+
+Logs: /tmp/coachapp-training-templates-current.log, /tmp/coachapp-training-assign-current.log, /tmp/coachapp-nutrition-plans-current.log, /tmp/coachapp-client-training-current.log and /tmp/coachapp-client-nutrition-current.log. The next pass covers plan lifecycle/management and remaining UX states; current rows are deliberately limited to the existing suites. Timestamp-dependent nutrition screenshots are archived in /tmp/coachapp-plan-audit-2026-09-15 before restoring their tracked baselines.
+
+
+## Plan management verification
+
+PLAN-01 — Server-side date validation ran while inputs were disabled, so the intended field focus was lost. Stale-plan and confirmation errors also left focus away from recovery. Client plan management now waits for pending state to finish before focusing the invalid date or root error. When a dialog is open, focus stays in that dialog; rejected actions focus their error and Tab reaches Close and review. FormError accepts opt-in ref/tabIndex props, used only by the plan-management screens; existing callers keep their previous markup and behavior.
+
+The corrected pre-fix control restores the committed client-plan screen temporarily and fails because Start date is inactive after the real overlap rejection. A separate template-confirmation probe fails because its stale error is inactive. The first harness expected a root overlap alert, but the server correctly returns a Start date field error; that harness result is not evidence of an application defect. Both complete lifecycle suites now pass at 375px/1280px against normal API 4000/app 2022, including independent copies, frozen history after deletion, date/revision conflicts, three cursor pages, interrupted writes and account replacement.
+
+Build, scoped Biome, repository rules and full backend precommit pass (1,778 tests, zero failures). Focus-state screenshots are tests/plans/artifacts/{date-error,template-error}-{training,nutrition}-{375,1280}.png. Timestamp-dependent tracked screenshots are archived locally before restoring their baselines. Fixture records remain in disposable businesses. The ledger also restores the intended Backend/Frontend placement of RM-230/RM-231 and indexes them alongside the new RM-232 focus rule.

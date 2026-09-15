@@ -56,8 +56,14 @@ function ManageTemplate({resource, id}: {resource: PlanResource; id: string}) {
   const [copyUncertain, setCopyUncertain] = useState(false);
   const [needsReview, setNeedsReview] = useState(false);
   const mounted = useRef(true);
+  const errorElement = useRef<HTMLParagraphElement>(null);
   const leaving = useRef(false);
   const pending = mutation.isPending;
+  useEffect(() => {
+    if (error && confirmation && !pending) {
+      errorElement.current?.focus();
+    }
+  }, [error, confirmation, pending]);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -286,7 +292,11 @@ function ManageTemplate({resource, id}: {resource: PlanResource; id: string}) {
                 {description[confirmation.action]}
               </DialogDescription>
             </DialogHeader>
-            {error && <FormError message={error} />}
+            <FormError
+              ref={errorElement}
+              tabIndex={-1}
+              message={error}
+            />
             {copyUncertain && confirmation.action === 'duplicate' && (
               <Link
                 to={`${library}?status=all`}

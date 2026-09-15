@@ -216,6 +216,7 @@ try {
       await end.fill(shift(today, 12));
       await save.click();
       await expect(page.getByText(/overlap/).first()).toBeVisible();
+      await expect(start).toBeFocused();
       await expect(end).toHaveValue(shift(today, 12));
       await end.fill(shift(today, 9));
       await save.click();
@@ -229,6 +230,10 @@ try {
       await send('patch', endpoint, {expected_revision: plan.revision, description: 'A newer coach edit'}, token);
       await save.click();
       await expect(page.getByRole('alert')).toContainText('This plan changed');
+      await expect(page.getByRole('alert')).toBeFocused();
+      await page.screenshot({path: `tests/plans/artifacts/date-error-${resource}-${width}.png`, fullPage: true});
+      await page.keyboard.press('Tab');
+      await expect(page.getByRole('button', {name: 'Load saved dates', exact: true})).toBeFocused();
       await expect(end).toHaveValue(shift(today, 8));
       await page.getByRole('button', {name: 'Load saved dates', exact: true}).click();
       await dialog.getByRole('button', {name: 'Load saved dates', exact: true}).click();
@@ -257,6 +262,9 @@ try {
       await dialog.getByRole('button', {name: 'Restore plan', exact: true}).click();
       await expect(dialog.getByRole('alert')).toBeVisible();
       await expect(dialog.getByRole('button', {name: 'Restore plan', exact: true})).toBeDisabled();
+      await expect(dialog.getByRole('alert')).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(dialog.getByRole('button', {name: 'Close and review', exact: true})).toBeFocused();
       await dialog.getByRole('button', {name: 'Close and review', exact: true}).click();
       expect((await send('get', endpoint, undefined, token)).data.lifecycle).toBe('archived');
       await lifecycle(resource, replacement, 'archive', token);

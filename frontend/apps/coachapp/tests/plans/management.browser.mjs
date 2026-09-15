@@ -179,6 +179,10 @@ try {
       ).data;
       await dialog.getByRole('button', {name: 'Archive template', exact: true}).click();
       await expect(dialog.getByRole('alert')).toContainText('changed after');
+      await expect(dialog.getByRole('alert')).toBeFocused();
+      await page.screenshot({path: `tests/plans/artifacts/template-error-${resource}-${width}.png`, fullPage: true});
+      await page.keyboard.press('Tab');
+      await expect(dialog.getByRole('button', {name: 'Close and review', exact: true})).toBeFocused();
       await expect(dialog.getByRole('button', {name: 'Archive template', exact: true})).toBeDisabled();
       await dialog.getByRole('button', {name: 'Close and review'}).click();
       await expect(page.getByText('Newer saved guidance', {exact: true})).toBeVisible();

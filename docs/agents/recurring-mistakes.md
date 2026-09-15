@@ -174,6 +174,7 @@ Severity of the rule isn't the point; recurrence is.
 | RM-230 | Fixture emails survive runtime restarts | Backend | test |
 | RM-231 | Signed URLs can still fail image delivery | Frontend | test |
 | RM-232 | Focus server errors after pending controls re-enable | Frontend | test |
+| RM-233 | Saved feedback follows actual draft state | Frontend | test |
 
 ---
 
@@ -1281,6 +1282,13 @@ explicit whole-number range; disabling the next action alone does not explain re
 Application review/enrollment also exercise this sequence in `tests/acquisition/prospects.browser.mjs`: stale writes, failed saved-review reloads, server field errors, unconfirmed enrollment, and the successful result. Focus result transitions by stable identity, so a background refresh of the same record does not interrupt the user.
 
 Public application validation includes conditionally hidden fields: open their section before focusing an invalid input. Successful stale-form refresh must clear obsolete errors and focus the next decision while retaining valid answers. The acquisition browser suite verifies both transitions and receipt recovery.
+
+### RM-233 — Saved feedback follows actual draft state
+An editor cleared its saved notice only on DOM change events, so adding a program left
+Draft saved visible over unsaved content. Render saved feedback from the form's dirty
+state; field-array append, remove and move actions also change the draft. **Verify by:**
+coachapp `tests/acquisition/acquisition.browser.mjs` saves a draft, adds a program and
+requires the saved notice to disappear before removing that program and publishing.
 
 ## Deploy / ops
 

@@ -1,5 +1,5 @@
 import {Copy, ExternalLink} from 'lucide-react';
-import {useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {generatePath, Link} from 'react-router-dom';
 import {useBusiness} from '../api/business';
 import {errorMessage} from '../api/client';
@@ -74,8 +74,20 @@ export function CoachingPage() {
 function SavedPage({page, businessName}: {page: LandingPage; businessName: string}) {
   const save = useSaveLandingPage();
   const [offline, setOffline] = useState(false);
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useState<'copied' | 'offline' | null>(null);
   const [error, setError] = useState('');
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const offlineErrorRef = useRef<HTMLParagraphElement>(null);
+  const noticeRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (!save.isPending) {
+      if (error) {
+        (offline ? offlineErrorRef : errorRef).current?.focus();
+      } else if (!offline && notice === 'offline') {
+        noticeRef.current?.focus();
+      }
+    }
+  }, [save.isPending, error, offline, notice]);
   const path = generatePath(routes.publicCoachingPage, {slug: page.slug});
   const url = new URL(path, window.location.origin).href;
   return (
@@ -99,9 +111,11 @@ function SavedPage({page, businessName}: {page: LandingPage; businessName: strin
               <Button
                 variant="outline"
                 onPress={async () => {
+                  setError('');
+                  setNotice(null);
                   try {
                     await navigator.clipboard.writeText(url);
-                    setNotice('Page link copied.');
+                    setNotice('copied');
                   } catch {
                     setError('Could not copy the link. You can select the address above.');
                   }
@@ -127,7 +141,11 @@ function SavedPage({page, businessName}: {page: LandingPage; businessName: strin
               </a>
               <Button
                 variant="ghost"
-                onPress={() => setOffline(true)}
+                onPress={() => {
+                  setError('');
+                  setNotice(null);
+                  setOffline(true);
+                }}
               >
                 Take page offline
               </Button>
@@ -140,13 +158,21 @@ function SavedPage({page, businessName}: {page: LandingPage; businessName: strin
         )}
         {notice && (
           <p
+            ref={noticeRef}
+            tabIndex={-1}
             role="status"
             className="text-sm"
           >
-            {notice}
+            {notice === 'copied' ? 'Page link copied.' : 'Your page is now offline.'}
           </p>
         )}
-        <FormError message={error} />
+        {!offline && (
+          <FormError
+            ref={errorRef}
+            tabIndex={-1}
+            message={error}
+          />
+        )}
       </Surface>
       <div className="overflow-hidden rounded-xl border border-border">
         <p className="border-b border-border bg-muted/40 px-5 py-3 text-sm text-muted-foreground">
@@ -162,6 +188,9 @@ function SavedPage({page, businessName}: {page: LandingPage; businessName: strin
         onOpenChange={(open) => {
           if (!save.isPending) {
             setOffline(open);
+            if (!open) {
+              setError('');
+            }
           }
         }}
         isKeyboardDismissDisabled={save.isPending}
@@ -176,12 +205,19 @@ function SavedPage({page, businessName}: {page: LandingPage; businessName: strin
             People with the link won’t be able to view the page or apply. Your content and existing applications will be
             kept.
           </p>
-          <FormError message={error} />
+          <FormError
+            ref={offlineErrorRef}
+            tabIndex={-1}
+            message={error}
+          />
           <div className="flex flex-wrap gap-3">
             <Button
               variant="outline"
               isDisabled={save.isPending}
-              onPress={() => setOffline(false)}
+              onPress={() => {
+                setOffline(false);
+                setError('');
+              }}
             >
               Keep page live
             </Button>
@@ -192,7 +228,7 @@ function SavedPage({page, businessName}: {page: LandingPage; businessName: strin
                 try {
                   await save.mutateAsync(pageInput(landingDraft(page, page.slug), 'draft'));
                   setOffline(false);
-                  setNotice('Your page is now offline.');
+                  setNotice('offline');
                 } catch (reason) {
                   setError(errorMessage(reason, 'Could not take the page offline. Try again.'));
                 }

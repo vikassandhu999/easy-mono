@@ -1,7 +1,6 @@
 import {ArrowDown, ArrowUp, Plus, Trash2} from 'lucide-react';
 import {Controller, useFieldArray, useFormContext, useWatch} from 'react-hook-form';
 import {Button} from '../ui/button';
-import {FormError} from '../ui/form-error';
 import {FormField} from '../ui/form-field';
 import {Label} from '../ui/label';
 import {SelectItem} from '../ui/select';
@@ -135,7 +134,7 @@ export function ProgramFields() {
 }
 
 export function QuestionFields() {
-  const {control, formState} = useFormContext<LandingDraft>();
+  const {control} = useFormContext<LandingDraft>();
   const questions = useFieldArray({control, name: 'application_questions'});
   const values = useWatch({control, name: 'application_questions'});
   return (
@@ -202,7 +201,6 @@ export function QuestionFields() {
           )}
         </section>
       ))}
-      <FormError message={formState.errors.application_questions?.message} />
       <Button
         variant="outline"
         isDisabled={questions.fields.length >= 5}

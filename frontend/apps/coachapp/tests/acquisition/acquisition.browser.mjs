@@ -68,6 +68,9 @@ try {
       .getByLabel('About you', {exact: true})
       .fill('I’m Kavya. I help you build a routine you can keep, with clear targets and regular support.');
     await page.getByRole('button', {name: 'Add who you help', exact: true}).click();
+    await page.getByText('More about your coaching', {exact: true}).click();
+    await page.getByRole('button', {name: 'Save draft', exact: true}).click();
+    await expect(page.getByLabel('A good fit for 1', {exact: true})).toBeFocused();
     await page
       .getByLabel('A good fit for 1', {exact: true})
       .fill('You want a practical routine around work and family.');
@@ -90,11 +93,14 @@ try {
         : route.continue(),
     );
     await page.getByRole('button', {name: 'Save draft', exact: true}).click();
-    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page.getByRole('alert')).toBeFocused();
     await expect(page.getByLabel('Program name', {exact: true})).toHaveValue('Personal strength coaching');
     await page.unroute('**/v1/coach/landing-page');
     await page.getByRole('button', {name: 'Save draft', exact: true}).click();
-    await expect(page.getByText('Draft saved. Your page is private.', {exact: true})).toBeVisible();
+    await expect(page.getByText('Draft saved. Your page is private.', {exact: true})).toBeFocused();
+    await page.getByRole('button', {name: 'Add program', exact: true}).click();
+    await expect(page.getByText('Draft saved. Your page is private.', {exact: true})).toHaveCount(0);
+    await page.getByRole('button', {name: 'Remove program 2', exact: true}).click();
     expect((await api.get(`/v1/public/landing-pages/${slug}`)).status()).toBe(404);
     await page.getByRole('button', {name: 'Preview', exact: true}).click();
     await expect(
@@ -106,7 +112,7 @@ try {
     await capture(page, 'preview', width);
     await page.keyboard.press('Escape');
     await page.getByRole('button', {name: 'Publish page', exact: true}).click();
-    await expect(page.getByText('Your page is live. Changes are published.', {exact: true})).toBeVisible();
+    await expect(page.getByText('Your page is live. Changes are published.', {exact: true})).toBeFocused();
     await capture(page, 'editor', width);
     const saved = (await send('get', '/v1/coach/landing-page', undefined, tokens.access_token)).data;
     await publicPage.goto(`/coaching/${slug}`);
@@ -206,8 +212,22 @@ try {
     await page.getByRole('button', {name: 'Publish changes', exact: true}).click();
     await expect(page.getByRole('button', {name: 'Load saved version', exact: true})).toBeVisible();
     await expect(page.getByLabel('What can you help people achieve?', {exact: true})).toHaveValue('My older draft');
+    await expect(page.locator('form').getByRole('alert')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Load saved version', exact: true})).toBeFocused();
     await page.getByRole('button', {name: 'Load saved version', exact: true}).click();
+    await page.route('**/v1/coach/landing-page', (route) =>
+      route.fulfill({status: 503, json: {error_code: 'unavailable'}}),
+    );
     await page.getByRole('button', {name: 'Load saved page', exact: true}).click();
+    const reloadDialog = page.getByRole('dialog', {name: 'Replace your unsaved changes?', exact: true});
+    await expect(reloadDialog.getByRole('alert')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(reloadDialog.getByRole('button', {name: 'Keep editing', exact: true})).toBeFocused();
+    await page.screenshot({path: `tests/acquisition/artifacts/editor-recovery-${width}.png`});
+    await page.unroute('**/v1/coach/landing-page');
+    await page.getByRole('button', {name: 'Load saved page', exact: true}).click();
+    await expect(page.getByText('Latest saved version loaded.', {exact: true})).toBeFocused();
     await expect(page.getByLabel('What can you help people achieve?', {exact: true})).toHaveValue(
       'Headline from another tab',
     );
@@ -270,9 +290,44 @@ try {
       'Headline from another tab',
     );
     await page.getByRole('link', {name: 'Coaching page', exact: true}).click();
+    await page.evaluate(() =>
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: {
+          writeText: async () => {
+            throw new Error('Clipboard unavailable');
+          },
+        },
+      }),
+    );
+    await page.getByRole('button', {name: 'Copy link', exact: true}).click();
+    await expect(page.getByRole('alert')).toBeFocused();
+    await page.evaluate(() =>
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: {writeText: async () => undefined},
+      }),
+    );
+    await page.getByRole('button', {name: 'Copy link', exact: true}).click();
+    await expect(page.getByText('Page link copied.', {exact: true})).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(page.getByRole('button', {name: 'Copy link', exact: true})).toBeFocused();
     await page.getByRole('button', {name: 'Take page offline', exact: true}).click();
+    await page.route('**/v1/coach/landing-page', (route) =>
+      route.request().method() === 'PUT'
+        ? route.fulfill({status: 503, json: {error_code: 'unavailable'}})
+        : route.continue(),
+    );
     await page.getByRole('button', {name: 'Take offline', exact: true}).click();
-    await expect(page.getByText('Your page is now offline.', {exact: true})).toBeVisible();
+    const offlineDialog = page.getByRole('dialog', {name: 'Take your page offline?', exact: true});
+    await expect(offlineDialog.getByRole('alert')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(offlineDialog.getByRole('button', {name: 'Keep page live', exact: true})).toBeFocused();
+    await page.screenshot({path: `tests/acquisition/artifacts/offline-recovery-${width}.png`});
+    expect((await api.get(`/v1/public/landing-pages/${slug}`)).status()).toBe(200);
+    await page.unroute('**/v1/coach/landing-page');
+    await page.getByRole('button', {name: 'Take offline', exact: true}).click();
+    await expect(page.getByText('Your page is now offline.', {exact: true})).toBeFocused();
     await publicPage.goto(`/coaching/${slug}`);
     await expect(publicPage.getByRole('heading', {name: 'This page is unavailable', exact: true})).toBeVisible();
     expect(errors).toEqual([]);

@@ -1,5 +1,5 @@
 import {Eye} from 'lucide-react';
-import {useCallback, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {FormProvider, useForm, useWatch} from 'react-hook-form';
 import {useBeforeUnload, useBlocker} from 'react-router-dom';
 import {type Business, useBusiness} from '../api/business';
@@ -81,6 +81,49 @@ function Editor({page, business}: {page: LandingPage | null; business: Business}
   const pending = form.formState.isSubmitting;
   const dirty = form.formState.isDirty;
   const blocker = useBlocker(dirty || pending);
+  const formRef = useRef<HTMLFormElement>(null);
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const noticeRef = useRef<HTMLParagraphElement>(null);
+  const reloadErrorRef = useRef<HTMLParagraphElement>(null);
+  const errors = form.formState.errors;
+  const summaryError = [
+    errors.root?.message,
+    errors.proof_points?.message,
+    errors.fit_points?.message,
+    errors.application_questions?.message,
+  ]
+    .join(' ')
+    .trim();
+  useEffect(() => {
+    if (pending || preview || reload || blocker.state === 'blocked') {
+      return;
+    }
+    if (summaryError) {
+      errorRef.current?.focus();
+      return;
+    }
+    const invalid =
+      Object.keys(errors).length > 0
+        ? formRef.current?.querySelector<HTMLElement>(
+            'input[aria-invalid="true"], textarea[aria-invalid="true"], button[aria-invalid="true"]',
+          )
+        : null;
+    if (invalid) {
+      let section = invalid.closest('details');
+      while (section) {
+        section.open = true;
+        section = section.parentElement?.closest('details') ?? null;
+      }
+      invalid.focus();
+    } else if (notice && !dirty) {
+      noticeRef.current?.focus();
+    }
+  }, [pending, preview, reload, blocker.state, summaryError, errors, notice, dirty]);
+  useEffect(() => {
+    if (reload && query.isError && !query.isFetching) {
+      reloadErrorRef.current?.focus();
+    }
+  }, [reload, query.isError, query.isFetching]);
   useBeforeUnload(
     useCallback(
       (event) => {
@@ -140,6 +183,7 @@ function Editor({page, business}: {page: LandingPage | null; business: Business}
           {saved?.status === 'published' ? 'Live · changes publish when you save' : 'Draft · private until you publish'}
         </StatusBadge>
         <form
+          ref={formRef}
           noValidate
           onSubmit={submit(saved?.status === 'published' ? 'published' : 'draft')}
           className="space-y-6"
@@ -202,9 +246,11 @@ function Editor({page, business}: {page: LandingPage | null; business: Business}
               <QuestionFields />
             </Surface>
           </fieldset>
-          <FormError message={form.formState.errors.root?.message} />
-          <FormError message={form.formState.errors.proof_points?.message} />
-          <FormError message={form.formState.errors.fit_points?.message} />
+          <FormError
+            ref={errorRef}
+            tabIndex={-1}
+            message={summaryError}
+          />
           {stale && (
             <div className="space-y-3">
               <p className="text-sm">
@@ -218,8 +264,10 @@ function Editor({page, business}: {page: LandingPage | null; business: Business}
               </Button>
             </div>
           )}
-          {notice && (
+          {notice && !dirty && (
             <p
+              ref={noticeRef}
+              tabIndex={-1}
               role="status"
               className="text-sm"
             >
@@ -288,6 +336,13 @@ function Editor({page, business}: {page: LandingPage | null; business: Business}
         </DialogHeader>
         <div className="dialog-body space-y-4">
           <p>This will load the latest saved page and discard this draft.</p>
+          {query.isError && (
+            <FormError
+              ref={reloadErrorRef}
+              tabIndex={-1}
+              message="Could not load the saved page. Your draft is still here."
+            />
+          )}
           <div className="flex flex-wrap gap-3">
             <Button
               variant="outline"
@@ -312,7 +367,6 @@ function Editor({page, business}: {page: LandingPage | null; business: Business}
               Load saved page
             </Button>
           </div>
-          {query.isError && <FormError message="Could not load the saved page. Your draft is still here." />}
         </div>
       </Dialog>
       <Dialog

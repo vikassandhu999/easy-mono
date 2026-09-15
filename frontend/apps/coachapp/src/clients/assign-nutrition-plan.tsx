@@ -94,7 +94,7 @@ function Choose({clientId}: {clientId: string}) {
           <Link
             to={generatePath(routes.previewNutritionPlan, {id: clientId, templateId: plan.id})}
             state={{...state, nutritionSearch: search}}
-            className="block space-y-1 px-5 py-4 hover:bg-muted/50 focus-visible:-outline-offset-4"
+            className="block space-y-1 px-5 py-4 [overflow-wrap:anywhere] hover:bg-muted/50 focus-visible:-outline-offset-4"
           >
             <p className="font-semibold">{plan.name}</p>
             <p className="text-sm text-muted-foreground">
@@ -184,7 +184,7 @@ function Preview({clientId, templateId, name}: {clientId: string; templateId: st
       >
         Choose another plan
       </Link>
-      <Surface className="space-y-6">
+      <Surface className="min-w-0 space-y-6 [overflow-wrap:anywhere]">
         <h2
           ref={previewHeading}
           tabIndex={-1}

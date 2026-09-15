@@ -32,3 +32,10 @@ The existing Client Overview/invitation suite also passed at 375px and 1280px, w
 Server overlap validation now waits for date inputs to re-enable before focusing Start date. Stale templates lead directly to Refresh preview; failed refreshes retain dates and offer keyboard retry, while successful refreshes focus the updated prescription. Unconfirmed assignments retain Check client plans. A real saved assignment with a lost response was recovered with one write and three server-counted client plans. Selection rows now keep their keyboard outline inside the clipped list.
 
 The original overlap-focus and row-outline probes fail; the expanded nutrition suite passes at 375px/1280px, including authoring, server nutrition, independent client copies and assignment recovery. Build, Biome, repository checks and backend precommit pass (1,778 tests). Expanded nutrition assignment-list states remain in the route worklist.
+
+
+## Assignment selection audit, 2026-09-15
+
+The dedicated `test:nutrition-assignment` suite now covers the client-scoped picker with 45 real templates at 375px/1280px: empty/loading/error recovery, manual and automatic pagination, server totals and search, retained refresh results, preview/reload/return position, zero targets and archived exclusion. A long unbroken template name exposed horizontal overflow; wrapping stays local to assignment rows and the preview surface. The original viewport probe fails and the corrected suite passes, checking both document width and text inside the row. Screenshots are archived under `/tmp/coachapp-nutrition-selection-audit-2026-09-15`. The suite is included in `test:nutrition`.
+
+Verification: build, scoped Biome, repository checks and backend precommit pass (1,778 tests, zero failures). Remote search targets a record absent from the first loaded page.

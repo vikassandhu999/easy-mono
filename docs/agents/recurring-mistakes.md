@@ -1221,6 +1221,11 @@ identity information or introducing document-wide scrolling. **Verify by:** use 
 long email, assert document scroll width does not exceed the viewport, and inspect the
 complete readable address. Covered by coachapp `test:auth-accessibility` at 375px/1280px.
 
+Saved plan names and guidance need the same treatment. The nutrition assignment audit
+checks the viewport and the row's own scroll width, because an overflow-hidden ancestor
+can conceal truncated text. `test:nutrition-assignment` exercises real long names and
+guidance in selection and preview at both widths.
+
 ### RM-227 — Interrupted creation keeps the draft and offers saved-result recovery
 Invite client discarded entered details on navigation and allowed blind retry after a lost
 response. Guard dirty and pending navigation, retain the submitted identity when the outcome

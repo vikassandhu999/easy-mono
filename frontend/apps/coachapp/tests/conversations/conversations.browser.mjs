@@ -2,6 +2,7 @@ import {mkdir, readFile} from 'node:fs/promises';
 import {chromium, expect, request} from '@playwright/test';
 import {chooseOption, selectTrigger} from '../select-helpers.mjs';
 import {checkConversationFeatures} from './conversation-features.mjs';
+import {expectStoredMedia, observeChatUploads} from './storage.mjs';
 
 const api = await request.newContext({baseURL: process.env.COACHAPP_API_URL || 'http://localhost:4000'});
 const appUrl = process.env.COACHAPP_URL || 'http://localhost:2022';
@@ -197,17 +198,11 @@ try {
 
     await page.screenshot({path: `tests/conversations/artifacts/text-thread-${width}.png`, fullPage: true});
     const image = await readFile('tests/weight-progress/artifacts/progress-375.png');
-    let failUpload = true;
-    await page.route('http://127.0.0.1:44001/**', (route) =>
-      route.request().method() === 'PUT'
-        ? route.fulfill({status: failUpload ? 503 : 200, body: ''})
-        : route.fulfill({status: 200, contentType: 'image/png', body: image}),
-    );
+    const photoUploads = await observeChatUploads(page, person.id, {failFirst: true});
     await page
       .getByLabel('Attach a file', {exact: true})
       .setInputFiles({name: 'progress.png', mimeType: 'image/png', buffer: image});
     await expect(page.getByText('Upload failed', {exact: true})).toBeVisible();
-    failUpload = false;
     await page.getByRole('button', {name: 'Retry upload', exact: true}).click();
     await expect(page.getByText('Ready to send', {exact: true})).toBeVisible();
     await page.getByRole('button', {name: 'Send message', exact: true}).click();
@@ -221,6 +216,9 @@ try {
     expect(
       await page.getByRole('img', {name: 'Message attachment', exact: true}).evaluate((node) => node.naturalWidth > 0),
     ).toBe(true);
+    expect(photoUploads).toHaveLength(1);
+    expect(photoUploads[0]).toEqual(image);
+    await expectStoredMedia(page, page.getByRole('img', {name: 'Message attachment', exact: true}), image);
     await page.screenshot({path: `tests/conversations/artifacts/thread-${width}.png`, fullPage: true});
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.getByRole('link', {name: 'Back to messages', exact: true}).click();

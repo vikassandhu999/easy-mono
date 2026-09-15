@@ -8,7 +8,7 @@ Message history reads oldest to newest, opening at the latest message. Older pag
 
 Use server cursor pages for inbox and history, server search/status/counts, typed hooks and session guards. Realtime events only invalidate authorized HTTP queries; never trust pushed records to populate another client's cache. Refresh session before connecting, disconnect on account replacement, and refetch after reconnect. Connection trouble leaves history and drafts usable with explicit refresh/retry.
 
-Verify real client and coach messages, multiple inbox/history pages, search beyond page one, server status/counts, read/handled conflicts, multiline and empty sends, failed/lost writes, media upload/download recovery, live incoming updates, reconnect and account isolation at 375px/1280px. Media storage may use a local transport fixture while the API remains real. No real messages to existing users or real external delivery.
+Verify real client and coach messages, multiple inbox/history pages, search beyond page one, server status/counts, read/handled conflicts, multiline and empty sends, failed/lost writes, media upload/download recovery, live incoming updates, reconnect and account isolation at 375px/1280px. Media upload and download verification uses the configured storage service; only deliberate failure responses are simulated. No real messages to existing users or real external delivery.
 
 Evidence: backend Chat, ChatMessages, Conversation/Message schemas, coach ConversationController and UploadController, generated conversation/upload types, InboxChannel and UserSocket. Graph tools are unavailable; these task-directed source reads establish the contract. The referenced type-system-discipline skill is missing from repo and user skill locations; the available TypeScript skill supplies the applicable type rules.
 
@@ -23,7 +23,7 @@ App build, scoped Biome and `just check-rm` passed. Backend `mix precommit` pass
 
 The completion checks on 2026-09-13 also pass at 375px and 1280px: intake and check-in response sharing, response-reader failure/retry, invalid response removal, read/handled updates across two tabs, missed replies after reconnect with the draft retained, microphone denial/retry, real recording and playback, re-record/discard, capture-track cleanup, and sending/playing recorded audio. The mobile account-replacement scenario holds both history and a successful send response and checks that neither repopulates the replacement account. Full-suite verification passed before the final composer button grouping; the focused response/voice/team suite checks that grouping at both widths.
 
-Final application audit still needs external storage delivery and device/browser media coverage beyond Chromium, including video and Safari recording. Photo and audio storage transport is simulated here; API authorization, metadata and signing are real. This browser verification does not replace a target-coach usability review.
+The 2026-09-13 run simulated photo and audio storage transport. The real-storage verification below supersedes that limitation for local storage and Chromium; physical-device and Safari recording checks remain open. This browser verification does not replace a target-coach usability review.
 
 
 ## Completing responses and voice notes
@@ -36,3 +36,12 @@ The recorder checks supported output using [MediaRecorder.isTypeSupported](https
 
 
 The browser suite uses Chromium's full headless mode (`channel: chromium`) for fake microphone capture; headless shell returned NotSupportedError before MediaRecorder started. Its reconnect fixture closes only the application socket. Closing Vite's development socket triggers a page reload and does not model chat reconnect. Temporary diagnostic logging was removed.
+
+
+## Real storage audit — 2026-09-15
+
+The complete conversation suite passes at 375px and 1280px against normal API 4000, coach app 2022 and configured local storage. The test discovers upload destinations from real signing responses instead of assuming the old fake storage address. Photo upload deliberately fails once; explicit retry performs a real PUT, and the downloaded bytes match the original. Voice notes use real MediaRecorder output, storage upload/download, byte comparison and playback. A generated WebM video uploads and plays; an injected storage GET failure exposes Retry attachment, which restores playback from storage.
+
+The full run also repeats cursor history, server inbox filters/counts, reading anchors, incoming replies, read/handled races, lost-send recovery, shared form responses, reconnect and account replacement. No application or public API change was needed for this storage checkpoint. Screenshots were inspected at both widths; timestamp-dependent existing screenshots are retained as local run evidence rather than committed baseline changes.
+
+Build, scoped Biome, repository rules and full backend precommit pass (1,778 tests, zero failures). The existing bundle-size warning remains. Disposable accounts, messages and media remain in the test businesses, as in the existing suite. Real remote deployment/storage configuration, physical-device media compatibility and target-coach usability remain outside this local Chromium verification.

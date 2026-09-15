@@ -1,4 +1,5 @@
 import {expect} from '@playwright/test';
+import {createVideo, expectStoredMedia, observeChatUploads} from './storage.mjs';
 
 export async function checkConversationFeatures({
   page,
@@ -195,16 +196,7 @@ export async function checkConversationFeatures({
   await page.getByRole('button', {name: 'Start recording', exact: true}).click();
   await expect(page.getByRole('timer', {name: 'Recording duration', exact: true})).toContainText('0:01');
   await page.getByRole('button', {name: 'Stop recording', exact: true}).click();
-  let audioBytes;
-  let audioType;
-  await page.route('http://127.0.0.1:44001/**', (route) => {
-    if (route.request().method() === 'PUT') {
-      audioBytes = route.request().postDataBuffer();
-      audioType = route.request().headers()['content-type'];
-      return route.fulfill({status: 200, body: ''});
-    }
-    return route.fulfill({status: 200, contentType: audioType, body: audioBytes});
-  });
+  const audioUploads = await observeChatUploads(page, person.id);
   await page.getByRole('button', {name: 'Use voice note', exact: true}).click();
   await expect(page.getByText('Ready to send', {exact: true})).toBeVisible();
   await page.getByRole('button', {name: 'Send message', exact: true}).click();
@@ -213,6 +205,46 @@ export async function checkConversationFeatures({
   await expect(sentAudio).toBeVisible();
   await expect.poll(() => sentAudio.evaluate((audio) => audio.readyState)).toBeGreaterThan(0);
   expect(await page.evaluate(() => window.chatTestTracks.every((track) => track.readyState === 'ended'))).toBe(true);
-  expect(audioBytes.byteLength).toBeGreaterThan(0);
+  expect(audioUploads).toHaveLength(1);
+  expect(audioUploads[0].byteLength).toBeGreaterThan(0);
+  await expectStoredMedia(page, sentAudio, audioUploads[0]);
+  await sentAudio.evaluate((audio) => audio.play());
+  await expect.poll(() => sentAudio.evaluate((audio) => audio.currentTime)).toBeGreaterThan(0);
+  const video = await createVideo(page);
+  const videoUploads = await observeChatUploads(page, person.id);
+  await page.getByLabel('Attach a file', {exact: true}).setInputFiles({
+    name: 'Test coaching video.webm',
+    mimeType: 'video/webm',
+    buffer: video,
+  });
+  await expect(page.getByText('Ready to send', {exact: true})).toBeVisible();
+  await page.getByRole('button', {name: 'Send message', exact: true}).click();
+  let failDownload = true;
+  const downloads = '**/v1/coach/attachments/download-urls';
+  await page.route(downloads, async (route) => {
+    const response = await route.fetch();
+    expect(response.ok()).toBe(true);
+    const {data} = await response.json();
+    await page.route(data[0].download_url, (storage) => {
+      if (failDownload) {
+        failDownload = false;
+        return storage.fulfill({status: 503, body: ''});
+      }
+      return storage.continue();
+    });
+    return route.fulfill({response});
+  });
+  await page.getByRole('button', {name: 'Open video', exact: true}).click();
+  await expect(page.getByRole('button', {name: 'Retry attachment', exact: true})).toBeVisible();
+  await page.getByRole('button', {name: 'Retry attachment', exact: true}).click();
+  const sentVideo = page.locator('[data-slot="message"] video');
+  await expect(sentVideo).toBeVisible();
+  await expect.poll(() => sentVideo.evaluate((video) => video.readyState)).toBeGreaterThan(0);
+  expect(videoUploads).toHaveLength(1);
+  await expectStoredMedia(page, sentVideo, video);
+  await sentVideo.evaluate((video) => video.play());
+  await expect.poll(() => sentVideo.evaluate((video) => video.currentTime)).toBeGreaterThan(0);
+  await page.unroute(downloads);
+  await page.screenshot({path: `tests/conversations/artifacts/video-${width}.png`, fullPage: true});
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 }

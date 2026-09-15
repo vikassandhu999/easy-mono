@@ -26,8 +26,8 @@ Inventory comes from the current router, not the navigation. Earlier slice evide
 | /clients/invite | Coach | 375 / 1280 | Intake loading/error/preview, validation, send/retry, dirty and pending navigation, reload warning, lost-response lookup, session isolation | Passed listed states | INV-01 |
 | /clients/:id | Coach | 375 / 1280 | Invitation lifecycle, intake review, reminder uncertainty, due date/priority, dismiss/reopen, concurrent submission, refresh and account isolation | Passed listed states | |
 | /clients/:id/profile | Coach | 375 / 1280 | Contact/services/stage/dates/goal, ownership, changed fields, save/lost response, dirty navigation, lifecycle, invalid ID and account changes | Passed profile/lifecycle suite | |
-| /messages | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /clients/:clientId/conversation | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
+| /messages | Coach | 375 / 1280 | Server search/status totals, cursor pages, empty/loading/error/retry, return filters and live updates | Passed listed states | CHAT-01 |
+| /clients/:clientId/conversation | Coach | 375 / 1280 | Cursor history/anchors, live read/handled conflicts, draft/uncertain-send recovery, response sharing, reconnect, photo/audio/video real storage and retries, account isolation | Passed listed states | CHAT-01 |
 | /clients/:clientId/training-sessions | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /clients/:clientId/training-sessions/:id | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /clients/:clientId/nutrition-history | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
@@ -139,3 +139,10 @@ The focused suite passes at 375px/1280px on normal API 4000/app 2022, including 
 The pre-fix control uses the committed screen source and fails because Send invitation remains enabled after a real successful creation whose response was lost. The corrected test also checks focus and dialog bounds. Screenshots are tests/team/artifacts/invitation-recovery-{375,1280}.png. Focused fixtures are revoked on completion; the interrupted harness fixture was separately found by its exact test email and revoked. Disposable accounts and the pre-existing lifecycle suite's fixtures remain.
 
 Coach build, scoped Biome, repository checks and full backend precommit pass (1,778 tests, zero failures). The existing bundle-size warning remains. The full application audit stays open.
+
+
+## Conversation storage verification
+
+CHAT-01 is a test coverage defect: the previous suite intercepted a fixed fake-storage address. Against the normal API, a real upload reached Ready to send while the test incorrectly expected Upload failed. The corrected helper obtains the signed destination from the real API, injects only the selected failed request, and lets successful storage operations continue. The full suite passes at both widths, including byte-for-byte photo/audio/video downloads, audio/video playback and a real-storage read retry. No production code change was required.
+
+Current evidence: tests/conversations/artifacts/video-{375,1280}.png and the complete conversation test output. Existing timestamp-dependent screenshots were inspected without changing their tracked baselines. Build, Biome, repository rules and backend precommit pass (1,778 tests, zero failures). Disposable conversation fixtures and storage objects remain in their own test businesses. Deployed storage, physical-device/Safari media and target-coach usability remain unverified; other route rows retain their current coverage limits.

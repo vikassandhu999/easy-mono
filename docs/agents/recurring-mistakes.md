@@ -1223,6 +1223,20 @@ Forms creation had the same defect. Its saved-result lookup includes question pr
 `test:form-creation-recovery` requires a subsequent edit to keep the server count at one.
 Recovery errors receive focus, and returning to retry focuses a re-enabled form field.
 
+### RM-228 — Wrapping must constrain intrinsic width as well as visible text
+A long intake title widened the Workbench even after ordinary word wrapping kept the
+paragraph's contents inside its own box. Use wrapping that participates in intrinsic sizing
+when text can determine a flex/grid child's minimum width. **Verify by:** assert both the
+text element's scroll width and the document width, using an unbroken title at 375px/1280px.
+Coachapp `test:workbench` covers the title, trailing due date and resulting task actions.
+
+### RM-229 — A snooze confirmation must correspond to time actually hidden
+The snooze endpoint accepts expired dates, so the editor reported success for yesterday
+while the task remained visible. The action editor rejects dates before the queue's current
+day, retaining the date and field focus. This does not change historical API data handling.
+**Verify by:** coachapp `test:workbench` submits yesterday, requires a visible error and no
+PUT, then submits a valid date and requires the task to leave the queue.
+
 ## Deploy / ops
 
 ### RM-221 — Filter-then-assert: parse WHILE filtering, don't assert afterwards

@@ -40,6 +40,22 @@ try {
     const unique = `${Date.now()}-${width}`;
     const tokens = await account(unique);
     const token = tokens.access_token;
+    const intakeName = `Test Intake ${'Reflection'.repeat(23)}`;
+    const intakeTemplate = (
+      await send(
+        'post',
+        '/v1/coach/form-templates',
+        {
+          name: intakeName,
+          purpose: 'intake',
+          sections: [
+            {title: 'Goals', questions: [{id: crypto.randomUUID(), type: 'text', label: 'What brings you here?'}]},
+          ],
+        },
+        token,
+      )
+    ).data;
+    await send('put', `/v1/coach/form-templates/${intakeTemplate.id}/default-intake`, undefined, token);
     const alex = await client(unique, token, 'Alex');
     const jordan = await client(`other-${unique}`, token, 'Jordan');
     const q = crypto.randomUUID();
@@ -99,8 +115,14 @@ try {
       url.searchParams.set('limit', '1');
       return route.continue({url: url.href});
     });
+    await page.route('**/v1/coach/workbench', (route) => route.fulfill({status: 503, json: {}}));
     await page.goto('/workbench');
     await expect(page.getByRole('heading', {name: 'Workbench', exact: true})).toBeVisible();
+    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page.getByText('2 tasks', {exact: true})).toBeVisible();
+    await page.unroute('**/v1/coach/workbench');
+    await page.getByRole('button', {name: 'Refresh workbench', exact: true}).click();
+    await expect(page.getByRole('alert')).toHaveCount(0);
     const navigation = page.getByRole('navigation', {name: 'Workbench queues', exact: true});
     const rows = page.getByRole('list', {name: 'tasks', exact: true}).locator(':scope > li');
     const pick = async (label) => {
@@ -121,6 +143,17 @@ try {
       await expect(rows).toHaveCount(2);
       await expect(rows.getByRole('article', {name: 'Alex Morgan', exact: true})).toHaveCount(1);
       await expect(rows.getByRole('article', {name: 'Jordan Morgan', exact: true})).toHaveCount(1);
+      if (label === 'Getting started') {
+        const reason = rows.first().getByText(intakeName, {exact: false});
+        await expect(reason).toBeVisible();
+        const geometry = await reason.evaluate((node) => ({
+          width: node.clientWidth,
+          scroll: node.scrollWidth,
+          overflowWrap: getComputedStyle(node).overflowWrap,
+          tag: node.tagName,
+        }));
+        expect(geometry.scroll, JSON.stringify(geometry)).toBeLessThanOrEqual(geometry.width);
+      }
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.getByRole('heading', {name: 'Workbench', exact: true}).click();
       await page.evaluate(() => {
@@ -212,6 +245,20 @@ try {
     const dialog = page.getByRole('dialog');
     await dialog.getByRole('button', {name: 'Snooze task', exact: true}).click();
     await expect(dialog.getByLabel('Hide through', {exact: true})).toHaveAttribute('aria-invalid', 'true');
+    let invalidDateWrites = 0;
+    const countSnoozes = (request) => {
+      if (request.url().endsWith('/queue-snooze') && request.method() === 'PUT') {
+        invalidDateWrites += 1;
+      }
+    };
+    page.on('request', countSnoozes);
+    await dialog.getByLabel('Hide through', {exact: true}).fill(date(-1));
+    await dialog.getByRole('button', {name: 'Snooze task', exact: true}).click();
+    await expect(dialog.getByLabel('Hide through', {exact: true})).toHaveAttribute('aria-invalid', 'true');
+    await expect(dialog.getByLabel('Hide through', {exact: true})).toBeFocused();
+    await expect(dialog.getByText('Choose today or a later date.', {exact: true})).toBeVisible();
+    expect(invalidDateWrites).toBe(0);
+    page.off('request', countSnoozes);
     await dialog.getByLabel('Hide through', {exact: true}).fill(date(5));
     const snoozeEndpoint = `**/v1/coach/clients/${jordan.person.id}/queue-snooze`;
     await page.route(snoozeEndpoint, (route) => route.fulfill({status: 503, json: {}}));

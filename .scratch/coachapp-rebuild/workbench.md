@@ -23,3 +23,13 @@ Source inspection and computed browser styles revealed that direct `buttonVarian
 Normal development services were also repaired and checked: coachapp on 2022 proxies this project's Phoenix API on 4100, using the normal development database with pending migrations applied. Ports 4000 and 4001 belong to other projects and were left running. Development email falls back to the local mailbox without a Resend key. Browser test data stays on the separate 44000 API and isolated database.
 
 Intake reminder/dismissal/priority controls remain in the intake task ledger. Getting started currently opens the existing invitation/intake overview. Full device and target-coach usability checks remain in the final application audit. No commit or deployment was made.
+
+## Current route audit — 2026-09-15
+
+The full Workbench browser journey passes at 375px and 1280px against normal API 4000 and coach app 2022. This supersedes the earlier development-port note. Intake follow-up now includes reminders, due date/priority, dismiss/reopen and concurrent-submission recovery; its regression also passes at both widths.
+
+A valid long intake title exposed document overflow. Task reasons now use wrap-anywhere, so line breaks also participate in intrinsic width calculation. The pre-fix document-width probe fails, while the fixed row retains the complete title and date at both widths. See the [Tailwind overflow-wrap reference](https://tailwindcss.com/docs/overflow-wrap).
+
+The snooze API accepts expired dates, and both snoozable queues currently use UTC today. The editor now requires today or a later date, preventing a success message for a snooze that immediately expires. The pre-fix journey reports success through yesterday while leaving the task visible. The fixed journey shows a field error, keeps focus on the date and sends no request; valid dates still complete normally. No public API behavior was changed.
+
+The extended suite also proves a failed counts request leaves queue tasks usable and Refresh workbench recovers it. All six queue journeys, cursor/search/count behavior, task completion and return, lost-response retries and session isolation pass. Coach build, scoped Biome, repository rules and full backend precommit pass (1,778 tests, zero failures). The existing bundle-size warning remains; fixture accounts and their referenced test records remain in the development database.

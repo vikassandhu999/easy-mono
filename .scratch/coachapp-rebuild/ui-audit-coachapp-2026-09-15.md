@@ -10,17 +10,17 @@ Inventory comes from the current router, not the navigation. Earlier slice evide
 | /accept-invite | Public / signed-in guard | 375 / 1280 | Missing, revoked, expired, accepted, reload, invalid OTP, account guard | Passed existing flow; full state sweep at each width pending |  |
 | /coaching/:slug | Public | 375 / 1280 | Pending | Unverified | |
 | / | Coach | 375 / 1280 | Post-login, sessions, roster status/stage filters, cursor pages, search/return, observer-free loading and offline recovery | Passed listed states | NAV-01 |
-| /workbench | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /team | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
+| /workbench | Coach | 375 / 1280 | Six queues, cursor pages/counts/search, task completion/return, summary failure, retained refresh, snooze validation/recovery, long titles and account isolation | Passed listed states | WB-01, WB-02 |
+| /team | Owner / trainer denied | 375 / 1280 | Cursor pages, search/status, refresh failures, retained rows, return/reload and permissions | Passed listed states | |
 | /billing | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /coaching-page | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /applications | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /applications/:id | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /applications/:id/enroll | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /coaching-page/edit | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /team/invite | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /team/:id | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /clients/:id/coach | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
+| /team/invite | Owner | 375 / 1280 | Validation, dirty navigation, send/retry and delayed account replacement | Partial; unconfirmed creation recovery pending | |
+| /team/:id | Owner / trainer denied | 375 / 1280 | Expired/pending/active/inactive, resend/revoke, concurrent acceptance, deactivate/reactivate, client transfer and return | Passed listed states | |
+| /clients/:id/coach | Owner / trainer denied | 375 / 1280 | Active-coach search, current/disabled choices, confirmation, failed assignment/retry and resulting visibility | Passed listed states | |
 | /settings/profile | Owner / trainer | 375 / 1280 | Saved profile/header, changed fields, failure/retry, draft retention, unsaved navigation | Passed settings regression; full keyboard sweep pending |  |
 | /settings/business | Owner / trainer read-only | 375 / 1280 | Preferences, validation, load/save/refresh failures, lost response, discard, late-account isolation | Passed settings regression; full keyboard sweep pending |  |
 | /clients/invite | Coach | 375 / 1280 | Intake loading/error/preview, validation, send/retry, dirty and pending navigation, reload warning, lost-response lookup, session isolation | Passed listed states | INV-01 |
@@ -76,6 +76,9 @@ Inventory comes from the current router, not the navigation. Earlier slice evide
 
 ## Findings
 
+- WB-01 — A long unbroken intake title widened Workbench beyond the viewport. Classification: objective visual defect. Fixed in workbench/workbench-task.tsx with wrapping that also allows intrinsic layout width to shrink. The pre-fix probe fails document-width checks; the same long-title fixture passes at 375px/1280px afterward. Screenshots: tests/workbench/artifacts/getting-started-{375,1280}.png.
+- WB-02 — Snoozing through yesterday reported success while leaving the task visible. Classification: behavioral. The backend permits expired snoozes and evaluates both snoozable queues against UTC today; the snooze editor now requires today or later. The pre-fix browser captured success through yesterday with the task still present. The corrected flow shows a field message, keeps date focus and sends no PUT, then completes a valid snooze. The public API remains unchanged.
+
 - FORM-01 — Create form allowed another POST after the first creation succeeded but its response was lost. Classification: behavioral. Fixed in forms/form-editor.tsx and api/forms.ts. The pre-fix real-create probe finds Save enabled after the lost response; afterward the draft is retained and locked for saved-result review. Server search, question counts, nested preview and opening the saved form pass at both widths. A subsequent edit persists to the same form, with the server count remaining one. Screenshots: tests/forms/artifacts/creation-recovery-{375,1280}.png.
 
 - INV-01 — Invite client discarded entered details on navigation and offered a blind retry after an unconfirmed send. Classification: behavioral. Fixed in clients/invite-client.tsx and api/clients.ts. The pre-fix Cancel probe fails because it reaches the roster without a warning. The same journey now passes, together with dismissed reload, held-request navigation, failed lookup/retry and real saved-client recovery after a lost response, at 375px and 1280px. Search and counts come from the API; no downloaded-client filtering is used. Screenshots: tests/clients/artifacts/invitation-recovery-{375,1280}.png.
@@ -120,3 +123,9 @@ The client profile/lifecycle, existing invitation/acceptance/intake and focused 
 ## Verification for form creation recovery
 
 Full Forms authoring/recovery and lifecycle/management suites pass at both widths against normal API 4000 and coach app 2022. The focused lost-creation suite deletes its created forms and verifies nested preview focus, draft retention, saved-record editing and a server count of one. Invitation recovery also passes after adding focus to its re-enabled email field. Roster cursor lists and intake follow-up regressions pass at both widths. Build, Biome, repository rules and full backend precommit pass (1,778 tests, zero failures); the existing bundle-size warning remains. Remaining route rows retain their unverified state.
+
+## Workbench and Team audit verification
+
+Workbench passes at 375px/1280px with all six real queues, two cursor pages per queue, server counts/search, completed review/reply/assignment/engagement tasks, summary failure/recovery, retained queue rows, independent snoozes and account isolation. Long-title and expired-date probes fail before their respective fixes and pass afterward. Team's current suite passes both widths on the isolated API/app, including permissions, stale acceptance, invitation/access recovery and client reassignment; unconfirmed invitation creation remains explicitly pending.
+
+Coach build, scoped Biome, repository rules and full backend precommit pass (1,778 tests, zero failures). Workbench runs against normal API 4000/app 2022; Team uses isolated API 44000/app 22022 and its own fixture database. Fixtures remain in disposable test accounts, as in the existing suites. Full application coverage remains open.

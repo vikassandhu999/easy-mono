@@ -158,7 +158,7 @@ export function WorkbenchTaskRow({task, onSnooze}: {task: WorkbenchTask; onSnooz
       >
         {name}
       </Link>
-      <div className="space-y-2 text-sm leading-relaxed text-muted-foreground">{reasons}</div>
+      <div className="space-y-2 wrap-anywhere text-sm leading-relaxed text-muted-foreground">{reasons}</div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
     </article>
   );

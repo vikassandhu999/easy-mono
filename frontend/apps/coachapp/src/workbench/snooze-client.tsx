@@ -64,6 +64,11 @@ export function SnoozeClient({
           type="date"
           isRequired
           isDisabled={pending}
+          rules={{
+            validate: (value) =>
+              // Workbench snoozes currently expire against the server's UTC date.
+              value >= new Date().toISOString().slice(0, 10) || 'Choose today or a later date.',
+          }}
         />
         <FormError message={form.formState.errors.root?.message} />
         <div className="flex flex-wrap gap-3">

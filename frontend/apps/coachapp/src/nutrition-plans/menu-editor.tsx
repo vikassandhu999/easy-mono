@@ -5,6 +5,7 @@ import {Input} from '../ui/input';
 import {SelectItem} from '../ui/select';
 import {SelectField} from '../ui/select-field';
 import {Textarea} from '../ui/textarea';
+import {ArrangeMenu} from './arrange-menu';
 import {FoodPicker} from './food-picker';
 import {newMeal, removeDayMenu, removeMeal, restoreDayMenu, restoreMeal, slotLabel, slots, weekdays} from './menu';
 import {PortionEditor} from './portion-editor';
@@ -17,6 +18,7 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
   const [newSlot, setNewSlot] = useState<(typeof slots)[number]>('breakfast');
   const [picking, setPicking] = useState<string | null>(null);
   const [removingDay, setRemovingDay] = useState(false);
+  const [arranging, setArranging] = useState(false);
   const [removedDay, setRemovedDay] = useState<NonNullable<ReturnType<typeof removeDayMenu>>['removed'] | null>(null);
   const [removedItem, setRemovedItem] = useState<{mealId: string; item: NutritionMealItem; index: number} | null>(null);
   const [removed, setRemoved] = useState<{
@@ -89,12 +91,20 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-bold">Meals for the week</h2>
-        <Button
-          variant="outline"
-          onPress={duplicateDay}
-        >
-          Create day variation
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="ghost"
+            onPress={() => setArranging(true)}
+          >
+            Arrange menus
+          </Button>
+          <Button
+            variant="outline"
+            onPress={duplicateDay}
+          >
+            Create day variation
+          </Button>
+        </div>
       </div>
       {removedDay && (
         <div
@@ -240,6 +250,7 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
               if (!meal) {
                 return null;
               }
+              const mealScope = `${pattern.id}-${slot.meal_slot}-${meal.id}`;
               return (
                 <section
                   key={meal.id}
@@ -251,13 +262,13 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
                   )}
                   <div className="flex items-center gap-3">
                     <label
-                      id={`${`meal-name-${meal.id}`}-label`}
-                      htmlFor={`meal-name-${meal.id}`}
+                      id={`meal-name-${mealScope}-label`}
+                      htmlFor={`meal-name-${mealScope}`}
                       className="grid min-w-0 flex-1 gap-1 text-xs text-muted-foreground"
                     >
                       Meal name
                       <Input
-                        id={`meal-name-${meal.id}`}
+                        id={`meal-name-${mealScope}`}
                         value={meal.name}
                         maxLength={255}
                         className="font-semibold"
@@ -280,6 +291,7 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
                     <FoodRow
                       key={item.id}
                       item={item}
+                      scope={mealScope}
                       onChange={(next) =>
                         updateMeal({
                           ...meal,
@@ -302,13 +314,13 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
                   <details>
                     <summary className="w-fit cursor-pointer py-2 text-sm text-muted-foreground">Meal guidance</summary>
                     <label
-                      id={`${`meal-notes-${meal.id}`}-label`}
-                      htmlFor={`meal-notes-${meal.id}`}
+                      id={`meal-notes-${mealScope}-label`}
+                      htmlFor={`meal-notes-${mealScope}`}
                       className="grid gap-1 text-xs text-muted-foreground"
                     >
                       Notes
                       <Textarea
-                        id={`meal-notes-${meal.id}`}
+                        id={`meal-notes-${mealScope}`}
                         value={meal.notes ?? ''}
                         onChange={(event) => updateMeal({...meal, notes: event.target.value})}
                       />
@@ -410,15 +422,27 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
           }}
         />
       )}
+      {arranging && (
+        <ArrangeMenu
+          menu={menu}
+          onClose={() => setArranging(false)}
+          onApply={(value) => {
+            onChange(value);
+            setArranging(false);
+          }}
+        />
+      )}
     </section>
   );
 }
 function FoodRow({
   item,
+  scope,
   onChange,
   onRemove,
 }: {
   item: NutritionMealItem;
+  scope: string;
   onChange: (item: NutritionMealItem) => void;
   onRemove: () => void;
 }) {
@@ -427,6 +451,7 @@ function FoodRow({
   const [quantityDraft, setQuantityDraft] = useState<{text: string; value: number} | null>(null);
   const quantity = portion.kind === 'gram' ? portion.grams : portion.amount;
   const invalidQuantity = !Number.isFinite(quantity) || quantity <= 0;
+  const portionId = `portion-${scope}-${item.id}`;
   return (
     <div
       className="grid grid-cols-[minmax(0,1fr)_6rem_2.75rem] items-center gap-2"
@@ -446,18 +471,18 @@ function FoodRow({
         </Button>
       </div>
       <label
-        id={`${`portion-${item.id}`}-label`}
-        htmlFor={`portion-${item.id}`}
+        id={`${portionId}-label`}
+        htmlFor={portionId}
         className="grid gap-1 text-xs text-muted-foreground"
       >
         {portion.kind === 'gram' ? 'Grams' : portion.label || portion.unit}
         <Input
-          id={`portion-${item.id}`}
+          id={portionId}
           aria-label={`${item.name} portion`}
           inputMode="decimal"
           value={quantityDraft && Object.is(quantityDraft.value, quantity) ? quantityDraft.text : String(quantity)}
           aria-invalid={invalidQuantity}
-          aria-describedby={invalidQuantity ? `portion-${item.id}-error` : undefined}
+          aria-describedby={invalidQuantity ? `${portionId}-error` : undefined}
           onChange={(event) => {
             const value = Number(event.target.value);
             setQuantityDraft({text: event.target.value, value});
@@ -469,7 +494,7 @@ function FoodRow({
         />
         {invalidQuantity && (
           <span
-            id={`portion-${item.id}-error`}
+            id={`${portionId}-error`}
             className="text-xs text-destructive"
           >
             Enter more than zero.

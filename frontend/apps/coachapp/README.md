@@ -277,3 +277,7 @@ Client overview links to All training/nutrition plans and Manage dates and acces
 ## Nutrition portions and day menus
 
 Meal rows keep inline quantities and offer Change portion for available gram or serving choices. Remove day menu asks for replacement weekdays and keeps shared meals. Item and day-menu removal have Undo; weekday choices made after removal stay intact when undoing. Run `rtk pnpm -C frontend/apps/coachapp test:menu-editing` with API 4000 and app 2022, or set `COACH_API_URL` / `COACH_APP_URL`. See [the menu-editing brief](../../../.scratch/coachapp-rebuild/menu-editing.md).
+
+## Arrange nutrition menus
+
+Arrange menus orders day menus, alternatives and foods without adding controls to each worksheet row. Meal times keep their fixed daily order. Apply order updates the draft; Save nutrition plan persists it. Run `rtk pnpm -C frontend/apps/coachapp test:menu-order` with API 4000 and app 2022, or set `COACH_API_URL` / `COACH_APP_URL`. See [the ordering brief](../../../.scratch/coachapp-rebuild/menu-order.md).

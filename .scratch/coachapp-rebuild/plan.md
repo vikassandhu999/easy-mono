@@ -193,3 +193,7 @@ Uniform working sets can receive duration, distance, effort and notes in one loc
 ## Nutrition portions and day-menu removal
 
 Meal items support server-provided portion choices and typed fractional quantities. Coaches can remove a day menu, choose replacement weekday assignments and Undo without reverting later edits. Shared meals remain intact. See [the menu-editing brief](menu-editing.md). Remaining menu ordering and full application journeys follow.
+
+## Nutrition menu order
+
+Arrange menus provides a compact drill-down view for day-menu, alternative and food ordering. Meal times keep the server's fixed order. Cancel, Apply order, keyboard focus, preview and persistence are verified at both widths; see [the ordering brief](menu-order.md). The remaining client/form tasks and full application audit follow.

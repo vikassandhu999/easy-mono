@@ -1,5 +1,5 @@
-import {type ReactNode, useCallback, useState} from 'react';
-import {Controller, useForm} from 'react-hook-form';
+import {type ReactNode, useCallback, useEffect, useRef, useState} from 'react';
+import {Controller, type FieldPath, type FieldValues, type UseFormReturn, useForm} from 'react-hook-form';
 import {NavLink, useBeforeUnload, useBlocker} from 'react-router-dom';
 import {type Profile, type ProfileUpdate, useProfile, useUpdateProfile} from '../api/auth';
 import {type Business, type BusinessUpdate, useBusiness, useTimezones, useUpdateBusiness} from '../api/business';
@@ -48,20 +48,36 @@ function SettingsFrame({title, description, children}: {title: string; descripti
   );
 }
 
-function SettingsActions({
-  dirty,
-  pending,
-  error,
+function SettingsActions<T extends FieldValues>({
+  form,
+  fields,
   notice,
   discard,
 }: {
-  dirty: boolean;
-  pending: boolean;
-  error: string | undefined;
+  form: UseFormReturn<T>;
+  fields: FieldPath<T>[];
   notice: string;
   discard: () => void;
 }) {
+  const {isDirty: dirty, isSubmitting: pending, errors} = form.formState;
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const noticeRef = useRef<HTMLParagraphElement>(null);
   const blocker = useBlocker(dirty || pending);
+  useEffect(() => {
+    if (pending || blocker.state === 'blocked') {
+      return;
+    }
+    if (errors.root) {
+      errorRef.current?.focus();
+      return;
+    }
+    const invalid = fields.find((field) => form.getFieldState(field).invalid);
+    if (invalid) {
+      form.setFocus(invalid);
+    } else if (notice && !dirty) {
+      noticeRef.current?.focus();
+    }
+  }, [pending, blocker.state, errors, fields, form.getFieldState, form.setFocus, notice, dirty]);
   useBeforeUnload(
     useCallback(
       (event) => {
@@ -75,9 +91,15 @@ function SettingsActions({
   );
   return (
     <>
-      <FormError message={error} />
-      {notice && (
+      <FormError
+        ref={errorRef}
+        tabIndex={-1}
+        message={errors.root?.message}
+      />
+      {notice && !dirty && (
         <p
+          ref={noticeRef}
+          tabIndex={-1}
           role="status"
           className="text-sm"
         >
@@ -252,9 +274,8 @@ function ProfileForm({profile}: {profile: Profile}) {
         </div>
       </Surface>
       <SettingsActions
-        dirty={form.formState.isDirty}
-        pending={pending}
-        error={form.formState.errors.root?.message}
+        form={form}
+        fields={profileFields}
         notice={notice}
         discard={() => {
           form.reset(profileValues(profile));
@@ -334,6 +355,13 @@ function BusinessDetails({business}: {business: Business}) {
   );
 }
 
+const businessFields: Array<keyof BusinessUpdate> = [
+  'name',
+  'about',
+  'whatsapp_number',
+  'default_weight_unit',
+  'timezone',
+];
 function businessValues(business: Business) {
   return {
     name: business.name,
@@ -375,13 +403,12 @@ function BusinessForm({business}: {business: Business}) {
       form.reset(businessValues(result.data));
       setNotice('Business settings are saved.');
     } catch (error) {
-      setFormError(error, 'Could not save business settings. Your changes are still here.', form.setError, [
-        'name',
-        'about',
-        'whatsapp_number',
-        'default_weight_unit',
-        'timezone',
-      ]);
+      setFormError(
+        error,
+        'Could not save business settings. Your changes are still here.',
+        form.setError,
+        businessFields,
+      );
     }
   });
   return (
@@ -528,9 +555,8 @@ function BusinessForm({business}: {business: Business}) {
         />
       </Surface>
       <SettingsActions
-        dirty={form.formState.isDirty}
-        pending={pending}
-        error={form.formState.errors.root?.message}
+        form={form}
+        fields={businessFields}
         notice={notice}
         discard={() => {
           form.reset(businessValues(business));

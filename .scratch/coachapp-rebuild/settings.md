@@ -17,3 +17,9 @@ Frontend build, scoped Biome, `just check-rm`, and `git diff --check` passed. Au
 Time-zone choices use the shadcn Select and the server's finite reference list.
 
 Calendar ownership audit, 2026-09-15: the coach Client update and client self-profile update contracts expose no per-client time-zone change. The business default is stamped at invitation and subsequent business edits preserve existing client calendars. A separate client preference control would require a new domain policy, so the current settings surface remains the supported editor. The local-calendar and client-read boundary suites pass 34 tests, including different dates for the same UTC instant and invitation inheritance. The complete settings browser regression also passes at 375px and 1280px against the isolated API, covering both roles, recovery and account replacement.
+
+## Current keyboard audit, 2026-09-15
+
+The shared save/discard controls now use each form's state and registered field references. Failed writes focus their recovery error; server field validation waits for re-enabled inputs and selects. Save and discard confirmations receive focus, and dirty drafts suppress saved notices. The original profile-result focus probe failed.
+
+The full settings suite passes at 375px/1280px, including required-name validation, a real server rejection of the time zone, retained drafts, lost responses, trainer read-only business settings and late account changes. Build, Biome, repository checks and backend precommit pass (1,778 tests, zero failures). One intermediate cleanup error was not reproduced; scenario diagnostics and consistent assertion timeouts now preserve clearer failure evidence.

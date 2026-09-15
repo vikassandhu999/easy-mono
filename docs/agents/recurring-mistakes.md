@@ -1283,6 +1283,8 @@ Application review/enrollment also exercise this sequence in `tests/acquisition/
 
 Public application validation includes conditionally hidden fields: open their section before focusing an invalid input. Successful stale-form refresh must clear obsolete errors and focus the next decision while retaining valid answers. The acquisition browser suite verifies both transitions and receipt recovery.
 
+Settings use the same field-reference approach for text inputs and shadcn selects; `tests/settings/settings.browser.mjs` checks server time-zone rejection, root errors and focused save/discard results.
+
 ### RM-233 — Saved feedback follows actual draft state
 An editor cleared its saved notice only on DOM change events, so adding a program left
 Draft saved visible over unsaved content. Render saved feedback from the form's dirty

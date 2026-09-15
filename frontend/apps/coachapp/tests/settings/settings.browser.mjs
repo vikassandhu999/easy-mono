@@ -1,8 +1,10 @@
 import {execFileSync} from 'node:child_process';
 import {mkdir, readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
-import {chromium, expect, request} from '@playwright/test';
+import {expect as baseExpect, chromium, request} from '@playwright/test';
 import {chooseOption, selectTrigger} from '../select-helpers.mjs';
+
+const expect = baseExpect.configure({timeout: 15_000});
 
 execFileSync('rtk', ['proxy', 'mix', 'run', '--no-start', fileURLToPath(new URL('./fixtures.exs', import.meta.url))], {
   cwd: fileURLToPath(new URL('../../../../../backend', import.meta.url)),
@@ -80,7 +82,7 @@ try {
     });
     await page.getByLabel('First name', {exact: true}).fill('Tay');
     await page.getByRole('button', {name: 'Save changes', exact: true}).click();
-    await expect(page.getByText('Your profile is saved.', {exact: true})).toBeVisible();
+    await expect(page.getByText('Your profile is saved.', {exact: true})).toBeFocused();
     expect(await page.evaluate(() => window.settingsWrites)).toEqual([{first_name: 'Tay'}]);
     await page.getByRole('button', {name: 'Your account', exact: true}).click();
     await expect(page.getByText('Tay Reed', {exact: true})).toBeVisible();
@@ -99,10 +101,14 @@ try {
     );
     await page.getByRole('button', {name: 'Save changes', exact: true}).click();
     await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page.getByRole('alert')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Discard changes', exact: true})).toBeFocused();
+    await page.screenshot({path: `tests/settings/artifacts/save-error-${width}.png`});
     await expect(page.getByLabel('Phone', {exact: true})).toHaveValue('+1 555 0100');
     await page.unroute('**/v1/coach/me');
     await page.getByRole('button', {name: 'Save changes', exact: true}).click();
-    await expect(page.getByText('Your profile is saved.', {exact: true})).toBeVisible();
+    await expect(page.getByText('Your profile is saved.', {exact: true})).toBeFocused();
     await expect(page.getByLabel('Phone', {exact: true})).toBeEnabled();
     await capture(page, 'profile', width);
     await page.getByLabel('Phone', {exact: true}).fill('unsaved');
@@ -140,6 +146,7 @@ try {
     await page.getByLabel('Business name', {exact: true}).fill('   ');
     await page.getByRole('button', {name: 'Save changes', exact: true}).click();
     await expect(page.getByLabel('Business name', {exact: true})).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.getByLabel('Business name', {exact: true})).toBeFocused();
     await page.getByLabel('Business name', {exact: true}).fill('Steady Strength Coaching');
     await page.getByLabel('About your business', {exact: true}).fill('Strength and nutrition for everyday life.');
     await page.getByLabel('WhatsApp number', {exact: true}).fill('+44 7700 900123');
@@ -160,6 +167,8 @@ try {
     });
     await page.getByRole('button', {name: 'Save changes', exact: true}).click();
     await expect(page.getByText('choose a valid time zone', {exact: true})).toBeVisible();
+    await expect(selectTrigger(page, 'Default time zone')).toBeFocused();
+    await page.screenshot({path: `tests/settings/artifacts/timezone-error-${width}.png`});
     await expect(selectTrigger(page, 'Default time zone')).toContainText('Europe/London');
     await page.unroute('**/v1/businesses/me');
     let lost = false;
@@ -175,9 +184,10 @@ try {
     });
     await page.getByRole('button', {name: 'Save changes', exact: true}).click();
     await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page.locator('form').getByRole('alert')).toBeFocused();
     await expect(page.getByLabel('Business name', {exact: true})).toHaveValue('Steady Strength Coaching');
     await page.getByRole('button', {name: 'Save changes', exact: true}).click();
-    await expect(page.getByText('Business settings are saved.', {exact: true})).toBeVisible();
+    await expect(page.getByText('Business settings are saved.', {exact: true})).toBeFocused();
     await page.unroute('**/v1/businesses/me');
     expect((await send('get', '/v1/businesses/me', undefined, owner.access_token)).data).toMatchObject({
       name: 'Steady Strength Coaching',
@@ -194,6 +204,7 @@ try {
     await capture(page, 'business', width);
     await page.getByLabel('About your business', {exact: true}).fill('');
     await page.getByRole('button', {name: 'Discard changes', exact: true}).click();
+    await expect(page.getByText('Changes discarded.', {exact: true})).toBeFocused();
     await expect(page.getByLabel('About your business', {exact: true})).toHaveValue(
       'Strength and nutrition for everyday life.',
     );
@@ -251,7 +262,7 @@ try {
     await expect(page.getByLabel('First name', {exact: true})).toHaveValue('Jamie');
     await page.getByLabel('First name', {exact: true}).fill('James');
     await page.getByRole('button', {name: 'Save changes', exact: true}).click();
-    await expect(page.getByText('Your profile is saved.', {exact: true})).toBeVisible();
+    await expect(page.getByText('Your profile is saved.', {exact: true})).toBeFocused();
     expect((await send('get', '/v1/coach/me', undefined, owner.access_token)).data.first_name).toBe('Tay');
     expect(errors).toEqual([]);
     await context.close();
@@ -259,6 +270,9 @@ try {
       `Settings ${width}: persistence, permissions, defaults, load/save recovery, draft protection and account replacement passed.`,
     );
   }
+} catch (error) {
+  console.error('Settings scenario failed:', error.message);
+  throw error;
 } finally {
   await browser.close();
   await api.dispose();

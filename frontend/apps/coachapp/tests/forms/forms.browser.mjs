@@ -77,6 +77,10 @@ try {
     await expect(page.getByRole('alert')).toBeVisible();
     await expect(page.getByLabel('Form name', {exact: true})).toHaveValue('Getting to know you');
     await page.unroute('**/v1/coach/form-templates');
+    await page.getByRole('button', {name: 'Check saved forms', exact: true}).click();
+    await expect(page.getByText('No matching forms found.', {exact: true})).toBeVisible();
+    await page.getByRole('button', {name: 'Return and retry', exact: true}).click();
+    await expect(page.getByLabel('Form name', {exact: true})).toBeFocused();
     const createdResponse = page.waitForResponse(
       (response) =>
         response.url().endsWith('/form-templates') &&

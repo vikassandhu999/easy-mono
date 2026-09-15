@@ -9,7 +9,7 @@ Inventory comes from the current router, not the navigation. Earlier slice evide
 | /verify | Public | 375 / 1280 | OTP validation/retry/resend, long email, keyboard focus, real confirmation link and used-link fallback | Passed listed states; expired-link UI case remains | NAV-01, A11Y-02, LAYOUT-01 |
 | /accept-invite | Public / signed-in guard | 375 / 1280 | Missing, revoked, expired, accepted, reload, invalid OTP, account guard | Passed existing flow; full state sweep at each width pending |  |
 | /coaching/:slug | Public | 375 / 1280 | Pending | Unverified | |
-| / | Coach | 375 / 1280 | Post-login, explicit logout, profile recovery, sessions, roster status/stage filters, invitation return and saved-client refresh | Partial; cursor list sweep pending | NAV-01 |
+| / | Coach | 375 / 1280 | Post-login, sessions, roster status/stage filters, cursor pages, search/return, observer-free loading and offline recovery | Passed listed states | NAV-01 |
 | /workbench | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /team | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /billing | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
@@ -24,7 +24,7 @@ Inventory comes from the current router, not the navigation. Earlier slice evide
 | /settings/profile | Owner / trainer | 375 / 1280 | Saved profile/header, changed fields, failure/retry, draft retention, unsaved navigation | Passed settings regression; full keyboard sweep pending |  |
 | /settings/business | Owner / trainer read-only | 375 / 1280 | Preferences, validation, load/save/refresh failures, lost response, discard, late-account isolation | Passed settings regression; full keyboard sweep pending |  |
 | /clients/invite | Coach | 375 / 1280 | Intake loading/error/preview, validation, send/retry, dirty and pending navigation, reload warning, lost-response lookup, session isolation | Passed listed states | INV-01 |
-| /clients/:id | Coach | 375 / 1280 | Pending/accepted invitation, resend/copy recovery, intake pending/submitted/reviewed, snapshot answers, reload and return | Passed listed states; follow-up regression pending | |
+| /clients/:id | Coach | 375 / 1280 | Invitation lifecycle, intake review, reminder uncertainty, due date/priority, dismiss/reopen, concurrent submission, refresh and account isolation | Passed listed states | |
 | /clients/:id/profile | Coach | 375 / 1280 | Contact/services/stage/dates/goal, ownership, changed fields, save/lost response, dirty navigation, lifecycle, invalid ID and account changes | Passed profile/lifecycle suite | |
 | /messages | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /clients/:clientId/conversation | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
@@ -67,14 +67,16 @@ Inventory comes from the current router, not the navigation. Earlier slice evide
 | /clients/:clientId/nutrition-plans/:id/edit | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /clients/:id/nutrition-plans/assign | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
 | /clients/:id/nutrition-plans/assign/:templateId | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
-| /forms | Coach | 375 / 1280 | Deep-link login, retained search, expired-session recovery, separate tabs | Partial; full list audit pending | NAV-01 |
-| /forms/new | Coach | 375 / 1280 | Entry after signup and business setup | Partial; editor audit pending | NAV-01 |
-| /forms/:id | Coach | 375 / 1280 | Saved-record deep link, query/fragment retention, reload, logout | Partial; editor audit pending | NAV-01 |
-| /forms/:id/manage | Coach / owner restrictions where applicable | 375 / 1280 | Pending | Unverified | |
+| /forms | Coach | 375 / 1280 | Deep links, cursor pages, server totals/search/status/purpose, retry, search races, offline and observer-free loading, return scroll | Passed listed states | NAV-01 |
+| /forms/new | Coach | 375 / 1280 | Create, sections/questions/order, required/choice validation, preview, failed save, saved-result lookup and retained draft | Passed listed states | NAV-01, FORM-01 |
+| /forms/:id | Coach | 375 / 1280 | Saved-record deep link, reload, edits, purpose lock, default intake, stale revisions, dirty navigation and account isolation | Passed listed states | NAV-01 |
+| /forms/:id/manage | Coach | 375 / 1280 | Archive/restore, unused deletion, usage links/counts, defaults/fallbacks, conflicts, interrupted writes and account isolation | Passed management suite | |
 | /register-business | Guest | 375 / 1280 | Keyboard creation, validation, failed promotion/retry, reload, main focus, requested destination | Passed listed states | NAV-01, A11Y-02 |
 | * | Public | 375 / 1280 | Unknown address, main focus, keyboard return to account | Passed | A11Y-02 |
 
 ## Findings
+
+- FORM-01 — Create form allowed another POST after the first creation succeeded but its response was lost. Classification: behavioral. Fixed in forms/form-editor.tsx and api/forms.ts. The pre-fix real-create probe finds Save enabled after the lost response; afterward the draft is retained and locked for saved-result review. Server search, question counts, nested preview and opening the saved form pass at both widths. A subsequent edit persists to the same form, with the server count remaining one. Screenshots: tests/forms/artifacts/creation-recovery-{375,1280}.png.
 
 - INV-01 — Invite client discarded entered details on navigation and offered a blind retry after an unconfirmed send. Classification: behavioral. Fixed in clients/invite-client.tsx and api/clients.ts. The pre-fix Cancel probe fails because it reaches the roster without a warning. The same journey now passes, together with dismissed reload, held-request navigation, failed lookup/retry and real saved-client recovery after a lost response, at 375px and 1280px. Search and counts come from the API; no downloaded-client filtering is used. Screenshots: tests/clients/artifacts/invitation-recovery-{375,1280}.png.
 
@@ -114,3 +116,7 @@ The pre-fix probe recorded 14 failures across both widths (pending action name, 
 ## Verification for invitation recovery
 
 The client profile/lifecycle, existing invitation/acceptance/intake and focused recovery suites pass at both widths. The recovery suite deletes its created clients; earlier regression suites retain their disposable account fixtures as before. Coach build, scoped Biome, repository rules and whitespace checks pass. Full backend precommit passes 1,778 tests with zero failures. The existing Vite bundle-size warning remains. Full route coverage remains open.
+
+## Verification for form creation recovery
+
+Full Forms authoring/recovery and lifecycle/management suites pass at both widths against normal API 4000 and coach app 2022. The focused lost-creation suite deletes its created forms and verifies nested preview focus, draft retention, saved-record editing and a server count of one. Invitation recovery also passes after adding focus to its re-enabled email field. Roster cursor lists and intake follow-up regressions pass at both widths. Build, Biome, repository rules and full backend precommit pass (1,778 tests, zero failures); the existing bundle-size warning remains. Remaining route rows retain their unverified state.

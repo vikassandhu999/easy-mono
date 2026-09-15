@@ -36,3 +36,13 @@ The existing auth, trainer-invitation, client-invitation, mobile-foundation, and
 Review corrections: wait for a fresh successful detail request before initializing an editor; retain local edits during subsequent refetches; clear stale save errors when the draft changes; preserve keyboard focus when changing answer type; use the client's 1–5 rating range. New Service type questions are required and lock their identity/type, with only one allowed on an Intake. The unsaved-dialog regression waits for focus restoration before typing. shadcn downloaded native-select, textarea, and checkbox; their imports and sizing use the app's existing helper and mobile tokens.
 
 Preview answers are temporary and do not upload photos. Unsaved work stays in memory; browser reload warns before discarding it. Physical-device keyboards and safe areas, and a target-coach usability review, remain unverified. No commit, push, or deployment was requested.
+
+## Creation recovery audit — 2026-09-15
+
+When a new form's creation response is lost, the coach needs to find the saved questions before retrying. Opening the full library would abandon the draft; a scoped dialog keeps it in place and offers the existing form preview before choosing a saved record.
+
+An unconfirmed creation now locks the entered name, purpose and questions. Check saved forms uses server search, purpose, cursor pages and question counts. Lookup failures retain the draft and offer Retry. Preview opens the saved questions; Open saved form makes the choice explicit and preserves originating list filters. A completed lookup offers a deliberate return to the draft for retry. Failed writes invalidate form queries because the server may have committed.
+
+The pre-fix real-API probe created a form, lost the successful response and found Save still enabled for another POST. The new recovery suite passes at 375px and 1280px: failed lookup, retained draft, nested preview/focus return, opening the saved record, subsequent edit/reload and a server count of one. Its forms are deleted in cleanup. Creation's ordinary failed-save/empty-lookup/retry path also passes in the full Forms suite. Recovery errors receive focus; returning to retry focuses the re-enabled name field. Invitation retry applies the same focus behavior to email.
+
+Full Forms authoring/recovery and lifecycle/management suites pass at both widths against normal API 4000 and coach app 2022. Roster cursor lists and intake follow-up regressions also pass at both widths. Coach build, scoped Biome, repository rules and full backend precommit pass (1,778 tests, zero failures). The existing Vite bundle-size warning remains. Current route-state coverage is recorded in the audit worklist.

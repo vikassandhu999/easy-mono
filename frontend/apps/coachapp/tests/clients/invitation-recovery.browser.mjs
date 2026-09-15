@@ -110,6 +110,7 @@ try {
       await recovery.getByRole('button', {name: 'Try again', exact: true}).click();
       await expect(recovery.getByText('No matching clients found.', {exact: true})).toBeVisible();
       await recovery.getByRole('button', {name: 'Return and retry', exact: true}).click();
+      await expect(page.getByLabel('Email', {exact: true})).toBeFocused();
       await expect(page.getByLabel('Email', {exact: true})).toHaveValue(email);
       await expect(page.getByLabel('Email', {exact: true})).toBeEnabled();
       await page.getByRole('button', {name: 'Send invitation', exact: true}).click();

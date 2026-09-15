@@ -1219,6 +1219,10 @@ holds a send, cancels reload, fails a lookup, then commits a real invitation whi
 response and requires recovery to the single saved client at 375px/1280px. Guard presence
 alone cannot prove these outcomes; this rule uses the browser regression rather than grep.
 
+Forms creation had the same defect. Its saved-result lookup includes question previews;
+`test:form-creation-recovery` requires a subsequent edit to keep the server count at one.
+Recovery errors receive focus, and returning to retry focuses a re-enabled form field.
+
 ## Deploy / ops
 
 ### RM-221 — Filter-then-assert: parse WHILE filtering, don't assert afterwards

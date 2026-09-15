@@ -71,6 +71,11 @@ export function useSaveFormTemplate() {
       return call(client.POST('/v1/coach/form-templates', {body}));
     },
     onSuccess: refreshForms,
+    onError: async (_error, _input, sessionId) => {
+      if (sessionId && getSession()?.id === sessionId) {
+        await queryClient.invalidateQueries({queryKey: formKeys.all});
+      }
+    },
   });
 }
 

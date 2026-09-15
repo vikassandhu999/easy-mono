@@ -1,5 +1,6 @@
 import {Plus} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {flushSync} from 'react-dom';
 import {Controller, FormProvider, useFieldArray, useForm, useWatch} from 'react-hook-form';
 import {generatePath, Link, useBeforeUnload, useBlocker, useNavigate, useParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
@@ -7,6 +8,7 @@ import {
   type FormTemplate,
   type FormTemplateCreate,
   useFormTemplate,
+  useFormTemplates,
   useSaveFormTemplate,
   useSetDefaultIntake,
 } from '../api/forms';
@@ -17,6 +19,7 @@ import {FormError} from '../ui/form-error';
 import {setFormError} from '../ui/form-errors';
 import {FormField} from '../ui/form-field';
 import {FormPreview} from '../ui/form-preview';
+import {InfiniteList} from '../ui/infinite-list';
 import {useListLocation} from '../ui/list-location';
 import {FormActions, Page, PageHeader, StatusBadge, Surface} from '../ui/page';
 import {SelectItem} from '../ui/select';
@@ -101,6 +104,15 @@ function Editor({template}: {template: FormTemplate | undefined}) {
   const [revision, setRevision] = useState(template?.revision);
   const [stale, setStale] = useState(false);
   const [reload, setReload] = useState(false);
+  const [uncertain, setUncertain] = useState<Pick<FormTemplateCreate, 'name' | 'purpose'>>();
+  const [checking, setChecking] = useState(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const query = useFormTemplate(template?.id);
   const errorSummary = useRef<HTMLDivElement>(null);
   const form = useForm<FormTemplateCreate>({
@@ -117,11 +129,13 @@ function Editor({template}: {template: FormTemplate | undefined}) {
     clearErrors('root');
   }, [values, clearErrors]);
   useEffect(() => {
-    if (form.formState.errors.root) {
+    if (form.formState.errors.root && !form.formState.isSubmitting) {
+      errorSummary.current?.focus({preventScroll: true});
       errorSummary.current?.scrollIntoView({block: 'center'});
     }
-  }, [form.formState.errors.root]);
+  }, [form.formState.errors.root, form.formState.isSubmitting]);
   const pending = form.formState.isSubmitting || setDefault.isPending;
+  const locked = pending || Boolean(uncertain);
   const dirty = form.formState.isDirty;
   const blocker = useBlocker(useCallback(() => (dirty || pending) && !saved.current, [dirty, pending]));
   useBeforeUnload(
@@ -139,6 +153,9 @@ function Editor({template}: {template: FormTemplate | undefined}) {
     section?.questions?.some((question) => question?.type === 'service_type'),
   );
   const submit = form.handleSubmit(async (body) => {
+    if (pending || uncertain) {
+      return;
+    }
     form.clearErrors('root');
     if (!body.sections.some((section) => section.questions.length > 0)) {
       form.setError('root', {message: 'Add at least one question before saving.'});
@@ -150,9 +167,23 @@ function Editor({template}: {template: FormTemplate | undefined}) {
         ...(revision ? {expectedRevision: revision} : {}),
         body: {...body, name: body.name.trim()},
       });
+      if (!mounted.current) {
+        return;
+      }
       saved.current = true;
       navigate(listLocation, {state: {saved: body.name.trim()}});
     } catch (error) {
+      if (!mounted.current) {
+        return;
+      }
+      if (!template && (!(error instanceof ApiError) || error.status >= 500)) {
+        setUncertain({name: body.name.trim(), purpose: body.purpose});
+        form.setError('root', {
+          message:
+            'The save could not be confirmed. Check saved forms before trying again. Your questions are still here.',
+        });
+        return;
+      }
       setStale(error instanceof ApiError && error.code === 'stale_revision');
       setFormError(error, "We couldn't save your form. Your changes are still here. Please try again.", form.setError, [
         'name',
@@ -190,7 +221,11 @@ function Editor({template}: {template: FormTemplate | undefined}) {
           <DialogTitle>Leave without saving?</DialogTitle>
         </DialogHeader>
         <div className="dialog-body space-y-5">
-          <p className="text-sm text-muted-foreground">Your unsaved changes will be lost.</p>
+          <p className="text-sm text-muted-foreground">
+            {uncertain
+              ? 'This form may already have been saved. Leaving discards your draft, but does not delete a saved form.'
+              : 'Your unsaved changes will be lost.'}
+          </p>
           <div className="flex flex-wrap gap-3">
             <Button
               autoFocus
@@ -229,7 +264,7 @@ function Editor({template}: {template: FormTemplate | undefined}) {
               name="name"
               label="Form name"
               isRequired
-              isDisabled={pending}
+              isDisabled={locked}
               maxLength={255}
               rules={{
                 validate: (value) => (typeof value === 'string' && Boolean(value.trim())) || 'Enter a form name.',
@@ -254,7 +289,7 @@ function Editor({template}: {template: FormTemplate | undefined}) {
                     value={field.value}
                     onBlur={field.onBlur}
                     onChange={field.onChange}
-                    isDisabled={Boolean(template) || pending}
+                    isDisabled={Boolean(template) || locked}
                   >
                     <SelectItem id="intake">Intake</SelectItem>
                     <SelectItem
@@ -321,14 +356,14 @@ function Editor({template}: {template: FormTemplate | undefined}) {
                 key={section._key}
                 index={index}
                 count={sections.fields.length}
-                pending={pending}
+                pending={locked}
                 onMove={(target) => sections.move(index, target)}
                 onRemove={() => sections.remove(index)}
               />
             ))}
             <Button
               variant="outline"
-              isDisabled={pending}
+              isDisabled={locked}
               onPress={() =>
                 sections.append(
                   {title: '', questions: [newQuestion()]},
@@ -354,10 +389,19 @@ function Editor({template}: {template: FormTemplate | undefined}) {
               </div>
             )}
             <div
-              className="mb-4"
+              className="mb-4 space-y-3"
               ref={errorSummary}
+              tabIndex={-1}
             >
               <FormError message={form.formState.errors.root?.message} />
+              {uncertain && (
+                <Button
+                  variant="outline"
+                  onPress={() => setChecking(true)}
+                >
+                  Check saved forms
+                </Button>
+              )}
             </div>
             <FormActions>
               <Button
@@ -370,7 +414,12 @@ function Editor({template}: {template: FormTemplate | undefined}) {
               <Button
                 type="submit"
                 isPending={form.formState.isSubmitting}
-                isDisabled={setDefault.isPending || stale || Boolean(template && template.revision !== revision)}
+                isDisabled={
+                  setDefault.isPending ||
+                  Boolean(uncertain) ||
+                  stale ||
+                  Boolean(template && template.revision !== revision)
+                }
               >
                 Save form
               </Button>
@@ -378,6 +427,24 @@ function Editor({template}: {template: FormTemplate | undefined}) {
           </div>
         </form>
       </FormProvider>
+      {checking && uncertain && (
+        <SavedForms
+          search={uncertain}
+          onClose={() => setChecking(false)}
+          onOpen={(id) => {
+            saved.current = true;
+            navigate(generatePath(routes.editForm, {id}), {replace: true, state: listState});
+          }}
+          onRetry={() => {
+            flushSync(() => {
+              setChecking(false);
+              setUncertain(undefined);
+              form.clearErrors('root');
+            });
+            form.setFocus('name');
+          }}
+        />
+      )}
       <Dialog
         isOpen={reload}
         onOpenChange={setReload}
@@ -418,6 +485,84 @@ function Editor({template}: {template: FormTemplate | undefined}) {
         </div>
       </Dialog>
     </Page>
+  );
+}
+
+function SavedForms({
+  search,
+  onClose,
+  onOpen,
+  onRetry,
+}: {
+  search: Pick<FormTemplateCreate, 'name' | 'purpose'>;
+  onClose: () => void;
+  onOpen: (id: string) => void;
+  onRetry: () => void;
+}) {
+  const query = useFormTemplates({search: search.name, purpose: search.purpose});
+  return (
+    <Dialog
+      isOpen
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <DialogHeader>
+        <DialogTitle>Check saved forms</DialogTitle>
+      </DialogHeader>
+      <div className="dialog-body space-y-4">
+        <p>
+          Preview the matching forms to find the questions you just saved. Opening a saved form replaces this draft.
+        </p>
+        <InfiniteList
+          query={query}
+          label="matching forms"
+          singular="matching form"
+          empty={<p>No matching forms found.</p>}
+        >
+          {(item) => (
+            <div className="space-y-3 p-4">
+              <div>
+                <p className="break-words font-semibold">{item.name}</p>
+                <p className="text-sm text-muted-foreground">
+                  {item.question_count} {item.question_count === 1 ? 'question' : 'questions'}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <FormPreview values={item} />
+                <Button
+                  variant="outline"
+                  onPress={() => onOpen(item.id)}
+                >
+                  Open saved form
+                </Button>
+              </div>
+            </div>
+          )}
+        </InfiniteList>
+        {query.isSuccess && !query.isPaused && !query.isFetching && !query.hasNextPage && (
+          <>
+            <p className="text-sm text-muted-foreground">
+              If none matches this attempt, return to your draft and try saving again.
+            </p>
+            <Button
+              variant="outline"
+              onPress={onRetry}
+            >
+              Return and retry
+            </Button>
+          </>
+        )}
+        <Button
+          variant="ghost"
+          onPress={onClose}
+        >
+          Keep my draft
+        </Button>
+      </div>
+    </Dialog>
   );
 }
 

@@ -1,4 +1,5 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {flushSync} from 'react-dom';
 import {useForm} from 'react-hook-form';
 import {generatePath, Link, useBeforeUnload, useBlocker, useNavigate} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
@@ -224,9 +225,12 @@ export function InviteClient() {
           onClose={() => setChecking(false)}
           onOpen={openClient}
           onRetry={() => {
-            setChecking(false);
-            setUncertainEmail('');
-            form.clearErrors('root');
+            flushSync(() => {
+              setChecking(false);
+              setUncertainEmail('');
+              form.clearErrors('root');
+            });
+            form.setFocus('email');
           }}
         />
       )}

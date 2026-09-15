@@ -1,6 +1,6 @@
 # Coach app rebuild
 
-Build one complete coaching task at a time. The first deliverable is authentication in `frontend/apps/coachapp`, using the Phoenix API and shadcn's React Aria base. Write the application code from scratch. The earlier app is evidence of API behavior, never an implementation template.
+Build one complete coaching task at a time. The first deliverable is authentication in `frontend/apps/coachapp`, using the Phoenix API and shadcn's React Aria base. Write the application code from scratch. Do not consult coachapp-v2 code, screens or references. Use the backend contract for behavior and this plan for UX decisions.
 
 ## Product loop
 

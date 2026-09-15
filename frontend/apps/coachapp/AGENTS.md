@@ -4,7 +4,7 @@ Vite + React 19 + React Router + TanStack Query + React Hook Form + shadcn (Reac
 
 Build one complete coaching task at a time. Read `.scratch/coachapp-rebuild/plan.md` from the repo root before designing a product screen.
 
-**Rebuild:** Design each screen from the coach's task and the mobile-first foundation. Write app code from scratch; never copy components, layouts, styles, or interaction patterns from `coachapp-v2`. Use the backend contract for behavior and data. If an old screen is consulted to clarify a behavior, evaluate that behavior independently before adopting it.
+**Rebuild:** Follow `.scratch/coachapp-rebuild/plan.md`, designing each screen from the coach's task and the mobile-first foundation. Write app code from scratch. Do not consult `coachapp-v2` code, screens or references. Use the backend contract for behavior and data and this app's primitives for UI.
 
 API types come from generated `src/api/schema.ts`. Forms use basic field rules and server validation. Do not add Zod or duplicate API schemas. Runtime checks belong at untrusted persistence boundaries.
 

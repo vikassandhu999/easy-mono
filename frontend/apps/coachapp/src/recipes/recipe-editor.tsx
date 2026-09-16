@@ -1,4 +1,5 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {flushSync} from 'react-dom';
 import {useForm} from 'react-hook-form';
 import {generatePath, useBeforeUnload, useBlocker, useNavigate, useParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
@@ -81,6 +82,8 @@ function Editor({initial}: {initial: Recipe | undefined}) {
   const mounted = useRef(true);
   const leaving = useRef(false);
   const errorRef = useRef<HTMLDivElement>(null);
+  const noticeRef = useRef<HTMLParagraphElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const navigate = useNavigate();
   const {to, state} = useListLocation(routes.recipes);
   const dirty = form.formState.isDirty;
@@ -93,11 +96,20 @@ function Editor({initial}: {initial: Recipe | undefined}) {
     };
   }, []);
   useEffect(() => {
+    if (pending || reload || checking) {
+      return;
+    }
     if (form.formState.errors.root) {
       errorRef.current?.focus();
       errorRef.current?.scrollIntoView({block: 'center'});
+      return;
     }
-  }, [form.formState.errors.root]);
+    const invalid = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]');
+    for (let section = invalid?.closest('details'); section; section = section.parentElement?.closest('details')) {
+      section.open = true;
+    }
+    invalid?.focus();
+  }, [form.formState.errors, pending, reload, checking]);
   const blocker = useBlocker(
     useCallback(
       ({currentLocation, nextLocation}) =>
@@ -116,6 +128,11 @@ function Editor({initial}: {initial: Recipe | undefined}) {
       [dirty, pending],
     ),
   );
+  useEffect(() => {
+    if (notice) {
+      noticeRef.current?.focus();
+    }
+  }, [notice]);
   function resetRecipe(saved: Recipe) {
     setRecipe(saved);
     form.reset(fields(saved));
@@ -146,6 +163,7 @@ function Editor({initial}: {initial: Recipe | undefined}) {
         }
       />
       <form
+        ref={formRef}
         noValidate
         className="has-mobile-actions min-w-0 space-y-6"
         onSubmit={form.handleSubmit(async (values) => {
@@ -192,7 +210,7 @@ function Editor({initial}: {initial: Recipe | undefined}) {
         })}
       >
         <fieldset
-          disabled={pending}
+          disabled={pending || uncertain}
           className="min-w-0 space-y-6"
         >
           <legend className="sr-only">Recipe information</legend>
@@ -221,7 +239,7 @@ function Editor({initial}: {initial: Recipe | undefined}) {
           <Ingredients
             key={recipe?.revision ?? 'new'}
             form={form}
-            disabled={pending}
+            disabled={pending || uncertain}
           />
           <details>
             <summary className="w-fit cursor-pointer py-2 font-medium">Preparation and portion details</summary>
@@ -260,7 +278,7 @@ function Editor({initial}: {initial: Recipe | undefined}) {
               </p>
               <NutritionTags
                 value={{allergens: form.watch('allergens'), dietary_tags: form.watch('dietary_tags')}}
-                isDisabled={pending}
+                isDisabled={pending || uncertain}
                 onChange={(field, values) => form.setValue(field, values, {shouldDirty: true})}
               />
             </div>
@@ -317,7 +335,15 @@ function Editor({initial}: {initial: Recipe | undefined}) {
             </Button>
           )}
         </div>
-        {notice && !dirty && <p role="status">{notice}</p>}
+        {notice && !dirty && (
+          <p
+            ref={noticeRef}
+            tabIndex={-1}
+            role="status"
+          >
+            {notice}
+          </p>
+        )}
         <p
           role="status"
           className="text-xs text-muted-foreground"
@@ -350,9 +376,12 @@ function Editor({initial}: {initial: Recipe | undefined}) {
             navigate(generatePath(routes.recipe, {id: saved.id}), {replace: true, state});
           }}
           onRetry={() => {
-            setChecking(false);
-            setUncertain(false);
-            form.clearErrors('root');
+            flushSync(() => {
+              setChecking(false);
+              setUncertain(false);
+              form.clearErrors('root');
+            });
+            form.setFocus('name');
           }}
         />
       )}

@@ -1,4 +1,5 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {flushSync} from 'react-dom';
 import {useForm} from 'react-hook-form';
 import {generatePath, useBeforeUnload, useBlocker, useNavigate, useParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
@@ -91,6 +92,7 @@ function Editor({initial}: {initial: Food | undefined}) {
   const mounted = useRef(true);
   const leaving = useRef(false);
   const errorRef = useRef<HTMLDivElement>(null);
+  const noticeRef = useRef<HTMLParagraphElement>(null);
   const navigate = useNavigate();
   const {to, state} = useListLocation(routes.foods);
   const dirty = form.formState.isDirty;
@@ -126,6 +128,11 @@ function Editor({initial}: {initial: Food | undefined}) {
       [dirty, pending],
     ),
   );
+  useEffect(() => {
+    if (notice) {
+      noticeRef.current?.focus();
+    }
+  }, [notice]);
   function resetFood(saved: Food) {
     setFood(saved);
     form.reset(fields(saved));
@@ -206,7 +213,7 @@ function Editor({initial}: {initial: Food | undefined}) {
         })}
       >
         <fieldset
-          disabled={pending || readOnly}
+          disabled={pending || readOnly || uncertain}
           className="min-w-0 space-y-6"
         >
           <legend className="sr-only">Food information</legend>
@@ -249,7 +256,7 @@ function Editor({initial}: {initial: Food | undefined}) {
           <FoodServings
             key={food?.revision ?? 'new'}
             form={form}
-            isDisabled={pending || readOnly}
+            isDisabled={pending || readOnly || uncertain}
           />
           <details>
             <summary className="w-fit cursor-pointer py-2 font-medium">Brand, allergens and other details</summary>
@@ -268,7 +275,7 @@ function Editor({initial}: {initial: Food | undefined}) {
               />
               <NutritionTags
                 value={{allergens: form.watch('allergens'), dietary_tags: form.watch('dietary_tags')}}
-                isDisabled={pending || readOnly}
+                isDisabled={pending || readOnly || uncertain}
                 onChange={(field, values) => form.setValue(field, values, {shouldDirty: true})}
               />
               <FormField
@@ -284,7 +291,7 @@ function Editor({initial}: {initial: Food | undefined}) {
         <FoodMedia
           key={food?.revision ?? 'new'}
           media={form.watch('media')}
-          disabled={pending || readOnly}
+          disabled={pending || readOnly || uncertain}
           readOnly={readOnly}
           onBusy={setUploading}
           onChange={(media) => form.setValue('media', media, {shouldDirty: true})}
@@ -313,7 +320,15 @@ function Editor({initial}: {initial: Food | undefined}) {
             </Button>
           )}
         </div>
-        {notice && !dirty && <p role="status">{notice}</p>}
+        {notice && !dirty && (
+          <p
+            ref={noticeRef}
+            tabIndex={-1}
+            role="status"
+          >
+            {notice}
+          </p>
+        )}
         {!readOnly && (
           <p
             role="status"
@@ -350,9 +365,12 @@ function Editor({initial}: {initial: Food | undefined}) {
             navigate(generatePath(routes.food, {id: saved.id}), {replace: true, state});
           }}
           onRetry={() => {
-            setChecking(false);
-            setUncertain(false);
-            form.clearErrors('root');
+            flushSync(() => {
+              setChecking(false);
+              setUncertain(false);
+              form.clearErrors('root');
+            });
+            form.setFocus('name');
           }}
         />
       )}

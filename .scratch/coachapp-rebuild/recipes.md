@@ -13,3 +13,10 @@ Graph discovery was attempted through the available CLI but timed out. Bounded s
 Verified on 2026-09-11 at 375px and 1280px in `tests/recipes/recipes.browser.mjs`: batch ingredient selection across searches, quantity validation, serving-to-gram changes, removal/undo, notes, saved totals with unknown values, preservation of existing tags, unsaved navigation, committed creation with a lost response, revision conflicts, failed reads/writes and retries, 44 recipes across cursor pages, search beyond page one, URL reload, return scroll restoration, food-edit invalidation, meal-plan reuse and account replacement during a pending save. Screenshots were reviewed at both widths. Optional finished weight sits below the ingredient worksheet, and Remove sits beside the ingredient name on mobile.
 
 The existing nutrition creation/assignment and recovery browser suites passed at both widths. App build, Biome, repository shape checks and backend `mix precommit` passed (1,645 tests, zero failures). Vite still reports the existing large-bundle warning. No target-coach usability review has been performed.
+
+
+## Authoring recovery audit, 2026-09-16
+
+Recipe creation keeps the uncertain draft fixed until saved-result review. Returning to the draft preserves that state; choosing a separate item restores editing and name focus without a request. The unsaved-changes confirmation still supports leaving. Save confirmations receive focus. Recipe validation now reveals closed sections before focusing an invalid finished weight.
+
+The full authoring suite passes at 375px/1280px, including empty lookup, explicit retry, real saved-record recovery with one POST, revision conflicts, server values, meal reuse and account isolation. Food media upload/playback regression also passes at both widths. Build, Biome, repository checks and backend precommit pass (1,778 tests). Screenshots are archived under `/tmp/coachapp-food-recipe-audit-2026-09-16`.

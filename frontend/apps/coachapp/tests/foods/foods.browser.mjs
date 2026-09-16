@@ -76,6 +76,33 @@ try {
     await page.keyboard.press('Space');
     await expect(page.getByRole('checkbox', {name: 'vegan', exact: true})).toBeChecked();
     await page.getByLabel('Notes', {exact: true}).fill('Nutrition from the package label.');
+    // Keep the submitted draft stable while saved-result lookup is unresolved.
+    const draftName = await name.inputValue();
+    let unknownAttempts = 0;
+    await page.route('**/v1/coach/nutrition-foods', (route) => {
+      unknownAttempts += 1;
+      return route.fulfill({status: 503, json: {}});
+    });
+    await save.click();
+    await expect(page.getByRole('button', {name: 'Check saved foods', exact: true})).toBeVisible();
+    await expect(name).toBeDisabled();
+    await expect(calories).toBeDisabled();
+    await page.unroute('**/v1/coach/nutrition-foods');
+    await page.getByRole('button', {name: 'Check saved foods', exact: true}).click();
+    await expect(page.getByText('No matching foods found.', {exact: true})).toBeVisible();
+    await page.getByRole('button', {name: 'Return to draft', exact: true}).click();
+    await expect(name).toHaveValue(draftName);
+    await expect(name).toBeDisabled();
+    await expect(sizes.getByLabel('Weight · g', {exact: true})).toBeDisabled();
+    await page.getByRole('button', {name: 'Back to foods', exact: true}).click();
+    await expect(page.getByRole('button', {name: 'Discard changes', exact: true})).toBeEnabled();
+    await page.getByRole('button', {name: 'Keep editing', exact: true}).click();
+    await page.getByRole('button', {name: 'Check saved foods', exact: true}).click();
+    await page.getByRole('button', {name: 'Create a separate food', exact: true}).click();
+    await expect(name).toBeEnabled();
+    await expect(name).toBeFocused();
+    await expect(name).toHaveValue(draftName);
+    expect(unknownAttempts).toBe(1);
     let creates = 0;
     page.on('request', (request) => {
       if (request.method() === 'POST' && request.url().endsWith('/v1/coach/nutrition-foods')) {
@@ -93,6 +120,8 @@ try {
     await save.click();
     await expect(page.getByRole('button', {name: 'Check saved foods', exact: true})).toBeVisible();
     await expect(save).toBeDisabled();
+    await expect(name).toBeDisabled();
+    await expect(calories).toBeDisabled();
     await page.unroute('**/v1/coach/nutrition-foods');
     await page.getByRole('button', {name: 'Check saved foods', exact: true}).click();
     await expect(page.getByRole('dialog', {name: 'Check saved foods', exact: true})).toContainText('Everyday Pantry');
@@ -120,7 +149,7 @@ try {
     await expect(calories).toHaveValue('400');
     await page.unroute(`**${endpoint}`);
     await save.click();
-    await expect(page.getByText('Food saved.', {exact: true})).toBeVisible();
+    await expect(page.getByText('Food saved.', {exact: true})).toBeFocused();
     food = (await send('get', endpoint, undefined, token)).data;
     expect(food.serving_sizes).toEqual(servings);
     await calories.fill('410');
@@ -135,7 +164,7 @@ try {
     await expect(calories).toHaveValue('400');
     await name.fill('Everyday pantry rolled oats');
     await save.click();
-    await expect(page.getByText('Food saved.', {exact: true})).toBeVisible();
+    await expect(page.getByText('Food saved.', {exact: true})).toBeFocused();
     await page.evaluate(() => {
       if (document.activeElement instanceof HTMLElement) {
         document.activeElement.blur();
@@ -243,7 +272,7 @@ try {
     await page.getByRole('button', {name: 'Undo removal', exact: true}).click();
     await expect(page.getByRole('button', {name: 'Large bowl is the default serving', exact: true})).toBeVisible();
     await save.click();
-    await expect(page.getByText('Food saved.', {exact: true})).toBeVisible();
+    await expect(page.getByText('Food saved.', {exact: true})).toBeFocused();
     await expect(page.getByRole('button', {name: 'Undo removal', exact: true})).toHaveCount(0);
     food = (await send('get', endpoint, undefined, token)).data;
     expect(food.default_portion).toMatchObject({kind: 'serving', label: 'Large bowl', amount: 2});

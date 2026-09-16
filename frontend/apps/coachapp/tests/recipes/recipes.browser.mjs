@@ -98,6 +98,13 @@ try {
     await page
       .getByLabel('Preparation instructions', {exact: true})
       .fill('Cook oats with water. Divide into bowls and top with blueberries.');
+    await page.getByLabel('Finished weight · g (optional)', {exact: true}).fill('0');
+    await page.getByText('Preparation and portion details', {exact: true}).click();
+    await save.click();
+    await expect(page.getByLabel('Finished weight · g (optional)', {exact: true})).toBeFocused();
+    await expect(page.getByText('Enter a positive quantity.', {exact: true})).toBeVisible();
+    await page.screenshot({path: `tests/recipes/artifacts/hidden-validation-${width}.png`});
+    await page.getByLabel('Finished weight · g (optional)', {exact: true}).fill('350');
     await page.getByText('Allergens and dietary tags', {exact: true}).click();
     await page.getByText('wheat', {exact: true}).click();
     await page.getByRole('checkbox', {name: 'vegan', exact: true}).focus();
@@ -105,6 +112,34 @@ try {
     await page.getByRole('link', {name: 'Back to recipes', exact: true}).click();
     await page.getByRole('button', {name: 'Keep editing', exact: true}).click();
     await expect(page.getByRole('dialog', {includeHidden: true})).toHaveCount(0);
+    // Keep the submitted draft stable while saved-result lookup is unresolved.
+    const draftName = await name.inputValue();
+    let unknownAttempts = 0;
+    await page.route('**/v1/coach/nutrition-recipes', (route) => {
+      unknownAttempts += 1;
+      return route.fulfill({status: 503, json: {}});
+    });
+    await save.click();
+    await expect(page.getByRole('button', {name: 'Check saved recipes', exact: true})).toBeVisible();
+    await expect(name).toBeDisabled();
+    await expect(servings).toBeDisabled();
+    await page.unroute('**/v1/coach/nutrition-recipes');
+    await page.getByRole('button', {name: 'Check saved recipes', exact: true}).click();
+    await expect(page.getByText('No matching recipes found.', {exact: true})).toBeVisible();
+    await page.getByRole('button', {name: 'Return to draft', exact: true}).click();
+    await expect(name).toHaveValue(draftName);
+    await expect(name).toBeDisabled();
+    await expect(oatsRow.getByLabel('Quantity', {exact: true})).toBeDisabled();
+    await expect(page.getByRole('button', {name: 'Add ingredients', exact: true})).toBeDisabled();
+    await page.getByRole('button', {name: 'Back to recipes', exact: true}).click();
+    await expect(page.getByRole('button', {name: 'Discard changes', exact: true})).toBeEnabled();
+    await page.getByRole('button', {name: 'Keep editing', exact: true}).click();
+    await page.getByRole('button', {name: 'Check saved recipes', exact: true}).click();
+    await page.getByRole('button', {name: 'Create a separate recipe', exact: true}).click();
+    await expect(name).toBeEnabled();
+    await expect(name).toBeFocused();
+    await expect(name).toHaveValue(draftName);
+    expect(unknownAttempts).toBe(1);
     let creates = 0;
     page.on('request', (request) => {
       if (request.method() === 'POST' && request.url().endsWith('/v1/coach/nutrition-recipes')) {
@@ -122,6 +157,8 @@ try {
     await save.click();
     await expect(page.getByRole('button', {name: 'Check saved recipes', exact: true})).toBeVisible();
     await expect(save).toBeDisabled();
+    await expect(name).toBeDisabled();
+    await expect(servings).toBeDisabled();
     await page.unroute('**/v1/coach/nutrition-recipes');
     await page.getByRole('button', {name: 'Check saved recipes', exact: true}).click();
     await page.getByRole('button', {name: 'Open saved recipe', exact: true}).click();
@@ -158,7 +195,7 @@ try {
     await expect(oatsRow.getByLabel('Quantity', {exact: true})).toHaveValue('100');
     await page.unroute(`**${endpoint}`);
     await save.click();
-    await expect(page.getByText('Recipe saved.', {exact: true})).toBeVisible();
+    await expect(page.getByText('Recipe saved.', {exact: true})).toBeFocused();
     await expect(nutrition).toContainText('450 kcal');
     recipe = (await send('get', endpoint, undefined, token)).data;
     expect(recipe.allergens).toEqual(['wheat']);
@@ -176,7 +213,7 @@ try {
     await expect(servings).toHaveValue('2');
     await name.fill('Blueberry breakfast oats');
     await save.click();
-    await expect(page.getByText('Recipe saved.', {exact: true})).toBeVisible();
+    await expect(page.getByText('Recipe saved.', {exact: true})).toBeFocused();
     await expect(name).toBeEnabled();
     await page.evaluate(() => {
       document.activeElement?.blur();
@@ -273,7 +310,7 @@ try {
     expect((await send('get', endpoint, undefined, token)).data.allergens).toEqual(['wheat']);
     await page.unroute(`**${endpoint}`);
     await save.click();
-    await expect(page.getByText('Recipe saved.', {exact: true})).toBeVisible();
+    await expect(page.getByText('Recipe saved.', {exact: true})).toBeFocused();
     recipe = (await send('get', endpoint, undefined, token)).data;
     expect(recipe.allergens).toEqual([]);
     expect(recipe.dietary_tags).toEqual([]);

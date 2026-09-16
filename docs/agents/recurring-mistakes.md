@@ -711,6 +711,8 @@ assert the named end-date error appears without a PATCH, then restore the valid 
 Exercise classification selects apply the same rule: show the server field message and
 associate it with the trigger. `tests/exercises/exercises.browser.mjs` submits from a
 closed optional section and verifies the message, focus and accessible description.
+Recipe validation likewise opens a closed preparation section before focusing an invalid
+finished weight; `test:recipes` verifies the visible message and focused input.
 
 ### RM-161 — Feature pickers use the canonical button primitive
 The client plan picker built its close, row, and create actions from styled raw buttons,
@@ -1254,7 +1256,9 @@ navigation and explicit retry after an empty lookup.
 
 Exercise creation must also keep the uncertain draft fixed, so renaming cannot change
 which saved record is searched for. Its authoring suite checks the locked fields, empty
-lookup, deliberate separate-creation focus and one-write saved-result recovery.
+lookup, deliberate separate-creation focus and one-write saved-result recovery. Food and
+recipe authoring apply the same rule to fields, media, servings and ingredients; their
+browser suites also verify that leaving remains available through draft confirmation.
 
 ### RM-228 — Wrapping must constrain intrinsic width as well as visible text
 A long intake title widened the Workbench even after ordinary word wrapping kept the

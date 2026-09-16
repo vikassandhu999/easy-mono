@@ -23,3 +23,10 @@ On 2026-09-11, the food browser suite passed at 375px and 1280px. It covers succ
 Both nutrition browser suites passed after moving the meal picker to the food resource hook. The app build, Biome, check-rm and backend precommit passed; precommit ran 1,645 tests with zero failures. Vite retains its bundle-size warning. No backend contract or legacy UI changed.
 
 Screenshots were inspected at both widths. Browser verification does not replace a target-coach usability session or physical-device keyboard testing. Graph lookup timed out; bounded source reads and reference searches were used.
+
+
+## Authoring recovery audit, 2026-09-16
+
+Food creation keeps the uncertain draft fixed until saved-result review. Returning to the draft preserves that state; choosing a separate item restores editing and name focus without a request. The unsaved-changes confirmation still supports leaving. Save confirmations receive focus.
+
+The full authoring suite passes at 375px/1280px, including empty lookup, explicit retry, real saved-record recovery with one POST, revision conflicts, server values, meal reuse and account isolation. Food media upload/playback regression also passes at both widths. Build, Biome, repository checks and backend precommit pass (1,778 tests). Screenshots are archived under `/tmp/coachapp-food-recipe-audit-2026-09-16`.

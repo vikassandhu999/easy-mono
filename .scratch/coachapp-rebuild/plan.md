@@ -4,7 +4,7 @@ Build one complete coaching task at a time. The first deliverable is authenticat
 
 ## Product loop
 
-The whole-app objective and remaining tasks are tracked in [the completion ledger](completion.md). Complete and verify each task without consulting the old app.
+The whole-app objective and remaining tasks are tracked in [the completion ledger](completion.md). Complete and verify each task without consulting the old app. After the screen audits, use the [final journey audit](final-audit.md) to verify connected workflows and record remaining limits.
 
 1. Pick a coach, a situation, and an outcome. Write: "When ___, I need to ___, so that ___." Record the device, frequency, information needed, and the costly mistake to prevent.
 2. Write a short screen brief before layout: entry, primary decision, action, successful exit, empty/loading/error states, and recovery after interruption. Identify what belongs on another screen.

@@ -169,6 +169,7 @@ export function AppShell() {
       <nav
         aria-label="Coaching"
         className="app-navigation"
+        onFocusCapture={(event) => event.target.scrollIntoView({block: 'nearest', inline: 'nearest'})}
       >
         <NavLink
           to={routes.workbench}

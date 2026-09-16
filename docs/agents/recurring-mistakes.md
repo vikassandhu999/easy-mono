@@ -1332,6 +1332,8 @@ coachapp `tests/acquisition/prospects.browser.mjs` reaches the row with Tab, req
 `:focus-visible` and an inward outline, and captures screenshots at both widths. Nutrition
 assignment verifies the same clipped-row case in `tests/nutrition/plans.browser.mjs`.
 
+A horizontally scrolling navigation can also leave a focused link partly outside the viewport. Reveal focused items within their scroller and reserve padding around an inward outline so it does not cross the label. Coachapp `test:navigation` traverses every primary link with real Tab/Shift+Tab, checks full visibility and outline spacing, and captures the focused navigation at 375px/1280px for owner and trainer.
+
 ## Deploy / ops
 
 ### RM-221 — Filter-then-assert: parse WHILE filtering, don't assert afterwards

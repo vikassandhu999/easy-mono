@@ -401,7 +401,8 @@
   .app-navigation {
     display: flex;
     overflow-x: auto;
-    gap: 1.5rem;
+    scroll-padding-inline: var(--page-gutter);
+    gap: 0.5rem;
     max-width: var(--page-width);
     margin-inline: auto;
     padding-inline: var(--page-gutter);
@@ -411,6 +412,7 @@
     display: inline-flex;
     flex-shrink: 0;
     white-space: nowrap;
+    padding-inline: 0.5rem;
     min-height: 3rem;
     align-items: center;
     border-bottom: 2px solid transparent;
@@ -421,6 +423,9 @@
   .app-navigation-link.active {
     border-color: var(--primary);
     color: var(--foreground);
+  }
+  .app-navigation-link:focus-visible {
+    outline-offset: -4px;
   }
   .question-card {
     min-width: 0;

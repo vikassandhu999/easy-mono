@@ -1,10 +1,10 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {Link, Navigate, useNavigate, useSearchParams} from 'react-router-dom';
 import {useResend, useVerify, type VerifyRequest} from '../api/auth';
-import {errorMessage} from '../api/client';
+import {ApiError, errorMessage} from '../api/client';
 import {routes} from '../routes';
-import {Button} from '../ui/button';
+import {Button, buttonVariants} from '../ui/button';
 import {FormField} from '../ui/form-field';
 import {SubmitButton} from '../ui/submit-button';
 import {AuthLayout, FormError} from './auth-layout';
@@ -50,6 +50,20 @@ function VerifyCode({initial, returnTo}: {initial: Challenge; returnTo: string})
   const form = useForm<Pick<VerifyRequest, 'otp'>>({defaultValues: {otp: ''}});
   const remaining = Math.max(0, Math.ceil((challenge.sentAt + 30_000 - clock) / 1000));
   const busy = form.formState.isSubmitting || resend.isPending;
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const rootError = form.formState.errors.root;
+
+  useEffect(() => {
+    if (rootError && !busy) {
+      errorRef.current?.focus();
+    }
+  }, [rootError, busy]);
+
+  useEffect(() => {
+    if (notice && !resend.isPending) {
+      form.setFocus('otp');
+    }
+  }, [notice, resend.isPending, form]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setClock(Date.now()), 1000);
@@ -90,7 +104,6 @@ function VerifyCode({initial, returnTo}: {initial: Challenge; returnTo: string})
       setClock(Date.now());
       form.reset({otp: ''});
       setNotice('A fresh code is on its way.');
-      form.setFocus('otp');
     } catch (error) {
       form.setError('root', {message: errorMessage(error, 'We could not resend the code. Please try again.')});
     }
@@ -122,7 +135,11 @@ function VerifyCode({initial, returnTo}: {initial: Challenge; returnTo: string})
           isDisabled={resend.isPending}
           rules={{pattern: {value: /^\d{6}$/, message: 'Enter the 6-digit code from your email.'}}}
         />
-        <FormError message={form.formState.errors.root?.message} />
+        <FormError
+          ref={errorRef}
+          tabIndex={-1}
+          message={rootError?.message}
+        />
         <SubmitButton pending={busy}>Verify and continue</SubmitButton>
       </form>
       <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
@@ -155,6 +172,22 @@ function VerifyCode({initial, returnTo}: {initial: Challenge; returnTo: string})
 function VerifyLink({token, returnTo}: {token: string; returnTo: string}) {
   const mutation = useVerify();
   const navigate = useNavigate();
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const code = mutation.error instanceof ApiError ? mutation.error.code : undefined;
+  const unusable = code === 'token_expired' || code === 'token_invalid';
+  const message = mutation.isError
+    ? unusable
+      ? code === 'token_expired'
+        ? 'This link has expired. Sign in with a new code to continue.'
+        : 'This link is no longer valid. Sign in with a new code to continue.'
+      : errorMessage(mutation.error, 'This link could not be verified. Please try again or sign in with a code.')
+    : undefined;
+
+  useEffect(() => {
+    if (mutation.isError) {
+      errorRef.current?.focus();
+    }
+  }, [mutation.isError]);
   const verify = async () => {
     try {
       await mutation.mutateAsync({kind: 'link', token});
@@ -170,21 +203,21 @@ function VerifyLink({token, returnTo}: {token: string; returnTo: string}) {
     >
       <div className="space-y-5">
         <FormError
-          message={
-            mutation.isError
-              ? errorMessage(mutation.error, 'This link could not be verified. Request a code to continue.')
-              : undefined
-          }
+          ref={errorRef}
+          tabIndex={-1}
+          message={message}
         />
-        <Button
-          className="w-full"
-          isPending={mutation.isPending}
-          onPress={verify}
-        >
-          Confirm email
-        </Button>
+        {!unusable && (
+          <Button
+            className="w-full"
+            isPending={mutation.isPending}
+            onPress={verify}
+          >
+            Confirm email
+          </Button>
+        )}
         <Link
-          className="text-link block text-center text-sm"
+          className={unusable ? buttonVariants({className: 'w-full'}) : 'text-link block text-center text-sm'}
           to={authPath(routes.login, returnTo)}
         >
           Sign in with a code

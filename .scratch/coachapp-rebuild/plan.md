@@ -197,3 +197,8 @@ Meal items support server-provided portion choices and typed fractional quantiti
 ## Nutrition menu order
 
 Arrange menus provides a compact drill-down view for day-menu, alternative and food ordering. Meal times keep the server's fixed order. Cancel, Apply order, keyboard focus, preview and persistence are verified at both widths; see [the ordering brief](menu-order.md). The remaining client/form tasks and full application audit follow.
+
+
+## Invitation and verification recovery audit
+
+On 2026-09-16, invitation states and recovery passed independently at 375px and 1280px. Failed code sends/resends and link verification focus their error; successful resend restores code entry. Expired and invalid links lead to code sign-in, while temporary failures retain retry. A real expired confirmation recovers through signup completion to its original destination. Existing auth/session, confirmation-link and deep-link regressions pass. See AUTH-01 in [the route audit](ui-audit-coachapp-2026-09-15.md). Training and nutrition builder route audits remain next.

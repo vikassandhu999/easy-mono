@@ -1,4 +1,4 @@
-import {useSyncExternalStore} from 'react';
+import {useEffect, useRef, useSyncExternalStore} from 'react';
 import {useForm} from 'react-hook-form';
 import {Link, useNavigate, useSearchParams} from 'react-router-dom';
 import {useAcceptInvitation, useInvitation, type VerifyRequest} from '../api/auth';
@@ -119,6 +119,13 @@ function InvitationForm({token, business, email}: {token: string; business: stri
   const challenge = getChallenge();
   const initialEmail = challenge?.kind === 'invite' && challenge.token === token ? challenge.email : email;
   const form = useForm<Pick<VerifyRequest, 'email'>>({defaultValues: {email: initialEmail}});
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const {errors, isSubmitting} = form.formState;
+  useEffect(() => {
+    if (errors.root && !isSubmitting) {
+      errorRef.current?.focus();
+    }
+  }, [errors.root, isSubmitting]);
   const submit = form.handleSubmit(async ({email}) => {
     try {
       await mutation.mutateAsync({email, invitation_token: token});
@@ -146,7 +153,11 @@ function InvitationForm({token, business, email}: {token: string; business: stri
           autoComplete="email"
           isRequired
         />
-        <FormError message={form.formState.errors.root?.message} />
+        <FormError
+          ref={errorRef}
+          tabIndex={-1}
+          message={errors.root?.message}
+        />
         <SubmitButton pending={form.formState.isSubmitting}>Continue with email</SubmitButton>
       </form>
     </AuthLayout>

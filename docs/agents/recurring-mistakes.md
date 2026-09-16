@@ -1307,6 +1307,8 @@ Settings use the same field-reference approach for text inputs and shadcn select
 
 Plan assignment applies this to server date conflicts and stale-preview reloads: wait for editable fields, focus failed refresh feedback before retry, and focus the updated prescription after refresh. Training and nutrition browser suites verify these transitions and uncertain-write lookup.
 
+Auth applies this to invitation sends, code resends and confirmation failures. The auth browser suites require error focus, keyboard retry, editable code focus after resend, and a usable code-sign-in action after actual expired or used links. Temporary link failures retain confirmation retry.
+
 ### RM-233 — Saved feedback follows actual draft state
 An editor cleared its saved notice only on DOM change events, so adding a program left
 Draft saved visible over unsaved content. Render saved feedback from the form's dirty

@@ -118,7 +118,16 @@ try {
         .digest('hex');
       await page.goto(`/verify?token=${token}&returnTo=%2Fforms%2Fnew`);
       await expect(page.getByRole('heading', {name: 'Confirm your email', exact: true})).toBeVisible();
+      await page.route('**/v1/auth/verify', (route) =>
+        route.fulfill({status: 503, json: {error: {message: 'Verification temporarily unavailable. Try again.'}}}),
+      );
       await tabTo(page, page.getByRole('button', {name: 'Confirm email', exact: true}));
+      await page.keyboard.press('Enter');
+      await expect(page.getByRole('alert')).toBeFocused();
+      await expect(page.getByRole('button', {name: 'Confirm email', exact: true})).toBeEnabled();
+      await page.unroute('**/v1/auth/verify');
+      await page.keyboard.press('Tab');
+      await expect(page.getByRole('button', {name: 'Confirm email', exact: true})).toBeFocused();
       await page.keyboard.press('Enter');
       await expect(page.getByRole('heading', {name: 'Your coaching business', exact: true})).toBeVisible();
       await check(`setup-${width}: route focus`, () => expect(page.getByRole('main')).toBeFocused());
@@ -161,7 +170,8 @@ try {
       await expect(page.getByRole('heading', {name: 'Confirm your email', exact: true})).toBeVisible();
       await tabTo(page, page.getByRole('button', {name: 'Confirm email', exact: true}));
       await page.keyboard.press('Enter');
-      await expect(page.getByRole('alert')).toBeVisible();
+      await expect(page.getByRole('alert')).toBeFocused();
+      await expect(page.getByRole('button', {name: 'Confirm email', exact: true})).toHaveCount(0);
       await tabTo(page, page.getByRole('link', {name: 'Sign in with a code', exact: true}));
       await page.keyboard.press('Enter');
       await expect(page).toHaveURL('/login?returnTo=%2Fforms%2Fnew');

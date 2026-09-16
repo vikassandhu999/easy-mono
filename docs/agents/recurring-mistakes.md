@@ -1260,6 +1260,8 @@ lookup, deliberate separate-creation focus and one-write saved-result recovery. 
 recipe authoring apply the same rule to fields, media, servings and ingredients; their
 browser suites also verify that leaving remains available through draft confirmation.
 
+Training templates apply the same protection across the whole worksheet. `tests/training/templates.browser.mjs` checks failed/empty lookup and explicit retry; `workspace.browser.mjs` recovers a real lost creation with exactly one POST, preserving targets and restoring focus.
+
 ### RM-228 — Wrapping must constrain intrinsic width as well as visible text
 A long intake title widened the Workbench even after ordinary word wrapping kept the
 paragraph's contents inside its own box. Use wrapping that participates in intrinsic sizing

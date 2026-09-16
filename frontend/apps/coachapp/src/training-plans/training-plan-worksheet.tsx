@@ -1,5 +1,6 @@
 import {ArrowLeft} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {flushSync} from 'react-dom';
 import {FormProvider, useForm} from 'react-hook-form';
 import {generatePath, Link, useBeforeUnload, useBlocker, useNavigate} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
@@ -35,6 +36,7 @@ export function TrainingPlanWorksheet({
   const save = useSaveTrainingPlan(context.kind === 'client' ? context.clientId : undefined);
   const [reloadOpen, setReloadOpen] = useState(false);
   const [recoveryOpen, setRecoveryOpen] = useState(false);
+  const [creationUncertain, setCreationUncertain] = useState(false);
   const [reloading, setReloading] = useState(false);
   const [conflict, setConflict] = useState(false);
   const [notice, setNotice] = useState('');
@@ -163,6 +165,9 @@ export function TrainingPlanWorksheet({
           className="has-mobile-actions min-w-0 space-y-6"
           onSubmit={form.handleSubmit(
             async (draft) => {
+              if (creationUncertain) {
+                return;
+              }
               form.clearErrors();
               setNotice('');
               let saved = plan;
@@ -215,6 +220,7 @@ export function TrainingPlanWorksheet({
                 }
                 const stale = error instanceof ApiError && error.status === 409;
                 setConflict(stale);
+                setCreationUncertain(!saved && (!(error instanceof ApiError) || error.status >= 500));
                 form.setError('root', {
                   message: stale
                     ? 'This plan changed elsewhere. Your edits are still here. Load the saved version to review the latest changes before editing again.'
@@ -247,7 +253,7 @@ export function TrainingPlanWorksheet({
           )}
         >
           <fieldset
-            disabled={pending || unavailable}
+            disabled={pending || unavailable || creationUncertain}
             className="min-w-0 space-y-6"
           >
             <legend className="sr-only">Training prescription</legend>
@@ -397,7 +403,7 @@ export function TrainingPlanWorksheet({
               <Button
                 type="submit"
                 isPending={pending}
-                isDisabled={conflict || unavailable || !dirty}
+                isDisabled={conflict || unavailable || creationUncertain || !dirty}
               >
                 {clientPlan ? 'Save client plan' : 'Save plan'}
               </Button>
@@ -410,9 +416,21 @@ export function TrainingPlanWorksheet({
           name={form.getValues('name')}
           onClose={() => setRecoveryOpen(false)}
           onUse={(saved) => {
-            setPlan(saved);
-            form.clearErrors('root');
-            setRecoveryOpen(false);
+            flushSync(() => {
+              setPlan(saved);
+              setCreationUncertain(false);
+              form.clearErrors('root');
+              setRecoveryOpen(false);
+            });
+            form.setFocus('name');
+          }}
+          onRetry={() => {
+            flushSync(() => {
+              setCreationUncertain(false);
+              form.clearErrors('root');
+              setRecoveryOpen(false);
+            });
+            form.setFocus('name');
           }}
         />
       )}

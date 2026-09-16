@@ -264,10 +264,16 @@ try {
     });
     await page.getByRole('button', {name: 'Save plan', exact: true}).click();
     await expect(page.getByRole('alert')).toContainText("We couldn't confirm creation.");
+    await expect(page.getByLabel('Plan name · edit anytime', {exact: true})).toBeDisabled();
+    await expect(page.getByLabel('Reps per set', {exact: true})).toBeDisabled();
+    await expect(selectTrigger(page, 'Sets')).toBeDisabled();
+    await expect(page.getByRole('button', {name: 'Create a variation', exact: true})).toBeDisabled();
+    await expect(page.getByRole('button', {name: 'Save plan', exact: true})).toBeDisabled();
     await page.unroute('**/v1/coach/training-plans');
     await page.getByRole('button', {name: 'Check training plans', exact: true}).click();
     await page.getByRole('button', {name: 'Check this template', exact: true}).click();
     await page.getByRole('button', {name: 'Use for this draft', exact: true}).click();
+    await expect(page.getByLabel('Plan name · edit anytime', {exact: true})).toBeFocused();
     await expect(page.getByLabel('Reps per set', {exact: true})).toHaveValue('15');
     await page.getByRole('button', {name: 'Save plan', exact: true}).click();
     await expect(page).toHaveURL(/training-plans\/[0-9a-f-]+$/);

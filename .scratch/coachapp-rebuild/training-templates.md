@@ -20,7 +20,7 @@ Client view hides controls in the same worksheet and shows current draft targets
 
 One Save plan action coordinates the existing metadata and atomic prescription writes. These remain separate API transactions. A successful metadata response supplies the revision for the prescription write. If the latter fails, retry retains the successful revision instead of repeating creation or a metadata write.
 
-A lost creation response offers an in-place Check training plans dialog. It searches matching templates using the shared cursor list, reads the selected template, and allows an active empty template to be used for the current draft. The worksheet stays intact and the next explicit save uses that template's identity. A populated or inactive template cannot be adopted through this recovery flow.
+A lost creation response offers an in-place Check training plans dialog. It searches matching templates using the shared cursor list, reads the selected template, and allows an active empty template to be used for the current draft. The worksheet stays intact and the next explicit save uses that template's identity. A populated or inactive template cannot be adopted through this recovery flow. While creation is unconfirmed, the submitted worksheet stays fixed and Save plan is disabled. Closing recovery keeps that protection. After a successful lookup, Create a separate template explicitly restores editing; recovering an empty template restores the same draft without another creation request. Both choices focus the plan name. Back navigation remains available with the unsaved-changes confirmation.
 
 Failed saves retain the draft. Revision conflicts require explicitly loading the latest saved version. Block accidental navigation with unsaved changes. Browser reload warns before losing the in-memory draft. Previously assigned client plans remain independent copies.
 
@@ -41,3 +41,10 @@ These run with `test:templates`. Screenshots are in ignored `tests/training/arti
 The coach build, Biome and repository shape checks are required finish gates. Vite retains its existing bundle-size warning. No backend changes were needed for the worksheet iteration. The preceding pagination work passed backend `mix precommit` with 1,635 tests and its exercise controller suite with 26 tests; its generated schemas are already in the working tree.
 
 Code graph access timed out (`cbm`: broker request timed out). Structural evidence came from targeted source reads and reference searches. No legacy app components, layouts or styles were consulted or copied. The existing coachapp-v2 change is its previously generated API schema. No commit or deployment was requested.
+
+
+## Creation recovery audit, 2026-09-16
+
+The original browser probe reproduced an enabled Save plan immediately after an uncertain creation. The corrected template suite verifies disabled editing/save, failed lookup with separate creation disabled, empty lookup, return to the protected draft, leave/cancel, and explicit retry with retained values and focus. The worksheet suite loses the response to a real creation, recovers that saved identity, and saves the full prescription with exactly one creation request. Both pass at 375px/1280px.
+
+Compact sets, shared targets and client personalization regressions also pass at both widths. Template/worksheet suites use the existing isolated API/app: the normal database includes shared exercises, so its search/paging totals differ from these fixtures' exact-count assumptions. The initial normal template run passed the changed recovery flow before reaching that unrelated count assertion. Personalization passes against the normal API/app. Broader long-content, saved-result focus and builder route-state checks remain in the route audit.

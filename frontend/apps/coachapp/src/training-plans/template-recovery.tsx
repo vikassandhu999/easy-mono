@@ -10,10 +10,12 @@ export function TemplateRecovery({
   name,
   onUse,
   onClose,
+  onRetry,
 }: {
   name: string;
   onUse: (plan: TrainingPlan) => void;
   onClose: () => void;
+  onRetry: () => void;
 }) {
   const templates = useTrainingTemplates({search: name.trim(), archived: false});
   const [selected, setSelected] = useState('');
@@ -86,7 +88,8 @@ export function TemplateRecovery({
             singular="matching template"
             empty={
               <p className="text-sm text-muted-foreground">
-                No saved template found with this name. Return to your draft to retry Save plan.
+                No saved template found with this name. You can return to your draft or choose to create a separate
+                template.
               </p>
             }
           >
@@ -110,7 +113,18 @@ export function TemplateRecovery({
           </InfiniteList>
         )}
       </div>
-      <div className="border-t border-border p-4">
+      <div className="space-y-3 border-t border-border p-4">
+        <p className="text-sm text-muted-foreground">
+          If none of these results is your interrupted save, you can create a separate template. This may create a
+          duplicate.
+        </p>
+        <Button
+          variant="outline"
+          isDisabled={!templates.isSuccess || templates.isFetching || detail.isFetching}
+          onPress={onRetry}
+        >
+          Create a separate template
+        </Button>
         <Button
           variant="ghost"
           onPress={onClose}

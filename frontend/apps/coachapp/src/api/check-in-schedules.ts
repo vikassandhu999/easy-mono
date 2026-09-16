@@ -1,5 +1,5 @@
 import {useInfiniteQuery, useMutation} from '@tanstack/react-query';
-import {call, client} from './client';
+import {ApiError, call, callEmpty, client} from './client';
 import {checkInKeys, formKeys, workbenchKeys} from './keys';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
@@ -24,14 +24,15 @@ export function useCheckInSchedules(clientId: string, filters: ScheduleFilters =
   });
 }
 
+async function invalidateSchedules(clientId: string) {
+  await Promise.all([
+    queryClient.invalidateQueries({queryKey: workbenchKeys.all}),
+    queryClient.invalidateQueries({queryKey: checkInKeys.forClient(clientId)}),
+    queryClient.invalidateQueries({queryKey: formKeys.all}),
+  ]);
+}
+
 export function useSaveCheckInSchedule(clientId: string) {
-  async function invalidate() {
-    await Promise.all([
-      queryClient.invalidateQueries({queryKey: workbenchKeys.all}),
-      queryClient.invalidateQueries({queryKey: checkInKeys.forClient(clientId)}),
-      queryClient.invalidateQueries({queryKey: formKeys.all}),
-    ]);
-  }
   return useMutation({
     onMutate: () => getSession()?.id,
     mutationFn: (
@@ -49,14 +50,45 @@ export function useSaveCheckInSchedule(clientId: string) {
       if (!sessionId || getSession()?.id !== sessionId) {
         throw new Error('Your session changed. Please try again.');
       }
-      await invalidate();
+      await invalidateSchedules(clientId);
       if (getSession()?.id !== sessionId) {
         throw new Error('Your session changed. Please try again.');
       }
     },
     onError: async (_error, _input, sessionId) => {
       if (sessionId && getSession()?.id === sessionId) {
-        await invalidate();
+        await invalidateSchedules(clientId);
+      }
+    },
+  });
+}
+
+export function useDeleteCheckInSchedule(clientId: string) {
+  return useMutation({
+    onMutate: () => getSession()?.id,
+    mutationFn: async (id: string) => {
+      try {
+        await callEmpty(client.DELETE('/v1/coach/check-in-schedules/{id}', {params: {path: {id}}}));
+        return 'deleted';
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) {
+          return 'unavailable';
+        }
+        throw error;
+      }
+    },
+    onSuccess: async (_result, _id, sessionId) => {
+      if (!sessionId || getSession()?.id !== sessionId) {
+        throw new Error('Your session changed. Please try again.');
+      }
+      await invalidateSchedules(clientId);
+      if (getSession()?.id !== sessionId) {
+        throw new Error('Your session changed. Please try again.');
+      }
+    },
+    onError: async (_error, _id, sessionId) => {
+      if (sessionId && getSession()?.id === sessionId) {
+        await invalidateSchedules(clientId);
       }
     },
   });

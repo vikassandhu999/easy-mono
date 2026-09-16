@@ -207,6 +207,9 @@ view's controller test asserts the rendered entity with
 Create/update must return the same fully-preloaded shape as GET; truthiness-only tests let
 zero/empty derived fields pass. **Enforced by:** exact value assertions in write-response
 tests for derived fields and nested collections.
+When recovery depends on a domain error code, assert its exact rendered code and retained
+records as well as HTTP status. The check-in schedule controller deletion test covers
+`schedule_has_assignments`; a generic 422 code cannot drive its Stop scheduling recovery.
 
 ### RM-006 — OpenApiSpex enums and examples must mirror domain enums
 Invalid examples hide drift from real enum values. Source `enum:` from the domain

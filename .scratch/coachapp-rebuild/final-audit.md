@@ -57,3 +57,10 @@ The existing generic form-assignment POST supported a coaching task absent from 
 The new page adds one registered route: current source inventory has 69 route constants plus wildcard (70 routes), with no unregistered constants. The detailed route worklist includes the new route. Browser proof covers its entry from Client overview, choice/preview/return and saved intake, including real clientapp submission and coach review at both coach widths.
 
 Current build, scoped Biome, repository checks and backend precommit pass (1,779 tests). Existing invitation and intake-follow-up regressions pass at both widths. See assign-intake.md for complete evidence and retained limits. The original whole-app objective and remaining reconciliation checklist remain active.
+
+
+## Schedule deletion reconciliation, 2026-09-16
+
+Comparing HTTP method and path identified a missing action that path-only inventory could not distinguish from schedule editing: DELETE an unused check-in schedule. CHECKIN-03 now covers it through the existing client schedule page; no new route is needed. The backend remains responsible for generated-history protection, and the UI offers the existing Stop scheduling action after that specific rejection.
+
+New deletion and existing scheduling browser suites pass at 375px/1280px against normal services. App build, scoped Biome, repository checks and full backend precommit pass (1,780 tests). See delete-check-in-schedule.md for logs, API review and retained limits. The current route count remains 70 including wildcard. Continue classifying remaining unused API operations by coaching outcome before adding screens; final reconciliation remains open.

@@ -207,3 +207,8 @@ On 2026-09-16, invitation states and recovery passed independently at 375px and 
 ## Assign a missing intake
 
 Client overview's missing-intake state now leads to a client-scoped assignment page. Choose an active Intake through server search and cursor pages, preview the questions, then assign and return to the client. Existing intake, concurrent assignment and interrupted results lead to the saved intake without a second creation. Normal invitations retain their automatic default. See [the assignment brief](assign-intake.md).
+
+
+## Remove an unused check-in schedule
+
+The client schedule list now offers a quiet Delete schedule action with a named confirmation. The server protects generated check-ins; the dialog offers Stop scheduling for active protected schedules and retains completed answers. Explicit retry handles interrupted deletion of the same ID. See [the deletion brief](delete-check-in-schedule.md) for recovery and mobile/desktop verification.

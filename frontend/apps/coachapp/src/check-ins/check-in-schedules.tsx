@@ -9,8 +9,13 @@ import {
   useParams,
   useSearchParams,
 } from 'react-router-dom';
-import {type CheckInSchedule, useCheckInSchedules, useSaveCheckInSchedule} from '../api/check-in-schedules';
-import {errorMessage} from '../api/client';
+import {
+  type CheckInSchedule,
+  useCheckInSchedules,
+  useDeleteCheckInSchedule,
+  useSaveCheckInSchedule,
+} from '../api/check-in-schedules';
+import {ApiError, errorMessage} from '../api/client';
 import {useClient} from '../api/clients';
 import {routes} from '../routes';
 import {Button, buttonVariants} from '../ui/button';
@@ -49,6 +54,13 @@ function Schedules({clientId}: {clientId: string}) {
   );
   const [editing, setEditing] = useState<CheckInSchedule>();
   const [stopping, setStopping] = useState<CheckInSchedule>();
+  const [removing, setRemoving] = useState<CheckInSchedule>();
+  const noticeRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (notice) {
+      noticeRef.current?.focus();
+    }
+  }, [notice]);
   const status = params.get('status') === 'active' ? 'active' : params.get('status') === 'stopped' ? 'stopped' : 'all';
   const query = useCheckInSchedules(clientId, {
     search: params.get('search')?.trim() ?? '',
@@ -102,7 +114,15 @@ function Schedules({clientId}: {clientId: string}) {
               This client is not active. New check-ins are generated only for active clients.
             </p>
           )}
-          {notice && <p role="status">{notice}</p>}
+          {notice && (
+            <p
+              ref={noticeRef}
+              tabIndex={-1}
+              role="status"
+            >
+              {notice}
+            </p>
+          )}
           <div className="grid items-end gap-4 sm:grid-cols-[1fr_12rem]">
             <ListSearch label="Search schedules" />
             <div className="grid gap-2">
@@ -193,6 +213,15 @@ function Schedules({clientId}: {clientId: string}) {
                       Stop scheduling
                     </Button>
                   )}
+                  <Button
+                    variant="ghost"
+                    onPress={() => {
+                      setNotice('');
+                      setRemoving(schedule);
+                    }}
+                  >
+                    Delete schedule
+                  </Button>
                 </div>
               </article>
             )}
@@ -221,7 +250,127 @@ function Schedules({clientId}: {clientId: string}) {
           }}
         />
       )}
+      {removing && (
+        <DeleteSchedule
+          schedule={removing}
+          clientId={clientId}
+          onClose={() => setRemoving(undefined)}
+          onDeleted={(result) => {
+            setRemoving(undefined);
+            setNotice(result === 'deleted' ? 'Schedule deleted.' : 'This schedule is no longer available.');
+          }}
+          onStop={() => {
+            setRemoving(undefined);
+            setStopping(removing);
+          }}
+        />
+      )}
     </Page>
+  );
+}
+
+function DeleteSchedule({
+  schedule,
+  clientId,
+  onClose,
+  onDeleted,
+  onStop,
+}: {
+  schedule: CheckInSchedule;
+  clientId: string;
+  onClose: () => void;
+  onDeleted: (result: string) => void;
+  onStop: () => void;
+}) {
+  const remove = useDeleteCheckInSchedule(clientId);
+  const mounted = useRef(true);
+  const errorRef = useRef<HTMLDivElement>(null);
+  const used = remove.error instanceof ApiError && remove.error.code === 'schedule_has_assignments';
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (remove.isError && !remove.isPending) {
+      errorRef.current?.focus();
+    }
+  }, [remove.isError, remove.isPending]);
+  return (
+    <Dialog
+      isOpen
+      isDismissable={!remove.isPending}
+      showCloseButton={!remove.isPending}
+      onOpenChange={(open) => {
+        if (!open && !remove.isPending) {
+          onClose();
+        }
+      }}
+    >
+      <DialogHeader>
+        <DialogTitle>Delete this schedule?</DialogTitle>
+      </DialogHeader>
+      <div className="dialog-body space-y-4">
+        <p className="wrap-anywhere font-semibold">{schedule.form_template.name}</p>
+        <p className="text-sm text-muted-foreground">
+          {frequencyLabels[schedule.frequency]} · {schedule.next_due_on}
+        </p>
+        <p>
+          Delete only if this schedule has not generated any check-ins. This cannot be undone. The form stays in your
+          library.
+        </p>
+        <div
+          ref={errorRef}
+          tabIndex={-1}
+        >
+          {remove.isError && (
+            <FormError
+              message={
+                used
+                  ? schedule.active
+                    ? 'This schedule already generated check-ins and must be kept with their history. Stop scheduling to prevent new check-ins.'
+                    : 'This schedule already generated check-ins and must be kept with their history. Scheduling is already stopped.'
+                  : errorMessage(
+                      remove.error,
+                      'Deletion could not be confirmed. Retry the same schedule or close and refresh the list.',
+                    )
+              }
+            />
+          )}
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Button
+            variant="outline"
+            autoFocus
+            isDisabled={remove.isPending}
+            onPress={onClose}
+          >
+            Keep schedule
+          </Button>
+          {used ? (
+            schedule.active && <Button onPress={onStop}>Stop scheduling instead</Button>
+          ) : (
+            <Button
+              variant="destructive"
+              isPending={remove.isPending}
+              onPress={async () => {
+                try {
+                  const result = await remove.mutateAsync(schedule.id);
+                  if (mounted.current) {
+                    onDeleted(result);
+                  }
+                } catch {
+                  /* The mutation error is shown in the confirmation. */
+                }
+              }}
+            >
+              {remove.isError ? 'Retry deletion' : 'Delete schedule'}
+            </Button>
+          )}
+        </div>
+      </div>
+    </Dialog>
   );
 }
 

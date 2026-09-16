@@ -33,7 +33,7 @@ Inventory comes from the current router, not the navigation. Earlier slice evide
 | /clients/:clientId/nutrition-history | Coach | 375 / 1280 | Real recorded totals, missing/zero nutrients, frozen guidance, long meal names, date validation/focus/reload, client timezone, retained refresh and account isolation | Passed listed states | HISTORY-02 |
 | /clients/:clientId/weight-progress | Coach | 375 / 1280 | Server trend/totals, mixed units, form provenance, cursor pages, empty/single/constant trend, dates, retry and account isolation | Passed listed states |  |
 | /clients/:id/intake/assign | Coach | 375 / 1280 | Active Intake selection, server totals/search, three pages, preview/reload, read/write recovery, existing/inactive guards, concurrent assignment, client submission/review and logout isolation | Passed listed states | INTAKE-01 |
-| /clients/:id/check-ins | Coach | 375 / 1280 | Real edit/stop/resume, long names/confirmation, server search/counts/cursor pages, recovery and account isolation | Passed listed states | CHECKIN-01, CHECKIN-02 |
+| /clients/:id/check-ins | Coach | 375 / 1280 | Real edit/stop/resume/delete, protected history and Stop recovery, long names/confirmation, server search/counts/cursor pages, recovery and account isolation | Passed listed states | CHECKIN-01, CHECKIN-02, CHECKIN-03 |
 | /clients/:id/check-ins/new | Coach | 375 / 1280 | Form search/preview, long names, validation/draft protection, keyboard saved-result lookup/retry, empty-lookup focus restoration, uncertain leave warning, duplicate/capacity errors, real client-app answer/review | Passed listed states | CHECKIN-01, CHECKIN-02 |
 | /check-ins | Coach | 375 / 1280 | Server search/status/counts, cursor pages and recovery | Passed listed states | |
 | /check-ins/responses/:id | Coach | 375 / 1280 | Frozen answers, review/retry, persisted review and account isolation, actual photo signing/storage recovery and decoding | Passed listed states | PHOTO-01 |
@@ -325,3 +325,8 @@ The browser fixture exposed a server tokenization bug for copied hyphenated name
 ## Missing-intake assignment, 2026-09-16
 
 INTAKE-01 — Client overview previously named the missing intake without an action. A client-scoped choice/preview page now completes assignment through the existing API. The route's listed states pass at both widths, including the real client submission and coach review journey. A delayed-logout probe exposed a secondary rejected error-handler promise; the handler now skips stale-session invalidation. Existing-intake focus now waits for both the intake and client details. Full verification is recorded in assign-intake.md.
+
+
+## Schedule deletion, 2026-09-16
+
+CHECKIN-03 — The schedule list lacked removal of an unused schedule. A quiet row action now opens a named confirmation. The server retains schedules with generated check-ins; active protected schedules offer Stop scheduling instead. A specific API error code connects this recovery without inspecting loaded assignments. Both viewport suites verify retained completed answers, cancellation/pending controls, long names, filtered server totals, failed and lost responses, explicit absent-resource retry, result focus and logout isolation. Existing scheduling regression and full backend precommit pass. See delete-check-in-schedule.md for evidence and limits.

@@ -254,7 +254,16 @@ defmodule EasyWeb.FallbackController do
   end
 
   def call(conn, {:error, :schedule_has_assignments}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{schedule: ["has assignments"]}})})
+    call(
+      conn,
+      {:error,
+       Error.new(
+         :schedule_has_assignments,
+         "This schedule has generated check-ins. Stop scheduling to keep their history.",
+         %{fields: %{schedule: ["has assignments"]}},
+         :unprocessable_entity
+       )}
+    )
   end
 
   def call(conn, {:error, :invalid_default_intake_template}) do

@@ -189,6 +189,23 @@ defmodule EasyWeb.Coaches.CheckInScheduleControllerTest do
     refute Repo.get(CheckInSchedule, schedule.id)
   end
 
+  test "deletion explains generated-check-in protection and retains history", %{conn: conn, client: client, template: template} do
+    schedule = insert(:check_in_schedule, business: client.business, client: client, form_template: template)
+
+    assignment =
+      insert(:form_assignment,
+        business: client.business,
+        client: client,
+        form_template: template,
+        check_in_schedule: schedule
+      )
+
+    conn = delete(conn, "/v1/coach/check-in-schedules/#{schedule.id}")
+    assert %{"error_code" => "schedule_has_assignments", "error_detail" => %{"fields" => %{"schedule" => ["has assignments"]}}} = json_response(conn, 422)
+    assert Repo.get(CheckInSchedule, schedule.id)
+    assert Repo.get(Easy.Forms.FormAssignment, assignment.id)
+  end
+
   test "creates a second active schedule with a different template and lists both",
        %{conn: conn, client: client, template: template} do
     other_template = insert(:form_template, business: client.business, purpose: :check_in)

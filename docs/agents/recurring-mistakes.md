@@ -1269,6 +1269,8 @@ Coachapp `test:workbench` covers the title, trailing due date and resulting task
 `test:nutrition-history` and `test:training-history` cover long saved meal and plan names
 inside the expanded original guidance, including after reload. `test:check-ins` also
 covers long selected form names, saved-result lookup and the stop-scheduling confirmation.
+Nutrition-library management checks long usage names inside its grid and item names in
+copy dialogs; ordinary break-word wrapping alone did not constrain the usage grid.
 
 ### RM-229 — A snooze confirmation must correspond to time actually hidden
 The snooze endpoint accepts expired dates, so the editor reported success for yesterday

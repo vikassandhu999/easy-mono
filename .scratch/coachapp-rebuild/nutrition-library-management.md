@@ -22,3 +22,8 @@ The new `/usage` endpoints return only visible client-plan references. The legac
 Returning from saved-item review with Create a separate copy left keyboard focus without a useful destination. The same browser probe failed on the original food action. The shared food/recipe confirmation now mounts its normal actions before focusing Create copy. Returning sends no request; a separate Enter press creates one independent copy. The exercise action already restores its name field, and its expanded regression passes unchanged.
 
 The full nutrition-library management suite verifies both resources at 375px and 1280px, including real copy persistence after keyboard recovery, usage pages, reference constraints, lost responses and session isolation. App build, scoped Biome, repository checks and backend precommit pass (1,778 tests, zero failures). Chromium/local-storage coverage does not establish physical-device or target-coach usability.
+
+
+## Management route audit, 2026-09-16
+
+Usage names now wrap without expanding the management grid. Long food/recipe names and copy dialogs pass at 375px/1280px; the original viewport probe fails. The expanded management suite covers initial usage failure, retained refresh and paging, keyboard category selection, reference-conflict recovery, a failed deletion that leaves the item intact, keyboard retry, copy lookup and session isolation. Existing server-counted uses, linked return, independent copies and lost-delete reconciliation also pass. Build, Biome, repository checks and backend precommit pass (1,778 tests). Screenshots are archived under `/tmp/coachapp-library-management-audit-2026-09-16`.

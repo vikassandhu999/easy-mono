@@ -1,6 +1,6 @@
 import {mkdir} from 'node:fs/promises';
 import {chromium, expect, request} from '@playwright/test';
-import {chooseOption, selectTrigger} from '../select-helpers.mjs';
+import {selectTrigger} from '../select-helpers.mjs';
 
 const baseURL = process.env.COACH_APP_URL || 'http://localhost:22022';
 const api = await request.newContext({baseURL: process.env.COACH_API_URL || 'http://localhost:44000'});
@@ -67,7 +67,7 @@ try {
         'post',
         '/v1/coach/nutrition-foods',
         {
-          name: 'Breakfast oats',
+          name: `Breakfast oats ${'WholegrainBreakfast'.repeat(7)}`,
           calories_per_100g: 380,
           notes: 'Original food notes',
           dietary_tags: ['vegan'],
@@ -81,7 +81,7 @@ try {
         'post',
         '/v1/coach/nutrition-recipes',
         {
-          name: 'Overnight oats',
+          name: `Overnight oats ${'PortableBreakfast'.repeat(8)}`,
           servings_count: 2,
           instructions: 'Chill overnight.',
           dietary_tags: ['vegan'],
@@ -145,6 +145,8 @@ try {
     await page.getByRole('button', {name: 'Load more', exact: true}).scrollIntoViewIfNeeded();
     await expect(uses).toHaveCount(44);
     expect(new Set(await uses.getByRole('link').evaluateAll((links) => links.map((link) => link.href))).size).toBe(44);
+    await page.screenshot({path: `tests/nutrition-library/artifacts/long-usage-${width}.png`, fullPage: true});
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.getByLabel('Search uses', {exact: true}).fill('Overnight');
     await expect(uses).toHaveCount(1);
     await expect(page.getByText('1 use', {exact: true})).toBeVisible();
@@ -161,15 +163,25 @@ try {
     await page.unroute(`**${usageEndpoint}?*`);
     await page.getByRole('button', {name: 'Retry refresh', exact: true}).click();
     await expect(page.getByRole('button', {name: 'Copy food', exact: true})).toBeEnabled();
-    await chooseOption(category, 'Plan templates (1)');
+    await page.getByLabel('Search uses', {exact: true}).focus();
+    await page.keyboard.press('Shift+Tab');
+    await expect(category).toBeFocused();
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Home');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await expect(category).toContainText('Plan templates (1)');
     await expect(uses.getByRole('link')).toContainText('Oats meal plan');
     await uses.getByRole('link').click();
     await expect(page.getByLabel('Plan name', {exact: true})).toHaveValue('Oats meal plan');
     await page.getByRole('link', {name: 'Back to food usage', exact: true}).click();
     await expect(category).toContainText('Plan templates (1)');
     await expect(page.getByRole('button', {name: 'Delete food', exact: true})).toBeDisabled();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
     await page.screenshot({path: `tests/nutrition-library/artifacts/food-usage-${width}.png`, fullPage: true});
     await page.getByRole('button', {name: 'Copy food', exact: true}).click();
+    expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
     await dialog.getByRole('button', {name: 'Create copy', exact: true}).click();
     await expect(foodName).toHaveValue(food.name);
     const foodCopyId = page.url().split('/').at(-1);
@@ -199,7 +211,10 @@ try {
     await page.getByRole('button', {name: 'Delete food', exact: true}).click();
     await dialog.getByRole('button', {name: 'Delete food', exact: true}).click();
     await expect(dialog.getByRole('alert')).toContainText('now in use');
-    await dialog.getByRole('button', {name: 'Review usage', exact: true}).click();
+    await expect(dialog.getByRole('alert').locator('..')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(dialog.getByRole('button', {name: 'Review usage', exact: true})).toBeFocused();
+    await page.keyboard.press('Enter');
     await expect(uses.getByRole('link')).toContainText('Late use');
     await send('delete', `/v1/coach/nutrition-recipes/${lateRecipe.id}`, undefined, token);
     await page.getByRole('button', {name: 'Refresh uses', exact: true}).click();
@@ -209,7 +224,18 @@ try {
     foodCopy = (await send('get', `/v1/coach/nutrition-foods/${foodCopyId}`, undefined, token)).data;
     expect(foodCopy.id).toBe(foodCopyId);
     await page.getByRole('button', {name: 'Delete food', exact: true}).click();
+    await page.route(`**/v1/coach/nutrition-foods/${foodCopyId}`, (route) =>
+      route.request().method() === 'DELETE' ? route.fulfill({status: 503, json: {}}) : route.continue(),
+    );
     await dialog.getByRole('button', {name: 'Delete food', exact: true}).click();
+    await expect(dialog.getByRole('alert').locator('..')).toBeFocused();
+    expect((await send('get', `/v1/coach/nutrition-foods/${foodCopyId}`, undefined, token)).data.id).toBe(foodCopyId);
+    await page.unroute(`**/v1/coach/nutrition-foods/${foodCopyId}`);
+    await page.keyboard.press('Tab');
+    await expect(dialog.getByRole('button', {name: 'Cancel', exact: true})).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(dialog.getByRole('button', {name: 'Delete food', exact: true})).toBeFocused();
+    await page.keyboard.press('Enter');
     await expect(page.getByText('Oats for a smaller bowl deleted.', {exact: true})).toBeVisible();
     await expect(page).toHaveURL(`${baseURL}/nutrition-foods?search=Breakfast`);
     // Recipe usage links and copy retain ingredients and stay independent.
@@ -220,8 +246,11 @@ try {
     await page.getByRole('link', {name: 'Back to recipe usage', exact: true}).click();
     await expect(category).toContainText('Plan templates (1)');
     await expect(page.getByRole('heading', {level: 1})).toHaveText(recipe.name);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
     await page.screenshot({path: `tests/nutrition-library/artifacts/recipe-usage-${width}.png`, fullPage: true});
     await page.getByRole('button', {name: 'Copy recipe', exact: true}).click();
+    expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
     await dialog.getByRole('button', {name: 'Create copy', exact: true}).click();
     await expect(page.getByLabel('Recipe name', {exact: true})).toHaveValue(/Overnight oats/);
     const recipeCopyId = page.url().split('/').at(-1);
@@ -288,7 +317,14 @@ try {
       ['food', food.id],
       ['recipe', recipe.id],
     ]) {
+      const usageRoute = `**/v1/coach/nutrition-${resource}s/${id}/usage?*`;
+      await page.route(usageRoute, (route) => route.fulfill({status: 503, json: {}}));
       await page.goto(`/nutrition-${resource}s/${id}/manage`);
+      await page.reload();
+      await expect(page.getByRole('button', {name: 'Try again', exact: true})).toBeVisible();
+      await expect(page.getByRole('button', {name: `Copy ${resource}`, exact: true})).toBeDisabled();
+      await page.unroute(usageRoute);
+      await page.getByRole('button', {name: 'Try again', exact: true}).click();
       await page.getByRole('button', {name: `Copy ${resource}`, exact: true}).click();
       let attempts = 0;
       const copyEndpoint = `**/v1/coach/nutrition-${resource}s/*/copy`;
@@ -298,6 +334,11 @@ try {
       });
       await dialog.getByRole('button', {name: 'Create copy', exact: true}).click();
       await expect(dialog.getByRole('alert')).toContainText('copy could not be confirmed');
+      await expect(dialog.getByRole('alert').locator('..')).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(
+        dialog.getByLabel(`Search saved ${resource === 'food' ? 'foods' : 'recipes'}`, {exact: true}),
+      ).toBeFocused();
       await dialog.getByRole('button', {name: 'Create a separate copy', exact: true}).press('Enter');
       const createCopy = dialog.getByRole('button', {name: 'Create copy', exact: true});
       await expect(createCopy).toBeFocused();

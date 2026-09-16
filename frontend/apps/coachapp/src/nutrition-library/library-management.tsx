@@ -210,7 +210,7 @@ function UsageLink({
           : null;
   const content = (
     <>
-      <p className="break-words font-semibold">{reference.name}</p>
+      <p className="font-semibold [overflow-wrap:anywhere]">{reference.name}</p>
       <p className="text-sm text-muted-foreground">
         {reference.kind === 'recipe'
           ? 'Recipe'

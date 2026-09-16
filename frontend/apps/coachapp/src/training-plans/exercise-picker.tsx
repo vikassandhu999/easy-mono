@@ -46,7 +46,7 @@ export function ExercisePicker({
     >
       <DialogHeader className="block pr-12">
         <DialogTitle>{purpose === 'replace' ? 'Replace movement' : 'Add exercises'}</DialogTitle>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 break-words text-sm text-muted-foreground">
           {purpose === 'replace'
             ? `Choose a replacement for ${workoutName}.`
             : `Choose movements for ${workoutName || 'this workout'}. Arrange your selection below.`}
@@ -208,7 +208,7 @@ function PickerDetails({exercise}: {exercise: Exercise}) {
         <p className="mt-1">{exercise.equipment.map((item) => item.name).join(', ')}</p>
       )}
       {exercise.instructions && (
-        <p className="mt-2 whitespace-pre-wrap text-muted-foreground">{exercise.instructions}</p>
+        <p className="mt-2 whitespace-pre-wrap break-words text-muted-foreground">{exercise.instructions}</p>
       )}
     </details>
   );

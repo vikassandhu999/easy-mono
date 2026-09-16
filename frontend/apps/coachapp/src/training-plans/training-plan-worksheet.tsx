@@ -40,6 +40,12 @@ export function TrainingPlanWorksheet({
   const [reloading, setReloading] = useState(false);
   const [conflict, setConflict] = useState(false);
   const [notice, setNotice] = useState('');
+  const noticeRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (notice) {
+      noticeRef.current?.focus();
+    }
+  }, [notice]);
   const mounted = useRef(true);
   const leavingAfterSave = useRef(false);
   const errorSummary = useRef<HTMLDivElement>(null);
@@ -83,6 +89,7 @@ export function TrainingPlanWorksheet({
     }
   }, [form.formState.errors.root, pending]);
   async function loadLatest() {
+    setNotice('');
     setReloading(true);
     try {
       const result = await query.refetch();
@@ -361,6 +368,8 @@ export function TrainingPlanWorksheet({
           {unavailable && <FormError message="This plan is archived and cannot be edited here." />}
           {notice && !dirty && (
             <p
+              ref={noticeRef}
+              tabIndex={-1}
               role="status"
               className="text-sm"
             >

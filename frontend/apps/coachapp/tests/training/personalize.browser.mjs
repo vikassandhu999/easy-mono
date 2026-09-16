@@ -121,6 +121,7 @@ try {
     await page.route(`**${endpoint}/prescription`, (route) => route.fulfill({status: 503, json: {}}));
     await save.click();
     await expect(page.getByRole('alert')).toContainText("We couldn't confirm the full save.");
+    await expect(page.getByRole('alert').locator('..')).toBeFocused();
     await expect(reps).toHaveValue('10–12');
     let persisted = (await send('get', endpoint, undefined, token)).data;
     expect(persisted.name).toBe('Alex’s strength plan');
@@ -150,6 +151,7 @@ try {
     await expect(reps).toHaveValue('6');
     await page.getByRole('button', {name: 'Review saved version', exact: true}).click();
     await page.getByRole('button', {name: 'Load saved prescription', exact: true}).click();
+    await expect(page.getByText('Latest saved version loaded.', {exact: true})).toBeFocused();
     await expect(name).toHaveValue('Updated by another coach');
     await expect(reps).toHaveValue('10–12');
     await reps.fill('9');
@@ -180,6 +182,7 @@ try {
     await page.unroute(`**${endpoint}/prescription`);
     await page.getByRole('button', {name: 'Review saved version', exact: true}).click();
     await page.getByRole('button', {name: 'Load saved prescription', exact: true}).click();
+    await expect(page.getByText('Latest saved version loaded.', {exact: true})).toBeFocused();
     await expect(reps).toHaveValue('9');
     await expect(save).toBeDisabled();
     // Route context cannot turn a template or another client's plan into an editable client copy.

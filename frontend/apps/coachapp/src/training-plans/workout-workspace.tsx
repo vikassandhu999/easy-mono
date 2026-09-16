@@ -77,7 +77,7 @@ export function WorkoutWorkspace({
           role="status"
           className="flex items-center justify-between gap-3 rounded-xl bg-muted p-3 text-sm"
         >
-          <span>Removed {removed.workout.name}.</span>
+          <span className="min-w-0 break-words">Removed {removed.workout.name}.</span>
           <Button
             variant="outline"
             size="sm"

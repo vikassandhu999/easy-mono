@@ -17,3 +17,6 @@ The browser scenario in tests/training/personalize.browser.mjs covers the real A
 Browser-test recovery waits for the closing dialog to unmount before typing in the worksheet. Without that wait, programmatic typing could run while the background was still inert. Screenshots were inspected on mobile and desktop. A target-coach usability review and physical-device testing remain separate.
 
 Graph discovery failed because the local MCP process exited. Bounded source reads and reference searches supplied the implementation evidence. No legacy UI was inspected or copied.
+
+
+The 2026-09-16 worksheet audit reran client personalization against the normal API/app at both widths. Failed-save feedback and saved-version reload confirmations now have explicit focus assertions; independent template preservation, lost-save recovery, route ownership and archived access remain green. The shared worksheet also passes long-content and repeated reload checks in `worksheet-audit.browser.mjs`; see TRAINING-02 in the route audit.

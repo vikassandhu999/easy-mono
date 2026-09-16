@@ -1272,7 +1272,7 @@ Coachapp `test:workbench` covers the title, trailing due date and resulting task
 inside the expanded original guidance, including after reload. `test:check-ins` also
 covers long selected form names, saved-result lookup and the stop-scheduling confirmation.
 Nutrition-library management checks long usage names inside its grid and item names in
-copy dialogs; ordinary break-word wrapping alone did not constrain the usage grid.
+copy dialogs; ordinary break-word wrapping alone did not constrain the usage grid. Training worksheet audits also check long names inside picker headings and flex-based Undo feedback, including each dialog’s own scroll width.
 
 ### RM-229 — A snooze confirmation must correspond to time actually hidden
 The snooze endpoint accepts expired dates, so the editor reported success for yesterday
@@ -1310,6 +1310,8 @@ Settings use the same field-reference approach for text inputs and shadcn select
 Plan assignment applies this to server date conflicts and stale-preview reloads: wait for editable fields, focus failed refresh feedback before retry, and focus the updated prescription after refresh. Training and nutrition browser suites verify these transitions and uncertain-write lookup.
 
 Auth applies this to invitation sends, code resends and confirmation failures. The auth browser suites require error focus, keyboard retry, editable code focus after resend, and a usable code-sign-in action after actual expired or used links. Temporary link failures retain confirmation retry.
+
+Training worksheet success notices receive focus, and reload starts by clearing the previous notice so repeated successful loads trigger the same handoff. `worksheet-audit.browser.mjs` verifies failed reload retention, keyboard retry and repeated success; personalization checks the shared behavior on client copies.
 
 ### RM-233 — Saved feedback follows actual draft state
 An editor cleared its saved notice only on DOM change events, so adding a program left

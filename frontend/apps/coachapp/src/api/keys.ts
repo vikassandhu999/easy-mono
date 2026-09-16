@@ -1,3 +1,4 @@
+import type {RequestFilters} from './check-in-requests';
 import type {CheckInResponseFilters} from './check-in-responses';
 import type {ScheduleFilters} from './check-in-schedules';
 import type {ClientPlanFilters} from './client-plans';
@@ -96,6 +97,14 @@ export const recipeKeys = {
   detail: (id: string) => [...recipeKeys.details(), id] as const,
   usage: (id: string, kind: string, search: string) => [...recipeKeys.lists(), 'usage', id, {kind, search}] as const,
   copyCandidates: (search: string) => [...recipeKeys.lists(), 'copy-candidates', {search}] as const,
+};
+
+export const checkInRequestKeys = {
+  all: ['check-in-requests'] as const,
+  lists: () => [...checkInRequestKeys.all, 'list'] as const,
+  forClient: (clientId: string) => [...checkInRequestKeys.lists(), clientId] as const,
+  infinite: (clientId: string, filters: RequestFilters) =>
+    [...checkInRequestKeys.forClient(clientId), 'infinite', filters] as const,
 };
 
 export const checkInKeys = {

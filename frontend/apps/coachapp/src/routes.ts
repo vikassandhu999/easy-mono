@@ -19,6 +19,7 @@ export const routes = {
   clientProfile: '/clients/:id/profile',
   assignIntake: '/clients/:id/intake/assign',
   clientCheckIns: '/clients/:id/check-ins',
+  checkInRequests: '/clients/:id/check-ins/requests',
   createCheckIn: '/clients/:id/check-ins/new',
   checkInResponses: '/check-ins',
   checkInResponse: '/check-ins/responses/:id',

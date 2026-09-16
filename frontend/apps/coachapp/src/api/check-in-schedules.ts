@@ -1,6 +1,6 @@
 import {useInfiniteQuery, useMutation} from '@tanstack/react-query';
 import {ApiError, call, callEmpty, client} from './client';
-import {checkInKeys, formKeys, workbenchKeys} from './keys';
+import {checkInKeys, checkInRequestKeys, formKeys, workbenchKeys} from './keys';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
 import type {CheckInScheduleCreate, CheckInScheduleListQuery, CheckInScheduleUpdate} from './schema';
@@ -28,6 +28,7 @@ async function invalidateSchedules(clientId: string) {
   await Promise.all([
     queryClient.invalidateQueries({queryKey: workbenchKeys.all}),
     queryClient.invalidateQueries({queryKey: checkInKeys.forClient(clientId)}),
+    queryClient.invalidateQueries({queryKey: checkInRequestKeys.forClient(clientId)}),
     queryClient.invalidateQueries({queryKey: formKeys.all}),
   ]);
 }

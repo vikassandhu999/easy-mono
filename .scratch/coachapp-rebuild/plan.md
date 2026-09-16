@@ -212,3 +212,8 @@ Client overview's missing-intake state now leads to a client-scoped assignment p
 ## Remove an unused check-in schedule
 
 The client schedule list now offers a quiet Delete schedule action with a named confirmation. The server protects generated check-ins; the dialog offers Stop scheduling for active protected schedules and retains completed answers. Explicit retry handles interrupted deletion of the same ID. See [the deletion brief](delete-check-in-schedule.md) for recovery and mobile/desktop verification.
+
+
+## Individual check-in requests
+
+Client schedules now link to Requested check-ins. The client-scoped list defaults to outstanding requests, including missed ones, with server search/status/totals and cursor pages. Coaches can adjust one request's due date and priority, dismiss it, or reopen it without changing future scheduling. Completed work opens the response reader and preserves the list on return. See [the request brief](check-in-requests.md) for interrupted writes, concurrent client submission and mobile/desktop verification.

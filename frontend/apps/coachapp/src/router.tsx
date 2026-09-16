@@ -16,6 +16,7 @@ import {Setup} from './auth/setup';
 import {Signup} from './auth/signup';
 import {Verify} from './auth/verify';
 import {BillingPage} from './billing/billing';
+import {CheckInRequests} from './check-ins/check-in-requests';
 import {CheckInResponse} from './check-ins/check-in-response';
 import {CheckInResponses, ClientCheckInResponses} from './check-ins/check-in-responses';
 import {CheckInSchedules} from './check-ins/check-in-schedules';
@@ -144,6 +145,7 @@ function Root() {
           matchPath(routes.weightProgress, location.pathname) ||
           matchPath(routes.assignNutritionPlan, location.pathname) ||
           matchPath(routes.clientCheckIns, location.pathname) ||
+          matchPath(routes.checkInRequests, location.pathname) ||
           location.pathname === routes.home ||
           matchPath(routes.assignTrainingPlan, location.pathname)
             ? location.pathname + location.search
@@ -199,6 +201,7 @@ export const router = createBrowserRouter([
               {path: routes.nutritionHistory, element: <NutritionHistory />},
               {path: routes.weightProgress, element: <WeightProgress />},
               {path: routes.clientCheckIns, element: <CheckInSchedules />},
+              {path: routes.checkInRequests, element: <CheckInRequests />},
               {path: routes.createCheckIn, element: <CreateCheckIn />},
               {path: routes.checkInResponses, element: <CheckInResponses />},
               {path: routes.checkInResponse, element: <CheckInResponse />},

@@ -3,6 +3,8 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
 
   alias Easy.Forms.Assignments
   alias Easy.Forms.Submissions
+  alias EasyWeb.Types.CheckInRequest
+  alias EasyWeb.Types.CheckInRequestIndex
   alias EasyWeb.Types.{FormAssignment, FormSubmissionDetail}
 
   typed(:intake, ok: {200, data(FormAssignment.t() | nil)})
@@ -17,6 +19,17 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
   )
 
   typed(:remind, ok: {204, nil})
+  typed(:requests, query: CheckInRequest.list_query(), ok: {200, CheckInRequestIndex.t()})
+
+  @spec requests(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def requests(conn, %{"client_id" => client_id}) do
+    params = conn.query_params
+    opts = [cursor: params["cursor"], limit: params["limit"], search: params["search"], status: params["status"]]
+
+    with {:ok, page} <- Easy.CheckInRequests.list_requests_for_client(conn.assigns.ctx, client_id, opts) do
+      ok(conn, page)
+    end
+  end
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, %{"client_id" => client_id}) do

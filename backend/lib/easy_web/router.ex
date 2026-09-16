@@ -156,6 +156,7 @@ defmodule EasyWeb.Router do
     post "/form-submissions/:id/review", CheckInReviewController, :review
     get "/clients/:client_id/intake", FormAssignmentController, :intake
     get "/clients/:client_id/form-assignments", FormAssignmentController, :index
+    get "/clients/:client_id/check-in-requests", FormAssignmentController, :requests
     get "/clients/:client_id/form-submissions/:id", FormAssignmentController, :submission
     post "/clients/:client_id/form-assignments", FormAssignmentController, :create
     get "/form-assignments/:id/submissions", FormAssignmentController, :submissions

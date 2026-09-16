@@ -42,6 +42,7 @@
     "test:exercise-media": "node tests/exercises/media.browser.mjs",
     "test:check-ins": "node tests/check-ins/schedules.browser.mjs && node tests/check-ins/delete-schedule.browser.mjs",
     "test:schedule-deletion": "node tests/check-ins/delete-schedule.browser.mjs",
+    "test:check-in-requests": "node tests/check-ins/requests.browser.mjs",
     "test:reviews": "node tests/check-ins/review.browser.mjs",
     "test:training-history": "node tests/training/history.browser.mjs",
     "test:nutrition-history": "node tests/nutrition/history.browser.mjs",

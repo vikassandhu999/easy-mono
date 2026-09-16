@@ -1354,6 +1354,8 @@ A success callback can reject a late response after logout. Its error callback m
 invalidation for that stale session instead of throwing the same session error again.
 Coachapp `test:intake-assignment` holds a real assignment response through logout and
 requires the login route, an empty query cache and no unhandled browser error.
+`test:check-in-requests` also waits for the held response to finish after logout before
+checking those invariants; asserting only before response delivery misses late effects.
 
 
 ## Deploy / ops

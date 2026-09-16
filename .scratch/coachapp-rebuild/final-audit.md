@@ -64,3 +64,12 @@ Current build, scoped Biome, repository checks and backend precommit pass (1,779
 Comparing HTTP method and path identified a missing action that path-only inventory could not distinguish from schedule editing: DELETE an unused check-in schedule. CHECKIN-03 now covers it through the existing client schedule page; no new route is needed. The backend remains responsible for generated-history protection, and the UI offers the existing Stop scheduling action after that specific rejection.
 
 New deletion and existing scheduling browser suites pass at 375px/1280px against normal services. App build, scoped Biome, repository checks and full backend precommit pass (1,780 tests). See delete-check-in-schedule.md for logs, API review and retained limits. The current route count remains 70 including wildcard. Continue classifying remaining unused API operations by coaching outcome before adding screens; final reconciliation remains open.
+
+
+## Individual-request reconciliation, 2026-09-16
+
+The generic assignment read exposed a real remaining coaching outcome: seeing all unanswered check-ins for a client. Workbench's missed-check-in queue deliberately surfaces only the latest due request per client; submitted history cannot show unanswered work. CHECKIN-04 now supplies the scoped list and due-date/priority/dismiss/reopen actions without loading the generic unpaged collection. Real client submission and retained scheduling are verified. Current source inventory is 70 registered route constants plus wildcard (71 routes), with no unregistered constants; the new route is in the detailed worklist.
+
+Other reviewed candidates do not require new screens: food/recipe impact arrays describe the same recipe/template/client-plan references now provided by paginated usage management; dashboard-setup updates only hidden-state metadata for a setup panel the original UX plan does not introduce. Client invitation-acceptance operations belong to the client journey and are exercised by the real onboarding suites. Conversation inbox/history and weight progress use their existing scoped cursor APIs. The remaining checklist above stays open for final evidence reconciliation, with device/provider/usability limits unchanged.
+
+Checkpoint gates: new request browser and existing scheduling/deletion/review suites pass at both widths; build, repository checks, API generation/review and full backend precommit pass (1,784 tests). See check-in-requests.md for the exact evidence.

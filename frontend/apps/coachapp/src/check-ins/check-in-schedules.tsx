@@ -88,12 +88,21 @@ function Schedules({clientId}: {clientId: string}) {
           ) : undefined
         }
       />
-      <Link
-        to={generatePath(routes.clientCheckInResponses, {clientId})}
-        className="text-link"
-      >
-        View submitted responses
-      </Link>
+      <div className="flex flex-wrap gap-5">
+        <Link
+          className="text-link"
+          to={generatePath(routes.checkInRequests, {id: clientId})}
+          state={{scheduleSearch: location.search}}
+        >
+          View requested check-ins
+        </Link>
+        <Link
+          to={generatePath(routes.clientCheckInResponses, {clientId})}
+          className="text-link"
+        >
+          View submitted responses
+        </Link>
+      </div>
       {client.isError ? (
         <Surface>
           <FormError message={errorMessage(client.error, 'Could not load this client.')} />

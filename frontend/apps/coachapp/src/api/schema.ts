@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash b7813078ae6fb4e6202560668e4ccbe2d7e174c8268daf4c6d327747f37b6073 */
+/* typed-routes:hash 6a982fd6d29c63a68b18b383b9778369fdeb0d0315eb436ede258038bd8c523c */
 export type Attachment = {
   id: string;
   content_type:
@@ -115,6 +115,23 @@ export type CheckInAwaitingReviewReason = {
   code: 'check_in_awaiting_review';
   submission_id: string;
   submitted_at: string;
+};
+export type CheckInRequest = {
+  id: string;
+  client_id: string;
+  form_name: string;
+  status: 'assigned' | 'in_progress' | 'missed' | 'completed' | 'dismissed';
+  priority: 'normal' | 'high';
+  due_date: string | null;
+  inserted_at: string;
+  latest_submission_id: string | null;
+};
+export type CheckInRequestIndex = {data: Array<CheckInRequest>; count: number; next_cursor: string | null};
+export type CheckInRequestListQuery = {
+  cursor?: string;
+  limit?: number;
+  search?: string;
+  status?: 'all' | 'outstanding' | 'missed' | 'completed' | 'dismissed';
 };
 export type CheckInReview = {
   id: string;
@@ -1456,7 +1473,7 @@ export type WorkbenchSnooze = {queue: 'quiet' | 'expiring'; snoozed_until: strin
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash b8976676fc2b1e30a09bdc2b41f444f3dc3cd5f0c03c17c4e8b40c4c4e65e7b5 */
+  /* typed-routes:hash 9b9e8ad1825515c0dc1dc8510725d0d268783b65077850ee31f9352a859242b4 */
   '/api/health': {
     get: {
       parameters: {
@@ -1691,6 +1708,19 @@ export interface paths {
       requestBody: {content: {'application/json': ClientInvite}};
       responses: {
         201: {content: {'application/json': {data: Client}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/check-in-requests': {
+    get: {
+      parameters: {
+        query?: CheckInRequestListQuery;
+        header?: {Authorization?: string};
+        path: {client_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': CheckInRequestIndex}};
       };
     };
   };

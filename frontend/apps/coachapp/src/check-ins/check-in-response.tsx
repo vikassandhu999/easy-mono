@@ -1,5 +1,5 @@
 import {Check} from 'lucide-react';
-import {generatePath, Link, useParams} from 'react-router-dom';
+import {generatePath, Link, useLocation, useParams} from 'react-router-dom';
 import {useCheckInResponse, useReviewCheckIn} from '../api/check-in-responses';
 import {ApiError, errorMessage} from '../api/client';
 import {routes} from '../routes';
@@ -23,10 +23,26 @@ export function CheckInResponse() {
 function Response({id, clientId}: {id: string; clientId?: string}) {
   const query = useCheckInResponse(id);
   const review = useReviewCheckIn(id);
-  const {to, state} = useListLocation(
-    clientId ? generatePath(routes.clientCheckInResponses, {clientId}) : routes.checkInResponses,
+  const entry: unknown = useLocation().state;
+  const fromRequests = Boolean(
+    clientId && entry && typeof entry === 'object' && 'fromRequests' in entry && entry.fromRequests === true,
   );
-  const back = {to, state, label: 'Back to responses'};
+  const {to, state} = useListLocation(
+    clientId
+      ? fromRequests
+        ? generatePath(routes.checkInRequests, {id: clientId})
+        : generatePath(routes.clientCheckInResponses, {clientId})
+      : routes.checkInResponses,
+  );
+  const scheduleSearch =
+    entry &&
+    typeof entry === 'object' &&
+    'scheduleSearch' in entry &&
+    typeof entry.scheduleSearch === 'string' &&
+    entry.scheduleSearch.startsWith('?')
+      ? entry.scheduleSearch
+      : '';
+  const back = {to, state: {...state, scheduleSearch}, label: fromRequests ? 'Back to requests' : 'Back to responses'};
   const submission = query.data?.data;
   const mismatch = submission && clientId && submission.client.id !== clientId;
   if (!submission || mismatch) {
@@ -67,10 +83,10 @@ function Response({id, clientId}: {id: string; clientId?: string}) {
               )}
               <Link
                 to={to}
-                state={state}
+                state={back.state}
                 className="text-link"
               >
-                Return to responses
+                {fromRequests ? 'Return to requests' : 'Return to responses'}
               </Link>
             </div>
           )}

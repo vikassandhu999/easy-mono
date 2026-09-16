@@ -23,4 +23,6 @@ Screenshots were inspected at both widths. The mobile meal worksheet keeps porti
 Build, Biome, check-rm and backend precommit passed (1,645 tests, zero failures). No backend contract changed. Vite retains its bundle-size warning. Graph reference lookup timed out, so bounded source reads and reference searches supplied the evidence. No legacy app UI was inspected or copied.
 
 
-The 2026-09-16 recovery audit verifies failed saved-version reloads retain edited targets, close the dialog, focus the error, and offer keyboard retry. Successful reloads focus their result. Full client personalization and shared nutrition regressions pass at 375px/1280px against the normal API/app; see NUTRITION-01 in the route audit for evidence and remaining layout/validation work.
+The 2026-09-16 recovery audit verifies failed saved-version reloads retain edited targets, close the dialog, focus the error, and offer keyboard retry. Successful reloads focus their result. Full client personalization and shared nutrition regressions pass at 375px/1280px against the normal API/app; see NUTRITION-01 in the route audit.
+
+The subsequent worksheet audit verifies hidden day/meal/portion validation and long-content wrapping at both widths. The shared worksheet reveals and focuses an invalid field once per Save or Preview attempt, preserving navigation between day menus. Shared preview wrapping also applies to client overview and assignment. Full client personalization and authoring/assignment regressions pass; see NUTRITION-02 for evidence and local verification limits.

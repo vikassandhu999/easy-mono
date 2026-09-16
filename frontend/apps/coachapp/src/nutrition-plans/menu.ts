@@ -30,20 +30,30 @@ export function newMeal(name: string): NutritionMeal {
 export function portionLabel(portion: NutritionPortion) {
   return portion.kind === 'gram' ? `${portion.grams} g` : `${portion.amount} ${portion.label || portion.unit}`;
 }
-export function validateMenu(menu: NutritionMenu): string | null {
+export type MenuIssue =
+  | {kind: 'day'; dayId: string; message: string}
+  | {kind: 'meal'; mealId: string; message: string}
+  | {kind: 'portion'; mealId: string; itemId: string; message: string};
+
+export function validateMenu(menu: NutritionMenu): MenuIssue | null {
   for (const pattern of menu.day_patterns) {
     if (!pattern.name.trim()) {
-      return 'Name each day menu.';
+      return {kind: 'day', dayId: pattern.id, message: 'Name each day menu.'};
     }
   }
   for (const meal of menu.meals) {
     if (!meal.name.trim()) {
-      return 'Name each meal.';
+      return {kind: 'meal', mealId: meal.id, message: 'Name each meal.'};
     }
     for (const item of meal.meal_items) {
       const amount = item.portion.kind === 'gram' ? item.portion.grams : item.portion.amount;
       if (!Number.isFinite(amount) || amount <= 0) {
-        return `Enter a portion greater than zero for ${item.name || 'each food'}.`;
+        return {
+          kind: 'portion',
+          mealId: meal.id,
+          itemId: item.id,
+          message: `Enter a portion greater than zero for ${item.name || 'each food'}.`,
+        };
       }
     }
   }

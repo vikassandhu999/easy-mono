@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import type {NutritionMeal, NutritionMealItem, NutritionMenu} from '../api/nutrition-plans';
 import {Button} from '../ui/button';
 import {Input} from '../ui/input';
@@ -7,11 +7,31 @@ import {SelectField} from '../ui/select-field';
 import {Textarea} from '../ui/textarea';
 import {ArrangeMenu} from './arrange-menu';
 import {FoodPicker} from './food-picker';
-import {newMeal, removeDayMenu, removeMeal, restoreDayMenu, restoreMeal, slotLabel, slots, weekdays} from './menu';
+import {
+  type MenuIssue,
+  newMeal,
+  removeDayMenu,
+  removeMeal,
+  restoreDayMenu,
+  restoreMeal,
+  slotLabel,
+  slots,
+  weekdays,
+} from './menu';
 import {PortionEditor} from './portion-editor';
 import {RemoveDayMenu} from './remove-day-menu';
 
-export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (menu: NutritionMenu) => void}) {
+export function MenuEditor({
+  menu,
+  issue,
+  pending,
+  onChange,
+}: {
+  menu: NutritionMenu;
+  issue: MenuIssue | null;
+  pending: boolean;
+  onChange: (menu: NutritionMenu) => void;
+}) {
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [active, setActive] = useState(menu.day_patterns[0]?.id);
   const pattern = menu.day_patterns.find((day) => day.id === active) ?? menu.day_patterns[0];
@@ -27,9 +47,43 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
     slot: (typeof slots)[number];
     index: number;
   } | null>(null);
+  const focusedIssue = useRef<MenuIssue | null>(null);
+  useEffect(() => {
+    if (!issue || pending || focusedIssue.current === issue) {
+      return;
+    }
+    const day = menu.day_patterns.find((value) =>
+      issue.kind === 'day'
+        ? value.id === issue.dayId
+        : value.slots.some((slot) => slot.meal_ids.includes(issue.mealId)),
+    );
+    if (!day) {
+      return;
+    }
+    if (day.id !== pattern?.id) {
+      setActive(day.id);
+      return;
+    }
+    let fieldId = 'nutrition-day-name';
+    if (issue.kind !== 'day') {
+      const slot = day.slots.find((value) => value.meal_ids.includes(issue.mealId));
+      if (!slot) {
+        return;
+      }
+      const scope = `${day.id}-${slot.meal_slot}-${issue.mealId}`;
+      fieldId = issue.kind === 'meal' ? `meal-name-${scope}` : `portion-${scope}-${issue.itemId}`;
+    }
+    const field = document.getElementById(fieldId);
+    if (field) {
+      field.focus();
+      field.scrollIntoView({block: 'center'});
+      focusedIssue.current = issue;
+    }
+  }, [issue, menu.day_patterns, pattern?.id, pending]);
   if (!pattern) {
     return null;
   }
+  const dayError = issue?.kind === 'day' && issue.dayId === pattern.id ? issue.message : undefined;
   function updateMeal(meal: NutritionMeal) {
     onChange({...menu, meals: menu.meals.map((value) => (value.id === meal.id ? meal : value))});
   }
@@ -111,7 +165,7 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
           role="status"
           className="flex flex-wrap items-center gap-2 text-sm"
         >
-          <span>Removed {removedDay.pattern.name}.</span>
+          <span className="min-w-0 break-words">Removed {removedDay.pattern.name}.</span>
           <Button
             variant="ghost"
             size="sm"
@@ -188,6 +242,8 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
         <Input
           id="nutrition-day-name"
           value={pattern.name}
+          aria-invalid={Boolean(dayError)}
+          aria-describedby={dayError ? 'nutrition-day-name-error' : undefined}
           maxLength={255}
           className="text-xl font-bold"
           onChange={(event) =>
@@ -200,6 +256,14 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
           }
         />
       </label>
+      {dayError && (
+        <p
+          id="nutrition-day-name-error"
+          className="text-sm text-destructive"
+        >
+          {dayError}
+        </p>
+      )}
       {menu.day_patterns.length > 1 && (
         <Button
           variant="ghost"
@@ -214,7 +278,7 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
           role="status"
           className="flex flex-wrap items-center gap-2 text-sm"
         >
-          <span>Removed {removedItem.item.name || 'meal item'}.</span>
+          <span className="min-w-0 break-words">Removed {removedItem.item.name || 'meal item'}.</span>
           <Button
             variant="ghost"
             size="sm"
@@ -251,6 +315,7 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
                 return null;
               }
               const mealScope = `${pattern.id}-${slot.meal_slot}-${meal.id}`;
+              const mealError = issue?.kind === 'meal' && issue.mealId === meal.id ? issue.message : undefined;
               return (
                 <section
                   key={meal.id}
@@ -270,6 +335,8 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
                       <Input
                         id={`meal-name-${mealScope}`}
                         value={meal.name}
+                        aria-invalid={Boolean(mealError)}
+                        aria-describedby={mealError ? `meal-name-${mealScope}-error` : undefined}
                         maxLength={255}
                         className="font-semibold"
                         onChange={(event) => updateMeal({...meal, name: event.target.value})}
@@ -287,6 +354,14 @@ export function MenuEditor({menu, onChange}: {menu: NutritionMenu; onChange: (me
                       Remove
                     </Button>
                   </div>
+                  {mealError && (
+                    <p
+                      id={`meal-name-${mealScope}-error`}
+                      className="text-sm text-destructive"
+                    >
+                      {mealError}
+                    </p>
+                  )}
                   {meal.meal_items.map((item, itemIndex) => (
                     <FoodRow
                       key={item.id}

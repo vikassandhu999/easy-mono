@@ -21,7 +21,7 @@ import {InfiniteList} from '../ui/infinite-list';
 import {useListLocation} from '../ui/list-location';
 import {NutritionMenuPreview} from '../ui/nutrition-plan-preview';
 import {FormActions, Page, PageHeader} from '../ui/page';
-import {emptyMenu, validateMenu} from './menu';
+import {emptyMenu, type MenuIssue, validateMenu} from './menu';
 import {MenuEditor} from './menu-editor';
 
 const targets = [
@@ -67,6 +67,7 @@ export function NutritionPlanWorksheet({
   const form = useForm({defaultValues: fields(initial)});
   const [menu, setMenu] = useState(() => initial?.menu ?? emptyMenu());
   const [menuDirty, setMenuDirty] = useState(false);
+  const [menuIssue, setMenuIssue] = useState<MenuIssue | null>(null);
   const [previewMenu, setPreviewMenu] = useState<NutritionMenu>();
   const [conflict, setConflict] = useState(false);
   const [uncertain, setUncertain] = useState(false);
@@ -101,11 +102,11 @@ export function NutritionPlanWorksheet({
     };
   }, []);
   useEffect(() => {
-    if (form.formState.errors.root && !pending) {
+    if (form.formState.errors.root && !pending && !menuIssue) {
       errorRef.current?.focus();
       errorRef.current?.scrollIntoView({block: 'center'});
     }
-  }, [form.formState.errors.root, pending]);
+  }, [form.formState.errors.root, pending, menuIssue]);
   const blocker = useBlocker(
     useCallback(
       ({currentLocation, nextLocation}) =>
@@ -129,6 +130,7 @@ export function NutritionPlanWorksheet({
     form.reset(fields(saved));
     setMenu(saved.menu);
     setMenuDirty(false);
+    setMenuIssue(null);
     setConflict(false);
     setUncertain(false);
   }
@@ -206,8 +208,9 @@ export function NutritionPlanWorksheet({
           form.clearErrors('root');
           setNotice('');
           const invalid = validateMenu(menu);
+          setMenuIssue(invalid);
           if (invalid) {
-            form.setError('root', {message: invalid});
+            form.setError('root', {message: invalid.message});
             return;
           }
           let saved = plan;
@@ -326,9 +329,12 @@ export function NutritionPlanWorksheet({
           </section>
           <MenuEditor
             menu={menu}
+            issue={menuIssue}
+            pending={pending}
             onChange={(value) => {
               setMenu(value);
               setMenuDirty(true);
+              setMenuIssue(null);
               form.clearErrors('root');
             }}
           />
@@ -346,7 +352,7 @@ export function NutritionPlanWorksheet({
         <div
           ref={errorRef}
           tabIndex={-1}
-          className="space-y-3"
+          className="space-y-3 break-words"
         >
           <FormError message={form.formState.errors.root?.message} />
           {form.formState.errors.root && plan && (
@@ -380,8 +386,9 @@ export function NutritionPlanWorksheet({
             isDisabled={pending || unavailable}
             onPress={async () => {
               const invalid = validateMenu(menu);
+              setMenuIssue(invalid);
               if (invalid) {
-                form.setError('root', {message: invalid});
+                form.setError('root', {message: invalid.message});
                 return;
               }
               form.clearErrors('root');

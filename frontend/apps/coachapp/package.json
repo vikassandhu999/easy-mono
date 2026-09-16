@@ -26,7 +26,7 @@
     "test:foods": "node tests/foods/foods.browser.mjs",
     "test:client-nutrition": "node tests/nutrition/personalize.browser.mjs",
     "test:client-training": "node tests/training/personalize.browser.mjs",
-    "test:nutrition": "node tests/nutrition/plans.browser.mjs && node tests/nutrition/assignment.browser.mjs && node tests/nutrition/recovery.browser.mjs && node tests/nutrition/menu-editing.browser.mjs && node tests/nutrition/menu-order.browser.mjs",
+    "test:nutrition": "node tests/nutrition/plans.browser.mjs && node tests/nutrition/assignment.browser.mjs && node tests/nutrition/recovery.browser.mjs && node tests/nutrition/menu-editing.browser.mjs && node tests/nutrition/menu-order.browser.mjs && node tests/nutrition/worksheet-audit.browser.mjs",
     "test:nutrition-assignment": "node tests/nutrition/assignment.browser.mjs",
     "test:menu-order": "node tests/nutrition/menu-order.browser.mjs",
     "test:menu-editing": "node tests/nutrition/menu-editing.browser.mjs",

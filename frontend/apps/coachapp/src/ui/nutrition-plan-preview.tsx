@@ -44,10 +44,13 @@ export function NutritionMenuPreview({menu}: {menu: NutritionMenu}) {
   const pattern = menu.day_patterns.find((day) => day.id === active) ?? menu.day_patterns[0];
   const meals = new Map(menu.meals.map((meal) => [meal.id, meal]));
   return (
-    <div className="space-y-5">
+    <div className="min-w-0 space-y-5 [overflow-wrap:anywhere]">
       <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
         {(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const).map((day) => (
-          <div key={day}>
+          <div
+            key={day}
+            className="min-w-0"
+          >
             <dt className="capitalize text-xs text-muted-foreground">{day}</dt>
             <dd>{menu.day_patterns.find((value) => value.id === menu.schedule[day])?.name ?? 'Menu unavailable'}</dd>
           </div>
@@ -61,11 +64,12 @@ export function NutritionMenuPreview({menu}: {menu: NutritionMenu}) {
         {menu.day_patterns.map((day) => (
           <Button
             key={day.id}
+            className="max-w-full"
             variant={day.id === pattern?.id ? 'secondary' : 'ghost'}
             aria-pressed={day.id === pattern?.id}
             onPress={() => setActive(day.id)}
           >
-            {day.name}
+            <span className="truncate">{day.name}</span>
           </Button>
         ))}
       </div>

@@ -137,7 +137,7 @@ export function FoodPicker({onAdd, onClose}: {onAdd: (items: NutritionMealItem[]
 function Foods({search, children}: {search: string; children: (item: Food) => React.ReactNode}) {
   return (
     <InfiniteList
-      query={useFoods(search)}
+      query={useFoods({search})}
       label="foods"
       singular="food"
       empty={<p>No matching foods. Try another name.</p>}

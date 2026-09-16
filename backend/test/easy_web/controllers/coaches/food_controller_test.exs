@@ -207,6 +207,30 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
   end
 
   describe "GET /v1/coach/nutrition-foods" do
+    test "search matches copied punctuation and numeric names within a category", %{conn: conn, coach: coach, business: business} do
+      for name <- ["Non-fat yogurt 2.5%", "Test food 00 1789533529417-375", "Farmer's yogurt", "Crème fraîche"] do
+        food = insert(:food, name: name, category: "Breakfast", creator: coach, business: business)
+        insert(:food, name: name, category: "Dinner", creator: coach, business: business)
+
+        assert %{"data" => [%{"id" => id}], "count" => 1, "next_cursor" => nil} =
+                 conn
+                 |> get("/v1/coach/nutrition-foods", %{"search" => name, "categories" => ["Breakfast"], "cursor" => "start"})
+                 |> json_response(200)
+
+        assert id == food.id
+      end
+
+      assert %{"data" => [%{"name" => "Non-fat yogurt 2.5%"}], "count" => 1} =
+               conn
+               |> get("/v1/coach/nutrition-foods", %{"search" => "non-fa yog 2.5", "categories" => ["Breakfast"], "cursor" => "start"})
+               |> json_response(200)
+
+      assert %{"count" => 4} =
+               conn
+               |> get("/v1/coach/nutrition-foods", %{"search" => "! :* & |", "categories" => ["Breakfast"], "cursor" => "start"})
+               |> json_response(200)
+    end
+
     test "rejects unknown query parameters", %{conn: conn} do
       conn = get(conn, "/v1/coach/nutrition-foods", %{"unknown" => "value"})
 

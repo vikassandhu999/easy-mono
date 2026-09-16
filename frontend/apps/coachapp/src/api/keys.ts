@@ -3,6 +3,7 @@ import type {ScheduleFilters} from './check-in-schedules';
 import type {ClientPlanFilters} from './client-plans';
 import type {ClientFilters} from './clients';
 import type {ConversationFilters} from './conversations';
+import type {FoodFilters} from './foods';
 import type {FormTemplateFilters} from './forms';
 import type {NutritionPlanFilters} from './nutrition-plans';
 import type {TeamFilters} from './team';
@@ -79,7 +80,8 @@ export const nutritionKeys = {
 export const foodKeys = {
   all: ['foods'] as const,
   lists: () => [...foodKeys.all, 'list'] as const,
-  infinite: (search: string) => [...foodKeys.lists(), 'infinite', {search}] as const,
+  infinite: (filters: FoodFilters) => [...foodKeys.lists(), 'infinite', filters] as const,
+  categories: () => [...foodKeys.lists(), 'categories'] as const,
   details: () => [...foodKeys.all, 'detail'] as const,
   detail: (id: string) => [...foodKeys.details(), id] as const,
   usage: (id: string, kind: string, search: string) => [...foodKeys.lists(), 'usage', id, {kind, search}] as const,

@@ -312,3 +312,10 @@ NAV-02 — Connected navigation audit, 2026-09-16. Backward keyboard traversal c
 Evidence: `/tmp/coachapp-navigation-control.log`, `/tmp/coachapp-navigation-final.log`, `/tmp/coachapp-final-auth.log`, `/tmp/coachapp-final-team.log`, `/tmp/coachapp-final-settings.log`. Screenshots are archived under `/tmp/coachapp-navigation-audit-2026-09-16`. Fresh accepted clients and account/business records remain in the isolated fixture database; no existing records were changed. See final-audit.md for cross-screen evidence and remaining completion reconciliation.
 
 Navigation checkpoint gates: scoped Biome, repository checks, app production build and full backend precommit pass (1,778 tests, zero failures; `/tmp/coachapp-navigation-final-precommit.log`). The existing bundle-size warning remains.
+
+
+## Food category browsing, 2026-09-16
+
+LIBRARY-04 — Complete the food-library browsing task with one visible Category select, following foods.md. Choices, filtering and totals come from the server; search/category persist through reload and editor return. Three filtered pages, failed page retention/retry, combined search, remote names, empty results, creation invalidation, long labels and unknown selections pass at 375px/1280px. A focused retry control disappeared after success; the original probe failed, and the selector now receives focus after loading finishes. Food, recipe and nutrition-plan authoring regressions pass at both widths.
+
+The browser fixture exposed a server tokenization bug for copied hyphenated names. Search now shares the indexed text parser, preserving prefix matching and newest-first pagination for punctuation-only input. Focused backend tests cover both behaviors. Evidence: `/tmp/coachapp-food-categories-verified.log`, `/tmp/coachapp-food-category-{authoring,recipes,plans}.log`, `/tmp/coachapp-food-category-search-verified.log`. Reviewed screenshots are archived under `/tmp/coachapp-food-category-audit-2026-09-16`. The source review and API contract check used only current coachapp and backend files.

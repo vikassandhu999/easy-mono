@@ -192,25 +192,25 @@ defmodule Easy.Nutrition.Food do
   def search(query, ""), do: query
 
   def search(query, term) do
-    case to_tsquery(term) do
-      "" ->
-        query
-
-      tsquery ->
-        from(f in query,
-          where: fragment("search_vector @@ to_tsquery('simple', ?)", ^tsquery),
-          order_by: [
-            desc:
-              fragment(
-                "ts_rank(search_vector, to_tsquery('simple', ?)) / greatest(length(?), 1)",
-                ^tsquery,
-                f.name
-              ),
-            asc: f.name,
-            asc: f.id
-          ]
-        )
-    end
+    # Parse query lexemes with the same dictionary as the stored vector, retaining prefix search.
+    from(f in query,
+      cross_join:
+        search in fragment(
+          """
+          (SELECT to_tsquery('simple', string_agg(quote_literal(token) || ':*', ' & ')) AS value
+           FROM unnest(tsvector_to_array(to_tsvector('simple', ?))) AS token)
+          """,
+          ^term
+        ),
+      where: is_nil(search.value) or fragment("search_vector @@ ?", search.value),
+      order_by: [
+        desc: fragment("ts_rank(search_vector, ?) / greatest(length(?), 1)", search.value, f.name),
+        desc: fragment("CASE WHEN ? IS NULL THEN ? END", search.value, f.inserted_at),
+        desc: fragment("CASE WHEN ? IS NULL THEN ? END", search.value, f.id),
+        asc: f.name,
+        asc: f.id
+      ]
+    )
   end
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
@@ -221,18 +221,5 @@ defmodule Easy.Nutrition.Food do
   @spec include_media(Ecto.Queryable.t()) :: Ecto.Query.t()
   def include_media(query \\ __MODULE__) do
     from(f in query, preload: [:media])
-  end
-
-  defp to_tsquery(term) do
-    term
-    |> String.trim()
-    |> String.split(~r/\s+/, trim: true)
-    |> Enum.map(&sanitize_tsquery_token/1)
-    |> Enum.reject(&(&1 == ""))
-    |> Enum.map_join(" & ", &"#{&1}:*")
-  end
-
-  defp sanitize_tsquery_token(token) do
-    String.replace(token, ~r/[^\w]/u, "")
   end
 end

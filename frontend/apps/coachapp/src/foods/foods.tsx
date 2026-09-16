@@ -1,10 +1,14 @@
+import {useEffect, useRef} from 'react';
 import {generatePath, Link, useLocation, useSearchParams} from 'react-router-dom';
-import {useFoods} from '../api/foods';
+import {useFoodCategories, useFoods} from '../api/foods';
 import {routes} from '../routes';
-import {buttonVariants} from '../ui/button';
+import {Button, buttonVariants} from '../ui/button';
+import {FormError} from '../ui/form-error';
 import {InfiniteList} from '../ui/infinite-list';
 import {ListSearch} from '../ui/list-search';
 import {Page, PageHeader, Surface} from '../ui/page';
+import {SelectItem} from '../ui/select';
+import {SelectField} from '../ui/select-field';
 export function Foods() {
   const [params] = useSearchParams();
   const {search, state: locationState} = useLocation();
@@ -13,7 +17,9 @@ export function Foods() {
     state && typeof state === 'object' && 'deleted' in state && typeof state.deleted === 'string'
       ? state.deleted
       : null;
-  const query = useFoods(params.get('search')?.trim() ?? '');
+  const category = params.get('category') || '';
+  const query = useFoods({search: params.get('search')?.trim() ?? '', ...(category ? {categories: [category]} : {})});
+  const filtered = Boolean(params.get('search') || category);
   return (
     <Page>
       <PageHeader
@@ -38,17 +44,20 @@ export function Foods() {
           {deleted} deleted.
         </p>
       )}
-      <ListSearch label="Search foods" />
+      <div className="grid items-start gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,16rem)]">
+        <ListSearch label="Search foods" />
+        <CategoryFilter />
+      </div>
       <InfiniteList
         query={query}
         label="foods"
         singular="food"
         empty={
           <Surface>
-            <h2 className="section-title">{params.get('search') ? 'No matching foods' : 'Create your first food'}</h2>
+            <h2 className="section-title">{filtered ? 'No matching foods' : 'Create your first food'}</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              {params.get('search')
-                ? 'Try another name, or create the food you need.'
+              {filtered
+                ? 'Try another name or category, or create the food you need.'
                 : 'Add a food and its nutrition, then select it when building a meal.'}
             </p>
           </Surface>
@@ -70,5 +79,100 @@ export function Foods() {
         )}
       </InfiniteList>
     </Page>
+  );
+}
+
+function CategoryFilter() {
+  const query = useFoodCategories();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const retryRef = useRef<HTMLButtonElement>(null);
+  const retryRequested = useRef(false);
+  const [params, setParams] = useSearchParams();
+  const {state} = useLocation();
+  const category = params.get('category') || '';
+  const choices = query.data?.data ?? [];
+  useEffect(() => {
+    if (!retryRequested.current || query.isFetching) {
+      return;
+    }
+    retryRequested.current = false;
+    if (document.activeElement === document.body || document.activeElement === retryRef.current) {
+      (query.isError ? retryRef : triggerRef).current?.focus();
+    }
+  }, [query.isFetching, query.isError]);
+  return (
+    <div className="grid min-w-0 gap-2">
+      <label
+        id="food-category-label"
+        htmlFor="food-category"
+        className="text-sm font-medium"
+      >
+        Category
+      </label>
+      <SelectField
+        id="food-category"
+        triggerRef={triggerRef}
+        value={category ? `category:${category}` : 'all'}
+        isDisabled={query.isPending}
+        onChange={(value) =>
+          setParams(
+            (current) => {
+              const next = new URLSearchParams(current);
+              if (value === 'all') {
+                next.delete('category');
+              } else {
+                next.set('category', value.slice('category:'.length));
+              }
+              return next;
+            },
+            {replace: true, state},
+          )
+        }
+      >
+        <SelectItem id="all">All categories</SelectItem>
+        {category && !choices.includes(category) && (
+          <SelectItem
+            id={`category:${category}`}
+            textValue={category}
+          >
+            <span className="min-w-0 [overflow-wrap:anywhere]">{category}</span>
+          </SelectItem>
+        )}
+        {choices.map((value) => (
+          <SelectItem
+            key={value}
+            id={`category:${value}`}
+            textValue={value}
+          >
+            <span className="min-w-0 [overflow-wrap:anywhere]">{value}</span>
+          </SelectItem>
+        ))}
+      </SelectField>
+      {query.isPending && (
+        <p
+          role="status"
+          className="text-xs text-muted-foreground"
+        >
+          Loading categories…
+        </p>
+      )}
+      {query.isError && (
+        <div className="space-y-2">
+          <FormError message="Could not refresh categories. You can still search foods or choose All categories." />
+          <Button
+            ref={retryRef}
+            variant="ghost"
+            size="sm"
+            isPending={query.isFetching}
+            onPress={() => {
+              retryRequested.current = true;
+              query.refetch();
+            }}
+          >
+            Retry categories
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }

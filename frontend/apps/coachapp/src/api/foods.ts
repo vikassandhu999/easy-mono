@@ -3,21 +3,29 @@ import {call, client} from './client';
 import {foodKeys, nutritionKeys, recipeKeys} from './keys';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
-import type {FoodCreate, FoodUpdate} from './schema';
+import type {FoodCreate, FoodListQuery, FoodUpdate} from './schema';
 import {getSession} from './session';
 
 export type {Food, FoodCreate, FoodUpdate} from './schema';
+export type FoodFilters = Pick<FoodListQuery, 'search' | 'categories'>;
 
-export function useFoods(search: string) {
+export function useFoods(filters: FoodFilters) {
   return useInfiniteQuery({
-    queryKey: foodKeys.infinite(search),
+    queryKey: foodKeys.infinite(filters),
     queryFn: async ({pageParam, signal}) => {
       const page = await call(
-        client.GET('/v1/coach/nutrition-foods', {params: {query: {search, cursor: pageParam, limit: 20}}, signal}),
+        client.GET('/v1/coach/nutrition-foods', {params: {query: {...filters, cursor: pageParam, limit: 20}}, signal}),
       );
       return {...page, next_cursor: page.next_cursor ?? null};
     },
     ...cursorPagination,
+  });
+}
+
+export function useFoodCategories() {
+  return useQuery({
+    queryKey: foodKeys.categories(),
+    queryFn: ({signal}) => call(client.GET('/v1/coach/nutrition-foods/categories', {signal})),
   });
 }
 

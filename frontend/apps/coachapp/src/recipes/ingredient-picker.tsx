@@ -10,7 +10,7 @@ export function IngredientPicker({onAdd, onClose}: {onAdd: (foods: Food[]) => vo
   const [draft, setDraft] = useState('');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(new Map<string, Food>());
-  const query = useFoods(search);
+  const query = useFoods({search});
   useEffect(() => {
     const timer = setTimeout(() => setSearch(draft.trim()), 300);
     return () => clearTimeout(timer);

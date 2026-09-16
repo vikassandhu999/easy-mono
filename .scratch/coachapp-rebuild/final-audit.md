@@ -6,7 +6,7 @@ This audit connects the completed slices. It does not introduce another screen o
 
 ## Current checkpoint
 
-Implementation checkpoint: `c5b9774`, verified 2026-09-16. Nutrition hidden-field validation and long-content checks pass at 375px/1280px, along with authoring/assignment, personalization, recovery, portions and ordering. App build, scoped Biome, repository checks and full backend precommit pass (1,778 tests, zero failures).
+Previous implementation checkpoints: `c5b9774` (nutrition worksheet) and `f351d95` (connected navigation), verified 2026-09-16. Nutrition hidden-field validation and long-content checks pass at 375px/1280px, along with authoring/assignment, personalization, recovery, portions and ordering. App build, scoped Biome, repository checks and full backend precommit pass (1,778 tests, zero failures).
 
 ## Cross-screen evidence
 
@@ -39,3 +39,12 @@ The test uses only its fresh isolated accounts and accepted clients; those recor
 The live legacy OpenAPI and saved coach spec agree on 10 paths and 14 schemas after excluding Elixir-only `x-struct`/`x-validate` metadata. Typed-route generation is checked separately by backend precommit (170 typed routes across consumers). This comparison needed no API or generated-file edits.
 
 Navigation checkpoint gates: scoped Biome, repository checks, app production build and full backend precommit pass (1,778 tests, zero failures; `/tmp/coachapp-navigation-final-precommit.log`). The existing bundle-size warning remains.
+
+
+## Food browsing reconciliation, 2026-09-16
+
+The contract-to-task review identified one missing planned browsing capability: food category filtering. The current food library now exposes the existing categories endpoint through a shadcn select. LIBRARY-04 and foods.md record combined search, three pages, error recovery, keyboard focus, long labels and editor return at both widths. Copied-name search also now uses PostgreSQL's indexed text parser; prefixes and punctuation-only newest ordering pass backend regression tests.
+
+Current checkpoint gates pass: coach production build, scoped Biome, repository checks and full backend precommit (1,779 tests, zero failures). Logs: `/tmp/coachapp-food-category-final-build.log` and `/tmp/coachapp-food-category-precommit-verified.log`. Food authoring, recipe authoring and nutrition-plan regressions pass at both widths. Normal API4000, coach2022 and client1314 remain available.
+
+Continue reconciling endpoint candidates against coaching outcomes, especially direct form assignments versus intake and one-time check-in flows. An unused API path alone is not evidence of a missing screen. The remaining local checklist above is still open.

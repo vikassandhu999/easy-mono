@@ -483,7 +483,7 @@ function CreationRecovery({
   onClose: () => void;
   onRetry: () => void;
 }) {
-  const query = useFoods(name.trim());
+  const query = useFoods({search: name.trim()});
   return (
     <Dialog
       isOpen

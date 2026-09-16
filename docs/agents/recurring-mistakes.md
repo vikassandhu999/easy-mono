@@ -176,6 +176,7 @@ Severity of the rule isn't the point; recurrence is.
 | RM-232 | Focus server errors after pending controls re-enable | Frontend | test |
 | RM-233 | Saved feedback follows actual draft state | Frontend | test |
 | RM-234 | Focus outlines must survive container clipping | Frontend | browser test |
+| RM-235 | Search lexemes match the indexed text parser | Backend | test |
 
 ---
 
@@ -384,6 +385,12 @@ conflicting Diary saves roll back and can be retried. Joining an existing transa
 does not upgrade its isolation level.
 
 ---
+
+### RM-235 — Search lexemes must match the indexed text parser
+Food controller tests cover copied hyphenated, decimal, apostrophe and Unicode names,
+prefix matching and category scope. Library tests preserve newest-first pagination when
+the parser produces no searchable lexemes. Removing punctuation before parsing changes
+the words and can make a saved name impossible to find.
 
 ### RM-230 — Persisted fixture identities must survive a new VM
 System.unique_integer is unique only within one runtime. A subsequent test process can
@@ -1316,6 +1323,10 @@ Auth applies this to invitation sends, code resends and confirmation failures. T
 Training worksheet success notices receive focus, and reload starts by clearing the previous notice so repeated successful loads trigger the same handoff. `worksheet-audit.browser.mjs` verifies failed reload retention, keyboard retry and repeated success; personalization checks the shared behavior on client copies. Nutrition reload failure also closes the confirmation before focusing retained-draft feedback, so the error cannot remain hidden behind an open modal; its personalization suite verifies keyboard retry.
 
 Nutrition validation reveals the containing day before focusing an invalid name or portion. Handle each validation result once: an effect that keeps selecting the invalid day traps navigation. The nutrition worksheet audit switches away after validation, then submits again and requires a fresh focus handoff.
+
+Category retries restore focus after choices settle: the successful selector or failed retry
+action must be mounted and enabled first. Do not interrupt a user who moved to another
+field while waiting. Coachapp `test:food-categories` checks the successful handoff.
 
 ### RM-233 — Saved feedback follows actual draft state
 An editor cleared its saved notice only on DOM change events, so adding a program left

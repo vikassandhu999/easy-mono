@@ -6,13 +6,13 @@ This audit connects the completed slices. It does not introduce another screen o
 
 ## Current checkpoint
 
-Previous implementation checkpoints: `c5b9774` (nutrition worksheet) and `f351d95` (connected navigation), verified 2026-09-16. Nutrition hidden-field validation and long-content checks pass at 375px/1280px, along with authoring/assignment, personalization, recovery, portions and ordering. App build, scoped Biome, repository checks and full backend precommit pass (1,778 tests, zero failures).
+Latest implementation checkpoint: `dc01639` (individual check-in requests), verified 2026-09-16. New request management and existing scheduling/deletion/response-review journeys pass at 375px/1280px. Build, scoped Biome, repository checks, API generation/review and backend precommit pass (1,784 tests). Earlier route and connected-workflow evidence remains below and in the route worklist.
 
 ## Cross-screen evidence
 
 | Check | Current evidence | Status |
 | --- | --- | --- |
-| Router coverage | Compared current `routes.ts`, `router.tsx` and route worklist: 69 registered routes including wildcard; none missing from the worklist; no unregistered route constants | Source inventory passed |
+| Router coverage | Current `routes.ts` and `router.tsx`: 70 registered constants plus wildcard (71 routes); the route worklist includes the missing-intake and individual-request additions; no unregistered route constants | Source inventory passed |
 | Entry references | Every route constant has a source reference outside its definition and router; this establishes a reference, not successful runtime reachability | Source inventory passed; connected keyboard navigation passed for owner/trainer at both widths (NAV-02) |
 | Client onboarding | Current real-API invitation → client-app acceptance/intake → coach snapshot/review, retry, reload, persisted review and delayed-account isolation, at 375px/1280px | Passed; `/tmp/coachapp-final-onboarding.log` |
 | Daily coaching | All six Workbench queues, task completion/return, snooze, failed requests and account isolation, at 375px/1280px | Passed; `/tmp/coachapp-final-workbench.log` |
@@ -73,3 +73,15 @@ The generic assignment read exposed a real remaining coaching outcome: seeing al
 Other reviewed candidates do not require new screens: food/recipe impact arrays describe the same recipe/template/client-plan references now provided by paginated usage management; dashboard-setup updates only hidden-state metadata for a setup panel the original UX plan does not introduce. Client invitation-acceptance operations belong to the client journey and are exercised by the real onboarding suites. Conversation inbox/history and weight progress use their existing scoped cursor APIs. The remaining checklist above stays open for final evidence reconciliation, with device/provider/usability limits unchanged.
 
 Checkpoint gates: new request browser and existing scheduling/deletion/review suites pass at both widths; build, repository checks, API generation/review and full backend precommit pass (1,784 tests). See check-in-requests.md for the exact evidence.
+
+
+## Server-value ownership audit, 2026-09-16
+
+A bounded source pass over current coachapp `src/` found the remaining `filter` calls in unsaved form/menu/workout edits, selected upload removal, draft service/tag choices, and static question-type rendering. The count-related `length` uses are draft field-array controls; exercise relations use length only for their empty state. No `reduce`, `sort` or `toSorted` call was found in this scope. The shared InfiniteList renders the API page's `count`, uses loaded length only for empty/rendering decisions, follows opaque cursors, pauses automatic paging on failure and retains explicit retry. This establishes the inspected source behavior, not a graph completeness claim or a guarantee against every possible arithmetic implementation. Existing server-value and cursor browser/backend tests remain the behavioral evidence.
+
+
+## Production and second-engine verification, 2026-09-16
+
+The actual built app now has a connected browser suite without source imports or injected authentication. Chromium and WebKit both pass signup/deep-link recovery, form authoring with shadcn selection and saved choices, all eight sections, a real inbox socket, logout/login and missing-record return at both widths. The startup harness also records three compressed cold-load samples per width under network/CPU throttling. See [production verification](production-verification.md) for evidence, harness corrections and measured values.
+
+Current build, scoped Biome, repository checks and full backend precommit pass (1,784 tests). This closes the development-server-only evidence gap for the tested core journey. Remaining browser-engine work is media and the deeper feature interactions; physical-device, target-coach and deployed-provider limits remain. No startup optimization or product redesign was inferred from the bundle warning.

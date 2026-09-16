@@ -11,6 +11,8 @@
     "test:auth-accessibility": "node tests/auth/accessibility.browser.mjs",
     "test:deep-links": "node tests/auth/deep-links.browser.mjs",
     "test:navigation": "node tests/navigation/navigation.browser.mjs",
+    "test:production": "pnpm build && node tests/navigation/production.browser.mjs",
+    "test:startup": "pnpm build && node tests/navigation/startup-audit.browser.mjs",
     "test:lists": "node tests/lists/lists.browser.mjs",
     "test:forms": "node tests/forms/forms.browser.mjs && node tests/forms/creation-recovery.browser.mjs",
     "test:form-creation-recovery": "node tests/forms/creation-recovery.browser.mjs",

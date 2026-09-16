@@ -1,6 +1,6 @@
 # Coach app route audit — 2026-09-15
 
-Inventory comes from the current router, not the navigation. Earlier slice evidence remains in completion.md; pending rows below require a current route audit. Tests use separate disposable accounts and only mutate their own records. No handwritten coachapp-v2 files are consulted.
+Inventory comes from the current router, not the navigation. Earlier slice evidence remains in completion.md; pending rows below require a current route audit. Tests use separate disposable accounts and only mutate their own records. No handwritten coachapp-v2 files are consulted. Route rows describe Chromium evidence unless another engine is explicitly identified below.
 
 | Route | Role | Viewport | States covered in this audit | Result | Findings |
 | --- | --- | --- | --- | --- | --- |
@@ -336,3 +336,8 @@ CHECKIN-03 — The schedule list lacked removal of an unused schedule. A quiet r
 ## Individual check-in requests, 2026-09-16
 
 CHECKIN-04 — Schedule generation and submitted history left individual unanswered requests inaccessible. The requested-check-in list now exposes the complete client-scoped task through server status/search/counts and cursor pages. Management preserves future schedules and protects concurrent client submission through the observed status. Interrupted writes require an explicit current-list refresh before another change. The existing response reader recognizes request-list entry and restores its filters on return. New and affected regression suites pass at both widths; see check-in-requests.md for logs, reviewed screenshots and limits.
+
+
+## Production engine coverage, 2026-09-16
+
+PROD-01 — The built bundle passes the connected signup/auth → form authoring/reload → eight main sections → inbox WebSocket → logout/login → missing-record recovery journey in Chromium and WebKit, at 375px and 1280px. The test uses visible controls and built scripts throughout. Screenshots, sample startup measurements and evidence limits are in production-verification.md. This does not upgrade every route row's deeper scenarios to WebKit coverage.

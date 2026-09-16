@@ -39,3 +39,10 @@ The original overlap-focus and row-outline probes fail; the expanded nutrition s
 The dedicated `test:nutrition-assignment` suite now covers the client-scoped picker with 45 real templates at 375px/1280px: empty/loading/error recovery, manual and automatic pagination, server totals and search, retained refresh results, preview/reload/return position, zero targets and archived exclusion. A long unbroken template name exposed horizontal overflow; wrapping stays local to assignment rows and the preview surface. The original viewport probe fails and the corrected suite passes, checking both document width and text inside the row. Screenshots are archived under `/tmp/coachapp-nutrition-selection-audit-2026-09-15`. The suite is included in `test:nutrition`.
 
 Verification: build, scoped Biome, repository checks and backend precommit pass (1,778 tests, zero failures). Remote search targets a record absent from the first loaded page.
+
+
+## Worksheet recovery audit, 2026-09-16
+
+Uncertain creation now keeps the submitted fields and meal worksheet fixed until saved-result review. Recovery and an explicit separate-template choice restore editing and focus without another write; closing lookup preserves the guard, and leaving remains available. Failed saved-version reloads close the confirmation and focus the error so keyboard retry is reachable. Save/load notices receive focus and disappear when form or meal edits make the draft dirty.
+
+The expanded recovery and client-personalization probes fail before these fixes and pass afterward at 375px/1280px. Template authoring/assignment, menu portions/removal and ordering regressions also pass against the normal API/app. The menu-editing fixture now uses a distinct business-handle prefix after colliding with the ordering suite in a parallel run. Build, Biome, repository checks and full backend precommit pass (1,778 tests). See NUTRITION-01 in the route audit. Long-content and hidden-menu validation checks remain next.

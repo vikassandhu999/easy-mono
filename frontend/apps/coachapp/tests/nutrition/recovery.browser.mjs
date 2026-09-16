@@ -1,7 +1,9 @@
+import {mkdir} from 'node:fs/promises';
 import {chromium, expect, request} from '@playwright/test';
 
 const api = await request.newContext({baseURL: 'http://localhost:4000'});
 const browser = await chromium.launch();
+await mkdir('tests/nutrition/artifacts', {recursive: true});
 async function send(method, path, data, token) {
   const response = await api[method](path, {data, headers: token ? {authorization: `Bearer ${token}`} : {}});
   expect(response.ok(), `${method} ${path} ${response.status()}`).toBe(true);
@@ -39,6 +41,7 @@ try {
     await page.getByLabel('Calories · kcal', {exact: true}).fill('-1');
     await page.getByRole('button', {name: 'Save nutrition plan', exact: true}).click();
     await expect(page.getByText('Enter zero or a positive number.', {exact: true})).toBeVisible();
+    await expect(page.getByLabel('Calories · kcal', {exact: true})).toBeFocused();
     await page.getByLabel('Calories · kcal', {exact: true}).fill('1800');
     await page.getByRole('button', {name: 'Add meal', exact: true}).click();
     await page.getByLabel('Meal name', {exact: true}).fill('Rice bowl');
@@ -67,6 +70,38 @@ try {
     await page.getByRole('link', {name: 'Back to nutrition plans', exact: true}).click();
     await expect(page.getByRole('dialog', {name: 'Leave without saving?'})).toBeVisible();
     await page.getByRole('button', {name: 'Keep editing', exact: true}).click();
+    // No response and no persisted creation: lookup must precede deliberate retry.
+    await page.route('**/v1/coach/nutrition-plans', (route) =>
+      route.request().method() === 'POST' ? route.fulfill({status: 503, json: {}}) : route.continue(),
+    );
+    await page.getByRole('button', {name: 'Save nutrition plan', exact: true}).click();
+    await expect(page.getByRole('button', {name: 'Check saved plans', exact: true})).toBeVisible();
+    await expect(page.getByLabel('Plan name', {exact: true})).toBeDisabled();
+    await expect(page.getByLabel('Brown rice portion', {exact: true})).toBeDisabled();
+    await expect(page.getByRole('button', {name: 'Create day variation', exact: true})).toBeDisabled();
+    await page.unroute('**/v1/coach/nutrition-plans');
+    await page.route('**/v1/coach/nutrition-plans?*', (route) => route.fulfill({status: 503, json: {}}));
+    await page.getByRole('button', {name: 'Check saved plans', exact: true}).click();
+    const recovery = page.getByRole('dialog', {name: 'Check saved plans', exact: true});
+    await expect(recovery.getByRole('button', {name: 'Try again', exact: true})).toBeVisible();
+    await expect(recovery.getByRole('button', {name: 'Create a separate template', exact: true})).toHaveCount(0);
+    await page.unroute('**/v1/coach/nutrition-plans?*');
+    await recovery.getByRole('button', {name: 'Try again', exact: true}).click();
+    await expect(
+      recovery.getByText('No matching plan found. Your worksheet is still here.', {exact: true}),
+    ).toBeVisible();
+    expect(await recovery.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+    await page.screenshot({path: `tests/nutrition/artifacts/creation-recovery-${width}.png`, animations: 'disabled'});
+    await recovery.getByRole('button', {name: 'Close', exact: true}).click();
+    await expect(page.getByLabel('Plan name', {exact: true})).toBeDisabled();
+    await page.getByRole('link', {name: 'Back to nutrition plans', exact: true}).click();
+    await expect(page.getByRole('button', {name: 'Discard changes', exact: true})).toBeEnabled();
+    await page.getByRole('button', {name: 'Keep editing', exact: true}).click();
+    await page.getByRole('button', {name: 'Check saved plans', exact: true}).click();
+    await recovery.getByRole('button', {name: 'Create a separate template', exact: true}).click();
+    await expect(page.getByLabel('Plan name', {exact: true})).toBeFocused();
+    await expect(page.getByLabel('Plan name', {exact: true})).toHaveValue('Recovery plan');
+    await expect(page.getByLabel('Brown rice portion', {exact: true})).toHaveValue('125');
     let creates = 0;
     page.on('request', (request) => {
       if (request.method() === 'POST' && request.url().endsWith('/v1/coach/nutrition-plans')) {
@@ -91,12 +126,24 @@ try {
       .getByRole('button', {name: 'Recovery plan', exact: true})
       .click();
     await page.getByRole('button', {name: 'Use this empty template', exact: true}).click();
+    await expect(page.getByLabel('Plan name', {exact: true})).toBeFocused();
     await expect(page.getByLabel('Brown rice portion', {exact: true})).toHaveValue('125');
     await page.getByRole('button', {name: 'Save nutrition plan', exact: true}).click();
     await expect(page).toHaveURL(/\/nutrition-plans\/[0-9a-f-]+$/);
     expect(creates).toBe(1);
     await expect(page.getByLabel('Plan name', {exact: true})).toHaveValue('Recovery plan');
     const planId = page.url().split('/').at(-1);
+    await page.getByLabel('Calories · kcal', {exact: true}).fill('1850');
+    await page.getByRole('button', {name: 'Save nutrition plan', exact: true}).click();
+    await expect(page.getByText('Nutrition plan saved.', {exact: true})).toBeFocused();
+    expect((await send('get', `/v1/coach/nutrition-plans/${planId}`, undefined, token)).data.target_calories).toBe(
+      1850,
+    );
+    await page.getByLabel('Brown rice portion', {exact: true}).fill('140');
+    await expect(page.getByText('Nutrition plan saved.', {exact: true})).toHaveCount(0);
+    await page.getByRole('button', {name: 'Save nutrition plan', exact: true}).click();
+    await expect(page.getByText('Nutrition plan saved.', {exact: true})).toBeFocused();
+
     await page.getByLabel('Calories · kcal', {exact: true}).fill('1900');
     let resume;
     const delayed = new Promise((resolve) => {

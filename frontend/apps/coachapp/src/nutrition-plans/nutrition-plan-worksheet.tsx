@@ -1,4 +1,5 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {flushSync} from 'react-dom';
 import {useForm} from 'react-hook-form';
 import {generatePath, useBeforeUnload, useBlocker, useNavigate} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
@@ -73,6 +74,12 @@ export function NutritionPlanWorksheet({
   const [reloadOpen, setReloadOpen] = useState(false);
   const [reloading, setReloading] = useState(false);
   const [notice, setNotice] = useState('');
+  const noticeRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (notice) {
+      noticeRef.current?.focus();
+    }
+  }, [notice]);
   const mounted = useRef(true);
   const leaving = useRef(false);
   const errorRef = useRef<HTMLDivElement>(null);
@@ -94,11 +101,11 @@ export function NutritionPlanWorksheet({
     };
   }, []);
   useEffect(() => {
-    if (form.formState.errors.root) {
+    if (form.formState.errors.root && !pending) {
       errorRef.current?.focus();
       errorRef.current?.scrollIntoView({block: 'center'});
     }
-  }, [form.formState.errors.root]);
+  }, [form.formState.errors.root, pending]);
   const blocker = useBlocker(
     useCallback(
       ({currentLocation, nextLocation}) =>
@@ -126,6 +133,7 @@ export function NutritionPlanWorksheet({
     setUncertain(false);
   }
   async function loadLatest() {
+    setNotice('');
     setReloading(true);
     try {
       const result = await query.refetch();
@@ -142,6 +150,7 @@ export function NutritionPlanWorksheet({
         form.setError('root', {
           message: errorMessage(error, 'Could not load the saved plan. Your draft is still here.'),
         });
+        setReloadOpen(false);
       }
     } finally {
       if (mounted.current) {
@@ -191,6 +200,9 @@ export function NutritionPlanWorksheet({
         noValidate
         className="has-mobile-actions min-w-0 space-y-8"
         onSubmit={form.handleSubmit(async (values) => {
+          if (uncertain) {
+            return;
+          }
           form.clearErrors('root');
           setNotice('');
           const invalid = validateMenu(menu);
@@ -263,7 +275,7 @@ export function NutritionPlanWorksheet({
         })}
       >
         <fieldset
-          disabled={pending || unavailable}
+          disabled={pending || unavailable || uncertain}
           className="min-w-0 space-y-8"
         >
           <legend className="sr-only">Nutrition plan details</legend>
@@ -322,7 +334,15 @@ export function NutritionPlanWorksheet({
           />
         </fieldset>
         {unavailable && <FormError message="This nutrition plan is archived and cannot be edited here." />}
-        {notice && !dirty && <p role="status">{notice}</p>}
+        {notice && !dirty && (
+          <p
+            ref={noticeRef}
+            tabIndex={-1}
+            role="status"
+          >
+            {notice}
+          </p>
+        )}
         <div
           ref={errorRef}
           tabIndex={-1}
@@ -420,15 +440,21 @@ export function NutritionPlanWorksheet({
           name={form.getValues('name')}
           onClose={() => setRecovering(false)}
           onNew={() => {
-            setRecovering(false);
-            setUncertain(false);
-            form.clearErrors('root');
+            flushSync(() => {
+              setRecovering(false);
+              setUncertain(false);
+              form.clearErrors('root');
+            });
+            form.setFocus('name');
           }}
           onUse={(saved) => {
-            setPlan(saved);
-            setUncertain(false);
-            setRecovering(false);
-            form.clearErrors('root');
+            flushSync(() => {
+              setPlan(saved);
+              setUncertain(false);
+              setRecovering(false);
+              form.clearErrors('root');
+            });
+            form.setFocus('name');
           }}
         />
       )}

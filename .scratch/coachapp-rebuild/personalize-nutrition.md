@@ -21,3 +21,6 @@ Verified on 2026-09-11. Client nutrition editing and both shared nutrition brows
 Screenshots were inspected at both widths. The mobile meal worksheet keeps portions and the save action visible; names, meal headings and optional guidance retain their hierarchy. This is browser verification, not a target-coach usability session or a physical-device keyboard check.
 
 Build, Biome, check-rm and backend precommit passed (1,645 tests, zero failures). No backend contract changed. Vite retains its bundle-size warning. Graph reference lookup timed out, so bounded source reads and reference searches supplied the evidence. No legacy app UI was inspected or copied.
+
+
+The 2026-09-16 recovery audit verifies failed saved-version reloads retain edited targets, close the dialog, focus the error, and offer keyboard retry. Successful reloads focus their result. Full client personalization and shared nutrition regressions pass at 375px/1280px against the normal API/app; see NUTRITION-01 in the route audit for evidence and remaining layout/validation work.

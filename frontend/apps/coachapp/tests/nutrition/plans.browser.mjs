@@ -201,6 +201,7 @@ try {
     await expect(page.getByLabel('Protein · g', {exact: true})).toHaveValue('110');
     await page.getByRole('button', {name: 'Review saved version', exact: true}).click();
     await page.getByRole('button', {name: 'Load saved plan', exact: true}).click();
+    await expect(page.getByText('Saved version loaded.', {exact: true})).toBeFocused();
     await expect(page.getByLabel('Protein · g', {exact: true})).toHaveValue('100');
     const email = `nutrition-client-${Date.now()}@example.test`;
     const person = (

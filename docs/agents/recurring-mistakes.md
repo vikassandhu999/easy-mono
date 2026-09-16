@@ -1260,7 +1260,7 @@ lookup, deliberate separate-creation focus and one-write saved-result recovery. 
 recipe authoring apply the same rule to fields, media, servings and ingredients; their
 browser suites also verify that leaving remains available through draft confirmation.
 
-Training templates apply the same protection across the whole worksheet. `tests/training/templates.browser.mjs` checks failed/empty lookup and explicit retry; `workspace.browser.mjs` recovers a real lost creation with exactly one POST, preserving targets and restoring focus.
+Training templates apply the same protection across the whole worksheet. `tests/training/templates.browser.mjs` checks failed/empty lookup and explicit retry; `workspace.browser.mjs` recovers a real lost creation with exactly one POST, preserving targets and restoring focus. Nutrition applies this to fields and meal editing too; its recovery suite covers failed/empty lookup, explicit separate creation, retained navigation and one persisted creation after a lost response.
 
 ### RM-228 — Wrapping must constrain intrinsic width as well as visible text
 A long intake title widened the Workbench even after ordinary word wrapping kept the
@@ -1311,7 +1311,7 @@ Plan assignment applies this to server date conflicts and stale-preview reloads:
 
 Auth applies this to invitation sends, code resends and confirmation failures. The auth browser suites require error focus, keyboard retry, editable code focus after resend, and a usable code-sign-in action after actual expired or used links. Temporary link failures retain confirmation retry.
 
-Training worksheet success notices receive focus, and reload starts by clearing the previous notice so repeated successful loads trigger the same handoff. `worksheet-audit.browser.mjs` verifies failed reload retention, keyboard retry and repeated success; personalization checks the shared behavior on client copies.
+Training worksheet success notices receive focus, and reload starts by clearing the previous notice so repeated successful loads trigger the same handoff. `worksheet-audit.browser.mjs` verifies failed reload retention, keyboard retry and repeated success; personalization checks the shared behavior on client copies. Nutrition reload failure also closes the confirmation before focusing retained-draft feedback, so the error cannot remain hidden behind an open modal; its personalization suite verifies keyboard retry.
 
 ### RM-233 — Saved feedback follows actual draft state
 An editor cleared its saved notice only on DOM change events, so adding a program left

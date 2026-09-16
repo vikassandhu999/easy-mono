@@ -206,8 +206,18 @@ try {
     await expect(save).toBeDisabled();
     await expect(calories).toHaveValue('1700');
     await page.getByRole('button', {name: 'Review saved version', exact: true}).click();
+    await page.route(`**${endpoint}`, (route) => route.fulfill({status: 503, json: {}}));
     await page.getByRole('button', {name: 'Load saved plan', exact: true}).click();
     await expect(page.getByRole('dialog', {includeHidden: true})).toHaveCount(0);
+    await expect(page.getByRole('alert').locator('..')).toBeFocused();
+    await expect(calories).toHaveValue('1700');
+    await page.unroute(`**${endpoint}`);
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Review saved version', exact: true})).toBeFocused();
+    await page.keyboard.press('Enter');
+    await page.getByRole('button', {name: 'Load saved plan', exact: true}).click();
+    await expect(page.getByRole('dialog', {includeHidden: true})).toHaveCount(0);
+    await expect(page.getByText('Saved version loaded.', {exact: true})).toBeFocused();
     await expect(name).toHaveValue('Updated by another coach');
     await expect(calories).toHaveValue('1800');
     await calories.fill('1900');
@@ -222,6 +232,7 @@ try {
     await page.getByRole('button', {name: 'Review saved version', exact: true}).click();
     await page.getByRole('button', {name: 'Load saved plan', exact: true}).click();
     await expect(page.getByRole('dialog', {includeHidden: true})).toHaveCount(0);
+    await expect(page.getByText('Saved version loaded.', {exact: true})).toBeFocused();
     await expect(calories).toHaveValue('1900');
     await expect(save).toBeDisabled();
     // Upcoming coverage has an independently editable plan too.

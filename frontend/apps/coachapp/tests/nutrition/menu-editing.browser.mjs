@@ -17,7 +17,12 @@ try {
     const email = `menu-editing-${unique}@example.test`;
     await send('post', '/v1/auth/signup', {email, first_name: 'Taylor'});
     const guest = await send('post', '/v1/auth/verify', {email, otp: '123456'});
-    await send('post', '/v1/businesses', {name: 'Everyday Coaching', handle: `menu-${unique}`}, guest.access_token);
+    await send(
+      'post',
+      '/v1/businesses',
+      {name: 'Everyday Coaching', handle: `menu-editing-${unique}`},
+      guest.access_token,
+    );
     const tokens = await send('post', '/v1/auth/token', {
       grant_type: 'refresh_token',
       refresh_token: guest.refresh_token,

@@ -18,6 +18,7 @@
     "test:clients": "node tests/clients/invite.browser.mjs && node tests/clients/invitation-recovery.browser.mjs",
     "test:invitation-recovery": "node tests/clients/invitation-recovery.browser.mjs",
     "test:intake-follow-up": "node tests/clients/intake-follow-up.browser.mjs",
+    "test:intake-assignment": "node tests/intake-assignment/assignment.browser.mjs",
     "gen:api": "openapi-typescript ../../openapi/coach.openapi.json -o src/api/schema.ts",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "lint": "biome check --write .",

@@ -47,4 +47,13 @@ The contract-to-task review identified one missing planned browsing capability: 
 
 Current checkpoint gates pass: coach production build, scoped Biome, repository checks and full backend precommit (1,779 tests, zero failures). Logs: `/tmp/coachapp-food-category-final-build.log` and `/tmp/coachapp-food-category-precommit-verified.log`. Food authoring, recipe authoring and nutrition-plan regressions pass at both widths. Normal API4000, coach2022 and client1314 remain available.
 
-Continue reconciling endpoint candidates against coaching outcomes, especially direct form assignments versus intake and one-time check-in flows. An unused API path alone is not evidence of a missing screen. The remaining local checklist above is still open.
+The direct form-assignment review identified the missing-intake action, completed below. Continue reconciling the other endpoint candidates against coaching outcomes. An unused API path alone is not evidence of a missing screen. The remaining local checklist above is still open.
+
+
+## Missing-intake reconciliation, 2026-09-16
+
+The existing generic form-assignment POST supported a coaching task absent from the UI: assigning the first intake to an existing client without one. INTAKE-01 now completes that task with server-owned active Intake selection, preview and recoverable assignment. The same API's one-time Check-in task remains covered by the existing schedule → client submission → review journey; it does not require another assignment screen. Intake retrieval, follow-up and submitted response history retain their scoped existing reads.
+
+The new page adds one registered route: current source inventory has 69 route constants plus wildcard (70 routes), with no unregistered constants. The detailed route worklist includes the new route. Browser proof covers its entry from Client overview, choice/preview/return and saved intake, including real clientapp submission and coach review at both coach widths.
+
+Current build, scoped Biome, repository checks and backend precommit pass (1,779 tests). Existing invitation and intake-follow-up regressions pass at both widths. See assign-intake.md for complete evidence and retained limits. The original whole-app objective and remaining reconciliation checklist remain active.

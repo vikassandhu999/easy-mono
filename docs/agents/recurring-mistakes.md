@@ -177,6 +177,7 @@ Severity of the rule isn't the point; recurrence is.
 | RM-233 | Saved feedback follows actual draft state | Frontend | test |
 | RM-234 | Focus outlines must survive container clipping | Frontend | browser test |
 | RM-235 | Search lexemes match the indexed text parser | Backend | test |
+| RM-236 | Mutation error callbacks tolerate a changed session | Frontend | browser test |
 
 ---
 
@@ -1344,6 +1345,13 @@ coachapp `tests/acquisition/prospects.browser.mjs` reaches the row with Tab, req
 assignment verifies the same clipped-row case in `tests/nutrition/plans.browser.mjs`.
 
 A horizontally scrolling navigation can also leave a focused link partly outside the viewport. Reveal focused items within their scroller and reserve padding around an inward outline so it does not cross the label. Coachapp `test:navigation` traverses every primary link with real Tab/Shift+Tab, checks full visibility and outline spacing, and captures the focused navigation at 375px/1280px for owner and trainer.
+
+### RM-236 — Mutation error callbacks must tolerate a changed session
+A success callback can reject a late response after logout. Its error callback must skip
+invalidation for that stale session instead of throwing the same session error again.
+Coachapp `test:intake-assignment` holds a real assignment response through logout and
+requires the login route, an empty query cache and no unhandled browser error.
+
 
 ## Deploy / ops
 

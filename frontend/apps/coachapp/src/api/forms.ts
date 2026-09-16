@@ -3,7 +3,14 @@ import {ApiError, call, callEmpty, client} from './client';
 import {clientKeys, formKeys, workbenchKeys} from './keys';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
-import type {FormAssignment, FormAssignmentUpdate, FormTemplate, FormTemplateCreate, paths} from './schema';
+import type {
+  FormAssignment,
+  FormAssignmentCreate,
+  FormAssignmentUpdate,
+  FormTemplate,
+  FormTemplateCreate,
+  paths,
+} from './schema';
 import {getSession} from './session';
 
 export type {
@@ -193,6 +200,36 @@ export function useClientIntake(clientId: string) {
     queryFn: ({signal}) =>
       call(client.GET('/v1/coach/clients/{client_id}/intake', {params: {path: {client_id: clientId}}, signal})),
     staleTime: 0,
+  });
+}
+
+export function useAssignIntake(clientId: string) {
+  const invalidate = () =>
+    Promise.all([
+      queryClient.invalidateQueries({queryKey: formKeys.all}),
+      queryClient.invalidateQueries({queryKey: clientKeys.all}),
+      queryClient.invalidateQueries({queryKey: workbenchKeys.all}),
+    ]);
+  const refresh = async (sessionId: string | undefined) => {
+    requireFormSession(sessionId);
+    await invalidate();
+    requireFormSession(sessionId);
+  };
+  return useMutation({
+    onMutate: () => getSession()?.id,
+    mutationFn: (body: FormAssignmentCreate) =>
+      call(
+        client.POST('/v1/coach/clients/{client_id}/form-assignments', {
+          params: {path: {client_id: clientId}},
+          body,
+        }),
+      ),
+    onSuccess: (_result, _body, sessionId) => refresh(sessionId),
+    onError: async (_error, _body, sessionId) => {
+      if (sessionId && getSession()?.id === sessionId) {
+        await invalidate();
+      }
+    },
   });
 }
 

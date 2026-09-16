@@ -140,6 +140,15 @@ function Overview({id}: {id: string}) {
           <Surface>
             <h2 className="section-title">No intake assigned</h2>
             <p className="mt-2 text-sm text-muted-foreground">There is no intake form for this client yet.</p>
+            {person.status !== 'inactive' && !client.isError && (
+              <Link
+                to={generatePath(routes.assignIntake, {id})}
+                state={listState}
+                className={buttonVariants({variant: 'outline', className: 'mt-4'})}
+              >
+                Assign intake
+              </Link>
+            )}
           </Surface>
         )}
       </section>

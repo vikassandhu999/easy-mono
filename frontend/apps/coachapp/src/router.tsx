@@ -20,6 +20,7 @@ import {CheckInResponse} from './check-ins/check-in-response';
 import {CheckInResponses, ClientCheckInResponses} from './check-ins/check-in-responses';
 import {CheckInSchedules} from './check-ins/check-in-schedules';
 import {CreateCheckIn} from './check-ins/create-check-in';
+import {AssignIntake} from './clients/assign-intake';
 import {AssignNutritionPlan} from './clients/assign-nutrition-plan';
 import {AssignTrainingPlan} from './clients/assign-training-plan';
 import {ChangeClientCoach} from './clients/change-client-coach';
@@ -190,6 +191,7 @@ export const router = createBrowserRouter([
               {path: routes.inviteClient, element: <InviteClient />},
               {path: routes.client, element: <ClientOverview />},
               {path: routes.clientProfile, element: <ClientProfile />},
+              {path: routes.assignIntake, element: <AssignIntake />},
               {path: routes.conversations, element: <Conversations />},
               {path: routes.clientConversation, element: <Conversation />},
               {path: routes.trainingSessions, element: <TrainingSessions />},

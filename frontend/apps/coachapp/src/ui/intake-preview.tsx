@@ -17,8 +17,7 @@ export function IntakePreview({template}: {template: FormTemplate}) {
         <div className="min-w-0">
           <h2 className="section-title break-words">{template.name}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {template.question_count} {template.question_count === 1 ? 'question' : 'questions'} · Included
-            automatically
+            {template.question_count} {template.question_count === 1 ? 'question' : 'questions'}
           </p>
         </div>
       </div>

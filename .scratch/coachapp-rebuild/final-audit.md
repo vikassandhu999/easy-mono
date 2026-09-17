@@ -6,7 +6,7 @@ This audit connects the completed slices. It does not introduce another screen o
 
 ## Current checkpoint
 
-Current verification: conversation centering and Chromium/WebKit media coverage, 2026-09-17. The complete inbox/thread suite passes at 375px/1280px with real local storage. Build, scoped Biome, repository checks and backend precommit pass (1,784 tests). The previous production core-journey checkpoint is `88c541b`; individual check-in requests are `dc01639`. Earlier route and connected-workflow evidence remains below and in the route worklist.
+The 2026-09-17 [whole-app audit](completion-audit-2026-09-17.md) reconciles all 71 routes and verifies all 56 browser suites. The initial run passed 53; three catalog/database fixture corrections passed their reruns. There are no unresolved failures. Build, scoped Biome, repository checks and backend precommit pass (1,784 tests). Application source is unchanged from `9840499`; the audit changes test fixtures and evidence records. Target-coach review and device/provider limits remain below.
 
 ## Cross-screen evidence
 
@@ -25,7 +25,7 @@ Discovery used bounded current-source reads because graph tools were unavailable
 
 ## Remaining local checks
 
-- Reconcile every remaining item in the completion ledger with recorded evidence or an explicit limit. Run final app/repository/backend gates after any further fixes; preserve normal development services.
+The local reconciliation and final gates are complete for the recorded scope. Every browser file is referenced by a package script and included in the 56-suite run. The completion audit records the exact evidence and unresolved external validation limits; normal development services remain available.
 
 Physical-device/Safari media behavior, a target-coach usability session, and deployed storage/payment-provider behavior are not established by local Chromium tests. Record these limits when reporting local completion. The existing production bundle-size warning remains; local startup measurements are recorded in production-verification.md.
 

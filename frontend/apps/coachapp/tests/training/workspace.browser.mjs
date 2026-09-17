@@ -43,7 +43,13 @@ try {
       role: 'coach',
     });
     const token = tokens.access_token;
-    for (const name of ['Goblet squat', 'Lat pulldown', 'Dumbbell press', 'Front squat']) {
+    const exerciseNames = {
+      goblet: `Goblet squat ${unique}`,
+      lat: `Lat pulldown ${unique}`,
+      press: `Dumbbell press ${unique}`,
+      front: `Front squat ${unique}`,
+    };
+    for (const name of Object.values(exerciseNames)) {
       await send('post', '/v1/coach/training-exercises', {name, instructions: `Instructions for ${name}.`}, token);
     }
     const context = await browser.newContext({baseURL: appURL, viewport: {width, height: 900}});
@@ -74,19 +80,19 @@ try {
     await expect(page.getByRole('heading', {name: 'Start with the movements', exact: true})).toBeVisible();
     await page.getByRole('button', {name: 'Add exercises', exact: true}).click();
     const picker = page.getByRole('dialog', {name: 'Add exercises', exact: true});
-    await picker.getByLabel('Search exercises', {exact: true}).fill('Lat');
+    await picker.getByLabel('Search exercises', {exact: true}).fill(exerciseNames.lat);
     await expect(picker.getByText('1 exercise', {exact: true})).toBeVisible();
-    await picker.getByRole('button', {name: 'Select Lat pulldown', exact: true}).click();
+    await picker.getByRole('button', {name: `Select ${exerciseNames.lat}`, exact: true}).click();
     await picker.getByText('Exercise details', {exact: true}).click();
-    await expect(picker.getByText('Instructions for Lat pulldown.', {exact: true})).toBeVisible();
-    await picker.getByLabel('Search exercises', {exact: true}).fill('Goblet');
-    await expect(picker.getByRole('button', {name: 'Select Lat pulldown', exact: true})).toHaveCount(0);
+    await expect(picker.getByText(`Instructions for ${exerciseNames.lat}.`, {exact: true})).toBeVisible();
+    await picker.getByLabel('Search exercises', {exact: true}).fill(exerciseNames.goblet);
+    await expect(picker.getByRole('button', {name: `Select ${exerciseNames.lat}`, exact: true})).toHaveCount(0);
     await expect(picker.getByText('1 exercise', {exact: true})).toBeVisible();
-    await picker.getByRole('button', {name: 'Select Goblet squat', exact: true}).click();
-    await picker.getByRole('button', {name: 'Move Goblet squat up', exact: true}).click();
+    await picker.getByRole('button', {name: `Select ${exerciseNames.goblet}`, exact: true}).click();
+    await picker.getByRole('button', {name: `Move ${exerciseNames.goblet} up`, exact: true}).click();
     await expect(
       picker.getByRole('list', {name: 'Selected exercises', exact: true}).locator('li').first(),
-    ).toContainText('Goblet squat');
+    ).toContainText(exerciseNames.goblet);
     await page.screenshot({path: `tests/training/artifacts/worksheet-picker-${width}.png`, animations: 'disabled'});
     if (width === 375) {
       await page.setViewportSize({width, height: 480});
@@ -97,8 +103,8 @@ try {
     await picker.getByRole('button', {name: 'Add 2 exercises', exact: true}).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByRole('textbox', {name: 'Workout name', exact: true})).toHaveValue('Workout A');
-    const squat = page.getByRole('region', {name: 'Goblet squat prescription', exact: true});
-    const lat = page.getByRole('region', {name: 'Lat pulldown prescription', exact: true});
+    const squat = page.getByRole('region', {name: `${exerciseNames.goblet} prescription`, exact: true});
+    const lat = page.getByRole('region', {name: `${exerciseNames.lat} prescription`, exact: true});
     await chooseOption(selectTrigger(squat, 'Sets'), '4');
     await squat.getByLabel('Reps per set', {exact: true}).fill('8–10');
     await squat.getByRole('textbox', {name: 'Load', exact: true}).fill('20');
@@ -133,12 +139,12 @@ try {
     await page.getByRole('button', {name: 'Create a variation', exact: true}).click();
     await expect(page.getByRole('textbox', {name: 'Workout name', exact: true})).toHaveValue('Full body A (copy)');
     await page.getByRole('textbox', {name: 'Workout name', exact: true}).fill('Full body B');
-    await replaceMovement(page, 1, 'Front squat', true);
-    const front = page.getByRole('region', {name: 'Front squat prescription', exact: true});
+    await replaceMovement(page, 1, exerciseNames.front, true);
+    const front = page.getByRole('region', {name: `${exerciseNames.front} prescription`, exact: true});
     await expect(front.getByRole('paragraph').getByText('Controlled descent', {exact: true})).toBeVisible();
     await front.getByRole('group', {name: 'Set 1', exact: true}).getByLabel('Load', {exact: true}).fill('22.5');
-    await replaceMovement(page, 2, 'Dumbbell press', false);
-    const press = page.getByRole('region', {name: 'Dumbbell press prescription', exact: true});
+    await replaceMovement(page, 2, exerciseNames.press, false);
+    const press = page.getByRole('region', {name: `${exerciseNames.press} prescription`, exact: true});
     await expect(press.getByLabel('Reps per set', {exact: true})).toHaveValue('');
     await expect(selectTrigger(press, 'Sets')).toHaveText('3');
     await press.getByLabel('Reps per set', {exact: true}).fill('8–12');
@@ -199,12 +205,12 @@ try {
     let saved = (await send('get', endpoint, undefined, token)).data;
     expect(saved.workouts.map((workout) => workout.name)).toEqual(['Full body A', 'Full body B']);
     expect(saved.workouts[0].workout_elements.map((exercise) => exercise.exercise.name)).toEqual([
-      'Goblet squat',
-      'Lat pulldown',
+      exerciseNames.goblet,
+      exerciseNames.lat,
     ]);
     expect(saved.workouts[1].workout_elements.map((exercise) => exercise.exercise.name)).toEqual([
-      'Front squat',
-      'Dumbbell press',
+      exerciseNames.front,
+      exerciseNames.press,
     ]);
     expect(saved.workouts[0].workout_elements[0].planned_sets[0].load_value).toBe('20');
     expect(saved.workouts[1].workout_elements[0].planned_sets[0]).toMatchObject({
@@ -230,13 +236,13 @@ try {
     await page.getByRole('button', {name: 'Expand Full body B', exact: true}).click();
     await expect(press.getByLabel('Reps per set', {exact: true})).toHaveValue('8–12');
     const originalElementId = saved.workouts[1].workout_elements[1].id;
-    await replaceMovement(page, 2, 'Lat pulldown', true);
+    await replaceMovement(page, 2, exerciseNames.lat, true);
     await page.getByRole('button', {name: 'Save plan', exact: true}).click();
     await expect(page.getByText('Training plan saved.', {exact: true})).toBeVisible();
     saved = (await send('get', endpoint, undefined, token)).data;
     expect(saved.workouts[1].workout_elements[1]).toMatchObject({
       id: originalElementId,
-      exercise: {name: 'Lat pulldown'},
+      exercise: {name: exerciseNames.lat},
     });
     expect(saved.workouts[1].workout_elements[1].planned_sets[0]).toMatchObject({reps: '8–12', load_value: '12.5'});
     await page.evaluate(() => scrollTo(0, 0));
@@ -249,7 +255,8 @@ try {
     // A lost creation response can be recovered without abandoning the worksheet or creating a duplicate.
     await page.goto('/training-plans/new');
     await page.getByRole('button', {name: 'Add exercises', exact: true}).click();
-    await page.getByRole('button', {name: 'Select Goblet squat', exact: true}).click();
+    await page.getByRole('dialog').getByLabel('Search exercises', {exact: true}).fill(exerciseNames.goblet);
+    await page.getByRole('button', {name: `Select ${exerciseNames.goblet}`, exact: true}).click();
     await page.getByRole('button', {name: 'Add 1 exercise', exact: true}).click();
     await page.getByLabel('Plan name · edit anytime', {exact: true}).fill('Interrupted creation');
     await page.getByLabel('Reps per set', {exact: true}).fill('15');

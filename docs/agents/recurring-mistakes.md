@@ -1358,6 +1358,14 @@ requires the login route, an empty query cache and no unhandled browser error.
 checking those invariants; asserting only before response delivery misses late effects.
 
 
+### RM-237 — Browser fixtures must tolerate shared catalogs and use their seeded database
+Training tests assumed their custom exercises were the whole catalog or that a common
+movement name matched only one row. Shared exercises made both assumptions false.
+Compare unfiltered totals with the API, then use unique fixture names and server search
+for deterministic paging assertions. A reference-data seed and its browser API must
+target the same database. **Verify by:** coachapp `test:templates` on a populated shared
+catalog and `test:exercises` against its default isolated API44000/app22022 pair.
+
 ## Deploy / ops
 
 ### RM-221 — Filter-then-assert: parse WHILE filtering, don't assert afterwards

@@ -25,3 +25,8 @@ The existing training template, compact-set and worksheet browser suites also pa
 Movement type and Force now show server field errors, associate the explanation with their select, and open the optional section when invalid. Save and saved-version load confirmations receive focus. During uncertain creation, fields and media stay fixed so saved-result lookup uses the submitted name. After reviewing results, Create a separate exercise re-enables the draft and focuses the name without sending another request.
 
 The missing-message, saved-result focus and editable-uncertain-name probes fail before their fixes. The full authoring suite passes at 375px/1280px, including failed saved-version reload, retained drafts, reference selection, remote search/paging, independent training reuse and session isolation. Copy/delete and actual photo/video upload/playback regressions also pass at both widths. Build, Biome, repository checks and backend precommit pass (1,778 tests). Screenshots are archived under `/tmp/coachapp-exercise-ux-audit-2026-09-15`.
+
+
+## Fixture database, 2026-09-17
+
+`test:exercises` defaults to the isolated API44000/app22022 pair because `seed-catalog.exs` populates `easy_coachapp_auth_dev`. Its reference choices must come from that same database. The full-app regression exposed the earlier default-to-normal-server mismatch; the corrected suite passes at 375px/1280px. Environment overrides require a matching fixture database.

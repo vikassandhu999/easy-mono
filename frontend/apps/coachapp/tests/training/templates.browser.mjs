@@ -34,9 +34,18 @@ try {
     const unique = `${Date.now()}-${width}`;
     const tokens = await account(unique);
     const token = tokens.access_token;
+    const exercisePrefix = `Template ${unique}`;
+    const firstExercise = `${exercisePrefix} Exercise 00`;
+    const secondExercise = `${exercisePrefix} Exercise 01`;
     for (let index = 0; index < 43; index++) {
-      await send('post', '/v1/coach/training-exercises', {name: `Exercise ${String(index).padStart(2, '0')}`}, token);
+      await send(
+        'post',
+        '/v1/coach/training-exercises',
+        {name: `${exercisePrefix} Exercise ${String(index).padStart(2, '0')}`},
+        token,
+      );
     }
+    const catalog = await send('get', '/v1/coach/training-exercises?cursor=start&limit=1', undefined, token);
     const context = await browser.newContext({baseURL: appURL, viewport: {width, height: 900}});
     context.setDefaultTimeout(10000);
     const page = await context.newPage();
@@ -97,7 +106,10 @@ try {
     await picker.getByRole('button', {name: 'Try again', exact: true}).click();
     const exerciseRows = picker.getByRole('list', {name: 'exercises', exact: true}).locator(':scope > li');
     await expect(exerciseRows).toHaveCount(20);
+    await expect(picker.getByText(`${catalog.count} exercises`, {exact: true})).toBeVisible();
+    await picker.getByLabel('Search exercises', {exact: true}).fill(exercisePrefix);
     await expect(picker.getByText('43 exercises', {exact: true})).toBeVisible();
+    await expect(exerciseRows).toHaveCount(20);
     let pageFailures = 0;
     await page.route('**/v1/coach/training-exercises?*', (route) => {
       if (new URL(route.request().url()).searchParams.get('cursor') !== 'start') {
@@ -118,9 +130,9 @@ try {
     await expect(exerciseRows).toHaveCount(43);
     await picker.getByLabel('Search exercises', {exact: true}).fill('zzzz');
     await expect(picker.getByText('No matching exercises. Try a different name.', {exact: true})).toBeVisible();
-    await picker.getByLabel('Search exercises', {exact: true}).fill('Exercise 00');
+    await picker.getByLabel('Search exercises', {exact: true}).fill(firstExercise);
     await expect(picker.getByText('1 exercise', {exact: true})).toBeVisible();
-    await picker.getByRole('button', {name: 'Select Exercise 00', exact: true}).click();
+    await picker.getByRole('button', {name: `Select ${firstExercise}`, exact: true}).click();
     await picker.getByRole('button', {name: 'Add 1 exercise', exact: true}).click();
     await expect(picker).toHaveCount(0);
     await page.getByRole('textbox', {name: 'Workout name', exact: true}).fill('');
@@ -129,7 +141,11 @@ try {
     await page.getByRole('textbox', {name: 'Workout name', exact: true}).fill('Full body A');
     await chooseOption(selectTrigger(page, 'Sets'), '1');
     await page.getByRole('button', {name: 'Vary sets & add details', exact: true}).click();
-    const prescription = page.getByRole('region', {name: 'Exercise 00 prescription', exact: true, includeHidden: true});
+    const prescription = page.getByRole('region', {
+      name: `${firstExercise} prescription`,
+      exact: true,
+      includeHidden: true,
+    });
     await prescription.getByLabel('Reps', {exact: true}).fill('8–10');
     await prescription.getByLabel('Load', {exact: true}).fill('0');
     await prescription.getByRole('button', {name: 'Set 1 actions', exact: true}).click();
@@ -185,8 +201,8 @@ try {
     await page.getByRole('button', {name: 'Save plan', exact: true}).click();
     await expect(page.getByText('Training plan saved.', {exact: true})).toBeVisible();
     await page.getByRole('button', {name: 'Add workout', exact: true}).click();
-    await page.getByRole('dialog').getByLabel('Search exercises', {exact: true}).fill('Exercise 01');
-    await page.getByRole('button', {name: 'Select Exercise 01', exact: true}).click();
+    await page.getByRole('dialog').getByLabel('Search exercises', {exact: true}).fill(secondExercise);
+    await page.getByRole('button', {name: `Select ${secondExercise}`, exact: true}).click();
     await page.getByRole('button', {name: 'Add 1 exercise', exact: true}).click();
     await page.getByRole('textbox', {name: 'Workout name', exact: true}).fill('Full body B');
     await page.getByRole('button', {name: 'workout 2 actions', exact: true}).click();

@@ -16,4 +16,4 @@ The real API shared-targets browser scenario covers 375px and 1280px: cancel and
 
 The compact-set regression covers matching updates with individual exceptions, preserved extra instructions, repetition, warm-up sets and saved order at both widths. The complete training-template regression covers all individual set fields, exercise pagination, creation/editing, revision recovery and assignment. On 2026-09-14, build, scoped Biome and repository rules passed. Full backend precommit passed all four gates with 1,778 tests and zero failures.
 
-The remaining product audit includes complete navigation and role/session journeys and physical-device interaction. Nutrition menu fields are the next builder audit.
+Navigation and role/session journeys are recorded in final-audit.md. Nutrition menu fields are covered in menu-editing.md and menu-order.md. Physical-device interaction remains unverified.

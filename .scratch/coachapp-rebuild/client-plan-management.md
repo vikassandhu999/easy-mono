@@ -18,7 +18,7 @@ Real API/browser verification passed at 375px and 1280px on ports 4000/2022: 44 
 
 Backend router tests cover list/detail lifecycle at the client-local date boundary, client override and business fallback timezones, three cursor pages, literal search, archived filtering, and tenant/trainer/client visibility. Client plan preload now includes the business calendar, and lifecycle stamping uses the client's local day. Both coach generated schemas were regenerated with just gen-api. Full backend precommit passed 1,778 tests; app build, scoped Biome and repository shape checks passed. The normal API was restarted to load the new typed route query contract and returned healthy afterward.
 
-Remaining: full application navigation/role/device audit and the remaining prescription/menu field audit. Physical-device and target-coach review have not been performed. Exact source evidence: client_training_plan_controller.ex, nutrition_plan_reader.ex, training_plan_reader.ex, nutrition/plan.ex, training/training_plan.ex and the two Client overview plan sections. Graph tools are unavailable in this session, so these findings use direct source reads.
+Navigation and role evidence is recorded in final-audit.md. Prescription targets and menu fields are covered in prescription-fields.md, menu-editing.md and menu-order.md. Physical-device and target-coach review have not been performed. Exact source evidence: client_training_plan_controller.ex, nutrition_plan_reader.ex, training_plan_reader.ex, nutrition/plan.ex, training/training_plan.ex and the two Client overview plan sections. Graph tools are unavailable in this session, so these findings use direct source reads.
 
 
 ## Current management audit — 2026-09-15

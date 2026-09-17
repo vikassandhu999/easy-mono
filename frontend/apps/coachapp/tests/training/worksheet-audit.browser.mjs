@@ -1,8 +1,12 @@
 import {mkdir} from 'node:fs/promises';
-import {chromium, expect, request} from '@playwright/test';
+import {chromium, expect, request, webkit} from '@playwright/test';
 
 const api = await request.newContext({baseURL: process.env.COACH_API_URL || 'http://localhost:4000'});
-const browser = await chromium.launch();
+const engine = process.env.BROWSER_ENGINE || 'chromium';
+if (engine !== 'chromium' && engine !== 'webkit') {
+  throw new Error(`Unsupported BROWSER_ENGINE: ${engine}`);
+}
+const browser = await (engine === 'webkit' ? webkit : chromium).launch();
 await mkdir('tests/training/artifacts', {recursive: true});
 async function send(method, path, data, token) {
   const response = await api[method](path, {data, headers: token ? {authorization: `Bearer ${token}`} : {}});
@@ -103,6 +107,8 @@ try {
         const {saveSession} = await import('/src/api/session.ts');
         saveSession(tokens);
       }, tokens);
+      await expect(page).not.toHaveURL(/\/login$/);
+      await page.waitForLoadState('networkidle');
       await page.route(`**${endpoint}`, async (route) => {
         await new Promise((resolve) => {
           release = resolve;

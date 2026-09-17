@@ -1,9 +1,13 @@
 import {mkdir} from 'node:fs/promises';
-import {chromium, expect, request} from '@playwright/test';
+import {chromium, expect, request, webkit} from '@playwright/test';
 import {chooseOption, selectTrigger} from '../select-helpers.mjs';
 
 const api = await request.newContext({baseURL: 'http://localhost:4000'});
-const browser = await chromium.launch();
+const engine = process.env.BROWSER_ENGINE || 'chromium';
+if (engine !== 'chromium' && engine !== 'webkit') {
+  throw new Error(`Unsupported BROWSER_ENGINE: ${engine}`);
+}
+const browser = await (engine === 'webkit' ? webkit : chromium).launch();
 await mkdir('tests/nutrition/artifacts', {recursive: true});
 async function send(method, path, data, token) {
   const response = await api[method](path, {data, headers: token ? {authorization: `Bearer ${token}`} : {}});
@@ -63,6 +67,8 @@ try {
         const {saveSession} = await import('/src/api/session.ts');
         saveSession(tokens);
       }, tokens);
+      await expect(page).not.toHaveURL(/\/login$/);
+      await page.waitForLoadState('networkidle');
       await page.goto('/nutrition-plans/new');
       await page.getByLabel('Plan name', {exact: true}).fill('Test weekly nutrition');
       await page.getByRole('button', {name: 'Add meal', exact: true}).click();
@@ -147,6 +153,7 @@ try {
       await preview.getByRole('button', {name: 'Back to editing', exact: true}).click();
       await page.getByRole('button', {name: 'Save nutrition plan', exact: true}).click();
       await expect(page).toHaveURL(/nutrition-plans\/[0-9a-f-]+$/);
+      await page.waitForLoadState('networkidle');
       const endpoint = `/v1/coach/nutrition-plans/${new URL(page.url()).pathname.split('/').at(-1)}`;
       const saved = (await send('get', endpoint, undefined, token)).data;
       expect(saved.menu.meals.map((meal) => meal.meal_items[0].portion.grams)).toEqual([100, 150]);

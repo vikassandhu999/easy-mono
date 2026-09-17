@@ -90,3 +90,8 @@ Current build, scoped Biome, repository checks and full backend precommit pass (
 ## Conversation engine verification, 2026-09-17
 
 The complete existing conversation suite passes in Chromium and WebKit at both widths, including real recording, uploads/downloads, native playback and network recovery. The desktop WebKit run found a clipped Jump to latest control: `inset-s-1/2` generated no CSS rule. The supported `start-1/2` utility restores its centered position, which the browser suite now checks before clicking. See [conversations](conversations.md) for fixture details and retained device/storage limits. Screenshots are archived under `/tmp/coachapp-conversations-webkit-audit`.
+
+
+## Worksheet engine verification, 2026-09-17
+
+Training and nutrition worksheet audits pass in Chromium and WebKit at both widths, including long-content layout, compact targets/variations, picker and preview interactions, validation focus, Undo and persistence. Training also verifies failed save/load recovery and repeated saved-version focus. No application change was needed; the harness lets authentication and newly saved detail loading settle before navigation. See [worksheet browser verification](worksheet-browser-verification.md) for commands, exact scope, cleanup and retained limits.

@@ -37,6 +37,7 @@
     "test:menu-editing": "node tests/nutrition/menu-editing.browser.mjs",
     "test:templates": "node tests/training/templates.browser.mjs && node tests/training/compact-sets.browser.mjs && node tests/training/shared-targets.browser.mjs && node tests/training/workspace.browser.mjs && node tests/training/worksheet-audit.browser.mjs",
     "test:shared-targets": "node tests/training/shared-targets.browser.mjs",
+    "test:worksheets": "node tests/training/worksheet-audit.browser.mjs && node tests/nutrition/worksheet-audit.browser.mjs",
     "test:nutrition-library-management": "node tests/nutrition-library/management.browser.mjs",
     "test:recipes": "node tests/recipes/recipes.browser.mjs",
     "test:exercises": "node tests/exercises/exercises.browser.mjs",

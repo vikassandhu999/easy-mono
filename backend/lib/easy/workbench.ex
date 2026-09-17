@@ -10,6 +10,23 @@ defmodule Easy.Workbench do
   alias Easy.WorkbenchQuietQueue
   alias Easy.WorkbenchRepliesQueue
 
+  @spec list_items(Ctx.t(), keyword()) :: {:ok, map()} | {:error, atom() | Ecto.Changeset.t()}
+  def list_items(%Ctx{} = ctx, opts \\ []) do
+    with {:ok, params} <- Easy.WorkbenchItemPage.prepare(ctx, opts) do
+      results = ctx |> Easy.WorkbenchItems.query(params) |> Repo.all()
+
+      count =
+        case results do
+          [%{count: count} | _] -> count
+          [] -> nil
+        end
+
+      rows = for %{row: %{source_id: id} = row, client: client} <- results, not is_nil(id), do: Map.put(row, :client, client)
+      page = Easy.WorkbenchPage.finish(rows, params.limit, count, params.scope, &Easy.WorkbenchItemPage.position(&1, params.evaluated_at))
+      {:ok, Map.update!(page, :items, &Enum.map(&1, fn row -> Easy.WorkbenchItem.from_row(row) end))}
+    end
+  end
+
   @spec counts(Ctx.t()) ::
           {:ok,
            %{

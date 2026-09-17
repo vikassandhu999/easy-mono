@@ -1,5 +1,7 @@
 # Daily Workbench
 
+The unified workbench is implemented as of 2026-09-17: [specification](../coachapp-workbench/spec.md), [verification](../coachapp-workbench/verification.md). The behavior and verification below are the historical six-queue version, retained as prior evidence.
+
 When a coach starts a work session, they need to see which clients need attention and finish a useful action without opening every client. This is a frequent phone and desktop task. The costly mistakes are acting on stale status, overlooking a date or second required service, and losing the task list after completing an action.
 
 Use six plainly named queues: Check-in reviews, Replies, Getting started, Plans, Ending soon and Missed check-ins. Phones use a compact shadcn select; desktop keeps all six queue choices visible. Each choice shows its server count; no total is computed across overlapping queues. One queue is open at a time, with search and a server-side service filter for Plans. The API determines membership, priority order and all reasons. The coach sees the client name, the complete reason and date, and an action with a concrete verb.

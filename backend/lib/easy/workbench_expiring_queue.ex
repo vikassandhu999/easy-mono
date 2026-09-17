@@ -43,7 +43,8 @@ defmodule Easy.WorkbenchExpiringQueue do
     end
   end
 
-  defp facts(%Ctx{} = ctx, today, search \\ nil) do
+  @spec facts(Ctx.t(), Date.t(), String.t() | nil) :: Ecto.Query.t()
+  def facts(%Ctx{} = ctx, today, search \\ nil) do
     active_snooze =
       QueueSnooze
       |> QueueSnooze.for_business(ctx.business_id)

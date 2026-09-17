@@ -1,7 +1,7 @@
 import type {InfiniteData, UseInfiniteQueryResult} from '@tanstack/react-query';
 import {type ReactNode, useEffect, useRef} from 'react';
-import {errorMessage} from '../api/client';
-import type {CursorPage} from '../api/pagination';
+import {ApiError, errorMessage} from '../api/client';
+import {type CursorPage, latestPageCount} from '../api/pagination';
 import {Button} from './button';
 import {FormError} from './form-error';
 import {Surface} from './page';
@@ -82,8 +82,9 @@ export function InfiniteList<Item extends {id: string}>({
     );
   }
 
-  const count = query.data.pages.at(-1)?.count ?? 0;
-  const items = query.data.pages.flatMap((page) => page.data);
+  const restartPage = query.isFetchNextPageError && query.error instanceof ApiError && query.error.status === 422;
+  const count = latestPageCount(query.data.pages);
+  const items = [...new Map(query.data.pages.flatMap((page) => page.data).map((item) => [item.id, item])).values()];
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
@@ -91,7 +92,7 @@ export function InfiniteList<Item extends {id: string}>({
           role="status"
           className="text-sm text-muted-foreground"
         >
-          {count} {count === 1 ? singular : label}
+          {count === null ? 'Count unavailable' : `${count} ${count === 1 ? singular : label}`}
           {isFetching && !query.isFetchingNextPage ? ' · Updating…' : ''}
         </p>
         <Button
@@ -133,19 +134,23 @@ export function InfiniteList<Item extends {id: string}>({
       )}
       {query.isError && (
         <FormError
-          message={errorMessage(
-            query.error,
-            query.isFetchNextPageError
-              ? `Couldn't load more ${label}. Your loaded results are still here.`
-              : `Couldn't refresh ${label}. Showing the previous results.`,
-          )}
+          message={
+            restartPage
+              ? 'This list has changed. Refresh to continue from the beginning.'
+              : errorMessage(
+                  query.error,
+                  query.isFetchNextPageError
+                    ? `Couldn't load more ${label}. Your loaded results are still here.`
+                    : `Couldn't refresh ${label}. Showing the previous results.`,
+                )
+          }
         />
       )}
       <div
         ref={sentinel}
         className="flex justify-center py-2"
       >
-        {query.isError && !query.isFetchNextPageError ? (
+        {query.isError && (!query.isFetchNextPageError || restartPage) ? (
           <Button
             variant="outline"
             isPending={isFetching}

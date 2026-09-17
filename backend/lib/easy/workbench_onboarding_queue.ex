@@ -58,7 +58,8 @@ defmodule Easy.WorkbenchOnboardingQueue do
     |> Map.update!(:items, fn items -> Enum.map(items, &to_item/1) end)
   end
 
-  defp facts(%Ctx{} = ctx, now, search \\ nil) do
+  @spec facts(Ctx.t(), DateTime.t(), String.t() | nil) :: Ecto.Query.t()
+  def facts(%Ctx{} = ctx, now, search \\ nil) do
     today = DateTime.to_date(now)
     invitation_cutoff = DateTime.add(now, -@follow_up_days, :day)
 

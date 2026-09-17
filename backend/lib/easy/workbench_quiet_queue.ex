@@ -44,7 +44,8 @@ defmodule Easy.WorkbenchQuietQueue do
     end
   end
 
-  defp facts(%Ctx{} = ctx, today, search \\ nil) do
+  @spec facts(Ctx.t(), Date.t(), String.t() | nil) :: Ecto.Query.t()
+  def facts(%Ctx{} = ctx, today, search \\ nil) do
     latest_due = latest_due_assignments(ctx, today, search)
 
     active_snooze =

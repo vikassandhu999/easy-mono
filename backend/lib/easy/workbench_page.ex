@@ -20,8 +20,8 @@ defmodule Easy.WorkbenchPage do
   @spec limit(keyword()) :: pos_integer()
   def limit(opts), do: CursorPage.limit(opts)
 
-  @spec finish([item], pos_integer(), non_neg_integer(), map(), (item -> map())) :: %{
-          count: non_neg_integer(),
+  @spec finish([item], pos_integer(), non_neg_integer() | nil, map(), (item -> map())) :: %{
+          count: non_neg_integer() | nil,
           items: [item],
           next_cursor: String.t() | nil
         }

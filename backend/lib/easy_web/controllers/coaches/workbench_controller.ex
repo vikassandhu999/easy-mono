@@ -3,7 +3,9 @@ defmodule EasyWeb.Coaches.WorkbenchController do
 
   alias Easy.Workbench
   alias EasyWeb.Types.Workbench, as: WorkbenchType
+  alias EasyWeb.Types.WorkbenchItems
 
+  typed(:items, query: WorkbenchItems.query(), ok: {200, WorkbenchItems.t()})
   typed(:index, ok: {200, data(WorkbenchType.t())})
   typed(:onboarding, query: WorkbenchType.list_query(), ok: {200, WorkbenchType.onboarding_page()})
 
@@ -17,6 +19,23 @@ defmodule EasyWeb.Coaches.WorkbenchController do
   typed(:check_ins, query: WorkbenchType.list_query(), ok: {200, WorkbenchType.check_in_page()})
   typed(:replies, query: WorkbenchType.list_query(), ok: {200, WorkbenchType.replies_page()})
   typed(:snooze, path: %{id: Ecto.UUID.t()}, body: WorkbenchType.snooze(), ok: {204, nil})
+
+  @spec items(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def items(conn, _params) do
+    opts =
+      [
+        view: conn.query_params["view"],
+        search: conn.query_params["search"],
+        cursor: conn.query_params["cursor"],
+        limit: conn.query_params["limit"],
+        include_count: conn.query_params["include_count"]
+      ]
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+
+    with {:ok, page} <- Workbench.list_items(conn.assigns.ctx, opts) do
+      ok(conn, %{data: page.items, count: page.count, next_cursor: page.next_cursor})
+    end
+  end
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do

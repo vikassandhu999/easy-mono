@@ -1,0 +1,59 @@
+[
+  {
+    "suite": "workbench/workbench",
+    "exit_code": 0,
+    "log": "/tmp/coachapp-unified-workbench-browser.log",
+    "widths": [
+      375,
+      1280
+    ]
+  },
+  {
+    "suite": "lists/lists",
+    "exit_code": 0,
+    "seconds": 16.26,
+    "log": "/tmp/coachapp-workbench-regressions/lists-lists.log"
+  },
+  {
+    "suite": "check-ins/review",
+    "exit_code": 0,
+    "seconds": 24.21,
+    "log": "/tmp/coachapp-workbench-regressions/check-ins-review.log"
+  },
+  {
+    "suite": "clients/intake-follow-up",
+    "exit_code": 0,
+    "seconds": 11.4,
+    "log": "/tmp/coachapp-workbench-regressions/clients-intake-follow-up.log"
+  },
+  {
+    "suite": "training/assign",
+    "exit_code": 0,
+    "seconds": 17.77,
+    "log": "/tmp/coachapp-workbench-regressions/training-assign.log"
+  },
+  {
+    "suite": "nutrition/assignment",
+    "exit_code": 0,
+    "seconds": 14.83,
+    "log": "/tmp/coachapp-workbench-regressions/nutrition-assignment.log"
+  },
+  {
+    "suite": "clients/profile",
+    "exit_code": 0,
+    "seconds": 11.96,
+    "log": "/tmp/coachapp-workbench-regressions/clients-profile.log"
+  },
+  {
+    "suite": "conversations/conversations",
+    "exit_code": 0,
+    "seconds": 56.52,
+    "log": "/tmp/coachapp-workbench-regressions/conversations-conversations.log"
+  },
+  {
+    "suite": "navigation/navigation",
+    "exit_code": 0,
+    "seconds": 19.58,
+    "log": "/tmp/coachapp-workbench-regressions/navigation-navigation.log"
+  }
+]

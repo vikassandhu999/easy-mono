@@ -121,13 +121,12 @@ try {
     await send('patch', updatePath, {due_date: overdue.toISOString().slice(0, 10)}, token);
     // Complete a real overdue-intake task and return to its cached Workbench queue.
     await page.getByRole('link', {name: 'Workbench', exact: true}).click();
-    if (width === 375) {
-      await chooseOption(selectTrigger(page, 'Task queue'), /^Getting started/);
-    } else {
-      await page.getByRole('button', {name: /^Getting started/}).click();
-    }
+    await page
+      .getByRole('navigation', {name: 'Workbench views'})
+      .getByRole('button', {name: /^Follow-ups/})
+      .click();
     await expect(page.getByText('Alex Morgan', {exact: true})).toBeVisible();
-    await page.getByRole('link', {name: 'Follow up', exact: true}).click();
+    await page.getByRole('link', {name: 'Follow up intake', exact: true}).click();
     await page.getByRole('button', {name: 'Manage intake', exact: true}).click();
     await dialog.getByRole('button', {name: 'Dismiss intake instead', exact: true}).click();
     await expect(dialog.getByRole('heading', {name: 'Dismiss this intake?', exact: true})).toBeVisible();
@@ -143,14 +142,13 @@ try {
     await page.unroute(`**${updatePath}`);
     await expect(page.getByRole('button', {name: 'Send intake reminder', exact: true})).toHaveCount(0);
     await page.getByRole('link', {name: 'Workbench', exact: true}).click();
-    if (width === 375) {
-      await chooseOption(selectTrigger(page, 'Task queue'), /^Getting started/);
-    } else {
-      await page.getByRole('button', {name: /^Getting started/}).click();
-    }
+    await page
+      .getByRole('navigation', {name: 'Workbench views'})
+      .getByRole('button', {name: /^Follow-ups/})
+      .click();
     await expect(page.getByText('Alex Morgan', {exact: true})).toHaveCount(0);
     expect(
-      (await send('get', '/v1/coach/workbench/queues/onboarding?cursor=start&search=Alex', undefined, token)).count,
+      (await send('get', '/v1/coach/workbench/items?view=follow-ups&cursor=start&search=Alex', undefined, token)).count,
     ).toBe(0);
     await page.getByRole('link', {name: 'Clients', exact: true}).click();
     await page.getByRole('link', {name: /Alex Morgan/}).click();

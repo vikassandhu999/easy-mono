@@ -125,6 +125,8 @@ Client Overview → Client details provides contact, coaching services, engageme
 
 ## Daily Workbench
 
+The unified workbench replaces category selection with Awaiting you and Follow-ups. It is implemented and verified; see the [specification](../coachapp-workbench/spec.md) and [evidence](../coachapp-workbench/verification.md). The paragraph below records the superseded six-queue design.
+
 Workbench connects six server-owned queues to the completed task screens. Mobile uses a compact shadcn queue selector; desktop keeps the six choices visible. Native priority keysets, literal search, service filtering and counts stay in the backend. Snooze and task return navigation complete the session loop. See [the Workbench brief](workbench.md) for scope and verification.
 
 ## Profile and business settings

@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 6a982fd6d29c63a68b18b383b9778369fdeb0d0315eb436ede258038bd8c523c */
+/* typed-routes:hash dd62ba22346782ab2fa3c2fbea0fa5d8efbc75d2fec007c7210aeae6daf95185 */
 export type Attachment = {
   id: string;
   content_type:
@@ -618,6 +618,7 @@ export type FormTemplateUpdate = {
   status?: 'active' | 'archived';
 };
 export type Health = {status: string; service: string; timestamp: string; version: string};
+export type IntakeAwaitingReviewReason = {code: 'intake_awaiting_review'; submission_id: string; submitted_at: string};
 export type IntakeOverdueReason = {code: 'intake_overdue'; assignment_id: string; due_on: string; form_title: string};
 export type InvitationFollowUpDueReason = {
   code: 'invitation_follow_up_due';
@@ -1426,13 +1427,76 @@ export type WorkbenchCheckInSubmission = {
   submitted_at: string;
   reviewed_at: string | null;
 };
+export type WorkbenchClient = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  status: 'active' | 'pending' | 'inactive';
+};
+export type WorkbenchEndingEngagementItem = {
+  id: string;
+  kind: 'ending_engagement';
+  client: WorkbenchClient;
+  target: {client_id: string};
+  reasons: Array<EngagementEndingSoonReason>;
+  waiting_since: string | null;
+  due_on: string | null;
+  preview: string | null;
+};
 export type WorkbenchExpiringPage = {
   data: Array<WorkbenchExpiringQueueItem>;
   count: number;
   next_cursor: string | null;
 };
 export type WorkbenchExpiringQueueItem = {client: Client; reasons: Array<EngagementEndingSoonReason>};
+export type WorkbenchIntakeFollowUpItem = {
+  id: string;
+  kind: 'intake_follow_up';
+  client: WorkbenchClient;
+  target: {assignment_id: string};
+  reasons: Array<IntakeOverdueReason>;
+  waiting_since: string | null;
+  due_on: string | null;
+  preview: string | null;
+};
+export type WorkbenchInvitationFollowUpItem = {
+  id: string;
+  kind: 'invitation_follow_up';
+  client: WorkbenchClient;
+  target: {invitation_id: string};
+  reasons: Array<InvitationFollowUpDueReason>;
+  waiting_since: string | null;
+  due_on: string | null;
+  preview: string | null;
+};
+export type WorkbenchItem =
+  | WorkbenchReplyItem
+  | WorkbenchReviewItem
+  | WorkbenchPreparePlanItem
+  | WorkbenchInvitationFollowUpItem
+  | WorkbenchIntakeFollowUpItem
+  | WorkbenchMissedCheckInItem
+  | WorkbenchEndingEngagementItem;
+export type WorkbenchItems = {data: Array<WorkbenchItem>; count: number | null; next_cursor: string | null};
+export type WorkbenchItemsQuery = {
+  view?: 'awaiting' | 'follow-ups';
+  search?: string;
+  cursor?: string;
+  limit?: number;
+  include_count?: boolean;
+};
 export type WorkbenchListQuery = {offset?: number; cursor?: string; search?: string; limit?: number};
+export type WorkbenchMissedCheckInItem = {
+  id: string;
+  kind: 'missed_check_in';
+  client: WorkbenchClient;
+  target: {assignment_id: string};
+  reasons: Array<MissedCheckInReason>;
+  waiting_since: string | null;
+  due_on: string | null;
+  preview: string | null;
+};
 export type WorkbenchOnboardingPage = {
   data: Array<WorkbenchOnboardingQueueItem>;
   count: number;
@@ -1441,6 +1505,16 @@ export type WorkbenchOnboardingPage = {
 export type WorkbenchOnboardingQueueItem = {
   client: Client;
   reasons: Array<InvitationFollowUpDueReason | IntakeOverdueReason>;
+};
+export type WorkbenchPreparePlanItem = {
+  id: string;
+  kind: 'prepare_plan';
+  client: WorkbenchClient;
+  target: {service: 'training' | 'nutrition'};
+  reasons: Array<ServiceNeverProgrammedReason | ServiceCoverageMissingReason | ServiceCoverageEndingSoonReason>;
+  waiting_since: string | null;
+  due_on: string | null;
+  preview: string | null;
 };
 export type WorkbenchProgrammingCounts = {all: number; training: number; nutrition: number};
 export type WorkbenchProgrammingPage = {
@@ -1468,12 +1542,32 @@ export type WorkbenchRepliesQueueItem = {
   client_status: 'active' | 'pending' | 'inactive';
   reasons: Array<ReplyNeededReason>;
 };
+export type WorkbenchReplyItem = {
+  id: string;
+  kind: 'reply';
+  client: WorkbenchClient;
+  target: {conversation_id: string};
+  reasons: Array<ReplyNeededReason>;
+  waiting_since: string | null;
+  due_on: string | null;
+  preview: string | null;
+};
+export type WorkbenchReviewItem = {
+  id: string;
+  kind: 'review';
+  client: WorkbenchClient;
+  target: {submission_id: string; assignment_id: string; purpose: 'intake' | 'check_in'};
+  reasons: Array<IntakeAwaitingReviewReason | CheckInAwaitingReviewReason>;
+  waiting_since: string | null;
+  due_on: string | null;
+  preview: string | null;
+};
 export type WorkbenchSnooze = {queue: 'quiet' | 'expiring'; snoozed_until: string};
 /* typed-routes:types-end */
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 9b9e8ad1825515c0dc1dc8510725d0d268783b65077850ee31f9352a859242b4 */
+  /* typed-routes:hash a90c8ca0f82642f6fb7acbb132399456eea48e69ade01c1cf262d587d11472d8 */
   '/api/health': {
     get: {
       parameters: {
@@ -3078,6 +3172,19 @@ export interface paths {
       };
       responses: {
         200: {content: {'application/json': {data: Workbench}}};
+      };
+    };
+  };
+  '/v1/coach/workbench/items': {
+    get: {
+      parameters: {
+        query?: WorkbenchItemsQuery;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': WorkbenchItems}};
       };
     };
   };

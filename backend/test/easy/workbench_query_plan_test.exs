@@ -107,8 +107,117 @@ defmodule Easy.WorkbenchQueryPlanTest do
     assert unbounded_scans == []
   end
 
+  test "unified pages use one snapshot statement with optional counts at representative sizes" do
+    assert String.contains?(Repo.config()[:database], "_test")
+    fixture = seed_representative_data(1, 1_200)
+    sparse_coach = insert(:coach, business: fixture.business)
+
+    sparse_ids =
+      Repo.all(
+        from(client in Client,
+          where: client.business_id == ^fixture.business.id,
+          order_by: client.id,
+          limit: 12,
+          select: client.id
+        )
+      )
+
+    from(client in Client, where: client.id in ^sparse_ids)
+    |> Repo.update_all(set: [assigned_coach_id: sparse_coach.id])
+
+    actors = [
+      {:owner, fixture.owner_ctx, fixture.owner_coach},
+      {:assigned_coach, fixture.trainer_ctx, fixture.trainer},
+      {:sparse_coach, trainer_ctx(sparse_coach), sparse_coach}
+    ]
+
+    Repo.query!("""
+    ANALYZE clients, conversations, form_assignments, form_submissions,
+      training_plans, nutrition_plans, workbench_queue_snoozes
+    """)
+
+    evidence =
+      for {role, ctx, coach} <- actors,
+          view <- ["awaiting", "follow-ups"],
+          include_count <- [true, false],
+          search <- ["", "absent-client"] do
+        opts = [view: view, include_count: include_count, search: search, limit: 25]
+        {elapsed, {result, queries}} = :timer.tc(fn -> QueryPlan.capture(fn -> Workbench.list_items(ctx, opts) end) end)
+        assert {:ok, page} = result
+        assert length(queries) == 1
+        assert length(page.items) <= 25
+        assert is_integer(page.count) == include_count
+        plans = QueryPlan.explain(queries)
+
+        timings =
+          for _ <- 1..5 do
+            {time, {:ok, _}} = :timer.tc(fn -> Workbench.list_items(ctx, opts) end)
+            time / 1_000
+          end
+
+        conn = Phoenix.ConnTest.build_conn() |> Easy.ConnCase.authenticate_coach(coach)
+
+        api_timings =
+          for _ <- 1..3 do
+            {time, response} =
+              :timer.tc(fn ->
+                Phoenix.ConnTest.dispatch(conn, EasyWeb.Endpoint, :get, "/v1/coach/workbench/items", Map.new(opts))
+              end)
+
+            assert Phoenix.ConnTest.json_response(response, 200)["count"] == page.count
+            time / 1_000
+          end
+
+        later =
+          if page.next_cursor do
+            {next, later_queries} =
+              QueryPlan.capture(fn -> Workbench.list_items(ctx, Keyword.put(opts, :cursor, page.next_cursor)) end)
+
+            assert {:ok, later_page} = next
+            assert length(later_queries) == 1
+            refute Enum.any?(later_page.items, fn item -> Enum.any?(page.items, &(&1.id == item.id)) end)
+            QueryPlan.explain(later_queries)
+          else
+            []
+          end
+
+        %{
+          role: role,
+          view: view,
+          include_count: include_count,
+          search: search,
+          elapsed_ms: elapsed / 1_000,
+          repeated_ms: timings,
+          api_ms: api_timings,
+          plans: plans,
+          later_plans: later,
+          sql: Enum.map(queries, & &1.sql),
+          summaries: Enum.map(plans, &QueryPlan.summarize/1)
+        }
+      end
+
+    if report = System.get_env("WORKBENCH_QUERY_REPORT") do
+      File.write!(
+        report,
+        Jason.encode!(
+          %{
+            database: "isolated test database",
+            postgres: Repo.query!("SHOW server_version").rows,
+            clients: 1_200,
+            row_counts: fixture.row_counts,
+            evidence: evidence
+          },
+          pretty: true
+        )
+      )
+    end
+  end
+
   defp projections(owner_ctx, trainer_ctx) do
     [
+      {:owner_items, fn -> Workbench.list_items(owner_ctx) end, 1},
+      {:trainer_items, fn -> Workbench.list_items(trainer_ctx) end, 1},
+      {:follow_up_items, fn -> Workbench.list_items(trainer_ctx, view: "follow-ups") end, 1},
       {:owner_counts, fn -> Workbench.counts(owner_ctx) end, 6},
       {:trainer_counts, fn -> Workbench.counts(trainer_ctx) end, 6},
       {:onboarding_list, fn -> Workbench.list_onboarding_queue(trainer_ctx, limit: 20) end, 3},
@@ -136,13 +245,13 @@ defmodule Easy.WorkbenchQueryPlanTest do
     |> Enum.sum()
   end
 
-  defp seed_representative_data do
+  defp seed_representative_data(tenant_count \\ @tenant_count, clients_per_tenant \\ @clients_per_tenant) do
     seeded_at_usec = DateTime.utc_now(:microsecond)
     seeded_at = DateTime.truncate(seeded_at_usec, :second)
     today = Date.utc_today()
 
     tenants =
-      for _tenant_index <- 1..@tenant_count do
+      for _tenant_index <- 1..tenant_count do
         business = insert(:business)
         owner_coach = insert(:coach, business: business, user: business.owner)
         trainer = insert(:coach, business: business)
@@ -158,7 +267,7 @@ defmodule Easy.WorkbenchQueryPlanTest do
 
     records =
       for tenant <- tenants,
-          client_index <- 0..(@clients_per_tenant - 1) do
+          client_index <- 0..(clients_per_tenant - 1) do
         representative_record(tenant, client_index, seeded_at, seeded_at_usec, today)
       end
 
@@ -174,6 +283,9 @@ defmodule Easy.WorkbenchQueryPlanTest do
     target = hd(tenants)
 
     %{
+      business: target.business,
+      owner_coach: target.owner_coach,
+      trainer: target.trainer,
       owner_ctx: owner_ctx(target.business),
       trainer_ctx: trainer_ctx(target.trainer),
       row_counts: %{

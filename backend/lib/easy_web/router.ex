@@ -109,6 +109,7 @@ defmodule EasyWeb.Router do
     patch "/prospects/:id", ProspectController, :update
     post "/prospects/:id/enroll", ProspectController, :enroll
 
+    get "/workbench/items", WorkbenchController, :items
     get "/workbench", WorkbenchController, :index
     get "/workbench/queues/onboarding", WorkbenchController, :onboarding
     get "/workbench/queues/programming", WorkbenchController, :programming

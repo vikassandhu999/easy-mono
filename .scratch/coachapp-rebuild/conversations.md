@@ -45,3 +45,12 @@ The complete conversation suite passes at 375px and 1280px against normal API 40
 The full run also repeats cursor history, server inbox filters/counts, reading anchors, incoming replies, read/handled races, lost-send recovery, shared form responses, reconnect and account replacement. No application or public API change was needed for this storage checkpoint. Screenshots were inspected at both widths; timestamp-dependent existing screenshots are retained as local run evidence rather than committed baseline changes.
 
 Build, scoped Biome, repository rules and full backend precommit pass (1,778 tests, zero failures). The existing bundle-size warning remains. Disposable accounts, messages and media remain in the test businesses, as in the existing suite. Real remote deployment/storage configuration, physical-device media compatibility and target-coach usability remain outside this local Chromium verification.
+
+
+## WebKit verification, 2026-09-17
+
+The existing full conversation journey now runs in Chromium and WebKit at 375px and 1280px. WebKit uses generated oscillator audio with its real MediaRecorder; Chromium retains its fake microphone. Both exercise denial/retry, preview, re-record/discard, track cleanup, real photo/audio/video storage, byte equality and native playback. Inbox/history paging, live team updates, reconnect, shared responses, uncertain sends and account isolation remain in the same suite. Run instructions and fixture limits are in `tests/conversations/README.md`.
+
+The desktop WebKit run exposed a clipped Jump to latest button. Its `inset-s-1/2` utility generated no positioning rule in this app's CSS. Replacing it with `start-1/2` supplies the intended logical 50% inset; the test now checks centering before clicking. No stacking workaround remains. The screen's layout and interaction design otherwise stay unchanged.
+
+Harness corrections keep the check meaningful: retain WebKit's test mediaDevices reference, capture file-backed upload bytes before fetch when Playwright omits the body, and let injected sign-in finish before navigating. Authentication suites retain expiry coverage. These changes do not mock encoding, successful storage or playback. Physical Safari microphone/device behavior and deployed storage remain outside this local evidence.

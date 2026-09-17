@@ -162,6 +162,32 @@ export async function checkConversationFeatures({
   await page.getByRole('button', {name: 'Remove shared response', exact: true}).click();
   await expect(attached).toHaveCount(0);
 
+  if (context.browser().browserType().name() === 'webkit') {
+    // Install after navigation: WebKit may recreate the mediaDevices wrapper.
+    // Supply generated audio to the real recorder, never a physical microphone.
+    await page.evaluate(() => {
+      Object.defineProperty(navigator, 'mediaDevices', {value: navigator.mediaDevices});
+      navigator.mediaDevices.getUserMedia = async () => {
+        const audio = new AudioContext();
+        const oscillator = audio.createOscillator();
+        const destination = audio.createMediaStreamDestination();
+        oscillator.connect(destination);
+        oscillator.start();
+        audio.resume();
+        for (const track of destination.stream.getTracks()) {
+          const stop = track.stop.bind(track);
+          track.stop = () => {
+            stop();
+            if (audio.state !== 'closed') {
+              oscillator.stop();
+              audio.close();
+            }
+          };
+        }
+        return destination.stream;
+      };
+    });
+  }
   await page.evaluate(() => {
     const getUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
     window.chatTestTracks = [];

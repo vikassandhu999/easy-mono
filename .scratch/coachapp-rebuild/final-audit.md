@@ -6,7 +6,7 @@ This audit connects the completed slices. It does not introduce another screen o
 
 ## Current checkpoint
 
-Latest implementation checkpoint: `dc01639` (individual check-in requests), verified 2026-09-16. New request management and existing scheduling/deletion/response-review journeys pass at 375px/1280px. Build, scoped Biome, repository checks, API generation/review and backend precommit pass (1,784 tests). Earlier route and connected-workflow evidence remains below and in the route worklist.
+Current verification: conversation centering and Chromium/WebKit media coverage, 2026-09-17. The complete inbox/thread suite passes at 375px/1280px with real local storage. Build, scoped Biome, repository checks and backend precommit pass (1,784 tests). The previous production core-journey checkpoint is `88c541b`; individual check-in requests are `dc01639`. Earlier route and connected-workflow evidence remains below and in the route worklist.
 
 ## Cross-screen evidence
 
@@ -27,7 +27,7 @@ Discovery used bounded current-source reads because graph tools were unavailable
 
 - Reconcile every remaining item in the completion ledger with recorded evidence or an explicit limit. Run final app/repository/backend gates after any further fixes; preserve normal development services.
 
-Physical-device/Safari media behavior, a target-coach usability session, and deployed storage/payment-provider behavior are not established by local Chromium tests. Record these limits when reporting local completion. The existing production bundle-size warning remains; this audit has not measured or improved startup performance.
+Physical-device/Safari media behavior, a target-coach usability session, and deployed storage/payment-provider behavior are not established by local Chromium tests. Record these limits when reporting local completion. The existing production bundle-size warning remains; local startup measurements are recorded in production-verification.md.
 
 
 ## Navigation finding, 2026-09-16
@@ -84,4 +84,9 @@ A bounded source pass over current coachapp `src/` found the remaining `filter` 
 
 The actual built app now has a connected browser suite without source imports or injected authentication. Chromium and WebKit both pass signup/deep-link recovery, form authoring with shadcn selection and saved choices, all eight sections, a real inbox socket, logout/login and missing-record return at both widths. The startup harness also records three compressed cold-load samples per width under network/CPU throttling. See [production verification](production-verification.md) for evidence, harness corrections and measured values.
 
-Current build, scoped Biome, repository checks and full backend precommit pass (1,784 tests). This closes the development-server-only evidence gap for the tested core journey. Remaining browser-engine work is media and the deeper feature interactions; physical-device, target-coach and deployed-provider limits remain. No startup optimization or product redesign was inferred from the bundle warning.
+Current build, scoped Biome, repository checks and full backend precommit pass (1,784 tests). This closes the development-server-only evidence gap for the tested core journey. Conversation media and history interactions are covered by the subsequent WebKit pass below; deeper feature interactions in other areas remain; physical-device, target-coach and deployed-provider limits remain. No startup optimization or product redesign was inferred from the bundle warning.
+
+
+## Conversation engine verification, 2026-09-17
+
+The complete existing conversation suite passes in Chromium and WebKit at both widths, including real recording, uploads/downloads, native playback and network recovery. The desktop WebKit run found a clipped Jump to latest control: `inset-s-1/2` generated no CSS rule. The supported `start-1/2` utility restores its centered position, which the browser suite now checks before clicking. See [conversations](conversations.md) for fixture details and retained device/storage limits. Screenshots are archived under `/tmp/coachapp-conversations-webkit-audit`.

@@ -1,15 +1,21 @@
 import {mkdir, readFile} from 'node:fs/promises';
-import {chromium, expect, request} from '@playwright/test';
+import {chromium, expect, request, webkit} from '@playwright/test';
 import {chooseOption, selectTrigger} from '../select-helpers.mjs';
 import {checkConversationFeatures} from './conversation-features.mjs';
 import {expectStoredMedia, observeChatUploads} from './storage.mjs';
 
 const api = await request.newContext({baseURL: process.env.COACHAPP_API_URL || 'http://localhost:4000'});
 const appUrl = process.env.COACHAPP_URL || 'http://localhost:2022';
-const browser = await chromium.launch({
-  channel: 'chromium',
-  args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
-});
+const engine = process.env.BROWSER_ENGINE || 'chromium';
+if (engine !== 'chromium' && engine !== 'webkit') {
+  throw new Error(`Unsupported BROWSER_ENGINE: ${engine}`);
+}
+const browser = await (engine === 'webkit'
+  ? webkit.launch()
+  : chromium.launch({
+      channel: 'chromium',
+      args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
+    }));
 await mkdir('tests/conversations/artifacts', {recursive: true});
 async function send(method, path, data, token) {
   const response = await api[method](path, {data, headers: token ? {authorization: `Bearer ${token}`} : {}});
@@ -56,7 +62,7 @@ try {
     }
     const context = await browser.newContext({
       baseURL: appUrl,
-      permissions: ['microphone'],
+      permissions: engine === 'chromium' ? ['microphone'] : [],
       viewport: {width, height: 1000},
     });
     context.setDefaultTimeout(15000);
@@ -75,8 +81,10 @@ try {
     await expect(page.getByRole('heading', {name: 'Welcome back', exact: true})).toBeVisible();
     await page.evaluate(async (tokens) => {
       const {saveSession} = await import('/src/api/session.ts');
-      saveSession({...tokens, expires_in: 1});
+      saveSession(tokens);
     }, tokens);
+    await expect(page).not.toHaveURL(/\/login$/);
+    await page.waitForLoadState('networkidle');
     await page.goto('/messages');
     await expect(page.getByRole('heading', {name: 'Messages', exact: true})).toBeVisible();
     await expect.poll(() => joined).toBe(true);
@@ -133,7 +141,11 @@ try {
     await expect(viewport).not.toHaveAttribute('data-autoscrolling', '');
     await viewport.press('Home');
     await expect(rows).toHaveCount(45);
-    await page.getByRole('button', {name: 'Jump to latest', exact: true}).click();
+    const jump = page.getByRole('button', {name: 'Jump to latest', exact: true});
+    const historyBounds = await viewport.boundingBox();
+    const jumpBounds = await jump.boundingBox();
+    expect(Math.abs(jumpBounds.x + jumpBounds.width / 2 - historyBounds.x - historyBounds.width / 2)).toBeLessThan(2);
+    await jump.click();
     await expect(rows.last()).toBeInViewport();
     await page.getByRole('button', {name: 'Mark as read · 45', exact: true}).click();
     await expect(page.getByText('Marked as read for your team.', {exact: true})).toBeVisible();

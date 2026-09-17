@@ -4,6 +4,21 @@ import {expect} from '@playwright/test';
 // the configured storage service. Only the requested first PUT is simulated.
 export async function observeChatUploads(page, clientId, {failFirst = false} = {}) {
   const uploads = [];
+  // WebKit does not expose file-backed PUT bodies through postDataBuffer.
+  // Capture the actual browser bytes before fetch, then compare storage's GET.
+  await page.evaluate(() => {
+    if (window.chatTestUploadBytes) {
+      return;
+    }
+    window.chatTestUploadBytes = new Map();
+    const fetch = window.fetch.bind(window);
+    window.fetch = async (input, init) => {
+      if (init?.method === 'PUT' && init.body instanceof Blob) {
+        window.chatTestUploadBytes.set(String(input), Array.from(new Uint8Array(await init.body.arrayBuffer())));
+      }
+      return fetch(input, init);
+    };
+  });
   await page.route(`**/v1/coach/clients/${clientId}/uploads`, async (route) => {
     const response = await route.fetch();
     expect(response.ok()).toBe(true);
@@ -13,7 +28,10 @@ export async function observeChatUploads(page, clientId, {failFirst = false} = {
         failFirst = false;
         return storage.fulfill({status: 503, body: ''});
       }
-      uploads.push(storage.request().postDataBuffer());
+      const bytes = storage.request().postDataBuffer();
+      uploads.push(
+        bytes ?? Buffer.from(await page.evaluate((url) => window.chatTestUploadBytes.get(url), data.upload_url)),
+      );
       return storage.continue();
     });
     return route.fulfill({response});

@@ -341,3 +341,10 @@ CHECKIN-04 — Schedule generation and submitted history left individual unanswe
 ## Production engine coverage, 2026-09-16
 
 PROD-01 — The built bundle passes the connected signup/auth → form authoring/reload → eight main sections → inbox WebSocket → logout/login → missing-record recovery journey in Chromium and WebKit, at 375px and 1280px. The test uses visible controls and built scripts throughout. Screenshots, sample startup measurements and evidence limits are in production-verification.md. This does not upgrade every route row's deeper scenarios to WebKit coverage.
+
+
+## Conversation positioning and WebKit media, 2026-09-17
+
+CONVERSATIONS-02: Jump to latest could be clipped at the history pane's left edge. The `inset-s-1/2` class generated no horizontal positioning rule; `start-1/2` provides the intended 50% logical inset. A WebKit desktop click reproduced the failure. The full suite now checks the button's center against the history viewport before its real click, and passes in Chromium/WebKit at 375px/1280px.
+
+The same suite verifies real photo/audio/video storage and playback, microphone denial/retry, re-record/discard cleanup, inbox/history, response sharing, reconnect and account isolation in both engines. See conversations.md and the test README for generated media, harness corrections and physical-device/deployed-storage limits. Current build, scoped Biome, repository checks and backend precommit pass (1,784 tests).

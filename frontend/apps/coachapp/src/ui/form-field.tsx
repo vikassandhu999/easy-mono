@@ -14,6 +14,7 @@ export function FormField<T extends FieldValues>({
   multiline = false,
   isRequired = false,
   isDisabled = false,
+  emphasis,
   ...inputProps
 }: {
   control: Control<T>;
@@ -23,6 +24,7 @@ export function FormField<T extends FieldValues>({
   multiline?: boolean;
   isRequired?: boolean;
   isDisabled?: boolean;
+  emphasis?: 'title' | 'item';
   rules?: ControllerProps<T>['rules'];
 } & Pick<ComponentProps<typeof Input>, 'type' | 'autoComplete' | 'inputMode' | 'maxLength'>) {
   return (
@@ -57,6 +59,7 @@ export function FormField<T extends FieldValues>({
           ) : (
             <Input
               {...inputProps}
+              className={emphasis === 'title' ? 'editor-name' : emphasis === 'item' ? 'editor-item-name' : ''}
               ref={field.ref}
             />
           )}

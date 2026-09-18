@@ -83,6 +83,7 @@ export function FormSection({
         control={control}
         name={`sections.${index}.title`}
         label="Section title"
+        emphasis="item"
         isDisabled={pending}
         description="Optional. Group related questions under a heading."
       />
@@ -98,7 +99,7 @@ export function FormSection({
               className="question-card space-y-4"
             >
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold">Question {questionIndex + 1}</p>
+                <p className="text-xs font-medium text-muted-foreground">Question {questionIndex + 1}</p>
                 <div className="flex gap-1">
                   <Button
                     variant="ghost"
@@ -133,6 +134,7 @@ export function FormSection({
                 control={control}
                 name={`${name}.label`}
                 label="Question"
+                emphasis="item"
                 isRequired
                 isDisabled={pending || type === 'service_type'}
                 rules={{

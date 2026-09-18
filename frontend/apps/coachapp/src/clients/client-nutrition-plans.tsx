@@ -20,33 +20,36 @@ export function ClientNutritionPlans({
   return (
     <section
       aria-label="Client nutrition plans"
-      className="space-y-4"
+      className="client-section space-y-4"
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="section-title">Nutrition plans</h2>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            to={generatePath(routes.clientNutritionPlans, {clientId: person.id}) + '?status=all'}
-            state={state}
-            className={buttonVariants({variant: 'outline'})}
-          >
-            All nutrition plans
-          </Link>
-          <Link
-            to={generatePath(routes.nutritionHistory, {clientId: person.id})}
-            className={buttonVariants({variant: 'ghost'})}
-          >
-            View nutrition history
-          </Link>
-          <Link
-            to={generatePath(routes.assignNutritionPlan, {id: person.id})}
-            state={state}
-            className={buttonVariants({variant: 'outline'})}
-          >
-            Assign nutrition plan
-          </Link>
+      <div className="client-section-heading">
+        <div className="min-w-0">
+          <h2 className="section-title">Nutrition plans</h2>
+          <div className="client-plan-links">
+            <Link
+              to={generatePath(routes.clientNutritionPlans, {clientId: person.id}) + '?status=all'}
+              state={state}
+              className="text-link"
+            >
+              All nutrition plans
+            </Link>
+            <Link
+              to={generatePath(routes.nutritionHistory, {clientId: person.id})}
+              className="text-link"
+            >
+              View nutrition history
+            </Link>
+          </div>
         </div>
+        <Link
+          to={generatePath(routes.assignNutritionPlan, {id: person.id})}
+          state={state}
+          className={buttonVariants({variant: 'outline'})}
+        >
+          Assign nutrition plan
+        </Link>
       </div>
+
       {!coverage && query.isPending && (
         <Surface>
           <p role="status">Loading nutrition plans…</p>
@@ -66,7 +69,14 @@ export function ClientNutritionPlans({
       )}
       {coverage && (
         <>
-          {!coverage.current && <p className="text-sm text-muted-foreground">No current nutrition plan.</p>}
+          {!coverage.current && (
+            <Surface>
+              <p className="font-medium">No current nutrition plan.</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Choose a nutrition template to prepare their meals and targets.
+              </p>
+            </Surface>
+          )}
           {coverage.current && (
             <Plan
               plan={coverage.current}
@@ -91,7 +101,7 @@ function Plan({plan, clientId}: {plan: NutritionPlan; clientId: string}) {
     <Surface>
       <details>
         <summary className="cursor-pointer space-y-2">
-          <span className="block font-semibold">{plan.name}</span>
+          <span className="editor-item-title block">{plan.name}</span>
           <span className="block text-sm capitalize text-muted-foreground">
             {plan.lifecycle} · {plan.start_date} → {plan.end_date || 'No end date'}
           </span>

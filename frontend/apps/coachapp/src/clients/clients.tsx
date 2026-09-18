@@ -35,7 +35,7 @@ export function Clients() {
     );
   }
   return (
-    <Page>
+    <Page className="client-page">
       <PageHeader
         title="Clients"
         description="Your clients and their invitations."
@@ -125,7 +125,7 @@ export function Clients() {
             </span>
             <div className="client-row-meta">
               <div className="min-w-0 max-w-full">
-                <p className="truncate font-semibold">
+                <p className="break-words text-lg font-semibold">
                   {`${client.first_name ?? ''} ${client.last_name ?? ''}`.trim() ||
                     client.email ||
                     client.phone ||

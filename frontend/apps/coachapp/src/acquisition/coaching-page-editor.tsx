@@ -42,7 +42,7 @@ export function CoachingPageEditor() {
           business={business.data.data}
         />
       ) : (
-        <Page>
+        <Page className="editor-page">
           <PageHeader
             title="Your coaching page"
             back={{to: routes.coachingPage, label: 'Coaching page'}}
@@ -161,7 +161,7 @@ function Editor({page, business}: {page: LandingPage | null; business: Business}
     });
   return (
     <FormProvider {...form}>
-      <Page>
+      <Page className="editor-page">
         <PageHeader
           title={saved ? 'Edit coaching page' : 'Create your coaching page'}
           description="Start with your introduction. Add what helps someone decide if your coaching is right for them."
@@ -199,6 +199,7 @@ function Editor({page, business}: {page: LandingPage | null; business: Business}
                 control={form.control}
                 name="headline"
                 label="What can you help people achieve?"
+                emphasis="title"
                 isRequired
                 maxLength={255}
                 description="Make your headline specific and easy to understand."

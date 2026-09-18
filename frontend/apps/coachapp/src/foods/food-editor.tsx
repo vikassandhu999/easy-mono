@@ -52,7 +52,7 @@ function LoadEditor({id}: {id: string}) {
     return <Editor initial={initial} />;
   }
   return (
-    <Page>
+    <Page className="editor-page">
       <PageHeader
         title="Food"
         back={{to, label: 'Back to foods', state}}
@@ -141,7 +141,7 @@ function Editor({initial}: {initial: Food | undefined}) {
     setChecking(false);
   }
   return (
-    <Page>
+    <Page className="editor-page">
       <PageHeader
         title={initial ? (readOnly ? 'Food details' : 'Edit food') : 'Create food'}
         description={
@@ -155,7 +155,7 @@ function Editor({initial}: {initial: Food | undefined}) {
         actions={
           food && (
             <Button
-              variant="outline"
+              variant="ghost"
               isDisabled={pending || conflict || uncertain}
               onPress={() => navigate(generatePath(routes.manageFood, {id: food.id}), {state})}
             >
@@ -221,16 +221,17 @@ function Editor({initial}: {initial: Food | undefined}) {
             control={form.control}
             name="name"
             label="Food name"
+            emphasis="title"
             isRequired
             maxLength={255}
             rules={{validate: (value) => Boolean(String(value).trim()) || 'Enter a food name.'}}
           />
           <section
-            className="space-y-4"
+            className="editor-section space-y-4"
             aria-label="Nutrition per 100 grams"
           >
             <div>
-              <h2 className="text-xl font-bold">Nutrition per 100 g</h2>
+              <h2 className="editor-section-title">Nutrition per 100 g</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Use per-100-g values, not per-serving values. Leave unknown values blank; enter 0 only when known.
               </p>

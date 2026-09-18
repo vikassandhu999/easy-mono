@@ -56,7 +56,7 @@ export function ClientProfile() {
   const overview = generatePath(routes.client, {id});
   return (
     <div className="has-mobile-actions mx-auto max-w-3xl">
-      <Page>
+      <Page className="client-page">
         <PageHeader
           title={
             query.data

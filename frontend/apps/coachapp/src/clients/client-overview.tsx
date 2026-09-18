@@ -46,7 +46,7 @@ function Overview({id}: {id: string}) {
   };
   if (!client.data) {
     return (
-      <Page>
+      <Page className="client-page">
         <PageHeader
           title={
             client.isPending
@@ -155,20 +155,22 @@ function Overview({id}: {id: string}) {
     </div>
   );
   return (
-    <Page>
+    <Page className="client-page">
       <PageHeader
         title={
           `${person.first_name ?? ''} ${person.last_name ?? ''}`.trim() || person.email || person.phone || 'Client'
         }
-        description={
-          <>
-            <span className="block text-xs font-medium uppercase tracking-wider">Client overview</span>
-            <span className="mt-1 block">{person.email || person.phone}</span>
-          </>
-        }
+        eyebrow="Client overview"
+        description={person.email || person.phone}
         back={{to: listLocation, label: 'Back to clients'}}
         actions={
           <>
+            <Link
+              to={generatePath(routes.clientConversation, {clientId: id})}
+              className={buttonVariants()}
+            >
+              Message client
+            </Link>
             <Link
               to={generatePath(routes.clientProfile, {id})}
               state={listState}
@@ -177,7 +179,7 @@ function Overview({id}: {id: string}) {
               Client details
             </Link>
             <Button
-              variant="outline"
+              variant="ghost"
               isPending={
                 client.isFetching ||
                 assignments.isFetching ||
@@ -235,70 +237,55 @@ function Overview({id}: {id: string}) {
         </p>
       )}
       {person.stage === 'onboarding' && intakeSection}
-      <section
-        className="flex flex-wrap items-center justify-between gap-4"
-        aria-label="Client check-ins"
-      >
-        <div>
-          <h2 className="section-title">Check-ins</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Read progress updates and manage when this client checks in.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-3">
+      <div className="client-activity">
+        <section
+          className="min-w-0 space-y-3"
+          aria-label="Client check-ins"
+        >
+          <div>
+            <h2 className="section-title">Check-ins</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Read progress updates and manage when this client checks in.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to={generatePath(routes.clientCheckInResponses, {clientId: id})}
+              className={buttonVariants({variant: 'outline'})}
+            >
+              View responses
+            </Link>
+            <Link
+              to={generatePath(routes.clientCheckIns, {id})}
+              className={buttonVariants({variant: 'ghost'})}
+            >
+              Manage check-ins
+            </Link>
+          </div>
+        </section>
+        <section
+          className="min-w-0 space-y-3"
+          aria-label="Client progress"
+        >
+          <div>
+            <h2 className="section-title">Weight progress</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Review measurements, notes and the change over time.</p>
+          </div>
           <Link
-            to={generatePath(routes.clientCheckInResponses, {clientId: id})}
+            to={generatePath(routes.weightProgress, {clientId: id})}
             className={buttonVariants({variant: 'outline'})}
           >
-            View responses
+            View weight progress
           </Link>
-          <Link
-            to={generatePath(routes.clientCheckIns, {id})}
-            className={buttonVariants({variant: 'outline'})}
-          >
-            Manage check-ins
-          </Link>
-        </div>
-      </section>
-      <section
-        className="flex flex-wrap items-center justify-between gap-4"
-        aria-label="Client messages"
-      >
-        <div>
-          <h2 className="section-title">Messages</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Check in, answer questions and keep the conversation going.
-          </p>
-        </div>
-        <Link
-          to={generatePath(routes.clientConversation, {clientId: id})}
-          className={buttonVariants({variant: 'outline'})}
-        >
-          Message client
-        </Link>
-      </section>
-      <ClientNutritionPlans
-        person={person}
-        query={nutrition}
-      />
-      <section
-        aria-label="Client progress"
-        className="flex flex-wrap items-center justify-between gap-4"
-      >
-        <div>
-          <h2 className="section-title">Weight progress</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Review measurements, notes and the change over time.</p>
-        </div>
-        <Link
-          to={generatePath(routes.weightProgress, {clientId: id})}
-          className={buttonVariants({variant: 'outline'})}
-        >
-          View weight progress
-        </Link>
-      </section>
+        </section>
+      </div>
       <ClientTrainingPlans
         person={person}
         query={trainingPlans}
+      />
+      <ClientNutritionPlans
+        person={person}
+        query={nutrition}
       />
       {person.stage !== 'onboarding' && intakeSection}
     </Page>

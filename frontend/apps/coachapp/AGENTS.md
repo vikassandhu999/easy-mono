@@ -24,3 +24,7 @@ Use resource `useInfiniteQuery` hooks with `api/pagination.ts`, filter-specific 
 Counts, aggregates, and business selections come from API fields or scoped endpoints. Never derive them by filtering, reducing, or sorting downloaded records. Local array operations are for rendering and unsaved form editing; loaded row length is only an empty/rendering check, never the result total. Add a server field when a screen needs a persisted derived value.
 
 Before adding a list, read `.scratch/coachapp-rebuild/lists.md`. Verify multiple pages, server totals, search beyond the first page, retry, and return navigation at 375px and 1280px.
+
+## Builder and client hierarchy
+
+Use `Page` with `editor-page` or `client-page` for these screens. `FormField`'s `emphasis` distinguishes editable names from ordinary values; `editor-section-title` and `editor-item-title` distinguish sections from their contents. Keep maintenance actions secondary and exercise rows borderless. Verify the rendered sizes, wrapping and primary actions at both widths with `pnpm test:visual-hierarchy`; class names alone do not prove the hierarchy is visible.

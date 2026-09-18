@@ -140,11 +140,11 @@ export function MenuEditor({
   }
   return (
     <section
-      className="min-w-0 space-y-6"
+      className="editor-section min-w-0 space-y-5"
       aria-label="Meal worksheet"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-bold">Meals for the week</h2>
+        <h2 className="editor-section-title">Meals for the week</h2>
         <div className="flex flex-wrap gap-2">
           <Button
             variant="ghost"
@@ -233,46 +233,50 @@ export function MenuEditor({
           </Button>
         ))}
       </div>
-      <label
-        id="nutrition-day-name-label"
-        htmlFor="nutrition-day-name"
-        className="grid max-w-md gap-1 text-xs text-muted-foreground"
-      >
-        Day menu name
-        <Input
-          id="nutrition-day-name"
-          value={pattern.name}
-          aria-invalid={Boolean(dayError)}
-          aria-describedby={dayError ? 'nutrition-day-name-error' : undefined}
-          maxLength={255}
-          className="text-xl font-bold"
-          onChange={(event) =>
-            onChange({
-              ...menu,
-              day_patterns: menu.day_patterns.map((day) =>
-                day.id === pattern.id ? {...day, name: event.target.value} : day,
-              ),
-            })
-          }
-        />
-      </label>
-      {dayError && (
-        <p
-          id="nutrition-day-name-error"
-          className="text-sm text-destructive"
-        >
-          {dayError}
-        </p>
-      )}
-      {menu.day_patterns.length > 1 && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onPress={() => setRemovingDay(true)}
-        >
-          Remove day menu
-        </Button>
-      )}
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="min-w-0 max-w-md flex-1 basis-48">
+          <label
+            id="nutrition-day-name-label"
+            htmlFor="nutrition-day-name"
+            className="grid gap-1 text-xs text-muted-foreground"
+          >
+            Day menu name
+            <Input
+              id="nutrition-day-name"
+              value={pattern.name}
+              aria-invalid={Boolean(dayError)}
+              aria-describedby={dayError ? 'nutrition-day-name-error' : undefined}
+              maxLength={255}
+              className="editor-item-name"
+              onChange={(event) =>
+                onChange({
+                  ...menu,
+                  day_patterns: menu.day_patterns.map((day) =>
+                    day.id === pattern.id ? {...day, name: event.target.value} : day,
+                  ),
+                })
+              }
+            />
+          </label>
+          {dayError && (
+            <p
+              id="nutrition-day-name-error"
+              className="mt-1 text-sm text-destructive"
+            >
+              {dayError}
+            </p>
+          )}
+        </div>
+        {menu.day_patterns.length > 1 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => setRemovingDay(true)}
+          >
+            Remove day menu
+          </Button>
+        )}
+      </div>
       {removedItem && menu.meals.some((meal) => meal.id === removedItem.mealId) && (
         <div
           role="status"
@@ -308,7 +312,7 @@ export function MenuEditor({
             aria-label={`${slotLabel(slot.meal_slot)} options`}
             className="space-y-5"
           >
-            <h3 className="text-lg font-semibold capitalize">{slotLabel(slot.meal_slot)}</h3>
+            <h3 className="editor-item-title capitalize">{slotLabel(slot.meal_slot)}</h3>
             {slot.meal_ids.map((id, index) => {
               const meal = menu.meals.find((value) => value.id === id);
               if (!meal) {
@@ -338,7 +342,7 @@ export function MenuEditor({
                         aria-invalid={Boolean(mealError)}
                         aria-describedby={mealError ? `meal-name-${mealScope}-error` : undefined}
                         maxLength={255}
-                        className="font-semibold"
+                        className="editor-item-name"
                         onChange={(event) => updateMeal({...meal, name: event.target.value})}
                       />
                     </label>

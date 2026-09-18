@@ -161,7 +161,7 @@ export function NutritionPlanWorksheet({
     }
   }
   return (
-    <Page>
+    <Page className="editor-page">
       <PageHeader
         title={clientPlan ? `Nutrition for ${clientName}` : initial ? 'Edit nutrition plan' : 'Create nutrition plan'}
         description={
@@ -170,29 +170,38 @@ export function NutritionPlanWorksheet({
             : 'Set daily targets and offer practical meal choices.'
         }
         back={{to, label: clientPlan ? 'Back to client' : 'Back to nutrition plans', state}}
+        actions={
+          plan && (
+            <>
+              {plan && !clientPlan && (
+                <Button
+                  variant="ghost"
+                  isDisabled={pending}
+                  onPress={() => navigate(generatePath(routes.manageNutritionPlan, {id: plan.id}), {state})}
+                >
+                  Manage template
+                </Button>
+              )}
+              {plan && context.kind === 'client' && (
+                <Button
+                  variant="ghost"
+                  isDisabled={pending}
+                  onPress={() =>
+                    navigate(
+                      generatePath(routes.manageClientNutritionPlan, {id: plan.id, clientId: context.clientId}),
+                      {
+                        state,
+                      },
+                    )
+                  }
+                >
+                  Manage dates and access
+                </Button>
+              )}
+            </>
+          )
+        }
       />
-      {plan && !clientPlan && (
-        <Button
-          variant="outline"
-          isDisabled={pending}
-          onPress={() => navigate(generatePath(routes.manageNutritionPlan, {id: plan.id}), {state})}
-        >
-          Manage template
-        </Button>
-      )}
-      {plan && context.kind === 'client' && (
-        <Button
-          variant="outline"
-          isDisabled={pending}
-          onPress={() =>
-            navigate(generatePath(routes.manageClientNutritionPlan, {id: plan.id, clientId: context.clientId}), {
-              state,
-            })
-          }
-        >
-          Manage dates and access
-        </Button>
-      )}
       {clientPlan && plan && (
         <p className="text-sm text-muted-foreground">
           {plan.start_date ?? 'Start date not set'} → {plan.end_date ?? 'No end date'}
@@ -287,6 +296,7 @@ export function NutritionPlanWorksheet({
               control={form.control}
               name="name"
               label="Plan name"
+              emphasis="title"
               isRequired
               maxLength={255}
               rules={{validate: (value) => Boolean(String(value).trim()) || 'Enter a plan name.'}}
@@ -302,9 +312,9 @@ export function NutritionPlanWorksheet({
               />
             </details>
           </div>
-          <section className="space-y-4">
+          <section className="editor-section space-y-4">
             <div>
-              <h2 className="text-xl font-bold">Daily targets</h2>
+              <h2 className="editor-section-title">Daily targets</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Leave any target blank if it isn't part of this plan.
               </p>

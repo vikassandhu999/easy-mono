@@ -433,3 +433,106 @@
     padding-top: 1.25rem;
   }
 }
+
+@layer components {
+  /* Builder and client hierarchy: identity, section, item, supporting detail. */
+  .page-eyebrow {
+    margin-bottom: 0.5rem;
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .editor-page h2.section-title,
+  .client-page h2.section-title,
+  .editor-section-title {
+    font-size: 1.25rem;
+    line-height: 1.4;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+  }
+  .editor-item-title {
+    font-size: 1.125rem;
+    line-height: 1.5;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+  .editor-section {
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+  .editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+  }
+  .editor-page .page-header-actions > * {
+    flex: initial;
+  }
+  .client-page .page-header-actions > * {
+    flex: initial;
+  }
+  .client-section {
+    min-width: 0;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+  .client-activity {
+    display: grid;
+    gap: 1.5rem;
+    padding-block: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+  .client-section-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+  }
+  .client-plan-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 1rem;
+    font-size: 0.875rem;
+  }
+  .client-plan-links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+  }
+  @media (min-width: 48rem) {
+    .editor-section,
+    .client-section {
+      padding-top: 2rem;
+    }
+    .client-activity {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 2rem;
+    }
+  }
+}
+
+/* These explicit field variants override the input primitive utilities. */
+@layer utilities {
+  .editor-page .editor-name {
+    height: 3.5rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    color: var(--foreground);
+  }
+  .editor-page .editor-item-name {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--foreground);
+  }
+  .editor-page :is(.editor-name, .editor-item-name):disabled {
+    color: var(--muted-foreground);
+  }
+}

@@ -28,7 +28,7 @@ export function WeekStrip({
       className="space-y-3"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-semibold">Your week</h2>
+        <h2 className="editor-section-title">Your week</h2>
         {!readOnly && <p className="text-xs text-muted-foreground">Choose a day to assign a workout.</p>}
       </div>
       <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">

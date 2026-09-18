@@ -3,8 +3,8 @@ import type {ReactNode} from 'react';
 import {Link} from 'react-router-dom';
 import {cn} from './cn';
 
-export function Page({children}: {children: ReactNode}) {
-  return <div className="page">{children}</div>;
+export function Page({children, className}: {children: ReactNode; className?: string}) {
+  return <div className={cn('page', className)}>{children}</div>;
 }
 
 export function PageHeader({
@@ -12,11 +12,13 @@ export function PageHeader({
   description,
   back,
   actions,
+  eyebrow,
 }: {
   title: string;
   description?: ReactNode;
   back?: {to: string; label: string; state?: unknown};
   actions?: ReactNode;
+  eyebrow?: ReactNode;
 }) {
   return (
     <div className="page-header">
@@ -35,6 +37,7 @@ export function PageHeader({
       )}
       <div className="page-heading-row">
         <div className="min-w-0">
+          {eyebrow && <p className="page-eyebrow">{eyebrow}</p>}
           <h1 className="page-title">{title}</h1>
           {description && <div className="page-description">{description}</div>}
         </div>

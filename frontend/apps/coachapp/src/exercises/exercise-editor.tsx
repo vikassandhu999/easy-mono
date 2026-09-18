@@ -47,7 +47,7 @@ function LoadEditor({id}: {id: string}) {
     return <Editor initial={initial} />;
   }
   return (
-    <Page>
+    <Page className="editor-page">
       <PageHeader
         title="Exercise"
         back={{to, label: 'Back to exercises', state}}
@@ -150,7 +150,7 @@ function Editor({initial}: {initial: Exercise | undefined}) {
     setChecking(false);
   }
   return (
-    <Page>
+    <Page className="editor-page">
       <PageHeader
         title={initial ? (readOnly ? 'Exercise details' : 'Edit exercise') : 'Create exercise'}
         description={
@@ -164,7 +164,7 @@ function Editor({initial}: {initial: Exercise | undefined}) {
         actions={
           exercise && (
             <Button
-              variant="outline"
+              variant="ghost"
               isDisabled={dirty || pending || query.isError}
               onPress={() => setAction('copy')}
             >
@@ -246,6 +246,7 @@ function Editor({initial}: {initial: Exercise | undefined}) {
             control={form.control}
             name="name"
             label="Exercise name"
+            emphasis="title"
             isRequired
             maxLength={255}
             rules={{validate: (value) => Boolean(String(value).trim()) || 'Enter an exercise name.'}}

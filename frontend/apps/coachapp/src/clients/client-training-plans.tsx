@@ -26,34 +26,37 @@ export function ClientTrainingPlans({
   const {state} = useListLocation(routes.home);
   return (
     <section
-      className="min-w-0 space-y-4"
+      className="client-section space-y-4"
       aria-label="Client training plans"
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="section-title">Training plans</h2>
-        <div className="flex flex-wrap gap-3">
-          <Link
-            to={generatePath(routes.clientTrainingPlans, {clientId: person.id}) + '?status=all'}
-            state={state}
-            className={buttonVariants({variant: 'outline'})}
-          >
-            All training plans
-          </Link>
-          <Link
-            to={generatePath(routes.trainingSessions, {clientId: person.id})}
-            className={buttonVariants({variant: 'outline'})}
-          >
-            View training history
-          </Link>
-          <Link
-            to={generatePath(routes.assignTrainingPlan, {id: person.id})}
-            state={state}
-            className={buttonVariants({variant: 'outline'})}
-          >
-            Assign training plan
-          </Link>
+      <div className="client-section-heading">
+        <div className="min-w-0">
+          <h2 className="section-title">Training plans</h2>
+          <div className="client-plan-links">
+            <Link
+              to={generatePath(routes.clientTrainingPlans, {clientId: person.id}) + '?status=all'}
+              state={state}
+              className="text-link"
+            >
+              All training plans
+            </Link>
+            <Link
+              to={generatePath(routes.trainingSessions, {clientId: person.id})}
+              className="text-link"
+            >
+              View training history
+            </Link>
+          </div>
         </div>
+        <Link
+          to={generatePath(routes.assignTrainingPlan, {id: person.id})}
+          state={state}
+          className={buttonVariants({variant: 'outline'})}
+        >
+          Assign training plan
+        </Link>
       </div>
+
       <InfiniteList
         query={query}
         label="assigned plans"
@@ -68,7 +71,7 @@ export function ClientTrainingPlans({
         {(plan) => (
           <details className="group">
             <summary className="min-h-24 cursor-pointer space-y-2 px-5 py-4 focus-visible:-outline-offset-4">
-              <span className="break-words font-semibold">{plan.name}</span>
+              <span className="editor-item-title">{plan.name}</span>
               <span className="block text-sm text-muted-foreground">
                 {plan.start_date ? (
                   <>

@@ -49,7 +49,7 @@ function ExistingFormEditor({id}: {id: string}) {
   }, [initialTemplate, query.isSuccess, query.isFetchedAfterMount, query.data]);
   if (!initialTemplate) {
     return (
-      <Page>
+      <Page className="editor-page">
         <PageHeader
           title="Edit form"
           back={{to: listLocation, label: 'Back to forms'}}
@@ -191,7 +191,7 @@ function Editor({template}: {template: FormTemplate | undefined}) {
     }
   });
   return (
-    <Page>
+    <Page className="editor-page">
       <PageHeader
         title={template ? 'Edit form' : 'Create form'}
         description="Build a form that helps you understand your client."
@@ -201,7 +201,7 @@ function Editor({template}: {template: FormTemplate | undefined}) {
             <Link
               to={generatePath(routes.manageForm, {id: template.id})}
               state={listState}
-              className={buttonVariants({variant: 'outline'})}
+              className={buttonVariants({variant: 'ghost'})}
             >
               Manage form
             </Link>
@@ -263,6 +263,7 @@ function Editor({template}: {template: FormTemplate | undefined}) {
               control={form.control}
               name="name"
               label="Form name"
+              emphasis="item"
               isRequired
               isDisabled={locked}
               maxLength={255}

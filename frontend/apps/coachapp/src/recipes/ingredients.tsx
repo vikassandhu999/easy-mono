@@ -13,13 +13,13 @@ export function Ingredients({form, disabled}: {form: UseFormReturn<RecipeFields>
   const [removed, setRemoved] = useState<{item: RecipeFields['ingredients'][number]; index: number}>();
   return (
     <section
-      className="space-y-4"
+      className="editor-section space-y-4"
       aria-labelledby="ingredients-heading"
     >
       <div>
         <h2
           id="ingredients-heading"
-          className="text-xl font-bold"
+          className="editor-section-title"
         >
           Ingredients
         </h2>
@@ -46,7 +46,7 @@ export function Ingredients({form, disabled}: {form: UseFormReturn<RecipeFields>
             >
               <div className="flex min-w-0 items-center justify-between gap-3 sm:pb-3">
                 <div className="min-w-0">
-                  <h3 className="break-words font-semibold">{item.food?.name ?? 'Unavailable food'}</h3>
+                  <h3 className="editor-item-title">{item.food?.name ?? 'Unavailable food'}</h3>
                   {item.food?.brand && <p className="text-xs text-muted-foreground">{item.food.brand}</p>}
                 </div>
               </div>

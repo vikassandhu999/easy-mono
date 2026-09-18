@@ -117,41 +117,43 @@ export function TrainingPlanWorksheet({
     }
   }
   return (
-    <Page>
+    <Page className="editor-page">
       {!readOnly && <h1 className="sr-only">Training plan worksheet</h1>}
-      <Link
-        to={listLocation}
-        state={listState}
-        className="page-back"
-      >
-        <ArrowLeft
-          aria-hidden="true"
-          size={18}
-        />
-        {backLabel}
-      </Link>
-      {plan && !clientPlan && (
-        <Button
-          variant="outline"
-          isDisabled={pending}
-          onPress={() => navigate(generatePath(routes.manageTrainingPlan, {id: plan.id}), {state: listState})}
+      <div className="editor-toolbar">
+        <Link
+          to={listLocation}
+          state={listState}
+          className="page-back"
         >
-          Manage template
-        </Button>
-      )}
-      {plan && context.kind === 'client' && (
-        <Button
-          variant="outline"
-          isDisabled={pending}
-          onPress={() =>
-            navigate(generatePath(routes.manageClientTrainingPlan, {id: plan.id, clientId: context.clientId}), {
-              state: listState,
-            })
-          }
-        >
-          Manage dates and access
-        </Button>
-      )}
+          <ArrowLeft
+            aria-hidden="true"
+            size={18}
+          />
+          {backLabel}
+        </Link>
+        {plan && !clientPlan && (
+          <Button
+            variant="ghost"
+            isDisabled={pending}
+            onPress={() => navigate(generatePath(routes.manageTrainingPlan, {id: plan.id}), {state: listState})}
+          >
+            Manage template
+          </Button>
+        )}
+        {plan && context.kind === 'client' && (
+          <Button
+            variant="ghost"
+            isDisabled={pending}
+            onPress={() =>
+              navigate(generatePath(routes.manageClientTrainingPlan, {id: plan.id, clientId: context.clientId}), {
+                state: listState,
+              })
+            }
+          >
+            Manage dates and access
+          </Button>
+        )}
+      </div>
       {clientPlan && plan && (
         <div className="space-y-1">
           <p className="font-semibold">

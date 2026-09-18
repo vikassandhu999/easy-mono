@@ -59,7 +59,9 @@ export function WorkoutEditor({
             className={expanded ? '' : '-rotate-90'}
           />
           {(!expanded || readOnly) && (
-            <span className="min-w-0 break-words text-xl font-bold">{workout.name || `Workout ${index + 1}`}</span>
+            <span className="min-w-0 break-words text-xl font-semibold tracking-tight">
+              {workout.name || `Workout ${index + 1}`}
+            </span>
           )}
         </Button>
         <div
@@ -74,7 +76,7 @@ export function WorkoutEditor({
           </label>
           <Input
             id={`${path}.name`}
-            className="border-transparent pl-1 pr-7 text-xl font-bold shadow-none hover:border-border focus:border-border"
+            className="border-transparent pl-1 pr-7 text-xl font-semibold tracking-tight shadow-none hover:border-border focus:border-border sm:text-2xl"
             maxLength={255}
             aria-invalid={Boolean(nameError)}
             aria-describedby={nameError ? `${path}.name-error` : undefined}
@@ -251,7 +253,7 @@ function ExerciseEditor({
       className="space-y-3"
     >
       <div className="flex items-center justify-between gap-3 pb-1">
-        <h3 className="min-w-0 break-words text-lg font-semibold leading-snug text-foreground">{exercise.name}</h3>
+        <h3 className="editor-item-title min-w-0 text-foreground">{exercise.name}</h3>
         {!readOnly && (
           <OrderActions
             label={`exercise ${index + 1}`}

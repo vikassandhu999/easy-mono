@@ -43,7 +43,7 @@ function LoadEditor({id}: {id: string}) {
     return <Editor initial={initial} />;
   }
   return (
-    <Page>
+    <Page className="editor-page">
       <PageHeader
         title="Recipe"
         back={{to, label: 'Back to recipes', state}}
@@ -141,7 +141,7 @@ function Editor({initial}: {initial: Recipe | undefined}) {
     setChecking(false);
   }
   return (
-    <Page>
+    <Page className="editor-page">
       <PageHeader
         title={initial ? 'Edit recipe' : 'Create recipe'}
         description={
@@ -153,7 +153,7 @@ function Editor({initial}: {initial: Recipe | undefined}) {
         actions={
           recipe && (
             <Button
-              variant="outline"
+              variant="ghost"
               isDisabled={pending || conflict || uncertain}
               onPress={() => navigate(generatePath(routes.manageRecipe, {id: recipe.id}), {state})}
             >
@@ -218,6 +218,7 @@ function Editor({initial}: {initial: Recipe | undefined}) {
             control={form.control}
             name="name"
             label="Recipe name"
+            emphasis="title"
             isRequired
             maxLength={255}
             rules={{validate: (value) => Boolean(String(value).trim()) || 'Enter a recipe name.'}}
@@ -288,7 +289,7 @@ function Editor({initial}: {initial: Recipe | undefined}) {
           className="space-y-3"
           aria-label="Recipe nutrition"
         >
-          <h2 className="text-lg font-bold">Nutrition · whole recipe</h2>
+          <h2 className="editor-section-title">Nutrition · whole recipe</h2>
           {dirty || !recipe ? (
             <p className="text-sm text-muted-foreground">Save the recipe to see nutrition for these ingredients.</p>
           ) : (

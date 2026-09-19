@@ -185,6 +185,13 @@ defmodule EasyWeb.Types.FormAssignment do
           required(:updated_at) => DateTime.t()
         }
 
+  @type list_query :: %{
+          optional(:cursor) => String.t(),
+          optional(:limit) => pos_integer(),
+          optional(:state) => :pending | :history,
+          optional(:purpose) => :intake | :check_in
+        }
+
   @type create :: %{required(:form_template_id) => String.t()}
 
   @type update :: %{
@@ -196,5 +203,15 @@ defmodule EasyWeb.Types.FormAssignment do
 
   @type submit :: %{
           required(:answers) => %{String.t() => EasyWeb.Types.FormAssignmentAnswer.t()}
+        }
+end
+
+defmodule EasyWeb.Types.ClientFormAssignmentIndex do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:data) => [EasyWeb.Types.FormAssignment.t()],
+          required(:count) => non_neg_integer(),
+          required(:next_cursor) => String.t() | nil
         }
 end

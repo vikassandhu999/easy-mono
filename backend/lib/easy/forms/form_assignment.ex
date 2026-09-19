@@ -164,6 +164,17 @@ defmodule Easy.Forms.FormAssignment do
   @spec open(Ecto.Queryable.t()) :: Ecto.Query.t()
   def open(query \\ __MODULE__), do: from(a in query, where: a.status in @open_statuses)
 
+  @spec for_state(Ecto.Queryable.t(), :pending | :history | String.t() | nil) :: Ecto.Query.t()
+  def for_state(query \\ __MODULE__, state)
+  def for_state(query, nil), do: query
+  def for_state(query, state) when state in [:pending, "pending"], do: open(query)
+  def for_state(query, state) when state in [:history, "history"], do: where(query, [a], a.status not in @open_statuses)
+
+  @spec for_purpose(Ecto.Queryable.t(), purpose() | String.t() | nil) :: Ecto.Query.t()
+  def for_purpose(query \\ __MODULE__, purpose)
+  def for_purpose(query, nil), do: query
+  def for_purpose(query, purpose), do: where(query, [a], a.purpose == ^purpose)
+
   @spec open?(t()) :: boolean()
   def open?(%__MODULE__{status: status}), do: status in @open_statuses
 

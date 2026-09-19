@@ -3,18 +3,20 @@ defmodule EasyWeb.Clients.FormAssignmentController do
 
   alias Easy.Forms.Assignments
   alias Easy.Forms.Submissions
+  alias EasyWeb.Types.ClientFormAssignmentIndex
   alias EasyWeb.Types.FormAssignment
 
-  typed(:index, ok: {200, data([FormAssignment.t()])})
+  typed(:index, query: FormAssignment.list_query(), ok: {200, ClientFormAssignmentIndex.t()})
   typed(:show, ok: {200, data(FormAssignment.t())})
   typed(:submit, body: FormAssignment.submit(), ok: {201, data(FormAssignment.submission())})
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
-    ctx = conn.assigns.ctx
+    params = conn.query_params
+    opts = [cursor: params["cursor"], limit: params["limit"], state: params["state"], purpose: params["purpose"]]
 
-    with {:ok, assignments} <- Assignments.list_client_form_assignments(ctx) do
-      ok(conn, %{data: assignments})
+    with {:ok, page} <- Assignments.list_client_form_assignments(conn.assigns.ctx, opts) do
+      ok(conn, page)
     end
   end
 

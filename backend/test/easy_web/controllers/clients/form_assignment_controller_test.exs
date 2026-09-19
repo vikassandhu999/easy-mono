@@ -35,9 +35,97 @@ defmodule EasyWeb.Clients.FormAssignmentControllerTest do
         |> authenticate_client(client)
         |> get("/v1/client/form-assignments?unexpected=true")
 
-      assert %{"error_detail" => %{"fields" => %{"$" => ["must be empty"]}}} =
+      assert %{"error_detail" => %{"fields" => %{"unexpected" => ["is unknown"]}}} =
                json_response(conn, 422)
     end
+  end
+
+  describe "client assignment cursor pages" do
+    setup do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, user: insert(:user))
+      template = insert(:form_template, business: coach.business, purpose: :check_in)
+      %{client: client, template: template, conn: authenticate_client(build_conn(), client)}
+    end
+
+    test "continues past tied timestamps and a deleted cursor anchor", %{client: client, template: template, conn: conn} do
+      assignments = for _ <- 1..3, do: assignment_for(client, template)
+      [newest | remaining] = Enum.sort_by(assignments, & &1.id, :desc)
+
+      assert %{"data" => [first], "count" => 3, "next_cursor" => cursor} =
+               conn |> get("/v1/client/form-assignments", %{cursor: "start", limit: 1}) |> json_response(200)
+
+      assert first["id"] == newest.id
+      assert is_binary(cursor)
+      Repo.delete!(newest)
+
+      assert %{"data" => second, "count" => 2, "next_cursor" => nil} =
+               conn |> recycle() |> get("/v1/client/form-assignments", %{cursor: cursor, limit: 2}) |> json_response(200)
+
+      assert Enum.map(second, & &1["id"]) == Enum.map(remaining, & &1.id)
+    end
+
+    test "filters pending work and history before counting and paging", %{client: client, template: template, conn: conn} do
+      for status <- [:assigned, :in_progress, :completed, :missed, :dismissed] do
+        assignment_for(client, template, status: status)
+      end
+
+      intake = insert(:form_template, business: client.business, purpose: :intake)
+      assignment_for(client, intake)
+
+      assert %{"data" => [_], "count" => 2, "next_cursor" => cursor} =
+               conn |> get("/v1/client/form-assignments", %{state: "pending", purpose: "check_in", limit: 1}) |> json_response(200)
+
+      assert is_binary(cursor)
+
+      assert %{"data" => history, "count" => 3, "next_cursor" => nil} =
+               conn |> recycle() |> get("/v1/client/form-assignments", %{state: "history"}) |> json_response(200)
+
+      assert Enum.sort(Enum.map(history, & &1["status"])) == ["completed", "dismissed", "missed"]
+
+      assert %{"data" => [%{"purpose" => "intake"}], "count" => 1, "next_cursor" => nil} =
+               conn |> recycle() |> get("/v1/client/form-assignments", %{state: "pending", purpose: "intake"}) |> json_response(200)
+    end
+
+    test "excludes other clients and tenants from rows and counts", %{client: client, template: template, conn: conn} do
+      other_client = insert(:client, business: client.business, user: insert(:user))
+      assignment_for(other_client, template)
+      foreign_client = insert(:client, user: insert(:user))
+      foreign_template = insert(:form_template, business: foreign_client.business, purpose: :check_in)
+      assignment_for(foreign_client, foreign_template)
+
+      assert %{"data" => [], "count" => 0, "next_cursor" => nil} =
+               conn |> get("/v1/client/form-assignments", %{state: "pending"}) |> json_response(200)
+    end
+
+    test "rejects invalid cursor, limit and filter inputs", %{conn: conn} do
+      for {params, field} <- [
+            {%{cursor: "not-a-cursor"}, "cursor"},
+            {%{limit: "0"}, "limit"},
+            {%{state: "anything"}, "state"},
+            {%{purpose: "anything"}, "purpose"},
+            {%{unexpected: "true"}, "unexpected"}
+          ] do
+        assert %{"error_detail" => %{"fields" => %{^field => [_]}}} =
+                 conn |> recycle() |> get("/v1/client/form-assignments", params) |> json_response(422)
+      end
+    end
+  end
+
+  defp assignment_for(client, template, attrs \\ []) do
+    insert(
+      :form_assignment,
+      Keyword.merge(
+        [
+          business: client.business,
+          client: client,
+          form_template: template,
+          purpose: template.purpose,
+          inserted_at: ~U[2026-01-01 00:00:00Z]
+        ],
+        attrs
+      )
+    )
   end
 
   describe "GET /v1/client/form-assignments/:id" do

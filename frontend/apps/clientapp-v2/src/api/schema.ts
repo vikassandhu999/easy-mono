@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash dc58a4e67c6c11c4d247036ec5fda1cdf316067c4fe2bfee11e4912d09401320 */
+/* typed-routes:hash 2f5ba858a82996e00b69b8cc5544a289cf15d748a0dcbbf9087c457d40f1213a */
 export type Attachment = {
   id: string;
   content_type:
@@ -35,6 +35,7 @@ export type ChatMessageClientCreate = {body?: string | null; attachment_ids?: Ar
 export type ChatMessageEmbed = {type: 'form_submission'; id: string; snapshot: FormSubmissionEmbedSnapshot};
 export type ChatMessageListQuery = {before?: string; limit?: number};
 export type ChatMessagePage = {data: Array<ChatMessage>; has_more: boolean};
+export type ClientFormAssignmentIndex = {data: Array<FormAssignment>; count: number; next_cursor: string | null};
 export type ClientProfile = {
   id: string;
   first_name: string | null;
@@ -196,6 +197,12 @@ export type FormAssignment = {
   updated_at: string;
 };
 export type FormAssignmentAnswer = string | number | boolean | Array<string> | {services: Array<string>};
+export type FormAssignmentListQuery = {
+  cursor?: string;
+  limit?: number;
+  state?: 'pending' | 'history';
+  purpose?: 'intake' | 'check_in';
+};
 export type FormAssignmentSubmission = FormSubmission;
 export type FormAssignmentSubmit = {answers: {[key: string]: FormAssignmentAnswer}};
 export type FormSnapshotQuestion = {
@@ -734,7 +741,7 @@ export type WeightEntryListQuery = {since?: string};
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 68250ed9bd727992df1df2041f867e43e0a0080b6625aa0c7aa643228d0aed75 */
+  /* typed-routes:hash 17f849f2cf16cb4ad7cc8745cf9af298fbf0f1c4c6952b96ee7e6e25be8b70f7 */
   '/api/health': {
     get: {
       parameters: {
@@ -816,13 +823,13 @@ export interface paths {
   '/v1/client/form-assignments': {
     get: {
       parameters: {
-        query?: never;
+        query?: FormAssignmentListQuery;
         header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<FormAssignment>}}};
+        200: {content: {'application/json': ClientFormAssignmentIndex}};
       };
     };
   };

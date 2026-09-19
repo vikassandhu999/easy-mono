@@ -2,6 +2,7 @@ defmodule Easy.Forms.Assignments do
   alias Easy.ClientAccess
   alias Easy.Clients.Client
   alias Easy.Ctx
+  alias Easy.CursorPage
   alias Easy.Forms.{FormAssignment, FormTemplate, Photos, Templates}
   alias Easy.Repo
 
@@ -101,18 +102,35 @@ defmodule Easy.Forms.Assignments do
     end
   end
 
-  @spec list_client_form_assignments(Ctx.t()) ::
-          {:ok, [FormAssignment.t()]} | {:error, :not_found}
-  def list_client_form_assignments(%Ctx{} = ctx) do
+  @spec list_client_form_assignments(Ctx.t(), keyword()) ::
+          {:ok, CursorPage.t(FormAssignment.t())} | {:error, :not_found | :invalid_cursor}
+  def list_client_form_assignments(%Ctx{} = ctx, opts \\ []) do
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
-      assignments =
-        client_assignment_query(ctx, client_id)
-        |> FormAssignment.oldest()
-        |> Repo.all()
-        |> then(&Photos.attach_assignments(ctx, &1))
-        |> Enum.map(&FormAssignment.put_latest_submission/1)
+      base =
+        FormAssignment
+        |> FormAssignment.for_client(ctx.business_id, client_id)
+        |> FormAssignment.include_form_template(ctx.business_id)
+        |> FormAssignment.for_state(Keyword.get(opts, :state))
+        |> FormAssignment.for_purpose(Keyword.get(opts, :purpose))
 
-      {:ok, assignments}
+      client_assignment_page(ctx, base, opts)
+    end
+  end
+
+  defp client_assignment_page(ctx, base, opts) do
+    limit = CursorPage.limit(opts)
+
+    with {:ok, query} <- CursorPage.query(base, Keyword.get(opts, :cursor) || "start", limit) do
+      Repo.snapshot(fn ->
+        assignments =
+          query
+          |> FormAssignment.include_submission_reviews(ctx.business_id)
+          |> Repo.all()
+          |> then(&Photos.attach_assignments(ctx, &1))
+          |> Enum.map(&FormAssignment.put_latest_submission/1)
+
+        {:ok, CursorPage.finish(assignments, limit, Repo.aggregate(base, :count, :id))}
+      end)
     end
   end
 

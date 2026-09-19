@@ -6,7 +6,7 @@ Inventory date: 2026-09-19. Evidence is the Phoenix router and client typed cont
 | --- | --- | --- |
 | Join coach | Auth invitation preview, accept, verify | Build client routes; preserve invitation during OTP/restart; reject silent account replacement |
 | Sign in | OTP, token with client role, refresh token | Shared refresh, invalid-vs-transient failure, logout races, native persistence |
-| Complete intake/check-in | Assignment index/show/submit | Index is unpaged with no server pending filter/count. Add scoped summary/cursor API before authoritative Today counts or infinite lists |
+| Complete intake/check-in | Assignment index/show/submit | Client index now returns cursor pages and filtered server counts, with pending/history and purpose filters. Mobile forms, photos, and response recovery remain to implement |
 | Understand today | Coverage by date, active training session, nutrition days, assignments | No unified Today endpoint; client profile lacks timezone. Resolve client-local date and server-owned pending selection explicitly |
 | Follow workout | Plans/coverage, exercises, sessions, performed sets, complete/discard | Client plan/session lists use offset. Add cursor support; audit creation/lost-response semantics before retries |
 | Follow nutrition/log meals | Nutrition plans, foods, recipes, nutrition days GET/PATCH | Day/slot revisions and server totals are available. Audit source search, paging, and idempotent save semantics |

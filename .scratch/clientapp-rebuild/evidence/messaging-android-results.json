@@ -1,0 +1,11 @@
+[
+  {
+    "scenario": "Native keyboard/back, gallery cancellation/selection, offline text/media process restart, deliberate send, background/resume and saved-message cold link",
+    "passed": true,
+    "count": 1
+  },
+  {
+    "scenario": "Native document selection, video/audio bytes after process restart, real upload and playback",
+    "passed": true
+  }
+]

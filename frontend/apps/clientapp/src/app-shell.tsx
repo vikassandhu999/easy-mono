@@ -6,6 +6,7 @@ import {latestPageCount} from './api/pagination';
 import {clearSession, getSession, parseSession, sessionSnapshot, subscribeSession} from './api/session';
 import {useTrainingCoverage} from './api/training';
 import {authPath} from './auth/return-to';
+import {TodayMessages} from './messages/messages';
 import {TodayNutrition} from './nutrition/nutrition';
 import {routes} from './routes';
 import {dayLabel} from './training/recording';
@@ -48,7 +49,7 @@ export function AppShell() {
           </NavLink>
           <NavLink to={routes.training}>Training</NavLink>
           <NavLink to={routes.nutrition}>Nutrition</NavLink>
-          <NavLink to={routes.forms}>Check-ins</NavLink>
+          <NavLink to={routes.messages}>Messages</NavLink>
         </nav>
       </div>
     </VerifiedAccount>
@@ -203,6 +204,7 @@ export function Home() {
         )}
       </section>
       <TodayNutrition />
+      <TodayMessages />
       <Button
         variant="ghost"
         onPress={clearSession}

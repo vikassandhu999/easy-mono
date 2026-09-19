@@ -109,3 +109,25 @@ a:focus-visible {
 :root[data-keyboard="open"] .mobile-nav {
   display: none;
 }
+.messages-page {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 30rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  background: var(--background);
+}
+.message-composer {
+  flex-shrink: 0;
+  max-height: 55%;
+  overflow-y: auto;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+.message-composer textarea {
+  min-height: 4rem;
+  max-height: 8rem;
+}

@@ -1358,6 +1358,11 @@ requires the login route, an empty query cache and no unhandled browser error.
 `test:check-in-requests` also waits for the held response to finish after logout before
 checking those invariants; asserting only before response delivery misses late effects.
 
+Capture request ownership before waiting for authentication refresh, and verify it before
+attaching credentials. A queued send otherwise can acquire another account's tokens after
+the refresh lock becomes available. Clientapp `tests/messages/account.browser.mjs` holds
+that lock through session replacement and requires both server conversations to stay empty.
+
 
 ### RM-237 — Browser fixtures must tolerate shared catalogs and use their seeded database
 Training tests assumed their custom exercises were the whole catalog or that a common

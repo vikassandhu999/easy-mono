@@ -6,6 +6,7 @@ import {Login} from './auth/login';
 import {Verify} from './auth/verify';
 import {FormDetail} from './forms/form';
 import {Forms} from './forms/forms';
+import {Messages} from './messages/messages';
 import {NutritionMeal} from './nutrition/meal';
 import {Nutrition, NutritionPlan, NutritionPlans} from './nutrition/nutrition';
 import {routes} from './routes';
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
     children: [
       {path: routes.home, element: <Home />},
       {path: routes.account, element: <Account />},
+      {path: routes.messages, element: <Messages />},
       {path: routes.forms, element: <Forms />},
       {path: routes.form, element: <FormDetail />},
       {path: routes.training, element: <Training />},

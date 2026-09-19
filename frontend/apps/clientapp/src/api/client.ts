@@ -89,9 +89,13 @@ const retryRequests = new WeakMap<Request, {request: Request; sessionId: string}
 
 client.use({
   async onRequest({request}) {
+    const owner = getSession()?.id;
     const session = await refreshSession();
     if (!session) {
       throw new Error('Please sign in to continue.');
+    }
+    if (!owner || session.id !== owner || getSession()?.id !== owner) {
+      throw new Error('Your session changed. Please try again.');
     }
     request.headers.set('Authorization', `Bearer ${session.tokens.access_token}`);
     retryRequests.set(request, {request: request.clone(), sessionId: session.id});

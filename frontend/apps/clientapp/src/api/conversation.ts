@@ -40,10 +40,10 @@ function requireOnline() {
 }
 
 export function useSendMessage() {
+  const owner = getSession()?.id;
   return useMutation({
-    onMutate: () => getSession()?.id,
+    onMutate: () => owner,
     mutationFn: async (body: MessageSend) => {
-      const owner = getSession()?.id;
       requireOwner(owner);
       requireOnline();
       const result = await call(client.POST('/v1/client/conversation/messages', {body}));
@@ -59,10 +59,10 @@ export function useSendMessage() {
 }
 
 export function useReadConversation() {
+  const owner = getSession()?.id;
   return useMutation({
-    onMutate: () => getSession()?.id,
+    onMutate: () => owner,
     mutationFn: async (through: string) => {
-      const owner = getSession()?.id;
       requireOwner(owner);
       requireOnline();
       const result = await call(client.POST('/v1/client/conversation/read', {params: {query: {through}}}));

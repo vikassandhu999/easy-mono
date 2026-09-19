@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "writes": 1,
+  "tickets": 3,
+  "count": 1,
+  "attachments": [
+    "image/png",
+    "video/mp4",
+    "audio/mpeg"
+  ]
+}

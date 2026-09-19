@@ -4,6 +4,7 @@ export const routes = {
   verify: '/verify',
   invitation: '/invite/:token',
   account: '/account',
+  messages: '/messages',
   forms: '/forms',
   form: '/forms/:id',
   training: '/training',

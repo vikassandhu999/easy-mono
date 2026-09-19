@@ -1,9 +1,10 @@
 import type {InfiniteData, UseInfiniteQueryResult} from '@tanstack/react-query';
-import {type ReactNode, useEffect, useRef} from 'react';
+import {type ReactNode} from 'react';
 import {ApiError, errorMessage} from '../api/client';
 import {type CursorPage, latestPageCount} from '../api/pagination';
 import {Button} from './button';
 import {FormError} from './form-error';
+import {useInfiniteScroll} from './infinite-scroll';
 
 type ListQuery<Item> = Pick<
   UseInfiniteQueryResult<InfiniteData<CursorPage<Item>>, Error>,
@@ -33,25 +34,8 @@ export function InfiniteList<Item extends {id: string}>({
   empty: ReactNode;
   children: (item: Item) => ReactNode;
 }) {
-  const sentinel = useRef<HTMLDivElement>(null);
-  const {hasNextPage, isFetching, isError, fetchNextPage} = query;
-  useEffect(() => {
-    const node = sentinel.current;
-    if (!node || !hasNextPage || isFetching || isError || !('IntersectionObserver' in window)) {
-      return;
-    }
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          observer.disconnect();
-          fetchNextPage({cancelRefetch: false});
-        }
-      },
-      {rootMargin: '200px'},
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetching, isError, fetchNextPage]);
+  const sentinel = useInfiniteScroll(query);
+  const {hasNextPage, isFetching, fetchNextPage} = query;
 
   if (!query.data) {
     return (

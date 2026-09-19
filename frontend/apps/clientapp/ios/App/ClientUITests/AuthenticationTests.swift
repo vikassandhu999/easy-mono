@@ -97,7 +97,7 @@ final class AuthenticationTests: XCTestCase {
             XCTAssertTrue(denied.waitForExistence(timeout: 10), app.debugDescription)
             XCTAssertTrue(denied.buttons["Settings"].exists)
             denied.buttons["OK"].tap()
-            XCTAssertTrue(app.staticTexts["Photo access is off. Enable it for Easy in your device settings, then try again. You can keep answering the form."].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.staticTexts["Photo access is off. Enable it for Easy in your device settings, then try again. Your draft stays here."].waitForExistence(timeout: 10))
         }
         XCTAssertTrue(goal.waitForExistence(timeout: 10))
         if let control = fixture.apiControlURL { try await setConnection(control, available: false) }
@@ -299,6 +299,114 @@ final class AuthenticationTests: XCTestCase {
         request.httpMethod = "POST"
         let (_, response) = try await URLSession.shared.data(for: request)
         XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+    }
+
+    @MainActor
+    func testMessageDraftPhotoAndSavedResult() throws {
+        continueAfterFailure = false
+        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "fixture", withExtension: "json"))
+        let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
+        let app = XCUIApplication(bundleIdentifier: "com.easy.client")
+        let system = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let allow = system.buttons["Allow Full Access"]
+        if allow.exists { allow.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap() }
+        app.terminate()
+        app.resetAuthorizationStatus(for: .photos)
+        app.launch()
+        app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.token)")))
+        let signOut = app.buttons["Sign out to continue"]
+        if signOut.waitForExistence(timeout: 2) { signOut.tap() }
+        XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 15))
+        app.buttons["Continue with email"].tap()
+        let code = app.webViews.textFields["Verification code"]
+        XCTAssertTrue(code.waitForExistence(timeout: 15))
+        code.tap()
+        code.typeText("123456")
+        app.buttons["Verify and continue"].tap()
+        XCTAssertTrue(app.links["Forms & check-ins"].waitForExistence(timeout: 15))
+        let messageURL = try XCTUnwrap(URL(string: "easy://app/messages"))
+        app.open(messageURL)
+        let input = app.webViews.textViews["Message your coach"]
+        XCTAssertTrue(input.waitForExistence(timeout: 15), app.debugDescription)
+        input.tap()
+        input.typeText("My iPhone message survives a restart")
+        XCTAssertEqual(input.value as? String, "My iPhone message survives a restart")
+        XCTAssertTrue(app.staticTexts["Draft saved on this device."].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Send"].isHittable, app.debugDescription)
+        let keyboard = XCTAttachment(screenshot: app.screenshot())
+        keyboard.name = "iPhone message keyboard"
+        keyboard.lifetime = .keepAlways
+        add(keyboard)
+        app.terminate()
+        app.launch()
+        app.open(messageURL)
+        XCTAssertTrue(input.waitForExistence(timeout: 15))
+        XCTAssertEqual(input.value as? String, "My iPhone message survives a restart")
+        app.buttons["Attach"].tap()
+        app.buttons["Choose photo"].tap()
+        XCTAssertTrue(allow.waitForExistence(timeout: 10), system.debugDescription)
+        allow.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        let image = app.scrollViews.buttons.firstMatch
+        XCTAssertTrue(image.waitForExistence(timeout: 10), app.debugDescription)
+        image.tap()
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["Remove attachment 1"].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(app.staticTexts["Draft saved on this device."].waitForExistence(timeout: 10))
+        app.terminate()
+        app.launch()
+        app.open(messageURL)
+        XCTAssertTrue(app.buttons["Remove attachment 1"].waitForExistence(timeout: 15))
+        XCTAssertEqual(input.value as? String, "My iPhone message survives a restart")
+        app.buttons["Send"].tap()
+        XCTAssertTrue(app.staticTexts["Message sent."].waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.buttons["Open photo"].waitForExistence(timeout: 15))
+        app.buttons["Open photo"].tap()
+        XCTAssertTrue(app.images["Shared in this conversation"].waitForExistence(timeout: 15), app.debugDescription)
+        XCUIDevice.shared.press(.home)
+        app.activate()
+        XCTAssertTrue(app.staticTexts["1 message"].waitForExistence(timeout: 15), app.debugDescription)
+        app.terminate()
+        app.launch()
+        app.open(messageURL)
+        XCTAssertTrue(app.staticTexts["1 message"].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertEqual(input.value as? String ?? "", "")
+        app.buttons["Open photo"].tap()
+        XCTAssertTrue(app.images["Shared in this conversation"].waitForExistence(timeout: 15), app.debugDescription)
+        let saved = XCTAttachment(screenshot: app.screenshot())
+        saved.name = "iPhone saved message and attachment"
+        saved.lifetime = .keepAlways
+        add(saved)
+        for name in ["clip", "note"] {
+            if app.buttons["Attach"].exists { app.buttons["Attach"].tap() }
+            app.buttons["Video or audio"].tap()
+            let choose = app.buttons["Choose File"]
+            XCTAssertTrue(choose.waitForExistence(timeout: 10), app.debugDescription)
+            choose.tap()
+            let browse = app.buttons["Browse"].firstMatch
+            if browse.waitForExistence(timeout: 2) { browse.tap() }
+            let local = app.staticTexts["On My iPhone"].firstMatch
+            if local.waitForExistence(timeout: 2) { local.tap() }
+            let file = app.cells.matching(NSPredicate(format: "label CONTAINS %@", name)).firstMatch
+            XCTAssertTrue(file.waitForExistence(timeout: 10), app.debugDescription)
+            file.tap()
+            XCTAssertTrue(app.staticTexts["Draft saved on this device."].waitForExistence(timeout: 10), app.debugDescription)
+        }
+        XCTAssertTrue(app.buttons["Remove attachment 2"].waitForExistence(timeout: 15), app.debugDescription)
+        app.terminate()
+        app.launch()
+        app.open(messageURL)
+        XCTAssertTrue(app.buttons["Remove attachment 2"].waitForExistence(timeout: 15), app.debugDescription)
+        app.buttons["Send"].tap()
+        XCTAssertTrue(app.staticTexts["Message sent."].waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.buttons["Open video"].waitForExistence(timeout: 15), app.debugDescription)
+        app.buttons["Open video"].tap()
+        XCTAssertTrue(app.buttons["Open audio"].waitForExistence(timeout: 15), app.debugDescription)
+        app.buttons["Open audio"].tap()
+        XCTAssertTrue(app.staticTexts["2 messages"].waitForExistence(timeout: 15), app.debugDescription)
+        let media = XCTAttachment(screenshot: app.screenshot())
+        media.name = "iPhone video and audio message"
+        media.lifetime = .keepAlways
+        add(media)
     }
 
     @MainActor

@@ -40,7 +40,7 @@ function photoError(error: unknown) {
     return 'A camera is not available on this device. Choose a photo from your library.';
   }
   return code === CameraErrorCode.CameraPermissionDenied || code === CameraErrorCode.GalleryPermissionDenied
-    ? 'Photo access is off. Enable it for Easy in your device settings, then try again. You can keep answering the form.'
+    ? 'Photo access is off. Enable it for Easy in your device settings, then try again. Your draft stays here.'
     : 'The photo could not be opened. Try choosing a photo from your library.';
 }
 async function keepPhoto(data: unknown, intent: PhotoIntent, session: NonNullable<ReturnType<typeof getSession>>) {
@@ -70,7 +70,7 @@ async function keepPhoto(data: unknown, intent: PhotoIntent, session: NonNullabl
     owner: session.accountId,
     resource: intent.resource,
     blob,
-    name: 'Progress photo',
+    name: 'Photo',
     questionShape: intent.questionShape,
   };
   await savePhoto(photo, () => getSession()?.id === session.id);
@@ -156,7 +156,7 @@ export async function restoreNativePhoto(event: RestoredListenerEvent) {
     await writeDraft(
       session.id,
       `${intent.resource}.picker-error`,
-      'Your photo could not be recovered after the app restarted. Please choose it again. Your answers are still here.',
+      'Your photo could not be recovered after the app restarted. Please choose it again. Your draft is still here.',
     );
     await removeDraft(session.id, intentKey);
   }

@@ -59,6 +59,9 @@ importers:
       openapi-fetch:
         specifier: 0.17.0
         version: 0.17.0
+      phoenix:
+        specifier: 1.8.9
+        version: 1.8.9
       react:
         specifier: ^19.2.8
         version: 19.2.8
@@ -99,6 +102,9 @@ importers:
       '@types/node':
         specifier: ^24.13.3
         version: 24.13.3
+      '@types/phoenix':
+        specifier: 1.6.7
+        version: 1.6.7
       '@types/react':
         specifier: ^19.2.18
         version: 19.2.18

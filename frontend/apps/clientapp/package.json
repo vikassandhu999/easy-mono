@@ -11,6 +11,7 @@
     "lint": "biome check --write .",
     "preview": "vite preview",
     "native:sync": "node scripts/native-sync.mjs",
+    "test:training": "node tests/training/training.browser.mjs && node tests/training/recovery.browser.mjs && node tests/training/history.browser.mjs",
     "test:browser": "node tests/auth/auth.browser.mjs",
     "test:forms": "node tests/forms/forms.browser.mjs && node tests/forms/recovery.browser.mjs",
     "test:offline": "node tests/forms/offline.browser.mjs",

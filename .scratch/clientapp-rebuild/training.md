@@ -1,6 +1,6 @@
 # Today and training
 
-Status: design and backend prerequisites implemented; no training screen is delivered yet. Every screen keeps the phone composition on tablets and wide browsers.
+Status: Today and training screens implemented and verified in the browser, iPhone simulator and Android emulator. Every screen keeps the phone composition on tablets and wide browsers.
 
 ## Screen brief
 
@@ -35,3 +35,23 @@ These are focused prerequisites for the supported workflow. Follow the repositor
 2026-09-19 set-retry prerequisite: 52 focused tests and full backend precommit pass (1,817 tests). Tests cover lost-response retry, equal-valued deliberate sets, normalized numeric inputs, changed-body conflict, preservation of later edits, deleted-set tombstones, terminal-session recovery, account/session isolation, invalid writes, concurrent retry and database constraints. API review identified the initial single-column set reference; the final composite FK enforces matching business/session and nulls only the set ID on deletion. Its target index is built concurrently in a separate migration. Both final migrations applied to the isolated test and development databases. Generated contracts, strict client build and repository shape checks pass; the existing real-API auth/account browser suite passes at 375 and 768 pixels. The development API was restarted on port 4100 with local mail and storage on 9002. Training UI, native recording and lost-response browser interception remain to implement and verify.
 
 Exercise planned and freestyle sessions against Phoenix: server-local today, rest and missing-coverage states, start/resume, every supported tracking type, save/edit/remove, frozen targets after a coach edit, completion/discard, saved history and return. Inject a lost set response and verify one persisted set after deliberate retry. Check concurrent terminal changes and account isolation. Verify draft and cached-session recovery with offline reload, native background/restart, native keyboard and Android back. Browser checks at 375, 768 and 1280 pixels must keep one mobile composition. Physical-device and real-client observations remain separate evidence.
+
+## Mobile implementation and browser evidence
+
+Today now leads with an active workout, pending forms and server-local training guidance. Training contains assigned plan previews, freestyle start and server-filtered cursor history. The recording screen presents the frozen targets and one exercise at a time. Its nine tracking modes share the same measurement mapping, with units, set type, effort and notes in secondary controls. All routes use the same phone composition, including on tablets and wide browsers; content and navigation stay capped at 480px.
+
+Each new set receives a UUID and captures its exercise association before submission. Its exact body is durably written before sending and locked after an uncertain response. A retry checks the same set, including after session closure. Failure to save that identity locally prevents the API request. A lost Start response reconciles the active workout; a lost Delete response reads the session and confirms that the exact set ID is absent. Session notes and unsent sets remain account-owned drafts. Completion on another device opens the saved reader while retaining different local input separately until deliberate removal. Soreness follows the current contract: an existing saved rating can be changed but not cleared.
+
+The browser scenarios under `tests/training/` pass against the isolated Phoenix API:
+
+- Planned workout at 375, 768 and 1280 pixels: lost Start and set-create responses, draft reload, retry without duplication, preserved exercise ID, deliberate equal-valued sets, edit, lost Delete response, notes reload, frozen targets after a coach edit, finish and saved history.
+- Production build at 375 pixels: all nine tracking modes, distance/time edit, offline shell/session/draft reload, deliberate reconnect save, storage failure before submission, other-device completion, retained unsent entries, explicit local removal and discard.
+- Twenty-two sessions: opaque cursor continuation, failed next-page retention/retry, server counts, date/status filters, filter return/reset, logout cleanup and isolation from another client.
+
+Existing auth/account browser checks pass at 375 and 768 pixels. Check-in and recovery checks pass at 375, 768 and 1280 pixels; the production offline suite also passes. The added Training navigation required scoping the existing Service type checkbox test to its field. API review confirmed the planned exercise association and deletion reconciliation. Full backend precommit passes 1,817 tests. Strict TypeScript/build, Biome and repository shape checks pass.
+
+The iPhone 17 simulator (iOS 26.3.1) passes native keyboard entry, immediate process termination/draft restoration, set save, background/resume, finish and reopening saved history. Android API 36 passes the existing auth/form regression plus workout keyboard/back, network-off force-stop, cold session deep link, cached context/input restoration, deliberate reconnect save, finish, saved-session restart and durable logout. `evidence/ios-training.json`, `evidence/training-android-results.json` and the corresponding screenshots retain these results.
+
+Native test development found that accessibility hittability did not account for the fixed navigation or keyboard. Root scroll padding now reserves navigation clearance. The tests scroll fields above the keyboard and controls above navigation before native taps; Android also waits for loaded list context before calculating screen coordinates. These changes preserve actual native input and assertions rather than substituting DOM clicks. The final iOS and Android runs pass. Both debug builds and native sync pass.
+
+Physical-device checks and real-client observations remain separate, as do the remaining nutrition, messaging and progress workflows. Editing an existing set follows the backend's current last-write-wins contract; there is no revision conflict API for simultaneous set edits.

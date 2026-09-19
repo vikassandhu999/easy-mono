@@ -93,7 +93,7 @@ try {
       await expect(page.getByRole('checkbox', {name: 'Friday', exact: true})).toBeChecked();
       await page.getByRole('radio', {name: '4', exact: true}).check();
       await page.getByLabel('Current weight', {exact: false}).fill('70.5');
-      await page.getByText('Training', {exact: true}).click();
+      await page.getByLabel('Service type (required)').getByText('Training', {exact: true}).click();
       await expect(page.getByRole('checkbox', {name: 'Training', exact: true})).toBeChecked();
       await page.getByText('Nutrition', {exact: true}).click();
       await expect(page.getByRole('checkbox', {name: 'Nutrition', exact: true})).toBeChecked();

@@ -7,7 +7,8 @@ export function safeReturnTo(value: string | null) {
   }
   try {
     const url = new URL(value, 'https://clientapp.invalid');
-    return [routes.home, routes.account].some((route) => route === url.pathname)
+    return [routes.home, routes.account, routes.forms, routes.training].some((route) => route === url.pathname) ||
+      /^\/(forms\/[^/]+|training\/(sessions\/[^/]+|plans\/[^/]+(?:\/workouts\/[^/]+)?))$/.test(url.pathname)
       ? `${url.pathname}${url.search}${url.hash}`
       : routes.home;
   } catch {

@@ -1,0 +1,26 @@
+[
+  {
+    "width": 375,
+    "passed": true,
+    "planned": true,
+    "lostStartResponse": true,
+    "lostSetResponse": true,
+    "frozenPrescription": true
+  },
+  {
+    "width": 768,
+    "passed": true,
+    "planned": true,
+    "lostStartResponse": true,
+    "lostSetResponse": true,
+    "frozenPrescription": true
+  },
+  {
+    "width": 1280,
+    "passed": true,
+    "planned": true,
+    "lostStartResponse": true,
+    "lostSetResponse": true,
+    "frozenPrescription": true
+  }
+]

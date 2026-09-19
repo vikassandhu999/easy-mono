@@ -40,7 +40,8 @@ try {
   let page = await pageForApp();
   const tap = async (locator) => {
     await expect(locator).toBeVisible();
-    await locator.scrollIntoViewIfNeeded();
+    await locator.evaluate((node) => node.scrollIntoView({block: 'center', behavior: 'instant'}));
+    await locator.click({trial: true});
     const target = await locator.boundingBox();
     if (!target) {
       throw new Error('The mobile control has no visible bounds.');
@@ -87,7 +88,7 @@ try {
   await launch();
   await expect(page.getByLabel('First name')).toHaveValue('Android saved client');
   await device.input.press('Back');
-  await expect(page.getByRole('heading', {name: 'Your coaching'})).toBeVisible();
+  await expect(page.getByRole('heading', {name: 'Today', exact: true})).toBeVisible();
   results.push({
     scenario:
       'native invite, OTP keyboard, profile draft after process restart, save, background/resume and Android back',
@@ -148,6 +149,62 @@ try {
   results.push({
     scenario:
       'native form draft, gallery cancellation, network disabled across two process restarts, offline editing, reconnection, deliberate save and saved response restart',
+    passed: true,
+  });
+  await tap(page.getByRole('navigation', {name: 'Main navigation'}).getByRole('link', {name: 'Training', exact: true}));
+  await expect(page.getByText('0 plans', {exact: true})).toBeVisible();
+  await expect(page.getByText('Loading your active workout…', {exact: true})).toHaveCount(0);
+  await tap(page.getByRole('button', {name: 'Start freestyle workout'}));
+  await expect(page).toHaveURL(/\/training\/sessions\//);
+  const workoutId = new URL(page.url()).pathname.split('/').at(-1);
+  await tap(page.getByLabel('Exercise name'));
+  await device.input.type('Android squat');
+  await tap(page.getByRole('textbox', {name: 'Reps', exact: true}));
+  await device.input.type('12');
+  await expect(page.getByRole('textbox', {name: 'Reps', exact: true})).toHaveValue('12');
+  await expect(page.getByText('Draft saved on this device.', {exact: true})).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('data-keyboard', 'open');
+  await device.screenshot({path: 'tests/auth/artifacts/android-training-keyboard.png'});
+  await device.input.press('Back');
+  await expect(page.getByRole('heading', {name: 'Freestyle workout', exact: true})).toBeVisible();
+  await device.shell('svc wifi disable');
+  await device.shell('svc data disable');
+  await expect(page.getByText("You're offline.", {exact: false})).toBeVisible();
+  await device.shell(`am force-stop ${app}`);
+  await device.shell(
+    `am start -W -n ${app}/.MainActivity -a android.intent.action.VIEW -d easy://app/training/sessions/${workoutId}`,
+  );
+  page = await pageForApp();
+  await expect(page.getByRole('textbox', {name: 'Reps', exact: true})).toHaveValue('12');
+  await expect(page.getByLabel('Exercise name')).toHaveValue('Android squat');
+  await expect(page.getByRole('button', {name: 'Save set', exact: true})).toBeDisabled();
+  await expect(page.getByText('Showing the copy from', {exact: false})).toBeVisible();
+  await device.shell('svc wifi enable');
+  await device.shell('svc data enable');
+  await expect(page.getByRole('button', {name: 'Save set', exact: true})).toBeEnabled();
+  await tap(page.getByRole('button', {name: 'Save set', exact: true}));
+  await expect(page.getByText('Set saved.', {exact: true})).toBeVisible();
+  await device.input.press('Home');
+  await launch();
+  await expect(page.getByRole('list', {name: 'Saved sets'}).getByRole('listitem')).toHaveCount(1);
+  await tap(page.getByRole('button', {name: 'Finish workout', exact: true}));
+  await tap(page.getByRole('dialog').getByRole('button', {name: 'Finish and save workout'}));
+  await expect(page.getByRole('link', {name: 'Back to workout history'})).toBeVisible();
+  await device.shell(`am force-stop ${app}`);
+  await device.shell(
+    `am start -W -n ${app}/.MainActivity -a android.intent.action.VIEW -d easy://app/training/sessions/${workoutId}`,
+  );
+  page = await pageForApp();
+  await expect(page.getByText('12 reps', {exact: true})).toBeVisible();
+  const workout = (
+    await api(`/v1/coach/clients/${fixture.clientId}/training-sessions/${workoutId}`, {token: fixture.coachToken})
+  ).data;
+  expect(workout.state).toBe('completed');
+  expect(workout.performed_sets).toHaveLength(1);
+  await device.screenshot({path: 'tests/auth/artifacts/android-training-saved.png'});
+  results.push({
+    scenario:
+      'native training keyboard/back, offline draft process restart, explicit set save, background/resume, finish and saved deep link',
     passed: true,
   });
   await tap(page.getByRole('link', {name: 'Your account', exact: true}));

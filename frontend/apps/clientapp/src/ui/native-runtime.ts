@@ -12,8 +12,9 @@ export function deepLinkPath(value: string): string | null {
       return null;
     }
     if (
-      !['/', '/account', '/verify', '/forms'].includes(url.pathname) &&
-      !/^\/(invite|forms)\/[^/]+$/.test(url.pathname)
+      !['/', '/account', '/verify', '/forms', '/training'].includes(url.pathname) &&
+      !/^\/(invite|forms)\/[^/]+$/.test(url.pathname) &&
+      !/^\/training\/(sessions\/[^/]+|plans\/[^/]+(?:\/workouts\/[^/]+)?)$/.test(url.pathname)
     ) {
       return null;
     }

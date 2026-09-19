@@ -29,7 +29,7 @@ try {
       await expect(page.getByText('Invalid code.', {exact: false})).toBeVisible();
       await otp.fill('123456');
       await page.getByRole('button', {name: 'Verify and continue'}).click();
-      await expect(page.getByRole('heading', {name: 'Your coaching'})).toBeVisible();
+      await expect(page.getByRole('heading', {name: 'Today', exact: true})).toBeVisible();
       await page.getByRole('link', {name: 'Your account', exact: true}).click();
       await page.getByLabel('First name').fill('Alexandria with a long name');
       await page.reload();

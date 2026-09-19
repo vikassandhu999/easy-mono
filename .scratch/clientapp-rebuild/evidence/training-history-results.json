@@ -1,0 +1,6 @@
+[
+  {
+    "scenario": "22-session cursor paging, failed-page retry, server state/date filters and counts, filter return/reset, logout and other-account isolation",
+    "passed": true
+  }
+]

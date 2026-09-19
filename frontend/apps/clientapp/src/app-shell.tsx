@@ -1,13 +1,18 @@
 import {useSyncExternalStore} from 'react';
-import {Link, Navigate, Outlet, useLocation} from 'react-router-dom';
+import {generatePath, Link, Navigate, NavLink, Outlet, useLocation} from 'react-router-dom';
 import {useProfile} from './api/auth';
-import {errorMessage} from './api/client';
+import {useFormAssignments} from './api/forms';
+import {latestPageCount} from './api/pagination';
 import {clearSession, parseSession, sessionSnapshot, subscribeSession} from './api/session';
+import {useTrainingCoverage} from './api/training';
 import {authPath} from './auth/return-to';
 import {routes} from './routes';
+import {dayLabel} from './training/recording';
+import {ActiveWorkout} from './training/training';
 import {Button} from './ui/button';
 import {CachedRead} from './ui/cached-read';
 import {Page} from './ui/page';
+import {ReadState} from './ui/read-state';
 
 export function AppShell() {
   const session = parseSession(useSyncExternalStore(subscribeSession, sessionSnapshot));
@@ -29,6 +34,19 @@ export function AppShell() {
         </Link>
       </header>
       <Outlet />
+      <nav
+        aria-label="Main navigation"
+        className="mobile-nav"
+      >
+        <NavLink
+          to={routes.home}
+          end
+        >
+          Today
+        </NavLink>
+        <NavLink to={routes.training}>Training</NavLink>
+        <NavLink to={routes.forms}>Check-ins</NavLink>
+      </nav>
     </div>
   ) : (
     <Navigate
@@ -40,59 +58,123 @@ export function AppShell() {
 
 export function Home() {
   const profile = useProfile();
+  const coverage = useTrainingCoverage();
+  const forms = useFormAssignments({state: 'pending'});
+  const pendingCount = forms.data ? latestPageCount(forms.data.pages) : null;
+  const guidance = coverage.data?.data;
   return (
     <Page
-      title="Your coaching"
-      description={profile.data?.data.coach?.business_name ?? 'Your account with your coach.'}
+      title="Today"
+      description={
+        profile.data
+          ? `${profile.data.data.first_name || 'Welcome'} · ${profile.data.data.local_date ? dayLabel(profile.data.data.local_date) : (profile.data.data.coach?.business_name ?? 'Your coaching')}`
+          : 'Your next steps with your coach.'
+      }
     >
-      {profile.isPending && (
-        <p role="status">{profile.isPaused ? 'Reconnect to load your account.' : 'Loading your account…'}</p>
+      {!profile.data && (
+        <ReadState
+          label="your account"
+          failed={profile.isError}
+          retry={() => {
+            profile.refetch();
+          }}
+        />
       )}
-      {profile.isError && !profile.data && (
-        <div className="space-y-4">
-          <p role="alert">
-            {errorMessage(profile.error, 'We could not load your account. Check your connection and try again.')}
-          </p>
-          <Button
-            onPress={() => {
-              profile.refetch();
+      <ActiveWorkout />
+      <section className="mb-8 space-y-3">
+        <h2 className="text-xl font-semibold">Forms & check-ins</h2>
+        {forms.data ? (
+          <>
+            <CachedRead
+              updatedAt={forms.dataUpdatedAt}
+              failed={forms.isError}
+              refreshing={forms.isFetching}
+              refresh={() => forms.refetch()}
+            />
+            <p className="text-muted-foreground">
+              {pendingCount === 0
+                ? 'You are up to date with your coach’s requests.'
+                : pendingCount === null
+                  ? 'Review your coach’s requests.'
+                  : `${pendingCount} ${pendingCount === 1 ? 'request' : 'requests'} to complete.`}
+            </p>
+            <Link
+              to={routes.forms}
+              className="text-link inline-block"
+            >
+              Forms & check-ins
+            </Link>
+          </>
+        ) : (
+          <ReadState
+            label="your requests"
+            failed={forms.isError}
+            retry={() => {
+              forms.refetch();
             }}
-          >
-            Try again
-          </Button>
-        </div>
-      )}
-      {profile.data && (
-        <div className="space-y-5">
-          <CachedRead
-            updatedAt={profile.dataUpdatedAt}
-            failed={profile.isError}
-            refreshing={profile.isFetching}
-            refresh={() => profile.refetch()}
           />
-          <Link
-            to={routes.forms}
-            className="text-link block text-lg"
-          >
-            Forms & check-ins
-          </Link>
-          <p>Welcome, {profile.data.data.first_name || profile.data.data.email}.</p>
-          <Link
-            to={routes.account}
-            className="text-link"
-          >
-            Review your details
-          </Link>
-        </div>
-      )}
-      <div className="mt-10">
-        <Button
-          variant="ghost"
-          onPress={clearSession}
-        >
-          Sign out
-        </Button>
-      </div>
+        )}
+      </section>
+      <section className="mb-8 space-y-3">
+        <h2 className="text-xl font-semibold">Your training</h2>
+        {coverage.data ? (
+          <>
+            <CachedRead
+              updatedAt={coverage.dataUpdatedAt}
+              failed={coverage.isError}
+              refreshing={coverage.isFetching}
+              refresh={() => coverage.refetch()}
+            />
+            {guidance ? (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  {guidance.plan.name} · {dayLabel(guidance.date)}
+                </p>
+                {guidance.workout ? (
+                  <Link
+                    className="text-link block text-xl font-semibold"
+                    to={generatePath(routes.workout, {id: guidance.plan.id, workoutId: guidance.workout.id})}
+                  >
+                    {guidance.workout.name}
+                  </Link>
+                ) : (
+                  <p>No workout is scheduled today. Rest, or choose another workout from your plan.</p>
+                )}
+                <Link
+                  className="text-link inline-block"
+                  to={generatePath(routes.trainingPlan, {id: guidance.plan.id})}
+                >
+                  See your plan
+                </Link>
+              </>
+            ) : (
+              <p className="text-muted-foreground">
+                There is no training plan covering today. You can review your plans or record your own workout.
+              </p>
+            )}
+            <Link
+              className="text-link block"
+              to={routes.training}
+            >
+              All training
+            </Link>
+          </>
+        ) : (
+          <ReadState
+            label="today's training"
+            failed={coverage.isError}
+            retry={() => {
+              coverage.refetch();
+            }}
+          />
+        )}
+      </section>
+      <Button
+        variant="ghost"
+        onPress={clearSession}
+      >
+        Sign out
+      </Button>
     </Page>
   );
 }

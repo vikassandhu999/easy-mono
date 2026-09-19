@@ -1,5 +1,6 @@
 import type {FormAssignmentFilters} from './forms';
 import {getSession} from './session';
+import type {SessionFilters} from './training';
 
 export const authKeys = {
   all: ['auth'] as const,
@@ -17,4 +18,16 @@ export const formKeys = {
 
 export const attachmentKeys = {
   urls: (ids: string[]) => ['attachments', getSession()?.id, 'urls', ids] as const,
+};
+
+export const trainingKeys = {
+  all: ['training'] as const,
+  lists: () => ['training', getSession()?.id, 'lists'] as const,
+  plans: (search: string) => [...trainingKeys.lists(), 'plans', 'infinite', search] as const,
+  history: (filters: SessionFilters) => [...trainingKeys.lists(), 'history', 'infinite', filters] as const,
+  details: () => ['training', getSession()?.id, 'details'] as const,
+  plan: (id: string) => [...trainingKeys.details(), 'plan', id] as const,
+  session: (id: string) => [...trainingKeys.details(), 'session', id] as const,
+  coverage: () => ['training', getSession()?.id, 'coverage'] as const,
+  active: () => ['training', getSession()?.id, 'active'] as const,
 };

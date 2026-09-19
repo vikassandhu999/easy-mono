@@ -145,6 +145,82 @@ final class AuthenticationTests: XCTestCase {
         XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 10))
     }
 
+    @MainActor
+    func testWorkoutDraftAndSavedResult() throws {
+        continueAfterFailure = false
+        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "fixture", withExtension: "json"))
+        let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
+        let app = XCUIApplication(bundleIdentifier: "com.easy.client")
+        app.launch()
+        app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.token)")))
+        let signOut = app.buttons["Sign out to continue"]
+        if signOut.waitForExistence(timeout: 2) { signOut.tap() }
+        XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 15))
+        app.buttons["Continue with email"].tap()
+        let code = app.webViews.textFields["Verification code"]
+        XCTAssertTrue(code.waitForExistence(timeout: 15))
+        code.tap()
+        code.typeText("123456")
+        app.buttons["Verify and continue"].tap()
+        XCTAssertTrue(app.links["Forms & check-ins"].waitForExistence(timeout: 15))
+        app.open(try XCTUnwrap(URL(string: "easy://app/training")))
+        let start = app.buttons["Start freestyle workout"]
+        XCTAssertTrue(start.waitForExistence(timeout: 15), app.debugDescription)
+        app.swipeUp()
+        start.tap()
+        let exercise = app.webViews.textFields["Exercise name"]
+        XCTAssertTrue(exercise.waitForExistence(timeout: 15))
+        exercise.tap()
+        exercise.typeText("iPhone squat")
+        let reps = app.webViews.textFields["Reps"]
+        let web = app.webViews.firstMatch
+        web.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.4)).press(
+            forDuration: 0.05,
+            thenDragTo: web.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.15))
+        )
+        reps.tap()
+        reps.typeText("8")
+        XCTAssertTrue(app.staticTexts["Draft saved on this device."].waitForExistence(timeout: 10))
+        let keyboard = XCTAttachment(screenshot: app.screenshot())
+        keyboard.name = "iPhone workout keyboard"
+        keyboard.lifetime = .keepAlways
+        add(keyboard)
+        app.terminate()
+        app.launch()
+        let resume = app.links["Resume workout"]
+        XCTAssertTrue(resume.waitForExistence(timeout: 15), app.debugDescription)
+        resume.tap()
+        XCTAssertTrue(reps.waitForExistence(timeout: 15))
+        XCTAssertEqual(reps.value as? String, "8")
+        XCTAssertEqual(exercise.value as? String, "iPhone squat")
+        let save = app.buttons["Save set"]
+        if !save.isHittable { app.swipeUp() }
+        save.tap()
+        XCTAssertTrue(app.staticTexts["Set saved."].waitForExistence(timeout: 15), app.debugDescription)
+        XCUIDevice.shared.press(.home)
+        app.activate()
+        let finish = app.buttons["Finish workout"]
+        if !finish.isHittable { app.swipeUp() }
+        finish.tap()
+        let confirm = app.buttons["Finish and save workout"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10))
+        confirm.tap()
+        XCTAssertTrue(app.links["Back to workout history"].waitForExistence(timeout: 15))
+        app.terminate()
+        app.launch()
+        app.open(try XCTUnwrap(URL(string: "easy://app/training?view=history")))
+        let result = app.links.matching(NSPredicate(format: "label CONTAINS %@", "Freestyle workout")).firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 15), app.debugDescription)
+        app.swipeUp()
+        result.tap()
+        XCTAssertTrue(app.staticTexts["8 reps"].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(app.links["Back to workout history"].exists)
+        let saved = XCTAttachment(screenshot: app.screenshot())
+        saved.name = "iPhone saved workout"
+        saved.lifetime = .keepAlways
+        add(saved)
+    }
+
     private func setConnection(_ control: String, available: Bool) async throws {
         let url = try XCTUnwrap(URL(string: "\(control)?available=\(available)"))
         var request = URLRequest(url: url)

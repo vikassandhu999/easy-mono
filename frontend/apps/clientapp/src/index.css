@@ -30,6 +30,9 @@
   --border: #d5ddd5;
   --destructive: #a52a27;
 }
+html {
+  scroll-padding-block: 1rem calc(7rem + env(safe-area-inset-bottom));
+}
 body {
   margin: 0;
   padding-top: env(safe-area-inset-top);
@@ -47,7 +50,7 @@ a {
 .page {
   max-width: 30rem;
   margin: 0 auto;
-  padding: 1.5rem 1.25rem 3rem;
+  padding: 1.5rem 1.25rem 7rem;
   overflow-wrap: anywhere;
 }
 .app-header {
@@ -73,4 +76,36 @@ a:focus-visible {
 .text-link {
   min-height: 44px;
   align-content: center;
+}
+.mobile-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 30rem;
+  display: flex;
+  justify-content: space-around;
+  padding: 0.5rem 1rem calc(0.5rem + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  z-index: 20;
+}
+.mobile-nav a {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+.mobile-nav a[aria-current] {
+  color: var(--primary);
+  font-weight: 700;
+  background: var(--muted);
+  border-radius: 0.75rem;
+}
+:root[data-keyboard="open"] .mobile-nav {
+  display: none;
 }

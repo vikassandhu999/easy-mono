@@ -16,6 +16,10 @@ coach:
 client:
     cd frontend && pnpm dev:clientapp-v2
 
+# rebuilt browser/native client
+client-next:
+    cd frontend && pnpm --filter @easy/clientapp dev
+
 # frontend: website dev server
 site:
     cd frontend && pnpm dev:website
@@ -73,6 +77,6 @@ api-docs: openapi
 # regenerate the OpenAPI spec + both app clients end-to-end
 # Both apps: openapi-typescript type schema (React Query hooks are hand-written).
 gen-api: openapi
-    cd frontend && pnpm --filter @easy/coachapp gen:api && pnpm --filter coachapp-v2 gen:api && pnpm --filter clientapp-v2 gen:api
+    cd frontend && pnpm --filter @easy/coachapp gen:api && pnpm --filter @easy/clientapp gen:api && pnpm --filter coachapp-v2 gen:api && pnpm --filter clientapp-v2 gen:api
     cd backend && mix typed_routes.gen
-    cd frontend && pnpm exec biome check --write apps/coachapp/src/api/schema.ts apps/coachapp-v2/src/api/schema.ts apps/clientapp-v2/src/api/schema.ts
+    cd frontend && pnpm exec biome check --write apps/coachapp/src/api/schema.ts apps/clientapp/src/api/schema.ts apps/coachapp-v2/src/api/schema.ts apps/clientapp-v2/src/api/schema.ts

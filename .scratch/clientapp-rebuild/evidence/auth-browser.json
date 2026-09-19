@@ -1,0 +1,12 @@
+[
+  {
+    "width": 375,
+    "passed": true,
+    "email": "client-1789826681153-tsdzu6@example.test"
+  },
+  {
+    "width": 768,
+    "passed": true,
+    "email": "client-1789826683387-91k8e2@example.test"
+  }
+]

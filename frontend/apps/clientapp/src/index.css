@@ -1,0 +1,72 @@
+@import "tailwindcss";
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--primary);
+  --color-destructive: var(--destructive);
+}
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--foreground);
+  background: var(--background);
+  --background: #f8faf7;
+  --foreground: #202821;
+  --surface: #fff;
+  --primary: #265b40;
+  --primary-foreground: #fff;
+  --muted: #edf1eb;
+  --muted-foreground: #58635a;
+  --border: #d5ddd5;
+  --destructive: #a52a27;
+}
+body {
+  margin: 0;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+button,
+a,
+input {
+  touch-action: manipulation;
+}
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+.page {
+  max-width: 30rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+  overflow-wrap: anywhere;
+}
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 0.5rem 1.25rem;
+  min-height: 4rem;
+}
+.text-link {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+a:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+.text-link {
+  min-height: 44px;
+  align-content: center;
+}

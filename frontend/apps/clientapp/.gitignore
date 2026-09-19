@@ -1,0 +1,4 @@
+.env.local
+.env.*.local
+tests/**/artifacts/
+ios/App/ClientUITests/fixture.json

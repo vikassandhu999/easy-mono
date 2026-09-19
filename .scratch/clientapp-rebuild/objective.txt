@@ -1,0 +1,103 @@
+  Rewrite the clientapp as a mobile-first iOS and Android application using React and Capacitor, with a shared browser-compatible codebase. Complete supported
+  client workflows end to end, screen by screen, following the engineering and UX principles established during the coachapp rewrite.
+
+  Keep the experience centered on the client's daily needs: understanding what to do, completing it with little effort, and knowing their progress has been
+  saved.
+
+  Start by reading repository instructions, the coachapp rewrite's documented decisions, and backend contracts. Inventory supported client workflows, identify
+  API gaps, and create a UX plan, screen sequence, and completion ledger in .scratch/clientapp-rebuild/.
+
+  Do not copy or consult clientapp-v2 or coachapp-v2 code, screens, or UX as references. Use backend contracts and domain rules to establish supported
+  behavior. Reuse the rewritten coachapp's suitable technical conventions and shared infrastructure while designing interactions specifically for clients.
+
+  Use this technical stack:
+  - React 19, strict TypeScript, and Vite.
+  - Capacitor for iOS and Android.
+  - React Router for routing.
+  - TanStack React Query v5 for server state.
+  - React Hook Form for forms.
+  - Tailwind CSS v4 and the repository's established shadcn components.
+  - openapi-typescript and openapi-fetch for typed API access.
+  - The Phoenix/Elixir backend, with OpenApiSpex as the API contract.
+  - Biome for formatting and linting, Playwright for browser verification.
+  - pnpm workspaces and repository commands.
+
+  Check package manifests and repository conventions before installing dependencies. Use compatible versions and the established component implementation.
+  Avoid adding competing UI libraries, state frameworks, duplicate validation schemas, or speculative abstractions.
+
+  Establish the Capacitor foundation early. Run a complete authenticated workflow against the real backend in both native platforms before building out every
+  screen. Address native authentication, API configuration, deep links, and session persistence as part of that foundation.
+
+  Inventory and implement supported workflows, including:
+  - Joining a coach, signing in, and completing intake.
+  - Understanding today's training, nutrition, and pending actions.
+  - Following workouts and recording sets, targets, and results.
+  - Viewing assigned nutrition plans and logging meals.
+  - Completing forms and check-ins, including progress photos.
+  - Messaging the coach and sharing supported attachments.
+  - Reviewing history and progress.
+  - Managing account details and preferences.
+
+  Confirm exact scope against backend capabilities. Record gaps explicitly. Make focused backend changes when needed to complete an agreed workflow, following
+  the repository's API-change process. Do not invent unrelated product features.
+
+  Apply these UX principles throughout:
+  - Make the next useful action obvious.
+  - Design for one-handed use and comfortable touch targets.
+  - Minimize typing, repeated entry, unnecessary choices, and navigation.
+  - Use typography, spacing, and grouping to establish visual hierarchy.
+  - Make exercise names and prescribed targets easy to scan.
+  - Keep sets, meals, alternatives, and variations compact and readable.
+  - Avoid excessive borders, nested cards, decorative dashboards, and competing actions.
+  - Reveal secondary controls when relevant.
+  - Use plain language and specific feedback about what happened.
+  - Provide accessible labels, focus behavior, contrast, and readable text.
+  - Adapt to wider screens without weakening the mobile experience.
+
+  Use established shadcn Select and chat/message components. Evaluate selects, dialogs, sheets, and navigation for touch interaction and the mobile keyboard.
+
+  Treat mobile behavior as part of every workflow:
+  - Handle safe areas, keyboard visibility, Android back navigation, and deep links.
+  - Preserve useful state when the app backgrounds, resumes, or restarts.
+  - Persist in-progress workout entries and form drafts where interruption would lose work.
+  - Make connectivity, saving, saved, and retry states understandable.
+  - Prevent duplicate submissions and accidental loss of unsaved work.
+  - Keep cached data and drafts isolated by account and clear them appropriately on logout.
+  - Use Capacitor plugins for required camera/photo and notification workflows, with contextual permission requests and denial recovery.
+  - Keep platform-specific code small and separate from domain logic.
+
+  Define offline behavior per workflow. Support useful cached reading and draft recovery where appropriate. Only queue writes when retry, conflict resolution,
+  and duplicate prevention are explicitly designed. Keep the server authoritative.
+
+  Build shared cross-cutting behavior before duplicating it across screens:
+  - Generated API types, consistent query keys, mutation handling, and session management.
+  - Shared infinite scrolling using opaque server cursors.
+  - Server-owned search, filtering, ordering, counts, totals, nutrition calculations, and business rules.
+  - Never derive authoritative counts or totals by filtering or aggregating downloaded pages.
+  - Local array operations are appropriate for rendering and unsaved drafts.
+  - Consistent loading, empty, error, validation, retry, and return-navigation states.
+  - Reliable cache invalidation and protection against stale account data.
+
+  Keep implementation small and easy to understand. Organize code around clear responsibilities. Extract shared behavior when concrete repetition justifies it.
+  Refactor only where the benefit is clear.
+
+  Build complete vertical slices against the real backend. For each workflow, implement its entry point, primary action, persistence, recovery states, and
+  return path before marking it complete.
+
+  Verify throughout:
+  - Run repository-required checks and meaningful tests for business behavior.
+  - Exercise real browser workflows at mobile and desktop widths.
+  - Check long content, empty data, keyboard interaction, save/reload, failures, and retries.
+  - Build and exercise iOS and Android using available simulators or emulators.
+  - Check native keyboard, safe areas, back navigation, lifecycle, permissions, and network recovery.
+  - Record physical-device and human usability checks separately.
+  - Do not claim browser tests prove native behavior or automated tests prove usability.
+
+  Keep the real backend and development apps working. Commit verified, coherent checkpoints. Maintain the UX plan and completion ledger with evidence,
+  unresolved issues, and external dependencies.
+
+  Work autonomously, choose sensible defaults, and ask only when an unresolved decision materially changes scope or behavior. Do not use Superpowers. Do not
+  push, deploy, or publish to app stores without authorization.
+
+  Continue until every agreed client workflow is implemented and verified to the extent available in this environment. Clearly distinguish completed
+  implementation from validation awaiting devices, credentials, external services, or real clients.

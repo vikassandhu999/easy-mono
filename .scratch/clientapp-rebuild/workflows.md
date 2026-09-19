@@ -1,0 +1,19 @@
+# Supported workflows and gaps
+
+Inventory date: 2026-09-19. Evidence is the Phoenix router and client typed controllers, not legacy frontend screens. Graph discovery was attempted through `cbm architecture`, which returned `backend_timeout`; targeted source reads are the fallback. This is a route/controller inventory; context behavior and exact payloads still need verification per slice.
+
+| Outcome | Backend surface | Required work / gap |
+| --- | --- | --- |
+| Join coach | Auth invitation preview, accept, verify | Build client routes; preserve invitation during OTP/restart; reject silent account replacement |
+| Sign in | OTP, token with client role, refresh token | Shared refresh, invalid-vs-transient failure, logout races, native persistence |
+| Complete intake/check-in | Assignment index/show/submit | Index is unpaged with no server pending filter/count. Add scoped summary/cursor API before authoritative Today counts or infinite lists |
+| Understand today | Coverage by date, active training session, nutrition days, assignments | No unified Today endpoint; client profile lacks timezone. Resolve client-local date and server-owned pending selection explicitly |
+| Follow workout | Plans/coverage, exercises, sessions, performed sets, complete/discard | Client plan/session lists use offset. Add cursor support; audit creation/lost-response semantics before retries |
+| Follow nutrition/log meals | Nutrition plans, foods, recipes, nutrition days GET/PATCH | Day/slot revisions and server totals are available. Audit source search, paging, and idempotent save semantics |
+| Progress photos | Client upload and signed download URL endpoints; assignment submission | Native camera/photo adapter, media validation, permission denial and upload recovery |
+| Message coach | Conversation show/messages/create/read | Messages use `before` and `has_more`, not shared opaque cursor; inspect context before defining a cursor API. Audit send deduplication and supported attachment types |
+| Review history | Sessions, nutrition days, assignment show, weight entries | Client history paging and completed response access need contract/context audit; weight trend exposed to coach is not yet exposed to client |
+| Manage account | Profile GET/PATCH | Editable names, phone, goal weight. Email and default unit are not editable in this profile contract; do not invent writes |
+| Notifications | No notification registration route in router | Remote delivery needs backend registration and APNs/FCM credentials; define supported local reminders separately before implementing |
+
+Any backend change follows the repository API-change process, including tests for tenant/account isolation, contract generation, and required backend precommit. The user selected the migrated typed-route contract pipeline. OpenAPI generation remains for auth; client resources derive from typed controllers.

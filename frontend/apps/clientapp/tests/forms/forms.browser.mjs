@@ -105,6 +105,39 @@ try {
       await expect(page.getByRole('button', {name: 'Retry photo 1'})).toBeVisible();
       await expect(page.getByText('The photo could not be uploaded. Try again when connected.')).toBeVisible();
       await expect(page.getByRole('button', {name: 'Send response'})).toBeDisabled();
+      if (width === 375) {
+        // An interrupted upload saved by the Blob-based app must survive the storage format change.
+        await page.evaluate(
+          () =>
+            new Promise((resolve, reject) => {
+              const open = indexedDB.open('clientapp.photos');
+              open.onerror = () => reject(open.error);
+              open.onsuccess = () => {
+                const db = open.result;
+                const tx = db.transaction('photos', 'readwrite');
+                const request = tx.objectStore('photos').openCursor();
+                request.onsuccess = () => {
+                  const cursor = request.result;
+                  if (!cursor || !(cursor.value.blob instanceof ArrayBuffer)) {
+                    reject(new Error('Expected a persisted byte-backed photo before converting the fixture.'));
+                    tx.abort();
+                    return;
+                  }
+                  const {mimeType, ...record} = cursor.value;
+                  cursor.update({...record, blob: new Blob([record.blob], {type: mimeType})});
+                };
+                tx.oncomplete = () => {
+                  db.close();
+                  resolve();
+                };
+                tx.onabort = () => {
+                  db.close();
+                  reject(tx.error);
+                };
+              };
+            }),
+        );
+      }
       await page.reload();
       await expect(page.getByText('Your unsent answers were restored.')).toBeVisible();
       await expect(page.getByLabel('What would you like to work on?', {exact: false})).toHaveValue(

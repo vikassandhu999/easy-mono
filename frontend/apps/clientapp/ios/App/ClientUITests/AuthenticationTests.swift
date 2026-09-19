@@ -67,6 +67,7 @@ final class AuthenticationTests: XCTestCase {
         let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
         let app = XCUIApplication(bundleIdentifier: "com.easy.client")
         app.resetAuthorizationStatus(for: .photos)
+        app.resetAuthorizationStatus(for: .camera)
         app.launch()
         app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.formToken)")))
         let signOut = app.buttons["Sign out to continue"]
@@ -84,18 +85,20 @@ final class AuthenticationTests: XCTestCase {
         XCTAssertTrue(goal.waitForExistence(timeout: 15), app.debugDescription)
         goal.tap()
         goal.typeText("A steady native routine")
-        let choose = app.buttons["Choose photo"]
-        if !choose.isHittable { app.swipeUp() }
-        choose.tap()
         let system = XCUIApplication(bundleIdentifier: "com.apple.springboard")
-        let refuse = system.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Don")).firstMatch
-        XCTAssertTrue(refuse.waitForExistence(timeout: 10), system.debugDescription)
-        refuse.tap()
-        let denied = app.alerts["Easy"]
-        XCTAssertTrue(denied.waitForExistence(timeout: 10), app.debugDescription)
-        XCTAssertTrue(denied.buttons["Settings"].exists)
-        denied.buttons["OK"].tap()
-        XCTAssertTrue(app.staticTexts["Photo access is off. Enable it for Easy in your device settings, then try again. You can keep answering the form."].waitForExistence(timeout: 10))
+        for action in ["Take photo", "Choose photo"] {
+            let choose = app.buttons[action]
+            if !choose.isHittable { app.swipeUp() }
+            choose.tap()
+            let refuse = system.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Don")).firstMatch
+            XCTAssertTrue(refuse.waitForExistence(timeout: 10), system.debugDescription)
+            refuse.tap()
+            let denied = app.alerts["Easy"]
+            XCTAssertTrue(denied.waitForExistence(timeout: 10), app.debugDescription)
+            XCTAssertTrue(denied.buttons["Settings"].exists)
+            denied.buttons["OK"].tap()
+            XCTAssertTrue(app.staticTexts["Photo access is off. Enable it for Easy in your device settings, then try again. You can keep answering the form."].waitForExistence(timeout: 10))
+        }
         XCTAssertTrue(goal.waitForExistence(timeout: 10))
         if let control = fixture.apiControlURL { try await setConnection(control, available: false) }
         app.terminate()
@@ -157,6 +160,7 @@ final class AuthenticationTests: XCTestCase {
         let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
         let app = XCUIApplication(bundleIdentifier: "com.easy.client")
         app.resetAuthorizationStatus(for: .photos)
+        app.resetAuthorizationStatus(for: .camera)
         app.launch()
         app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.photoToken)")))
         let signOut = app.buttons["Sign out to continue"]
@@ -170,11 +174,31 @@ final class AuthenticationTests: XCTestCase {
         app.buttons["Verify and continue"].tap()
         XCTAssertTrue(app.links["Forms & check-ins"].waitForExistence(timeout: 15))
         app.open(try XCTUnwrap(URL(string: "easy://app/forms/\(fixture.photoAssignmentId)")))
-        let choose = app.buttons["Choose photo"]
+        let capture = fixture.photoSource == "camera"
+        let choose = app.buttons[capture ? "Take photo" : "Choose photo"]
         XCTAssertTrue(choose.waitForExistence(timeout: 15))
-        choose.tap()
         let system = XCUIApplication(bundleIdentifier: "com.apple.springboard")
-        if fixture.photoAccess == "limited" {
+        choose.tap()
+        var useGallery = !capture
+        if capture {
+            XCTAssertTrue(system.buttons["Allow"].waitForExistence(timeout: 10), system.debugDescription)
+            system.buttons["Allow"].tap()
+            let shutter = app.buttons["Take Picture"]
+            XCTAssertTrue(shutter.waitForExistence(timeout: 15), app.debugDescription)
+            #if targetEnvironment(simulator)
+            // The simulator opens capture but does not supply an image after shutter.
+            app.buttons["DismissImagePickerButton"].tap()
+            XCTAssertTrue(choose.waitForExistence(timeout: 10))
+            app.buttons["Choose photo"].tap()
+            useGallery = true
+            #else
+            shutter.tap()
+            let usePhoto = app.buttons["Use Photo"]
+            XCTAssertTrue(usePhoto.waitForExistence(timeout: 15), app.debugDescription)
+            usePhoto.tap()
+            #endif
+        }
+        if useGallery && fixture.photoAccess == "limited" {
             let limit = system.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Limit Access")).firstMatch
             XCTAssertTrue(limit.waitForExistence(timeout: 10), system.debugDescription)
             limit.tap()
@@ -184,18 +208,20 @@ final class AuthenticationTests: XCTestCase {
             // PhotosPicker exposes image bounds but no accessibility hit point.
             photo.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
             library.buttons["Done"].coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-        } else {
+        } else if useGallery {
             let allow = system.buttons["Allow Full Access"]
             XCTAssertTrue(allow.waitForExistence(timeout: 10), system.debugDescription)
             allow.tap()
         }
-        let image = app.scrollViews.buttons.firstMatch
-        XCTAssertTrue(image.waitForExistence(timeout: 10), app.debugDescription)
-        if fixture.photoAccess == "limited" {
-            XCTAssertEqual(app.scrollViews.buttons.count, 1, "Only the permitted photo appears in Easy's library")
+        if useGallery {
+            let image = app.scrollViews.buttons.firstMatch
+            XCTAssertTrue(image.waitForExistence(timeout: 10), app.debugDescription)
+            if fixture.photoAccess == "limited" {
+                XCTAssertEqual(app.scrollViews.buttons.count, 1, "Only the permitted photo appears in Easy's library")
+            }
+            image.tap()
+            app.buttons["Done"].tap()
         }
-        image.tap()
-        app.buttons["Done"].tap()
         XCTAssertTrue(app.staticTexts["Photo uploaded"].waitForExistence(timeout: 20), app.debugDescription)
         let send = app.buttons["Send response"]
         if !send.isHittable { app.swipeUp() }
@@ -208,7 +234,7 @@ final class AuthenticationTests: XCTestCase {
         app.open(try XCTUnwrap(URL(string: "easy://app/forms/\(fixture.photoAssignmentId)")))
         XCTAssertTrue(savedPhoto.waitForExistence(timeout: 15), app.debugDescription)
         let saved = XCTAttachment(screenshot: app.screenshot())
-        saved.name = "iPhone saved progress photo (\(fixture.photoAccess ?? "full") access)"
+        saved.name = "iPhone saved progress photo (\(useGallery ? "gallery" : "camera"), \(fixture.photoAccess ?? "full") access)"
         saved.lifetime = .keepAlways
         add(saved)
     }
@@ -221,6 +247,7 @@ final class AuthenticationTests: XCTestCase {
         let assignmentId: String
         let apiControlURL: String?
         let photoAccess: String?
+        let photoSource: String?
         let photoToken: String
         let photoAssignmentId: String
     }

@@ -37,6 +37,7 @@ await api(`/v1/coach/form-templates/${photoAssignment.form_template_id}`, {
   },
 });
 fixture.photoAccess = process.env.CLIENTAPP_PHOTO_ACCESS || 'full';
+fixture.photoSource = process.env.CLIENTAPP_PHOTO_SOURCE || 'gallery';
 fixture.photoToken = photoClient.token;
 fixture.photoAssignmentId = photoAssignment.id;
 await writeFile(new URL('../../ios/App/ClientUITests/fixture.json', import.meta.url), JSON.stringify(fixture));

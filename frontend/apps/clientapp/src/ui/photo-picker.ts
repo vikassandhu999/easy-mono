@@ -1,5 +1,5 @@
 import {type RestoredListenerEvent} from '@capacitor/app';
-import {Camera, CameraErrorCode, MediaTypeSelection} from '@capacitor/camera';
+import {Camera, CameraErrorCode, CameraResultType, CameraSource, MediaTypeSelection} from '@capacitor/camera';
 import {Capacitor, registerPlugin} from '@capacitor/core';
 import {validatePhoto} from '../api/attachments';
 import {readDraft, removeDraft, writeDraft} from '../api/drafts';
@@ -27,12 +27,17 @@ function readIntent(value: unknown): PhotoIntent | null {
 }
 function photoError(error: unknown) {
   const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
+  const message = error && typeof error === 'object' && 'message' in error ? error.message : undefined;
   if (
     code === 'cancelled' ||
     code === CameraErrorCode.TakePhotoCancelled ||
-    code === CameraErrorCode.ChooseMediaCancelled
+    code === CameraErrorCode.ChooseMediaCancelled ||
+    message === 'User cancelled photos app'
   ) {
     return null;
+  }
+  if (code === CameraErrorCode.NoCameraAvailable) {
+    return 'A camera is not available on this device. Choose a photo from your library.';
   }
   return code === CameraErrorCode.CameraPermissionDenied || code === CameraErrorCode.GalleryPermissionDenied
     ? 'Photo access is off. Enable it for Easy in your device settings, then try again. You can keep answering the form.'
@@ -75,6 +80,19 @@ async function keepPhoto(data: unknown, intent: PhotoIntent, session: NonNullabl
 function firstResult(data: unknown): unknown {
   return data && typeof data === 'object' && 'results' in data && Array.isArray(data.results) ? data.results[0] : data;
 }
+function capturePhoto() {
+  if (Capacitor.getPlatform() === 'android') {
+    // Camera 8.2.4 saves the capture file and plugin callback only for getPhoto.
+    // Keep this path until takePhoto passes the Android process-recovery scenario.
+    return Camera.getPhoto({
+      source: CameraSource.Camera,
+      resultType: CameraResultType.Uri,
+      quality: 85,
+      saveToGallery: false,
+    });
+  }
+  return Camera.takePhoto({quality: 85, saveToGallery: false});
+}
 export async function pickNativePhoto(source: 'camera' | 'gallery', resource: string, questionShape: string) {
   const session = getSession();
   if (!session?.accountId) {
@@ -91,7 +109,7 @@ export async function pickNativePhoto(source: 'camera' | 'gallery', resource: st
   try {
     data =
       source === 'camera'
-        ? await Camera.takePhoto({quality: 85, saveToGallery: false})
+        ? await capturePhoto()
         : Capacitor.getPlatform() === 'android'
           ? await photoLibrary.pick()
           : await Camera.chooseFromGallery({
@@ -117,7 +135,7 @@ export async function pickNativePhoto(source: 'camera' | 'gallery', resource: st
 export async function restoreNativePhoto(event: RestoredListenerEvent) {
   if (
     !(event.pluginId === 'PhotoLibrary' && event.methodName === 'pick') &&
-    !(event.pluginId === 'Camera' && ['takePhoto', 'chooseFromGallery'].includes(event.methodName))
+    !(event.pluginId === 'Camera' && ['getPhoto', 'takePhoto', 'chooseFromGallery'].includes(event.methodName))
   ) {
     return null;
   }

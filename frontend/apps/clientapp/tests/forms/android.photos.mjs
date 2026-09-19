@@ -13,6 +13,9 @@ const results = [];
 await mkdir('tests/forms/artifacts', {recursive: true});
 const app = 'com.easy.client';
 const recoverPicker = process.env.CLIENTAPP_PICKER_RESTART === '1';
+const capture = process.env.CLIENTAPP_PHOTO_SOURCE === 'camera';
+const sourceApp = capture ? 'com.android.camera2' : 'com.google.android.photopicker';
+const sourceAction = capture ? 'Take photo' : 'Choose photo';
 const pageForApp = async () => (await device.webView({pkg: app})).page();
 try {
   const fixture = await inviteClient({firstName: ''});
@@ -81,13 +84,13 @@ try {
   await device.input.type('Photo selection survives interruption');
   await expect(page.getByText('Draft saved on this device.', {exact: true})).toBeVisible();
   await device.input.press('Back');
-  await tap(page.getByRole('button', {name: 'Choose photo', exact: true}));
-  await device.wait({pkg: 'com.google.android.photopicker'});
+  await tap(page.getByRole('button', {name: sourceAction, exact: true}));
+  await device.wait({pkg: sourceApp});
   await device.input.press('Back');
   await expect(page.getByLabel('Your goal', {exact: false})).toHaveValue('Photo selection survives interruption');
   await expect(page.getByRole('alert')).toHaveCount(0);
-  await tap(page.getByRole('button', {name: 'Choose photo', exact: true}));
-  await device.wait({pkg: 'com.google.android.photopicker'});
+  await tap(page.getByRole('button', {name: sourceAction, exact: true}));
+  await device.wait({pkg: sourceApp});
   const pid = (await device.shell(`pidof ${app}`)).toString().trim();
   if (recoverPicker) {
     if (!/^\d+$/.test(pid)) {
@@ -108,9 +111,14 @@ try {
     await device.input.press('AppSwitch');
     await device.screenshot({path: 'tests/forms/artifacts/android-recents.png'});
     await device.tap({res: 'com.google.android.apps.nexuslauncher:id/snapshot', desc: 'Easy'});
-    await device.wait({pkg: 'com.google.android.photopicker'});
+    await device.wait({pkg: sourceApp});
   }
-  await device.tap({pkg: 'com.google.android.photopicker', desc: /Photo taken.*/});
+  if (capture) {
+    await device.tap({pkg: sourceApp, desc: 'Shutter'});
+    await device.tap({pkg: sourceApp, desc: 'Done'});
+  } else {
+    await device.tap({pkg: sourceApp, desc: /Photo taken.*/});
+  }
   if (recoverPicker) {
     page = await pageForApp();
     expect((await device.shell(`pidof ${app}`)).toString().trim()).not.toBe(pid);
@@ -135,6 +143,7 @@ try {
     .toBeGreaterThan(0);
   await device.screenshot({path: 'tests/forms/artifacts/android-saved-photo.png'});
   results.push({
+    source: capture ? 'camera' : 'gallery',
     scenario: recoverPicker
       ? 'native picker cancellation and process death, recovered photo and draft, deliberate upload and saved image after restart'
       : 'native photo cancellation, selection, real upload and saved image after restart',
@@ -146,7 +155,7 @@ try {
 } finally {
   await device.close();
   await writeFile(
-    `tests/forms/artifacts/android-photo-${recoverPicker ? 'recovery' : 'upload'}-results.json`,
+    `tests/forms/artifacts/android-${capture ? 'camera' : 'photo'}-${recoverPicker ? 'recovery' : 'upload'}-results.json`,
     JSON.stringify(results, null, 2),
   );
 }

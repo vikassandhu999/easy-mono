@@ -63,7 +63,27 @@ function isPhoto(value: unknown): value is StoredPhoto {
       (!('upload' in value) || isUpload(value.upload)),
   );
 }
+function storedPhoto(value: unknown): StoredPhoto | null {
+  if (
+    value &&
+    typeof value === 'object' &&
+    'blob' in value &&
+    value.blob instanceof ArrayBuffer &&
+    'mimeType' in value &&
+    typeof value.mimeType === 'string'
+  ) {
+    const photo = {...value, blob: new Blob([value.blob], {type: value.mimeType})};
+    return isPhoto(photo) ? photo : null;
+  }
+  return isPhoto(value) ? value : null;
+}
+async function photoRecord(photo: StoredPhoto) {
+  // WKWebView can abort Blob writes while preparing their backing files.
+  // Store bytes in the transaction and reconstruct the Blob when reading.
+  return {...photo, blob: await photo.blob.arrayBuffer(), mimeType: photo.blob.type};
+}
 export async function updatePhoto(photo: StoredPhoto, isCurrent: () => boolean) {
+  const record = await photoRecord(photo);
   const db = await open();
   return new Promise<void>((resolve, reject) => {
     const tx = db.transaction('photos', 'readwrite');
@@ -74,7 +94,7 @@ export async function updatePhoto(photo: StoredPhoto, isCurrent: () => boolean) 
         tx.abort();
         return;
       }
-      store.put(photo);
+      store.put(record);
     };
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
@@ -87,22 +107,30 @@ export async function readPhotos(owner: string, resource: string) {
     const request = db.transaction('photos').objectStore('photos').index('owner').getAll(owner);
     request.onsuccess = () => {
       const rows: unknown = request.result;
-      resolve(Array.isArray(rows) ? rows.filter(isPhoto).filter((row) => row.resource === resource) : []);
+      resolve(
+        Array.isArray(rows)
+          ? rows.flatMap((row) => {
+              const photo = storedPhoto(row);
+              return photo?.resource === resource ? [photo] : [];
+            })
+          : [],
+      );
     };
     request.onerror = () => reject(request.error);
   });
 }
 export async function savePhoto(photo: StoredPhoto, isCurrent: () => boolean) {
+  const record = await photoRecord(photo);
   const db = await open();
   if (!isCurrent()) {
     throw new Error('Your account changed.');
   }
   return new Promise<void>((resolve, reject) => {
     const tx = db.transaction('photos', 'readwrite');
-    tx.objectStore('photos').put(photo);
+    tx.objectStore('photos').put(record);
     tx.oncomplete = () => resolve();
     // A request error bubbles before the transaction has its error. Wait for abort.
-    tx.onabort = () => reject(tx.error ?? new Error('The photo could not be saved on this device.'));
+    tx.onabort = () => reject(new Error('The photo could not be saved on this device. Please try again.'));
   });
 }
 export async function removePhoto(id: string) {
@@ -141,8 +169,8 @@ export async function clearFormPhotos(owner: string, prefix: string) {
     request.onsuccess = () => {
       const cursor = request.result;
       if (cursor) {
-        const value: unknown = cursor.value;
-        if (isPhoto(value) && value.resource.startsWith(prefix)) {
+        const value = storedPhoto(cursor.value);
+        if (value?.resource.startsWith(prefix)) {
           cursor.delete();
         }
         cursor.continue();

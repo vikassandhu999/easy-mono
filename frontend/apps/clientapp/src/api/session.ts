@@ -9,6 +9,13 @@ const KEY = 'clientapp.auth.v1';
 const EVENT = 'clientapp:session';
 let snapshot: string | null = null;
 let writes: Promise<void> = Promise.resolve();
+let endingState: 'idle' | 'pending' | 'failed' = 'idle';
+let endingTask: (() => Promise<void>) | undefined;
+let endingPromise: Promise<void> | undefined;
+
+export function sessionEndState() {
+  return endingState;
+}
 
 export async function restoreSession() {
   snapshot = await readStored(KEY);
@@ -81,18 +88,45 @@ export function clearSession() {
   return endSession(true);
 }
 
-async function endSession(removePrivateData: boolean) {
+function endSession(removePrivateData: boolean) {
+  if (endingTask) {
+    return retryEndSession();
+  }
   const owner = getSession()?.accountId;
   const tombstone = JSON.stringify({id: crypto.randomUUID()});
-  const pending = persist(tombstone);
-  const clearing = owner && removePrivateData ? clearPrivateStorage(owner) : Promise.resolve();
-  queryClient.clear();
-  window.dispatchEvent(new Event(EVENT));
-  await Promise.all([pending, clearing]);
-  if (sessionSnapshot() === tombstone) {
-    await clearChallenge();
+  endingTask = async () => {
+    const pending = persist(tombstone);
+    const clearing = owner && removePrivateData ? clearPrivateStorage(owner) : Promise.resolve();
+    queryClient.clear();
+    await Promise.all([pending, clearing]);
+    if (sessionSnapshot() === tombstone) {
+      await clearChallenge();
+    }
+  };
+  return retryEndSession();
+}
+
+export function retryEndSession(): Promise<void> {
+  if (endingPromise || !endingTask) {
+    return endingPromise ?? Promise.resolve();
   }
+  endingState = 'pending';
   window.dispatchEvent(new Event(EVENT));
+  endingPromise = endingTask()
+    .then(
+      () => {
+        endingState = 'idle';
+        endingTask = undefined;
+      },
+      () => {
+        endingState = 'failed';
+      },
+    )
+    .finally(() => {
+      endingPromise = undefined;
+      window.dispatchEvent(new Event(EVENT));
+    });
+  return endingPromise;
 }
 
 export function subscribeSession(onChange: () => void) {

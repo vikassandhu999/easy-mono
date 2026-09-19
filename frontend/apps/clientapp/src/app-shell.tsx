@@ -1,4 +1,4 @@
-import {useState, useSyncExternalStore} from 'react';
+import {useSyncExternalStore} from 'react';
 import {Link, Navigate, Outlet, useLocation} from 'react-router-dom';
 import {useProfile} from './api/auth';
 import {errorMessage} from './api/client';
@@ -39,7 +39,6 @@ export function AppShell() {
 
 export function Home() {
   const profile = useProfile();
-  const [error, setError] = useState('');
   return (
     <Page
       title="Your coaching"
@@ -62,6 +61,12 @@ export function Home() {
       )}
       {profile.data && (
         <div className="space-y-5">
+          <Link
+            to={routes.forms}
+            className="text-link block text-lg"
+          >
+            Forms & check-ins
+          </Link>
           <p>Welcome, {profile.data.data.first_name || profile.data.data.email}.</p>
           <Link
             to={routes.account}
@@ -74,17 +79,10 @@ export function Home() {
       <div className="mt-10">
         <Button
           variant="ghost"
-          onPress={async () => {
-            try {
-              await clearSession();
-            } catch {
-              setError('Sign-out could not be saved on this device. Please try again.');
-            }
-          }}
+          onPress={clearSession}
         >
           Sign out
         </Button>
-        {error && <p role="alert">{error}</p>}
       </div>
     </Page>
   );

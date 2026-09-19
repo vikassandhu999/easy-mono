@@ -6,8 +6,10 @@ defmodule Easy.Forms.Submissions do
   alias Easy.FormAnswers
   alias Easy.Forms.FormAssignment
   alias Easy.Forms.FormSubmission
+  alias Easy.Forms.FormTemplate
   alias Easy.Forms.Photos
   alias Easy.Repo
+  alias Easy.Revision
   alias Easy.WeightEntries
 
   import Ecto.Query
@@ -18,18 +20,22 @@ defmodule Easy.Forms.Submissions do
   @spec submit_client_assignment(Ctx.t(), String.t(), map()) ::
           {:ok, FormSubmission.t()} | {:error, FormAnswers.parse_error() | submit_error()}
   def submit_client_assignment(%Ctx{} = ctx, assignment_id, attrs) do
-    with {:ok, answers} <- FormAnswers.from_attrs(attrs),
+    with {:ok, expected} <- FormTemplate.expected_revision(attrs),
+         {:ok, answers} <- FormAnswers.from_attrs(attrs),
          {:ok, client} <- ClientAccount.get_client_account(ctx),
-         {:ok, assignment} <- get_client_assignment(ctx, assignment_id) do
-      submit(ctx, client, assignment, answers)
+         {:ok, assignment} <- get_client_assignment(ctx, assignment_id),
+         {:ok, unit} <- WeightEntries.get_client_form_weight_unit(ctx, attrs) do
+      Revision.locked(FormTemplate.for_business(ctx.business_id), assignment.form_template_id, expected, fn template ->
+        submit(ctx, client, %{assignment | form_template: template}, answers, unit)
+      end)
     end
   end
 
-  defp submit(ctx, client, assignment, answers) do
+  defp submit(ctx, client, assignment, answers, unit) do
     with :ok <- ensure_assignment_submittable(assignment),
          :ok <- FormAnswers.validate(assignment.form_template.sections, answers),
          :ok <- Photos.validate(ctx, client.id, assignment.form_template.sections, answers) do
-      submit_assignment_transaction(ctx, client, assignment, answers)
+      submit_assignment_transaction(ctx, client, assignment, answers, unit)
     end
   end
 
@@ -125,13 +131,15 @@ defmodule Easy.Forms.Submissions do
     |> FormSubmission.for_visible_clients(ctx)
   end
 
-  defp submit_assignment_transaction(ctx, client, assignment, answers) do
-    with {:ok, submission} <- Repo.transact(fn -> submit_locked_assignment(ctx, client, assignment, answers) end) do
+  defp submit_assignment_transaction(ctx, client, assignment, answers, unit) do
+    transaction = fn -> submit_locked_assignment(ctx, client, assignment, answers, unit) end
+
+    with {:ok, submission} <- Repo.transact(transaction) do
       {:ok, Photos.attach_submission(ctx, submission)}
     end
   end
 
-  defp submit_locked_assignment(ctx, client, assignment, answers) do
+  defp submit_locked_assignment(ctx, client, assignment, answers, unit) do
     locked =
       FormAssignment
       |> FormAssignment.for_client(ctx.business_id, client.id)
@@ -141,16 +149,16 @@ defmodule Easy.Forms.Submissions do
 
     with {:ok, current} <- ok_or_not_found(locked),
          :ok <- ensure_assignment_submittable(current) do
-      submit_assignment(ctx, client, %{current | form_template: assignment.form_template}, answers)
+      submit_assignment(ctx, client, %{current | form_template: assignment.form_template}, answers, unit)
     end
   end
 
-  defp submit_assignment(ctx, client, assignment, answers) do
+  defp submit_assignment(ctx, client, assignment, answers, unit) do
     template = assignment.form_template
     submitted_at = DateTime.utc_now(:second)
 
     attrs = %{
-      "question_snapshot" => template.sections,
+      "question_snapshot" => FormAnswers.put_weight_unit(template.sections, unit),
       "answers" => answers,
       "submitted_at" => submitted_at
     }

@@ -5,6 +5,7 @@ defmodule Easy.Forms.Assignments do
   alias Easy.CursorPage
   alias Easy.Forms.{FormAssignment, FormTemplate, Photos, Templates}
   alias Easy.Repo
+  alias Easy.WeightEntries
 
   import Ecto.Query
 
@@ -160,14 +161,13 @@ defmodule Easy.Forms.Assignments do
   end
 
   @spec get_client_form_assignment(Ctx.t(), String.t()) ::
-          {:ok, FormAssignment.t()} | {:error, :not_found}
+          {:ok, %{data: FormAssignment.t(), weight_unit: :kg | :lbs}} | {:error, :not_found | Ecto.Changeset.t()}
   def get_client_form_assignment(%Ctx{} = ctx, assignment_id) do
-    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
-      client_assignment_query(ctx, client_id)
-      |> Repo.get(assignment_id)
-      |> then(&Photos.attach_assignments(ctx, &1))
-      |> FormAssignment.put_latest_submission()
-      |> ok_or_not_found()
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
+         {:ok, assignment} <- ctx |> client_assignment_query(client_id) |> Repo.get(assignment_id) |> ok_or_not_found(),
+         {:ok, unit} <- WeightEntries.get_client_form_weight_unit(ctx) do
+      data = assignment |> then(&Photos.attach_assignments(ctx, &1)) |> FormAssignment.put_latest_submission()
+      {:ok, %{data: data, weight_unit: unit}}
     end
   end
 

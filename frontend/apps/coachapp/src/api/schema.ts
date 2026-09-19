@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash dd62ba22346782ab2fa3c2fbea0fa5d8efbc75d2fec007c7210aeae6daf95185 */
+/* typed-routes:hash 2cb9e7915cb68011b2e8b4cef145a66bf2e78c12dc850e592c7c8f505ce2a3e9 */
 export type Attachment = {
   id: string;
   content_type:
@@ -506,6 +506,7 @@ export type FormSnapshotQuestion = {
     | 'weight'
     | 'photo'
     | 'service_type';
+  unit?: 'kg' | 'lbs';
   required?: boolean;
   options?: Array<string>;
 };

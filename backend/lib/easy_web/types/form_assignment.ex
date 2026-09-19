@@ -26,6 +26,7 @@ defmodule EasyWeb.Types.FormSnapshotQuestion do
             | :weight
             | :photo
             | :service_type,
+          optional(:unit) => :kg | :lbs,
           optional(:required) => boolean(),
           optional(:options) => [String.t()]
         }
@@ -202,6 +203,8 @@ defmodule EasyWeb.Types.FormAssignment do
         }
 
   @type submit :: %{
+          optional(:expected_revision) => pos_integer(),
+          optional(:weight_unit) => :kg | :lbs,
           required(:answers) => %{String.t() => EasyWeb.Types.FormAssignmentAnswer.t()}
         }
 end
@@ -213,5 +216,14 @@ defmodule EasyWeb.Types.ClientFormAssignmentIndex do
           required(:data) => [EasyWeb.Types.FormAssignment.t()],
           required(:count) => non_neg_integer(),
           required(:next_cursor) => String.t() | nil
+        }
+end
+
+defmodule EasyWeb.Types.ClientFormAssignmentDetail do
+  use EasyWeb.Type
+
+  @type t :: %{
+          required(:data) => EasyWeb.Types.FormAssignment.t(),
+          required(:weight_unit) => :kg | :lbs
         }
 end

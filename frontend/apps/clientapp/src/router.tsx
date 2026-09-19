@@ -4,6 +4,8 @@ import {AppShell, Home} from './app-shell';
 import {Invitation} from './auth/invitation';
 import {Login} from './auth/login';
 import {Verify} from './auth/verify';
+import {FormDetail} from './forms/form';
+import {Forms} from './forms/forms';
 import {routes} from './routes';
 
 export const router = createBrowserRouter([
@@ -15,6 +17,8 @@ export const router = createBrowserRouter([
     children: [
       {path: routes.home, element: <Home />},
       {path: routes.account, element: <Account />},
+      {path: routes.forms, element: <Forms />},
+      {path: routes.form, element: <FormDetail />},
     ],
   },
   {

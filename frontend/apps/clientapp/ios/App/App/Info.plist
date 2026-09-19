@@ -58,6 +58,12 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Take progress photos to share with your coach.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose progress photos to share with your coach.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Save a progress photo when you choose to keep it.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

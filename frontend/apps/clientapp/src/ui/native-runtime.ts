@@ -3,6 +3,7 @@ import {Keyboard} from '@capacitor/keyboard';
 import {Network} from '@capacitor/network';
 import {focusManager, onlineManager} from '@tanstack/react-query';
 import {isNative} from '../api/storage';
+import {restoreNativePhoto} from './photo-picker';
 
 export function deepLinkPath(value: string): string | null {
   try {
@@ -10,7 +11,10 @@ export function deepLinkPath(value: string): string | null {
     if (url.protocol !== 'easy:' || url.hostname !== 'app') {
       return null;
     }
-    if (!['/', '/account', '/verify'].includes(url.pathname) && !/^\/invite\/[^/]+$/.test(url.pathname)) {
+    if (
+      !['/', '/account', '/verify', '/forms'].includes(url.pathname) &&
+      !/^\/(invite|forms)\/[^/]+$/.test(url.pathname)
+    ) {
       return null;
     }
     return url.pathname + url.search;
@@ -29,16 +33,22 @@ export async function startNativeRuntime({
   if (!isNative) {
     return;
   }
-  const open = (value: string) => {
+  await App.addListener('appRestoredResult', async (event) => {
+    const path = await restoreNativePhoto(event).catch(() => '/forms?photoRecovery=failed');
+    if (path) {
+      await navigate(path);
+    }
+  });
+  const open = async (value: string) => {
     const path = deepLinkPath(value);
     if (path) {
-      navigate(path);
+      await navigate(path);
     }
   };
   await App.addListener('appUrlOpen', ({url}) => open(url));
   const launch = await App.getLaunchUrl();
   if (launch) {
-    open(launch.url);
+    await open(launch.url);
   }
   await App.addListener('appStateChange', ({isActive}) => focusManager.setFocused(isActive));
   await App.addListener('backButton', ({canGoBack}) => {

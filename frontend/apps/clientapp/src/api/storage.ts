@@ -1,7 +1,12 @@
-import {Capacitor} from '@capacitor/core';
+import {Capacitor, registerPlugin} from '@capacitor/core';
 import {Preferences} from '@capacitor/preferences';
+import {clearAccountPhotos} from './photo-store';
 
 export const isNative = Capacitor.isNativePlatform();
+const nativeWrites =
+  Capacitor.getPlatform() === 'android'
+    ? registerPlugin<Pick<typeof Preferences, 'set' | 'remove'>>('DurableStorage')
+    : Preferences;
 let writes: Promise<void> = Promise.resolve();
 
 function enqueue(write: () => Promise<void>) {
@@ -17,7 +22,7 @@ export async function readStored(key: string) {
 
 export async function writeStored(key: string, value: string) {
   if (isNative) {
-    await enqueue(() => Preferences.set({key, value}));
+    await enqueue(() => nativeWrites.set({key, value}));
   } else {
     localStorage.setItem(key, value);
   }
@@ -25,23 +30,26 @@ export async function writeStored(key: string, value: string) {
 
 export async function removeStored(key: string) {
   if (isNative) {
-    await enqueue(() => Preferences.remove({key}));
+    await enqueue(() => nativeWrites.remove({key}));
   } else {
     localStorage.removeItem(key);
   }
 }
 
 export async function clearPrivateStorage(owner: string) {
-  await enqueue(async () => {
-    const keys = isNative ? (await Preferences.keys()).keys : Object.keys(localStorage);
-    for (const key of keys) {
-      if (key.startsWith(`clientapp.private.${owner}.`)) {
-        if (isNative) {
-          await Preferences.remove({key});
-        } else {
-          localStorage.removeItem(key);
+  await Promise.all([
+    clearAccountPhotos(owner),
+    enqueue(async () => {
+      const keys = isNative ? (await Preferences.keys()).keys : Object.keys(localStorage);
+      for (const key of keys) {
+        if (key.startsWith(`clientapp.private.${owner}.`)) {
+          if (isNative) {
+            await nativeWrites.remove({key});
+          } else {
+            localStorage.removeItem(key);
+          }
         }
       }
-    }
-  });
+    }),
+  ]);
 }

@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 2f5ba858a82996e00b69b8cc5544a289cf15d748a0dcbbf9087c457d40f1213a */
+/* typed-routes:hash 78c02e1bae0c322973e306696e98d0f50195631543447e5e7594b6c410f13937 */
 export type Attachment = {
   id: string;
   content_type:
@@ -35,6 +35,7 @@ export type ChatMessageClientCreate = {body?: string | null; attachment_ids?: Ar
 export type ChatMessageEmbed = {type: 'form_submission'; id: string; snapshot: FormSubmissionEmbedSnapshot};
 export type ChatMessageListQuery = {before?: string; limit?: number};
 export type ChatMessagePage = {data: Array<ChatMessage>; has_more: boolean};
+export type ClientFormAssignmentDetail = {data: FormAssignment; weight_unit: 'kg' | 'lbs'};
 export type ClientFormAssignmentIndex = {data: Array<FormAssignment>; count: number; next_cursor: string | null};
 export type ClientProfile = {
   id: string;
@@ -204,7 +205,11 @@ export type FormAssignmentListQuery = {
   purpose?: 'intake' | 'check_in';
 };
 export type FormAssignmentSubmission = FormSubmission;
-export type FormAssignmentSubmit = {answers: {[key: string]: FormAssignmentAnswer}};
+export type FormAssignmentSubmit = {
+  expected_revision?: number;
+  weight_unit?: 'kg' | 'lbs';
+  answers: {[key: string]: FormAssignmentAnswer};
+};
 export type FormSnapshotQuestion = {
   id: string;
   label: string;
@@ -219,6 +224,7 @@ export type FormSnapshotQuestion = {
     | 'weight'
     | 'photo'
     | 'service_type';
+  unit?: 'kg' | 'lbs';
   required?: boolean;
   options?: Array<string>;
 };
@@ -741,7 +747,7 @@ export type WeightEntryListQuery = {since?: string};
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 17f849f2cf16cb4ad7cc8745cf9af298fbf0f1c4c6952b96ee7e6e25be8b70f7 */
+  /* typed-routes:hash 01a43fade1f4e6837fd18c46636b5ca79ab839f3045299d006e338c0b8be24ea */
   '/api/health': {
     get: {
       parameters: {
@@ -842,7 +848,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: FormAssignment}}};
+        200: {content: {'application/json': ClientFormAssignmentDetail}};
       };
     };
   };

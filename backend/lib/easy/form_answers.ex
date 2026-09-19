@@ -50,6 +50,21 @@ defmodule Easy.FormAnswers do
         do: value
   end
 
+  @spec put_weight_unit([map()], :kg | :lbs) :: [map()]
+  def put_weight_unit(sections, unit) do
+    Enum.map(sections, fn section ->
+      Map.update!(section, "questions", &Enum.map(&1, fn question -> put_question_unit(question, unit) end))
+    end)
+  end
+
+  defp put_question_unit(%{"type" => "weight"} = question, unit), do: Map.put(question, "unit", to_string(unit))
+  defp put_question_unit(question, _unit), do: question
+
+  @spec weight_unit([map()]) :: String.t() | nil
+  def weight_unit(sections) do
+    sections |> questions_of_type("weight") |> Enum.find_value(&Map.get(&1, "unit"))
+  end
+
   @spec photo_attachment_ids([map()], map()) :: [Ecto.UUID.t()]
   def photo_attachment_ids(sections, answers) do
     for %{"id" => id} <- questions_of_type(sections, "photo"),

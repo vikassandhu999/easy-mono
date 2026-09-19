@@ -7,6 +7,7 @@ import {restoreSession} from './api/session';
 import {router} from './router';
 import {ConnectionStatus} from './ui/connection-status';
 import {startNativeRuntime} from './ui/native-runtime';
+import {SessionBoundary} from './ui/session-boundary';
 import './index.css';
 
 async function start() {
@@ -15,13 +16,16 @@ async function start() {
     throw new Error('Application root is missing.');
   }
   await Promise.all([restoreSession(), restoreChallenge()]);
+  // Resolve the native launch destination before route guards can redirect the initial screen.
+  await startNativeRuntime({navigate: (path) => router.navigate(path), back: () => router.navigate(-1)});
   createRoot(root).render(
     <QueryClientProvider client={queryClient}>
-      <ConnectionStatus />
-      <RouterProvider router={router} />
+      <SessionBoundary>
+        <ConnectionStatus />
+        <RouterProvider router={router} />
+      </SessionBoundary>
     </QueryClientProvider>,
   );
-  await startNativeRuntime({navigate: (path) => router.navigate(path), back: () => router.navigate(-1)});
 }
 
 start().catch(() => {

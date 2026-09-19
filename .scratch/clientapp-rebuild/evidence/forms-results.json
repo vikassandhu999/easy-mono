@@ -1,0 +1,17 @@
+[
+  {
+    "width": 375,
+    "passed": true,
+    "objectStorage": "external boundary simulated; Phoenix and PostgreSQL real"
+  },
+  {
+    "width": 768,
+    "passed": true,
+    "objectStorage": "external boundary simulated; Phoenix and PostgreSQL real"
+  },
+  {
+    "width": 1280,
+    "passed": true,
+    "objectStorage": "external boundary simulated; Phoenix and PostgreSQL real"
+  }
+]

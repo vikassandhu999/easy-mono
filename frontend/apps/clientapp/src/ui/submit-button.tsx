@@ -1,12 +1,21 @@
 import {LoaderCircle} from 'lucide-react';
 import {Button} from './button';
 
-export function SubmitButton({pending, children}: {pending: boolean; children: string}) {
+export function SubmitButton({
+  pending,
+  children,
+  isDisabled = false,
+}: {
+  pending: boolean;
+  children: string;
+  isDisabled?: boolean;
+}) {
   return (
     <Button
       type="submit"
       className="relative w-full"
       isPending={pending}
+      isDisabled={isDisabled}
       aria-label={children}
     >
       <span className={pending ? 'invisible' : undefined}>{children}</span>

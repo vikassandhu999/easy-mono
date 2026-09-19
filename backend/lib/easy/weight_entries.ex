@@ -75,6 +75,20 @@ defmodule Easy.WeightEntries do
     end
   end
 
+  @spec get_client_form_weight_unit(Ctx.t(), map()) :: {:ok, :kg | :lbs} | {:error, :not_found | Ecto.Changeset.t()}
+  def get_client_form_weight_unit(%Ctx{} = ctx, attrs \\ %{}) do
+    types = %{weight_unit: WeightEntry.__schema__(:type, :unit)}
+    changeset = Ecto.Changeset.cast({%{}, types}, attrs, [:weight_unit])
+
+    with {:ok, input} <- Ecto.Changeset.apply_action(changeset, :insert),
+         {:ok, client} <- ClientAccount.get_client_account(ctx) do
+      case Map.get(input, :weight_unit) do
+        nil -> weight_unit(ctx, client)
+        unit -> {:ok, unit}
+      end
+    end
+  end
+
   @spec record_form_submission(Ctx.t(), Client.t(), FormSubmission.t()) ::
           {:ok, [WeightEntry.t()]} | {:error, :not_found | Ecto.Changeset.t()}
   def record_form_submission(
@@ -93,9 +107,16 @@ defmodule Easy.WeightEntries do
         {:ok, []}
 
       values ->
-        with {:ok, unit} <- weight_unit(ctx, client) do
+        with {:ok, unit} <- submission_weight_unit(ctx, client, submission) do
           insert_submission_weights(ctx.business_id, client.id, submission, unit, values)
         end
+    end
+  end
+
+  defp submission_weight_unit(ctx, client, submission) do
+    case FormAnswers.weight_unit(submission.question_snapshot) do
+      nil -> weight_unit(ctx, client)
+      unit -> {:ok, unit}
     end
   end
 

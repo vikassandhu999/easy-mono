@@ -1,6 +1,7 @@
 defmodule EasyWeb.Clients.FormAssignmentControllerTest do
   use Easy.ConnCase
 
+  alias Easy.Fitness.WeightEntry
   alias Easy.Forms.FormAssignment
   alias Easy.Forms.FormSubmission
   alias Easy.Repo
@@ -218,6 +219,73 @@ defmodule EasyWeb.Clients.FormAssignmentControllerTest do
   end
 
   describe "POST /v1/client/form-assignments/:id/submit" do
+    test "rejects an outdated supplied template revision before saving answers" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, user: insert(:user))
+      template = insert(:form_template, business: coach.business, revision: 2)
+      assignment = insert(:form_assignment, business: coach.business, client: client, form_template: template)
+      conn = build_conn() |> put_req_header("content-type", "application/json") |> authenticate_client(client)
+      path = "/v1/client/form-assignments/#{assignment.id}/submit"
+
+      assert %{"error_code" => "stale_revision", "error_detail" => %{"current_revision" => 2}} =
+               conn |> post(path, %{answers: %{meal_prep_ability: "high"}, expected_revision: 1}) |> json_response(409)
+
+      refute Repo.get_by(FormSubmission, form_assignment_id: assignment.id)
+      assert Repo.reload(assignment).status == :assigned
+
+      assert %{"data" => %{"question_snapshot" => snapshot}} =
+               conn
+               |> recycle()
+               |> post(path, %{answers: %{meal_prep_ability: "high"}, expected_revision: 2})
+               |> json_response(201)
+
+      assert snapshot == template.sections
+    end
+
+    test "returns the preferred unit and preserves the unit observed when drafting" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, user: insert(:user))
+      insert(:weight_entry, business: coach.business, client: client, unit: :lbs, date: Date.utc_today())
+
+      template =
+        insert(:form_template,
+          business: coach.business,
+          sections: [
+            %{"title" => "Progress", "questions" => [%{"id" => "weight", "label" => "Current weight", "type" => "weight"}]}
+          ]
+        )
+
+      assignment = insert(:form_assignment, business: coach.business, client: client, form_template: template)
+      conn = build_conn() |> put_req_header("content-type", "application/json") |> authenticate_client(client)
+      path = "/v1/client/form-assignments/#{assignment.id}"
+
+      assert %{"weight_unit" => "lbs"} = conn |> get(path) |> json_response(200)
+
+      assert %{"data" => %{"id" => submission_id, "question_snapshot" => [%{"questions" => [question]}]}} =
+               conn |> recycle() |> post(path <> "/submit", %{answers: %{weight: 70.5}, weight_unit: "kg"}) |> json_response(201)
+
+      assert question["unit"] == "kg"
+      assert %{unit: :kg, value: value} = Repo.get_by!(WeightEntry, form_submission_id: submission_id)
+      assert Decimal.equal?(value, Decimal.new("70.5"))
+    end
+
+    test "rejects an unsupported weight unit without completing the assignment" do
+      client = insert(:client, user: insert(:user))
+      template = insert(:form_template, business: client.business)
+      assignment = insert(:form_assignment, business: client.business, client: client, form_template: template)
+      conn = build_conn() |> put_req_header("content-type", "application/json") |> authenticate_client(client)
+
+      assert json_response(
+               post(conn, "/v1/client/form-assignments/#{assignment.id}/submit", %{
+                 answers: %{meal_prep_ability: "high"},
+                 weight_unit: "stone"
+               }),
+               422
+             )
+
+      assert Repo.reload(assignment).status == :assigned
+    end
+
     test "casts and submits a closed Service type answer through the router" do
       coach = insert(:coach)
       client = insert(:client, business: coach.business, creator: coach, user: insert(:user))

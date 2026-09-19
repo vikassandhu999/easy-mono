@@ -14,3 +14,7 @@ export const formKeys = {
   details: () => ['forms', getSession()?.id, 'details'] as const,
   detail: (id: string) => [...formKeys.details(), id] as const,
 };
+
+export const attachmentKeys = {
+  urls: (ids: string[]) => ['attachments', getSession()?.id, 'urls', ids] as const,
+};

@@ -37,5 +37,5 @@ export async function inviteClient({firstName = 'Alex'} = {}) {
   if (!token) {
     throw new Error('Invitation URL did not include a token');
   }
-  return {email, token, clientId: invitation.data.id};
+  return {email, token, clientId: invitation.data.id, coachToken: coach.access_token};
 }

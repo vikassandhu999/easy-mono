@@ -8,6 +8,10 @@
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--foreground);
+  --color-accent: var(--muted);
+  --color-accent-foreground: var(--foreground);
   --color-input: var(--border);
   --color-ring: var(--primary);
   --color-destructive: var(--destructive);
@@ -51,7 +55,7 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  max-width: 64rem;
+  max-width: 30rem;
   margin: 0 auto;
   padding: 0.5rem 1.25rem;
   min-height: 4rem;

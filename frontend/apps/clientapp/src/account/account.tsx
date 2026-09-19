@@ -2,10 +2,11 @@ import {useEffect, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {type Profile, type ProfileUpdate, useProfile, useUpdateProfile} from '../api/auth';
 import {errorMessage} from '../api/client';
-import {readDraft, removeDraft, writeDraft} from '../api/drafts';
+import {readDraft, removeDraft} from '../api/drafts';
 import {clearSession, getSession} from '../api/session';
 import {routes} from '../routes';
 import {Button} from '../ui/button';
+import {DraftStatus, useDraftWriter} from '../ui/draft-status';
 import {FormError} from '../ui/form-error';
 import {FormField} from '../ui/form-field';
 import {Page} from '../ui/page';
@@ -50,6 +51,7 @@ function ProfileForm({profile}: {profile: Profile}) {
   const [draftReady, setDraftReady] = useState(false);
   const [draftError, setDraftError] = useState('');
   const [owner] = useState(() => getSession()?.id);
+  const {saveDraft, state: draftState} = useDraftWriter(owner, 'profile');
   const form = useForm<ProfileUpdate>({
     defaultValues: {
       first_name: profile.first_name ?? '',
@@ -98,14 +100,10 @@ function ProfileForm({profile}: {profile: Profile}) {
       return;
     }
     const subscription = form.watch((values) => {
-      writeDraft(owner, 'profile', values).catch(() =>
-        setDraftError(
-          'Your changes could not be saved on this device. Keep this screen open until you save your details.',
-        ),
-      );
+      saveDraft(values);
     });
     return () => subscription.unsubscribe();
-  }, [draftReady, form, owner]);
+  }, [draftReady, form, owner, saveDraft]);
   const submit = form.handleSubmit(async (values) => {
     setNotice('');
     try {
@@ -170,6 +168,7 @@ function ProfileForm({profile}: {profile: Profile}) {
         />
         <FormError message={form.formState.errors.root?.message} />
         {draftError && <p role="alert">{draftError}</p>}
+        {form.formState.isDirty && <DraftStatus state={draftState} />}
         <p
           role="status"
           className="text-sm text-muted-foreground"

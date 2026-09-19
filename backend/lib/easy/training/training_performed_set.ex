@@ -71,6 +71,28 @@ defmodule Easy.Training.TrainingPerformedSet do
     end
   end
 
+  @spec creation_fingerprint(map()) :: {:ok, binary()} | {:error, Ecto.Changeset.t()}
+  def creation_fingerprint(attrs) do
+    fields = [:exercise_id | @create_fields]
+
+    with {:ok, set} <-
+           %__MODULE__{}
+           |> cast(attrs, fields)
+           |> update_change(:exercise_name, &Easy.Utils.trim/1)
+           |> apply_action(:validate) do
+      values = set |> Map.from_struct() |> Map.take(fields)
+      values = if set.exercise_id, do: Map.delete(values, :exercise_name), else: values
+
+      canonical =
+        Map.new(values, fn
+          {key, %Decimal{} = value} -> {key, Decimal.normalize(value)}
+          entry -> entry
+        end)
+
+      {:ok, :crypto.hash(:sha256, :erlang.term_to_binary(canonical, [:deterministic]))}
+    end
+  end
+
   @spec insert_changeset(String.t(), String.t(), non_neg_integer(), TrainingExercise.t() | nil, map()) ::
           Ecto.Changeset.t()
   def insert_changeset(business_id, session_id, position, exercise, attrs) do

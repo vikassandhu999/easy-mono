@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 8dac0d29f05af0e424bc9265539e09905cd9de13b52befa3399b6463f95e8ce4 */
+/* typed-routes:hash 5737e8da1895e15581b494267919eae60e16fe605b3c7c31098259edc9808b1f */
 export type Attachment = {
   id: string;
   content_type:
@@ -498,6 +498,7 @@ export type PerformedSet = {
   updated_at: string;
 };
 export type PerformedSetCreate = {
+  request_id?: string;
   exercise_name?: string | null;
   exercise_id?: string | null;
   snapshot_exercise_ref?: string | null;

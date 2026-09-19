@@ -25,6 +25,7 @@ defmodule EasyWeb.Types.Training.PerformedSet do
         }
 
   @type create :: %{
+          optional(:request_id) => Ecto.UUID.t(),
           optional(:exercise_name) => String.t() | nil,
           optional(:exercise_id) => String.t() | nil,
           optional(:snapshot_exercise_ref) => String.t() | nil,

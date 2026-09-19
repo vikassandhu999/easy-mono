@@ -72,6 +72,40 @@ defmodule Easy.Training.PerformedSetConcurrencyTest do
     end)
   end
 
+  test "concurrent retries of one request create one set and reserve one append position", ctx do
+    parent = self()
+    attrs = %{request_id: Ecto.UUID.generate(), exercise_id: ctx.exercise.id, reps: "10"}
+
+    tasks =
+      for _ <- 1..@append_count do
+        Task.async(fn ->
+          Sandbox.checkout(Repo, sandbox: false)
+          send(parent, {:retry_ready, self()})
+
+          receive do
+            :go -> PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, attrs)
+          end
+        end)
+      end
+
+    for _ <- 1..@append_count do
+      receive do
+        {:retry_ready, pid} -> send(pid, :go)
+      end
+    end
+
+    sets =
+      Enum.map(tasks, fn task ->
+        assert {:ok, set} = Task.await(task, 5_000)
+        set
+      end)
+
+    assert length(Enum.uniq_by(sets, & &1.id)) == 1
+    assert Enum.all?(sets, &(&1.position == 0))
+    {:ok, next} = PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{attrs | request_id: Ecto.UUID.generate()})
+    assert next.position == 1
+  end
+
   test "a delete waiting on session completion cannot change terminal history", ctx do
     assert_terminal_transition_wins(ctx, fn set ->
       PerformedSets.delete_client_performed_set(ctx.ctx, set.id)

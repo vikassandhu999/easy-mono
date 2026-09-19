@@ -146,6 +146,7 @@ defmodule Easy.Nutrition.PlanReader do
           ctx
           |> client_plan_query(client_id)
           |> Plan.for_archived(archived)
+          |> Plan.for_search(opts |> Keyword.get(:search, "") |> String.trim())
 
         plans =
           query
@@ -157,6 +158,45 @@ defmodule Easy.Nutrition.PlanReader do
         resolve_page(query, plans, ctx, :plans)
       end
     end)
+  end
+
+  @spec list_client_plan_page(Ctx.t(), keyword()) ::
+          {:ok, CursorPage.t(Plan.t())} | {:error, read_error() | :invalid_cursor | :cursor_incompatible}
+  def list_client_plan_page(%Ctx{} = ctx, opts \\ []) do
+    case Keyword.get(opts, :cursor) do
+      nil ->
+        with {:ok, %{plans: plans, count: count}} <- list_client_plans(ctx, opts) do
+          {:ok, %{data: plans, count: count, next_cursor: nil}}
+        end
+
+      _cursor ->
+        client_cursor_page(ctx, opts)
+    end
+  end
+
+  defp client_cursor_page(ctx, opts) do
+    Repo.snapshot(fn ->
+      with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+        query =
+          ctx
+          |> client_plan_query(client_id)
+          |> Plan.for_archived(Keyword.get(opts, :archived) || false)
+          |> Plan.for_search(opts |> Keyword.get(:search, "") |> String.trim())
+
+        resolve_client_cursor(query, ctx, opts)
+      end
+    end)
+  end
+
+  defp resolve_client_cursor(query, ctx, opts) do
+    limit = CursorPage.limit(opts)
+
+    with :ok <- CursorPage.validate_options(opts),
+         {:ok, page_query} <- CursorPage.query(query, Keyword.fetch!(opts, :cursor), limit) do
+      rows = page_query |> Plan.include_client(ctx.business_id) |> Repo.all()
+      page = CursorPage.finish(rows, limit, Repo.aggregate(query, :count, :id))
+      resolve_cursor_page(page, ctx)
+    end
   end
 
   @spec get_client_plan(Ctx.t(), String.t()) :: {:ok, Plan.t()} | {:error, read_error()}

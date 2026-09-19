@@ -2,27 +2,24 @@ defmodule EasyWeb.Clients.NutritionPlanController do
   use EasyWeb, :typed_controller
 
   alias Easy.Nutrition.PlanReader
-  alias EasyWeb.Types.NutritionPlan
+  alias EasyWeb.Types.{NutritionPlan, NutritionPlanIndex}
 
   typed(:index,
     query: NutritionPlan.client_list_query(),
-    ok: {200, page(NutritionPlan.t())}
+    ok: {200, NutritionPlanIndex.t()}
   )
 
   typed(:show, ok: {200, data(NutritionPlan.t())})
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
-    params = conn.query_params
-    archived = Map.get(params, "archived")
+    opts =
+      [:archived, :offset, :limit, :cursor, :search]
+      |> Enum.map(&{&1, conn.query_params[Atom.to_string(&1)]})
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
 
-    with {:ok, %{plans: plans, count: count}} <-
-           PlanReader.list_client_plans(conn.assigns.ctx,
-             archived: archived,
-             offset: Map.get(params, "offset", 0),
-             limit: Map.get(params, "limit", 20)
-           ) do
-      ok(conn, %{data: plans, count: count})
+    with {:ok, page} <- PlanReader.list_client_plan_page(conn.assigns.ctx, opts) do
+      ok(conn, page)
     end
   end
 

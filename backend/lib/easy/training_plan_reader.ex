@@ -214,7 +214,7 @@ defmodule Easy.Training.PlanReader do
   defp cursor_page(base, business_id, cursor, opts) do
     limit = CursorPage.limit(opts)
 
-    with :ok <- compatible_cursor_options(opts),
+    with :ok <- CursorPage.validate_options(opts),
          {:ok, query} <- CursorPage.query(base, cursor, limit) do
       plans =
         query
@@ -225,10 +225,6 @@ defmodule Easy.Training.PlanReader do
 
       {:ok, CursorPage.finish(plans, limit, Repo.aggregate(base, :count, :id))}
     end
-  end
-
-  defp compatible_cursor_options(opts) do
-    if Keyword.get(opts, :offset, 0) == 0, do: :ok, else: {:error, :cursor_incompatible}
   end
 
   defp plan_page(query, business_id, opts) do

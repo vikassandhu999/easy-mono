@@ -130,6 +130,7 @@ defmodule EasyWeb.Types.Nutrition.Food do
         }
 
   @type client_list_query :: %{
+          optional(:cursor) => String.t(),
           optional(:offset) => integer(),
           optional(:limit) => integer(),
           optional(:search) => String.t()

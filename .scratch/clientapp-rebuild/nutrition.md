@@ -1,6 +1,6 @@
 # Nutrition
 
-Status: screen brief and initial contract audit. No nutrition screen is delivered.
+Status: cursor prerequisites verified. No nutrition screen is delivered.
 
 ## Screen brief
 
@@ -25,3 +25,9 @@ Graph tools are unavailable. This is bounded source evidence, without a complete
 ## Verification to complete
 
 Exercise planned and unplanned days, alternatives, portions, substitutions/extras, skipping, save/read-back, server totals, archived source changes, date eligibility, timezone boundaries and concurrent revisions against Phoenix. Verify library and plan cursor search/counts/isolation. Inject lost save responses, storage failures and connectivity changes. Confirm account isolation and logout cleanup. Browser checks use 375, 768 and 1280 pixels with the same phone layout; native checks cover keyboard, background, process restart and saved reading on both platforms. Device and real-client observations remain separate.
+
+## Cursor prerequisite evidence
+
+Client food, recipe and assigned-plan indexes now support opaque cursor pages and server counts while preserving offset callers. Plan search and archive filtering remain server-owned. Shared cursor validation rejects a nonzero offset combined with a cursor. Five new router tests cover tenant visibility, system foods, same-business client isolation, search/counts, deleted boundaries, later inserts, archive filtering, invalid cursors, mixed pagination and the page limit.
+
+All 28 focused controller tests pass. Generated contracts, strict client build, repository shape checks and API-change review pass. Full backend precommit passes 1,822 tests. These checks establish the contract prerequisite, not the meal screens or native nutrition behavior.

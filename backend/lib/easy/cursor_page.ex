@@ -3,6 +3,11 @@ defmodule Easy.CursorPage do
 
   @type t(item) :: %{data: [item], count: non_neg_integer(), next_cursor: String.t() | nil}
 
+  @spec validate_options(keyword()) :: :ok | {:error, :cursor_incompatible}
+  def validate_options(opts) do
+    if Keyword.get(opts, :offset, 0) == 0, do: :ok, else: {:error, :cursor_incompatible}
+  end
+
   @spec query(Ecto.Queryable.t(), String.t(), pos_integer()) ::
           {:ok, Ecto.Query.t()} | {:error, :invalid_cursor}
   def query(query, cursor, limit) do

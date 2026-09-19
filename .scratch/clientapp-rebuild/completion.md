@@ -11,7 +11,7 @@ The full objective remains active. A scaffold, passing build, or browser-only fl
 | Join, sign in, intake | Invitation, sign-in and intake form implemented | Browser and native recovery pass, including offline snapshots, native gallery uploads and Android capture; physical iPhone capture remains |
 | Today | Active workout, pending requests and server-local training guidance implemented | Browser/native entry points pass; nutrition guidance joins its logging slice |
 | Training execution | [Mobile plans, planned/freestyle recording and history](training.md) implemented | All nine modes, cursor filters/counts, duplicate-safe retries, durable/offline drafts, other-device closure and saved results pass; native recording/restart passes on both platforms |
-| Nutrition | Pending | Alternatives, portions, server totals, revision conflict/retry, save/reload |
+| Nutrition | Cursor prerequisites verified; screens pending | Alternatives, portions, server totals, revision conflict/retry, save/reload |
 | Forms/check-ins/photos | Mobile list, all question types, draft/revision recovery, offline snapshots and saved reader implemented | Browser and native recovery pass; real gallery uploads, iOS limited access and Android gallery/capture process death pass; physical iPhone capture remains |
 | Messaging/attachments | Pending | History, read/send, loss/retry/deduplication, media |
 | History/progress | Training history and completed form readers implemented | Training cursor paging/filtering/counts and reader returns pass; nutrition history and weight/progress remain |

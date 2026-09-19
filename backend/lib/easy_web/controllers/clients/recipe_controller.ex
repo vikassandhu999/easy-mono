@@ -2,9 +2,9 @@ defmodule EasyWeb.Clients.RecipeController do
   use EasyWeb, :typed_controller
 
   alias Easy.Nutrition.Library
-  alias EasyWeb.Types.Nutrition.Recipe
+  alias EasyWeb.Types.Nutrition.{Recipe, RecipeIndex}
 
-  typed(:index, query: Recipe.list_query(), ok: {200, page(Recipe.t())})
+  typed(:index, query: Recipe.list_query(), ok: {200, RecipeIndex.t()})
   typed(:show, ok: {200, data(Recipe.t())})
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -17,8 +17,14 @@ defmodule EasyWeb.Clients.RecipeController do
       limit: Map.get(params, "limit", 20)
     ]
 
-    with {:ok, %{recipes: recipes, count: count}} <- Library.list_recipes(conn.assigns.ctx, opts) do
-      ok(conn, %{data: recipes, count: count})
+    if Map.has_key?(params, "cursor") do
+      with {:ok, page} <- Library.list_recipe_page(conn.assigns.ctx, Keyword.put(opts, :cursor, params["cursor"])) do
+        ok(conn, page)
+      end
+    else
+      with {:ok, %{recipes: recipes, count: count}} <- Library.list_recipes(conn.assigns.ctx, opts) do
+        ok(conn, %{data: recipes, count: count, next_cursor: nil})
+      end
     end
   end
 

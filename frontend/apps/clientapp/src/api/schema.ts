@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 5737e8da1895e15581b494267919eae60e16fe605b3c7c31098259edc9808b1f */
+/* typed-routes:hash fca653106af71773655d8f2fb49ea0b9aef536a63de531c9ff542dabf0abbc95 */
 export type Attachment = {
   id: string;
   content_type:
@@ -164,7 +164,8 @@ export type Food = {
   inserted_at: string;
   updated_at: string;
 };
-export type FoodClientListQuery = {offset?: number; limit?: number; search?: string};
+export type FoodClientListQuery = {cursor?: string; offset?: number; limit?: number; search?: string};
+export type FoodIndex = {data: Array<Food>; count: number; next_cursor: string | null};
 export type FoodMedia = {
   id: string;
   kind: 'image' | 'video';
@@ -464,7 +465,14 @@ export type NutritionPlan = {
   updated_at: string;
 };
 export type NutritionPlanClient = {id: string; first_name: string | null; last_name: string | null};
-export type NutritionPlanClientListQuery = {offset?: number; limit?: number; archived?: boolean};
+export type NutritionPlanClientListQuery = {
+  cursor?: string;
+  search?: string;
+  offset?: number;
+  limit?: number;
+  archived?: boolean;
+};
+export type NutritionPlanIndex = {data: Array<NutritionPlan>; count: number; next_cursor: string | null};
 export type NutritionPortion =
   | {kind: 'gram'; grams: number}
   | {kind: 'serving'; amount: number; unit: string; label: string | null};
@@ -541,6 +549,7 @@ export type Recipe = {
   inserted_at: string;
   updated_at: string;
 };
+export type RecipeIndex = {data: Array<Recipe>; count: number; next_cursor: string | null};
 export type RecipeIngredient = {food_id: string; food: Food | null; portion: NutritionPortion; position: number};
 export type RecipeListQuery = {cursor?: string; offset?: number; limit?: number; search?: string};
 export type Session = {
@@ -760,7 +769,7 @@ export type WeightEntryListQuery = {since?: string};
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 6029eece28bd58b10e63f88d231ad48eb9a11c0e700b58e3256bc823143f535c */
+  /* typed-routes:hash 2c5f6d265a824a56647eab2eddfb0ee01a8586253d8e36c4367b9124abe54bb1 */
   '/api/health': {
     get: {
       parameters: {
@@ -940,7 +949,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<Food>; count: number}}};
+        200: {content: {'application/json': FoodIndex}};
       };
     };
   };
@@ -966,7 +975,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<NutritionPlan>; count: number}}};
+        200: {content: {'application/json': NutritionPlanIndex}};
       };
     };
   };
@@ -992,7 +1001,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<Recipe>; count: number}}};
+        200: {content: {'application/json': RecipeIndex}};
       };
     };
   };

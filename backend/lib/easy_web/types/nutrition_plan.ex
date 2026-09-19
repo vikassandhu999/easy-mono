@@ -188,6 +188,8 @@ defmodule EasyWeb.Types.NutritionPlan do
         }
 
   @type client_list_query :: %{
+          optional(:cursor) => String.t(),
+          optional(:search) => String.t(),
           optional(:offset) => integer(),
           optional(:limit) => integer(),
           optional(:archived) => boolean()

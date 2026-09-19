@@ -52,7 +52,8 @@ defmodule Easy.Nutrition.Library do
      }}
   end
 
-  @spec list_food_page(Ctx.t(), keyword()) :: {:ok, CursorPage.t(Food.t())} | {:error, :invalid_cursor | :conflict}
+  @spec list_food_page(Ctx.t(), keyword()) ::
+          {:ok, CursorPage.t(Food.t())} | {:error, :invalid_cursor | :cursor_incompatible | :conflict}
   def list_food_page(%Ctx{} = ctx, opts) do
     base =
       Food
@@ -63,7 +64,8 @@ defmodule Easy.Nutrition.Library do
     cursor_page(base, opts, &Food.include_media/1)
   end
 
-  @spec list_recipe_page(Ctx.t(), keyword()) :: {:ok, CursorPage.t(Recipe.t())} | {:error, :invalid_cursor | :conflict}
+  @spec list_recipe_page(Ctx.t(), keyword()) ::
+          {:ok, CursorPage.t(Recipe.t())} | {:error, :invalid_cursor | :cursor_incompatible | :conflict}
   def list_recipe_page(%Ctx{} = ctx, opts) do
     base =
       Recipe
@@ -77,7 +79,8 @@ defmodule Easy.Nutrition.Library do
     Repo.snapshot(fn ->
       limit = CursorPage.limit(opts)
 
-      with {:ok, query} <- CursorPage.query(exclude(base, :order_by), Keyword.get(opts, :cursor), limit) do
+      with :ok <- CursorPage.validate_options(opts),
+           {:ok, query} <- CursorPage.query(exclude(base, :order_by), Keyword.get(opts, :cursor), limit) do
         rows = query |> preload.() |> Repo.all()
         {:ok, CursorPage.finish(rows, limit, Repo.aggregate(base, :count, :id))}
       end

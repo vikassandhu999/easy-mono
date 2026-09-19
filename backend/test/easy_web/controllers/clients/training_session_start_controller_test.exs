@@ -1,6 +1,8 @@
 defmodule EasyWeb.Clients.TrainingSessionStartControllerTest do
   use Easy.ConnCase
 
+  alias Easy.Clients.Client
+
   setup do
     coach = insert(:coach)
     client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
@@ -21,7 +23,7 @@ defmodule EasyWeb.Clients.TrainingSessionStartControllerTest do
     end
 
     test "starts any workout in current Coverage and renders its typed snapshot", ctx do
-      plan = insert_client_plan(ctx, name: "Strength", start_date: Date.utc_today())
+      plan = insert_client_plan(ctx, name: "Strength", start_date: Client.local_date(ctx.client, DateTime.utc_now()))
       guided = insert(:workout, business: ctx.coach.business, plan: plan, name: "Guided", position: 0)
       selected = insert(:workout, business: ctx.coach.business, plan: plan, name: "Selected", position: 1)
       exercise = insert(:exercise, business: ctx.coach.business, name: "Deadlift", tracking_type: "weight_reps")
@@ -38,7 +40,7 @@ defmodule EasyWeb.Clients.TrainingSessionStartControllerTest do
         business: ctx.coach.business,
         plan: plan,
         workout: guided,
-        weekday: weekday(Date.utc_today())
+        weekday: weekday(Client.local_date(ctx.client, DateTime.utc_now()))
       )
 
       conn =

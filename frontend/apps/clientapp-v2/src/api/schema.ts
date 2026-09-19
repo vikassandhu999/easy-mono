@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash a15a65819e4eaf9a698774e960e4380d4e8c7d436ee3aa5d647b080533b643d1 */
+/* typed-routes:hash 8dac0d29f05af0e424bc9265539e09905cd9de13b52befa3399b6463f95e8ce4 */
 export type Attachment = {
   id: string;
   content_type:
@@ -46,6 +46,8 @@ export type ClientProfile = {
   goal_weight_value: string | null;
   goal_weight_unit: string | null;
   default_weight_unit: 'kg' | 'lbs';
+  timezone: string;
+  local_date: string;
   subscription_started_on: string | null;
   subscription_ends_on: string | null;
   status: string;

@@ -13,6 +13,8 @@ defmodule EasyWeb.Types.ClientProfile do
           required(:goal_weight_value) => Decimal.t() | nil,
           required(:goal_weight_unit) => String.t() | nil,
           required(:default_weight_unit) => :kg | :lbs,
+          required(:timezone) => String.t(),
+          required(:local_date) => Date.t(),
           required(:subscription_started_on) => Date.t() | nil,
           required(:subscription_ends_on) => Date.t() | nil,
           required(:status) => String.t(),
@@ -34,12 +36,8 @@ defmodule EasyWeb.Types.ClientProfile do
           optional(:goal_weight_unit) => String.t() | nil
         }
 
-  @spec format(%{
-          required(:client) => Client.t(),
-          required(:coach) => Coach.t() | nil,
-          required(:default_weight_unit) => :kg | :lbs
-        }) :: t()
-  def format(%{client: %Client{} = client, coach: coach, default_weight_unit: default_weight_unit}) do
+  @spec format(Easy.ClientAccount.account_profile()) :: t()
+  def format(%{client: %Client{} = client, coach: coach, default_weight_unit: default_weight_unit} = profile) do
     %{
       id: client.id,
       first_name: client.first_name,
@@ -49,6 +47,8 @@ defmodule EasyWeb.Types.ClientProfile do
       goal_weight_value: client.goal_weight_value,
       goal_weight_unit: format_unit(client.goal_weight_unit),
       default_weight_unit: default_weight_unit,
+      timezone: profile.timezone,
+      local_date: profile.local_date,
       subscription_started_on: client.subscription_started_on,
       subscription_ends_on: client.subscription_ends_on,
       status: Atom.to_string(client.status),

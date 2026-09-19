@@ -15,11 +15,25 @@ defmodule Easy.ClientAccountTest do
           %{ctx | business_id: insert(:business).id}
         ] do
       assert {:error, :not_found} = ClientAccount.get_client_account(denied)
+      assert {:error, :not_found} = ClientAccount.get_client_calendar(denied)
       assert {:error, :not_found} = ClientAccount.get_client_account_profile(denied)
       assert {:error, :not_found} = ClientAccount.update_client_account_profile(denied, %{first_name: "Unexpected"})
     end
 
     assert Repo.get!(Client, client.id).first_name == client.first_name
+  end
+
+  test "client calendar follows the stored timezone on either side of UTC midnight" do
+    for {timezone, now, expected} <- [
+          {"Pacific/Kiritimati", ~U[2026-09-19 12:00:00Z], ~D[2026-09-20]},
+          {"America/Los_Angeles", ~U[2026-09-19 00:30:00Z], ~D[2026-09-18]},
+          {"America/Los_Angeles", ~U[2026-03-08 09:59:59Z], ~D[2026-03-08]},
+          {"America/Los_Angeles", ~U[2026-03-08 10:00:00Z], ~D[2026-03-08]}
+        ] do
+      client = insert(:client, timezone: timezone)
+      ctx = %Ctx{business_id: client.business_id, client_id: client.id, user_id: client.user_id}
+      assert {:ok, %{timezone: ^timezone, local_date: ^expected}} = ClientAccount.get_client_calendar(ctx, now)
+    end
   end
 
   test "self-service changes ignore identities and coach-managed fields" do

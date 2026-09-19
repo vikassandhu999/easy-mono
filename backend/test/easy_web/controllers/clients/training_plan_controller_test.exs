@@ -1,6 +1,8 @@
 defmodule EasyWeb.Clients.TrainingPlanControllerTest do
   use Easy.ConnCase
 
+  alias Easy.Clients.Client
+
   setup do
     coach = insert(:coach)
     client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
@@ -11,7 +13,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
 
   describe "GET /v1/client/training-plans" do
     test "lists only the authenticated client's unarchived Client Plans with lifecycle labels", ctx do
-      today = Date.utc_today()
+      today = Client.local_date(ctx.client, DateTime.utc_now())
       incomplete = insert_client_plan(ctx, name: "Incomplete")
       current = insert_client_plan(ctx, name: "Current", start_date: today, end_date: today)
       archived = insert_client_plan(ctx, name: "Archived", archived_at: DateTime.utc_now(:second))
@@ -53,7 +55,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
 
   describe "GET /v1/client/training-plans/:id" do
     test "renders the complete ordered Prescription needed by the client", ctx do
-      plan = insert_client_plan(ctx, start_date: Date.utc_today())
+      plan = insert_client_plan(ctx, start_date: Client.local_date(ctx.client, DateTime.utc_now()))
       workout = insert(:workout, business: ctx.coach.business, plan: plan, name: "Lower", position: 7)
 
       exercise =
@@ -158,7 +160,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
   end
 
   describe "GET /v1/client/training-plans/coverage" do
-    test "resolves one Client Plan and its scheduled workout for a UTC date", ctx do
+    test "resolves one Client Plan and its scheduled workout for an explicit date", ctx do
       date = ~D[2026-08-15]
       plan = insert_client_plan(ctx, start_date: date, end_date: date)
       workout = insert(:workout, business: ctx.coach.business, plan: plan, position: 0)
@@ -184,7 +186,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
       assert %{"data" => nil} = json_response(conn, 200)
     end
 
-    test "rejects a malformed UTC date instead of resolving today", ctx do
+    test "rejects a malformed date instead of resolving today", ctx do
       conn = get(ctx.conn, "/v1/client/training-plans/coverage", %{"date" => "not-a-date"})
 
       assert %{"error_detail" => %{"fields" => %{"date" => ["is invalid"]}}} =

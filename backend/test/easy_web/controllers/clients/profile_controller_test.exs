@@ -1,6 +1,8 @@
 defmodule EasyWeb.Clients.ProfileControllerTest do
   use Easy.ConnCase
 
+  alias Easy.Clients.Client
+
   describe "GET /v1/client/me" do
     test "returns client profile with coach info" do
       coach = insert(:coach, first_name: "Rajat", last_name: "Jain", phone: "+91 99999 12345")
@@ -36,6 +38,8 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
       assert data["goal_weight_value"] == "82.50"
       assert data["goal_weight_unit"] == "lbs"
       assert data["default_weight_unit"] == "kg"
+      assert data["timezone"] == client.timezone
+      assert data["local_date"] == Date.to_iso8601(Client.local_date(client, DateTime.utc_now()))
       assert data["status"] == "active"
       assert data["subscription_started_on"] == "2026-07-01"
       assert data["subscription_ends_on"] == "2026-09-30"
@@ -50,10 +54,12 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
                "goal_weight_value",
                "id",
                "last_name",
+               "local_date",
                "phone",
                "status",
                "subscription_ends_on",
-               "subscription_started_on"
+               "subscription_started_on",
+               "timezone"
              ]
 
       assert %{

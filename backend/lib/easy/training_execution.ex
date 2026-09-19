@@ -17,9 +17,9 @@ defmodule Easy.Training.Execution do
           {:ok, TrainingSession.t()} | {:error, :not_found | :conflict | Ecto.Changeset.t()}
   def start_client_session(%Ctx{} = ctx, workout_id, attrs) do
     started_at = DateTime.utc_now(:second)
-    date = DateTime.to_date(started_at)
 
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
+         {:ok, %{local_date: date}} <- ClientAccount.get_client_calendar(ctx, started_at),
          {:ok, start} <- resolve_start(ctx, workout_id, date, started_at) do
       ctx.business_id
       |> TrainingSession.insert_changeset(client_id, start, attrs)

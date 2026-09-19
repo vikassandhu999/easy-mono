@@ -14,7 +14,7 @@ defmodule EasyWeb.Clients.TrainingPlanController do
 
   @spec coverage(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def coverage(conn, _params) do
-    date = Map.get(conn.query_params, "date", Date.utc_today())
+    date = conn.query_params["date"]
 
     with {:ok, coverage} <- PlanReader.resolve_client_coverage(conn.assigns.ctx, date) do
       ok(conn, %{data: coverage})

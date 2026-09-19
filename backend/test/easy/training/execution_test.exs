@@ -1,6 +1,7 @@
 defmodule Easy.Training.ExecutionTest do
   use Easy.DataCase, async: true
 
+  alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Repo
   alias Easy.Training.{Execution, PlanReader}
@@ -15,7 +16,12 @@ defmodule Easy.Training.ExecutionTest do
 
   describe "resolve_client_startable_prescription/3" do
     test "resolves any workout in the Client Plan supplying Coverage, regardless of schedule", ctx do
-      plan = insert_client_plan(ctx, start_date: Date.utc_today(), end_date: Date.utc_today())
+      plan =
+        insert_client_plan(ctx,
+          start_date: Client.local_date(ctx.client, DateTime.utc_now()),
+          end_date: Client.local_date(ctx.client, DateTime.utc_now())
+        )
+
       guided = insert(:workout, business: ctx.coach.business, plan: plan, name: "Guided", position: 0)
       selected = insert(:workout, business: ctx.coach.business, plan: plan, name: "Selected", position: 1)
 
@@ -23,18 +29,18 @@ defmodule Easy.Training.ExecutionTest do
         business: ctx.coach.business,
         plan: plan,
         workout: guided,
-        weekday: weekday(Date.utc_today())
+        weekday: weekday(Client.local_date(ctx.client, DateTime.utc_now()))
       )
 
       assert {:ok, %{plan: resolved_plan, workout: resolved_workout}} =
-               PlanReader.resolve_client_startable_prescription(ctx.ctx, selected.id, Date.utc_today())
+               PlanReader.resolve_client_startable_prescription(ctx.ctx, selected.id, Client.local_date(ctx.client, DateTime.utc_now()))
 
       assert resolved_plan.id == plan.id
       assert resolved_workout.id == selected.id
     end
 
     test "conceals workouts outside eligible Coverage", ctx do
-      current = insert_client_plan(ctx, start_date: Date.utc_today())
+      current = insert_client_plan(ctx, start_date: Client.local_date(ctx.client, DateTime.utc_now()))
       other_client = insert(:client, business: ctx.coach.business, creator: ctx.coach, assigned_coach: ctx.coach)
 
       other_plan =
@@ -43,17 +49,17 @@ defmodule Easy.Training.ExecutionTest do
           business: ctx.coach.business,
           creator: ctx.coach.user,
           client: other_client,
-          start_date: Date.utc_today()
+          start_date: Client.local_date(ctx.client, DateTime.utc_now())
         )
 
       current_workout = insert(:workout, business: ctx.coach.business, plan: current, position: 0)
       other_workout = insert(:workout, business: ctx.coach.business, plan: other_plan, position: 0)
 
       assert {:error, :not_found} =
-               PlanReader.resolve_client_startable_prescription(ctx.ctx, current_workout.id, Date.add(Date.utc_today(), -1))
+               PlanReader.resolve_client_startable_prescription(ctx.ctx, current_workout.id, Date.add(Client.local_date(ctx.client, DateTime.utc_now()), -1))
 
       assert {:error, :not_found} =
-               PlanReader.resolve_client_startable_prescription(ctx.ctx, other_workout.id, Date.utc_today())
+               PlanReader.resolve_client_startable_prescription(ctx.ctx, other_workout.id, Client.local_date(ctx.client, DateTime.utc_now()))
     end
   end
 
@@ -63,7 +69,7 @@ defmodule Easy.Training.ExecutionTest do
 
       assert session.kind == :freestyle
       assert session.state == :active
-      assert session.date == DateTime.to_date(session.started_at)
+      assert session.date == Client.local_date(ctx.client, session.started_at)
       assert session.notes == "Unplanned work"
       assert session.snapshot_version == nil
       assert session.prescription_snapshot == nil
@@ -76,8 +82,8 @@ defmodule Easy.Training.ExecutionTest do
         insert_client_plan(ctx,
           name: "Strength Block",
           revision: 7,
-          start_date: Date.utc_today(),
-          end_date: Date.utc_today()
+          start_date: Client.local_date(ctx.client, DateTime.utc_now()),
+          end_date: Client.local_date(ctx.client, DateTime.utc_now())
         )
 
       workout = insert(:workout, business: ctx.coach.business, plan: plan, name: "Lower", position: 4)
@@ -182,7 +188,7 @@ defmodule Easy.Training.ExecutionTest do
     end
 
     test "keeps the frozen snapshot readable after the plan is deleted", ctx do
-      plan = insert_client_plan(ctx, start_date: Date.utc_today())
+      plan = insert_client_plan(ctx, start_date: Client.local_date(ctx.client, DateTime.utc_now()))
       workout = insert(:workout, business: ctx.coach.business, plan: plan, name: "Original", position: 0)
 
       assert {:ok, started} = Execution.start_client_session(ctx.ctx, workout.id, %{})

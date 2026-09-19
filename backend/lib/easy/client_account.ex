@@ -8,8 +8,12 @@ defmodule Easy.ClientAccount do
   @type account_profile :: %{
           client: Client.t(),
           coach: Orgs.Coach.t() | nil,
-          default_weight_unit: :kg | :lbs
+          default_weight_unit: :kg | :lbs,
+          timezone: String.t(),
+          local_date: Date.t()
         }
+
+  @type calendar :: %{timezone: String.t(), local_date: Date.t()}
 
   @spec get_active_client(Ctx.t()) :: {:ok, Client.t()} | {:error, :not_found}
   def get_active_client(%Ctx{} = ctx) do
@@ -28,6 +32,13 @@ defmodule Easy.ClientAccount do
       |> Client.for_business(ctx.business_id)
       |> Repo.get(client_id)
       |> ok_or_not_found()
+    end
+  end
+
+  @spec get_client_calendar(Ctx.t(), DateTime.t()) :: {:ok, calendar()} | {:error, :not_found}
+  def get_client_calendar(%Ctx{} = ctx, now \\ DateTime.utc_now()) do
+    with {:ok, client} <- get_client_account(ctx) do
+      {:ok, client_calendar(client, now)}
     end
   end
 
@@ -83,8 +94,13 @@ defmodule Easy.ClientAccount do
     with {:ok, business} <- Orgs.get_business(ctx) do
       coach = get_assigned_coach(ctx, client.assigned_coach_id)
 
-      {:ok, %{client: client, coach: coach, default_weight_unit: business.default_weight_unit}}
+      profile = %{client: client, coach: coach, default_weight_unit: business.default_weight_unit}
+      {:ok, Map.merge(profile, client_calendar(client, DateTime.utc_now()))}
     end
+  end
+
+  defp client_calendar(client, now) do
+    %{timezone: Client.applied_timezone(client), local_date: Client.local_date(client, now)}
   end
 
   defp get_assigned_coach(_ctx, nil), do: nil

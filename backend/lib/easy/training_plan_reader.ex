@@ -1,5 +1,6 @@
 defmodule Easy.Training.PlanReader do
   alias Easy.ClientAccess
+  alias Easy.ClientAccount
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.CursorPage
@@ -105,7 +106,7 @@ defmodule Easy.Training.PlanReader do
     end
   end
 
-  @spec resolve_client_coverage(Ctx.t(), Date.t()) ::
+  @spec resolve_client_coverage(Ctx.t(), Date.t() | nil) ::
           {:ok,
            nil
            | %{
@@ -115,6 +116,14 @@ defmodule Easy.Training.PlanReader do
                weekday: WorkoutSchedule.weekday()
              }}
           | {:error, :not_found}
+  def resolve_client_coverage(ctx, date \\ nil)
+
+  def resolve_client_coverage(%Ctx{} = ctx, nil) do
+    with {:ok, %{local_date: date}} <- ClientAccount.get_client_calendar(ctx) do
+      resolve_client_coverage(ctx, date)
+    end
+  end
+
   def resolve_client_coverage(%Ctx{} = ctx, %Date{} = date) do
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
       plan =

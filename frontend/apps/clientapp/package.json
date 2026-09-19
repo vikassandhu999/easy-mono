@@ -13,6 +13,7 @@
     "native:sync": "node scripts/native-sync.mjs",
     "test:browser": "node tests/auth/auth.browser.mjs",
     "test:forms": "node tests/forms/forms.browser.mjs && node tests/forms/recovery.browser.mjs",
+    "test:offline": "node tests/forms/offline.browser.mjs",
     "test:android": "node tests/auth/android.native.mjs"
   },
   "dependencies": {

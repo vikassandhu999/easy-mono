@@ -6,6 +6,7 @@ import {clearSession, parseSession, sessionSnapshot, subscribeSession} from './a
 import {authPath} from './auth/return-to';
 import {routes} from './routes';
 import {Button} from './ui/button';
+import {CachedRead} from './ui/cached-read';
 import {Page} from './ui/page';
 
 export function AppShell() {
@@ -44,8 +45,10 @@ export function Home() {
       title="Your coaching"
       description={profile.data?.data.coach?.business_name ?? 'Your account with your coach.'}
     >
-      {profile.isPending && <p role="status">Loading your account…</p>}
-      {profile.isError && (
+      {profile.isPending && (
+        <p role="status">{profile.isPaused ? 'Reconnect to load your account.' : 'Loading your account…'}</p>
+      )}
+      {profile.isError && !profile.data && (
         <div className="space-y-4">
           <p role="alert">
             {errorMessage(profile.error, 'We could not load your account. Check your connection and try again.')}
@@ -61,6 +64,12 @@ export function Home() {
       )}
       {profile.data && (
         <div className="space-y-5">
+          <CachedRead
+            updatedAt={profile.dataUpdatedAt}
+            failed={profile.isError}
+            refreshing={profile.isFetching}
+            refresh={() => profile.refetch()}
+          />
           <Link
             to={routes.forms}
             className="text-link block text-lg"

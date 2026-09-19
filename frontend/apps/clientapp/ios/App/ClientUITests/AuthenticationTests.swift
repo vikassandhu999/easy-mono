@@ -61,7 +61,7 @@ final class AuthenticationTests: XCTestCase {
     }
 
     @MainActor
-    func testFormDraftAndSavedResponse() throws {
+    func testFormDraftAndSavedResponse() async throws {
         continueAfterFailure = false
         let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "fixture", withExtension: "json"))
         let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
@@ -93,6 +93,7 @@ final class AuthenticationTests: XCTestCase {
         denied.buttons["OK"].tap()
         XCTAssertTrue(app.staticTexts["Photo access is off. Enable it for Easy in your device settings, then try again. You can keep answering the form."].waitForExistence(timeout: 10))
         XCTAssertTrue(goal.waitForExistence(timeout: 10))
+        if let control = fixture.apiControlURL { try await setConnection(control, available: false) }
         app.terminate()
         app.launch()
         XCTAssertTrue(app.links["Forms & check-ins"].waitForExistence(timeout: 15))
@@ -101,6 +102,21 @@ final class AuthenticationTests: XCTestCase {
         XCTAssertEqual(goal.value as? String, "A steady native routine")
         XCTAssertTrue(app.staticTexts["Your unsent answers were restored."].waitForExistence(timeout: 10))
         let send = app.buttons["Send response"]
+        if let control = fixture.apiControlURL {
+            let stale = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "The latest version could not be checked.")).firstMatch
+            XCTAssertTrue(stale.waitForExistence(timeout: 15), app.debugDescription)
+            XCTAssertFalse(send.isEnabled, "A cached form cannot be sent until its server state is checked")
+            let offline = XCTAttachment(screenshot: app.screenshot())
+            offline.name = "iPhone cached form during API interruption"
+            offline.lifetime = .keepAlways
+            add(offline)
+            try await setConnection(control, available: true)
+            let refresh = app.buttons["Check for updates"]
+            if !refresh.isHittable { app.swipeDown() }
+            refresh.tap()
+            let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: send)
+            await fulfillment(of: [ready], timeout: 15)
+        }
         if !send.isHittable { app.swipeUp() }
         send.tap()
         XCTAssertTrue(app.staticTexts["A steady native routine"].waitForExistence(timeout: 15), app.debugDescription)
@@ -109,15 +125,25 @@ final class AuthenticationTests: XCTestCase {
         saved.name = "iPhone saved form"
         saved.lifetime = .keepAlways
         add(saved)
+        if let control = fixture.apiControlURL { try await setConnection(control, available: false) }
         app.terminate()
         app.launch()
         XCTAssertTrue(app.links["Forms & check-ins"].waitForExistence(timeout: 15))
         app.open(try XCTUnwrap(URL(string: "easy://app/forms/\(fixture.assignmentId)")))
         XCTAssertTrue(app.staticTexts["A steady native routine"].waitForExistence(timeout: 15))
+        if let control = fixture.apiControlURL { try await setConnection(control, available: true) }
         app.links["Your account"].tap()
         XCTAssertTrue(app.buttons["Sign out"].waitForExistence(timeout: 15))
         app.buttons["Sign out"].tap()
         XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 10))
+    }
+
+    private func setConnection(_ control: String, available: Bool) async throws {
+        let url = try XCTUnwrap(URL(string: "\(control)?available=\(available)"))
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        let (_, response) = try await URLSession.shared.data(for: request)
+        XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
     }
 
     struct Fixture: Decodable {
@@ -126,5 +152,6 @@ final class AuthenticationTests: XCTestCase {
         let formToken: String
         let formEmail: String
         let assignmentId: String
+        let apiControlURL: String?
     }
 }

@@ -31,6 +31,7 @@ export async function startNativeRuntime({
   back: () => Promise<void>;
 }) {
   if (!isNative) {
+    onlineManager.setOnline(navigator.onLine);
     return;
   }
   await App.addListener('appRestoredResult', async (event) => {

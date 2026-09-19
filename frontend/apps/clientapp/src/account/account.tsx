@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {type ReactNode, useEffect, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {type Profile, type ProfileUpdate, useProfile, useUpdateProfile} from '../api/auth';
 import {errorMessage} from '../api/client';
@@ -6,6 +6,8 @@ import {readDraft, removeDraft} from '../api/drafts';
 import {clearSession, getSession} from '../api/session';
 import {routes} from '../routes';
 import {Button} from '../ui/button';
+import {CachedRead} from '../ui/cached-read';
+import {useOnline} from '../ui/connection-status';
 import {DraftStatus, useDraftWriter} from '../ui/draft-status';
 import {FormError} from '../ui/form-error';
 import {FormField} from '../ui/form-field';
@@ -14,6 +16,7 @@ import {SubmitButton} from '../ui/submit-button';
 
 export function Account() {
   const query = useProfile();
+  const online = useOnline();
   if (!query.data) {
     return (
       <Page
@@ -32,7 +35,9 @@ export function Account() {
             </Button>
           </>
         ) : (
-          <p role="status">Loading your details…</p>
+          <p role="status">
+            {online ? 'Loading your details…' : 'Your details are not available offline. Reconnect to open them.'}
+          </p>
         )}
       </Page>
     );
@@ -41,15 +46,24 @@ export function Account() {
     <ProfileForm
       key={query.data.data.id}
       profile={query.data.data}
-    />
+    >
+      <CachedRead
+        updatedAt={query.dataUpdatedAt}
+        failed={query.isError}
+        refreshing={query.isFetching}
+        refresh={() => query.refetch()}
+      />
+    </ProfileForm>
   );
 }
 
-function ProfileForm({profile}: {profile: Profile}) {
+function ProfileForm({profile, children}: {profile: Profile; children: ReactNode}) {
+  const online = useOnline();
   const mutation = useUpdateProfile();
   const [notice, setNotice] = useState('');
   const [draftReady, setDraftReady] = useState(false);
   const [draftError, setDraftError] = useState('');
+  const [hasDraft, setHasDraft] = useState(false);
   const [owner] = useState(() => getSession()?.id);
   const {saveDraft, state: draftState} = useDraftWriter(owner, 'profile');
   const form = useForm<ProfileUpdate>({
@@ -80,6 +94,7 @@ function ProfileForm({profile}: {profile: Profile}) {
           typeof draft.phone === 'string'
         ) {
           form.reset({first_name: draft.first_name, last_name: draft.last_name, phone: draft.phone});
+          setHasDraft(true);
           setNotice('Your unsaved details were restored.');
         }
         setDraftReady(true);
@@ -95,16 +110,36 @@ function ProfileForm({profile}: {profile: Profile}) {
     };
   }, [form, owner]);
 
+  const {isDirty, isSubmitting} = form.formState;
+  useEffect(() => {
+    if (!draftReady || hasDraft || isDirty || isSubmitting) {
+      return;
+    }
+    const values = {
+      first_name: profile.first_name ?? '',
+      last_name: profile.last_name ?? '',
+      phone: profile.phone ?? '',
+    };
+    if (JSON.stringify(form.getValues()) !== JSON.stringify(values)) {
+      form.reset(values);
+    }
+  }, [draftReady, hasDraft, isDirty, isSubmitting, profile.first_name, profile.last_name, profile.phone, form]);
+
   useEffect(() => {
     if (!draftReady || !owner) {
       return;
     }
-    const subscription = form.watch((values) => {
-      saveDraft(values);
+    const subscription = form.watch((values, {name}) => {
+      if (name) {
+        saveDraft(values);
+      }
     });
     return () => subscription.unsubscribe();
   }, [draftReady, form, owner, saveDraft]);
   const submit = form.handleSubmit(async (values) => {
+    if (!online) {
+      return;
+    }
     setNotice('');
     try {
       const result = await mutation.mutateAsync(values);
@@ -116,6 +151,7 @@ function ProfileForm({profile}: {profile: Profile}) {
       if (owner) {
         await removeDraft(owner, 'profile');
       }
+      setHasDraft(false);
       setNotice('Your details are saved.');
     } catch (error) {
       form.setError('root', {
@@ -142,6 +178,7 @@ function ProfileForm({profile}: {profile: Profile}) {
       description={profile.email ?? undefined}
       back={routes.home}
     >
+      {children}
       <form
         noValidate
         onSubmit={submit}
@@ -175,7 +212,17 @@ function ProfileForm({profile}: {profile: Profile}) {
         >
           {notice}
         </p>
-        <SubmitButton pending={form.formState.isSubmitting}>Save details</SubmitButton>
+        <SubmitButton
+          pending={form.formState.isSubmitting}
+          isDisabled={!online}
+        >
+          Save details
+        </SubmitButton>
+        {!online && (
+          <p className="text-sm text-muted-foreground">
+            Your edits stay on this device. Reconnect to save them to your account.
+          </p>
+        )}
       </form>
       <div className="mt-10 border-t border-border pt-6">
         <Button

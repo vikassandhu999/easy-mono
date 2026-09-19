@@ -5,6 +5,7 @@ import {readPhotos, removePhoto, type StoredPhoto, savePhoto} from '../api/photo
 import {getSession} from '../api/session';
 import {isNative} from '../api/storage';
 import {Button} from '../ui/button';
+import {useOnline} from '../ui/connection-status';
 import {pickNativePhoto} from '../ui/photo-picker';
 
 function Preview({blob, label}: {blob: Blob; label: string}) {
@@ -24,6 +25,7 @@ function Preview({blob, label}: {blob: Blob; label: string}) {
 }
 export function SavedPhotos({ids}: {ids: string[]}) {
   const query = useAttachmentUrls(ids);
+  const online = useOnline();
   const [failed, setFailed] = useState(false);
   return (
     <div className="space-y-2">
@@ -46,12 +48,15 @@ export function SavedPhotos({ids}: {ids: string[]}) {
           Open photo {index + 1}
         </a>
       ))}
-      {query.isPending && ids.length > 0 && <p role="status">Loading photos…</p>}
+      {query.isPending && ids.length > 0 && (
+        <p role="status">{online ? 'Loading photos…' : 'Reconnect to view uploaded photos.'}</p>
+      )}
       {(query.isError || failed) && (
         <>
-          <p role="alert">Photos could not be loaded.</p>
+          <p role="alert">{online ? 'Photos could not be loaded.' : 'Reconnect to view uploaded photos.'}</p>
           <Button
             variant="outline"
+            isDisabled={!online}
             onPress={() => {
               query.refetch();
               setFailed(false);
@@ -82,6 +87,7 @@ export function Photos({
   onWork: (resource: string, pending: boolean) => void;
 }) {
   const [photos, setPhotos] = useState<StoredPhoto[]>([]);
+  const online = useOnline();
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -172,7 +178,9 @@ export function Photos({
         return;
       }
       setPhotos((rows) => [...rows, photo]);
-      await upload(photo);
+      if (online) {
+        await upload(photo);
+      }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Photo could not be kept on this device.');
     } finally {
@@ -186,7 +194,9 @@ export function Photos({
       const photo = await pickNativePhoto(source, resource, shape);
       if (photo && isCurrent()) {
         setPhotos((rows) => [...rows, photo]);
-        await upload(photo);
+        if (online) {
+          await upload(photo);
+        }
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'The photo could not be opened. Please try again.');
@@ -256,7 +266,7 @@ export function Photos({
           {!photo.attachmentId && (
             <Button
               variant="outline"
-              isDisabled={disabled || busy}
+              isDisabled={disabled || busy || !online}
               onPress={() => upload(photo)}
             >
               Retry photo {index + 1}

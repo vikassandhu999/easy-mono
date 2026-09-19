@@ -1,6 +1,7 @@
 import {generatePath, Link, useSearchParams} from 'react-router-dom';
 import {useFormAssignments} from '../api/forms';
 import {routes} from '../routes';
+import {CachedRead} from '../ui/cached-read';
 import {InfiniteList} from '../ui/infinite-list';
 import {Page} from '../ui/page';
 
@@ -41,6 +42,14 @@ export function Forms() {
           History
         </Link>
       </nav>
+      {query.data && (
+        <CachedRead
+          updatedAt={query.dataUpdatedAt}
+          failed={query.isError}
+          refreshing={query.isFetching}
+          refresh={() => query.refetch()}
+        />
+      )}
       <InfiniteList
         query={query}
         label="requests"

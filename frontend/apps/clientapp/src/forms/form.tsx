@@ -16,6 +16,8 @@ import {clearFormPhotos, readPhotos} from '../api/photo-store';
 import {getSession} from '../api/session';
 import {routes} from '../routes';
 import {Button} from '../ui/button';
+import {CachedRead} from '../ui/cached-read';
+import {useOnline} from '../ui/connection-status';
 import {DraftStatus, useDraftWriter} from '../ui/draft-status';
 import {FormError} from '../ui/form-error';
 import {Page} from '../ui/page';
@@ -39,6 +41,7 @@ export function FormDetail() {
   const back = params.get('from') === 'history' ? `${routes.forms}?state=history` : routes.forms;
   const query = useFormAssignment(id);
   const profile = useProfile();
+  const online = useOnline();
   if (!query.data || !profile.data) {
     return (
       <Page
@@ -58,7 +61,11 @@ export function FormDetail() {
             </Button>
           </>
         ) : (
-          <p role="status">Opening your form…</p>
+          <p role="status">
+            {online
+              ? 'Opening your form…'
+              : 'This form is not available offline. Reconnect to open it. Your draft is kept on this device.'}
+          </p>
         )}
       </Page>
     );
@@ -78,6 +85,12 @@ export function FormDetail() {
         }
         back={back}
       >
+        <CachedRead
+          updatedAt={query.dataUpdatedAt}
+          failed={query.isError}
+          refreshing={query.isFetching}
+          refresh={() => query.refetch()}
+        />
         <UnsentAnswers assignmentId={assignment.id} />
         {saved ? (
           <div className="space-y-8">
@@ -127,6 +140,10 @@ export function FormDetail() {
       initialWeightUnit={query.data.weight_unit}
       back={back}
       refresh={() => query.refetch()}
+      canSend={online && query.isFetchedAfterMount && !query.isError && !query.isFetching}
+      checkedAt={query.dataUpdatedAt}
+      refreshFailed={query.isError}
+      refreshing={query.isFetching}
     />
   );
 }
@@ -136,11 +153,19 @@ function FormEditor({
   back,
   refresh,
   initialWeightUnit,
+  canSend,
+  checkedAt,
+  refreshFailed,
+  refreshing,
 }: {
   assignment: FormAssignment;
   back: string;
   refresh: () => Promise<unknown>;
   initialWeightUnit: FormWeightUnit;
+  canSend: boolean;
+  checkedAt: number;
+  refreshFailed: boolean;
+  refreshing: boolean;
 }) {
   const questions = assignment.form_template.sections.flatMap((section) => section.questions);
   const form = useForm<FormValues>({defaultValues: {answers: questions.map(() => '')}});
@@ -232,7 +257,7 @@ function FormEditor({
     return () => subscription.unsubscribe();
   }, [ready, previous, form, resource, session, weightUnit, saveDraft]);
   const submit = form.handleSubmit(async (values) => {
-    if (!session?.accountId) {
+    if (!session?.accountId || !canSend) {
       return;
     }
     try {
@@ -271,6 +296,12 @@ function FormEditor({
       description="Your answers help your coach support you. Required questions are marked."
       back={back}
     >
+      <CachedRead
+        updatedAt={checkedAt}
+        failed={refreshFailed}
+        refreshing={refreshing}
+        refresh={refresh}
+      />
       {notice && (
         <p
           role="status"
@@ -341,10 +372,20 @@ function FormEditor({
           )}
           <SubmitButton
             pending={form.formState.isSubmitting}
-            isDisabled={pendingPhotos}
+            isDisabled={pendingPhotos || !canSend}
           >
             Send response
           </SubmitButton>
+          {!canSend && (
+            <p
+              role="status"
+              className="text-sm text-muted-foreground"
+            >
+              {refreshing
+                ? 'Checking for updates before you send…'
+                : 'Reconnect and check for updates before sending. You can keep editing your answers.'}
+            </p>
+          )}
           <p className="text-sm text-muted-foreground">
             Your coach receives this form when you send it. Unsent answers stay on this device.
           </p>

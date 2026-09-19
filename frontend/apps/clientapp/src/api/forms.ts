@@ -1,4 +1,4 @@
-import {useInfiniteQuery, useMutation, useQuery} from '@tanstack/react-query';
+import {onlineManager, useInfiniteQuery, useMutation, useQuery} from '@tanstack/react-query';
 import {ApiError, call, client} from './client';
 import {removeDraft} from './drafts';
 import {formKeys} from './keys';
@@ -48,6 +48,7 @@ export function useFormAssignments(filters: FormAssignmentFilters) {
 
 export function useFormAssignment(id: string) {
   return useQuery({
+    refetchOnMount: 'always',
     queryKey: formKeys.detail(id),
     queryFn: ({signal}) => call(client.GET('/v1/client/form-assignments/{id}', {params: {path: {id}}, signal})),
     staleTime: 0,
@@ -58,6 +59,9 @@ export function useSubmitForm(id: string) {
   return useMutation({
     onMutate: () => getSession()?.id,
     mutationFn: async (body: FormAssignmentSubmit) => {
+      if (!onlineManager.isOnline()) {
+        throw new Error('Reconnect and check this form before sending. Your answers are saved on this device.');
+      }
       try {
         return await call(client.POST('/v1/client/form-assignments/{id}/submit', {params: {path: {id}}, body}));
       } catch (error) {

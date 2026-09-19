@@ -107,6 +107,9 @@ try {
   await device.screenshot({path: 'tests/auth/artifacts/android-photo-picker.png'});
   await device.input.press('Back');
   await expect(page.getByLabel('Your goal', {exact: false})).toHaveValue('A steady Android routine');
+  await device.shell('svc wifi disable');
+  await device.shell('svc data disable');
+  await expect(page.getByText("You're offline.", {exact: false})).toBeVisible();
   await device.shell(`am force-stop ${app}`);
   await device.shell(
     `am start -W -n ${app}/.MainActivity -a android.intent.action.VIEW -d easy://app/forms/${assignment.id}`,
@@ -114,6 +117,24 @@ try {
   page = await pageForApp();
   await expect(page.getByLabel('Your goal', {exact: false})).toHaveValue('A steady Android routine');
   await expect(page.getByText('Your unsent answers were restored.')).toBeVisible();
+  await expect(page.getByRole('button', {name: 'Send response'})).toBeDisabled();
+  await expect(page.getByText('Showing the copy from', {exact: false})).toBeVisible();
+  await tap(page.getByLabel('Your goal', {exact: false}));
+  await page.getByLabel('Your goal', {exact: false}).press('End');
+  await device.input.type(' offline');
+  await expect(page.getByLabel('Your goal', {exact: false})).toHaveValue('A steady Android routine offline');
+  await expect(page.getByText('Draft saved on this device.', {exact: true})).toBeVisible();
+  await device.shell(`am force-stop ${app}`);
+  await device.shell(
+    `am start -W -n ${app}/.MainActivity -a android.intent.action.VIEW -d easy://app/forms/${assignment.id}`,
+  );
+  page = await pageForApp();
+  await expect(page.getByLabel('Your goal', {exact: false})).toHaveValue('A steady Android routine offline');
+  await expect(page.getByRole('button', {name: 'Send response'})).toBeDisabled();
+  await device.screenshot({path: 'tests/auth/artifacts/android-offline-form.png'});
+  await device.shell('svc wifi enable');
+  await device.shell('svc data enable');
+  await expect(page.getByRole('button', {name: 'Send response'})).toBeEnabled();
   await tap(page.getByRole('button', {name: 'Send response'}));
   await expect(page.getByText(/Response saved/)).toBeVisible();
   await device.shell(`am force-stop ${app}`);
@@ -121,11 +142,12 @@ try {
     `am start -W -n ${app}/.MainActivity -a android.intent.action.VIEW -d easy://app/forms/${assignment.id}`,
   );
   page = await pageForApp();
-  await expect(page.getByText('A steady Android routine', {exact: true})).toBeVisible();
+  await expect(page.getByText('A steady Android routine offline', {exact: true})).toBeVisible();
   await expect(page.getByRole('link', {name: 'Back to your forms'})).toBeVisible();
   await device.screenshot({path: 'tests/auth/artifacts/android-saved-form.png'});
   results.push({
-    scenario: 'native form draft, gallery cancellation, process restart/deep link, save and saved response restart',
+    scenario:
+      'native form draft, gallery cancellation, network disabled across two process restarts, offline editing, reconnection, deliberate save and saved response restart',
     passed: true,
   });
   await tap(page.getByRole('link', {name: 'Your account', exact: true}));
@@ -141,6 +163,8 @@ try {
   await device.screenshot({path: 'tests/auth/artifacts/android-failure.png'});
   throw error;
 } finally {
+  await device.shell('svc wifi enable');
+  await device.shell('svc data enable');
   await device.close();
   await writeFile('tests/auth/artifacts/android-results.json', JSON.stringify(results, null, 2));
 }

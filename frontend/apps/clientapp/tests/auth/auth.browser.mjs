@@ -82,7 +82,8 @@ try {
         'client',
       );
       await page.unroute('**/v1/auth/token');
-      await page.getByRole('button', {name: 'Try again'}).click();
+      await page.getByRole('button', {name: 'Check for updates'}).click();
+      await expect(page.getByRole('alert')).toHaveCount(0);
       await expect(page.getByLabel('First name')).toHaveValue('Alexandria with a long name');
       // A rejected session must preserve drafts for this client through reauthentication.
       await page.getByLabel('First name').fill('Recovered after expired login');

@@ -23,5 +23,6 @@ await api(`/v1/coach/form-templates/${assignment.form_template_id}`, {
 fixture.formToken = formClient.token;
 fixture.formEmail = formClient.email;
 fixture.assignmentId = assignment.id;
+fixture.apiControlURL = process.env.CLIENTAPP_API_CONTROL || null;
 await writeFile(new URL('../../ios/App/ClientUITests/fixture.json', import.meta.url), JSON.stringify(fixture));
 console.log('Created an isolated native invitation fixture.');

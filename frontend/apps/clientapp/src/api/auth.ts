@@ -4,7 +4,7 @@ import {call, client, publicClient} from './client';
 import {authKeys} from './keys';
 import {queryClient} from './query-client';
 import type {ClientProfileUpdate, components} from './schema';
-import {getSession, saveSession, sessionSnapshot} from './session';
+import {getSession, identifySession, saveSession, sessionSnapshot} from './session';
 
 export type {ClientProfile as Profile} from './schema';
 export type ProfileUpdate = Pick<ClientProfileUpdate, 'first_name' | 'last_name' | 'phone'>;
@@ -60,7 +60,18 @@ export function useResend() {
 }
 
 export function useProfile() {
-  return useQuery({queryKey: authKeys.profile(), queryFn: ({signal}) => call(client.GET('/v1/client/me', {signal}))});
+  return useQuery({
+    queryKey: authKeys.profile(),
+    queryFn: async ({signal}) => {
+      const session = getSession();
+      if (!session) {
+        throw new Error('Please sign in to continue.');
+      }
+      const result = await call(client.GET('/v1/client/me', {signal}));
+      await identifySession(result.data.id, session.id);
+      return result;
+    },
+  });
 }
 
 export function useUpdateProfile() {

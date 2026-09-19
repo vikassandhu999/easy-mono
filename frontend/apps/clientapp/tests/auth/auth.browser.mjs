@@ -84,6 +84,36 @@ try {
       await page.unroute('**/v1/auth/token');
       await page.getByRole('button', {name: 'Try again'}).click();
       await expect(page.getByLabel('First name')).toHaveValue('Alexandria with a long name');
+      // A rejected session must preserve drafts for this client through reauthentication.
+      await page.getByLabel('First name').fill('Recovered after expired login');
+      await page.evaluate(() => {
+        const key = 'clientapp.auth.v1';
+        const session = JSON.parse(localStorage.getItem(key));
+        localStorage.setItem(key, JSON.stringify({...session, expiresAt: 1}));
+      });
+      await page.route('**/v1/auth/token', (route) =>
+        route.fulfill({status: 401, json: {error_code: 'session_expired', error_message: 'Session expired'}}),
+      );
+      await page.reload();
+      await expect(page.getByRole('heading', {name: 'Welcome back'})).toBeVisible();
+      await page.unroute('**/v1/auth/token');
+      // A different client's account must never show that private draft.
+      const other = await inviteClient();
+      await page.goto(`/invite/${other.token}`);
+      await page.getByRole('button', {name: 'Continue with email'}).click();
+      await page.getByLabel('Verification code').fill('123456');
+      await page.getByRole('button', {name: 'Verify and continue'}).click();
+      await page.getByRole('link', {name: 'Your account', exact: true}).click();
+      await expect(page.getByLabel('First name')).toHaveValue('Alex');
+      await page.getByLabel('First name').fill('A different private draft');
+      await page.getByRole('button', {name: 'Sign out', exact: true}).click();
+      await expect(page.getByRole('heading', {name: 'Welcome back'})).toBeVisible();
+      await page.getByLabel('Email', {exact: true}).fill(fixture.email);
+      await page.getByRole('button', {name: 'Continue with email'}).click();
+      await page.getByLabel('Verification code').fill('123456');
+      await page.getByRole('button', {name: 'Verify and continue'}).click();
+      await expect(page.getByLabel('First name')).toHaveValue('Recovered after expired login');
+      await expect(page.getByText('Your unsaved details were restored.')).toBeVisible();
       let releaseSave;
       let savedOnServer;
       const serverSaved = new Promise((resolve) => {

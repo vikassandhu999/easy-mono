@@ -27,6 +27,14 @@ final class AuthenticationTests: XCTestCase {
         XCTAssertTrue(firstName.waitForExistence(timeout: 15), app.debugDescription)
         firstName.tap()
         firstName.typeText("Native saved client")
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(account.waitForExistence(timeout: 15))
+        account.tap()
+        XCTAssertTrue(firstName.waitForExistence(timeout: 15))
+        XCTAssertEqual(firstName.value as? String, "Native saved client", "Draft survives process restart")
+        XCTAssertTrue(app.staticTexts["Your unsaved details were restored."].waitForExistence(timeout: 10))
+        firstName.tap()
         let save = app.buttons["Save details"]
         if !save.isHittable { app.swipeUp() }
         XCTAssertTrue(save.isHittable, "Save must remain reachable with the keyboard open")

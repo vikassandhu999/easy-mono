@@ -1,12 +1,19 @@
 import {getSession} from './session';
 import {readStored, removeStored, writeStored} from './storage';
 
-function draftKey(owner: string, resource: string) {
-  return `clientapp.private.${owner}.draft.${resource}`;
+function draftKey(sessionId: string, resource: string) {
+  const session = getSession();
+  return session?.id === sessionId && session.accountId
+    ? `clientapp.private.${session.accountId}.draft.${resource}`
+    : null;
 }
 
 export async function readDraft(owner: string, resource: string): Promise<unknown> {
-  const raw = await readStored(draftKey(owner, resource));
+  const key = draftKey(owner, resource);
+  if (!key) {
+    return null;
+  }
+  const raw = await readStored(key);
   if (getSession()?.id !== owner || !raw) {
     return null;
   }
@@ -18,11 +25,15 @@ export async function readDraft(owner: string, resource: string): Promise<unknow
 }
 
 export async function writeDraft(owner: string, resource: string, value: unknown) {
-  if (getSession()?.id === owner) {
-    await writeStored(draftKey(owner, resource), JSON.stringify(value));
+  const key = draftKey(owner, resource);
+  if (key) {
+    await writeStored(key, JSON.stringify(value));
   }
 }
 
 export async function removeDraft(owner: string, resource: string) {
-  await removeStored(draftKey(owner, resource));
+  const key = draftKey(owner, resource);
+  if (key) {
+    await removeStored(key);
+  }
 }

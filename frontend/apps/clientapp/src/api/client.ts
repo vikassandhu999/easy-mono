@@ -1,6 +1,6 @@
 import createClient from 'openapi-fetch';
 import type {paths} from './schema';
-import {clearSession, getSession, saveSession} from './session';
+import {expireSession, getSession, saveSession} from './session';
 
 function readError(data: unknown) {
   if (data && typeof data === 'object') {
@@ -70,7 +70,7 @@ export function refreshSession({role, rejectedAccessToken}: {role?: 'client'; re
         (error.status === 401 ||
           ['session_not_found', 'session_expired', 'session_revoked', 'token_invalid'].includes(error.code ?? ''));
       if (rejected && getSession()?.tokens.refresh_token === session.tokens.refresh_token) {
-        await clearSession();
+        await expireSession();
       }
       throw error;
     }
@@ -114,7 +114,7 @@ client.use({
     retry.request.headers.set('Authorization', `Bearer ${session.tokens.access_token}`);
     const result = await fetch(retry.request);
     if (result.status === 401 && getSession()?.tokens.access_token === session.tokens.access_token) {
-      await clearSession();
+      await expireSession();
     }
     if (getSession()?.id !== session.id) {
       throw new Error('Your session changed. Please try again.');

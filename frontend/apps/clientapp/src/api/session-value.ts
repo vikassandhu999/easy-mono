@@ -1,6 +1,6 @@
 import type {components} from './schema.ts';
 export type AuthTokens = components['schemas']['AuthTokenResponse'];
-export type Session = {id: string; expiresAt: number; tokens: AuthTokens};
+export type Session = {id: string; expiresAt: number; tokens: AuthTokens; accountId?: string};
 export function parseSession(raw: string | null): Session | null {
   try {
     const value: unknown = JSON.parse(raw ?? 'null');
@@ -34,6 +34,9 @@ export function parseSession(raw: string | null): Session | null {
     }
     return {
       id: value.id,
+      ...('accountId' in value && typeof value.accountId === 'string' && value.accountId
+        ? {accountId: value.accountId}
+        : {}),
       expiresAt: value.expiresAt,
       tokens: {
         access_token: tokens.access_token,

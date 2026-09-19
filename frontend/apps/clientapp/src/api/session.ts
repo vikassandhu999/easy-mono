@@ -41,8 +41,10 @@ export async function saveSession(tokens: AuthTokens, previous?: Session) {
   if (previous && getSession()?.tokens.refresh_token !== previous.tokens.refresh_token) {
     throw new Error('Your session changed. Please sign in again.');
   }
+  const accountId = previous ? getSession()?.accountId : undefined;
   const session: Session = {
     id: previous?.id ?? crypto.randomUUID(),
+    ...(accountId ? {accountId} : {}),
     tokens,
     expiresAt: Date.now() + tokens.expires_in * 1000,
   };
@@ -57,18 +59,38 @@ export async function saveSession(tokens: AuthTokens, previous?: Session) {
   return session;
 }
 
-export async function clearSession() {
-  const owner = getSession()?.id;
+export async function identifySession(accountId: string, sessionId: string) {
+  const session = getSession();
+  if (!session || session.id !== sessionId || (session.accountId && session.accountId !== accountId)) {
+    throw new Error('Your session changed. Please sign in again.');
+  }
+  if (!session.accountId) {
+    await persist(JSON.stringify({...session, accountId}));
+  }
+  if (getSession()?.id !== sessionId) {
+    throw new Error('Your session changed. Please sign in again.');
+  }
+}
+
+// Authentication expiry keeps account-scoped drafts for the next verified login.
+export function expireSession() {
+  return endSession(false);
+}
+
+export function clearSession() {
+  return endSession(true);
+}
+
+async function endSession(removePrivateData: boolean) {
+  const owner = getSession()?.accountId;
   const tombstone = JSON.stringify({id: crypto.randomUUID()});
   const pending = persist(tombstone);
+  const clearing = owner && removePrivateData ? clearPrivateStorage(owner) : Promise.resolve();
   queryClient.clear();
   window.dispatchEvent(new Event(EVENT));
-  await pending;
+  await Promise.all([pending, clearing]);
   if (sessionSnapshot() === tombstone) {
     await clearChallenge();
-  }
-  if (owner) {
-    await clearPrivateStorage(owner);
   }
   window.dispatchEvent(new Event(EVENT));
 }

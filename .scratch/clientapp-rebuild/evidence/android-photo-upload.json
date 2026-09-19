@@ -1,0 +1,6 @@
+[
+  {
+    "scenario": "native photo cancellation, selection, real upload and saved image after restart",
+    "passed": true
+  }
+]

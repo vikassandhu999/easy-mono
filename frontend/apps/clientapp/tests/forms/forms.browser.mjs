@@ -47,7 +47,7 @@ try {
     const objects = new Map();
     let failUpload = true;
     let failDownload = false;
-    await page.route('http://localhost:9000/**', async (route) => {
+    await page.route(`${process.env.CLIENT_STORAGE_URL || 'http://localhost:9000'}/**`, async (route) => {
       const path = new URL(route.request().url()).pathname;
       const headers = {
         'Access-Control-Allow-Origin': '*',

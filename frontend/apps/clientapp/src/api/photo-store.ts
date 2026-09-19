@@ -101,8 +101,8 @@ export async function savePhoto(photo: StoredPhoto, isCurrent: () => boolean) {
     const tx = db.transaction('photos', 'readwrite');
     tx.objectStore('photos').put(photo);
     tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error);
+    // A request error bubbles before the transaction has its error. Wait for abort.
+    tx.onabort = () => reject(tx.error ?? new Error('The photo could not be saved on this device.'));
   });
 }
 export async function removePhoto(id: string) {

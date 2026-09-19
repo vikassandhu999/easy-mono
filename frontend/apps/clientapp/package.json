@@ -14,7 +14,8 @@
     "test:browser": "node tests/auth/auth.browser.mjs",
     "test:forms": "node tests/forms/forms.browser.mjs && node tests/forms/recovery.browser.mjs",
     "test:offline": "node tests/forms/offline.browser.mjs",
-    "test:android": "node tests/auth/android.native.mjs"
+    "test:android": "node tests/auth/android.native.mjs",
+    "test:android:photos": "node tests/forms/android.photos.mjs"
   },
   "dependencies": {
     "@capacitor/app": "8.1.0",

@@ -1,11 +1,13 @@
 import {type RestoredListenerEvent} from '@capacitor/app';
 import {Camera, CameraErrorCode, MediaTypeSelection} from '@capacitor/camera';
+import {Capacitor, registerPlugin} from '@capacitor/core';
 import {validatePhoto} from '../api/attachments';
 import {readDraft, removeDraft, writeDraft} from '../api/drafts';
 import {type StoredPhoto, savePhoto} from '../api/photo-store';
 import {getSession} from '../api/session';
 
 const intentKey = 'photo-picker';
+const photoLibrary = registerPlugin<{pick: () => Promise<{path: string}>}>('PhotoLibrary');
 type PhotoIntent = {id: string; resource: string; returnPath: string; questionShape: string};
 function readIntent(value: unknown): PhotoIntent | null {
   return value &&
@@ -25,7 +27,11 @@ function readIntent(value: unknown): PhotoIntent | null {
 }
 function photoError(error: unknown) {
   const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
-  if (code === CameraErrorCode.TakePhotoCancelled || code === CameraErrorCode.ChooseMediaCancelled) {
+  if (
+    code === 'cancelled' ||
+    code === CameraErrorCode.TakePhotoCancelled ||
+    code === CameraErrorCode.ChooseMediaCancelled
+  ) {
     return null;
   }
   return code === CameraErrorCode.CameraPermissionDenied || code === CameraErrorCode.GalleryPermissionDenied
@@ -33,21 +39,27 @@ function photoError(error: unknown) {
     : 'The photo could not be opened. Try choosing a photo from your library.';
 }
 async function keepPhoto(data: unknown, intent: PhotoIntent, session: NonNullable<ReturnType<typeof getSession>>) {
-  if (
-    !session.accountId ||
-    !data ||
-    typeof data !== 'object' ||
-    !('webPath' in data) ||
-    typeof data.webPath !== 'string'
-  ) {
+  if (!session.accountId || !data || typeof data !== 'object') {
     throw new Error('The device did not return a photo.');
   }
-  const response = await fetch(data.webPath);
+  const path =
+    'webPath' in data && typeof data.webPath === 'string'
+      ? data.webPath
+      : 'path' in data && typeof data.path === 'string'
+        ? Capacitor.convertFileSrc(data.path)
+        : null;
+  if (!path) {
+    throw new Error('The device did not return a photo.');
+  }
+  const response = await fetch(path);
   if (!response.ok) {
     throw new Error('The selected photo could not be opened.');
   }
-  const blob = await response.blob();
-  validatePhoto(blob);
+  const source = await response.blob();
+  validatePhoto(source);
+  // A file-backed iOS photo can lose its library access before IndexedDB copies it.
+  // Own the bytes before persisting the selection or leaving the native picker flow.
+  const blob = new Blob([await source.arrayBuffer()], {type: source.type});
   const photo: StoredPhoto = {
     id: intent.id,
     owner: session.accountId,
@@ -75,16 +87,18 @@ export async function pickNativePhoto(source: 'camera' | 'gallery', resource: st
     returnPath: window.location.pathname + window.location.search,
   };
   await writeDraft(session.id, intentKey, intent);
+  let data: unknown;
   try {
-    const data =
+    data =
       source === 'camera'
         ? await Camera.takePhoto({quality: 85, saveToGallery: false})
-        : await Camera.chooseFromGallery({
-            mediaType: MediaTypeSelection.Photo,
-            allowMultipleSelection: false,
-            quality: 85,
-          });
-    return await keepPhoto(firstResult(data), intent, session);
+        : Capacitor.getPlatform() === 'android'
+          ? await photoLibrary.pick()
+          : await Camera.chooseFromGallery({
+              mediaType: MediaTypeSelection.Photo,
+              allowMultipleSelection: false,
+              quality: 85,
+            });
   } catch (error) {
     await removeDraft(session.id, intentKey);
     const message = photoError(error);
@@ -93,9 +107,18 @@ export async function pickNativePhoto(source: 'camera' | 'gallery', resource: st
     }
     return null;
   }
+  try {
+    return await keepPhoto(firstResult(data), intent, session);
+  } catch (error) {
+    await removeDraft(session.id, intentKey);
+    throw error;
+  }
 }
 export async function restoreNativePhoto(event: RestoredListenerEvent) {
-  if (event.pluginId !== 'Camera' || !['takePhoto', 'chooseFromGallery'].includes(event.methodName)) {
+  if (
+    !(event.pluginId === 'PhotoLibrary' && event.methodName === 'pick') &&
+    !(event.pluginId === 'Camera' && ['takePhoto', 'chooseFromGallery'].includes(event.methodName))
+  ) {
     return null;
   }
   const session = getSession();

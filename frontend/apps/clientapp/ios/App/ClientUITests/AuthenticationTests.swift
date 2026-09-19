@@ -66,6 +66,7 @@ final class AuthenticationTests: XCTestCase {
         let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "fixture", withExtension: "json"))
         let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
         let app = XCUIApplication(bundleIdentifier: "com.easy.client")
+        app.resetAuthorizationStatus(for: .photos)
         app.launch()
         app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.formToken)")))
         let signOut = app.buttons["Sign out to continue"]
@@ -86,7 +87,10 @@ final class AuthenticationTests: XCTestCase {
         let choose = app.buttons["Choose photo"]
         if !choose.isHittable { app.swipeUp() }
         choose.tap()
-        // This case exercises the simulator's denied photo-access state.
+        let system = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let refuse = system.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Don")).firstMatch
+        XCTAssertTrue(refuse.waitForExistence(timeout: 10), system.debugDescription)
+        refuse.tap()
         let denied = app.alerts["Easy"]
         XCTAssertTrue(denied.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(denied.buttons["Settings"].exists)
@@ -146,6 +150,69 @@ final class AuthenticationTests: XCTestCase {
         XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
     }
 
+    @MainActor
+    func testPhotoSelectionAndSubmission() throws {
+        continueAfterFailure = false
+        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "fixture", withExtension: "json"))
+        let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
+        let app = XCUIApplication(bundleIdentifier: "com.easy.client")
+        app.resetAuthorizationStatus(for: .photos)
+        app.launch()
+        app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.photoToken)")))
+        let signOut = app.buttons["Sign out to continue"]
+        if signOut.waitForExistence(timeout: 2) { signOut.tap() }
+        XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 15))
+        app.buttons["Continue with email"].tap()
+        let code = app.webViews.textFields["Verification code"]
+        XCTAssertTrue(code.waitForExistence(timeout: 15))
+        code.tap()
+        code.typeText("123456")
+        app.buttons["Verify and continue"].tap()
+        XCTAssertTrue(app.links["Forms & check-ins"].waitForExistence(timeout: 15))
+        app.open(try XCTUnwrap(URL(string: "easy://app/forms/\(fixture.photoAssignmentId)")))
+        let choose = app.buttons["Choose photo"]
+        XCTAssertTrue(choose.waitForExistence(timeout: 15))
+        choose.tap()
+        let system = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        if fixture.photoAccess == "limited" {
+            let limit = system.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Limit Access")).firstMatch
+            XCTAssertTrue(limit.waitForExistence(timeout: 10), system.debugDescription)
+            limit.tap()
+            let library = XCUIApplication(bundleIdentifier: "com.apple.mobileslideshow.photospicker")
+            let photo = library.images.matching(NSPredicate(format: "label BEGINSWITH %@", "Photo,")).firstMatch
+            XCTAssertTrue(photo.waitForExistence(timeout: 25), library.debugDescription)
+            // PhotosPicker exposes image bounds but no accessibility hit point.
+            photo.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            library.buttons["Done"].coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        } else {
+            let allow = system.buttons["Allow Full Access"]
+            XCTAssertTrue(allow.waitForExistence(timeout: 10), system.debugDescription)
+            allow.tap()
+        }
+        let image = app.scrollViews.buttons.firstMatch
+        XCTAssertTrue(image.waitForExistence(timeout: 10), app.debugDescription)
+        if fixture.photoAccess == "limited" {
+            XCTAssertEqual(app.scrollViews.buttons.count, 1, "Only the permitted photo appears in Easy's library")
+        }
+        image.tap()
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.staticTexts["Photo uploaded"].waitForExistence(timeout: 20), app.debugDescription)
+        let send = app.buttons["Send response"]
+        if !send.isHittable { app.swipeUp() }
+        send.tap()
+        let savedPhoto = app.links.matching(NSPredicate(format: "label CONTAINS %@", "Open photo 1")).firstMatch
+        XCTAssertTrue(savedPhoto.waitForExistence(timeout: 15), app.debugDescription)
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.links["Forms & check-ins"].waitForExistence(timeout: 15))
+        app.open(try XCTUnwrap(URL(string: "easy://app/forms/\(fixture.photoAssignmentId)")))
+        XCTAssertTrue(savedPhoto.waitForExistence(timeout: 15), app.debugDescription)
+        let saved = XCTAttachment(screenshot: app.screenshot())
+        saved.name = "iPhone saved progress photo (\(fixture.photoAccess ?? "full") access)"
+        saved.lifetime = .keepAlways
+        add(saved)
+    }
+
     struct Fixture: Decodable {
         let email: String
         let token: String
@@ -153,5 +220,8 @@ final class AuthenticationTests: XCTestCase {
         let formEmail: String
         let assignmentId: String
         let apiControlURL: String?
+        let photoAccess: String?
+        let photoToken: String
+        let photoAssignmentId: String
     }
 }

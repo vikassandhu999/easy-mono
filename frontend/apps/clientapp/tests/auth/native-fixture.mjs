@@ -24,5 +24,20 @@ fixture.formToken = formClient.token;
 fixture.formEmail = formClient.email;
 fixture.assignmentId = assignment.id;
 fixture.apiControlURL = process.env.CLIENTAPP_API_CONTROL || null;
+const photoClient = await inviteClient();
+const photoAssignment = (await api(`/v1/coach/clients/${photoClient.clientId}/intake`, {token: photoClient.coachToken}))
+  .data;
+await api(`/v1/coach/form-templates/${photoAssignment.form_template_id}`, {
+  method: 'PATCH',
+  token: photoClient.coachToken,
+  body: {
+    name: 'Native progress photos',
+    expected_revision: photoAssignment.form_template.revision,
+    sections: [{questions: [{id: 'photos', label: 'Progress views', type: 'photo', required: true}]}],
+  },
+});
+fixture.photoAccess = process.env.CLIENTAPP_PHOTO_ACCESS || 'full';
+fixture.photoToken = photoClient.token;
+fixture.photoAssignmentId = photoAssignment.id;
 await writeFile(new URL('../../ios/App/ClientUITests/fixture.json', import.meta.url), JSON.stringify(fixture));
 console.log('Created an isolated native invitation fixture.');

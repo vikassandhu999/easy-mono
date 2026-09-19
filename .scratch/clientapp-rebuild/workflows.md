@@ -6,11 +6,11 @@ Inventory date: 2026-09-19. Evidence is the Phoenix router and client typed cont
 | --- | --- | --- |
 | Join coach | Auth invitation preview, accept, verify | Build client routes; preserve invitation during OTP/restart; reject silent account replacement |
 | Sign in | OTP, token with client role, refresh token | Shared refresh, invalid-vs-transient failure, logout races, native persistence |
-| Complete intake/check-in | Assignment index/show/submit | Client index now returns cursor pages and filtered server counts, with pending/history and purpose filters. Mobile forms, photos, and response recovery remain to implement |
+| Complete intake/check-in | Assignment index/show/submit | Client index now returns cursor pages and filtered server counts, with pending/history and purpose filters. Mobile forms, gallery photos, and response recovery are implemented; camera capture verification remains |
 | Understand today | Coverage by date, active training session, nutrition days, assignments | No unified Today endpoint; client profile lacks timezone. Resolve client-local date and server-owned pending selection explicitly |
 | Follow workout | Plans/coverage, exercises, sessions, performed sets, complete/discard | Client plan/session lists use offset. Add cursor support; audit creation/lost-response semantics before retries |
 | Follow nutrition/log meals | Nutrition plans, foods, recipes, nutrition days GET/PATCH | Day/slot revisions and server totals are available. Audit source search, paging, and idempotent save semantics |
-| Progress photos | Client upload and signed download URL endpoints; assignment submission | Native camera/photo adapter, media validation, permission denial and upload recovery |
+| Progress photos | Client upload and signed download URL endpoints; assignment submission | Gallery adapters, media validation, iOS permissions and Android picker recovery pass; camera capture verification remains |
 | Message coach | Conversation show/messages/create/read | Messages use `before` and `has_more`, not shared opaque cursor; inspect context before defining a cursor API. Audit send deduplication and supported attachment types |
 | Review history | Sessions, nutrition days, assignment show, weight entries | Client history paging and completed response access need contract/context audit; weight trend exposed to coach is not yet exposed to client |
 | Manage account | Profile GET/PATCH | Editable names, phone, goal weight. Email and default unit are not editable in this profile contract; do not invent writes |

@@ -5,6 +5,9 @@ Application.put_env(:easy, Easy.Mailer, adapter: Swoosh.Adapters.Local)
 Application.put_env(:easy, :start_client_subscription_sweeper, false)
 Application.put_env(:easy, :start_check_in_sweeper, false)
 Application.put_env(:easy, :client_frontend_url, "http://localhost:1315")
+if endpoint = System.get_env("CLIENT_STORAGE_URL") do
+  Application.put_env(:easy, Easy.Storage, Keyword.put(Application.get_env(:easy, Easy.Storage), :endpoint, endpoint))
+end
 Mix.Task.run("ecto.create", ["--quiet"])
 Mix.Task.run("ecto.migrate", ["--quiet"])
 Application.put_env(:easy, EasyWeb.Endpoint, Keyword.put(Application.get_env(:easy, EasyWeb.Endpoint), :server, true))

@@ -109,7 +109,7 @@ try {
       ],
     },
   });
-  await page.route('http://localhost:9000/**', (route) =>
+  await page.route(`${process.env.CLIENT_STORAGE_URL || 'http://localhost:9000'}/**`, (route) =>
     route.fulfill({status: 503, headers: {'Access-Control-Allow-Origin': '*'}}),
   );
   await page.goto(`/forms/${pending.id}`);

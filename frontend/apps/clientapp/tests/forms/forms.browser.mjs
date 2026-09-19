@@ -95,7 +95,7 @@ try {
       await page.getByLabel('Current weight', {exact: false}).fill('70.5');
       await page.getByLabel('Service type (required)').getByText('Training', {exact: true}).click();
       await expect(page.getByRole('checkbox', {name: 'Training', exact: true})).toBeChecked();
-      await page.getByText('Nutrition', {exact: true}).click();
+      await page.getByLabel('Service type (required)').getByText('Nutrition', {exact: true}).click();
       await expect(page.getByRole('checkbox', {name: 'Nutrition', exact: true})).toBeChecked();
       await page.getByRole('button', {name: 'Send response'}).click();
       await expect(page.getByRole('group', {name: /Progress views/})).toBeFocused();
@@ -233,6 +233,10 @@ try {
       expect(submissions.data[0].attachments).toHaveLength(1);
       expect(errors).toEqual([]);
       results.push({width, passed: true, objectStorage: 'external boundary simulated; Phoenix and PostgreSQL real'});
+    } catch (error) {
+      await writeFile(`tests/forms/artifacts/failure-${width}.txt`, await page.locator('body').innerText());
+      await page.screenshot({path: `tests/forms/artifacts/failure-${width}.png`, fullPage: true});
+      throw error;
     } finally {
       await context.close();
     }

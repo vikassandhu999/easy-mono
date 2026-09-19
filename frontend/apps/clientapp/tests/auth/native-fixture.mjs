@@ -2,6 +2,14 @@ import {writeFile} from 'node:fs/promises';
 import {api, inviteClient} from './fixtures.mjs';
 
 const fixture = await inviteClient({firstName: ''});
+await api('/v1/coach/nutrition-foods', {
+  method: 'POST',
+  token: fixture.coachToken,
+  body: {name: 'iPhone rice', calories_per_100g: 130},
+});
+fixture.nutritionDate = (
+  await api(`/v1/coach/clients/${fixture.clientId}/nutrition-days`, {token: fixture.coachToken})
+).data[0].date;
 const formClient = await inviteClient();
 const assignment = (await api(`/v1/coach/clients/${formClient.clientId}/intake`, {token: formClient.coachToken})).data;
 await api(`/v1/coach/form-templates/${assignment.form_template_id}`, {

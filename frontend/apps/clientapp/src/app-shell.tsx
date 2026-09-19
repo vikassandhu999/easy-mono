@@ -1,11 +1,12 @@
-import {useSyncExternalStore} from 'react';
+import {type ReactNode, useSyncExternalStore} from 'react';
 import {generatePath, Link, Navigate, NavLink, Outlet, useLocation} from 'react-router-dom';
 import {useProfile} from './api/auth';
 import {useFormAssignments} from './api/forms';
 import {latestPageCount} from './api/pagination';
-import {clearSession, parseSession, sessionSnapshot, subscribeSession} from './api/session';
+import {clearSession, getSession, parseSession, sessionSnapshot, subscribeSession} from './api/session';
 import {useTrainingCoverage} from './api/training';
 import {authPath} from './auth/return-to';
+import {TodayNutrition} from './nutrition/nutrition';
 import {routes} from './routes';
 import {dayLabel} from './training/recording';
 import {ActiveWorkout} from './training/training';
@@ -18,41 +19,73 @@ export function AppShell() {
   const session = parseSession(useSyncExternalStore(subscribeSession, sessionSnapshot));
   const location = useLocation();
   return session ? (
-    <div key={session.id}>
-      <header className="app-header">
-        <Link
-          to={routes.home}
-          className="text-xl font-semibold"
+    <VerifiedAccount key={session.id}>
+      <div>
+        <header className="app-header">
+          <Link
+            to={routes.home}
+            className="text-xl font-semibold"
+          >
+            easy
+          </Link>
+          <Link
+            to={routes.account}
+            className="text-link"
+          >
+            Your account
+          </Link>
+        </header>
+        <Outlet />
+        <nav
+          aria-label="Main navigation"
+          className="mobile-nav"
         >
-          easy
-        </Link>
-        <Link
-          to={routes.account}
-          className="text-link"
-        >
-          Your account
-        </Link>
-      </header>
-      <Outlet />
-      <nav
-        aria-label="Main navigation"
-        className="mobile-nav"
-      >
-        <NavLink
-          to={routes.home}
-          end
-        >
-          Today
-        </NavLink>
-        <NavLink to={routes.training}>Training</NavLink>
-        <NavLink to={routes.forms}>Check-ins</NavLink>
-      </nav>
-    </div>
+          <NavLink
+            to={routes.home}
+            end
+          >
+            Today
+          </NavLink>
+          <NavLink to={routes.training}>Training</NavLink>
+          <NavLink to={routes.nutrition}>Nutrition</NavLink>
+          <NavLink to={routes.forms}>Check-ins</NavLink>
+        </nav>
+      </div>
+    </VerifiedAccount>
   ) : (
     <Navigate
       to={authPath(routes.login, location.pathname + location.search)}
       replace
     />
+  );
+}
+
+function VerifiedAccount({children}: {children: ReactNode}) {
+  const profile = useProfile();
+  if (getSession()?.accountId) {
+    return children;
+  }
+  return (
+    <Page
+      title="Opening your account"
+      description="Loading your coaching details."
+    >
+      <ReadState
+        label="your account"
+        failed={profile.isError}
+        retry={() => {
+          profile.refetch();
+        }}
+      />
+      {profile.isError && (
+        <Button
+          variant="ghost"
+          onPress={clearSession}
+        >
+          Sign out
+        </Button>
+      )}
+    </Page>
   );
 }
 
@@ -169,6 +202,7 @@ export function Home() {
           />
         )}
       </section>
+      <TodayNutrition />
       <Button
         variant="ghost"
         onPress={clearSession}

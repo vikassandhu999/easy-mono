@@ -73,6 +73,9 @@ export async function identifySession(accountId: string, sessionId: string) {
   }
   if (!session.accountId) {
     await persist(JSON.stringify({...session, accountId}));
+    if (getSession()?.id === sessionId) {
+      window.dispatchEvent(new Event(EVENT));
+    }
   }
   if (getSession()?.id !== sessionId) {
     throw new Error('Your session changed. Please sign in again.');

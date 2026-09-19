@@ -178,6 +178,7 @@ Severity of the rule isn't the point; recurrence is.
 | RM-234 | Focus outlines must survive container clipping | Frontend | browser test |
 | RM-235 | Search lexemes match the indexed text parser | Backend | test |
 | RM-236 | Mutation error callbacks tolerate a changed session | Frontend | browser test |
+| RM-238 | Verify account identity before mounting draft editors | Frontend | browser/native test |
 
 ---
 
@@ -1365,6 +1366,16 @@ Compare unfiltered totals with the API, then use unique fixture names and server
 for deterministic paging assertions. A reference-data seed and its browser API must
 target the same database. **Verify by:** coachapp `test:templates` on a populated shared
 catalog and `test:exercises` against its default isolated API44000/app22022 pair.
+
+### RM-238 — Verify account identity before mounting draft editors
+An authenticated token did not yet identify the client profile used for private storage.
+Leaving Today cancelled its profile read, so a meal editor reported a saved draft while
+the storage helper silently skipped the write. Keep profile verification at the protected
+app boundary, notify session subscribers when identification completes, and reject draft
+writes without a verified owner. **Verify by:** clientapp
+`tests/auth/account-ready.browser.mjs` holds the first profile response and requires
+editable routes to wait; nutrition browser and Android tests then restart offline and
+require the saved draft and account snapshot.
 
 ## Deploy / ops
 

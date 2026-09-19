@@ -31,3 +31,14 @@ export const trainingKeys = {
   coverage: () => ['training', getSession()?.id, 'coverage'] as const,
   active: () => ['training', getSession()?.id, 'active'] as const,
 };
+
+export const nutritionKeys = {
+  all: ['nutrition'] as const,
+  lists: () => ['nutrition', getSession()?.id, 'lists'] as const,
+  plans: (search: string, archived: boolean) =>
+    [...nutritionKeys.lists(), 'plans', 'infinite', {search, archived}] as const,
+  library: (kind: 'food' | 'recipe', search: string) => [...nutritionKeys.lists(), kind, 'infinite', search] as const,
+  details: () => ['nutrition', getSession()?.id, 'details'] as const,
+  day: (date?: string) => [...nutritionKeys.details(), 'day', date ?? 'today'] as const,
+  plan: (id: string) => [...nutritionKeys.details(), 'plan', id] as const,
+};

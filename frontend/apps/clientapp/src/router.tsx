@@ -6,6 +6,8 @@ import {Login} from './auth/login';
 import {Verify} from './auth/verify';
 import {FormDetail} from './forms/form';
 import {Forms} from './forms/forms';
+import {NutritionMeal} from './nutrition/meal';
+import {Nutrition, NutritionPlan, NutritionPlans} from './nutrition/nutrition';
 import {routes} from './routes';
 import {TrainingSession} from './training/session';
 import {Training, TrainingPlan} from './training/training';
@@ -25,6 +27,10 @@ export const router = createBrowserRouter([
       {path: routes.trainingPlan, element: <TrainingPlan />},
       {path: routes.workout, element: <TrainingPlan />},
       {path: routes.trainingSession, element: <TrainingSession />},
+      {path: routes.nutrition, element: <Nutrition />},
+      {path: routes.nutritionPlans, element: <NutritionPlans />},
+      {path: routes.nutritionPlan, element: <NutritionPlan />},
+      {path: routes.nutritionMeal, element: <NutritionMeal />},
     ],
   },
   {

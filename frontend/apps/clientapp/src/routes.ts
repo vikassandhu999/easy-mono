@@ -10,4 +10,8 @@ export const routes = {
   trainingPlan: '/training/plans/:id',
   workout: '/training/plans/:id/workouts/:workoutId',
   trainingSession: '/training/sessions/:id',
+  nutrition: '/nutrition',
+  nutritionPlans: '/nutrition/plans',
+  nutritionPlan: '/nutrition/plans/:id',
+  nutritionMeal: '/nutrition/days/:date/:slot',
 } as const;

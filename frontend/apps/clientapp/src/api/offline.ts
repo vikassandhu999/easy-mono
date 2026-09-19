@@ -24,7 +24,8 @@ function eligible(key: QueryKey, sessionId: string) {
     key[1] === sessionId &&
     ((key[0] === 'auth' && key[2] === 'profile') ||
       (key[0] === 'forms' && ['lists', 'details'].includes(String(key[2]))) ||
-      (key[0] === 'training' && ['lists', 'details', 'coverage', 'active'].includes(String(key[2]))))
+      (key[0] === 'training' && ['lists', 'details', 'coverage', 'active'].includes(String(key[2]))) ||
+      (key[0] === 'nutrition' && ['lists', 'details'].includes(String(key[2]))))
   );
 }
 function cacheKey(owner: string) {

@@ -26,9 +26,10 @@ export async function readDraft(owner: string, resource: string): Promise<unknow
 
 export async function writeDraft(owner: string, resource: string, value: unknown) {
   const key = draftKey(owner, resource);
-  if (key) {
-    await writeStored(key, JSON.stringify(value));
+  if (!key) {
+    throw new Error('Your account must be verified before keeping a draft.');
   }
+  await writeStored(key, JSON.stringify(value));
 }
 
 export async function removeDraft(owner: string, resource: string) {

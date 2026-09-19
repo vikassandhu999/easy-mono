@@ -43,7 +43,7 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
       assert message["embed"] == nil
 
       assert Map.keys(message) |> Enum.sort() ==
-               ~w(attachments body conversation_id embed id inserted_at sender_id sender_type)
+               ~w(attachments body conversation_id embed id inserted_at request_id sender_id sender_type)
 
       list_conn =
         build_conn() |> authenticate_coach(coach) |> get("/v1/coach/conversations/#{conversation_id}/messages")

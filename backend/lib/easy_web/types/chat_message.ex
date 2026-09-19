@@ -59,6 +59,7 @@ defmodule EasyWeb.Types.ChatMessage do
           required(:conversation_id) => String.t(),
           required(:sender_type) => :coach | :client,
           required(:sender_id) => String.t(),
+          required(:request_id) => String.t() | nil,
           required(:body) => String.t() | nil,
           required(:attachments) => [EasyWeb.Types.Attachment.t()],
           required(:embed) => EasyWeb.Types.ChatMessageEmbed.t() | nil,
@@ -80,6 +81,7 @@ defmodule EasyWeb.Types.ChatMessage do
 
   @type client_create :: %{
           optional(:body) => String.t() | nil,
+          optional(:request_id) => Ecto.UUID.t(),
           optional(:attachment_ids) => [String.t()]
         }
 
@@ -102,6 +104,7 @@ defmodule EasyWeb.Types.ChatMessage do
       conversation_id: message.conversation_id,
       sender_type: message.sender_type,
       sender_id: message.sender_id,
+      request_id: message.request_id,
       body: message.body,
       attachments: Enum.map(message.attachments, &Attachment.take/1),
       embed: embed,

@@ -84,31 +84,74 @@ defmodule Easy.ChatMessages do
   end
 
   @spec send_message(Ctx.t(), Conversation.t(), {:coach | :client, Ecto.UUID.t()}, map()) ::
-          {:ok, Message.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, Message.t()} | {:error, :not_found | :conflict | Ecto.Changeset.t()}
   def send_message(%Ctx{} = ctx, conversation, {sender_type, sender_id}, attrs)
       when sender_type in [:coach, :client] do
     base_changeset =
       Message.insert_changeset(ctx.business_id, sender_type, sender_id, conversation.id, attrs)
 
     with {:ok, attachment_ids} <- Message.attachment_ids(base_changeset),
-         {:ok, attachments} <- load_attachments(ctx, conversation.client_id, attachment_ids),
          {:ok, embed_id} <- Message.embed_reference(base_changeset),
-         {:ok, embed} <- resolve_embed(ctx, conversation.client_id, embed_id),
-         changeset <- Message.put_content(base_changeset, attachments, embed),
-         {:ok, message} <- persist_message(changeset, conversation, attachments) do
-      broadcast_message(conversation, message)
+         changeset <- Message.put_request_fingerprint(base_changeset, attachment_ids, embed_id),
+         {:ok, candidate} <- Ecto.Changeset.apply_action(changeset, :insert),
+         {:ok, {message, created?}} <-
+           persist_message(ctx, conversation, changeset, candidate, attachment_ids, embed_id) do
+      if created?, do: broadcast_message(conversation, message)
       {:ok, message}
     end
   end
 
-  defp persist_message(changeset, conversation, attachments) do
+  defp persist_message(ctx, conversation, changeset, candidate, attachment_ids, embed_id) do
     Repo.transact(fn ->
-      with {:ok, message} <- Repo.insert(changeset),
-           {:ok, _links} <- insert_attachment_links(message, attachments),
-           {:ok, :updated} <- update_conversation(conversation, message, attachments) do
-        {:ok, %{message | attachments: attachments}}
+      locked =
+        Conversation
+        |> Conversation.for_business(ctx.business_id)
+        |> where([conversation], conversation.id == ^candidate.conversation_id)
+        |> lock("FOR UPDATE")
+        |> Repo.one()
+
+      case locked do
+        nil -> {:error, :not_found}
+        _ -> replay_or_insert(ctx, conversation, changeset, candidate, attachment_ids, embed_id)
       end
     end)
+  end
+
+  defp replay_or_insert(ctx, conversation, changeset, candidate, attachment_ids, embed_id) do
+    case find_request(candidate) do
+      nil ->
+        insert_message(ctx, conversation, changeset, attachment_ids, embed_id)
+
+      %{request_fingerprint: fingerprint} = message when fingerprint == candidate.request_fingerprint ->
+        {:ok, {message, false}}
+
+      _message ->
+        {:error, :conflict}
+    end
+  end
+
+  defp find_request(%Message{request_id: nil}), do: nil
+
+  defp find_request(candidate) do
+    Message
+    |> Message.for_conversation(candidate.business_id, candidate.conversation_id)
+    |> where(
+      [message],
+      message.sender_type == ^candidate.sender_type and message.sender_id == ^candidate.sender_id and
+        message.request_id == ^candidate.request_id
+    )
+    |> Message.include_attachments()
+    |> Repo.one()
+  end
+
+  defp insert_message(ctx, conversation, changeset, attachment_ids, embed_id) do
+    with {:ok, attachments} <- load_attachments(ctx, conversation.client_id, attachment_ids),
+         {:ok, embed} <- resolve_embed(ctx, conversation.client_id, embed_id),
+         {:ok, message} <- changeset |> Message.put_content(attachments, embed) |> Repo.insert(),
+         {:ok, _links} <- insert_attachment_links(message, attachments),
+         {:ok, :updated} <- update_conversation(conversation, message, attachments) do
+      {:ok, {%{message | attachments: attachments}, true}}
+    end
   end
 
   defp load_attachments(_ctx, _client_id, []), do: {:ok, []}

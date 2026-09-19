@@ -140,7 +140,7 @@ defmodule Easy.Chat do
   end
 
   @spec send_message(Ctx.t(), String.t(), map()) ::
-          {:ok, Message.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, Message.t()} | {:error, :not_found | :conflict | Ecto.Changeset.t()}
   def send_message(%Ctx{} = ctx, conversation_id, attrs) do
     with {:ok, coach} <- Coaches.get_membership(ctx),
          {:ok, conversation} <- fetch_conversation(ctx, conversation_id) do
@@ -192,17 +192,26 @@ defmodule Easy.Chat do
   end
 
   @spec send_client_message(Ctx.t(), map()) ::
-          {:ok, Message.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, Message.t()} | {:error, :not_found | :conflict | Ecto.Changeset.t()}
   def send_client_message(%Ctx{} = ctx, attrs) do
     with {:ok, conversation} <- client_conversation(ctx) do
       ChatMessages.send_message(ctx, conversation, {:client, conversation.client_id}, attrs)
     end
   end
 
-  @spec mark_client_read(Ctx.t()) :: {:ok, Conversation.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def mark_client_read(%Ctx{} = ctx) do
+  @spec list_client_message_page(Ctx.t(), keyword()) ::
+          {:ok, Easy.CursorPage.t(Message.t())} | {:error, :not_found | :invalid_cursor | Ecto.Changeset.t()}
+  def list_client_message_page(%Ctx{} = ctx, opts \\ []) do
     with {:ok, conversation} <- client_conversation(ctx) do
-      advance_read_cursor(conversation, :client_last_read_at, :client, nil)
+      ChatMessages.list_message_page(ctx, conversation, opts)
+    end
+  end
+
+  @spec mark_client_read(Ctx.t(), DateTime.t() | nil) ::
+          {:ok, Conversation.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def mark_client_read(%Ctx{} = ctx, through \\ nil) do
+    with {:ok, conversation} <- client_conversation(ctx) do
+      advance_read_cursor(conversation, :client_last_read_at, :client, through)
     end
   end
 

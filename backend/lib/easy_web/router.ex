@@ -297,6 +297,7 @@ defmodule EasyWeb.Router do
 
     # Chat
     get "/conversation", ConversationController, :show
+    get "/conversation/history", ConversationController, :history
     get "/conversation/messages", ConversationController, :messages
     post "/conversation/messages", ConversationController, :create_message
     post "/conversation/read", ConversationController, :mark_read

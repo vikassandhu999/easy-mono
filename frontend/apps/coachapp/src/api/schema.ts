@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 2cb9e7915cb68011b2e8b4cef145a66bf2e78c12dc850e592c7c8f505ce2a3e9 */
+/* typed-routes:hash cebb70582bd270b811647e3dcc96f7aed208fcd545e488b66254b282122ddc0e */
 export type Attachment = {
   id: string;
   content_type:
@@ -90,6 +90,7 @@ export type ChatMessage = {
   conversation_id: string;
   sender_type: 'coach' | 'client';
   sender_id: string;
+  request_id: string | null;
   body: string | null;
   attachments: Array<Attachment>;
   embed: ChatMessageEmbed | null;

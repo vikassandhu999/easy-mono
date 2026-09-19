@@ -17,6 +17,8 @@ defmodule Easy.Chat.Message do
 
   schema "chat_messages" do
     field :body, :string
+    field :request_id, :binary_id
+    field :request_fingerprint, :string
     field :embed_type, Ecto.Enum, values: [:form_submission]
     field :embed_id, :binary_id
     field :embed_snapshot, :map
@@ -37,7 +39,7 @@ defmodule Easy.Chat.Message do
           Ecto.Changeset.t()
   def insert_changeset(business_id, sender_type, sender_id, conversation_id, attrs) do
     %__MODULE__{}
-    |> cast(attrs, [:body])
+    |> cast(attrs, [:body, :request_id])
     |> update_change(:body, &Easy.Utils.trim/1)
     |> put_change(:business_id, business_id)
     |> put_change(:conversation_id, conversation_id)
@@ -45,12 +47,27 @@ defmodule Easy.Chat.Message do
     |> put_change(:sender_id, sender_id)
     |> validate_required([:business_id, :conversation_id, :sender_type, :sender_id])
     |> validate_length(:body, max: 4000)
+    |> unique_constraint(:request_id, name: :chat_messages_sender_request_index)
+    |> check_constraint(:request_id, name: :chat_messages_request_complete_check)
     |> foreign_key_constraint(:business_id)
     |> foreign_key_constraint(:conversation_id)
     |> foreign_key_constraint(:conversation_id, name: :chat_messages_conversation_business_id_fkey)
     |> check_constraint(:sender_type, name: :chat_messages_sender_type_check)
     |> check_constraint(:embed_type, name: :chat_messages_embed_type_check)
     |> check_constraint(:embed_id, name: :chat_messages_embed_complete_check)
+  end
+
+  @spec put_request_fingerprint(Ecto.Changeset.t(), [String.t()], String.t() | nil) :: Ecto.Changeset.t()
+  def put_request_fingerprint(changeset, attachment_ids, embed_id) do
+    case get_field(changeset, :request_id) do
+      nil ->
+        changeset
+
+      _request_id ->
+        payload = {get_field(changeset, :body), attachment_ids, embed_id}
+        fingerprint = :sha256 |> :crypto.hash(:erlang.term_to_binary(payload)) |> Base.encode16(case: :lower)
+        put_change(changeset, :request_fingerprint, fingerprint)
+    end
   end
 
   @spec attachment_ids(Ecto.Changeset.t()) :: {:ok, [String.t()]} | {:error, Ecto.Changeset.t()}

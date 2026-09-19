@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash fca653106af71773655d8f2fb49ea0b9aef536a63de531c9ff542dabf0abbc95 */
+/* typed-routes:hash 2bd98cf9e6c89ac5ab6578603921a0337fe080e74a326fc1ef06c906e3433c0c */
 export type Attachment = {
   id: string;
   content_type:
@@ -26,13 +26,21 @@ export type ChatMessage = {
   conversation_id: string;
   sender_type: 'coach' | 'client';
   sender_id: string;
+  request_id: string | null;
   body: string | null;
   attachments: Array<Attachment>;
   embed: ChatMessageEmbed | null;
   inserted_at: string;
 };
-export type ChatMessageClientCreate = {body?: string | null; attachment_ids?: Array<string>};
+export type ChatMessageClientCreate = {body?: string | null; request_id?: string; attachment_ids?: Array<string>};
 export type ChatMessageEmbed = {type: 'form_submission'; id: string; snapshot: FormSubmissionEmbedSnapshot};
+export type ChatMessageHistory = {
+  data: Array<ChatMessage>;
+  count: number;
+  next_cursor: string | null;
+  latest_message_at: string | null;
+};
+export type ChatMessageHistoryQuery = {cursor?: string; limit?: number};
 export type ChatMessageListQuery = {before?: string; limit?: number};
 export type ChatMessagePage = {data: Array<ChatMessage>; has_more: boolean};
 export type ClientFormAssignmentDetail = {data: FormAssignment; weight_unit: 'kg' | 'lbs'};
@@ -72,6 +80,7 @@ export type Conversation = {
   inserted_at: string;
   updated_at: string;
 };
+export type ConversationMarkReadQuery = {through?: string};
 export type Day = {
   date: string;
   plan_id: string | null;
@@ -769,7 +778,7 @@ export type WeightEntryListQuery = {since?: string};
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 2c5f6d265a824a56647eab2eddfb0ee01a8586253d8e36c4367b9124abe54bb1 */
+  /* typed-routes:hash 04ba7123729a6de14807f2bc632a4c43ea2794003544d0d799c6dfa5c7290b17 */
   '/api/health': {
     get: {
       parameters: {
@@ -810,6 +819,19 @@ export interface paths {
       };
     };
   };
+  '/v1/client/conversation/history': {
+    get: {
+      parameters: {
+        query?: ChatMessageHistoryQuery;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': ChatMessageHistory}};
+      };
+    };
+  };
   '/v1/client/conversation/messages': {
     get: {
       parameters: {
@@ -838,7 +860,7 @@ export interface paths {
   '/v1/client/conversation/read': {
     post: {
       parameters: {
-        query?: never;
+        query?: ConversationMarkReadQuery;
         header?: {Authorization?: string};
         path?: never;
         cookie?: never;

@@ -20,6 +20,13 @@ export const attachmentKeys = {
   urls: (ids: string[]) => ['attachments', getSession()?.id, 'urls', ids] as const,
 };
 
+export const conversationKeys = {
+  all: ['conversation'] as const,
+  lists: () => ['conversation', getSession()?.id, 'lists'] as const,
+  history: () => [...conversationKeys.lists(), 'history', 'infinite'] as const,
+  detail: () => ['conversation', getSession()?.id, 'detail'] as const,
+};
+
 export const trainingKeys = {
   all: ['training'] as const,
   lists: () => ['training', getSession()?.id, 'lists'] as const,

@@ -99,6 +99,31 @@ defmodule Easy.ChatTest do
       assert "chat_messages_embed_complete_check" in constraints
     end
 
+    test "database enforces complete and unique sender request identities" do
+      conversation = insert(:conversation)
+      sender_id = conversation.client_id
+      attrs = %{body: "Hello", request_id: Ecto.UUID.generate()}
+
+      changeset =
+        conversation.business_id
+        |> Message.insert_changeset(:client, sender_id, conversation.id, attrs)
+
+      assert {:error, incomplete} = Easy.Repo.insert(changeset, mode: :savepoint)
+      assert "is invalid" in errors_on(incomplete).request_id
+
+      complete = Message.put_request_fingerprint(changeset, [], nil)
+      assert {:ok, _} = Easy.Repo.insert(complete)
+      assert {:error, duplicate} = Easy.Repo.insert(complete, mode: :savepoint)
+      assert "has already been taken" in errors_on(duplicate).request_id
+
+      another_sender =
+        conversation.business_id
+        |> Message.insert_changeset(:coach, Ecto.UUID.generate(), conversation.id, attrs)
+        |> Message.put_request_fingerprint([], nil)
+
+      assert {:ok, _} = Easy.Repo.insert(another_sender)
+    end
+
     test "maps embed completeness constraint failures to changeset errors" do
       conversation = insert(:conversation)
 
@@ -901,6 +926,52 @@ defmodule Easy.ChatConcurrencyTest do
     reloaded = Repo.reload(context.conversation)
     assert reloaded.last_message_at == newer.inserted_at
     assert reloaded.waiting_since
+  end
+
+  test "concurrent retries publish and persist one message", context do
+    Phoenix.PubSub.subscribe(Easy.PubSub, "conversation:#{context.conversation.id}")
+    attrs = %{body: "One send", request_id: Ecto.UUID.generate()}
+    results = concurrent_sends(context.client_ctx, List.duplicate(attrs, 8))
+    messages = Enum.map(results, fn {:ok, message} -> message end)
+    assert length(Enum.uniq_by(messages, & &1.id)) == 1
+    assert_receive {:chat_message_created, _}
+    refute_receive {:chat_message_created, _}
+    assert Repo.aggregate(Message.for_conversation(context.business.id, context.conversation.id), :count) == 2
+  end
+
+  test "competing payloads with one request identity have one winner", context do
+    request_id = Ecto.UUID.generate()
+    attrs = for n <- 1..4, do: %{body: "Contender #{n}", request_id: request_id}
+    results = concurrent_sends(context.client_ctx, attrs)
+    assert Enum.count(results, &match?({:ok, _}, &1)) == 1
+    assert Enum.count(results, &(&1 == {:error, :conflict})) == 3
+    assert Repo.aggregate(Message.for_conversation(context.business.id, context.conversation.id), :count) == 2
+  end
+
+  defp concurrent_sends(ctx, payloads) do
+    parent = self()
+
+    tasks =
+      Enum.map(payloads, fn attrs ->
+        Task.async(fn ->
+          Sandbox.checkout(Repo, sandbox: false)
+          send(parent, {:send_ready, self()})
+
+          receive do
+            :go -> Chat.send_client_message(ctx, attrs)
+          end
+        end)
+      end)
+
+    workers =
+      for _ <- payloads do
+        receive do
+          {:send_ready, pid} -> pid
+        end
+      end
+
+    Enum.each(workers, &send(&1, :go))
+    Enum.map(tasks, &Task.await(&1, 5_000))
   end
 
   for reader <- [:coach, :client] do

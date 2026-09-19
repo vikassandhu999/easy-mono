@@ -104,8 +104,11 @@ defmodule EasyWeb.Types.Training.Session do
   @type list_query :: %{
           optional(:from) => Date.t(),
           optional(:to) => Date.t(),
-          optional(:offset) => integer(),
-          optional(:limit) => integer()
+          optional(:offset) => non_neg_integer(),
+          optional(:limit) => pos_integer(),
+          optional(:cursor) => String.t(),
+          optional(:search) => String.t(),
+          optional(:state) => :active | :completed | :discarded
         }
 
   @type coach_list_query :: %{

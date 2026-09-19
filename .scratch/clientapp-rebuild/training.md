@@ -1,6 +1,6 @@
 # Today and training
 
-Status: design and bounded contract audit; no training screen is delivered yet. Every screen keeps the phone composition on tablets and wide browsers.
+Status: design, bounded contract audit, and client cursor contracts; no training screen is delivered yet. Every screen keeps the phone composition on tablets and wide browsers.
 
 ## Screen brief
 
@@ -18,7 +18,7 @@ Empty guidance offers the available training choices. Failed reads retain cached
 
 Source inspection used the client typed controllers, `Easy.Training.Execution`, `Easy.Training.PerformedSets`, `Easy.Training.PlanReader`, their typed responses, and `Easy.Clients.Client`. Graph MCP tools were unavailable; no graph freshness or exhaustive coverage claim is made.
 
-* Client plan and session indexes return offset pages. Coach readers already contain opaque cursor paths. Add client-scoped cursor readers and typed contracts before exposing browse/history lists; retain server-owned totals and filtering.
+* Client plan and session indexes now support opaque cursor pages through the existing coach paging implementation. Plans accept server search; sessions accept search, state and inclusive date filters. Both retain offset compatibility and return server counts. Initial cursor is `start`. Cursor ordering uses insertion timestamp and ID; legacy session offset reads retain their existing start-time ordering. Training UI consumers remain pending.
 * `Execution.start_client_session/3` enforces one active session per client through a database constraint. A lost Start response can be reconciled with the active-session endpoint. Completion/discard already return the same terminal state on repeated calls. Preserve these rules and verify conflicting terminal transitions.
 * `PerformedSets.create_client_performed_set/3` appends a position under a session lock, but has no request identity. Two successful retries can create two sets. Add an account/session-scoped stable creation identity with uniqueness and conflict behavior before building reliable retry. Tests must distinguish a retry from another deliberate set with equal values and protect tenant isolation.
 * Starting a session derives its date from UTC; default training coverage also uses UTC. Clients already have a timezone and `Client.local_date/2`, but the client profile does not expose that timezone. Establish the client's server-owned local day consistently for coverage and start, including either side of UTC midnight. Do not use a browser-derived day that can disagree with session creation.
@@ -27,5 +27,7 @@ Source inspection used the client typed controllers, `Easy.Training.Execution`, 
 These are focused prerequisites for the supported workflow. Follow the repository API-change process, regenerate contracts, and verify behavior through router tests before building the screens.
 
 ## Verification to complete
+
+2026-09-19 cursor prerequisite: 32 focused router/context tests pass, including tied timestamps, deleted cursor boundaries, newly inserted rows, same-business/foreign-business isolation, filtered totals, invalid inputs and the 100-row maximum. `just gen-api`, strict client build (using the task API on port 4100), repository shape checks and full backend precommit pass (1,806 tests). The API-change subagent reviewed the typed contracts and generated current-client schema with no gaps. No screen or native training behavior is claimed by this backend checkpoint.
 
 Exercise planned and freestyle sessions against Phoenix: server-local today, rest and missing-coverage states, start/resume, every supported tracking type, save/edit/remove, frozen targets after a coach edit, completion/discard, saved history and return. Inject a lost set response and verify one persisted set after deliberate retry. Check concurrent terminal changes and account isolation. Verify draft and cached-session recovery with offline reload, native background/restart, native keyboard and Android back. Browser checks at 375, 768 and 1280 pixels must keep one mobile composition. Physical-device and real-client observations remain separate evidence.

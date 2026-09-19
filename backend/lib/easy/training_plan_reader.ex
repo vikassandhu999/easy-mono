@@ -82,6 +82,17 @@ defmodule Easy.Training.PlanReader do
     end
   end
 
+  @spec list_client_plan_page(Ctx.t(), keyword()) ::
+          {:ok, CursorPage.t(TrainingPlan.t())} | {:error, atom()}
+  def list_client_plan_page(%Ctx{} = ctx, opts \\ []) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+      ctx
+      |> client_plan_query(client_id)
+      |> TrainingPlan.for_search(opts |> Keyword.get(:search, "") |> String.trim())
+      |> cursor_or_offset_page(ctx.business_id, opts)
+    end
+  end
+
   @spec get_client_plan(Ctx.t(), String.t()) :: {:ok, TrainingPlan.t()} | {:error, :not_found}
   def get_client_plan(%Ctx{} = ctx, plan_id) do
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do

@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 78c02e1bae0c322973e306696e98d0f50195631543447e5e7594b6c410f13937 */
+/* typed-routes:hash a15a65819e4eaf9a698774e960e4380d4e8c7d436ee3aa5d647b080533b643d1 */
 export type Attachment = {
   id: string;
   content_type:
@@ -562,7 +562,16 @@ export type SessionCreate = {
   soreness_rating?: number | null;
   notes?: string | null;
 };
-export type SessionListQuery = {from?: string; to?: string; offset?: number; limit?: number};
+export type SessionIndex = {data: Array<Session>; count: number; next_cursor: string | null};
+export type SessionListQuery = {
+  from?: string;
+  to?: string;
+  offset?: number;
+  limit?: number;
+  cursor?: string;
+  search?: string;
+  state?: 'active' | 'completed' | 'discarded';
+};
 export type SessionPlannedSet = {
   set_type: 'working' | 'warmup' | 'dropset' | null;
   reps: string | null;
@@ -618,7 +627,7 @@ export type TrainingPlan = {
   updated_at: string;
 };
 export type TrainingPlanClient = {id: string; first_name: string | null; last_name: string | null};
-export type TrainingPlanClientListQuery = {offset?: number; limit?: number};
+export type TrainingPlanClientListQuery = {cursor?: string; offset?: number; limit?: number; search?: string};
 export type TrainingPlanCoverage = {
   date: string;
   weekday: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
@@ -644,6 +653,7 @@ export type TrainingPlanExercise = {
     | null;
   images: Array<string>;
 };
+export type TrainingPlanIndex = {data: Array<TrainingPlan>; count: number; next_cursor: string | null};
 export type TrainingPlanPlannedSet = {
   set_type: 'working' | 'warmup' | 'dropset' | null;
   reps: string | null;
@@ -747,7 +757,7 @@ export type WeightEntryListQuery = {since?: string};
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 01a43fade1f4e6837fd18c46636b5ca79ab839f3045299d006e338c0b8be24ea */
+  /* typed-routes:hash 6029eece28bd58b10e63f88d231ad48eb9a11c0e700b58e3256bc823143f535c */
   '/api/health': {
     get: {
       parameters: {
@@ -1056,7 +1066,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<TrainingPlan>; count: number}}};
+        200: {content: {'application/json': TrainingPlanIndex}};
       };
     };
   };
@@ -1095,7 +1105,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<Session>; count: number}}};
+        200: {content: {'application/json': SessionIndex}};
       };
     };
     post: {

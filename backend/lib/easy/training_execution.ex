@@ -106,8 +106,21 @@ defmodule Easy.Training.Execution do
   @spec list_session_page_for_client(Ctx.t(), String.t(), keyword()) ::
           {:ok, CursorPage.t(TrainingSession.t())} | {:error, :not_found | :invalid_cursor | Ecto.Changeset.t()}
   def list_session_page_for_client(%Ctx{} = ctx, client_id, opts \\ []) do
-    with :ok <- ClientAccess.authorize_client_id(ctx, client_id),
-         {:ok, filters} <- history_filters(opts),
+    with :ok <- ClientAccess.authorize_client_id(ctx, client_id) do
+      client_session_page(ctx, client_id, opts)
+    end
+  end
+
+  @spec list_client_session_page(Ctx.t(), keyword()) ::
+          {:ok, CursorPage.t(TrainingSession.t())} | {:error, :not_found | :invalid_cursor | Ecto.Changeset.t()}
+  def list_client_session_page(%Ctx{} = ctx, opts \\ []) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+      client_session_page(ctx, client_id, opts)
+    end
+  end
+
+  defp client_session_page(ctx, client_id, opts) do
+    with {:ok, filters} <- history_filters(opts),
          :ok <- compatible_pagination(opts) do
       base =
         TrainingSession

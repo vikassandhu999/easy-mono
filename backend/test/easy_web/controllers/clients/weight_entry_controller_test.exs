@@ -239,6 +239,87 @@ defmodule EasyWeb.Clients.WeightEntryControllerTest do
     end
   end
 
+  describe "GET /v1/client/weight-entry" do
+    test "reads only the authenticated client's self-recorded measurement for that date", ctx do
+      today = Date.utc_today()
+      other = insert(:client, creator: ctx.coach, business: ctx.business)
+      insert(:weight_entry, client: other, business: ctx.business, date: today)
+      insert(:weight_entry)
+      template = insert(:form_template, business: ctx.business)
+      assignment = insert(:form_assignment, business: ctx.business, client: ctx.client, form_template: template)
+      submission = insert(:form_submission, business: ctx.business, client: ctx.client, form_assignment: assignment)
+      form_entry = insert(:weight_entry, business: ctx.business, client: ctx.client, date: today, form_submission: submission)
+      assert %{"data" => nil} = ctx.conn |> get("/v1/client/weight-entry", %{date: Date.to_iso8601(today)}) |> json_response(200)
+      attrs = %{date: Date.to_iso8601(today), value: 80, unit: "kg", expected_entry: nil}
+      created = ctx.conn |> recycle() |> post("/v1/client/weight_entries", attrs) |> json_response(201) |> Map.fetch!("data")
+      assert created["id"] != form_entry.id
+      response = ctx.conn |> recycle() |> get("/v1/client/weight-entry", %{date: Date.to_iso8601(today)}) |> json_response(200)
+      assert response["data"]["id"] == created["id"]
+      assert response["data"]["revision"] == 1
+      assert %{"data" => nil} = ctx.conn |> recycle() |> get("/v1/client/weight-entry", %{date: Date.add(today, -1) |> Date.to_iso8601()}) |> json_response(200)
+      assert Easy.Repo.reload!(form_entry).form_submission_id == submission.id
+      progress = ctx.conn |> recycle() |> get("/v1/client/weight-progress") |> json_response(200)
+      derived = Enum.find(progress["data"], &(&1["id"] == form_entry.id))
+      assert derived["form_assignment_id"] == assignment.id
+      self_recorded = Enum.find(progress["data"], &(&1["id"] == created["id"]))
+      assert self_recorded["form_assignment_id"] == nil
+    end
+
+    test "requires a valid date and disallows caller-selected identity", ctx do
+      for params <- [%{}, %{date: "bad"}, %{date: Date.to_iso8601(Date.utc_today()), client_id: Ecto.UUID.generate()}] do
+        assert ctx.conn |> recycle() |> get("/v1/client/weight-entry", params) |> json_response(422)
+      end
+
+      assert build_conn() |> get("/v1/client/weight-entry", %{date: Date.to_iso8601(Date.utc_today())}) |> json_response(403)
+    end
+  end
+
+  describe "observed weight writes" do
+    test "rejects stale creation, edits and deletion without changing saved content", ctx do
+      attrs = %{date: Date.to_iso8601(Date.utc_today()), value: 80, unit: "kg", note: "morning", expected_entry: nil}
+      created = ctx.conn |> post("/v1/client/weight_entries", attrs) |> json_response(201) |> Map.fetch!("data")
+      assert created["revision"] == 1
+      assert ctx.conn |> recycle() |> post("/v1/client/weight_entries", %{attrs | value: 81}) |> json_response(409)
+      expected = %{id: created["id"], revision: created["revision"]}
+      edit = %{attrs | value: 82, expected_entry: expected}
+      updated = ctx.conn |> recycle() |> post("/v1/client/weight_entries", edit) |> json_response(201) |> Map.fetch!("data")
+      assert updated["id"] == created["id"]
+      assert updated["revision"] == 2
+      assert ctx.conn |> recycle() |> post("/v1/client/weight_entries", %{edit | value: 83}) |> json_response(409)
+      path = "/v1/client/weight_entries/#{created["id"]}"
+      assert ctx.conn |> recycle() |> delete(path <> "?expected_revision=1") |> json_response(409)
+      saved = Easy.Repo.get!(Easy.Fitness.WeightEntry, created["id"])
+      assert Decimal.eq?(saved.value, Decimal.new("82"))
+      assert saved.revision == 2
+      assert ctx.conn |> recycle() |> delete(path <> "?expected_revision=2") |> response(204)
+      assert ctx.conn |> recycle() |> post("/v1/client/weight_entries", edit) |> json_response(409)
+      replacement = ctx.conn |> recycle() |> post("/v1/client/weight_entries", attrs) |> json_response(201) |> Map.fetch!("data")
+      assert replacement["id"] != created["id"]
+      assert replacement["revision"] == 1
+      assert ctx.conn |> recycle() |> post("/v1/client/weight_entries", edit) |> json_response(409)
+    end
+
+    test "validates expected identity and revision without accepting a caller-set revision", ctx do
+      attrs = %{date: Date.to_iso8601(Date.utc_today()), value: 80, unit: "kg"}
+
+      expectations = [%{id: "bad", revision: 1}, %{id: Ecto.UUID.generate(), revision: 0}, %{id: Ecto.UUID.generate()}, "bad"]
+
+      for expected <- expectations do
+        invalid = Map.put(attrs, :expected_entry, expected)
+        assert ctx.conn |> recycle() |> post("/v1/client/weight_entries", invalid) |> json_response(422)
+      end
+
+      assert ctx.conn |> recycle() |> post("/v1/client/weight_entries", Map.put(attrs, :revision, 10)) |> json_response(422)
+      entry = insert(:weight_entry, client: ctx.client, business: ctx.business, date: Date.utc_today())
+
+      for revision <- [0, -1, "bad"] do
+        assert ctx.conn |> recycle() |> delete("/v1/client/weight_entries/#{entry.id}?expected_revision=#{revision}") |> json_response(422)
+      end
+
+      assert Easy.Repo.reload!(entry).revision == 1
+    end
+  end
+
   describe "DELETE /v1/client/weight_entries/:id" do
     test "deletes an owned entry", ctx do
       entry = insert(:weight_entry, client: ctx.client, business: ctx.business)

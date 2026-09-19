@@ -41,7 +41,7 @@ defmodule Easy.WeightEntries.Progress do
     first = base |> WeightEntry.newest() |> reverse_order() |> limit(1) |> Repo.one()
     client = Repo.preload(client, :business)
     unit = Keyword.get(opts, :unit) || (latest && latest.unit) || client.goal_weight_unit || client.business.default_weight_unit
-    page = DatedCursorPage.finish(Repo.all(query), limit, Repo.aggregate(base, :count, :id))
+    page = DatedCursorPage.finish(Repo.all(WeightEntry.include_submission(query)), limit, Repo.aggregate(base, :count, :id))
 
     Map.merge(page, %{
       from: range.from,

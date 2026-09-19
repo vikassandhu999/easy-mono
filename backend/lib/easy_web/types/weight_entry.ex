@@ -7,7 +7,9 @@ defmodule EasyWeb.Types.WeightEntry do
           required(:value) => Decimal.t(),
           required(:unit) => :kg | :lbs,
           required(:note) => String.t() | nil,
+          required(:revision) => pos_integer(),
           required(:form_submission_id) => String.t() | nil,
+          required(:form_assignment_id) => Ecto.UUID.t() | nil,
           required(:inserted_at) => DateTime.t()
         }
 
@@ -15,10 +17,13 @@ defmodule EasyWeb.Types.WeightEntry do
           required(:date) => Date.t(),
           required(:value) => number(),
           required(:unit) => :kg | :lbs,
-          optional(:note) => String.t() | nil
+          optional(:note) => String.t() | nil,
+          optional(:expected_entry) => %{required(:id) => Ecto.UUID.t(), required(:revision) => pos_integer()} | nil
         }
 
   @type list_query :: %{optional(:since) => Date.t()}
+  @type day_query :: %{required(:date) => Date.t()}
+  @type delete_query :: %{optional(:expected_revision) => pos_integer()}
 end
 
 defmodule EasyWeb.Types.WeightEntryIndex do

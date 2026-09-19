@@ -21,6 +21,8 @@ defmodule Easy.Fitness.WeightEntry do
     field :value, :decimal
     field :unit, Ecto.Enum, values: @units
     field :note, :string
+    field :revision, :integer, default: 1
+    field :form_assignment_id, :binary_id, virtual: true
 
     belongs_to :client, Client
     belongs_to :business, Orgs.Business
@@ -56,6 +58,7 @@ defmodule Easy.Fitness.WeightEntry do
     entry
     |> cast(attrs, [:value, :unit, :note])
     |> validate_measurement()
+    |> put_change(:revision, entry.revision + 1)
   end
 
   defp validate_measurement(changeset) do
@@ -79,6 +82,15 @@ defmodule Easy.Fitness.WeightEntry do
 
   @spec self_logged(Ecto.Queryable.t()) :: Ecto.Query.t()
   def self_logged(query \\ __MODULE__), do: from(e in query, where: is_nil(e.form_submission_id))
+
+  @spec include_submission(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def include_submission(query \\ __MODULE__) do
+    from(entry in query,
+      left_join: submission in FormSubmission,
+      on: submission.id == entry.form_submission_id and submission.business_id == entry.business_id and submission.client_id == entry.client_id,
+      select_merge: %{form_assignment_id: submission.form_assignment_id}
+    )
+  end
 
   @spec for_submission(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_submission(query \\ __MODULE__, submission_id) do

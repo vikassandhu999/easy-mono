@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash cebb70582bd270b811647e3dcc96f7aed208fcd545e488b66254b282122ddc0e */
+/* typed-routes:hash bc37589e3b332d93a4a84788bfb4609e1f564013bf5a205476c0a433c5b0f677 */
 export type Attachment = {
   id: string;
   content_type:
@@ -1360,7 +1360,9 @@ export type WeightEntry = {
   value: string;
   unit: 'kg' | 'lbs';
   note: string | null;
+  revision: number;
   form_submission_id: string | null;
+  form_assignment_id: string | null;
   inserted_at: string;
 };
 export type WeightEntryIndex = {

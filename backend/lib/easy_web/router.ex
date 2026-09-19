@@ -292,6 +292,8 @@ defmodule EasyWeb.Router do
 
     # Weight entries
     get "/weight_entries", WeightEntryController, :index
+    get "/weight-progress", WeightEntryController, :progress
+    get "/weight-entry", WeightEntryController, :day
     post "/weight_entries", WeightEntryController, :create
     delete "/weight_entries/:id", WeightEntryController, :delete
 

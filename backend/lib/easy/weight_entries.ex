@@ -33,21 +33,38 @@ defmodule Easy.WeightEntries do
     end
   end
 
-  @spec upsert_client_weight_entry(Ctx.t(), map()) ::
-          {:ok, WeightEntry.t()}
-          | {:error, :not_found | Input.date_error() | Ecto.Changeset.t()}
-  def upsert_client_weight_entry(%Ctx{} = ctx, attrs) do
-    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
-         {:ok, input} <- Input.parse(attrs, Date.utc_today()) do
-      upsert_and_stamp(ctx, client_id, input.date, input.attrs)
+  @spec get_client_progress(Ctx.t(), keyword()) ::
+          {:ok, Progress.t()} | {:error, :not_found | :invalid_cursor | Ecto.Changeset.t()}
+  def get_client_progress(%Ctx{} = ctx, opts \\ []) do
+    with {:ok, client} <- ClientAccount.get_client_account(ctx) do
+      Progress.build(client, opts)
     end
   end
 
-  @spec delete_client_weight_entry(Ctx.t(), String.t()) ::
-          {:ok, WeightEntry.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def delete_client_weight_entry(%Ctx{} = ctx, entry_id) do
+  @spec get_client_weight_entry(Ctx.t(), Date.t() | String.t()) ::
+          {:ok, WeightEntry.t() | nil} | {:error, :not_found | :date_required | :invalid_date}
+  def get_client_weight_entry(%Ctx{} = ctx, date) do
+    with {:ok, client} <- ClientAccount.get_client_account(ctx),
+         {:ok, date} <- Input.parse_date(date) do
+      {:ok, existing_entry(ctx.business_id, client.id, date)}
+    end
+  end
+
+  @spec upsert_client_weight_entry(Ctx.t(), map()) ::
+          {:ok, WeightEntry.t()}
+          | {:error, :not_found | :conflict | Input.date_error() | Ecto.Changeset.t()}
+  def upsert_client_weight_entry(%Ctx{} = ctx, attrs) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
+         {:ok, input} <- Input.parse(attrs, Date.utc_today()) do
+      upsert_and_stamp(ctx, client_id, input)
+    end
+  end
+
+  @spec delete_client_weight_entry(Ctx.t(), String.t(), keyword()) ::
+          {:ok, WeightEntry.t()} | {:error, :not_found | :conflict | Ecto.Changeset.t()}
+  def delete_client_weight_entry(%Ctx{} = ctx, entry_id, opts \\ []) do
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
-      delete_locked(ctx.business_id, client_id, entry_id)
+      delete_locked(ctx.business_id, client_id, entry_id, Keyword.get(opts, :expected_revision))
     end
   end
 
@@ -150,38 +167,50 @@ defmodule Easy.WeightEntries do
     with {:ok, business} <- Orgs.get_business(ctx), do: {:ok, business.default_weight_unit}
   end
 
-  defp delete_locked(business_id, client_id, entry_id) do
+  defp delete_locked(business_id, client_id, entry_id, expected_revision) do
     Repo.transact(fn ->
       with {:ok, _client} <- lock_client(business_id, client_id),
-           {:ok, entry} <- get_entry(business_id, client_id, entry_id) do
+           {:ok, entry} <- get_entry(business_id, client_id, entry_id),
+           :ok <- check_revision(expected_revision, entry) do
         Repo.delete(entry)
       end
     end)
   end
 
-  defp upsert_and_stamp(%Ctx{business_id: business_id} = ctx, client_id, date, attrs) do
+  defp upsert_and_stamp(%Ctx{business_id: business_id} = ctx, client_id, input) do
     Repo.transact(fn ->
       occurred_at = DateTime.utc_now(:second)
 
       with {:ok, _client} <- lock_client(business_id, client_id),
-           {:ok, entry} <- upsert(business_id, client_id, date, attrs),
+           existing = existing_entry(business_id, client_id, input.date),
+           :ok <- check_expected(input.expected_entry, existing),
+           {:ok, entry} <- upsert(business_id, client_id, input, existing),
            {:ok, :recorded} <- ClientAccount.record_client_activity(ctx, occurred_at) do
         {:ok, entry}
       end
     end)
   end
 
-  defp upsert(business_id, client_id, date, attrs) do
-    case existing_entry(business_id, client_id, date) do
+  defp upsert(business_id, client_id, input, existing) do
+    case existing do
       nil ->
         business_id
-        |> WeightEntry.insert_changeset(client_id, Date.utc_today(), Map.put(attrs, "date", date))
+        |> WeightEntry.insert_changeset(client_id, Date.utc_today(), Map.put(input.attrs, "date", input.date))
         |> Repo.insert()
 
       existing ->
-        WeightEntry.update_changeset(existing, attrs) |> Repo.update()
+        WeightEntry.update_changeset(existing, input.attrs) |> Repo.update()
     end
   end
+
+  defp check_expected(:any, _entry), do: :ok
+  defp check_expected(:absent, nil), do: :ok
+  defp check_expected(%{id: id, revision: revision}, %{id: id, revision: revision}), do: :ok
+  defp check_expected(_expected, _entry), do: {:error, :conflict}
+
+  defp check_revision(nil, _entry), do: :ok
+  defp check_revision(revision, %{revision: revision}), do: :ok
+  defp check_revision(_revision, _entry), do: {:error, :conflict}
 
   defp lock_client(business_id, client_id) do
     Client
@@ -202,6 +231,7 @@ defmodule Easy.WeightEntries do
     |> WeightEntry.for_client(business_id, client_id)
     |> WeightEntry.for_since(since_date)
     |> WeightEntry.oldest()
+    |> WeightEntry.include_submission()
     |> Repo.all()
   end
 

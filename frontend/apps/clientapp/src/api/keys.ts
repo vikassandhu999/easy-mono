@@ -1,6 +1,7 @@
 import type {FormAssignmentFilters} from './forms';
 import {getSession} from './session';
 import type {SessionFilters} from './training';
+import type {WeightFilters} from './weight';
 
 export const authKeys = {
   all: ['auth'] as const,
@@ -48,4 +49,12 @@ export const nutritionKeys = {
   details: () => ['nutrition', getSession()?.id, 'details'] as const,
   day: (date?: string) => [...nutritionKeys.details(), 'day', date ?? 'today'] as const,
   plan: (id: string) => [...nutritionKeys.details(), 'plan', id] as const,
+};
+
+export const weightKeys = {
+  all: ['weight'] as const,
+  lists: () => ['weight', getSession()?.id, 'lists'] as const,
+  infinite: (filters: WeightFilters) => [...weightKeys.lists(), 'infinite', filters] as const,
+  details: () => ['weight', getSession()?.id, 'details'] as const,
+  day: (date: string) => [...weightKeys.details(), 'day', date] as const,
 };

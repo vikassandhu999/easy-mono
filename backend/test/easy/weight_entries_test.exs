@@ -11,6 +11,8 @@ defmodule Easy.WeightEntriesTest do
 
     for invalid_ctx <- [%{ctx | client_id: nil}, %{ctx | business_id: other_business.id}] do
       assert {:error, :not_found} = WeightEntries.list_client_weight_entries(invalid_ctx)
+      assert {:error, :not_found} = WeightEntries.get_client_progress(invalid_ctx)
+      assert {:error, :not_found} = WeightEntries.get_client_weight_entry(invalid_ctx, Date.utc_today())
 
       assert {:error, :not_found} =
                WeightEntries.upsert_client_weight_entry(invalid_ctx, %{

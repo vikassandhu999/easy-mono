@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 2bd98cf9e6c89ac5ab6578603921a0337fe080e74a326fc1ef06c906e3433c0c */
+/* typed-routes:hash 490f06b819cebd754df78359683e2ff24528dd87b3a915c8ebce708be24f7d01 */
 export type Attachment = {
   id: string;
   content_type:
@@ -758,10 +758,20 @@ export type WeightEntry = {
   value: string;
   unit: 'kg' | 'lbs';
   note: string | null;
+  revision: number;
   form_submission_id: string | null;
+  form_assignment_id: string | null;
   inserted_at: string;
 };
-export type WeightEntryCreate = {date: string; value: number; unit: 'kg' | 'lbs'; note?: string | null};
+export type WeightEntryCreate = {
+  date: string;
+  value: number;
+  unit: 'kg' | 'lbs';
+  note?: string | null;
+  expected_entry?: {id: string; revision: number} | null;
+};
+export type WeightEntryDayQuery = {date: string};
+export type WeightEntryDeleteQuery = {expected_revision?: number};
 export type WeightEntryIndex = {
   entries: Array<WeightEntry>;
   goal: {value: string; unit: 'kg' | 'lbs'} | null;
@@ -774,11 +784,36 @@ export type WeightEntryIndex = {
   adherence: {logged_days: number; window_days: number};
 };
 export type WeightEntryListQuery = {since?: string};
+export type WeightProgress = {
+  data: Array<WeightEntry>;
+  count: number;
+  next_cursor: string | null;
+  from: string;
+  to: string;
+  unit: 'kg' | 'lbs';
+  goal: {value: string; unit: 'kg' | 'lbs'} | null;
+  summary: {
+    first_entry: WeightProgressMeasurement | null;
+    latest_entry: WeightProgressMeasurement | null;
+    total_change: number | null;
+    change_unit: 'kg' | 'lbs' | null;
+  };
+  chart: {min: number | null; max: number | null; points: Array<WeightProgressPoint>};
+};
+export type WeightProgressListQuery = {
+  from?: string;
+  to?: string;
+  unit?: 'kg' | 'lbs';
+  cursor?: string;
+  limit?: number;
+};
+export type WeightProgressMeasurement = {date: string; value: string; unit: 'kg' | 'lbs'};
+export type WeightProgressPoint = {id: string; date: string; value: number};
 /* typed-routes:types-end */
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 04ba7123729a6de14807f2bc632a4c43ea2794003544d0d799c6dfa5c7290b17 */
+  /* typed-routes:hash 6403e0a6e063ce1da9e57bd5d547a0e11e0efc32c531ab1358e204e436b46d08 */
   '/api/health': {
     get: {
       parameters: {
@@ -1248,6 +1283,32 @@ export interface paths {
       };
     };
   };
+  '/v1/client/weight-entry': {
+    get: {
+      parameters: {
+        query: WeightEntryDayQuery;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: WeightEntry | null}}};
+      };
+    };
+  };
+  '/v1/client/weight-progress': {
+    get: {
+      parameters: {
+        query?: WeightProgressListQuery;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': WeightProgress}};
+      };
+    };
+  };
   '/v1/client/weight_entries': {
     get: {
       parameters: {
@@ -1276,7 +1337,7 @@ export interface paths {
   '/v1/client/weight_entries/{id}': {
     delete: {
       parameters: {
-        query?: never;
+        query?: WeightEntryDeleteQuery;
         header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;

@@ -141,7 +141,70 @@ defmodule Easy.WeightEntriesConcurrencyTest do
     refute Repo.get(WeightEntry, entry.id)
   end
 
-  defp start_delete(ctx, entry_id) do
+  test "observed simultaneous creates and updates have one winner", %{ctx: ctx} do
+    attrs = %{date: Date.utc_today(), unit: :kg, expected_entry: nil}
+    results = race_observed_writes(ctx, attrs, ["80", "81"])
+    assert [{:error, :conflict}] = Enum.filter(results, &match?({:error, _}, &1))
+    assert [{:ok, created}] = Enum.filter(results, &match?({:ok, _}, &1))
+    assert created.revision == 1
+    assert Repo.aggregate(WeightEntry.for_client(ctx.business_id, ctx.client_id), :count) == 1
+    observed = %{attrs | expected_entry: %{id: created.id, revision: created.revision}}
+    updates = race_observed_writes(ctx, observed, ["82", "83"])
+    assert [{:error, :conflict}] = Enum.filter(updates, &match?({:error, _}, &1))
+    assert [{:ok, updated}] = Enum.filter(updates, &match?({:ok, _}, &1))
+    assert updated.revision == 2
+    assert updated.id == created.id
+    assert Decimal.eq?(Repo.get!(WeightEntry, created.id).value, updated.value)
+  end
+
+  test "an observed deletion waiting on an update preserves the updated record", %{ctx: ctx} do
+    today = Date.utc_today()
+    {:ok, entry} = WeightEntries.upsert_client_weight_entry(ctx, %{date: today, value: "80", unit: :kg})
+
+    {:ok, contender} =
+      Repo.transaction(fn ->
+        Client |> lock("FOR UPDATE") |> Repo.get!(ctx.client_id)
+        contender = start_delete(ctx, entry.id, expected_revision: entry.revision)
+        assert_receive {:contender, backend_pid}, 1_000
+        assert_blocked(backend_pid, 100)
+        assert {:ok, _updated} = WeightEntries.upsert_client_weight_entry(ctx, %{date: today, value: "85"})
+        contender
+      end)
+
+    assert {:error, :conflict} = Task.await(contender, 5_000)
+    assert Decimal.eq?(Repo.get!(WeightEntry, entry.id).value, Decimal.new("85"))
+  end
+
+  defp race_observed_writes(ctx, attrs, values) do
+    {:ok, contenders} =
+      Repo.transaction(fn ->
+        Client |> lock("FOR UPDATE") |> Repo.get!(ctx.client_id)
+
+        contenders = Enum.map(values, &start_write(ctx, Map.put(attrs, :value, &1)))
+
+        for _ <- contenders do
+          assert_receive {:contender, backend_pid}, 1_000
+          assert_blocked(backend_pid, 100)
+        end
+
+        contenders
+      end)
+
+    Enum.map(contenders, &Task.await(&1, 5_000))
+  end
+
+  defp start_write(ctx, attrs) do
+    parent = self()
+
+    Task.async(fn ->
+      Sandbox.checkout(Repo, sandbox: false)
+      %{rows: [[backend_pid]]} = Repo.query!("SELECT pg_backend_pid()")
+      send(parent, {:contender, backend_pid})
+      WeightEntries.upsert_client_weight_entry(ctx, attrs)
+    end)
+  end
+
+  defp start_delete(ctx, entry_id, opts \\ []) do
     parent = self()
 
     Task.async(fn ->
@@ -150,7 +213,7 @@ defmodule Easy.WeightEntriesConcurrencyTest do
       send(parent, {:contender, backend_pid})
 
       try do
-        WeightEntries.delete_client_weight_entry(ctx, entry_id)
+        WeightEntries.delete_client_weight_entry(ctx, entry_id, opts)
       rescue
         error -> {:raised, error.__struct__}
       end

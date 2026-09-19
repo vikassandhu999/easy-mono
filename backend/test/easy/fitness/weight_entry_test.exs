@@ -68,6 +68,23 @@ defmodule Easy.Fitness.WeightEntryTest do
   end
 
   describe "update_changeset/2" do
+    test "revision is server-owned and advances for writes" do
+      client = insert_client()
+      attrs = %{date: Date.utc_today(), value: 80, unit: :kg, revision: 100}
+      assert {:ok, entry} = client.business_id |> WeightEntry.insert_changeset(client.id, Date.utc_today(), attrs) |> Repo.insert()
+      assert entry.revision == 1
+      assert {:ok, updated} = entry |> WeightEntry.update_changeset(%{value: 81, revision: 100}) |> Repo.update()
+      assert updated.revision == 2
+    end
+
+    test "the database rejects a nonpositive revision" do
+      entry = insert_weight_entry()
+
+      assert_raise Postgrex.Error, fn ->
+        Repo.query!("UPDATE weight_entries SET revision = 0 WHERE id = $1", [Ecto.UUID.dump!(entry.id)])
+      end
+    end
+
     test "updates value, unit, and note" do
       entry = insert_weight_entry()
 

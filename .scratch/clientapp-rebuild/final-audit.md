@@ -62,6 +62,8 @@ forcing application connectivity or retrying a tap. Application behavior was unc
 Final source build and native sync pass in `/tmp/easy-clientapp-final-native-sync.log`;
 Android debug build passes in `/tmp/easy-clientapp-final-android-build.log`. Biome checks
 139 files with no changes; `just check-rm` and `git diff --check` pass.
+The package patch directory declares its unified-diff blank-line markers through
+`.gitattributes`; ordinary source whitespace checks remain enabled.
 
 The final iPhone connected suite passes all four scenarios in 232.256 seconds:
 goal 38.840s, meal 51.401s, messages/media 98.700s and weight 43.314s. Result:

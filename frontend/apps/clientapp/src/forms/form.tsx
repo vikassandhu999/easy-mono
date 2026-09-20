@@ -1,4 +1,4 @@
-import {Check, Sparkles} from 'lucide-react';
+import {Check, ClipboardList, Sparkles} from 'lucide-react';
 import {useCallback, useEffect, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {Link, useParams, useSearchParams} from 'react-router-dom';
@@ -86,12 +86,19 @@ export function FormDetail() {
         title={assignment.form_template.name}
         back={back}
       >
-        <div className="mb-6 rounded-3xl bg-[var(--progress)] p-5">
+        <div className={`mb-6 rounded-3xl p-5 ${saved ? 'bg-[var(--progress)]' : 'bg-muted'}`}>
           <div className="mb-3 grid size-11 place-items-center rounded-2xl bg-white/70">
-            <Check
-              aria-hidden="true"
-              className="size-5"
-            />
+            {saved ? (
+              <Check
+                aria-hidden="true"
+                className="size-5"
+              />
+            ) : (
+              <ClipboardList
+                aria-hidden="true"
+                className="size-5"
+              />
+            )}
           </div>
           <p className="text-xl font-bold">
             {saved

@@ -76,6 +76,12 @@ try {
       await page.getByLabel('Verification code').fill('123456');
       await page.getByRole('button', {name: 'Verify and continue'}).click();
       await expect(page.getByRole('heading', {name: 'Today', exact: true})).toBeVisible();
+      await expect(page.getByRole('link', {name: 'Lower body', exact: true})).toBeVisible();
+      await expect(page.getByRole('link', {name: 'Resume workout', exact: true})).toHaveCount(0);
+      await page.screenshot({path: `tests/training/artifacts/today-assigned-${width}.png`, fullPage: true});
+      await page.getByRole('link', {name: 'Lower body', exact: true}).click();
+      await expect(page.getByRole('button', {name: 'Start workout', exact: true})).toBeVisible();
+      await page.goto('/');
       await page
         .getByRole('navigation', {name: 'Main navigation'})
         .getByRole('link', {name: 'Training', exact: true})
@@ -199,6 +205,19 @@ try {
       await expect(page.getByLabel('Workout notes', {exact: true})).toHaveValue('Felt steady today.');
       await page.screenshot({path: `tests/training/artifacts/notes-${width}.png`});
       await page.getByRole('button', {name: 'Close', exact: true}).click();
+      await page.goto('/');
+      const resume = page.getByRole('link', {name: 'Resume workout', exact: true});
+      await expect(resume).toBeVisible();
+      await expect(resume).toHaveAttribute('href', `/training/sessions/${sessionId}`);
+      expect((await resume.boundingBox()).y).toBeLessThan(400);
+      await page.screenshot({path: `tests/training/artifacts/today-active-${width}.png`, fullPage: true});
+      await resume.click();
+      await expect(
+        page.getByRole('list', {name: 'Saved sets'}).getByText('10 reps · 85 kg', {exact: true}),
+      ).toBeVisible();
+      await page.getByRole('button', {name: 'Workout notes & soreness', exact: true}).click();
+      await expect(page.getByLabel('Workout notes', {exact: true})).toHaveValue('Felt steady today.');
+      await page.getByRole('button', {name: 'Close', exact: true}).click();
       await api(`/v1/coach/training-plans/${plan.id}/prescription`, {
         method: 'PUT',
         token: fixture.coachToken,
@@ -255,11 +274,18 @@ try {
       await page.getByLabel('Search plans').fill('');
       await page.getByRole('button', {name: 'Apply filters'}).click();
       await expect(page.getByText('1 plan', {exact: true})).toBeVisible();
+      await page.goto('/no-such-client-screen');
+      await expect(page).toHaveURL(/\/$/);
+      await expect(page.getByRole('heading', {name: 'Today', exact: true})).toBeVisible();
+      await expect(page.getByRole('link', {name: 'Resume workout', exact: true})).toHaveCount(0);
+      await page.screenshot({path: `tests/training/artifacts/today-completed-${width}.png`, fullPage: true});
       expect(errors).toEqual([]);
       results.push({
         width,
         passed: true,
         planned: true,
+        todayAssignedAndResume: true,
+        unknownRouteReturn: true,
         lostStartResponse: true,
         lostSetResponse: true,
         frozenPrescription: true,

@@ -23,7 +23,7 @@
     "test:auth:mobile": "node tests/auth/mobile.browser.mjs",
     "test:account": "node tests/account/account.browser.mjs && node tests/account/recovery.browser.mjs",
     "test:account:android": "node tests/account/android.native.mjs",
-    "test:forms": "node tests/forms/forms.browser.mjs && node tests/forms/recovery.browser.mjs",
+    "test:forms": "node tests/forms/forms.browser.mjs && node tests/forms/recovery.browser.mjs && node tests/forms/closed.browser.mjs",
     "test:offline": "node tests/forms/offline.browser.mjs",
     "test:android": "node tests/auth/android.native.mjs",
     "test:android:photos": "node tests/forms/android.photos.mjs"

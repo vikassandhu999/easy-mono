@@ -1457,6 +1457,15 @@ client starter image exceeded iOS's decoded-image limit, and the simulator cache
 failure after replacement. Compare built/installed asset metadata before blaming source.
 Fresh-install branding evidence does not establish draft or session recovery.
 
+
+### RM-245 — Completion visuals require a saved outcome
+A terminal request can be missed or closed without a response. Reserve the success
+checkmark and success panel for an actual saved submission; use neutral treatment
+when no response exists. **Verify by:** clientapp `tests/forms/closed.browser.mjs`
+creates both terminal states through the coach API, checks that no Send or Response
+saved claim appears, and captures their detail/history screens for visual review.
+The completed-response browser/native flows must retain their saved confirmation.
+
 ## Deploy / ops
 
 ### RM-221 — Filter-then-assert: parse WHILE filtering, don't assert afterwards

@@ -620,11 +620,32 @@ final class AuthenticationTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Message sent."].waitForExistence(timeout: 20), app.debugDescription)
         XCTAssertTrue(app.buttons["Open video"].waitForExistence(timeout: 15), app.debugDescription)
         app.buttons["Open video"].tap()
+        // The one-second fixtures must advance after a physical tap, not merely load.
+        let video = app.otherElements.matching(NSPredicate(format: "label == %@", "1 seconds")).firstMatch
+        XCTAssertTrue(video.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertEqual(video.value as? String, "0 seconds")
+        video.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        let playingVideo = XCTAttachment(screenshot: app.screenshot())
+        playingVideo.name = "iPhone message video playing"
+        playingVideo.lifetime = .keepAlways
+        add(playingVideo)
+        let videoFinished = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value == %@", "1 seconds"), object: video
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [videoFinished], timeout: 10), .completed, app.debugDescription)
+        app.buttons["Close video"].tap()
         XCTAssertTrue(app.buttons["Open audio"].waitForExistence(timeout: 15), app.debugDescription)
         app.buttons["Open audio"].tap()
+        let audio = app.otherElements["Audio Controls"].firstMatch
+        XCTAssertTrue(audio.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(app.staticTexts["Elapsed: 0 seconds"].exists)
+        // WebKit's Play accessibility frame extends outside the audio control.
+        // Tap the visible control's leading play icon instead.
+        audio.coordinate(withNormalizedOffset: CGVector(dx: 0.07, dy: 0.5)).tap()
+        XCTAssertTrue(app.staticTexts["Elapsed: 1 second"].waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(app.staticTexts["2 messages"].waitForExistence(timeout: 15), app.debugDescription)
         let media = XCTAttachment(screenshot: app.screenshot())
-        media.name = "iPhone video and audio message"
+        media.name = "iPhone message audio played to completion"
         media.lifetime = .keepAlways
         add(media)
     }

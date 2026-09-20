@@ -2,6 +2,32 @@ import XCTest
 
 final class AuthenticationTests: XCTestCase {
     @MainActor
+    func testLauncherEntry() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.easy.client")
+        app.terminate()
+        XCUIDevice.shared.press(.home)
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let icon = springboard.icons["Easy"].firstMatch
+        for _ in 0..<5 {
+            if icon.exists && icon.isHittable { break }
+            springboard.swipeLeft()
+        }
+        XCTAssertTrue(icon.exists && icon.isHittable, "Easy is available from the launcher")
+        let launcher = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        launcher.name = "iPhone Easy launcher icon"
+        launcher.lifetime = .keepAlways
+        add(launcher)
+        icon.tap()
+        XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 10) || app.links["Your account"].exists)
+        let opened = XCTAttachment(screenshot: app.screenshot())
+        opened.name = "iPhone launcher entry"
+        opened.lifetime = .keepAlways
+        add(opened)
+    }
+
+    @MainActor
     func testInvitationProfileAndRestart() throws {
         continueAfterFailure = false
         let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "fixture", withExtension: "json"))

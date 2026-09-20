@@ -11,6 +11,7 @@
     "lint": "biome check --write .",
     "preview": "vite preview",
     "native:sync": "node scripts/native-sync.mjs",
+    "brand:assets": "node scripts/brand-assets.mjs",
     "test:training": "node tests/training/training.browser.mjs && node tests/training/recovery.browser.mjs && node tests/training/history.browser.mjs",
     "test:nutrition": "node tests/nutrition/nutrition.browser.mjs && node tests/nutrition/recovery.browser.mjs",
     "test:nutrition:android": "node tests/nutrition/android.native.mjs",
@@ -62,6 +63,7 @@
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.1.0",
     "openapi-typescript": "7.13.0",
+    "sharp": "0.34.5",
     "typescript": "~6.0.2",
     "vite": "^8.2.2"
   }

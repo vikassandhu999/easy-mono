@@ -184,6 +184,7 @@ Severity of the rule isn't the point; recurrence is.
 | RM-241 | Late saves must respect subsequent navigation | Frontend | browser test |
 | RM-242 | Styled choices retain a full native input target | Frontend | browser test |
 | RM-243 | Shared content returns to its entry context | Frontend | browser test |
+| RM-244 | Inspect the installed native artifact and cold launch | Frontend | native runtime |
 
 ---
 
@@ -1445,6 +1446,16 @@ include `returnTo=/messages`, and the saved reader labels that return explicitly
 **Verify by:** clientapp message history browser flow opens a real coach-shared form
 response, reads its saved answer, uses Back to messages and requires the coach's message
 again. A generic Forms back link or a hidden global tab cannot satisfy this check.
+
+### RM-244 — Inspect the installed native artifact and cold launch
+A launcher-only UI test opened an older installed iPhone bundle even though the new
+asset catalog had compiled. Install the current built app explicitly before entering
+through the system launcher. A passing launch assertion proves entry, not visual assets.
+**Verify by:** inspect the installed icon, capture a cold-launch sequence, and check
+SplashBoard diagnostics when a launch image is blank. Keep launch artwork small; the
+client starter image exceeded iOS's decoded-image limit, and the simulator cached that
+failure after replacement. Compare built/installed asset metadata before blaming source.
+Fresh-install branding evidence does not establish draft or session recovery.
 
 ## Deploy / ops
 

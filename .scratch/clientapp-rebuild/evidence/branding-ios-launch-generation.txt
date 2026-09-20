@@ -1,0 +1,6 @@
+getpwuid_r did not find a match for uid 501
+Timestamp               Ty Process[PID:TID]
+2026-09-20 14:40:30.669 Df splashboardd[6731:39720a6] [com.apple.SplashBoard:Capture] [com.easy.client] launch image generation completed after 0.028s
+2026-09-20 14:40:30.716 Df splashboardd[6731:39720a6] [com.apple.SplashBoard:Capture] [com.easy.client] launch image generation completed after 0.003s
+2026-09-20 14:40:30.747 Df splashboardd[6731:39720a6] [com.apple.SplashBoard:Capture] [com.easy.client] launch image generation completed after 0.002s
+2026-09-20 14:40:30.778 Df splashboardd[6731:39720a6] [com.apple.SplashBoard:Capture] [com.easy.client] launch image generation completed after 0.001s

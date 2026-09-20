@@ -44,6 +44,15 @@ body {
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
 }
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top);
+  background: var(--background);
+  pointer-events: none;
+  z-index: 40;
+}
 button,
 a,
 input {
@@ -338,4 +347,44 @@ a:focus-visible {
   .action-card {
     transition: none;
   }
+}
+
+.training-segments {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  border-radius: 20px;
+  padding: 4px;
+  background: var(--training);
+  font-size: 14px;
+  font-weight: 700;
+}
+.training-segments a {
+  border-radius: 16px;
+}
+.training-segments a[aria-current="page"] {
+  background: var(--surface);
+  box-shadow: 0 2px 5px #2924380a;
+}
+.training-list-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 0;
+  overflow-wrap: anywhere;
+}
+.training-row-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  background: var(--training);
+  color: var(--primary);
+  font-weight: 800;
+}
+.training-row-icon svg {
+  width: 20px;
+  height: 20px;
 }

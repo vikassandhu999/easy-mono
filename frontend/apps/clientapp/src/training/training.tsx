@@ -1,3 +1,4 @@
+import {Check, ChevronRight, Dumbbell, History as HistoryIcon, Play, SlidersHorizontal} from 'lucide-react';
 import {useState} from 'react';
 import {generatePath, Link, useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import {errorMessage} from '../api/client';
@@ -10,6 +11,7 @@ import {
   useTrainingPlans,
 } from '../api/training';
 import {routes} from '../routes';
+import {BottomSheet} from '../ui/bottom-sheet';
 import {Button, buttonVariants} from '../ui/button';
 import {CachedRead} from '../ui/cached-read';
 import {useOnline} from '../ui/connection-status';
@@ -24,6 +26,7 @@ import {dayLabel, sessionName, targetText} from './recording';
 export function Training() {
   const [params, setParams] = useSearchParams();
   const history = params.get('view') === 'history';
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const search = params.get('search') ?? '';
   const state = params.get('state');
   const filters: SessionFilters = {
@@ -36,101 +39,144 @@ export function Training() {
     <Page
       title="Training"
       description="Your plans and the work you've saved."
-      back={routes.home}
+      compact
     >
       <ActiveWorkout />
       <nav
         aria-label="Training views"
-        className="my-6 flex gap-6"
+        className="training-segments my-5"
       >
         <Link
           to={routes.training}
           aria-current={!history ? 'page' : undefined}
-          className="text-link"
+          className="min-h-12 flex items-center justify-center gap-2"
         >
+          <Dumbbell
+            className="size-4"
+            aria-hidden="true"
+          />
           Your plans
         </Link>
         <Link
           to={`${routes.training}?view=history`}
           aria-current={history ? 'page' : undefined}
-          className="text-link"
+          className="min-h-12 flex items-center justify-center gap-2"
         >
+          <HistoryIcon
+            className="size-4"
+            aria-hidden="true"
+          />
           Workout history
         </Link>
       </nav>
-      <form
-        className="mb-6 space-y-3"
-        onSubmit={(event) => {
-          event.preventDefault();
-          const fields = new FormData(event.currentTarget);
-          const next = new URLSearchParams(history ? {view: 'history'} : {});
-          for (const name of ['search', 'from', 'to', 'state']) {
-            const value = fields.get(name);
-            if (typeof value === 'string' && value.trim()) {
-              next.set(name, value.trim());
-            }
-          }
-          setParams(next);
-        }}
-      >
-        <label className="grid gap-2 font-medium">
-          Search {history ? 'workouts' : 'plans'}
-          <input
-            className="h-12 w-full rounded-xl border border-border bg-surface px-3 text-base"
-            key={search}
-            name="search"
-            type="search"
-            defaultValue={search}
-          />
-        </label>
-        {history && (
-          <div className="grid grid-cols-2 gap-3">
-            <label className="grid gap-2 text-sm">
-              From
-              <input
-                className="min-w-0 h-12 rounded-xl border border-border px-2 text-base"
-                key={filters.from ?? ''}
-                name="from"
-                type="date"
-                defaultValue={filters.from}
-              />
-            </label>
-            <label className="grid gap-2 text-sm">
-              To
-              <input
-                className="min-w-0 h-12 rounded-xl border border-border px-2 text-base"
-                key={filters.to ?? ''}
-                name="to"
-                type="date"
-                defaultValue={filters.to}
-              />
-            </label>
-          </div>
-        )}
-        {history && (
-          <SelectField
-            aria-label="Workout status"
-            name="state"
-            key={filters.state ?? ''}
-            defaultValue={filters.state ?? ''}
-          >
-            <SelectItem id="">All workouts</SelectItem>
-            <SelectItem id="completed">Completed</SelectItem>
-            <SelectItem id="discarded">Discarded</SelectItem>
-            <SelectItem id="active">In progress</SelectItem>
-          </SelectField>
-        )}
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <p className="text-sm text-muted-foreground">
+          {history ? 'The work you’ve put in.' : 'Find your next good session.'}
+        </p>
         <Button
-          type="submit"
           variant="outline"
+          onPress={() => setFiltersOpen(true)}
+          className="gap-2 shrink-0"
         >
-          Apply filters
+          <SlidersHorizontal
+            className="size-4"
+            aria-hidden="true"
+          />
+          {history ? 'Filter workouts' : 'Find a plan'}
         </Button>
-      </form>
-      {history ? <History filters={filters} /> : <Plans search={search} />}
+      </div>
+      {filtersOpen && (
+        <BottomSheet
+          title={history ? 'Find a workout' : 'Find a plan'}
+          onClose={() => setFiltersOpen(false)}
+        >
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const fields = new FormData(event.currentTarget);
+              const next = new URLSearchParams(history ? {view: 'history'} : {});
+              for (const name of ['search', 'from', 'to', 'state']) {
+                const value = fields.get(name);
+                if (typeof value === 'string' && value.trim()) {
+                  next.set(name, value.trim());
+                }
+              }
+              setParams(next);
+              setFiltersOpen(false);
+            }}
+          >
+            <label className="grid gap-2 font-medium">
+              Search {history ? 'workouts' : 'plans'}
+              <input
+                className="h-12 w-full rounded-xl border border-border bg-surface px-3 text-base"
+                key={search}
+                name="search"
+                type="search"
+                defaultValue={search}
+              />
+            </label>
+            {history && (
+              <div className="grid grid-cols-2 gap-3">
+                <label className="grid gap-2 text-sm">
+                  From
+                  <input
+                    className="min-w-0 h-12 rounded-xl border border-border px-2 text-base"
+                    key={filters.from ?? ''}
+                    name="from"
+                    type="date"
+                    defaultValue={filters.from}
+                  />
+                </label>
+                <label className="grid gap-2 text-sm">
+                  To
+                  <input
+                    className="min-w-0 h-12 rounded-xl border border-border px-2 text-base"
+                    key={filters.to ?? ''}
+                    name="to"
+                    type="date"
+                    defaultValue={filters.to}
+                  />
+                </label>
+              </div>
+            )}
+            {history && (
+              <SelectField
+                aria-label="Workout status"
+                name="state"
+                key={filters.state ?? ''}
+                defaultValue={filters.state ?? ''}
+              >
+                <SelectItem id="">All workouts</SelectItem>
+                <SelectItem id="completed">Completed</SelectItem>
+                <SelectItem id="discarded">Discarded</SelectItem>
+                <SelectItem id="active">In progress</SelectItem>
+              </SelectField>
+            )}
+            <Button
+              type="submit"
+              className="w-full"
+            >
+              Apply filters
+            </Button>
+          </form>
+        </BottomSheet>
+      )}
+      {history ? (
+        <History
+          filters={filters}
+          returnTo={`${routes.training}?${params}`}
+        />
+      ) : (
+        <Plans search={search} />
+      )}
       {!history && (
-        <div className="mt-8 border-t border-border pt-6 space-y-3">
-          <h2 className="text-xl font-semibold">Doing your own workout?</h2>
+        <div className="mt-6 rounded-[2rem] bg-[var(--training)] p-5 space-y-3">
+          <Dumbbell
+            className="size-7 -rotate-12"
+            aria-hidden="true"
+          />
+          <h2 className="text-xl font-bold">Doing your own workout?</h2>
           <p className="text-muted-foreground">Record exercises without a plan.</p>
           <StartWorkout workoutId={null} />
         </div>
@@ -169,6 +215,10 @@ export function ActiveWorkout() {
             className={buttonVariants()}
             to={generatePath(routes.trainingSession, {id: session.id})}
           >
+            <Play
+              className="size-4 mr-2"
+              aria-hidden="true"
+            />
             Resume workout
           </Link>
         </section>
@@ -201,26 +251,38 @@ function Plans({search}: {search: string}) {
       >
         {(plan) => (
           <Link
-            className="block py-5 space-y-1"
+            className="training-list-row"
             to={generatePath(routes.trainingPlan, {id: plan.id})}
           >
-            <span className="block text-lg font-semibold">{plan.name}</span>
-            <span className="block text-sm text-muted-foreground">
-              {plan.lifecycle === 'current'
-                ? 'Current plan'
-                : plan.lifecycle === 'upcoming'
-                  ? 'Starts soon'
-                  : plan.lifecycle === 'ended'
-                    ? 'Past plan'
-                    : 'Dates not set'}{' '}
-              · {plan.workout_count} workouts
+            <span
+              className="training-row-icon"
+              aria-hidden="true"
+            >
+              <Dumbbell />
             </span>
-            {plan.start_date && (
-              <span className="block text-sm">
-                {dayLabel(plan.start_date)}
-                {plan.end_date ? ` – ${dayLabel(plan.end_date)}` : ' onwards'}
+            <span className="min-w-0 flex-1 space-y-1">
+              <span className="block text-lg font-bold">{plan.name}</span>
+              <span className="block text-sm text-muted-foreground">
+                {plan.lifecycle === 'current'
+                  ? 'Current plan'
+                  : plan.lifecycle === 'upcoming'
+                    ? 'Starts soon'
+                    : plan.lifecycle === 'ended'
+                      ? 'Past plan'
+                      : 'Dates not set'}{' '}
+                · {plan.workout_count} {plan.workout_count === 1 ? 'workout' : 'workouts'}
               </span>
-            )}
+              {plan.start_date && (
+                <span className="block text-sm">
+                  {dayLabel(plan.start_date)}
+                  {plan.end_date ? ` – ${dayLabel(plan.end_date)}` : ' onwards'}
+                </span>
+              )}
+            </span>
+            <ChevronRight
+              className="size-4 shrink-0"
+              aria-hidden="true"
+            />
           </Link>
         )}
       </InfiniteList>
@@ -228,7 +290,7 @@ function Plans({search}: {search: string}) {
   );
 }
 
-function History({filters}: {filters: SessionFilters}) {
+function History({filters, returnTo}: {filters: SessionFilters; returnTo: string}) {
   const query = useTrainingHistory(filters);
   return (
     <>
@@ -252,18 +314,30 @@ function History({filters}: {filters: SessionFilters}) {
       >
         {(session) => (
           <Link
-            className="block py-5 space-y-1"
-            to={generatePath(routes.trainingSession, {id: session.id})}
+            className="training-list-row"
+            to={`${generatePath(routes.trainingSession, {id: session.id})}?${new URLSearchParams({returnTo})}`}
           >
-            <span className="block text-lg font-semibold">{sessionName(session)}</span>
-            <span className="block text-sm text-muted-foreground">
-              {dayLabel(session.date)} ·{' '}
-              {session.state === 'completed'
-                ? 'Completed'
-                : session.state === 'discarded'
-                  ? 'Discarded'
-                  : 'In progress'}
+            <span
+              className="training-row-icon"
+              aria-hidden="true"
+            >
+              {session.state === 'completed' ? <Check /> : <HistoryIcon />}
             </span>
+            <span className="min-w-0 flex-1 space-y-1">
+              <span className="block text-lg font-bold">{sessionName(session)}</span>
+              <span className="block text-sm text-muted-foreground">
+                {dayLabel(session.date)} ·{' '}
+                {session.state === 'completed'
+                  ? 'Completed'
+                  : session.state === 'discarded'
+                    ? 'Discarded'
+                    : 'In progress'}
+              </span>
+            </span>
+            <ChevronRight
+              className="size-4 shrink-0"
+              aria-hidden="true"
+            />
           </Link>
         )}
       </InfiniteList>
@@ -281,6 +355,7 @@ export function TrainingPlan() {
       title={workout?.name ?? plan?.name ?? 'Training plan'}
       description={workout ? plan?.name : (plan?.description ?? undefined)}
       back={workoutId ? generatePath(routes.trainingPlan, {id}) : routes.training}
+      compact
     >
       {!plan ? (
         <ReadState
@@ -301,13 +376,21 @@ export function TrainingPlan() {
           {workoutId ? (
             workout ? (
               <>
-                <ol className="divide-y divide-border mb-8">
-                  {workout.workout_elements.map((item) => (
+                <ol className="space-y-4 mb-8">
+                  {workout.workout_elements.map((item, exerciseIndex) => (
                     <li
-                      className="py-5 space-y-2"
+                      className="rounded-3xl bg-surface p-5 space-y-3"
                       key={item.id}
                     >
-                      <h2 className="text-xl font-semibold">{item.exercise.name}</h2>
+                      <div className="flex gap-3 items-start">
+                        <span
+                          className="training-row-icon shrink-0"
+                          aria-hidden="true"
+                        >
+                          {exerciseIndex + 1}
+                        </span>
+                        <h2 className="text-xl font-bold">{item.exercise.name}</h2>
+                      </div>
                       {item.planned_sets.length === 0 ? (
                         <p className="text-muted-foreground">No set targets prescribed.</p>
                       ) : (
@@ -315,7 +398,7 @@ export function TrainingPlan() {
                           {item.planned_sets.map((set, index) => (
                             <li
                               key={index}
-                              className="text-muted-foreground"
+                              className="rounded-2xl bg-[var(--training)] p-3"
                             >
                               <span className="font-medium">Set {index + 1}</span> · {targetText(set)}
                               {set.notes && <p className="text-sm mt-1">{set.notes}</p>}
@@ -349,13 +432,27 @@ export function TrainingPlan() {
                 {plan.workouts.map((item) => (
                   <li key={item.id}>
                     <Link
-                      className="block py-5 space-y-1"
+                      className="training-list-row"
                       to={generatePath(routes.workout, {id, workoutId: item.id})}
                     >
-                      <span className="block text-xl font-semibold">{item.name}</span>
-                      <span className="block capitalize text-muted-foreground">
-                        {item.weekdays.join(', ') || 'Choose any day'}
+                      <span
+                        className="training-row-icon"
+                        aria-hidden="true"
+                      >
+                        <Dumbbell />
                       </span>
+                      <span className="min-w-0 flex-1 space-y-1">
+                        <span className="block text-xl font-bold">{item.name}</span>
+                        <span className="block capitalize text-muted-foreground">
+                          {item.weekdays.length === 7
+                            ? 'Every day'
+                            : item.weekdays.map((day) => day.slice(0, 3)).join(' · ') || 'Choose any day'}
+                        </span>
+                      </span>
+                      <ChevronRight
+                        className="size-4 shrink-0"
+                        aria-hidden="true"
+                      />
                     </Link>
                   </li>
                 ))}
@@ -374,7 +471,7 @@ function StartWorkout({workoutId}: {workoutId: string | null}) {
   const online = useOnline();
   const [error, setError] = useState('');
   return (
-    <div className="space-y-3">
+    <div className={workoutId ? 'mobile-save-bar space-y-3' : 'space-y-3'}>
       {!online && (
         <p
           role="status"

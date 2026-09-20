@@ -197,12 +197,36 @@ final class AuthenticationTests: XCTestCase {
         XCTAssertTrue(reps.waitForExistence(timeout: 15))
         XCTAssertEqual(reps.value as? String, "8")
         XCTAssertEqual(exercise.value as? String, "iPhone squat")
+        reps.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         let save = app.buttons["Save set"]
-        if !save.isHittable { app.swipeUp() }
+        XCTAssertGreaterThan(app.keyboards.firstMatch.frame.height, 150)
+        XCTAssertLessThan(app.keyboards.firstMatch.frame.minY, app.frame.maxY - 150)
+        XCTAssertTrue(save.isHittable, "Set save remains reachable above the keyboard")
+        XCTAssertLessThanOrEqual(save.frame.maxY, app.keyboards.firstMatch.frame.minY, "Save must be above the native keyboard")
+        let beforeSave = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        beforeSave.name = "iPhone workout save above keyboard"
+        beforeSave.lifetime = .keepAlways
+        add(beforeSave)
         save.tap()
         XCTAssertTrue(app.staticTexts["Set saved."].waitForExistence(timeout: 15), app.debugDescription)
         XCUIDevice.shared.press(.home)
         app.activate()
+        let workoutNotes = app.buttons["Workout notes & soreness"]
+        if !workoutNotes.isHittable { app.swipeUp() }
+        workoutNotes.tap()
+        let notes = app.webViews.textViews["Workout notes"]
+        XCTAssertTrue(notes.waitForExistence(timeout: 10), app.debugDescription)
+        notes.tap()
+        notes.typeText("Steady on iPhone.")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        let saveNotes = app.buttons["Save workout notes"]
+        XCTAssertGreaterThan(app.keyboards.firstMatch.frame.height, 150)
+        XCTAssertLessThan(app.keyboards.firstMatch.frame.minY, app.frame.maxY - 150)
+        XCTAssertTrue(saveNotes.isHittable)
+        XCTAssertLessThanOrEqual(saveNotes.frame.maxY, app.keyboards.firstMatch.frame.minY)
+        saveNotes.tap()
+        XCTAssertTrue(app.staticTexts["Workout notes saved."].waitForExistence(timeout: 15), app.debugDescription)
         let finish = app.buttons["Finish workout"]
         if !finish.isHittable { app.swipeUp() }
         finish.tap()
@@ -218,6 +242,7 @@ final class AuthenticationTests: XCTestCase {
         app.swipeUp()
         result.tap()
         XCTAssertTrue(app.staticTexts["8 reps"].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(app.staticTexts["Steady on iPhone."].exists)
         XCTAssertTrue(app.links["Back to workout history"].exists)
         let saved = XCTAttachment(screenshot: app.screenshot())
         saved.name = "iPhone saved workout"

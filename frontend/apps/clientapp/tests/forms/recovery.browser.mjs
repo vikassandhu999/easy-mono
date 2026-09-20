@@ -88,7 +88,8 @@ try {
   failNext = false;
   await page.getByRole('button', {name: 'Retry loading more'}).click();
   await expect(page.getByRole('list', {name: 'requests'}).getByRole('link')).toHaveCount(22);
-  await expect(page.getByRole('button', {name: 'All requests loaded'})).toBeDisabled();
+  await expect(page.getByText('All requests loaded', {exact: true})).toBeAttached();
+  await expect(page.getByRole('button', {name: 'Load more', exact: true})).toHaveCount(0);
   await page.getByRole('link', {name: /Weekly check-in 1 /}).click();
   await expect(page.getByLabel('How was your week?')).toBeVisible();
   await page.goBack();

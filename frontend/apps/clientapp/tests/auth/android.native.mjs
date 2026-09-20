@@ -186,11 +186,30 @@ try {
   await device.shell('svc wifi enable');
   await device.shell('svc data enable');
   await expect(page.getByRole('button', {name: 'Save set', exact: true})).toBeEnabled();
+  await tap(page.getByLabel('Reps', {exact: true}));
+  await expect(page.locator('html')).toHaveAttribute('data-keyboard', 'open');
+  const setSaveBounds = await page.getByRole('button', {name: 'Save set', exact: true}).boundingBox();
+  const keyboardViewport = await page.evaluate(() => ({height: visualViewport.height, top: visualViewport.offsetTop}));
+  expect(setSaveBounds.y + setSaveBounds.height).toBeLessThanOrEqual(
+    keyboardViewport.height + keyboardViewport.top + 1,
+  );
   await tap(page.getByRole('button', {name: 'Save set', exact: true}));
   await expect(page.getByText('Set saved.', {exact: true})).toBeVisible();
   await device.input.press('Home');
   await launch();
   await expect(page.getByRole('list', {name: 'Saved sets'}).getByRole('listitem')).toHaveCount(1);
+  await tap(page.getByRole('button', {name: 'Workout notes & soreness', exact: true}));
+  await page.getByLabel('Workout notes', {exact: true}).fill('Steady on Android.');
+  await tap(page.getByLabel('Workout notes', {exact: true}));
+  await expect(page.locator('html')).toHaveAttribute('data-keyboard', 'open');
+  expect(
+    await page
+      .getByRole('button', {name: 'Save set', exact: true})
+      .evaluate((node) => Boolean(node.closest('[inert]'))),
+  ).toBe(true);
+  await tap(page.getByRole('button', {name: 'Save workout notes', exact: true}));
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByText('Workout notes saved.', {exact: true})).toBeVisible();
   await tap(page.getByRole('button', {name: 'Finish workout', exact: true}));
   await tap(page.getByRole('dialog').getByRole('button', {name: 'Finish and save workout'}));
   await expect(page.getByRole('link', {name: 'Back to workout history'})).toBeVisible();
@@ -205,12 +224,21 @@ try {
   ).data;
   expect(workout.state).toBe('completed');
   expect(workout.performed_sets).toHaveLength(1);
+  expect(workout.notes).toBe('Steady on Android.');
   await device.screenshot({path: 'tests/auth/artifacts/android-training-saved.png'});
   results.push({
     scenario:
       'native training keyboard/back, offline draft process restart, explicit set save, background/resume, finish and saved deep link',
     passed: true,
   });
+  await tap(page.getByRole('link', {name: 'Back to workout history', exact: true}));
+  await expect(page.getByText('1 workout', {exact: true})).toBeVisible();
+  await expect(page.getByText('Loading your active workout…', {exact: true})).toHaveCount(0);
+  await tap(page.getByRole('button', {name: 'Filter workouts'}));
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await device.input.press('Back');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('heading', {name: 'Training', exact: true})).toBeVisible();
   await tap(page.getByRole('link', {name: 'Your account', exact: true}));
   await tap(page.getByRole('link', {name: 'Personal details', exact: true}));
   await expect(page.getByLabel('First name')).toHaveValue('Android saved client');

@@ -1,5 +1,6 @@
+import {Check, Dumbbell, Pencil, Trash2} from 'lucide-react';
 import {useCallback, useState} from 'react';
-import {Link, useParams} from 'react-router-dom';
+import {Link, useParams, useSearchParams} from 'react-router-dom';
 import {useProfile} from '../api/auth';
 import {ApiError, errorMessage} from '../api/client';
 import {
@@ -9,6 +10,7 @@ import {
   useTrainingSession,
   useWriteTrainingSet,
 } from '../api/training';
+import {safeReturnTo} from '../auth/return-to';
 import {routes} from '../routes';
 import {Button} from '../ui/button';
 import {CachedRead} from '../ui/cached-read';
@@ -37,6 +39,8 @@ import {WorkoutNotes} from './workout-notes';
 
 export function TrainingSession() {
   const {id = ''} = useParams();
+  const [params] = useSearchParams();
+  const returnTo = params.has('returnTo') ? safeReturnTo(params.get('returnTo')) : `${routes.training}?view=history`;
   const query = useTrainingSession(id);
   const profile = useProfile();
   const online = useOnline();
@@ -49,7 +53,8 @@ export function TrainingSession() {
           ? `${dayLabel(session.date)} · ${session.state === 'active' ? 'In progress' : session.state === 'completed' ? 'Workout saved' : 'Discarded'}`
           : undefined
       }
-      back={`${routes.training}?view=history`}
+      back={returnTo}
+      compact
     >
       {!session || !profile.data ? (
         <ReadState
@@ -74,6 +79,7 @@ export function TrainingSession() {
           <SessionContent
             key={session.id}
             session={session}
+            returnTo={returnTo}
             unit={profile.data.data.default_weight_unit}
             canSave={online && query.isFetchedAfterMount && !query.isFetching && !query.isError}
           />
@@ -89,7 +95,17 @@ function entryIdentity(entry: SetEntry) {
   return entry.operation.kind === 'create' ? entry.operation.requestId : entry.operation.id;
 }
 
-function SessionContent({session, unit, canSave}: {session: Session; unit: 'kg' | 'lbs'; canSave: boolean}) {
+function SessionContent({
+  session,
+  unit,
+  canSave,
+  returnTo,
+}: {
+  session: Session;
+  unit: 'kg' | 'lbs';
+  canSave: boolean;
+  returnTo: string;
+}) {
   const {draft, update, state: draftState, loadError} = useWorkoutDraft(session, unit);
   const saveSet = useWriteTrainingSet(session.id);
   const saveWorkout = useSaveTraining(session.id);
@@ -103,6 +119,11 @@ function SessionContent({session, unit, canSave}: {session: Session; unit: 'kg' 
   const exercise = session.prescription_snapshot?.workout.exercises.find((item) => item.ref === selected);
   const savedSets = session.performed_sets.filter((set) =>
     selected === 'freestyle' ? !set.snapshot_exercise_ref : set.snapshot_exercise_ref === selected,
+  );
+  const previousSet = savedSets.findLast(
+    (set) =>
+      selected !== 'freestyle' ||
+      (set.exercise_name === entry?.values.exercise_name.trim() && set.exercise_id === (entry.exerciseId ?? null)),
   );
 
   const changeEntry = useCallback(
@@ -326,10 +347,16 @@ function SessionContent({session, unit, canSave}: {session: Session; unit: 'kg' 
             </>
           )}
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold">{exercise?.exercise_name ?? 'Your exercise'}</h2>
+            <div className="flex items-start gap-3">
+              <Dumbbell
+                className="size-6 shrink-0 mt-1 text-primary"
+                aria-hidden="true"
+              />
+              <h2 className="text-2xl font-bold leading-tight">{exercise?.exercise_name ?? 'Your exercise'}</h2>
+            </div>
             {exercise && (
-              <div className="rounded-xl bg-muted p-4 space-y-2">
-                <h3 className="font-semibold">Your targets</h3>
+              <div className="rounded-3xl bg-[var(--training)] p-5 space-y-3">
+                <h3 className="text-sm font-bold uppercase tracking-wide">Your targets</h3>
                 {exercise.sets.length === 0 ? (
                   <p>No set targets prescribed.</p>
                 ) : (
@@ -346,6 +373,24 @@ function SessionContent({session, unit, canSave}: {session: Session; unit: 'kg' 
                 )}
               </div>
             )}
+            {entry && (
+              <SetEditor
+                key={entryIdentity(entry)}
+                entry={entry}
+                pending={pending}
+                canSave={canSave}
+                previous={
+                  previousSet && !entryHasInput(entry)
+                    ? {...setValues(previousSet, exercise, unit), tracking: entry.values.tracking, rpe: '', notes: ''}
+                    : undefined
+                }
+                onChange={changeEntry}
+                onSave={(values) => {
+                  saveEntry({...entry, values});
+                }}
+                onClear={() => setConfirmation({kind: 'clear'})}
+              />
+            )}
             {savedSets.length > 0 && (
               <ol
                 aria-label="Saved sets"
@@ -354,51 +399,54 @@ function SessionContent({session, unit, canSave}: {session: Session; unit: 'kg' 
                 {savedSets.map((set) => (
                   <li
                     key={set.id}
-                    className="py-3 space-y-1"
+                    className="py-3 flex items-start gap-2"
                   >
-                    <p className="font-medium">
-                      {selected === 'freestyle' ? `${set.exercise_name} · ` : ''}
-                      {measurementText(set)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {set.set_type === 'warmup' ? 'Warm-up' : set.set_type === 'dropset' ? 'Drop set' : 'Working set'}
-                      {set.rpe ? ` · Effort ${set.rpe}/10` : ''}
-                    </p>
-                    {set.notes && <p className="text-sm whitespace-pre-wrap">{set.notes}</p>}
-                    <div className="flex gap-2">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <p className="font-medium">
+                        {selected === 'freestyle' ? `${set.exercise_name} · ` : ''}
+                        {measurementText(set)}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {set.set_type === 'warmup'
+                          ? 'Warm-up'
+                          : set.set_type === 'dropset'
+                            ? 'Drop set'
+                            : 'Working set'}
+                        {set.rpe ? ` · Effort ${set.rpe}/10` : ''}
+                      </p>
+                      {set.notes && <p className="text-sm whitespace-pre-wrap">{set.notes}</p>}
+                    </div>
+                    <div className="flex shrink-0">
                       <Button
                         variant="ghost"
+                        size="icon-sm"
                         isDisabled={pending || !canSave}
                         onPress={() => {
                           editSet(set);
                         }}
                       >
-                        Edit set
+                        <Pencil
+                          className="size-4"
+                          aria-hidden="true"
+                        />
+                        <span className="sr-only">Edit set</span>
                       </Button>
                       <Button
                         variant="ghost"
+                        size="icon-sm"
                         isDisabled={pending || !canSave}
                         onPress={() => setConfirmation({kind: 'remove', id: set.id})}
                       >
-                        Remove set
+                        <Trash2
+                          className="size-4"
+                          aria-hidden="true"
+                        />
+                        <span className="sr-only">Remove set</span>
                       </Button>
                     </div>
                   </li>
                 ))}
               </ol>
-            )}
-            {entry && (
-              <SetEditor
-                key={entryIdentity(entry)}
-                entry={entry}
-                pending={pending}
-                canSave={canSave}
-                onChange={changeEntry}
-                onSave={(values) => {
-                  saveEntry({...entry, values});
-                }}
-                onClear={() => setConfirmation({kind: 'clear'})}
-              />
             )}
           </section>
           <DraftStatus state={draftState} />
@@ -413,15 +461,11 @@ function SessionContent({session, unit, canSave}: {session: Session; unit: 'kg' 
             }}
             onSave={async (values) => {
               setError('');
-              try {
-                await saveWorkout.mutateAsync({
-                  kind: 'save',
-                  body: {notes: values.notes, ...(values.soreness ? {soreness_rating: Number(values.soreness)} : {})},
-                });
-                setNotice('Workout notes saved.');
-              } catch (cause) {
-                setError(errorMessage(cause, 'Your notes could not be saved. They are kept on this device.'));
-              }
+              await saveWorkout.mutateAsync({
+                kind: 'save',
+                body: {notes: values.notes, ...(values.soreness ? {soreness_rating: Number(values.soreness)} : {})},
+              });
+              setNotice('Workout notes saved.');
             }}
             onFinish={() => setConfirmation({kind: 'finish'})}
           />
@@ -437,8 +481,12 @@ function SessionContent({session, unit, canSave}: {session: Session; unit: 'kg' 
         <>
           <p
             role="status"
-            className="text-lg font-medium"
+            className="flex gap-3 items-center rounded-3xl bg-[var(--progress)] p-5 text-xl font-bold"
           >
+            <Check
+              className="size-6 shrink-0"
+              aria-hidden="true"
+            />
             {session.state === 'completed' ? 'Your workout is saved.' : 'This workout was discarded.'}
           </p>
           {session.performed_sets.length === 0 ? (
@@ -517,13 +565,13 @@ function SessionContent({session, unit, canSave}: {session: Session; unit: 'kg' 
             </section>
           )}
           <Link
-            className="text-link block"
-            to={`${routes.training}?view=history`}
+            className="flex min-h-12 items-center justify-center rounded-2xl bg-surface px-4 font-semibold"
+            to={returnTo}
           >
             Back to workout history
           </Link>
           <Link
-            className="text-link block"
+            className="flex min-h-12 items-center justify-center rounded-2xl bg-surface px-4 font-semibold"
             to={routes.home}
           >
             Back to Today

@@ -51,6 +51,7 @@ try {
   for (const [index, mode] of modes.entries()) {
     await expect(page.getByRole('button', {name: 'Save set', exact: true})).toBeEnabled();
     await page.getByLabel('Exercise name').fill(`Exercise ${index + 1}`);
+    await expect(page.getByRole('button', {name: 'Use last set', exact: true})).toHaveCount(0);
     await page.getByRole('button', {name: /What to record/}).click();
     await page.getByRole('option', {name: mode.name, exact: true}).click();
     if (mode.reps) {
@@ -67,6 +68,7 @@ try {
     }
     await page.getByRole('button', {name: 'Save set', exact: true}).click();
     await expect(page.getByRole('list', {name: 'Saved sets'}).getByRole('listitem')).toHaveCount(index + 1);
+    await expect(page.getByRole('button', {name: 'Use last set', exact: true})).toBeVisible();
     const saved = (await read()).performed_sets.at(-1);
     expect(saved.reps).toBe(mode.reps ?? null);
     expect(saved.load_value === null ? null : Number(saved.load_value)).toBe(mode.load ? Number(mode.load) : null);

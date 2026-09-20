@@ -1,4 +1,5 @@
 import type {InfiniteData, UseInfiniteQueryResult} from '@tanstack/react-query';
+import {RefreshCw} from 'lucide-react';
 import {type ReactNode} from 'react';
 import {ApiError, errorMessage} from '../api/client';
 import {type CursorPage, latestPageCount} from '../api/pagination';
@@ -80,13 +81,17 @@ export function InfiniteList<Item extends {id: string}>({
         </p>
         <Button
           variant="ghost"
+          size="icon-sm"
           aria-label={`Refresh ${label}`}
           isPending={isFetching}
           onPress={() => {
             query.refetch();
           }}
         >
-          Refresh
+          <RefreshCw
+            className="size-4"
+            aria-hidden="true"
+          />
         </Button>
       </div>
       {query.isPaused && (
@@ -143,24 +148,28 @@ export function InfiniteList<Item extends {id: string}>({
           >
             Retry refresh
           </Button>
+        ) : hasNextPage ? (
+          <Button
+            variant="outline"
+            isPending={isFetching}
+            onPress={() => {
+              fetchNextPage({cancelRefetch: false});
+            }}
+          >
+            {query.isFetchingNextPage
+              ? 'Loading more…'
+              : query.isFetchNextPageError
+                ? 'Retry loading more'
+                : 'Load more'}
+          </Button>
         ) : (
-          (hasNextPage || items.length > 0) && (
-            <Button
-              variant="outline"
-              isPending={isFetching}
-              isDisabled={!hasNextPage}
-              onPress={() => {
-                fetchNextPage({cancelRefetch: false});
-              }}
+          items.length > 0 && (
+            <p
+              role="status"
+              className="sr-only"
             >
-              {query.isFetchingNextPage
-                ? 'Loading more…'
-                : query.isFetchNextPageError
-                  ? 'Retry loading more'
-                  : hasNextPage
-                    ? 'Load more'
-                    : `All ${label} loaded`}
-            </Button>
+              All {label} loaded
+            </p>
           )
         )}
       </div>

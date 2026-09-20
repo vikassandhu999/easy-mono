@@ -180,6 +180,7 @@ Severity of the rule isn't the point; recurrence is.
 | RM-236 | Mutation error callbacks tolerate a changed session | Frontend | browser test |
 | RM-238 | Verify account identity before mounting draft editors | Frontend | browser/native test |
 | RM-239 | Android Back reaches the focused overlay | Frontend | native test |
+| RM-240 | Verify fixed save actions with a keyboard-open native tap | Frontend | native test |
 
 ---
 
@@ -1395,6 +1396,18 @@ listbox or menu. Dispatching it on `document` bypassed the sheet's handler and l
 Android Back ineffective. **Verify by:** clientapp `tests/progress/android.native.mjs`
 opens the unit picker and filter sheet, presses native Back, and requires each overlay
 to close while its underlying route stays open.
+
+### RM-240 — Verify fixed save actions with a keyboard-open native tap
+A fixed workout Save button reported hittable, yet its first tap moved focus without
+saving. Avoid moving focus from the input during
+the press when that moves the action with the viewport; workout Save opts into React Aria's
+`preventFocusOnPress`. Keep this opt-in local to verified actions. **Verify by:** clientapp
+`testWorkoutDraftAndSavedResult` opens the native keyboard, asserts the Save button's bounds,
+taps once, requires saved feedback and reads the completed result after restart. Require
+the keyboard frame to be inside the screen: Simulator can expose an off-screen keyboard
+in hardware-keyboard mode. The Android
+auth/workout scenario exercises the same physical tap. DOM clicks and hittability alone
+do not prove this interaction.
 
 ## Deploy / ops
 

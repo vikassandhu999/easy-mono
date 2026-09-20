@@ -33,6 +33,8 @@ export function AppShell() {
   const location = useLocation();
   const focusedEditor =
     location.pathname.startsWith('/progress/weight/') ||
+    location.pathname.startsWith('/training/plans/') ||
+    location.pathname.startsWith('/training/sessions/') ||
     location.pathname === routes.accountDetails ||
     location.pathname === routes.accountGoal;
   return session ? (

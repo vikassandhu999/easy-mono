@@ -46,19 +46,30 @@ try {
   failNext = false;
   await page.getByRole('button', {name: 'Retry loading more'}).click();
   await expect(rows).toHaveCount(22);
-  await expect(page.getByRole('button', {name: 'All workouts loaded'})).toBeDisabled();
+  for (const width of [375, 768, 1280]) {
+    await page.setViewportSize({width, height: 812});
+    await page.screenshot({path: `tests/training/artifacts/history-${width}.png`, fullPage: true});
+    expect(await page.locator('main').evaluate((node) => node.getBoundingClientRect().width)).toBeLessThanOrEqual(480);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await page.setViewportSize({width: 375, height: 812});
+  await expect(page.getByText('All workouts loaded', {exact: true})).toBeAttached();
+  await expect(page.getByRole('button', {name: 'Load more', exact: true})).toHaveCount(0);
+  await page.getByRole('button', {name: 'Filter workouts'}).click();
   await page.getByRole('button', {name: /Workout status/}).click();
   await page.getByRole('option', {name: 'Discarded', exact: true}).click();
   await page.getByLabel('From', {exact: true}).fill(profile.local_date);
   await page.getByLabel('To', {exact: true}).fill(profile.local_date);
+  await page.screenshot({path: 'tests/training/artifacts/history-filters-375.png', fullPage: false});
   await page.getByRole('button', {name: 'Apply filters'}).click();
   await expect(page).toHaveURL(/state=discarded/);
   await expect(page.getByText('2 workouts', {exact: true})).toBeVisible();
   await expect(rows).toHaveCount(2);
   await rows.first().click();
   await expect(page.getByRole('link', {name: 'Back to workout history'})).toBeVisible();
-  await page.goBack();
+  await page.getByRole('link', {name: 'Back to workout history'}).click();
   await expect(page.getByText('2 workouts', {exact: true})).toBeVisible();
+  await page.getByRole('button', {name: 'Filter workouts'}).click();
   await expect(page.getByLabel('From', {exact: true})).toHaveValue(profile.local_date);
   await page.getByRole('button', {name: /Workout status/}).click();
   await page.getByRole('option', {name: 'All workouts', exact: true}).click();

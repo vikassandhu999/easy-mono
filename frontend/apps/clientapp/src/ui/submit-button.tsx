@@ -5,10 +5,12 @@ export function SubmitButton({
   pending,
   children,
   isDisabled = false,
+  preventFocusOnPress = false,
 }: {
   pending: boolean;
   children: string;
   isDisabled?: boolean;
+  preventFocusOnPress?: boolean;
 }) {
   return (
     <Button
@@ -16,6 +18,7 @@ export function SubmitButton({
       className="relative w-full"
       isPending={pending}
       isDisabled={isDisabled}
+      preventFocusOnPress={preventFocusOnPress}
       aria-label={children}
     >
       <span className={pending ? 'invisible' : undefined}>{children}</span>

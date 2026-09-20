@@ -76,7 +76,18 @@ try {
       await page.getByLabel('Verification code').fill('123456');
       await page.getByRole('button', {name: 'Verify and continue'}).click();
       await expect(page.getByRole('heading', {name: 'Today', exact: true})).toBeVisible();
-      await page.getByRole('link', {name: 'Lower body', exact: true}).click();
+      await page
+        .getByRole('navigation', {name: 'Main navigation'})
+        .getByRole('link', {name: 'Training', exact: true})
+        .click();
+      await expect(page.getByRole('link', {name: /Steady strength/})).toBeVisible();
+      await page.screenshot({path: `tests/training/artifacts/plans-${width}.png`, fullPage: true});
+      await page.getByRole('link', {name: /Steady strength/}).click();
+      await expect(page.getByRole('link', {name: /^Lower body/})).toBeVisible();
+      await page.screenshot({path: `tests/training/artifacts/plan-${width}.png`, fullPage: true});
+      await page.getByRole('link', {name: /^Lower body/}).click();
+      await expect(page.getByRole('button', {name: 'Start workout', exact: true})).toBeVisible();
+      await page.screenshot({path: `tests/training/artifacts/preview-${width}.png`, fullPage: true});
       await expect(page.getByText('5 reps · 80 kg · Rest 90 sec', {exact: false})).toBeVisible();
       let starts = 0;
       await page.route('**/v1/client/training-sessions', async (route) => {
@@ -95,6 +106,9 @@ try {
       await page.unroute('**/v1/client/training-sessions');
       await page.getByLabel('Reps', {exact: true}).fill('8');
       await page.getByLabel('Weight (kg)', {exact: true}).fill('85');
+      await page.getByText('Units, set type & notes', {exact: true}).click();
+      await page.getByLabel('Set notes', {exact: true}).fill('Only this first set.');
+      await page.getByLabel('Effort (1–10)', {exact: true}).fill('7');
       await expect(page.getByText('Draft saved on this device.', {exact: true})).toBeVisible();
       await page.reload();
       await expect(page.getByLabel('Reps', {exact: true})).toHaveValue('8');
@@ -122,8 +136,20 @@ try {
       expect(submitted).toHaveLength(1);
       expect(submitted[0].request_id).toBeTruthy();
       await expect(page.getByLabel('Reps', {exact: true})).toHaveValue('');
-      await page.getByLabel('Reps', {exact: true}).fill('8');
-      await page.getByLabel('Weight (kg)', {exact: true}).fill('85');
+      await page.getByRole('button', {name: 'Use last set', exact: true}).click();
+      await expect(page.getByLabel('Reps', {exact: true})).toHaveValue('8');
+      await expect(page.getByLabel('Weight (kg)', {exact: true})).toHaveValue('85');
+      await expect(page.getByRole('button', {name: 'Use last set', exact: true})).toHaveCount(0);
+      await expect(page.getByText('Draft saved on this device.', {exact: true})).toBeVisible();
+      await page.reload();
+      await expect(page.getByLabel('Reps', {exact: true})).toHaveValue('8');
+      await page.getByText('Units, set type & notes', {exact: true}).click();
+      await expect(page.getByLabel('Set notes', {exact: true})).toHaveValue('');
+      await expect(page.getByLabel('Effort (1–10)', {exact: true})).toHaveValue('');
+      saved = (
+        await api(`/v1/coach/clients/${fixture.clientId}/training-sessions/${sessionId}`, {token: fixture.coachToken})
+      ).data;
+      expect(saved.performed_sets).toHaveLength(1);
       await page.getByRole('button', {name: 'Save set', exact: true}).click();
       await expect(page.getByRole('list', {name: 'Saved sets'}).getByRole('listitem')).toHaveCount(2);
       await page.getByRole('button', {name: 'Edit set', exact: true}).first().click();
@@ -151,6 +177,28 @@ try {
       await page.reload();
       await page.getByText('Workout notes & soreness', {exact: true}).click();
       await expect(page.getByLabel('Workout notes', {exact: true})).toHaveValue('Felt steady today.');
+      expect(
+        await page
+          .getByRole('button', {name: 'Save set', exact: true})
+          .evaluate((node) => Boolean(node.closest('[inert]'))),
+      ).toBe(true);
+      await page.route(`**/v1/client/training-sessions/${sessionId}`, async (route) => {
+        if (route.request().method() === 'PATCH') {
+          return route.abort('connectionreset');
+        }
+        return route.continue();
+      });
+      await page.getByRole('button', {name: 'Save workout notes', exact: true}).click();
+      await expect(page.getByRole('dialog').getByRole('alert')).toContainText('Your notes could not be saved');
+      await expect(page.getByLabel('Workout notes', {exact: true})).toHaveValue('Felt steady today.');
+      await page.unroute(`**/v1/client/training-sessions/${sessionId}`);
+      await page.getByRole('button', {name: 'Save workout notes', exact: true}).click();
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+      await expect(page.getByText('Workout notes saved.', {exact: true})).toBeVisible();
+      await page.getByRole('button', {name: 'Workout notes & soreness', exact: true}).click();
+      await expect(page.getByLabel('Workout notes', {exact: true})).toHaveValue('Felt steady today.');
+      await page.screenshot({path: `tests/training/artifacts/notes-${width}.png`});
+      await page.getByRole('button', {name: 'Close', exact: true}).click();
       await api(`/v1/coach/training-plans/${plan.id}/prescription`, {
         method: 'PUT',
         token: fixture.coachToken,
@@ -194,9 +242,19 @@ try {
       await page.screenshot({path: `tests/training/artifacts/saved-${width}.png`, fullPage: true});
       await page.getByRole('link', {name: 'Back to workout history'}).click();
       await expect(page.getByRole('link', {name: /Lower body.*Completed/})).toBeVisible();
+      await page.getByRole('button', {name: 'Filter workouts'}).click();
       await page.getByLabel('Search workouts').fill('No match');
       await page.getByRole('button', {name: 'Apply filters'}).click();
       await expect(page.getByText('0 workouts', {exact: true})).toBeVisible();
+      await page.getByRole('link', {name: 'Your plans', exact: true}).click();
+      await page.getByRole('button', {name: 'Find a plan', exact: true}).click();
+      await page.getByLabel('Search plans').fill('No match');
+      await page.getByRole('button', {name: 'Apply filters'}).click();
+      await expect(page.getByText('0 plans', {exact: true})).toBeVisible();
+      await page.getByRole('button', {name: 'Find a plan', exact: true}).click();
+      await page.getByLabel('Search plans').fill('');
+      await page.getByRole('button', {name: 'Apply filters'}).click();
+      await expect(page.getByText('1 plan', {exact: true})).toBeVisible();
       expect(errors).toEqual([]);
       results.push({
         width,

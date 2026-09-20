@@ -18,10 +18,10 @@ This continues the authorized rebuild on `clientapp-rebuild`, including its exis
 | `/messages` | client | 375 / 768 / 1280 | Text/live/read, long content, restart, lost response, conflict discard, composer above tabs | Behavior/geometry pass; distinct conversation design/native recheck pending | UI-01 |
 | `/forms` | client | 375 / 768 / 1280 | Pending/history after saved response | Behavior regression passes; mobile redesign pending | UI-01 |
 | `/forms/:id` | client | 375 / 768 / 1280 | All question types, validation, draft/revision/photo retry, saved response, progress return | Behavior regression passes; mobile redesign pending | UI-01 |
-| `/training` | client | 375 / 768 / 1280 | History, filters, search, paging/error/retry, completed return | Behavior regression passes; mobile redesign pending | UI-01 |
-| `/training/plans/:id` | client | 375 / 768 / 1280 | Pending | Pending | UI-01 |
-| `/training/plans/:id/workouts/:workoutId` | client | 375 / 768 / 1280 | Prescription, start, interrupted start | Behavior regression passes; mobile redesign pending | UI-01 |
-| `/training/sessions/:id` | client | 375 / 768 / 1280 | Planned/freeform recording, all modes, retry, offline, edit/remove, complete/discard | Behavior regression passes; mobile redesign pending | UI-01 |
+| `/training` | client | 375 / 768 / 1280, Android | Plan/history segments, search/empty/reset, sheet filters/Back, paging/error/retry, preserved completed return | Mobile pass for exercised states | UI-07 |
+| `/training/plans/:id` | client | 375 / 768 / 1280 | Plan entry, workout rows, schedule, preview return | Mobile pass for exercised states | UI-07 |
+| `/training/plans/:id/workouts/:workoutId` | client | 375 / 768 / 1280 | Numbered prescription, long name, reachable start, interrupted start | Mobile pass for exercised states | UI-07 |
+| `/training/sessions/:id` | client | 375 / 768 / 1280, iOS/Android | Planned/freeform, all modes, last-set prefill, notes sheet/failure/retry, offline/restart, edit/remove, complete/discard, physical keyboard-open save | Browser/native pass; physical device/usability separate | UI-07, UI-08, UI-09 |
 | `/nutrition` | client | 375 / 768 / 1280 | Planned/empty/saved day and history return | Behavior regression passes; mobile redesign pending | UI-01 |
 | `/nutrition/plans` | client | 375 / 768 / 1280 | Pending | Pending | UI-01 |
 | `/nutrition/plans/:id` | client | 375 / 768 / 1280 | Pending | Pending | UI-01 |
@@ -41,3 +41,8 @@ Evidence: `frontend/apps/clientapp/tests/progress/artifacts/{today,invitation,ed
 Shared consumers: `Page` serves account, forms, training, nutrition and progress; `AuthLayout` serves login, verification and invitation; `Button`/inputs/selects serve every workflow. Every consumer must be checked after the shared changes. The message viewport must be verified against the floating tab bar and keyboard.
 
 - UI-06: Account now uses a personal overview and separate contact/goal editors with compact app bars and reachable Save. Real browser/native verification passes; see `account.md`. Typed goal fields previously returned success without persistence; the backend self changeset and router regressions now enforce their declared behavior. Evidence: `evidence/account-*`.
+
+- UI-07: Training mobile pass replaces the web filter form/navigation with segments and sheets, focuses preview/recording, moves the next entry above saved sets and offers explicit same-exercise prefill. Notes save in a separate sheet. Mobile browser and native workflows pass; see `training.md` and `evidence/training-mobile-*`. Shared infinite-list refresh/end-state changes also pass forms, nutrition and weight regressions.
+- UI-08: iOS reported the fixed Save set action hittable while a physical tap failed to save and focused Finish. `SetEditor` now opts into `preventFocusOnPress`; the same native probe verifies button bounds and a successful first-tap save. Notes also verify keyboard-open save. Prevention: RM-240. The shared SubmitButton defaults to its previous focus behavior; this opt-in only applies to workout set recording.
+
+- UI-09: Native screenshot review found scrolled content overlapping the status bar. `body::before` now provides a fixed background over the top safe area. The final iPhone screenshot shows clear status indicators with the software keyboard visible; workout and goal tests pass. Browser and Android auth/form/workout regressions also pass. The keyboard probe was strengthened after discovering that hardware-keyboard mode can leave an off-screen keyboard in the accessibility tree; see `auth-native.md`.

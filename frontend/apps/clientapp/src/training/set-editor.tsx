@@ -23,6 +23,7 @@ export function SetEditor({
   entry,
   pending,
   canSave,
+  previous,
   onChange,
   onSave,
   onClear,
@@ -30,6 +31,7 @@ export function SetEditor({
   entry: SetEntry;
   pending: boolean;
   canSave: boolean;
+  previous: SetValues | undefined;
   onChange: (values: SetValues) => void;
   onSave: (values: SetValues) => void;
   onClear: () => void;
@@ -51,10 +53,18 @@ export function SetEditor({
 
   return (
     <form
-      className="space-y-4"
+      className="rounded-[2rem] bg-surface p-5 space-y-4"
       onSubmit={form.handleSubmit(onSave)}
     >
       <h3 className="text-lg font-semibold">{entry.operation.kind === 'edit' ? 'Edit saved set' : 'Record a set'}</h3>
+      {previous && !locked && (
+        <Button
+          variant="secondary"
+          onPress={() => form.reset(previous)}
+        >
+          Use last set
+        </Button>
+      )}
       {entry.attempted && (
         <p
           role="status"
@@ -96,7 +106,7 @@ export function SetEditor({
           />
         </>
       )}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 [&_input]:h-16 [&_input]:text-2xl [&_input]:font-bold [&_input]:text-center">
         {fields.reps && (
           <FormField
             control={form.control}
@@ -145,7 +155,7 @@ export function SetEditor({
         className="space-y-4"
         open={entry.attempted ? true : undefined}
       >
-        <summary className="text-link cursor-pointer py-2">Units, set type & notes</summary>
+        <summary className="cursor-pointer min-h-12 py-3 font-semibold">Units, set type & notes</summary>
         {fields.load && (
           <Controller
             control={form.control}
@@ -217,12 +227,15 @@ export function SetEditor({
           isDisabled={locked}
         />
       </details>
-      <SubmitButton
-        pending={pending}
-        isDisabled={!canSave}
-      >
-        {entry.attempted ? 'Retry set save' : entry.operation.kind === 'edit' ? 'Save set changes' : 'Save set'}
-      </SubmitButton>
+      <div className="mobile-save-bar">
+        <SubmitButton
+          preventFocusOnPress
+          pending={pending}
+          isDisabled={!canSave}
+        >
+          {entry.attempted ? 'Retry set save' : entry.operation.kind === 'edit' ? 'Save set changes' : 'Save set'}
+        </SubmitButton>
+      </div>
       <Button
         variant="ghost"
         isDisabled={pending}

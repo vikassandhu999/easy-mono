@@ -1,3 +1,4 @@
+import {Check, Sparkles} from 'lucide-react';
 import {useCallback, useEffect, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {Link, useParams, useSearchParams} from 'react-router-dom';
@@ -50,6 +51,7 @@ export function FormDetail() {
   if (!query.data || !profile.data) {
     return (
       <Page
+        compact
         title="Your form"
         back={back}
       >
@@ -80,16 +82,28 @@ export function FormDetail() {
     const saved = assignment.latest_submission;
     return (
       <Page
+        compact
         title={assignment.form_template.name}
-        description={
-          saved
-            ? `Response saved ${new Date(saved.submitted_at).toLocaleString()}`
-            : assignment.status === 'missed'
-              ? 'This request was missed.'
-              : 'Your coach has closed this request.'
-        }
         back={back}
       >
+        <div className="mb-6 rounded-3xl bg-[var(--progress)] p-5">
+          <div className="mb-3 grid size-11 place-items-center rounded-2xl bg-white/70">
+            <Check
+              aria-hidden="true"
+              className="size-5"
+            />
+          </div>
+          <p className="text-xl font-bold">
+            {saved
+              ? 'Response saved'
+              : assignment.status === 'missed'
+                ? 'This request was missed.'
+                : 'Your coach has closed this request.'}
+          </p>
+          {saved && (
+            <p className="mt-1 text-sm">{new Date(saved.submitted_at).toLocaleString()} · Shared with your coach</p>
+          )}
+        </div>
         <CachedRead
           updatedAt={query.dataUpdatedAt}
           failed={query.isError}
@@ -107,9 +121,12 @@ export function FormDetail() {
                 {(section.title || section.section) && (
                   <h2 className="text-xl font-semibold">{section.title || section.section}</h2>
                 )}
-                <dl className="space-y-5">
+                <dl className="divide-y divide-border rounded-3xl bg-white px-5">
                   {section.questions.map((question) => (
-                    <div key={question.id}>
+                    <div
+                      key={question.id}
+                      className="py-5"
+                    >
                       <dt className="font-medium">
                         {question.label}
                         {question.type === 'weight' && ` (${question.unit ?? 'unit not recorded'})`}
@@ -131,7 +148,7 @@ export function FormDetail() {
         )}
         <Link
           to={back}
-          className="text-link mt-8 block"
+          className="mt-8 flex min-h-12 items-center justify-center rounded-2xl bg-primary px-4 font-semibold text-primary-foreground"
         >
           {back.startsWith(routes.progress) ? 'Back to your progress' : 'Back to your forms'}
         </Link>
@@ -297,10 +314,24 @@ function FormEditor({
   const pendingPhotos = Object.values(photoWork).some(Boolean);
   return (
     <Page
+      compact
       title={assignment.form_template.name}
-      description="Your answers help your coach support you. Required questions are marked."
       back={back}
     >
+      <div className="mb-6 flex items-start gap-3 rounded-3xl bg-[var(--training)] p-5">
+        <Sparkles
+          aria-hidden="true"
+          className="mt-1 size-5 shrink-0 text-primary"
+        />
+        <div>
+          <p className="font-bold">
+            {assignment.purpose === 'intake' ? 'Let’s get to know you' : 'Make a moment for you'}
+          </p>
+          <p className="mt-1 text-sm leading-relaxed">
+            Your answers help your coach support you. Required questions are marked.
+          </p>
+        </div>
+      </div>
       <CachedRead
         updatedAt={checkedAt}
         failed={refreshFailed}
@@ -317,7 +348,9 @@ function FormEditor({
       )}
       {previous.length > 0 && (
         <details className="mb-6">
-          <summary className="text-link cursor-pointer">Answers from the earlier form</summary>
+          <summary className="min-h-11 cursor-pointer py-3 font-semibold text-primary">
+            Answers from the earlier form
+          </summary>
           <dl className="space-y-3 py-4">
             {previous.map((entry, index) => (
               <div key={index}>
@@ -340,12 +373,12 @@ function FormEditor({
         <form
           noValidate
           onSubmit={submit}
-          className="space-y-9"
+          className="space-y-9 pb-24"
         >
           {assignment.form_template.sections.map((section, sectionIndex) => (
             <section
               key={sectionIndex}
-              className="space-y-7"
+              className="space-y-8"
             >
               {section.title && <h2 className="text-xl font-semibold">{section.title}</h2>}
               {section.questions.map((question) => (
@@ -362,11 +395,7 @@ function FormEditor({
               ))}
             </section>
           ))}
-          <FormError message={form.formState.errors.root?.message} />
           <DraftStatus state={draftState} />
-          {mutation.error instanceof FormAlreadySubmittedError && (
-            <Button onPress={() => refresh()}>Open saved response</Button>
-          )}
           {pendingPhotos && (
             <p
               role="status"
@@ -375,12 +404,6 @@ function FormEditor({
               Upload or remove unfinished photos before sending.
             </p>
           )}
-          <SubmitButton
-            pending={form.formState.isSubmitting}
-            isDisabled={pendingPhotos || !canSend}
-          >
-            Send response
-          </SubmitButton>
           {!canSend && (
             <p
               role="status"
@@ -394,6 +417,20 @@ function FormEditor({
           <p className="text-sm text-muted-foreground">
             Your coach receives this form when you send it. Unsent answers stay on this device.
           </p>
+          <div className="mobile-save-bar space-y-2">
+            <FormError message={form.formState.errors.root?.message} />
+            {mutation.error instanceof FormAlreadySubmittedError && (
+              <Button onPress={() => refresh()}>Open saved response</Button>
+            )}
+
+            <SubmitButton
+              pending={form.formState.isSubmitting}
+              isDisabled={pendingPhotos || !canSend}
+              preventFocusOnPress
+            >
+              Send response
+            </SubmitButton>
+          </div>
         </form>
       )}
     </Page>

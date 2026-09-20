@@ -1,3 +1,4 @@
+import {Check, ChevronRight, ClipboardList} from 'lucide-react';
 import {generatePath, Link, useSearchParams} from 'react-router-dom';
 import {useFormAssignments} from '../api/forms';
 import {routes} from '../routes';
@@ -11,8 +12,9 @@ export function Forms() {
   const query = useFormAssignments({state});
   return (
     <Page
+      compact
       title="Forms & check-ins"
-      description="Your coach's requests and your saved responses."
+      description="A little reflection. A step forward."
       back={routes.home}
     >
       {params.get('photoRecovery') === 'failed' && (
@@ -25,19 +27,19 @@ export function Forms() {
       )}
       <nav
         aria-label="Form views"
-        className="mb-6 flex gap-6"
+        className="mb-6 grid grid-cols-2 rounded-2xl bg-muted p-1"
       >
         <Link
           to={routes.forms}
           aria-current={state === 'pending' ? 'page' : undefined}
-          className="text-link"
+          className={`flex min-h-11 items-center justify-center rounded-xl px-3 text-sm font-semibold ${state === 'pending' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground'}`}
         >
           To complete
         </Link>
         <Link
           to={`${routes.forms}?state=history`}
           aria-current={state === 'history' ? 'page' : undefined}
-          className="text-link"
+          className={`flex min-h-11 items-center justify-center rounded-xl px-3 text-sm font-semibold ${state === 'history' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground'}`}
         >
           History
         </Link>
@@ -55,7 +57,7 @@ export function Forms() {
         label="requests"
         singular="request"
         empty={
-          <p className="py-6 text-muted-foreground">
+          <p className="rounded-3xl bg-[var(--progress)] p-6 leading-relaxed">
             {state === 'pending'
               ? 'Nothing to complete right now. Your coach’s next request will appear here.'
               : 'Your completed and closed requests will appear here.'}
@@ -65,24 +67,43 @@ export function Forms() {
         {(assignment) => (
           <Link
             to={`${generatePath(routes.form, {id: assignment.id})}?from=${state}`}
-            className="block min-h-16 space-y-1 py-5"
+            className="flex min-h-20 items-center gap-3 py-5"
           >
-            <span className="block text-lg font-semibold">{assignment.form_template.name}</span>
-            <span className="block text-sm text-muted-foreground">
-              {assignment.purpose === 'intake' ? 'Getting to know you' : 'Check-in'}
-              {assignment.due_date
-                ? ` · Due ${new Date(`${assignment.due_date}T12:00:00`).toLocaleDateString(undefined, {day: 'numeric', month: 'short'})}`
-                : ''}
+            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--training)] text-primary">
+              {assignment.status === 'completed' ? (
+                <Check
+                  aria-hidden="true"
+                  className="size-5"
+                />
+              ) : (
+                <ClipboardList
+                  aria-hidden="true"
+                  className="size-5"
+                />
+              )}
             </span>
-            <span className="block text-sm">
-              {state === 'pending'
-                ? `${assignment.form_template.question_count} questions`
-                : assignment.status === 'completed'
-                  ? 'Response saved'
-                  : assignment.status === 'missed'
-                    ? 'Missed'
-                    : 'Closed by your coach'}
+            <span className="min-w-0 flex-1 space-y-1">
+              <span className="block text-base font-bold">{assignment.form_template.name}</span>
+              <span className="block text-sm text-muted-foreground">
+                {assignment.purpose === 'intake' ? 'Getting to know you' : 'Check-in'}
+                {assignment.due_date
+                  ? ` · Due ${new Date(`${assignment.due_date}T12:00:00`).toLocaleDateString(undefined, {day: 'numeric', month: 'short'})}`
+                  : ''}
+              </span>
+              <span className="block text-sm font-medium text-primary">
+                {state === 'pending'
+                  ? `${assignment.form_template.question_count} questions`
+                  : assignment.status === 'completed'
+                    ? 'Response saved'
+                    : assignment.status === 'missed'
+                      ? 'Missed'
+                      : 'Closed by your coach'}
+              </span>
             </span>
+            <ChevronRight
+              aria-hidden="true"
+              className="size-5 shrink-0 text-muted-foreground"
+            />
           </Link>
         )}
       </InfiniteList>

@@ -182,6 +182,7 @@ Severity of the rule isn't the point; recurrence is.
 | RM-239 | Android Back reaches the focused overlay | Frontend | native test |
 | RM-240 | Verify fixed save actions with a keyboard-open native tap | Frontend | native test |
 | RM-241 | Late saves must respect subsequent navigation | Frontend | browser test |
+| RM-242 | Styled choices retain a full native input target | Frontend | browser test |
 
 ---
 
@@ -1417,6 +1418,14 @@ and weight editors guard their success navigation by mounted state. **Verify by:
 real meal PATCH response, leave for Account, release it, then require the cleared attempt,
 the saved server portion and the unchanged Account URL. Clientapp nutrition recovery covers
 this sequence; a successful save alone cannot establish correct navigation.
+
+### RM-242 — Styled choices retain a full native input target
+When styling a native radio as a large choice button, keep the input over the entire
+visible target instead of shrinking it to a screen-reader-only box. Preserve native
+keyboard behavior and a visible focus outline on the label. **Verify by:** clientapp
+forms browser tests require at least 44px input bounds, keyboard selection, pointer
+selection and server-persisted values. The first implementation's `sr-only` input
+failed pointer selection because its label intercepted the tiny input target.
 
 ## Deploy / ops
 

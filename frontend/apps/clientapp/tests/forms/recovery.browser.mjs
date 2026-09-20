@@ -125,6 +125,7 @@ try {
   });
   await expect(page.getByRole('button', {name: 'Retry photo 1'})).toBeVisible();
   await expect(page.getByText('The photo could not be uploaded. Try again when connected.')).toBeVisible();
+  await page.getByRole('link', {name: 'Back', exact: true}).click();
   await page.getByRole('link', {name: 'Your account'}).click();
   await page.evaluate(() => {
     const transaction = IDBDatabase.prototype.transaction;

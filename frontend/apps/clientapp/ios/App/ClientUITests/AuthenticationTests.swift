@@ -128,7 +128,19 @@ final class AuthenticationTests: XCTestCase {
             let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: send)
             await fulfillment(of: [ready], timeout: 15)
         }
-        if !send.isHittable { app.swipeUp() }
+        goal.tap()
+        goal.typeText(" ")
+        goal.typeText(XCUIKeyboardKey.delete.rawValue)
+        XCTAssertEqual(goal.value as? String, "A steady native routine")
+        let keyboard = app.keyboards.firstMatch
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 10))
+        XCTAssertGreaterThan(keyboard.frame.height, 150)
+        XCTAssertLessThan(keyboard.frame.minY, app.frame.maxY - 100)
+        XCTAssertLessThanOrEqual(send.frame.maxY, keyboard.frame.minY + 2)
+        let keyboardShot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        keyboardShot.name = "iPhone form send above visible keyboard"
+        keyboardShot.lifetime = .keepAlways
+        add(keyboardShot)
         send.tap()
         XCTAssertTrue(app.staticTexts["A steady native routine"].waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(app.links["Back to your forms"].exists)
@@ -143,6 +155,7 @@ final class AuthenticationTests: XCTestCase {
         app.open(try XCTUnwrap(URL(string: "easy://app/forms/\(fixture.assignmentId)")))
         XCTAssertTrue(app.staticTexts["A steady native routine"].waitForExistence(timeout: 15))
         if let control = fixture.apiControlURL { try await setConnection(control, available: true) }
+        app.links["Back to your forms"].tap()
         app.links["Your account"].tap()
         XCTAssertTrue(app.buttons["Sign out"].waitForExistence(timeout: 15))
         app.buttons["Sign out"].tap()

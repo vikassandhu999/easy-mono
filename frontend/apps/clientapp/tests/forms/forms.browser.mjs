@@ -79,10 +79,21 @@ try {
       await page.getByRole('link', {name: 'Forms & check-ins', exact: true}).click();
       await page.getByRole('link', {name: /Getting started together/}).click();
       await expect(page.getByRole('button', {name: 'Send response'})).toBeEnabled();
+      await expect(page.getByRole('navigation', {name: 'Main navigation'})).toHaveCount(0);
+      await page.screenshot({path: `tests/forms/artifacts/empty-${width}.png`, fullPage: true});
+      await page.screenshot({path: `tests/forms/artifacts/screen-${width}.png`});
       await page.getByRole('button', {name: 'Send response'}).click();
+      await expect(page.getByText('Please answer this question.').first()).toBeVisible();
       await expect(page.getByLabel('What would you like to work on?', {exact: false})).toBeFocused();
       await page.getByLabel('What would you like to work on?', {exact: false}).fill('Build a steady routine');
       await page.getByLabel('Sessions each week', {exact: false}).fill('3');
+      const noChoice = page.getByRole('radio', {name: 'No', exact: true});
+      const choiceBounds = await noChoice.boundingBox();
+      expect(choiceBounds.width).toBeGreaterThanOrEqual(44);
+      expect(choiceBounds.height).toBeGreaterThanOrEqual(44);
+      await noChoice.focus();
+      await noChoice.press('Space');
+      await expect(noChoice).toBeChecked();
       await page.getByRole('radio', {name: 'No', exact: true}).check();
       await page.getByLabel('Preferred start date', {exact: false}).fill('2026-10-01');
       await page.getByRole('button', {name: /Meal preference/}).click();
@@ -216,13 +227,12 @@ try {
       await expect(page.getByRole('img', {name: 'Progress view 1'})).toBeVisible();
       await page.screenshot({path: `tests/forms/artifacts/saved-${width}.png`, fullPage: true});
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-      expect(await page.locator('.app-header').evaluate((el) => el.getBoundingClientRect().width)).toBeLessThanOrEqual(
-        480,
-      );
+      expect(await page.locator('main').evaluate((el) => el.getBoundingClientRect().width)).toBeLessThanOrEqual(480);
       await page.getByRole('link', {name: 'Back to your forms'}).click();
       await expect(page.getByText('Nothing to complete right now.', {exact: false})).toBeVisible();
       await page.getByRole('link', {name: 'History', exact: true}).click();
       await expect(page.getByRole('link', {name: /Getting started together/})).toBeVisible();
+      await page.screenshot({path: `tests/forms/artifacts/history-${width}.png`, fullPage: true});
       const submissions = await api(`/v1/coach/form-assignments/${assignment.data.id}/submissions`, {
         token: fixture.coachToken,
       });

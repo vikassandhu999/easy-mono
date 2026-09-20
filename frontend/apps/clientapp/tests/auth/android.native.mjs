@@ -140,6 +140,12 @@ try {
   await device.shell('svc wifi enable');
   await device.shell('svc data enable');
   await expect(page.getByRole('button', {name: 'Send response'})).toBeEnabled();
+  await tap(page.getByLabel('Your goal', {exact: false}));
+  await expect(page.locator('html')).toHaveAttribute('data-keyboard', 'open');
+  const sendBounds = await page.getByRole('button', {name: 'Send response'}).boundingBox();
+  const visibleBottom = await page.evaluate(() => visualViewport.offsetTop + visualViewport.height);
+  expect(sendBounds.y + sendBounds.height).toBeLessThanOrEqual(visibleBottom + 2);
+  await device.screenshot({path: 'tests/auth/artifacts/android-form-keyboard.png'});
   await tap(page.getByRole('button', {name: 'Send response'}));
   await expect(page.getByText(/Response saved/)).toBeVisible();
   await device.shell(`am force-stop ${app}`);
@@ -155,6 +161,7 @@ try {
       'native form draft, gallery cancellation, network disabled across two process restarts, offline editing, reconnection, deliberate save and saved response restart',
     passed: true,
   });
+  await tap(page.getByRole('link', {name: 'Back to your forms'}));
   await tap(page.getByRole('navigation', {name: 'Main navigation'}).getByRole('link', {name: 'Training', exact: true}));
   await expect(page.getByText('0 plans', {exact: true})).toBeVisible();
   await expect(page.getByText('Loading your active workout…', {exact: true})).toHaveCount(0);

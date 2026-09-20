@@ -96,10 +96,11 @@ export function Question({
               : [];
           const choices = question.type === 'service_type' ? ['training', 'nutrition'] : options;
           input = (
-            <div className="space-y-1">
+            <div className="space-y-2">
               {choices.map((option) => (
                 <Checkbox
                   key={option}
+                  className="min-h-12 rounded-2xl bg-white px-4 py-3 text-base data-selected:bg-[var(--training)] data-selected:text-primary"
                   isDisabled={disabled}
                   isSelected={selected.includes(option)}
                   onChange={(checked) => {
@@ -121,10 +122,11 @@ export function Question({
                 return (
                   <label
                     key={choice}
-                    className="flex min-h-12 min-w-12 items-center gap-2 rounded-xl border border-border px-3 has-checked:border-primary has-checked:bg-muted"
+                    className="relative flex min-h-12 min-w-12 flex-1 cursor-pointer items-center justify-center rounded-2xl bg-white px-3 font-semibold has-checked:bg-primary has-checked:text-primary-foreground has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-primary has-disabled:opacity-50"
                   >
                     <input
                       type="radio"
+                      className="absolute inset-0 size-full cursor-pointer opacity-0"
                       name={field.name}
                       value={choice}
                       checked={field.value === value}
@@ -160,7 +162,7 @@ export function Question({
         }
         return (
           <div
-            className="space-y-2 rounded-xl focus:outline-2 focus:outline-offset-4 focus:outline-primary"
+            className="space-y-3 rounded-xl focus:outline-2 focus:outline-offset-4 focus:outline-primary"
             ref={grouped ? field.ref : undefined}
             tabIndex={grouped ? -1 : undefined}
             {...(grouped
@@ -175,8 +177,14 @@ export function Question({
             <label
               id={`${id}-label`}
               htmlFor={id}
-              className="block font-medium leading-relaxed"
+              className="block font-semibold leading-relaxed"
             >
+              <span
+                aria-hidden="true"
+                className="mb-2 grid size-7 place-items-center rounded-full bg-[var(--training)] text-xs font-bold text-primary"
+              >
+                {index + 1}
+              </span>
               {label}
             </label>
             {input}

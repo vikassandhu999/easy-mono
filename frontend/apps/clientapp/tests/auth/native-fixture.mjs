@@ -2,13 +2,19 @@ import {writeFile} from 'node:fs/promises';
 import {api, inviteClient} from './fixtures.mjs';
 
 const fixture = await inviteClient({firstName: ''});
+// Each native scenario accepts its own single-use invitation.
+const mealClient = await inviteClient();
+fixture.mealToken = mealClient.token;
+fixture.messageToken = (await inviteClient()).token;
+fixture.weightToken = (await inviteClient()).token;
+fixture.workoutToken = (await inviteClient()).token;
 await api('/v1/coach/nutrition-foods', {
   method: 'POST',
-  token: fixture.coachToken,
+  token: mealClient.coachToken,
   body: {name: 'iPhone rice', calories_per_100g: 130},
 });
 fixture.nutritionDate = (
-  await api(`/v1/coach/clients/${fixture.clientId}/nutrition-days`, {token: fixture.coachToken})
+  await api(`/v1/coach/clients/${mealClient.clientId}/nutrition-days`, {token: mealClient.coachToken})
 ).data[0].date;
 fixture.goalToken = (await inviteClient()).token;
 const formClient = await inviteClient();

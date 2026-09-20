@@ -1,11 +1,11 @@
 import {clearChallenge} from './challenge.ts';
+import {sessionStorageKey as KEY, readCredentials, writeCredentials} from './credential-store.ts';
 import {queryClient} from './query-client.ts';
 import {type AuthTokens, parseSession, type Session} from './session-value.ts';
-import {clearPrivateStorage, isNative, readStored, writeStored} from './storage.ts';
+import {clearPrivateStorage, isNative} from './storage.ts';
 
 export {parseSession} from './session-value.ts';
 
-const KEY = 'clientapp.auth.v1';
 const EVENT = 'clientapp:session';
 let snapshot: string | null = null;
 let writes: Promise<void> = Promise.resolve();
@@ -18,7 +18,7 @@ export function sessionEndState() {
 }
 
 export async function restoreSession() {
-  snapshot = await readStored(KEY);
+  snapshot = await readCredentials();
 }
 
 export function sessionSnapshot() {
@@ -36,7 +36,7 @@ function persist(value: string) {
     return Promise.resolve();
   }
   // Serialize native storage so a delayed sign-in cannot overwrite a logout.
-  const pending = writes.catch(() => undefined).then(() => writeStored(KEY, value));
+  const pending = writes.catch(() => undefined).then(() => writeCredentials(value));
   writes = pending;
   return pending;
 }

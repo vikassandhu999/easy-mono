@@ -1,0 +1,6 @@
+[
+  {
+    "scenario": "Native decimal keyboard and reachable save, offline process restart, deliberate save, sheet Android Back, background/resume and saved cold link",
+    "passed": true
+  }
+]

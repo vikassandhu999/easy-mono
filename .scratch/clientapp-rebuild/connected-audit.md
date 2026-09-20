@@ -54,10 +54,31 @@ Full backend `mix precommit` passes all 1,846 tests with zero failures in
 unauthenticated protected API read on 4100 returns its expected 403. Real authenticated
 browser/native operations also succeeded.
 
-## Remaining audit
+## Final audit and external validation
 
-Finish the requirement-by-requirement review, including applicable read/loading/error
-states, Today rest-day guidance, credential-storage evaluation and the connected native
-flows. Record the physical-device and human usability checklist separately. Notification
-delivery and owned-domain link association retain their external dependencies. The full
-goal remains active.
+The requirement-by-requirement source/evidence review is in final-audit.md. Startup
+storage failures now have an explicit mobile Try again action with verified same-account
+and draft recovery. Today rest-day/read-state checks pass; credential-storage.md records
+the native vault and migration checks. The final connected native regressions pass on both platforms; results and gates are in final-audit.md.
+Physical-device and human usability checks are separate in device-and-client-checks.md. Notification
+delivery and owned-domain link association retain their external dependencies. The local implementation and available-environment verification are complete.
+
+Today rest-day/read-state evidence: `tests/today/today.browser.mjs` and
+`/tmp/easy-clientapp-today-states.log` pass at 375/768/1280. Artificial delay/503 covers
+the request boundary; missing guidance and the seven-day rest schedule use real API data.
+The first fixture correctly failed validation because schedules require every weekday;
+the final fixture includes all seven weekdays with no workout reference.
+
+Native credential migration/refresh and logout now pass on both platforms. The account
+regression also exposed a keyboard-open first-tap Save failure; details uses the verified
+focus-preserving submit option, with strict keyboard geometry in its iPhone regression.
+See credential-storage.md. The old text-only startup handler first failed the new
+browser probe. The corrected mobile recovery passes at 375/768/1280, including repeated
+read failures, focus, touch bounds and restoration of a real private draft.
+
+
+Final secure-session bundle: iPhone goal/meal/messages/weight pass as a combined suite
+with separate invitations (four tests, zero failures); Android nutrition/progress/goal
+and messages/media pass. Build/native sync, Biome, repository shape and full backend
+precommit pass (1,846 tests). See final-audit.md for exact logs, result bundle and the
+verification corrections made after the initial combined run.

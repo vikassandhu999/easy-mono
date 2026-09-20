@@ -24,5 +24,10 @@
     "@playwright/test": "1.61.0",
     "typescript": "^5.5.3"
   },
-  "packageManager": "pnpm@10.27.0"
+  "packageManager": "pnpm@10.27.0",
+  "pnpm": {
+    "patchedDependencies": {
+      "@aparajita/capacitor-secure-storage@8.0.0": "patches/@aparajita__capacitor-secure-storage@8.0.0.patch"
+    }
+  }
 }

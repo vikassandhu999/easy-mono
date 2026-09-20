@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@aparajita/capacitor-secure-storage@8.0.0':
+    hash: xfndiy6jjsqa2vgk6e6lxswxnu
+    path: patches/@aparajita__capacitor-secure-storage@8.0.0.patch
+
 importers:
 
   .:
@@ -20,6 +25,9 @@ importers:
 
   apps/clientapp:
     dependencies:
+      '@aparajita/capacitor-secure-storage':
+        specifier: 8.0.0
+        version: 8.0.0(patch_hash=xfndiy6jjsqa2vgk6e6lxswxnu)
       '@capacitor/app':
         specifier: 8.1.0
         version: 8.1.0(@capacitor/core@8.3.0)
@@ -512,6 +520,10 @@ packages:
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
     engines: {node: '>=10'}
+
+  '@aparajita/capacitor-secure-storage@8.0.0':
+    resolution: {integrity: sha512-oYnwSjdIh23aRNgz8982+TmFvQH/2yZkEdw1iIg+H2ziFJoOVELPTc7u6Ez2HwOuDIW5AGqBX75GvrzQ+D70Qg==}
+    engines: {node: '>=20.0.0'}
 
   '@apideck/better-ajv-errors@0.3.7':
     resolution: {integrity: sha512-TajUJwGWbDwkCx/CZi7tRE8PVB7simCvKJfHUsSdvps+aTM/PDPP4gkLmKnc+x3CE//y9i/nj74GqdL/hwk7Iw==}
@@ -4837,6 +4849,14 @@ snapshots:
       use-sync-external-store: 1.6.0(react@19.1.1)
 
   '@alloc/quick-lru@5.2.0': {}
+
+  '@aparajita/capacitor-secure-storage@8.0.0(patch_hash=xfndiy6jjsqa2vgk6e6lxswxnu)':
+    dependencies:
+      '@capacitor/android': 8.3.0(@capacitor/core@8.3.0)
+      '@capacitor/app': 8.1.0(@capacitor/core@8.3.0)
+      '@capacitor/core': 8.3.0
+      '@capacitor/ios': 8.3.0(@capacitor/core@8.3.0)
+      '@capacitor/keyboard': 8.0.2(@capacitor/core@8.3.0)
 
   '@apideck/better-ajv-errors@0.3.7(ajv@8.20.0)':
     dependencies:

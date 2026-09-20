@@ -47,7 +47,7 @@ Persist draft changes as they occur, isolated by authenticated account and resou
 
 Use Capacitor 8 with the repository-compatible dependency versions. Bundle the same Vite output into both native projects. Configure API origin explicitly for native builds and allow local HTTP only in development configurations. Keep native adapters feature-agnostic under `ui/` or `api/` according to the frontend import boundary.
 
-Use App lifecycle/deep-link/back events and Keyboard behavior early. Preferences provides durable native storage; evaluate credential storage separately from drafts before production. Camera/photo permissions are requested when attaching a photo, with denial recovery. Notification delivery is an API gap, not an excuse to ask for permission on first launch.
+Use App lifecycle/deep-link/back events and Keyboard behavior early. Preferences provides durable draft storage. Native credentials use Keychain/Keystore with migration and logout checks; see credential-storage.md. Camera/photo permissions are requested when attaching a photo, with denial recovery. Notification delivery is an API gap, not an excuse to ask for permission on first launch.
 
 Use a local scheme for simulator verification. Verified universal/app links require a real owned domain and signing configuration; record that separately. Native runtime tests must cover authentication, reload/restart, background/resume, keyboard, safe areas, back, deep links, and network failure. Browser checks do not prove those behaviors.
 

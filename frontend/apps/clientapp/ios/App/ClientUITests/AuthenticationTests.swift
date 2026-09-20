@@ -28,6 +28,35 @@ final class AuthenticationTests: XCTestCase {
     }
 
     @MainActor
+    func testMigratedSessionAndSignOut() throws {
+        continueAfterFailure = false
+        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "fixture", withExtension: "json"))
+        let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
+        guard fixture.credentialMigration == true else {
+            throw XCTSkip("Run ios-credential-fixture.mjs before the isolated migration test")
+        }
+        let app = XCUIApplication(bundleIdentifier: "com.easy.client")
+        app.launch()
+        app.open(try XCTUnwrap(URL(string: "easy://app/account/details")))
+        XCTAssertTrue(app.staticTexts[fixture.formEmail].waitForExistence(timeout: 15), app.debugDescription)
+        app.terminate()
+        app.launch()
+        app.open(try XCTUnwrap(URL(string: "easy://app/account/details")))
+        XCTAssertTrue(app.staticTexts[fixture.formEmail].waitForExistence(timeout: 15), app.debugDescription)
+        let migrated = XCTAttachment(screenshot: app.screenshot())
+        migrated.name = "iPhone migrated credential session after restart"
+        migrated.lifetime = .keepAlways
+        add(migrated)
+        app.links["Back"].tap()
+        if !app.buttons["Sign out"].isHittable { app.swipeUp() }
+        app.buttons["Sign out"].tap()
+        XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 15))
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 15))
+    }
+
+    @MainActor
     func testInvitationProfileAndRestart() throws {
         continueAfterFailure = false
         let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "fixture", withExtension: "json"))
@@ -77,6 +106,15 @@ final class AuthenticationTests: XCTestCase {
         let save = app.buttons["Save details"]
         if !save.isHittable { app.swipeUp() }
         XCTAssertTrue(save.isHittable, "Save must remain reachable with the keyboard open")
+        let detailsKeyboard = app.keyboards.firstMatch
+        XCTAssertTrue(detailsKeyboard.waitForExistence(timeout: 10))
+        XCTAssertGreaterThan(detailsKeyboard.frame.height, 150)
+        XCTAssertLessThan(detailsKeyboard.frame.minY, app.frame.maxY - 100)
+        XCTAssertLessThanOrEqual(save.frame.maxY, detailsKeyboard.frame.minY + 2)
+        let beforeSave = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        beforeSave.name = "iPhone details save above visible keyboard"
+        beforeSave.lifetime = .keepAlways
+        add(beforeSave)
         save.tap()
         XCTAssertTrue(app.staticTexts["Your details are saved."].waitForExistence(timeout: 15), app.debugDescription)
         let saved = XCTAttachment(screenshot: app.screenshot())
@@ -206,7 +244,7 @@ final class AuthenticationTests: XCTestCase {
         let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
         let app = XCUIApplication(bundleIdentifier: "com.easy.client")
         app.launch()
-        app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.token)")))
+        app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.workoutToken)")))
         let signOut = app.buttons["Sign out to continue"]
         if signOut.waitForExistence(timeout: 2) { signOut.tap() }
         XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 15))
@@ -306,7 +344,7 @@ final class AuthenticationTests: XCTestCase {
         let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
         let app = XCUIApplication(bundleIdentifier: "com.easy.client")
         app.launch()
-        app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.token)")))
+        app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.mealToken)")))
         let signOut = app.buttons["Sign out to continue"]
         if signOut.waitForExistence(timeout: 2) { signOut.tap() }
         XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 15))
@@ -389,7 +427,7 @@ final class AuthenticationTests: XCTestCase {
         let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
         let app = XCUIApplication(bundleIdentifier: "com.easy.client")
         app.launch()
-        app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.token)")))
+        app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.weightToken)")))
         let signOut = app.buttons["Sign out to continue"]
         if signOut.waitForExistence(timeout: 2) { signOut.tap() }
         XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 15))
@@ -518,7 +556,7 @@ final class AuthenticationTests: XCTestCase {
         app.terminate()
         app.resetAuthorizationStatus(for: .photos)
         app.launch()
-        app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.token)")))
+        app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.messageToken)")))
         let signOut = app.buttons["Sign out to continue"]
         if signOut.waitForExistence(timeout: 2) { signOut.tap() }
         XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 15))
@@ -739,6 +777,10 @@ final class AuthenticationTests: XCTestCase {
     struct Fixture: Decodable {
         let email: String
         let token: String
+        let mealToken: String
+        let messageToken: String
+        let weightToken: String
+        let workoutToken: String
         let goalToken: String
         let formToken: String
         let formEmail: String
@@ -746,6 +788,7 @@ final class AuthenticationTests: XCTestCase {
         let apiControlURL: String?
         let photoAccess: String?
         let photoSource: String?
+        let credentialMigration: Bool?
         let photoToken: String
         let photoAssignmentId: String
         let nutritionDate: String

@@ -1,15 +1,16 @@
 # Completion ledger
 
-The full objective remains active. A scaffold, passing build, or browser-only flow does not complete the mobile rewrite.
+The agreed supported workflows are implemented and verified to the extent available in this environment. The final requirement review is in [final-audit.md](final-audit.md). Physical-device and human usability checks, notification delivery and production domain/signing setup remain explicitly separate in [device-and-client-checks.md](device-and-client-checks.md). Historical entries below record progress at their checkpoint dates.
 
 | Requirement | Implementation | Verification / remaining evidence |
 | --- | --- | --- |
 | Instructions, coach decisions, backend inventory | Initial plan and controller inventory written | Context-level rules still verified per slice; graph timeout disclosed |
 | React/strict TS/Vite/Router/Query/RHF/shadcn/typed API/Biome | Foundation implemented | App build, Biome, shape checks pass; user chose current typed-route contracts |
 | Capacitor iOS/Android foundation | Both debug builds and authenticated runtime checks pass | iPhone 17 simulator and API 36 Android emulator; installed branding/launch verified |
+| Native credential storage | [Keychain/Keystore adapter and ordered legacy migration](credential-storage.md) | Six fault tests, native migration/refresh/restart/logout and plaintext cleanup pass; physical protection/backup checks are separate |
 | Authenticated native workflow before screen expansion | Verified on both platforms | Invite, OTP/native keyboard, profile draft recovery, save, background/resume, restart/read-back and durable sign-out |
 | Join, sign in, intake | Invitation, sign-in and intake form implemented | Browser and native recovery pass, including offline snapshots, native gallery uploads and Android capture; physical iPhone capture remains |
-| Today | Active workout, pending requests and server-local training/nutrition guidance implemented | Browser/native entry points pass |
+| Today | Active workout, pending requests and server-local training/nutrition guidance implemented | Assigned/resume/completed, missing plan, real rest day, loading/error/retry and cached failure pass at 375/768/1280 |
 | Training execution | [Mobile plans, planned/freestyle recording and history](training.md) implemented | All nine modes, cursor filters/counts, duplicate-safe retries, durable/offline drafts, other-device closure and saved results pass; native recording/restart passes on both platforms |
 | Nutrition | [Mobile days, plans, meal editor and saved intake](nutrition.md) implemented | Browser planned/unplanned, alternatives, portions, swaps/extras, frozen nutrients, lost-response/conflict and offline recovery pass; meal recording/restart passes on iOS and Android |
 | Forms/check-ins/photos | Mobile list, all question types, draft/revision recovery, offline snapshots and saved reader implemented | Browser and native recovery pass; real gallery uploads, iOS limited access and Android gallery/capture process death pass; physical iPhone capture remains |
@@ -17,13 +18,13 @@ The full objective remains active. A scaffold, passing build, or browser-only fl
 | History/progress | Training/nutrition/form histories and [mobile weight tracking](progress.md) implemented | Weight create/edit/delete, cursor counts, trend conversion, check-in provenance, offline/interrupted save and conflict recovery pass in browser; keyboard/save/restart pass on both native platforms |
 | Account/preferences | [Mobile account overview, personal details and optional weight goal](account.md) implemented | Browser save/recovery/isolation and both native keyboard/restart checks pass; timezone/default units are read-only; notification delivery remains a provider/API gap |
 | Shared cursor lists | Assignment, training and nutrition cursor contracts/hooks/shared list UI implemented | Assignment/training browser paging and router isolation/filter/count/cursor checks pass; nutrition and messaging paging, error/retry and unread-history checks pass |
-| Cached reading/drafts | Account/form/training/nutrition/conversation snapshots and drafts, local media bytes and browser shell cache implemented | Browser network-off reload, expiry/corruption/storage failure, account isolation and logout pass; Android network-off restart and iOS native draft recovery pass. Protected editors now wait for verified account identity. Remaining cross-workflow seams are tracked in the connected audit |
+| Cached reading/drafts | Account/form/training/nutrition/conversation snapshots and drafts, local media bytes and browser shell cache implemented | Browser network-off reload, expiry/corruption/storage failure, account isolation and logout pass; Android network-off restart and iOS native draft recovery pass. Protected editors now wait for verified account identity. Final connected native regressions pass; see final-audit.md |
 | Native keyboard/safe areas/back/lifecycle/deep links | Foundation exercised on simulator and emulator | Cold links, native input, Android back, background/resume and force-stop recovery pass; physical-device checks remain |
 | Camera/photo/notifications | Native picker adapter and recovery intent implemented | Gallery permissions/upload pass; Android gallery and capture cancellation/process recovery pass; physical iPhone capture remains; notification API/provider gap |
-| Mobile browser verification | Auth/account/forms/training/nutrition/messaging pass at 375px and 768px; forms/training/nutrition/messaging also at 1280px | One mobile screen, including tablet use; content capped at 480px. Final requirement audit remains |
-| Modern, playful mobile screen redesign | Shared shell, Today, account/progress, training, nutrition, forms, conversation and auth updated | [Route audit](ui-audit-clientapp-2026-09-20.md) remains active for remaining route states, branding and connected native checks |
-| Physical devices and human usability | External validation pending | Separate observations by real clients and device/platform |
-| Coherent checkpoint commits | Foundation committed as `e4cfa92` | Continue committing verified slices; no push, deployment, or store publication |
+| Mobile browser verification | Auth/account/forms/training/nutrition/messaging pass at 375px and 768px; forms/training/nutrition/messaging also at 1280px | One mobile screen, including tablet use; content capped at 480px. Final requirement audit is complete; see final-audit.md |
+| Modern, playful mobile screen redesign | Shared shell, Today, account/progress, training, nutrition, forms, conversation and auth updated | [Route audit](ui-audit-clientapp-2026-09-20.md) accounts for every router entry; native branding, connected checks and startup recovery pass |
+| Physical devices and human usability | [Separate hardware and client checklist](device-and-client-checks.md) | External validation pending; device inventory confirms no connected physical phones |
+| Coherent checkpoint commits | Foundation committed as `e4cfa92` | Verified slices and final audit checkpoint committed locally; no push, deployment, or store publication |
 
 ## Evidence log
 
@@ -89,3 +90,19 @@ and verifies advancing clocks; updated iOS forms and Android auth/offline form/w
 regressions pass. Build/native sync, Biome, check-rm and full backend precommit pass
 (1,846 tests). See connected-audit.md and evidence/connected-*. The full requirement
 review and external-validation checklist remain; the goal stays active.
+
+
+2026-09-20 final checkpoint: native credentials now use Keychain/Keystore, with ordered
+migration, durable writes, native refresh/restart/logout and plaintext cleanup verified.
+Personal details saves with one keyboard-open iPhone tap after its reproduced focus
+failure was fixed. Today loading/error/no-plan/rest/cached-retry states pass at all three
+widths. The new mobile startup recovery passes repeated failures and restores the same
+real account and unfinished draft. Final connected nutrition, weight/goal and messaging
+regressions pass on both native runtimes, including actual media playback. Native tests
+now use independent iPhone invitations and await actual Android transport/keyboard states.
+
+Strict build/native sync, both native builds, Biome, check-rm, diff checks and full backend
+precommit pass (1,846 tests, zero failures). Localhost:1315 and Phoenix:4100 remain live.
+The requirement review and route audit have no outstanding local implementation items.
+Physical phones, real-client usability and external provider/domain/signing dependencies
+are recorded separately; no production readiness or usability sign-off is implied.

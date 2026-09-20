@@ -2,6 +2,9 @@
 include ':capacitor-android'
 project(':capacitor-android').projectDir = new File('../../../node_modules/.pnpm/@capacitor+android@8.3.0_@capacitor+core@8.3.0/node_modules/@capacitor/android/capacitor')
 
+include ':aparajita-capacitor-secure-storage'
+project(':aparajita-capacitor-secure-storage').projectDir = new File('../../../node_modules/.pnpm/@aparajita+capacitor-secure-storage@8.0.0_patch_hash=xfndiy6jjsqa2vgk6e6lxswxnu/node_modules/@aparajita/capacitor-secure-storage/android')
+
 include ':capacitor-app'
 project(':capacitor-app').projectDir = new File('../../../node_modules/.pnpm/@capacitor+app@8.1.0_@capacitor+core@8.3.0/node_modules/@capacitor/app/android')
 

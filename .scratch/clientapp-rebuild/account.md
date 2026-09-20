@@ -23,3 +23,10 @@ Android emulator API 36 passes native decimal input, reachable Save with keyboar
 The iPhone 17 simulator passes goal decimal entry, reachable Save with keyboard open, draft termination/relaunch, saved read-back, background/resume and cold links. Personal-details auth/restart/logout also passes. Goal tests now use a separate invitation fixture after a combined run exposed reuse of an already consumed invitation. Browser auth at 375/768 and production offline regressions pass. Build, Biome and frontend-shape checks pass.
 
 Physical-device and real-client usability observations remain separate. No notification permission or preference is fabricated; delivery still needs the documented provider/API work. Other workflow screens remain in the mobile redesign audit.
+
+2026-09-20 credential regression: a keyboard-open first tap on Save details failed while
+the action reported hittable. Details opts into preventFocusOnPress, and the iPhone test
+requires an on-screen keyboard and button clearance before the physical tap. The same
+profile draft/save/restart/logout scenario passes in 42.071 seconds. Browser account/goal
+recovery and the Android full auth/form/workout suite pass on the final button. Evidence:
+evidence/credentials-ios-details-{keyboard,saved}.png; prevention: RM-240.

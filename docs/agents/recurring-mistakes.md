@@ -185,6 +185,9 @@ Severity of the rule isn't the point; recurrence is.
 | RM-242 | Styled choices retain a full native input target | Frontend | browser test |
 | RM-243 | Shared content returns to its entry context | Frontend | browser test |
 | RM-244 | Inspect the installed native artifact and cold launch | Frontend | native runtime |
+| RM-245 | Completion visuals require a saved outcome | Frontend | browser test |
+| RM-246 | Verify the stored credential format through a native restart | Frontend | native test |
+| RM-247 | Startup failure needs an in-app recovery action | Frontend | browser test |
 
 ---
 
@@ -1421,7 +1424,8 @@ taps once, requires saved feedback and reads the completed result after restart.
 the keyboard frame to be inside the screen: Simulator can expose an off-screen keyboard
 in hardware-keyboard mode. The Android
 auth/workout scenario exercises the same physical tap. DOM clicks and hittability alone
-do not prove this interaction.
+do not prove this interaction. Account details also opts in after the same first-tap
+failure was reproduced; its iPhone test requires visible keyboard bounds before Save.
 
 ### RM-241 — Late saves must respect subsequent navigation
 A save may finish after its editor has unmounted. Complete account-owned persistence and
@@ -1465,6 +1469,23 @@ when no response exists. **Verify by:** clientapp `tests/forms/closed.browser.mj
 creates both terminal states through the coach API, checks that no Send or Response
 saved claim appears, and captures their detail/history screens for visual review.
 The completed-response browser/native flows must retain their saved confirmation.
+
+
+### RM-246 — Verify the stored credential format through a native restart
+Secure-storage libraries can expose both JSON and raw-string methods. Pair the matching
+read/write APIs; a successful write can still persist a double-encoded session that
+fails restoration. Credential migration must acknowledge the secure write before removing
+its plaintext source, and native write promises must acknowledge disk persistence.
+**Verify by:** clientapp credential migration tests cover interrupted steps; Android
+checks the encrypted file, removes the plaintext source and restarts authenticated;
+iPhone migrates a real legacy session, restarts, signs out and restarts signed out.
+
+### RM-247 — Startup failure needs an in-app recovery action
+A bootstrap storage error left only text asking the client to close the app. Render an
+accessible mobile recovery state with a deliberate retry that restarts initialization;
+do not clear credentials or private drafts merely because a read failed. **Verify by:**
+clientapp `test:startup` forces repeated read failures, checks the focused touch-sized
+retry, then restores storage and requires the same real account and unfinished draft.
 
 ## Deploy / ops
 

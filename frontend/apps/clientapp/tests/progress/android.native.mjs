@@ -91,6 +91,7 @@ try {
   await device.screenshot({path: 'tests/progress/artifacts/android-weight-offline.png'});
   await device.shell('svc wifi enable');
   await device.shell('svc data enable');
+  await expect(page.getByText("You're offline.", {exact: false})).toHaveCount(0, {timeout: 30_000});
   await expect(page.getByRole('button', {name: 'Save weight', exact: true})).toBeEnabled();
   expect(await read()).toBeNull();
   await tap(value());
@@ -98,6 +99,9 @@ try {
   await tap(page.getByRole('button', {name: 'Save weight', exact: true}));
   await expect(page.getByText('Your weight is saved.', {exact: true})).toBeVisible();
   expect(Number((await read()).value)).toBe(74.25);
+  // Save navigates while the software keyboard is closing. Wait for native resize
+  // before converting the next control's web bounds into device coordinates.
+  await expect(page.locator('html')).not.toHaveAttribute('data-keyboard', 'open');
   await tap(page.getByRole('button', {name: 'Date range & units'}));
   await expect(page.getByRole('dialog', {name: 'Your progress view'})).toBeVisible();
   await device.input.press('Back');

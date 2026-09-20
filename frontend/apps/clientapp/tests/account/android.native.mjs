@@ -83,6 +83,7 @@ try {
   await device.screenshot({path: 'tests/account/artifacts/android-goal-offline.png'});
   await device.shell('svc wifi enable');
   await device.shell('svc data enable');
+  await expect(page.getByText("You're offline.", {exact: false})).toHaveCount(0, {timeout: 30_000});
   await expect(page.getByRole('button', {name: 'Save goal', exact: true})).toBeEnabled();
   await tap(value());
   await expect(page.locator('html')).toHaveAttribute('data-keyboard', 'open');

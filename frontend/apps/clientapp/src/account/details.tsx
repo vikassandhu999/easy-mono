@@ -217,6 +217,7 @@ function ProfileForm({profile, children}: {profile: Profile; children: ReactNode
         </p>
         <div className="mobile-save-bar">
           <SubmitButton
+            preventFocusOnPress
             pending={form.formState.isSubmitting}
             isDisabled={!online}
           >

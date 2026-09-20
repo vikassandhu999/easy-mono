@@ -80,6 +80,61 @@ try {
   );
   await device.screenshot({path: 'tests/auth/artifacts/android-keyboard.png'});
   await tap(page.getByRole('button', {name: 'Verify and continue'}));
+  await expect(page.getByRole('heading', {name: 'Today', exact: true})).toBeVisible();
+  const credentialState = () =>
+    page.evaluate(async () => {
+      const plugins = window.Capacitor.Plugins;
+      const key = 'clientapp.auth.v1';
+      const ordinary = await plugins.Preferences.get({key});
+      const vault = await plugins.SecureStorage.internalGetItem({prefixedKey: `capacitor-storage_${key}`, sync: false});
+      const session = JSON.parse(vault.data);
+      return {
+        plaintextPresent: ordinary.value !== null,
+        accountId: session.accountId,
+        authenticated: Boolean(session.tokens?.refresh_token),
+      };
+    });
+  expect(await credentialState()).toEqual({plaintextPresent: false, accountId: fixture.clientId, authenticated: true});
+  // Recreate the pre-migration format, with a different value in the secure store.
+  await page.evaluate(async () => {
+    const plugins = window.Capacitor.Plugins;
+    const key = 'clientapp.auth.v1';
+    const prefixedKey = `capacitor-storage_${key}`;
+    const vault = await plugins.SecureStorage.internalGetItem({prefixedKey, sync: false});
+    const expired = {...JSON.parse(vault.data), expiresAt: 1};
+    await plugins.DurableStorage.set({key, value: JSON.stringify(expired)});
+    await plugins.DurableStorage.remove({key: 'clientapp.credentials.v1'});
+    await plugins.SecureStorage.internalSetItem({prefixedKey, data: '{}', sync: false});
+  });
+  await stop();
+  await launch();
+  page = await pageForApp();
+  await expect(page.getByRole('heading', {name: 'Today', exact: true})).toBeVisible();
+  expect(await credentialState()).toEqual({plaintextPresent: false, accountId: fixture.clientId, authenticated: true});
+  await expect
+    .poll(
+      () =>
+        page.evaluate(async () => {
+          const {data} = await window.Capacitor.Plugins.SecureStorage.internalGetItem({
+            prefixedKey: 'capacitor-storage_clientapp.auth.v1',
+            sync: false,
+          });
+          return JSON.parse(data).expiresAt > Date.now();
+        }),
+      {timeout: 15_000},
+    )
+    .toBe(true);
+  const encrypted = (
+    await device.shell('run-as com.easy.client cat shared_prefs/WSSecureStorageSharedPreferences.xml')
+  ).toString();
+  expect(encrypted).toContain('capacitor-storage_clientapp.auth.v1');
+  expect(encrypted).not.toContain('refresh_token');
+  expect(encrypted).not.toContain('access_token');
+  expect(encrypted).not.toContain(fixture.clientId);
+  results.push({
+    scenario: 'encrypted native session, legacy migration/refresh, plaintext cleanup and authenticated restart',
+    passed: true,
+  });
   await tap(page.getByRole('link', {name: 'Your account', exact: true}));
   await tap(page.getByRole('link', {name: 'Personal details', exact: true}));
   await tap(page.getByLabel('First name'));
@@ -267,7 +322,8 @@ try {
   await launch();
   page = await pageForApp();
   await expect(page.getByRole('heading', {name: 'Welcome back'})).toBeVisible();
-  results.push({scenario: 'logout survives process restart', passed: true});
+  expect(await credentialState()).toEqual({plaintextPresent: false, accountId: undefined, authenticated: false});
+  results.push({scenario: 'logout survives process restart and removes usable credentials', passed: true});
 } catch (error) {
   await device.screenshot({path: 'tests/auth/artifacts/android-failure.png'});
   throw error;

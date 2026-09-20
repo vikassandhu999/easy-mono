@@ -1,6 +1,6 @@
 import {Capacitor, registerPlugin} from '@capacitor/core';
 import {Preferences} from '@capacitor/preferences';
-import {clearAccountPhotos} from './photo-store';
+import {clearAccountPhotos} from './photo-store.ts';
 
 export const isNative = Capacitor.isNativePlatform();
 const nativeWrites =

@@ -293,6 +293,65 @@ final class AuthenticationTests: XCTestCase {
         add(saved)
     }
 
+    func testWeightDraftAndSavedResult() throws {
+        continueAfterFailure = false
+        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "fixture", withExtension: "json"))
+        let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
+        let app = XCUIApplication(bundleIdentifier: "com.easy.client")
+        app.launch()
+        app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.token)")))
+        let signOut = app.buttons["Sign out to continue"]
+        if signOut.waitForExistence(timeout: 2) { signOut.tap() }
+        XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 15))
+        app.buttons["Continue with email"].tap()
+        let code = app.webViews.textFields["Verification code"]
+        XCTAssertTrue(code.waitForExistence(timeout: 15))
+        code.tap()
+        code.typeText("123456")
+        app.buttons["Verify and continue"].tap()
+        XCTAssertTrue(app.links["Forms & check-ins"].waitForExistence(timeout: 15))
+        let weightURL = try XCTUnwrap(URL(string: "easy://app/progress/weight/\(fixture.nutritionDate)"))
+        app.open(weightURL)
+        let weight = app.webViews.textFields["Weight"]
+        XCTAssertTrue(weight.waitForExistence(timeout: 15), app.debugDescription)
+        weight.tap()
+        weight.typeText("74.25")
+        XCTAssertEqual(weight.value as? String, "74.25")
+        XCTAssertTrue(app.staticTexts["Draft saved on this device."].waitForExistence(timeout: 10))
+        let save = app.buttons["Save weight"]
+        XCTAssertTrue(save.isHittable, app.debugDescription)
+        let keyboard = XCTAttachment(screenshot: app.screenshot())
+        keyboard.name = "iPhone weight keyboard and save"
+        keyboard.lifetime = .keepAlways
+        add(keyboard)
+        app.terminate()
+        app.launch()
+        app.open(weightURL)
+        XCTAssertTrue(weight.waitForExistence(timeout: 15))
+        XCTAssertEqual(weight.value as? String, "74.25")
+        XCTAssertTrue(save.waitForExistence(timeout: 15))
+        weight.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        save.tap()
+        XCTAssertTrue(app.staticTexts["Your weight is saved."].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(app.staticTexts["1 weight record"].waitForExistence(timeout: 10))
+        app.buttons["Date range & units"].tap()
+        XCTAssertTrue(app.staticTexts["Your progress view"].waitForExistence(timeout: 10), app.debugDescription)
+        app.buttons["Close"].tap()
+        XCUIDevice.shared.press(.home)
+        app.activate()
+        XCTAssertTrue(app.staticTexts["1 weight record"].waitForExistence(timeout: 15))
+        app.terminate()
+        app.launch()
+        app.open(weightURL)
+        XCTAssertTrue(weight.waitForExistence(timeout: 15))
+        XCTAssertEqual(weight.value as? String, "74.25")
+        let saved = XCTAttachment(screenshot: app.screenshot())
+        saved.name = "iPhone saved weight after restart"
+        saved.lifetime = .keepAlways
+        add(saved)
+    }
+
     private func setConnection(_ control: String, available: Bool) async throws {
         let url = try XCTUnwrap(URL(string: "\(control)?available=\(available)"))
         var request = URLRequest(url: url)

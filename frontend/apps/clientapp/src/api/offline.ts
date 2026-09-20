@@ -26,6 +26,7 @@ function eligible(key: QueryKey, sessionId: string) {
       (key[0] === 'forms' && ['lists', 'details'].includes(String(key[2]))) ||
       (key[0] === 'training' && ['lists', 'details', 'coverage', 'active'].includes(String(key[2]))) ||
       (key[0] === 'nutrition' && ['lists', 'details'].includes(String(key[2]))) ||
+      (key[0] === 'weight' && ['lists', 'details'].includes(String(key[2]))) ||
       (key[0] === 'conversation' && ['lists', 'detail'].includes(String(key[2]))))
   );
 }

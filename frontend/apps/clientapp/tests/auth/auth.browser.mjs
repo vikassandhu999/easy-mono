@@ -137,6 +137,7 @@ try {
       await page.getByRole('button', {name: 'Save details'}).click();
       await serverSaved;
       await page.getByRole('link', {name: 'easy', exact: true}).click();
+      await page.getByRole('link', {name: 'Your account', exact: true}).click();
       await page.getByRole('button', {name: 'Sign out', exact: true}).click();
       await expect(page.getByRole('heading', {name: 'Welcome back'})).toBeVisible();
       releaseSave();

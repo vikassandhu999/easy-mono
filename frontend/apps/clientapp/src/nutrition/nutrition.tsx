@@ -1,8 +1,10 @@
+import {Utensils} from 'lucide-react';
 import {useState} from 'react';
 import {generatePath, Link, useParams, useSearchParams} from 'react-router-dom';
 import {type Day, type FoodNutrients, useNutritionDay, useNutritionPlan, useNutritionPlans} from '../api/nutrition';
 import {routes} from '../routes';
 import {dayLabel} from '../training/recording';
+import {ActionCard} from '../ui/action-card';
 import {Button} from '../ui/button';
 import {CachedRead} from '../ui/cached-read';
 import {InfiniteList} from '../ui/infinite-list';
@@ -29,8 +31,7 @@ export function Nutrients({value, label}: {value: FoodNutrients; label: string})
 export function TodayNutrition() {
   const query = useNutritionDay();
   return (
-    <section className="mb-8 space-y-3">
-      <h2 className="text-xl font-semibold">Your nutrition</h2>
+    <section className="mb-4 space-y-3">
       {query.data ? (
         <>
           <CachedRead
@@ -39,19 +40,20 @@ export function TodayNutrition() {
             refreshing={query.isFetching}
             refresh={() => query.refetch()}
           />
-          <p className="text-muted-foreground">
-            {query.data.data.summary.has_intake
-              ? 'Your recorded meals are saved. Continue with your next meal.'
-              : query.data.data.plan_id
-                ? 'Your meals for today are ready.'
-                : 'No nutrition plan covers today. You can still record your meals.'}
-          </p>
-          <Link
+          <ActionCard
+            title="Today’s meals"
+            eyebrow="Fuel your day"
             to={routes.nutrition}
-            className="text-link inline-block"
-          >
-            Today’s meals
-          </Link>
+            tone="nutrition"
+            icon={<Utensils />}
+            description={
+              query.data.data.summary.has_intake
+                ? 'Your meals are saved. Ready for the next one?'
+                : query.data.data.plan_id
+                  ? 'Your plan is ready. Let’s dig in.'
+                  : 'Make a little space to record what you eat.'
+            }
+          />
         </>
       ) : (
         <ReadState

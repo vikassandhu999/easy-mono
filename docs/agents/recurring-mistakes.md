@@ -179,6 +179,7 @@ Severity of the rule isn't the point; recurrence is.
 | RM-235 | Search lexemes match the indexed text parser | Backend | test |
 | RM-236 | Mutation error callbacks tolerate a changed session | Frontend | browser test |
 | RM-238 | Verify account identity before mounting draft editors | Frontend | browser/native test |
+| RM-239 | Android Back reaches the focused overlay | Frontend | native test |
 
 ---
 
@@ -1274,6 +1275,12 @@ browser suites also verify that leaving remains available through draft confirma
 
 Training templates apply the same protection across the whole worksheet. `tests/training/templates.browser.mjs` checks failed/empty lookup and explicit retry; `workspace.browser.mjs` recovers a real lost creation with exactly one POST, preserving targets and restoring focus. Nutrition applies this to fields and meal editing too; its recovery suite covers failed/empty lookup, explicit separate creation, retained navigation and one persisted creation after a lost response.
 
+An observed revision changing after an uncertain save may be the result of that save.
+Compare the immutable attempted content with the fresh server result before disabling
+recovery as a conflict. **Verify by:** clientapp `tests/progress/recovery.browser.mjs`
+loses both the write response and read-back, restarts, and requires Check save to confirm
+the existing measurement without another POST. Different saved content must still require review.
+
 ### RM-228 — Wrapping must constrain intrinsic width as well as visible text
 A long intake title widened the Workbench even after ordinary word wrapping kept the
 paragraph's contents inside its own box. Use wrapping that participates in intrinsic sizing
@@ -1381,6 +1388,13 @@ writes without a verified owner. **Verify by:** clientapp
 `tests/auth/account-ready.browser.mjs` holds the first profile response and requires
 editable routes to wait; nutrition browser and Android tests then restart offline and
 require the saved draft and account snapshot.
+
+### RM-239 — Android Back reaches the focused overlay
+Dispatch Escape from the focused element so it bubbles through the active dialog,
+listbox or menu. Dispatching it on `document` bypassed the sheet's handler and left
+Android Back ineffective. **Verify by:** clientapp `tests/progress/android.native.mjs`
+opens the unit picker and filter sheet, presses native Back, and requires each overlay
+to close while its underlying route stays open.
 
 ## Deploy / ops
 

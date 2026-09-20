@@ -16,6 +16,8 @@
     "test:nutrition:android": "node tests/nutrition/android.native.mjs",
     "test:messages": "node tests/messages/messages.browser.mjs && node tests/messages/recovery.browser.mjs && node tests/messages/history.browser.mjs && node tests/messages/account.browser.mjs",
     "test:messages:android": "node tests/messages/android.native.mjs",
+    "test:progress": "node tests/progress/progress.browser.mjs && node tests/progress/recovery.browser.mjs && node tests/progress/history.browser.mjs",
+    "test:progress:android": "node tests/progress/android.native.mjs",
     "test:browser": "node tests/auth/auth.browser.mjs",
     "test:forms": "node tests/forms/forms.browser.mjs && node tests/forms/recovery.browser.mjs",
     "test:offline": "node tests/forms/offline.browser.mjs",

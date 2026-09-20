@@ -1,8 +1,9 @@
+import {MessageCircle} from 'lucide-react';
 import {useEffect, useRef} from 'react';
-import {Link} from 'react-router-dom';
 import {useConversation} from '../api/conversation';
 import {useConversationUpdates} from '../api/conversation-updates';
 import {routes} from '../routes';
+import {ActionCard} from '../ui/action-card';
 import {CachedRead} from '../ui/cached-read';
 import {useOnline} from '../ui/connection-status';
 import {MessageScrollerProvider} from '../ui/message-scroller';
@@ -14,8 +15,7 @@ export function TodayMessages() {
   const query = useConversation();
   useConversationUpdates(query.data?.data.id);
   return (
-    <section className="mb-8 space-y-3">
-      <h2 className="text-xl font-semibold">Your coach</h2>
+    <section className="mb-4 space-y-3">
       {query.data ? (
         <>
           <CachedRead
@@ -24,17 +24,18 @@ export function TodayMessages() {
             refreshing={query.isFetching}
             refresh={() => query.refetch()}
           />
-          <p className="text-muted-foreground">
-            {query.data.data.unread_count > 0
-              ? `${query.data.data.unread_count} unread ${query.data.data.unread_count === 1 ? 'message' : 'messages'} from your coach.`
-              : 'Ask a question or share how things are going.'}
-          </p>
-          <Link
-            className="text-link block"
+          <ActionCard
+            title="Message your coach"
+            eyebrow="You’ve got support"
+            tone="coach"
             to={routes.messages}
-          >
-            Message your coach
-          </Link>
+            icon={<MessageCircle />}
+            description={
+              query.data.data.unread_count > 0
+                ? `${query.data.data.unread_count} unread ${query.data.data.unread_count === 1 ? 'message' : 'messages'} from your coach.`
+                : 'Questions, wins, or a tough day. Share it here.'
+            }
+          />
         </>
       ) : (
         <ReadState
@@ -68,9 +69,9 @@ export function Messages() {
       const header = document.querySelector('.app-header')?.getBoundingClientRect();
       const nav = document.querySelector('.mobile-nav')?.getBoundingClientRect();
       const top = Math.max(offset, header?.bottom ?? 0);
-      const navHeight = nav && nav.top < offset + height ? nav.height : 0;
+      const bottom = nav && nav.height > 0 ? Math.min(offset + height, nav.top - 8) : offset + height;
       node.style.top = `${top}px`;
-      node.style.height = `${Math.max(180, height - (top - offset) - navHeight)}px`;
+      node.style.height = `${Math.max(180, bottom - top)}px`;
     };
     measure();
     window.visualViewport?.addEventListener('resize', measure);

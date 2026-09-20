@@ -14,6 +14,7 @@ import {
 } from '../api/forms';
 import {clearFormPhotos, readPhotos} from '../api/photo-store';
 import {getSession} from '../api/session';
+import {safeReturnTo} from '../auth/return-to';
 import {routes} from '../routes';
 import {Button} from '../ui/button';
 import {CachedRead} from '../ui/cached-read';
@@ -38,7 +39,11 @@ import {Question} from './question';
 export function FormDetail() {
   const {id = ''} = useParams();
   const [params] = useSearchParams();
-  const back = params.get('from') === 'history' ? `${routes.forms}?state=history` : routes.forms;
+  const back = params.has('returnTo')
+    ? safeReturnTo(params.get('returnTo'))
+    : params.get('from') === 'history'
+      ? `${routes.forms}?state=history`
+      : routes.forms;
   const query = useFormAssignment(id);
   const profile = useProfile();
   const online = useOnline();
@@ -128,7 +133,7 @@ export function FormDetail() {
           to={back}
           className="text-link mt-8 block"
         >
-          Back to your forms
+          {back.startsWith(routes.progress) ? 'Back to your progress' : 'Back to your forms'}
         </Link>
       </Page>
     );

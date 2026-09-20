@@ -12,9 +12,18 @@ export function deepLinkPath(value: string): string | null {
       return null;
     }
     if (
-      !['/', '/account', '/messages', '/verify', '/forms', '/training', '/nutrition', '/nutrition/plans'].includes(
-        url.pathname,
-      ) &&
+      ![
+        '/',
+        '/account',
+        '/progress',
+        '/messages',
+        '/verify',
+        '/forms',
+        '/training',
+        '/nutrition',
+        '/nutrition/plans',
+      ].includes(url.pathname) &&
+      !/^\/progress\/weight\/\d{4}-\d{2}-\d{2}$/.test(url.pathname) &&
       !/^\/nutrition\/(plans\/[^/]+|days\/\d{4}-\d{2}-\d{2}\/[a-z_]+)$/.test(url.pathname) &&
       !/^\/(invite|forms)\/[^/]+$/.test(url.pathname) &&
       !/^\/training\/(sessions\/[^/]+|plans\/[^/]+(?:\/workouts\/[^/]+)?)$/.test(url.pathname)
@@ -57,8 +66,10 @@ export async function startNativeRuntime({
   }
   await App.addListener('appStateChange', ({isActive}) => focusManager.setFocused(isActive));
   await App.addListener('backButton', ({canGoBack}) => {
-    if (document.querySelector('[role="dialog"]')) {
-      document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+    if (document.querySelector('[role="dialog"], [role="listbox"], [role="menu"]')) {
+      (document.activeElement ?? document).dispatchEvent(
+        new KeyboardEvent('keydown', {key: 'Escape', code: 'Escape', bubbles: true, cancelable: true}),
+      );
     } else if (canGoBack && window.location.pathname !== '/') {
       back();
     } else {

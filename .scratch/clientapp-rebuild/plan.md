@@ -58,3 +58,7 @@ Read: root/frontend/backend instructions, `CONTEXT.md`, coach rewrite `plan.md`,
 The objective requests OpenApiSpex, but the checked-in backend has migrated client controllers to typed routes. Regenerating OpenAPI on 2026-09-19 produced 11 paths, all auth/webhook. The user selected the current typed-route pipeline and explicitly authorized reusing coachapp auth and engineering patterns. Auth retains OpenAPI generation.
 
 Capacitor requirements checked against [official environment documentation](https://capacitorjs.com/docs/getting-started/environment-setup). The machine has Xcode 26.2 and iOS 26.3 simulators. Android command-line tools and Android Studio exist; no SDK packages were installed at initial inspection.
+
+## Client visual direction (2026-09-20)
+
+The user rejected the plain web-like screens and requested a modern, playful mobile app with its own client UX. Reuse coachapp engineering, not its screen conventions. Use compact app bars, icon bottom navigation, full tappable action rows, contextual bottom sheets and reachable primary actions. Warm cream, clear purple actions and soft activity colors give the app a friendly identity. Avoid underlined web navigation, dashboard grids and long undifferentiated sections. Apply this direction to every route, including completed workflows, and verify again in browser and native runtimes.

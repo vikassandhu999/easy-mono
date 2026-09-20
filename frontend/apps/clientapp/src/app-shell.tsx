@@ -1,3 +1,14 @@
+import {
+  ClipboardCheck,
+  Dumbbell,
+  Flower2,
+  House,
+  MessageCircle,
+  Sprout,
+  TrendingUp,
+  UserRound,
+  Utensils,
+} from 'lucide-react';
 import {type ReactNode, useSyncExternalStore} from 'react';
 import {generatePath, Link, Navigate, NavLink, Outlet, useLocation} from 'react-router-dom';
 import {useProfile} from './api/auth';
@@ -11,6 +22,7 @@ import {TodayNutrition} from './nutrition/nutrition';
 import {routes} from './routes';
 import {dayLabel} from './training/recording';
 import {ActiveWorkout} from './training/training';
+import {ActionCard} from './ui/action-card';
 import {Button} from './ui/button';
 import {CachedRead} from './ui/cached-read';
 import {Page} from './ui/page';
@@ -19,38 +31,58 @@ import {ReadState} from './ui/read-state';
 export function AppShell() {
   const session = parseSession(useSyncExternalStore(subscribeSession, sessionSnapshot));
   const location = useLocation();
+  const focusedEditor = location.pathname.startsWith('/progress/weight/');
   return session ? (
     <VerifiedAccount key={session.id}>
       <div>
-        <header className="app-header">
-          <Link
-            to={routes.home}
-            className="text-xl font-semibold"
-          >
-            easy
-          </Link>
-          <Link
-            to={routes.account}
-            className="text-link"
-          >
-            Your account
-          </Link>
-        </header>
+        {!focusedEditor && location.pathname !== routes.progress && (
+          <header className="app-header">
+            <Link
+              to={routes.home}
+              className="app-brand"
+            >
+              <Flower2 aria-hidden="true" />
+              easy
+            </Link>
+            <Link
+              to={routes.account}
+              className="account-button"
+              aria-label="Your account"
+            >
+              <UserRound
+                className="size-5"
+                aria-hidden="true"
+              />
+            </Link>
+          </header>
+        )}
         <Outlet />
-        <nav
-          aria-label="Main navigation"
-          className="mobile-nav"
-        >
-          <NavLink
-            to={routes.home}
-            end
+        {!focusedEditor && (
+          <nav
+            aria-label="Main navigation"
+            className="mobile-nav"
           >
-            Today
-          </NavLink>
-          <NavLink to={routes.training}>Training</NavLink>
-          <NavLink to={routes.nutrition}>Nutrition</NavLink>
-          <NavLink to={routes.messages}>Messages</NavLink>
-        </nav>
+            <NavLink
+              to={routes.home}
+              end
+            >
+              <House aria-hidden="true" />
+              Today
+            </NavLink>
+            <NavLink to={routes.training}>
+              <Dumbbell aria-hidden="true" />
+              Training
+            </NavLink>
+            <NavLink to={routes.nutrition}>
+              <Utensils aria-hidden="true" />
+              Nutrition
+            </NavLink>
+            <NavLink to={routes.messages}>
+              <MessageCircle aria-hidden="true" />
+              Messages
+            </NavLink>
+          </nav>
+        )}
       </div>
     </VerifiedAccount>
   ) : (
@@ -115,8 +147,7 @@ export function Home() {
         />
       )}
       <ActiveWorkout />
-      <section className="mb-8 space-y-3">
-        <h2 className="text-xl font-semibold">Forms & check-ins</h2>
+      <section className="mb-4 space-y-3">
         {forms.data ? (
           <>
             <CachedRead
@@ -125,19 +156,19 @@ export function Home() {
               refreshing={forms.isFetching}
               refresh={() => forms.refetch()}
             />
-            <p className="text-muted-foreground">
-              {pendingCount === 0
-                ? 'You are up to date with your coach’s requests.'
-                : pendingCount === null
-                  ? 'Review your coach’s requests.'
-                  : `${pendingCount} ${pendingCount === 1 ? 'request' : 'requests'} to complete.`}
-            </p>
-            <Link
+            <ActionCard
+              title="Forms & check-ins"
               to={routes.forms}
-              className="text-link inline-block"
-            >
-              Forms & check-ins
-            </Link>
+              icon={<ClipboardCheck />}
+              eyebrow={pendingCount ? 'A little check-in' : 'All caught up'}
+              description={
+                pendingCount === 0
+                  ? 'Your responses are saved. Nice work.'
+                  : pendingCount === null
+                    ? 'See what your coach has shared.'
+                    : `${pendingCount} ${pendingCount === 1 ? 'request' : 'requests'} to complete.`
+              }
+            />
           </>
         ) : (
           <ReadState
@@ -149,8 +180,7 @@ export function Home() {
           />
         )}
       </section>
-      <section className="mb-8 space-y-3">
-        <h2 className="text-xl font-semibold">Your training</h2>
+      <section className="mb-4 space-y-3">
         {coverage.data ? (
           <>
             <CachedRead
@@ -159,39 +189,24 @@ export function Home() {
               refreshing={coverage.isFetching}
               refresh={() => coverage.refetch()}
             />
-            {guidance ? (
-              <>
-                <p className="text-sm text-muted-foreground">
-                  {guidance.plan.name} · {dayLabel(guidance.date)}
-                </p>
-                {guidance.workout ? (
-                  <Link
-                    className="text-link block text-xl font-semibold"
-                    to={generatePath(routes.workout, {id: guidance.plan.id, workoutId: guidance.workout.id})}
-                  >
-                    {guidance.workout.name}
-                  </Link>
-                ) : (
-                  <p>No workout is scheduled today. Rest, or choose another workout from your plan.</p>
-                )}
-                <Link
-                  className="text-link inline-block"
-                  to={generatePath(routes.trainingPlan, {id: guidance.plan.id})}
-                >
-                  See your plan
-                </Link>
-              </>
-            ) : (
-              <p className="text-muted-foreground">
-                There is no training plan covering today. You can review your plans or record your own workout.
-              </p>
-            )}
-            <Link
-              className="text-link block"
-              to={routes.training}
-            >
-              All training
-            </Link>
+            <ActionCard
+              title={guidance?.workout?.name ?? 'Move at your pace'}
+              eyebrow="Your training"
+              tone="training"
+              icon={<Dumbbell />}
+              description={
+                guidance?.workout
+                  ? guidance.plan.name
+                  : guidance
+                    ? 'A rest day. Recharge or choose a workout.'
+                    : 'Choose a plan or record your own workout.'
+              }
+              to={
+                guidance?.workout
+                  ? generatePath(routes.workout, {id: guidance.plan.id, workoutId: guidance.workout.id})
+                  : routes.training
+              }
+            />
           </>
         ) : (
           <ReadState
@@ -205,12 +220,22 @@ export function Home() {
       </section>
       <TodayNutrition />
       <TodayMessages />
-      <Button
-        variant="ghost"
-        onPress={clearSession}
-      >
-        Sign out
-      </Button>
+      <section className="mb-4">
+        <ActionCard
+          title="Weight & progress"
+          description="Small steps add up. See yours."
+          icon={<TrendingUp />}
+          tone="progress"
+          to={routes.progress}
+        />
+      </section>
+      <p className="daily-note">
+        <Sprout
+          className="size-4"
+          aria-hidden="true"
+        />
+        Your pace. Your progress.
+      </p>
     </Page>
   );
 }

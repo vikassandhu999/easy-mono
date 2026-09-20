@@ -1,5 +1,6 @@
 import {type ReactNode, useEffect, useState} from 'react';
 import {useForm} from 'react-hook-form';
+import {Link} from 'react-router-dom';
 import {type Profile, type ProfileUpdate, useProfile, useUpdateProfile} from '../api/auth';
 import {errorMessage} from '../api/client';
 import {readDraft, removeDraft} from '../api/drafts';
@@ -179,6 +180,12 @@ function ProfileForm({profile, children}: {profile: Profile; children: ReactNode
       back={routes.home}
     >
       {children}
+      <Link
+        to={routes.progress}
+        className="text-link inline-flex min-h-11 items-center mb-5"
+      >
+        Weight & progress
+      </Link>
       <form
         noValidate
         onSubmit={submit}

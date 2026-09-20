@@ -162,7 +162,7 @@ export function ActiveWorkout() {
         refresh={() => query.refetch()}
       />
       {session && (
-        <section className="space-y-2 border-l-4 border-primary pl-4 py-2 mb-6">
+        <section className="active-workout space-y-3 mb-5">
           <p className="text-sm text-muted-foreground">Workout in progress · {dayLabel(session.date)}</p>
           <h2 className="text-xl font-semibold">{sessionName(session)}</h2>
           <Link

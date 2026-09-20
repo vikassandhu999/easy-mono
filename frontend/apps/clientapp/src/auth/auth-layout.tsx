@@ -1,3 +1,4 @@
+import {Dumbbell, Flower2, Heart, Sparkles} from 'lucide-react';
 import {type ReactNode, useEffect, useRef} from 'react';
 import {useLocation} from 'react-router-dom';
 
@@ -12,17 +13,34 @@ export function AuthLayout({title, description, children}: {title: string; descr
   }, [pathname, title]);
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      <header className="mx-auto flex max-w-md items-center gap-2 px-6 py-7">
-        <span className="text-xl font-semibold tracking-tight">easy</span>
-        <span className="border-l border-border pl-2 text-sm text-muted-foreground">Your coaching</span>
+      <header className="app-header">
+        <span className="app-brand">
+          <Flower2 aria-hidden="true" />
+          easy
+        </span>
+        <span className="brand-tag">A little better, together.</span>
       </header>
       <main
         ref={main}
         tabIndex={-1}
-        className="mx-auto w-full max-w-md break-words px-6 pb-12 pt-8 outline-none"
+        className="page auth-page outline-none"
       >
+        <div
+          className="welcome-art"
+          aria-hidden="true"
+        >
+          <span>
+            <Dumbbell />
+          </span>
+          <span>
+            <Heart />
+          </span>
+          <span>
+            <Sparkles />
+          </span>
+        </div>
         <div className="mb-8 space-y-3">
-          <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight">{title}</h1>
           <p className="text-base leading-relaxed text-muted-foreground">{description}</p>
         </div>
         {children}

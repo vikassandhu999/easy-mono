@@ -4,6 +4,8 @@ export const routes = {
   verify: '/verify',
   invitation: '/invite/:token',
   account: '/account',
+  progress: '/progress',
+  weight: '/progress/weight/:date',
   messages: '/messages',
   forms: '/forms',
   form: '/forms/:id',

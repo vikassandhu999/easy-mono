@@ -1,3 +1,4 @@
+import {ArrowLeft} from 'lucide-react';
 import {type ReactNode, useEffect, useRef} from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
@@ -5,11 +6,13 @@ export function Page({
   title,
   description,
   back,
+  compact = false,
   children,
 }: {
   title: string;
   description?: string | undefined;
   back?: string;
+  compact?: boolean;
   children: ReactNode;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
@@ -20,23 +23,29 @@ export function Page({
   }, [pathname]);
   return (
     <main className="page">
-      {back && (
-        <Link
-          className="text-link inline-flex min-h-11 items-center mb-4"
-          to={back}
-        >
-          Back
-        </Link>
-      )}
-      <header className="mb-8 space-y-2">
-        <h1
-          className="text-3xl font-semibold tracking-tight outline-none"
-          tabIndex={-1}
-          ref={heading}
-        >
-          {title}
-        </h1>
-        {description && <p className="text-muted-foreground leading-relaxed">{description}</p>}
+      <header className={compact ? 'page-heading page-heading-compact' : 'page-heading'}>
+        {back && (
+          <Link
+            className="back-button"
+            to={back}
+            aria-label="Back"
+          >
+            <ArrowLeft
+              className="size-5"
+              aria-hidden="true"
+            />
+          </Link>
+        )}
+        <div>
+          <h1
+            className="text-[2rem] leading-[1.12] font-extrabold tracking-tight outline-none"
+            tabIndex={-1}
+            ref={heading}
+          >
+            {title}
+          </h1>
+          {description && <p className="text-muted-foreground leading-relaxed">{description}</p>}
+        </div>
       </header>
       {children}
     </main>

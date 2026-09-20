@@ -10,12 +10,14 @@ export function safeReturnTo(value: string | null) {
     return [
       routes.home,
       routes.account,
+      routes.progress,
       routes.messages,
       routes.forms,
       routes.training,
       routes.nutrition,
       routes.nutritionPlans,
     ].some((route) => route === url.pathname) ||
+      /^\/progress\/weight\/\d{4}-\d{2}-\d{2}$/.test(url.pathname) ||
       /^\/nutrition\/(plans\/[^/]+|days\/\d{4}-\d{2}-\d{2}\/[a-z_]+)$/.test(url.pathname) ||
       /^\/(forms\/[^/]+|training\/(sessions\/[^/]+|plans\/[^/]+(?:\/workouts\/[^/]+)?))$/.test(url.pathname)
       ? `${url.pathname}${url.search}${url.hash}`

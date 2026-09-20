@@ -279,7 +279,7 @@ final class AuthenticationTests: XCTestCase {
         app.buttons["Search"].tap()
         let choose = app.buttons["Choose iPhone rice"]
         XCTAssertTrue(choose.waitForExistence(timeout: 15), app.debugDescription)
-        app.swipeUp()
+        if !choose.isHittable { app.swipeUp() }
         choose.tap()
         let portion = app.webViews.textFields["Portion (g)"]
         XCTAssertTrue(portion.waitForExistence(timeout: 15))
@@ -298,8 +298,19 @@ final class AuthenticationTests: XCTestCase {
         XCTAssertTrue(portion.waitForExistence(timeout: 15))
         XCTAssertEqual(portion.value as? String, "150")
         let save = app.buttons["Save meal"]
-        app.swipeUp()
         XCTAssertTrue(save.waitForExistence(timeout: 15))
+        portion.tap()
+        portion.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.5)).tap()
+        portion.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 3) + "150")
+        XCTAssertEqual(portion.value as? String, "150")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertGreaterThan(app.keyboards.firstMatch.frame.height, 150)
+        XCTAssertLessThan(app.keyboards.firstMatch.frame.minY, app.frame.maxY - 150)
+        XCTAssertLessThanOrEqual(save.frame.maxY, app.keyboards.firstMatch.frame.minY)
+        let beforeSave = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        beforeSave.name = "iPhone meal save above keyboard"
+        beforeSave.lifetime = .keepAlways
+        add(beforeSave)
         save.tap()
         XCTAssertTrue(app.staticTexts["Meal saved."].waitForExistence(timeout: 15), app.debugDescription)
         let total = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "195 kcal")).firstMatch

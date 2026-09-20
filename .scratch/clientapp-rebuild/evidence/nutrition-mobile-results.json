@@ -1,0 +1,23 @@
+[
+  {
+    "width": 375,
+    "passed": true,
+    "lostResponseWrites": 1,
+    "finalRevision": 6,
+    "recipeId": "d43be80c-bad2-4fd3-8dba-472ec47309f3"
+  },
+  {
+    "width": 768,
+    "passed": true,
+    "lostResponseWrites": 1,
+    "finalRevision": 5,
+    "recipeId": "45383881-df9e-45f2-b6fb-7f0668411b8c"
+  },
+  {
+    "width": 1280,
+    "passed": true,
+    "lostResponseWrites": 1,
+    "finalRevision": 5,
+    "recipeId": "b188830c-074c-4486-a4bc-1694805414e2"
+  }
+]

@@ -1,0 +1,35 @@
+[
+  {
+    "attachments" : [
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "516E4F05-967E-46C9-BCB8-9A8DCFFC5854",
+        "deviceName" : "Easy Client Photo Checks",
+        "exportedFileName" : "96A3BF14-CE7C-46EB-A642-3A379411E7F2.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "iPhone saved meal_0_47D06FB5-A33C-42E5-938F-7EBC6A242A63.png",
+        "timestamp" : 1789889118.862
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "516E4F05-967E-46C9-BCB8-9A8DCFFC5854",
+        "deviceName" : "Easy Client Photo Checks",
+        "exportedFileName" : "02C2D38E-DEAC-4C9B-AD63-EF8818E8A855.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "iPhone meal save above keyboard_0_71AFF967-9FB4-4845-81A6-3D88FE6C4A19.png",
+        "timestamp" : 1789889104.654
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "516E4F05-967E-46C9-BCB8-9A8DCFFC5854",
+        "deviceName" : "Easy Client Photo Checks",
+        "exportedFileName" : "31B189A2-BC57-4C4E-A0A8-8B146675FE57.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "iPhone meal keyboard_0_D0633349-1170-4A59-85F7-78A5E4225ACF.png",
+        "timestamp" : 1789889092.338
+      }
+    ],
+    "testIdentifier" : "AuthenticationTests/testMealDraftAndSavedResult()",
+    "testIdentifierURL" : "test://com.apple.xcode/App/ClientUITests/AuthenticationTests/testMealDraftAndSavedResult"
+  }
+]

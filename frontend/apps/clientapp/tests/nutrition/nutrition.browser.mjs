@@ -47,6 +47,11 @@ try {
       const oats = await food('Rolled oats with a deliberately long descriptive product name', 300);
       const berries = await food('Mixed berries', 60);
       const yogurt = await food('Greek yogurt', 80);
+      if (width === 375) {
+        for (let index = 0; index < 22; index++) {
+          await food(`Test extra ${String(index).padStart(2, '0')}`, 100);
+        }
+      }
       const recipe = (
         await api('/v1/coach/nutrition-recipes', {
           method: 'POST',
@@ -107,6 +112,12 @@ try {
         body: {expected_revision: plan.revision, start_date: today},
       });
       await page.getByRole('link', {name: 'Nutrition', exact: true}).click();
+      await expect(page.getByRole('link', {name: /Breakfast/})).toBeVisible();
+      await page.screenshot({path: `tests/nutrition/artifacts/day-${width}.png`, fullPage: true});
+      await page.getByRole('button', {name: 'Previous day', exact: true}).click();
+      await expect(page.getByText('No meals are planned or recorded for this day.', {exact: true})).toBeVisible();
+      await page.getByRole('button', {name: 'Next day', exact: true}).click();
+      await expect(page.getByRole('link', {name: /Breakfast/})).toBeVisible();
       await page.getByRole('link', {name: /Breakfast/}).click();
       await expect(page.getByRole('heading', {name: oats.name, exact: true})).toBeVisible();
       await page.getByRole('button', {name: 'Record all listed items'}).click();
@@ -141,6 +152,31 @@ try {
       await page.getByRole('link', {name: /Breakfast/}).click();
       await page.getByLabel('Portion (g)', {exact: true}).first().fill('90');
       await expect(page.getByText('Draft saved on this device.', {exact: true})).toBeVisible();
+      if (width === 375) {
+        let failPage = true;
+        await page.route('**/v1/client/nutrition-foods?**', (route) => {
+          const cursor = new URL(route.request().url()).searchParams.get('cursor');
+          return failPage && cursor && cursor !== 'start'
+            ? route.fulfill({status: 503, json: {error_message: 'Unavailable'}})
+            : route.continue();
+        });
+        await page.getByRole('button', {name: 'Add food or recipe', exact: true}).click();
+        await page.getByLabel('Search library').fill('Test extra');
+        await page.getByRole('button', {name: 'Search', exact: true}).click();
+        await expect(page.getByText('22 foods', {exact: true})).toBeVisible();
+        const choices = page.getByRole('button', {name: /^Choose Test extra/});
+        await expect(choices).toHaveCount(20);
+        await page.getByRole('button', {name: 'Load more', exact: true}).scrollIntoViewIfNeeded();
+        await expect(page.getByRole('button', {name: 'Retry loading more', exact: true})).toBeVisible();
+        await expect(choices).toHaveCount(20);
+        failPage = false;
+        await page.getByRole('button', {name: 'Retry loading more', exact: true}).click();
+        await expect(choices).toHaveCount(22);
+        await expect(page.getByText('22 foods', {exact: true})).toBeVisible();
+        await page.getByRole('button', {name: 'Close', exact: true}).click();
+        await expect(page.getByLabel('Portion (g)', {exact: true}).first()).toHaveValue('90');
+        await page.unroute('**/v1/client/nutrition-foods?**');
+      }
       const saved = day.slots[0];
       const entries = saved.rows
         .filter((row) => row.entry_id)
@@ -173,7 +209,15 @@ try {
       await page.getByRole('dialog').getByRole('button', {name: 'Change alternative'}).click();
       await page.getByRole('button', {name: 'Record all listed items'}).click();
       await page.getByRole('button', {name: 'Add food or recipe', exact: true}).click();
+      await expect(page.getByRole('dialog', {name: 'Choose food or recipe'})).toBeVisible();
+      expect(
+        await page
+          .getByRole('button', {name: 'Save meal', exact: true})
+          .evaluate((node) => Boolean(node.closest('[inert]'))),
+      ).toBe(true);
       await choose(page, 'Item type', 'Recipes');
+      await expect(page.getByRole('button', {name: 'Choose Berry oat bowl', exact: true})).toBeVisible();
+      await page.screenshot({path: `tests/nutrition/artifacts/food-picker-${width}.png`});
       await page.getByRole('button', {name: 'Choose Berry oat bowl', exact: true}).click();
       await page.getByRole('button', {name: 'Save meal', exact: true}).click();
       await expect(page.getByText('Meal saved.', {exact: true})).toBeVisible();
@@ -216,8 +260,23 @@ try {
         expect(day.slots[0].rows.find((row) => row.entry_id).name).toBe('Mixed berries');
       }
       await page.getByRole('link', {name: 'Your plans', exact: true}).click();
+      await expect(page.getByRole('link', {name: /Everyday meals/})).toBeVisible();
+      await page.screenshot({path: `tests/nutrition/artifacts/plans-${width}.png`, fullPage: true});
+      await page.getByRole('button', {name: 'Find a plan', exact: true}).click();
+      await page.getByLabel('Search plans', {exact: true}).fill('No match');
+      await page.getByRole('button', {name: 'Apply filters', exact: true}).click();
+      await expect(page.getByText('0 plans', {exact: true})).toBeVisible();
+      await page.getByRole('button', {name: 'Find a plan', exact: true}).click();
+      await page.getByLabel('Search plans', {exact: true}).fill('Everyday');
+      await page.getByRole('button', {name: 'Apply filters', exact: true}).click();
       await page.getByRole('link', {name: /Everyday meals/}).click();
       await expect(page.getByRole('heading', {name: 'Weekly guidance'})).toBeVisible();
+      await page.getByText('Oats and berries', {exact: true}).click();
+      await expect(page.getByText(oats.name, {exact: true})).toBeVisible();
+      await page.screenshot({path: `tests/nutrition/artifacts/plan-${width}.png`, fullPage: true});
+      await page.getByRole('link', {name: 'Back', exact: true}).click();
+      await expect(page).toHaveURL(/search=Everyday/);
+      await expect(page.getByText('1 plan', {exact: true})).toBeVisible();
       expect(errors).toEqual([]);
       results.push({
         width,

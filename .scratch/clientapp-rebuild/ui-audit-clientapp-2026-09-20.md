@@ -22,10 +22,10 @@ This continues the authorized rebuild on `clientapp-rebuild`, including its exis
 | `/training/plans/:id` | client | 375 / 768 / 1280 | Plan entry, workout rows, schedule, preview return | Mobile pass for exercised states | UI-07 |
 | `/training/plans/:id/workouts/:workoutId` | client | 375 / 768 / 1280 | Numbered prescription, long name, reachable start, interrupted start | Mobile pass for exercised states | UI-07 |
 | `/training/sessions/:id` | client | 375 / 768 / 1280, iOS/Android | Planned/freeform, all modes, last-set prefill, notes sheet/failure/retry, offline/restart, edit/remove, complete/discard, physical keyboard-open save | Browser/native pass; physical device/usability separate | UI-07, UI-08, UI-09 |
-| `/nutrition` | client | 375 / 768 / 1280 | Planned/empty/saved day and history return | Behavior regression passes; mobile redesign pending | UI-01 |
-| `/nutrition/plans` | client | 375 / 768 / 1280 | Pending | Pending | UI-01 |
-| `/nutrition/plans/:id` | client | 375 / 768 / 1280 | Pending | Pending | UI-01 |
-| `/nutrition/days/:date/:slot` | client | 375 / 768 / 1280 | Planned/unplanned, alternatives, portions, extras/swaps, conflict/retry, offline, saved reading | Behavior regression passes; mobile redesign pending | UI-01 |
+| `/nutrition` | client | 375 / 768 / 1280, iOS/Android | Empty/planned/saved day, previous/next, date sheet/Back, read-only date, meal-time sheet and return | Mobile pass for exercised states | UI-10 |
+| `/nutrition/plans` | client | 375 / 768 / 1280 | Assigned rows, filter sheet, empty search/reset, filtered return | Mobile pass for exercised states | UI-10 |
+| `/nutrition/plans/:id` | client | 375 / 768 / 1280 | Targets, weekly guidance, meal disclosure/portions, long names, return | Mobile pass for exercised states | UI-10 |
+| `/nutrition/days/:date/:slot` | client | 375 / 768 / 1280, iOS/Android | Planned/unplanned, alternative/portion/note, sheet food/recipe choice and 22-food paging/retry, extras/swaps, conflict/recovery, offline/restart, visible-keyboard save and saved reading | Browser/native pass; physical device/usability separate | UI-10, UI-11 |
 | `*` | public | 375 | Pending | Pending | — |
 
 ## Findings
@@ -46,3 +46,6 @@ Shared consumers: `Page` serves account, forms, training, nutrition and progress
 - UI-08: iOS reported the fixed Save set action hittable while a physical tap failed to save and focused Finish. `SetEditor` now opts into `preventFocusOnPress`; the same native probe verifies button bounds and a successful first-tap save. Notes also verify keyboard-open save. Prevention: RM-240. The shared SubmitButton defaults to its previous focus behavior; this opt-in only applies to workout set recording.
 
 - UI-09: Native screenshot review found scrolled content overlapping the status bar. `body::before` now provides a fixed background over the top safe area. The final iPhone screenshot shows clear status indicators with the software keyboard visible; workout and goal tests pass. Browser and Android auth/form/workout regressions also pass. The keyboard probe was strengthened after discovering that hardware-keyboard mode can leave an off-screen keyboard in the accessibility tree; see `auth-native.md`.
+
+- UI-10: Nutrition mobile pass replaces persistent date/filter forms and crowded item controls with a day switcher, sheets, compact portions and a reachable Save. No-intake state now invites recording instead of leading with unavailable calories. Browser/native evidence passes; see `nutrition.md` and `evidence/nutrition-mobile-*`.
+- UI-11: Meal success navigated unconditionally even after leaving its editor. A mounted-state guard now keeps subsequent navigation while finishing persistence. The real-response hold test verifies Account stays open, the attempt clears and the server stores the portion. Prevention: RM-241.

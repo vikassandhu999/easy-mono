@@ -35,6 +35,8 @@ export function AppShell() {
     location.pathname.startsWith('/progress/weight/') ||
     location.pathname.startsWith('/training/plans/') ||
     location.pathname.startsWith('/training/sessions/') ||
+    location.pathname.startsWith('/nutrition/days/') ||
+    location.pathname.startsWith('/nutrition/plans') ||
     location.pathname === routes.accountDetails ||
     location.pathname === routes.accountGoal;
   return session ? (

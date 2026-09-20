@@ -63,6 +63,11 @@ try {
   await expect(page.getByRole('heading', {name: 'Today', exact: true})).toBeVisible();
   await open(`/nutrition/days/${today}/lunch`);
   await tap(page.getByRole('button', {name: 'Add food or recipe'}));
+  await expect(page.getByRole('dialog', {name: 'Choose food or recipe'})).toBeVisible();
+  await device.input.press('Back');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('heading', {name: 'Lunch', exact: true})).toBeVisible();
+  await tap(page.getByRole('button', {name: 'Add food or recipe'}));
   await tap(page.getByLabel('Search library'));
   await device.input.type('Android rice');
   await tap(page.getByRole('button', {name: 'Search', exact: true}));
@@ -91,9 +96,18 @@ try {
   await device.shell('svc data enable');
   await expect(page.getByRole('button', {name: 'Save meal', exact: true})).toBeEnabled();
   expect((await read()).slots).toHaveLength(0);
+  await tap(page.getByLabel('Portion (g)'));
+  await expect(page.locator('html')).toHaveAttribute('data-keyboard', 'open');
+  const saveBounds = await page.getByRole('button', {name: 'Save meal', exact: true}).boundingBox();
+  const viewport = await page.evaluate(() => ({height: visualViewport.height, top: visualViewport.offsetTop}));
+  expect(saveBounds.y + saveBounds.height).toBeLessThanOrEqual(viewport.height + viewport.top + 1);
   await tap(page.getByRole('button', {name: 'Save meal', exact: true}));
   await expect(page.getByText('Meal saved.', {exact: true})).toBeVisible();
   await expect(page.getByText('Recorded: 195 kcal', {exact: true})).toBeVisible();
+  await tap(page.getByRole('button', {name: 'Choose day', exact: true}));
+  await expect(page.getByRole('dialog', {name: 'Choose a day'})).toBeVisible();
+  await device.input.press('Back');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await device.input.press('Home');
   await device.shell(`am start -W -n ${app}/.MainActivity`);
   await expect(page.getByText('Recorded: 195 kcal', {exact: true})).toBeVisible();
@@ -131,3 +145,6 @@ try {
   await writeFile('tests/nutrition/artifacts/android-results.json', JSON.stringify(results, null, 2));
 }
 console.log(JSON.stringify(results));
+// The experimental Android transport can retain a socket after device.close().
+// Assertions, cleanup and evidence writes have completed before this exit.
+process.exit(0);

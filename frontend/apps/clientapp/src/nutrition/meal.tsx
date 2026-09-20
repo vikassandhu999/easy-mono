@@ -1,4 +1,5 @@
-import {useEffect, useState} from 'react';
+import {ArrowLeftRight, Plus, Trash2, Utensils} from 'lucide-react';
+import {useEffect, useRef, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {useNavigate, useParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
@@ -48,6 +49,7 @@ export function NutritionMeal() {
       title={isMealSlot(slot) ? slotLabel(slot) : 'Meal'}
       description={date ? dayLabel(date) : undefined}
       back={`${routes.nutrition}?date=${date}`}
+      compact
     >
       {!isMealSlot(slot) ? (
         <p role="alert">This meal time is not available.</p>
@@ -80,6 +82,13 @@ export function NutritionMeal() {
 }
 
 function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolean}) {
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const saved = day.slots.find((item) => item.meal_slot === slot);
   const controller = useMealDraft(initialMealDraft(day.date, slot, saved));
   const {draft, update} = controller;
@@ -151,7 +160,9 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
       const result = await save.mutateAsync(input);
       const resultSlot = result.data.slots.find((item) => item.meal_slot === slot);
       if (await update(() => initialMealDraft(day.date, slot, resultSlot), true)) {
-        await navigate(`${routes.nutrition}?date=${day.date}&saved=${slot}`);
+        if (mounted.current) {
+          await navigate(`${routes.nutrition}?date=${day.date}&saved=${slot}`);
+        }
       } else {
         setError(
           'Your meal was saved, but this device could not clear the pending draft. Check the save again before editing.',
@@ -173,8 +184,8 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
       setSaving(false);
     }
   }
-  if (picker !== null && !locked) {
-    return (
+  const foodPicker =
+    picker !== null && !locked ? (
       <FoodPicker
         onClose={() => setPicker(null)}
         onPick={(kind, item, portion) => {
@@ -203,10 +214,10 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
           setPicker(null);
         }}
       />
-    );
-  }
+    ) : null;
   return (
     <div className="space-y-5">
+      {foodPicker}
       {!eligible && (
         <p
           role="status"
@@ -215,9 +226,9 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
           This meal is read-only. Any unsaved draft is kept below.
         </p>
       )}
-      {saved && (
+      {saved && saved.revision > 0 && (
         <details>
-          <summary className="text-link py-2 cursor-pointer">View saved meal</summary>
+          <summary className="min-h-12 py-3 cursor-pointer font-semibold">View saved meal</summary>
           <SavedMeal slot={saved} />
         </details>
       )}
@@ -253,33 +264,51 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
         </p>
       )}
       <DraftStatus state={controller.state} />
-      {saved && saved.options.length > 1 && (
-        <SelectField
-          aria-label="Meal alternative"
-          value={draft.mealId ?? ''}
-          isDisabled={locked}
-          onChange={(value) => {
-            const option = saved.options.find((item) => item.meal_id === value);
-            if (option && option.meal_id !== draft.mealId) {
-              setAlternative(option);
-            }
-          }}
-        >
-          {saved.options.map((option) => (
-            <SelectItem
-              key={option.meal_id ?? ''}
-              id={option.meal_id ?? ''}
-            >
-              {option.meal_name ?? 'Meal'}
-            </SelectItem>
-          ))}
-        </SelectField>
+      {selected?.meal_name && (!saved || saved.options.length < 2) && (
+        <div className="flex items-start gap-3 rounded-3xl bg-[var(--nutrition)] p-5">
+          <Utensils
+            className="size-6 shrink-0 text-primary mt-1"
+            aria-hidden="true"
+          />
+          <h2 className="text-xl font-bold">{selected.meal_name}</h2>
+        </div>
       )}
-      {selected?.meal_name && <h2 className="text-xl font-semibold">{selected.meal_name}</h2>}
+      {saved && saved.options.length > 1 && (
+        <div className="rounded-3xl bg-[var(--nutrition)] p-5 space-y-3">
+          <h2 className="flex items-center gap-2 font-bold">
+            <Utensils
+              className="size-5 text-primary"
+              aria-hidden="true"
+            />{' '}
+            Your meal
+          </h2>
+          <SelectField
+            aria-label="Meal alternative"
+            value={draft.mealId ?? ''}
+            isDisabled={locked}
+            onChange={(value) => {
+              const option = saved.options.find((item) => item.meal_id === value);
+              if (option && option.meal_id !== draft.mealId) {
+                setAlternative(option);
+              }
+            }}
+          >
+            {saved.options.map((option) => (
+              <SelectItem
+                key={option.meal_id ?? ''}
+                id={option.meal_id ?? ''}
+              >
+                {option.meal_name ?? 'Meal'}
+              </SelectItem>
+            ))}
+          </SelectField>
+        </div>
+      )}
       {draft.entries.length === 0 && <p className="text-muted-foreground">Add a food or recipe to record this meal.</p>}
       {draft.entries.some((entry) => !entry.included) && (
         <Button
           variant="outline"
+          className="w-full"
           isDisabled={locked}
           onPress={() =>
             update((current) => ({...current, entries: current.entries.map((entry) => ({...entry, included: true}))}))
@@ -288,16 +317,18 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
           Record all listed items
         </Button>
       )}
-      <ul className="divide-y divide-border">
+      <ul className="space-y-4">
         {draft.entries.map((entry) => (
           <li
             key={entry.input.id}
-            className="py-5 space-y-3"
+            className="rounded-3xl bg-surface p-5 space-y-3"
           >
             <div className="flex justify-between items-start gap-3">
-              <h3 className="text-lg font-semibold break-words">{entry.name}</h3>
+              <h3 className="text-lg font-bold min-w-0 flex-1">{entry.name}</h3>
               <Button
                 variant="ghost"
+                size="icon-sm"
+                aria-label={entry.included ? 'Remove from intake' : 'Record item'}
                 isDisabled={locked}
                 onPress={() =>
                   update((current) => ({
@@ -308,7 +339,17 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
                   }))
                 }
               >
-                {entry.included ? 'Remove from intake' : 'Record item'}
+                {entry.included ? (
+                  <Trash2
+                    className="size-4"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <Plus
+                    className="size-5"
+                    aria-hidden="true"
+                  />
+                )}
               </Button>
             </div>
             {entry.included ? (
@@ -332,19 +373,30 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
             )}
             <Button
               variant="ghost"
+              aria-label={`Replace ${entry.name}`}
+              className="px-2 text-sm"
               isDisabled={locked}
               onPress={() => setPicker(entry.input.id)}
             >
-              Replace {entry.name}
+              <ArrowLeftRight
+                className="size-4"
+                aria-hidden="true"
+              />{' '}
+              Replace item
             </Button>
           </li>
         ))}
       </ul>
       <Button
         variant="outline"
+        className="w-full"
         isDisabled={locked}
         onPress={() => setPicker('new')}
       >
+        <Plus
+          className="size-5"
+          aria-hidden="true"
+        />
         Add food or recipe
       </Button>
       <FormError message={error} />
@@ -357,14 +409,17 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
         </p>
       )}
       {(eligible || draft.attempt) && (
-        <Button
-          className="w-full"
-          isPending={save.isPending}
-          isDisabled={!canSave || (conflict && !draft.attempt)}
-          onPress={submit}
-        >
-          {draft.attempt ? 'Check meal save' : 'Save meal'}
-        </Button>
+        <div className="mobile-save-bar">
+          <Button
+            className="w-full"
+            preventFocusOnPress
+            isPending={save.isPending}
+            isDisabled={!canSave || (conflict && !draft.attempt)}
+            onPress={submit}
+          >
+            {draft.attempt ? 'Check meal save' : 'Save meal'}
+          </Button>
+        </div>
       )}
       <Button
         variant="ghost"
@@ -480,16 +535,18 @@ function EntryFields({
     return () => subscription.unsubscribe();
   }, [form, locked, onChange]);
   return (
-    <div className="space-y-3">
-      <FormField
-        control={form.control}
-        name="amount"
-        label={`Portion (${entry.input.portion.kind === 'gram' ? 'g' : entry.input.portion.label || entry.input.portion.unit})`}
-        inputMode="decimal"
-        isDisabled={locked}
-      />
+    <div className="space-y-2">
+      <div className="[&>div]:grid-cols-[1fr_7rem] [&_label]:self-center [&_input]:h-14 [&_input]:text-xl [&_input]:font-bold [&_input]:text-center">
+        <FormField
+          control={form.control}
+          name="amount"
+          label={`Portion (${entry.input.portion.kind === 'gram' ? 'g' : entry.input.portion.label || entry.input.portion.unit})`}
+          inputMode="decimal"
+          isDisabled={locked}
+        />
+      </div>
       <details>
-        <summary className="text-link py-2 cursor-pointer">Add a note</summary>
+        <summary className="min-h-11 py-3 cursor-pointer text-sm font-semibold">Add a note</summary>
         <FormField
           control={form.control}
           name="notes"

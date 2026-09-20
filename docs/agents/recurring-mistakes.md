@@ -181,6 +181,7 @@ Severity of the rule isn't the point; recurrence is.
 | RM-238 | Verify account identity before mounting draft editors | Frontend | browser/native test |
 | RM-239 | Android Back reaches the focused overlay | Frontend | native test |
 | RM-240 | Verify fixed save actions with a keyboard-open native tap | Frontend | native test |
+| RM-241 | Late saves must respect subsequent navigation | Frontend | browser test |
 
 ---
 
@@ -1408,6 +1409,14 @@ the keyboard frame to be inside the screen: Simulator can expose an off-screen k
 in hardware-keyboard mode. The Android
 auth/workout scenario exercises the same physical tap. DOM clicks and hittability alone
 do not prove this interaction.
+
+### RM-241 — Late saves must respect subsequent navigation
+A save may finish after its editor has unmounted. Complete account-owned persistence and
+cache updates, but do not redirect from the destination the client already chose. Nutrition
+and weight editors guard their success navigation by mounted state. **Verify by:** hold a
+real meal PATCH response, leave for Account, release it, then require the cleared attempt,
+the saved server portion and the unchanged Account URL. Clientapp nutrition recovery covers
+this sequence; a successful save alone cannot establish correct navigation.
 
 ## Deploy / ops
 

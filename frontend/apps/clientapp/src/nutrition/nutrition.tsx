@@ -1,10 +1,13 @@
-import {Utensils} from 'lucide-react';
+import {addDays} from '@easy/utils';
+import {CalendarDays, Check, ChevronLeft, ChevronRight, Plus, SlidersHorizontal, Utensils} from 'lucide-react';
 import {useState} from 'react';
 import {generatePath, Link, useParams, useSearchParams} from 'react-router-dom';
 import {type Day, type FoodNutrients, useNutritionDay, useNutritionPlan, useNutritionPlans} from '../api/nutrition';
+import {safeReturnTo} from '../auth/return-to';
 import {routes} from '../routes';
 import {dayLabel} from '../training/recording';
 import {ActionCard} from '../ui/action-card';
+import {BottomSheet} from '../ui/bottom-sheet';
 import {Button} from '../ui/button';
 import {CachedRead} from '../ui/cached-read';
 import {InfiniteList} from '../ui/infinite-list';
@@ -14,11 +17,22 @@ import {SelectItem} from '../ui/select';
 import {SelectField} from '../ui/select-field';
 import {mealSlots, portionText, slotLabel} from './meal-draft';
 
-export function Nutrients({value, label}: {value: FoodNutrients; label: string}) {
+export function Nutrients({
+  value,
+  label,
+  prominent = false,
+}: {
+  value: FoodNutrients;
+  label: string;
+  prominent?: boolean;
+}) {
   return (
     <div className="space-y-1">
-      <p className="font-medium">
-        {label}: {value.calories === null ? 'Calories unavailable' : `${value.calories} kcal`}
+      <p className={prominent ? 'space-y-1' : 'font-medium'}>
+        <span className={prominent ? 'block text-sm font-semibold' : undefined}>{label}: </span>
+        <span className={prominent ? 'block text-3xl font-extrabold tracking-tight' : undefined}>
+          {value.calories === null ? 'Calories unavailable' : `${value.calories} kcal`}
+        </span>
       </p>
       <p className="text-sm text-muted-foreground">
         Protein {value.protein ?? '—'} g · Carbs {value.carbohydrates ?? '—'} g · Fat {value.fat ?? '—'} g
@@ -73,42 +87,101 @@ export function Nutrition() {
   const date = params.get('date') || undefined;
   const query = useNutritionDay(date);
   const day = query.data?.data;
+  const [dateOpen, setDateOpen] = useState(false);
   return (
     <Page
       title="Nutrition"
-      description={day ? dayLabel(day.date) : 'Your meals, one day at a time.'}
-      back={routes.home}
+      description="A little fuel for your day."
+      compact
     >
-      <div className="mb-6 flex flex-wrap items-center gap-4">
+      <div className="mb-5 flex items-center justify-between gap-3">
         <Link
-          className="text-link"
+          className="inline-flex min-h-11 items-center gap-2 rounded-2xl bg-surface px-4 font-semibold"
           to={routes.nutritionPlans}
         >
+          <Utensils
+            className="size-4 text-primary"
+            aria-hidden="true"
+          />
           Your plans
         </Link>
         {date && (
           <Link
-            className="text-link"
+            className="inline-flex min-h-11 items-center px-3 font-semibold text-primary"
             to={routes.nutrition}
           >
             Back to today
           </Link>
         )}
       </div>
-      <label className="grid gap-2 mb-6 font-medium">
-        Day
-        <input
-          aria-label="Nutrition day"
-          type="date"
-          className="h-12 w-full min-w-0 rounded-xl border border-border px-3 text-base"
-          value={date ?? day?.date ?? ''}
-          onChange={(event) => {
-            if (event.target.value) {
-              setParams({date: event.target.value});
-            }
-          }}
-        />
-      </label>
+      <div className="mb-5 flex items-center justify-between gap-2 rounded-3xl bg-surface p-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Previous day"
+          isDisabled={!day}
+          onPress={() => day && setParams({date: addDays(day.date, -1).toString()})}
+        >
+          <ChevronLeft aria-hidden="true" />
+        </Button>
+        <Button
+          variant="ghost"
+          aria-label="Choose day"
+          className="flex-1 px-2"
+          onPress={() => setDateOpen(true)}
+        >
+          <CalendarDays
+            className="size-4"
+            aria-hidden="true"
+          />
+          {day ? dayLabel(day.date) : 'Choose day'}
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Next day"
+          isDisabled={!day}
+          onPress={() => day && setParams({date: addDays(day.date, 1).toString()})}
+        >
+          <ChevronRight aria-hidden="true" />
+        </Button>
+      </div>
+      {dateOpen && (
+        <BottomSheet
+          title="Choose a day"
+          onClose={() => setDateOpen(false)}
+        >
+          <form
+            className="space-y-5"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const selected = new FormData(event.currentTarget).get('date');
+              if (typeof selected === 'string' && selected) {
+                setParams({date: selected});
+              }
+              setDateOpen(false);
+            }}
+          >
+            <label className="grid gap-2 font-medium">
+              Day
+              <input
+                aria-label="Nutrition day"
+                name="date"
+                type="date"
+                required
+                className="h-12 w-full min-w-0 rounded-xl border border-border px-3 text-base"
+                defaultValue={date ?? day?.date ?? ''}
+              />
+            </label>
+            <Button
+              type="submit"
+              className="w-full"
+            >
+              Show day
+            </Button>
+          </form>
+        </BottomSheet>
+      )}
       {!day ? (
         <ReadState
           label="your meals"
@@ -128,8 +201,12 @@ export function Nutrition() {
           {params.get('saved') && (
             <p
               role="status"
-              className="mb-5 font-medium"
+              className="mb-5 flex items-center gap-2 font-semibold text-primary"
             >
+              <Check
+                className="size-5"
+                aria-hidden="true"
+              />
               Meal saved.
             </p>
           )}
@@ -142,30 +219,44 @@ export function Nutrition() {
 
 function DayOverview({day}: {day: Day}) {
   const [adding, setAdding] = useState(false);
+  const remaining = mealSlots.filter((slot) => !day.slots.some((item) => item.meal_slot === slot));
   return (
     <>
-      <section className="space-y-4 mb-7">
-        <Nutrients
-          value={day.summary.logged}
-          label="Recorded"
-        />
-        {day.slots.some((slot) => slot.options.length > 0) && (
+      <section className="space-y-4 mb-6 rounded-[2rem] bg-[var(--nutrition)] p-5">
+        {day.summary.has_intake ? (
           <Nutrients
-            value={day.summary.planned}
-            label="Planned"
+            value={day.summary.logged}
+            label="Recorded"
+            prominent
           />
+        ) : (
+          <div className="space-y-2">
+            <Utensils
+              className="size-7 text-primary -rotate-12"
+              aria-hidden="true"
+            />
+            <h2 className="text-2xl font-bold">Ready when you are</h2>
+            <p className="text-sm text-muted-foreground">Open a meal below to record what you ate.</p>
+          </div>
         )}
-        {Object.values(day.targets).some((value) => value !== null) && (
-          <p className="text-sm text-muted-foreground">
-            Daily target: {day.targets.calories ?? '—'} kcal · Protein {day.targets.protein_g ?? '—'} g · Carbs{' '}
-            {day.targets.carbs_g ?? '—'} g · Fat {day.targets.fat_g ?? '—'} g
-          </p>
-        )}
-        <p className="text-sm text-muted-foreground">
-          {day.applied_timezone.replaceAll('_', ' ')}
-          {!day.write_eligible ? ' · This day is read-only.' : ''}
-        </p>
+        <details className="space-y-3">
+          <summary className="min-h-11 cursor-pointer py-3 font-semibold">Your daily guidance</summary>
+          {day.slots.some((slot) => slot.options.length > 0) && (
+            <Nutrients
+              value={day.summary.planned}
+              label="Planned"
+            />
+          )}
+          {Object.values(day.targets).some((value) => value !== null) && (
+            <p className="text-sm text-muted-foreground">
+              Daily target: {day.targets.calories ?? '—'} kcal · Protein {day.targets.protein_g ?? '—'} g · Carbs{' '}
+              {day.targets.carbs_g ?? '—'} g · Fat {day.targets.fat_g ?? '—'} g
+            </p>
+          )}
+          <p className="text-sm text-muted-foreground">{day.applied_timezone.replaceAll('_', ' ')}</p>
+        </details>
       </section>
+      {!day.write_eligible && <p className="mb-5 text-sm text-muted-foreground">This day is read-only.</p>}
       {day.slots.length === 0 && (
         <p className="mb-6 text-muted-foreground">No meals are planned or recorded for this day.</p>
       )}
@@ -173,47 +264,71 @@ function DayOverview({day}: {day: Day}) {
         {day.slots.map((slot) => (
           <li key={slot.meal_slot}>
             <Link
-              className="block py-5 space-y-1"
+              className="flex items-center gap-3 py-5"
               to={generatePath(routes.nutritionMeal, {date: day.date, slot: slot.meal_slot})}
             >
-              <span className="block text-xl font-semibold">{slotLabel(slot.meal_slot)}</span>
-              <span className="block">
-                {slot.options.find((option) => option.meal_id === slot.meal_id)?.meal_name ?? 'Your meal'}
+              <span
+                className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--nutrition)] text-primary"
+                aria-hidden="true"
+              >
+                {slot.revision > 0 ? <Check className="size-5" /> : <Utensils className="size-5" />}
               </span>
-              <span className="block text-sm text-muted-foreground">
-                {slot.revision > 0 ? 'Saved' : 'Not recorded'}
-                {slot.logged_calories !== null ? ` · ${slot.logged_calories} kcal recorded` : ''}
+              <span className="min-w-0 flex-1 space-y-1">
+                <span className="block text-xl font-bold">{slotLabel(slot.meal_slot)}</span>
+                <span className="block">
+                  {slot.options.find((option) => option.meal_id === slot.meal_id)?.meal_name ?? 'Your meal'}
+                </span>
+                <span className="block text-sm text-muted-foreground">
+                  {slot.revision > 0 ? 'Saved' : 'Not recorded'}
+                  {slot.logged_calories !== null ? ` · ${slot.logged_calories} kcal recorded` : ''}
+                </span>
               </span>
+              <ChevronRight
+                className="size-5 shrink-0"
+                aria-hidden="true"
+              />
             </Link>
           </li>
         ))}
       </ul>
-      {day.write_eligible && (
+      {day.write_eligible && remaining.length > 0 && (
         <div className="mt-6 space-y-3">
           <Button
             variant="outline"
+            className="w-full"
             onPress={() => setAdding(!adding)}
           >
+            <Plus
+              className="size-5"
+              aria-hidden="true"
+            />
             Record another meal
           </Button>
           {adding && (
-            <ul
-              aria-label="Meal times"
-              className="divide-y divide-border"
+            <BottomSheet
+              title="Choose a meal time"
+              onClose={() => setAdding(false)}
             >
-              {mealSlots
-                .filter((slot) => !day.slots.some((item) => item.meal_slot === slot))
-                .map((slot) => (
+              <ul
+                aria-label="Meal times"
+                className="divide-y divide-border"
+              >
+                {remaining.map((slot) => (
                   <li key={slot}>
                     <Link
-                      className="text-link block py-3"
+                      className="flex min-h-14 items-center justify-between py-3 font-semibold"
                       to={generatePath(routes.nutritionMeal, {date: day.date, slot})}
                     >
                       {slotLabel(slot)}
+                      <ChevronRight
+                        className="size-5"
+                        aria-hidden="true"
+                      />
                     </Link>
                   </li>
                 ))}
-            </ul>
+              </ul>
+            </BottomSheet>
           )}
         </div>
       )}
@@ -226,46 +341,67 @@ export function NutritionPlans() {
   const search = params.get('search') ?? '';
   const archived = params.get('archived') === 'true';
   const query = useNutritionPlans(search, archived);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   return (
     <Page
       title="Nutrition plans"
       description="Meals and guidance from your coach."
       back={routes.nutrition}
+      compact
     >
-      <form
-        className="space-y-3 mb-6"
-        onSubmit={(event) => {
-          event.preventDefault();
-          const data = new FormData(event.currentTarget);
-          setParams({search: String(data.get('search') ?? ''), archived: String(data.get('archived') ?? 'false')});
-        }}
+      <Button
+        variant="outline"
+        className="mb-5"
+        onPress={() => setFiltersOpen(true)}
       >
-        <label className="grid gap-2 font-medium">
-          Search plans
-          <input
-            key={search}
-            name="search"
-            type="search"
-            defaultValue={search}
-            className="h-12 rounded-xl border border-border px-3 text-base"
-          />
-        </label>
-        <SelectField
-          aria-label="Plan archive"
-          name="archived"
-          key={String(archived)}
-          defaultValue={String(archived)}
+        <SlidersHorizontal
+          className="size-4"
+          aria-hidden="true"
+        />{' '}
+        Find a plan
+      </Button>
+      {filtersOpen && (
+        <BottomSheet
+          title="Find a nutrition plan"
+          onClose={() => setFiltersOpen(false)}
         >
-          <SelectItem id="false">Your plans</SelectItem>
-          <SelectItem id="true">Archived plans</SelectItem>
-        </SelectField>
-        <Button
-          type="submit"
-          variant="outline"
-        >
-          Apply filters
-        </Button>
-      </form>
+          <form
+            className="space-y-3 mb-6"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const data = new FormData(event.currentTarget);
+              setParams({search: String(data.get('search') ?? ''), archived: String(data.get('archived') ?? 'false')});
+              setFiltersOpen(false);
+            }}
+          >
+            <label className="grid gap-2 font-medium">
+              Search plans
+              <input
+                key={search}
+                name="search"
+                type="search"
+                defaultValue={search}
+                className="h-12 rounded-xl border border-border px-3 text-base"
+              />
+            </label>
+            <SelectField
+              aria-label="Plan archive"
+              name="archived"
+              key={String(archived)}
+              defaultValue={String(archived)}
+            >
+              <SelectItem id="false">Your plans</SelectItem>
+              <SelectItem id="true">Archived plans</SelectItem>
+            </SelectField>
+            <Button
+              type="submit"
+              className="w-full"
+            >
+              Apply filters
+            </Button>
+          </form>
+        </BottomSheet>
+      )}
       {query.data && (
         <CachedRead
           updatedAt={query.dataUpdatedAt}
@@ -286,14 +422,26 @@ export function NutritionPlans() {
       >
         {(plan) => (
           <Link
-            className="block py-5 space-y-1"
-            to={generatePath(routes.nutritionPlan, {id: plan.id})}
+            className="flex items-center gap-3 py-5"
+            to={`${generatePath(routes.nutritionPlan, {id: plan.id})}?${new URLSearchParams({returnTo: `${routes.nutritionPlans}?${params}`})}`}
           >
-            <span className="block text-xl font-semibold">{plan.name}</span>
-            <span className="block capitalize text-sm text-muted-foreground">
-              {plan.lifecycle}
-              {plan.start_date ? ` · ${dayLabel(plan.start_date)}` : ''}
+            <span
+              className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--nutrition)] text-primary"
+              aria-hidden="true"
+            >
+              <Utensils className="size-5" />
             </span>
+            <span className="min-w-0 flex-1 space-y-1">
+              <span className="block text-xl font-bold">{plan.name}</span>
+              <span className="block capitalize text-sm text-muted-foreground">
+                {plan.lifecycle}
+                {plan.start_date ? ` · ${dayLabel(plan.start_date)}` : ''}
+              </span>
+            </span>
+            <ChevronRight
+              className="size-5 shrink-0"
+              aria-hidden="true"
+            />
           </Link>
         )}
       </InfiniteList>
@@ -303,13 +451,15 @@ export function NutritionPlans() {
 
 export function NutritionPlan() {
   const {id = ''} = useParams();
+  const [params] = useSearchParams();
   const query = useNutritionPlan(id);
   const plan = query.data?.data;
   return (
     <Page
       title={plan?.name ?? 'Nutrition plan'}
       description={plan?.description ?? undefined}
-      back={routes.nutritionPlans}
+      back={params.has('returnTo') ? safeReturnTo(params.get('returnTo')) : routes.nutritionPlans}
+      compact
     >
       {!plan ? (
         <ReadState
@@ -332,7 +482,7 @@ export function NutritionPlan() {
               ? `From ${dayLabel(plan.start_date)}${plan.end_date ? ` to ${dayLabel(plan.end_date)}` : ''}`
               : 'Your coach has not set dates yet.'}
           </p>
-          <section className="mb-6 space-y-2">
+          <section className="mb-6 rounded-[2rem] bg-[var(--nutrition)] p-5 space-y-2">
             <h2 className="text-xl font-semibold">Daily targets</h2>
             <p>
               {plan.target_calories ?? '—'} kcal · Protein {plan.target_protein_g ?? '—'} g
@@ -343,11 +493,11 @@ export function NutritionPlan() {
             </p>
           </section>
           <h2 className="text-xl font-semibold mb-3">Weekly guidance</h2>
-          <dl className="mb-6 space-y-2">
+          <dl className="mb-6 divide-y divide-border rounded-3xl bg-surface px-5">
             {Object.entries(plan.menu.schedule).map(([weekday, patternId]) => (
               <div
                 key={weekday}
-                className="flex justify-between gap-4"
+                className="flex justify-between gap-4 py-3"
               >
                 <dt className="capitalize">{weekday}</dt>
                 <dd className="text-right text-muted-foreground">
@@ -358,12 +508,15 @@ export function NutritionPlan() {
           </dl>
           {plan.menu.day_patterns.map((pattern) => (
             <section
-              className="mb-7 space-y-3"
+              className="mb-6 space-y-3"
               key={pattern.id}
             >
               <h2 className="text-xl font-semibold">{pattern.name}</h2>
               {pattern.slots.map((slot) => (
-                <div key={slot.meal_slot}>
+                <div
+                  className="rounded-2xl bg-surface p-4"
+                  key={slot.meal_slot}
+                >
                   <h3 className="font-medium">{slotLabel(slot.meal_slot)}</h3>
                   <p className="text-muted-foreground">
                     {slot.meal_ids
@@ -379,9 +532,9 @@ export function NutritionPlan() {
           {plan.menu.meals.map((meal) => (
             <details
               key={meal.id}
-              className="border-b border-border py-3"
+              className="rounded-3xl bg-surface px-5 py-3 mt-3"
             >
-              <summary className="py-2 cursor-pointer font-semibold text-lg">{meal.name}</summary>
+              <summary className="min-h-12 py-3 cursor-pointer font-bold text-lg">{meal.name}</summary>
               <div className="py-3 space-y-3">
                 {meal.notes && <p className="whitespace-pre-wrap">{meal.notes}</p>}
                 <ul className="space-y-3">

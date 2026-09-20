@@ -129,7 +129,9 @@ try {
   await expect(page.getByText('Meal saved.', {exact: true})).toBeVisible();
   const past = new Date(`${today}T12:00:00Z`);
   past.setUTCDate(past.getUTCDate() - 10);
+  await page.getByRole('button', {name: 'Choose day', exact: true}).click();
   await page.getByLabel('Nutrition day').fill(past.toISOString().slice(0, 10));
+  await page.getByRole('button', {name: 'Show day', exact: true}).click();
   await expect(page.getByText('This day is read-only.', {exact: false})).toBeVisible();
   await expect(page.getByRole('button', {name: 'Record another meal'})).toHaveCount(0);
   await page.goto(`/nutrition/days/${today}/lunch`);
@@ -148,7 +150,47 @@ try {
     passed: true,
   });
   await page.screenshot({path: 'tests/nutrition/artifacts/recovery-375.png', fullPage: true});
+  await page.getByLabel('Portion (g)').fill('180');
+  let releaseSave;
+  let arrived;
+  const held = new Promise((resolve) => {
+    releaseSave = resolve;
+  });
+  const savedResponse = new Promise((resolve) => {
+    arrived = resolve;
+  });
+  await page.route(`**/v1/client/nutrition-days/${today}`, async (route) => {
+    if (route.request().method() !== 'PATCH') {
+      return route.continue();
+    }
+    const response = await route.fetch();
+    expect(response.status()).toBe(200);
+    arrived();
+    await held;
+    await route.fulfill({response});
+  });
+  await page.getByRole('button', {name: 'Save meal', exact: true}).click();
+  await savedResponse;
+  await page.getByRole('link', {name: 'Back', exact: true}).click();
   await page.getByRole('link', {name: 'Your account'}).click();
+  releaseSave();
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const key = Object.keys(localStorage).find(
+          (key) => key.includes('.draft.nutrition.') && key.endsWith('.lunch'),
+        );
+        return key ? JSON.parse(localStorage.getItem(key)).attempt : undefined;
+      }),
+    )
+    .toBeNull();
+  await expect(page).toHaveURL(/\/account$/);
+  expect((await read()).summary.logged.calories).toBe(234);
+  await page.unroute(`**/v1/client/nutrition-days/${today}`);
+  results.push({
+    scenario: 'A delayed meal save clears its draft without redirecting after the client leaves',
+    passed: true,
+  });
   await page.getByRole('button', {name: 'Sign out', exact: true}).click();
   await expect(page.getByRole('heading', {name: 'Welcome back', exact: true})).toBeVisible();
   expect(

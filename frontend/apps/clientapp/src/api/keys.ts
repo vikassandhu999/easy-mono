@@ -31,7 +31,6 @@ export const conversationKeys = {
 export const trainingKeys = {
   all: ['training'] as const,
   lists: () => ['training', getSession()?.id, 'lists'] as const,
-  plans: (search: string) => [...trainingKeys.lists(), 'plans', 'infinite', search] as const,
   history: (filters: SessionFilters) => [...trainingKeys.lists(), 'history', 'infinite', filters] as const,
   details: () => ['training', getSession()?.id, 'details'] as const,
   plan: (id: string) => [...trainingKeys.details(), 'plan', id] as const,
@@ -43,8 +42,6 @@ export const trainingKeys = {
 export const nutritionKeys = {
   all: ['nutrition'] as const,
   lists: () => ['nutrition', getSession()?.id, 'lists'] as const,
-  plans: (search: string, archived: boolean) =>
-    [...nutritionKeys.lists(), 'plans', 'infinite', {search, archived}] as const,
   library: (kind: 'food' | 'recipe', search: string) => [...nutritionKeys.lists(), kind, 'infinite', search] as const,
   details: () => ['nutrition', getSession()?.id, 'details'] as const,
   day: (date?: string) => [...nutritionKeys.details(), 'day', date ?? 'today'] as const,

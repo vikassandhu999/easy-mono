@@ -208,7 +208,7 @@ export function Home() {
                   ? guidance.plan.name
                   : guidance
                     ? 'A rest day. Recharge or choose a workout.'
-                    : 'Choose a plan or record your own workout.'
+                    : 'Your coach hasn’t scheduled a plan for today. You can still record your own workout.'
               }
               to={
                 guidance?.workout

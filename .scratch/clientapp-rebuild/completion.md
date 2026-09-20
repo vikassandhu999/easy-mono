@@ -106,3 +106,15 @@ precommit pass (1,846 tests, zero failures). Localhost:1315 and Phoenix:4100 rem
 The requirement review and route audit have no outstanding local implementation items.
 Physical phones, real-client usability and external provider/domain/signing dependencies
 are recorded separately; no production readiness or usability sign-off is implied.
+
+
+2026-09-20 assigned-plan UX correction: Training opens the server-selected plan's
+workouts directly, with today's workout/rest guidance. Nutrition links directly to the
+selected day's plan; the old collection URL resolves today's assignment. Plan search,
+counts and archive selection were removed; workout-history filtering remains. Browser
+entry, retry, no-plan/rest, return and recording/recovery checks pass at 375/768/1280.
+Android regressions and iPhone meal/workout save/restart checks pass; the iPhone workout
+required a simulator reboot after its off-screen-keyboard failure, with assertions unchanged.
+Build/native sync, Biome, check-rm and full backend precommit pass (1,846 tests).
+The user's localhost:1315 app now uses the regular Phoenix backend on port 4000;
+isolated automated fixtures remain on 4100. See [assigned-plan evidence](assigned-plan-ux.md).

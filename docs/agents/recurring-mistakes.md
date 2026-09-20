@@ -188,6 +188,7 @@ Severity of the rule isn't the point; recurrence is.
 | RM-245 | Completion visuals require a saved outcome | Frontend | browser test |
 | RM-246 | Verify the stored credential format through a native restart | Frontend | native test |
 | RM-247 | Startup failure needs an in-app recovery action | Frontend | browser test |
+| RM-248 | A client assignment is not a plan catalog | Frontend | browser test |
 
 ---
 
@@ -1486,6 +1487,13 @@ accessible mobile recovery state with a deliberate retry that restarts initializ
 do not clear credentials or private drafts merely because a read failed. **Verify by:**
 clientapp `test:startup` forces repeated read failures, checks the focused touch-sized
 retry, then restores storage and requires the same real account and unfinished draft.
+
+### RM-248 — A client assignment is not a plan catalog
+An API exposing a list does not mean the client should search it. When the coach owns
+assignment and the server resolves one applicable plan, open its work directly. Keep
+historical records separate from the current task. **Verify by:** client training and
+nutrition browser scenarios require direct workouts/plan entry and no Find a plan
+control; Today tests distinguish rest, no coverage, loading and failed reads.
 
 ## Deploy / ops
 

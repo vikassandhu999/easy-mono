@@ -29,15 +29,6 @@ export function useTrainingCoverage() {
   });
 }
 
-export function useTrainingPlans(search: string) {
-  return useInfiniteQuery({
-    queryKey: trainingKeys.plans(search),
-    queryFn: ({pageParam, signal}) =>
-      call(client.GET('/v1/client/training-plans', {params: {query: {search, cursor: pageParam, limit: 20}}, signal})),
-    ...cursorPagination,
-  });
-}
-
 export function useTrainingPlan(id: string) {
   return useQuery({
     queryKey: trainingKeys.plan(id),

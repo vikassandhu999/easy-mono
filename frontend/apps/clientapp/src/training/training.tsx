@@ -4,11 +4,12 @@ import {generatePath, Link, useNavigate, useParams, useSearchParams} from 'react
 import {errorMessage} from '../api/client';
 import {
   type SessionFilters,
+  type TrainingPlan as TrainingPlanValue,
   useActiveTraining,
   useStartTraining,
+  useTrainingCoverage,
   useTrainingHistory,
   useTrainingPlan,
-  useTrainingPlans,
 } from '../api/training';
 import {routes} from '../routes';
 import {BottomSheet} from '../ui/bottom-sheet';
@@ -38,7 +39,7 @@ export function Training() {
   return (
     <Page
       title="Training"
-      description="Your plans and the work you've saved."
+      description="Your workout, ready when you are."
       compact
     >
       <ActiveWorkout />
@@ -55,7 +56,7 @@ export function Training() {
             className="size-4"
             aria-hidden="true"
           />
-          Your plans
+          Your plan
         </Link>
         <Link
           to={`${routes.training}?view=history`}
@@ -69,25 +70,25 @@ export function Training() {
           Workout history
         </Link>
       </nav>
-      <div className="flex items-center justify-between gap-3 mb-3">
-        <p className="text-sm text-muted-foreground">
-          {history ? 'The work you’ve put in.' : 'Find your next good session.'}
-        </p>
-        <Button
-          variant="outline"
-          onPress={() => setFiltersOpen(true)}
-          className="gap-2 shrink-0"
-        >
-          <SlidersHorizontal
-            className="size-4"
-            aria-hidden="true"
-          />
-          {history ? 'Filter workouts' : 'Find a plan'}
-        </Button>
-      </div>
-      {filtersOpen && (
+      {history && (
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <p className="text-sm text-muted-foreground">The work you’ve put in.</p>
+          <Button
+            variant="outline"
+            onPress={() => setFiltersOpen(true)}
+            className="gap-2 shrink-0"
+          >
+            <SlidersHorizontal
+              className="size-4"
+              aria-hidden="true"
+            />
+            Filter workouts
+          </Button>
+        </div>
+      )}
+      {history && filtersOpen && (
         <BottomSheet
-          title={history ? 'Find a workout' : 'Find a plan'}
+          title="Find a workout"
           onClose={() => setFiltersOpen(false)}
         >
           <form
@@ -95,7 +96,7 @@ export function Training() {
             onSubmit={(event) => {
               event.preventDefault();
               const fields = new FormData(event.currentTarget);
-              const next = new URLSearchParams(history ? {view: 'history'} : {});
+              const next = new URLSearchParams({view: 'history'});
               for (const name of ['search', 'from', 'to', 'state']) {
                 const value = fields.get(name);
                 if (typeof value === 'string' && value.trim()) {
@@ -107,7 +108,7 @@ export function Training() {
             }}
           >
             <label className="grid gap-2 font-medium">
-              Search {history ? 'workouts' : 'plans'}
+              Search workouts
               <input
                 className="h-12 w-full rounded-xl border border-border bg-surface px-3 text-base"
                 key={search}
@@ -168,16 +169,11 @@ export function Training() {
           returnTo={`${routes.training}?${params}`}
         />
       ) : (
-        <Plans search={search} />
+        <CurrentPlan />
       )}
       {!history && (
-        <div className="mt-6 rounded-[2rem] bg-[var(--training)] p-5 space-y-3">
-          <Dumbbell
-            className="size-7 -rotate-12"
-            aria-hidden="true"
-          />
-          <h2 className="text-xl font-bold">Doing your own workout?</h2>
-          <p className="text-muted-foreground">Record exercises without a plan.</p>
+        <div className="mt-6 space-y-3">
+          <p className="text-sm text-muted-foreground">Training outside your plan?</p>
           <StartWorkout workoutId={null} />
         </div>
       )}
@@ -227,32 +223,88 @@ export function ActiveWorkout() {
   );
 }
 
-function Plans({search}: {search: string}) {
-  const query = useTrainingPlans(search);
+function CurrentPlan() {
+  const query = useTrainingCoverage();
+  if (!query.data) {
+    return (
+      <ReadState
+        label="your training plan"
+        failed={query.isError}
+        retry={() => {
+          query.refetch();
+        }}
+      />
+    );
+  }
+  const guidance = query.data.data;
   return (
     <>
-      {query.data && (
-        <CachedRead
-          updatedAt={query.dataUpdatedAt}
-          failed={query.isError}
-          refreshing={query.isFetching}
-          refresh={() => query.refetch()}
+      <CachedRead
+        updatedAt={query.dataUpdatedAt}
+        failed={query.isError}
+        refreshing={query.isFetching}
+        refresh={() => query.refetch()}
+      />
+      {guidance ? (
+        <AssignedWorkouts
+          id={guidance.plan.id}
+          todayWorkoutId={guidance.workout?.id ?? null}
         />
+      ) : (
+        <p className="py-5 text-muted-foreground">Your coach hasn’t scheduled a training plan for today.</p>
       )}
-      <InfiniteList
-        query={query}
-        label="plans"
-        singular="plan"
-        empty={
-          <p className="py-5 text-muted-foreground">
-            {search ? 'No plans match this search.' : 'Your coach has not shared a training plan yet.'}
-          </p>
-        }
-      >
-        {(plan) => (
+    </>
+  );
+}
+
+function AssignedWorkouts({id, todayWorkoutId}: {id: string; todayWorkoutId: string | null}) {
+  const query = useTrainingPlan(id);
+  const plan = query.data?.data;
+  if (!plan) {
+    return (
+      <ReadState
+        label="your workouts"
+        failed={query.isError}
+        retry={() => {
+          query.refetch();
+        }}
+      />
+    );
+  }
+  return (
+    <section className="space-y-3">
+      <CachedRead
+        updatedAt={query.dataUpdatedAt}
+        failed={query.isError}
+        refreshing={query.isFetching}
+        refresh={() => query.refetch()}
+      />
+      <div className="rounded-3xl bg-[var(--training)] p-5 space-y-2">
+        <p className="text-sm font-semibold">Your training plan</p>
+        <h2 className="text-2xl font-bold">{plan.name}</h2>
+        {plan.description && <p className="text-muted-foreground">{plan.description}</p>}
+        {!todayWorkoutId && (
+          <p className="text-muted-foreground">Today is a rest day. Your workouts are here when you need them.</p>
+        )}
+      </div>
+      <PlanWorkouts
+        plan={plan}
+        todayWorkoutId={todayWorkoutId}
+      />
+    </section>
+  );
+}
+
+function PlanWorkouts({plan, todayWorkoutId}: {plan: TrainingPlanValue; todayWorkoutId?: string | null}) {
+  return plan.workouts.length === 0 ? (
+    <p>No workouts have been added to this plan yet.</p>
+  ) : (
+    <ul className="divide-y divide-border">
+      {plan.workouts.map((item) => (
+        <li key={item.id}>
           <Link
             className="training-list-row"
-            to={generatePath(routes.trainingPlan, {id: plan.id})}
+            to={generatePath(routes.workout, {id: plan.id, workoutId: item.id})}
           >
             <span
               className="training-row-icon"
@@ -261,32 +313,23 @@ function Plans({search}: {search: string}) {
               <Dumbbell />
             </span>
             <span className="min-w-0 flex-1 space-y-1">
-              <span className="block text-lg font-bold">{plan.name}</span>
-              <span className="block text-sm text-muted-foreground">
-                {plan.lifecycle === 'current'
-                  ? 'Current plan'
-                  : plan.lifecycle === 'upcoming'
-                    ? 'Starts soon'
-                    : plan.lifecycle === 'ended'
-                      ? 'Past plan'
-                      : 'Dates not set'}{' '}
-                · {plan.workout_count} {plan.workout_count === 1 ? 'workout' : 'workouts'}
+              <span className="block text-xl font-bold">{item.name}</span>
+              <span className="block capitalize text-muted-foreground">
+                {item.id === todayWorkoutId
+                  ? 'Today’s workout'
+                  : item.weekdays.length === 7
+                    ? 'Every day'
+                    : item.weekdays.map((day) => day.slice(0, 3)).join(' · ') || 'Choose any day'}
               </span>
-              {plan.start_date && (
-                <span className="block text-sm">
-                  {dayLabel(plan.start_date)}
-                  {plan.end_date ? ` – ${dayLabel(plan.end_date)}` : ' onwards'}
-                </span>
-              )}
             </span>
             <ChevronRight
               className="size-4 shrink-0"
               aria-hidden="true"
             />
           </Link>
-        )}
-      </InfiniteList>
-    </>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -354,7 +397,7 @@ export function TrainingPlan() {
     <Page
       title={workout?.name ?? plan?.name ?? 'Training plan'}
       description={workout ? plan?.name : (plan?.description ?? undefined)}
-      back={workoutId ? generatePath(routes.trainingPlan, {id}) : routes.training}
+      back={routes.training}
       compact
     >
       {!plan ? (
@@ -427,36 +470,7 @@ export function TrainingPlan() {
                   ? `From ${dayLabel(plan.start_date)}${plan.end_date ? ` to ${dayLabel(plan.end_date)}` : ''}`
                   : 'Your coach has not set dates yet.'}
               </p>
-              {plan.workouts.length === 0 && <p>No workouts have been added to this plan yet.</p>}
-              <ul className="divide-y divide-border">
-                {plan.workouts.map((item) => (
-                  <li key={item.id}>
-                    <Link
-                      className="training-list-row"
-                      to={generatePath(routes.workout, {id, workoutId: item.id})}
-                    >
-                      <span
-                        className="training-row-icon"
-                        aria-hidden="true"
-                      >
-                        <Dumbbell />
-                      </span>
-                      <span className="min-w-0 flex-1 space-y-1">
-                        <span className="block text-xl font-bold">{item.name}</span>
-                        <span className="block capitalize text-muted-foreground">
-                          {item.weekdays.length === 7
-                            ? 'Every day'
-                            : item.weekdays.map((day) => day.slice(0, 3)).join(' · ') || 'Choose any day'}
-                        </span>
-                      </span>
-                      <ChevronRight
-                        className="size-4 shrink-0"
-                        aria-hidden="true"
-                      />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              <PlanWorkouts plan={plan} />
             </>
           )}
         </>
@@ -483,6 +497,7 @@ function StartWorkout({workoutId}: {workoutId: string | null}) {
       <FormError message={error} />
       <Button
         className="w-full"
+        variant={workoutId ? 'default' : 'outline'}
         isDisabled={!online}
         isPending={mutation.isPending}
         onPress={async () => {

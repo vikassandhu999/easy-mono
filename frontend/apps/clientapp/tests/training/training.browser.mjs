@@ -86,9 +86,10 @@ try {
         .getByRole('navigation', {name: 'Main navigation'})
         .getByRole('link', {name: 'Training', exact: true})
         .click();
-      await expect(page.getByRole('link', {name: /Steady strength/})).toBeVisible();
-      await page.screenshot({path: `tests/training/artifacts/plans-${width}.png`, fullPage: true});
-      await page.getByRole('link', {name: /Steady strength/}).click();
+      await expect(page.getByRole('heading', {name: 'Steady strength', exact: true})).toBeVisible();
+      await expect(page.getByRole('button', {name: 'Find a plan', exact: true})).toHaveCount(0);
+      await expect(page.getByText('1 plan', {exact: true})).toHaveCount(0);
+      await expect(page.getByText('Today’s workout', {exact: true})).toBeVisible();
       await expect(page.getByRole('link', {name: /^Lower body/})).toBeVisible();
       await page.screenshot({path: `tests/training/artifacts/plan-${width}.png`, fullPage: true});
       await page.getByRole('link', {name: /^Lower body/}).click();
@@ -265,15 +266,13 @@ try {
       await page.getByLabel('Search workouts').fill('No match');
       await page.getByRole('button', {name: 'Apply filters'}).click();
       await expect(page.getByText('0 workouts', {exact: true})).toBeVisible();
-      await page.getByRole('link', {name: 'Your plans', exact: true}).click();
-      await page.getByRole('button', {name: 'Find a plan', exact: true}).click();
-      await page.getByLabel('Search plans').fill('No match');
-      await page.getByRole('button', {name: 'Apply filters'}).click();
-      await expect(page.getByText('0 plans', {exact: true})).toBeVisible();
-      await page.getByRole('button', {name: 'Find a plan', exact: true}).click();
-      await page.getByLabel('Search plans').fill('');
-      await page.getByRole('button', {name: 'Apply filters'}).click();
-      await expect(page.getByText('1 plan', {exact: true})).toBeVisible();
+      await page.getByRole('link', {name: 'Your plan', exact: true}).click();
+      await expect(page.getByRole('heading', {name: 'Steady strength', exact: true})).toBeVisible();
+      await expect(page.getByRole('button', {name: 'Find a plan', exact: true})).toHaveCount(0);
+      await page.getByRole('link', {name: /^Lower body/}).click();
+      await page.getByRole('link', {name: 'Back', exact: true}).click();
+      await expect(page).toHaveURL(/\/training$/);
+      await expect(page.getByRole('heading', {name: 'Steady strength', exact: true})).toBeVisible();
       await page.goto('/no-such-client-screen');
       await expect(page).toHaveURL(/\/$/);
       await expect(page.getByRole('heading', {name: 'Today', exact: true})).toBeVisible();

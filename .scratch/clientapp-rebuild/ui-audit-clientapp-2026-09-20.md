@@ -18,13 +18,13 @@ This continues the authorized rebuild on `clientapp-rebuild`, including its exis
 | `/messages` | client | 375 / 768 / 1280, iOS/Android | Focused conversation, empty/whitespace Send state, attachment sheet/error, text/live/read, long content, restart, lost response/retry, conflict discard, real media and shared-form return | Browser/native pass, including iOS simulator MP4/MP3 playback taps and elapsed clocks | UI-13, UI-14, UI-15 |
 | `/forms` | client | 375 / 768 / 1280 | Pending/history segments, empty, saved/closed/missed return, 22-row cursor retry | Mobile pass for exercised states | UI-12 |
 | `/forms/:id` | client | 375 / 768 / 1280, iOS/Android | All question types, empty/partial validation, keyboard/pointer choices, draft/revision/photo retry, saved/closed/missed response, offline; native visible-keyboard send/restart | Browser/native pass; physical device/usability separate | UI-12 |
-| `/training` | client | 375 / 768 / 1280, Android | Plan/history segments, search/empty/reset, sheet filters/Back, paging/error/retry, preserved completed return | Mobile pass for exercised states | UI-07 |
+| `/training` | client | 375 / 768 / 1280, Android | Current plan/workouts directly, rest/no-plan/read retry, history segments and history-only search/date/status filters, preserved completed return | Mobile pass for exercised states | UI-07 |
 | `/training/plans/:id` | client | 375 / 768 / 1280 | Plan entry, workout rows, schedule, preview return | Mobile pass for exercised states | UI-07 |
 | `/training/plans/:id/workouts/:workoutId` | client | 375 / 768 / 1280 | Numbered prescription, long name, reachable start, interrupted start | Mobile pass for exercised states | UI-07 |
 | `/training/sessions/:id` | client | 375 / 768 / 1280, iOS/Android | Planned/freeform, all modes, last-set prefill, notes sheet/failure/retry, offline/restart, edit/remove, complete/discard, physical keyboard-open save | Browser/native pass; physical device/usability separate | UI-07, UI-08, UI-09 |
 | `/nutrition` | client | 375 / 768 / 1280, iOS/Android | Empty/planned/saved day, previous/next, date sheet/Back, read-only date, meal-time sheet and return | Mobile pass for exercised states | UI-10 |
-| `/nutrition/plans` | client | 375 / 768 / 1280 | Assigned rows, filter sheet, empty search/reset, filtered return | Mobile pass for exercised states | UI-10 |
-| `/nutrition/plans/:id` | client | 375 / 768 / 1280 | Targets, weekly guidance, meal disclosure/portions, long names, return | Mobile pass for exercised states | UI-10 |
+| `/nutrition/plans` | client | 375 / 768 / 1280 | Legacy URL resolves the current nutrition plan directly; no-plan/read retry and return to Nutrition | Mobile pass for exercised states | UI-10 |
+| `/nutrition/plans/:id` | client | 375 / 768 / 1280 | Direct entry from selected day, targets, Monday–Sunday guidance, meal disclosure/portions, long names and return to the same day | Mobile pass for exercised states | UI-10 |
 | `/nutrition/days/:date/:slot` | client | 375 / 768 / 1280, iOS/Android | Planned/unplanned, alternative/portion/note, sheet food/recipe choice and 22-food paging/retry, extras/swaps, conflict/recovery, offline/restart, visible-keyboard save and saved reading | Browser/native pass; physical device/usability separate | UI-10, UI-11 |
 | Startup failure | public/client | 375 / 768 / 1280 | Repeated storage-read failure, focused touch-sized Try again, same-account/draft recovery, mobile width | Browser pass; native lock-state validation separate | UI-19 |
 | `*` | public/client | 375 / 768 / 1280 | Signed-in fallback to Today; signed-out fallback to Login | Pass | — |
@@ -69,3 +69,10 @@ Shared consumers: `Page` serves account, forms, training, nutrition and progress
   listeners or erasing credentials/drafts. The browser probe first failed on the old
   text-only state, then passed repeated failures and recovery of the same real account
   and private draft at 375/768/1280. Evidence: `evidence/startup-*`; prevention: RM-247.
+
+- UI-20: Plan search and paginated collections copied library behavior into a client
+  task with one applicable assignment. Training now opens the server-selected plan’s
+  workouts directly; Nutrition’s View plan opens the selected day’s plan. Plan search,
+  counts and archive controls are removed, while workout history keeps its filters.
+  Freestyle is secondary. Current-plan, rest/no-plan, retry and return browser checks
+  pass at all three widths. See assigned-plan-ux.md.

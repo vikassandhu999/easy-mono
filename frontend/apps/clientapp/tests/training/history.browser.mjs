@@ -3,7 +3,10 @@ import {chromium, expect} from '@playwright/test';
 import {api, inviteClient} from '../auth/fixtures.mjs';
 
 const browser = await chromium.launch();
-const context = await browser.newContext({baseURL: 'http://localhost:1315', viewport: {width: 375, height: 812}});
+const context = await browser.newContext({
+  baseURL: process.env.CLIENT_APP_URL || 'http://localhost:1315',
+  viewport: {width: 375, height: 812},
+});
 const page = await context.newPage();
 const errors = [];
 page.on('pageerror', (error) => errors.push(error.message));

@@ -1,8 +1,8 @@
 import {addDays} from '@easy/utils';
-import {CalendarDays, Check, ChevronLeft, ChevronRight, Plus, SlidersHorizontal, Utensils} from 'lucide-react';
+import {CalendarDays, Check, ChevronLeft, ChevronRight, Plus, Utensils} from 'lucide-react';
 import {useState} from 'react';
-import {generatePath, Link, useParams, useSearchParams} from 'react-router-dom';
-import {type Day, type FoodNutrients, useNutritionDay, useNutritionPlan, useNutritionPlans} from '../api/nutrition';
+import {generatePath, Link, Navigate, useParams, useSearchParams} from 'react-router-dom';
+import {type Day, type FoodNutrients, useNutritionDay, useNutritionPlan} from '../api/nutrition';
 import {safeReturnTo} from '../auth/return-to';
 import {routes} from '../routes';
 import {dayLabel} from '../training/recording';
@@ -10,12 +10,11 @@ import {ActionCard} from '../ui/action-card';
 import {BottomSheet} from '../ui/bottom-sheet';
 import {Button} from '../ui/button';
 import {CachedRead} from '../ui/cached-read';
-import {InfiniteList} from '../ui/infinite-list';
 import {Page} from '../ui/page';
 import {ReadState} from '../ui/read-state';
-import {SelectItem} from '../ui/select';
-import {SelectField} from '../ui/select-field';
 import {mealSlots, portionText, slotLabel} from './meal-draft';
+
+const weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 
 export function Nutrients({
   value,
@@ -95,16 +94,18 @@ export function Nutrition() {
       compact
     >
       <div className="mb-5 flex items-center justify-between gap-3">
-        <Link
-          className="inline-flex min-h-11 items-center gap-2 rounded-2xl bg-surface px-4 font-semibold"
-          to={routes.nutritionPlans}
-        >
-          <Utensils
-            className="size-4 text-primary"
-            aria-hidden="true"
-          />
-          Your plans
-        </Link>
+        {day?.plan_id && (
+          <Link
+            className="inline-flex min-h-11 items-center gap-2 rounded-2xl bg-surface px-4 font-semibold"
+            to={`${generatePath(routes.nutritionPlan, {id: day.plan_id})}?${new URLSearchParams({returnTo: `${routes.nutrition}${params.size ? `?${params}` : ''}`})}`}
+          >
+            <Utensils
+              className="size-4 text-primary"
+              aria-hidden="true"
+            />
+            View plan
+          </Link>
+        )}
         {date && (
           <Link
             className="inline-flex min-h-11 items-center px-3 font-semibold text-primary"
@@ -336,115 +337,44 @@ function DayOverview({day}: {day: Day}) {
   );
 }
 
-export function NutritionPlans() {
-  const [params, setParams] = useSearchParams();
-  const search = params.get('search') ?? '';
-  const archived = params.get('archived') === 'true';
-  const query = useNutritionPlans(search, archived);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+export function CurrentNutritionPlan() {
+  const query = useNutritionDay();
+  const planId = query.data?.data.plan_id;
+  if (planId) {
+    return (
+      <Navigate
+        to={generatePath(routes.nutritionPlan, {id: planId})}
+        replace
+      />
+    );
+  }
   return (
     <Page
-      title="Nutrition plans"
-      description="Meals and guidance from your coach."
+      title="Your nutrition plan"
       back={routes.nutrition}
       compact
     >
-      <Button
-        variant="outline"
-        className="mb-5"
-        onPress={() => setFiltersOpen(true)}
-      >
-        <SlidersHorizontal
-          className="size-4"
-          aria-hidden="true"
-        />{' '}
-        Find a plan
-      </Button>
-      {filtersOpen && (
-        <BottomSheet
-          title="Find a nutrition plan"
-          onClose={() => setFiltersOpen(false)}
-        >
-          <form
-            className="space-y-3 mb-6"
-            onSubmit={(event) => {
-              event.preventDefault();
-              const data = new FormData(event.currentTarget);
-              setParams({search: String(data.get('search') ?? ''), archived: String(data.get('archived') ?? 'false')});
-              setFiltersOpen(false);
-            }}
-          >
-            <label className="grid gap-2 font-medium">
-              Search plans
-              <input
-                key={search}
-                name="search"
-                type="search"
-                defaultValue={search}
-                className="h-12 rounded-xl border border-border px-3 text-base"
-              />
-            </label>
-            <SelectField
-              aria-label="Plan archive"
-              name="archived"
-              key={String(archived)}
-              defaultValue={String(archived)}
-            >
-              <SelectItem id="false">Your plans</SelectItem>
-              <SelectItem id="true">Archived plans</SelectItem>
-            </SelectField>
-            <Button
-              type="submit"
-              className="w-full"
-            >
-              Apply filters
-            </Button>
-          </form>
-        </BottomSheet>
-      )}
-      {query.data && (
-        <CachedRead
-          updatedAt={query.dataUpdatedAt}
+      {!query.data ? (
+        <ReadState
+          label="your nutrition plan"
           failed={query.isError}
-          refreshing={query.isFetching}
-          refresh={() => query.refetch()}
+          retry={() => {
+            query.refetch();
+          }}
         />
-      )}
-      <InfiniteList
-        query={query}
-        label="plans"
-        singular="plan"
-        empty={
-          <p className="py-5 text-muted-foreground">
-            {search ? 'No plans match this search.' : 'No nutrition plans are available here yet.'}
+      ) : (
+        <>
+          <CachedRead
+            updatedAt={query.dataUpdatedAt}
+            failed={query.isError}
+            refreshing={query.isFetching}
+            refresh={() => query.refetch()}
+          />
+          <p className="text-muted-foreground">
+            Your coach hasn’t scheduled a nutrition plan for today. You can still record your meals.
           </p>
-        }
-      >
-        {(plan) => (
-          <Link
-            className="flex items-center gap-3 py-5"
-            to={`${generatePath(routes.nutritionPlan, {id: plan.id})}?${new URLSearchParams({returnTo: `${routes.nutritionPlans}?${params}`})}`}
-          >
-            <span
-              className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--nutrition)] text-primary"
-              aria-hidden="true"
-            >
-              <Utensils className="size-5" />
-            </span>
-            <span className="min-w-0 flex-1 space-y-1">
-              <span className="block text-xl font-bold">{plan.name}</span>
-              <span className="block capitalize text-sm text-muted-foreground">
-                {plan.lifecycle}
-                {plan.start_date ? ` · ${dayLabel(plan.start_date)}` : ''}
-              </span>
-            </span>
-            <ChevronRight
-              className="size-5 shrink-0"
-              aria-hidden="true"
-            />
-          </Link>
-        )}
-      </InfiniteList>
+        </>
+      )}
     </Page>
   );
 }
@@ -458,7 +388,7 @@ export function NutritionPlan() {
     <Page
       title={plan?.name ?? 'Nutrition plan'}
       description={plan?.description ?? undefined}
-      back={params.has('returnTo') ? safeReturnTo(params.get('returnTo')) : routes.nutritionPlans}
+      back={params.has('returnTo') ? safeReturnTo(params.get('returnTo')) : routes.nutrition}
       compact
     >
       {!plan ? (
@@ -494,14 +424,15 @@ export function NutritionPlan() {
           </section>
           <h2 className="text-xl font-semibold mb-3">Weekly guidance</h2>
           <dl className="mb-6 divide-y divide-border rounded-3xl bg-surface px-5">
-            {Object.entries(plan.menu.schedule).map(([weekday, patternId]) => (
+            {weekdays.map((weekday) => (
               <div
                 key={weekday}
                 className="flex justify-between gap-4 py-3"
               >
                 <dt className="capitalize">{weekday}</dt>
                 <dd className="text-right text-muted-foreground">
-                  {plan.menu.day_patterns.find((pattern) => pattern.id === patternId)?.name ?? 'No guidance'}
+                  {plan.menu.day_patterns.find((pattern) => pattern.id === plan.menu.schedule[weekday])?.name ??
+                    'No guidance'}
                 </dd>
               </div>
             ))}

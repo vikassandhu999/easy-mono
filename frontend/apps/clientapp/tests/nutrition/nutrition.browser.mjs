@@ -259,24 +259,28 @@ try {
         day = (await api('/v1/client/nutrition-days', {token})).data[0];
         expect(day.slots[0].rows.find((row) => row.entry_id).name).toBe('Mixed berries');
       }
-      await page.getByRole('link', {name: 'Your plans', exact: true}).click();
-      await expect(page.getByRole('link', {name: /Everyday meals/})).toBeVisible();
-      await page.screenshot({path: `tests/nutrition/artifacts/plans-${width}.png`, fullPage: true});
-      await page.getByRole('button', {name: 'Find a plan', exact: true}).click();
-      await page.getByLabel('Search plans', {exact: true}).fill('No match');
-      await page.getByRole('button', {name: 'Apply filters', exact: true}).click();
-      await expect(page.getByText('0 plans', {exact: true})).toBeVisible();
-      await page.getByRole('button', {name: 'Find a plan', exact: true}).click();
-      await page.getByLabel('Search plans', {exact: true}).fill('Everyday');
-      await page.getByRole('button', {name: 'Apply filters', exact: true}).click();
-      await page.getByRole('link', {name: /Everyday meals/}).click();
+      await page.getByRole('link', {name: 'View plan', exact: true}).click();
+      await expect(page.getByRole('heading', {name: 'Everyday meals', exact: true})).toBeVisible();
+      await expect(page.getByRole('button', {name: 'Find a plan', exact: true})).toHaveCount(0);
       await expect(page.getByRole('heading', {name: 'Weekly guidance'})).toBeVisible();
+      await expect(page.locator('dl dt')).toHaveText([
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+        'sunday',
+      ]);
       await page.getByText('Oats and berries', {exact: true}).click();
       await expect(page.getByText(oats.name, {exact: true})).toBeVisible();
       await page.screenshot({path: `tests/nutrition/artifacts/plan-${width}.png`, fullPage: true});
       await page.getByRole('link', {name: 'Back', exact: true}).click();
-      await expect(page).toHaveURL(/search=Everyday/);
-      await expect(page.getByText('1 plan', {exact: true})).toBeVisible();
+      await expect(page).toHaveURL(/\/nutrition(?:\?|$)/);
+      await expect(page.getByRole('link', {name: 'View plan', exact: true})).toBeVisible();
+      await page.goto('/nutrition/plans?search=Old%20filter&archived=true');
+      await expect(page.getByRole('heading', {name: 'Everyday meals', exact: true})).toBeVisible();
+      await expect(page.getByRole('button', {name: 'Find a plan', exact: true})).toHaveCount(0);
       expect(errors).toEqual([]);
       results.push({
         width,

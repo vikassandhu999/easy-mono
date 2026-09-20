@@ -42,20 +42,6 @@ async function readDay(date?: string, signal?: AbortSignal) {
   return {data: day};
 }
 
-export function useNutritionPlans(search: string, archived: boolean) {
-  return useInfiniteQuery({
-    queryKey: nutritionKeys.plans(search, archived),
-    queryFn: ({pageParam, signal}) =>
-      call(
-        client.GET('/v1/client/nutrition-plans', {
-          params: {query: {search, archived, cursor: pageParam, limit: 20}},
-          signal,
-        }),
-      ),
-    ...cursorPagination,
-  });
-}
-
 export function useNutritionPlan(id: string) {
   return useQuery({
     queryKey: nutritionKeys.plan(id),

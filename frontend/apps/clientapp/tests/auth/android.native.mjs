@@ -228,7 +228,7 @@ try {
   });
   await tap(page.getByRole('link', {name: 'Back to your forms'}));
   await tap(page.getByRole('navigation', {name: 'Main navigation'}).getByRole('link', {name: 'Training', exact: true}));
-  await expect(page.getByText('0 plans', {exact: true})).toBeVisible();
+  await expect(page.getByText('Your coach hasn’t scheduled a training plan for today.', {exact: true})).toBeVisible();
   await expect(page.getByText('Loading your active workout…', {exact: true})).toHaveCount(0);
   await tap(page.getByRole('button', {name: 'Start freestyle workout'}));
   await expect(page).toHaveURL(/\/training\/sessions\//);

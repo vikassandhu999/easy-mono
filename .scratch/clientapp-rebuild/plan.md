@@ -62,3 +62,19 @@ Capacitor requirements checked against [official environment documentation](http
 ## Client visual direction (2026-09-20)
 
 The user rejected the plain web-like screens and requested a modern, playful mobile app with its own client UX. Reuse coachapp engineering, not its screen conventions. Use compact app bars, icon bottom navigation, full tappable action rows, contextual bottom sheets and reachable primary actions. Warm cream, clear purple actions and soft activity colors give the app a friendly identity. Avoid underlined web navigation, dashboard grids and long undifferentiated sections. Apply this direction to every route, including completed workflows, and verify again in browser and native runtimes.
+
+## Assigned-plan UX correction
+
+The client has one applicable plan, chosen by the coach. Training opens its workouts
+directly using server coverage; nutrition opens the day's server-selected plan without
+a catalog step. Search/count/archive controls describe a coach library and are removed
+from client plan entry. Workout history keeps its useful date/status filters.
+
+Situation: the client wants to do today's work, not find a plan. Considered a single
+plan card versus showing its workouts immediately; choose immediate workouts to remove
+an extra tap. Nutrition already opens daily meals, so its secondary View plan link goes
+directly to the assigned plan and returns to the same day. Existing plan deep links
+stay valid; the old nutrition collection URL resolves today's plan. Missing assignment,
+loading, cached/offline and failed-read retry remain explicit. No client-side selection
+from paginated plans and no backend contract change. Verify direct entry, rest/no-plan,
+retry, return and recording in mobile browser and native builds.

@@ -8,7 +8,10 @@ await mkdir('tests/today/artifacts', {recursive: true});
 try {
   for (const width of [375, 768, 1280]) {
     const fixture = await inviteClient();
-    const context = await browser.newContext({baseURL: 'http://localhost:1315', viewport: {width, height: 812}});
+    const context = await browser.newContext({
+      baseURL: process.env.CLIENT_APP_URL || 'http://localhost:1315',
+      viewport: {width, height: 812},
+    });
     try {
       const page = await context.newPage();
       const errors = [];
@@ -35,8 +38,26 @@ try {
       await page.screenshot({path: `tests/today/artifacts/error-${width}.png`, fullPage: true});
       fail = false;
       await page.getByRole('button', {name: 'Try again', exact: true}).click();
-      await expect(page.getByText('Choose a plan or record your own workout.', {exact: true})).toBeVisible();
+      await expect(
+        page.getByText('Your coach hasn’t scheduled a plan for today. You can still record your own workout.', {
+          exact: true,
+        }),
+      ).toBeVisible();
       await page.screenshot({path: `tests/today/artifacts/no-plan-${width}.png`, fullPage: true});
+      await page.goto('/training?search=Old%20filter');
+      await expect(
+        page.getByText('Your coach hasn’t scheduled a training plan for today.', {exact: true}),
+      ).toBeVisible();
+      await expect(page.getByRole('button', {name: 'Find a plan'})).toHaveCount(0);
+      await page.goto('/nutrition/plans');
+      await expect(
+        page.getByText('Your coach hasn’t scheduled a nutrition plan for today. You can still record your meals.', {
+          exact: true,
+        }),
+      ).toBeVisible();
+      await page.getByRole('link', {name: 'Back', exact: true}).click();
+      await expect(page).toHaveURL(/\/nutrition$/);
+      await page.goto('/');
       const token = await page.evaluate(
         () => JSON.parse(localStorage.getItem('clientapp.auth.v1')).tokens.access_token,
       );
@@ -87,7 +108,11 @@ try {
       await expect(page.getByRole('alert')).toHaveCount(0);
       await page.getByRole('link', {name: 'Move at your pace', exact: true}).click();
       await expect(page).toHaveURL(/\/training$/);
-      await expect(page.getByRole('link', {name: /A little movement/})).toBeVisible();
+      await expect(page.getByRole('heading', {name: 'A little movement', exact: true})).toBeVisible();
+      await expect(
+        page.getByText('Today is a rest day. Your workouts are here when you need them.', {exact: true}),
+      ).toBeVisible();
+      await expect(page.getByRole('button', {name: 'Find a plan'})).toHaveCount(0);
       expect(errors).toEqual([]);
       results.push({
         width,

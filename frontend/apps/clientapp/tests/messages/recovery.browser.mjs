@@ -71,7 +71,7 @@ try {
   await expect(page.getByRole('button', {name: 'Send', exact: true})).toBeDisabled();
   expect(writes).toBe(0);
   await context.setOffline(false);
-  await expect(page.getByText('Conversation connected', {exact: true})).toBeVisible();
+  await expect(page.getByText('Your coach · Conversation connected', {exact: true})).toBeVisible();
   expect(writes).toBe(0);
 
   let lostUpload = false;
@@ -169,6 +169,7 @@ try {
   await expect(input).toHaveValue('');
   await input.fill('Logout removes my unsent message.');
   await expect(page.getByText('Draft saved on this device.', {exact: true})).toBeVisible();
+  await page.getByRole('link', {name: 'Back to Today', exact: true}).click();
   await page.getByRole('link', {name: 'Your account', exact: true}).click();
   await page.getByRole('button', {name: 'Sign out', exact: true}).click();
   await expect(page.getByRole('heading', {name: 'Welcome back', exact: true})).toBeVisible();

@@ -183,6 +183,7 @@ Severity of the rule isn't the point; recurrence is.
 | RM-240 | Verify fixed save actions with a keyboard-open native tap | Frontend | native test |
 | RM-241 | Late saves must respect subsequent navigation | Frontend | browser test |
 | RM-242 | Styled choices retain a full native input target | Frontend | browser test |
+| RM-243 | Shared content returns to its entry context | Frontend | browser test |
 
 ---
 
@@ -1343,6 +1344,11 @@ Category retries restore focus after choices settle: the successful selector or 
 action must be mounted and enabled first. Do not interrupt a user who moved to another
 field while waiting. Coachapp `test:food-categories` checks the successful handoff.
 
+Attachment validation belongs inside the active chooser sheet. An error rendered only
+in the underlying composer is hidden and inert. Clientapp messaging browser checks
+reject an unsupported file, require the visible focused alert inside the sheet and
+verify that no attachment was added.
+
 ### RM-233 — Saved feedback follows actual draft state
 An editor cleared its saved notice only on DOM change events, so adding a program left
 Draft saved visible over unsaved content. Render saved feedback from the form's dirty
@@ -1426,6 +1432,14 @@ keyboard behavior and a visible focus outline on the label. **Verify by:** clien
 forms browser tests require at least 44px input bounds, keyboard selection, pointer
 selection and server-persisted values. The first implementation's `sr-only` input
 failed pointer selection because its label intercepted the tiny input target.
+
+### RM-243 — Shared content returns to its entry context
+A detail screen opened from a conversation must carry a validated return destination;
+its generic collection is not the client's current context. Conversation form links
+include `returnTo=/messages`, and the saved reader labels that return explicitly.
+**Verify by:** clientapp message history browser flow opens a real coach-shared form
+response, reads its saved answer, uses Back to messages and requires the coach's message
+again. A generic Forms back link or a hidden global tab cannot satisfy this check.
 
 ## Deploy / ops
 

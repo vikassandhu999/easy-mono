@@ -1,5 +1,6 @@
-import {MessageCircle} from 'lucide-react';
+import {ArrowLeft, MessageCircle} from 'lucide-react';
 import {useEffect, useRef} from 'react';
+import {Link} from 'react-router-dom';
 import {useConversation} from '../api/conversation';
 import {useConversationUpdates} from '../api/conversation-updates';
 import {routes} from '../routes';
@@ -66,10 +67,9 @@ export function Messages() {
       const viewport = window.visualViewport;
       const offset = viewport?.offsetTop ?? 0;
       const height = viewport?.height ?? window.innerHeight;
-      const header = document.querySelector('.app-header')?.getBoundingClientRect();
-      const nav = document.querySelector('.mobile-nav')?.getBoundingClientRect();
-      const top = Math.max(offset, header?.bottom ?? 0);
-      const bottom = nav && nav.height > 0 ? Math.min(offset + height, nav.top - 8) : offset + height;
+      const safeTop = Number.parseFloat(getComputedStyle(document.body).paddingTop) || 0;
+      const top = Math.max(offset, safeTop);
+      const bottom = offset + height;
       node.style.top = `${top}px`;
       node.style.height = `${Math.max(180, bottom - top)}px`;
     };
@@ -77,12 +77,7 @@ export function Messages() {
     window.visualViewport?.addEventListener('resize', measure);
     window.visualViewport?.addEventListener('scroll', measure);
     window.addEventListener('resize', measure);
-    const observer = new ResizeObserver(measure);
-    for (const element of document.querySelectorAll('.app-header, .mobile-nav')) {
-      observer.observe(element);
-    }
     return () => {
-      observer.disconnect();
       window.visualViewport?.removeEventListener('resize', measure);
       window.visualViewport?.removeEventListener('scroll', measure);
       window.removeEventListener('resize', measure);
@@ -93,24 +88,42 @@ export function Messages() {
       ref={main}
       className="messages-page"
     >
-      <header className="shrink-0 px-5 pt-3 pb-2">
-        <h1
-          ref={heading}
-          tabIndex={-1}
-          className="text-2xl font-semibold outline-none"
+      <header className="flex shrink-0 items-center gap-3 py-3 pr-16 pl-4">
+        <Link
+          to={routes.home}
+          className="back-button"
+          aria-label="Back to Today"
         >
-          Messages
-        </h1>
-        <p
-          role="status"
-          className="text-sm text-muted-foreground"
-        >
-          {!online
-            ? 'Offline · Reconnect for new messages'
-            : status === 'live'
-              ? 'Conversation connected'
-              : 'Connecting to live updates…'}
-        </p>
+          <ArrowLeft
+            aria-hidden="true"
+            className="size-5"
+          />
+        </Link>
+        <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--coach)]">
+          <MessageCircle
+            aria-hidden="true"
+            className="size-5"
+          />
+        </div>
+        <div className="min-w-0">
+          <h1
+            ref={heading}
+            tabIndex={-1}
+            className="text-xl font-extrabold tracking-tight outline-none"
+          >
+            Messages
+          </h1>
+          <p
+            role="status"
+            className="text-xs text-muted-foreground"
+          >
+            {!online
+              ? 'Offline · Reconnect for new messages'
+              : status === 'live'
+                ? 'Your coach · Conversation connected'
+                : 'Connecting to live updates…'}
+          </p>
+        </div>
       </header>
       <MessageScrollerProvider
         defaultScrollPosition="end"

@@ -29,10 +29,6 @@ try {
     await expect(locator).toBeVisible();
     await locator.evaluate((node) => node.scrollIntoView({block: 'center', behavior: 'instant'}));
     await locator.click({trial: true});
-    if (await locator.evaluate((node) => node.tagName === 'BUTTON')) {
-      await device.tap({pkg: app, text: (await locator.innerText()).trim()});
-      return;
-    }
     const view = await device.info({clazz: 'android.webkit.WebView', pkg: app});
     const target = await locator.boundingBox();
     if (!target) {
@@ -69,6 +65,7 @@ try {
   await tap(page.getByRole('button', {name: 'Verify and continue'}));
   await expect(page.getByRole('heading', {name: 'Today', exact: true})).toBeVisible({timeout: 15_000});
   await open('/messages');
+  await expect(page.getByRole('button', {name: 'Send', exact: true})).toBeDisabled();
   await tap(page.getByLabel('Message your coach', {exact: true}));
   await device.input.type('My Android message survives a restart');
   await expect(page.getByLabel('Message your coach', {exact: true})).toHaveValue(
@@ -83,6 +80,11 @@ try {
   await device.screenshot({path: 'tests/messages/artifacts/android-keyboard.png'});
   await device.input.press('Back');
   await expect(page.locator('html')).not.toHaveAttribute('data-keyboard', 'open');
+  await expect(page.getByRole('heading', {name: 'Messages', exact: true})).toBeVisible();
+  await tap(page.getByRole('button', {name: 'Attach', exact: true}));
+  await expect(page.getByRole('dialog', {name: 'Add to your message'})).toBeVisible();
+  await device.input.press('Back');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.getByRole('heading', {name: 'Messages', exact: true})).toBeVisible();
   await tap(page.getByRole('button', {name: 'Attach', exact: true}));
   await tap(page.getByRole('button', {name: 'Choose photo', exact: true}));
@@ -110,13 +112,24 @@ try {
   expect((await read()).count).toBe(0);
   await device.shell('svc wifi enable');
   await device.shell('svc data enable');
+  await expect(page.getByText('Your coach · Conversation connected', {exact: true})).toBeVisible({timeout: 30_000});
   await expect(page.getByRole('button', {name: 'Send', exact: true})).toBeEnabled();
   expect((await read()).count).toBe(0);
+  await tap(page.getByLabel('Message your coach', {exact: true}));
+  await expect(page.locator('html')).toHaveAttribute('data-keyboard', 'open');
+  const beforeSend = await page.getByRole('button', {name: 'Send', exact: true}).boundingBox();
+  expect(beforeSend.y + beforeSend.height).toBeLessThanOrEqual(
+    await page.evaluate(() => visualViewport.height + visualViewport.offsetTop),
+  );
+  await device.screenshot({path: 'tests/messages/artifacts/android-send-keyboard.png'});
   await tap(page.getByRole('button', {name: 'Send', exact: true}));
   await expect(page.getByText('Message sent.', {exact: true})).toBeVisible({timeout: 30_000});
+  await expect(page.getByText('Your coach · Conversation connected', {exact: true})).toBeVisible({timeout: 15_000});
   await tap(page.getByRole('button', {name: 'Open photo', exact: true}));
   await expect
-    .poll(() => page.getByRole('img', {name: 'Shared in this conversation'}).evaluate((node) => node.naturalWidth))
+    .poll(() => page.getByRole('img', {name: 'Shared in this conversation'}).evaluate((node) => node.naturalWidth), {
+      timeout: 15_000,
+    })
     .toBeGreaterThan(0);
   await device.input.press('Home');
   await device.shell(`am start -W -n ${app}/.MainActivity`);

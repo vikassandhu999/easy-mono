@@ -1,5 +1,6 @@
+import {ArrowUp, Camera, ImagePlus, LoaderCircle, Paperclip, Video, X} from 'lucide-react';
 import {useEffect, useRef, useState} from 'react';
-import {useForm, useWatch} from 'react-hook-form';
+import {Controller, useForm, useWatch} from 'react-hook-form';
 import {uploadAttachment, validateAttachment} from '../api/attachments';
 import {ApiError} from '../api/client';
 import {useSendMessage} from '../api/conversation';
@@ -7,14 +8,15 @@ import {readDraft, removeDraft} from '../api/drafts';
 import {removePhoto, type StoredPhoto, savePhoto} from '../api/photo-store';
 import {getSession} from '../api/session';
 import {isNative} from '../api/storage';
+import {BottomSheet} from '../ui/bottom-sheet';
 import {Button} from '../ui/button';
 import {Confirm} from '../ui/confirm';
 import {useOnline} from '../ui/connection-status';
 import {DraftStatus} from '../ui/draft-status';
 import {FormError} from '../ui/form-error';
-import {FormField} from '../ui/form-field';
 import {useMessageScroller} from '../ui/message-scroller';
 import {pickNativePhoto} from '../ui/photo-picker';
+import {Textarea} from '../ui/textarea';
 import {messageAttempt, messageResource} from './message-draft';
 import {useMessageDraft} from './use-message-draft';
 
@@ -72,7 +74,7 @@ export function Composer() {
   }
   return (
     <>
-      {sent && (
+      {sent && !store.draft.body && store.draft.mediaIds.length === 0 && (
         <p
           role="status"
           className="shrink-0 px-5 py-1 text-sm text-muted-foreground"
@@ -112,8 +114,9 @@ function MessageComposer({store, onSent}: {store: Store; onSent: () => void}) {
     if (current && !current.attempt && current.body !== body) {
       store.update({...current, body});
       setError('');
+      form.clearErrors('body');
     }
-  }, [body, store]);
+  }, [body, store, form]);
   useEffect(() => {
     if (!draftId || !sessionId) {
       return;
@@ -156,7 +159,8 @@ function MessageComposer({store, onSent}: {store: Store; onSent: () => void}) {
     if (!(await store.update({...current, mediaIds: [...current.mediaIds, photo.id]}))) {
       throw new Error('The attachment is stored, but this draft could not update. Reopen Messages before sending.');
     }
-    setAttachmentsOpen(true);
+    setAttachmentsOpen(false);
+    form.clearErrors('body');
   }
   function add(file: File) {
     work(async () => {
@@ -209,6 +213,11 @@ function MessageComposer({store, onSent}: {store: Store; onSent: () => void}) {
     });
   }
   function send() {
+    const draft = store.current.current;
+    if (draft && !draft.attempt && !body.trim() && draft.mediaIds.length === 0) {
+      form.setError('body', {message: 'Write a message or add an attachment.'}, {shouldFocus: true});
+      return;
+    }
     work(async () => {
       const current = store.current.current;
       if (!current || !store.session || !online) {
@@ -216,10 +225,6 @@ function MessageComposer({store, onSent}: {store: Store; onSent: () => void}) {
       }
       let attempt = current.attempt;
       if (!attempt) {
-        if (!body.trim() && current.mediaIds.length === 0) {
-          form.setError('body', {message: 'Write a message or add an attachment.'}, {shouldFocus: true});
-          return;
-        }
         const next = {...current, body};
         if (!(await store.update(next, true))) {
           throw new Error('Your message could not be saved on this device. Nothing was sent. Try again.');
@@ -272,21 +277,13 @@ function MessageComposer({store, onSent}: {store: Store; onSent: () => void}) {
   }
   return (
     <form
-      className="message-composer space-y-3 border-t border-border bg-surface px-5 py-3"
+      className="message-composer space-y-2 bg-background px-4 py-3"
       onSubmit={form.handleSubmit(send)}
       noValidate
     >
-      <FormField
-        control={form.control}
-        name="body"
-        label="Message your coach"
-        multiline
-        maxLength={4000}
-        isDisabled={locked}
-      />
       {draft.mediaIds.length > 0 && (
         <div
-          className="space-y-2"
+          className="max-h-36 space-y-2 overflow-y-auto rounded-2xl bg-white p-3"
           aria-label="Message attachments"
           role="group"
         >
@@ -309,12 +306,15 @@ function MessageComposer({store, onSent}: {store: Store; onSent: () => void}) {
                 </span>
                 <Button
                   variant="ghost"
-                  size="sm"
+                  className="size-11 shrink-0 rounded-full p-0"
                   isDisabled={locked}
                   onPress={() => remove(id)}
                   aria-label={`Remove attachment ${index + 1}`}
                 >
-                  Remove
+                  <X
+                    aria-hidden="true"
+                    className="size-4"
+                  />
                 </Button>
               </div>
             );
@@ -322,39 +322,55 @@ function MessageComposer({store, onSent}: {store: Store; onSent: () => void}) {
         </div>
       )}
       {attachmentsOpen && !draft.attempt && (
-        <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
-            Up to 4 attachments: photos 15 MB, video 50 MB, audio 10 MB. Uploads start when you send.
-          </p>
-          <div className="flex flex-wrap gap-2">
+        <BottomSheet
+          title="Add to your message"
+          onClose={() => setAttachmentsOpen(false)}
+        >
+          <div className="space-y-3">
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Up to 4 attachments: photos 15 MB, video 50 MB, audio 10 MB. Uploads start when you send.
+            </p>
             <Button
-              variant="outline"
-              size="sm"
+              variant="secondary"
+              className="w-full justify-start gap-3"
               isDisabled={locked || draft.mediaIds.length >= 4}
               onPress={() => (isNative ? pick('gallery') : photos.current?.click())}
             >
+              <ImagePlus
+                aria-hidden="true"
+                className="size-5"
+              />
               Choose photo
             </Button>
             {isNative && (
               <Button
-                variant="outline"
-                size="sm"
+                variant="secondary"
+                className="w-full justify-start gap-3"
                 isDisabled={locked || draft.mediaIds.length >= 4}
                 onPress={() => pick('camera')}
               >
+                <Camera
+                  aria-hidden="true"
+                  className="size-5"
+                />
                 Take photo
               </Button>
             )}
             <Button
-              variant="outline"
-              size="sm"
+              variant="secondary"
+              className="w-full justify-start gap-3"
               isDisabled={locked || draft.mediaIds.length >= 4}
               onPress={() => input.current?.click()}
             >
+              <Video
+                aria-hidden="true"
+                className="size-5"
+              />
               Video or audio
             </Button>
+            <FormError message={error} />
           </div>
-        </div>
+        </BottomSheet>
       )}
       <input
         ref={photos}
@@ -394,36 +410,94 @@ function MessageComposer({store, onSent}: {store: Store; onSent: () => void}) {
           This message is kept until delivery is confirmed. Retrying cannot send a duplicate.
         </p>
       ) : (
-        (body || draft.mediaIds.length > 0) && <DraftStatus state={store.state} />
+        (body || draft.mediaIds.length > 0) && (
+          <div className="flex items-center justify-between gap-2">
+            <DraftStatus state={store.state} />
+            <Button
+              variant="ghost"
+              size="sm"
+              isDisabled={busy}
+              onPress={() => setDiscard(true)}
+            >
+              Discard
+            </Button>
+          </div>
+        )
       )}
       {!online && <p className="text-sm text-muted-foreground">Reconnect to send. Nothing sends automatically.</p>}
-      <FormError message={error} />
-      <div className="flex items-center justify-between gap-2">
+      {!attachmentsOpen && <FormError message={error} />}
+      {conflict && (
         <Button
           variant="ghost"
-          size="sm"
-          isDisabled={locked}
-          aria-expanded={attachmentsOpen}
-          onPress={() => setAttachmentsOpen((open) => !open)}
+          isDisabled={busy}
+          onPress={() => setDiscard(true)}
         >
-          {attachmentsOpen ? 'Close attachments' : 'Attach'}
+          Discard conflicting draft
         </Button>
-        {(body || draft.mediaIds.length > 0) && (!draft.attempt || conflict) && (
-          <Button
-            variant="ghost"
-            size="sm"
-            isDisabled={busy}
-            onPress={() => setDiscard(true)}
-          >
-            {conflict ? 'Discard conflicting draft' : 'Discard'}
-          </Button>
-        )}
+      )}
+      <div className="flex items-end gap-2">
+        <Button
+          variant="ghost"
+          className="size-12 shrink-0 rounded-full p-0"
+          isDisabled={locked}
+          aria-label="Attach"
+          aria-expanded={attachmentsOpen}
+          onPress={() => setAttachmentsOpen(true)}
+        >
+          <Paperclip
+            aria-hidden="true"
+            className="size-5"
+          />
+        </Button>
+        <Controller
+          control={form.control}
+          name="body"
+          render={({field, fieldState}) => (
+            <div className="min-w-0 flex-1">
+              <Textarea
+                {...field}
+                aria-label="Message your coach"
+                aria-invalid={Boolean(fieldState.error)}
+                aria-describedby={fieldState.error ? 'message-body-error' : undefined}
+                className="min-h-12 resize-none rounded-3xl bg-white px-4 py-3"
+                rows={1}
+                placeholder="Write a message…"
+                maxLength={4000}
+                disabled={locked}
+              />
+              {fieldState.error && (
+                <p
+                  id="message-body-error"
+                  role="alert"
+                  className="mt-1 text-sm text-destructive"
+                >
+                  {fieldState.error.message}
+                </p>
+              )}
+            </div>
+          )}
+        />
         <Button
           type="submit"
+          className={draft.attempt ? 'min-h-12 shrink-0 rounded-full px-4' : 'size-12 shrink-0 rounded-full p-0'}
           isPending={busy}
-          isDisabled={!online || busy}
+          isDisabled={!online || busy || (!draft.attempt && !body.trim() && draft.mediaIds.length === 0)}
+          preventFocusOnPress
+          aria-label={draft.attempt ? 'Retry send' : 'Send'}
         >
-          {draft.attempt ? 'Retry send' : 'Send'}
+          {busy ? (
+            <LoaderCircle
+              aria-hidden="true"
+              className="size-5 animate-spin motion-reduce:animate-none"
+            />
+          ) : draft.attempt ? (
+            'Retry'
+          ) : (
+            <ArrowUp
+              aria-hidden="true"
+              className="size-5"
+            />
+          )}
         </Button>
       </div>
       {discard && (

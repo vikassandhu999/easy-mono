@@ -496,6 +496,7 @@ final class AuthenticationTests: XCTestCase {
         app.open(messageURL)
         let input = app.webViews.textViews["Message your coach"]
         XCTAssertTrue(input.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertFalse(app.buttons["Send"].isEnabled, "An empty composer has nothing to send")
         input.tap()
         input.typeText("My iPhone message survives a restart")
         XCTAssertEqual(input.value as? String, "My iPhone message survives a restart")
@@ -525,6 +526,19 @@ final class AuthenticationTests: XCTestCase {
         app.open(messageURL)
         XCTAssertTrue(app.buttons["Remove attachment 1"].waitForExistence(timeout: 15))
         XCTAssertEqual(input.value as? String, "My iPhone message survives a restart")
+        input.tap()
+        input.typeText(" ")
+        input.typeText(XCUIKeyboardKey.delete.rawValue)
+        XCTAssertEqual(input.value as? String, "My iPhone message survives a restart")
+        let visibleKeyboard = app.keyboards.firstMatch
+        XCTAssertTrue(visibleKeyboard.waitForExistence(timeout: 10))
+        XCTAssertGreaterThan(visibleKeyboard.frame.height, 150)
+        XCTAssertLessThan(visibleKeyboard.frame.minY, app.frame.maxY - 100)
+        XCTAssertLessThanOrEqual(app.buttons["Send"].frame.maxY, visibleKeyboard.frame.minY + 2)
+        let beforeSend = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        beforeSend.name = "iPhone message send above visible keyboard"
+        beforeSend.lifetime = .keepAlways
+        add(beforeSend)
         app.buttons["Send"].tap()
         XCTAssertTrue(app.staticTexts["Message sent."].waitForExistence(timeout: 20), app.debugDescription)
         XCTAssertTrue(app.buttons["Open photo"].waitForExistence(timeout: 15))
@@ -537,7 +551,8 @@ final class AuthenticationTests: XCTestCase {
         app.launch()
         app.open(messageURL)
         XCTAssertTrue(app.staticTexts["1 message"].waitForExistence(timeout: 15), app.debugDescription)
-        XCTAssertEqual(input.value as? String ?? "", "")
+        // WebKit exposes the placeholder as the accessibility value of an empty textarea.
+        XCTAssertEqual(input.value as? String, "Write a message…")
         app.buttons["Open photo"].tap()
         XCTAssertTrue(app.images["Shared in this conversation"].waitForExistence(timeout: 15), app.debugDescription)
         let saved = XCTAttachment(screenshot: app.screenshot())

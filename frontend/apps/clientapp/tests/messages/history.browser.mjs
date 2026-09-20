@@ -60,8 +60,10 @@ try {
   await page.getByRole('link', {name: 'Messages', exact: true}).click();
   await expect(page.getByText("We couldn't load messages.", {exact: false})).toBeVisible();
   failInitial = false;
-  await page.getByRole('button', {name: 'Try again', exact: true}).click();
-  await expect(page.getByText('65 messages', {exact: true})).toBeVisible();
+  // Live connection recovery can replace the transient error while a tap is pending.
+  // The header refresh remains available in both states and explicitly retries history.
+  await page.getByRole('button', {name: 'Refresh messages', exact: true}).click();
+  await expect(page.getByText('65 messages', {exact: true})).toBeAttached();
   await expect(page.getByText('Coach guidance 65', {exact: true})).toBeVisible();
   await expect(page.getByText('Coach guidance 01', {exact: true})).toHaveCount(0);
   const viewport = page.getByRole('region', {name: 'Conversation history', exact: true});
@@ -78,9 +80,9 @@ try {
   await expect(page.getByText('Coach guidance 01', {exact: true})).toBeVisible();
   expect(cursors.size).toBeGreaterThanOrEqual(3);
   expect(await page.locator('[data-message-id]').count()).toBe(65);
-  await expect(page.getByText('65 messages', {exact: true})).toBeVisible();
+  await expect(page.getByText('65 messages', {exact: true})).toBeAttached();
   await send('A new question while you read older messages.');
-  await expect(page.getByText('66 messages', {exact: true})).toBeVisible();
+  await expect(page.getByText('66 messages', {exact: true})).toBeAttached();
   expect((await api('/v1/client/conversation', {token})).data.unread_count).toBe(1);
   await page.getByRole('button', {name: 'Jump to latest'}).click();
   await expect.poll(async () => (await api('/v1/client/conversation', {token})).data.unread_count).toBe(0);
@@ -100,7 +102,7 @@ try {
   });
   await page.getByRole('link', {name: 'View response: A check on your goals'}).click();
   await expect(page.getByText('Feel stronger every week', {exact: true})).toBeVisible();
-  await page.getByRole('link', {name: 'Messages', exact: true}).click();
+  await page.getByRole('link', {name: 'Back to messages', exact: true}).click();
   await expect(page.getByText('Let us build on these goals.', {exact: true})).toBeVisible();
   expect(errors).toEqual([]);
   await writeFile(

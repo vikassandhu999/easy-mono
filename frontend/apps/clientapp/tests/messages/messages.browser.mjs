@@ -36,9 +36,26 @@ try {
       await page.getByRole('link', {name: 'Messages', exact: true}).click();
       await expect(page.getByRole('heading', {name: 'Messages', exact: true})).toBeVisible();
       await expect(page.getByText('How did your training feel today?', {exact: true})).toBeVisible();
-      await expect(page.getByText('Conversation connected', {exact: true})).toBeVisible();
+      await expect(page.getByText('Your coach · Conversation connected', {exact: true})).toBeVisible();
       await expect.poll(async () => (await api('/v1/client/conversation', {token})).data.unread_count).toBe(0);
       const input = page.getByLabel('Message your coach', {exact: true});
+      await expect(page.getByRole('button', {name: 'Send', exact: true})).toBeDisabled();
+      await input.fill('   ');
+      await expect(page.getByRole('button', {name: 'Send', exact: true})).toBeDisabled();
+      await input.fill('');
+      expect((await api('/v1/client/conversation/history', {token})).count).toBe(1);
+      await page.getByRole('button', {name: 'Attach', exact: true}).click();
+      await expect(page.getByRole('dialog', {name: 'Add to your message'})).toBeVisible();
+      if (width === 375) {
+        await page
+          .getByLabel('Choose message photo')
+          .setInputFiles({name: 'unsupported.txt', mimeType: 'text/plain', buffer: Buffer.from('not a photo')});
+        await expect(page.getByRole('dialog').getByRole('alert')).toBeVisible();
+        await expect(page.getByRole('dialog').getByRole('alert')).toBeFocused();
+        await expect(page.getByRole('img', {name: 'Attachment 1', exact: true})).toHaveCount(0);
+      }
+      await page.screenshot({path: `tests/messages/artifacts/attachments-${width}.png`});
+      await page.getByRole('button', {name: 'Close', exact: true}).click();
       await input.fill('The last set felt strong.\nCan we review my technique?');
       await expect(page.getByText('Draft saved on this device.', {exact: true})).toBeVisible();
       await page.reload();
@@ -65,6 +82,7 @@ try {
       await expect(input).toBeDisabled();
       expect(writes).toBe(1);
       await page.unroute('**/v1/client/conversation/messages');
+      await expect(page.getByRole('button', {name: 'Retry send', exact: true})).toHaveText('Retry');
       await page.getByRole('button', {name: 'Retry send', exact: true}).click();
       await expect(page.getByText('Message sent.', {exact: true})).toBeVisible();
       await expect(input).toHaveValue('');
@@ -81,10 +99,11 @@ try {
         480,
       );
       const sendBounds = await page.getByRole('button', {name: 'Send', exact: true}).boundingBox();
-      const navBounds = await page.getByRole('navigation', {name: 'Main navigation'}).boundingBox();
-      expect(sendBounds.y + sendBounds.height).toBeLessThanOrEqual(navBounds.y);
+      await expect(page.getByRole('navigation', {name: 'Main navigation'})).toHaveCount(0);
+      expect(sendBounds.y + sendBounds.height).toBeLessThanOrEqual(812);
+      expect(sendBounds.height).toBeGreaterThanOrEqual(44);
       await page.screenshot({path: `tests/messages/artifacts/conversation-${width}.png`, fullPage: true});
-      await page.getByRole('link', {name: 'Today', exact: true}).click();
+      await page.getByRole('link', {name: 'Back to Today', exact: true}).click();
       await expect(page.getByRole('link', {name: 'Message your coach', exact: true})).toBeVisible();
       await page.getByRole('link', {name: 'Message your coach', exact: true}).click();
       await expect(page.getByText('How did your training feel today?', {exact: true})).toBeVisible();

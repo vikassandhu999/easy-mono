@@ -1,4 +1,5 @@
 import {focusManager} from '@tanstack/react-query';
+import {ChevronRight, ClipboardCheck, MessageCircle, RefreshCw} from 'lucide-react';
 import {useEffect, useRef, useState, useSyncExternalStore} from 'react';
 import {generatePath, Link} from 'react-router-dom';
 import {useAttachmentUrls} from '../api/attachments';
@@ -78,19 +79,24 @@ export function History() {
 
   return (
     <div className="min-h-0 flex flex-1 flex-col">
-      <div className="flex shrink-0 items-center justify-between px-5">
-        <p className="text-sm text-muted-foreground">
+      <div className="absolute top-3 right-4">
+        <p className="sr-only">
           {count === null ? 'Conversation history' : `${count} ${count === 1 ? 'message' : 'messages'}`}
         </p>
         <Button
           variant="ghost"
           size="sm"
+          aria-label="Refresh messages"
+          className="size-11 rounded-full p-0"
           isPending={query.isFetching}
           onPress={() => {
             query.refetch();
           }}
         >
-          Refresh messages
+          <RefreshCw
+            aria-hidden="true"
+            className="size-4"
+          />
         </Button>
       </div>
       {query.data && (
@@ -145,6 +151,12 @@ export function History() {
             )}
             {query.data && items.length === 0 && (
               <MessageScrollerItem messageId="empty">
+                <div className="mb-4 grid size-16 place-items-center rounded-3xl bg-[var(--coach)]">
+                  <MessageCircle
+                    aria-hidden="true"
+                    className="size-7"
+                  />
+                </div>
                 <h2 className="text-xl font-semibold">Your coach is a message away</h2>
                 <p className="mt-2 text-muted-foreground">Ask a question about your plan or share how today went.</p>
               </MessageScrollerItem>
@@ -157,18 +169,32 @@ export function History() {
               >
                 <Message align={message.sender_type === 'client' ? 'end' : 'start'}>
                   <MessageContent>
-                    <MessageHeader>{message.sender_type === 'client' ? 'You' : 'Coach'}</MessageHeader>
+                    <MessageHeader className="sr-only">
+                      {message.sender_type === 'client' ? 'You' : 'Coach'}
+                    </MessageHeader>
                     {message.body && (
                       <Bubble variant={message.sender_type === 'client' ? 'default' : 'muted'}>
-                        <BubbleContent className="whitespace-pre-wrap text-base">{message.body}</BubbleContent>
+                        <BubbleContent
+                          className={`whitespace-pre-wrap rounded-[1.4rem] px-4 py-3 text-base ${message.sender_type === 'coach' ? 'rounded-bl-md bg-white' : 'rounded-br-md'}`}
+                        >
+                          {message.body}
+                        </BubbleContent>
                       </Bubble>
                     )}
                     {message.embed && (
                       <Link
-                        className="text-link rounded-xl bg-muted px-3 py-2 max-w-full"
-                        to={generatePath(routes.form, {id: message.embed.snapshot.form_assignment_id})}
+                        className="flex min-h-16 max-w-full items-center gap-3 rounded-2xl bg-[var(--training)] px-4 py-3 font-semibold text-primary"
+                        to={`${generatePath(routes.form, {id: message.embed.snapshot.form_assignment_id})}?returnTo=${encodeURIComponent(routes.messages)}`}
                       >
-                        View response: {message.embed.snapshot.title}
+                        <ClipboardCheck
+                          aria-hidden="true"
+                          className="size-5 shrink-0"
+                        />
+                        <span>View response: {message.embed.snapshot.title}</span>
+                        <ChevronRight
+                          aria-hidden="true"
+                          className="size-5 shrink-0"
+                        />
                       </Link>
                     )}
                     {message.attachments.map((attachment) => (
@@ -247,7 +273,10 @@ function MessageMedia({attachment}: {attachment: ChatMessage['attachments'][numb
       ? 'Video'
       : 'Audio';
   return (
-    <div className="max-w-full space-y-2">
+    <div
+      data-slot="message-media"
+      className="max-w-full space-y-2"
+    >
       <Button
         variant="outline"
         size="sm"

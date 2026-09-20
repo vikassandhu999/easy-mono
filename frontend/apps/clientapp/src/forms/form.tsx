@@ -150,7 +150,11 @@ export function FormDetail() {
           to={back}
           className="mt-8 flex min-h-12 items-center justify-center rounded-2xl bg-primary px-4 font-semibold text-primary-foreground"
         >
-          {back.startsWith(routes.progress) ? 'Back to your progress' : 'Back to your forms'}
+          {back === routes.messages
+            ? 'Back to messages'
+            : back.startsWith(routes.progress)
+              ? 'Back to your progress'
+              : 'Back to your forms'}
         </Link>
       </Page>
     );

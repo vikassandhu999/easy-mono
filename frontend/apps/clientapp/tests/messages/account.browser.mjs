@@ -15,7 +15,7 @@ try {
     await expect(page.getByRole('heading', {name: 'Today', exact: true})).toBeVisible();
     await page.getByRole('link', {name: 'Messages', exact: true}).click();
     await expect(page.getByLabel('Message your coach', {exact: true})).toBeVisible();
-    await expect(page.getByText('Conversation connected', {exact: true})).toBeVisible();
+    await expect(page.getByText('Your coach · Conversation connected', {exact: true})).toBeVisible();
     const session = await page.evaluate(() => JSON.parse(localStorage.getItem('clientapp.auth.v1')));
     clients.push({page, session});
   }

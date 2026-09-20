@@ -19,7 +19,18 @@ final class AuthenticationTests: XCTestCase {
         XCTAssertTrue(code.waitForExistence(timeout: 15), app.debugDescription)
         code.tap()
         code.typeText("123456")
-        app.buttons["Verify and continue"].tap()
+        let keyboard = app.keyboards.firstMatch
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 5))
+        XCTAssertGreaterThan(keyboard.frame.height, 150)
+        XCTAssertLessThan(keyboard.frame.minY, app.frame.maxY - 100, "Software keyboard is visible on screen")
+        let verify = app.buttons["Verify and continue"]
+        XCTAssertTrue(verify.isHittable)
+        XCTAssertLessThanOrEqual(verify.frame.maxY, keyboard.frame.minY + 2, "Verify stays above the keyboard")
+        let codeScreen = XCTAttachment(screenshot: app.screenshot())
+        codeScreen.name = "iPhone verification above keyboard"
+        codeScreen.lifetime = .keepAlways
+        add(codeScreen)
+        verify.tap()
         let account = app.links["Your account"]
         XCTAssertTrue(account.waitForExistence(timeout: 15), app.debugDescription)
         account.tap()

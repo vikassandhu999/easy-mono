@@ -6,7 +6,7 @@ const browser = await chromium.launch();
 const results = [];
 await mkdir('tests/auth/artifacts', {recursive: true});
 try {
-  for (const width of [375, 768]) {
+  for (const width of [375, 768, 1280]) {
     const fixture = await inviteClient();
     const context = await browser.newContext({
       baseURL: process.env.CLIENT_APP_URL || 'http://localhost:1315',

@@ -21,7 +21,7 @@ export function Invitation() {
         description="This link is incomplete. Ask your coach to send another invitation."
       >
         <Link
-          className="text-link"
+          className="auth-primary-link"
           to={routes.login}
         >
           Sign in
@@ -35,9 +35,14 @@ export function Invitation() {
         title="You're signed in"
         description="Sign out before accepting an invitation for another account."
       >
-        <Button onPress={clearSession}>Sign out to continue</Button>
+        <Button
+          className="w-full"
+          onPress={clearSession}
+        >
+          Sign out to continue
+        </Button>
         <Link
-          className="text-link block mt-5"
+          className="text-link flex justify-center mt-5"
           to={routes.home}
         >
           Return to your account
@@ -75,6 +80,7 @@ function InvitationPreview({token}: {token: string}) {
         )}
       >
         <Button
+          className="w-full"
           onPress={() => {
             query.refetch();
           }}
@@ -82,6 +88,15 @@ function InvitationPreview({token}: {token: string}) {
         >
           Try again
         </Button>
+        <p className="mt-5 text-sm text-muted-foreground">
+          If the link no longer works, ask your coach for a new invitation.
+        </p>
+        <Link
+          className="text-link mt-3 flex justify-center"
+          to={routes.login}
+        >
+          Sign in to an existing account
+        </Link>
       </AuthLayout>
     );
   }
@@ -97,7 +112,7 @@ function InvitationPreview({token}: {token: string}) {
         }
       >
         <Link
-          className="text-link"
+          className="auth-primary-link"
           to={routes.login}
         >
           Sign in
@@ -134,6 +149,7 @@ function InvitationForm({token, business, email}: {token: string; business: stri
     <AuthLayout
       title={`Join ${business}`}
       description="Verify your email to accept your coach's invitation."
+      artwork="welcome"
     >
       <form
         noValidate
@@ -147,6 +163,7 @@ function InvitationForm({token, business, email}: {token: string; business: stri
           type="email"
           autoComplete="email"
           isRequired
+          isDisabled={form.formState.isSubmitting}
         />
         <FormError message={form.formState.errors.root?.message} />
         <SubmitButton pending={form.formState.isSubmitting}>Continue with email</SubmitButton>

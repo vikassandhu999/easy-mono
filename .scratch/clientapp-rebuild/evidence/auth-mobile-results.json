@@ -1,0 +1,17 @@
+[
+  {
+    "width": 375,
+    "passed": true,
+    "scenarios": "Email/code validation, real missing account, invitation failure/retry and long name, Change email, challenge restart, invalid code, resend cooldown/failure/retry, accepted invitation, signed-in boundary and protected return"
+  },
+  {
+    "width": 768,
+    "passed": true,
+    "scenarios": "Email/code validation, real missing account, invitation failure/retry and long name, Change email, challenge restart, invalid code, resend cooldown/failure/retry, accepted invitation, signed-in boundary and protected return"
+  },
+  {
+    "width": 1280,
+    "passed": true,
+    "scenarios": "Email/code validation, real missing account, invitation failure/retry and long name, Change email, challenge restart, invalid code, resend cooldown/failure/retry, accepted invitation, signed-in boundary and protected return"
+  }
+]

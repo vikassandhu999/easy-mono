@@ -6,9 +6,9 @@ This continues the authorized rebuild on `clientapp-rebuild`, including its exis
 
 | Route | Role | Viewport | States covered | Result | Findings |
 | --- | --- | --- | --- | --- | --- |
-| `/login` | client | 375 / 768 / 1280 | Pending | Pending | UI-01 |
-| `/verify` | client | 375 / 768 / 1280 | Real OTP join; bad OTP/restart at 375/768 | Behavior passes; full visual/state pass pending | UI-01 |
-| `/invite/:token` | client | 375 / 768 / 1280 | Real join; screenshot | Behavior passes; failure/long content visual pass pending | UI-01 |
+| `/login` | client | 375 / 768 / 1280 | Welcome, empty/malformed email, missing account, protected return, session expiry | Browser/native pass; physical autofill/usability separate | UI-16 |
+| `/verify` | client | 375 / 768 / 1280, iOS/Android | Compact code entry, empty/partial/invalid OTP, Change email, cooldown/resend/failure/focus, restart, keyboard-open Verify | Browser/native pass; physical autofill/usability separate | UI-16 |
+| `/invite/:token` | client | 375 / 768 / 1280, iOS/Android | Loading, temporary failure/retry, long coach name, real join/accepted/signed-in, injected expired state and sign-in return | Browser/native pass; physical autofill/usability separate | UI-16 |
 | `/` | client | 375 / 768 / 1280 | Empty training/nutrition, pending intake, unread coach message, card navigation | Pass for exercised states; assigned/active workout visual pass pending | UI-01 |
 | `/account` | client | 375 / 768 / 1280, iOS/Android | Mobile overview, editor rows, coaching, progress, sign-out | Pass for exercised states | UI-06 |
 | `/account/details` | client | 375 / 768 / 1280, iOS/Android | Names/phone, save/error/retry, draft/session expiry, account isolation, keyboard/restart/logout | Browser/native regression passes | UI-06 |
@@ -55,3 +55,5 @@ Shared consumers: `Page` serves account, forms, training, nutrition and progress
 - UI-13: Messages mobile pass uses its own header, compact composer with touch-sized actions, attachment sheet and readable bubbles. Send becomes available for text or attachments; uncertain sends retain an explicit Retry action. Browser scenarios pass, including offline media, lost responses, server counts/read watermarks and account isolation. Native verification is tracked in messaging.md.
 - UI-14: A shared form depended on global navigation for returning to Messages. Links now carry validated returnTo and the saved reader has an explicit Back to messages action; the real shared-response browser path passes. Prevention: RM-243.
 - UI-15: Attachment validation rendered outside the active sheet. It now renders and receives focus inside that sheet; the unsupported-file browser check verifies the alert and no added attachment. Prevention: RM-232.
+
+- UI-16: Auth now uses entry-only welcome art, a compact code screen with a clear Change email return, full-width resend and useful invitation recovery. Browser checks cover three widths, including actual OTP/account rejection and challenge restart; native verification requires real keyboard bounds and first-tap authentication. An initial disabled-code change failed focused correction and was removed; RM-232 prevents recurrence. See auth-mobile.md and evidence/auth-mobile-*.

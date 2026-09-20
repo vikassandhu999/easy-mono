@@ -13,7 +13,7 @@ export async function api(path, {method = 'GET', body, token} = {}) {
   return data;
 }
 
-export async function inviteClient({firstName = 'Alex'} = {}) {
+export async function inviteClient({firstName = 'Alex', businessName = 'Everyday Coaching'} = {}) {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const coachEmail = `coach-${suffix}@example.test`;
   const email = `client-${suffix}@example.test`;
@@ -22,7 +22,7 @@ export async function inviteClient({firstName = 'Alex'} = {}) {
   await api('/v1/businesses', {
     method: 'POST',
     token: guest.access_token,
-    body: {name: 'Everyday Coaching', handle: `mobile-${suffix}`},
+    body: {name: businessName, handle: `mobile-${suffix}`},
   });
   const coach = await api('/v1/auth/token', {
     method: 'POST',

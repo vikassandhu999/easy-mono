@@ -320,6 +320,28 @@ a:focus-visible {
 }
 .auth-page {
   padding-top: 1rem;
+  padding-bottom: 2rem;
+}
+.auth-code [data-slot="input"] {
+  height: 4rem;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.auth-primary-link {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 700;
+}
+:root[data-keyboard="open"] .welcome-art {
+  display: none;
 }
 [data-slot="input"],
 [data-slot="textarea"],

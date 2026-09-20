@@ -32,6 +32,7 @@ export function Login() {
     <AuthLayout
       title="Welcome back"
       description="Enter your email to receive a sign-in code."
+      artwork="welcome"
     >
       <form
         noValidate
@@ -45,6 +46,7 @@ export function Login() {
           type="email"
           autoComplete="email"
           isRequired
+          isDisabled={form.formState.isSubmitting}
         />
         <FormError message={form.formState.errors.root?.message} />
         <SubmitButton pending={form.formState.isSubmitting}>Continue with email</SubmitButton>

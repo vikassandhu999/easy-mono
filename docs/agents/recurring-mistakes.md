@@ -1336,6 +1336,11 @@ Plan assignment applies this to server date conflicts and stale-preview reloads:
 
 Auth applies this to invitation sends, code resends and confirmation failures. The auth browser suites require error focus, keyboard retry, editable code focus after resend, and a usable code-sign-in action after actual expired or used links. Temporary link failures retain confirmation retry.
 
+Clientapp code verification keeps the OTP input editable during verification so a rejected
+code can receive focus. Disabling it until the submit promise finishes loses that focus.
+Its `test:browser` and `test:auth:mobile` require the invalid code to be focused after the
+real server rejection; resend still disables entry while replacing the challenge.
+
 Training worksheet success notices receive focus, and reload starts by clearing the previous notice so repeated successful loads trigger the same handoff. `worksheet-audit.browser.mjs` verifies failed reload retention, keyboard retry and repeated success; personalization checks the shared behavior on client copies. Nutrition reload failure also closes the confirmation before focusing retained-draft feedback, so the error cannot remain hidden behind an open modal; its personalization suite verifies keyboard retry.
 
 Nutrition validation reveals the containing day before focusing an invalid name or portion. Handle each validation result once: an effect that keeps selecting the invalid day traps navigation. The nutrition worksheet audit switches away after validation, then submits again and requires a fresh focus handoff.

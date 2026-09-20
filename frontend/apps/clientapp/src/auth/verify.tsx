@@ -1,6 +1,6 @@
 import {useEffect, useRef, useState} from 'react';
 import {useForm} from 'react-hook-form';
-import {generatePath, Link, Navigate, useNavigate, useSearchParams} from 'react-router-dom';
+import {generatePath, Navigate, useNavigate, useSearchParams} from 'react-router-dom';
 import {useResend, useVerify, type VerifyRequest} from '../api/auth';
 import {type Challenge, getChallenge, saveChallenge} from '../api/challenge';
 import {errorMessage} from '../api/client';
@@ -110,11 +110,13 @@ function VerifyCode({initial, returnTo}: {initial: Challenge; returnTo: string})
     <AuthLayout
       title="Check your email"
       description={`Enter the 6-digit code sent to ${challenge.email}.`}
+      artwork="code"
+      back={busy ? undefined : {to: changeEmail, label: 'Change email'}}
     >
       <form
         noValidate
         onSubmit={submit}
-        className="space-y-5"
+        className="auth-code space-y-5"
       >
         <FormField
           control={form.control}
@@ -132,24 +134,22 @@ function VerifyCode({initial, returnTo}: {initial: Challenge; returnTo: string})
           tabIndex={-1}
           message={rootError?.message}
         />
-        <SubmitButton pending={busy}>Verify and continue</SubmitButton>
+        <SubmitButton
+          pending={busy}
+          preventFocusOnPress
+        >
+          Verify and continue
+        </SubmitButton>
       </form>
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
+      <div className="mt-4">
         <Button
-          variant="link"
+          variant="ghost"
+          className="w-full"
           isDisabled={busy || remaining > 0}
           onPress={sendAgain}
         >
           {remaining > 0 ? `Resend in ${remaining}s` : 'Resend code'}
         </Button>
-        {!busy && (
-          <Link
-            className="text-link text-sm"
-            to={changeEmail}
-          >
-            Change email
-          </Link>
-        )}
       </div>
       <p
         role="status"

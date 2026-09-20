@@ -14,6 +14,10 @@ await mkdir('tests/auth/artifacts', {recursive: true});
 const app = 'com.easy.client';
 const launch = () => device.shell(`am start -W -n ${app}/.MainActivity`);
 const pageForApp = async () => (await device.webView({pkg: app})).page();
+const stop = async () => {
+  await device.shell(`am force-stop ${app}`);
+  await expect.poll(() => device.webViews().some((view) => view.pkg() === app), {timeout: 15_000}).toBe(false);
+};
 try {
   const fixture = await inviteClient({firstName: ''});
   const assignment = (await api(`/v1/coach/clients/${fixture.clientId}/intake`, {token: fixture.coachToken})).data;
@@ -33,7 +37,7 @@ try {
       ],
     },
   });
-  await device.shell(`am force-stop ${app}`);
+  await stop();
   await device.shell(
     `am start -W -n ${app}/.MainActivity -a android.intent.action.VIEW -d easy://app/invite/${encodeURIComponent(fixture.token)}`,
   );
@@ -69,6 +73,11 @@ try {
   await tap(page.getByLabel('Verification code'));
   await device.input.type('123456');
   await expect(page.getByLabel('Verification code')).toHaveValue('123456');
+  await expect(page.locator('html')).toHaveAttribute('data-keyboard', 'open');
+  const verify = await page.getByRole('button', {name: 'Verify and continue'}).boundingBox();
+  expect(verify.y + verify.height).toBeLessThanOrEqual(
+    await page.evaluate(() => visualViewport.height + visualViewport.offsetTop),
+  );
   await device.screenshot({path: 'tests/auth/artifacts/android-keyboard.png'});
   await tap(page.getByRole('button', {name: 'Verify and continue'}));
   await tap(page.getByRole('link', {name: 'Your account', exact: true}));
@@ -77,7 +86,7 @@ try {
   await device.input.type('Android saved client');
   await expect(page.getByLabel('First name')).toHaveValue('Android saved client');
   await expect(page.getByText('Draft saved on this device.', {exact: true})).toBeVisible();
-  await device.shell(`am force-stop ${app}`);
+  await stop();
   await launch();
   page = await pageForApp();
   await tap(page.getByRole('link', {name: 'Your account', exact: true}));
@@ -115,7 +124,7 @@ try {
   await device.shell('svc wifi disable');
   await device.shell('svc data disable');
   await expect(page.getByText("You're offline.", {exact: false})).toBeVisible();
-  await device.shell(`am force-stop ${app}`);
+  await stop();
   await device.shell(
     `am start -W -n ${app}/.MainActivity -a android.intent.action.VIEW -d easy://app/forms/${assignment.id}`,
   );
@@ -129,7 +138,7 @@ try {
   await device.input.type(' offline');
   await expect(page.getByLabel('Your goal', {exact: false})).toHaveValue('A steady Android routine offline');
   await expect(page.getByText('Draft saved on this device.', {exact: true})).toBeVisible();
-  await device.shell(`am force-stop ${app}`);
+  await stop();
   await device.shell(
     `am start -W -n ${app}/.MainActivity -a android.intent.action.VIEW -d easy://app/forms/${assignment.id}`,
   );
@@ -139,6 +148,7 @@ try {
   await device.screenshot({path: 'tests/auth/artifacts/android-offline-form.png'});
   await device.shell('svc wifi enable');
   await device.shell('svc data enable');
+  await expect(page.getByText("You're offline.", {exact: false})).toHaveCount(0, {timeout: 30_000});
   await expect(page.getByRole('button', {name: 'Send response'})).toBeEnabled();
   await tap(page.getByLabel('Your goal', {exact: false}));
   await expect(page.locator('html')).toHaveAttribute('data-keyboard', 'open');
@@ -148,7 +158,7 @@ try {
   await device.screenshot({path: 'tests/auth/artifacts/android-form-keyboard.png'});
   await tap(page.getByRole('button', {name: 'Send response'}));
   await expect(page.getByText(/Response saved/)).toBeVisible();
-  await device.shell(`am force-stop ${app}`);
+  await stop();
   await device.shell(
     `am start -W -n ${app}/.MainActivity -a android.intent.action.VIEW -d easy://app/forms/${assignment.id}`,
   );
@@ -181,7 +191,7 @@ try {
   await device.shell('svc wifi disable');
   await device.shell('svc data disable');
   await expect(page.getByText("You're offline.", {exact: false})).toBeVisible();
-  await device.shell(`am force-stop ${app}`);
+  await stop();
   await device.shell(
     `am start -W -n ${app}/.MainActivity -a android.intent.action.VIEW -d easy://app/training/sessions/${workoutId}`,
   );
@@ -192,6 +202,7 @@ try {
   await expect(page.getByText('Showing the copy from', {exact: false})).toBeVisible();
   await device.shell('svc wifi enable');
   await device.shell('svc data enable');
+  await expect(page.getByText("You're offline.", {exact: false})).toHaveCount(0, {timeout: 30_000});
   await expect(page.getByRole('button', {name: 'Save set', exact: true})).toBeEnabled();
   await tap(page.getByLabel('Reps', {exact: true}));
   await expect(page.locator('html')).toHaveAttribute('data-keyboard', 'open');
@@ -220,7 +231,7 @@ try {
   await tap(page.getByRole('button', {name: 'Finish workout', exact: true}));
   await tap(page.getByRole('dialog').getByRole('button', {name: 'Finish and save workout'}));
   await expect(page.getByRole('link', {name: 'Back to workout history'})).toBeVisible();
-  await device.shell(`am force-stop ${app}`);
+  await stop();
   await device.shell(
     `am start -W -n ${app}/.MainActivity -a android.intent.action.VIEW -d easy://app/training/sessions/${workoutId}`,
   );
@@ -252,7 +263,7 @@ try {
   await tap(page.getByRole('link', {name: 'Back', exact: true}));
   await tap(page.getByRole('button', {name: 'Sign out', exact: true}));
   await expect(page.getByRole('heading', {name: 'Welcome back'})).toBeVisible();
-  await device.shell(`am force-stop ${app}`);
+  await stop();
   await launch();
   page = await pageForApp();
   await expect(page.getByRole('heading', {name: 'Welcome back'})).toBeVisible();

@@ -122,6 +122,8 @@ try {
       await page.getByLabel('Business name', {exact: true}).fill('Test New Navigation');
       await page.getByLabel('Business handle', {exact: true}).fill(`new-links-${unique}`);
       await page.getByRole('button', {name: 'Create business', exact: true}).click();
+      await expect(page.getByRole('heading', {name: 'Know the person behind the plan.', exact: true})).toBeVisible();
+      await page.getByRole('button', {name: 'Skip tour', exact: true}).click();
       await expect(page).toHaveURL('/forms/new');
       await expect(page.getByRole('heading', {name: 'Create form', exact: true})).toBeVisible();
       expect(errors).toEqual([]);

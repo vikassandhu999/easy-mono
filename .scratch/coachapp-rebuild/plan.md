@@ -4,6 +4,8 @@ Build one complete coaching task at a time. The first deliverable is authenticat
 
 ## Product loop
 
+The [coach welcome tour](welcome-tour.md) introduces clients, training, nutrition, check-ins, messages, and Workbench after business creation. Coaches can replay it from the account menu.
+
 The whole-app objective and remaining tasks are tracked in [the completion ledger](completion.md). Complete and verify each task without consulting the old app. After the screen audits, use the [final journey audit](final-audit.md) to verify connected workflows and record remaining limits.
 
 1. Pick a coach, a situation, and an outcome. Write: "When ___, I need to ___, so that ___." Record the device, frequency, information needed, and the costly mistake to prevent.

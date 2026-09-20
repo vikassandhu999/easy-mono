@@ -1,5 +1,6 @@
 export const routes = {
   home: '/',
+  welcome: '/welcome',
   profileSettings: '/settings/profile',
   businessSettings: '/settings/business',
   workbench: '/workbench',

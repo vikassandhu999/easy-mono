@@ -39,6 +39,8 @@
     "test:shared-targets": "node tests/training/shared-targets.browser.mjs",
     "test:worksheets": "node tests/training/worksheet-audit.browser.mjs && node tests/nutrition/worksheet-audit.browser.mjs",
     "test:visual-hierarchy": "node tests/visual-hierarchy/hierarchy.browser.mjs",
+    "test:welcome": "node tests/welcome/welcome.browser.mjs",
+    "capture:welcome": "node tests/welcome/capture.browser.mjs",
     "test:nutrition-library-management": "node tests/nutrition-library/management.browser.mjs",
     "test:recipes": "node tests/recipes/recipes.browser.mjs",
     "test:exercises": "node tests/exercises/exercises.browser.mjs",

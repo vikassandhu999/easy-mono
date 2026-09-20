@@ -15,6 +15,7 @@ import {authPath, getReturnTo} from './auth/return-to';
 import {Setup} from './auth/setup';
 import {Signup} from './auth/signup';
 import {Verify} from './auth/verify';
+import {Welcome} from './auth/welcome';
 import {BillingPage} from './billing/billing';
 import {CheckInRequests} from './check-ins/check-in-requests';
 import {CheckInResponse} from './check-ins/check-in-response';
@@ -91,7 +92,7 @@ function Gate({guest = false}: {guest?: boolean}) {
   if (session.tokens.scope === 'coach' && location.pathname === routes.setup) {
     return (
       <Navigate
-        to={getReturnTo(location.search)}
+        to={authPath(routes.welcome, getReturnTo(location.search))}
         replace
       />
     );
@@ -243,6 +244,7 @@ export const router = createBrowserRouter([
             ],
           },
           {path: routes.setup, element: <Setup />},
+          {path: routes.welcome, element: <Welcome />},
         ],
       },
       {path: '*', element: <NotFound />},

@@ -1,4 +1,4 @@
-import {Building2, CreditCard, Globe, LogOut, UserRound, UsersRound} from 'lucide-react';
+import {Building2, Compass, CreditCard, Globe, LogOut, UserRound, UsersRound} from 'lucide-react';
 import {useEffect, useRef} from 'react';
 import {flushSync} from 'react-dom';
 import {Link, matchPath, NavLink, Outlet, useLocation, useNavigate} from 'react-router-dom';
@@ -154,6 +154,13 @@ export function AppShell() {
                     Team
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuItem
+                  onAction={() => navigate(routes.welcome)}
+                  textValue="Explore Easy"
+                >
+                  <Compass aria-hidden="true" />
+                  Explore Easy
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onAction={signOut}
                   textValue="Sign out"

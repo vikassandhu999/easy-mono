@@ -140,6 +140,9 @@ try {
       await page.keyboard.press('Tab');
       await expect(page.getByRole('button', {name: 'Create business', exact: true})).toBeFocused();
       await page.keyboard.press('Enter');
+      await expect(page.getByRole('heading', {name: 'Know the person behind the plan.', exact: true})).toBeFocused();
+      await tabTo(page, page.getByRole('button', {name: 'Skip tour', exact: true}));
+      await page.keyboard.press('Enter');
       await expect(page.getByRole('heading', {name: 'Create form', exact: true})).toBeVisible();
       await check(`account-${width}: focus after profile loads`, () => expect(page.getByRole('main')).toBeFocused());
       const draftName = page.getByRole('textbox', {name: 'Form name', exact: true});

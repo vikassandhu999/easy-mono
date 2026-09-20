@@ -9,7 +9,7 @@ import {setFormError} from '../ui/form-errors';
 import {FormField} from '../ui/form-field';
 import {SubmitButton} from '../ui/submit-button';
 import {AuthLayout, FormError} from './auth-layout';
-import {getReturnTo} from './return-to';
+import {authPath, getReturnTo} from './return-to';
 
 export function Setup() {
   const setup = useSetup();
@@ -20,7 +20,7 @@ export function Setup() {
   const submit = form.handleSubmit(async (data) => {
     try {
       await mutation.mutateAsync(data);
-      navigate(returnTo, {replace: true});
+      navigate(authPath(routes.welcome, returnTo), {replace: true});
     } catch (error) {
       setFormError(error, 'We could not finish setup. Please try again.', form.setError, ['name', 'handle']);
     }
@@ -28,7 +28,7 @@ export function Setup() {
   if (setup.data === true) {
     return (
       <Navigate
-        to={returnTo}
+        to={authPath(routes.welcome, returnTo)}
         replace
       />
     );

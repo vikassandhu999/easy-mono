@@ -31,11 +31,14 @@ import {ReadState} from './ui/read-state';
 export function AppShell() {
   const session = parseSession(useSyncExternalStore(subscribeSession, sessionSnapshot));
   const location = useLocation();
-  const focusedEditor = location.pathname.startsWith('/progress/weight/');
+  const focusedEditor =
+    location.pathname.startsWith('/progress/weight/') ||
+    location.pathname === routes.accountDetails ||
+    location.pathname === routes.accountGoal;
   return session ? (
     <VerifiedAccount key={session.id}>
       <div>
-        {!focusedEditor && location.pathname !== routes.progress && (
+        {!focusedEditor && location.pathname !== routes.progress && location.pathname !== routes.account && (
           <header className="app-header">
             <Link
               to={routes.home}

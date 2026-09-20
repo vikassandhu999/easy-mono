@@ -15,6 +15,8 @@ export function deepLinkPath(value: string): string | null {
       ![
         '/',
         '/account',
+        '/account/details',
+        '/account/goal',
         '/progress',
         '/messages',
         '/verify',

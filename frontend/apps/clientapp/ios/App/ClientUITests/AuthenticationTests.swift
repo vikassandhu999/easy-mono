@@ -23,6 +23,7 @@ final class AuthenticationTests: XCTestCase {
         let account = app.links["Your account"]
         XCTAssertTrue(account.waitForExistence(timeout: 15), app.debugDescription)
         account.tap()
+        app.links["Personal details"].tap()
         let firstName = app.webViews.textFields["First name"]
         XCTAssertTrue(firstName.waitForExistence(timeout: 15), app.debugDescription)
         firstName.tap()
@@ -31,6 +32,7 @@ final class AuthenticationTests: XCTestCase {
         app.launch()
         XCTAssertTrue(account.waitForExistence(timeout: 15))
         account.tap()
+        app.links["Personal details"].tap()
         XCTAssertTrue(firstName.waitForExistence(timeout: 15))
         XCTAssertEqual(firstName.value as? String, "Native saved client", "Draft survives process restart")
         XCTAssertTrue(app.staticTexts["Your unsaved details were restored."].waitForExistence(timeout: 10))
@@ -46,13 +48,15 @@ final class AuthenticationTests: XCTestCase {
         add(saved)
         XCUIDevice.shared.press(.home)
         app.activate()
-        XCTAssertTrue(app.links["Your account"].waitForExistence(timeout: 10))
+        XCTAssertTrue(firstName.waitForExistence(timeout: 10))
         app.terminate()
         app.launch()
         XCTAssertTrue(app.links["Your account"].waitForExistence(timeout: 15), "Session survives process restart")
         app.links["Your account"].tap()
+        app.links["Personal details"].tap()
         XCTAssertTrue(firstName.waitForExistence(timeout: 15))
         XCTAssertEqual(firstName.value as? String, "Native saved client")
+        app.links["Back"].tap()
         app.buttons["Sign out"].tap()
         XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 10))
         app.terminate()
@@ -352,6 +356,62 @@ final class AuthenticationTests: XCTestCase {
         add(saved)
     }
 
+    @MainActor
+    func testGoalDraftAndSavedResult() throws {
+        continueAfterFailure = false
+        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "fixture", withExtension: "json"))
+        let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
+        let app = XCUIApplication(bundleIdentifier: "com.easy.client")
+        app.launch()
+        app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.goalToken)")))
+        let signOut = app.buttons["Sign out to continue"]
+        if signOut.waitForExistence(timeout: 2) { signOut.tap() }
+        XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 15))
+        app.buttons["Continue with email"].tap()
+        let code = app.webViews.textFields["Verification code"]
+        XCTAssertTrue(code.waitForExistence(timeout: 15))
+        code.tap()
+        code.typeText("123456")
+        app.buttons["Verify and continue"].tap()
+        XCTAssertTrue(app.links["Forms & check-ins"].waitForExistence(timeout: 15))
+        let weightURL = try XCTUnwrap(URL(string: "easy://app/account/goal"))
+        app.open(weightURL)
+        let weight = app.webViews.textFields["Goal weight"]
+        XCTAssertTrue(weight.waitForExistence(timeout: 15), app.debugDescription)
+        weight.tap()
+        weight.typeText("74.25")
+        XCTAssertEqual(weight.value as? String, "74.25")
+        XCTAssertTrue(app.staticTexts["Draft saved on this device."].waitForExistence(timeout: 10))
+        let save = app.buttons["Save goal"]
+        XCTAssertTrue(save.isHittable, app.debugDescription)
+        let keyboard = XCTAttachment(screenshot: app.screenshot())
+        keyboard.name = "iPhone goal keyboard and save"
+        keyboard.lifetime = .keepAlways
+        add(keyboard)
+        app.terminate()
+        app.launch()
+        app.open(weightURL)
+        XCTAssertTrue(weight.waitForExistence(timeout: 15))
+        XCTAssertEqual(weight.value as? String, "74.25")
+        XCTAssertTrue(save.waitForExistence(timeout: 15))
+        weight.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        save.tap()
+        XCTAssertTrue(app.staticTexts["Your goal is saved."].waitForExistence(timeout: 15), app.debugDescription)
+        XCUIDevice.shared.press(.home)
+        app.activate()
+        XCTAssertTrue(weight.waitForExistence(timeout: 15))
+        app.terminate()
+        app.launch()
+        app.open(weightURL)
+        XCTAssertTrue(weight.waitForExistence(timeout: 15))
+        XCTAssertEqual(weight.value as? String, "74.25")
+        let saved = XCTAttachment(screenshot: app.screenshot())
+        saved.name = "iPhone saved goal after restart"
+        saved.lifetime = .keepAlways
+        add(saved)
+    }
+
     private func setConnection(_ control: String, available: Bool) async throws {
         let url = try XCTUnwrap(URL(string: "\(control)?available=\(available)"))
         var request = URLRequest(url: url)
@@ -557,6 +617,7 @@ final class AuthenticationTests: XCTestCase {
     struct Fixture: Decodable {
         let email: String
         let token: String
+        let goalToken: String
         let formToken: String
         let formEmail: String
         let assignmentId: String

@@ -78,7 +78,7 @@ defmodule Easy.Clients.Client do
     :subscription_ends_on,
     :required_services
   ]
-  @self_update_cast_fields [:first_name, :last_name, :phone]
+  @self_update_cast_fields [:first_name, :last_name, :phone, :goal_weight_value, :goal_weight_unit]
 
   # Allowed manual status transitions (coach-driven).
   # pending -> active is reserved for accept_invite/3 (the accept flow) only.
@@ -318,6 +318,9 @@ defmodule Easy.Clients.Client do
     client
     |> cast(attrs, @self_update_cast_fields)
     |> validate_profile_lengths()
+    |> normalize_goal_weight(attrs)
+    |> validate_goal_weight_paired()
+    |> validate_number(:goal_weight_value, greater_than: 0, less_than: 1000)
   end
 
   defp validate_profile_lengths(changeset) do

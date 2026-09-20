@@ -31,6 +31,7 @@ try {
       await page.getByRole('button', {name: 'Verify and continue'}).click();
       await expect(page.getByRole('heading', {name: 'Today', exact: true})).toBeVisible();
       await page.getByRole('link', {name: 'Your account', exact: true}).click();
+      await page.getByRole('link', {name: 'Personal details', exact: true}).click();
       await page.getByLabel('First name').fill('Alexandria with a long name');
       await page.reload();
       await expect(page.getByLabel('First name')).toHaveValue('Alexandria with a long name');
@@ -56,12 +57,13 @@ try {
         await page.getByLabel('First name').evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize)),
       ).toBeGreaterThanOrEqual(16);
       await page.screenshot({path: `tests/auth/artifacts/account-${width}.png`, fullPage: true});
+      await page.getByRole('link', {name: 'Back', exact: true}).click();
       await page.getByRole('button', {name: 'Sign out', exact: true}).click();
       expect(
         await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('clientapp.private.'))),
       ).toEqual([]);
-      await page.goto('/account');
-      await expect(page).toHaveURL(/\/login\?returnTo=%2Faccount/);
+      await page.goto('/account/details');
+      await expect(page).toHaveURL(/\/login\?returnTo=%2Faccount%2Fdetails/);
       await page.getByLabel('Email', {exact: true}).fill(fixture.email);
       await page.getByRole('button', {name: 'Continue with email'}).click();
       await page.getByLabel('Verification code').fill('123456');
@@ -105,14 +107,17 @@ try {
       await page.getByLabel('Verification code').fill('123456');
       await page.getByRole('button', {name: 'Verify and continue'}).click();
       await page.getByRole('link', {name: 'Your account', exact: true}).click();
+      await page.getByRole('link', {name: 'Personal details', exact: true}).click();
       await expect(page.getByLabel('First name')).toHaveValue('Alex');
       await page.getByLabel('First name').fill('A different private draft');
+      await page.getByRole('link', {name: 'Back', exact: true}).click();
       await page.getByRole('button', {name: 'Sign out', exact: true}).click();
       await expect(page.getByRole('heading', {name: 'Welcome back'})).toBeVisible();
       await page.getByLabel('Email', {exact: true}).fill(fixture.email);
       await page.getByRole('button', {name: 'Continue with email'}).click();
       await page.getByLabel('Verification code').fill('123456');
       await page.getByRole('button', {name: 'Verify and continue'}).click();
+      await page.getByRole('link', {name: 'Personal details', exact: true}).click();
       await expect(page.getByLabel('First name')).toHaveValue('Recovered after expired login');
       await expect(page.getByText('Your unsaved details were restored.')).toBeVisible();
       let releaseSave;
@@ -136,8 +141,7 @@ try {
       await page.getByLabel('First name').fill('A delayed private change');
       await page.getByRole('button', {name: 'Save details'}).click();
       await serverSaved;
-      await page.getByRole('link', {name: 'easy', exact: true}).click();
-      await page.getByRole('link', {name: 'Your account', exact: true}).click();
+      await page.getByRole('link', {name: 'Back', exact: true}).click();
       await page.getByRole('button', {name: 'Sign out', exact: true}).click();
       await expect(page.getByRole('heading', {name: 'Welcome back'})).toBeVisible();
       releaseSave();

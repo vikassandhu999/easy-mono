@@ -145,7 +145,7 @@ try {
   await expect(page.getByText('Continue the routine after reconnecting', {exact: true})).toBeVisible();
   const token = await page.evaluate(() => JSON.parse(localStorage.getItem('clientapp.auth.v1')).tokens.access_token);
   await api('/v1/client/me', {method: 'PATCH', token, body: {first_name: 'Updated on the server'}});
-  await page.goto('/account');
+  await page.goto('/account/details');
   await expect(page.getByLabel('First name')).toHaveValue('Updated on the server');
   await context.setOffline(true);
   await page.getByLabel('First name').fill('Offline account draft');
@@ -153,6 +153,7 @@ try {
   await expect(page.getByRole('button', {name: 'Save details'})).toBeDisabled();
   await page.reload();
   await expect(page.getByLabel('First name')).toHaveValue('Offline account draft');
+  await page.getByRole('link', {name: 'Back', exact: true}).click();
   await page.getByRole('button', {name: 'Sign out', exact: true}).click();
   await expect(page.getByRole('heading', {name: 'Welcome back'})).toBeVisible();
   expect(

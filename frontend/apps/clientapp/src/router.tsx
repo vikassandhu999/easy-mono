@@ -1,5 +1,7 @@
 import {createBrowserRouter, Navigate} from 'react-router-dom';
 import {Account} from './account/account';
+import {AccountDetails} from './account/details';
+import {WeightGoal} from './account/goal';
 import {AppShell, Home} from './app-shell';
 import {Invitation} from './auth/invitation';
 import {Login} from './auth/login';
@@ -24,6 +26,8 @@ export const router = createBrowserRouter([
     children: [
       {path: routes.home, element: <Home />},
       {path: routes.account, element: <Account />},
+      {path: routes.accountDetails, element: <AccountDetails />},
+      {path: routes.accountGoal, element: <WeightGoal />},
       {path: routes.progress, element: <Progress />},
       {path: routes.weight, element: <Weight />},
       {path: routes.messages, element: <Messages />},

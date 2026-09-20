@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "device": "iPhone 17 simulator, iOS 26.3",
+  "tests": [
+    "testGoalDraftAndSavedResult",
+    "testInvitationProfileAndRestart"
+  ],
+  "testsPassed": 2,
+  "failures": 0,
+  "durationSeconds": 73.801,
+  "xcresult": "/tmp/easy-clientapp-ios-build/Logs/Test/Test-ClientUITests-2026.09.20_11-57-28-+0530.xcresult"
+}

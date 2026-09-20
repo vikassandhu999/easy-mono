@@ -4,6 +4,8 @@ export const routes = {
   verify: '/verify',
   invitation: '/invite/:token',
   account: '/account',
+  accountDetails: '/account/details',
+  accountGoal: '/account/goal',
   progress: '/progress',
   weight: '/progress/weight/:date',
   messages: '/messages',

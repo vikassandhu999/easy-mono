@@ -10,6 +10,8 @@ export function safeReturnTo(value: string | null) {
     return [
       routes.home,
       routes.account,
+      routes.accountDetails,
+      routes.accountGoal,
       routes.progress,
       routes.messages,
       routes.forms,

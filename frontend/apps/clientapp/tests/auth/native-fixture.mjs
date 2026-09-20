@@ -10,6 +10,7 @@ await api('/v1/coach/nutrition-foods', {
 fixture.nutritionDate = (
   await api(`/v1/coach/clients/${fixture.clientId}/nutrition-days`, {token: fixture.coachToken})
 ).data[0].date;
+fixture.goalToken = (await inviteClient()).token;
 const formClient = await inviteClient();
 const assignment = (await api(`/v1/coach/clients/${formClient.clientId}/intake`, {token: formClient.coachToken})).data;
 await api(`/v1/coach/form-templates/${assignment.form_template_id}`, {

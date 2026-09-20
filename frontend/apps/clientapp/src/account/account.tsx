@@ -1,244 +1,148 @@
-import {type ReactNode, useEffect, useState} from 'react';
-import {useForm} from 'react-hook-form';
+import {ChevronRight, Heart, LogOut, Sprout, Target, TrendingUp, UserRound} from 'lucide-react';
+import type {ReactNode} from 'react';
 import {Link} from 'react-router-dom';
-import {type Profile, type ProfileUpdate, useProfile, useUpdateProfile} from '../api/auth';
-import {errorMessage} from '../api/client';
-import {readDraft, removeDraft} from '../api/drafts';
-import {clearSession, getSession} from '../api/session';
+import {useProfile} from '../api/auth';
+import {clearSession} from '../api/session';
 import {routes} from '../routes';
 import {Button} from '../ui/button';
 import {CachedRead} from '../ui/cached-read';
-import {useOnline} from '../ui/connection-status';
-import {DraftStatus, useDraftWriter} from '../ui/draft-status';
-import {FormError} from '../ui/form-error';
-import {FormField} from '../ui/form-field';
 import {Page} from '../ui/page';
-import {SubmitButton} from '../ui/submit-button';
+import {ReadState} from '../ui/read-state';
 
 export function Account() {
   const query = useProfile();
-  const online = useOnline();
-  if (!query.data) {
-    return (
-      <Page
-        title="Your account"
-        back={routes.home}
-      >
-        {query.isError ? (
-          <>
-            <p role="alert">{errorMessage(query.error, 'Your details could not be loaded.')}</p>
-            <Button
-              onPress={() => {
-                query.refetch();
-              }}
-            >
-              Try again
-            </Button>
-          </>
-        ) : (
-          <p role="status">
-            {online ? 'Loading your details…' : 'Your details are not available offline. Reconnect to open them.'}
-          </p>
-        )}
-      </Page>
-    );
-  }
-  return (
-    <ProfileForm
-      key={query.data.data.id}
-      profile={query.data.data}
-    >
-      <CachedRead
-        updatedAt={query.dataUpdatedAt}
-        failed={query.isError}
-        refreshing={query.isFetching}
-        refresh={() => query.refetch()}
-      />
-    </ProfileForm>
-  );
-}
-
-function ProfileForm({profile, children}: {profile: Profile; children: ReactNode}) {
-  const online = useOnline();
-  const mutation = useUpdateProfile();
-  const [notice, setNotice] = useState('');
-  const [draftReady, setDraftReady] = useState(false);
-  const [draftError, setDraftError] = useState('');
-  const [hasDraft, setHasDraft] = useState(false);
-  const [owner] = useState(() => getSession()?.id);
-  const {saveDraft, state: draftState} = useDraftWriter(owner, 'profile');
-  const form = useForm<ProfileUpdate>({
-    defaultValues: {
-      first_name: profile.first_name ?? '',
-      last_name: profile.last_name ?? '',
-      phone: profile.phone ?? '',
-    },
-  });
-  useEffect(() => {
-    let active = true;
-    if (!owner) {
-      return;
-    }
-    readDraft(owner, 'profile')
-      .then((draft) => {
-        if (!active) {
-          return;
-        }
-        if (
-          draft &&
-          typeof draft === 'object' &&
-          'first_name' in draft &&
-          typeof draft.first_name === 'string' &&
-          'last_name' in draft &&
-          typeof draft.last_name === 'string' &&
-          'phone' in draft &&
-          typeof draft.phone === 'string'
-        ) {
-          form.reset({first_name: draft.first_name, last_name: draft.last_name, phone: draft.phone});
-          setHasDraft(true);
-          setNotice('Your unsaved details were restored.');
-        }
-        setDraftReady(true);
-      })
-      .catch(() => {
-        if (active) {
-          setDraftError('Your saved draft could not be opened. Changes will only stay here while this screen is open.');
-          setDraftReady(true);
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [form, owner]);
-
-  const {isDirty, isSubmitting} = form.formState;
-  useEffect(() => {
-    if (!draftReady || hasDraft || isDirty || isSubmitting) {
-      return;
-    }
-    const values = {
-      first_name: profile.first_name ?? '',
-      last_name: profile.last_name ?? '',
-      phone: profile.phone ?? '',
-    };
-    if (JSON.stringify(form.getValues()) !== JSON.stringify(values)) {
-      form.reset(values);
-    }
-  }, [draftReady, hasDraft, isDirty, isSubmitting, profile.first_name, profile.last_name, profile.phone, form]);
-
-  useEffect(() => {
-    if (!draftReady || !owner) {
-      return;
-    }
-    const subscription = form.watch((values, {name}) => {
-      if (name) {
-        saveDraft(values);
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [draftReady, form, owner, saveDraft]);
-  const submit = form.handleSubmit(async (values) => {
-    if (!online) {
-      return;
-    }
-    setNotice('');
-    try {
-      const result = await mutation.mutateAsync(values);
-      form.reset({
-        first_name: result.data.first_name ?? '',
-        last_name: result.data.last_name ?? '',
-        phone: result.data.phone ?? '',
-      });
-      if (owner) {
-        await removeDraft(owner, 'profile');
-      }
-      setHasDraft(false);
-      setNotice('Your details are saved.');
-    } catch (error) {
-      form.setError('root', {
-        message: errorMessage(
-          error,
-          'Your details could not be saved. Your changes are still here. Try again when connected.',
-        ),
-      });
-    }
-  });
-  if (!draftReady) {
-    return (
-      <Page
-        title="Your account"
-        back={routes.home}
-      >
-        <p role="status">Opening your details…</p>
-      </Page>
-    );
-  }
+  const profile = query.data?.data;
   return (
     <Page
       title="Your account"
-      description={profile.email ?? undefined}
       back={routes.home}
+      compact
     >
-      {children}
-      <Link
-        to={routes.progress}
-        className="text-link inline-flex min-h-11 items-center mb-5"
-      >
-        Weight & progress
-      </Link>
-      <form
-        noValidate
-        onSubmit={submit}
-        className="space-y-5"
-      >
-        <FormField
-          control={form.control}
-          name="first_name"
-          label="First name"
-          autoComplete="given-name"
+      {!profile ? (
+        <ReadState
+          label="your account"
+          failed={query.isError}
+          retry={() => query.refetch()}
         />
-        <FormField
-          control={form.control}
-          name="last_name"
-          label="Last name"
-          autoComplete="family-name"
-        />
-        <FormField
-          control={form.control}
-          name="phone"
-          label="Phone"
-          type="tel"
-          autoComplete="tel"
-        />
-        <FormError message={form.formState.errors.root?.message} />
-        {draftError && <p role="alert">{draftError}</p>}
-        {form.formState.isDirty && <DraftStatus state={draftState} />}
-        <p
-          role="status"
-          className="text-sm text-muted-foreground"
-        >
-          {notice}
-        </p>
-        <SubmitButton
-          pending={form.formState.isSubmitting}
-          isDisabled={!online}
-        >
-          Save details
-        </SubmitButton>
-        {!online && (
-          <p className="text-sm text-muted-foreground">
-            Your edits stay on this device. Reconnect to save them to your account.
+      ) : (
+        <div className="space-y-6">
+          <CachedRead
+            updatedAt={query.dataUpdatedAt}
+            failed={query.isError}
+            refreshing={query.isFetching}
+            refresh={() => query.refetch()}
+          />
+          <div className="rounded-[2rem] bg-[var(--sunshine)] p-6 flex items-center gap-4">
+            <div className="rounded-full bg-white/60 p-4">
+              <UserRound
+                className="size-7"
+                aria-hidden="true"
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="text-2xl font-extrabold tracking-tight break-words">{profile.first_name || 'Welcome'}</p>
+              <p className="text-sm mt-1">A little space for you.</p>
+            </div>
+          </div>
+          <div className="rounded-3xl bg-surface px-4 divide-y divide-border">
+            <AccountRow
+              to={routes.accountDetails}
+              icon={<UserRound />}
+              title="Personal details"
+              description={profile.email ?? 'Your name and phone number'}
+            />
+            <AccountRow
+              to={routes.accountGoal}
+              icon={<Target />}
+              title="Weight goal"
+              description={
+                profile.goal_weight_value && profile.goal_weight_unit
+                  ? `${profile.goal_weight_value} ${profile.goal_weight_unit}`
+                  : 'Optional. Set what feels right for you.'
+              }
+            />
+            <AccountRow
+              to={routes.progress}
+              icon={<TrendingUp />}
+              title="Weight & progress"
+              description="Your measurements over time"
+            />
+          </div>
+          {profile.coach && (
+            <section
+              className="rounded-3xl bg-[var(--coach)] p-5 space-y-3"
+              aria-label="Your coaching"
+            >
+              <Heart
+                className="size-6"
+                aria-hidden="true"
+              />
+              <p className="text-sm">Your coaching</p>
+              <h2 className="text-xl font-bold">{profile.coach.business_name}</h2>
+              {(profile.coach.first_name || profile.coach.last_name) && (
+                <p>{[profile.coach.first_name, profile.coach.last_name].filter(Boolean).join(' ')}</p>
+              )}
+              <Link
+                to={routes.messages}
+                className="flex min-h-11 items-center justify-between font-semibold"
+              >
+                Message your coach
+                <ChevronRight
+                  className="size-4"
+                  aria-hidden="true"
+                />
+              </Link>
+            </section>
+          )}
+          <div className="text-sm text-muted-foreground space-y-1 px-1">
+            <p>Coaching timezone · {profile.timezone}</p>
+            <p>Default weight unit · {profile.default_weight_unit === 'lbs' ? 'Pounds (lb)' : 'Kilograms (kg)'}</p>
+          </div>
+          <Button
+            variant="ghost"
+            onPress={clearSession}
+            className="w-full gap-2"
+          >
+            <LogOut
+              className="size-4"
+              aria-hidden="true"
+            />
+            Sign out
+          </Button>
+          <p className="daily-note">
+            <Sprout
+              className="size-4"
+              aria-hidden="true"
+            />
+            Your pace. Your progress.
           </p>
-        )}
-      </form>
-      <div className="mt-10 border-t border-border pt-6">
-        <Button
-          variant="ghost"
-          onPress={clearSession}
-        >
-          Sign out
-        </Button>
-      </div>
+        </div>
+      )}
     </Page>
+  );
+}
+
+function AccountRow({to, icon, title, description}: {to: string; icon: ReactNode; title: string; description: string}) {
+  return (
+    <Link
+      to={to}
+      aria-label={title}
+      className="flex items-center gap-3 py-5"
+    >
+      <span
+        className="rounded-2xl bg-muted p-3 [&>svg]:size-5"
+        aria-hidden="true"
+      >
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-bold">{title}</span>
+        <span className="block text-sm text-muted-foreground mt-1 break-words">{description}</span>
+      </span>
+      <ChevronRight
+        className="size-4 shrink-0"
+        aria-hidden="true"
+      />
+    </Link>
   );
 }

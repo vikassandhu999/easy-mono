@@ -52,6 +52,33 @@ try {
       await page.getByLabel('Business name', {exact: true}).fill('Test Production Business');
       await page.getByLabel('Business handle', {exact: true}).fill(`production-${suffix}`);
       await page.getByRole('button', {name: 'Create business', exact: true}).click();
+      await expect(page).toHaveURL(`${baseURL}/welcome?returnTo=%2Fforms%2Fnew`);
+      for (const title of [
+        'Know the person behind the plan.',
+        'Build once. Coach each person.',
+        'Make healthy choices easier.',
+        'See how the week really went.',
+        'Keep the conversation close.',
+        'Know who needs you next.',
+      ]) {
+        const heading = page.getByRole('heading', {level: 1, name: title, exact: true});
+        await expect(heading).toBeVisible();
+        await expect(heading).toBeFocused();
+        const image = page.getByRole('figure').locator('img');
+        await expect.poll(() => image.evaluate((node) => node.complete && node.naturalWidth > 0)).toBe(true);
+        expect(await image.evaluate((node) => new URL(node.currentSrc).pathname)).toMatch(
+          width === 375 ? /^\/welcome\/.+-mobile\.jpg$/ : /^\/welcome\/.+-desktop\.jpg$/,
+        );
+        expect(
+          await heading.evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize)),
+        ).toBeGreaterThanOrEqual(32);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        if (title !== 'Know who needs you next.') {
+          await page.getByRole('button', {name: 'Next', exact: true}).click();
+        }
+      }
+      await page.screenshot({path: `/tmp/coachapp-welcome-production-${engine}-${width}.png`, animations: 'disabled'});
+      await page.getByRole('button', {name: 'Continue to your page', exact: true}).click();
       await expect(page).toHaveURL(`${baseURL}/forms/new`);
       await page.getByLabel('Form name', {exact: true}).fill(name);
       await page.getByLabel('Section title', {exact: true}).fill('Your progress');
@@ -133,7 +160,7 @@ try {
       expect([...scripts].every((path) => path.startsWith('/assets/') && path.endsWith('.js'))).toBe(true);
       expect(errors).toEqual([]);
       console.log(
-        `Production ${engine} ${width}px: signup/deep link, validation/recovery, saved form/reload, eight sections, real inbox socket, logout/login and missing-record recovery passed. Only built asset scripts loaded.`,
+        `Production ${engine} ${width}px: signup, six-slide welcome with shipped previews, retained deep link, validation/recovery, saved form/reload, eight sections, real inbox socket, logout/login and missing-record recovery passed. Only built asset scripts loaded.`,
       );
     } finally {
       await context.close();

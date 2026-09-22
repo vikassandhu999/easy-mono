@@ -23,3 +23,12 @@ Verification on 2026-09-20: the six-slide journey and recovery checks passed at 
 The screenshots were recaptured after correcting CSS import ordering. Tour styles are imported from `index.css` after Tailwind so component layers do not precede the reset. Browser assertions verify actual heading sizes and page gutters. Mobile captures focus on feature content instead of screen controls.
 
 No independent coach usability session is implied by browser checks.
+
+On 2026-09-22, the built app also passed `tests/navigation/production.browser.mjs`
+in Chromium and WebKit at 375px and 1280px. Real signup enters all six slides,
+decodes each shipped responsive preview, focuses each heading, and retains the
+protected form-creation destination through completion. The journey then saves and
+reopens a form, visits every main section, joins the inbox socket, and verifies
+logout/login and missing-record recovery. Actual heading sizes and horizontal
+overflow are checked in the production bundle. Reviewed screenshots are at
+`/tmp/coachapp-welcome-production-{chromium,webkit}-{375,1280}.png`.

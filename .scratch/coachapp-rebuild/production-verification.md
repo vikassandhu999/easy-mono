@@ -8,6 +8,21 @@ The earlier route suites primarily run against Vite's development server. This p
 
 An early WebKit harness forced document navigation as soon as the save response arrived, before the app finished returning to its list. WebKit reported an access-control diagnostic for that interrupted list fetch. Changing only the harness to open the visible saved-form link eliminates the error at both widths; explicit reloads after the editor is ready also pass. No request-layer or application change was made, and page-error assertions remain active. Earlier harness expectations for invalid-code and missing-form messages were corrected to the actual associated field error and recoverable missing-record view. These were test assumptions, not repaired product defects.
 
+The 2026-09-22 run adds the complete six-slide welcome tour between business
+creation and the preserved form destination. Chromium and WebKit pass at both
+widths, checking shipped mobile/desktop image decoding, heading focus and size,
+Next navigation, and horizontal overflow before continuing the connected journey.
+Logs: `/tmp/coachapp-production-welcome-chromium.log` and
+`/tmp/coachapp-production-welcome-webkit.log`.
+
+The API initially returned 503 because the populated local development database
+still recorded the retired migration history. Its schema was compared with the
+fresh baseline across all 42 tables, columns, constraints, indexes, generated
+values, extensions, functions and triggers. With an exact match, only the local
+`schema_migrations` records were replaced transactionally. Coaching data was
+preserved. The prior records are backed up in
+`/tmp/easy-dev-migration-records-before-baseline.sql`.
+
 ## Startup observation
 
 `tests/navigation/startup-audit.browser.mjs` serves the production output with gzip, disables browser cache, and uses a 200,000-byte/s download limit, 150ms latency and 4× CPU throttling. Three samples at each width measure from navigation until the email field accepts text. The final samples were 2,231–2,345ms at 375px and 2,226–2,240ms at 1280px. Each transferred 328,263 compressed JavaScript bytes. These are local simulated observations, not real-device timings or a performance guarantee. No arbitrary timing gate or speculative bundle refactor was added; the build's existing bundle-size warning remains.

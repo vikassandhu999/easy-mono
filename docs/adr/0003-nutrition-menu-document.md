@@ -23,9 +23,7 @@ Direct SQL bypasses that protection. Recipe ingredient foreign keys remain, and
 there is no second reference table or writable cache. Tests use independent
 connections to exercise both orders of saves and destructive Library mutations.
 
-The cutover is a forward migration that backfills saved values before removing the
-child tables and the frozen option's live meal FK. It requires stopped application
-writers and matching backend/frontend releases. Back up the database before the
-migration. Rollback restores that backup with its matching application release.
-Historical migrations remain executable history; runtime compatibility readers do
-not remain in the application.
+The 2026-09-22 prototype baseline creates the Menu document directly. The earlier
+child-table backfill is retained in Git history. Databases using that migration
+history require the [baseline reset](../../backend/README.md#database-baseline).
+The application has no runtime compatibility readers.

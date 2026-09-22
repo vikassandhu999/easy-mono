@@ -5,8 +5,7 @@
 # Seeds are modular and idempotent - safe to run multiple times, and this is the
 # path the release runs on deploy (Easy.Release.seed/0). It seeds the SYSTEM
 # library a fresh business needs: muscles/equipment, exercises, and a curated
-# foods subset. (Measurement-unit and subscription-plan seeds are intentionally
-# omitted — those schemas don't exist yet; billing is deferred.)
+# foods subset. Billing state is created per business by the application.
 #
 # The full foods database (priv/repo/foods_database.csv, ~126k rows) is excluded
 # from the Docker image; locally it's used automatically when present, otherwise

@@ -14,12 +14,22 @@ defmodule Easy.Repo.Migrations.CreateBilling do
       add :razorpay_subscription_id, :string
       add :razorpay_plan_id, :string
       add :current_period_end, :utc_datetime
+      add :cancellation_state, :string
+      add :cancellation_requested_at, :utc_datetime
 
       timestamps(type: :utc_datetime)
     end
 
     create unique_index(:business_billing, [:business_id])
-    create index(:business_billing, [:razorpay_subscription_id])
+
+    create unique_index(:business_billing, [:razorpay_subscription_id],
+             where: "razorpay_subscription_id IS NOT NULL"
+           )
+
+    create constraint(:business_billing, :business_billing_cancellation_state,
+             check:
+               "cancellation_state IS NULL OR cancellation_state IN ('requested', 'unknown', 'accepted')"
+           )
 
     create table(:billing_events, primary_key: false) do
       add :id, :binary_id, primary_key: true
@@ -49,5 +59,26 @@ defmodule Easy.Repo.Migrations.CreateBilling do
     end
 
     create unique_index(:billing_webhook_receipts, [:razorpay_event_id])
+
+    create table(:billing_checkout_intents, primary_key: false) do
+      add :id, :binary_id, primary_key: true
+
+      add :business_id, references(:businesses, type: :binary_id, on_delete: :delete_all),
+        null: false
+
+      add :request_id, :binary_id, null: false
+      add :target_quantity, :integer, null: false
+      add :kind, :string, null: false
+      add :status, :string, null: false
+      add :subscription_id, :string
+
+      timestamps(type: :utc_datetime)
+    end
+
+    create unique_index(:billing_checkout_intents, [:business_id],
+             where: "status IN ('pending', 'unknown')"
+           )
+
+    create unique_index(:billing_checkout_intents, [:business_id, :request_id])
   end
 end

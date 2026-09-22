@@ -31,8 +31,7 @@ The tradeoff is calculating live values when reading plans. There is no material
 nutrition cache to synchronize. If measured read costs later require one, it must
 preserve this live-value contract rather than silently serving a mixture of versions.
 
-The migration backfills Diary days, converts stored portions and nutrients, removes
-redundant columns, and preserves Food image URLs as system Media records. Stop
-application writers and back up the database before migrating. Deploy matching
-backend and frontend releases together. Rollback restores the backup and matching
-release; runtime compatibility paths are not retained.
+The 2026-09-22 prototype baseline creates Diary days, portion documents, and Media
+references directly. CSV seeds create Food images as system Media records. The
+earlier conversion migrations remain in Git history; databases using that history
+require the [baseline reset](../../backend/README.md#database-baseline).

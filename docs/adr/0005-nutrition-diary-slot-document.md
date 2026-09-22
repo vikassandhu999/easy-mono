@@ -23,8 +23,8 @@ The tradeoff is rewriting a slot document for an intake edit and validating nest
 values through Ecto. There is no independent entry query API or global entry ID
 constraint. These boundaries match the operations the product exposes.
 
-The forward-only migration preserves frozen values, public UUIDs, revisions,
-timezones, targets, and order before dropping child tables and their redundant
-parent index. Stop writers, take a database backup, migrate, and start the matching
-backend. Rollback restores that backup and release. The public JSON contract stays
-the same; there is no runtime compatibility reader.
+The 2026-09-22 prototype baseline creates Diary slot documents directly, including
+their identity, revision, timezone, and day relationship. The earlier child-table
+conversion remains in Git history; databases using that history require the
+[baseline reset](../../backend/README.md#database-baseline). The public JSON contract
+is unchanged, and there is no runtime compatibility reader.

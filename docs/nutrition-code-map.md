@@ -146,8 +146,8 @@ always support servings; grams require a measured cooked weight. Menu, recipe in
 and diary writes send the chosen portion; the backend resolves weights and nutrition.
 
 Foods have one `media_id`. Media can be an uploaded asset or an external system
-image; both return the same media object. The migration preserves existing food
-images. CSV seeds create the system Library once, atomically; they are not an import
+image; both return the same media object. CSV seeds create Food images as system
+Media and create the system Library once, atomically; they are not an import
 synchronization API.
 
 ## Client diary
@@ -215,9 +215,9 @@ unit still work after library deletion. Replacement foods resolve fresh nutritio
 offered meal preserves existing intake. Past days never reconstruct old guidance
 from today's plan. Correction deadlines use the timezone frozen with each slot.
 
-Database migrations repair missing historical planned-item identities and recipe
-serving units before enforcing the new constraints. No runtime legacy fallback is
-needed. Frozen planned references remain stable after menu or library deletion.
+The initial migrations create the document schema directly. Pre-baseline databases
+require the [prototype reset](../backend/README.md#database-baseline). Frozen planned
+references remain stable after menu or library deletion.
 
 Day targets freeze on the first successful slot save and are shared by every slot
 on that date. Starting a later slot does not replace them with edited plan targets.

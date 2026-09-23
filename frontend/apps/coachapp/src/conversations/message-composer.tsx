@@ -1,113 +1,148 @@
 import {Mic, Paperclip, X} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {useBeforeUnload, useBlocker, useLocation, useSearchParams} from 'react-router-dom';
+import {useBeforeUnload, useBlocker} from 'react-router-dom';
+import {useProfile} from '../api/auth';
 import {uploadContentType, useUploadChatAttachment} from '../api/chat-uploads';
 import {ApiError, errorMessage} from '../api/client';
 import {type Conversation, useConversationAction, useMessages} from '../api/conversations';
-import {useFormSubmission} from '../api/forms';
-import {
-  Attachment,
-  AttachmentAction,
-  AttachmentActions,
-  AttachmentContent,
-  AttachmentDescription,
-  AttachmentTitle,
-} from '../ui/attachment';
+import {getSession} from '../api/session';
 import {Button} from '../ui/button';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FormError} from '../ui/form-error';
 import {useMessageScroller} from '../ui/message-scroller';
 import {Textarea} from '../ui/textarea';
-import {SharedResponse} from './shared-response';
+import {type ConversationDraft, draftKey, emptyDraft, loadDraft, type RecordReference, saveDraft} from './draft';
 import {VoiceNote} from './voice-note';
 
-type DraftAttachment = {key: string; file: File} & (
-  | {state: 'uploading'}
-  | {state: 'error'; message: string}
-  | {state: 'done'; id: string}
-);
-export function MessageComposer({conversation}: {conversation: Conversation}) {
-  const location = useLocation();
-  const [params, setParams] = useSearchParams();
-  const responseId = params.get('response');
-  const shared = useFormSubmission(conversation.client_id, responseId);
-  function removeResponse() {
-    if (!responseId) {
-      return;
-    }
-    setParams(
-      (previous) => {
-        const next = new URLSearchParams(previous);
-        next.delete('response');
-        return next;
-      },
-      {replace: true, state: location.state},
-    );
-  }
+type Upload = {key: string; file: File; state: 'uploading' | 'error'; message: string};
+export function MessageComposer({
+  conversation,
+  requestedReference,
+  onReferenceConsumed,
+}: {
+  conversation: Conversation;
+  requestedReference: RecordReference | null;
+  onReferenceConsumed: () => void;
+}) {
+  const key = draftKey(getSession()?.id ?? '', conversation.id);
+  const [loaded, setLoaded] = useState(() => loadDraft(key));
+  const [draft, setDraft] = useState(() => (loaded.kind === 'ready' ? loaded.draft : emptyDraft()));
+  const [uploads, setUploads] = useState<Upload[]>([]);
   const [voiceOpen, setVoiceOpen] = useState(false);
-  const [body, setBody] = useState('');
-  const [files, setFiles] = useState<DraftAttachment[]>([]);
   const [error, setError] = useState('');
-  const [recovery, setRecovery] = useState<'editing' | 'uncertain' | 'checked'>('editing');
   const [notice, setNotice] = useState('');
+  const [stored, setStored] = useState(true);
   const send = useConversationAction(conversation.id);
   const upload = useUploadChatAttachment(conversation.client_id);
   const messages = useMessages(conversation.id);
+  const profile = useProfile();
   const {scrollToEnd} = useMessageScroller();
   const input = useRef<HTMLInputElement>(null);
   const textarea = useRef<HTMLTextAreaElement>(null);
   const mounted = useRef(true);
+  const pending = send.isPending || upload.isPending;
+  const dirty = Boolean(draft.body || draft.reference || draft.attachments.length);
+  const latestHistory = messages.data?.pages[0]?.latest_message_at ?? null;
   useEffect(() => {
     mounted.current = true;
     return () => {
       mounted.current = false;
     };
   }, []);
-  const pending = send.isPending || upload.isPending;
-  const dirty = body.length > 0 || files.length > 0 || voiceOpen || Boolean(responseId);
+  useEffect(() => {
+    if (loaded.kind === 'ready') {
+      setStored(saveDraft(key, draft));
+    }
+  }, [key, draft, loaded.kind]);
+  useEffect(() => {
+    if (
+      loaded.kind === 'failed' ||
+      !messages.data ||
+      !requestedReference ||
+      draft.state === 'uncertain' ||
+      send.isPending
+    ) {
+      return;
+    }
+    setDraft((previous) => ({
+      ...previous,
+      reference: requestedReference,
+      teammateThrough: previous.teammateThrough === undefined ? latestHistory : previous.teammateThrough,
+    }));
+    onReferenceConsumed();
+    textarea.current?.focus({preventScroll: true});
+  }, [requestedReference, onReferenceConsumed, latestHistory, draft.state, send.isPending, loaded.kind, messages.data]);
   const blocker = useBlocker(
-    ({currentLocation, nextLocation}) => (dirty || pending) && currentLocation.pathname !== nextLocation.pathname,
+    ({currentLocation, nextLocation}) =>
+      (pending || voiceOpen || (!stored && dirty)) && currentLocation.pathname !== nextLocation.pathname,
   );
   useBeforeUnload(
     useCallback(
       (event) => {
-        if (dirty || pending) {
+        if (pending || voiceOpen || (!stored && dirty)) {
           event.preventDefault();
           event.returnValue = '';
         }
       },
-      [dirty, pending],
+      [pending, voiceOpen, stored, dirty],
     ),
   );
-
-  async function attach(file: File, key: string = crypto.randomUUID()) {
+  const teammateReply =
+    profile.data &&
+    dirty &&
+    draft.teammateThrough !== undefined &&
+    messages.data?.pages[0]?.data.some(
+      (message) =>
+        message.sender_type === 'coach' &&
+        message.sender_id !== profile.data?.data.id &&
+        (draft.teammateThrough === null || message.inserted_at > (draft.teammateThrough ?? '')),
+    );
+  function edit(patch: Partial<ConversationDraft>) {
+    setDraft((previous) => ({
+      ...previous,
+      ...patch,
+      teammateThrough: previous.teammateThrough === undefined ? latestHistory : previous.teammateThrough,
+    }));
+    setError('');
+    setNotice('');
+  }
+  async function attach(file: File, fileKey: string = crypto.randomUUID()) {
     if (!uploadContentType(file.type)) {
       setError('Choose a JPEG, PNG, WebP, HEIC, MP4, WebM, MOV or MP3 file.');
       return;
     }
-    if (files.length >= 4 && !files.some((item) => item.key === key)) {
+    if (draft.attachments.length >= 4 && !draft.attachments.some((item) => item.key === fileKey)) {
       setError('You can attach up to four files.');
       return;
     }
     setError('');
-    setFiles((previous) =>
-      previous.some((item) => item.key === key)
-        ? previous.map((item) => (item.key === key ? {key, file, state: 'uploading'} : item))
-        : [...previous, {key, file, state: 'uploading'}],
-    );
+    setDraft((previous) => ({
+      ...previous,
+      teammateThrough: previous.teammateThrough === undefined ? latestHistory : previous.teammateThrough,
+      attachments: previous.attachments.some((item) => item.key === fileKey)
+        ? previous.attachments
+        : [...previous.attachments, {key: fileKey, name: file.name, id: null}],
+    }));
+    setUploads((previous) => [
+      ...previous.filter((item) => item.key !== fileKey),
+      {key: fileKey, file, state: 'uploading', message: ''},
+    ]);
     try {
       const result = await upload.mutateAsync(file);
-      if (mounted.current) {
-        setFiles((previous) =>
-          previous.map((item) => (item.key === key ? {key, file, state: 'done', id: result.id} : item)),
-        );
+      if (!mounted.current) {
+        return;
       }
+      setDraft((previous) => ({
+        ...previous,
+        attachments: previous.attachments.map((item) => (item.key === fileKey ? {...item, id: result.id} : item)),
+      }));
+      setUploads((previous) => previous.filter((item) => item.key !== fileKey));
     } catch (error) {
       if (mounted.current) {
-        setFiles((previous) =>
+        setUploads((previous) =>
           previous.map((item) =>
-            item.key === key
-              ? {key, file, state: 'error', message: errorMessage(error, 'Upload failed. Please try again.')}
+            item.key === fileKey
+              ? {...item, state: 'error', message: errorMessage(error, 'Upload failed. Try again.')}
               : item,
           ),
         );
@@ -115,40 +150,52 @@ export function MessageComposer({conversation}: {conversation: Conversation}) {
     }
   }
   async function submit() {
-    if (pending || recovery === 'uncertain') {
+    if (loaded.kind === 'failed') {
       return;
     }
-    if (!body.trim() && files.length === 0 && !responseId) {
+    if (pending || !messages.data) {
+      return;
+    }
+    if (!draft.body.trim() && !draft.attachments.length && !draft.reference) {
       setError('Write a message or attach a file.');
       textarea.current?.focus();
       return;
     }
-    if (responseId && (!shared.data || shared.isError)) {
-      setError('Wait for the shared response to load, retry it, or remove it before sending.');
-      return;
-    }
-    if (files.some((file) => file.state !== 'done')) {
-      setError('Finish uploading or remove the failed attachment before sending.');
+    if (draft.attachments.some((file) => !file.id)) {
+      setError('Finish uploading or remove the unavailable attachment before sending.');
       return;
     }
     setError('');
     setNotice('');
+    const sending = {
+      ...draft,
+      state: 'uncertain' as const,
+    };
+    // Persist the exact retry identity before the request can reach the server.
+    if (!saveDraft(key, sending)) {
+      setError('This device could not save your send recovery. Free browser storage and try again.');
+      return;
+    }
+    setDraft(sending);
     try {
       await send.mutateAsync({
         kind: 'send',
         body: {
-          body: body.trim() || null,
-          ...(responseId && shared.data ? {embed: {type: 'form_submission', id: shared.data.data.id}} : {}),
-          attachment_ids: files.flatMap((file) => (file.state === 'done' ? [file.id] : [])),
+          body: sending.body.trim() || null,
+          request_id: sending.requestId,
+          ...(sending.reference
+            ? {embed: {type: sending.reference.type, id: sending.reference.id, revision: sending.reference.revision}}
+            : {}),
+          attachment_ids: sending.attachments.flatMap((item) => (item.id ? [item.id] : [])),
         },
       });
+      const cleared = emptyDraft();
+      saveDraft(key, cleared);
       if (!mounted.current) {
         return;
       }
-      setBody('');
-      setFiles([]);
-      removeResponse();
-      setRecovery('editing');
+      setDraft(cleared);
+      setUploads([]);
       setNotice('Message sent.');
       scrollToEnd();
       textarea.current?.focus({preventScroll: true});
@@ -157,21 +204,68 @@ export function MessageComposer({conversation}: {conversation: Conversation}) {
         return;
       }
       if (error instanceof ApiError && error.status >= 400 && error.status < 500) {
+        setDraft((previous) => ({...previous, state: 'editing'}));
         setError(errorMessage(error, 'Could not send the message.'));
-      } else {
-        setRecovery('uncertain');
       }
     }
+  }
+  if (loaded.kind === 'failed') {
+    return (
+      <section
+        aria-label="Draft recovery"
+        className="shrink-0 space-y-3 rounded-2xl border border-border bg-surface p-4"
+      >
+        <FormError message="Your saved draft could not be read. It has been kept unchanged, including any send retry information." />
+        <p className="text-sm text-muted-foreground">
+          Retry recovery to continue. Before discarding, check the conversation: a previous send may have succeeded.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            onPress={() => {
+              const recovered = loadDraft(key);
+              if (recovered.kind === 'ready') {
+                setDraft(recovered.draft);
+              }
+              setLoaded(recovered);
+            }}
+          >
+            Retry draft recovery
+          </Button>
+          <Button
+            variant="ghost"
+            onPress={() => {
+              const cleared = emptyDraft();
+              if (saveDraft(key, cleared)) {
+                setDraft(cleared);
+                setLoaded({kind: 'ready', draft: cleared});
+              } else {
+                setStored(false);
+              }
+            }}
+          >
+            Discard saved draft
+          </Button>
+        </div>
+      </section>
+    );
   }
   return (
     <>
       <form
-        className="max-h-[45dvh] shrink-0 space-y-3 overflow-y-auto rounded-2xl border border-border bg-surface p-3 sm:p-4"
+        className="max-h-[48dvh] shrink-0 space-y-3 overflow-y-auto rounded-2xl border border-border bg-surface p-3 sm:p-4"
         onSubmit={(event) => {
           event.preventDefault();
           submit();
         }}
       >
+        {teammateReply && (
+          <p
+            role="status"
+            className="rounded-xl bg-muted p-3 text-sm"
+          >
+            A teammate replied while you were composing. Your draft is saved. Read their message before sending.
+          </p>
+        )}
         <label
           htmlFor="message-body"
           className="block text-sm font-medium"
@@ -181,164 +275,100 @@ export function MessageComposer({conversation}: {conversation: Conversation}) {
         <Textarea
           id="message-body"
           ref={textarea}
-          value={body}
+          value={draft.body}
           maxLength={4000}
-          disabled={pending || recovery !== 'editing'}
-          onChange={(event) => {
-            setBody(event.target.value);
-            setError('');
-            setNotice('');
-          }}
+          disabled={pending || !messages.data || draft.state === 'uncertain'}
+          onChange={(event) => edit({body: event.target.value})}
           placeholder="Write your message…"
           className="min-h-16 max-h-40"
         />
-        {responseId && (
+        {draft.reference && (
           <div
-            className="flex items-start gap-2 rounded-xl bg-muted p-2"
             role="group"
-            aria-label="Attached form response"
+            aria-label="Attached record"
+            className="flex items-center gap-3 rounded-xl bg-muted p-3"
           >
-            <div className="min-w-0 flex-1 space-y-2">
-              {shared.data ? (
-                <SharedResponse
-                  clientId={conversation.client_id}
-                  id={shared.data.data.id}
-                  title={shared.data.data.form_assignment.form_template.name}
-                />
-              ) : shared.isPending ? (
-                <p
-                  role="status"
-                  className="p-2 text-sm"
-                >
-                  Loading shared response…
-                </p>
-              ) : (
-                <FormError message="Could not load the shared response. Retry or remove it to continue." />
-              )}
-              {shared.isError && (
-                <Button
-                  variant="outline"
-                  onPress={() => {
-                    shared.refetch();
-                  }}
-                >
-                  Retry shared response
-                </Button>
-              )}
+            <div className="min-w-0 flex-1 text-sm">
+              <p className="break-words font-medium">{draft.reference.title}</p>
+              <p className="text-xs text-muted-foreground">Reference · revision {draft.reference.revision}</p>
             </div>
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label="Remove shared response"
-              isDisabled={pending || recovery !== 'editing'}
-              onPress={removeResponse}
+              aria-label="Remove reference"
+              isDisabled={pending || draft.state === 'uncertain'}
+              onPress={() => edit({reference: null})}
             >
               <X aria-hidden="true" />
             </Button>
           </div>
         )}
-        {files.length > 0 && (
-          <div
-            role="group"
-            aria-label="Message attachments"
-            className="flex flex-wrap gap-3"
-          >
-            {files.map((file) => (
-              <Attachment
-                key={file.key}
-                state={file.state}
-                className="w-full sm:w-auto sm:max-w-80"
-              >
-                <AttachmentContent>
-                  <AttachmentTitle title={file.file.name}>{file.file.name}</AttachmentTitle>
-                  <AttachmentDescription>
-                    {file.state === 'done'
-                      ? 'Ready to send'
-                      : file.state === 'uploading'
-                        ? 'Uploading…'
-                        : 'Upload failed'}
-                  </AttachmentDescription>
-                  {file.state === 'error' && <p className="text-xs text-muted-foreground">{file.message}</p>}
-                </AttachmentContent>
-                <AttachmentActions>
-                  {file.state === 'error' && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      isDisabled={pending || recovery !== 'editing'}
-                      onPress={() => {
-                        attach(file.file, file.key);
-                      }}
-                    >
-                      Retry upload
-                    </Button>
-                  )}
-                  <AttachmentAction
-                    aria-label={`Remove ${file.file.name}`}
-                    isDisabled={pending || recovery !== 'editing'}
-                    onPress={() => setFiles((previous) => previous.filter((item) => item.key !== file.key))}
-                  >
-                    <X aria-hidden="true" />
-                  </AttachmentAction>
-                </AttachmentActions>
-              </Attachment>
-            ))}
-          </div>
-        )}
-        {error && <FormError message={error} />}
-        {recovery !== 'editing' && (
-          <div
-            className="space-y-3"
-            role="alert"
-          >
-            <p className="text-sm">
-              We couldn't confirm the send. Your draft is here. Check the latest messages before sending it again.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                isPending={messages.isFetching}
-                onPress={async () => {
-                  const result = await messages.refetch();
-                  if (!mounted.current) {
-                    return;
-                  }
-                  if (result.isError) {
-                    setError('Could not check recent messages. Try again.');
-                    return;
-                  }
-                  setError('');
-                  setRecovery('checked');
-                  scrollToEnd();
-                }}
-              >
-                Check latest messages
-              </Button>
-              {recovery === 'checked' && (
-                <>
-                  <Button
-                    variant="outline"
-                    onPress={() => {
-                      setBody('');
-                      setFiles([]);
-                      removeResponse();
-                      setRecovery('editing');
-                      setNotice('Draft cleared.');
-                    }}
-                  >
-                    Already sent · clear draft
-                  </Button>
-                  <Button
-                    onPress={() => {
-                      submit();
-                    }}
-                    isPending={send.isPending}
-                  >
-                    Send again
-                  </Button>
-                </>
+        {draft.attachments.map((file) => {
+          const progress = uploads.find((item) => item.key === file.key);
+          return (
+            <div
+              key={file.key}
+              role="group"
+              aria-label={file.name}
+              className="rounded-xl border border-border p-3 text-sm"
+            >
+              <div className="flex items-center gap-2">
+                <p className="min-w-0 flex-1 break-all">{file.name}</p>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`Remove ${file.name}`}
+                  isDisabled={pending || draft.state === 'uncertain'}
+                  onPress={() => edit({attachments: draft.attachments.filter((item) => item.key !== file.key)})}
+                >
+                  <X aria-hidden="true" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {file.id
+                  ? 'Ready to send'
+                  : progress?.state === 'uploading'
+                    ? 'Uploading…'
+                    : progress
+                      ? progress.message
+                      : 'Upload was interrupted. Remove this file and attach it again.'}
+              </p>
+              {progress?.state === 'error' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => {
+                    attach(progress.file, file.key);
+                  }}
+                >
+                  Retry upload
+                </Button>
               )}
             </div>
+          );
+        })}
+        {error && <FormError message={error} />}
+        {!stored && (
+          <FormError message="Draft could not be saved on this device. Keep this page open until storage is available." />
+        )}
+        {draft.state === 'uncertain' && !send.isPending && (
+          <div
+            role="alert"
+            className="space-y-2"
+          >
+            <p className="text-sm">
+              We couldn’t confirm the send. Your message is saved. Retry safely; an accepted message will not be sent
+              twice.
+            </p>
+            <Button
+              onPress={() => {
+                submit();
+              }}
+              isDisabled={pending || !messages.data}
+              isPending={send.isPending}
+            >
+              Retry send
+            </Button>
           </div>
         )}
         <div className="flex items-center justify-between gap-3">
@@ -360,7 +390,8 @@ export function MessageComposer({conversation}: {conversation: Conversation}) {
             />
             <Button
               variant="ghost"
-              isDisabled={pending || files.length >= 4 || recovery !== 'editing'}
+              aria-label="Attach file"
+              isDisabled={pending || !messages.data || draft.attachments.length >= 4 || draft.state === 'uncertain'}
               onPress={() => input.current?.click()}
             >
               <Paperclip aria-hidden="true" />
@@ -369,7 +400,7 @@ export function MessageComposer({conversation}: {conversation: Conversation}) {
             <Button
               variant="ghost"
               aria-label="Record voice note"
-              isDisabled={pending || files.length >= 4 || recovery !== 'editing'}
+              isDisabled={pending || !messages.data || draft.attachments.length >= 4 || draft.state === 'uncertain'}
               onPress={() => setVoiceOpen(true)}
             >
               <Mic aria-hidden="true" />
@@ -378,16 +409,15 @@ export function MessageComposer({conversation}: {conversation: Conversation}) {
           </div>
           <Button
             type="submit"
-            isDisabled={
-              upload.isPending || recovery !== 'editing' || Boolean(responseId && (!shared.data || shared.isError))
-            }
+            isDisabled={upload.isPending || !messages.data || draft.state === 'uncertain'}
             isPending={send.isPending}
           >
             {send.isPaused ? 'Waiting for connection…' : 'Send message'}
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          Up to 4 files. Photos up to 15 MB, videos 50 MB, audio 10 MB. Enter starts a new line.
+          {stored ? 'Draft saved on this device.' : 'Draft has not been saved on this device.'} Up to 4 files.
+          Unfinished uploads need to be attached again after reopening.
         </p>
         {notice && (
           <p
@@ -421,33 +451,25 @@ export function MessageComposer({conversation}: {conversation: Conversation}) {
         }}
       >
         <DialogHeader>
-          <DialogTitle>Leave this conversation?</DialogTitle>
+          <DialogTitle>Keep this page open</DialogTitle>
         </DialogHeader>
         <div className="dialog-body space-y-4">
-          <p>Your unsent message and attachments will be discarded.</p>
-          <div className="flex flex-wrap gap-3">
-            <Button
-              autoFocus
-              onPress={() => {
-                if (blocker.state === 'blocked') {
-                  blocker.reset();
-                }
-              }}
-            >
-              Keep writing
-            </Button>
-            <Button
-              variant="outline"
-              isDisabled={pending}
-              onPress={() => {
-                if (blocker.state === 'blocked') {
-                  blocker.proceed();
-                }
-              }}
-            >
-              Discard draft
-            </Button>
-          </div>
+          <p>
+            {pending
+              ? 'Wait for the send or upload to finish. Your message text is saved on this device.'
+              : voiceOpen
+                ? 'Finish or cancel the voice recording first.'
+                : 'Your draft could not be saved on this device. Stay here to preserve it.'}
+          </p>
+          <Button
+            onPress={() => {
+              if (blocker.state === 'blocked') {
+                blocker.reset();
+              }
+            }}
+          >
+            Keep writing
+          </Button>
         </div>
       </Dialog>
     </>

@@ -125,6 +125,9 @@ export function Messages() {
           </p>
         </div>
       </header>
+      <p className="px-5 pb-2 text-xs text-muted-foreground">
+        Your coach replies asynchronously. Messages and shared notes may not be read immediately.
+      </p>
       <MessageScrollerProvider
         defaultScrollPosition="end"
         autoScroll

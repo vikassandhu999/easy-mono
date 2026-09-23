@@ -116,7 +116,7 @@ try {
       const token = createHash('sha256')
         .update(email + '123456')
         .digest('hex');
-      await page.goto(`/verify?token=${token}&returnTo=%2Fforms%2Fnew`);
+      await page.goto(`/verify?token=${token}&returnTo=%2Ftraining-exercises%2Fnew`);
       await expect(page.getByRole('heading', {name: 'Confirm your email', exact: true})).toBeVisible();
       await page.route('**/v1/auth/verify', (route) =>
         route.fulfill({status: 503, json: {error: {message: 'Verification temporarily unavailable. Try again.'}}}),
@@ -140,21 +140,21 @@ try {
       await page.keyboard.press('Tab');
       await expect(page.getByRole('button', {name: 'Create business', exact: true})).toBeFocused();
       await page.keyboard.press('Enter');
-      await expect(page.getByRole('heading', {name: 'Know the person behind the plan.', exact: true})).toBeFocused();
+      await expect(page.getByRole('heading', {name: 'Build once. Coach each person.', exact: true})).toBeFocused();
       await tabTo(page, page.getByRole('button', {name: 'Skip tour', exact: true}));
       await page.keyboard.press('Enter');
-      await expect(page.getByRole('heading', {name: 'Create form', exact: true})).toBeVisible();
+      await expect(page.getByRole('heading', {name: 'Create exercise', exact: true})).toBeVisible();
       await check(`account-${width}: focus after profile loads`, () => expect(page.getByRole('main')).toBeFocused());
-      const draftName = page.getByRole('textbox', {name: 'Form name', exact: true});
+      const draftName = page.getByRole('textbox', {name: 'Exercise name', exact: true});
       await tabTo(page, draftName);
-      await page.keyboard.type('Unfinished form');
+      await page.keyboard.type('Unfinished exercise');
       await page.evaluate(async () => {
         const {queryClient} = await import('/src/api/query-client.ts');
         const {authKeys} = await import('/src/api/keys.ts');
         await queryClient.invalidateQueries({queryKey: authKeys.profile()});
       });
       await expect(draftName).toBeFocused();
-      await expect(draftName).toHaveValue('Unfinished form');
+      await expect(draftName).toHaveValue('Unfinished exercise');
       await draftName.fill('');
 
       await page.goto('/missing-test-route');
@@ -169,7 +169,7 @@ try {
       await expect(page.getByRole('menuitem', {name: 'Sign out', exact: true})).toBeFocused();
       await page.keyboard.press('Enter');
       await expect(page.getByRole('heading', {name: 'Welcome back', exact: true})).toBeVisible();
-      await page.goto(`/verify?token=${token}&returnTo=%2Fforms%2Fnew`);
+      await page.goto(`/verify?token=${token}&returnTo=%2Ftraining-exercises%2Fnew`);
       await expect(page.getByRole('heading', {name: 'Confirm your email', exact: true})).toBeVisible();
       await tabTo(page, page.getByRole('button', {name: 'Confirm email', exact: true}));
       await page.keyboard.press('Enter');
@@ -177,7 +177,7 @@ try {
       await expect(page.getByRole('button', {name: 'Confirm email', exact: true})).toHaveCount(0);
       await tabTo(page, page.getByRole('link', {name: 'Sign in with a code', exact: true}));
       await page.keyboard.press('Enter');
-      await expect(page).toHaveURL('/login?returnTo=%2Fforms%2Fnew');
+      await expect(page).toHaveURL('/login?returnTo=%2Ftraining-exercises%2Fnew');
       expect(errors).toEqual([]);
       console.log(`Auth keyboard, pending, long content, confirmation link and route recovery checked at ${width}px.`);
     } finally {

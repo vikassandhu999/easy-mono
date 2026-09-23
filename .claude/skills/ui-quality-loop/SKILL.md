@@ -12,9 +12,9 @@ screenshots of static states.
 
 ## 1. Setup
 
-1. Read the root, frontend, and target-app `AGENTS.md`, `frontend/apps/coachapp-v2/UI-CONTRACT.md`, and the frontend entries in `docs/agents/recurring-mistakes.md`.
+1. Read the root, frontend, and target-app `AGENTS.md`, the target app’s UI contract if it provides one, and the frontend entries in `docs/agents/recurring-mistakes.md`.
 2. Required sub-skills: `design-pro` for CoachApp visual/design work; `chrome-devtools-axi` for live browser work.
-3. Dev servers are the user's — coachapp :2021, clientapp :1314, backend already up. Verify with one request; if one is down, report and stop rather than starting it. Reuse the authenticated AXI session; when a login is needed, use the standing seed accounts coach: `admin@example.com` and client: `gina.lanetti@example.com` with dev OTP `123456`.
+3. Dev servers are the user's; read the target app’s package and dev configuration for its URL. Verify with one request; if one is down, report and stop rather than starting it. Reuse the authenticated AXI session; when a login is needed, use the standing seed accounts coach: `admin@example.com` and client: `gina.lanetti@example.com` with dev OTP `123456`.
 4. Record `git status --short --branch`. Every existing change is user-owned.
 5. Implementation runs happen on a dedicated `ui-quality/<app>-<date>` branch created from a clean tree. Dirty tree → clean worktree, or ask.
 6. Work stays on the local branch — never push, merge, rebase, or force-push.
@@ -78,7 +78,7 @@ Applied to this loop:
 
 1. **Behavioral defect:** an interaction whose outcome is wrong — data lost or duplicated, action silently no-ops, wrong navigation, state not persisted, stale error kept. Highest priority.
 2. **Objective visual defect:** clipping, overlap, overflow past a container, unreadable contrast, missing focus, layout shift, inaccessible control.
-3. **System inconsistency:** violates the UI contract, theme, canonical component (PickerModal for pickers, control-height tiers, `type-*` sizes…), or an established repeated pattern.
+3. **System inconsistency:** violates the target app’s contract, theme, shared component API, or an established repeated pattern.
 4. **Subjective:** a preference without an authority. Report; fix only if the user asked for redesign.
 
 A "regression" claim needs an authority: an approved design, screenshot, or
@@ -89,7 +89,7 @@ nothing about itself.
 ## 5. Repair and verify
 
 Handle one coherent root-cause group at a time. Before changing a shared seam
-(theme rule, `@components`, `builder-kit`), enumerate ALL its consumers
+(theme rule or shared `src/ui/` component), enumerate ALL its consumers
 (`rg -l`) and spot-check each in the browser after the fix — a seam fix that
 helps one route and breaks four is worse than no fix.
 
@@ -107,7 +107,7 @@ After each group:
 2. Reopen the exact route, state, and viewport with fresh browser evidence; re-run the flow end-to-end when the fix touched behavior.
 3. Check the other required viewport and every consumer of a changed shared seam.
 4. Check console and relevant network failures.
-5. Run focused Biome, app typecheck/build, `./scripts/check-rm.sh`, `./scripts/check-ui-contract.sh` when applicable, and `git diff --check`. Record pre-existing failures as pre-existing; a run absorbs only its own.
+5. Run focused Biome, app typecheck/build, `./scripts/check-rm.sh`, the target app’s applicable theme checks, and `git diff --check`. Record pre-existing failures as pre-existing; a run absorbs only its own.
 
 ## 6. Write back prevention
 

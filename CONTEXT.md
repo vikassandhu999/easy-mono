@@ -1,43 +1,26 @@
 # Easy coaching
 
-Easy supports coaches who manage client onboarding, programming, check-ins, conversations, and coaching engagements.
+Easy supports coaches who manage clients, training and nutrition plans, workout and meal history, conversations, and coaching engagements.
 
 ## Language
 
-**Workbench**:
-The coach's action-oriented workspace. It contains ordered queues of work that can be completed or deferred.
-
-**Queue**:
-A drainable, ordered collection of coach work. Every queue has an entry rule, an exit action, and a reason for each item.
-_Avoid_: Metric, list
-
-**Queue item**:
-One unit of coach work. A client may have items in several queues when separate actions are required. Several reasons for the same work do not create several items.
-
-**Queue reason**:
-A machine-readable domain fact explaining why an item belongs to a queue. An item may have several ordered reasons. Reasons contain structured facts, not user-facing labels, tones, or actions.
-
-**Onboarding**:
-Action required to move a client through invitation acceptance and intake completion.
-_Avoid_: New clients
-
-**Intake**:
-The single lifetime onboarding form assigned to a client. It may be completed or dismissed, but a client is never assigned a second Intake.
-
-**Recent client**:
-A client whose invitation was accepted within the reporting window. This is a reporting concept, not a work queue.
+**Client**:
+A person invited to a coaching business. Direct invitation and acceptance establish access. A coach manages the client's profile, plans, history, and conversation.
 
 **Required service**:
-Training or Nutrition currently selected for a client. A coach may select it directly; a client's submitted Service type answer may replace the selection. A requirement has no separate start date or requested/confirmed state.
-
-**Service type question**:
-An Intake-only question asking whether the client requires Training, Nutrition, or both. Its submitted answer becomes the client's required services. It is never part of a Check-in.
-
-**Unclassified client**:
-An active client with no required service selected. An unclassified client does not enter Programming until Training or Nutrition is selected.
+Training or Nutrition selected directly by the coach for a client. A requirement has no separate start date or requested/confirmed state.
 
 **Coverage**:
 The inclusive local-date range for which a client-owned plan supplies a required service. Coverage begins on its start date and is open-ended when it has no end date.
+
+**Note to coach**:
+Client commentary sent as a chat message with an optional reference to a workout or meal record. Draft saving is separate from completing a workout or sharing a meal.
+
+**Record reference**:
+One optional source link per message, carrying a frozen summary and revision. Opening it shows the source record. Source corrections do not rewrite the message preview.
+
+**Not recorded**:
+No structured record is available. This is not evidence of non-adherence or a skipped meal.
 
 **Training Template**:
 A reusable training prescription that can be copied for a client. It is never itself assigned to a client.
@@ -52,7 +35,7 @@ The act of creating a client-owned plan from a reusable template. It is not a pe
 _Avoid_: Assigned plan
 
 **Training Session**:
-One client's record of performing a planned or freestyle workout. A completed or discarded Training Session is final historical evidence.
+One client's record of performing a planned or freestyle workout. Completion records that the activity happened and first shares it. Clients may correct recorded facts afterward using the current revision; the captured prescription remains unchanged. Discarded sessions remain closed.
 _Avoid_: Workout log
 
 **Planned Training Session**:
@@ -80,16 +63,6 @@ _Avoid_: Planned set
 **Performed Set**:
 A historical record of work performed during a Training Session. It freezes the exercise name even when it retains a live exercise reference.
 _Avoid_: Logged set
-
-**Waiting conversation**:
-A conversation in which the client has started an unanswered message sequence. It remains waiting until a coach replies or marks it handled.
-_Avoid_: Unread conversation
-
-**Handled**:
-A coach decision that a waiting conversation needs no reply.
-
-**Quiet client**:
-An active client whose most recent due check-in was missed. Training inactivity is not part of this definition for v1.
 
 ### Nutrition
 

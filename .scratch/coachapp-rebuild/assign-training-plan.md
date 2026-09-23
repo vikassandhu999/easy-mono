@@ -1,6 +1,6 @@
 # Assign a training plan
 
-When I have reviewed a client's intake, I need to choose an existing training plan and its dates so the client can begin their prescribed workouts. The user approved this slice after Forms and the shared list foundation. Phones are the primary layout; desktop keeps the same decisions and actions.
+When a client needs training guidance, choose an existing plan and its dates. Phones are the primary layout; desktop keeps the same decisions and actions.
 
 ## Screen brief
 
@@ -20,7 +20,7 @@ Plan prescription arrays are rendered in server order. No browser filtering, sor
 
 Verified on 2026-09-10. `tests/training/assign.browser.mjs` passes at 375px and 1280px against the isolated browser API. It creates 45 real templates and an accepted client, then exercises three cursor pages, a failed next page with keyboard retry, server totals/search, saved search and scroll on return, preview loading failure, workout and set values including zero, required/reversed dates, stale revision refresh, assignment failure and retry, and persisted client access to the copied prescription. It also verifies overlap rejection and an upcoming assignment, a committed write with a lost response, retained rows after refresh failure, archived-template rejection, and an empty-library response fixture. Mobile regressions cover leaving and switching accounts while an assignment response is pending. Error focus and visibility are asserted after submission. Screenshots were inspected at both widths.
 
-The existing Clients/intake suite and shared-list suite pass. Coach build, Biome, repository shape/rule checks, and diff checks pass. Backend `mix precommit` passes with 1,633 tests and zero failures, including controller coverage for cursor bounds, authorization, literal search, same-timestamp ordering, and stale revision rejection. `just gen-api` refreshed all three consumers; clientapp-v2 typecheck passes. The legacy coachapp-v2 typecheck still reports the React ref-type conflicts in question-type-meta.ts and meal-palette.tsx recorded by the preceding slice. Its handwritten code is unchanged.
+Current reset verification is recorded in `../core-reset/verification.md`.
 
 The coach build retains its bundle-size warning (638 kB uncompressed JS). Browser checks do not replace target-coach usability review or physical-device testing. No production deployment or commit was performed.
 

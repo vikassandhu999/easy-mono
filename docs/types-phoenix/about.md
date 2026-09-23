@@ -6,7 +6,7 @@ The rule is one sentence: you write Elixir types for the JSON, and you point `ty
 
 ## What you maintain today
 
-A public JSON endpoint is unfinished until the router, the `operation` macro, an OpenApiSpex schema, the JSON view or payload, and `just gen-api` agree. RM-002 exists because the schema and the view drift. That is four copies of one JSON shape, plus a generated fifth in `frontend/apps/coachapp-v2/src/api/schema.ts` and `frontend/apps/clientapp-v2/src/api/schema.ts`.
+A public JSON endpoint is unfinished until the router, the `operation` macro, an OpenApiSpex schema, the JSON view or payload, and `just gen-api` agree. RM-002 exists because the schema and the view drift. That is four copies of one JSON shape, plus a generated fifth in `frontend/apps/coachapp/src/api/schema.ts`, `frontend/apps/clientapp/src/api/schema.ts`, and `frontend/apps/clientapp-v2/src/api/schema.ts`.
 
 OpenAPI braids shape, constraints, examples, docs, runtime cast, and client codegen into one artifact. Generating OpenAPI in secret still means thinking in OpenAPI.
 

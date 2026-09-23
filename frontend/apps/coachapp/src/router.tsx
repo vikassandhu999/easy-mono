@@ -1,11 +1,5 @@
 import {useSyncExternalStore} from 'react';
 import {createBrowserRouter, Link, matchPath, Navigate, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
-import {ApplicationPage} from './acquisition/application';
-import {Applications} from './acquisition/applications';
-import {CoachingPage} from './acquisition/coaching-page';
-import {CoachingPageEditor} from './acquisition/coaching-page-editor';
-import {EnrollApplication} from './acquisition/enroll-application';
-import {PublicCoachingPage} from './acquisition/public-coaching-page';
 import {parseSession, sessionSnapshot, subscribeSession} from './api/session';
 import {AppShell} from './app-shell';
 import {AuthLayout} from './auth/auth-layout';
@@ -17,12 +11,6 @@ import {Signup} from './auth/signup';
 import {Verify} from './auth/verify';
 import {Welcome} from './auth/welcome';
 import {BillingPage} from './billing/billing';
-import {CheckInRequests} from './check-ins/check-in-requests';
-import {CheckInResponse} from './check-ins/check-in-response';
-import {CheckInResponses, ClientCheckInResponses} from './check-ins/check-in-responses';
-import {CheckInSchedules} from './check-ins/check-in-schedules';
-import {CreateCheckIn} from './check-ins/create-check-in';
-import {AssignIntake} from './clients/assign-intake';
 import {AssignNutritionPlan} from './clients/assign-nutrition-plan';
 import {AssignTrainingPlan} from './clients/assign-training-plan';
 import {ChangeClientCoach} from './clients/change-client-coach';
@@ -36,9 +24,6 @@ import {ExerciseEditor} from './exercises/exercise-editor';
 import {Exercises} from './exercises/exercises';
 import {FoodEditor} from './foods/food-editor';
 import {Foods} from './foods/foods';
-import {FormEditor} from './forms/form-editor';
-import {Forms} from './forms/forms';
-import {ManageForm} from './forms/manage-form';
 import {NutritionHistory} from './nutrition-history/nutrition-history';
 import {LibraryManagement} from './nutrition-library/library-management';
 import {NutritionPlanEditor} from './nutrition-plans/nutrition-plan-editor';
@@ -57,8 +42,6 @@ import {TrainingPlanEditor} from './training-plans/training-plan-editor';
 import {TrainingPlans} from './training-plans/training-plans';
 import {TrainingSession} from './training-sessions/training-session';
 import {TrainingSessions} from './training-sessions/training-sessions';
-import {WeightProgress} from './weight-progress/weight-progress';
-import {Workbench} from './workbench/workbench';
 
 function Gate({guest = false}: {guest?: boolean}) {
   const session = parseSession(useSyncExternalStore(subscribeSession, sessionSnapshot));
@@ -122,10 +105,7 @@ function Root() {
       <Outlet />
       <ScrollRestoration
         getKey={(location) =>
-          location.pathname === routes.workbench ||
           location.pathname === routes.team ||
-          location.pathname === routes.applications ||
-          location.pathname === routes.forms ||
           location.pathname === routes.conversations ||
           location.pathname === routes.trainingPlans ||
           location.pathname === routes.exercises ||
@@ -140,13 +120,8 @@ function Root() {
           matchPath(routes.manageClientNutritionPlan, location.pathname) ||
           matchPath(routes.manageFood, location.pathname) ||
           matchPath(routes.manageRecipe, location.pathname) ||
-          location.pathname === routes.checkInResponses ||
-          matchPath(routes.clientCheckInResponses, location.pathname) ||
           matchPath(routes.trainingSessions, location.pathname) ||
-          matchPath(routes.weightProgress, location.pathname) ||
           matchPath(routes.assignNutritionPlan, location.pathname) ||
-          matchPath(routes.clientCheckIns, location.pathname) ||
-          matchPath(routes.checkInRequests, location.pathname) ||
           location.pathname === routes.home ||
           matchPath(routes.assignTrainingPlan, location.pathname)
             ? location.pathname + location.search
@@ -170,22 +145,24 @@ export const router = createBrowserRouter([
         ],
       },
       {path: routes.invitation, element: <Invitation />},
-      {path: routes.publicCoachingPage, element: <PublicCoachingPage />},
       {
         element: <Gate />,
         children: [
           {
             element: <AppShell />,
             children: [
+              {
+                path: '/',
+                element: (
+                  <Navigate
+                    to={routes.home}
+                    replace
+                  />
+                ),
+              },
               {path: routes.home, element: <Clients />},
-              {path: routes.workbench, element: <Workbench />},
               {path: routes.team, element: <Team />},
               {path: routes.billing, element: <BillingPage />},
-              {path: routes.coachingPage, element: <CoachingPage />},
-              {path: routes.applications, element: <Applications />},
-              {path: routes.application, element: <ApplicationPage />},
-              {path: routes.enrollApplication, element: <EnrollApplication />},
-              {path: routes.editCoachingPage, element: <CoachingPageEditor />},
               {path: routes.inviteCoach, element: <InviteCoach />},
               {path: routes.teamMember, element: <TeamMemberPage />},
               {path: routes.changeClientCoach, element: <ChangeClientCoach />},
@@ -194,20 +171,11 @@ export const router = createBrowserRouter([
               {path: routes.inviteClient, element: <InviteClient />},
               {path: routes.client, element: <ClientOverview />},
               {path: routes.clientProfile, element: <ClientProfile />},
-              {path: routes.assignIntake, element: <AssignIntake />},
               {path: routes.conversations, element: <Conversations />},
               {path: routes.clientConversation, element: <Conversation />},
               {path: routes.trainingSessions, element: <TrainingSessions />},
               {path: routes.trainingSession, element: <TrainingSession />},
               {path: routes.nutritionHistory, element: <NutritionHistory />},
-              {path: routes.weightProgress, element: <WeightProgress />},
-              {path: routes.clientCheckIns, element: <CheckInSchedules />},
-              {path: routes.checkInRequests, element: <CheckInRequests />},
-              {path: routes.createCheckIn, element: <CreateCheckIn />},
-              {path: routes.checkInResponses, element: <CheckInResponses />},
-              {path: routes.checkInResponse, element: <CheckInResponse />},
-              {path: routes.clientCheckInResponses, element: <ClientCheckInResponses />},
-              {path: routes.clientCheckInResponse, element: <CheckInResponse />},
               {path: routes.assignTrainingPlan, element: <AssignTrainingPlan />},
               {path: routes.previewTrainingPlan, element: <AssignTrainingPlan />},
               {path: routes.trainingPlans, element: <TrainingPlans />},
@@ -237,10 +205,6 @@ export const router = createBrowserRouter([
               {path: routes.editClientNutritionPlan, element: <NutritionPlanEditor />},
               {path: routes.assignNutritionPlan, element: <AssignNutritionPlan />},
               {path: routes.previewNutritionPlan, element: <AssignNutritionPlan />},
-              {path: routes.forms, element: <Forms />},
-              {path: routes.createForm, element: <FormEditor key="new" />},
-              {path: routes.editForm, element: <FormEditor />},
-              {path: routes.manageForm, element: <ManageForm />},
             ],
           },
           {path: routes.setup, element: <Setup />},

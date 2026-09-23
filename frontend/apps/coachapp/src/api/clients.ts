@@ -1,6 +1,6 @@
 import {useInfiniteQuery, useMutation, useQuery} from '@tanstack/react-query';
 import {ApiError, call, client} from './client';
-import {billingKeys, clientKeys, workbenchKeys} from './keys';
+import {billingKeys, clientKeys} from './keys';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
 import type {Client, ClientInvite, ClientUpdate, paths} from './schema';
@@ -37,7 +37,6 @@ async function updateClient(result: {data: Client}, _input: unknown, sessionId: 
   queryClient.setQueryData(clientKeys.detail(result.data.id), result);
   await Promise.all([
     queryClient.invalidateQueries({queryKey: clientKeys.lists()}),
-    queryClient.invalidateQueries({queryKey: workbenchKeys.all}),
     queryClient.invalidateQueries({queryKey: billingKeys.all}),
   ]);
   if (getSession()?.id !== sessionId) {
@@ -54,7 +53,6 @@ export function useInviteClient() {
       if (sessionId && getSession()?.id === sessionId) {
         await Promise.all([
           queryClient.invalidateQueries({queryKey: clientKeys.lists()}),
-          queryClient.invalidateQueries({queryKey: workbenchKeys.all}),
           queryClient.invalidateQueries({queryKey: billingKeys.all}),
         ]);
       }

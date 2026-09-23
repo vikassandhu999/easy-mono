@@ -3,7 +3,7 @@ import {queryClient, snapshotAge} from './query-client';
 import {getSession, subscribeSession} from './session';
 import {readStored, removeStored, writeStored} from './storage';
 
-const version = 1;
+const version = 2;
 const listeners = new Set<() => void>();
 let issue = '';
 export const offlineIssue = () => issue;
@@ -23,10 +23,8 @@ function eligible(key: QueryKey, sessionId: string) {
   return (
     key[1] === sessionId &&
     ((key[0] === 'auth' && key[2] === 'profile') ||
-      (key[0] === 'forms' && ['lists', 'details'].includes(String(key[2]))) ||
       (key[0] === 'training' && ['lists', 'details', 'coverage', 'active'].includes(String(key[2]))) ||
       (key[0] === 'nutrition' && ['lists', 'details'].includes(String(key[2]))) ||
-      (key[0] === 'weight' && ['lists', 'details'].includes(String(key[2]))) ||
       (key[0] === 'conversation' && ['lists', 'detail'].includes(String(key[2]))))
   );
 }

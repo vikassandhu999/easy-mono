@@ -1,10 +1,10 @@
-import type {FormTemplateIndex} from './schema';
+import type {ConversationInbox} from './schema';
 
-export type CursorPage<Item> = Omit<FormTemplateIndex, 'data' | 'count'> & {data: Item[]; count: number | null};
+export type CursorPage<Item> = Omit<ConversationInbox, 'data' | 'count'> & {data: Item[]; count: number | null};
 
 export const cursorPagination = {
   initialPageParam: 'start',
-  getNextPageParam: (page: Pick<FormTemplateIndex, 'next_cursor'>) => page.next_cursor,
+  getNextPageParam: (page: Pick<ConversationInbox, 'next_cursor'>) => page.next_cursor,
   staleTime: 30_000,
 };
 

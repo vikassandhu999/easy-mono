@@ -8,21 +8,19 @@ import {getSession} from '../api/session';
 
 const intentKey = 'photo-picker';
 const photoLibrary = registerPlugin<{pick: () => Promise<{path: string}>}>('PhotoLibrary');
-type PhotoIntent = {id: string; resource: string; returnPath: string; questionShape: string};
+type PhotoIntent = {id: string; resource: string; returnPath: string};
 function readIntent(value: unknown): PhotoIntent | null {
   return value &&
     typeof value === 'object' &&
     'id' in value &&
     typeof value.id === 'string' &&
-    'questionShape' in value &&
-    typeof value.questionShape === 'string' &&
     'resource' in value &&
     typeof value.resource === 'string' &&
     'returnPath' in value &&
     typeof value.returnPath === 'string' &&
     value.returnPath.startsWith('/') &&
     !value.returnPath.startsWith('//')
-    ? {id: value.id, resource: value.resource, returnPath: value.returnPath, questionShape: value.questionShape}
+    ? {id: value.id, resource: value.resource, returnPath: value.returnPath}
     : null;
 }
 function photoError(error: unknown) {
@@ -71,7 +69,6 @@ async function keepPhoto(data: unknown, intent: PhotoIntent, session: NonNullabl
     resource: intent.resource,
     blob,
     name: 'Photo',
-    questionShape: intent.questionShape,
   };
   await savePhoto(photo, () => getSession()?.id === session.id);
   await removeDraft(session.id, intentKey);
@@ -93,7 +90,7 @@ function capturePhoto() {
   }
   return Camera.takePhoto({quality: 85, saveToGallery: false});
 }
-export async function pickNativePhoto(source: 'camera' | 'gallery', resource: string, questionShape: string) {
+export async function pickNativePhoto(source: 'camera' | 'gallery', resource: string) {
   const session = getSession();
   if (!session?.accountId) {
     throw new Error('Please sign in again before choosing a photo.');
@@ -101,7 +98,6 @@ export async function pickNativePhoto(source: 'camera' | 'gallery', resource: st
   const intent = {
     id: crypto.randomUUID(),
     resource,
-    questionShape,
     returnPath: window.location.pathname + window.location.search,
   };
   await writeDraft(session.id, intentKey, intent);

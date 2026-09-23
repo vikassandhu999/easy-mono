@@ -15,6 +15,12 @@ try {
     const page = await context.newPage();
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
+    const retiredRequests = [];
+    page.on('request', (request) => {
+      if (/\/v1\/client\/weight[-_]/.test(request.url())) {
+        retiredRequests.push(request.url());
+      }
+    });
     try {
       await page.goto(`/invite/${fixture.token}`);
       await page.getByRole('button', {name: 'Continue with email'}).click();
@@ -27,82 +33,69 @@ try {
         () => JSON.parse(localStorage.getItem('clientapp.auth.v1')).tokens.access_token,
       );
       const profile = async () => (await api('/v1/client/me', {token})).data;
-      await page.getByRole('link', {name: 'Weight goal', exact: true}).click();
-      const value = page.getByRole('textbox', {name: 'Goal weight', exact: true});
-      await expect(value).toHaveValue('');
-      await page.getByRole('button', {name: 'Save goal', exact: true}).click();
-      await expect(page.getByText('Enter goal weight.', {exact: true})).toBeVisible();
-      await value.fill('1000');
-      await page.getByRole('button', {name: 'Save goal', exact: true}).click();
-      await expect(value).toBeFocused();
-      await expect(page.getByText('Enter a goal greater than 0', {exact: false})).toBeVisible();
-      await value.fill('72,5');
+      await expect(page.getByRole('link', {name: /Weight goal|Weight & progress/})).toHaveCount(0);
+      await page.getByRole('link', {name: 'Personal details', exact: true}).click();
+      const firstName = page.getByLabel('First name');
+      await firstName.fill('Sam');
+      await page.getByLabel('Phone', {exact: true}).fill('+15555550123');
       await expect(page.getByText('Draft saved on this device.', {exact: true})).toBeVisible();
       await page.reload();
-      await expect(value).toHaveValue('72,5');
+      await expect(firstName).toHaveValue('Sam');
+      await expect(page.getByLabel('Phone', {exact: true})).toHaveValue('+15555550123');
+      await context.setOffline(true);
+      await expect(page.getByRole('button', {name: 'Save details'})).toBeDisabled();
+      await context.setOffline(false);
+      await expect(page.getByRole('button', {name: 'Save details'})).toBeEnabled();
       let writes = 0;
       await page.route('**/v1/client/me', async (route) => {
         if (route.request().method() !== 'PATCH') {
           return route.continue();
         }
         writes++;
-        expect(route.request().postDataJSON()).toEqual({goal_weight_value: 72.5, goal_weight_unit: 'kg'});
-        expect((await route.fetch()).ok()).toBe(true);
-        await route.abort('connectionreset');
+        expect(route.request().postDataJSON()).toEqual({first_name: 'Sam', last_name: 'Client', phone: '+15555550123'});
+        if (writes === 1) {
+          return route.fulfill({status: 503, json: {error_message: 'Temporarily unavailable'}});
+        }
+        return route.continue();
       });
-      await page.getByRole('button', {name: 'Save goal', exact: true}).click();
-      await expect(page.getByText('Your goal is saved.', {exact: true})).toBeVisible();
-      expect(writes).toBe(1);
-      expect(Number((await profile()).goal_weight_value)).toBe(72.5);
-      await page.unroute('**/v1/client/me');
-      await page.getByRole('button', {name: 'Goal unit'}).click();
-      await page.getByRole('option', {name: 'Pounds (lb)'}).click();
-      await value.fill('160');
-      await page.getByRole('button', {name: 'Save goal', exact: true}).click();
-      await expect(page.getByText('Your goal is saved.', {exact: true})).toBeVisible();
-      expect((await profile()).goal_weight_unit).toBe('lbs');
-      await page.screenshot({path: `tests/account/artifacts/goal-${width}.png`, fullPage: true});
-      await page.getByRole('link', {name: 'Back', exact: true}).click();
-      await expect(page.getByRole('link', {name: 'Weight goal', exact: true})).toContainText('160');
-      await page.getByRole('link', {name: 'Personal details', exact: true}).click();
-      await page.getByLabel('First name').fill('Sam');
+      await page.getByRole('button', {name: 'Save details'}).click();
+      await expect(page.locator('form').getByRole('alert')).toBeVisible();
+      await expect(firstName).toHaveValue('Sam');
       await page.getByRole('button', {name: 'Save details'}).click();
       await expect(page.getByText('Your details are saved.')).toBeVisible();
-      expect(Number((await profile()).goal_weight_value)).toBe(160);
-      await page.getByRole('link', {name: 'Back', exact: true}).click();
-      await page.getByRole('link', {name: 'Weight goal', exact: true}).click();
-      await expect(value).toHaveValue('160.00');
-      await value.fill('158');
-      await expect(page.getByText('Draft saved on this device.', {exact: true})).toBeVisible();
-      // Keep the incomplete edit while offline, then compare a goal changed elsewhere.
-      await context.setOffline(true);
-      await expect(page.getByRole('button', {name: 'Save goal', exact: true})).toBeDisabled();
-      await value.fill('157,5');
-      await expect(page.getByText('Draft saved on this device.', {exact: true})).toBeVisible();
-      await context.setOffline(false);
-      await api('/v1/client/me', {method: 'PATCH', token, body: {goal_weight_value: 155, goal_weight_unit: 'lbs'}});
-      await page.reload();
-      await expect(value).toHaveValue('157,5');
-      await expect(page.getByRole('button', {name: 'Review my draft'})).toBeVisible();
-      await expect(page.getByRole('button', {name: 'Save goal', exact: true})).toBeDisabled();
-      await page.getByRole('button', {name: 'Review my draft'}).click();
-      await page.getByRole('dialog').getByRole('button', {name: 'Use my draft'}).click();
-      await page.getByRole('button', {name: 'Save goal', exact: true}).click();
-      await expect(page.getByText('Your goal is saved.', {exact: true})).toBeVisible();
-      expect(Number((await profile()).goal_weight_value)).toBe(157.5);
       expect((await profile()).first_name).toBe('Sam');
-      await page.getByRole('button', {name: 'Remove goal', exact: true}).click();
-      await page.getByRole('dialog').getByRole('button', {name: 'Remove goal', exact: true}).click();
-      await expect(page.getByText('Your goal was removed.')).toBeVisible();
-      expect((await profile()).goal_weight_value).toBeNull();
+      expect((await profile()).phone).toBe('+15555550123');
+      expect(writes).toBe(2);
+      await page.unroute('**/v1/client/me');
       await page.reload();
-      await expect(value).toHaveValue('');
+      await expect(firstName).toHaveValue('Sam');
+      await page.getByRole('link', {name: 'Back', exact: true}).click();
+      await expect(page.getByRole('heading', {name: 'Your account'})).toBeVisible();
+      await expect(page.getByText('Sam', {exact: true})).toBeVisible();
+      await expect(page.getByText('Workout weight unit', {exact: false})).toBeVisible();
+      await page.getByRole('link', {name: 'Today', exact: true}).click();
+      await expect(page.getByRole('navigation', {name: 'Main navigation'}).getByRole('link')).toHaveCount(4);
+      await expect(page.getByRole('link', {name: /Weight goal|Weight & progress/})).toHaveCount(0);
+      for (const name of ['Training', 'Nutrition']) {
+        await page.getByRole('navigation', {name: 'Main navigation'}).getByRole('link', {name, exact: true}).click();
+        await expect(page.getByRole('heading', {level: 1})).toBeVisible();
+      }
+      await page.getByRole('link', {name: 'Messages', exact: true}).click();
+      const input = page.getByLabel('Message your coach', {exact: true});
+      await expect(page.getByText('Your coach · Conversation connected', {exact: true})).toBeVisible();
+      await input.fill('My training plan looks good.');
+      await page.getByRole('button', {name: 'Send', exact: true}).click();
+      await expect(page.getByText('Message sent.', {exact: true})).toBeVisible();
+      const history = await api('/v1/client/conversation/history', {token});
+      expect(history.data.map((message) => message.body)).toEqual(['My training plan looks good.']);
+      expect(history.data[0].embed).toBeNull();
+      expect(retiredRequests).toEqual([]);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       expect(await page.locator('main').evaluate((node) => node.getBoundingClientRect().width)).toBeLessThanOrEqual(
         480,
       );
       expect(errors).toEqual([]);
-      results.push({width, passed: true, lostResponseWrites: writes});
+      results.push({width, passed: true, profileSaveAttempts: writes});
     } catch (error) {
       await page.screenshot({path: `tests/account/artifacts/failure-${width}.png`, fullPage: true});
       await writeFile(`tests/account/artifacts/failure-${width}.txt`, await page.locator('body').innerText());

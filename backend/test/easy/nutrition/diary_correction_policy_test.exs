@@ -4,15 +4,14 @@ defmodule Easy.Nutrition.Diary.CorrectionPolicyTest do
   alias Easy.Nutrition.Diary.CorrectionPolicy
   alias Easy.Orgs.Business
   @today ~D[2026-08-26]
-  test "the correction window includes today and seven prior local dates" do
+  test "past recorded facts remain correctable without a time cutoff" do
     assert CorrectionPolicy.write_eligible?(@today, @today)
     assert CorrectionPolicy.write_eligible?(Date.add(@today, -7), @today)
-    refute CorrectionPolicy.write_eligible?(Date.add(@today, -8), @today)
+    assert CorrectionPolicy.write_eligible?(Date.add(@today, -365), @today)
     refute CorrectionPolicy.write_eligible?(Date.add(@today, 1), @today)
     assert :ok = CorrectionPolicy.validate_write(Date.add(@today, -7), @today)
 
-    assert {:error, :outside_correction_window} =
-             CorrectionPolicy.validate_write(Date.add(@today, -8), @today)
+    assert :ok = CorrectionPolicy.validate_write(Date.add(@today, -365), @today)
 
     assert {:error, :future_date} = CorrectionPolicy.validate_write(Date.add(@today, 1), @today)
   end

@@ -57,7 +57,7 @@ try {
       const {saveSession} = await import('/src/api/session.ts');
       saveSession(tokens);
     }, tokens);
-    await page.goto('/?status=pending');
+    await page.goto('/clients?status=pending');
     await expect(page.getByText('1 client', {exact: true})).toBeVisible();
     await page.getByText('Jordan Morgan', {exact: true}).click();
     await page.getByRole('link', {name: 'Client details', exact: true}).click();
@@ -99,19 +99,21 @@ try {
     await page.getByLabel('Engagement starts', {exact: true}).fill('2026-01-01');
     await page.getByLabel('Engagement ends', {exact: true}).fill('2099-12-31');
     await chooseOption(selectTrigger(page, 'Coaching stage'), 'Coaching');
-    await page.getByLabel('Goal weight', {exact: true}).fill('170');
-    await chooseOption(selectTrigger(page, 'Unit'), 'lb');
     await page.getByRole('button', {name: 'Save changes', exact: true}).click();
     await expect(page.getByText('Client details saved.', {exact: true})).toBeVisible();
     expect(await stored()).toMatchObject({
       phone: '555-0100',
       notes: 'Prefers morning sessions.',
       stage: 'coaching',
-      goal_weight_unit: 'lbs',
+      required_services: ['training', 'nutrition'],
+      subscription_started_on: '2026-01-01',
+      subscription_ends_on: '2099-12-31',
     });
     await page.reload();
     await expect(page.getByLabel('Phone', {exact: true})).toHaveValue('555-0100');
-    await expect(page.getByLabel('Goal weight', {exact: true})).toHaveValue(/^170(?:\.0+)?$/);
+    await expect(page.getByLabel('Coaching notes', {exact: true})).toHaveValue('Prefers morning sessions.');
+    await expect(page.getByLabel('Engagement starts', {exact: true})).toHaveValue('2026-01-01');
+    await expect(page.getByLabel('Engagement ends', {exact: true})).toHaveValue('2099-12-31');
     if (width === 1280) {
       for (const [first, second] of [
         ['Contact email', 'Phone'],
@@ -160,12 +162,12 @@ try {
     await page.getByRole('button', {name: 'Discard and leave', exact: true}).click();
     await page.getByRole('link', {name: 'Client details', exact: true}).click();
     await expect(page.getByLabel('Coaching notes', {exact: true})).toHaveValue('Keep this draft.');
-    for (const label of ['Phone', 'Coaching notes', 'Goal weight']) {
+    for (const label of ['Phone', 'Coaching notes']) {
       await page.getByLabel(label, {exact: true}).fill('');
     }
     await page.getByRole('button', {name: 'Save changes', exact: true}).click();
     await expect(page.getByText('Client details saved.', {exact: true})).toBeVisible();
-    expect(await stored()).toMatchObject({phone: null, notes: null, goal_weight_value: null, goal_weight_unit: null});
+    expect(await stored()).toMatchObject({phone: null, notes: null});
 
     // Access actions are separate, confirmed, and leave the coaching history intact.
     await page.getByRole('button', {name: 'Deactivate client', exact: true}).click();
@@ -186,7 +188,7 @@ try {
     await dialog.getByRole('button', {name: 'Reactivate client', exact: true}).click();
     await expect(page.getByText('Client reactivated.', {exact: true})).toBeVisible();
     expect(await stored()).toMatchObject({status: 'active', subscription_ends_on: null});
-    await page.goto('/?status=active&stage=coaching&search=Alex');
+    await page.goto('/clients?status=active&stage=coaching&search=Alex');
     await expect(page.getByText('1 client', {exact: true})).toBeVisible();
     await chooseOption(selectTrigger(page, 'Status'), 'Inactive');
     await expect(page.getByText('No matching clients', {exact: true})).toBeVisible();

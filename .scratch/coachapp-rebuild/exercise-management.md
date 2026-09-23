@@ -20,4 +20,4 @@ The exercise authoring regression passes at both widths, including references, c
 
 Screenshots reviewed at phone and desktop widths. A browser check caught the mobile save bar covering the removal control; maintenance sits inside the form's bottom padding. Target-coach usability and physical-device checks remain part of the application audit.
 
-Graph tools were unavailable and the CLI graph backend timed out. Evidence uses exact source reads of the exercise controller, context, schema, generated contract and restrictive prescription foreign key. No handwritten coachapp-v2 code was consulted. No API contract changed.
+Graph tools were unavailable and the CLI graph backend timed out. Evidence uses exact source reads of the exercise controller, context, schema, generated contract and restrictive prescription foreign key. No handwritten code from the retired coach implementation was consulted. No API contract changed.

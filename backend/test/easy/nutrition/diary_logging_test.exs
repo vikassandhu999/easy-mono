@@ -170,7 +170,7 @@ defmodule Easy.Nutrition.DiaryLoggingTest do
     assert {:ok, ^original} = get_client_nutrition_day(client_ctx(client), date)
   end
 
-  test "a new past slot has no reconstructed plan and observes the seven-day correction window" do
+  test "past recording has no reconstructed plan and no correction cutoff" do
     %{client: client, food: food, today: today} = covering_setup(start_offset: -7)
     ctx = client_ctx(client)
 
@@ -180,8 +180,7 @@ defmodule Easy.Nutrition.DiaryLoggingTest do
       assert day.plan_id == nil
     end
 
-    assert {:error, :outside_correction_window} =
-             save_extra(ctx, Date.add(today, -8), extra_attrs(food))
+    assert {:ok, _past} = save_extra(ctx, Date.add(today, -365), extra_attrs(food))
 
     assert {:error, :future_date} = save_extra(ctx, Date.add(today, 1), extra_attrs(food))
   end

@@ -1,19 +1,7 @@
-import {
-  ClipboardCheck,
-  Dumbbell,
-  Flower2,
-  House,
-  MessageCircle,
-  Sprout,
-  TrendingUp,
-  UserRound,
-  Utensils,
-} from 'lucide-react';
+import {Dumbbell, Flower2, House, MessageCircle, Sprout, UserRound, Utensils} from 'lucide-react';
 import {type ReactNode, useSyncExternalStore} from 'react';
 import {generatePath, Link, Navigate, NavLink, Outlet, useLocation} from 'react-router-dom';
 import {useProfile} from './api/auth';
-import {useFormAssignments} from './api/forms';
-import {latestPageCount} from './api/pagination';
 import {clearSession, getSession, parseSession, sessionSnapshot, subscribeSession} from './api/session';
 import {useTrainingCoverage} from './api/training';
 import {authPath} from './auth/return-to';
@@ -32,19 +20,16 @@ export function AppShell() {
   const session = parseSession(useSyncExternalStore(subscribeSession, sessionSnapshot));
   const location = useLocation();
   const focusedEditor =
-    location.pathname.startsWith('/progress/weight/') ||
     location.pathname.startsWith('/training/plans/') ||
     location.pathname.startsWith('/training/sessions/') ||
     location.pathname.startsWith('/nutrition/days/') ||
     location.pathname.startsWith('/nutrition/plans') ||
-    location.pathname.startsWith('/forms/') ||
     location.pathname === routes.messages ||
-    location.pathname === routes.accountDetails ||
-    location.pathname === routes.accountGoal;
+    location.pathname === routes.accountDetails;
   return session ? (
     <VerifiedAccount key={session.id}>
       <div>
-        {!focusedEditor && location.pathname !== routes.progress && location.pathname !== routes.account && (
+        {!focusedEditor && location.pathname !== routes.account && (
           <header className="app-header">
             <Link
               to={routes.home}
@@ -134,8 +119,6 @@ function VerifiedAccount({children}: {children: ReactNode}) {
 export function Home() {
   const profile = useProfile();
   const coverage = useTrainingCoverage();
-  const forms = useFormAssignments({state: 'pending'});
-  const pendingCount = forms.data ? latestPageCount(forms.data.pages) : null;
   const guidance = coverage.data?.data;
   return (
     <Page
@@ -143,7 +126,7 @@ export function Home() {
       description={
         profile.data
           ? `${profile.data.data.first_name || 'Welcome'} · ${profile.data.data.local_date ? dayLabel(profile.data.data.local_date) : (profile.data.data.coach?.business_name ?? 'Your coaching')}`
-          : 'Your next steps with your coach.'
+          : 'Your training, nutrition and messages.'
       }
     >
       {!profile.data && (
@@ -156,39 +139,6 @@ export function Home() {
         />
       )}
       <ActiveWorkout />
-      <section className="mb-4 space-y-3">
-        {forms.data ? (
-          <>
-            <CachedRead
-              updatedAt={forms.dataUpdatedAt}
-              failed={forms.isError}
-              refreshing={forms.isFetching}
-              refresh={() => forms.refetch()}
-            />
-            <ActionCard
-              title="Forms & check-ins"
-              to={routes.forms}
-              icon={<ClipboardCheck />}
-              eyebrow={pendingCount ? 'A little check-in' : 'All caught up'}
-              description={
-                pendingCount === 0
-                  ? 'Your responses are saved. Nice work.'
-                  : pendingCount === null
-                    ? 'See what your coach has shared.'
-                    : `${pendingCount} ${pendingCount === 1 ? 'request' : 'requests'} to complete.`
-              }
-            />
-          </>
-        ) : (
-          <ReadState
-            label="your requests"
-            failed={forms.isError}
-            retry={() => {
-              forms.refetch();
-            }}
-          />
-        )}
-      </section>
       <section className="mb-4 space-y-3">
         {coverage.data ? (
           <>
@@ -229,15 +179,6 @@ export function Home() {
       </section>
       <TodayNutrition />
       <TodayMessages />
-      <section className="mb-4">
-        <ActionCard
-          title="Weight & progress"
-          description="Small steps add up. See yours."
-          icon={<TrendingUp />}
-          tone="progress"
-          to={routes.progress}
-        />
-      </section>
       <p className="daily-note">
         <Sprout
           className="size-4"

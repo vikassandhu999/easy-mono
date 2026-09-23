@@ -58,6 +58,9 @@ defmodule EasyWeb.Types.Nutrition.NutritionDaySlot do
   use EasyWeb.Type
 
   @type t :: %{
+          required(:id) => Ecto.UUID.t() | nil,
+          required(:shared_at) => DateTime.t() | nil,
+          required(:note_to_coach) => String.t() | nil,
           required(:meal_slot) =>
             :early_morning
             | :breakfast
@@ -123,6 +126,8 @@ defmodule EasyWeb.Types.Nutrition.DaySlotInput do
   use EasyWeb.Type
 
   @type t :: %{
+          optional(:share) => boolean(),
+          optional(:note_to_coach) => String.t() | nil,
           required(:meal_slot) =>
             :early_morning
             | :breakfast

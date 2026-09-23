@@ -54,42 +54,6 @@ defmodule Easy.Emails do
     |> html_body(HTML.trainer_invitation(business_name, invitation_url))
   end
 
-  @spec check_in_due_email(String.t(), String.t(), String.t()) :: Swoosh.Email.t()
-  def check_in_due_email(email, client_name, assignment_id) do
-    url = AppLinks.check_in(assignment_id)
-
-    new()
-    |> to(email)
-    |> from(from_email())
-    |> subject("Your check-in is due")
-    |> text_body("Hi #{client_name}, your check-in is due today: #{url}")
-    |> html_body(HTML.reminder(client_name, "your check-in is due today", url, "Open check-in"))
-  end
-
-  @spec check_in_overdue_email(String.t(), String.t(), String.t()) :: Swoosh.Email.t()
-  def check_in_overdue_email(email, client_name, assignment_id) do
-    url = AppLinks.check_in(assignment_id)
-
-    new()
-    |> to(email)
-    |> from(from_email())
-    |> subject("Your check-in is overdue")
-    |> text_body("Hi #{client_name}, your check-in is overdue: #{url}")
-    |> html_body(HTML.reminder(client_name, "your check-in is overdue", url, "Open check-in"))
-  end
-
-  @spec intake_reminder_email(String.t(), String.t(), String.t()) :: Swoosh.Email.t()
-  def intake_reminder_email(email, client_name, assignment_id) do
-    url = AppLinks.check_in(assignment_id)
-
-    new()
-    |> to(email)
-    |> from(from_email())
-    |> subject("Your intake form is waiting")
-    |> text_body("Hi #{client_name}, your coach is waiting for your intake form: #{url}")
-    |> html_body(HTML.reminder(client_name, "your coach is waiting for your intake form", url, "Open intake"))
-  end
-
   # Private functions for text templates
 
   defp otp_verification_text(code) do

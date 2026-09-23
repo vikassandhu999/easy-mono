@@ -21,6 +21,11 @@ defmodule EasyWeb.ConversationChannel do
     {:noreply, socket}
   end
 
+  def handle_info({:conversation_updated, _id}, socket) do
+    push(socket, "conversation_updated", %{})
+    {:noreply, socket}
+  end
+
   def handle_info(_message, socket), do: {:noreply, socket}
 
   defp authorize(%{assigns: %{role: :client, ctx: ctx}}, conversation_id) do

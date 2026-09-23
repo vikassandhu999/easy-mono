@@ -38,9 +38,12 @@ export type SetEntry = {
   values: SetValues;
   operation: {kind: 'create'; requestId: string} | {kind: 'edit'; id: string};
   attempted: boolean;
+  expectedRevision?: number;
 };
 export type WorkoutDraft = {
   version: 1;
+  revision?: number;
+  date?: string;
   selected: string;
   notes: string;
   soreness: string;
@@ -162,6 +165,14 @@ function isEntry(value: unknown): value is SetEntry {
   ) {
     return false;
   }
+  if (
+    'expectedRevision' in value &&
+    (!Number.isInteger(value.expectedRevision) ||
+      typeof value.expectedRevision !== 'number' ||
+      value.expectedRevision < 1)
+  ) {
+    return false;
+  }
   const operation = value.operation;
   if ('exerciseId' in value && value.exerciseId !== null && typeof value.exerciseId !== 'string') {
     return false;
@@ -188,16 +199,32 @@ export function parseWorkoutDraft(value: unknown): WorkoutDraft | null {
     typeof value.soreness !== 'string' ||
     !('entries' in value) ||
     !Array.isArray(value.entries) ||
-    !value.entries.every(isEntry)
+    !value.entries.every(isEntry) ||
+    ('date' in value && typeof value.date !== 'string')
   ) {
     return null;
   }
-  return {version: 1, selected: value.selected, notes: value.notes, soreness: value.soreness, entries: value.entries};
+  return {
+    version: 1,
+    ...('revision' in value &&
+    typeof value.revision === 'number' &&
+    Number.isInteger(value.revision) &&
+    value.revision > 0
+      ? {revision: value.revision}
+      : {}),
+    selected: value.selected,
+    ...('date' in value && typeof value.date === 'string' ? {date: value.date} : {}),
+    notes: value.notes,
+    soreness: value.soreness,
+    entries: value.entries,
+  };
 }
 
 export function initialWorkoutDraft(session: Session): WorkoutDraft {
   return {
     version: 1,
+    revision: session.revision,
+    date: session.date,
     selected: session.prescription_snapshot?.workout.exercises[0]?.ref ?? 'freestyle',
     notes: session.notes ?? '',
     soreness: session.soreness_rating === null ? '' : String(session.soreness_rating),

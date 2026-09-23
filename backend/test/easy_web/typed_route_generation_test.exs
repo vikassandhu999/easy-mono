@@ -10,7 +10,7 @@ defmodule EasyWeb.TypedRouteGenerationTest do
 
     output = capture_io(fn -> Gen.run(["--stdout"]) end)
 
-    assert output =~ "'/v1/client/weight_entries': {"
+    assert output =~ "'/v1/coach/nutrition-plans': {"
     assert output =~ "get: {"
     assert output =~ "post: {"
     refute output =~ "},,"

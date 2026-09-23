@@ -1,4 +1,4 @@
-import {ChevronRight, Heart, LogOut, Sprout, Target, TrendingUp, UserRound} from 'lucide-react';
+import {ChevronRight, Heart, LogOut, Sprout, UserRound} from 'lucide-react';
 import type {ReactNode} from 'react';
 import {Link} from 'react-router-dom';
 import {useProfile} from '../api/auth';
@@ -51,22 +51,6 @@ export function Account() {
               title="Personal details"
               description={profile.email ?? 'Your name and phone number'}
             />
-            <AccountRow
-              to={routes.accountGoal}
-              icon={<Target />}
-              title="Weight goal"
-              description={
-                profile.goal_weight_value && profile.goal_weight_unit
-                  ? `${profile.goal_weight_value} ${profile.goal_weight_unit}`
-                  : 'Optional. Set what feels right for you.'
-              }
-            />
-            <AccountRow
-              to={routes.progress}
-              icon={<TrendingUp />}
-              title="Weight & progress"
-              description="Your measurements over time"
-            />
           </div>
           {profile.coach && (
             <section
@@ -96,7 +80,7 @@ export function Account() {
           )}
           <div className="text-sm text-muted-foreground space-y-1 px-1">
             <p>Coaching timezone · {profile.timezone}</p>
-            <p>Default weight unit · {profile.default_weight_unit === 'lbs' ? 'Pounds (lb)' : 'Kilograms (kg)'}</p>
+            <p>Workout weight unit · {profile.default_weight_unit === 'lbs' ? 'Pounds (lb)' : 'Kilograms (kg)'}</p>
           </div>
           <Button
             variant="ghost"

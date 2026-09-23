@@ -2,7 +2,7 @@
 
 The client arrives from their coach's invitation or returns to their existing account. The next action is entering an email, then one six-digit code. Keep the supported passwordless contract and native deep-link/session behavior.
 
-Considered a welcome carousel and a direct email screen. Choose direct email: no extra onboarding decisions before the client's actual intake. Keep the playful welcome illustration on entry; use a compact envelope motif on verification and simple status screens on failures. One accessible code field supports paste/autofill and numeric keyboards without six separate focus targets. Change email remains an explicit return, resend is secondary with its existing cooldown, and errors stay with the relevant action.
+Considered a welcome carousel and a direct email screen. Choose direct email: no extra onboarding decisions before the client's coaching. Keep the playful welcome illustration on entry; use a compact envelope motif on verification and simple status screens on failures. One accessible code field supports paste/autofill and numeric keyboards without six separate focus targets. Change email remains an explicit return, resend is secondary with its existing cooldown, and errors stay with the relevant action.
 
 Use one bounded phone composition at 375/768/1280. Avoid repeating the large welcome artwork on every step. Keep buttons reachable with the keyboard, preserve pending challenge through restart, and never save the OTP. Invitation used/expired/error states lead to sign-in or explicit retry. Native tests must check actual keyboard bounds and first-tap verification, followed by authenticated persistence; browser tests cover validation, resend/retry, challenge restart, safe return and invitation states.
 

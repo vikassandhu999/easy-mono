@@ -74,6 +74,7 @@ defmodule EasyWeb.Types.Training.Session do
 
   @type t :: %{
           required(:id) => String.t(),
+          required(:revision) => pos_integer(),
           required(:kind) => :planned | :freestyle,
           required(:date) => Date.t(),
           required(:started_at) => DateTime.t(),
@@ -97,7 +98,9 @@ defmodule EasyWeb.Types.Training.Session do
         }
 
   @type update :: %{
-          optional(:soreness_rating) => pos_integer(),
+          optional(:expected_revision) => pos_integer(),
+          optional(:date) => Date.t(),
+          optional(:soreness_rating) => pos_integer() | nil,
           optional(:notes) => String.t()
         }
 
@@ -125,6 +128,7 @@ defmodule EasyWeb.Types.Training.Session do
   def format(%TrainingSession{} = session) do
     %{
       id: session.id,
+      revision: session.revision,
       kind: session.kind,
       date: session.date,
       started_at: session.started_at,

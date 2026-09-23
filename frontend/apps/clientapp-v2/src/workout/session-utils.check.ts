@@ -147,6 +147,7 @@ const session = {
     },
   },
   snapshot_version: 1,
+  revision: 1,
   soreness_rating: null,
   source_plan_id: 'plan',
   source_workout_id: 'workout',

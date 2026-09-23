@@ -21,16 +21,19 @@ import {
   MessageScrollerItem,
   MessageScrollerViewport,
 } from '../ui/message-scroller';
-import {SharedResponse} from './shared-response';
+import type {RecordReference} from './draft';
 
 export function MessageHistory({
   query,
   clientName,
-  clientId,
+  onOpenRecord,
+  onShownMessage,
 }: {
   query: ReturnType<typeof useMessages>;
   clientName: string;
   clientId: string;
+  onOpenRecord: (record: RecordReference) => void;
+  onShownMessage: (id: string, timestamp: string) => void;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
   const older = useRef<HTMLDivElement>(null);
@@ -59,6 +62,28 @@ export function MessageHistory({
     observer.observe(older.current);
     return () => observer.disconnect();
   }, [query.data, hasNextPage, isFetching, isError, fetchNextPage]);
+  useEffect(() => {
+    const root = viewport.current;
+    if (!root || !query.data || !('IntersectionObserver' in window)) {
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const timestamp = entry.target.getAttribute('data-message-at');
+          const id = entry.target.getAttribute('data-message-id');
+          if (entry.isIntersecting && timestamp && id) {
+            onShownMessage(id, timestamp);
+          }
+        }
+      },
+      {root, threshold: 0.1},
+    );
+    for (const item of root.querySelectorAll('[data-message-at]')) {
+      observer.observe(item);
+    }
+    return () => observer.disconnect();
+  }, [query.data, onShownMessage]);
   const items = query.data?.pages.toReversed().flatMap((page) => page.data.toReversed()) ?? [];
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
@@ -139,21 +164,41 @@ export function MessageHistory({
                       key={message.id}
                       messageId={message.id}
                       data-message-id={message.id}
+                      data-message-at={message.inserted_at}
                     >
                       <Message align={message.sender_type === 'coach' ? 'end' : 'start'}>
                         <MessageContent>
-                          <MessageHeader>{message.sender_type === 'coach' ? 'Coach' : clientName}</MessageHeader>
+                          <MessageHeader>
+                            {message.sender_type === 'coach' ? message.sender_name || 'Coach' : clientName}
+                          </MessageHeader>
                           {message.body && (
                             <Bubble variant={message.sender_type === 'coach' ? 'default' : 'muted'}>
                               <BubbleContent className="whitespace-pre-wrap">{message.body}</BubbleContent>
                             </Bubble>
                           )}
                           {message.embed && (
-                            <SharedResponse
-                              clientId={clientId}
-                              id={message.embed.id}
-                              title={message.embed.snapshot.title}
-                            />
+                            <Button
+                              variant="outline"
+                              className="h-auto max-w-full justify-start py-3 text-left whitespace-normal"
+                              onPress={() => {
+                                if (message.embed) {
+                                  onOpenRecord({
+                                    type: message.embed.type,
+                                    id: message.embed.id,
+                                    title: message.embed.snapshot.title,
+                                    revision: message.embed.snapshot.revision ?? 1,
+                                    occurredOn: message.embed.snapshot.occurred_on ?? null,
+                                  });
+                                }
+                              }}
+                            >
+                              <span>
+                                <span className="block break-words">{message.embed.snapshot.title}</span>
+                                <span className="mt-1 block text-xs font-normal text-muted-foreground">
+                                  Shared revision {message.embed.snapshot.revision ?? 1} · Open latest record
+                                </span>
+                              </span>
+                            </Button>
                           )}
                           {message.attachments.map((attachment) => (
                             <MessageAttachment

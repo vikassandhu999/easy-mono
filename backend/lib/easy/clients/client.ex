@@ -32,8 +32,6 @@ defmodule Easy.Clients.Client do
     field :last_name, :string
     field :phone, :string
     field :notes, :string
-    field :goal_weight_value, :decimal
-    field :goal_weight_unit, Ecto.Enum, values: [:kg, :lbs]
 
     field :status, Ecto.Enum, values: @statuses
     field :stage, Ecto.Enum, values: @stages, default: :onboarding
@@ -70,15 +68,13 @@ defmodule Easy.Clients.Client do
     :phone,
     :email,
     :notes,
-    :goal_weight_value,
-    :goal_weight_unit,
     :status,
     :stage,
     :subscription_started_on,
     :subscription_ends_on,
     :required_services
   ]
-  @self_update_cast_fields [:first_name, :last_name, :phone, :goal_weight_value, :goal_weight_unit]
+  @self_update_cast_fields [:first_name, :last_name, :phone]
 
   # Allowed manual status transitions (coach-driven).
   # pending -> active is reserved for accept_invite/3 (the accept flow) only.
@@ -147,9 +143,6 @@ defmodule Easy.Clients.Client do
     |> normalize_required_services()
     |> validate_required_services_unique()
     |> validate_required_services_edit(attrs)
-    |> normalize_goal_weight(attrs)
-    |> validate_goal_weight_paired()
-    |> validate_number(:goal_weight_value, greater_than: 0, less_than: 1000)
     |> validate_status_transition(client.status)
     |> validate_subscription_dates()
     |> validate_stage_change()
@@ -189,48 +182,6 @@ defmodule Easy.Clients.Client do
 
   defp supplied?(attrs, field) do
     Map.has_key?(attrs, field) or Map.has_key?(attrs, Atom.to_string(field))
-  end
-
-  # If either goal field was explicitly sent as blank, clear both —
-  # "leave empty to remove the goal" from the coach-side edit dialog.
-  defp normalize_goal_weight(changeset, attrs) do
-    value_sent? =
-      Map.has_key?(attrs, "goal_weight_value") or Map.has_key?(attrs, :goal_weight_value)
-
-    unit_sent? = Map.has_key?(attrs, "goal_weight_unit") or Map.has_key?(attrs, :goal_weight_unit)
-
-    value = get_field(changeset, :goal_weight_value)
-    unit = get_field(changeset, :goal_weight_unit)
-
-    cond do
-      value_sent? and is_nil(value) ->
-        changeset |> put_change(:goal_weight_value, nil) |> put_change(:goal_weight_unit, nil)
-
-      unit_sent? and is_nil(unit) ->
-        changeset |> put_change(:goal_weight_value, nil) |> put_change(:goal_weight_unit, nil)
-
-      true ->
-        changeset
-    end
-  end
-
-  defp validate_goal_weight_paired(changeset) do
-    value = get_field(changeset, :goal_weight_value)
-    unit = get_field(changeset, :goal_weight_unit)
-
-    cond do
-      is_nil(value) and is_nil(unit) ->
-        changeset
-
-      is_nil(value) ->
-        add_error(changeset, :goal_weight_value, "is required when goal_weight_unit is set")
-
-      is_nil(unit) ->
-        add_error(changeset, :goal_weight_unit, "is required when goal_weight_value is set")
-
-      true ->
-        changeset
-    end
   end
 
   defp validate_status_transition(changeset, current) do
@@ -318,9 +269,6 @@ defmodule Easy.Clients.Client do
     client
     |> cast(attrs, @self_update_cast_fields)
     |> validate_profile_lengths()
-    |> normalize_goal_weight(attrs)
-    |> validate_goal_weight_paired()
-    |> validate_number(:goal_weight_value, greater_than: 0, less_than: 1000)
   end
 
   defp validate_profile_lengths(changeset) do

@@ -27,6 +27,7 @@ defmodule Easy.Training.TrainingSession do
   @states [:active, :completed, :discarded]
 
   schema "training_sessions" do
+    field :revision, :integer, default: 1
     field :kind, Ecto.Enum, values: @kinds
     field :state, Ecto.Enum, values: @states, default: :active
     field :date, :date
@@ -52,22 +53,46 @@ defmodule Easy.Training.TrainingSession do
   @spec states() :: [state()]
   def states, do: @states
 
-  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(session, attrs) do
+  @spec update_changeset(t(), Date.t(), map()) :: Ecto.Changeset.t()
+  def update_changeset(session, today, attrs) do
     session
-    |> cast(attrs, [:notes, :soreness_rating])
+    |> cast(attrs, [:date, :notes, :soreness_rating], force_changes: true)
+    |> validate_required([:date])
+    |> validate_change(:date, fn :date, date ->
+      if Date.compare(date, today) == :gt, do: [date: "cannot be in the future"], else: []
+    end)
     |> active_metadata_validations()
+    |> put_change(:revision, session.revision + 1)
   end
 
-  @spec update_changeset(t(), :completed | :discarded, DateTime.t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(session, state, closed_at, attrs) when state in [:completed, :discarded] do
+  @spec update_changeset(t(), :completed | :discarded, DateTime.t(), Date.t(), map()) :: Ecto.Changeset.t()
+  def update_changeset(session, state, closed_at, today, attrs) when state in [:completed, :discarded] do
     session
-    |> update_changeset(attrs)
+    |> update_changeset(today, attrs)
     |> put_change(:state, state)
     |> put_change(:closed_at, closed_at)
     |> check_constraint(:state, name: :training_sessions_closing_check)
     |> check_constraint(:started_at, name: :training_sessions_chronology_check)
   end
+
+  @spec check_revision(t(), map()) :: :ok | {:error, :not_found | Ecto.Changeset.t()}
+  def check_revision(%__MODULE__{state: :discarded}, _attrs), do: {:error, :not_found}
+
+  def check_revision(session, attrs) do
+    changeset =
+      {%{}, %{expected_revision: :integer}}
+      |> cast(attrs, [:expected_revision])
+      |> validate_number(:expected_revision, greater_than: 0)
+
+    changeset = if session.state == :completed, do: validate_required(changeset, [:expected_revision]), else: changeset
+
+    with {:ok, input} <- apply_action(changeset, :update) do
+      Easy.Revision.check(session, Map.get(input, :expected_revision, :any))
+    end
+  end
+
+  @spec touch_changeset(t()) :: Ecto.Changeset.t()
+  def touch_changeset(session), do: change(session, revision: session.revision + 1)
 
   @spec insert_changeset(String.t(), String.t(), start(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, client_id, start, attrs) when is_map(start) do
@@ -96,7 +121,7 @@ defmodule Easy.Training.TrainingSession do
 
   defp active_metadata_validations(changeset) do
     changeset
-    |> validate_length(:notes, max: 5000)
+    |> validate_length(:notes, max: 4000)
     |> validate_number(:soreness_rating, greater_than_or_equal_to: 1, less_than_or_equal_to: 5)
     |> check_constraint(:soreness_rating, name: :training_sessions_soreness_rating_check)
   end

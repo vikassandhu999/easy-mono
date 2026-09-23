@@ -1,7 +1,7 @@
-import {ArrowLeft} from 'lucide-react';
-import {useState} from 'react';
+import {ArrowLeft, X} from 'lucide-react';
+import {useCallback, useState} from 'react';
 import {generatePath, Link, useParams} from 'react-router-dom';
-import {ApiError, errorMessage} from '../api/client';
+import {errorMessage} from '../api/client';
 import {useConversationUpdates} from '../api/conversation-updates';
 import {
   type Conversation as ConversationData,
@@ -14,16 +14,18 @@ import {Button, buttonVariants} from '../ui/button';
 import {FormError} from '../ui/form-error';
 import {useListLocation} from '../ui/list-location';
 import {MessageScrollerProvider} from '../ui/message-scroller';
-import {StatusBadge, Surface} from '../ui/page';
+import {Surface} from '../ui/page';
+import type {RecordReference} from './draft';
 import {MessageComposer} from './message-composer';
 import {MessageHistory} from './message-history';
+import {RecordDetail} from './record-detail';
 
 export function Conversation() {
   const {clientId = ''} = useParams();
   const query = useConversation(clientId);
   const back = useListLocation(routes.conversations);
   return (
-    <div className="mx-auto flex h-[calc(100dvh-10.625rem)] min-h-[36rem] w-full max-w-3xl flex-col gap-3 md:h-[calc(100dvh-12.125rem)]">
+    <div className="mx-auto flex h-[calc(100dvh-10.625rem)] min-h-[44rem] w-full max-w-7xl flex-col gap-4 md:h-[calc(100dvh-12.125rem)]">
       <header className="shrink-0 space-y-2">
         <Link
           to={back.to}
@@ -36,18 +38,17 @@ export function Conversation() {
           />
           Back to messages
         </Link>
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-start justify-between gap-3">
           <h1 className="min-w-0 break-words text-xl font-semibold">
-            {query.data?.data.client_name || 'Client conversation'}
+            {query.data?.data.client_name || 'Conversation'}
           </h1>
           <Link
             to={generatePath(routes.client, {id: clientId})}
             className={buttonVariants({variant: 'ghost', size: 'sm'})}
           >
-            View client
+            Client details
           </Link>
         </div>
-        <p className="text-xs text-muted-foreground">Shared with your coaching team.</p>
       </header>
       {!query.data ? (
         <Surface>
@@ -67,7 +68,7 @@ export function Conversation() {
           )}
         </Surface>
       ) : (
-        <Thread
+        <ConversationThread
           key={query.data.data.id}
           conversation={query.data.data}
         />
@@ -75,29 +76,96 @@ export function Conversation() {
     </div>
   );
 }
-
-function Thread({conversation}: {conversation: ConversationData}) {
+function ConversationThread({conversation}: {conversation: ConversationData}) {
+  const [context, setContext] = useState<RecordReference | null>(null);
+  const [reference, setReference] = useState<RecordReference | null>(null);
+  const consumeReference = useCallback(() => setReference(null), []);
+  function discuss(record: RecordReference) {
+    setReference(record);
+    setContext(null);
+  }
+  return (
+    <>
+      <div
+        className={
+          context
+            ? 'grid min-h-0 flex-1 items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.8fr)]'
+            : 'mx-auto flex min-h-0 w-full max-w-3xl flex-1'
+        }
+      >
+        <div className={context ? 'hidden min-h-0 flex-col gap-3 lg:flex' : 'flex min-h-0 flex-1 flex-col gap-3'}>
+          <Thread
+            conversation={conversation}
+            requestedReference={reference}
+            onReferenceConsumed={consumeReference}
+            onOpen={setContext}
+          />
+        </div>
+        {context && (
+          <aside
+            aria-label="Client context"
+            className="min-h-0 min-w-0 space-y-5 overflow-y-auto rounded-2xl border border-border bg-surface p-4"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="min-w-0 break-words font-semibold">{context.title}</h2>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Back to conversation"
+                onPress={() => setContext(null)}
+              >
+                <X aria-hidden="true" />
+              </Button>
+            </div>
+            <RecordDetail
+              clientId={conversation.client_id}
+              record={context}
+              onDiscuss={discuss}
+            />
+            <Button
+              variant="outline"
+              onPress={() => setContext(null)}
+            >
+              Back to conversation
+            </Button>
+          </aside>
+        )}
+      </div>
+    </>
+  );
+}
+function Thread({
+  conversation,
+  requestedReference,
+  onReferenceConsumed,
+  onOpen,
+}: {
+  conversation: ConversationData;
+  requestedReference: RecordReference | null;
+  onReferenceConsumed: () => void;
+  onOpen: (record: RecordReference) => void;
+}) {
   const messages = useMessages(conversation.id);
   const action = useConversationAction(conversation.id);
   const connection = useConversationUpdates();
+  const [shownThrough, setShownThrough] = useState<string | null>(null);
+  const onShownMessage = useCallback((_id: string, timestamp: string) => {
+    setShownThrough((previous) => (!previous || timestamp > previous ? timestamp : previous));
+  }, []);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
-  async function update(kind: 'read' | 'handled') {
-    const through = messages.data?.pages[0]?.latest_message_at;
+  async function markRead() {
+    const through = shownThrough;
     if (!through) {
       return;
     }
     setError('');
     setNotice('');
     try {
-      await action.mutateAsync(kind === 'read' ? {kind, through} : {kind, expected: through});
-      setNotice(kind === 'read' ? 'Marked as read for your team.' : 'Conversation marked handled.');
+      await action.mutateAsync({kind: 'read', through});
+      setNotice('Marked as read for your team.');
     } catch (error) {
-      setError(
-        error instanceof ApiError && error.status === 409
-          ? 'A new message arrived. Read it before marking this conversation handled.'
-          : errorMessage(error, 'Could not update this conversation. Try again.'),
-      );
+      setError(errorMessage(error, 'Could not update these messages. Try again.'));
     }
   }
   return (
@@ -106,31 +174,17 @@ function Thread({conversation}: {conversation: ConversationData}) {
       autoScroll
     >
       <div className="flex shrink-0 flex-wrap items-center gap-2">
-        {conversation.waiting_since && <StatusBadge>Needs reply</StatusBadge>}
         {conversation.unread_count > 0 && (
           <Button
             variant="outline"
             size="sm"
-            isDisabled={!messages.data || messages.isFetching || messages.isError}
+            isDisabled={!shownThrough || !messages.data || messages.isFetching || messages.isError}
             isPending={action.isPending}
             onPress={() => {
-              update('read');
+              markRead();
             }}
           >
             Mark as read · {conversation.unread_count}
-          </Button>
-        )}
-        {conversation.waiting_since && (
-          <Button
-            variant="ghost"
-            size="sm"
-            isDisabled={!messages.data || messages.isFetching || messages.isError}
-            isPending={action.isPending}
-            onPress={() => {
-              update('handled');
-            }}
-          >
-            Mark handled
           </Button>
         )}
       </div>
@@ -146,7 +200,7 @@ function Thread({conversation}: {conversation: ConversationData}) {
       {connection === 'reconnecting' && (
         <p
           role="status"
-          className="text-sm text-muted-foreground"
+          className="text-xs text-muted-foreground"
         >
           Live updates are reconnecting. Refresh messages to check for replies.
         </p>
@@ -155,8 +209,14 @@ function Thread({conversation}: {conversation: ConversationData}) {
         query={messages}
         clientId={conversation.client_id}
         clientName={conversation.client_name || 'Client'}
+        onOpenRecord={onOpen}
+        onShownMessage={onShownMessage}
       />
-      <MessageComposer conversation={conversation} />
+      <MessageComposer
+        conversation={conversation}
+        requestedReference={requestedReference}
+        onReferenceConsumed={onReferenceConsumed}
+      />
     </MessageScrollerProvider>
   );
 }

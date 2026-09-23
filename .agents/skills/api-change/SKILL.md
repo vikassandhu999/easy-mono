@@ -41,15 +41,15 @@ Source of truth is the working tree vs `main`: the JSON views and controller ope
 
 ```text
 git status --short
-git diff main -- backend/lib/easy_web backend/test/easy_web frontend/apps/coachapp-v2/src/api frontend/apps/clientapp-v2/src/api
-git ls-files --others --exclude-standard -- backend/lib/easy_web backend/test/easy_web frontend/apps/coachapp-v2/src/api frontend/apps/clientapp-v2/src/api
+git diff main -- backend/lib/easy_web backend/test/easy_web frontend/apps/coachapp/src/api frontend/apps/clientapp/src/api frontend/apps/clientapp-v2/src/api
+git ls-files --others --exclude-standard -- backend/lib/easy_web backend/test/easy_web frontend/apps/coachapp/src/api frontend/apps/clientapp/src/api frontend/apps/clientapp-v2/src/api
 ```
 
 If that diff has no public JSON change, stop and say so.
 
 1. **Schema + view** — change the OpenApiSpex schema and the JSON view in the same edit (RM-002). Done when they name the same fields as the view in the diff.
 2. **Tests** — controller tests go through the real router. Write responses use `OpenApiSpex.TestAssertions.assert_schema/3`. Nested request schemas that feed `cast_embed` / `cast_assoc` set `struct?: false` (RM-007). Done when the focused controller test is green.
-3. **Generate** — `just gen-api`. `src/api/schema.ts` is always overwritten. Done when both apps' generated files contain the new field or path.
+3. **Generate** — `just gen-api`. `src/api/schema.ts` is always overwritten. Done when all supported apps' generated files contain the new field or path.
 4. **Hooks** — hand-written hooks in `src/api/*.ts` consume the new types. Invalidation lives in the mutation via `src/api/keys.ts` factories (RM-118, RM-143). Types come from `schema.ts`; no `as unknown as` on API objects (RM-106). Done when the owning hook and keys compile against the generated types.
 5. **Finish** — the focused controller test and `just gen-api` ran in this session. In `:dev` the next request rebuilds the spec (`NoneCache`, RM-004). Done when both completed.
 

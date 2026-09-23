@@ -2,13 +2,10 @@ if Mix.env() != :dev, do: raise("Run auth fixtures in MIX_ENV=dev")
 
 Logger.configure(level: :warning)
 
-if database = System.get_env("AUTH_TEST_DATABASE") do
-  Application.put_env(:easy, Easy.Repo, Keyword.put(Application.get_env(:easy, Easy.Repo), :database, database))
-end
+Application.put_env(:easy, Easy.Repo, Keyword.put(Application.get_env(:easy, Easy.Repo), :database, System.get_env("EASY_BROWSER_DATABASE", "easy_browser_dev")))
 
 Application.put_env(:easy, Easy.Mailer, adapter: Swoosh.Adapters.Local)
 Application.put_env(:easy, :start_client_subscription_sweeper, false)
-Application.put_env(:easy, :start_check_in_sweeper, false)
 {:ok, _} = Application.ensure_all_started(:easy)
 
 suffix = System.system_time(:microsecond)

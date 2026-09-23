@@ -40,7 +40,7 @@ try {
       y: view.bounds.y + (target.y + target.height / 2) * scale,
     });
   };
-  await device.push(new URL('../forms/photo.png', import.meta.url).pathname, '/sdcard/Pictures/Easy-message-photo.png');
+  await device.push(new URL('./photo.png', import.meta.url).pathname, '/sdcard/Pictures/Easy-message-photo.png');
   await device.push(new URL('./clip.mp4', import.meta.url).pathname, '/sdcard/Download/Easy-technique.mp4');
   await device.push(new URL('./note.mp3', import.meta.url).pathname, '/sdcard/Download/Easy-note.mp3');
   await device.shell(

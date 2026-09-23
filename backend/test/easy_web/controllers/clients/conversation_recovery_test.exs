@@ -78,7 +78,7 @@ defmodule EasyWeb.Clients.ConversationRecoveryTest do
     refute_receive {:chat_message_created, _}
     refute_receive {:conversation_updated, _}
     assert history(ctx.conn)["count"] == 2
-    assert %{waiting_since: nil, last_message_at: at} = Repo.reload!(ctx.conversation)
+    assert %{last_message_at: at} = Repo.reload!(ctx.conversation)
     assert at == reply.inserted_at
 
     changed = %{attrs | "body" => "A different message"}

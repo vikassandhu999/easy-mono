@@ -1,6 +1,6 @@
 import {useInfiniteQuery, useMutation, useQuery} from '@tanstack/react-query';
 import {call, client} from './client';
-import {clientKeys, trainingPlanKeys, workbenchKeys} from './keys';
+import {clientKeys, trainingPlanKeys} from './keys';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
 import type {paths} from './schema';
@@ -67,7 +67,6 @@ export function useAssignTrainingPlan(clientId: string, templateId: string) {
         throw new Error('Your session changed. Please try again.');
       }
       await Promise.all([
-        queryClient.invalidateQueries({queryKey: workbenchKeys.all}),
         queryClient.invalidateQueries({queryKey: trainingPlanKeys.forClient(clientId)}),
         queryClient.invalidateQueries({queryKey: clientKeys.detail(clientId)}),
         queryClient.invalidateQueries({queryKey: clientKeys.lists()}),
@@ -120,7 +119,6 @@ export function useSaveTrainingPlan(clientId?: string) {
         throw new Error('Your session changed. Please try again.');
       }
       await Promise.all([
-        queryClient.invalidateQueries({queryKey: workbenchKeys.all}),
         queryClient.invalidateQueries({queryKey: trainingPlanKeys.detail(result.data.id)}),
         queryClient.invalidateQueries({queryKey: trainingPlanKeys.lists()}),
         ...(result.data.client_id
@@ -137,7 +135,6 @@ export function useSaveTrainingPlan(clientId?: string) {
     onError: async (_error, input, sessionId) => {
       if (sessionId && getSession()?.id === sessionId) {
         await Promise.all([
-          queryClient.invalidateQueries({queryKey: workbenchKeys.all}),
           queryClient.invalidateQueries({queryKey: trainingPlanKeys.lists()}),
           ...(clientId
             ? [

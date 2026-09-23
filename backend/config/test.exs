@@ -25,7 +25,6 @@ config :easy, EasyWeb.Endpoint,
 config :easy, Easy.Mailer, adapter: Swoosh.Adapters.Test
 
 config :easy, start_client_subscription_sweeper: false
-config :easy, start_check_in_sweeper: false
 
 # Real browser tests use ordinary connections in a disposable, fixed database.
 # This override exists only in MIX_ENV=test; dev and production cannot enable it.

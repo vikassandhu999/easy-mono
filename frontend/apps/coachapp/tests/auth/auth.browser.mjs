@@ -55,9 +55,12 @@ try {
   await expect(page.getByText('We could not reach the service. Please try again shortly.')).toBeVisible();
   await page.unroute('**/v1/auth/token');
   await page.getByRole('button', {name: 'Create business'}).click();
-  await expect(page.getByRole('heading', {name: 'Know the person behind the plan.'})).toBeVisible();
+  await expect(page.getByRole('heading', {name: 'Build once. Coach each person.'})).toBeVisible();
   await page.getByRole('button', {name: 'Skip tour', exact: true}).click();
-  await page.getByRole('link', {name: 'Clients', exact: true}).click();
+  await page
+    .getByRole('navigation', {name: 'Coaching', exact: true})
+    .getByRole('link', {name: 'Clients', exact: true})
+    .click();
   await expect(page.getByRole('heading', {name: 'Clients', exact: true})).toBeVisible();
   expect(businessesCreated).toBe(1);
   await page.unroute('**/v1/businesses');

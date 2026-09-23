@@ -7,7 +7,7 @@
   Start by reading repository instructions, the coachapp rewrite's documented decisions, and backend contracts. Inventory supported client workflows, identify
   API gaps, and create a UX plan, screen sequence, and completion ledger in .scratch/clientapp-rebuild/.
 
-  Do not copy or consult clientapp-v2 or coachapp-v2 code, screens, or UX as references. Use backend contracts and domain rules to establish supported
+  Do not copy or consult clientapp-v2 or the retired coach implementation’s code, screens, or UX as references. Use backend contracts and domain rules to establish supported
   behavior. Reuse the rewritten coachapp's suitable technical conventions and shared infrastructure while designing interactions specifically for clients.
 
   Use this technical stack:
@@ -29,13 +29,12 @@
   screen. Address native authentication, API configuration, deep links, and session persistence as part of that foundation.
 
   Inventory and implement supported workflows, including:
-  - Joining a coach, signing in, and completing intake.
-  - Understanding today's training, nutrition, and pending actions.
+  - Joining a coach by direct invitation and signing in.
+  - Understanding today's training and nutrition.
   - Following workouts and recording sets, targets, and results.
   - Viewing assigned nutrition plans and logging meals.
-  - Completing forms and check-ins, including progress photos.
   - Messaging the coach and sharing supported attachments.
-  - Reviewing history and progress.
+  - Reviewing workout and nutrition history.
   - Managing account details and preferences.
 
   Confirm exact scope against backend capabilities. Record gaps explicitly. Make focused backend changes when needed to complete an agreed workflow, following
@@ -59,7 +58,7 @@
   Treat mobile behavior as part of every workflow:
   - Handle safe areas, keyboard visibility, Android back navigation, and deep links.
   - Preserve useful state when the app backgrounds, resumes, or restarts.
-  - Persist in-progress workout entries and form drafts where interruption would lose work.
+  - Persist in-progress workout entries and editable record drafts where interruption would lose work.
   - Make connectivity, saving, saved, and retry states understandable.
   - Prevent duplicate submissions and accidental loss of unsaved work.
   - Keep cached data and drafts isolated by account and clear them appropriately on logout.

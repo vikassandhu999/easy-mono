@@ -6,7 +6,7 @@ defmodule EasyWeb.Clients.PerformedSetController do
 
   typed(:create, body: PerformedSet.create(), ok: {201, data(PerformedSet.t())})
   typed(:update, body: PerformedSet.update(), ok: {200, data(PerformedSet.t())})
-  typed(:delete, ok: {204, nil})
+  typed(:delete, query: PerformedSet.delete_query(), ok: {204, nil})
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
@@ -30,7 +30,7 @@ defmodule EasyWeb.Clients.PerformedSetController do
   def delete(conn, _params) do
     id = conn.path_params["id"]
 
-    with {:ok, _set} <- PerformedSets.delete_client_performed_set(conn.assigns.ctx, id) do
+    with {:ok, _set} <- PerformedSets.delete_client_performed_set(conn.assigns.ctx, id, conn.query_params) do
       ok(conn)
     end
   end

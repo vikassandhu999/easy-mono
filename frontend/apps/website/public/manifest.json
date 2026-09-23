@@ -1,7 +1,7 @@
 {
   "name": "CoachEasy - Fitness Coaching Platform",
   "short_name": "CoachEasy",
-  "description": "The simplest all-in-one coaching platform for fitness professionals. Manage clients, create plans, track progress, and grow your business.",
+  "description": "The simplest all-in-one coaching platform for fitness professionals. Manage clients, create plans, review workouts and meals, and grow your business.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

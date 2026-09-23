@@ -31,9 +31,6 @@ defmodule Easy.OrgsTest do
 
     assert {:error, :not_found} = Orgs.get_business(ctx)
     assert {:error, :not_found} = Orgs.update_business(ctx, %{name: "Missing"})
-
-    assert {:error, :not_found} =
-             Orgs.update_dashboard_setup(ctx, %{dashboard_setup_hidden_reason: :dismissed})
   end
 
   test "onboarding rejects an unknown user and duplicate handles without creating another business" do

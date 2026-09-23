@@ -5,6 +5,8 @@ defmodule Easy.Nutrition.Diary.Input do
 
   @type t :: %{slots: [slot()]}
   @type slot :: %{
+          optional(:share) => boolean(),
+          optional(:note_to_coach) => String.t() | nil,
           meal_slot: MealSlot.t(),
           meal_id: String.t() | nil,
           expected_revision: non_neg_integer(),

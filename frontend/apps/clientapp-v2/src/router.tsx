@@ -5,14 +5,11 @@ import AcceptInvite from '@/auth/accept-invite';
 import Login from '@/auth/login';
 import VerifyInviteOtp from '@/auth/verify-invite-otp';
 import VerifyLoginOtp from '@/auth/verify-login-otp';
-import FillCheckin from '@/checkins/fill-checkin';
-import ListCheckins from '@/checkins/list-checkins';
 import SessionDetail from '@/history/session-detail';
 import WorkoutHistory from '@/history/workout-history';
 import CoachChat from '@/messages/coach-chat';
 import NutritionHistory from '@/nutrition/nutrition-history';
 import NutritionToday from '@/nutrition/nutrition-today';
-import ProgressHome from '@/progress/progress-home';
 import {ROUTES} from '@/routes';
 import Settings from '@/settings/settings';
 import TodayHome from '@/today/today-home';
@@ -45,9 +42,6 @@ export const router = createBrowserRouter([
       {path: ROUTES.WORKOUT_PREVIEW, Component: WorkoutPreview},
       {path: ROUTES.NUTRITION, Component: NutritionToday},
       {path: ROUTES.NUTRITION_HISTORY, Component: NutritionHistory},
-      {path: ROUTES.PROGRESS, Component: ProgressHome},
-      {path: ROUTES.CHECKINS, Component: ListCheckins},
-      {path: ROUTES.CHECKIN_FILL, Component: FillCheckin},
       {path: ROUTES.MESSAGES, Component: CoachChat},
       {path: ROUTES.WORKOUT_ACTIVE, Component: ActiveWorkout},
       {path: ROUTES.WORKOUT_HISTORY, Component: WorkoutHistory},

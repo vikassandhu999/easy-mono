@@ -16,18 +16,14 @@ export function deepLinkPath(value: string): string | null {
         '/',
         '/account',
         '/account/details',
-        '/account/goal',
-        '/progress',
         '/messages',
         '/verify',
-        '/forms',
         '/training',
         '/nutrition',
         '/nutrition/plans',
       ].includes(url.pathname) &&
-      !/^\/progress\/weight\/\d{4}-\d{2}-\d{2}$/.test(url.pathname) &&
       !/^\/nutrition\/(plans\/[^/]+|days\/\d{4}-\d{2}-\d{2}\/[a-z_]+)$/.test(url.pathname) &&
-      !/^\/(invite|forms)\/[^/]+$/.test(url.pathname) &&
+      !/^\/invite\/[^/]+$/.test(url.pathname) &&
       !/^\/training\/(sessions\/[^/]+|plans\/[^/]+(?:\/workouts\/[^/]+)?)$/.test(url.pathname)
     ) {
       return null;
@@ -50,7 +46,7 @@ export async function startNativeRuntime({
     return;
   }
   await App.addListener('appRestoredResult', async (event) => {
-    const path = await restoreNativePhoto(event).catch(() => '/forms?photoRecovery=failed');
+    const path = await restoreNativePhoto(event).catch(() => '/messages?photoRecovery=failed');
     if (path) {
       await navigate(path);
     }

@@ -14,7 +14,6 @@ defmodule Easy.Billing.ConcurrentInviteTest do
   alias Easy.ClientInvitations
   alias Easy.Clients.Client
   alias Easy.Ctx
-  alias Easy.Forms.{FormAssignment, FormTemplate}
   alias Easy.Identity.User
   alias Easy.Orgs.{Business, Coach}
   alias Easy.Repo
@@ -83,7 +82,7 @@ defmodule Easy.Billing.ConcurrentInviteTest do
   end
 
   defp cleanup(business_id, owner_id) do
-    for schema <- [FormAssignment, FormTemplate, Client, Event, BusinessBilling, Coach] do
+    for schema <- [Client, Event, BusinessBilling, Coach] do
       Repo.delete_all(from r in schema, where: r.business_id == ^business_id)
     end
 

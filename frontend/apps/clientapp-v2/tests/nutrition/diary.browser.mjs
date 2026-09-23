@@ -1,12 +1,8 @@
 import assert from 'node:assert/strict';
-import {createRequire} from 'node:module';
-
-const require = createRequire(new URL('../../../coachapp-v2/package.json', import.meta.url));
-const {chromium} = require('playwright');
+import {chromium} from '@playwright/test';
 
 // Real screens and query hooks; controlled HTTP responses exercise failure recovery.
 const origin = process.env.CLIENT_TEST_ORIGIN ?? 'http://localhost:1314';
-const coachOrigin = process.env.COACH_TEST_ORIGIN ?? 'http://localhost:2021';
 const nutrients = {calories: 100, protein: 5, carbohydrates: 15, fat: 2, fiber: 1, complete: true};
 const portion = {kind: 'gram', grams: 50};
 const items = ['Oats', 'Milk'].map((name, i) => ({
@@ -71,7 +67,7 @@ function day(date = '2026-09-05') {
   };
 }
 
-async function mount(page, url, component, coach = false) {
+async function mount(page, url, component) {
   const main = await (await page.request.get(`${url}/src/main.tsx`)).text();
   const dep = (name) => {
     const path = [...main.matchAll(/"([^"\n]+)"/g)]
@@ -92,7 +88,7 @@ async function mount(page, url, component, coach = false) {
     import '/src/index.css';
     const queryClient = new QueryClient({defaultOptions: {queries: {retry: false}}});
     window.refetchNutrition = () => queryClient.refetchQueries({type: 'active'});
-    const router = createBrowserRouter([{path: ${JSON.stringify(coach ? '/clients/:id/nutrition/:date' : '*')}, element: React.createElement(Screen)}]);
+    const router = createBrowserRouter([{path: '*', element: React.createElement(Screen)}]);
     ReactDOM.createRoot(document.getElementById('root')).render(
       React.createElement(QueryClientProvider, {client: queryClient},
         React.createElement('div', {style: {display: 'flex', flexDirection: 'column', height: '100dvh'}}, React.createElement(RouterProvider, {router}))));
@@ -255,32 +251,9 @@ try {
   );
   await page.screenshot({path: '/tmp/nutrition-diary-375.png'});
 
-  for (const width of [375, 1280]) {
-    const coach = await browser.newPage({viewport: {width, height: 900}});
-    coach.on('pageerror', (error) => errors.push(error.message));
-    await mount(coach, coachOrigin, '/src/clients/client-nutrition-day.tsx', true);
-    await coach.route('**/v1/coach/clients/*/nutrition-days**', (route) =>
-      route.fulfill({json: {data: [day()]}}),
-    );
-    await coach.goto(`${coachOrigin}/clients/client/nutrition/2026-09-05`);
-    await coach.getByText('Oats', {exact: true}).waitFor();
-    await coach.getByText('Pending', {exact: true}).waitFor();
-    await coach.getByText('Banana', {exact: true}).waitFor();
-    await coach.getByText('Oats', {exact: true}).scrollIntoViewIfNeeded();
-    assert(
-      await coach.locator('.easy_page').evaluate((node) => node.getBoundingClientRect().height > 500),
-      'coach page has real viewport height',
-    );
-    assert(
-      await coach.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-      'coach no horizontal overflow',
-    );
-    await coach.screenshot({path: `/tmp/nutrition-diary-coach-${width}.png`});
-    await coach.close();
-  }
   assert.deepEqual(errors, []);
   console.log(
-    'PASS: diary 75g create + retry, cached response, pending toggle, edit, replacement, undo, extra retry; coach 375/1280',
+    'PASS: diary 75g create + retry, cached response, pending toggle, edit, replacement, undo, extra retry; client 375px',
   );
 } finally {
   await browser.close();

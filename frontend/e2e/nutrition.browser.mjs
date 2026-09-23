@@ -14,7 +14,17 @@ async function fixture(scenario, testInfo) {
   return seeds[`${scenario}-${testInfo.project.name}`];
 }
 
-async function login(page, email, origin = 'http://localhost:2421') {
+async function login(page, email) {
+  await page.goto('http://localhost:2421/login');
+  await page.getByLabel('Email', {exact: true}).fill(email);
+  await page.getByRole('button', {name: 'Continue with email', exact: true}).click();
+  await page.getByLabel('Verification code', {exact: true}).fill('123456');
+  await page.getByRole('button', {name: 'Verify and continue', exact: true}).click();
+  await expect(page.getByRole('heading', {name: 'Clients', exact: true})).toBeVisible();
+}
+
+async function loginClient(page, email) {
+  const origin = 'http://localhost:2414';
   await page.goto(`${origin}/login`);
   await page.getByRole('textbox', {name: /^Email/}).fill(email);
   await page.getByRole('button', {name: 'Continue with email'}).click();
@@ -24,61 +34,68 @@ async function login(page, email, origin = 'http://localhost:2421') {
   await expect(page).not.toHaveURL(/login/);
 }
 
-async function saveMenu(page) {
+async function saveMenu(page, clientId) {
   const saved = page.waitForResponse(
     (response) => response.url().endsWith('/menu') && response.request().method() === 'PUT',
   );
-  await page.getByRole('button', {name: 'Save menu', exact: true}).click();
+  await page.getByRole('button', {name: clientId ? 'Save client plan' : 'Save nutrition plan', exact: true}).click();
   expect((await saved).status()).toBe(200);
-  await expect(page.getByText('Menu saved', {exact: true})).toBeVisible();
+  if (clientId) {
+    await expect(page).toHaveURL(new RegExp(`/clients/${clientId}$`));
+  } else {
+    await expect(page.getByText('All changes saved', {exact: true})).toBeVisible();
+  }
 }
 
 test('build food, recipe and whole menu; reload preserves amounts', async ({page}, testInfo) => {
   const seed = await fixture('build', testInfo);
   await login(page, seed.coach_email);
-  await page.goto('/library/foods/create');
-  await page.getByRole('textbox', {name: /^Name/}).fill('Breakfast oats');
-  await page.getByRole('textbox', {name: 'Calories', exact: true}).fill('200');
-  await page.getByRole('button', {name: 'Create food', exact: true}).click();
-  await expect(page).toHaveURL(/\/foods\/[a-f0-9-]+$/);
+  await page.goto('/nutrition-foods/new');
+  await page.getByLabel('Food name', {exact: true}).fill('Breakfast oats');
+  await page.getByLabel('Calories · kcal', {exact: true}).fill('200');
+  await page.getByRole('button', {name: 'Save food', exact: true}).click();
+  await expect(page).toHaveURL(/\/nutrition-foods\/[a-f0-9-]+$/);
   await page.reload();
-  await expect(page.getByRole('heading', {name: 'Breakfast oats', exact: true})).toBeVisible();
+  await expect(page.getByLabel('Food name', {exact: true})).toHaveValue('Breakfast oats');
 
-  await page.goto('/library/recipes/create');
-  await page.getByRole('textbox', {name: /^Name/}).fill('Oat bowl');
-  await page.getByRole('textbox', {name: 'Servings', exact: true}).fill('2');
-  await page.getByRole('textbox', {name: 'Cooked weight (g)', exact: true}).fill('200');
-  await page.getByRole('button', {name: 'Add ingredient', exact: true}).click();
-  await page.getByRole('option').filter({hasText: 'Breakfast oats'}).click();
+  await page.goto('/nutrition-recipes/new');
+  await page.getByLabel('Recipe name', {exact: true}).fill('Oat bowl');
+  await page.getByLabel('Makes how many servings?', {exact: true}).fill('2');
+  await page.getByText('Preparation and portion details', {exact: true}).click();
+  await page.getByLabel('Finished weight · g (optional)', {exact: true}).fill('200');
+  await page.getByRole('button', {name: 'Add ingredients', exact: true}).click();
+  await page.getByLabel('Search foods', {exact: true}).fill('Breakfast oats');
+  await page.getByRole('button', {name: 'Select Breakfast oats', exact: true}).click();
   await page.getByRole('button', {name: 'Add 1 ingredient', exact: true}).click();
-  await page.getByRole('textbox', {name: /^Weight \(g\)/}).fill('100');
-  await page.getByRole('button', {name: 'Create recipe', exact: true}).click();
-  await expect(page).toHaveURL(/\/recipes\/[a-f0-9-]+$/);
+  await page
+    .getByRole('list', {name: 'Recipe ingredients', exact: true})
+    .getByLabel('Quantity', {exact: true})
+    .fill('100');
+  await page.getByRole('button', {name: 'Save recipe', exact: true}).click();
+  await expect(page).toHaveURL(/\/nutrition-recipes\/[a-f0-9-]+$/);
   await page.reload();
-  await expect(page.getByText('Breakfast oats', {exact: true})).toBeVisible();
+  await expect(
+    page.getByRole('list', {name: 'Recipe ingredients', exact: true}).getByLabel('Quantity', {exact: true}),
+  ).toHaveValue('100');
 
-  await page.goto('/library/nutrition-plans/create');
-  await page.getByRole('textbox', {name: /^Name/}).fill('Built in browser');
-  await page.getByRole('button', {name: 'Create plan', exact: true}).click();
-  await expect(page.getByText('Menu saved', {exact: true})).toBeVisible();
-  await page.getByTestId('nb-add-meal').click();
-  await page.getByTestId('nb-create-meal').click();
-  await page.getByRole('textbox', {name: 'Meal name', exact: true}).fill('Breakfast');
-  await page.getByRole('textbox', {name: 'Meal name', exact: true}).press('Enter');
-  await page.getByRole('button', {name: '+ Add food or recipe', exact: true}).click();
-  await page.getByRole('option').filter({hasText: 'Breakfast oats'}).click();
-  await page.getByRole('button', {name: 'Recipes', exact: true}).click();
-  await page.getByRole('option').filter({hasText: 'Oat bowl'}).click();
-  await page.getByRole('button', {name: 'Set amounts — 2 items', exact: true}).click();
-  await page.getByRole('textbox', {name: /^Amount/}).fill('75');
-  await page.getByRole('button', {name: 'Next', exact: true}).click();
-  await page.getByRole('textbox', {name: /^Amount/}).fill('1');
-  await page.getByRole('button', {name: 'Add 2 items', exact: true}).click();
+  await page.goto('/nutrition-plans/new');
+  await page.getByLabel('Plan name', {exact: true}).fill('Built in browser');
+  await page.getByRole('button', {name: 'Add meal', exact: true}).click();
+  await page.getByLabel('Meal name', {exact: true}).fill('Breakfast');
+  await page.getByRole('button', {name: 'Add foods or recipes', exact: true}).click();
+  const picker = page.getByRole('dialog', {name: 'Add foods or recipes', exact: true});
+  await picker.getByLabel('Search foods', {exact: true}).fill('Breakfast oats');
+  await picker.getByRole('button', {name: 'Select Breakfast oats', exact: true}).click();
+  await picker.getByRole('button', {name: 'Recipes', exact: true}).click();
+  await picker.getByRole('button', {name: 'Select Oat bowl', exact: true}).click();
+  await picker.getByRole('button', {name: 'Add 2 items', exact: true}).click();
+  await page.getByLabel('Breakfast oats portion', {exact: true}).fill('75');
+  await page.getByLabel('Oat bowl portion', {exact: true}).fill('1');
   await saveMenu(page);
+  await expect(page).toHaveURL(/\/nutrition-plans\/[a-f0-9-]+$/);
   await page.reload();
-  await page.getByRole('button', {name: 'Expand Breakfast', exact: true}).click();
-  await expect(page.getByRole('button', {name: /^Breakfast oats/})).toContainText('75');
-  await expect(page.getByRole('button', {name: /^Oat bowl/})).toContainText('1 serving');
+  await expect(page.getByLabel('Breakfast oats portion', {exact: true})).toHaveValue('75');
+  await expect(page.getByLabel('Oat bowl portion', {exact: true})).toHaveValue('1');
 });
 
 async function openDiary(client, seed) {
@@ -105,20 +122,24 @@ async function logOats(client, grams = '50') {
 }
 
 async function coachDiary(page, seed, calories) {
-  await page.goto(`/clients/${seed.client_id}/nutrition/${seed.date}`);
-  await expect(page.getByRole('progressbar', {name: `Calories: ${calories} of 2000 kcal`, exact: true})).toBeVisible();
+  await page.goto(`/clients/${seed.client_id}/nutrition-history?date=${seed.date}`);
+  const logged = calories === 'unknown' ? '—' : `${calories} kcal`;
+  await expect(
+    page
+      .getByRole('table', {name: 'Logged nutrition and daily targets', exact: true})
+      .getByRole('row', {name: `Calories ${logged} 2000 kcal`, exact: true}),
+  ).toBeVisible();
 }
 
 test('assign a menu; client logs it; coach sees persisted intake', async ({page, client}, testInfo) => {
   const seed = await fixture('assign', testInfo);
   await login(page, seed.coach_email);
-  await page.goto(`/library/nutrition-plans/${seed.plan_id}`);
-  await page.getByRole('button', {name: 'Add to client', exact: true}).click();
-  await page.getByRole('option').filter({hasText: 'Test Client'}).click();
-  await page.getByRole('button', {name: 'Assign to Test Client', exact: true}).click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.goto(`/clients/${seed.client_id}/nutrition-plans/assign/${seed.plan_id}`);
+  await page.getByLabel('Start date', {exact: true}).fill(seed.date);
+  await page.getByRole('button', {name: 'Assign nutrition plan', exact: true}).click();
+  await expect(page).toHaveURL(new RegExp(`/clients/${seed.client_id}$`));
 
-  await login(client, seed.client_email, 'http://localhost:2414');
+  await loginClient(client, seed.client_email);
   await openDiary(client, seed);
   await logOats(client);
   const day = await openDiary(client, seed);
@@ -126,12 +147,12 @@ test('assign a menu; client logs it; coach sees persisted intake', async ({page,
   expect(day.slots[0].rows[0].notes).toBe('Logged from the real client app');
   await expect(client.getByRole('button', {name: 'Oats 100', exact: true})).toBeVisible();
   await coachDiary(page, seed, 100);
-  await expect(page.getByText('50 g', {exact: true})).toBeVisible();
+  await expect(page.getByRole('listitem').getByText('50 g', {exact: true})).toBeVisible();
 });
 
 test('correct, replace and remove intake; both apps agree after reload', async ({page, client}, testInfo) => {
   const seed = await fixture('corrections', testInfo);
-  await login(client, seed.client_email, 'http://localhost:2414');
+  await loginClient(client, seed.client_email);
   await openDiary(client, seed);
   await logOats(client);
   await client.getByRole('button', {name: 'Oats 100', exact: true}).click();
@@ -162,7 +183,7 @@ test('correct, replace and remove intake; both apps agree after reload', async (
   expect(day.slots[0].rows[0].status).toBe('pending');
   await expect(client.getByRole('button', {name: 'Log as eaten', exact: true})).toBeVisible();
   await coachDiary(page, seed, 'unknown');
-  await expect(page.getByText('Pending', {exact: true})).toBeVisible();
+  await expect(page.getByText('Not logged yet', {exact: true})).toBeVisible();
   await expect(page.getByText('Banana', {exact: true})).toHaveCount(0);
 });
 
@@ -172,37 +193,33 @@ test('concurrent menu saves reject stale edits; failed reload retains draft', as
   const other = await browser.newPage();
   try {
     await login(other, seed.coach_email);
-    const path = `/library/nutrition-plans/${seed.plan_id}`;
+    const path = `/nutrition-plans/${seed.plan_id}`;
     await page.goto(path);
     await other.goto(path);
-    await page.getByRole('button', {name: 'Rename', exact: true}).click();
-    await page.getByRole('textbox', {name: 'Day name'}).fill('My retained draft');
-    await page.getByRole('textbox', {name: 'Day name'}).press('Enter');
-    await other.getByRole('button', {name: 'Rename', exact: true}).click();
-    await other.getByRole('textbox', {name: 'Day name'}).fill('Saved elsewhere');
-    await other.getByRole('textbox', {name: 'Day name'}).press('Enter');
+    await page.getByLabel('Day menu name', {exact: true}).fill('My retained draft');
+    await other.getByLabel('Day menu name', {exact: true}).fill('Saved elsewhere');
     await saveMenu(other);
 
     const stale = page.waitForResponse((r) => r.url().endsWith('/menu') && r.status() === 409);
-    await page.getByRole('button', {name: 'Save menu', exact: true}).click();
+    await page.getByRole('button', {name: 'Save nutrition plan', exact: true}).click();
     await stale;
     await expect(page.getByText(/This plan changed elsewhere/)).toBeVisible();
-    await expect(page.getByRole('radio', {name: 'My retained draft', exact: true})).toBeVisible();
+    await expect(page.getByLabel('Day menu name', {exact: true})).toHaveValue('My retained draft');
     const planUrl = `**/v1/coach/nutrition-plans/${seed.plan_id}`;
     await page.route(planUrl, (route) => route.abort('connectionfailed'));
-    await page.getByRole('button', {name: 'Discard', exact: true}).click();
-    await expect(page.getByText("Couldn't load the saved plan. Your draft is still here.")).toBeVisible();
-    await expect(page.getByRole('radio', {name: 'My retained draft', exact: true})).toBeVisible();
+    await page.getByRole('button', {name: 'Review saved version', exact: true}).click();
+    await page.getByRole('button', {name: 'Load saved plan', exact: true}).click();
+    await expect(page.getByRole('alert')).toContainText('Could not load the saved plan. Your draft is still here.');
+    await expect(page.getByLabel('Day menu name', {exact: true})).toHaveValue('My retained draft');
     await page.unroute(planUrl);
-    await page.getByRole('button', {name: 'Discard', exact: true}).click();
-    await expect(page.getByText('Menu saved', {exact: true})).toBeVisible();
-    await expect(page.getByRole('radio', {name: 'Saved elsewhere', exact: true})).toBeVisible();
-    await page.getByRole('button', {name: 'Rename', exact: true}).click();
-    await page.getByRole('textbox', {name: 'Day name'}).fill('Recovered and saved');
-    await page.getByRole('textbox', {name: 'Day name'}).press('Enter');
+    await page.getByRole('button', {name: 'Review saved version', exact: true}).click();
+    await page.getByRole('button', {name: 'Load saved plan', exact: true}).click();
+    await expect(page.getByText('Saved version loaded.', {exact: true})).toBeVisible();
+    await expect(page.getByLabel('Day menu name', {exact: true})).toHaveValue('Saved elsewhere');
+    await page.getByLabel('Day menu name', {exact: true}).fill('Recovered and saved');
     await saveMenu(page);
     await other.reload();
-    await expect(other.getByRole('radio', {name: 'Recovered and saved', exact: true})).toBeVisible();
+    await expect(other.getByLabel('Day menu name', {exact: true})).toHaveValue('Recovered and saved');
   } finally {
     await other.close();
   }
@@ -210,27 +227,27 @@ test('concurrent menu saves reject stale edits; failed reload retains draft', as
 
 test('recorded nutrition stays frozen after food and assigned menu edits', async ({page, client}, testInfo) => {
   const seed = await fixture('history', testInfo);
-  await login(client, seed.client_email, 'http://localhost:2414');
+  await loginClient(client, seed.client_email);
   await openDiary(client, seed);
   await logOats(client);
   const before = await openDiary(client, seed);
   await login(page, seed.coach_email);
-  await page.goto(`/library/foods/${seed.food_id}/edit`);
-  await page.getByRole('textbox', {name: /^Name/}).fill('Changed oats');
-  await page.getByRole('textbox', {name: 'Calories', exact: true}).fill('800');
-  await page.getByRole('button', {name: 'Save changes', exact: true}).click();
-  await expect(page).toHaveURL(new RegExp(`/foods/${seed.food_id}$`));
-  await page.goto(`/library/nutrition-plans/${seed.plan_id}`);
-  await page.getByRole('button', {name: 'Expand Breakfast', exact: true}).click();
-  await page.getByRole('button', {name: /^Changed oats/}).click();
-  await page.getByRole('textbox', {name: /^Amount/}).fill('200');
-  await page.getByRole('button', {name: 'Done', exact: true}).click();
-  await saveMenu(page);
+  await page.goto(`/nutrition-foods/${seed.food_id}`);
+  await page.getByLabel('Food name', {exact: true}).fill('Changed oats');
+  await page.getByLabel('Calories · kcal', {exact: true}).fill('800');
+  const savedFood = page.waitForResponse(
+    (r) => r.url().endsWith(`/nutrition-foods/${seed.food_id}`) && r.request().method() === 'PATCH',
+  );
+  await page.getByRole('button', {name: 'Save food', exact: true}).click();
+  expect((await savedFood).status()).toBe(200);
+  await page.goto(`/clients/${seed.client_id}/nutrition-plans/${seed.plan_id}/edit`);
+  await page.getByLabel('Changed oats portion', {exact: true}).fill('200');
+  await saveMenu(page, seed.client_id);
   const after = await openDiary(client, seed);
   expect(after.slots).toEqual(before.slots);
   expect(after.summary).toEqual(before.summary);
   await expect(client.getByRole('button', {name: 'Oats 100', exact: true})).toBeVisible();
   await coachDiary(page, seed, 100);
-  await expect(page.getByText('Oats', {exact: true})).toBeVisible();
-  await expect(page.getByText('50 g', {exact: true})).toBeVisible();
+  await expect(page.getByRole('heading', {name: 'Oats', exact: true})).toBeVisible();
+  await expect(page.getByRole('listitem').getByText('50 g', {exact: true})).toBeVisible();
 });

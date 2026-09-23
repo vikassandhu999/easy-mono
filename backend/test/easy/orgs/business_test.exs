@@ -67,38 +67,4 @@ defmodule Easy.Orgs.BusinessTest do
     assert updated.name == business.name
     assert updated.default_weight_unit == business.default_weight_unit
   end
-
-  test "dashboard setup changesets persist consistent state and preserve completion" do
-    business = insert(:business)
-    now = DateTime.utc_now(:second)
-
-    assert {:ok, dismissed} =
-             business
-             |> Business.update_changeset(:dashboard_setup, now, %{dashboard_setup_hidden_reason: :dismissed})
-             |> Repo.update()
-
-    assert %DateTime{} = dismissed.dashboard_setup_hidden_at
-
-    assert {:ok, visible} =
-             dismissed
-             |> Business.update_changeset(:dashboard_setup, now, %{dashboard_setup_hidden_reason: nil})
-             |> Repo.update()
-
-    assert visible.dashboard_setup_hidden_reason == nil
-    assert visible.dashboard_setup_hidden_at == nil
-
-    assert {:ok, completed} =
-             visible
-             |> Business.update_changeset(:dashboard_setup, now, %{dashboard_setup_hidden_reason: :completed})
-             |> Repo.update()
-
-    assert %DateTime{} = completed.dashboard_setup_hidden_at
-
-    for reason <- [nil, :dismissed] do
-      assert {:ok, ^completed} =
-               completed
-               |> Business.update_changeset(:dashboard_setup, now, %{dashboard_setup_hidden_reason: reason})
-               |> Repo.update()
-    end
-  end
 end

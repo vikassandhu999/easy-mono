@@ -155,7 +155,7 @@ export function SetEditor({
         className="space-y-4"
         open={entry.attempted ? true : undefined}
       >
-        <summary className="cursor-pointer min-h-12 py-3 font-semibold">Units, set type & notes</summary>
+        <summary className="cursor-pointer min-h-12 py-3 font-semibold">Units & set type</summary>
         {fields.load && (
           <Controller
             control={form.control}
@@ -218,14 +218,9 @@ export function SetEditor({
           rules={numeric(false, 1, 10)}
           isDisabled={locked}
         />
-        <FormField
-          control={form.control}
-          name="notes"
-          label="Set notes"
-          multiline
-          maxLength={5000}
-          isDisabled={locked}
-        />
+        {entry.values.notes && (
+          <p className="text-sm whitespace-pre-wrap text-muted-foreground">Recorded detail: {entry.values.notes}</p>
+        )}
       </details>
       <div className="mobile-save-bar">
         <SubmitButton

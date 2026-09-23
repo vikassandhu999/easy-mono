@@ -33,7 +33,7 @@ export default defineConfig({
       reuseExistingServer: false,
     },
     ...[
-      ['coachapp-v2', 2421],
+      ['coachapp', 2421],
       ['clientapp-v2', 2414],
     ].map(([app, port]) => ({
       name: app,

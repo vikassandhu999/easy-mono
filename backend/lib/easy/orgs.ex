@@ -1,6 +1,4 @@
 defmodule Easy.Orgs do
-  import Ecto.Query
-
   alias Easy.Coaches
   alias Easy.Ctx
   alias Easy.Identity.Users
@@ -39,36 +37,6 @@ defmodule Easy.Orgs do
       |> Business.update_changeset(attrs)
       |> Repo.update()
     end
-  end
-
-  @spec update_dashboard_setup(Ctx.t(), map()) ::
-          {:ok, Business.t()} | {:error, :not_found | :not_owner | Ecto.Changeset.t()}
-  def update_dashboard_setup(%Ctx{owner?: false}, _attrs), do: {:error, :not_owner}
-
-  def update_dashboard_setup(%Ctx{} = ctx, attrs) do
-    with {:ok, attrs} <- Business.dashboard_setup_input(attrs) do
-      Repo.transact(fn -> update_locked_dashboard_setup(ctx.business_id, attrs) end)
-    end
-  end
-
-  defp update_locked_dashboard_setup(business_id, attrs) do
-    case lock_business(business_id) do
-      nil -> {:error, :not_found}
-      business -> persist_dashboard_setup(business, attrs)
-    end
-  end
-
-  defp lock_business(business_id) do
-    Business
-    |> where([business], business.id == ^business_id)
-    |> lock("FOR UPDATE")
-    |> Repo.one()
-  end
-
-  defp persist_dashboard_setup(business, attrs) do
-    business
-    |> Business.update_changeset(:dashboard_setup, DateTime.utc_now(:second), attrs)
-    |> Repo.update()
   end
 
   defp ok_or_not_found(nil), do: {:error, :not_found}

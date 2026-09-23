@@ -107,4 +107,4 @@ In the owning `src/api/*.ts` file, export the named type (`Recipe`, `RecipeCreat
 
 Write the controller test through the router. Assert status and the JSON values you care about (RM-005). The typed checker asserts the shape. Do not use `OpenApiSpex.TestAssertions.assert_schema/3`.
 
-Run `mix test` on that test file, then `cd backend && mix precommit` when the change is ready. Run `pnpm -C apps/coachapp-v2 build` or the client app equivalent so `tsc` sees the new `schema.ts`.
+Run `mix test` on that test file, then `cd backend && mix precommit` when the change is ready. Run `pnpm -C apps/coachapp build` or the client app equivalent so `tsc` sees the new `schema.ts`.

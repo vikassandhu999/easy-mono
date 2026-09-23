@@ -150,7 +150,7 @@ try {
     await page.getByLabel('Business name', {exact: true}).fill('Steady Strength Coaching');
     await page.getByLabel('About your business', {exact: true}).fill('Strength and nutrition for everyday life.');
     await page.getByLabel('WhatsApp number', {exact: true}).fill('+44 7700 900123');
-    await chooseOption(selectTrigger(page, 'Default weight unit'), 'Pounds (lb)');
+    await chooseOption(selectTrigger(page, 'Default workout load unit'), 'Pounds (lb)');
     await page.getByRole('listbox', {includeHidden: true}).waitFor({state: 'detached'});
     await chooseOption(selectTrigger(page, 'Default time zone'), 'Europe/London');
     await page.getByRole('listbox', {includeHidden: true}).waitFor({state: 'detached'});

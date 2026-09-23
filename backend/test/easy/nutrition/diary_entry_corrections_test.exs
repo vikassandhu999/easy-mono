@@ -80,7 +80,7 @@ defmodule Easy.Nutrition.DiaryEntryCorrectionsTest do
     assert hd(removed.slots).options != []
   end
 
-  test "correction deadlines use the frozen slot timezone and retries cannot bypass them" do
+  test "old meals remain correctable using their current revision" do
     %{client: client, food: food, today: date} = covering_setup()
     ctx = client_ctx(client)
     {:ok, day} = save_extra(ctx, date, extra_attrs(food))
@@ -88,8 +88,10 @@ defmodule Easy.Nutrition.DiaryEntryCorrectionsTest do
     past = Date.add(date, -8)
     move_slot_date(stored, past)
 
-    assert {:error, :outside_correction_window} =
+    assert {:ok, corrected} =
              Diary.save_client_nutrition_day(ctx, past, %{slots: [slot_draft(hd(day.slots))]})
+
+    assert corrected.date == past
   end
 
   test "changing the same food between portion options scales frozen nutrition" do

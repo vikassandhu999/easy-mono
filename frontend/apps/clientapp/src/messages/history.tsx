@@ -170,7 +170,7 @@ export function History() {
                 <Message align={message.sender_type === 'client' ? 'end' : 'start'}>
                   <MessageContent>
                     <MessageHeader className="sr-only">
-                      {message.sender_type === 'client' ? 'You' : 'Coach'}
+                      {message.sender_type === 'client' ? 'You' : message.sender_name || 'Coach'}
                     </MessageHeader>
                     {message.body && (
                       <Bubble variant={message.sender_type === 'client' ? 'default' : 'muted'}>
@@ -184,13 +184,16 @@ export function History() {
                     {message.embed && (
                       <Link
                         className="flex min-h-16 max-w-full items-center gap-3 rounded-2xl bg-[var(--training)] px-4 py-3 font-semibold text-primary"
-                        to={`${generatePath(routes.form, {id: message.embed.snapshot.form_assignment_id})}?returnTo=${encodeURIComponent(routes.messages)}`}
+                        to={referencePath(message.embed)}
                       >
                         <ClipboardCheck
                           aria-hidden="true"
                           className="size-5 shrink-0"
                         />
-                        <span>View response: {message.embed.snapshot.title}</span>
+                        <span>
+                          View record: {message.embed.snapshot.title}
+                          {message.embed.snapshot.revision ? ` · revision ${message.embed.snapshot.revision}` : ''}
+                        </span>
                         <ChevronRight
                           aria-hidden="true"
                           className="size-5 shrink-0"
@@ -204,6 +207,7 @@ export function History() {
                       />
                     ))}
                     <MessageFooter>
+                      {message.sender_type === 'coach' && `${message.sender_name || 'Coach'} · `}
                       <time dateTime={message.inserted_at}>
                         {new Date(message.inserted_at).toLocaleString(undefined, {
                           month: 'short',
@@ -259,6 +263,27 @@ export function History() {
       )}
     </div>
   );
+}
+
+function referencePath(embed: NonNullable<ChatMessage['embed']>) {
+  const snapshot = embed.snapshot;
+  const params = new URLSearchParams({returnTo: routes.messages, referenceId: embed.id});
+  if (snapshot.revision) {
+    params.set('referenceRevision', String(snapshot.revision));
+  }
+  let path: string;
+  switch (embed.type) {
+    case 'training_session':
+      path = generatePath(routes.trainingSession, {id: embed.id});
+      break;
+    case 'meal':
+      path =
+        snapshot.occurred_on && snapshot.meal_slot
+          ? generatePath(routes.nutritionMeal, {date: snapshot.occurred_on, slot: snapshot.meal_slot})
+          : routes.nutrition;
+      break;
+  }
+  return `${path}?${params}`;
 }
 
 function MessageMedia({attachment}: {attachment: ChatMessage['attachments'][number]}) {

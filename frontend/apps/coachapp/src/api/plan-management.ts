@@ -1,6 +1,6 @@
 import {useMutation, useQuery} from '@tanstack/react-query';
 import {ApiError, call, client} from './client';
-import {clientKeys, exerciseKeys, foodKeys, nutritionKeys, recipeKeys, trainingPlanKeys, workbenchKeys} from './keys';
+import {clientKeys, exerciseKeys, foodKeys, nutritionKeys, recipeKeys, trainingPlanKeys} from './keys';
 import {queryClient} from './query-client';
 import type {paths, TrainingPlan} from './schema';
 import {getSession} from './session';
@@ -114,7 +114,6 @@ function invalidate(resource: PlanResource) {
   return Promise.all([
     queryClient.invalidateQueries({queryKey: keys(resource).all}),
     queryClient.invalidateQueries({queryKey: clientKeys.all}),
-    queryClient.invalidateQueries({queryKey: workbenchKeys.all}),
     ...(resource === 'nutrition'
       ? [
           queryClient.invalidateQueries({queryKey: foodKeys.lists()}),

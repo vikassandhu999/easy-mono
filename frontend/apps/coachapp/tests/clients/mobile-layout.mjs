@@ -3,7 +3,7 @@ import {expect} from '@playwright/test';
 export async function checkMobileFoundation(page) {
   for (const width of [375, 390, 768, 1280]) {
     await page.setViewportSize({width, height: 812});
-    await page.getByLabel('First name', {exact: true}).fill('Kept through preview');
+    await page.getByLabel('First name', {exact: true}).fill('Kept while navigating');
     await page.getByLabel('Email', {exact: true}).fill('layout@example.test');
     const input = page.getByLabel('Email', {exact: true});
     expect(await input.evaluate((element) => getComputedStyle(element).fontSize)).toBe('16px');
@@ -27,33 +27,7 @@ export async function checkMobileFoundation(page) {
     expect((await signOut.boundingBox()).height).toBeGreaterThanOrEqual(44);
     await page.keyboard.press('Escape');
     await expect(account).toBeFocused();
-    const preview = page.getByRole('button', {name: 'Preview intake', exact: true});
-    await preview.click();
-    const dialog = page.getByRole('dialog');
-    await expect(dialog).toBeVisible();
-    const bounds = await dialog.boundingBox();
-    expect(bounds.y).toBeGreaterThanOrEqual(0);
-    expect(bounds.y + bounds.height).toBeLessThanOrEqual(813);
-    expect(bounds.width).toBeLessThanOrEqual(width);
-    for (const key of ['Tab', 'Tab', 'Shift+Tab']) {
-      await page.keyboard.press(key);
-      expect(await dialog.evaluate((element) => element.contains(document.activeElement))).toBe(true);
-    }
-    const body = page.getByRole('region', {name: 'Intake questions', exact: true});
-    expect(await body.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
-    await page.getByRole('button', {name: 'Close preview', exact: true}).focus();
-    await page.keyboard.press('Tab');
-    await expect(body).toBeFocused();
-    await page.keyboard.press('PageDown');
-    await expect.poll(() => body.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
-    await page.keyboard.press('End');
-    await expect(body.locator('ol > li').last()).toBeInViewport({ratio: 1});
-    await expect(page.getByRole('button', {name: 'Close preview', exact: true})).toBeInViewport();
-    await page.screenshot({path: `tests/clients/artifacts/mobile-preview-${width}.png`});
-    await page.keyboard.press('Escape');
-    await expect(dialog).toHaveCount(0);
-    await expect(preview).toBeFocused();
-    await expect(page.getByLabel('First name', {exact: true})).toHaveValue('Kept through preview');
+    await expect(page.getByLabel('First name', {exact: true})).toHaveValue('Kept while navigating');
     await expect(input).toHaveValue('layout@example.test');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     expect(await page.locator('main').evaluate((element) => getComputedStyle(element).paddingLeft)).toBe(
@@ -72,7 +46,7 @@ export async function checkMobileFoundation(page) {
     await page.setViewportSize({width, height: 812});
     await page.evaluate(() => scrollTo(0, 0));
     await page.screenshot({path: `tests/clients/artifacts/mobile-invite-${width}.png`, fullPage: true});
-    console.log(`Mobile foundation: ${width}px layout, controls, menu, dialog focus and scroll passed.`);
+    console.log(`Mobile foundation: ${width}px layout, controls, menu, focus and scroll passed.`);
   }
   await page.getByLabel('First name', {exact: true}).fill('');
   await page.getByLabel('Email', {exact: true}).fill('');

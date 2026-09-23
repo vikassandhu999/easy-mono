@@ -57,48 +57,48 @@ Severity of the rule isn't the point; recurrence is.
 | RM-026 | Async delivery tests must wait for the mailbox | Backend | test |
 | RM-027 | `Operation.parameter/5` schema is the third argument | Backend | test |
 | RM-028 | Page enrichment queries by the page keys directly | Backend | test |
-| RM-101 | No dead HeroUI v2 Tailwind tokens | Frontend | check-rm |
-| RM-102 | Use ROUTES + `generatePath`, never a path string | Frontend | check-rm |
+| RM-101 | No dead HeroUI v2 Tailwind tokens | Frontend | check-rm (clientapp-v2) |
+| RM-102 | Use ROUTES + `generatePath`, never a path string | Frontend | review |
 | RM-103 | No orphan routes / no dead screens | Frontend | review |
 | RM-104 | Stable React keys for editable lists | Frontend | biome |
 | RM-105 | Run biome + tsc before finishing FE work | Frontend | biome |
 | RM-106 | Never `as unknown` to read absent contract fields | Frontend | review |
 | RM-107 | Field-driving logic has one shared source of truth | Frontend | review |
 | RM-108 | Do not optimistically send values the server rejects | Frontend | review |
-| RM-109 | No literal brand colors in UI | Frontend | check-rm |
+| RM-109 | No literal brand colors in UI | Frontend | review |
 | RM-110 | Verify HeroUI semantics before "fixing" them | Frontend | review |
 | RM-111 | Spec audits quote exact spec text | Frontend | review |
-| RM-112 | Pickers use the responsive overlay pattern | Frontend | promoted |
-| RM-113 | Standard coachapp page alignment | Frontend | promoted |
+| RM-112 | Pickers use the responsive overlay pattern | Frontend | retired |
+| RM-113 | Standard coachapp page alignment | Frontend | retired |
 | RM-114 | Do not let legacy components drive builder architecture | Frontend | review |
-| RM-115 | Headers/form actions follow the exercise screen | Frontend | promoted |
-| RM-116 | HeroUI v3 primitives over raw HTML controls | Frontend | promoted |
-| RM-117 | Detail surface, not permanent edit forms | Frontend | promoted |
+| RM-115 | Headers/form actions follow the exercise screen | Frontend | retired |
+| RM-116 | HeroUI v3 primitives over raw HTML controls | Frontend | retired |
+| RM-117 | Detail surface, not permanent edit forms | Frontend | retired |
 | RM-118 | Mutations invalidate every visible list/detail | Frontend | review |
 | RM-119 | No blind visual redesigns without live verification | Frontend | review |
 | RM-120 | Shared form wrappers must not mount uncontrolled | Frontend | review |
-| RM-121 | No react-aria `NumberField` for numeric entry | Frontend | check-rm |
-| RM-122 | Forms from shared primitives; no optional/required labels | Frontend | check-rm |
-| RM-123 | Browse lists use `BrowseListBox` | Frontend | check-rm |
-| RM-124 | Do not stack inline `translateX` with Tailwind translate | Frontend | check-rm |
-| RM-125 | Loading/pending states must not change layout | Frontend | check-rm |
+| RM-121 | No react-aria `NumberField` for numeric entry | Frontend | retired |
+| RM-122 | Forms from shared primitives; no optional/required labels | Frontend | retired |
+| RM-123 | Browse lists use `BrowseListBox` | Frontend | retired |
+| RM-124 | Do not stack inline `translateX` with Tailwind translate | Frontend | review |
+| RM-125 | Loading/pending states must not change layout | Frontend | review |
 | RM-126 | Server field errors + HeroUI validation deadlock | Frontend | review |
-| RM-127 | `bg-foreground`/`text-background` invert with theme | Frontend | check-rm |
-| RM-128 | Status colors fail AA on body copy | Frontend | check-rm |
-| RM-129 | Screen body is `Page.Content bare` + `Page.Frame` | Frontend | check-rm |
+| RM-127 | `bg-foreground`/`text-background` invert with theme | Frontend | retired |
+| RM-128 | Status colors fail AA on body copy | Frontend | retired |
+| RM-129 | Screen body is `Page.Content bare` + `Page.Frame` | Frontend | retired |
 | RM-130 | Backend decimals arrive as JSON strings | Frontend | review |
 | RM-131 | Screen builds committed when they render, own branch | Frontend | review |
-| RM-132 | `--type-*` / `--radius-*` scale is a closed vocabulary | Frontend | check-ui-contract |
-| RM-133 | Theme rules for vendor classes: verify the effect | Frontend | check-theme-selectors |
-| RM-134 | Size tokens live in `--type-*`; `text-*` is colour | Frontend | check-ui-contract |
-| RM-135 | Renaming a custom property means grepping `var(--old)` | Frontend | check-theme-selectors |
-| RM-136 | A recurring look is a component variant | Frontend | check-rm |
-| RM-137 | Colour is a `text-*` token, never `color:` | Frontend | check-rm |
-| RM-138 | Same token on both sides of a responsive pair | Frontend | check-rm |
+| RM-132 | `--type-*` / `--radius-*` scale is a closed vocabulary | Frontend | retired |
+| RM-133 | Theme rules for vendor classes: verify the effect | Frontend | check-theme-selectors (clientapp-v2) |
+| RM-134 | Size tokens live in `--type-*`; `text-*` is colour | Frontend | review |
+| RM-135 | Renaming a custom property means grepping `var(--old)` | Frontend | check-theme-selectors (clientapp-v2) |
+| RM-136 | A recurring look is a component variant | Frontend | review |
+| RM-137 | Colour is a `text-*` token, never `color:` | Frontend | review |
+| RM-138 | Same token on both sides of a responsive pair | Frontend | review |
 | RM-139 | Unlayered theme rule released only by its own `:not()` | Frontend | review |
 | RM-140 | Visual spacing does not separate a flex accessible name | Frontend | review |
-| RM-141 | Overlay gutter is one theme rule | Frontend | check-rm |
-| RM-142 | Colour utility needs a `--color-*` alias | Frontend | check-color-utilities |
+| RM-141 | Overlay gutter is one theme rule | Frontend | review |
+| RM-142 | Colour utility needs a `--color-*` alias | Frontend | check-color-utilities (clientapp-v2) |
 | RM-142 | `useMutation` result is a new object every render | Frontend | review |
 | RM-143 | List-shaped query keys nest under `lists()` | Frontend | review |
 | RM-144 | Three kinds of directory, and the arrows point one way | Frontend | check-rm |
@@ -119,7 +119,7 @@ Severity of the rule isn't the point; recurrence is.
 | RM-158 | Recoverable query error owns a Retry outcome | Frontend | review |
 | RM-159 | Query failure is not an empty collection | Frontend | review |
 | RM-160 | Custom form controls render their field errors | Frontend | test |
-| RM-161 | Feature pickers use the canonical button primitive | Frontend | check-ui-contract |
+| RM-161 | Feature pickers use the canonical button primitive | Frontend | review |
 | RM-162 | Form schemas mirror request-string normalization | Frontend | test |
 | RM-163 | Collect user-owned mutation prerequisites first | Frontend | review |
 | RM-164 | Composite controls name trigger and overlay | Frontend | review |
@@ -133,13 +133,13 @@ Severity of the rule isn't the point; recurrence is.
 | RM-172 | Bulk clones preserve source collection order | Frontend | test |
 | RM-173 | Incremental multi-field editors have valid intermediate states | Frontend | test |
 | RM-174 | Theme skin for a vendor surface covers the family | Frontend | review |
-| RM-175 | A copied class string freezes | Frontend | check-rm |
+| RM-175 | A copied class string freezes | Frontend | review |
 | RM-176 | One object, one component | Frontend | review |
 | RM-177 | Empty-state sentence must not assert what it can't know | Frontend | review |
 | RM-178 | A row with its own controls is a grid row | Frontend | review |
 | RM-179 | A pane inside `Page.Content` must not stretch to the viewport | Frontend | review |
-| RM-180 | `scale-100!` cannot cancel vendor `transform: scale` | Frontend | check-rm |
-| RM-181 | Responsively-hidden button label still needs `aria-label` | Frontend | check-rm |
+| RM-180 | `scale-100!` cannot cancel vendor `transform: scale` | Frontend | check-rm (clientapp-v2) |
+| RM-181 | Responsively-hidden button label still needs `aria-label` | Frontend | check-rm (clientapp-v2) |
 | RM-182 | Submit far from validation scrolls the message into view | Frontend | review |
 | RM-183 | Keyboard sheet needs offset-aware visual-viewport geometry | Frontend | test |
 | RM-184 | Overlay locks are reference counted and exit-lived | Frontend | test |
@@ -149,22 +149,22 @@ Severity of the rule isn't the point; recurrence is.
 | RM-202 | A verification command that can no-op is not verification | Deploy / ops | review |
 | RM-203 | Height-released row in a capped scroll column needs `shrink-0` | Deploy / ops | review |
 | RM-204 | Date-only "today" from the browser must hold on both clocks | Deploy / ops | review |
-| RM-205 | A picker collection is a ListBox | Deploy / ops | check-rm |
-| RM-206 | Overlay motion belongs to the theme | Deploy / ops | check-rm |
-| RM-207 | Create/edit form body chrome belongs to `FormPanel` | Deploy / ops | check-rm |
+| RM-205 | A picker collection is a ListBox | Deploy / ops | review |
+| RM-206 | Overlay motion belongs to the theme | Deploy / ops | review |
+| RM-207 | Create/edit form body chrome belongs to `FormPanel` | Deploy / ops | retired |
 | RM-208 | Collection rows receive external state that changes rendering | Frontend | review |
-| RM-209 | Locked queue interaction keeps queue-specific anatomy | Frontend | check-rm |
-| RM-210 | Breaking vocabulary cutover includes internal route state | Frontend | check-rm |
-| RM-211 | Refresh expiring access token before first socket handshake | Frontend | check-rm |
-| RM-212 | Resolve grouped-list loading/errors before empty | Frontend | check-rm |
-| RM-213 | Dependent pane does not render instructions without its item | Frontend | check-rm |
-| RM-214 | Presentation predicates move with a domain cutover | Frontend | check-rm |
-| RM-215 | Multi-line toggle cards release control height | Frontend | check-rm |
-| RM-216 | Special builder questions lock invariants; edits clear errors | Frontend | check-rm |
-| RM-217 | Client form detail keeps stable loading geometry | Frontend | check-rm |
-| RM-218 | Shared form completion copy follows assignment purpose | Frontend | check-rm |
-| RM-219 | Mobile queue rows keep the actionable absolute fact visible | Frontend | check-rm |
-| RM-220 | Queue identity text stays inside its grid track | Frontend | check-rm |
+| RM-209 | Locked queue interaction keeps queue-specific anatomy | Frontend | retired |
+| RM-210 | Breaking vocabulary cutover includes internal route state | Frontend | retired |
+| RM-211 | Refresh expiring access token before first socket handshake | Frontend | check-rm (clientapp-v2) |
+| RM-212 | Resolve grouped-list loading/errors before empty | Frontend | retired |
+| RM-213 | Dependent pane does not render instructions without its item | Frontend | retired |
+| RM-214 | Presentation predicates move with a domain cutover | Frontend | review |
+| RM-215 | Multi-line toggle cards release control height | Frontend | review |
+| RM-216 | Special builder questions lock invariants; edits clear errors | Frontend | retired |
+| RM-217 | Client form detail keeps stable loading geometry | Frontend | retired |
+| RM-218 | Shared form completion copy follows assignment purpose | Frontend | retired |
+| RM-219 | Mobile queue rows keep the actionable absolute fact visible | Frontend | retired |
+| RM-220 | Queue identity text stays inside its grid track | Frontend | retired |
 | RM-223 | Scrollable dialog content remains keyboard reachable | Frontend | test |
 | RM-221 | Filter-then-assert: parse while filtering instead | Frontend | review |
 | RM-222 | A UI key is narrowed into its vocabulary, never cast | Frontend | review |
@@ -189,6 +189,7 @@ Severity of the rule isn't the point; recurrence is.
 | RM-246 | Verify the stored credential format through a native restart | Frontend | native test |
 | RM-247 | Startup failure needs an in-app recovery action | Frontend | browser test |
 | RM-248 | A client assignment is not a plan catalog | Frontend | browser test |
+| RM-249 | Reply coverage cannot jump over unseen messages | Frontend | browser test |
 
 ---
 
@@ -219,8 +220,7 @@ Create/update must return the same fully-preloaded shape as GET; truthiness-only
 zero/empty derived fields pass. **Enforced by:** exact value assertions in write-response
 tests for derived fields and nested collections.
 When recovery depends on a domain error code, assert its exact rendered code and retained
-records as well as HTTP status. The check-in schedule controller deletion test covers
-`schedule_has_assignments`; a generic 422 code cannot drive its Stop scheduling recovery.
+records as well as HTTP status; a generic 422 code cannot drive domain-specific recovery.
 
 ### RM-006 — OpenApiSpex enums and examples must mirror domain enums
 Invalid examples hide drift from real enum values. Source `enum:` from the domain
@@ -357,25 +357,13 @@ mailbox check. It races any production path that intentionally calls
 `Easy.MailerDelivery.deliver_async/2`: the reminder can be enqueued correctly while the
 full suite fails before the supervised task runs. At async-delivery seams, use a bounded
 `assert_receive {:email, email}, timeout` and then assert the email values directly.
-**Enforced by:** the Intake-reminder regression test in
-`test/easy/forms/required_services_test.exs` and review of new `deliver_async` tests.
+**Verify by:** review new `deliver_async` tests for bounded mailbox waits and exact email assertions.
 
 ### RM-027 — `Operation.parameter/5` takes its schema as the third argument
-Passing `:string` as the third argument and a richer schema in `schema:` silently discards
-the richer schema when OpenApiSpex calls `Parameter.put_schema/2`. The Programming filter
-lost its enum and default this way even though the source appeared to declare both. Pass
-the `%OpenApiSpex.Schema{}` as the third argument. **Enforced by:**
-`test/easy_web/controllers/workbench_open_api_test.exs` asserts the resolved parameter enum
-and default, and generated-client checks require the closed union.
+Passing `:string` as the third argument and a richer schema in `schema:` silently discards the richer schema when OpenApiSpex calls `Parameter.put_schema/2`. Pass the `%OpenApiSpex.Schema{}` as the third argument. Verify enum/default values in the generated contract as well as the declaration.
 
 ### RM-028 — A bounded page enrichment must query by the page keys directly
-The Replies message-count enrichment already had each selected conversation id and its
-waiting timestamp, but joined `conversations` again to recover those facts. PostgreSQL
-scanned all 1,800 representative conversations for a five-row page. Build the grouped
-child query from the tenant id and captured page facts; do not rejoin an unbounded parent
-relation for values already loaded. **Enforced by:**
-`test/easy/workbench_query_plan_test.exs` rejects large sequential scans and per-client
-query growth across every Workbench projection.
+Build bounded-page enrichment queries from the tenant and keys already selected for that page. Do not rejoin an unbounded parent relation to recover values already loaded. Verify query plans and query counts on representative data, including small pages in large tenants.
 
 ### RM-029 — Generators and drift checks must not start the application
 Code generation is a compile-time operation. Starting the supervision tree from a generator
@@ -416,6 +404,11 @@ existing test database; do not delete retained records to make the tests pass.
 
 ## Frontend
 
+App component and theme rules come from the target app’s `AGENTS.md`. The coach
+app uses shadcn; `clientapp-v2` retains HeroUI. Retired coach UI prescriptions below
+are historical entries, not rules for the surviving apps. Repository shape checks
+cover all supported apps; HeroUI token and selector checks cover `clientapp-v2`.
+
 ### RM-145 — HeroUI's press scale is a `transform`; neutralise it with `transform-none`, not `scale-100`
 The button recipe's pressed state is `transform: scale(0.97)` (`&:active, &[data-pressed="true"]`).
 A `scale-100!` override targets the separate CSS `scale` property and is a silent no-op — the
@@ -424,9 +417,13 @@ Use `active:transform-none! data-[pressed=true]:transform-none!` (plus `transiti
 the ease). **Verify by:** setting `data-pressed="true"` on the element in the console —
 computed `transform` must be `none` (a stock button reads `matrix(0.97…)`).
 
-### RM-101 — No dead HeroUI v2 Tailwind tokens (`primary`/`divider`/`content1..4`/`foreground-NNN`). **Enforced by:** `just check-rm`.
+### RM-101 — No dead HeroUI v2 Tailwind tokens in `clientapp-v2`
+**Enforced by:** `just check-rm` for the retained HeroUI client app. App-specific
+semantic tokens in the shadcn apps follow their own themes.
 
-### RM-102 — Use the ROUTES constant (+ `generatePath`), never a hardcoded path string. **Enforced by:** `just check-rm`.
+### RM-102 — Use the app's route constants and `generatePath`
+Resolve navigation through the target app's route vocabulary. Review links and return
+state together; a source string check does not prove the destination exists.
 
 ### RM-103 — No orphan routes / no dead screens
 Every route needs an inbound link, wired in the SAME change. Conversely, check an
@@ -449,7 +446,9 @@ renderer/editor; parallel null-check heuristics drift.
 Mirror OpenApiSpex min/max in input attributes and save handlers; a rolled-back optimistic
 write looks broken and hides the real constraint.
 
-### RM-109 — No literal brand colors in UI classes/styles (semantic tokens only). **Enforced by:** `just check-rm` (coachapp; widen to clientapp once its hex debt is cleaned).
+### RM-109 — Use semantic colors from the target app's theme
+Review classes and inline styles against that app's tokens. The retired coach color
+scanner is no longer an enforcement claim for the surviving apps.
 
 ### RM-110 — Verify HeroUI component semantics against app usage before "fixing" them
 Don't replace established primitives from an audit hunch — check app-wide usage and the
@@ -460,19 +459,29 @@ pattern, not a bug).
 Findings cite concrete spec lines and separate literal requirements from interpretation;
 grep/read the cited text before filing or fixing a drift finding.
 
-### RM-112 — Pickers use the responsive overlay pattern. **Promoted to** `coachapp-v2/AGENTS.md` §Canonical Components.
+### RM-112 — Picker wrapper prescription
+**Retired:** this policy belonged to the deleted coach interface. Use the target
+app’s `AGENTS.md`, shared components, and theme for its component and layout rules.
 
-### RM-113 — Standard coachapp page alignment/section structure. **Promoted to** `coachapp-v2/AGENTS.md` §Page Anatomy.
+### RM-113 — Coach page anatomy prescription
+**Retired:** this policy belonged to the deleted coach interface. Use the target
+app’s `AGENTS.md`, shared components, and theme for its component and layout rules.
 
 ### RM-114 — Do not let legacy components drive builder architecture
 Existing code is app-fit reference, not proof of quality — build to the validated
 spec/mockups; reuse only primitives that are actually good.
 
-### RM-115 — Headers/form actions follow the exercise reference screen. **Promoted to** `coachapp-v2/AGENTS.md` §Page Anatomy.
+### RM-115 — Exercise-screen header prescription
+**Retired:** this policy belonged to the deleted coach interface. Use the target
+app’s `AGENTS.md`, shared components, and theme for its component and layout rules.
 
-### RM-116 — HeroUI v3 primitives over raw HTML controls. **Promoted to** `coachapp-v2/AGENTS.md` §Page Anatomy.
+### RM-116 — Coach HeroUI primitive prescription
+**Retired:** this policy belonged to the deleted coach interface. Use the target
+app’s `AGENTS.md`, shared components, and theme for its component and layout rules.
 
-### RM-117 — Detail surface, not permanent edit forms. **Promoted to** `coachapp-v2/AGENTS.md` §Page Anatomy.
+### RM-117 — Coach detail-surface prescription
+**Retired:** this policy belonged to the deleted coach interface. Use the target
+app’s `AGENTS.md`, shared components, and theme for its component and layout rules.
 
 ### RM-118 — Mutations must invalidate/refetch every visible list/detail
 Delete-staleness shipped app-wide across five resources. After create/update/delete, test
@@ -487,15 +496,25 @@ were checked.
 Optional values start `undefined`; normalize to a controlled value in the shared wrapper,
 not at each caller.
 
-### RM-121 — No react-aria `NumberField` for numeric entry (races mobile soft keyboards; use `NumberInput`). **Promoted to** AGENTS §Canonical Components; **enforced by** `just check-rm`.
+### RM-121 — Coach numeric-input prescription
+**Retired:** this policy belonged to the deleted coach interface. Use the target
+app’s `AGENTS.md`, shared components, and theme for its component and layout rules.
 
-### RM-122 — Forms from shared primitives; no `(optional)`/`(required)` labels. **Promoted to** AGENTS §Canonical Components; **enforced by** `just check-rm`.
+### RM-122 — Coach form-label prescription
+**Retired:** this policy belonged to the deleted coach interface. Use the target
+app’s `AGENTS.md`, shared components, and theme for its component and layout rules.
 
-### RM-123 — Browse lists use `BrowseListBox`; errors via `ErrorState` / "Couldn't load X". **Promoted to** AGENTS §Canonical Components; **enforced by** `just check-rm`.
+### RM-123 — Coach browse-list wrapper prescription
+**Retired:** this policy belonged to the deleted coach interface. Use the target
+app’s `AGENTS.md`, shared components, and theme for its component and layout rules.
 
-### RM-124 — Never stack inline `translateX` with a Tailwind `-translate-x-*` (v4 emits the `translate` property, so both apply and the offsets ADD — one mechanism per axis). **Enforced by:** `just check-rm`.
+### RM-124 — Use one translation mechanism per axis
+Inline `translateX` and Tailwind's `translate` property can add together. Inspect
+computed transforms and rendered position when reviewing a translated element.
 
-### RM-125 — Loading/pending states must not change layout (skeletons not centered spinners; constant-width pending buttons). **Promoted to** AGENTS §Canonical Components; **enforced by** `just check-rm`.
+### RM-125 — Loading and pending states should preserve layout
+Use the target app's loading and pending primitives. Verify the control width and
+surrounding layout before, during, and after a request. Enforced by browser review.
 
 ### RM-126 — Server field errors + HeroUI native form validation deadlock resubmits
 `setError` sets a native `customError`, and HeroUI's default `validationBehavior` then
@@ -504,11 +523,17 @@ touched. Any form surfacing server errors via `setError` needs
 `validationBehavior="aria"` plus `form.clearErrors()` before `handleSubmit`.
 **Enforced by:** convention; graduate to `check-rm` if it recurs.
 
-### RM-127 — `bg-foreground`/`text-background` inverts with the theme; the stable always-dark pair is `bg-accent` + `text-accent-foreground`. **Enforced by:** `just check-rm`.
+### RM-127 — Coach fixed color-pair prescription
+**Retired:** this policy belonged to the deleted coach interface. Use the target
+app’s `AGENTS.md`, shared components, and theme for its component and layout rules.
 
-### RM-128 — Status colors (`text-danger` etc.) fail AA on body copy — icons/borders/large numerals only; sentences and chip text use `text-<status>-soft-foreground`. **Enforced by:** `just check-rm`.
+### RM-128 — Coach status-color token prescription
+**Retired:** this policy belonged to the deleted coach interface. Use the target
+app’s `AGENTS.md`, shared components, and theme for its component and layout rules.
 
-### RM-129 — Every screen body is `<Page.Content bare>` + `<Page.Frame size=...>` — a non-`bare` Content applies the gutter itself, so nesting a Frame doubles it and omitting one unbounds the width. **Enforced by:** `just check-rm`.
+### RM-129 — Coach Page.Content/Page.Frame prescription
+**Retired:** this policy belonged to the deleted coach interface. Use the target
+app’s `AGENTS.md`, shared components, and theme for its component and layout rules.
 
 ### RM-130 — Backend decimal fields arrive as JSON strings; coerce with `Number()` before math
 Elixir serializes `Decimal` columns as strings, but the generated types say `number` — the
@@ -522,50 +547,40 @@ Two client-detail builds were browser-verified and then lost to branch switches 
 the tree was never committed. WIP-commit as soon as it compiles and renders — before
 verification loops, review passes, or anything that switches branches.
 
-### RM-132 — The `--type-*` / `--radius-*` scale is a closed vocabulary
-A per-screen `@theme` token is a px literal wearing a name (nine ports grew the theme
-81 → 164 tokens). Snap to the nearest existing step or STOP and propose one — adding a
-step is a user decision in its own commit. **Enforced by:** `scripts/check-ui-contract.sh`
-theme freeze (`UI_CONTRACT_SKIP_THEME=1` for deliberate changes).
+### RM-132 — Coach closed type and radius scale
+**Retired:** this policy belonged to the deleted coach interface. Use the target
+app’s `AGENTS.md`, shared components, and theme for its component and layout rules.
 
 ### RM-133 — After writing a theme rule for a vendor class, verify the EFFECT, not the edit
 A wrong vendor class name fails silently (HeroUI is BEM-ish: you want `block__element`,
 not the hyphenated guess). Confirm the selector matches a live node and produces the
-intended computed value. **Enforced by:** `scripts/check-theme-selectors.sh` in
-`just lint` — every class selector in `index.css` must exist in the installed
-`@heroui/styles`.
+intended computed value. **Enforced for `clientapp-v2` by:** `scripts/check-theme-selectors.sh` in
+`just lint`. The check compares its theme selectors with the installed HeroUI styles;
+other apps require their own component and rendered-style checks.
 
-### RM-134 — Size tokens live in `--type-*`, never `text-*`; `text-*` means colour, only
-tailwind-merge (inside every HeroUI component) groups any custom `text-<size>` with
-colours and silently drops one of the pair. The `type-*` namespace has no merge group, so
-the collision is impossible by construction. **Enforced by:**
-`scripts/check-ui-contract.sh` rejects the old `text-<size>` utilities.
+### RM-134 — Verify custom size utilities against the component's class merger
+HeroUI can classify custom `text-*` size utilities as colors and drop one value.
+The retained HeroUI client app uses its own type tokens. Confirm the computed size
+and color against its theme. The shadcn apps use their own component conventions.
 
 ### RM-135 — Renaming a custom property means grepping `var(--old-name)` too
 A dangling `var()` invalidates the whole declaration at computed-value time — the property
 silently inherits, looking exactly like "the rule is not applying". Read the computed
-value off a real node after a rename. **Enforced by:** `scripts/check-theme-selectors.sh`
-fails any `var(--x)` in `index.css` that nothing defines.
+value off a real node after a rename. **Enforced for `clientapp-v2` by:** `scripts/check-theme-selectors.sh`,
+which checks unresolved custom properties in that app’s theme.
 
-### RM-136 — A recurring look is a component variant, not a class string to re-type
-Five hand-assembled copies of the ink-selected pill drifted on three axes. Define the look
-once as a variant following HeroUI's own convention — a BEM modifier class that sets the
-block's custom properties (like `.toggle-button--ghost`), never on the base class. Use
-`.toggle-button--ink` / `.toggle-button--filter`. **Enforced by:** `just check-rm` rejects
-the re-assembly signature; `check-theme-selectors.sh` verifies the modifier's block exists.
+### RM-136 — A recurring appearance belongs to a component variant
+Define repeated styling through the target app's variant API, then remove duplicate
+call-site declarations. Review every consumer of the shared variant after a change.
 
-### RM-137 — Colour is a `text-*` token; there is no case for an arbitrary `color:` property
-Literals bypass the theme, and token-wrapped ones were scar tissue from the pre-RM-134
-merge collision — worse, tailwind-merge can't classify them, making the base string
-unoverridable. **Enforced by:** `just check-rm` (whole app). Prose quoting the banned form
-trips the check — reword comments.
+### RM-137 — Use the target app's color tokens
+A literal or arbitrary color can bypass the owning theme and its class-merging rules.
+Review the rendered color and override behavior in the app's actual component system.
 
-### RM-138 — A responsive pair with the same token on both sides is a missing step, not a style
-Nobody writes `sm:x` to mean "stay the same": it's either a step never filled in (fix) or
-a leftover (delete). Check what the base actually computes before deleting — under RM-134
-the base could be silently eaten, making the `sm:` load-bearing. **Enforced by:**
-`just check-rm` (multiline `-U`, since the halves usually sit in separate string literals
-inside one `cn()`).
+### RM-138 — Check redundant responsive declarations
+A matching base and breakpoint token can be redundant or can hide a class-merging
+problem. Inspect computed values at both widths before removing it. Reviewed in the
+browser; the deleted coach-specific scanner no longer enforces this pattern.
 
 ### RM-139 — An UNLAYERED theme rule can only be released by its own `:not()`, not by a layered class
 `.button--row` (the sanctioned release from the control-height tier) lived in `@layer
@@ -624,13 +639,12 @@ depends on the rendered compound-component tree.
 React-aria's `ListBoxLoadMoreItem` fires `onLoadMore` for as long as the sentinel is
 visible — on a list shorter than the viewport, that is every render. Fed a raw React Query
 `fetchNextPage`, it hot-looped (~2 fetches per frame), and each call's default
-`cancelRefetch` aborted in-flight invalidation refetches, so mutations (snooze, review)
+`cancelRefetch` aborted in-flight invalidation refetches, so mutations
 never landed fresh data in the mounted list while counts around it updated. The guard
 lives in ONE place, `useInfiniteItems`: call through it, never pass a query's
 `fetchNextPage` to a sentinel directly. **Verify by:** on a one-page list, mutate a row
-out of the queue and assert the row disappears without a reload; watch the network for
-repeated identical list fetches. Found on the workbench Quiet queue, 2026-08-06 — latent
-in every short infinite list before that.
+out of the list and assert the row disappears without a reload; watch the network for
+repeated identical list fetches. This can affect every short infinite list.
 
 ### RM-149 — Search must match the composite label the list displays
 A client row displays `First Last`, but the API searched the entire term against each
@@ -648,7 +662,7 @@ submit the form empty, enter only the alternate field, and assert the original f
 longer invalid before resubmitting. Not mechanically gated: it depends on live form state.
 
 ### RM-151 — Lifecycle gates must cover every dependent surface, not only navigation
-Pending clients correctly hid activity tabs but still rendered workout, meal, weight, and
+Pending clients correctly hid activity tabs but still rendered workout, meal, and
 last-active stats that cannot exist before invite acceptance. A lifecycle capability gate
 must wrap every surface whose data depends on that capability. **Verify by:** open a freshly
 invited `Test` client and assert activity stat labels and tabs are absent while invitation
@@ -672,7 +686,7 @@ Resend, and neither can invoke an inapplicable action. Not mechanically gated: t
 spans response data, rendered controls, and endpoint validation.
 
 ### RM-154 — Async media must not define a navigation control's name
-A Check-ins photo link inherited its accessible name from lazy thumbnails and an overflow
+A photo link inherited its accessible name from lazy thumbnails and an overflow
 count, so before signed URLs resolved it was announced only as “+2.” A media-backed
 navigation control sets a stable action label on the control itself; image alt text still
 describes loaded media but never owns the destination name. **Verify by:** snapshot the
@@ -736,13 +750,10 @@ closed optional section and verifies the message, focus and accessible descripti
 Recipe validation likewise opens a closed preparation section before focusing an invalid
 finished weight; `test:recipes` verifies the visible message and focused input.
 
-### RM-161 — Feature pickers use the canonical button primitive
-The client plan picker built its close, row, and create actions from styled raw buttons,
-bypassing the app's press, focus, pending, and disabled contracts. Every feature action
-uses HeroUI `Button` with `onPress`; list semantics still come from `BrowseListBox` when
-the canonical fetched-list wrapper fits. **Gated:** `scripts/check-ui-contract.sh` rejects
-raw buttons and `onClick` in changed UI files. **Verify by:** keyboard-activate close, a
-plan row, and create-new, and assert each reaches its exact state or route.
+### RM-161 — Feature actions use the target app's shared primitives
+Picker close, select, and create actions must retain that app's keyboard, focus,
+pending, and disabled behavior. Review against its component API and exercise each
+action's resulting state or route. Collection semantics follow the owning picker.
 
 ### RM-162 — Form schemas mirror request-string normalization and bounds
 The exercise form accepted whitespace-only names and strings longer than the OpenAPI
@@ -898,26 +909,18 @@ Declaring `--success-secondary: #127c4e` does NOT make `text-success-secondary`
 work. Tailwind generates the utility from the `--color-*` alias, and HeroUI ships
 that alias for most of its vars but not all. clientapp declared the var, used the
 utility in 12 places, and rendered inherited near-black in all 12 — chat "Online",
-completed-set ticks, weight deltas, the membership badge, the workout finish
+completed-set ticks, the membership badge, the workout finish
 banner. coachapp had the same shape on `bg-field-background`. It fails silently and
 does not *look* broken: dead colour reads as "that text is dark", not as a bug.
 Fix is one line in the app's `@theme inline`: `--color-x: var(--x);`. **Gated:**
-`scripts/check-color-utilities.sh` (in `just lint`) flags any token the app
-declares that is used as a utility and has no alias. **Verify by:**
+`scripts/check-color-utilities.sh` (in `just lint`) checks `clientapp-v2` for
+app-defined tokens used as utilities without aliases. **Verify by:**
 `getComputedStyle` on a probe element, never by eye.
 
-### RM-141 — The overlay gutter is one theme rule, not a per-surface choice
-Every overlay surface (keyboard sheet, popover, picker bands) keeps content 16px from the
-edge, but the two vendor dialogs shipped `p-6` and call sites were re-deciding the gutter
-per surface (24px confirm dialogs beside 16px pickers; one modal hand-set `px-6` bands
-that broke `SearchPickerBody`'s sticky-header `-mx-4` bleed). The gutter is pinned once
-in `index.css` (`.alert-dialog__dialog, .modal__dialog { padding: 16px }`). A call site
-may RELEASE it (`p-0`) to build band anatomy — title row · body · dock — never restate or
-widen it. Same rule for overlay list rows: the inset lives on the shared row wrapper
-(`SearchPickerBody`'s row button) or the vendor `ListBox.Item` default — renderItem
-content and `ListBox.Item` classNames don't re-add insets. **Gated:**
-`scripts/check-rm.sh` fails any `AlertDialog.Dialog`/`Modal.Dialog` className with a
-non-zero padding. **Verify by:** `getComputedStyle` padding on a live dialog = 16px.
+### RM-141 — Shared overlays own their content spacing
+Keep common overlay spacing in the target app's dialog or sheet primitive. Call sites
+use its public layout API. Verify content, sticky regions, and scroll boundaries at
+mobile and desktop widths instead of imposing one app's gutter on another.
 
 ### RM-142 — A useMutation RESULT is a new object every render; never key a stateful memo on it
 TanStack's `useMutation` returns a fresh result object each render (only
@@ -960,17 +963,10 @@ siblings. **Verify by:** render the group at one child AND at several; a single-
 cannot see this. Prove the rule is yours by removing the variant class on a live node and
 watching the vendor value return.
 
-### RM-175 — A copied class string freezes; the component it came from keeps moving
-Both plan builders rendered their page heading as a raw `<h1>` carrying a byte-identical
-copy of `Page.Title`'s classes, with a comment justifying the copy (`.typography--h3` is
-unlayered) that had stopped being true — `PageTitle` is a plain `<h1>` with utilities and
-has no `Typography` in it. Meanwhile `Page.Title` grew the mobile step the copies never
-got (`type-metric` + `sm:type-display`), so every plan title rendered at 27px on a 375px
-screen and truncated ("Test N…", "TB fixt…"). The rule is not "don't duplicate" — it is
-that a copy cannot receive later fixes, so the justification for one has to be re-checked,
-not inherited. **Gated:** `check-rm.sh` RM-175 greps `font-grotesk…type-display` outside
-`page.tsx`. **Verify by:** render a long title at 375 and confirm `scrollWidth ===
-clientWidth` on the `<h1>`.
+### RM-175 — Copied styling does not receive shared component fixes
+Use the owning shared component when two surfaces represent the same object.
+Recheck a justified copy whenever that component changes. Verify long headings and
+wrapping at the app's required viewports. Enforced by review and browser evidence.
 
 ### RM-176 — One object, one component — a second copy drifts on axes nobody chose
 The two plan builders each had their own `WeekdayChips`, and `@easy/utils` carried two
@@ -998,17 +994,7 @@ exercise BOTH branches — an empty collection and a full-but-all-used one — a
 copy differs; a single-case check cannot detect this class.
 
 ### RM-178 — A row with its own controls is a grid row, not a listbox option
-Every workbench queue row carried a verb button (`Message` / `Assign plan` / `Review`) and
-some carried a snooze menu, all inside a `ListBox.Item`. The markup was correct and the
-buttons had `tabIndex=0`, and they were still **unreachable by keyboard**: a listbox option
-is a single focusable unit, so react-aria gives the whole list one tab stop, moves between
-rows with the arrows, and sends the next Tab out of the list entirely. Snooze had no
-keyboard path at all. Fixed with a `grid` opt-in on `BrowseListBox` (react-aria `GridList`
-+ `GridListItem` + `GridListLoadMoreItem`), where ArrowRight steps into a row's controls.
-Grid rows own their press — list-level `onAction` does not apply, the row passes its own.
-**Verify by:** driving real `Tab`/`Arrow` key presses and logging `document.activeElement`
-at each stop. Programmatic `el.focus()` proves nothing here — react-aria tracks
-focus-visible itself, so a scripted focus reports a ring that a keyboard user never gets.
+A `ListBox.Item` is a single focusable option; buttons inside it can remain unreachable even with `tabIndex=0`. Rows with their own buttons or menus use `BrowseListBox` with `grid` and `GridListItem`. ArrowRight can then reach the row controls. Grid rows own their press handler. Verify real Tab/Arrow navigation and visible focus; programmatic `focus()` does not establish keyboard reachability.
 
 ### RM-180 — `scale-100!` cannot cancel a vendor `transform: scale(…)`
 `LIST_ITEM_CLASS` carried `active:scale-100! data-[pressed=true]:scale-100!` to kill HeroUI's
@@ -1018,25 +1004,20 @@ Tailwind v4 compiles `scale-*` to the **standalone `scale` property**. Two diffe
 properties both apply and multiply — `!important` is irrelevant because they were never
 competing. Every browse row in the app pressed to 98% under a class asserting it didn't.
 `transform-none!` is the cancel that lands. Same family as RM-134: a utility that looks like
-the fix and silently isn't. Enforced by `just check-rm` (RM-180). **Verify by:** set the
+the fix and silently isn't. Enforced for `clientapp-v2` by `just check-rm` (RM-180). **Verify by:** set the
 `data-pressed` attribute by hand and read `getComputedStyle(el).transform` — synthetic
 events never trigger react-aria's press state, so clicking proves nothing. A valid probe
 shows identity on the fixed element AND `matrix(0.98…)` on an unfixed control beside it.
 
 ### RM-179 — A pane inside `Page.Content` must not stretch to the viewport
-The workbench put `min-h-0 flex-1` on its `Page.Frame` and card, which is exactly what
-`page.tsx` documents as the thing not to do: `Page.Content` is deliberately `flex-1` with
-NO `min-h-0` so short pages hug and long lists overflow the scroll container. With the
-clamp back on, a drained queue rendered its empty state stranded at the top of a ~640px
-empty card, and a two-row queue showed two rows over a void. **Verify by:** open the state
-with the FEWEST rows (empty, and 1–2 rows) — a full list hides this class completely.
+Do not put `min-h-0 flex-1` on a `Page.Frame` and its card. `Page.Content` deliberately uses `flex-1` without `min-h-0`, so short pages hug their contents and long lists overflow the scroll container. Verify empty and one- or two-row states; a full list hides excessive empty height.
 
 ### RM-181 — A responsively-hidden button label still needs `aria-label`
 The form builder's "Edit details" button wrapped its label in `<span className="hidden
 sm:inline">` to go icon-only on mobile — and `display:none` removes the span from the
 accessibility tree, so below `sm` the button had NO name (the a11y snapshot showed a bare
 `button` between named siblings). Any button whose visible label can hide at some
-breakpoint carries a constant `aria-label`. Gated in `scripts/check-rm.sh`. **Verify by:**
+breakpoint carries a constant `aria-label`. Gated for `clientapp-v2` in `scripts/check-rm.sh`. **Verify by:**
 a11y snapshot at 375px — every button row must carry a name.
 
 The same rule applies to pending states. Auth submit buttons kept their geometry by making
@@ -1101,126 +1082,26 @@ external row state, derive that state into every affected item (or use the colle
 controlled state) so both the previous and next rows invalidate. **Verify by:** select row A,
 then row B; exactly one detail is rendered and it is a descendant of row B.
 
-### RM-209 — A locked queue interaction keeps its queue-specific anatomy
-Ticket 16 had correct queue data and actions but partially flattened three accepted interactions
-into generic production chrome: Onboarding lost its two-column mobile identity/action layout,
-Programming put its filter inside the list, centered an intrinsic-width row, and truncated required
-mobile facts; Replies split one desktop task surface into two cards and then double-bordered it.
-Share data and behavior helpers, but
-do not replace a locked interaction's responsive structure with a generic row or card grammar,
-and do not ship prototype narration that explains the design decision to the end user.
-**Enforced by:** `scripts/check-rm.sh` pins the accepted Onboarding compact grid, Programming
-toolbar/stretch/full-fact contract, one-owner Replies split surface, and absence of known prototype-only narration.
-**Verify by:** compare populated states at 375px and 1280px against the locked variant, including
-child `scrollWidth <= clientWidth` and a copy pass that leaves only user-facing facts/actions.
-
-### RM-210 — A breaking vocabulary cutover includes internal route state
-Removing an old API name while retaining it in a URL/query-state id leaves a live compatibility
-alias and lets bookmarks, analytics, and UI logic keep teaching the retired vocabulary. When a
-cutover names one canonical resource, update production route state and discriminated unions too;
-locked prototypes and historical evidence stay unchanged. **Enforced by:** `just check-rm` rejects
-the retired `new` workbench id from the production queue registry.
-
 ### RM-211 — Refresh an expiring access token before the first socket handshake
-HTTP auth middleware and Phoenix sockets start independently after a reload. Connecting the socket
-synchronously let it race the HTTP refresh with a stored five-minute token, producing a `403`
-before the error callback refreshed storage and a later retry recovered. Giving HTTP and socket
-separate refresh locks then produced duplicate refresh requests. Both apps create the socket
-synchronously for channel callers, but HTTP and socket await the same shared refresh promise before
-their request/first `connect()`; the socket error callback remains the recovery path for later
-disconnects. **Enforced by:** `just check-rm` requires both owners to import one refresh module,
-keeps the token endpoint in that module, and requires refresh before the first socket connect.
-**Verify by:** force the stored expiry into the past, reload, and assert exactly one successful
-token refresh, no console errors or failed first handshake, and an open socket.
+In `clientapp-v2`, HTTP and socket startup share the token-refresh module and promise.
+Socket creation stays synchronous for channel callers, but the first connection waits
+for refresh. **Enforced by:** `just check-rm` checks that app's two consumers and
+refresh owner. **Verify by:** expire the stored token, reload, and assert one successful
+refresh and an open socket without a failed first handshake.
 
-### RM-212 — Resolve grouped-list loading and errors before classifying an empty result
-Programming partitioned fetched rows into priority groups before rendering its canonical
-`BrowseListBox`. While the request was loading, the empty group map painted a blank pane; when the
-request failed, the same empty array selected the successful “Everyone's programmed” state and hid
-the error and Retry action. A grouped or derived collection must pass loading/error through its
-canonical list surface before branching on derived emptiness. **Enforced by:** `just check-rm`
-pins Programming's pre-group loading/error gate. **Verify by:** delay the first queue response and
-require list skeleton rows, then fail it and require “Couldn't load” plus a working Retry; the
-successful empty message must appear only after a successful empty response.
+### RM-214 — Presentation predicates move with a domain cutover
+When a domain rule changes, review presentation helpers and copy alongside its API.
+Use the canonical domain fields instead of inferring status from unrelated names or
+missing data. Verify representative records against the agreed product behavior.
+The retired coach-specific predicate guard no longer enforces this lesson.
 
-### RM-213 — A dependent pane does not render instructions without its source item
-Desktop Replies always rendered its selected-task pane, even with zero conversations. The queue's
-truthful “Replies cleared” card then sat beside “Choose a reply,” an impossible instruction; the
-same stale pane appeared beside loading and fetch-error states. A detail/task pane that depends on
-a selected collection item renders only when that item exists, leaving the canonical collection
-state to own the full surface otherwise. **Enforced by:** `just check-rm` pins the no-selection
-guard in Replies. **Verify by:** exercise loading, error, and successful empty responses at desktop
-width and require one state surface with no selection instruction; then populate one row and
-require the locked split surface.
-
-### RM-214 — Presentation predicates move with a coordinated domain cutover
-The roster still derived “Needs plan” from both plan names being absent after Programming moved to
-explicit `required_services`. Active clients with an empty set were therefore told they needed a
-plan even though the domain classifies them as Unclassified and deliberately excludes them from
-Programming. When a coordinated cutover replaces a predicate, audit presentation helpers and copy
-as well as endpoint/query code; derive UI state from the canonical domain field. **Enforced by:**
-`just check-rm` pins `isUnclassified` / `needsRequiredPlan` in `clients/lib/client.ts` and their
-roster call sites. **Verify by:** render an active
-client with `required_services: []` and require Unclassified at both widths, then render a
-classified client missing a required service plan and require “Needs plan.”
-
-### RM-215 — Multi-line toggle cards must release the theme's control height
-The required-services selector used `ToggleButton` for correct multi-select semantics, but inherited
-the theme's one-line control height while rendering a 40px icon plus a label and description. Both
-Invite and Edit visibly clipped the description at mobile and desktop widths. A toggle styled as a
-content card must use the theme's named row release; the fixed control tier only fits compact toggles.
-**Enforced by:** `just check-rm` pins `toggle-button--row` at the shared field and in the theme's
-control-height exclusion/release.
-**Verify by:** render Training and Nutrition selected at 375px and desktop and require each card's
-scroll height to equal its client height with both text lines fully visible.
-
-### RM-216 — Special builder questions lock every invariant and edits clear stale errors
-The Intake builder created `Service type` as required and non-duplicable, but still let coaches
-rename it or change its answer type. It also left “Add at least one question” visible after the
-question was added. A domain-special question locks every invariant its server meaning depends on,
-and validation feedback is cleared when the relevant draft changes so the screen never contradicts
-its current state. **Enforced by:** `just check-rm` pins `questionIdentityLocked` and the builder's
-draft-commit error reset. **Verify by:** add Service type after an empty-save
-error; require the error to disappear, Question and Answer type to be disabled, Required selected and
-disabled, no Options editor, no Duplicate action, and no second palette item.
-
-### RM-217 — Client form detail keeps stable loading geometry and a recovery action
-The ClientApp Intake/check-in detail used a lone centered spinner during load and a bespoke failure
-card with no Retry. The required-services completion route therefore jumped from almost-empty chrome
-to a form and stranded transient request failures. Detail routes render a content-shaped skeleton and
-the app's shared `ErrorState` wired to the query refetch. **Enforced by:** `just check-rm` pins Skeleton,
-shared ErrorState, and Retry wiring in `fill-checkin.tsx`. **Verify by:** delay the assignment GET and
-require form skeleton blocks, then fail it and require “Couldn't load” plus a Retry that recovers.
-
-### RM-218 — Shared form completion copy follows the assignment purpose
-The shared ClientApp completed state always said “Check-in submitted,” including on a page titled
-Test Intake with an Intake assignment. Shared rendering must not flatten the domain vocabulary it
-already receives; branch user-facing completion copy on `assignment.purpose`. **Enforced by:**
-`just check-rm` pins `purposeLabel` on the completed heading. **Verify by:** complete one Intake and
-one Check-in and require the matching noun while their common completed layout stays identical.
-
-### RM-219 — Mobile queue rows keep the actionable absolute fact visible
-The shared queue row truncated every subtitle at all widths. With Renew and Snooze controls present,
-the 375px Expiring row collapsed “Engagement ending soon · Ends 20 Aug” to “Engagement ending s…”,
-hiding the date that explains the action; Quiet's missed date had the same risk. Queue facts wrap on
-mobile and return to truncation at the desktop breakpoint. **Enforced by:** `just check-rm` pins the
-mobile-wrap/desktop-truncate class at the shared row. **Verify by:** populate Expiring and Quiet at
-375px with both trailing controls present and require the complete reason plus absolute date.
-
-### RM-220 — Queue identity text stays inside its grid track
-The long `Test Workbench Client` name painted underneath Expiring's Renew and Quiet's Message control
-groups at 375px even though its grid track used `minmax(0, 1fr)`. The text column must also clip its
-own paint and the single-line label must own an explicit block-width truncation boundary. **Enforced
-by:** `just check-rm` pins `overflow-hidden` on the text column and the block/max-width truncation
-boundary on its label. **Verify by:** populate Expiring and Quiet with a long client name at 375px and
-require an ellipsis before the action group with no overlapping pixels.
+### RM-215 — Multi-line controls must fit their content
+A control designed for a single line can clip a title and description. Use the target
+app's appropriate component variant and verify all lines at mobile and desktop widths.
+The deleted coach theme's named height-release guard no longer applies.
 
 ### RM-223 — Scrollable dialog content remains keyboard reachable
-An intake preview trapped focus correctly but only its Close button was keyboard reachable,
-so PageDown could not reveal the remaining questions. Give independently scrolling content
-a named, focusable region and a visible focus indicator. **Enforced by:** coachapp
-`tests/clients/mobile-layout.mjs` tabs into the region and uses PageDown and End to reach the
-last question. Setting `scrollTop` directly does not verify keyboard access.
+Independently scrolling dialog content needs a named, focusable region and visible focus. Verify that Tab reaches the region and PageDown/End reveal its final content. Setting `scrollTop` directly does not verify keyboard access.
 
 ### RM-224 — Authentication preserves the requested task through every intermediate route
 A signed-out coach opening a saved form was returned to Clients after verification. Carry a
@@ -1286,38 +1167,23 @@ Training templates apply the same protection across the whole worksheet. `tests/
 
 An observed revision changing after an uncertain save may be the result of that save.
 Compare the immutable attempted content with the fresh server result before disabling
-recovery as a conflict. **Verify by:** clientapp `tests/progress/recovery.browser.mjs`
-loses both the write response and read-back, restarts, and requires Check save to confirm
-the existing measurement without another POST. Different saved content must still require review.
+recovery as a conflict. Recovery checks must lose both the write response and read-back,
+restart, and confirm the existing record without another write. Different saved content
+must still require review.
 
 ### RM-228 — Wrapping must constrain intrinsic width as well as visible text
-A long intake title widened the Workbench even after ordinary word wrapping kept the
-paragraph's contents inside its own box. Use wrapping that participates in intrinsic sizing
+Long titles can widen a layout even when ordinary word wrapping keeps the paragraph contents inside its own box. Use wrapping that participates in intrinsic sizing
 when text can determine a flex/grid child's minimum width. **Verify by:** assert both the
 text element's scroll width and the document width, using an unbroken title at 375px/1280px.
-Coachapp `test:workbench` covers the title, trailing due date and resulting task actions.
 `test:nutrition-history` and `test:training-history` cover long saved meal and plan names
-inside the expanded original guidance, including after reload. `test:check-ins` also
-covers long selected form names, saved-result lookup and the stop-scheduling confirmation.
+inside the expanded original guidance, including after reload.
 Nutrition-library management checks long usage names inside its grid and item names in
 copy dialogs; ordinary break-word wrapping alone did not constrain the usage grid. Training worksheet audits also check long names inside picker headings and flex-based Undo feedback, including each dialog’s own scroll width.
 
 Nutrition worksheet audits measure picker brand/selection text, preview day choices and weekday values independently: a fitting document or dialog can still hide overflowing children. Keep day choices compact while preserving their accessible names.
 
-### RM-229 — A snooze confirmation must correspond to time actually hidden
-The snooze endpoint accepts expired dates, so the editor reported success for yesterday
-while the task remained visible. The action editor rejects dates before the queue's current
-day, retaining the date and field focus. This does not change historical API data handling.
-**Verify by:** coachapp `test:workbench` submits yesterday, requires a visible error and no
-PUT, then submits a valid date and requires the task to leave the queue.
-
 ### RM-231 — Successful signing does not prove a photo loaded
-A response reader displayed a broken image when storage rejected a valid signed URL.
-Handle image load failure visibly and reset that failure when Reload obtains a new
-response, even if the signed URL is unchanged. **Verify by:** coachapp `test:reviews`
-uploads real client photos, submits real answers, injects a storage GET failure, requires
-an error message, then reloads and compares downloaded bytes. Intake and conversation
-previews exercise the same reader.
+Handle image load failures visibly even when URL signing succeeds. Reset the failure when Reload obtains a response, including when the signed URL is unchanged. Verify a storage GET failure, visible recovery, and successful media loading after retry.
 
 ### RM-232 — Focus server errors after pending controls are re-enabled
 A plan-date overlap attached its error while the date fields were disabled, so the
@@ -1330,10 +1196,6 @@ in the keyboard sequence without moving focus outside the dialog. **Verify by:**
 Billing applies the same rule across page and confirmation errors. Its browser suite also
 requires Add seats to focus the mounted quantity and associate invalid values with an
 explicit whole-number range; disabling the next action alone does not explain recovery.
-
-Application review/enrollment also exercise this sequence in `tests/acquisition/prospects.browser.mjs`: stale writes, failed saved-review reloads, server field errors, unconfirmed enrollment, and the successful result. Focus result transitions by stable identity, so a background refresh of the same record does not interrupt the user.
-
-Public application validation includes conditionally hidden fields: open their section before focusing an invalid input. Successful stale-form refresh must clear obsolete errors and focus the next decision while retaining valid answers. The acquisition browser suite verifies both transitions and receipt recovery.
 
 Settings use the same field-reference approach for text inputs and shadcn selects; `tests/settings/settings.browser.mjs` checks server time-zone rejection, root errors and focused save/discard results.
 
@@ -1367,22 +1229,17 @@ coachapp `tests/acquisition/acquisition.browser.mjs` saves a draft, adds a progr
 requires the saved notice to disappear before removing that program and publishing.
 
 ### RM-234 — Focus outlines must survive container clipping
-A keyboard-focused application row had a valid outline, but the list's overflow clipping
+A keyboard-focused list row had a valid outline, but the list's overflow clipping
 hid it. Place the outline inside a full-width row when its container clips overflow.
 An active-element assertion alone does not establish visible focus. **Verify by:**
-coachapp `tests/acquisition/prospects.browser.mjs` reaches the row with Tab, requires
-`:focus-visible` and an inward outline, and captures screenshots at both widths. Nutrition
-assignment verifies the same clipped-row case in `tests/nutrition/plans.browser.mjs`.
+nutrition assignment checks the clipped-row case in `tests/nutrition/plans.browser.mjs` with keyboard navigation and screenshots at both widths.
 
 A horizontally scrolling navigation can also leave a focused link partly outside the viewport. Reveal focused items within their scroller and reserve padding around an inward outline so it does not cross the label. Coachapp `test:navigation` traverses every primary link with real Tab/Shift+Tab, checks full visibility and outline spacing, and captures the focused navigation at 375px/1280px for owner and trainer.
 
 ### RM-236 — Mutation error callbacks must tolerate a changed session
 A success callback can reject a late response after logout. Its error callback must skip
 invalidation for that stale session instead of throwing the same session error again.
-Coachapp `test:intake-assignment` holds a real assignment response through logout and
-requires the login route, an empty query cache and no unhandled browser error.
-`test:check-in-requests` also waits for the held response to finish after logout before
-checking those invariants; asserting only before response delivery misses late effects.
+Hold a real response through logout, release it, and require the login route, an empty query cache and no unhandled browser error. Asserting only before response delivery misses late effects.
 
 Capture request ownership before waiting for authentication refresh, and verify it before
 attaching credentials. A queued send otherwise can acquire another account's tokens after
@@ -1411,9 +1268,8 @@ require the saved draft and account snapshot.
 ### RM-239 — Android Back reaches the focused overlay
 Dispatch Escape from the focused element so it bubbles through the active dialog,
 listbox or menu. Dispatching it on `document` bypassed the sheet's handler and left
-Android Back ineffective. **Verify by:** clientapp `tests/progress/android.native.mjs`
-opens the unit picker and filter sheet, presses native Back, and requires each overlay
-to close while its underlying route stays open.
+Android Back ineffective. **Verify by:** open a retained workout or nutrition picker,
+press native Back, and require the overlay to close while its underlying route stays open.
 
 ### RM-240 — Verify fixed save actions with a keyboard-open native tap
 A fixed workout Save button reported hittable, yet its first tap moved focus without
@@ -1431,7 +1287,7 @@ failure was reproduced; its iPhone test requires visible keyboard bounds before 
 ### RM-241 — Late saves must respect subsequent navigation
 A save may finish after its editor has unmounted. Complete account-owned persistence and
 cache updates, but do not redirect from the destination the client already chose. Nutrition
-and weight editors guard their success navigation by mounted state. **Verify by:** hold a
+editors guard their success navigation by mounted state. **Verify by:** hold a
 real meal PATCH response, leave for Account, release it, then require the cleared attempt,
 the saved server portion and the unchanged Account URL. Clientapp nutrition recovery covers
 this sequence; a successful save alone cannot establish correct navigation.
@@ -1487,6 +1343,15 @@ accessible mobile recovery state with a deliberate retry that restarts initializ
 do not clear credentials or private drafts merely because a read failed. **Verify by:**
 clientapp `test:startup` forces repeated read failures, checks the focused touch-sized
 retry, then restores storage and requires the same real account and unfinished draft.
+
+Coach conversation drafts follow the same recovery rule: an unreadable or malformed
+draft must not become a new empty draft that overwrites an uncertain send's retry ID.
+Coachapp `tests/conversations/workspace.browser.mjs` injects a failed read, verifies the
+stored draft stays unchanged, and recovers the original accepted send exactly once.
+
+### RM-249 — Reply-obligation coverage
+**Retired:** reply-obligation workflows were removed. Normal chat keeps its read and
+unread cursors; record references remain attached to workout and meal notes.
 
 ### RM-248 — A client assignment is not a plan catalog
 An API exposing a list does not mean the client should search it. When the coach owns
@@ -1553,37 +1418,25 @@ cap fits and asserting a row's `offsetHeight` ≥ its content (or clicking a row
 says is "intercepted" by its sibling — that interception IS the overlap).
 
 ### RM-204 — Plan coverage uses the client's calendar
-Assignment defaults, coverage reads, lifecycle labels, and Programming queues must
+Assignment defaults, coverage reads, and lifecycle labels must
 use the client's local date, computed by the server with the business timezone
 fallback. The coach browser and UTC can show different dates near midnight.
 Do not choose the earlier of competing clocks; that hides disagreement instead of
 fixing ownership. **Verify by:** exercising UTC+14 and UTC−10 clients at the same
 instant, and checking assignment uses the returned `Client.local_date`.
 
-### RM-205 — A picker collection is a ListBox, not a stack of row-shaped Buttons
-The shared search picker, add-to-client picker, and plan-template picker each rendered
-selectable entities by mapping `Button`s inside generic `div`s. That discarded collection
-semantics, produced different row spacing, and let the same centered picker shell drift
-between `sm` and `md` widths. `PickerModal` now owns one `md` desktop width; selectable
-picker collections use `ListBox`/`ListBox.Item` (or `GridList` for rows with controls).
-Picker searches use the same sticky top band so their field remains available while rows
-scroll. Independent create actions and tile palettes remain Buttons. Enforced at the
-shared seams by `scripts/check-rm.sh` (RM-205). **Verify by:** inspect every overlay
-collection at 375px and desktop, scroll a long list without losing its search field, then
-use Arrow keys to move between items without tabbing through each row.
+### RM-205 — Picker collections need collection semantics
+Use the target app's accessible collection primitive for selectable results. Verify
+arrow-key movement, selection, long-list scrolling, and access to search. The deleted
+coach picker scanner no longer defines the component choice for other apps.
 
-### RM-206 — Overlay motion belongs to the theme, not individual dialogs
-Modal, confirmation-dialog, and sheet motion had separate defaults: HeroUI owned the two
-centered surfaces while `KeyboardSheet` carried transition classes and render-prop transforms
-inside its component. That makes duration, easing, direction, and reduced-motion behavior
-drift as soon as another overlay is added. `index.css` now owns one centered lift-and-settle
-motion and one directional bottom-sheet slide; call sites supply no motion classes. Enforced
-at the shared seams by `scripts/check-rm.sh` (RM-206). **Verify by:** inspect enter and exit
-animations on a Modal, AlertDialog, and KeyboardSheet; with reduced motion enabled, all three
-must retain only the brief opacity fade and report no spatial transform.
+### RM-206 — Shared overlay motion belongs to its owner
+Keep dialog and sheet motion in the target app's shared primitives or theme. Verify
+enter, exit, and reduced-motion behavior across consumers. Enforced by browser review.
 
-### RM-207 — Create/edit form body chrome belongs to `FormPanel`
-Promoted to `frontend/apps/coachapp-v2/AGENTS.md`; enforced by `scripts/check-rm.sh` (RM-207).
+### RM-207 — Coach FormPanel prescription
+**Retired:** this policy belonged to the deleted coach interface. Use the target
+app’s `AGENTS.md`, shared components, and theme for its component and layout rules.
 
 ### RM-202 — A verification command that can no-op is not verification
 `clientapp-v2`'s build script ran bare `tsc --noEmit`, but its root `tsconfig.json` is a

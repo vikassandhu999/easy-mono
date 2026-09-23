@@ -1,9 +1,4 @@
 defmodule Easy.Emails.HTML do
-  @spec reminder(String.t(), String.t(), String.t(), String.t()) :: String.t()
-  def reminder(client_name, message, url, label) do
-    "<p>Hi #{escape(client_name)}, #{escape(message)}: <a href=\"#{escape(url)}\">#{escape(label)}</a></p>"
-  end
-
   @spec otp_verification(String.t()) :: String.t()
   def otp_verification(code) do
     code = escape(code)

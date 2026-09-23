@@ -4,62 +4,49 @@ A coach builds a menu. A client records what they ate. The coach reviews the dia
 
 ## Coach menu editor
 
-The editor has a saved plan and, while editing, one private draft. Every edit changes
-that draft synchronously. Save submits the complete menu; Discard reloads the saved
-plan. A failed save or reload leaves the draft intact. Background query errors keep the
-editor mounted while cached data exists. A revision conflict asks the coach to
-reload instead of silently merging changes or replacing their input.
-
-```mermaid
-flowchart LR
-  Read[Saved plan] -->|Start editing| Draft[Local menu draft]
-  Draft -->|Edit meals and days| Draft
-  Draft -->|Save once| API[Validate and save menu]
-  API -->|Success| Read
-  API -->|Failure: retain input| Draft
-```
+The worksheet keeps saved plan details and a private menu draft. Edits stay local
+until Save. A failed request leaves the draft intact; loading the saved version
+replaces it only after a successful response. A revision conflict requires an
+explicit reload before editing continues.
 
 Read the editor in this order:
 
-1. [menu.ts](../frontend/apps/coachapp-v2/src/library/nutrition-plans/builder/menu.ts)
-   edits the API's `NutritionMenu` directly. Meals contain items. Day patterns contain
-   slots and ordered meals. The week schedule points to day patterns. Array
-   order is authoritative. Meals, items, and days keep their UUIDs through saves.
-   Each slot contains ordered `meal_ids`; a choice needs no separate UUID.
-2. [plan-builder.tsx](../frontend/apps/coachapp-v2/src/library/nutrition-plans/builder/plan-builder.tsx)
-   owns the draft, Save, Discard, navigation protection, and the active editor. The
-   query cache contains saved server data. It is never patched while typing.
-3. [nutrition-plans.ts](../frontend/apps/coachapp-v2/src/api/nutrition-plans.ts)
-   sends `{expected_revision, menu}` to `PUT /v1/coach/nutrition-plans/{id}/menu`
-   and updates affected queries after success. The response is the complete saved
-   plan, including the same `menu` structure and calculated nutrition.
+1. [menu.ts](../frontend/apps/coachapp/src/nutrition-plans/menu.ts) constructs and
+   validates the API's `NutritionMenu` and owns removal and undo operations. Meals
+   contain items; day patterns contain slots with ordered `meal_ids`; the week
+   schedule points to day patterns. These values keep their UUIDs through saves.
+2. [nutrition-plan-worksheet.tsx](../frontend/apps/coachapp/src/nutrition-plans/nutrition-plan-worksheet.tsx)
+   owns the saved baseline, details form, menu draft, Save, Preview, reload, and
+   navigation protection. It creates or updates details first when needed, then
+   saves the menu using the revision returned by that write. A successful menu
+   save replaces the baseline. The query cache holds saved data.
+3. [menu-editor.tsx](../frontend/apps/coachapp/src/nutrition-plans/menu-editor.tsx)
+   owns day and meal controls, item selection, ordering, and local undo.
+   [portion-editor.tsx](../frontend/apps/coachapp/src/nutrition-plans/portion-editor.tsx)
+   loads available portions and applies a selected amount to the draft.
+4. [nutrition-plans.ts](../frontend/apps/coachapp/src/api/nutrition-plans.ts)
+   sends details and `{expected_revision, menu}` writes and invalidates affected
+   queries. Preview sends the draft to the server without saving it.
 
 The public contract is in
 [nutrition_plan.ex](../backend/lib/easy_web/types/nutrition_plan.ex).
 `NutritionMenu` is shared by reads and writes. Database positions, parent IDs, and
-row timestamps stay on the server. Item names and nutrient totals are optional on
-input and supplied by the server; sending a read response back does not make these
-values authoritative. Gram portions use `grams`; serving portions use `amount`,
-`unit`, and `label`. The server resolves serving weights.
+row timestamps stay on the server. Item names and nutrient totals are supplied by
+the server; sending a read response back does not make those values authoritative.
+Gram portions use `grams`; serving portions use `amount`, `unit`, and `label`.
+The server resolves serving weights and nutrition for saves and previews.
 
 The server requires at least one day, a complete week schedule, valid meal
-references, and unique UUIDs. It checks the plan revision and saves everything in
-one transaction. UUIDs identify values within a menu. A copied menu retains those
-IDs under its own plan ID, and editing one copy never changes another. Foods and
-recipes are resolved in the coach's business scope. Archived plans are read-only.
+references, and unique UUIDs. Each menu replacement checks the plan revision and
+saves the document in one transaction. Details and menu writes are separate
+operations. UUIDs identify values within a menu; copying a plan retains those IDs
+under its own plan ID. Foods and recipes resolve in the coach's business scope.
+Archived plans are read-only.
 
-The other builder components render controls or collect input. They report local
-edits; they do not decide when to send requests, retry, undo, or refetch.
-
-Amount entry has one unit and one positive value. Done applies that amount to the
-draft. Nutrients are calculated by the server on Save; the editor hides saved totals
-while the draft has changes. This deliberately gives up live nutrient previews.
-Coverage dates, plan details, and targets are edited together on the plan details
-form. Assignment and lifecycle actions are unavailable while menu edits are pending.
-
-The editor retains meals shared across days and alternative meals. Deleting
-a day transfers its weekdays to a remaining day and keeps its meals. Deleting a meal
-removes its uses throughout the menu. These are product rules, located in `editMenu`.
+Removing a meal removes it from the selected day and preserves it when another
+day still uses it. Removing a day transfers its weekdays to a chosen remaining
+day and removes meals that no remaining day uses. Undo restores the removed values
+while preserving subsequent edits. These rules live in `menu.ts`.
 
 ## Menu persistence
 
@@ -106,8 +93,7 @@ storage tradeoff and deployment requirements.
 ## Assignment and coverage
 
 Pick a client, choose dates, then assign. The default start comes from the server’s
-`Client.local_date`. Coverage and Programming queues use the same client calendar,
-with business timezone fallback. Existing plan names do not block the
+`Client.local_date`. Coverage uses the client calendar, with business timezone fallback. Existing plan names do not block the
 picker: the database rejects overlapping date ranges. A copied client plan has
 its own menu and revision.
 
@@ -124,18 +110,18 @@ Food, recipe, and plan details forms keep their initial entity and revision toge
 Background refreshes cannot advance the revision underneath an unfinished form.
 Conflicts retain input. Only an explicit, successful Discard and reload replaces it.
 
-[RecipeForm](../frontend/apps/coachapp-v2/src/library/recipes/recipe-form.tsx) owns
-one form containing details and the ordered ingredients. Ingredients use the same
-form control, validation, and dirty state. Each ingredient is `{food_id, portion}`. A portion is grams or a named serving;
-the server resolves its weight. Serving buttons select that portion directly;
-there are no ingredient subforms, selection maps, forced remounts, or live nutrient
-calculations. Save submits the whole ingredient array. Missing ingredients are
-reported instead of silently dropped.
+[RecipeEditor](../frontend/apps/coachapp/src/recipes/recipe-editor.tsx) owns
+one form for details and ordered ingredients.
+[recipe.ts](../frontend/apps/coachapp/src/recipes/recipe.ts) maps form values to
+`{food_id, portion}` ingredients. Portions are grams or named servings; the server
+resolves their weight. Save sends the complete ingredient array. Validation opens
+the section containing an invalid field and focuses it.
 
-[FoodForm](../frontend/apps/coachapp-v2/src/library/foods/food-form.tsx) likewise
-owns details and serving sizes. Serving labels, units, amounts, gram weights, and
-the chosen default are preserved on save. A serving is edited directly in the form,
-with no intermediate add form or read/write representation converter.
+[FoodEditor](../frontend/apps/coachapp/src/foods/food-editor.tsx) owns details,
+media, and serving sizes. [food.ts](../frontend/apps/coachapp/src/foods/food.ts)
+normalizes numeric form values and preserves serving labels, units, amounts,
+gram weights, and the chosen default. Both editors retain unsaved input on
+failures and provide explicit recovery for an uncertain creation or stale revision.
 
 [Portions](../backend/lib/easy/nutrition_portions.ex) defines `default_portion` and
 `portion_options` for foods and recipes. Both apps use these returned portions.
@@ -262,54 +248,33 @@ invalidate dependent Library, plan, coverage, and Diary queries.
 
 ## Tests
 
-Run `rtk proxy just test-e2e` from the repo root for the real coach/client journeys.
-Install dependencies with `rtk proxy just setup` and install the browser once with
-`rtk proxy pnpm -C frontend exec playwright install chromium`. Local Postgres must
-be running with the connection configured in `backend/config/test.exs`.
+The coach app's `package.json` names the supported browser suites. From the repo
+root, `rtk proxy pnpm -C frontend/apps/coachapp test:nutrition` runs plan creation,
+assignment, recovery, menu editing, ordering, and worksheet scenarios. The scripts
+use a running coach app and backend; inspect their `COACH_APP_URL` and
+`COACH_API_URL` settings before running against a test environment.
 
-The command recreates only `easy_test_e2e`, migrates it, seeds separate confirmed
-coaches and clients per scenario, builds both apps, and starts Phoenix on 4400,
-coach on 2421, and client on 2414. Those ports must be free. Playwright stops its
-servers when the run finishes. Test mail stays local; OTP is `123456`.
+Relevant source:
 
-[The five journeys](../frontend/e2e/nutrition.browser.mjs) cover food/recipe/menu
-creation, assignment and logging, intake corrections, concurrent menu saves with
-failed reload recovery, and frozen diary data after library/menu edits. Each runs
-with the coach at 375px and 1280px; the client stays at 375px. Login and successful
-API calls use the real server. Only the failed-refresh case interrupts a request.
-Service workers are blocked for predictable request interception, so this suite
-does not verify PWA installation or offline caching.
+- [menu-editing.browser.mjs](../frontend/apps/coachapp/tests/nutrition/menu-editing.browser.mjs)
+  covers portions, quantities, preview, item undo, day removal, and persistence.
+- [recovery.browser.mjs](../frontend/apps/coachapp/tests/nutrition/recovery.browser.mjs)
+  covers failed previews, uncertain creation, reload failures, and retained drafts.
+- [assignment.browser.mjs](../frontend/apps/coachapp/tests/nutrition/assignment.browser.mjs)
+  covers server pages, plan selection, and assignment.
+- [management.browser.mjs](../frontend/apps/coachapp/tests/nutrition-library/management.browser.mjs)
+  covers food and recipe usage, copy, deletion, and recovery. Run it through
+  `test:nutrition-library-management`; its default URLs differ from the nutrition
+  editor scripts, so set the environment for the intended test servers.
 
-Use `rtk proxy just test-e2e --project=375` for one coach width, or add
-`--grep 'concurrent'` to run one journey. Failures retain screenshots and traces
-under `frontend/e2e/test-results/`. Open the report with
-`rtk proxy pnpm -C frontend exec playwright show-report e2e/playwright-report`.
-Generated fixtures, builds, and browser artifacts are ignored by git.
+The retained client app's diary scenario is
+[diary.browser.mjs](../frontend/apps/clientapp-v2/tests/nutrition/diary.browser.mjs).
+Run `rtk proxy node frontend/apps/clientapp-v2/tests/nutrition/diary.browser.mjs`
+with that app's development server available. It uses controlled HTTP responses
+for portion entry, notes, save and refresh failures, retries, and diary edits.
+Backend router tests separately verify persistence, revisions, tenant isolation,
+and frozen nutrition values.
 
-Behavior suites live under each app's `tests/nutrition/`. Run an app's `check` script
-for its unit suites. They cover product behavior and failures across operations,
-without requiring a test file beside each helper.
-
-With the coach dev server running, execute
-`rtk node frontend/apps/coachapp-v2/tests/nutrition/builder.browser.mjs` from the repo
-root. It renders the actual builder against controlled HTTP responses at 375px and
-1280px. It checks local edits, Save failures and retries, revision conflicts, Discard,
-navigation protection, stable identities, meal creation/reuse, and day deletion.
-It also covers failed refreshes and explicit reloads without draft loss. This is browser coverage of
-the frontend; it is not an end-to-end database test.
-
-With both app dev servers running, execute
-`rtk proxy node frontend/apps/clientapp-v2/tests/nutrition/diary.browser.mjs`.
-It exercises the client diary at 375px: actual portion on first log, failed-save
-retry, failed refresh with amount/notes retention, returned-day rendering, pending-row logging, edits, replacement, undo, and
-extra-food retry. It also checks coach diary rendering at 375px and 1280px.
-Controlled HTTP responses cover frontend behavior; backend router tests separately
-verify persisted portions, revisions, tenant isolation, and frozen nutrients.
-
-Library and assignment scenarios run with
-`rtk proxy node frontend/apps/coachapp-v2/tests/nutrition/library-and-coverage.browser.mjs`.
-At both coach widths they verify ingredient validation/reordering, failed-save
-recovery, serving metadata round trips, default selection, current/upcoming plans,
-ending by date, server-owned assignment defaults, and assigning to a client with
-an existing plan. Food and recipe edits include concurrent revision changes,
-failed reloads, and explicit recovery.
+Run each app's `check` script for its behavior suites and its `build` script for
+TypeScript and production bundling. Browser evidence establishes only the flows,
+viewports, and server configuration used by that run.

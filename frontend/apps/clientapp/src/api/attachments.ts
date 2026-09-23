@@ -82,7 +82,7 @@ async function uploadStoredPhoto(photo: StoredPhoto, sessionId: string) {
     stored.upload && Date.parse(stored.upload.upload_url_expires_at) > Date.now() + 15_000
       ? stored.upload
       : (await call(client.POST('/v1/client/uploads', {body: {content_type, byte_size: stored.blob.size}}))).data;
-  const uploading = {...stored, ...(photo.questionShape ? {questionShape: photo.questionShape} : {}), upload: ticket};
+  const uploading = {...stored, upload: ticket};
   await updatePhoto(uploading, isCurrent);
   let result: Response;
   try {

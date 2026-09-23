@@ -117,8 +117,10 @@ defmodule Easy.Training.TrainingPerformedSet do
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(performed_set, attrs) do
+    fields = if is_nil(performed_set.exercise_id), do: [:exercise_name | @measurement_fields], else: @measurement_fields
+
     performed_set
-    |> cast(attrs, @measurement_fields)
+    |> cast(attrs, fields)
     |> validate_fields()
   end
 

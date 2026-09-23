@@ -482,12 +482,6 @@
     padding-top: 1.5rem;
     border-top: 1px solid var(--border);
   }
-  .client-activity {
-    display: grid;
-    gap: 1.5rem;
-    padding-block: 1.5rem;
-    border-top: 1px solid var(--border);
-  }
   .client-section-heading {
     display: flex;
     flex-wrap: wrap;
@@ -511,10 +505,6 @@
     .editor-section,
     .client-section {
       padding-top: 2rem;
-    }
-    .client-activity {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 2rem;
     }
   }
 }

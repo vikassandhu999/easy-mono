@@ -46,14 +46,21 @@ defmodule Easy.Training.Execution do
   @spec update_client_session(Ctx.t(), String.t(), map()) ::
           {:ok, TrainingSession.t()} | {:error, :not_found | :conflict | Ecto.Changeset.t()}
   def update_client_session(%Ctx{} = ctx, session_id, attrs) do
-    mutate_client_session(ctx, session_id, fn
-      %TrainingSession{state: :active} = session ->
-        session |> TrainingSession.update_changeset(attrs) |> Repo.update()
-
-      %TrainingSession{} ->
-        {:error, :conflict}
+    mutate_client_session(ctx, session_id, fn session ->
+      with :ok <- TrainingSession.check_revision(session, attrs),
+           {:ok, %{local_date: today}} <- ClientAccount.get_client_calendar(ctx),
+           {:ok, updated} <- session |> TrainingSession.update_changeset(today, attrs) |> Repo.update(),
+           {:ok, _message} <- share_corrected_note(ctx, session, updated) do
+        {:ok, updated}
+      end
     end)
   end
+
+  defp share_corrected_note(ctx, %{state: :completed, notes: before}, %{notes: after_note} = updated)
+       when before != after_note,
+       do: Easy.ChatRecordNotes.share(ctx, :training_session, updated, after_note)
+
+  defp share_corrected_note(_ctx, _session, _updated), do: {:ok, nil}
 
   @spec complete_client_session(Ctx.t(), String.t(), map()) ::
           {:ok, TrainingSession.t()} | {:error, :not_found | :conflict | Ecto.Changeset.t()}
@@ -160,7 +167,7 @@ defmodule Easy.Training.Execution do
       result =
         Repo.transact(fn -> apply_client_session_mutation(ctx.business_id, client_id, session_id, mutation) end)
 
-      preload_session(result, ctx.business_id)
+      result |> preload_session(ctx.business_id) |> then(&Easy.ChatRecordNotes.notify_result(ctx, &1))
     end
   end
 
@@ -179,16 +186,21 @@ defmodule Easy.Training.Execution do
   defp close_client_session(ctx, %TrainingSession{} = session, :completed, attrs) do
     closed_at = DateTime.utc_now(:second)
 
-    with {:ok, updated} <- session |> TrainingSession.update_changeset(:completed, closed_at, attrs) |> Repo.update(),
-         {:ok, :recorded} <- ClientAccount.record_client_activity(ctx, closed_at) do
+    with :ok <- TrainingSession.check_revision(session, attrs),
+         {:ok, %{local_date: today}} <- ClientAccount.get_client_calendar(ctx, closed_at),
+         {:ok, updated} <- session |> TrainingSession.update_changeset(:completed, closed_at, today, attrs) |> Repo.update(),
+         {:ok, :recorded} <- ClientAccount.record_client_activity(ctx, closed_at),
+         {:ok, _message} <- Easy.ChatRecordNotes.share(ctx, :training_session, updated, updated.notes) do
       {:ok, updated}
     end
   end
 
-  defp close_client_session(_ctx, %TrainingSession{} = session, :discarded, _attrs) do
-    session
-    |> TrainingSession.update_changeset(:discarded, DateTime.utc_now(:second), %{})
-    |> Repo.update()
+  defp close_client_session(ctx, %TrainingSession{} = session, :discarded, _attrs) do
+    closed_at = DateTime.utc_now(:second)
+
+    with {:ok, %{local_date: today}} <- ClientAccount.get_client_calendar(ctx, closed_at) do
+      session |> TrainingSession.update_changeset(:discarded, closed_at, today, %{}) |> Repo.update()
+    end
   end
 
   defp lock_client_session(business_id, client_id, session_id) do

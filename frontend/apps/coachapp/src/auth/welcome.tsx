@@ -11,14 +11,6 @@ import {getReturnTo} from './return-to';
 
 const slides = [
   {
-    id: 'clients',
-    feature: 'Your clients',
-    title: 'Know the person behind the plan.',
-    description: 'Bring intake, plans, and progress together. Open a client and pick up exactly where you left off.',
-    caption: 'Client overview · a complete picture of each person',
-    alt: 'Client overview with intake, check-ins, and assigned training and nutrition plans.',
-  },
-  {
     id: 'training',
     feature: 'Training',
     title: 'Build once. Coach each person.',
@@ -35,33 +27,6 @@ const slides = [
       'Turn nutrition targets into practical meals. Give clients food choices and day variations that fit their routine.',
     caption: 'Nutrition builder · targets, meals, and everyday choices',
     alt: 'Nutrition builder showing daily targets and meals arranged into a weekly plan.',
-  },
-  {
-    id: 'check-ins',
-    feature: 'Check-ins',
-    title: 'See how the week really went.',
-    description:
-      'Schedule check-ins and review each client’s responses. See what is working and where they need your help.',
-    caption: 'Check-in review · the context behind the progress',
-    alt: 'A weekly check-in response with the client’s progress, recovery, and request for support.',
-  },
-  {
-    id: 'messages',
-    feature: 'Messages',
-    title: 'Keep the conversation close.',
-    description:
-      'Answer questions, share feedback, and keep coaching conversations together. See who needs a reply without losing the thread.',
-    caption: 'Messages · a direct connection with your clients',
-    alt: 'A coaching conversation about workout progress and an adjustment for the next session.',
-  },
-  {
-    id: 'workbench',
-    feature: 'Your daily workbench',
-    title: 'Know who needs you next.',
-    description:
-      'Replies, reviews, and plan gaps come together in one place. Start with what needs you, then move through your follow-ups.',
-    caption: 'Workbench · your next coaching actions, together',
-    alt: 'Workbench listing clients awaiting a reply, a check-in review, or a plan.',
   },
 ];
 
@@ -126,10 +91,11 @@ function WelcomeTour({coachId}: {coachId: string}) {
   const heading = useRef<HTMLHeadingElement>(null);
   const navigate = useNavigate();
   const returnTo = getReturnTo(useLocation().search);
-  const destination =
-    returnTo === routes.home || returnTo.split(/[?#]/)[0] === routes.welcome ? routes.workbench : returnTo;
+  const destination = returnTo === routes.home || returnTo.split(/[?#]/)[0] === routes.welcome ? routes.home : returnTo;
   const slide = slides[step] ?? slides[0];
   const last = step === slides.length - 1;
+  const preview = slide.id;
+  const previewFormat = 'jpg';
 
   // The heading gives keyboard and screen-reader users the new slide's context.
   // biome-ignore lint/correctness/useExhaustiveDependencies: Refocus when the selected slide changes.
@@ -213,11 +179,11 @@ function WelcomeTour({coachId}: {coachId: string}) {
                 <picture key={`${slide.id}-${imageAttempt}`}>
                   <source
                     media="(max-width: 767px)"
-                    srcSet={`/welcome/${slide.id}-mobile.jpg`}
+                    srcSet={`/welcome/${preview}-mobile.${previewFormat}`}
                   />
                   {/* biome-ignore lint/a11y/noNoninteractiveElementInteractions: Image loading recovery is not a user interaction. */}
                   <img
-                    src={`/welcome/${slide.id}-desktop.jpg`}
+                    src={`/welcome/${preview}-desktop.${previewFormat}`}
                     alt={slide.alt}
                     width={1088}
                     height={680}
@@ -266,7 +232,7 @@ function WelcomeTour({coachId}: {coachId: string}) {
               className="welcome-next"
               onPress={() => (last ? finish() : selectStep(step + 1))}
             >
-              {last ? (destination === routes.workbench ? 'Open my workbench' : 'Continue to your page') : 'Next'}
+              {last ? (destination === routes.home ? 'Open clients' : 'Continue to your page') : 'Next'}
               <ArrowRight aria-hidden="true" />
             </Button>
           </div>

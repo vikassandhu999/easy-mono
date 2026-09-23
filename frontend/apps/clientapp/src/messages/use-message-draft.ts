@@ -1,6 +1,6 @@
 import {useEffect, useRef, useState} from 'react';
 import {readDraft, writeDraft} from '../api/drafts';
-import {clearFormPhotos, readPhotos, type StoredPhoto} from '../api/photo-store';
+import {clearResourcePhotos, readPhotos, type StoredPhoto} from '../api/photo-store';
 import {getSession} from '../api/session';
 import {emptyMessageDraft, type MessageDraft, messageResource, parseMessageDraft} from './message-draft';
 
@@ -102,7 +102,7 @@ export function useMessageDraft() {
     }
     setMedia([]);
     if (session?.accountId && previous) {
-      await clearFormPhotos(session.accountId, messageResource(previous.id)).catch(() => undefined);
+      await clearResourcePhotos(session.accountId, messageResource(previous.id)).catch(() => undefined);
     }
     return true;
   }

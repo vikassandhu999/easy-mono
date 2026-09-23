@@ -106,7 +106,7 @@ export function Clients() {
             <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
               {search || status || stage
                 ? 'Try a different search or filter.'
-                : "They'll receive an invitation to join you and complete their intake form."}
+                : "They'll receive an invitation to join your coaching account."}
             </p>
           </Surface>
         }

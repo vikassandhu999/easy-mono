@@ -5,12 +5,11 @@
 # the MANUAL gates at the end are the ones that actually make or break the demo.
 #
 # Usage:
-#   BACKEND=https://easy-backend.fly.dev SLUG=my-published-page ./scripts/demo-smoke.sh
+#   BACKEND=https://easy-backend.fly.dev ./scripts/demo-smoke.sh
 #
 set -uo pipefail
 
 BACKEND="${BACKEND:-https://easy-backend.fly.dev}"
-SLUG="${SLUG:-}"
 pass=0; fail=0
 ok()   { echo "  ✓ $1"; pass=$((pass+1)); }
 bad()  { echo "  ✗ $1"; fail=$((fail+1)); }
@@ -25,13 +24,11 @@ echo "2. OpenAPI spec renders (proves the CURRENT app booted — a 404 here mean
 spec="$(curl -fsS "$BACKEND/api/openapi" 2>/dev/null)"
 if [ -n "$spec" ]; then ok "/api/openapi renders"; else bad "/api/openapi FAILED — backend is down OR a stale deploy. Run: cd backend && just deploy"; fi
 
-echo "3. Landing-funnel routes are deployed (definitive: the spec lists them)"
-if printf '%s' "$spec" | grep -q '/v1/public/landing-pages'; then ok "public landing routes present in the live spec"; else bad "landing funnel NOT in the deployed spec → redeploy the current code (cd backend && just deploy)"; fi
-
-if [ -n "$SLUG" ]; then
-  echo "4. Published landing page '$SLUG'"
-  if curl -fsS "$BACKEND/v1/public/landing-pages/$SLUG" | grep -q '"data"'; then ok "page '$SLUG' is published and served"; else bad "page '$SLUG' not found/published"; fi
-fi
+echo "3. Core coaching routes are deployed"
+for route in /v1/coach/clients /v1/coach/training-plans /v1/coach/nutrition-plans /v1/coach/conversations; do
+  status="$(curl -sS -o /dev/null -w '%{http_code}' "$BACKEND$route")"
+  if [ "$status" = 403 ]; then ok "$route is deployed and requires sign-in"; else bad "$route returned $status (expected 403 without credentials)"; fi
+done
 
 echo
 echo "Result: $pass passed, $fail failed."

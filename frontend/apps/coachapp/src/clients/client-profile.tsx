@@ -29,7 +29,7 @@ type Values = Pick<
   | 'stage'
   | 'subscription_started_on'
   | 'subscription_ends_on'
-> & {goal_weight_value: string; goal_weight_unit: 'kg' | 'lbs'};
+>;
 const textFields: Array<
   'first_name' | 'last_name' | 'phone' | 'email' | 'notes' | 'subscription_started_on' | 'subscription_ends_on'
 > = ['first_name', 'last_name', 'phone', 'email', 'notes', 'subscription_started_on', 'subscription_ends_on'];
@@ -44,8 +44,6 @@ function defaults(person: Client): Values {
     stage: person.stage,
     subscription_started_on: person.subscription_started_on ?? '',
     subscription_ends_on: person.subscription_ends_on ?? '',
-    goal_weight_value: String(person.goal_weight_value ?? ''),
-    goal_weight_unit: person.goal_weight_unit ?? 'kg',
   };
 }
 
@@ -145,10 +143,6 @@ function Profile({person}: {person: Client}) {
     if (person.status === 'active' && form.formState.dirtyFields.stage) {
       patch.stage = values.stage;
     }
-    if (form.formState.dirtyFields.goal_weight_value || form.formState.dirtyFields.goal_weight_unit) {
-      patch.goal_weight_value = values.goal_weight_value.trim() ? Number(values.goal_weight_value) : null;
-      patch.goal_weight_unit = patch.goal_weight_value === null ? null : values.goal_weight_unit;
-    }
     form.clearErrors();
     setNotice('');
     try {
@@ -160,8 +154,6 @@ function Profile({person}: {person: Client}) {
         ...textFields,
         'required_services',
         'stage',
-        'goal_weight_value',
-        'goal_weight_unit',
       ]);
     }
   });
@@ -320,55 +312,6 @@ function Profile({person}: {person: Client}) {
               )}
             />
           )}
-        </Surface>
-        <Surface className="space-y-5">
-          <h2 className="section-title">Weight goal</h2>
-          <p className="text-sm text-muted-foreground">
-            Set a target in the chosen unit, or leave it empty to remove the goal.
-          </p>
-          <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-4">
-            <FormField
-              control={form.control}
-              name="goal_weight_value"
-              label="Goal weight"
-              inputMode="decimal"
-              isDisabled={pending}
-              rules={{
-                validate: (value) =>
-                  (typeof value === 'string' &&
-                    (!value.trim() || (Number.isFinite(Number(value)) && Number(value) > 0 && Number(value) < 1000))) ||
-                  'Enter a goal greater than 0 and less than 1,000.',
-              }}
-            />
-            <Controller
-              control={form.control}
-              name="goal_weight_unit"
-              render={({field, fieldState}) => (
-                <div className="grid content-start gap-2">
-                  <Label
-                    id="goal-unit-label"
-                    htmlFor="goal-unit"
-                  >
-                    Unit
-                  </Label>
-                  <SelectField
-                    id="goal-unit"
-                    value={field.value}
-                    isDisabled={pending}
-                    onChange={(value) => {
-                      if (value === 'kg' || value === 'lbs') {
-                        field.onChange(value);
-                      }
-                    }}
-                  >
-                    <SelectItem id="kg">kg</SelectItem>
-                    <SelectItem id="lbs">lb</SelectItem>
-                  </SelectField>
-                  <FormError message={fieldState.error?.message} />
-                </div>
-              )}
-            />
-          </div>
         </Surface>
         <FormError message={form.formState.errors.root?.message} />
         {notice && <p role="status">{notice}</p>}

@@ -40,7 +40,7 @@ These run with `test:templates`. Screenshots are in ignored `tests/training/arti
 
 The coach build, Biome and repository shape checks are required finish gates. Vite retains its existing bundle-size warning. No backend changes were needed for the worksheet iteration. The preceding pagination work passed backend `mix precommit` with 1,635 tests and its exercise controller suite with 26 tests; its generated schemas are already in the working tree.
 
-Code graph access timed out (`cbm`: broker request timed out). Structural evidence came from targeted source reads and reference searches. No legacy app components, layouts or styles were consulted or copied. The existing coachapp-v2 change is its previously generated API schema. No commit or deployment was requested.
+Code graph access timed out (`cbm`: broker request timed out). Structural evidence came from targeted source reads and reference searches. No legacy app components, layouts or styles were consulted or copied. No commit or deployment was requested.
 
 
 ## Creation recovery audit, 2026-09-16

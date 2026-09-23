@@ -7,7 +7,7 @@ const fixture = JSON.parse(await readFile(new URL('../../ios/App/ClientUITests/f
 const browser = await chromium.launch();
 try {
   const page = await browser.newPage();
-  await page.goto(`http://localhost:1315/invite/${fixture.formToken}`);
+  await page.goto(`http://localhost:1315/invite/${fixture.migrationToken}`);
   await page.getByRole('button', {name: 'Continue with email'}).click();
   await page.getByLabel('Verification code').fill('123456');
   await page.getByRole('button', {name: 'Verify and continue'}).click();

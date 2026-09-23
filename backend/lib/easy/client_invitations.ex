@@ -3,7 +3,6 @@ defmodule Easy.ClientInvitations do
 
   alias Easy.{Billing, ClientAccess, Coaches, Ctx, Repo}
   alias Easy.Clients.Client
-  alias Easy.Forms.Assignments
   alias Easy.Identity.User
   alias Easy.Orgs.Coach
 
@@ -124,12 +123,7 @@ defmodule Easy.ClientInvitations do
   end
 
   defp reserve_and_create(ctx, changeset) do
-    Billing.reserve_seat(ctx, fn ->
-      with {:ok, client} <- Repo.insert(changeset),
-           {:ok, _assignment} <- Assignments.assign_default_intake_to_client(ctx, client.id) do
-        {:ok, client}
-      end
-    end)
+    Billing.reserve_seat(ctx, fn -> Repo.insert(changeset) end)
   end
 
   defp validate_not_self_invite(%Coach{user: %User{email: coach_email}}, email)

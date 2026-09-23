@@ -24,4 +24,4 @@ Run the production browser check after `VITE_API_BASE_URL=http://localhost:4100 
 
 For the iOS outage case, run `node tests/auth/native-proxy.mjs`, sync with `VITE_API_BASE_URL=http://localhost:4101`, and create the fixture with `CLIENTAPP_API_CONTROL=http://127.0.0.1:4101/__test/connection node tests/auth/native-fixture.mjs`. Then run `ClientUITests`. The proxy forwards to the real API on 4100 and limits each injected outage to 30 seconds. Android keeps its API on 4100 through `adb reverse` and runs `pnpm test:android`.
 
-Uploaded images still require a connection; the reader explains this instead of waiting indefinitely. Offline snapshots for training, nutrition, messaging, and progress must be added with those workflows. Physical-device and human usability checks remain outstanding.
+Uploaded images still require a connection; the reader explains this instead of waiting indefinitely. Offline snapshots for training, nutrition, and messaging must be added with those workflows. Physical-device and human usability checks remain outstanding.

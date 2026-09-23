@@ -15,7 +15,7 @@ export function ActionCard({
   eyebrow?: string;
   icon: ReactNode;
   to: string;
-  tone?: 'plain' | 'training' | 'nutrition' | 'coach' | 'progress';
+  tone?: 'plain' | 'training' | 'nutrition' | 'coach';
 }) {
   return (
     <Link

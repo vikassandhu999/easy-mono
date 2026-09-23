@@ -166,42 +166,6 @@ try {
   const today = new Date().toISOString().slice(0, 10);
   await send('post', `/v1/coach/clients/${alex.person.id}/training-plans/${training.id}/assign`, {start_date: today});
   await send('post', `/v1/coach/clients/${alex.person.id}/nutrition-plans/${nutrition.id}/assign`, {start_date: today});
-  const question = crypto.randomUUID();
-  const recovery = crypto.randomUUID();
-  const support = crypto.randomUUID();
-  const form = (
-    await send('post', '/v1/coach/form-templates', {
-      name: 'Your weekly check-in',
-      purpose: 'check_in',
-      sections: [
-        {
-          title: 'Progress and recovery',
-          questions: [
-            {id: question, label: 'What went well this week?', type: 'text', required: true},
-            {id: recovery, label: 'How is your energy and recovery?', type: 'text'},
-            {id: support, label: 'Where would you like support?', type: 'text'},
-          ],
-        },
-      ],
-    })
-  ).data;
-  const assignment = (
-    await send('post', `/v1/coach/clients/${alex.person.id}/form-assignments`, {form_template_id: form.id})
-  ).data;
-  const submitted = (
-    await send(
-      'post',
-      `/v1/client/form-assignments/${assignment.id}/submit`,
-      {
-        answers: {
-          [question]: 'I completed all three workouts and felt stronger on my squats.',
-          [recovery]: 'Sleeping better. A little tired after Friday’s session, but recovered over the weekend.',
-          [support]: 'Could we make next week’s Wednesday session shorter? I have a busy workday.',
-        },
-      },
-      alex.token,
-    )
-  ).data;
   await send(
     'post',
     '/v1/client/conversation/messages',
@@ -223,9 +187,7 @@ try {
     ['clients', `/clients/${alex.person.id}`, 'Alex Morgan'],
     ['training', `/training-plans/${training.id}`, 'Stronger every week'],
     ['nutrition', `/nutrition-plans/${nutrition.id}`, 'Everyday nourishment'],
-    ['check-ins', `/clients/${alex.person.id}/check-in-responses/${submitted.id}`, 'What went well this week?'],
-    ['messages', `/clients/${alex.person.id}/conversation`, 'Can we make Wednesday a 30-minute session?'],
-    ['workbench', '/workbench', 'Awaiting you'],
+    ['workspace', `/clients/${alex.person.id}/conversation`, 'Can we make Wednesday a 30-minute session?'],
   ];
   for (const [device, width, height] of [
     ['desktop', 1152, 1100],
@@ -269,14 +231,10 @@ try {
                 name: device === 'mobile' ? 'breakfast options' : 'Meal worksheet',
                 exact: true,
               })
-            : name === 'check-ins'
-              ? page.getByRole('region', {name: 'Submitted answers', exact: true})
-              : name === 'messages'
-                ? page.locator('[aria-label="Conversation history"]')
-                : name === 'workbench' && device === 'mobile'
-                  ? page.getByRole('list', {name: 'tasks', exact: true})
-                  : page.locator('main');
-      if (name === 'messages') {
+            : name === 'workspace'
+              ? page.locator('[aria-label="Conversation history"]')
+              : page.locator('main');
+      if (name === 'workspace') {
         await anchor.evaluate((node) => {
           node.scrollTop = 0;
         });
@@ -288,10 +246,10 @@ try {
       const gutter = device === 'mobile' ? 20 : 32;
       const captureHeight = device === 'desktop' ? 680 : 300;
       const top = Math.max(130, focus.y - 16);
+      const format = name === 'workspace' ? 'png' : 'jpg';
       await page.screenshot({
-        path: `${output}/${name}-${device}.jpg`,
-        type: 'jpeg',
-        quality: 85,
+        path: `${output}/${name}-${device}.${format}`,
+        ...(format === 'jpg' ? {type: 'jpeg', quality: 85} : {type: 'png'}),
         animations: 'disabled',
         clip: {x: main.x + gutter, y: top, width: main.width - gutter * 2, height: captureHeight},
       });

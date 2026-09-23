@@ -4,7 +4,7 @@ No physical phone is connected: `xcrun xctrace list devices` lists only this Mac
 simulators, and `adb devices -l` lists only emulator-5554 (2026-09-20).
 
 These checks are pending. Simulator, emulator and browser results in completion.md do
-not establish them. Use a separate test coach/client with representative plans, forms
+not establish them. Use a separate test coach/client with representative plans
 and messages. Record device model, OS, app commit, network, result and observed problem
 for each check. Do not use the retained localhost preview account for destructive tests.
 
@@ -14,7 +14,7 @@ for each check. Do not use the retained localhost preview account for destructiv
   software keyboard visible, close the app, then reopen the same authenticated account.
 * Start a workout, enter an unsaved set, lock the phone, switch apps and return. Repeat
   after OS process reclamation. Verify the draft and saved sets against the coach view.
-* Save a set, meal, check-in and message with the keyboard open using one tap. Check
+* Save a set, meal and message with the keyboard open using one tap. Check
   small phone screens, gesture-navigation insets, landscape and a connected hardware
   keyboard. Android Back must close an open picker/sheet before leaving its screen.
 * Capture an actual iPhone camera frame, cancel a capture, deny permission, grant it in
@@ -47,12 +47,10 @@ wrong turns, repeated typing, accidental submissions and whether saved feedback 
   day. Resume a partly recorded workout and finish it.
 * Record a prescribed meal, choose an alternative, adjust a portion, and find the saved
   entry. Ask the client to explain what the totals represent.
-* Complete a check-in with a progress photo, correct a missing answer, and find the saved
-  response. For a closed request, ask what the client thinks happened and what to do next.
 * Message the coach, attach a photo, interrupt the app and return to the draft. Open a
-  coach-shared form and return to the conversation.
-* Review progress and update account details or an optional weight goal. Confirm that
-  the client understands units and the difference between a saved entry and a local draft.
+  coach-shared workout record and return to the conversation.
+* Update personal details. Confirm that the client understands the difference between
+  saved account information and a local draft.
 
 Record observations separately from automated pass/fail results. Resolve material
 usability problems before a client rollout; this document is not a usability sign-off.

@@ -64,9 +64,9 @@ defmodule Easy.ChatTest do
       assert Message.put_content(base, [%Easy.Attachments.Attachment{}], nil).valid?
 
       assert Message.put_content(base, [], %{
-               type: :form_submission,
+               type: :training_session,
                id: Ecto.UUID.generate(),
-               snapshot: %{"title" => "Weekly check-in"}
+               snapshot: %{"title" => "Workout"}
              }).valid?
     end
 
@@ -78,10 +78,10 @@ defmodule Easy.ChatTest do
         Message.put_content(base, [], %{type: :bogus, id: id, snapshot: %{}})
 
       missing_id =
-        Message.put_content(base, [], %{type: :form_submission, snapshot: %{}})
+        Message.put_content(base, [], %{type: :training_session, snapshot: %{}})
 
       missing_snapshot =
-        Message.put_content(base, [], %{type: :form_submission, id: id})
+        Message.put_content(base, [], %{type: :training_session, id: id})
 
       refute invalid_type.valid?
       assert "is invalid" in errors_on(invalid_type).embed_type
@@ -341,41 +341,41 @@ defmodule Easy.ChatTest do
       assert Enum.map(page2, & &1.body) == ["m1", "m2"]
     end
 
-    test "composes text, ordered attachments, and an immutable form submission embed", %{
+    test "composes text, ordered attachments, and an immutable workout record embed", %{
       coach: coach,
       client: client
     } do
       {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
       first = insert(:attachment, business: coach.business, client: client, content_type: "image/png")
       second = insert(:attachment, business: coach.business, client: client, content_type: "audio/webm")
-      template = insert(:form_template, business: coach.business)
-      assignment = insert(:form_assignment, business: coach.business, client: client, form_template: template)
-      submission = insert(:form_submission, business: coach.business, client: client, form_assignment: assignment)
+      entry = insert(:workout_session, state: :completed, business: coach.business, client: client)
 
       assert {:ok, message} =
                Chat.send_message(coach_ctx(coach), conversation.id, %{
                  body: "  Energy improved.  ",
                  attachment_ids: [String.upcase(second.id), first.id],
-                 embed: %{type: "form_submission", id: submission.id}
+                 embed: %{type: "training_session", id: entry.id}
                })
 
       assert message.body == "Energy improved."
       assert Enum.map(message.attachments, & &1.id) == [second.id, first.id]
-      assert message.embed_type == :form_submission
-      assert message.embed_id == submission.id
+      assert message.embed_type == :training_session
+      assert message.embed_id == entry.id
 
       assert message.embed_snapshot == %{
-               "form_assignment_id" => assignment.id,
-               "title" => assignment.form_template.name,
-               "submitted_at" => DateTime.to_iso8601(submission.submitted_at)
+               "title" => "Workout",
+               "recorded_at" => DateTime.to_iso8601(entry.closed_at),
+               "occurred_on" => Date.to_iso8601(entry.date),
+               "revision" => 1
              }
 
-      assignment.form_template
-      |> Ecto.Changeset.change(name: "Renamed")
+      entry
+      |> Ecto.Changeset.change(date: Date.add(entry.date, 1), revision: 2)
       |> Easy.Repo.update!()
 
       reloaded = Easy.Repo.get!(Message, message.id)
-      assert reloaded.embed_snapshot["title"] == assignment.form_template.name
+      assert reloaded.embed_snapshot["occurred_on"] == Date.to_iso8601(entry.date)
+      assert reloaded.embed_snapshot["revision"] == 1
     end
 
     test "string-keyed messages preserve ordered attachments and trim their body", %{coach: coach, client: client} do
@@ -392,7 +392,7 @@ defmodule Easy.ChatTest do
       assert Enum.map(message.attachments, & &1.id) == [second.id, first.id]
     end
 
-    test "string-keyed attachment errors and client embeds are rejected", %{client: client} do
+    test "string-keyed attachment errors and unavailable client references are rejected", %{client: client} do
       for ids <- ["invalid", ["invalid"], List.duplicate(Ecto.UUID.generate(), 5)] do
         assert {:error, %Ecto.Changeset{} = changeset} =
                  Chat.send_client_message(client_ctx(client), %{"body" => "Photos", "attachment_ids" => ids})
@@ -400,43 +400,37 @@ defmodule Easy.ChatTest do
         assert errors_on(changeset).attachment_ids != []
       end
 
-      assert {:error, %Ecto.Changeset{} = changeset} =
+      assert {:error, :not_found} =
                Chat.send_client_message(client_ctx(client), %{
                  "body" => "Snapshot",
-                 "embed" => %{"type" => "form_submission", "id" => Ecto.UUID.generate()}
+                 "embed" => %{"type" => "training_session", "id" => Ecto.UUID.generate()}
                })
-
-      assert errors_on(changeset).embed == ["is not allowed"]
     end
 
     test "string-keyed coach embeds resolve the server-owned snapshot", %{coach: coach, client: client} do
       {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
-      template = insert(:form_template, business: coach.business)
-      assignment = insert(:form_assignment, business: coach.business, client: client, form_template: template)
-      submission = insert(:form_submission, business: coach.business, client: client, form_assignment: assignment)
+      entry = insert(:workout_session, state: :completed, business: coach.business, client: client)
 
       assert {:ok, message} =
                Chat.send_message(coach_ctx(coach), conversation.id, %{
-                 "embed" => %{"type" => "form_submission", "id" => submission.id, "snapshot" => %{"title" => "Fake"}}
+                 "embed" => %{"type" => "training_session", "id" => entry.id, "snapshot" => %{"title" => "Fake"}}
                })
 
-      assert message.embed_id == submission.id
-      assert message.embed_snapshot["title"] == template.name
+      assert message.embed_id == entry.id
+      assert message.embed_snapshot["title"] == "Workout"
     end
 
-    test "accepts the typed form submission embed atom", %{coach: coach, client: client} do
+    test "accepts the typed workout record embed atom", %{coach: coach, client: client} do
       {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
-      template = insert(:form_template, business: coach.business)
-      assignment = insert(:form_assignment, business: coach.business, client: client, form_template: template)
-      submission = insert(:form_submission, business: coach.business, client: client, form_assignment: assignment)
+      entry = insert(:workout_session, state: :completed, business: coach.business, client: client)
 
       assert {:ok, message} =
                Chat.send_message(coach_ctx(coach), conversation.id, %{
-                 embed: %{type: :form_submission, id: submission.id}
+                 embed: %{type: :training_session, id: entry.id}
                })
 
-      assert message.embed_type == :form_submission
-      assert message.embed_id == submission.id
+      assert message.embed_type == :training_session
+      assert message.embed_id == entry.id
     end
 
     test "supports attachment-only and embed-only previews", %{coach: coach, client: client} do
@@ -459,19 +453,17 @@ defmodule Easy.ChatTest do
 
       assert Easy.Repo.get!(Conversation, conversation.id).last_message_preview == "2 attachments"
 
-      template = insert(:form_template, business: coach.business)
-      assignment = insert(:form_assignment, business: coach.business, client: client, form_template: template)
-      submission = insert(:form_submission, business: coach.business, client: client, form_assignment: assignment)
+      entry = insert(:workout_session, state: :completed, business: coach.business, client: client)
 
       assert {:ok, embed_message} =
                Chat.send_message(coach_ctx(coach), conversation.id, %{
-                 embed: %{type: "form_submission", id: submission.id}
+                 embed: %{type: "training_session", id: entry.id}
                })
 
       assert embed_message.body == nil
 
       assert Easy.Repo.get!(Conversation, conversation.id).last_message_preview ==
-               "Shared #{assignment.form_template.name}"
+               "Shared Workout"
     end
 
     test "rejects empty and invalid attachment compositions", %{coach: coach, client: client} do
@@ -507,10 +499,10 @@ defmodule Easy.ChatTest do
       other_client = insert(:client, business: coach.business, creator: coach)
       cross_client = insert(:attachment, business: coach.business, client: other_client)
       other_coach = insert(:coach)
-      other_client_business = insert(:client, business: other_coach.business, creator: other_coach)
-      cross_business = insert(:attachment, business: other_coach.business, client: other_client_business)
+      foreign_client = insert(:client, business: other_coach.business, creator: other_coach)
+      cross_tenant = insert(:attachment, business: other_coach.business, client: foreign_client)
 
-      for id <- [Ecto.UUID.generate(), cross_client.id, cross_business.id] do
+      for id <- [Ecto.UUID.generate(), cross_client.id, cross_tenant.id] do
         assert {:error, :not_found} =
                  Chat.send_message(coach_ctx(coach), conversation.id, %{
                    body: "must roll back",
@@ -521,44 +513,27 @@ defmodule Easy.ChatTest do
       assert Easy.Repo.aggregate(Message, :count) == 0
     end
 
-    test "coach embeds must belong to the conversation client and clients cannot embed", %{
+    test "coach and client references must belong to the conversation client", %{
       coach: coach,
       client: client
     } do
       {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
       other_client = insert(:client, business: coach.business, creator: coach)
-      template = insert(:form_template, business: coach.business)
-      assignment = insert(:form_assignment, business: coach.business, client: other_client, form_template: template)
-      submission = insert(:form_submission, business: coach.business, client: other_client, form_assignment: assignment)
-      embed = %{type: "form_submission", id: submission.id}
+      entry = insert(:workout_session, state: :completed, business: coach.business, client: other_client)
+      embed = %{type: "training_session", id: entry.id}
 
       other_coach = insert(:coach)
-      other_client_business = insert(:client, business: other_coach.business, creator: other_coach)
-      other_template = insert(:form_template, business: other_coach.business)
+      foreign_client = insert(:client, business: other_coach.business, creator: other_coach)
+      cross_tenant = insert(:workout_session, state: :completed, business: other_coach.business, client: foreign_client)
 
-      other_assignment =
-        insert(:form_assignment,
-          business: other_coach.business,
-          client: other_client_business,
-          form_template: other_template
-        )
-
-      cross_business =
-        insert(:form_submission,
-          business: other_coach.business,
-          client: other_client_business,
-          form_assignment: other_assignment
-        )
-
-      for id <- [submission.id, cross_business.id, Ecto.UUID.generate()] do
+      for id <- [entry.id, cross_tenant.id, Ecto.UUID.generate()] do
         assert {:error, :not_found} =
                  Chat.send_message(coach_ctx(coach), conversation.id, %{
-                   embed: %{type: "form_submission", id: id}
+                   embed: %{type: "training_session", id: id}
                  })
       end
 
-      assert {:error, changeset} = Chat.send_client_message(client_ctx(client), %{embed: embed})
-      assert "is not allowed" in errors_on(changeset).embed
+      assert {:error, :not_found} = Chat.send_client_message(client_ctx(client), %{embed: embed})
     end
 
     test "paginated messages preload attachments without changing message order", %{
@@ -607,7 +582,7 @@ defmodule Easy.ChatTest do
       assert reloaded.coach_last_read_at == reloaded.last_message_at
     end
 
-    test "client messages start one waiting clock, repeats preserve it, and a coach reply clears it", %{
+    test "client and coach messages update the conversation preview", %{
       coach: coach,
       client: client
     } do
@@ -615,127 +590,39 @@ defmodule Easy.ChatTest do
 
       assert {:ok, first} = Chat.send_client_message(client_ctx(client), %{body: "first"})
       after_first = Repo.reload(conversation)
-      assert after_first.waiting_since == first.inserted_at
       assert after_first.last_message_at == first.inserted_at
       assert after_first.last_message_role == :client
 
       assert {:ok, second} = Chat.send_client_message(client_ctx(client), %{body: "second"})
       after_second = Repo.reload(conversation)
-      assert after_second.waiting_since == first.inserted_at
       assert after_second.last_message_at == second.inserted_at
       assert after_second.last_message_role == :client
 
       assert {:ok, coach_reply} = Chat.send_message(coach_ctx(coach), conversation.id, %{body: "reply"})
       after_reply = Repo.reload(conversation)
-      assert after_reply.waiting_since == nil
       assert after_reply.last_message_at == coach_reply.inserted_at
       assert after_reply.last_message_role == :coach
     end
 
-    test "mark_read changes only the cursor and preserves waiting state", %{coach: coach, client: client} do
+    test "mark_read updates the coach cursor", %{coach: coach, client: client} do
       {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
-      assert {:ok, message} = Chat.send_client_message(client_ctx(client), %{body: "still waiting"})
+      assert {:ok, message} = Chat.send_client_message(client_ctx(client), %{body: "hello coach"})
 
       assert {:ok, read} = Chat.mark_read(coach_ctx(coach), conversation.id)
       reloaded = Repo.reload(conversation)
 
       assert read.coach_last_read_at == message.inserted_at
       assert reloaded.coach_last_read_at == message.inserted_at
-      assert reloaded.waiting_since == message.inserted_at
     end
 
-    test "mark handled clears the observed sequence idempotently without changing read state", %{
-      coach: coach,
-      client: client
-    } do
+    test "coach read broadcasts an inbox update after success", %{coach: coach, client: client} do
       {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
-      assert {:ok, message} = Chat.send_client_message(client_ctx(client), %{body: "thanks"})
-      assert {:ok, _read} = Chat.mark_read(coach_ctx(coach), conversation.id)
-      cursor = Repo.reload(conversation).coach_last_read_at
-
-      assert {:ok, :handled} =
-               Chat.mark_conversation_handled(coach_ctx(coach), conversation.id, message.inserted_at)
-
-      handled = Repo.reload(conversation)
-      assert handled.waiting_since == nil
-      assert handled.coach_last_read_at == cursor
-
-      assert {:ok, :handled} =
-               Chat.mark_conversation_handled(coach_ctx(coach), conversation.id, message.inserted_at)
-
-      assert Repo.reload(conversation).coach_last_read_at == cursor
-    end
-
-    test "coach read and handled actions broadcast inbox updates after success", %{coach: coach, client: client} do
-      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
-      assert {:ok, message} = Chat.send_client_message(client_ctx(client), %{body: "please review"})
+      assert {:ok, _message} = Chat.send_client_message(client_ctx(client), %{body: "please review"})
       Phoenix.PubSub.subscribe(Easy.PubSub, "inbox:business:#{coach.business_id}")
 
       assert {:ok, _read} = Chat.mark_read(coach_ctx(coach), conversation.id)
       assert_receive {:conversation_updated, conversation_id}
       assert conversation_id == conversation.id
-
-      assert {:ok, :handled} =
-               Chat.mark_conversation_handled(coach_ctx(coach), conversation.id, message.inserted_at)
-
-      assert_receive {:conversation_updated, ^conversation_id}
-    end
-
-    test "mark handled returns conflict for a newer waiting message", %{coach: coach, client: client} do
-      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
-      assert {:ok, first} = Chat.send_client_message(client_ctx(client), %{body: "first"})
-      assert {:ok, second} = Chat.send_client_message(client_ctx(client), %{body: "newer"})
-
-      assert {:error, :conflict} =
-               Chat.mark_conversation_handled(coach_ctx(coach), conversation.id, first.inserted_at)
-
-      reloaded = Repo.reload(conversation)
-      assert reloaded.waiting_since == first.inserted_at
-      assert reloaded.last_message_at == second.inserted_at
-    end
-
-    test "mark handled supports inactive clients", %{coach: coach, client: client} do
-      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
-      assert {:ok, message} = Chat.send_client_message(client_ctx(client), %{body: "before deactivation"})
-
-      client
-      |> Ecto.Changeset.change(status: :inactive, inactive_reason: :manual)
-      |> Repo.update!()
-
-      assert {:ok, :handled} =
-               Chat.mark_conversation_handled(coach_ctx(coach), conversation.id, message.inserted_at)
-
-      assert Repo.reload(conversation).waiting_since == nil
-    end
-
-    test "mark handled is tenant- and trainer-visibility scoped", %{coach: coach, client: client} do
-      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
-      assert {:ok, message} = Chat.send_client_message(client_ctx(client), %{body: "private"})
-      other_trainer = insert(:coach, business: coach.business)
-      other_business = insert(:business)
-
-      assert {:error, :not_found} =
-               Chat.mark_conversation_handled(
-                 trainer_ctx(other_trainer),
-                 conversation.id,
-                 message.inserted_at
-               )
-
-      assert {:error, :not_found} =
-               Chat.mark_conversation_handled(
-                 owner_ctx(other_business),
-                 conversation.id,
-                 message.inserted_at
-               )
-
-      assert Repo.reload(conversation).waiting_since == message.inserted_at
-
-      assert {:ok, :handled} =
-               Chat.mark_conversation_handled(
-                 owner_ctx(coach.business),
-                 conversation.id,
-                 message.inserted_at
-               )
     end
 
     test "client sends create the conversation lazily and set coach unread", %{coach: coach, client: client} do
@@ -778,8 +665,6 @@ defmodule Easy.ChatTest do
 
       for ctx <- [trainer_ctx(hidden_trainer), owner_coach_ctx(foreign_coach)] do
         assert {:ok, %{count: 0, conversations: []}} = Chat.list_conversations(ctx)
-        assert {:ok, 0} = Chat.count_waiting_conversations(ctx)
-        assert {:ok, %{count: 0, items: []}} = Chat.list_waiting_conversations(ctx)
         assert {:error, :not_found} = Chat.get_conversation(ctx, conversation.id)
         assert {:error, :not_found} = Chat.list_messages(ctx, conversation.id)
         assert {:error, :not_found} = Chat.send_message(ctx, conversation.id, %{body: "must not send"})
@@ -789,7 +674,6 @@ defmodule Easy.ChatTest do
       assert Repo.aggregate(Message, :count) == 1
       unchanged = Repo.reload!(conversation)
       assert unchanged.coach_last_read_at == nil
-      assert unchanged.waiting_since == message.inserted_at
       assert unchanged.last_message_preview == "private"
 
       assert {:ok, %{messages: [visible]}} = Chat.list_messages(owner_coach_ctx(coach), conversation.id)
@@ -883,51 +767,6 @@ defmodule Easy.ChatConcurrencyTest do
     }
   end
 
-  test "a stale Mark handled race cannot clear a newer client sequence", context do
-    parent = self()
-
-    send_task =
-      Task.async(fn ->
-        Sandbox.checkout(Repo, sandbox: false)
-        send(parent, {:ready, self()})
-
-        receive do
-          :go -> Chat.send_client_message(context.client_ctx, %{body: "newer"})
-        end
-      end)
-
-    handle_task =
-      Task.async(fn ->
-        Sandbox.checkout(Repo, sandbox: false)
-        send(parent, {:ready, self()})
-
-        receive do
-          :go ->
-            Chat.mark_conversation_handled(
-              context.coach_ctx,
-              context.conversation.id,
-              context.first.inserted_at
-            )
-        end
-      end)
-
-    workers =
-      for _ <- 1..2 do
-        receive do
-          {:ready, pid} -> pid
-        end
-      end
-
-    Enum.each(workers, &send(&1, :go))
-
-    assert {:ok, newer} = Task.await(send_task, 5_000)
-    assert Task.await(handle_task, 5_000) in [{:ok, :handled}, {:error, :conflict}]
-
-    reloaded = Repo.reload(context.conversation)
-    assert reloaded.last_message_at == newer.inserted_at
-    assert reloaded.waiting_since
-  end
-
   test "concurrent retries publish and persist one message", context do
     Phoenix.PubSub.subscribe(Easy.PubSub, "conversation:#{context.conversation.id}")
     attrs = %{body: "One send", request_id: Ecto.UUID.generate()}
@@ -992,7 +831,7 @@ defmodule Easy.ChatConcurrencyTest do
     end
   end
 
-  test "a waiting read marker returns the conversation state used by its cursor", context do
+  test "a blocked read marker returns the conversation state used by its cursor", context do
     {:ok, {contender, newer}} =
       Repo.transaction(fn ->
         Conversation |> lock("FOR UPDATE") |> Repo.get!(context.conversation.id)

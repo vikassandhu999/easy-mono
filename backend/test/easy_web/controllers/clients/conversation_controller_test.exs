@@ -18,14 +18,13 @@ defmodule EasyWeb.Clients.ConversationControllerTest do
 
     assert %{
              "client_name" => client_name,
-             "last_message_role" => nil,
-             "waiting_since" => nil
+             "last_message_role" => nil
            } = data
 
     assert client_name == String.trim("#{client.first_name} #{client.last_name}")
 
     assert Map.keys(data) |> Enum.sort() ==
-             ~w(client_id client_name id inserted_at last_message_at last_message_preview last_message_role unread_count updated_at waiting_since)
+             ~w(client_id client_name id inserted_at last_message_at last_message_preview last_message_role unread_count updated_at)
   end
 
   test "send + list + read round-trip", %{conn: conn, client: client} do
@@ -35,7 +34,7 @@ defmodule EasyWeb.Clients.ConversationControllerTest do
              json_response(post_conn, 201)
 
     assert Map.keys(message) |> Enum.sort() ==
-             ~w(attachments body conversation_id embed id inserted_at request_id sender_id sender_type)
+             ~w(attachments body conversation_id embed id inserted_at request_id sender_id sender_name sender_type)
 
     list_conn = build_conn() |> authenticate_client(client) |> get("/v1/client/conversation/messages")
     assert %{"data" => [%{"body" => "hi coach"}], "has_more" => false} = json_response(list_conn, 200)
@@ -49,13 +48,13 @@ defmodule EasyWeb.Clients.ConversationControllerTest do
     assert %{"data" => %{"unread_count" => 0}} = json_response(read_conn, 200)
   end
 
-  test "rejects coach-only embeds at the request boundary", %{conn: conn} do
+  test "rejects unavailable record references", %{conn: conn} do
     conn =
       post(conn, "/v1/client/conversation/messages", %{
-        "embed" => %{"type" => "form_submission", "id" => Ecto.UUID.generate()}
+        "embed" => %{"type" => "training_session", "id" => Ecto.UUID.generate()}
       })
 
-    assert json_response(conn, 422)
+    assert json_response(conn, 404)
   end
 
   test "rejects unknown message keys and invalid list query values", %{conn: conn} do
@@ -66,7 +65,7 @@ defmodule EasyWeb.Clients.ConversationControllerTest do
     assert json_response(invalid_query, 422)
   end
 
-  test "lists coach attachment metadata and form submission embeds", %{
+  test "lists coach attachment metadata and workout record embeds", %{
     conn: conn,
     coach: coach,
     client: client
@@ -78,9 +77,7 @@ defmodule EasyWeb.Clients.ConversationControllerTest do
       )
 
     attachment = insert(:attachment, business: client.business, client: client)
-    template = insert(:form_template, business: client.business)
-    assignment = insert(:form_assignment, business: client.business, client: client, form_template: template)
-    submission = insert(:form_submission, business: client.business, client: client, form_assignment: assignment)
+    entry = insert(:workout_session, state: :completed, business: client.business, client: client)
 
     assert {:ok, _message} =
              Easy.Chat.send_message(
@@ -88,7 +85,7 @@ defmodule EasyWeb.Clients.ConversationControllerTest do
                conversation.id,
                %{
                  attachment_ids: [attachment.id],
-                 embed: %{type: "form_submission", id: submission.id}
+                 embed: %{type: "training_session", id: entry.id}
                }
              )
 
@@ -106,12 +103,11 @@ defmodule EasyWeb.Clients.ConversationControllerTest do
                    }
                  ],
                  "embed" => %{
-                   "type" => "form_submission",
-                   "id" => submission_id,
+                   "type" => "training_session",
+                   "id" => entry_id,
                    "snapshot" => %{
-                     "form_assignment_id" => assignment_id,
                      "title" => title,
-                     "submitted_at" => submitted_at
+                     "recorded_at" => recorded_at
                    }
                  }
                }
@@ -119,10 +115,9 @@ defmodule EasyWeb.Clients.ConversationControllerTest do
            } = response
 
     assert attachment_id == attachment.id
-    assert submission_id == submission.id
-    assert assignment_id == assignment.id
-    assert title == template.name
-    assert submitted_at == DateTime.to_iso8601(submission.submitted_at)
+    assert entry_id == entry.id
+    assert title == "Workout"
+    assert recorded_at == DateTime.to_iso8601(entry.closed_at)
   end
 
   test "requires authentication" do

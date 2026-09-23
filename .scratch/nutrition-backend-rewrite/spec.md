@@ -110,7 +110,7 @@ On the first eligible write to a Diary Slot, Diary freezes every Meal Option off
 82. As a coach, I want deleting a Template to leave assigned Client Plans unchanged, so that Assignment remains a copy operation.
 83. As a client, I want deleting a Client Plan to leave Diary history unchanged, so that programming lifecycle does not erase intake.
 84. As a coach, I want Template results to include their active assigned-client count, so that reuse is visible without stored counters.
-85. As a Workbench user, I want Coverage resolved in a bounded client batch, so that client lists do not issue one plan query per client.
+85. As a coach browsing clients, I want Coverage resolved in a bounded client batch, so that client lists do not issue one plan query per client.
 86. As a client, I want one Nutrition Day result for a local date, so that planned guidance and actual intake cannot disagree between screens.
 87. As an authorized coach or business owner, I want to read the same Nutrition Day vocabulary as the client, so that coaching views tell the same story.
 88. As a client, I want unstarted slots on my local day to show live guidance without a compliance status, so that inactivity is not classified prematurely.
@@ -248,7 +248,7 @@ On the first eligible write to a Diary Slot, Diary freezes every Meal Option off
 * A partial unique rule permits at most one unarchived incomplete Client Plan per client. An exclusion rule rejects overlapping unarchived Coverage, treating a missing end date as infinity.
 * Business owners may mutate every Client Plan in the business. A coach may mutate a Client Plan only while that coach coaches the client. Creator identity does not grant access after that relationship ends.
 * Template collection results derive the distinct count of unarchived Client Plans originating from each Template. The count is a read projection.
-* Programming exposes one bounded batch Coverage projection for Workbench and client-list callers.
+* Programming exposes one bounded batch Coverage projection for client-list callers.
 
 ### Meal Slot vocabulary and presentation
 

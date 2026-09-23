@@ -208,7 +208,7 @@ export function Nutrition() {
                 className="size-5"
                 aria-hidden="true"
               />
-              Meal saved.
+              Meal shared.
             </p>
           )}
           <DayOverview day={day} />
@@ -280,7 +280,7 @@ function DayOverview({day}: {day: Day}) {
                   {slot.options.find((option) => option.meal_id === slot.meal_id)?.meal_name ?? 'Your meal'}
                 </span>
                 <span className="block text-sm text-muted-foreground">
-                  {slot.revision > 0 ? 'Saved' : 'Not recorded'}
+                  {slot.shared_at ? 'Shared' : slot.revision > 0 ? 'Saved draft' : 'Not recorded'}
                   {slot.logged_calories !== null ? ` · ${slot.logged_calories} kcal recorded` : ''}
                 </span>
               </span>

@@ -67,7 +67,7 @@ The fresh iPhone form regression passes. The account regression exposed a separa
 keyboard-open first-tap Save failure; Personal details opts into preventFocusOnPress
 and its test now checks actual keyboard bounds before tapping. The corrected iPhone
 auth/profile/save/restart/logout scenario passes in 42.071 seconds. Account browser
-checks and goal recovery also pass; RM-240 records the account consumer.
+checks also pass; RM-240 records the account consumer.
 
 The final migration fixtures mark the stored access session expired. iOS and Android
 then authenticate with the refresh token and persist a fresh access session before the
@@ -78,7 +78,7 @@ offline form/workout and logout sequence on the final account-button bundle.
 
 
 Final checkpoint gates pass: strict client build/native sync, both native builds, Biome,
-check-rm and full backend precommit (1,846 tests). The connected nutrition, weight/goal
+check-rm and full backend precommit (1,846 tests). The connected nutrition
 and messaging suites pass on both platforms with the secure-session bundle. Startup read
 failures now expose an explicit Try again mobile screen and retain the account/drafts;
 its browser failure/recovery probe passes at 375/768/1280. See final-audit.md.

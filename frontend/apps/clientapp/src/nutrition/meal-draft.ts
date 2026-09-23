@@ -40,6 +40,7 @@ export type MealDraft = {
   slot: MealSlot;
   revision: number;
   mealId: string | null;
+  noteToCoach: string;
   entries: MealEntry[];
   attempt: DaySlotInput | null;
 };
@@ -51,6 +52,7 @@ export function initialMealDraft(date: string, slot: MealSlot, saved?: Nutrition
     slot,
     revision: saved?.revision ?? 0,
     mealId: saved?.meal_id ?? null,
+    noteToCoach: saved?.note_to_coach ?? '',
     attempt: null,
     entries:
       saved?.rows.map((row) => ({
@@ -95,6 +97,8 @@ export function chooseAlternative(draft: MealDraft, option: NutritionDayOption):
 export function mealInput(draft: MealDraft): DaySlotInput {
   return {
     meal_slot: draft.slot,
+    share: true,
+    note_to_coach: draft.noteToCoach.trim() || null,
     meal_id: draft.mealId,
     expected_revision: draft.revision,
     entries: draft.entries
@@ -198,7 +202,17 @@ function parseAttempt(value: unknown): DaySlotInput | null {
     }
     entries.push(entry);
   }
-  return {meal_slot: value.meal_slot, meal_id: value.meal_id, expected_revision: value.expected_revision, entries};
+  if ('note_to_coach' in value && !nullableString(value.note_to_coach)) {
+    return null;
+  }
+  return {
+    meal_slot: value.meal_slot,
+    share: true,
+    note_to_coach: 'note_to_coach' in value && typeof value.note_to_coach === 'string' ? value.note_to_coach : null,
+    meal_id: value.meal_id,
+    expected_revision: value.expected_revision,
+    entries,
+  };
 }
 export function parseMealDraft(value: unknown, date: string, slot: MealSlot): MealDraft | null {
   if (
@@ -253,7 +267,16 @@ export function parseMealDraft(value: unknown, date: string, slot: MealSlot): Me
   if (new Set(entries.map((entry) => entry.input.id)).size !== entries.length) {
     return null;
   }
-  const draft: MealDraft = {version: 1, date, slot, revision: value.revision, mealId: value.mealId, entries, attempt};
+  const draft: MealDraft = {
+    version: 1,
+    date,
+    slot,
+    revision: value.revision,
+    mealId: value.mealId,
+    noteToCoach: 'noteToCoach' in value && typeof value.noteToCoach === 'string' ? value.noteToCoach : '',
+    entries,
+    attempt,
+  };
   if (attempt) {
     try {
       if (JSON.stringify(mealInput(draft)) !== JSON.stringify(attempt)) {

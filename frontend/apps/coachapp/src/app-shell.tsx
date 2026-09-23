@@ -1,4 +1,4 @@
-import {Building2, Compass, CreditCard, Globe, LogOut, UserRound, UsersRound} from 'lucide-react';
+import {Building2, Compass, CreditCard, LogOut, UserRound, UsersRound} from 'lucide-react';
 import {useEffect, useRef} from 'react';
 import {flushSync} from 'react-dom';
 import {Link, matchPath, NavLink, Outlet, useLocation, useNavigate} from 'react-router-dom';
@@ -132,13 +132,6 @@ export function AppShell() {
                   Business settings
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onAction={() => navigate(routes.coachingPage)}
-                  textValue="Coaching page"
-                >
-                  <Globe aria-hidden="true" />
-                  Coaching page
-                </DropdownMenuItem>
-                <DropdownMenuItem
                   onAction={() => navigate(routes.billing)}
                   textValue="Billing"
                 >
@@ -179,12 +172,6 @@ export function AppShell() {
         onFocusCapture={(event) => event.target.scrollIntoView({block: 'nearest', inline: 'nearest'})}
       >
         <NavLink
-          to={routes.workbench}
-          className={({isActive}) => (isActive ? 'app-navigation-link active' : 'app-navigation-link')}
-        >
-          Workbench
-        </NavLink>
-        <NavLink
           to={routes.home}
           end
           className={({isActive}) =>
@@ -197,12 +184,6 @@ export function AppShell() {
           Clients
         </NavLink>
         <NavLink
-          to={routes.applications}
-          className={({isActive}) => (isActive ? 'app-navigation-link active' : 'app-navigation-link')}
-        >
-          Applications
-        </NavLink>
-        <NavLink
           to={routes.conversations}
           className={({isActive}) =>
             isActive || matchPath(routes.clientConversation, pathname)
@@ -211,18 +192,6 @@ export function AppShell() {
           }
         >
           Messages
-        </NavLink>
-        <NavLink
-          to={routes.checkInResponses}
-          className={({isActive}) => (isActive ? 'app-navigation-link active' : 'app-navigation-link')}
-        >
-          Check-ins
-        </NavLink>
-        <NavLink
-          to={routes.forms}
-          className={({isActive}) => (isActive ? 'app-navigation-link active' : 'app-navigation-link')}
-        >
-          Forms
         </NavLink>
         <NavLink
           to={routes.trainingPlans}

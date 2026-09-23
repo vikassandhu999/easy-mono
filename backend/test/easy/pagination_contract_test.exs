@@ -2,7 +2,6 @@ defmodule Easy.PaginationContractTest do
   use Easy.DataCase, async: true
 
   alias Easy.Chat
-  alias Easy.Forms.Submissions
 
   setup do
     coach = insert(:coach)
@@ -122,28 +121,5 @@ defmodule Easy.PaginationContractTest do
 
     assert length(remainder) == 5
     assert MapSet.size(MapSet.new(page ++ remainder, & &1.id)) == 105
-  end
-
-  test "unreviewed check-ins allow pages larger than the default", %{coach: coach, client: client, ctx: ctx} do
-    template = insert(:form_template, business: coach.business, purpose: :check_in)
-
-    for _ <- 1..25 do
-      assignment =
-        insert(:form_assignment,
-          business: coach.business,
-          client: client,
-          form_template: template,
-          purpose: :check_in,
-          status: :completed
-        )
-
-      insert(:form_submission, business: coach.business, client: client, form_assignment: assignment)
-    end
-
-    assert {:ok, %{count: 25, submissions: default_page}} = Submissions.list_unreviewed_check_ins(ctx)
-    assert length(default_page) == 20
-
-    assert {:ok, %{count: 25, submissions: expanded}} = Submissions.list_unreviewed_check_ins(ctx, limit: 25)
-    assert length(expanded) == 25
   end
 end

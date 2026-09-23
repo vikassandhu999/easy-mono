@@ -4,13 +4,13 @@
 default:
     @just --list
 
-# frontend: live coach app (v2) dev server
+# frontend: coach app dev server
 web:
     cd frontend && pnpm dev:coachapp
 
-# frontend: new coach app dev server
+# frontend: coach app dev server (alias)
 coach:
-    cd frontend && pnpm dev:coachapp-next
+    cd frontend && pnpm dev:coachapp
 
 # frontend: client app dev server
 client:
@@ -41,7 +41,6 @@ setup:
 lint:
     cd frontend && pnpm lint
     ./scripts/check-rm.sh
-    ./scripts/check-ui-contract.sh
     ./scripts/check-theme-selectors.sh
     ./scripts/check-color-utilities.sh
 
@@ -74,9 +73,9 @@ openapi:
 api-docs: openapi
     cd frontend/openapi && python3 -m http.server 4444
 
-# regenerate the OpenAPI spec + both app clients end-to-end
-# Both apps: openapi-typescript type schema (React Query hooks are hand-written).
+# regenerate the OpenAPI spec + all retained app clients end-to-end
+# Apps use an openapi-typescript type schema (React Query hooks are hand-written).
 gen-api: openapi
-    cd frontend && pnpm --filter @easy/coachapp gen:api && pnpm --filter @easy/clientapp gen:api && pnpm --filter coachapp-v2 gen:api && pnpm --filter clientapp-v2 gen:api
+    cd frontend && pnpm --filter @easy/coachapp gen:api && pnpm --filter @easy/clientapp gen:api && pnpm --filter clientapp-v2 gen:api
     cd backend && mix typed_routes.gen
-    cd frontend && pnpm exec biome check --write apps/coachapp/src/api/schema.ts apps/clientapp/src/api/schema.ts apps/coachapp-v2/src/api/schema.ts apps/clientapp-v2/src/api/schema.ts
+    cd frontend && pnpm exec biome check --write apps/coachapp/src/api/schema.ts apps/clientapp/src/api/schema.ts apps/clientapp-v2/src/api/schema.ts

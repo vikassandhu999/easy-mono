@@ -2,8 +2,6 @@ defmodule Easy.Nutrition.Diary.CorrectionPolicy do
   alias Easy.Clients.Client
   alias Easy.LocalCalendar
 
-  @correction_days 7
-
   @spec local_today(Client.t() | String.t(), DateTime.t()) :: Date.t()
   def local_today(%Client{} = client, %DateTime{} = now) do
     Client.local_date(client, now)
@@ -15,17 +13,13 @@ defmodule Easy.Nutrition.Diary.CorrectionPolicy do
 
   @spec write_eligible?(Date.t(), Date.t()) :: boolean()
   def write_eligible?(%Date{} = date, %Date{} = today) do
-    Date.diff(today, date) in 0..@correction_days
+    Date.compare(date, today) != :gt
   end
 
   @spec validate_write(Date.t(), Date.t()) ::
-          :ok | {:error, :future_date | :outside_correction_window}
+          :ok | {:error, :future_date}
   def validate_write(%Date{} = date, %Date{} = today) do
-    cond do
-      Date.compare(date, today) == :gt -> {:error, :future_date}
-      write_eligible?(date, today) -> :ok
-      true -> {:error, :outside_correction_window}
-    end
+    if write_eligible?(date, today), do: :ok, else: {:error, :future_date}
   end
 
   @spec validate_switch(Date.t(), Date.t()) ::

@@ -10,8 +10,6 @@ defmodule EasyWeb.Types.ClientProfile do
           required(:last_name) => String.t() | nil,
           required(:email) => String.t() | nil,
           required(:phone) => String.t() | nil,
-          required(:goal_weight_value) => Decimal.t() | nil,
-          required(:goal_weight_unit) => String.t() | nil,
           required(:default_weight_unit) => :kg | :lbs,
           required(:timezone) => String.t(),
           required(:local_date) => Date.t(),
@@ -31,9 +29,7 @@ defmodule EasyWeb.Types.ClientProfile do
   @type update :: %{
           optional(:first_name) => String.t() | nil,
           optional(:last_name) => String.t() | nil,
-          optional(:phone) => String.t() | nil,
-          optional(:goal_weight_value) => number() | nil,
-          optional(:goal_weight_unit) => String.t() | nil
+          optional(:phone) => String.t() | nil
         }
 
   @spec format(Easy.ClientAccount.account_profile()) :: t()
@@ -44,8 +40,6 @@ defmodule EasyWeb.Types.ClientProfile do
       last_name: client.last_name,
       email: client.email,
       phone: client.phone,
-      goal_weight_value: client.goal_weight_value,
-      goal_weight_unit: format_unit(client.goal_weight_unit),
       default_weight_unit: default_weight_unit,
       timezone: profile.timezone,
       local_date: profile.local_date,
@@ -66,7 +60,4 @@ defmodule EasyWeb.Types.ClientProfile do
       business_name: business.name
     }
   end
-
-  defp format_unit(nil), do: nil
-  defp format_unit(unit), do: Atom.to_string(unit)
 end

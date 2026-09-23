@@ -14,9 +14,7 @@ defmodule EasyWeb.Types.CoachProfile do
             required(:id) => String.t(),
             required(:name) => String.t(),
             required(:slug) => String.t(),
-            required(:whatsapp_number) => String.t() | nil,
-            required(:dashboard_setup_hidden_at) => DateTime.t() | nil,
-            required(:dashboard_setup_hidden_reason) => :dismissed | :completed | nil
+            required(:whatsapp_number) => String.t() | nil
           }
         }
 
@@ -46,9 +44,7 @@ defmodule EasyWeb.Types.CoachProfile do
       id: business.id,
       name: business.name,
       slug: business.handle,
-      whatsapp_number: business.whatsapp_number,
-      dashboard_setup_hidden_at: business.dashboard_setup_hidden_at,
-      dashboard_setup_hidden_reason: business.dashboard_setup_hidden_reason
+      whatsapp_number: business.whatsapp_number
     }
   end
 end

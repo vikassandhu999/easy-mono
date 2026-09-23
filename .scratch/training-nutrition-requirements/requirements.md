@@ -189,7 +189,7 @@ These points need an explicit decision if the greenfield product is intended to 
 
 ## Scope exclusions
 
-No requirements are inferred for automatic exercise progression, automatic calorie or macro recommendations, target enforcement, nutrition balancing, template-to-client synchronization, coach-authored intake, barcode or image-based food logging, external food search, shopping lists, recipe subrecipes, custom meal slots, meal reminders, multiple workout occurrences per nutrition day, or offline conflict merging. Broader onboarding, billing, messaging, and check-in behavior is outside the two extracted contexts except for the assignment integration stated above.
+No requirements are inferred for automatic exercise progression, automatic calorie or macro recommendations, target enforcement, nutrition balancing, template-to-client synchronization, coach-authored intake, barcode or image-based food logging, external food search, shopping lists, recipe subrecipes, custom meal slots, meal reminders, multiple workout occurrences per nutrition day, or offline conflict merging. Broader onboarding, billing and messaging behavior is outside the two extracted contexts except for the assignment integration stated above.
 
 ## Source evidence
 

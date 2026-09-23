@@ -235,10 +235,10 @@ A new plug that must appear on the client is added to that table in the same cha
 
 `mix typed_routes.gen` overwrites:
 
-* `frontend/apps/coachapp-v2/src/api/schema.ts` from `/v1/coach`, `/v1/businesses`, `/v1/auth`, `/v1/public`, `/api`
-* `frontend/apps/clientapp-v2/src/api/schema.ts` from `/v1/client`, `/v1/auth`, `/v1/public`, `/api`
+* `frontend/apps/coachapp/src/api/schema.ts` from `/v1/coach`, `/v1/businesses`, `/v1/auth`, `/v1/public`, `/api`
+* `frontend/apps/clientapp/src/api/schema.ts` and `frontend/apps/clientapp-v2/src/api/schema.ts` from `/v1/client`, `/v1/auth`, `/v1/public`, `/api`
 
-Those prefixes are the live split. `/v1/webhooks` is in neither file.
+Those prefixes are the live split. `/v1/webhooks` is excluded from these files.
 
 `mix typed_routes.gen --check` exits non-zero on drift. CI runs `--check`. `just gen-api` points at this task.
 

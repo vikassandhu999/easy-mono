@@ -3,7 +3,7 @@ defmodule Easy.Training.RewriteVerificationTest do
 
   alias Easy.Training.{Execution, Library, PerformedSets, PlanReader, Programming}
 
-  test "Programming and Execution carry one Training design from Template to immutable history" do
+  test "Programming and Execution carry one Training design from Template to correctable history with frozen prescription" do
     coach = insert(:coach)
     client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach, stage: :onboarding)
     squat = insert(:exercise, business: coach.business, name: "Back Squat")
@@ -84,6 +84,15 @@ defmodule Easy.Training.RewriteVerificationTest do
     assert {:ok, history} = Execution.get_client_session(client_ctx, completed.id)
     assert history.prescription_snapshot == snapshot
     assert [%{exercise_name: "Back Squat", exercise_id: nil}] = history.performed_sets
-    assert {:error, :conflict} = Execution.update_client_session(client_ctx, history.id, %{notes: "rewrite"})
+
+    assert {:error, %Ecto.Changeset{action: :stale_revision}} =
+             Execution.update_client_session(client_ctx, history.id, %{expected_revision: history.revision - 1, notes: "rewrite"})
+
+    assert {:ok, corrected} =
+             Execution.update_client_session(client_ctx, history.id, %{expected_revision: history.revision, soreness_rating: 2})
+
+    assert corrected.prescription_snapshot == snapshot
+    assert corrected.closed_at == history.closed_at
+    assert corrected.soreness_rating == 2
   end
 end

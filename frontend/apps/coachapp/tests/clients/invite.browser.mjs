@@ -2,11 +2,10 @@ import {mkdir} from 'node:fs/promises';
 import {chromium, expect, request} from '@playwright/test';
 import {signOut} from '../auth/browser-helpers.mjs';
 import {checkMobileFoundation} from './mobile-layout.mjs';
-import {checkClientOverview} from './overview-flow.mjs';
 
 const baseURL = process.env.COACH_APP_URL || 'http://localhost:2022';
 const clientURL = process.env.CLIENT_APP_URL || 'http://localhost:1314';
-const api = await request.newContext({baseURL: 'http://localhost:4000'});
+const api = await request.newContext({baseURL: process.env.COACHAPP_API_URL || 'http://localhost:4000'});
 const browser = await chromium.launch();
 const errors = [];
 await mkdir('tests/clients/artifacts', {recursive: true});
@@ -46,24 +45,11 @@ try {
     await expect(page.getByRole('heading', {name: 'Clients', exact: true})).toBeVisible();
     await expect(page.getByText('Invite your first client')).toBeVisible();
     await expect(page.getByRole('button', {name: 'Your account', exact: true})).toBeVisible();
-    await page.route('**/v1/coach/form-templates/default-intake', (route) =>
-      route.fulfill({status: 503, json: {error_code: 'unavailable', error_message: 'Unavailable'}}),
-    );
     await page.getByRole('link', {name: 'Invite client', exact: true}).click();
-    await expect(page.getByRole('alert')).toBeVisible();
-    await expect(page.getByRole('button', {name: 'Send invitation', exact: true})).toBeDisabled();
-    await page.unroute('**/v1/coach/form-templates/default-intake');
-    await page.getByRole('button', {name: 'Try again', exact: true}).click();
-
     await expect(page.getByRole('heading', {name: 'Invite client', exact: true})).toBeVisible();
-    await expect(page.getByRole('heading', {name: 'Intake', exact: true})).toBeVisible();
     if (width === 375) {
       await checkMobileFoundation(page);
     }
-    await page.getByRole('button', {name: 'Preview intake', exact: true}).click();
-    await expect(page.getByText('What does success look like in 3 months?', {exact: true})).toBeVisible();
-    await page.screenshot({path: `tests/clients/artifacts/preview-${width}.png`, fullPage: true});
-    await page.getByRole('button', {name: 'Close preview', exact: true}).click();
     await page.getByRole('button', {name: 'Send invitation', exact: true}).click();
     await expect(page.getByText('Enter first name.', {exact: true})).toBeVisible();
     await expect(page.getByText('Enter email.', {exact: true})).toBeVisible();
@@ -86,7 +72,6 @@ try {
     await page.getByRole('button', {name: 'Send invitation', exact: true}).click();
     await expect(page.getByRole('heading', {name: 'Alex Morgan', exact: true})).toBeVisible();
     await expect(page.getByText('Waiting for acceptance', {exact: true})).toBeVisible();
-    await expect(page.getByText('Available after acceptance', {exact: true})).toBeVisible();
     const detailURL = page.url();
     const originalLink = await page.getByLabel('Invitation link', {exact: true}).inputValue();
     expect(originalLink.startsWith(`${clientURL}/invite/`)).toBe(true);
@@ -137,24 +122,13 @@ try {
       (response) => response.url().endsWith('/v1/auth/accept-invite/verify') && response.status() === 200,
     );
     await clientPage.getByRole('button', {name: 'Verify', exact: true}).click();
-    const clientTokens = await (await clientLogin).json();
+    expect((await clientLogin).ok()).toBe(true);
     await expect(clientPage).toHaveURL(`${clientURL}/`);
-    await clientPage.getByRole('button', {name: 'Fill intake form', exact: true}).click();
-    await expect(clientPage.getByRole('textbox', {name: /What does success look like in 3 months/})).toBeVisible();
-    await clientPage.screenshot({path: `tests/clients/artifacts/client-intake-${width}.png`, fullPage: true});
     await page.getByRole('button', {name: 'Refresh status', exact: true}).click();
     await expect(page.getByText('Invitation accepted', {exact: true})).toBeVisible();
-    await expect(page.getByRole('heading', {name: 'Intake pending', exact: true})).toBeVisible();
+    await expect(page.getByRole('link', {name: 'Messages', exact: true}).last()).toBeVisible();
     await expect(page.getByRole('button', {name: 'Resend invitation', exact: true})).toHaveCount(0);
     await expect(page.getByLabel('Invitation link', {exact: true})).toHaveCount(0);
-    await checkClientOverview({
-      page,
-      api,
-      coachToken: tokens.access_token,
-      clientToken: clientTokens.access_token,
-      clientId: detailURL.split('/').at(-1),
-      width,
-    });
     await clientContext.close();
     if (width === 375) {
       await page.goto('/clients/invite');
@@ -192,7 +166,7 @@ try {
       release.resolve();
       await settled;
       await page.waitForLoadState('networkidle');
-      await expect(page).toHaveURL(`${baseURL}/`);
+      await expect(page).toHaveURL(`${baseURL}/clients`);
       expect(
         await page.evaluate(async (id) => {
           const {queryClient} = await import('/src/api/query-client.ts');
@@ -203,9 +177,7 @@ try {
       console.log('A delayed invitation cannot repopulate another account or navigate it to the previous client.');
     }
     await context.close();
-    console.log(
-      `Invite, preview, retry, reload, resend, copy recovery, client acceptance and intake: ${width}px passed.`,
-    );
+    console.log(`Invite, retry, reload, resend, copy recovery, client acceptance: ${width}px passed.`);
   }
   expect(errors).toEqual([]);
 } finally {

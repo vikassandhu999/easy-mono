@@ -1,7 +1,7 @@
 import {Socket} from 'phoenix';
 import {useEffect, useState} from 'react';
 import {refreshSession} from './client';
-import {conversationKeys, workbenchKeys} from './keys';
+import {conversationKeys} from './keys';
 import {queryClient} from './query-client';
 import {getSession, subscribeSession} from './session';
 
@@ -16,7 +16,6 @@ export function useConversationUpdates() {
     const refresh = () => {
       if (current()) {
         queryClient.invalidateQueries({queryKey: conversationKeys.all});
-        queryClient.invalidateQueries({queryKey: workbenchKeys.all});
       }
     };
     function reconnect() {

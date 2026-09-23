@@ -26,7 +26,6 @@ defmodule Easy.Nutrition.Diary do
           PlanReader.read_error()
           | :client_inactive
           | :future_date
-          | :outside_correction_window
           | :cannot_switch_past_slot
           | Ecto.Changeset.t()
 
@@ -57,6 +56,7 @@ defmodule Easy.Nutrition.Diary do
     with {:ok, client} <- load_active_client(ctx),
          :ok <- Input.validate_slots(slots) do
       Repo.snapshot(fn -> save_day(ctx, client, date, slots) end)
+      |> then(&Easy.ChatRecordNotes.notify_result(ctx, &1))
     end
   end
 
@@ -99,11 +99,37 @@ defmodule Easy.Nutrition.Diary do
          {:ok, slot} <- start_slot(ctx, client, slot, now),
          :ok <- validate_selection(slot, draft.meal_id, now),
          {:ok, entries} <- EntryResolver.resolve(ctx, slot.document, draft.meal_id, draft.entries) do
-      slot
-      |> DiarySlot.update_changeset(%{meal_id: draft.meal_id, entries: entries})
-      |> persist_slot()
+      changeset =
+        slot
+        |> DiarySlot.update_changeset(%{meal_id: draft.meal_id, entries: entries})
+        |> publication(draft, now)
+
+      with {:ok, saved} <- persist_slot(changeset),
+           {:ok, _} <- share_note(ctx, existing, saved, Map.get(draft, :share, false)) do
+        {:ok, saved}
+      end
     end
   end
+
+  defp publication(changeset, %{share: true} = draft, now) do
+    changeset = changeset |> Ecto.Changeset.cast(draft, [:note_to_coach]) |> Ecto.Changeset.validate_length(:note_to_coach, max: 4000)
+
+    if draft.entries == [] and is_nil(changeset.data.shared_at) do
+      Ecto.Changeset.add_error(changeset, :entries, "record food before sharing a meal")
+    else
+      Ecto.Changeset.put_change(changeset, :shared_at, changeset.data.shared_at || now)
+    end
+  end
+
+  defp publication(changeset, _draft, _now), do: changeset
+
+  defp share_note(ctx, previous, saved, true) do
+    if is_nil(previous) or is_nil(previous.shared_at) or previous.note_to_coach != saved.note_to_coach,
+      do: Easy.ChatRecordNotes.share(ctx, :meal, saved, saved.note_to_coach),
+      else: {:ok, :unchanged}
+  end
+
+  defp share_note(_ctx, _previous, _saved, _share), do: {:ok, :quiet}
 
   defp persist_slot(changeset) do
     with {:error, %{errors: errors}} = error <- Repo.insert_or_update(changeset) do

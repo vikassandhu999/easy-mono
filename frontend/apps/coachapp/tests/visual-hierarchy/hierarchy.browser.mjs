@@ -20,11 +20,9 @@ function verifyHierarchy(name, metrics) {
   const order = {
     training: ['Build a stronger foundation', 'Full body A', 'Goblet squat'],
     nutrition: ['Everyday balanced meals', 'Daily targets', '2200'],
-    form: ['Section 1', 'What went well this week?'],
     recipe: ['Overnight breakfast oats', 'Ingredients', 'Rolled oats', '2'],
     food: ['Rolled oats', 'Nutrition per 100 g', '380'],
-    'coaching-page': ['Build strength that fits your life', 'Your introduction'],
-    client: ['Alex Morgan', 'Check-ins'],
+    client: ['Alex Morgan', 'Training'],
     'client-details': ['Alex Morgan', 'Contact details'],
   }[name];
   if (!order) {
@@ -120,21 +118,6 @@ try {
       target_protein_g: 140,
     })
   ).data;
-  const form = (
-    await send('post', '/v1/coach/form-templates', {
-      name: 'Your weekly check-in',
-      purpose: 'check_in',
-      sections: [
-        {
-          title: 'Progress and recovery',
-          questions: [
-            {id: crypto.randomUUID(), label: 'What went well this week?', type: 'text', required: true},
-            {id: crypto.randomUUID(), label: 'What would you like help with?', type: 'text', required: false},
-          ],
-        },
-      ],
-    })
-  ).data;
   const person = (
     await send('post', '/v1/coach/clients/invite', {
       first_name: 'Alex',
@@ -163,11 +146,9 @@ try {
     const screens = [
       ['training', `/training-plans/${training.id}`, 'Plan name · edit anytime'],
       ['nutrition', `/nutrition-plans/${nutrition.id}`, 'Plan name'],
-      ['form', `/forms/${form.id}`, 'Form name'],
       ['recipe', `/nutrition-recipes/${recipe.id}`, 'Recipe name'],
       ['food', `/nutrition-foods/${food.id}`, 'Food name'],
       ['exercise', `/training-exercises/${exercises[0].id}`, 'Exercise name'],
-      ['coaching-page', '/coaching-page/edit', 'What can you help people achieve?'],
       ['clients', '/', 'Search clients'],
       ['client', `/clients/${person.id}`, null],
       ['client-details', `/clients/${person.id}/profile`, 'Contact email'],
@@ -183,9 +164,6 @@ try {
         await page.getByRole('button', {name: 'Add meal', exact: true}).click();
         await page.getByLabel('Meal name', {exact: true}).fill('Oats and fruit');
         await page.getByRole('button', {name: 'Create day variation', exact: true}).click();
-      }
-      if (name === 'coaching-page') {
-        await page.getByLabel(label, {exact: true}).fill('Build strength that fits your life');
       }
       await page.evaluate(() => {
         document.activeElement?.blur();
@@ -231,7 +209,6 @@ try {
   const fixtures = [
     `/v1/coach/training-plans/${training.id}?expected_revision=${training.revision}`,
     `/v1/coach/nutrition-plans/${nutrition.id}?expected_revision=${nutrition.revision}`,
-    `/v1/coach/form-templates/${form.id}?expected_revision=${form.revision}`,
     `/v1/coach/nutrition-recipes/${recipe.id}`,
     `/v1/coach/nutrition-foods/${food.id}`,
     ...exercises.map((exercise) => `/v1/coach/training-exercises/${exercise.id}`),

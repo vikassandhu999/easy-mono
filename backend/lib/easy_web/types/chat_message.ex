@@ -19,13 +19,15 @@ defmodule EasyWeb.Types.Attachment do
         }
 end
 
-defmodule EasyWeb.Types.FormSubmissionEmbedSnapshot do
+defmodule EasyWeb.Types.ChatRecordSnapshot do
   use EasyWeb.Type
 
   @type t :: %{
-          required(:form_assignment_id) => String.t(),
           required(:title) => String.t(),
-          required(:submitted_at) => DateTime.t()
+          optional(:revision) => pos_integer(),
+          optional(:occurred_on) => Date.t(),
+          optional(:meal_slot) => String.t(),
+          optional(:recorded_at) => DateTime.t()
         }
 end
 
@@ -33,9 +35,9 @@ defmodule EasyWeb.Types.ChatMessageEmbed do
   use EasyWeb.Type
 
   @type t :: %{
-          required(:type) => :form_submission,
+          required(:type) => :training_session | :meal,
           required(:id) => String.t(),
-          required(:snapshot) => EasyWeb.Types.FormSubmissionEmbedSnapshot.t()
+          required(:snapshot) => EasyWeb.Types.ChatRecordSnapshot.t()
         }
 end
 
@@ -43,8 +45,9 @@ defmodule EasyWeb.Types.ChatMessageEmbedRequest do
   use EasyWeb.Type
 
   @type t :: %{
-          required(:type) => :form_submission,
-          required(:id) => String.t()
+          required(:type) => :training_session | :meal,
+          required(:id) => String.t(),
+          optional(:revision) => pos_integer()
         }
 end
 
@@ -59,6 +62,7 @@ defmodule EasyWeb.Types.ChatMessage do
           required(:conversation_id) => String.t(),
           required(:sender_type) => :coach | :client,
           required(:sender_id) => String.t(),
+          required(:sender_name) => String.t() | nil,
           required(:request_id) => String.t() | nil,
           required(:body) => String.t() | nil,
           required(:attachments) => [EasyWeb.Types.Attachment.t()],
@@ -73,6 +77,7 @@ defmodule EasyWeb.Types.ChatMessage do
 
   @type coach_create :: %{
           optional(:body) => String.t() | nil,
+          optional(:request_id) => Ecto.UUID.t(),
           optional(:attachment_ids) => [String.t()],
           optional(:embed) => EasyWeb.Types.ChatMessageEmbedRequest.t() | nil
         }
@@ -82,15 +87,16 @@ defmodule EasyWeb.Types.ChatMessage do
   @type client_create :: %{
           optional(:body) => String.t() | nil,
           optional(:request_id) => Ecto.UUID.t(),
-          optional(:attachment_ids) => [String.t()]
+          optional(:attachment_ids) => [String.t()],
+          optional(:embed) => EasyWeb.Types.ChatMessageEmbedRequest.t() | nil
         }
 
   @spec format(Message.t()) :: t()
   def format(%Message{embed_type: nil} = message), do: message_data(message, nil)
 
-  def format(%Message{embed_type: :form_submission} = message) do
+  def format(%Message{} = message) do
     embed = %{
-      type: :form_submission,
+      type: message.embed_type,
       id: message.embed_id,
       snapshot: message.embed_snapshot
     }
@@ -104,6 +110,7 @@ defmodule EasyWeb.Types.ChatMessage do
       conversation_id: message.conversation_id,
       sender_type: message.sender_type,
       sender_id: message.sender_id,
+      sender_name: message.sender_name,
       request_id: message.request_id,
       body: message.body,
       attachments: Enum.map(message.attachments, &Attachment.take/1),

@@ -4,7 +4,6 @@ defmodule Easy.ChatMessages do
   alias Easy.Chat.Message
   alias Easy.Chat.MessageAttachment
   alias Easy.Ctx
-  alias Easy.Forms.Submissions
   alias Easy.Repo
   alias Easy.Result
 
@@ -77,6 +76,7 @@ defmodule Easy.ChatMessages do
       |> Message.for_business(business_id)
       |> Message.for_ids(ids)
       |> Message.include_attachments()
+      |> Message.include_sender()
       |> Repo.all()
       |> Map.new(&{&1.id, &1})
 
@@ -87,6 +87,8 @@ defmodule Easy.ChatMessages do
           {:ok, Message.t()} | {:error, :not_found | :conflict | Ecto.Changeset.t()}
   def send_message(%Ctx{} = ctx, conversation, {sender_type, sender_id}, attrs)
       when sender_type in [:coach, :client] do
+    broadcast? = not Repo.in_transaction?()
+
     base_changeset =
       Message.insert_changeset(ctx.business_id, sender_type, sender_id, conversation.id, attrs)
 
@@ -96,12 +98,12 @@ defmodule Easy.ChatMessages do
          {:ok, candidate} <- Ecto.Changeset.apply_action(changeset, :insert),
          {:ok, {message, created?}} <-
            persist_message(ctx, conversation, changeset, candidate, attachment_ids, embed_id) do
-      if created?, do: broadcast_message(conversation, message)
+      if created? and broadcast?, do: broadcast_message(conversation, message)
       {:ok, message}
     end
   end
 
-  defp persist_message(ctx, conversation, changeset, candidate, attachment_ids, embed_id) do
+  defp persist_message(ctx, _conversation, changeset, candidate, attachment_ids, embed_id) do
     Repo.transact(fn ->
       locked =
         Conversation
@@ -112,7 +114,7 @@ defmodule Easy.ChatMessages do
 
       case locked do
         nil -> {:error, :not_found}
-        _ -> replay_or_insert(ctx, conversation, changeset, candidate, attachment_ids, embed_id)
+        _ -> replay_or_insert(ctx, locked, changeset, candidate, attachment_ids, embed_id)
       end
     end)
   end
@@ -141,6 +143,7 @@ defmodule Easy.ChatMessages do
         message.request_id == ^candidate.request_id
     )
     |> Message.include_attachments()
+    |> Message.include_sender()
     |> Repo.one()
   end
 
@@ -150,7 +153,8 @@ defmodule Easy.ChatMessages do
          {:ok, message} <- changeset |> Message.put_content(attachments, embed) |> Repo.insert(),
          {:ok, _links} <- insert_attachment_links(message, attachments),
          {:ok, :updated} <- update_conversation(conversation, message, attachments) do
-      {:ok, {%{message | attachments: attachments}, true}}
+      [loaded] = load_messages_with_attachments([message.id], ctx.business_id)
+      {:ok, {loaded, true}}
     end
   end
 
@@ -173,22 +177,7 @@ defmodule Easy.ChatMessages do
 
   defp resolve_embed(_ctx, _client_id, nil), do: {:ok, nil}
 
-  defp resolve_embed(ctx, client_id, id) do
-    with {:ok, submission} <- Submissions.get_for_client(ctx, client_id, id) do
-      assignment = submission.form_assignment
-
-      {:ok,
-       %{
-         type: :form_submission,
-         id: submission.id,
-         snapshot: %{
-           "form_assignment_id" => assignment.id,
-           "title" => assignment.form_template.name,
-           "submitted_at" => DateTime.to_iso8601(submission.submitted_at)
-         }
-       }}
-    end
-  end
+  defp resolve_embed(ctx, client_id, reference), do: Easy.ChatRecordReferences.reference(ctx, client_id, reference)
 
   defp insert_attachment_links(message, attachments) do
     attachments
@@ -201,44 +190,20 @@ defmodule Easy.ChatMessages do
   end
 
   defp update_conversation(conversation, message, attachments) do
-    result =
-      Conversation
-      |> where([c], c.id == ^conversation.id and c.business_id == ^conversation.business_id)
-      |> where([c], is_nil(c.last_message_at) or c.last_message_at <= ^message.inserted_at)
-      |> Repo.update_all(
-        set: [
-          last_message_at: message.inserted_at,
-          last_message_preview: Message.preview(message, attachments),
-          last_message_role: message.sender_type,
-          updated_at: DateTime.truncate(message.inserted_at, :second)
-        ]
-      )
-
-    update_waiting_state(conversation, message, result)
+    Conversation
+    |> where([c], c.id == ^conversation.id and c.business_id == ^conversation.business_id)
+    |> where([c], is_nil(c.last_message_at) or c.last_message_at <= ^message.inserted_at)
+    |> Repo.update_all(
+      set: [
+        last_message_at: message.inserted_at,
+        last_message_preview: Message.preview(message, attachments),
+        last_message_role: message.sender_type,
+        updated_at: DateTime.truncate(message.inserted_at, :second)
+      ]
+    )
 
     {:ok, :updated}
   end
-
-  defp update_waiting_state(conversation, %Message{sender_type: :client} = message, {1, _}) do
-    Conversation
-    |> where(
-      [candidate],
-      candidate.id == ^conversation.id and candidate.business_id == ^conversation.business_id and
-        is_nil(candidate.waiting_since)
-    )
-    |> Repo.update_all(set: [waiting_since: message.inserted_at])
-  end
-
-  defp update_waiting_state(conversation, %Message{sender_type: :coach}, {1, _}) do
-    Conversation
-    |> where(
-      [candidate],
-      candidate.id == ^conversation.id and candidate.business_id == ^conversation.business_id
-    )
-    |> Repo.update_all(set: [waiting_since: nil])
-  end
-
-  defp update_waiting_state(_conversation, _message, {0, _}), do: :ok
 
   defp broadcast_message(conversation, message) do
     Phoenix.PubSub.broadcast(Easy.PubSub, "conversation:#{conversation.id}", {:chat_message_created, message})

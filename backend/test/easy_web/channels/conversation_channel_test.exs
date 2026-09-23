@@ -28,27 +28,13 @@ defmodule EasyWeb.ConversationChannelTest do
 
     coach_ctx = Ctx.new(ctx.coach.business_id, ctx.coach.user_id, ctx.coach.id, true)
     attachment = insert(:attachment, business: ctx.coach.business, client: ctx.client)
-    template = insert(:form_template, business: ctx.coach.business)
-
-    assignment =
-      insert(:form_assignment,
-        business: ctx.coach.business,
-        client: ctx.client,
-        form_template: template
-      )
-
-    submission =
-      insert(:form_submission,
-        business: ctx.coach.business,
-        client: ctx.client,
-        form_assignment: assignment
-      )
+    entry = insert(:workout_session, state: :completed, business: ctx.coach.business, client: ctx.client)
 
     {:ok, message} =
       Chat.send_message(coach_ctx, ctx.conversation.id, %{
         body: "hello",
         attachment_ids: [attachment.id],
-        embed: %{type: "form_submission", id: submission.id}
+        embed: %{type: "training_session", id: entry.id}
       })
 
     message_id = message.id
@@ -60,20 +46,18 @@ defmodule EasyWeb.ConversationChannelTest do
       sender_type: :coach,
       attachments: [%{id: ^attachment_id, content_type: "image/jpeg", byte_size: 1024, duration_ms: nil}],
       embed: %{
-        type: :form_submission,
-        id: submission_id,
+        type: :training_session,
+        id: entry_id,
         snapshot: %{
-          "form_assignment_id" => assignment_id,
           "title" => title,
-          "submitted_at" => submitted_at
+          "recorded_at" => recorded_at
         }
       }
     }
 
-    assert submission_id == submission.id
-    assert assignment_id == assignment.id
-    assert title == template.name
-    assert submitted_at == DateTime.to_iso8601(submission.submitted_at)
+    assert entry_id == entry.id
+    assert title == "Workout"
+    assert recorded_at == DateTime.to_iso8601(entry.closed_at)
   end
 
   test "visible coach can join", ctx do

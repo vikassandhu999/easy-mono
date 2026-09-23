@@ -17,6 +17,8 @@ defmodule Easy.Nutrition.DiarySlot do
     field :applied_timezone, :string
     field :has_coverage, :boolean
     field :revision, :integer, default: 0
+    field :shared_at, :utc_datetime
+    field :note_to_coach, :string
     belongs_to :day, DiaryDay, foreign_key: :nutrition_diary_day_id
     belongs_to :business, Business
     belongs_to :client, Client

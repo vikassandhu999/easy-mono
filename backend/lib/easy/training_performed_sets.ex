@@ -24,7 +24,7 @@ defmodule Easy.Training.PerformedSets do
           {:ok, TrainingPerformedSet.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_client_performed_set(%Ctx{} = ctx, set_id, attrs) do
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
-      mutate_client_active_performed_set(ctx.business_id, client_id, set_id, fn set ->
+      mutate_client_performed_set(ctx.business_id, client_id, set_id, attrs, fn set ->
         set
         |> TrainingPerformedSet.update_changeset(attrs)
         |> Repo.update()
@@ -32,21 +32,12 @@ defmodule Easy.Training.PerformedSets do
     end
   end
 
-  @spec delete_client_performed_set(Ctx.t(), String.t()) ::
+  @spec delete_client_performed_set(Ctx.t(), String.t(), map()) ::
           {:ok, TrainingPerformedSet.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def delete_client_performed_set(%Ctx{} = ctx, set_id) do
+  def delete_client_performed_set(%Ctx{} = ctx, set_id, attrs \\ %{}) do
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
-      mutate_client_active_performed_set(ctx.business_id, client_id, set_id, &Repo.delete/1)
+      mutate_client_performed_set(ctx.business_id, client_id, set_id, attrs, &Repo.delete/1)
     end
-  end
-
-  defp lock_client_active_session(business_id, client_id, session_id) do
-    TrainingSession
-    |> TrainingSession.for_client(business_id, client_id)
-    |> TrainingSession.for_state(:active)
-    |> lock("FOR UPDATE")
-    |> Repo.get(session_id)
-    |> ok_or_not_found()
   end
 
   defp create_performed_set(business_id, client_id, session_id, attrs) do
@@ -87,11 +78,13 @@ defmodule Easy.Training.PerformedSets do
 
   defp replay_set(_session, _request, _identity), do: {:error, :conflict}
 
-  defp create_new_set(%TrainingSession{state: :active} = session, attrs, identity) do
-    with {:ok, exercise_id} <- TrainingPerformedSet.exercise_reference(attrs),
+  defp create_new_set(%TrainingSession{state: state} = session, attrs, identity) when state in [:active, :completed] do
+    with :ok <- TrainingSession.check_revision(session, attrs),
+         {:ok, exercise_id} <- TrainingPerformedSet.exercise_reference(attrs),
          {:ok, exercise} <- fetch_visible_exercise(session.business_id, exercise_id),
          {:ok, set} <- insert_performed_set(session, attrs, exercise),
-         :ok <- record_request(set, identity) do
+         :ok <- record_request(set, identity),
+         {:ok, _session} <- session |> TrainingSession.touch_changeset() |> Repo.update() do
       {:ok, set}
     end
   end
@@ -116,27 +109,26 @@ defmodule Easy.Training.PerformedSets do
     |> ok_or_not_found()
   end
 
-  defp fetch_client_active_performed_set(business_id, client_id, set_id) do
-    active_session_ids =
-      TrainingSession
-      |> TrainingSession.for_client(business_id, client_id)
-      |> TrainingSession.for_state(:active)
-      |> select([session], session.id)
+  defp fetch_client_performed_set(business_id, client_id, set_id) do
+    session_ids = TrainingSession |> TrainingSession.for_client(business_id, client_id) |> select([session], session.id)
 
     TrainingPerformedSet
     |> TrainingPerformedSet.for_business(business_id)
-    |> where([set], set.training_session_id in subquery(active_session_ids))
+    |> where([set], set.training_session_id in subquery(session_ids))
     |> TrainingPerformedSet.include_exercise(business_id)
-    |> lock("FOR UPDATE")
     |> Repo.get(set_id)
     |> ok_or_not_found()
   end
 
-  defp mutate_client_active_performed_set(business_id, client_id, set_id, mutation) do
+  defp mutate_client_performed_set(business_id, client_id, set_id, attrs, mutation) do
     Repo.transact(fn ->
-      with {:ok, set} <- fetch_client_active_performed_set(business_id, client_id, set_id),
-           {:ok, _session} <- lock_client_active_session(business_id, client_id, set.training_session_id) do
-        mutation.(set)
+      with {:ok, initial} <- fetch_client_performed_set(business_id, client_id, set_id),
+           {:ok, session} <- lock_client_session(business_id, client_id, initial.training_session_id),
+           :ok <- TrainingSession.check_revision(session, attrs),
+           {:ok, set} <- fetch_client_performed_set(business_id, client_id, set_id),
+           {:ok, result} <- mutation.(set),
+           {:ok, _session} <- session |> TrainingSession.touch_changeset() |> Repo.update() do
+        {:ok, result}
       end
     end)
   end

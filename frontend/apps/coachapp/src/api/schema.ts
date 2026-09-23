@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash bc37589e3b332d93a4a84788bfb4609e1f564013bf5a205476c0a433c5b0f677 */
+/* typed-routes:hash 1604f55f253205773017c1e505b554e59216b8224dc7e53827c5b6db4a7c525c */
 export type Attachment = {
   id: string;
   content_type:
@@ -70,8 +70,6 @@ export type Business = {
   default_weight_unit: 'kg' | 'lbs';
   timezone: string;
   whatsapp_number: string | null;
-  dashboard_setup_hidden_at: string | null;
-  dashboard_setup_hidden_reason: 'dismissed' | 'completed' | null;
   inserted_at: string;
   updated_at: string;
 };
@@ -84,12 +82,12 @@ export type BusinessUpdate = {
   whatsapp_number?: string | null;
   default_weight_unit?: 'kg' | 'lbs';
 };
-export type BusinessUpdateDashboardSetup = {dashboard_setup_hidden_reason: 'dismissed' | 'completed' | null};
 export type ChatMessage = {
   id: string;
   conversation_id: string;
   sender_type: 'coach' | 'client';
   sender_id: string;
+  sender_name: string | null;
   request_id: string | null;
   body: string | null;
   attachments: Array<Attachment>;
@@ -98,11 +96,12 @@ export type ChatMessage = {
 };
 export type ChatMessageCoachCreate = {
   body?: string | null;
+  request_id?: string;
   attachment_ids?: Array<string>;
   embed?: ChatMessageEmbedRequest | null;
 };
-export type ChatMessageEmbed = {type: 'form_submission'; id: string; snapshot: FormSubmissionEmbedSnapshot};
-export type ChatMessageEmbedRequest = {type: 'form_submission'; id: string};
+export type ChatMessageEmbed = {type: 'training_session' | 'meal'; id: string; snapshot: ChatRecordSnapshot};
+export type ChatMessageEmbedRequest = {type: 'training_session' | 'meal'; id: string; revision?: number};
 export type ChatMessageHistory = {
   data: Array<ChatMessage>;
   count: number;
@@ -112,89 +111,13 @@ export type ChatMessageHistory = {
 export type ChatMessageHistoryQuery = {cursor?: string; limit?: number};
 export type ChatMessageListQuery = {before?: string; limit?: number};
 export type ChatMessagePage = {data: Array<ChatMessage>; has_more: boolean};
-export type CheckInAwaitingReviewReason = {
-  code: 'check_in_awaiting_review';
-  submission_id: string;
-  submitted_at: string;
+export type ChatRecordSnapshot = {
+  title: string;
+  revision?: number;
+  occurred_on?: string;
+  meal_slot?: string;
+  recorded_at?: string;
 };
-export type CheckInRequest = {
-  id: string;
-  client_id: string;
-  form_name: string;
-  status: 'assigned' | 'in_progress' | 'missed' | 'completed' | 'dismissed';
-  priority: 'normal' | 'high';
-  due_date: string | null;
-  inserted_at: string;
-  latest_submission_id: string | null;
-};
-export type CheckInRequestIndex = {data: Array<CheckInRequest>; count: number; next_cursor: string | null};
-export type CheckInRequestListQuery = {
-  cursor?: string;
-  limit?: number;
-  search?: string;
-  status?: 'all' | 'outstanding' | 'missed' | 'completed' | 'dismissed';
-};
-export type CheckInReview = {
-  id: string;
-  form_assignment_id: string;
-  question_snapshot: Array<FormSnapshotSection>;
-  answers: {[key: string]: FormAssignmentAnswer};
-  submitted_by_type: 'coach' | 'client' | 'system';
-  submitted_at: string;
-  reviewed_at: string | null;
-  reviewed_by_id: string | null;
-  attachments: Array<{
-    id: string;
-    content_type:
-      | 'image/jpeg'
-      | 'image/png'
-      | 'image/webp'
-      | 'image/heic'
-      | 'video/mp4'
-      | 'video/webm'
-      | 'video/quicktime'
-      | 'audio/webm'
-      | 'audio/mp4'
-      | 'audio/mpeg';
-    byte_size: number;
-    duration_ms: number | null;
-  }>;
-  inserted_at: string;
-  client: {id: string; email: string | null; first_name: string | null; last_name: string | null};
-  form_assignment: FormAssignment;
-};
-export type CheckInReviewHistoryQuery = {
-  cursor?: string;
-  limit?: number;
-  client_id?: string;
-  reviewed?: boolean;
-  search?: string;
-};
-export type CheckInReviewListQuery = {offset?: number; limit?: number};
-export type CheckInSchedule = {
-  id: string;
-  client_id: string;
-  form_template_id: string;
-  frequency: 'once' | 'weekly' | 'biweekly' | 'monthly';
-  next_due_on: string;
-  active: boolean;
-  form_template: FormTemplate;
-  inserted_at: string;
-  updated_at: string;
-};
-export type CheckInScheduleCreate = {
-  form_template_id: string;
-  frequency: 'once' | 'weekly' | 'biweekly' | 'monthly';
-  next_due_on: string;
-};
-export type CheckInScheduleIndex = {data: Array<CheckInSchedule>; count: number; next_cursor: string | null};
-export type CheckInScheduleListQuery = {cursor?: string; limit?: number; search?: string; active?: boolean};
-export type CheckInScheduleUpdate = {
-  frequency?: 'once' | 'weekly' | 'biweekly' | 'monthly';
-  next_due_on?: string;
-  active?: boolean;
-};
-export type CheckInSubmissionIndex = {data: Array<CheckInReview>; count: number; next_cursor: string | null};
 export type Client = {
   id: string;
   local_date: string;
@@ -203,8 +126,6 @@ export type Client = {
   last_name: string | null;
   phone: string | null;
   notes: string | null;
-  goal_weight_value: string | null;
-  goal_weight_unit: 'kg' | 'lbs' | null;
   status: 'active' | 'pending' | 'inactive';
   stage: 'onboarding' | 'coaching';
   inactive_reason: 'manual' | 'subscription_expired' | 'awaiting_seat' | null;
@@ -256,8 +177,6 @@ export type ClientUpdate = {
   last_name?: string | null;
   phone?: string | null;
   notes?: string | null;
-  goal_weight_value?: number | null;
-  goal_weight_unit?: 'kg' | 'lbs' | null;
   status?: 'active' | 'inactive';
   stage?: 'onboarding' | 'coaching' | null;
   subscription_started_on?: string | null;
@@ -271,14 +190,7 @@ export type CoachProfile = {
   email: string;
   phone: string | null;
   is_owner: boolean;
-  business: {
-    id: string;
-    name: string;
-    slug: string;
-    whatsapp_number: string | null;
-    dashboard_setup_hidden_at: string | null;
-    dashboard_setup_hidden_reason: 'dismissed' | 'completed' | null;
-  };
+  business: {id: string; name: string; slug: string; whatsapp_number: string | null};
 };
 export type CoachProfileUpdate = {
   first_name?: string | null;
@@ -294,20 +206,13 @@ export type Conversation = {
   last_message_at: string | null;
   last_message_preview: string | null;
   last_message_role: 'coach' | 'client' | null;
-  waiting_since: string | null;
   unread_count: number;
   inserted_at: string;
   updated_at: string;
 };
 export type ConversationInbox = {data: Array<Conversation>; count: number; next_cursor: string | null};
-export type ConversationInboxQuery = {
-  cursor?: string;
-  limit?: number;
-  search?: string;
-  status?: 'all' | 'waiting' | 'unread';
-};
+export type ConversationInboxQuery = {cursor?: string; limit?: number; search?: string; status?: 'all' | 'unread'};
 export type ConversationListQuery = {offset?: number; limit?: number; search?: string};
-export type ConversationMarkHandled = {expected_last_message_at: string};
 export type ConversationMarkReadQuery = {through?: string};
 export type Day = {
   date: string;
@@ -319,7 +224,6 @@ export type Day = {
   slots: Array<NutritionDaySlot>;
 };
 export type DayListQuery = {date?: string; from?: string; to?: string};
-export type EngagementEndingSoonReason = {code: 'engagement_ending_soon'; ends_on: string};
 export type Equipment = {id: string; name: string; description: string | null};
 export type EquipmentListQuery = {search?: string};
 export type Exercise = {
@@ -466,274 +370,7 @@ export type FoodUpdate = {
   media_id?: string | null;
   serving_sizes?: Array<FoodServingSize>;
 };
-export type FormAssignment = {
-  id: string;
-  client_id: string;
-  form_template_id: string;
-  check_in_schedule_id: string | null;
-  purpose: 'intake' | 'check_in';
-  priority: 'high' | 'normal';
-  status: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
-  due_date: string | null;
-  completed_at: string | null;
-  due_reminder_sent_at: string | null;
-  overdue_reminder_sent_at: string | null;
-  latest_submission: FormSubmission | null;
-  latest_submission_reviewed_at: string | null;
-  form_template: FormTemplate;
-  inserted_at: string;
-  updated_at: string;
-};
-export type FormAssignmentAnswer = string | number | boolean | Array<string> | {services: Array<string>};
-export type FormAssignmentCreate = {form_template_id: string};
-export type FormAssignmentSubmission = FormSubmission;
-export type FormAssignmentUpdate = {
-  expected_status?: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
-  priority?: 'high' | 'normal';
-  status?: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
-  due_date?: string | null;
-};
-export type FormSnapshotQuestion = {
-  id: string;
-  label: string;
-  type:
-    | 'text'
-    | 'number'
-    | 'boolean'
-    | 'date'
-    | 'select'
-    | 'multi_select'
-    | 'rating'
-    | 'weight'
-    | 'photo'
-    | 'service_type';
-  unit?: 'kg' | 'lbs';
-  required?: boolean;
-  options?: Array<string>;
-};
-export type FormSnapshotSection = {questions: Array<FormSnapshotQuestion>; title?: string; section?: string};
-export type FormSubmission = {
-  id: string;
-  form_assignment_id: string;
-  question_snapshot: Array<FormSnapshotSection>;
-  answers: {[key: string]: FormAssignmentAnswer};
-  submitted_by_type: 'coach' | 'client' | 'system';
-  submitted_at: string;
-  reviewed_at: string | null;
-  reviewed_by_id: string | null;
-  attachments: Array<{
-    id: string;
-    content_type:
-      | 'image/jpeg'
-      | 'image/png'
-      | 'image/webp'
-      | 'image/heic'
-      | 'video/mp4'
-      | 'video/webm'
-      | 'video/quicktime'
-      | 'audio/webm'
-      | 'audio/mp4'
-      | 'audio/mpeg';
-    byte_size: number;
-    duration_ms: number | null;
-  }>;
-  inserted_at: string;
-};
-export type FormSubmissionDetail = {
-  id: string;
-  form_assignment_id: string;
-  question_snapshot: Array<FormSnapshotSection>;
-  answers: {[key: string]: FormAssignmentAnswer};
-  submitted_by_type: 'coach' | 'client' | 'system';
-  submitted_at: string;
-  reviewed_at: string | null;
-  reviewed_by_id: string | null;
-  attachments: Array<{
-    id: string;
-    content_type:
-      | 'image/jpeg'
-      | 'image/png'
-      | 'image/webp'
-      | 'image/heic'
-      | 'video/mp4'
-      | 'video/webm'
-      | 'video/quicktime'
-      | 'audio/webm'
-      | 'audio/mp4'
-      | 'audio/mpeg';
-    byte_size: number;
-    duration_ms: number | null;
-  }>;
-  inserted_at: string;
-  form_assignment: {id: string; purpose: 'intake' | 'check_in'; form_template: {id: string; name: string}};
-};
-export type FormSubmissionEmbedSnapshot = {form_assignment_id: string; title: string; submitted_at: string};
-export type FormTemplate = {
-  id: string;
-  name: string;
-  revision: number;
-  purpose: 'intake' | 'check_in';
-  sections: Array<{questions: Array<FormTemplateQuestion>; title?: string}>;
-  status: 'active' | 'archived';
-  is_default_intake: boolean;
-  question_count: number;
-  response_count: number;
-  inserted_at: string;
-  updated_at: string;
-};
-export type FormTemplateCreate = {
-  name: string;
-  purpose: 'intake' | 'check_in';
-  sections: Array<FormTemplateSection>;
-  status?: 'active' | 'archived';
-};
-export type FormTemplateIndex = {data: Array<FormTemplate>; count: number; next_cursor: string | null};
-export type FormTemplateListQuery = {
-  cursor?: string;
-  limit?: number;
-  search?: string;
-  purpose?: 'intake' | 'check_in';
-  status?: 'active' | 'archived';
-};
-export type FormTemplateManagement = {
-  template: FormTemplate;
-  assignment_count: number;
-  schedule_count: number;
-  active_schedule_count: number;
-  delete_blocked_reason: 'assignments' | 'schedules' | 'built_in' | null;
-};
-export type FormTemplateMutationQuery = {expected_revision?: number};
-export type FormTemplateQuestion =
-  | {
-      id: string;
-      label: string;
-      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
-      required?: boolean;
-      options?: Array<string>;
-    }
-  | {id: string; label: string; type: 'service_type'; required?: boolean};
-export type FormTemplateSection = {questions: Array<FormTemplateQuestion>; title?: string};
-export type FormTemplateUpdate = {
-  expected_revision?: number;
-  name?: string;
-  sections?: Array<FormTemplateSection>;
-  status?: 'active' | 'archived';
-};
 export type Health = {status: string; service: string; timestamp: string; version: string};
-export type IntakeAwaitingReviewReason = {code: 'intake_awaiting_review'; submission_id: string; submitted_at: string};
-export type IntakeOverdueReason = {code: 'intake_overdue'; assignment_id: string; due_on: string; form_title: string};
-export type InvitationFollowUpDueReason = {
-  code: 'invitation_follow_up_due';
-  invitation_id: string;
-  sent_at: string;
-  follow_up_due_at: string;
-};
-export type LandingPage = {
-  id: string;
-  slug: string;
-  revision: number;
-  template: 'proof_first' | 'problem_fit' | 'coach_story';
-  eyebrow: string | null;
-  headline: string;
-  subheadline: string | null;
-  coach_intro: string | null;
-  hero_image_url: string | null;
-  proof_points: Array<{label?: string; value?: string}>;
-  fit_points: Array<string>;
-  application_questions: Array<{
-    id?: string;
-    label?: string;
-    type?: 'short_text' | 'long_text' | 'single_select';
-    options?: Array<string>;
-  }>;
-  status: 'draft' | 'published';
-  programs: Array<{
-    id: string;
-    name: string;
-    audience: string | null;
-    promise: string | null;
-    description: string | null;
-    price_display: string | null;
-    position: number;
-  }>;
-  inserted_at: string;
-  updated_at: string;
-};
-export type LandingPageApplication = {
-  landing_page_id?: string;
-  request_id?: string;
-  expected_revision?: number;
-  name: string;
-  phone?: string | null;
-  email?: string | null;
-  instagram?: string | null;
-  landing_program_id?: string | null;
-  answers?: {[key: string]: unknown};
-};
-export type LandingPageApplicationResult = {
-  id: string;
-  name: string;
-  program_name: string | null;
-  business_name: string;
-  whatsapp_number: string | null;
-};
-export type LandingPagePublic = {
-  id: string;
-  slug: string;
-  revision: number;
-  template: 'proof_first' | 'problem_fit' | 'coach_story';
-  eyebrow: string | null;
-  headline: string;
-  subheadline: string | null;
-  coach_intro: string | null;
-  hero_image_url: string | null;
-  proof_points: Array<{label?: string; value?: string}>;
-  fit_points: Array<string>;
-  application_questions: Array<{
-    id?: string;
-    label?: string;
-    type?: 'short_text' | 'long_text' | 'single_select';
-    options?: Array<string>;
-  }>;
-  programs: Array<{
-    id: string;
-    name: string;
-    audience: string | null;
-    promise: string | null;
-    description: string | null;
-    price_display: string | null;
-    position: number;
-  }>;
-  business_name: string;
-  whatsapp_number: string | null;
-};
-export type LandingPageUpsert = {
-  slug: string;
-  expected_revision?: number;
-  template: 'proof_first' | 'problem_fit' | 'coach_story';
-  headline: string;
-  status: 'draft' | 'published';
-  eyebrow?: string | null;
-  subheadline?: string | null;
-  coach_intro?: string | null;
-  hero_image_url?: string | null;
-  proof_points?: Array<{label?: string; value?: string}>;
-  fit_points?: Array<string>;
-  application_questions?: Array<{
-    id?: string;
-    label?: string;
-    type?: 'short_text' | 'long_text' | 'single_select';
-    options?: Array<string>;
-  }>;
-  programs?: Array<{
-    id?: string;
-    name: string;
-    audience?: string | null;
-    promise?: string | null;
-    description?: string | null;
-    price_display?: string | null;
-  }>;
-};
 export type LibraryMedia = {
   id: string;
   kind: 'image' | 'video';
@@ -772,7 +409,6 @@ export type LibraryUsageReference = {
   kind: 'recipe' | 'template' | 'client_plan';
   inserted_at: string;
 };
-export type MissedCheckInReason = {code: 'missed_check_in'; assignment_id: string; due_on: string};
 export type Muscle = {id: string; name: string; description: string | null};
 export type MuscleListQuery = {search?: string};
 export type NutritionCoverage = {date: string; current: NutritionPlan | null; upcoming: Array<NutritionPlan>};
@@ -822,6 +458,9 @@ export type NutritionDayRow = {
   notes: string | null;
 };
 export type NutritionDaySlot = {
+  id: string | null;
+  shared_at: string | null;
+  note_to_coach: string | null;
   meal_slot:
     | 'early_morning'
     | 'breakfast'
@@ -984,61 +623,6 @@ export type PerformedSet = {
   inserted_at: string;
   updated_at: string;
 };
-export type Prospect = {
-  id: string;
-  name: string;
-  revision: number;
-  enrollment_defaults: {
-    first_name: string | null;
-    last_name: string | null;
-    email: string | null;
-    phone: string | null;
-  };
-  answer_rows: Array<{question_id: string; label: string; value: string | null}>;
-  phone: string | null;
-  email: string | null;
-  instagram: string | null;
-  submitted_questions: Array<{[key: string]: unknown}>;
-  answers: {[key: string]: unknown};
-  status: 'new' | 'reviewing' | 'won' | 'lost';
-  notes: string | null;
-  landing_page_slug: string | null;
-  program: {id: string; name: string} | null;
-  client: {
-    id: string;
-    first_name: string | null;
-    last_name: string | null;
-    status: 'pending' | 'active' | 'inactive';
-  } | null;
-  inserted_at: string;
-  updated_at: string;
-};
-export type ProspectEnroll = {
-  expected_revision?: number;
-  first_name?: string | null;
-  last_name?: string | null;
-  email?: string | null;
-  phone?: string | null;
-};
-export type ProspectEnrollment = {data: {prospect: Prospect; already_enrolled: boolean}};
-export type ProspectIndex = {
-  data: Array<Prospect>;
-  count: number;
-  next_cursor: string | null;
-  summary: {new: number; reviewing: number; won: number; lost: number};
-};
-export type ProspectListQuery = {
-  status?: 'new' | 'reviewing' | 'won' | 'lost';
-  search?: string;
-  cursor?: string;
-  offset?: number;
-  limit?: number;
-};
-export type ProspectUpdate = {
-  expected_revision?: number;
-  status: 'new' | 'reviewing' | 'won' | 'lost';
-  notes?: string | null;
-};
 export type Recipe = {
   id: string;
   name: string;
@@ -1084,22 +668,10 @@ export type RecipeUpdate = {
   dietary_tags?: Array<string>;
   recipe_ingredients?: Array<RecipeIngredientInput>;
 };
-export type ReplyNeededReason = {code: 'reply_needed'; waiting_since: string};
 export type Revision = {expected_revision: number};
-export type ServiceCoverageEndingSoonReason = {
-  code: 'service_coverage_ending_soon';
-  service: 'training' | 'nutrition';
-  coverage_ends_on: string;
-  first_uncovered_on: string;
-};
-export type ServiceCoverageMissingReason = {
-  code: 'service_coverage_missing';
-  service: 'training' | 'nutrition';
-  first_uncovered_on: string;
-};
-export type ServiceNeverProgrammedReason = {code: 'service_never_programmed'; service: 'training' | 'nutrition'};
 export type Session = {
   id: string;
+  revision: number;
   kind: 'planned' | 'freestyle';
   date: string;
   started_at: string;
@@ -1354,224 +926,11 @@ export type UploadCreate = {
 };
 export type UploadDownload = {id: string; download_url: string; download_url_expires_at: string};
 export type UploadDownloadUrls = {attachment_ids: Array<string>};
-export type WeightEntry = {
-  id: string;
-  date: string;
-  value: string;
-  unit: 'kg' | 'lbs';
-  note: string | null;
-  revision: number;
-  form_submission_id: string | null;
-  form_assignment_id: string | null;
-  inserted_at: string;
-};
-export type WeightEntryIndex = {
-  entries: Array<WeightEntry>;
-  goal: {value: string; unit: 'kg' | 'lbs'} | null;
-  summary: {
-    first_entry: {date: string; value: string; unit: 'kg' | 'lbs'} | null;
-    latest_entry: {date: string; value: string; unit: 'kg' | 'lbs'} | null;
-    total_change: number | null;
-    change_unit: 'kg' | 'lbs' | null;
-  };
-  adherence: {logged_days: number; window_days: number};
-};
-export type WeightEntryListQuery = {since?: string};
-export type WeightProgress = {
-  data: Array<WeightEntry>;
-  count: number;
-  next_cursor: string | null;
-  from: string;
-  to: string;
-  unit: 'kg' | 'lbs';
-  goal: {value: string; unit: 'kg' | 'lbs'} | null;
-  summary: {
-    first_entry: WeightProgressMeasurement | null;
-    latest_entry: WeightProgressMeasurement | null;
-    total_change: number | null;
-    change_unit: 'kg' | 'lbs' | null;
-  };
-  chart: {min: number | null; max: number | null; points: Array<WeightProgressPoint>};
-};
-export type WeightProgressListQuery = {
-  from?: string;
-  to?: string;
-  unit?: 'kg' | 'lbs';
-  cursor?: string;
-  limit?: number;
-};
-export type WeightProgressMeasurement = {date: string; value: string; unit: 'kg' | 'lbs'};
-export type WeightProgressPoint = {id: string; date: string; value: number};
-export type Workbench = {
-  check_ins: number;
-  replies: number;
-  onboarding: number;
-  programming: WorkbenchProgrammingCounts;
-  expiring: number;
-  quiet: number;
-};
-export type WorkbenchCheckInAssignment = {
-  id: string;
-  client_id: string;
-  form_template_id: string;
-  purpose: 'check_in';
-  status: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
-  due_date: string | null;
-};
-export type WorkbenchCheckInPage = {data: Array<WorkbenchCheckInQueueItem>; count: number; next_cursor: string | null};
-export type WorkbenchCheckInQueueItem = {
-  submission: WorkbenchCheckInSubmission;
-  client: Client;
-  assignment: WorkbenchCheckInAssignment;
-  reasons: Array<CheckInAwaitingReviewReason>;
-};
-export type WorkbenchCheckInSubmission = {
-  id: string;
-  form_assignment_id: string;
-  submitted_at: string;
-  reviewed_at: string | null;
-};
-export type WorkbenchClient = {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
-  email: string | null;
-  status: 'active' | 'pending' | 'inactive';
-};
-export type WorkbenchEndingEngagementItem = {
-  id: string;
-  kind: 'ending_engagement';
-  client: WorkbenchClient;
-  target: {client_id: string};
-  reasons: Array<EngagementEndingSoonReason>;
-  waiting_since: string | null;
-  due_on: string | null;
-  preview: string | null;
-};
-export type WorkbenchExpiringPage = {
-  data: Array<WorkbenchExpiringQueueItem>;
-  count: number;
-  next_cursor: string | null;
-};
-export type WorkbenchExpiringQueueItem = {client: Client; reasons: Array<EngagementEndingSoonReason>};
-export type WorkbenchIntakeFollowUpItem = {
-  id: string;
-  kind: 'intake_follow_up';
-  client: WorkbenchClient;
-  target: {assignment_id: string};
-  reasons: Array<IntakeOverdueReason>;
-  waiting_since: string | null;
-  due_on: string | null;
-  preview: string | null;
-};
-export type WorkbenchInvitationFollowUpItem = {
-  id: string;
-  kind: 'invitation_follow_up';
-  client: WorkbenchClient;
-  target: {invitation_id: string};
-  reasons: Array<InvitationFollowUpDueReason>;
-  waiting_since: string | null;
-  due_on: string | null;
-  preview: string | null;
-};
-export type WorkbenchItem =
-  | WorkbenchReplyItem
-  | WorkbenchReviewItem
-  | WorkbenchPreparePlanItem
-  | WorkbenchInvitationFollowUpItem
-  | WorkbenchIntakeFollowUpItem
-  | WorkbenchMissedCheckInItem
-  | WorkbenchEndingEngagementItem;
-export type WorkbenchItems = {data: Array<WorkbenchItem>; count: number | null; next_cursor: string | null};
-export type WorkbenchItemsQuery = {
-  view?: 'awaiting' | 'follow-ups';
-  search?: string;
-  cursor?: string;
-  limit?: number;
-  include_count?: boolean;
-};
-export type WorkbenchListQuery = {offset?: number; cursor?: string; search?: string; limit?: number};
-export type WorkbenchMissedCheckInItem = {
-  id: string;
-  kind: 'missed_check_in';
-  client: WorkbenchClient;
-  target: {assignment_id: string};
-  reasons: Array<MissedCheckInReason>;
-  waiting_since: string | null;
-  due_on: string | null;
-  preview: string | null;
-};
-export type WorkbenchOnboardingPage = {
-  data: Array<WorkbenchOnboardingQueueItem>;
-  count: number;
-  next_cursor: string | null;
-};
-export type WorkbenchOnboardingQueueItem = {
-  client: Client;
-  reasons: Array<InvitationFollowUpDueReason | IntakeOverdueReason>;
-};
-export type WorkbenchPreparePlanItem = {
-  id: string;
-  kind: 'prepare_plan';
-  client: WorkbenchClient;
-  target: {service: 'training' | 'nutrition'};
-  reasons: Array<ServiceNeverProgrammedReason | ServiceCoverageMissingReason | ServiceCoverageEndingSoonReason>;
-  waiting_since: string | null;
-  due_on: string | null;
-  preview: string | null;
-};
-export type WorkbenchProgrammingCounts = {all: number; training: number; nutrition: number};
-export type WorkbenchProgrammingPage = {
-  data: Array<WorkbenchProgrammingQueueItem>;
-  count: number;
-  next_cursor: string | null;
-};
-export type WorkbenchProgrammingQuery = {
-  offset?: number;
-  cursor?: string;
-  search?: string;
-  limit?: number;
-  service?: 'all' | 'training' | 'nutrition';
-};
-export type WorkbenchProgrammingQueueItem = {
-  client: Client;
-  reasons: Array<ServiceNeverProgrammedReason | ServiceCoverageMissingReason | ServiceCoverageEndingSoonReason>;
-};
-export type WorkbenchQuietPage = {data: Array<WorkbenchQuietQueueItem>; count: number; next_cursor: string | null};
-export type WorkbenchQuietQueueItem = {client: Client; reasons: Array<MissedCheckInReason>};
-export type WorkbenchRepliesPage = {data: Array<WorkbenchRepliesQueueItem>; count: number; next_cursor: string | null};
-export type WorkbenchRepliesQueueItem = {
-  conversation: Conversation;
-  waiting_message_count: number;
-  client_status: 'active' | 'pending' | 'inactive';
-  reasons: Array<ReplyNeededReason>;
-};
-export type WorkbenchReplyItem = {
-  id: string;
-  kind: 'reply';
-  client: WorkbenchClient;
-  target: {conversation_id: string};
-  reasons: Array<ReplyNeededReason>;
-  waiting_since: string | null;
-  due_on: string | null;
-  preview: string | null;
-};
-export type WorkbenchReviewItem = {
-  id: string;
-  kind: 'review';
-  client: WorkbenchClient;
-  target: {submission_id: string; assignment_id: string; purpose: 'intake' | 'check_in'};
-  reasons: Array<IntakeAwaitingReviewReason | CheckInAwaitingReviewReason>;
-  waiting_since: string | null;
-  due_on: string | null;
-  preview: string | null;
-};
-export type WorkbenchSnooze = {queue: 'quiet' | 'expiring'; snoozed_until: string};
 /* typed-routes:types-end */
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash a90c8ca0f82642f6fb7acbb132399456eea48e69ade01c1cf262d587d11472d8 */
+  /* typed-routes:hash 43c0db4da1b86c812b70022b5162da68a361cc44a687af31ec47abf4b5317e78 */
   '/api/health': {
     get: {
       parameters: {
@@ -1619,20 +978,6 @@ export interface paths {
         cookie?: never;
       };
       requestBody: {content: {'application/json': BusinessUpdate}};
-      responses: {
-        200: {content: {'application/json': {data: Business}}};
-      };
-    };
-  };
-  '/v1/businesses/me/dashboard-setup': {
-    patch: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': BusinessUpdateDashboardSetup}};
       responses: {
         200: {content: {'application/json': {data: Business}}};
       };
@@ -1718,70 +1063,6 @@ export interface paths {
       };
     };
   };
-  '/v1/coach/check-in-schedules/{id}': {
-    delete: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        204: {content?: never};
-      };
-    };
-    patch: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': CheckInScheduleUpdate}};
-      responses: {
-        200: {content: {'application/json': {data: CheckInSchedule}}};
-      };
-    };
-  };
-  '/v1/coach/check-ins/review-queue': {
-    get: {
-      parameters: {
-        query?: CheckInReviewListQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: Array<CheckInReview>; count: number}}};
-      };
-    };
-  };
-  '/v1/coach/check-ins/submissions': {
-    get: {
-      parameters: {
-        query?: CheckInReviewHistoryQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': CheckInSubmissionIndex}};
-      };
-    };
-  };
-  '/v1/coach/check-ins/submissions/{id}': {
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: CheckInReview}}};
-      };
-    };
-  };
   '/v1/coach/clients': {
     get: {
       parameters: {
@@ -1809,44 +1090,6 @@ export interface paths {
       };
     };
   };
-  '/v1/coach/clients/{client_id}/check-in-requests': {
-    get: {
-      parameters: {
-        query?: CheckInRequestListQuery;
-        header?: {Authorization?: string};
-        path: {client_id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': CheckInRequestIndex}};
-      };
-    };
-  };
-  '/v1/coach/clients/{client_id}/check-in-schedules': {
-    get: {
-      parameters: {
-        query?: CheckInScheduleListQuery;
-        header?: {Authorization?: string};
-        path: {client_id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': CheckInScheduleIndex}};
-      };
-    };
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {client_id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': CheckInScheduleCreate}};
-      responses: {
-        201: {content: {'application/json': {data: CheckInSchedule}}};
-      };
-    };
-  };
   '/v1/coach/clients/{client_id}/conversation': {
     get: {
       parameters: {
@@ -1857,57 +1100,6 @@ export interface paths {
       };
       responses: {
         200: {content: {'application/json': {data: Conversation}}};
-      };
-    };
-  };
-  '/v1/coach/clients/{client_id}/form-assignments': {
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {client_id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: Array<FormAssignment>}}};
-      };
-    };
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {client_id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': FormAssignmentCreate}};
-      responses: {
-        201: {content: {'application/json': {data: FormAssignment}}};
-      };
-    };
-  };
-  '/v1/coach/clients/{client_id}/form-submissions/{id}': {
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {client_id: string; id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: FormSubmissionDetail}}};
-      };
-    };
-  };
-  '/v1/coach/clients/{client_id}/intake': {
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {client_id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: FormAssignment | null}}};
       };
     };
   };
@@ -2031,32 +1223,6 @@ export interface paths {
       };
     };
   };
-  '/v1/coach/clients/{client_id}/weight-progress': {
-    get: {
-      parameters: {
-        query?: WeightProgressListQuery;
-        header?: {Authorization?: string};
-        path: {client_id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': WeightProgress}};
-      };
-    };
-  };
-  '/v1/coach/clients/{client_id}/weight_entries': {
-    get: {
-      parameters: {
-        query?: WeightEntryListQuery;
-        header?: {Authorization?: string};
-        path: {client_id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': WeightEntryIndex}};
-      };
-    };
-  };
   '/v1/coach/clients/{id}': {
     delete: {
       parameters: {
@@ -2090,20 +1256,6 @@ export interface paths {
       requestBody: {content: {'application/json': ClientUpdate}};
       responses: {
         200: {content: {'application/json': {data: Client}}};
-      };
-    };
-  };
-  '/v1/coach/clients/{id}/queue-snooze': {
-    put: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': WorkbenchSnooze}};
-      responses: {
-        204: {content?: never};
       };
     };
   };
@@ -2186,20 +1338,6 @@ export interface paths {
       };
     };
   };
-  '/v1/coach/conversations/{id}/mark-handled': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': ConversationMarkHandled}};
-      responses: {
-        204: {content?: never};
-      };
-    };
-  };
   '/v1/coach/conversations/{id}/messages': {
     get: {
       parameters: {
@@ -2235,195 +1373,6 @@ export interface paths {
       };
       responses: {
         200: {content: {'application/json': {data: Conversation}}};
-      };
-    };
-  };
-  '/v1/coach/form-assignments/{id}': {
-    patch: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': FormAssignmentUpdate}};
-      responses: {
-        200: {content: {'application/json': {data: FormAssignment}}};
-      };
-    };
-  };
-  '/v1/coach/form-assignments/{id}/remind': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        204: {content?: never};
-      };
-    };
-  };
-  '/v1/coach/form-assignments/{id}/submissions': {
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: Array<FormAssignmentSubmission>}}};
-      };
-    };
-  };
-  '/v1/coach/form-submissions/{id}/review': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: FormSubmission}}};
-      };
-    };
-  };
-  '/v1/coach/form-templates': {
-    get: {
-      parameters: {
-        query?: FormTemplateListQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': FormTemplateIndex}};
-      };
-    };
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': FormTemplateCreate}};
-      responses: {
-        201: {content: {'application/json': {data: FormTemplate}}};
-      };
-    };
-  };
-  '/v1/coach/form-templates/default-intake': {
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: FormTemplate}}};
-      };
-    };
-  };
-  '/v1/coach/form-templates/{id}': {
-    delete: {
-      parameters: {
-        query?: FormTemplateMutationQuery;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        204: {content?: never};
-      };
-    };
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: FormTemplate}}};
-      };
-    };
-    patch: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': FormTemplateUpdate}};
-      responses: {
-        200: {content: {'application/json': {data: FormTemplate}}};
-      };
-    };
-  };
-  '/v1/coach/form-templates/{id}/default-intake': {
-    delete: {
-      parameters: {
-        query?: FormTemplateMutationQuery;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: FormTemplate}}};
-      };
-    };
-    put: {
-      parameters: {
-        query?: FormTemplateMutationQuery;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: FormTemplate}}};
-      };
-    };
-  };
-  '/v1/coach/form-templates/{id}/management': {
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: FormTemplateManagement}}};
-      };
-    };
-  };
-  '/v1/coach/landing-page': {
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: LandingPage | null}}};
-      };
-    };
-    put: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': LandingPageUpsert}};
-      responses: {
-        200: {content: {'application/json': {data: LandingPage}}};
       };
     };
   };
@@ -2807,58 +1756,6 @@ export interface paths {
       };
     };
   };
-  '/v1/coach/prospects': {
-    get: {
-      parameters: {
-        query?: ProspectListQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': ProspectIndex}};
-      };
-    };
-  };
-  '/v1/coach/prospects/{id}': {
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: Prospect}}};
-      };
-    };
-    patch: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': ProspectUpdate}};
-      responses: {
-        200: {content: {'application/json': {data: Prospect}}};
-      };
-    };
-  };
-  '/v1/coach/prospects/{id}/enroll': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': ProspectEnroll}};
-      responses: {
-        201: {content: {'application/json': ProspectEnrollment}};
-      };
-    };
-  };
   '/v1/coach/team': {
     get: {
       parameters: {
@@ -3163,137 +2060,6 @@ export interface paths {
       requestBody: {content: {'application/json': Revision}};
       responses: {
         200: {content: {'application/json': {data: TrainingPlan}}};
-      };
-    };
-  };
-  '/v1/coach/workbench': {
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: Workbench}}};
-      };
-    };
-  };
-  '/v1/coach/workbench/items': {
-    get: {
-      parameters: {
-        query?: WorkbenchItemsQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': WorkbenchItems}};
-      };
-    };
-  };
-  '/v1/coach/workbench/queues/check-ins': {
-    get: {
-      parameters: {
-        query?: WorkbenchListQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': WorkbenchCheckInPage}};
-      };
-    };
-  };
-  '/v1/coach/workbench/queues/expiring': {
-    get: {
-      parameters: {
-        query?: WorkbenchListQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': WorkbenchExpiringPage}};
-      };
-    };
-  };
-  '/v1/coach/workbench/queues/onboarding': {
-    get: {
-      parameters: {
-        query?: WorkbenchListQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': WorkbenchOnboardingPage}};
-      };
-    };
-  };
-  '/v1/coach/workbench/queues/programming': {
-    get: {
-      parameters: {
-        query?: WorkbenchProgrammingQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': WorkbenchProgrammingPage}};
-      };
-    };
-  };
-  '/v1/coach/workbench/queues/quiet': {
-    get: {
-      parameters: {
-        query?: WorkbenchListQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': WorkbenchQuietPage}};
-      };
-    };
-  };
-  '/v1/coach/workbench/queues/replies': {
-    get: {
-      parameters: {
-        query?: WorkbenchListQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': WorkbenchRepliesPage}};
-      };
-    };
-  };
-  '/v1/public/landing-pages/{slug}': {
-    get: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {slug: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: LandingPagePublic}}};
-      };
-    };
-  };
-  '/v1/public/landing-pages/{slug}/applications': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {slug: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': LandingPageApplication}};
-      responses: {
-        201: {content: {'application/json': {data: LandingPageApplicationResult}}};
       };
     };
   };

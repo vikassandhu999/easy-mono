@@ -111,19 +111,6 @@ try {
       body: 'Hey Sam! Your workout and breakfast plan are ready. Take things at your pace, and message me whenever you need a hand.',
     },
   });
-  for (const [offset, value] of [
-    [21, 73.2],
-    [14, 72.8],
-    [7, 72.5],
-  ]) {
-    const date = new Date(`${today}T12:00:00Z`);
-    date.setUTCDate(date.getUTCDate() - offset);
-    await api('/v1/client/weight_entries', {
-      token,
-      method: 'POST',
-      body: {date: date.toISOString().slice(0, 10), value, unit: 'kg'},
-    });
-  }
   await page.reload();
   await expect(page.getByRole('link', {name: 'Full-body flow', exact: true})).toBeVisible();
   await page.getByRole('link', {name: 'Nutrition', exact: true}).click();

@@ -5,17 +5,11 @@
 #
 #   cd backend && mix run priv/repo/dev_client_states.exs
 #
-# Also resets Rowan White's newest check-in submission to unreviewed so the
-# manifest's "active" (needs-review) state is restored after a run that
-# exercised the review mutation.
 
 import Ecto.Query
 alias Easy.Repo
 alias Easy.Clients.Client
-alias Easy.Forms.FormSubmission
 alias Easy.Chat.{Conversation, Message}
-alias Easy.Attachments.Attachment
-alias Easy.Forms.CheckInSchedule
 
 rich_id = "f9e0ba52-2974-45b9-bf29-ffc3e081f7bd"
 rich = Repo.get!(Client, rich_id)
@@ -87,13 +81,7 @@ expiring =
     subscription_ends_on: Date.add(today, 5)
   })
 
-# Freya is the "fresh / nothing set up yet" fixture (CD-OV `fresh` + its
-# `No active plan` chip, CD-TR/CD-NU `plan-ended`, CD-CI `no-schedule`). Any
-# plan or schedule that lands on her silently breaks those states, so strip
-# them on every run — a fixture defined by ABSENCE has to seed that absence.
-{deleted, _} = Repo.delete_all(from s in CheckInSchedule, where: s.client_id == ^fresh.id)
-if deleted > 0, do: IO.puts("removed #{deleted} check-in schedule(s) from the fresh fixture")
-
+# Keep the fresh client free of training and nutrition plans on every run.
 {dropped_t, _} = Repo.delete_all(from p in Easy.Training.TrainingPlan, where: p.client_id == ^fresh.id)
 {dropped_n, _} = Repo.delete_all(from p in Easy.Nutrition.Plan, where: p.client_id == ^fresh.id)
 
@@ -131,80 +119,10 @@ end
 Repo.update!(Ecto.Changeset.change(conv, coach_last_read_at: nil))
 IO.puts("conversation marked unread for coach")
 
-# Restore the needs-review state on Rowan's newest completed check-in.
-newest =
-  Repo.one(
-    from s in FormSubmission,
-      where: s.client_id == ^rich_id,
-      order_by: [desc: s.submitted_at],
-      limit: 1
-  )
-
-if newest && newest.reviewed_at do
-  Repo.update!(Ecto.Changeset.change(newest, reviewed_at: nil, reviewed_by_id: nil))
-  IO.puts("reset newest submission #{newest.id} to unreviewed")
-end
-
-# Give EVERY completed check-in submission a photo answer (3 placeholder
-# attachments each) so the Overview latest-check-in card renders thumbnails AND
-# the Check-ins photos card has more than 3 photos — it needs an overflow tile.
-# This inserts attachment ROWS only. `dev_screen_data.exs` uploads the objects —
-# run it after this, or every photo tile renders the empty-tile placeholder.
-submissions =
-  Repo.all(
-    from s in FormSubmission,
-      where: s.client_id == ^rich_id,
-      order_by: [desc: s.submitted_at]
-  )
-
-for {submission, index} <- Enum.with_index(submissions) do
-  existing_photo_q =
-    submission.question_snapshot
-    |> List.wrap()
-    |> Enum.flat_map(&List.wrap(&1["questions"]))
-    |> Enum.find(&(&1["type"] == "photo"))
-
-  if existing_photo_q && submission.answers[existing_photo_q["id"]] not in [nil, []] do
-    :ok
-  else
-    atts =
-      for i <- 1..3 do
-        Repo.insert!(%Attachment{
-          id: Ecto.UUID.generate(),
-          uploaded_by_type: :client,
-          uploaded_by_id: rich_id,
-          storage_key: "dev/placeholder-photo-#{index}-#{i}.jpg",
-          content_type: "image/jpeg",
-          byte_size: 120_000,
-          business_id: rich.business_id,
-          client_id: rich_id
-        })
-      end
-
-    {photo_q, snapshot} =
-      if existing_photo_q do
-        {existing_photo_q, submission.question_snapshot}
-      else
-        q = %{"id" => Ecto.UUID.generate(), "type" => "photo", "label" => "Progress photos", "required" => false}
-        [first | rest] = List.wrap(submission.question_snapshot)
-        {q, [Map.update(first, "questions", [q], &(&1 ++ [q])) | rest]}
-      end
-
-    submission
-    |> Ecto.Changeset.change(
-      question_snapshot: snapshot,
-      answers: Map.put(submission.answers, photo_q["id"], Enum.map(atts, & &1.id))
-    )
-    |> Repo.update!()
-
-    IO.puts("added photo answer (3 attachments) to submission #{submission.id}")
-  end
-end
-
 IO.puts("""
 
 manifest routes:
-  active/reviewed:   /clients/#{rich_id}
+  active:            /clients/#{rich_id}
   fresh:             /clients/#{fresh.id}
   expiring:          /clients/#{expiring.id}
   inactive-manual:   /clients/#{inactive_manual.id}

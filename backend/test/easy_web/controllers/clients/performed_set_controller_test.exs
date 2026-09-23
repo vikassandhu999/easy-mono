@@ -172,13 +172,13 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
       assert session.performed_sets == []
     end
 
-    test "retry can recover after completion but cannot create new terminal history", ctx do
+    test "retry can recover after completion and new corrections require a revision", ctx do
       path = "/v1/client/training-sessions/#{ctx.session.id}/performed-sets"
       attrs = %{request_id: Ecto.UUID.generate(), exercise_id: ctx.exercise.id, reps: "5"}
       first = ctx.conn |> post_json(path, attrs) |> json_response(201)
       {:ok, _} = Execution.complete_client_session(ctx.ctx, ctx.session.id, %{})
       assert ctx.conn |> post_json(path, attrs) |> json_response(201) == first
-      assert ctx.conn |> post_json(path, %{attrs | request_id: Ecto.UUID.generate()}) |> json_response(404)
+      assert ctx.conn |> post_json(path, %{attrs | request_id: Ecto.UUID.generate()}) |> json_response(422)
       assert ctx.conn |> post_json(path, %{attrs | reps: "8"}) |> json_response(409)
     end
 

@@ -49,7 +49,7 @@ Before PATCH, the exact body is durably stored and its fields are locked. A fres
 * Offline testing exposed an account-identification race: leaving Today could cancel its profile read before private storage had an owner. The protected app now verifies the client before mounting editors, and unowned draft writes reject. `tests/auth/account-ready.browser.mjs` holds the profile response and verifies the boundary. Auth, forms/photo recovery and all training browser regressions pass after the fix. The new navigation label also required scoping an existing forms test to its service checkbox.
 * Strict frontend build, Biome, repository shape checks, native builds and full backend precommit pass (1,822 tests). Browser screenshots and result summaries are under `evidence/nutrition-*`.
 
-These checks use a real local API and simulated devices. They do not establish physical-device behavior or usability with clients. Messaging, progress and the remaining preferences are separate unfinished slices of the full goal.
+These checks use a real local API and simulated devices. They do not establish physical-device behavior or usability with clients. Messaging and the remaining preferences are separate unfinished slices of the full goal.
 
 ## Mobile design pass — 2026-09-20
 

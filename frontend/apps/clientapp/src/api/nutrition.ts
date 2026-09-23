@@ -1,6 +1,6 @@
 import {onlineManager, useInfiniteQuery, useMutation, useQuery} from '@tanstack/react-query';
 import {ApiError, call, client} from './client';
-import {nutritionKeys} from './keys';
+import {conversationKeys, nutritionKeys} from './keys';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
 import type {Day, DaySlotInput, NutritionDaySlot, NutritionPortion} from './schema';
@@ -84,6 +84,12 @@ export function mealSaveMatches(input: DaySlotInput, slot: NutritionDaySlot | un
   if (!slot || slot.revision !== input.expected_revision + 1 || slot.meal_id !== input.meal_id) {
     return false;
   }
+  if (
+    (input.share && !slot.shared_at) ||
+    (input.note_to_coach !== undefined && slot.note_to_coach !== input.note_to_coach)
+  ) {
+    return false;
+  }
   const rows = slot.rows.filter((row) => row.entry_id !== null);
   return (
     rows.length === input.entries.length &&
@@ -155,7 +161,10 @@ export function useSaveMeal(date: string) {
     onSuccess: async (result, _input, owner) => {
       requireOwner(owner);
       queryClient.setQueryData(nutritionKeys.day(date), result);
-      await queryClient.invalidateQueries({queryKey: nutritionKeys.all});
+      await Promise.all([
+        queryClient.invalidateQueries({queryKey: nutritionKeys.all}),
+        queryClient.invalidateQueries({queryKey: conversationKeys.all}),
+      ]);
       requireOwner(owner);
     },
     onError: async (error, _input, owner) => {

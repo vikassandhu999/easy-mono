@@ -63,15 +63,6 @@ defmodule EasyWeb.Router do
     post "/trainer-accept-invite/verify", AuthController, :trainer_accept_invite_verify
   end
 
-  # Unauthenticated public landing funnel: anonymous prospects render a coach's published
-  # page and submit applications. No auth pipeline by design.
-  scope "/v1/public", EasyWeb.Public do
-    pipe_through :api
-
-    get "/landing-pages/:slug", LandingPageController, :show
-    post "/landing-pages/:slug/applications", LandingPageController, :apply
-  end
-
   # Unauthenticated Razorpay webhook: verified by HMAC signature over the raw body, not auth.
   scope "/v1/webhooks", EasyWeb do
     pipe_through :api
@@ -87,7 +78,6 @@ defmodule EasyWeb.Router do
     get "/me", BusinessController, :show
     get "/timezones", BusinessController, :timezones
     patch "/me", BusinessController, :update
-    patch "/me/dashboard-setup", BusinessController, :update_dashboard_setup
   end
 
   scope "/v1/coach", EasyWeb.Coaches do
@@ -100,24 +90,6 @@ defmodule EasyWeb.Router do
     post "/billing/checkout", BillingController, :checkout
     post "/billing/cancel", BillingController, :cancel
     post "/billing/sync", BillingController, :sync
-
-    # Landing funnel
-    get "/landing-page", LandingPageController, :show
-    put "/landing-page", LandingPageController, :update
-    get "/prospects", ProspectController, :index
-    get "/prospects/:id", ProspectController, :show
-    patch "/prospects/:id", ProspectController, :update
-    post "/prospects/:id/enroll", ProspectController, :enroll
-
-    get "/workbench/items", WorkbenchController, :items
-    get "/workbench", WorkbenchController, :index
-    get "/workbench/queues/onboarding", WorkbenchController, :onboarding
-    get "/workbench/queues/programming", WorkbenchController, :programming
-    get "/workbench/queues/expiring", WorkbenchController, :expiring
-    get "/workbench/queues/quiet", WorkbenchController, :quiet
-    get "/workbench/queues/check-ins", WorkbenchController, :check_ins
-    get "/workbench/queues/replies", WorkbenchController, :replies
-    put "/clients/:id/queue-snooze", WorkbenchController, :snooze
 
     post "/clients/invite", ClientController, :invite
     post "/clients/:id/resend-invite", ClientController, :resend_invite
@@ -138,38 +110,10 @@ defmodule EasyWeb.Router do
     post "/team/:id/deactivate", TeamController, :deactivate
     post "/team/:id/reactivate", TeamController, :reactivate
 
-    get "/form-templates", FormTemplateController, :index
-    get "/form-templates/default-intake", FormTemplateController, :default_intake
-    post "/form-templates", FormTemplateController, :create
-    get "/form-templates/:id", FormTemplateController, :show
-    get "/form-templates/:id/management", FormTemplateController, :management
-    patch "/form-templates/:id", FormTemplateController, :update
-    delete "/form-templates/:id", FormTemplateController, :delete
-    put "/form-templates/:id/default-intake", FormTemplateController, :set_default_intake
-    delete "/form-templates/:id/default-intake", FormTemplateController, :clear_default_intake
-    get "/clients/:client_id/check-in-schedules", CheckInScheduleController, :index
-    post "/clients/:client_id/check-in-schedules", CheckInScheduleController, :create
-    patch "/check-in-schedules/:id", CheckInScheduleController, :update
-    delete "/check-in-schedules/:id", CheckInScheduleController, :delete
-    get "/check-ins/review-queue", CheckInReviewController, :index
-    get "/check-ins/submissions", CheckInReviewController, :history
-    get "/check-ins/submissions/:id", CheckInReviewController, :show
-    post "/form-submissions/:id/review", CheckInReviewController, :review
-    get "/clients/:client_id/intake", FormAssignmentController, :intake
-    get "/clients/:client_id/form-assignments", FormAssignmentController, :index
-    get "/clients/:client_id/check-in-requests", FormAssignmentController, :requests
-    get "/clients/:client_id/form-submissions/:id", FormAssignmentController, :submission
-    post "/clients/:client_id/form-assignments", FormAssignmentController, :create
-    get "/form-assignments/:id/submissions", FormAssignmentController, :submissions
-    patch "/form-assignments/:id", FormAssignmentController, :update
-    post "/form-assignments/:id/remind", FormAssignmentController, :remind
-
     # Client-scoped plan lists
     get "/clients/:client_id/training-plans", ClientTrainingPlanController, :index
     get "/clients/:client_id/nutrition-plans", ClientNutritionPlanController, :index
     get "/clients/:client_id/nutrition-coverage", NutritionCoverageController, :show
-    get "/clients/:client_id/weight_entries", ClientWeightEntryController, :index
-    get "/clients/:client_id/weight-progress", ClientWeightEntryController, :progress
 
     get "/nutrition-foods", FoodController, :index
     get "/nutrition-foods/categories", FoodController, :categories
@@ -237,7 +181,6 @@ defmodule EasyWeb.Router do
     get "/conversations/:id/messages", ConversationController, :messages
     post "/conversations/:id/messages", ConversationController, :create_message
     post "/conversations/:id/read", ConversationController, :mark_read
-    post "/conversations/:id/mark-handled", ConversationController, :mark_handled
     get "/clients/:client_id/conversation", ConversationController, :show_for_client
   end
 
@@ -249,10 +192,6 @@ defmodule EasyWeb.Router do
 
     post "/uploads", UploadController, :create
     post "/attachments/download-urls", UploadController, :download_urls
-
-    get "/form-assignments", FormAssignmentController, :index
-    get "/form-assignments/:id", FormAssignmentController, :show
-    post "/form-assignments/:id/submit", FormAssignmentController, :submit
 
     # Training plans (read-only)
     get "/training-plans", TrainingPlanController, :index
@@ -289,13 +228,6 @@ defmodule EasyWeb.Router do
 
     get "/nutrition-days", NutritionDayController, :index
     patch "/nutrition-days/:date", NutritionDayController, :save
-
-    # Weight entries
-    get "/weight_entries", WeightEntryController, :index
-    get "/weight-progress", WeightEntryController, :progress
-    get "/weight-entry", WeightEntryController, :day
-    post "/weight_entries", WeightEntryController, :create
-    delete "/weight_entries/:id", WeightEntryController, :delete
 
     # Chat
     get "/conversation", ConversationController, :show

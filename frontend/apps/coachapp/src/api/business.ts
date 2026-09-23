@@ -1,6 +1,6 @@
 import {useMutation, useQuery} from '@tanstack/react-query';
 import {call, client} from './client';
-import {authKeys, businessKeys, weightProgressKeys} from './keys';
+import {authKeys, businessKeys} from './keys';
 import {queryClient} from './query-client';
 import type {BusinessUpdate} from './schema';
 import {getSession} from './session';
@@ -39,7 +39,6 @@ export function useUpdateBusiness() {
       await Promise.all([
         queryClient.invalidateQueries({queryKey: authKeys.profile()}),
         queryClient.invalidateQueries({queryKey: businessKeys.detail()}),
-        queryClient.invalidateQueries({queryKey: weightProgressKeys.all}),
       ]);
       assertSession(sessionId);
     },

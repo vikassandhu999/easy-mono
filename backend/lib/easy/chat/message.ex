@@ -19,11 +19,12 @@ defmodule Easy.Chat.Message do
     field :body, :string
     field :request_id, :binary_id
     field :request_fingerprint, :string
-    field :embed_type, Ecto.Enum, values: [:form_submission]
+    field :embed_type, Ecto.Enum, values: [:training_session, :meal]
     field :embed_id, :binary_id
     field :embed_snapshot, :map
     field :sender_type, Ecto.Enum, values: [:coach, :client]
     field :sender_id, :binary_id
+    field :sender_name, :string, virtual: true
 
     belongs_to :conversation, Conversation
     belongs_to :business, Business
@@ -57,7 +58,7 @@ defmodule Easy.Chat.Message do
     |> check_constraint(:embed_id, name: :chat_messages_embed_complete_check)
   end
 
-  @spec put_request_fingerprint(Ecto.Changeset.t(), [String.t()], String.t() | nil) :: Ecto.Changeset.t()
+  @spec put_request_fingerprint(Ecto.Changeset.t(), [String.t()], map() | nil) :: Ecto.Changeset.t()
   def put_request_fingerprint(changeset, attachment_ids, embed_id) do
     case get_field(changeset, :request_id) do
       nil ->
@@ -107,7 +108,7 @@ defmodule Easy.Chat.Message do
   def put_content(changeset, [], nil), do: validate_required(changeset, [:body])
   def put_content(changeset, _attachments, embed), do: put_embed(changeset, embed)
 
-  @spec embed_reference(Ecto.Changeset.t()) :: {:ok, String.t() | nil} | {:error, :not_found | Ecto.Changeset.t()}
+  @spec embed_reference(Ecto.Changeset.t()) :: {:ok, map() | nil} | {:error, :not_found | Ecto.Changeset.t()}
   def embed_reference(changeset) do
     embed = normalize_embed(Map.get(changeset.params || %{}, "embed"))
 
@@ -115,13 +116,10 @@ defmodule Easy.Chat.Message do
       {_, nil} ->
         {:ok, nil}
 
-      {:client, _embed} ->
-        {:error, add_error(changeset, :embed, "is not allowed")}
-
-      {:coach, %{"type" => type, "id" => id}}
-      when type in [:form_submission, "form_submission"] and is_binary(id) ->
+      {_, %{"type" => type, "id" => id} = reference}
+      when type in [:training_session, "training_session", :meal, "meal"] and is_binary(id) ->
         case Ecto.UUID.cast(id) do
-          {:ok, id} -> {:ok, id}
+          {:ok, id} -> {:ok, %{type: to_string(type), id: id, revision: Map.get(reference, "revision")}}
           :error -> {:error, :not_found}
         end
 
@@ -213,26 +211,6 @@ defmodule Easy.Chat.Message do
     )
   end
 
-  @spec waiting_counts(Ecto.Queryable.t(), String.t(), [{String.t(), DateTime.t()}]) :: Ecto.Query.t()
-  def waiting_counts(query \\ __MODULE__, business_id, pairs) do
-    waiting_sequence =
-      Enum.reduce(pairs, dynamic(false), fn {conversation_id, waiting_since}, predicate ->
-        dynamic(
-          [message],
-          ^predicate or
-            (message.conversation_id == ^conversation_id and
-               message.inserted_at >= ^waiting_since)
-        )
-      end)
-
-    query
-    |> for_business(business_id)
-    |> where([message], message.sender_type == :client)
-    |> where(^waiting_sequence)
-    |> group_by([message], message.conversation_id)
-    |> select([message], {message.conversation_id, count(message.id)})
-  end
-
   @spec before_message(Ecto.Queryable.t(), t()) :: Ecto.Query.t()
   def before_message(query \\ __MODULE__, %__MODULE__{} = cursor) do
     from(m in query,
@@ -251,6 +229,20 @@ defmodule Easy.Chat.Message do
       on: attachment.id == link.attachment_id and attachment.business_id == message.business_id,
       order_by: [asc: link.position],
       preload: [attachments: attachment]
+    )
+  end
+
+  @spec include_sender(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def include_sender(query \\ __MODULE__) do
+    from(message in query,
+      left_join: coach in Easy.Orgs.Coach,
+      on: message.sender_type == :coach and coach.id == message.sender_id and coach.business_id == message.business_id,
+      left_join: client in Easy.Clients.Client,
+      on: message.sender_type == :client and client.id == message.sender_id and client.business_id == message.business_id,
+      select_merge: %{
+        sender_name:
+          fragment("COALESCE(NULLIF(trim(concat_ws(' ', ?, ?, ?, ?)), ''), ?::text)", coach.first_name, coach.last_name, client.first_name, client.last_name, message.sender_type)
+      }
     )
   end
 end

@@ -13,6 +13,9 @@ defmodule Easy.Nutrition.Diary.SlotView do
     today = CorrectionPolicy.local_today(slot.applied_timezone, now)
 
     %{
+      id: slot.id,
+      shared_at: slot.shared_at,
+      note_to_coach: slot.note_to_coach,
       meal_slot: slot.meal_slot,
       meal_id: document.meal_id,
       revision: slot.revision,

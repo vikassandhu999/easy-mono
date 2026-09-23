@@ -33,8 +33,6 @@ defmodule EasyWeb.Coaches.ConversationController do
     ok: {200, data(Conversation.t())}
   )
 
-  typed(:mark_handled, path: %{id: Ecto.UUID.t()}, body: Conversation.mark_handled(), ok: {204, nil})
-
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
     params = conn.query_params
@@ -90,18 +88,6 @@ defmodule EasyWeb.Coaches.ConversationController do
     with {:ok, conversation} <-
            Chat.mark_read(conn.assigns.ctx, conn.path_params["id"], conn.query_params["through"]) do
       ok(conn, %{data: conversation})
-    end
-  end
-
-  @spec mark_handled(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def mark_handled(conn, _params) do
-    with {:ok, :handled} <-
-           Chat.mark_conversation_handled(
-             conn.assigns.ctx,
-             conn.path_params["id"],
-             conn.body_params[:expected_last_message_at]
-           ) do
-      ok(conn)
     end
   end
 end

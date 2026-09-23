@@ -1,7 +1,6 @@
 import {mkdir} from 'node:fs/promises';
 import {chromium, expect, webkit} from '@playwright/test';
 import {preview} from 'vite';
-import {chooseOption, selectTrigger} from '../select-helpers.mjs';
 
 const engine = process.env.BROWSER_ENGINE || 'chromium';
 if (engine !== 'chromium' && engine !== 'webkit') {
@@ -12,8 +11,8 @@ const app = await preview({
     host: '127.0.0.1',
     port: 0,
     proxy: {
-      '/v1': {target: 'http://localhost:4000', changeOrigin: true},
-      '/socket': {target: 'http://localhost:4000', ws: true, changeOrigin: true},
+      '/v1': {target: process.env.COACHAPP_API_URL || 'http://localhost:4000', changeOrigin: true},
+      '/socket': {target: process.env.COACHAPP_API_URL || 'http://localhost:4000', ws: true, changeOrigin: true},
     },
   },
 });
@@ -37,7 +36,7 @@ try {
     const email = `production-${suffix}@example.test`;
     const name = `Test Production ${engine} ${width}`;
     try {
-      await page.goto('/forms/new');
+      await page.goto('/training-exercises/new');
       await expect(page).toHaveURL(/\/login\?returnTo=/);
       await page.getByRole('link', {name: 'Create an account', exact: true}).click();
       await page.getByLabel('First name', {exact: true}).fill('Test');
@@ -52,15 +51,8 @@ try {
       await page.getByLabel('Business name', {exact: true}).fill('Test Production Business');
       await page.getByLabel('Business handle', {exact: true}).fill(`production-${suffix}`);
       await page.getByRole('button', {name: 'Create business', exact: true}).click();
-      await expect(page).toHaveURL(`${baseURL}/welcome?returnTo=%2Fforms%2Fnew`);
-      for (const title of [
-        'Know the person behind the plan.',
-        'Build once. Coach each person.',
-        'Make healthy choices easier.',
-        'See how the week really went.',
-        'Keep the conversation close.',
-        'Know who needs you next.',
-      ]) {
+      await expect(page).toHaveURL(`${baseURL}/welcome?returnTo=%2Ftraining-exercises%2Fnew`);
+      for (const title of ['Build once. Coach each person.', 'Make healthy choices easier.']) {
         const heading = page.getByRole('heading', {level: 1, name: title, exact: true});
         await expect(heading).toBeVisible();
         await expect(heading).toBeFocused();
@@ -73,39 +65,30 @@ try {
           await heading.evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize)),
         ).toBeGreaterThanOrEqual(32);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-        if (title !== 'Know who needs you next.') {
+        if (title !== 'Make healthy choices easier.') {
           await page.getByRole('button', {name: 'Next', exact: true}).click();
         }
       }
       await page.screenshot({path: `/tmp/coachapp-welcome-production-${engine}-${width}.png`, animations: 'disabled'});
       await page.getByRole('button', {name: 'Continue to your page', exact: true}).click();
-      await expect(page).toHaveURL(`${baseURL}/forms/new`);
-      await page.getByLabel('Form name', {exact: true}).fill(name);
-      await page.getByLabel('Section title', {exact: true}).fill('Your progress');
-      await page.getByLabel('Question', {exact: true}).fill('What helped you this week?');
-      await chooseOption(selectTrigger(page, 'Answer type'), 'Single choice');
-      await page.getByLabel('Choices', {exact: true}).fill('Walking\nPlanning meals\nRest');
+      await expect(page).toHaveURL(`${baseURL}/training-exercises/new`);
+      await page.getByLabel('Exercise name', {exact: true}).fill(name);
       const createdResponse = page.waitForResponse(
         (response) =>
-          response.url().endsWith('/v1/coach/form-templates') &&
+          response.url().endsWith('/v1/coach/training-exercises') &&
           response.request().method() === 'POST' &&
           response.status() === 201,
       );
-      await page.getByRole('button', {name: 'Save form', exact: true}).click();
-      const form = (await (await createdResponse).json()).data;
-      expect(form.sections[0].questions[0].label).toBe('What helped you this week?');
-      expect(form.sections[0].questions[0].options).toEqual(['Walking', 'Planning meals', 'Rest']);
-      await page.getByRole('link', {name: new RegExp(name)}).click();
-      await expect(page.getByLabel('Form name', {exact: true})).toHaveValue(name);
-      await expect(page.getByLabel('Question', {exact: true})).toHaveValue('What helped you this week?');
+      await page.getByRole('button', {name: 'Save exercise', exact: true}).click();
+      const exercise = (await (await createdResponse).json()).data;
+      expect(exercise.name).toBe(name);
+      await page.goto(`/training-exercises/${exercise.id}`);
+      await expect(page.getByLabel('Exercise name', {exact: true})).toHaveValue(name);
       await page.reload();
-      await expect(page.getByLabel('Question', {exact: true})).toHaveValue('What helped you this week?');
+      await expect(page.getByLabel('Exercise name', {exact: true})).toHaveValue(name);
       for (const [label, path, title] of [
-        ['Workbench', '/workbench', 'Workbench'],
-        ['Clients', '/', 'Clients'],
-        ['Applications', '/applications', 'Applications'],
-        ['Check-ins', '/check-ins', 'Check-ins'],
-        ['Forms', '/forms', 'Forms'],
+        ['Messages', '/messages', 'Messages'],
+        ['Clients', '/clients', 'Clients'],
         ['Training', '/training-plans', 'Training plans'],
         ['Nutrition', '/nutrition-plans', 'Nutrition plans'],
       ]) {
@@ -119,48 +102,33 @@ try {
         await expect(page.getByRole('alert')).toHaveCount(0);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       }
-      const socketReady = page.waitForEvent('websocket').then((socket) =>
-        socket.waitForEvent('framereceived', {
-          predicate: (frame) => String(frame.payload).includes('phx_reply') && String(frame.payload).includes('ok'),
-        }),
-      );
-      await page
-        .getByRole('navigation', {name: 'Coaching', exact: true})
-        .getByRole('link', {name: 'Messages', exact: true})
-        .click();
-      await expect(page.getByRole('heading', {name: 'Messages', exact: true})).toBeVisible();
-      await socketReady;
-      await expect(page.getByText('Your conversations start here', {exact: true})).toBeVisible();
       await page.screenshot({
         path: `tests/navigation/artifacts/production-${engine}-${width}.png`,
         animations: 'disabled',
       });
-      await page.goto(`/forms/${form.id}`);
+      await page.goto(`/training-exercises/${exercise.id}`);
       const session = await page.evaluate(() => JSON.parse(localStorage.getItem('coachapp.auth.v1')));
-      const removal = await context.request.delete(
-        `${baseURL}/v1/coach/form-templates/${form.id}?expected_revision=${form.revision}`,
-        {
-          headers: {authorization: `Bearer ${session.tokens.access_token}`},
-        },
-      );
+      const removal = await context.request.delete(`${baseURL}/v1/coach/training-exercises/${exercise.id}`, {
+        headers: {authorization: `Bearer ${session.tokens.access_token}`},
+      });
       expect(removal.status()).toBe(204);
       await page.getByRole('button', {name: 'Your account', exact: true}).click();
       await page.getByRole('menuitem', {name: 'Sign out', exact: true}).click();
       await expect(page).toHaveURL(`${baseURL}/login`);
-      await page.goto(`/forms/${form.id}`);
+      await page.goto(`/training-exercises/${exercise.id}`);
       await expect(page).toHaveURL(/\/login\?returnTo=/);
       await page.getByLabel('Email', {exact: true}).fill(email);
       await page.getByRole('button', {name: 'Continue with email', exact: true}).click();
       await page.getByLabel('Verification code', {exact: true}).fill('123456');
       await page.getByRole('button', {name: 'Verify and continue', exact: true}).click();
-      await expect(page).toHaveURL(`${baseURL}/forms/${form.id}`);
+      await expect(page).toHaveURL(`${baseURL}/training-exercises/${exercise.id}`);
       await expect(page.getByRole('alert')).toContainText('The requested resource was not found.');
-      await page.getByRole('link', {name: 'Back to forms', exact: true}).click();
-      await expect(page.getByRole('heading', {name: 'Forms', exact: true})).toBeVisible();
+      await page.getByRole('link', {name: 'Back to exercises', exact: true}).click();
+      await expect(page.getByRole('heading', {name: 'Exercise library', exact: true})).toBeVisible();
       expect([...scripts].every((path) => path.startsWith('/assets/') && path.endsWith('.js'))).toBe(true);
       expect(errors).toEqual([]);
       console.log(
-        `Production ${engine} ${width}px: signup, six-slide welcome with shipped previews, retained deep link, validation/recovery, saved form/reload, eight sections, real inbox socket, logout/login and missing-record recovery passed. Only built asset scripts loaded.`,
+        `Production ${engine} ${width}px: signup, two-slide welcome with shipped previews, retained deep link, validation/recovery, saved exercise/reload, four sections, logout/login and missing-record recovery passed. Only built asset scripts loaded.`,
       );
     } finally {
       await context.close();

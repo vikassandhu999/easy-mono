@@ -9,11 +9,6 @@ defmodule EasyWeb.BusinessController do
   typed(:timezones, ok: {200, data(Business.timezone_options())})
   typed(:update, body: Business.update(), ok: {200, data(Business.t())})
 
-  typed(:update_dashboard_setup,
-    body: Business.update_dashboard_setup(),
-    ok: {200, data(Business.t())}
-  )
-
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
     with {:ok, business} <- Orgs.create_business(conn.assigns.ctx, conn.body_params) do
@@ -39,14 +34,6 @@ defmodule EasyWeb.BusinessController do
   def timezones(conn, _params) do
     with {:ok, timezones} <- Easy.LocalCalendar.timezones() do
       ok(conn, %{data: %{timezones: timezones}})
-    end
-  end
-
-  @spec update_dashboard_setup(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update_dashboard_setup(conn, _params) do
-    with {:ok, business} <-
-           Orgs.update_dashboard_setup(conn.assigns.ctx, conn.body_params) do
-      ok(conn, %{data: business})
     end
   end
 end

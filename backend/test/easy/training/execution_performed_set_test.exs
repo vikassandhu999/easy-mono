@@ -215,13 +215,13 @@ defmodule Easy.Training.ExecutionPerformedSetTest do
       assert updated.snapshot_exercise_ref == prescribed.id
     end
 
-    test "conceals sets outside the client's active session", ctx do
+    test "requires a revision to correct completed sets", ctx do
       assert {:ok, set} =
                PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{exercise_id: ctx.exercise.id})
 
       close_session(ctx.session)
 
-      assert {:error, :not_found} = PerformedSets.update_client_performed_set(ctx.ctx, set.id, %{reps: "8"})
+      assert {:error, %Ecto.Changeset{}} = PerformedSets.update_client_performed_set(ctx.ctx, set.id, %{reps: "8"})
     end
 
     test "rejects notes longer than 5000 characters", ctx do
@@ -251,7 +251,7 @@ defmodule Easy.Training.ExecutionPerformedSetTest do
                PerformedSets.create_client_performed_set(ctx.ctx, ctx.session.id, %{exercise_id: ctx.exercise.id})
 
       close_session(ctx.session)
-      assert {:error, :not_found} = PerformedSets.delete_client_performed_set(ctx.ctx, terminal_set.id)
+      assert {:error, %Ecto.Changeset{}} = PerformedSets.delete_client_performed_set(ctx.ctx, terminal_set.id)
     end
 
     test "conceals another client's active-session set from update and delete", ctx do

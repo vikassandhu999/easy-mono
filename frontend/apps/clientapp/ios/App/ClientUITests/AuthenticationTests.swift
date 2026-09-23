@@ -38,11 +38,11 @@ final class AuthenticationTests: XCTestCase {
         let app = XCUIApplication(bundleIdentifier: "com.easy.client")
         app.launch()
         app.open(try XCTUnwrap(URL(string: "easy://app/account/details")))
-        XCTAssertTrue(app.staticTexts[fixture.formEmail].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(app.staticTexts[fixture.migrationEmail].waitForExistence(timeout: 15), app.debugDescription)
         app.terminate()
         app.launch()
         app.open(try XCTUnwrap(URL(string: "easy://app/account/details")))
-        XCTAssertTrue(app.staticTexts[fixture.formEmail].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(app.staticTexts[fixture.migrationEmail].waitForExistence(timeout: 15), app.debugDescription)
         let migrated = XCTAttachment(screenshot: app.screenshot())
         migrated.name = "iPhone migrated credential session after restart"
         migrated.lifetime = .keepAlways
@@ -140,104 +140,6 @@ final class AuthenticationTests: XCTestCase {
     }
 
     @MainActor
-    func testFormDraftAndSavedResponse() async throws {
-        continueAfterFailure = false
-        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "fixture", withExtension: "json"))
-        let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
-        let app = XCUIApplication(bundleIdentifier: "com.easy.client")
-        app.resetAuthorizationStatus(for: .photos)
-        app.resetAuthorizationStatus(for: .camera)
-        app.launch()
-        app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.formToken)")))
-        let signOut = app.buttons["Sign out to continue"]
-        if signOut.waitForExistence(timeout: 2) { signOut.tap() }
-        XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 15), app.debugDescription)
-        app.buttons["Continue with email"].tap()
-        let code = app.webViews.textFields["Verification code"]
-        XCTAssertTrue(code.waitForExistence(timeout: 15), app.debugDescription)
-        code.tap()
-        code.typeText("123456")
-        app.buttons["Verify and continue"].tap()
-        XCTAssertTrue(app.links["Forms & check-ins"].waitForExistence(timeout: 15), app.debugDescription)
-        app.open(try XCTUnwrap(URL(string: "easy://app/forms/\(fixture.assignmentId)")))
-        let goal = app.webViews.textViews.matching(NSPredicate(format: "label CONTAINS %@", "Your goal")).firstMatch
-        XCTAssertTrue(goal.waitForExistence(timeout: 15), app.debugDescription)
-        goal.tap()
-        goal.typeText("A steady native routine")
-        let system = XCUIApplication(bundleIdentifier: "com.apple.springboard")
-        for action in ["Take photo", "Choose photo"] {
-            let choose = app.buttons[action]
-            if !choose.isHittable { app.swipeUp() }
-            choose.tap()
-            let refuse = system.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Don")).firstMatch
-            XCTAssertTrue(refuse.waitForExistence(timeout: 10), system.debugDescription)
-            refuse.tap()
-            let denied = app.alerts["Easy"]
-            XCTAssertTrue(denied.waitForExistence(timeout: 10), app.debugDescription)
-            XCTAssertTrue(denied.buttons["Settings"].exists)
-            denied.buttons["OK"].tap()
-            XCTAssertTrue(app.staticTexts["Photo access is off. Enable it for Easy in your device settings, then try again. Your draft stays here."].waitForExistence(timeout: 10))
-        }
-        XCTAssertTrue(goal.waitForExistence(timeout: 10))
-        if let control = fixture.apiControlURL { try await setConnection(control, available: false) }
-        app.terminate()
-        app.launch()
-        XCTAssertTrue(app.links["Forms & check-ins"].waitForExistence(timeout: 15))
-        app.open(try XCTUnwrap(URL(string: "easy://app/forms/\(fixture.assignmentId)")))
-        XCTAssertTrue(goal.waitForExistence(timeout: 15), app.debugDescription)
-        XCTAssertEqual(goal.value as? String, "A steady native routine")
-        XCTAssertTrue(app.staticTexts["Your unsent answers were restored."].waitForExistence(timeout: 10))
-        let send = app.buttons["Send response"]
-        if let control = fixture.apiControlURL {
-            let stale = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "The latest version could not be checked.")).firstMatch
-            XCTAssertTrue(stale.waitForExistence(timeout: 15), app.debugDescription)
-            XCTAssertFalse(send.isEnabled, "A cached form cannot be sent until its server state is checked")
-            let offline = XCTAttachment(screenshot: app.screenshot())
-            offline.name = "iPhone cached form during API interruption"
-            offline.lifetime = .keepAlways
-            add(offline)
-            try await setConnection(control, available: true)
-            let refresh = app.buttons["Check for updates"]
-            if !refresh.isHittable { app.swipeDown() }
-            refresh.tap()
-            let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: send)
-            await fulfillment(of: [ready], timeout: 15)
-        }
-        goal.tap()
-        goal.typeText(" ")
-        goal.typeText(XCUIKeyboardKey.delete.rawValue)
-        XCTAssertEqual(goal.value as? String, "A steady native routine")
-        let keyboard = app.keyboards.firstMatch
-        XCTAssertTrue(keyboard.waitForExistence(timeout: 10))
-        XCTAssertGreaterThan(keyboard.frame.height, 150)
-        XCTAssertLessThan(keyboard.frame.minY, app.frame.maxY - 100)
-        XCTAssertLessThanOrEqual(send.frame.maxY, keyboard.frame.minY + 2)
-        let keyboardShot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        keyboardShot.name = "iPhone form send above visible keyboard"
-        keyboardShot.lifetime = .keepAlways
-        add(keyboardShot)
-        send.tap()
-        XCTAssertTrue(app.staticTexts["A steady native routine"].waitForExistence(timeout: 15), app.debugDescription)
-        XCTAssertTrue(app.links["Back to your forms"].exists)
-        let saved = XCTAttachment(screenshot: app.screenshot())
-        saved.name = "iPhone saved form"
-        saved.lifetime = .keepAlways
-        add(saved)
-        if let control = fixture.apiControlURL { try await setConnection(control, available: false) }
-        app.terminate()
-        app.launch()
-        XCTAssertTrue(app.links["Forms & check-ins"].waitForExistence(timeout: 15))
-        app.open(try XCTUnwrap(URL(string: "easy://app/forms/\(fixture.assignmentId)")))
-        XCTAssertTrue(app.staticTexts["A steady native routine"].waitForExistence(timeout: 15))
-        if let control = fixture.apiControlURL { try await setConnection(control, available: true) }
-        app.links["Back to your forms"].tap()
-        app.links["Your account"].tap()
-        XCTAssertTrue(app.buttons["Sign out"].waitForExistence(timeout: 15))
-        app.buttons["Sign out"].tap()
-        XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 10))
-    }
-
-    @MainActor
     func testWorkoutDraftAndSavedResult() throws {
         continueAfterFailure = false
         let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "fixture", withExtension: "json"))
@@ -254,7 +156,7 @@ final class AuthenticationTests: XCTestCase {
         code.tap()
         code.typeText("123456")
         app.buttons["Verify and continue"].tap()
-        XCTAssertTrue(app.links["Forms & check-ins"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.links["Training"].waitForExistence(timeout: 15))
         app.open(try XCTUnwrap(URL(string: "easy://app/training")))
         let start = app.buttons["Start freestyle workout"]
         XCTAssertTrue(start.waitForExistence(timeout: 15), app.debugDescription)
@@ -354,7 +256,7 @@ final class AuthenticationTests: XCTestCase {
         code.tap()
         code.typeText("123456")
         app.buttons["Verify and continue"].tap()
-        XCTAssertTrue(app.links["Forms & check-ins"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.links["Training"].waitForExistence(timeout: 15))
         let mealURL = try XCTUnwrap(URL(string: "easy://app/nutrition/days/\(fixture.nutritionDate)/lunch"))
         app.open(mealURL)
         let addItem = app.buttons["Add food or recipe"]
@@ -421,129 +323,6 @@ final class AuthenticationTests: XCTestCase {
         add(saved)
     }
 
-    func testWeightDraftAndSavedResult() throws {
-        continueAfterFailure = false
-        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "fixture", withExtension: "json"))
-        let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
-        let app = XCUIApplication(bundleIdentifier: "com.easy.client")
-        app.launch()
-        app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.weightToken)")))
-        let signOut = app.buttons["Sign out to continue"]
-        if signOut.waitForExistence(timeout: 2) { signOut.tap() }
-        XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 15))
-        app.buttons["Continue with email"].tap()
-        let code = app.webViews.textFields["Verification code"]
-        XCTAssertTrue(code.waitForExistence(timeout: 15))
-        code.tap()
-        code.typeText("123456")
-        app.buttons["Verify and continue"].tap()
-        XCTAssertTrue(app.links["Forms & check-ins"].waitForExistence(timeout: 15))
-        let weightURL = try XCTUnwrap(URL(string: "easy://app/progress/weight/\(fixture.nutritionDate)"))
-        app.open(weightURL)
-        let weight = app.webViews.textFields["Weight"]
-        XCTAssertTrue(weight.waitForExistence(timeout: 15), app.debugDescription)
-        weight.tap()
-        weight.typeText("74.25")
-        XCTAssertEqual(weight.value as? String, "74.25")
-        XCTAssertTrue(app.staticTexts["Draft saved on this device."].waitForExistence(timeout: 10))
-        let save = app.buttons["Save weight"]
-        XCTAssertTrue(save.isHittable, app.debugDescription)
-        let keyboard = XCTAttachment(screenshot: app.screenshot())
-        keyboard.name = "iPhone weight keyboard and save"
-        keyboard.lifetime = .keepAlways
-        add(keyboard)
-        app.terminate()
-        app.launch()
-        app.open(weightURL)
-        XCTAssertTrue(weight.waitForExistence(timeout: 15))
-        XCTAssertEqual(weight.value as? String, "74.25")
-        XCTAssertTrue(save.waitForExistence(timeout: 15))
-        weight.tap()
-        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
-        save.tap()
-        XCTAssertTrue(app.staticTexts["Your weight is saved."].waitForExistence(timeout: 15), app.debugDescription)
-        XCTAssertTrue(app.staticTexts["1 weight record"].waitForExistence(timeout: 10))
-        app.buttons["Date range & units"].tap()
-        XCTAssertTrue(app.staticTexts["Your progress view"].waitForExistence(timeout: 10), app.debugDescription)
-        app.buttons["Close"].tap()
-        XCUIDevice.shared.press(.home)
-        app.activate()
-        XCTAssertTrue(app.staticTexts["1 weight record"].waitForExistence(timeout: 15))
-        app.terminate()
-        app.launch()
-        app.open(weightURL)
-        XCTAssertTrue(weight.waitForExistence(timeout: 15))
-        XCTAssertEqual(weight.value as? String, "74.25")
-        let saved = XCTAttachment(screenshot: app.screenshot())
-        saved.name = "iPhone saved weight after restart"
-        saved.lifetime = .keepAlways
-        add(saved)
-    }
-
-    @MainActor
-    func testGoalDraftAndSavedResult() throws {
-        continueAfterFailure = false
-        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "fixture", withExtension: "json"))
-        let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
-        let app = XCUIApplication(bundleIdentifier: "com.easy.client")
-        app.launch()
-        app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.goalToken)")))
-        let signOut = app.buttons["Sign out to continue"]
-        if signOut.waitForExistence(timeout: 2) { signOut.tap() }
-        XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 15))
-        app.buttons["Continue with email"].tap()
-        let code = app.webViews.textFields["Verification code"]
-        XCTAssertTrue(code.waitForExistence(timeout: 15))
-        code.tap()
-        code.typeText("123456")
-        app.buttons["Verify and continue"].tap()
-        XCTAssertTrue(app.links["Forms & check-ins"].waitForExistence(timeout: 15))
-        let weightURL = try XCTUnwrap(URL(string: "easy://app/account/goal"))
-        app.open(weightURL)
-        let weight = app.webViews.textFields["Goal weight"]
-        XCTAssertTrue(weight.waitForExistence(timeout: 15), app.debugDescription)
-        weight.tap()
-        weight.typeText("74.25")
-        XCTAssertEqual(weight.value as? String, "74.25")
-        XCTAssertTrue(app.staticTexts["Draft saved on this device."].waitForExistence(timeout: 10))
-        let save = app.buttons["Save goal"]
-        XCTAssertTrue(save.isHittable, app.debugDescription)
-        let keyboard = XCTAttachment(screenshot: app.screenshot())
-        keyboard.name = "iPhone goal keyboard and save"
-        keyboard.lifetime = .keepAlways
-        add(keyboard)
-        app.terminate()
-        app.launch()
-        app.open(weightURL)
-        XCTAssertTrue(weight.waitForExistence(timeout: 15))
-        XCTAssertEqual(weight.value as? String, "74.25")
-        XCTAssertTrue(save.waitForExistence(timeout: 15))
-        weight.tap()
-        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
-        save.tap()
-        XCTAssertTrue(app.staticTexts["Your goal is saved."].waitForExistence(timeout: 15), app.debugDescription)
-        XCUIDevice.shared.press(.home)
-        app.activate()
-        XCTAssertTrue(weight.waitForExistence(timeout: 15))
-        app.terminate()
-        app.launch()
-        app.open(weightURL)
-        XCTAssertTrue(weight.waitForExistence(timeout: 15))
-        XCTAssertEqual(weight.value as? String, "74.25")
-        let saved = XCTAttachment(screenshot: app.screenshot())
-        saved.name = "iPhone saved goal after restart"
-        saved.lifetime = .keepAlways
-        add(saved)
-    }
-
-    private func setConnection(_ control: String, available: Bool) async throws {
-        let url = try XCTUnwrap(URL(string: "\(control)?available=\(available)"))
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        let (_, response) = try await URLSession.shared.data(for: request)
-        XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
-    }
-
     @MainActor
     func testMessageDraftPhotoAndSavedResult() throws {
         continueAfterFailure = false
@@ -566,7 +345,7 @@ final class AuthenticationTests: XCTestCase {
         code.tap()
         code.typeText("123456")
         app.buttons["Verify and continue"].tap()
-        XCTAssertTrue(app.links["Forms & check-ins"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.links["Training"].waitForExistence(timeout: 15))
         let messageURL = try XCTUnwrap(URL(string: "easy://app/messages"))
         app.open(messageURL)
         let input = app.webViews.textViews["Message your coach"]
@@ -688,109 +467,15 @@ final class AuthenticationTests: XCTestCase {
         add(media)
     }
 
-    @MainActor
-    func testPhotoSelectionAndSubmission() throws {
-        continueAfterFailure = false
-        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "fixture", withExtension: "json"))
-        let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
-        let app = XCUIApplication(bundleIdentifier: "com.easy.client")
-        app.resetAuthorizationStatus(for: .photos)
-        app.resetAuthorizationStatus(for: .camera)
-        app.launch()
-        app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.photoToken)")))
-        let signOut = app.buttons["Sign out to continue"]
-        if signOut.waitForExistence(timeout: 2) { signOut.tap() }
-        XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 15))
-        app.buttons["Continue with email"].tap()
-        let code = app.webViews.textFields["Verification code"]
-        XCTAssertTrue(code.waitForExistence(timeout: 15))
-        code.tap()
-        code.typeText("123456")
-        app.buttons["Verify and continue"].tap()
-        XCTAssertTrue(app.links["Forms & check-ins"].waitForExistence(timeout: 15))
-        app.open(try XCTUnwrap(URL(string: "easy://app/forms/\(fixture.photoAssignmentId)")))
-        let capture = fixture.photoSource == "camera"
-        let choose = app.buttons[capture ? "Take photo" : "Choose photo"]
-        XCTAssertTrue(choose.waitForExistence(timeout: 15))
-        let system = XCUIApplication(bundleIdentifier: "com.apple.springboard")
-        choose.tap()
-        var useGallery = !capture
-        if capture {
-            XCTAssertTrue(system.buttons["Allow"].waitForExistence(timeout: 10), system.debugDescription)
-            system.buttons["Allow"].tap()
-            let shutter = app.buttons["Take Picture"]
-            XCTAssertTrue(shutter.waitForExistence(timeout: 15), app.debugDescription)
-            #if targetEnvironment(simulator)
-            // The simulator opens capture but does not supply an image after shutter.
-            app.buttons["DismissImagePickerButton"].tap()
-            XCTAssertTrue(choose.waitForExistence(timeout: 10))
-            app.buttons["Choose photo"].tap()
-            useGallery = true
-            #else
-            shutter.tap()
-            let usePhoto = app.buttons["Use Photo"]
-            XCTAssertTrue(usePhoto.waitForExistence(timeout: 15), app.debugDescription)
-            usePhoto.tap()
-            #endif
-        }
-        if useGallery && fixture.photoAccess == "limited" {
-            let limit = system.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Limit Access")).firstMatch
-            XCTAssertTrue(limit.waitForExistence(timeout: 10), system.debugDescription)
-            limit.tap()
-            let library = XCUIApplication(bundleIdentifier: "com.apple.mobileslideshow.photospicker")
-            let photo = library.images.matching(NSPredicate(format: "label BEGINSWITH %@", "Photo,")).firstMatch
-            XCTAssertTrue(photo.waitForExistence(timeout: 25), library.debugDescription)
-            // PhotosPicker exposes image bounds but no accessibility hit point.
-            photo.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-            library.buttons["Done"].coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-        } else if useGallery {
-            let allow = system.buttons["Allow Full Access"]
-            XCTAssertTrue(allow.waitForExistence(timeout: 10), system.debugDescription)
-            allow.tap()
-        }
-        if useGallery {
-            let image = app.scrollViews.buttons.firstMatch
-            XCTAssertTrue(image.waitForExistence(timeout: 10), app.debugDescription)
-            if fixture.photoAccess == "limited" {
-                XCTAssertEqual(app.scrollViews.buttons.count, 1, "Only the permitted photo appears in Easy's library")
-            }
-            image.tap()
-            app.buttons["Done"].tap()
-        }
-        XCTAssertTrue(app.staticTexts["Photo uploaded"].waitForExistence(timeout: 20), app.debugDescription)
-        let send = app.buttons["Send response"]
-        if !send.isHittable { app.swipeUp() }
-        send.tap()
-        let savedPhoto = app.links.matching(NSPredicate(format: "label CONTAINS %@", "Open photo 1")).firstMatch
-        XCTAssertTrue(savedPhoto.waitForExistence(timeout: 15), app.debugDescription)
-        app.terminate()
-        app.launch()
-        XCTAssertTrue(app.links["Forms & check-ins"].waitForExistence(timeout: 15))
-        app.open(try XCTUnwrap(URL(string: "easy://app/forms/\(fixture.photoAssignmentId)")))
-        XCTAssertTrue(savedPhoto.waitForExistence(timeout: 15), app.debugDescription)
-        let saved = XCTAttachment(screenshot: app.screenshot())
-        saved.name = "iPhone saved progress photo (\(useGallery ? "gallery" : "camera"), \(fixture.photoAccess ?? "full") access)"
-        saved.lifetime = .keepAlways
-        add(saved)
-    }
-
     struct Fixture: Decodable {
         let email: String
         let token: String
         let mealToken: String
         let messageToken: String
-        let weightToken: String
         let workoutToken: String
-        let goalToken: String
-        let formToken: String
-        let formEmail: String
-        let assignmentId: String
-        let apiControlURL: String?
-        let photoAccess: String?
-        let photoSource: String?
+        let migrationToken: String
+        let migrationEmail: String
         let credentialMigration: Bool?
-        let photoToken: String
-        let photoAssignmentId: String
         let nutritionDate: String
     }
 }

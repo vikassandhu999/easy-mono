@@ -1,14 +1,7 @@
 import {matchPath} from 'react-router-dom';
 import {routes} from '../routes.ts';
 
-const publicRoutes = new Set<string>([
-  routes.login,
-  routes.signup,
-  routes.verify,
-  routes.setup,
-  routes.invitation,
-  routes.publicCoachingPage,
-]);
+const publicRoutes = new Set<string>([routes.login, routes.signup, routes.verify, routes.setup, routes.invitation]);
 
 function safeReturnTo(value: string | null): string {
   // biome-ignore lint/suspicious/noControlCharactersInRegex: Reject URL control characters before normalization.

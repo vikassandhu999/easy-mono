@@ -8,7 +8,7 @@
 # places, and get inherited near-black in all twelve. Nothing builds red,
 # nothing lints, and it does not read as "broken" on screen — it reads as
 # "that text is dark". clientapp shipped exactly that on the chat "Online"
-# badge, completed-set ticks, weight deltas, the membership badge and the
+# badge, completed-set ticks, the membership badge and the
 # workout finish banner.
 #
 # The fix is one line per token in the app's `@theme inline`:
@@ -23,7 +23,7 @@ cd "$(dirname "$0")/.."
 
 status=0
 
-for APP in coachapp-v2 clientapp-v2; do
+for APP in clientapp-v2; do
   SRC="frontend/apps/$APP/src"
   THEME="$SRC/index.css"
   [ -f "$THEME" ] || continue

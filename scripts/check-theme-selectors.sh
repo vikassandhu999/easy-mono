@@ -13,18 +13,18 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-THEME=frontend/apps/coachapp-v2/src/index.css
-APP=frontend/apps/coachapp-v2/src
+THEME=frontend/apps/clientapp-v2/src/index.css
+APP=frontend/apps/clientapp-v2/src
 # Resolve the version the APP actually loads. Several @heroui/styles versions
 # can sit in the pnpm store at once (3.0.2 and 3.2.1 both do here), and their
 # class names differ — picking the wrong one would make this check lie.
-HEROUI=$(cd frontend/apps/coachapp-v2 2>/dev/null && node -e '
+HEROUI=$(cd frontend/apps/clientapp-v2 2>/dev/null && node -e '
   const p = require.resolve("@heroui/styles/package.json");
   process.stdout.write(require("node:path").join(require("node:path").dirname(p), "dist", "components"));
 ' 2>/dev/null)
 [ -d "$HEROUI" ] || HEROUI=$(find frontend/node_modules/.pnpm -type d -path '*@heroui/styles/dist/components' 2>/dev/null | sort -V | tail -1)
 
-[ -f "$THEME" ] || { echo "check-theme-selectors: $THEME missing"; exit 0; }
+[ -f "$THEME" ] || { echo "check-theme-selectors: $THEME missing"; exit 1; }
 if [ -z "$HEROUI" ]; then
   echo "check-theme-selectors: @heroui/styles not installed — skipping"
   exit 0
@@ -44,7 +44,7 @@ KNOWN=$(cat "$HEROUI"/*.css | grep -oE '\.[a-z][a-z0-9_-]*' | sort -u)
 # (`.toggle-button--ghost`), so an app variant follows the same convention. The
 # check that matters for these is still enforced — the BLOCK must exist, so
 # `.toggle-buton--ink` is still caught. Only the modifier is app-owned.
-OURS='^\.(eyebrow|segmented|tap-target|scrollbar-hide|heading|light|default|dark)$'
+OURS='^\.(eyebrow|segmented|tap-target|scrollbar-hide|heading|light|default|dark|rounded-xl|rounded-2xl)$'
 APP_MODIFIERS='^\.[a-z][a-z0-9-]*--(ink|filter|tab|row|outline|weekday|builder)$'
 
 MISSING=""

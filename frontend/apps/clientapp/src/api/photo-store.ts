@@ -8,7 +8,6 @@ export type StoredPhoto = {
   blob: Blob;
   name: string;
   attachmentId?: string;
-  questionShape?: string;
   upload?: PhotoUpload;
 };
 function isUpload(value: unknown): value is PhotoUpload {
@@ -59,7 +58,6 @@ function isPhoto(value: unknown): value is StoredPhoto {
       'name' in value &&
       typeof value.name === 'string' &&
       (!('attachmentId' in value) || typeof value.attachmentId === 'string') &&
-      (!('questionShape' in value) || typeof value.questionShape === 'string') &&
       (!('upload' in value) || isUpload(value.upload)),
   );
 }
@@ -161,7 +159,7 @@ export async function clearAccountPhotos(owner: string) {
   });
 }
 
-export async function clearFormPhotos(owner: string, prefix: string) {
+export async function clearResourcePhotos(owner: string, prefix: string) {
   const db = await open();
   return new Promise<void>((resolve, reject) => {
     const tx = db.transaction('photos', 'readwrite');

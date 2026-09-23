@@ -7,9 +7,6 @@ defmodule Easy.Orgs.Business do
   import Ecto.Query, only: [from: 2]
 
   @type t() :: %__MODULE__{}
-  @type dashboard_setup_hidden_reason() :: :dismissed | :completed
-
-  @dashboard_setup_hidden_reasons [:dismissed, :completed]
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -18,11 +15,8 @@ defmodule Easy.Orgs.Business do
     field :handle, :string
     field :about, :string
     field :whatsapp_number, :string
-    field :dashboard_setup_hidden_at, :utc_datetime
     field :default_weight_unit, Ecto.Enum, values: [:kg, :lbs], default: :kg
     field :timezone, :string, default: LocalCalendar.default_timezone()
-
-    field :dashboard_setup_hidden_reason, Ecto.Enum, values: @dashboard_setup_hidden_reasons
 
     belongs_to :owner, User
 
@@ -54,51 +48,6 @@ defmodule Easy.Orgs.Business do
     |> validate_profile()
     |> validate_length(:whatsapp_number, max: 255, count: :codepoints)
     |> LocalCalendar.validate_timezone()
-  end
-
-  @spec dashboard_setup_input(map()) :: {:ok, map()} | {:error, Ecto.Changeset.t()}
-  def dashboard_setup_input(attrs) when is_map(attrs) do
-    changeset = cast(%__MODULE__{}, attrs, [])
-
-    if Map.has_key?(changeset.params, "dashboard_setup_hidden_reason"),
-      do: {:ok, changeset.params},
-      else: {:error, missing_dashboard_setup_reason()}
-  end
-
-  def dashboard_setup_input(_attrs), do: {:error, missing_dashboard_setup_reason()}
-
-  defp missing_dashboard_setup_reason do
-    %__MODULE__{} |> change() |> add_error(:dashboard_setup_hidden_reason, "must be present")
-  end
-
-  @spec update_changeset(t(), :dashboard_setup, DateTime.t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(%__MODULE__{dashboard_setup_hidden_reason: :completed} = business, :dashboard_setup, _now, _attrs) do
-    change(business)
-  end
-
-  def update_changeset(business, :dashboard_setup, now, attrs) do
-    business
-    |> cast(attrs, [:dashboard_setup_hidden_reason])
-    |> stamp_dashboard_setup(now)
-    |> check_constraint(:dashboard_setup_hidden_reason,
-      name: :businesses_dashboard_setup_hidden_reason_check
-    )
-    |> check_constraint(:dashboard_setup_hidden_at,
-      name: :businesses_dashboard_setup_hidden_state_consistent
-    )
-  end
-
-  @spec dashboard_setup_hidden_reasons() :: [dashboard_setup_hidden_reason()]
-  def dashboard_setup_hidden_reasons, do: @dashboard_setup_hidden_reasons
-
-  defp stamp_dashboard_setup(changeset, now) do
-    hidden_at =
-      case get_field(changeset, :dashboard_setup_hidden_reason) do
-        nil -> nil
-        _reason -> now
-      end
-
-    put_change(changeset, :dashboard_setup_hidden_at, hidden_at)
   end
 
   defp validate_profile(changeset) do

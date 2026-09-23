@@ -1,7 +1,0 @@
-# CoachApp V2
-
-React 19 + Vite + TypeScript app for coaches (HeroUI v3, Tailwind v4, TanStack React Query + openapi-fetch).
-
-See **[`AGENTS.md`](./AGENTS.md)** for the development guide and **[`docs/`](./docs)** for specs.
-
-From the monorepo root: `just web` runs the dev server.

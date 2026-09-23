@@ -59,11 +59,11 @@ defmodule Easy.Training.ExecutionHistoryTest do
       assert updated.closed_at == nil
     end
 
-    test "rejects notes and soreness once the Training Session is terminal", ctx do
+    test "completed metadata corrections require a revision", ctx do
       assert {:ok, session} = Execution.start_client_session(ctx.ctx, nil, %{})
       assert {:ok, completed} = Execution.complete_client_session(ctx.ctx, session.id, %{})
 
-      assert {:error, :conflict} =
+      assert {:error, %Ecto.Changeset{}} =
                Execution.update_client_session(ctx.ctx, completed.id, %{notes: "Rewrite history"})
     end
   end
@@ -143,8 +143,8 @@ defmodule Easy.Training.ExecutionHistoryTest do
     end
   end
 
-  describe "terminal immutability" do
-    test "completed history rejects Performed Set mutations", ctx do
+  describe "revision protection" do
+    test "completed facts require a current revision for correction", ctx do
       exercise = insert(:exercise, business: ctx.coach.business, name: "Back Squat")
       assert {:ok, session} = Execution.start_client_session(ctx.ctx, nil, %{})
 
@@ -153,11 +153,11 @@ defmodule Easy.Training.ExecutionHistoryTest do
 
       assert {:ok, _} = Execution.complete_client_session(ctx.ctx, session.id, %{})
 
-      assert {:error, :not_found} =
+      assert {:error, %Ecto.Changeset{}} =
                PerformedSets.create_client_performed_set(ctx.ctx, session.id, %{exercise_id: exercise.id})
 
-      assert {:error, :not_found} = PerformedSets.update_client_performed_set(ctx.ctx, set.id, %{reps: "8"})
-      assert {:error, :not_found} = PerformedSets.delete_client_performed_set(ctx.ctx, set.id)
+      assert {:error, %Ecto.Changeset{}} = PerformedSets.update_client_performed_set(ctx.ctx, set.id, %{reps: "8"})
+      assert {:error, %Ecto.Changeset{}} = PerformedSets.delete_client_performed_set(ctx.ctx, set.id)
     end
   end
 

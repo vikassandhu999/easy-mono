@@ -66,9 +66,9 @@ defmodule Easy.Training.PerformedSetConcurrencyTest do
     assert positions == Enum.to_list(0..(@append_count - 1))
   end
 
-  test "an update waiting on session completion cannot change terminal history", ctx do
-    assert_terminal_transition_wins(ctx, fn set ->
-      PerformedSets.update_client_performed_set(ctx.ctx, set.id, %{reps: "12"})
+  test "an update observed before completion cannot overwrite the newer completed revision", ctx do
+    assert_terminal_transition_wins(ctx, fn set, revision ->
+      PerformedSets.update_client_performed_set(ctx.ctx, set.id, %{reps: "12", expected_revision: revision})
     end)
   end
 
@@ -106,9 +106,9 @@ defmodule Easy.Training.PerformedSetConcurrencyTest do
     assert next.position == 1
   end
 
-  test "a delete waiting on session completion cannot change terminal history", ctx do
-    assert_terminal_transition_wins(ctx, fn set ->
-      PerformedSets.delete_client_performed_set(ctx.ctx, set.id)
+  test "a delete observed before completion cannot remove a set from the newer completed revision", ctx do
+    assert_terminal_transition_wins(ctx, fn set, revision ->
+      PerformedSets.delete_client_performed_set(ctx.ctx, set.id, %{expected_revision: revision})
     end)
   end
 
@@ -119,6 +119,7 @@ defmodule Easy.Training.PerformedSetConcurrencyTest do
         reps: "10"
       })
 
+    {:ok, observed} = Execution.get_client_session(ctx.ctx, ctx.session.id)
     parent = self()
 
     terminal_transition =
@@ -137,7 +138,7 @@ defmodule Easy.Training.PerformedSetConcurrencyTest do
           receive do
             :complete ->
               session
-              |> change(state: :completed, closed_at: DateTime.utc_now(:second))
+              |> TrainingSession.update_changeset(:completed, DateTime.utc_now(:second), session.date, %{})
               |> Repo.update!()
           end
         end)
@@ -151,14 +152,14 @@ defmodule Easy.Training.PerformedSetConcurrencyTest do
     attempted_mutation =
       Task.async(fn ->
         Sandbox.checkout(Repo, sandbox: false)
-        mutation.(set)
+        mutation.(set, observed.revision)
       end)
 
     assert Task.yield(attempted_mutation, 100) == nil
     send(locker, :complete)
 
     assert {:ok, %TrainingSession{state: :completed}} = Task.await(terminal_transition, 5_000)
-    assert {:error, :not_found} = Task.await(attempted_mutation, 5_000)
+    assert {:error, %Ecto.Changeset{action: :stale_revision}} = Task.await(attempted_mutation, 5_000)
   end
 
   defp insert_fixture do

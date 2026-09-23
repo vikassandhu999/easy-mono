@@ -5,11 +5,6 @@ defmodule Easy.Factory do
   alias Easy.Billing.BusinessBilling
   alias Easy.Chat.MessageAttachment
   alias Easy.Clients.Client
-  alias Easy.Fitness.WeightEntry
-  alias Easy.Forms.CheckInSchedule
-  alias Easy.Forms.FormAssignment
-  alias Easy.Forms.FormSubmission
-  alias Easy.Forms.FormTemplate
   alias Easy.Identity.User
   alias Easy.Identity.UserSession
   alias Easy.LibraryMedia.Media, as: LibraryMedia
@@ -125,86 +120,6 @@ defmodule Easy.Factory do
     }
   end
 
-  def form_template_factory do
-    %FormTemplate{
-      business: build(:business),
-      name: sequence(:form_template_name, &"Check-in #{&1}"),
-      purpose: "check_in",
-      sections: [
-        %{
-          "title" => "Nutrition",
-          "section" => "nutrition",
-          "questions" => [
-            %{
-              "id" => "meal_prep_ability",
-              "label" => "Meal prep ability",
-              "type" => "select",
-              "required" => true,
-              "options" => ["low", "medium", "high"]
-            }
-          ]
-        }
-      ],
-      status: "active"
-    }
-  end
-
-  def check_in_schedule_factory do
-    client = build(:client)
-    template = build(:form_template, business: client.business)
-
-    %CheckInSchedule{
-      business: client.business,
-      client: client,
-      form_template: template,
-      frequency: :weekly,
-      next_due_on: Date.utc_today(),
-      active: true
-    }
-  end
-
-  def form_assignment_factory do
-    client = build(:client)
-    template = build(:form_template, business: client.business)
-
-    %FormAssignment{
-      business: client.business,
-      client: client,
-      form_template: template,
-      purpose: "check_in",
-      priority: "high",
-      status: "assigned"
-    }
-  end
-
-  def form_submission_factory do
-    assignment = build(:form_assignment)
-
-    %FormSubmission{
-      business: assignment.business,
-      client: assignment.client,
-      form_assignment: assignment,
-      question_snapshot: assignment.form_template.sections,
-      answers: %{"meal_prep_ability" => "high"},
-      submitted_by_type: "client",
-      submitted_by_id: assignment.client_id,
-      submitted_at: DateTime.utc_now(:second)
-    }
-  end
-
-  def weight_entry_factory do
-    client = build(:client)
-
-    %WeightEntry{
-      date: ~D[2026-04-22],
-      value: Decimal.new("91.40"),
-      unit: :kg,
-      note: nil,
-      client: client,
-      business: client.business
-    }
-  end
-
   def library_media_factory do
     %LibraryMedia{
       id: Ecto.UUID.generate(),
@@ -230,15 +145,6 @@ defmodule Easy.Factory do
       duration_ms: nil,
       client: client,
       business: client.business
-    }
-  end
-
-  def inquiry_attrs_factory do
-    %{
-      "first_name" => "Vikas",
-      "last_name" => "Sandhu",
-      "email" => sequence(:inquiry_email, &"inquiry-#{&1}@test.com"),
-      "phone" => "+91 98765 43210"
     }
   end
 

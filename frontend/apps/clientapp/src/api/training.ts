@@ -1,6 +1,6 @@
 import {onlineManager, useInfiniteQuery, useMutation, useQuery} from '@tanstack/react-query';
 import {ApiError, call, callEmpty, client} from './client';
-import {trainingKeys} from './keys';
+import {conversationKeys, trainingKeys} from './keys';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
 import type {PerformedSetCreate, PerformedSetUpdate, Session, SessionListQuery, SessionUpdate} from './schema';
@@ -86,7 +86,10 @@ async function trainingChanged(owner: string | undefined, session?: Session) {
   if (session) {
     queryClient.setQueryData(trainingKeys.session(session.id), {data: session});
   }
-  await queryClient.invalidateQueries({queryKey: trainingKeys.all});
+  await Promise.all([
+    queryClient.invalidateQueries({queryKey: trainingKeys.all}),
+    queryClient.invalidateQueries({queryKey: conversationKeys.all}),
+  ]);
   requireOwner(owner);
 }
 
@@ -120,7 +123,7 @@ export function useStartTraining() {
 type SetWrite =
   | {kind: 'create'; body: CreateSet}
   | {kind: 'update'; id: string; body: PerformedSetUpdate}
-  | {kind: 'remove'; id: string};
+  | {kind: 'remove'; id: string; expectedRevision: number};
 
 export function useWriteTrainingSet(sessionId: string) {
   return useMutation({
@@ -137,15 +140,39 @@ export function useWriteTrainingSet(sessionId: string) {
         );
       }
       if (input.kind === 'update') {
-        return call(
-          client.PATCH('/v1/client/training-performed-sets/{id}', {
-            params: {path: {id: input.id}},
-            body: input.body,
-          }),
-        );
+        try {
+          return await call(
+            client.PATCH('/v1/client/training-performed-sets/{id}', {
+              params: {path: {id: input.id}},
+              body: input.body,
+            }),
+          );
+        } catch (error) {
+          if (!(error instanceof ApiError) || error.status >= 500 || error.status === 409) {
+            const current = await call(
+              client.GET('/v1/client/training-sessions/{id}', {params: {path: {id: sessionId}}}),
+            );
+            requireOwner(owner);
+            const saved = current.data.performed_sets.find((set) => set.id === input.id);
+            const {expected_revision: _revision, ...measurements} = input.body;
+            if (
+              saved &&
+              Object.entries(measurements).every(
+                ([key, value]) => key in saved && String(Reflect.get(saved, key)) === String(value),
+              )
+            ) {
+              return {data: saved};
+            }
+          }
+          throw error;
+        }
       }
       try {
-        await callEmpty(client.DELETE('/v1/client/training-performed-sets/{id}', {params: {path: {id: input.id}}}));
+        await callEmpty(
+          client.DELETE('/v1/client/training-performed-sets/{id}', {
+            params: {path: {id: input.id}, query: {expected_revision: input.expectedRevision}},
+          }),
+        );
       } catch (error) {
         if (!(error instanceof ApiError) || error.status >= 500 || error.status === 404) {
           const saved = await call(client.GET('/v1/client/training-sessions/{id}', {params: {path: {id: sessionId}}}));
@@ -184,18 +211,65 @@ export function useWriteTrainingSet(sessionId: string) {
   });
 }
 
+type TrainingSave = {kind: 'save' | 'complete'; body: SessionUpdate};
+
+export function trainingSaveMatches(
+  input: TrainingSave,
+  saved: Pick<Session, 'date' | 'notes' | 'soreness_rating' | 'revision' | 'state'>,
+  previousState: Session['state'] | undefined,
+) {
+  const expectedState = input.kind === 'complete' ? 'completed' : previousState;
+  if (!expectedState || expectedState === 'discarded' || saved.state !== expectedState) {
+    return false;
+  }
+  if (
+    (input.body.expected_revision !== undefined && saved.revision !== input.body.expected_revision + 1) ||
+    (input.kind === 'save' && previousState === 'completed' && input.body.expected_revision === undefined)
+  ) {
+    return false;
+  }
+  const notes = input.body.notes?.trim() ? input.body.notes : null;
+  return (
+    (input.body.date === undefined || saved.date === input.body.date) &&
+    (input.body.notes === undefined || saved.notes === notes) &&
+    (input.body.soreness_rating === undefined || saved.soreness_rating === input.body.soreness_rating)
+  );
+}
+
 export function useSaveTraining(sessionId: string) {
   return useMutation({
     onMutate: () => getSession()?.id,
-    mutationFn: async (input: {kind: 'save' | 'complete'; body: SessionUpdate} | {kind: 'discard'}) => {
+    mutationFn: async (input: TrainingSave | {kind: 'discard'}) => {
+      const owner = getSession()?.id;
       requireOnline();
       const params = {path: {id: sessionId}};
       if (input.kind === 'discard') {
         return call(client.POST('/v1/client/training-sessions/{id}/discard', {params}));
       }
-      return input.kind === 'complete'
-        ? call(client.POST('/v1/client/training-sessions/{id}/complete', {params, body: input.body}))
-        : call(client.PATCH('/v1/client/training-sessions/{id}', {params, body: input.body}));
+      const previousState = queryClient.getQueryData<{data: Session}>(trainingKeys.session(sessionId))?.data.state;
+      try {
+        const result =
+          input.kind === 'complete'
+            ? await call(client.POST('/v1/client/training-sessions/{id}/complete', {params, body: input.body}))
+            : await call(client.PATCH('/v1/client/training-sessions/{id}', {params, body: input.body}));
+        requireOwner(owner);
+        // Completion retries may return an already closed workout. Its current
+        // metadata still has to match before this draft can be acknowledged.
+        if (input.kind === 'complete' && !trainingSaveMatches(input, result.data, previousState)) {
+          throw new Error('The saved workout differs from this draft. Compare it before saving again.');
+        }
+        return result;
+      } catch (error) {
+        if (!(error instanceof ApiError) || error.status >= 500 || error.status === 409) {
+          requireOwner(owner);
+          const current = await call(client.GET('/v1/client/training-sessions/{id}', {params}));
+          requireOwner(owner);
+          if (trainingSaveMatches(input, current.data, previousState)) {
+            return current;
+          }
+        }
+        throw error;
+      }
     },
     onSuccess: (result, _input, owner) => trainingChanged(owner, result.data),
     onError: async (_error, _input, owner) => {

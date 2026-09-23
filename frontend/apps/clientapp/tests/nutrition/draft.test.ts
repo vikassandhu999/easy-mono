@@ -15,10 +15,14 @@ draft.entries.push({
     notes: 'Kept through interruption',
   },
 });
+draft.noteToCoach = 'Is this portion enough?';
 const input = mealInput(draft);
+assert.equal(input.share, true);
+assert.equal(input.note_to_coach, 'Is this portion enough?');
 draft.attempt = input;
 const restored = parseMealDraft(JSON.parse(JSON.stringify(draft)), draft.date, draft.slot);
 assert.deepEqual(restored?.attempt, input);
+assert.equal(restored?.noteToCoach, 'Is this portion enough?');
 assert.equal(restored?.attempt?.entries[0]?.id, draft.entries[0]?.input.id);
 assert.deepEqual(restored?.attempt?.entries[0]?.portion, {kind: 'serving', amount: 0.5, unit: 'serving', label: null});
 assert.equal(

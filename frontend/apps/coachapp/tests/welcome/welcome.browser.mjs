@@ -4,14 +4,7 @@ import {chromium, expect} from '@playwright/test';
 const browser = await chromium.launch();
 const output = '/tmp/coachapp-welcome';
 await mkdir(output, {recursive: true});
-const titles = [
-  'Know the person behind the plan.',
-  'Build once. Coach each person.',
-  'Make healthy choices easier.',
-  'See how the week really went.',
-  'Keep the conversation close.',
-  'Know who needs you next.',
-];
+const titles = ['Build once. Coach each person.', 'Make healthy choices easier.'];
 try {
   for (const width of [375, 1280]) {
     const context = await browser.newContext({
@@ -46,7 +39,7 @@ try {
       await expect(page.getByRole('heading', {name: titles[index], exact: true})).toBeVisible();
       const image = page.locator('.welcome-preview img');
       await expect.poll(() => image.evaluate((node) => node.complete && node.naturalWidth > 0)).toBe(true);
-      expect(await image.evaluate((node) => node.currentSrc)).toContain(width === 375 ? '-mobile.jpg' : '-desktop.jpg');
+      expect(await image.evaluate((node) => node.currentSrc)).toContain(`-${width === 375 ? 'mobile' : 'desktop'}.jpg`);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.screenshot({path: `${output}/slide-${index + 1}-${width}.png`, fullPage: true});
       if (index === 1) {
@@ -61,15 +54,15 @@ try {
         await page.keyboard.press('Enter');
       }
     }
-    await page.getByRole('button', {name: 'Open my workbench', exact: true}).click();
-    await expect(page.getByRole('heading', {name: 'Workbench', exact: true})).toBeVisible();
+    await page.getByRole('button', {name: 'Open clients', exact: true}).click();
+    await expect(page.getByRole('heading', {name: 'Clients', exact: true})).toBeVisible();
     await page.reload();
-    await expect(page).toHaveURL(/\/workbench$/);
+    await expect(page).toHaveURL(/\/clients$/);
     await page.getByRole('button', {name: 'Your account', exact: true}).click();
     await page.getByRole('menuitem', {name: 'Explore Easy', exact: true}).click();
     await expect(page.getByRole('heading', {name: titles[0], exact: true})).toBeVisible();
     await page.getByRole('button', {name: 'Skip tour', exact: true}).click();
-    await expect(page).toHaveURL(/\/workbench$/);
+    await expect(page).toHaveURL(/\/clients$/);
     // Returning sign-in must not force the tour again.
     await page.getByRole('button', {name: 'Your account', exact: true}).click();
     await page.getByRole('menuitem', {name: 'Sign out', exact: true}).click();
@@ -79,12 +72,12 @@ try {
     await page.getByRole('button', {name: 'Verify and continue'}).click();
     await expect(page.getByRole('heading', {name: 'Clients', exact: true})).toBeVisible();
     // Preserve the coach's intended destination, including its search.
-    await page.goto('/welcome?returnTo=%2Fforms%3Fsearch%3Dweekly');
+    await page.goto('/welcome?returnTo=%2Fclients%3Fsearch%3DAlex');
     await page.getByRole('button', {name: 'Skip tour', exact: true}).click();
-    await expect(page).toHaveURL(/\/forms\?search=weekly$/);
+    await expect(page).toHaveURL(/\/clients\?search=Alex$/);
     await page.goto('/welcome?returnTo=%2Fwelcome%23again');
     await page.getByRole('button', {name: 'Skip tour', exact: true}).click();
-    await expect(page).toHaveURL(/\/workbench$/);
+    await expect(page).toHaveURL(/\/clients$/);
     await page.route('**/welcome/*.jpg', (route) => route.abort());
     await page.goto('/welcome');
     await expect(page.getByText('Screen preview couldn’t load. You can still continue the tour.')).toBeVisible();
@@ -103,7 +96,7 @@ try {
     expect(errors).toEqual([]);
     await context.close();
     console.log(
-      `Welcome: real signup, six previews, keyboard, reload/back, finish, replay, skip, login, return destination and recovery passed at ${width}px.`,
+      `Welcome: real signup, two previews, keyboard, reload/back, finish, replay, skip, login, return destination and recovery passed at ${width}px.`,
     );
   }
 } finally {

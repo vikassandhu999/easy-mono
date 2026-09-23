@@ -25,6 +25,7 @@ defmodule EasyWeb.Types.Training.PerformedSet do
         }
 
   @type create :: %{
+          optional(:expected_revision) => pos_integer(),
           optional(:request_id) => Ecto.UUID.t(),
           optional(:exercise_name) => String.t() | nil,
           optional(:exercise_id) => String.t() | nil,
@@ -41,6 +42,8 @@ defmodule EasyWeb.Types.Training.PerformedSet do
         }
 
   @type update :: %{
+          optional(:exercise_name) => String.t(),
+          optional(:expected_revision) => pos_integer(),
           optional(:set_type) => :working | :warmup | :dropset | nil,
           optional(:reps) => String.t() | nil,
           optional(:load_value) => number() | nil,
@@ -51,6 +54,8 @@ defmodule EasyWeb.Types.Training.PerformedSet do
           optional(:distance_unit) => :meters | :km | :miles | :none | nil,
           optional(:notes) => String.t() | nil
         }
+
+  @type delete_query :: %{optional(:expected_revision) => pos_integer()}
 
   @spec format(TrainingPerformedSet.t()) :: t()
   def format(%TrainingPerformedSet{} = set) do

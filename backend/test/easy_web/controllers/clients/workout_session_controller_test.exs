@@ -284,6 +284,62 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
   end
 
   describe "PATCH /v1/client/training-sessions/:id" do
+    test "backdates a planned workout and corrects its date without changing prescription or sharing time", ctx do
+      plan_id = Ecto.UUID.generate()
+      workout_id = Ecto.UUID.generate()
+
+      snapshot = %{
+        "version" => 1,
+        "plan" => %{"id" => plan_id, "name" => "Original plan", "revision" => 1},
+        "workout" => %{"id" => workout_id, "name" => "Original workout", "exercises" => []}
+      }
+
+      session =
+        insert(:workout_session,
+          client: ctx.client,
+          business: ctx.business,
+          kind: :planned,
+          snapshot_version: 1,
+          prescription_snapshot: snapshot,
+          source_plan_id: plan_id,
+          source_workout_id: workout_id
+        )
+
+      date = Date.to_iso8601(Date.add(Date.utc_today(), -3))
+      path = "/v1/client/training-sessions/#{session.id}"
+      assert %{"data" => active} = ctx.conn |> patch(path, %{date: date}) |> json_response(200)
+      assert active["date"] == date
+      assert active["prescription_snapshot"]["plan"]["name"] == "Original plan"
+      assert %{"data" => completed} = ctx.conn |> post(path <> "/complete", %{date: date}) |> json_response(200)
+      earlier = Date.to_iso8601(Date.add(Date.utc_today(), -5))
+      assert %{"data" => corrected} = ctx.conn |> patch(path, %{date: earlier, expected_revision: completed["revision"]}) |> json_response(200)
+      assert corrected["date"] == earlier
+      assert corrected["started_at"] == completed["started_at"]
+      assert corrected["closed_at"] == completed["closed_at"]
+      assert corrected["prescription_snapshot"] == completed["prescription_snapshot"]
+      assert corrected["source_workout_id"] == workout_id
+      assert ctx.conn |> patch(path, %{date: date, expected_revision: completed["revision"]}) |> response(409)
+      assert %{"data" => latest} = ctx.conn |> get(path) |> json_response(200)
+      assert latest["date"] == earlier
+    end
+
+    test "invalid and future occurrence dates are rejected while the saved draft stays intact", ctx do
+      session = insert(:workout_session, client: ctx.client, business: ctx.business, notes: "Saved draft")
+      path = "/v1/client/training-sessions/#{session.id}"
+      future = Date.to_iso8601(Date.add(Date.utc_today(), 2))
+
+      for date <- [future, "not-a-date", nil] do
+        assert ctx.conn |> patch(path, %{date: date}) |> response(422)
+        assert ctx.conn |> post(path <> "/complete", %{date: date}) |> response(422)
+      end
+
+      assert %{"data" => latest} = ctx.conn |> get(path) |> json_response(200)
+      assert latest["date"] == Date.to_iso8601(session.date)
+      assert latest["notes"] == "Saved draft"
+      assert latest["state"] == "active"
+      assert latest["closed_at"] == nil
+    end
+
     test "updates notes and soreness_rating without changing state", ctx do
       session = insert(:workout_session, client: ctx.client, business: ctx.business, state: :active)
 
@@ -302,7 +358,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
       assert data["closed_at"] == nil
     end
 
-    test "rejects notes on a terminal Training Session", ctx do
+    test "completed note corrections require a revision", ctx do
       session = insert(:workout_session, client: ctx.client, business: ctx.business, state: :completed)
 
       conn =
@@ -313,7 +369,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
           Jason.encode!(%{"notes" => "Rewrite history"})
         )
 
-      assert %{"error_code" => "conflict"} = json_response(conn, 409)
+      assert %{"error_detail" => %{"fields" => %{"expected_revision" => [_]}}} = json_response(conn, 422)
     end
 
     test "rejects generic state mutation", ctx do

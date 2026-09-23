@@ -1,6 +1,6 @@
 if Mix.env() != :dev, do: raise("Exercise browser fixtures require MIX_ENV=dev")
 
-Application.put_env(:easy, Easy.Repo, Keyword.put(Application.get_env(:easy, Easy.Repo), :database, "easy_coachapp_auth_dev"))
+Application.put_env(:easy, Easy.Repo, Keyword.put(Application.get_env(:easy, Easy.Repo), :database, System.get_env("EASY_BROWSER_DATABASE", "easy_browser_dev")))
 
 {:ok, _} = Application.ensure_all_started(:ecto_sql)
 {:ok, _} = Easy.Repo.start_link()

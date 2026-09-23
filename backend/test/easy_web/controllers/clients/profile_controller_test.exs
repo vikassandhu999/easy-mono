@@ -16,8 +16,6 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
           first_name: "Vikas",
           last_name: "Kumar",
           phone: "+91 98765 43210",
-          goal_weight_value: Decimal.new("82.5"),
-          goal_weight_unit: :lbs,
           subscription_started_on: ~D[2026-07-01],
           subscription_ends_on: ~D[2026-09-30],
           status: :active
@@ -35,8 +33,6 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
       assert data["first_name"] == "Vikas"
       assert data["last_name"] == "Kumar"
       assert data["phone"] == "+91 98765 43210"
-      assert data["goal_weight_value"] == "82.50"
-      assert data["goal_weight_unit"] == "lbs"
       assert data["default_weight_unit"] == "kg"
       assert data["timezone"] == client.timezone
       assert data["local_date"] == Date.to_iso8601(Client.local_date(client, DateTime.utc_now()))
@@ -50,8 +46,6 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
                "default_weight_unit",
                "email",
                "first_name",
-               "goal_weight_unit",
-               "goal_weight_value",
                "id",
                "last_name",
                "local_date",
@@ -158,47 +152,6 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
   end
 
   describe "PATCH /v1/client/me" do
-    test "saves and clears the client's own goal without changing contact details or another client" do
-      client = insert(:client, status: :active, first_name: "Keep")
-      other = insert(:client, business: client.business, status: :active)
-
-      for {body, expected_value, expected_unit} <- [
-            {%{"goal_weight_value" => 72.5, "goal_weight_unit" => "kg"}, "72.50", "kg"},
-            {%{"goal_weight_value" => 160, "goal_weight_unit" => "lbs"}, "160.00", "lbs"},
-            {%{"goal_weight_value" => nil}, nil, nil},
-            {%{"goal_weight_value" => 75, "goal_weight_unit" => "kg"}, "75.00", "kg"},
-            {%{"goal_weight_unit" => nil}, nil, nil}
-          ] do
-        conn = build_conn() |> authenticate_client(client) |> patch("/v1/client/me", body)
-        assert %{"data" => data} = json_response(conn, 200)
-        assert if(expected_value, do: Decimal.equal?(data["goal_weight_value"], expected_value), else: is_nil(data["goal_weight_value"]))
-        assert data["goal_weight_unit"] == expected_unit
-        assert data["first_name"] == "Keep"
-
-        read = build_conn() |> authenticate_client(client) |> get("/v1/client/me")
-        assert json_response(read, 200)["data"]["goal_weight_value"] == expected_value
-        assert Easy.Repo.get!(Client, other.id).goal_weight_value == nil
-      end
-    end
-
-    test "rejects invalid and unpaired goals without writing" do
-      client = insert(:client, status: :active)
-
-      for body <- [
-            %{"goal_weight_value" => 0, "goal_weight_unit" => "kg"},
-            %{"goal_weight_value" => -1, "goal_weight_unit" => "kg"},
-            %{"goal_weight_value" => 1000, "goal_weight_unit" => "kg"},
-            %{"goal_weight_value" => 72, "goal_weight_unit" => "stone"},
-            %{"goal_weight_value" => 72},
-            %{"goal_weight_unit" => "kg"}
-          ] do
-        conn = build_conn() |> authenticate_client(client) |> patch("/v1/client/me", body)
-        assert json_response(conn, 422)
-        assert Easy.Repo.get!(Client, client.id).goal_weight_value == nil
-        assert Easy.Repo.get!(Client, client.id).goal_weight_unit == nil
-      end
-    end
-
     test "updates first_name, last_name, and phone" do
       coach = insert(:coach)
       user = insert(:user, email_confirmed_at: DateTime.utc_now(:second))

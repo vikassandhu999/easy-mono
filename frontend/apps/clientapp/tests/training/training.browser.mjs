@@ -113,8 +113,7 @@ try {
       await page.unroute('**/v1/client/training-sessions');
       await page.getByLabel('Reps', {exact: true}).fill('8');
       await page.getByLabel('Weight (kg)', {exact: true}).fill('85');
-      await page.getByText('Units, set type & notes', {exact: true}).click();
-      await page.getByLabel('Set notes', {exact: true}).fill('Only this first set.');
+      await page.getByText('Units & set type', {exact: true}).click();
       await page.getByLabel('Effort (1–10)', {exact: true}).fill('7');
       await expect(page.getByText('Draft saved on this device.', {exact: true})).toBeVisible();
       await page.reload();
@@ -150,8 +149,7 @@ try {
       await expect(page.getByText('Draft saved on this device.', {exact: true})).toBeVisible();
       await page.reload();
       await expect(page.getByLabel('Reps', {exact: true})).toHaveValue('8');
-      await page.getByText('Units, set type & notes', {exact: true}).click();
-      await expect(page.getByLabel('Set notes', {exact: true})).toHaveValue('');
+      await page.getByText('Units & set type', {exact: true}).click();
       await expect(page.getByLabel('Effort (1–10)', {exact: true})).toHaveValue('');
       saved = (
         await api(`/v1/coach/clients/${fixture.clientId}/training-sessions/${sessionId}`, {token: fixture.coachToken})
@@ -178,12 +176,12 @@ try {
       await page.getByRole('dialog').getByRole('button', {name: 'Remove saved set'}).click();
       await expect(page.getByRole('list', {name: 'Saved sets'}).getByRole('listitem')).toHaveCount(1);
       await page.unroute('**/v1/client/training-performed-sets/*');
-      await page.getByText('Workout notes & soreness', {exact: true}).click();
-      await page.getByLabel('Workout notes', {exact: true}).fill('Felt steady today.');
+      await page.getByText('Workout date & note to coach', {exact: true}).click();
+      await page.getByLabel('Note to coach', {exact: true}).fill('Felt steady today.');
       await expect(page.getByText('Draft saved on this device.', {exact: true})).toBeVisible();
       await page.reload();
-      await page.getByText('Workout notes & soreness', {exact: true}).click();
-      await expect(page.getByLabel('Workout notes', {exact: true})).toHaveValue('Felt steady today.');
+      await page.getByText('Workout date & note to coach', {exact: true}).click();
+      await expect(page.getByLabel('Note to coach', {exact: true})).toHaveValue('Felt steady today.');
       expect(
         await page
           .getByRole('button', {name: 'Save set', exact: true})
@@ -195,15 +193,30 @@ try {
         }
         return route.continue();
       });
-      await page.getByRole('button', {name: 'Save workout notes', exact: true}).click();
-      await expect(page.getByRole('dialog').getByRole('alert')).toContainText('Your notes could not be saved');
-      await expect(page.getByLabel('Workout notes', {exact: true})).toHaveValue('Felt steady today.');
+      await page.getByRole('button', {name: 'Save workout details', exact: true}).click();
+      await expect(page.getByRole('dialog').getByRole('alert')).toContainText('could not be saved');
+      await expect(page.getByLabel('Note to coach', {exact: true})).toHaveValue('Felt steady today.');
       await page.unroute(`**/v1/client/training-sessions/${sessionId}`);
-      await page.getByRole('button', {name: 'Save workout notes', exact: true}).click();
+      // Accepted metadata with a lost response must recover by reading the exact saved revision.
+      let metadataWrites = 0;
+      await page.route(`**/v1/client/training-sessions/${sessionId}`, async (route) => {
+        if (route.request().method() !== 'PATCH') {
+          return route.continue();
+        }
+        const response = await route.fetch();
+        expect(response.status()).toBe(200);
+        metadataWrites++;
+        await route.abort('connectionreset');
+      });
+      await page.getByRole('button', {name: 'Save workout details', exact: true}).click();
       await expect(page.getByRole('dialog')).toHaveCount(0);
-      await expect(page.getByText('Workout notes saved.', {exact: true})).toBeVisible();
-      await page.getByRole('button', {name: 'Workout notes & soreness', exact: true}).click();
-      await expect(page.getByLabel('Workout notes', {exact: true})).toHaveValue('Felt steady today.');
+      await expect(
+        page.getByText('Workout details saved. Your note will be sent when you finish.', {exact: true}),
+      ).toBeVisible();
+      expect(metadataWrites).toBe(1);
+      await page.unroute(`**/v1/client/training-sessions/${sessionId}`);
+      await page.getByRole('button', {name: 'Workout date & note to coach', exact: true}).click();
+      await expect(page.getByLabel('Note to coach', {exact: true})).toHaveValue('Felt steady today.');
       await page.screenshot({path: `tests/training/artifacts/notes-${width}.png`});
       await page.getByRole('button', {name: 'Close', exact: true}).click();
       await page.goto('/');
@@ -216,8 +229,8 @@ try {
       await expect(
         page.getByRole('list', {name: 'Saved sets'}).getByText('10 reps · 85 kg', {exact: true}),
       ).toBeVisible();
-      await page.getByRole('button', {name: 'Workout notes & soreness', exact: true}).click();
-      await expect(page.getByLabel('Workout notes', {exact: true})).toHaveValue('Felt steady today.');
+      await page.getByRole('button', {name: 'Workout date & note to coach', exact: true}).click();
+      await expect(page.getByLabel('Note to coach', {exact: true})).toHaveValue('Felt steady today.');
       await page.getByRole('button', {name: 'Close', exact: true}).click();
       await api(`/v1/coach/training-plans/${plan.id}/prescription`, {
         method: 'PUT',
@@ -246,10 +259,19 @@ try {
       );
       await expect(page.getByRole('button', {name: 'Save set', exact: true})).toBeEnabled();
       await page.screenshot({path: `tests/training/artifacts/recording-${width}.png`, fullPage: true});
+      let completionWrites = 0;
+      await page.route(`**/v1/client/training-sessions/${sessionId}/complete`, async (route) => {
+        const response = await route.fetch();
+        expect(response.status()).toBe(200);
+        completionWrites++;
+        await route.abort('connectionreset');
+      });
       await page.getByRole('button', {name: 'Finish workout', exact: true}).click();
       await page.getByRole('dialog').getByRole('button', {name: 'Finish and save workout'}).click();
-      await expect(page.getByText('Your workout is saved.', {exact: true})).toBeVisible();
+      await expect(page.getByText('Your completed workout is saved.', {exact: true})).toBeVisible();
       await expect(page.getByText('Felt steady today.', {exact: true})).toBeVisible();
+      expect(completionWrites).toBe(1);
+      await page.unroute(`**/v1/client/training-sessions/${sessionId}/complete`);
       await page.reload();
       saved = (
         await api(`/v1/coach/clients/${fixture.clientId}/training-sessions/${sessionId}`, {token: fixture.coachToken})
@@ -287,6 +309,8 @@ try {
         unknownRouteReturn: true,
         lostStartResponse: true,
         lostSetResponse: true,
+        lostMetadataResponse: true,
+        lostCompletionResponse: true,
         frozenPrescription: true,
       });
     } finally {

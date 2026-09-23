@@ -12,7 +12,7 @@ Two arrangements were considered: a separate compose screen, and a composer bene
 
 ## Entry, reading and return
 
-Messages replaces Check-ins in the four-item primary navigation; check-ins remain reachable from Today. Today links to the conversation with the server's unread count. A cold message link, authentication return, background/resume and Android back use the existing native boundary. Older history uses opaque server cursors and server counts. Coach-shared form submissions link to the supported saved response reader.
+Messages is available in primary navigation and from Today. A cold message link, authentication return, background/resume and Android Back use the existing native boundary. Older history uses opaque server cursors and server counts. Workout and meal references open the corresponding record.
 
 Loading, an empty first conversation, failed history and failed older-page fetch each have specific states. Preserve visible history while retrying a later page. Image, video and audio attachments use signed downloads and explicit retry on failure. Cached conversation reading is account-scoped and visibly stale offline.
 

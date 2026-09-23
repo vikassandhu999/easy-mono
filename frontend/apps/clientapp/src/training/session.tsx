@@ -20,6 +20,7 @@ import {DraftStatus} from '../ui/draft-status';
 import {FormError} from '../ui/form-error';
 import {Page} from '../ui/page';
 import {ReadState} from '../ui/read-state';
+import {ReferenceNotice} from '../ui/reference-notice';
 import {SelectItem} from '../ui/select';
 import {SelectField} from '../ui/select-field';
 import {
@@ -67,6 +68,7 @@ export function TrainingSession() {
         />
       ) : (
         <>
+          <ReferenceNotice revision={session.revision} />
           <CachedRead
             updatedAt={query.dataUpdatedAt}
             failed={query.isError}
@@ -81,6 +83,7 @@ export function TrainingSession() {
             session={session}
             returnTo={returnTo}
             unit={profile.data.data.default_weight_unit}
+            localDate={profile.data.data.local_date}
             canSave={online && query.isFetchedAfterMount && !query.isFetching && !query.isError}
           />
         </>
@@ -98,11 +101,13 @@ function entryIdentity(entry: SetEntry) {
 function SessionContent({
   session,
   unit,
+  localDate,
   canSave,
   returnTo,
 }: {
   session: Session;
   unit: 'kg' | 'lbs';
+  localDate: string;
   canSave: boolean;
   returnTo: string;
 }) {
@@ -113,6 +118,7 @@ function SessionContent({
   const [error, setError] = useState('');
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [working, setWorking] = useState(false);
+  const [correcting, setCorrecting] = useState(false);
   const pending = working || saveSet.isPending || saveWorkout.isPending;
   const entry = draft?.entries.find((item) => item.key === draft.selected);
   const selected = draft?.selected ?? '';
@@ -151,7 +157,14 @@ function SessionContent({
     setError('');
     setNotice('');
     try {
-      const frozen = {...attempt, attempted: true};
+      const frozen = {
+        ...attempt,
+        attempted: true,
+        expectedRevision:
+          attempt.expectedRevision ??
+          (session.state === 'completed' ? draft?.revision : session.revision) ??
+          session.revision,
+      };
       const persisted = await update((current) => ({
         ...current,
         entries: current.entries.map((item) => (item.key === attempt.key ? frozen : item)),
@@ -161,12 +174,21 @@ function SessionContent({
       }
       await saveSet.mutateAsync(
         frozen.operation.kind === 'create'
-          ? {kind: 'create', body: creationBody(frozen)}
-          : {kind: 'update', id: frozen.operation.id, body: setMeasurements(frozen.values)},
+          ? {kind: 'create', body: {...creationBody(frozen), expected_revision: frozen.expectedRevision}}
+          : {
+              kind: 'update',
+              id: frozen.operation.id,
+              body: {
+                ...setMeasurements(frozen.values),
+                ...(!frozen.exerciseId ? {exercise_name: frozen.values.exercise_name.trim()} : {}),
+                expected_revision: frozen.expectedRevision,
+              },
+            },
       );
       const cleared = await update(
         (current) => ({
           ...current,
+          revision: frozen.expectedRevision + 1,
           entries: current.entries.map((item) => {
             if (item.key !== attempt.key || entryIdentity(item) !== entryIdentity(attempt)) {
               return item;
@@ -190,7 +212,7 @@ function SessionContent({
       );
       setNotice(cleared ? 'Set saved.' : 'Your set was saved. Retry to safely confirm it and clear the local entry.');
     } catch (cause) {
-      if (cause instanceof ApiError && cause.status === 422) {
+      if (cause instanceof ApiError && (cause.status === 422 || cause.status === 409)) {
         await update((current) => ({
           ...current,
           entries: current.entries.map((item) => (item.key === attempt.key ? {...item, attempted: false} : item)),
@@ -217,6 +239,7 @@ function SessionContent({
               values: setValues(set, exercise, unit),
               operation: {kind: 'edit', id: set.id},
               attempted: false,
+              expectedRevision: session.revision,
             }
           : item,
       ),
@@ -254,6 +277,8 @@ function SessionContent({
               ...current,
               entries: [],
               notes: session.notes ?? '',
+              date: session.date,
+              revision: session.revision,
               soreness: session.soreness_rating === null ? '' : String(session.soreness_rating),
             }),
             true,
@@ -262,17 +287,24 @@ function SessionContent({
           throw new Error('draft');
         }
       } else if (confirmation.kind === 'remove') {
-        await saveSet.mutateAsync({kind: 'remove', id: confirmation.id});
+        await saveSet.mutateAsync({kind: 'remove', id: confirmation.id, expectedRevision: session.revision});
+        await update((current) => ({...current, revision: session.revision + 1}), true);
         setNotice('Set removed.');
       } else {
-        await saveWorkout.mutateAsync(
+        const savedWorkout = await saveWorkout.mutateAsync(
           confirmation.kind === 'discard'
             ? {kind: 'discard'}
             : {
                 kind: 'complete',
-                body: {notes: draft.notes, ...(draft.soreness ? {soreness_rating: Number(draft.soreness)} : {})},
+                body: {
+                  expected_revision: draft.revision ?? session.revision,
+                  date: draft.date ?? session.date,
+                  notes: draft.notes,
+                  soreness_rating: draft.soreness ? Number(draft.soreness) : null,
+                },
               },
         );
+        await update((current) => ({...current, revision: savedWorkout.data.revision}), true);
       }
       setConfirmation(null);
     } catch (cause) {
@@ -292,6 +324,7 @@ function SessionContent({
   }
   const unsent = draft.entries.filter(entryHasInput);
   const unsentNotes =
+    (draft.date ?? session.date) !== session.date ||
     draft.notes !== (session.notes ?? '') ||
     draft.soreness !== (session.soreness_rating === null ? '' : String(session.soreness_rating));
   return (
@@ -305,7 +338,55 @@ function SessionContent({
           {notice}
         </p>
       )}
-      {session.state === 'active' ? (
+      {session.state === 'completed' && (
+        <div className="rounded-3xl bg-[var(--progress)] p-5 space-y-3">
+          <p className="font-semibold">Your completed workout is saved.</p>
+          <p className="text-sm">
+            You can correct recorded facts and when the workout happened. Your original targets and first-shared time
+            stay the same.
+          </p>
+          <Button
+            variant="outline"
+            onPress={() => setCorrecting(!correcting)}
+          >
+            {correcting ? 'View saved workout' : 'Correct this workout'}
+          </Button>
+        </div>
+      )}
+      {correcting && draft.revision !== session.revision && (
+        <section className="rounded-3xl bg-surface p-5 space-y-3">
+          <h2 className="font-semibold">Workout changed</h2>
+          <p className="text-sm">
+            Your draft is kept. Compare the saved sets and note before applying your corrections to the latest version.
+          </p>
+          <p className="text-sm whitespace-pre-wrap">
+            Saved note: {session.notes || 'No note'}
+            {session.soreness_rating ? ` · Soreness ${session.soreness_rating}/5` : ''}
+            {` · Workout date ${session.date}`}
+          </p>
+          <Button
+            variant="outline"
+            isDisabled={pending}
+            onPress={() =>
+              update(
+                (current) => ({
+                  ...current,
+                  revision: session.revision,
+                  entries: current.entries.map((item) => ({
+                    ...item,
+                    expectedRevision: session.revision,
+                    attempted: false,
+                  })),
+                }),
+                true,
+              )
+            }
+          >
+            I’ve compared the latest workout
+          </Button>
+        </section>
+      )}
+      {session.state === 'active' || correcting ? (
         <>
           {session.prescription_snapshot && (
             <>
@@ -453,7 +534,8 @@ function SessionContent({
           <WorkoutNotes
             notes={draft.notes}
             soreness={draft.soreness}
-            savedSoreness={session.soreness_rating}
+            date={draft.date ?? session.date}
+            localDate={localDate}
             pending={pending}
             canSave={canSave}
             onChange={(values) => {
@@ -461,21 +543,37 @@ function SessionContent({
             }}
             onSave={async (values) => {
               setError('');
-              await saveWorkout.mutateAsync({
+              if (!(await update((current) => ({...current, ...values}), true))) {
+                throw new Error('Your workout details could not be saved on this device. Try again before sharing.');
+              }
+              const savedWorkout = await saveWorkout.mutateAsync({
                 kind: 'save',
-                body: {notes: values.notes, ...(values.soreness ? {soreness_rating: Number(values.soreness)} : {})},
+                body: {
+                  expected_revision: draft.revision ?? session.revision,
+                  date: values.date,
+                  notes: values.notes,
+                  soreness_rating: values.soreness ? Number(values.soreness) : null,
+                },
               });
-              setNotice('Workout notes saved.');
+              await update((current) => ({...current, revision: savedWorkout.data.revision}), true);
+              setNotice(
+                session.state === 'completed'
+                  ? 'Corrections shared.'
+                  : 'Workout details saved. Your note will be sent when you finish.',
+              );
             }}
-            onFinish={() => setConfirmation({kind: 'finish'})}
+            onFinish={session.state === 'active' ? () => setConfirmation({kind: 'finish'}) : undefined}
+            completed={session.state === 'completed'}
           />
-          <Button
-            variant="ghost"
-            isDisabled={pending || !canSave}
-            onPress={() => setConfirmation({kind: 'discard'})}
-          >
-            Discard workout
-          </Button>
+          {session.state === 'active' && (
+            <Button
+              variant="ghost"
+              isDisabled={pending || !canSave}
+              onPress={() => setConfirmation({kind: 'discard'})}
+            >
+              Discard workout
+            </Button>
+          )}
         </>
       ) : (
         <>
@@ -511,7 +609,7 @@ function SessionContent({
           )}
           {session.notes && (
             <section>
-              <h2 className="font-semibold">Workout notes</h2>
+              <h2 className="font-semibold">Note to coach</h2>
               <p className="whitespace-pre-wrap">{session.notes}</p>
             </section>
           )}
@@ -520,7 +618,8 @@ function SessionContent({
             <section className="border-t border-border pt-5 space-y-3">
               <h2 className="text-xl font-semibold">Unsent entries on this device</h2>
               <p className="text-muted-foreground">
-                This workout is closed. These local entries are kept separately from the saved result.
+                These local entries are kept separately from the saved result. Use Correct this workout to add or edit
+                them.
               </p>
               {unsent.map((item) => (
                 <div
@@ -553,6 +652,7 @@ function SessionContent({
                 <p className="whitespace-pre-wrap">
                   {draft.notes}
                   {draft.soreness ? ` · Soreness ${draft.soreness}/5` : ''}
+                  {` · Workout date ${draft.date ?? session.date}`}
                 </p>
               )}
               <Button
@@ -610,7 +710,7 @@ function SessionContent({
               : confirmation.kind === 'discard'
                 ? 'This closes the workout as discarded. Recorded sets remain in its history, and unsent entries stay on this device.'
                 : confirmation.kind === 'remove'
-                  ? 'This removes the set from your active workout.'
+                  ? 'This removes the set from the saved workout. Your coach’s prescribed targets remain unchanged.'
                   : 'This removes the local draft. It does not remove a set that was already saved on the server.'}
           </p>
           <FormError message={error} />

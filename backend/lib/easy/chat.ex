@@ -8,7 +8,6 @@ defmodule Easy.Chat do
   alias Easy.ConversationPage
   alias Easy.Ctx
   alias Easy.Repo
-  alias Easy.WorkbenchPage
 
   import Ecto.Query
 
@@ -65,56 +64,6 @@ defmodule Easy.Chat do
     {:ok, %{count: count, conversations: conversations}}
   end
 
-  @type waiting_conversation :: %{
-          conversation: Conversation.t(),
-          waiting_message_count: non_neg_integer()
-        }
-
-  @spec count_waiting_conversations(Ctx.t()) :: {:ok, non_neg_integer()}
-  def count_waiting_conversations(%Ctx{} = ctx) do
-    {:ok, ctx |> waiting_conversations() |> Repo.count_unique()}
-  end
-
-  @spec list_waiting_conversations(Ctx.t(), keyword()) ::
-          {:ok, %{count: non_neg_integer(), items: [waiting_conversation()], next_cursor: String.t() | nil}}
-          | {:error, :cursor_incompatible | :invalid_cursor}
-  def list_waiting_conversations(%Ctx{} = ctx, opts \\ []) do
-    scope = %{"queue" => "replies", "search" => Keyword.get(opts, :search, "") || ""}
-
-    with {:ok, mode} <- WorkbenchPage.mode(opts, scope),
-         {:ok, position} <- decode_waiting_position(mode) do
-      query = ctx |> waiting_conversations() |> Conversation.for_client_search(opts[:search])
-      count = Repo.count_unique(query)
-
-      page =
-        case mode do
-          :legacy ->
-            %{count: count, items: query |> Conversation.include_client() |> Conversation.oldest() |> Easy.Utils.paginate(opts) |> Repo.all(), next_cursor: nil}
-
-          {:cursor, _cursor} ->
-            limit = WorkbenchPage.limit(opts)
-
-            query
-            |> after_waiting_position(position)
-            |> Conversation.include_client()
-            |> Conversation.oldest()
-            |> limit(^(limit + 1))
-            |> Repo.all()
-            |> WorkbenchPage.finish(limit, count, scope, &waiting_position_of/1)
-        end
-
-      conversations = attach_unread_counts(page.items, ctx.business_id, :coach)
-      waiting_counts = waiting_message_counts(conversations, ctx.business_id)
-
-      items =
-        Enum.map(conversations, fn conversation ->
-          %{conversation: conversation, waiting_message_count: Map.get(waiting_counts, conversation.id, 0)}
-        end)
-
-      {:ok, %{page | items: items}}
-    end
-  end
-
   @spec get_conversation(Ctx.t(), String.t()) :: {:ok, Conversation.t()} | {:error, :not_found}
   def get_conversation(%Ctx{} = ctx, conversation_id) do
     with {:ok, conversation} <- fetch_conversation(ctx, conversation_id) do
@@ -157,25 +106,6 @@ defmodule Easy.Chat do
     end
   end
 
-  @spec mark_conversation_handled(Ctx.t(), String.t(), DateTime.t()) ::
-          {:ok, :handled} | {:error, :not_found | :conflict}
-  def mark_conversation_handled(%Ctx{} = ctx, conversation_id, expected_last_message_at) do
-    with {:ok, :handled} <-
-           Repo.transact(fn ->
-             conversation =
-               ctx
-               |> visible_conversations()
-               |> where([conversation], conversation.id == ^conversation_id)
-               |> lock("FOR UPDATE")
-               |> Repo.one()
-
-             handle_locked_conversation(conversation, expected_last_message_at)
-           end) do
-      broadcast_conversation_updated(ctx.business_id, conversation_id)
-      {:ok, :handled}
-    end
-  end
-
   @spec get_client_conversation(Ctx.t()) :: {:ok, Conversation.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def get_client_conversation(%Ctx{} = ctx) do
     with {:ok, conversation} <- client_conversation(ctx) do
@@ -215,54 +145,10 @@ defmodule Easy.Chat do
     end
   end
 
-  defp waiting_conversations(%Ctx{} = ctx) do
-    ctx |> visible_conversations() |> Conversation.waiting()
-  end
-
-  defp decode_waiting_position(:legacy), do: {:ok, nil}
-  defp decode_waiting_position({:cursor, nil}), do: {:ok, nil}
-
-  defp decode_waiting_position({:cursor, %{"waiting_since" => waiting_since, "id" => id}})
-       when is_binary(waiting_since) and is_binary(id) do
-    with {:ok, waiting_since, 0} <- DateTime.from_iso8601(waiting_since),
-         {:ok, id} <- Ecto.UUID.cast(id) do
-      {:ok, %{waiting_since: waiting_since, id: id}}
-    else
-      _ -> {:error, :invalid_cursor}
-    end
-  end
-
-  defp decode_waiting_position(_mode), do: {:error, :invalid_cursor}
-  defp after_waiting_position(query, nil), do: query
-
-  defp after_waiting_position(query, %{waiting_since: waiting_since, id: id}) do
-    Conversation.after_waiting(query, waiting_since, id)
-  end
-
-  defp waiting_position_of(conversation), do: %{"waiting_since" => DateTime.to_iso8601(conversation.waiting_since), "id" => conversation.id}
-
   defp visible_conversations(%Ctx{} = ctx) do
     Conversation
     |> Conversation.for_business(ctx.business_id)
     |> Conversation.for_visible_clients(ctx)
-  end
-
-  defp waiting_message_counts([], _business_id), do: %{}
-
-  defp waiting_message_counts(conversations, business_id) do
-    pairs =
-      for %{id: id, waiting_since: waiting_since} <- conversations,
-          not is_nil(waiting_since),
-          do: {id, waiting_since}
-
-    if pairs == [] do
-      %{}
-    else
-      business_id
-      |> Message.waiting_counts(pairs)
-      |> Repo.all()
-      |> Map.new()
-    end
   end
 
   # Private
@@ -371,27 +257,6 @@ defmodule Easy.Chat do
       "inbox:business:#{business_id}",
       {:conversation_updated, conversation_id}
     )
-  end
-
-  defp handle_locked_conversation(nil, _expected_last_message_at), do: {:error, :not_found}
-
-  defp handle_locked_conversation(%Conversation{waiting_since: nil}, _expected_last_message_at),
-    do: {:ok, :handled}
-
-  defp handle_locked_conversation(
-         %Conversation{last_message_at: last_message_at} = conversation,
-         expected_last_message_at
-       ) do
-    if DateTime.compare(last_message_at, expected_last_message_at) == :eq do
-      Conversation
-      |> Conversation.for_business(conversation.business_id)
-      |> where([candidate], candidate.id == ^conversation.id)
-      |> Repo.update_all(set: [waiting_since: nil])
-
-      {:ok, :handled}
-    else
-      {:error, :conflict}
-    end
   end
 
   defp ok_or_not_found(nil), do: {:error, :not_found}

@@ -46,8 +46,6 @@ defmodule EasyWeb.BusinessControllerTest do
       assert data["default_weight_unit"] == "lbs"
       assert data["timezone"] == "Asia/Kolkata"
       assert data["whatsapp_number"] == nil
-      assert data["dashboard_setup_hidden_at"] == nil
-      assert data["dashboard_setup_hidden_reason"] == nil
       assert data["inserted_at"]
       assert data["updated_at"]
     end
@@ -64,57 +62,6 @@ defmodule EasyWeb.BusinessControllerTest do
     end
   end
 
-  describe "PATCH /v1/businesses/me/dashboard-setup" do
-    test "stores the terminal state and renders the updated business", %{
-      business: business,
-      owner_conn: conn
-    } do
-      conn =
-        patch(conn, "/v1/businesses/me/dashboard-setup", %{
-          "dashboard_setup_hidden_reason" => "dismissed"
-        })
-
-      assert %{"data" => data} = json_response(conn, 200)
-      assert data["id"] == business.id
-      assert data["name"] == business.name
-      assert data["handle"] == business.handle
-      assert data["about"] == business.about
-      assert data["default_weight_unit"] == Atom.to_string(business.default_weight_unit)
-      assert data["dashboard_setup_hidden_at"]
-      assert data["dashboard_setup_hidden_reason"] == "dismissed"
-      assert data["inserted_at"] == DateTime.to_iso8601(business.inserted_at)
-      assert data["updated_at"]
-    end
-
-    test "rejects non-owners", %{trainer_conn: conn} do
-      conn =
-        patch(conn, "/v1/businesses/me/dashboard-setup", %{
-          "dashboard_setup_hidden_reason" => "dismissed"
-        })
-
-      assert json_response(conn, 403)
-    end
-
-    test "validates the reason at the request boundary", %{owner_conn: conn} do
-      conn =
-        patch(conn, "/v1/businesses/me/dashboard-setup", %{
-          "dashboard_setup_hidden_reason" => "later"
-        })
-
-      assert json_response(conn, 422)
-    end
-
-    test "rejects unexpected body fields", %{owner_conn: conn} do
-      conn =
-        patch(conn, "/v1/businesses/me/dashboard-setup", %{
-          "dashboard_setup_hidden_reason" => "dismissed",
-          "unexpected" => true
-        })
-
-      assert json_response(conn, 422)
-    end
-  end
-
   describe "GET /v1/businesses/me" do
     test "renders the current business", %{business: business, owner_conn: conn} do
       conn = get(conn, "/v1/businesses/me")
@@ -122,8 +69,6 @@ defmodule EasyWeb.BusinessControllerTest do
       assert json_response(conn, 200) == %{
                "data" => %{
                  "about" => business.about,
-                 "dashboard_setup_hidden_at" => nil,
-                 "dashboard_setup_hidden_reason" => nil,
                  "default_weight_unit" => Atom.to_string(business.default_weight_unit),
                  "handle" => business.handle,
                  "id" => business.id,
@@ -138,20 +83,11 @@ defmodule EasyWeb.BusinessControllerTest do
   end
 
   describe "GET /v1/coach/me" do
-    test "exposes owner and dashboard setup state", %{business: business, owner_conn: conn} do
-      business
-      |> Ecto.Changeset.change(%{
-        dashboard_setup_hidden_at: DateTime.utc_now(:second),
-        dashboard_setup_hidden_reason: :completed
-      })
-      |> Easy.Repo.update!()
-
-      conn = get(conn, "/v1/coach/me")
-
-      assert %{"data" => data} = json_response(conn, 200)
+    test "exposes owner and business identity", %{business: business, owner_conn: conn} do
+      assert %{"data" => data} = conn |> get("/v1/coach/me") |> json_response(200)
       assert data["is_owner"] == true
-      assert data["business"]["dashboard_setup_hidden_reason"] == "completed"
-      assert data["business"]["dashboard_setup_hidden_at"]
+      assert data["business"]["id"] == business.id
+      assert data["business"]["name"] == business.name
     end
   end
 
@@ -174,8 +110,6 @@ defmodule EasyWeb.BusinessControllerTest do
       assert data["default_weight_unit"] == "lbs"
       assert data["timezone"] == "Europe/London"
       assert data["whatsapp_number"] == "+44 20 7946 0958"
-      assert data["dashboard_setup_hidden_at"] == nil
-      assert data["dashboard_setup_hidden_reason"] == nil
       assert data["inserted_at"] == DateTime.to_iso8601(business.inserted_at)
       assert data["updated_at"]
     end

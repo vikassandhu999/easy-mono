@@ -43,7 +43,7 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
       assert message["embed"] == nil
 
       assert Map.keys(message) |> Enum.sort() ==
-               ~w(attachments body conversation_id embed id inserted_at request_id sender_id sender_type)
+               ~w(attachments body conversation_id embed id inserted_at request_id sender_id sender_name sender_type)
 
       list_conn =
         build_conn() |> authenticate_coach(coach) |> get("/v1/coach/conversations/#{conversation_id}/messages")
@@ -51,7 +51,7 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
       assert %{"data" => [%{"body" => "Hello"}], "has_more" => false} = json_response(list_conn, 200)
     end
 
-    test "returns attachment metadata and the backend form submission snapshot", %{
+    test "returns attachment metadata and the backend workout record snapshot", %{
       conn: conn,
       client: client
     } do
@@ -59,14 +59,12 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
         conn |> get("/v1/coach/clients/#{client.id}/conversation") |> json_response(200)
 
       attachment = insert(:attachment, business: client.business, client: client, content_type: "audio/webm")
-      template = insert(:form_template, business: client.business)
-      assignment = insert(:form_assignment, business: client.business, client: client, form_template: template)
-      submission = insert(:form_submission, business: client.business, client: client, form_assignment: assignment)
+      entry = insert(:workout_session, state: :completed, business: client.business, client: client)
 
       post_conn =
         post(conn, "/v1/coach/conversations/#{conversation_id}/messages", %{
           "attachment_ids" => [attachment.id],
-          "embed" => %{"type" => "form_submission", "id" => submission.id}
+          "embed" => %{"type" => "training_session", "id" => entry.id}
         })
 
       response = json_response(post_conn, 201)
@@ -83,22 +81,20 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
                    }
                  ],
                  "embed" => %{
-                   "type" => "form_submission",
-                   "id" => submission_id,
+                   "type" => "training_session",
+                   "id" => entry_id,
                    "snapshot" => %{
-                     "form_assignment_id" => assignment_id,
                      "title" => title,
-                     "submitted_at" => submitted_at
+                     "recorded_at" => recorded_at
                    }
                  }
                }
              } = response
 
       assert attachment_id == attachment.id
-      assert submission_id == submission.id
-      assert assignment_id == assignment.id
-      assert title == assignment.form_template.name
-      assert submitted_at == DateTime.to_iso8601(submission.submitted_at)
+      assert entry_id == entry.id
+      assert title == "Workout"
+      assert recorded_at == DateTime.to_iso8601(entry.closed_at)
 
       list_conn =
         build_conn()
@@ -117,12 +113,11 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
                      }
                    ],
                    "embed" => %{
-                     "type" => "form_submission",
-                     "id" => ^submission_id,
+                     "type" => "training_session",
+                     "id" => ^entry_id,
                      "snapshot" => %{
-                       "form_assignment_id" => ^assignment_id,
                        "title" => ^title,
-                       "submitted_at" => ^submitted_at
+                       "recorded_at" => ^recorded_at
                      }
                    }
                  }
@@ -228,13 +223,6 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
     assert json_response(get(conn, "/v1/coach/conversations/not-a-uuid/messages"), 422)
     assert json_response(post(conn, "/v1/coach/conversations/not-a-uuid/messages", %{"body" => "hello"}), 422)
     assert json_response(post(conn, "/v1/coach/conversations/not-a-uuid/read", %{}), 422)
-
-    assert json_response(
-             post(conn, "/v1/coach/conversations/not-a-uuid/mark-handled", %{
-               "expected_last_message_at" => DateTime.to_iso8601(DateTime.utc_now(:microsecond))
-             }),
-             422
-           )
   end
 
   describe "POST /v1/coach/conversations/:id/read" do
@@ -249,7 +237,7 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
           sender_id: client.id
         )
 
-      set_conversation_activity(conversation, message.inserted_at)
+      set_conversation_timestamp(conversation, message.inserted_at)
 
       read_conn = post(conn, "/v1/coach/conversations/#{conversation.id}/read")
       assert %{"data" => %{"unread_count" => 0}} = json_response(read_conn, 200)
@@ -266,7 +254,7 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
 
       insert_client_message(conversation, client, inserted_at: observed_at)
       insert_client_message(conversation, client, inserted_at: later_at)
-      set_conversation_activity(conversation, later_at)
+      set_conversation_timestamp(conversation, later_at)
 
       read_conn =
         post(
@@ -294,33 +282,28 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
       assert id == conversation.id
     end
 
-    test "filters waiting and unread conversations with filtered counts", %{conn: conn, coach: coach, client: client} do
-      waiting = insert(:conversation, business: coach.business, client: client)
+    test "filters unread conversations with filtered counts", %{conn: conn, coach: coach, client: client} do
+      first_unread = insert(:conversation, business: coach.business, client: client)
       unread_client = insert(:client, business: coach.business, creator: coach)
       unread = insert(:conversation, business: coach.business, client: unread_client)
       normal_client = insert(:client, business: coach.business, creator: coach)
       normal = insert(:conversation, business: coach.business, client: normal_client)
       timestamp = ~U[2026-09-12 10:00:00.123456Z]
 
-      insert_client_message(waiting, client, inserted_at: timestamp)
+      insert_client_message(first_unread, client, inserted_at: timestamp)
       insert_client_message(unread, unread_client, inserted_at: timestamp)
-      set_conversation_activity(waiting, timestamp, waiting_since: timestamp)
-      set_conversation_activity(unread, timestamp)
-
-      assert %{"count" => 1, "data" => [%{"id" => waiting_id}]} =
-               json_response(get(conn, "/v1/coach/conversation-inbox", %{"status" => "waiting"}), 200)
-
-      assert waiting_id == waiting.id
+      set_conversation_timestamp(first_unread, timestamp)
+      set_conversation_timestamp(unread, timestamp)
 
       assert %{"count" => 2, "data" => unread_data} =
                json_response(get(conn, "/v1/coach/conversation-inbox", %{"status" => "unread"}), 200)
 
-      assert Enum.map(unread_data, & &1["id"]) |> Enum.sort() == Enum.sort([waiting.id, unread.id])
+      assert Enum.map(unread_data, & &1["id"]) |> Enum.sort() == Enum.sort([first_unread.id, unread.id])
 
       assert %{"count" => 3, "data" => all_data} =
                json_response(get(conn, "/v1/coach/conversation-inbox", %{"status" => "all"}), 200)
 
-      assert Enum.map(all_data, & &1["id"]) |> Enum.sort() == Enum.sort([waiting.id, unread.id, normal.id])
+      assert Enum.map(all_data, & &1["id"]) |> Enum.sort() == Enum.sort([first_unread.id, unread.id, normal.id])
     end
 
     test "treats search wildcards as literal characters", %{conn: conn, coach: coach} do
@@ -419,78 +402,6 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
     end
   end
 
-  describe "POST /v1/coach/conversations/:id/mark-handled" do
-    test "clears the observed waiting sequence", %{conn: conn, client: client} do
-      client_conn =
-        build_conn()
-        |> authenticate_client(client)
-        |> put_req_header("content-type", "application/json")
-
-      %{"data" => %{"inserted_at" => expected_last_message_at}} =
-        client_conn
-        |> post("/v1/client/conversation/messages", %{"body" => "Please take a look"})
-        |> json_response(201)
-
-      %{"data" => %{"id" => conversation_id, "waiting_since" => waiting_since}} =
-        conn
-        |> get("/v1/coach/clients/#{client.id}/conversation")
-        |> json_response(200)
-
-      assert is_binary(waiting_since)
-
-      handled_conn =
-        post(conn, "/v1/coach/conversations/#{conversation_id}/mark-handled", %{
-          "expected_last_message_at" => expected_last_message_at
-        })
-
-      assert response(handled_conn, 204) == ""
-
-      %{"data" => %{"waiting_since" => nil}} =
-        conn
-        |> get("/v1/coach/conversations/#{conversation_id}")
-        |> json_response(200)
-    end
-
-    test "returns 409 when a newer client message exists", %{conn: conn, client: client} do
-      client_conn =
-        build_conn()
-        |> authenticate_client(client)
-        |> put_req_header("content-type", "application/json")
-
-      %{"data" => %{"inserted_at" => observed_at}} =
-        client_conn
-        |> post("/v1/client/conversation/messages", %{"body" => "First"})
-        |> json_response(201)
-
-      _newer = post(client_conn, "/v1/client/conversation/messages", %{"body" => "Newer"})
-
-      %{"data" => %{"id" => conversation_id}} =
-        conn
-        |> get("/v1/coach/clients/#{client.id}/conversation")
-        |> json_response(200)
-
-      conflict_conn =
-        post(conn, "/v1/coach/conversations/#{conversation_id}/mark-handled", %{
-          "expected_last_message_at" => observed_at
-        })
-
-      assert json_response(conflict_conn, 409)
-    end
-
-    test "404s for another business's conversation", %{conn: conn} do
-      other_coach = insert(:coach)
-      other_client = insert(:client, business: other_coach.business, creator: other_coach)
-      conversation = insert(:conversation, business: other_coach.business, client: other_client)
-
-      handled_conn =
-        post(conn, "/v1/coach/conversations/#{conversation.id}/mark-handled", %{
-          "expected_last_message_at" => DateTime.to_iso8601(DateTime.utc_now(:microsecond))
-        })
-
-      assert json_response(handled_conn, 404)
-    end
-  end
-
   test "requires authentication" do
     conn = build_conn() |> get("/v1/coach/conversations")
     assert json_response(conn, 403)
@@ -511,7 +422,7 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
     )
   end
 
-  defp set_conversation_activity(conversation, timestamp, attrs \\ []) do
+  defp set_conversation_timestamp(conversation, timestamp, attrs \\ []) do
     updates = Keyword.merge([last_message_at: timestamp], attrs)
 
     Repo.update_all(

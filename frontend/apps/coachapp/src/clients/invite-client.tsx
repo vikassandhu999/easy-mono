@@ -2,9 +2,8 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {flushSync} from 'react-dom';
 import {useForm} from 'react-hook-form';
 import {generatePath, Link, useBeforeUnload, useBlocker, useNavigate} from 'react-router-dom';
-import {ApiError, errorMessage} from '../api/client';
+import {ApiError} from '../api/client';
 import {type ClientInvite, useClients, useInviteClient} from '../api/clients';
-import {useDefaultIntake} from '../api/forms';
 import {routes} from '../routes';
 import {Button, buttonVariants} from '../ui/button';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
@@ -12,14 +11,12 @@ import {FormError} from '../ui/form-error';
 import {setFormError} from '../ui/form-errors';
 import {FormField} from '../ui/form-field';
 import {InfiniteList} from '../ui/infinite-list';
-import {IntakePreview} from '../ui/intake-preview';
 import {useListLocation} from '../ui/list-location';
 import {FormActions, Page, PageHeader, Surface} from '../ui/page';
 
 export function InviteClient() {
   const navigate = useNavigate();
   const listLocation = useListLocation(routes.home);
-  const intake = useDefaultIntake();
   const invitation = useInviteClient();
   const form = useForm<Pick<ClientInvite, 'first_name' | 'last_name' | 'email'>>({
     defaultValues: {first_name: '', last_name: '', email: ''},
@@ -65,7 +62,7 @@ export function InviteClient() {
     navigate(generatePath(routes.client, {id}), {replace: true, state: listLocation.state});
   }
   const submit = form.handleSubmit(async (values) => {
-    if (!intake.isSuccess || pending || uncertainEmail) {
+    if (pending || uncertainEmail) {
       return;
     }
     try {
@@ -101,13 +98,13 @@ export function InviteClient() {
     <Page>
       <PageHeader
         title="Invite client"
-        description="Invite them to join you and complete their intake."
+        description="Invite them to join your coaching account."
         back={{to: listLocation.to, label: 'Back to clients'}}
       />
       <form
         noValidate
         onSubmit={submit}
-        className="has-mobile-actions grid items-start gap-6 md:grid-cols-2 md:gap-8"
+        className="has-mobile-actions space-y-6"
       >
         <Surface className="space-y-5">
           <div>
@@ -169,38 +166,6 @@ export function InviteClient() {
             </p>
           )}
         </Surface>
-        <section className="space-y-4">
-          <div>
-            <h2 className="section-title">Their intake form</h2>
-            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-              Ready for them as soon as they accept. You can preview the questions before sending.
-            </p>
-          </div>
-          {intake.isPending ? (
-            <Surface>
-              <p
-                role="status"
-                className="py-5 text-sm text-muted-foreground"
-              >
-                Loading intake…
-              </p>
-            </Surface>
-          ) : intake.isError ? (
-            <Surface className="space-y-4">
-              <FormError message={errorMessage(intake.error, "We couldn't load the intake. Please try again.")} />
-              <Button
-                variant="outline"
-                onPress={() => {
-                  intake.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            </Surface>
-          ) : (
-            <IntakePreview template={intake.data.data} />
-          )}
-        </section>
         <div className="md:col-span-2">
           <FormActions>
             <Link
@@ -212,7 +177,7 @@ export function InviteClient() {
             <Button
               type="submit"
               isPending={pending}
-              isDisabled={!intake.isSuccess || Boolean(uncertainEmail)}
+              isDisabled={Boolean(uncertainEmail)}
             >
               Send invitation
             </Button>

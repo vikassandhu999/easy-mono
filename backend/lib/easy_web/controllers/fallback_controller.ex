@@ -237,100 +237,6 @@ defmodule EasyWeb.FallbackController do
     )
   end
 
-  def call(conn, {:error, :form_template_assigned}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{form_template_id: ["has assignments"]}})})
-  end
-
-  def call(conn, {:error, :form_template_scheduled}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{form_template_id: ["has check-in schedules; archive it instead"]}})})
-  end
-
-  def call(conn, {:error, :form_template_built_in}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{form_template_id: ["is built in; archive it instead"]}})})
-  end
-
-  def call(conn, {:error, :form_template_archived}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{form_template_id: ["is archived; choose an active form"]}})})
-  end
-
-  def call(conn, {:error, :schedule_has_assignments}) do
-    call(
-      conn,
-      {:error,
-       Error.new(
-         :schedule_has_assignments,
-         "This schedule has generated check-ins. Stop scheduling to keep their history.",
-         %{fields: %{schedule: ["has assignments"]}},
-         :unprocessable_entity
-       )}
-    )
-  end
-
-  def call(conn, {:error, :invalid_default_intake_template}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{form_template_id: ["must be an active intake template"]}})})
-  end
-
-  def call(conn, {:error, :check_in_schedule_cap_reached}) do
-    call(
-      conn,
-      {:error,
-       Error.new(
-         :check_in_schedule_cap_reached,
-         "This client already has the maximum number of active check-in schedules.",
-         %{},
-         :unprocessable_entity
-       )}
-    )
-  end
-
-  def call(conn, {:error, :invalid_check_in_template}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{form_template_id: ["must be an active check-in template"]}})})
-  end
-
-  def call(conn, {:error, :invalid_answers}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{answers: ["is invalid"]}})})
-  end
-
-  def call(conn, {:error, :unknown_answer_keys}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{answers: ["reference unknown questions"]}})})
-  end
-
-  def call(conn, {:error, :missing_required_answers}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{answers: ["required questions are missing answers"]}})})
-  end
-
-  def call(conn, {:error, :invalid_answer_values}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{answers: ["contain invalid values"]}})})
-  end
-
-  def call(conn, {:error, :answers_required}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{answers: ["can't be blank"]}})})
-  end
-
-  def call(conn, {:error, :invalid_attachments}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{attachments: ["are invalid"]}})})
-  end
-
-  def call(conn, {:error, :assignment_changed}) do
-    call(conn, {:error, Error.new(:assignment_changed, "This intake changed. Refresh before trying again.", %{}, :conflict)})
-  end
-
-  def call(conn, {:error, :assignment_not_submittable}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{status: ["cannot be submitted"]}})})
-  end
-
-  def call(conn, {:error, :invalid_intake_assignment}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{purpose: ["must be an outstanding intake for an active client"]}})})
-  end
-
-  def call(conn, {:error, :invalid_service}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{service: ["is invalid"]}})})
-  end
-
-  def call(conn, {:error, :reminder_email_missing}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{email: ["client has no email address"]}})})
-  end
-
   def call(conn, {:error, :storage_unavailable}) do
     call(
       conn,
@@ -360,10 +266,6 @@ defmodule EasyWeb.FallbackController do
 
   def call(conn, {:error, :cursor_incompatible}) do
     call(conn, {:error, Error.unprocessable(%{fields: %{cursor: ["cannot be combined with offset or sort"]}})})
-  end
-
-  def call(conn, {:error, :cursor_required}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{cursor: ["is required with limit, search, or purpose"]}})})
   end
 
   def call(conn, {:error, :invalid_since}) do
@@ -472,13 +374,6 @@ defmodule EasyWeb.FallbackController do
 
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
     call(conn, {:error, Error.unprocessable(changeset)})
-  end
-
-  def call(conn, {:error, :too_many_programs}) do
-    call(
-      conn,
-      {:error, Error.unprocessable(%{fields: %{programs: ["a page can have at most 3 programs"]}})}
-    )
   end
 
   def call(conn, {:error, :read_only_source}) do

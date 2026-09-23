@@ -22,8 +22,6 @@ alias Easy.Training.{
 }
 
 alias Easy.Nutrition.{Diary, DiaryEntry, DiarySlot, Food, Plan, Programming}
-alias Easy.Fitness.WeightEntry
-alias Easy.Forms.{FormTemplate, FormAssignment, FormSubmission, CheckInSchedule}
 
 client_id = "f9e0ba52-2974-45b9-bf29-ffc3e081f7bd"
 client = Repo.get!(Client, client_id)
@@ -242,8 +240,7 @@ else
           soreness_rating: if(add_feedback?, do: Enum.random(2..4), else: nil),
           notes: if(add_feedback?, do: "Good session. Legs a bit sore from last time but pushed through.", else: nil),
           business_id: bid,
-          client_id: client_id,
-          training_workout_id: w.id
+          client_id: client_id
         })
 
       perform_sets.(session.id, els, week_idx)
@@ -401,11 +398,27 @@ else
 
   {:ok, day} = Diary.get_client_nutrition_day(client_ctx, today)
   breakfast = Enum.find(day.slots, &(&1.meal_slot == :breakfast))
-  {:ok, _} = Diary.save_client_nutrition_day(client_ctx, today, %{slots: [%{
-    meal_slot: :breakfast, meal_id: breakfast.meal_id, expected_revision: breakfast.revision,
-    entries: [%{id: Ecto.UUID.generate(), planned_item_ref: item.id, food_id: item.food_id, recipe_id: item.recipe_id, notes: nil,
-      portion: %{kind: item.portion_kind, grams: item.weight_g, amount: item.amount, unit: item.unit, label: item.serving_label}}]
-  }]})
+
+  {:ok, _} =
+    Diary.save_client_nutrition_day(client_ctx, today, %{
+      slots: [
+        %{
+          meal_slot: :breakfast,
+          meal_id: breakfast.meal_id,
+          expected_revision: breakfast.revision,
+          entries: [
+            %{
+              id: Ecto.UUID.generate(),
+              planned_item_ref: item.id,
+              food_id: item.food_id,
+              recipe_id: item.recipe_id,
+              notes: nil,
+              portion: %{kind: item.portion_kind, grams: item.weight_g, amount: item.amount, unit: item.unit, label: item.serving_label}
+            }
+          ]
+        }
+      ]
+    })
 
   extras =
     Enum.reduce(1..4, 0, fn offset, count ->
@@ -414,186 +427,35 @@ else
       else
         date = Date.add(today, -offset)
 
-        {:ok, _} = Diary.save_client_nutrition_day(client_ctx, date, %{slots: [%{
-          meal_slot: :lunch, meal_id: nil, expected_revision: 0,
-          entries: [%{id: Ecto.UUID.generate(), planned_item_ref: nil, food_id: extra_food.id, recipe_id: nil, notes: nil, portion: gram.(80)}]
-        }]})
+        {:ok, _} =
+          Diary.save_client_nutrition_day(client_ctx, date, %{
+            slots: [
+              %{
+                meal_slot: :lunch,
+                meal_id: nil,
+                expected_revision: 0,
+                entries: [%{id: Ecto.UUID.generate(), planned_item_ref: nil, food_id: extra_food.id, recipe_id: nil, notes: nil, portion: gram.(80)}]
+              }
+            ]
+          })
 
         count + 1
       end
     end)
 
-  {:ok, _} = Diary.save_client_nutrition_day(client_ctx, Date.add(today, -7), %{slots: [%{
-    meal_slot: :dinner, meal_id: nil, expected_revision: 0,
-    entries: [%{id: Ecto.UUID.generate(), planned_item_ref: nil, food_id: extra_food.id, recipe_id: nil, notes: nil, portion: gram.(40)}]
-  }]})
+  {:ok, _} =
+    Diary.save_client_nutrition_day(client_ctx, Date.add(today, -7), %{
+      slots: [
+        %{
+          meal_slot: :dinner,
+          meal_id: nil,
+          expected_revision: 0,
+          entries: [%{id: Ecto.UUID.generate(), planned_item_ref: nil, food_id: extra_food.id, recipe_id: nil, notes: nil, portion: gram.(40)}]
+        }
+      ]
+    })
 
   IO.puts("nutrition: assigned Client Plan + planned fulfilment + #{extras} extras + 1 no-Coverage entry")
-end
-
-# ------------------------------------------------------------------
-# 5. Weight entries + goal weight
-# ------------------------------------------------------------------
-existing_weights = Repo.aggregate(from(w in WeightEntry, where: w.client_id == ^client_id), :count)
-
-if existing_weights > 0 do
-  IO.puts("weight: #{existing_weights} entries already exist — skipping")
-else
-  # 12 entries over ~100 days, trending 78.0 -> 74.2 kg
-  points = 12
-  start_w = 78.0
-  end_w = 74.2
-  step = (start_w - end_w) / (points - 1)
-
-  notes_at = %{0 => "Starting weigh-in", 6 => "Feeling leaner, clothes fitting better", 11 => "Great progress this block"}
-
-  for i <- 0..(points - 1) do
-    days_ago = 100 - round(i * (100 / (points - 1)))
-    # small noise so the line isn't perfectly straight
-    noise = (:rand.uniform() - 0.5) * 0.4
-    value = Float.round(start_w - i * step + noise, 1)
-
-    Repo.insert!(%WeightEntry{
-      date: Date.add(today, -days_ago),
-      value: d.(value),
-      unit: :kg,
-      note: Map.get(notes_at, i),
-      business_id: bid,
-      client_id: client_id
-    })
-  end
-
-  Repo.update!(Ecto.Changeset.change(client, goal_weight_value: d.(70), goal_weight_unit: :kg))
-  IO.puts("weight: #{points} entries (78.0 -> 74.2 kg), goal set to 70 kg")
-end
-
-# ------------------------------------------------------------------
-# 6. Check-in schedule + form assignments + submissions (+ intake)
-# ------------------------------------------------------------------
-if Repo.get_by(CheckInSchedule, client_id: client_id) do
-  IO.puts("forms: check-in schedule already exists — skipping")
-else
-  check_in_tmpl =
-    Repo.one(from t in FormTemplate, where: t.business_id == ^bid and t.purpose == :check_in, limit: 1) ||
-      raise("no check-in form template for this business")
-
-  intake_tmpl = Repo.one(from t in FormTemplate, where: t.business_id == ^bid and t.purpose == :intake, limit: 1)
-
-  # generate a plausible answer per question type; skip photo (no object storage)
-  answer_for = fn q ->
-    case q["type"] do
-      "text" -> {q["id"], "Solid week overall. Energy was high and I hit all my training sessions."}
-      "number" -> {q["id"], 7}
-      "boolean" -> {q["id"], true}
-      "date" -> {q["id"], Date.to_iso8601(today)}
-      "select" -> {q["id"], List.first(q["options"] || [])}
-      "multi_select" -> {q["id"], [List.first(q["options"] || [])] |> Enum.reject(&is_nil/1)}
-      "rating" -> {q["id"], Enum.random(3..5)}
-      "weight" -> {q["id"], 75.4}
-      _ -> nil
-    end
-  end
-
-  build_answers = fn sections ->
-    for section <- List.wrap(sections),
-        q <- List.wrap(section["questions"]),
-        pair = answer_for.(q),
-        not is_nil(pair),
-        into: %{},
-        do: pair
-  end
-
-  insert_submission = fn business_id, template, assignment_id, submitted_at, reviewed_at ->
-    Repo.insert!(%FormSubmission{
-      question_snapshot: template.sections,
-      answers: build_answers.(template.sections),
-      submitted_by_type: :client,
-      submitted_by_id: client_id,
-      submitted_at: submitted_at,
-      reviewed_at: reviewed_at,
-      reviewed_by_id: if(reviewed_at, do: coach_user_id, else: nil),
-      business_id: business_id,
-      client_id: client_id,
-      form_assignment_id: assignment_id
-    })
-  end
-
-  # active weekly schedule, due tomorrow
-  schedule =
-    Repo.insert!(%CheckInSchedule{
-      frequency: :weekly,
-      next_due_on: Date.add(today, 1),
-      active: true,
-      business_id: bid,
-      client_id: client_id,
-      form_template_id: check_in_tmpl.id
-    })
-
-  # completed check-in #1 (older, reviewed)
-  a1 =
-    Repo.insert!(%FormAssignment{
-      purpose: :check_in,
-      priority: :normal,
-      status: :completed,
-      due_date: Date.add(today, -14),
-      completed_at: dt.(Date.add(today, -13), {9, 30}),
-      business_id: bid,
-      client_id: client_id,
-      form_template_id: check_in_tmpl.id,
-      check_in_schedule_id: schedule.id
-    })
-
-  insert_submission.(bid, check_in_tmpl, a1.id, dt.(Date.add(today, -13), {9, 30}), dt.(Date.add(today, -12), {14, 0}))
-
-  # completed check-in #2 (newest, unreviewed)
-  a2 =
-    Repo.insert!(%FormAssignment{
-      purpose: :check_in,
-      priority: :normal,
-      status: :completed,
-      due_date: Date.add(today, -7),
-      completed_at: dt.(Date.add(today, -6), {8, 15}),
-      business_id: bid,
-      client_id: client_id,
-      form_template_id: check_in_tmpl.id,
-      check_in_schedule_id: schedule.id
-    })
-
-  insert_submission.(bid, check_in_tmpl, a2.id, dt.(Date.add(today, -6), {8, 15}), nil)
-
-  # missed check-in (past due, no submission)
-  Repo.insert!(%FormAssignment{
-    purpose: :check_in,
-    priority: :normal,
-    status: :missed,
-    due_date: Date.add(today, -2),
-    business_id: bid,
-    client_id: client_id,
-    form_template_id: check_in_tmpl.id,
-    check_in_schedule_id: schedule.id
-  })
-
-  intake_note =
-    if intake_tmpl do
-      ai =
-        Repo.insert!(%FormAssignment{
-          purpose: :intake,
-          priority: :normal,
-          status: :completed,
-          due_date: Date.add(today, -25),
-          completed_at: dt.(Date.add(today, -24), {10, 0}),
-          business_id: bid,
-          client_id: client_id,
-          form_template_id: intake_tmpl.id
-        })
-
-      insert_submission.(bid, intake_tmpl, ai.id, dt.(Date.add(today, -24), {10, 0}), dt.(Date.add(today, -23), {11, 0}))
-      "1 completed intake"
-    else
-      "no intake template found"
-    end
-
-  IO.puts("forms: check-in schedule (weekly, due tomorrow) + 2 completed check-ins (1 reviewed, 1 unreviewed) + 1 missed; #{intake_note}")
 end
 
 # ------------------------------------------------------------------
@@ -610,9 +472,4 @@ IO.puts("performed sets:        #{count.(from ps in TrainingPerformedSet, join: 
 IO.puts("nutrition plans:       #{count.(from p in Plan, where: p.client_id == ^client_id)}")
 IO.puts("diary slots:           #{count.(from s in DiarySlot, where: s.client_id == ^client_id)}")
 IO.puts("diary entries:         #{count.(from e in DiaryEntry, where: e.client_id == ^client_id)}")
-IO.puts("weight entries:        #{count.(from w in WeightEntry, where: w.client_id == ^client_id)}")
-IO.puts("check-in schedules:    #{count.(from s in CheckInSchedule, where: s.client_id == ^client_id)}")
-IO.puts("form assignments:      #{count.(from a in FormAssignment, where: a.client_id == ^client_id)}")
-IO.puts("form submissions:      #{count.(from s in FormSubmission, where: s.client_id == ^client_id)}")
-IO.puts("goal weight:           #{inspect(Repo.reload!(client).goal_weight_value)} #{Repo.reload!(client).goal_weight_unit}")
 IO.puts("\ndone.")

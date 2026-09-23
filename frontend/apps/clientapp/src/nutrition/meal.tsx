@@ -1,7 +1,7 @@
 import {ArrowLeftRight, Plus, Trash2, Utensils} from 'lucide-react';
 import {useEffect, useRef, useState} from 'react';
 import {useForm} from 'react-hook-form';
-import {useNavigate, useParams} from 'react-router-dom';
+import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
 import {
   type Day,
@@ -13,6 +13,7 @@ import {
   useSaveMeal,
 } from '../api/nutrition';
 import {getSession} from '../api/session';
+import {safeReturnTo} from '../auth/return-to';
 import {routes} from '../routes';
 import {dayLabel} from '../training/recording';
 import {Button} from '../ui/button';
@@ -24,8 +25,10 @@ import {FormError} from '../ui/form-error';
 import {FormField} from '../ui/form-field';
 import {Page} from '../ui/page';
 import {ReadState} from '../ui/read-state';
+import {ReferenceNotice} from '../ui/reference-notice';
 import {SelectItem} from '../ui/select';
 import {SelectField} from '../ui/select-field';
+import {Textarea} from '../ui/textarea';
 import {FoodPicker} from './library';
 import {
   chooseAlternative,
@@ -42,13 +45,15 @@ import {useMealDraft} from './use-meal-draft';
 
 export function NutritionMeal() {
   const {date = '', slot = ''} = useParams();
+  const [params] = useSearchParams();
+  const back = params.has('returnTo') ? safeReturnTo(params.get('returnTo')) : `${routes.nutrition}?date=${date}`;
   const query = useNutritionDay(date);
   const day = query.data?.data;
   return (
     <Page
       title={isMealSlot(slot) ? slotLabel(slot) : 'Meal'}
       description={date ? dayLabel(date) : undefined}
-      back={`${routes.nutrition}?date=${date}`}
+      back={back}
       compact
     >
       {!isMealSlot(slot) ? (
@@ -61,6 +66,12 @@ export function NutritionMeal() {
             query.refetch();
           }}
         />
+      ) : params.has('referenceId') &&
+        params.get('referenceId') !== day.slots.find((item) => item.meal_slot === slot)?.id ? (
+        <p role="status">
+          The meal linked in this message is no longer available. The message and its saved preview are still available
+          in your conversation.
+        </p>
       ) : (
         <>
           <CachedRead
@@ -217,6 +228,7 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
     ) : null;
   return (
     <div className="space-y-5">
+      {saved && <ReferenceNotice revision={saved.revision} />}
       {foodPicker}
       {!eligible && (
         <p
@@ -304,7 +316,13 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
           </SelectField>
         </div>
       )}
-      {draft.entries.length === 0 && <p className="text-muted-foreground">Add a food or recipe to record this meal.</p>}
+      {!draft.entries.some((entry) => entry.included) && (
+        <p className="text-muted-foreground">
+          {saved?.shared_at
+            ? 'No foods in this correction. Sharing will remove the recorded intake for this meal. Earlier messages are kept.'
+            : 'Add a food or recipe to record this meal.'}
+        </p>
+      )}
       {draft.entries.some((entry) => !entry.included) && (
         <Button
           variant="outline"
@@ -357,14 +375,10 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
                 key={`${entry.input.id}.${entry.input.food_id}.${entry.input.recipe_id}.${draft.revision}`}
                 entry={entry}
                 locked={locked}
-                onChange={(amount, notes) => {
+                onChange={(amount) => {
                   update((current) => ({
                     ...current,
-                    entries: current.entries.map((row) =>
-                      row.input.id === entry.input.id
-                        ? {...row, amount, input: {...row.input, notes: notes || null}}
-                        : row,
-                    ),
+                    entries: current.entries.map((row) => (row.input.id === entry.input.id ? {...row, amount} : row)),
                   }));
                 }}
               />
@@ -399,6 +413,28 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
         />
         Add food or recipe
       </Button>
+      <section className="rounded-3xl bg-surface p-5 space-y-3">
+        <label
+          htmlFor="meal-note-to-coach"
+          className="font-semibold"
+        >
+          Note to coach
+        </label>
+        <Textarea
+          id="meal-note-to-coach"
+          value={draft.noteToCoach}
+          maxLength={5000}
+          disabled={locked}
+          onChange={(event) => {
+            const noteToCoach = event.target.value;
+            update((current) => ({...current, noteToCoach}));
+          }}
+        />
+        <p className="text-sm text-muted-foreground">
+          Sharing this meal sends your note in Messages. Your coach may reply later. Food details stay in your nutrition
+          history.
+        </p>
+      </section>
       <FormError message={error} />
       {!online && (
         <p
@@ -417,7 +453,7 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
             isDisabled={!canSave || (conflict && !draft.attempt)}
             onPress={submit}
           >
-            {draft.attempt ? 'Check meal save' : 'Save meal'}
+            {draft.attempt ? 'Check meal share' : saved?.shared_at ? 'Share meal corrections' : 'Share meal'}
           </Button>
         </div>
       )}
@@ -492,6 +528,12 @@ function SavedMeal({slot}: {slot: NutritionDaySlot}) {
       <p className="font-medium">
         Saved intake{slot.logged_calories === null ? '' : ` · ${slot.logged_calories} kcal`}
       </p>
+      {slot.note_to_coach && (
+        <p className="whitespace-pre-wrap">
+          <span className="font-medium">Note to coach: </span>
+          {slot.note_to_coach}
+        </p>
+      )}
       {rows.length === 0 ? (
         <p className="text-muted-foreground">No intake recorded.</p>
       ) : (
@@ -517,19 +559,19 @@ function EntryFields({
 }: {
   entry: MealEntry;
   locked: boolean;
-  onChange: (amount: string, notes: string) => void;
+  onChange: (amount: string) => void;
 }) {
-  const form = useForm({defaultValues: {amount: entry.amount, notes: entry.input.notes ?? ''}});
+  const form = useForm({defaultValues: {amount: entry.amount}});
   useEffect(() => {
     const values = form.getValues();
-    if (values.amount !== entry.amount || values.notes !== (entry.input.notes ?? '')) {
-      form.reset({amount: entry.amount, notes: entry.input.notes ?? ''});
+    if (values.amount !== entry.amount) {
+      form.reset({amount: entry.amount});
     }
-  }, [form, entry.amount, entry.input.notes]);
+  }, [form, entry.amount]);
   useEffect(() => {
     const subscription = form.watch((values) => {
       if (!locked) {
-        onChange(values.amount ?? '', values.notes ?? '');
+        onChange(values.amount ?? '');
       }
     });
     return () => subscription.unsubscribe();
@@ -545,17 +587,9 @@ function EntryFields({
           isDisabled={locked}
         />
       </div>
-      <details>
-        <summary className="min-h-11 py-3 cursor-pointer text-sm font-semibold">Add a note</summary>
-        <FormField
-          control={form.control}
-          name="notes"
-          label={`Notes for ${entry.name}`}
-          multiline
-          maxLength={5000}
-          isDisabled={locked}
-        />
-      </details>
+      {entry.input.notes && (
+        <p className="text-sm whitespace-pre-wrap text-muted-foreground">Recorded detail: {entry.input.notes}</p>
+      )}
     </div>
   );
 }

@@ -3,18 +3,6 @@ import {chromium, expect} from '@playwright/test';
 import {api, inviteClient} from '../auth/fixtures.mjs';
 
 const fixture = await inviteClient();
-const intake = (await api(`/v1/coach/clients/${fixture.clientId}/intake`, {token: fixture.coachToken})).data;
-await api(`/v1/coach/form-templates/${intake.form_template_id}`, {
-  method: 'PATCH',
-  token: fixture.coachToken,
-  body: {
-    expected_revision: intake.form_template.revision,
-    name: 'A check on your goals',
-    sections: [
-      {title: 'Your goals', questions: [{id: 'goal', type: 'text', label: 'What matters to you?', required: true}]},
-    ],
-  },
-});
 const browser = await chromium.launch();
 const context = await browser.newContext({
   baseURL: process.env.CLIENT_APP_URL || 'http://localhost:1315',
@@ -87,31 +75,10 @@ try {
   await page.getByRole('button', {name: 'Jump to latest'}).click();
   await expect.poll(async () => (await api('/v1/client/conversation', {token})).data.unread_count).toBe(0);
 
-  const form = (await api(`/v1/client/form-assignments/${intake.id}`, {token})).data;
-  const submission = (
-    await api(`/v1/client/form-assignments/${intake.id}/submit`, {
-      method: 'POST',
-      token,
-      body: {expected_revision: form.form_template.revision, answers: {goal: 'Feel stronger every week'}},
-    })
-  ).data;
-  await api(`/v1/coach/conversations/${conversation.id}/messages`, {
-    method: 'POST',
-    token: fixture.coachToken,
-    body: {body: 'Let us build on these goals.', embed: {type: 'form_submission', id: submission.id}},
-  });
-  await page.getByRole('link', {name: 'View response: A check on your goals'}).click();
-  await expect(page.getByText('Feel stronger every week', {exact: true})).toBeVisible();
-  await page.getByRole('link', {name: 'Back to messages', exact: true}).click();
-  await expect(page.getByText('Let us build on these goals.', {exact: true})).toBeVisible();
   expect(errors).toEqual([]);
   await writeFile(
     'tests/messages/artifacts/history.json',
-    JSON.stringify(
-      {passed: true, historyPages: cursors.size, failedOlder, count: 67, sharedSubmission: submission.id},
-      null,
-      2,
-    ),
+    JSON.stringify({passed: true, historyPages: cursors.size, failedOlder, count: 66}, null, 2),
   );
 } catch (error) {
   await page.screenshot({path: 'tests/messages/artifacts/history-failure.png', fullPage: true});
@@ -120,6 +87,4 @@ try {
 } finally {
   await browser.close();
 }
-console.log(
-  'Message history error/retry, opaque cursor paging, unseen-arrival unread state and shared response return passed.',
-);
+console.log('Message history error/retry, opaque cursor paging, and unseen-arrival unread state passed.');

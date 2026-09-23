@@ -9,8 +9,6 @@ defmodule EasyWeb.Types.Business do
           required(:default_weight_unit) => :kg | :lbs,
           required(:timezone) => String.t(),
           required(:whatsapp_number) => String.t() | nil,
-          required(:dashboard_setup_hidden_at) => DateTime.t() | nil,
-          required(:dashboard_setup_hidden_reason) => :dismissed | :completed | nil,
           required(:inserted_at) => DateTime.t(),
           required(:updated_at) => DateTime.t()
         }
@@ -31,8 +29,4 @@ defmodule EasyWeb.Types.Business do
         }
 
   @type timezone_options :: %{required(:timezones) => [String.t()]}
-
-  @type update_dashboard_setup :: %{
-          required(:dashboard_setup_hidden_reason) => :dismissed | :completed | nil
-        }
 end

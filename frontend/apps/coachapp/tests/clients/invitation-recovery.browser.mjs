@@ -40,7 +40,6 @@ try {
       await page.goto(roster);
       await expect(page.getByText('No matching clients', {exact: true})).toBeVisible();
       await page.getByRole('link', {name: 'Invite client', exact: true}).click();
-      await expect(page.getByRole('heading', {name: 'Intake', exact: true})).toBeVisible();
       await page.getByLabel('First name', {exact: true}).fill('Test Recovery');
       await page.getByLabel('Email', {exact: true}).fill(email);
       await page.getByRole('link', {name: 'Cancel', exact: true}).click();

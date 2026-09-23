@@ -1,17 +1,11 @@
-import type {RequestFilters} from './check-in-requests';
-import type {CheckInResponseFilters} from './check-in-responses';
-import type {ScheduleFilters} from './check-in-schedules';
 import type {ClientPlanFilters} from './client-plans';
 import type {ClientFilters} from './clients';
 import type {ConversationFilters} from './conversations';
 import type {FoodFilters} from './foods';
-import type {FormTemplateFilters} from './forms';
 import type {NutritionPlanFilters} from './nutrition-plans';
 import type {TeamFilters} from './team';
 import type {TrainingPlanFilters} from './training-plans';
 import type {SessionFilters} from './training-sessions';
-import type {WeightProgressFilters} from './weight-progress';
-import type {WorkbenchFilters} from './workbench';
 
 export const authKeys = {
   all: ['auth'] as const,
@@ -26,19 +20,6 @@ export const clientKeys = {
   infinite: (filters: ClientFilters) => [...clientKeys.lists(), 'infinite', filters] as const,
   details: () => [...clientKeys.all, 'detail'] as const,
   detail: (id: string) => [...clientKeys.details(), id] as const,
-};
-
-export const formKeys = {
-  all: ['forms'] as const,
-  defaultIntake: () => [...formKeys.all, 'default-intake'] as const,
-  lists: () => [...formKeys.all, 'list'] as const,
-  infinite: (filters: FormTemplateFilters) => [...formKeys.lists(), 'templates', 'infinite', filters] as const,
-  details: () => [...formKeys.all, 'detail'] as const,
-  detail: (id: string) => [...formKeys.details(), id] as const,
-  management: (id: string) => [...formKeys.detail(id), 'management'] as const,
-  intake: (clientId: string) => [...formKeys.all, 'intake', clientId] as const,
-  submissions: (assignmentId: string) => [...formKeys.lists(), 'submissions', {assignmentId}] as const,
-  submission: (clientId: string, id: string) => [...formKeys.details(), 'submission', clientId, id] as const,
 };
 
 export const attachmentKeys = {
@@ -99,30 +80,6 @@ export const recipeKeys = {
   copyCandidates: (search: string) => [...recipeKeys.lists(), 'copy-candidates', {search}] as const,
 };
 
-export const checkInRequestKeys = {
-  all: ['check-in-requests'] as const,
-  lists: () => [...checkInRequestKeys.all, 'list'] as const,
-  forClient: (clientId: string) => [...checkInRequestKeys.lists(), clientId] as const,
-  infinite: (clientId: string, filters: RequestFilters) =>
-    [...checkInRequestKeys.forClient(clientId), 'infinite', filters] as const,
-};
-
-export const checkInKeys = {
-  all: ['check-in-schedules'] as const,
-  lists: () => [...checkInKeys.all, 'list'] as const,
-  forClient: (clientId: string) => [...checkInKeys.lists(), clientId] as const,
-  infinite: (clientId: string, filters: ScheduleFilters) =>
-    [...checkInKeys.forClient(clientId), 'infinite', filters] as const,
-};
-
-export const checkInResponseKeys = {
-  all: ['check-in-responses'] as const,
-  lists: () => [...checkInResponseKeys.all, 'list'] as const,
-  infinite: (filters: CheckInResponseFilters) => [...checkInResponseKeys.lists(), 'infinite', filters] as const,
-  details: () => [...checkInResponseKeys.all, 'detail'] as const,
-  detail: (id: string) => [...checkInResponseKeys.details(), id] as const,
-};
-
 export const trainingSessionKeys = {
   all: ['training-sessions'] as const,
   lists: () => [...trainingSessionKeys.all, 'list'] as const,
@@ -138,13 +95,6 @@ export const nutritionDayKeys = {
   day: (clientId: string, date?: string) => [...nutritionDayKeys.lists(), clientId, {date: date ?? 'today'}] as const,
 };
 
-export const weightProgressKeys = {
-  all: ['weight-progress'] as const,
-  lists: () => [...weightProgressKeys.all, 'list'] as const,
-  infinite: (clientId: string, filters: WeightProgressFilters) =>
-    [...weightProgressKeys.lists(), clientId, 'infinite', filters] as const,
-};
-
 export const conversationKeys = {
   all: ['conversations'] as const,
   lists: () => [...conversationKeys.all, 'list'] as const,
@@ -152,13 +102,6 @@ export const conversationKeys = {
   details: () => [...conversationKeys.all, 'detail'] as const,
   forClient: (clientId: string) => [...conversationKeys.details(), 'client', clientId] as const,
   history: (id: string) => [...conversationKeys.lists(), 'history', id] as const,
-};
-
-export const workbenchKeys = {
-  all: ['workbench'] as const,
-  followUps: () => [...workbenchKeys.lists(), 'follow-ups', 'summary'] as const,
-  lists: () => [...workbenchKeys.all, 'list'] as const,
-  infinite: (filters: WorkbenchFilters) => [...workbenchKeys.lists(), 'items', 'infinite', filters] as const,
 };
 
 export const businessKeys = {
@@ -176,17 +119,3 @@ export const teamKeys = {
 };
 
 export const billingKeys = {all: ['billing'] as const, detail: () => ['billing', 'detail'] as const};
-
-export const landingPageKeys = {
-  all: ['landing-page'],
-  detail: () => ['landing-page', 'detail'],
-  public: (slug: string) => ['landing-page', 'public', slug],
-};
-
-export const prospectKeys = {
-  all: ['prospects'] as const,
-  lists: () => ['prospects', 'list'] as const,
-  infinite: (filters: object) => ['prospects', 'list', 'infinite', filters] as const,
-  details: () => ['prospects', 'detail'] as const,
-  detail: (id: string) => ['prospects', 'detail', id] as const,
-};

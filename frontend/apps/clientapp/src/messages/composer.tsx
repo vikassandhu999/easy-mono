@@ -192,7 +192,7 @@ function MessageComposer({store, onSent}: {store: Store; onSent: () => void}) {
       if (!(await store.update(current, true))) {
         throw new Error('This device could not save your draft. Try again before choosing a photo.');
       }
-      const photo = await pickNativePhoto(source, messageResource(current.id), 'message');
+      const photo = await pickNativePhoto(source, messageResource(current.id));
       if (photo) {
         await keep(photo);
       }

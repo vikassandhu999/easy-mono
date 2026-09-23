@@ -47,6 +47,8 @@ export function useWorkoutDraft(session: Session, unit: 'kg' | 'lbs') {
           return;
         }
         const saved = parseWorkoutDraft(raw) ?? initialWorkoutDraft(session);
+        saved.revision ??= session.revision;
+        saved.date ??= session.date;
         if (!saved.entries.some((entry) => entry.key === saved.selected)) {
           saved.entries.push(newEntry(saved.selected, session, unit));
         }

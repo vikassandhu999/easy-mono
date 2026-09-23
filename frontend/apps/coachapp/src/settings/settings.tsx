@@ -339,7 +339,7 @@ function BusinessDetails({business}: {business: Business}) {
           ['Business handle', business.handle],
           ['About', business.about || 'Not added'],
           ['WhatsApp number', business.whatsapp_number || 'Not added'],
-          ['Default weight unit', business.default_weight_unit === 'kg' ? 'Kilograms (kg)' : 'Pounds (lb)'],
+          ['Default workout load unit', business.default_weight_unit === 'kg' ? 'Kilograms (kg)' : 'Pounds (lb)'],
           ['Default time zone', business.timezone],
         ].map(([label, value]) => (
           <div
@@ -463,7 +463,7 @@ function BusinessForm({business}: {business: Business}) {
                 id="weight-unit-label"
                 htmlFor="weight-unit"
               >
-                Default weight unit
+                Default workout load unit
               </Label>
               <SelectField
                 id="weight-unit"
@@ -487,7 +487,7 @@ function BusinessForm({business}: {business: Business}) {
                 id="weight-unit-description"
                 className="text-sm text-muted-foreground"
               >
-                Used when a client has no recorded weight or chosen unit. Saved entries keep their units.
+                Used when your client records workout loads. Existing sets keep their units.
               </p>
               <FormError message={fieldState.error?.message} />
             </div>

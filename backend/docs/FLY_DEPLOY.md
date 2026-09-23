@@ -5,7 +5,7 @@
 - `flyctl` installed and authenticated
 - production domain decided (or use `easy-backend.fly.dev`)
 - mail provider credentials ready
-- a private Tigris bucket for check-in photos
+- a private Tigris bucket for message attachments and library media
 
 ## 1) Create Fly app and database
 

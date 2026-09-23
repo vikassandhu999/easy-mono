@@ -1,20 +1,10 @@
-import type {FormAssignmentFilters} from './forms';
 import {getSession} from './session';
 import type {SessionFilters} from './training';
-import type {WeightFilters} from './weight';
 
 export const authKeys = {
   all: ['auth'] as const,
   profile: () => ['auth', getSession()?.id, 'profile'] as const,
   invitation: (token: string) => ['auth', 'invitation', token] as const,
-};
-
-export const formKeys = {
-  all: ['forms'] as const,
-  lists: () => ['forms', getSession()?.id, 'lists'] as const,
-  infinite: (filters: FormAssignmentFilters) => [...formKeys.lists(), 'infinite', filters] as const,
-  details: () => ['forms', getSession()?.id, 'details'] as const,
-  detail: (id: string) => [...formKeys.details(), id] as const,
 };
 
 export const attachmentKeys = {
@@ -46,12 +36,4 @@ export const nutritionKeys = {
   details: () => ['nutrition', getSession()?.id, 'details'] as const,
   day: (date?: string) => [...nutritionKeys.details(), 'day', date ?? 'today'] as const,
   plan: (id: string) => [...nutritionKeys.details(), 'plan', id] as const,
-};
-
-export const weightKeys = {
-  all: ['weight'] as const,
-  lists: () => ['weight', getSession()?.id, 'lists'] as const,
-  infinite: (filters: WeightFilters) => [...weightKeys.lists(), 'infinite', filters] as const,
-  details: () => ['weight', getSession()?.id, 'details'] as const,
-  day: (date: string) => [...weightKeys.details(), 'day', date] as const,
 };

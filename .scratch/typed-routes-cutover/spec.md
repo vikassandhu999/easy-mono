@@ -29,18 +29,11 @@ Last segment of `EasyWeb.Types.*` is the TypeScript name. Claimed here so two ag
 | Equipment | `EasyWeb.Types.Training.Equipment` | `Equipment` |
 | Health | `EasyWeb.Types.Health` | `Health` |
 | Library media | `EasyWeb.Types.LibraryMedia` | `LibraryMedia` |
-| Weight entry | `EasyWeb.Types.WeightEntry` | `WeightEntry` |
 | Coach profile | `EasyWeb.Types.CoachProfile` | `CoachProfile` |
 | Client profile | `EasyWeb.Types.ClientProfile` | `ClientProfile` |
 | Upload | `EasyWeb.Types.Upload` | `Upload` |
 | Team member | `EasyWeb.Types.TeamMember` | `TeamMember` |
-| Prospect | `EasyWeb.Types.Prospect` | `Prospect` |
-| Landing page | `EasyWeb.Types.LandingPage` | `LandingPage` |
 | Business | `EasyWeb.Types.Business` | `Business` |
-| Form template | `EasyWeb.Types.FormTemplate` | `FormTemplate` |
-| Form assignment | `EasyWeb.Types.FormAssignment` | `FormAssignment` |
-| Check-in schedule | `EasyWeb.Types.CheckInSchedule` | `CheckInSchedule` |
-| Check-in review | `EasyWeb.Types.CheckInReview` | `CheckInReview` |
 | Client | `EasyWeb.Types.Client` | `Client` |
 | Food | `EasyWeb.Types.Nutrition.Food` | `Food` |
 | Recipe | `EasyWeb.Types.Nutrition.Recipe` | `Recipe` |
@@ -52,14 +45,13 @@ Last segment of `EasyWeb.Types.*` is the TypeScript name. Claimed here so two ag
 | Performed set | `EasyWeb.Types.Training.PerformedSet` | `PerformedSet` |
 | Conversation | `EasyWeb.Types.Conversation` | `Conversation` |
 | Chat message | `EasyWeb.Types.ChatMessage` | `ChatMessage` |
-| Workbench | `EasyWeb.Types.Workbench` | `Workbench` |
 | Billing | `EasyWeb.Types.Billing` | `Billing` |
 
 If `Session` collides at Mix unique-segment check, rename before generating. Do not prefix in the Mix task.
 
 ## Waves
 
-Parent runs `just gen-api` after each wave (not after each agent). Then `pnpm -C apps/coachapp-v2 exec tsc -p tsconfig.app.json --noEmit` and the client equivalent. Then `mix test` on the files that wave touched.
+Parent runs `just gen-api` after each wave (not after each agent). Then `pnpm -C apps/coachapp exec tsc -p tsconfig.app.json --noEmit` and the client equivalent. Then `mix test` on the files that wave touched.
 
 ### Wave 1 — clones of muscle
 
@@ -67,7 +59,6 @@ Parallel. `take/1`. Copy `MuscleController` and `EasyWeb.Types.Training.Muscle`.
 
 1. Equipment (`GET /v1/coach/training-equipment`)
 2. Health (`GET /api/health`) — rewrite `json`/`put_status` to `ok/2`; those tokens are banned in a typed controller file
-3. Weight entries (coach `ClientWeightEntryController` + client `WeightEntryController`, one `WeightEntry.t()`)
 4. Library media create
 
 ### Wave 2 — still flat, more actions
@@ -76,20 +67,14 @@ Parallel. Same JSON as today’s views. `Revision.t()` on deletes that already s
 
 1. Uploads (coach + client)
 2. Team
-3. Prospects
-4. Landing (public show/apply + coach show/update), one `LandingPage.t()`
 5. Business
 6. Coach profile + client profile (two type modules, two agents is fine)
 
-### Wave 3 — forms and clients
+### Wave 3 — clients
 
 Parallel. Medium.
 
-1. Form templates
-2. Form assignments (coach + client)
-3. Check-in schedules
 4. Clients (`ClientController`)
-5. Check-in review
 
 ### Wave 4 — food, then recipe
 
@@ -114,12 +99,11 @@ Training plan `replace_prescription` is the fat action. One agent, do not split 
 2. Parent generate
 3. Nutrition day (coach index + client diary writes). Idempotency plug on the write actions, not a `typed` key. Skip this wave if the diary rewrite is still dirty in the working tree.
 
-### Wave 7 — chat, workbench, billing
+### Wave 7 — chat and billing
 
 Parallel.
 
 1. Conversations + messages (coach + client)
-2. Workbench
 3. Billing
 
 ### Wave 8 — leftovers, then delete OpenAPI

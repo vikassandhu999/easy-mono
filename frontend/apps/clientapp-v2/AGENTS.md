@@ -31,7 +31,7 @@ src/
   pwa.ts  index.css
   api/     the server contract — flat
   ui/      feature-agnostic components and hooks — flat
-  today/  training/  workout/  nutrition/  progress/  checkins/  messages/
+  today/  training/  workout/  nutrition/  messages/
   history/  settings/  auth/
 ```
 
@@ -41,7 +41,7 @@ src/
 
 **Arrows point one way: feature → ui → api.** `ui/` never imports a feature; a feature never imports another feature's `.tsx`. A feature's root-level `.ts` files are its public surface — workout owns the session model (`workout/session-utils.ts`, which history and training import), nutrition owns adherence and targets (`nutrition/nutrition-utils.ts`, which today imports). `router.tsx` and `app-shell.tsx` are the composition root and are exempt.
 
-A screen that composes cards owns those cards: `today/` holds its own home-screen nudges rather than reaching into `checkins/` for them. Enforced by `scripts/check-frontend-shape.mjs` via `just check-rm` (RM-144).
+A screen that composes cards owns those cards: `today/` holds its own home-screen cards. Enforced by `scripts/check-frontend-shape.mjs` via `just check-rm` (RM-144).
 
 Pure model tests use relative imports with the `.ts` extension for Node’s type stripping. Exercise React and API integration through browser scenarios. Keep production logic together even when it needs browser coverage.
 
@@ -123,10 +123,7 @@ One component per job — don't hand-roll these:
 
 These are deliberate, not drift. Don't "fix" them toward coachapp without a reason:
 
-- **Loading is a centred `Spinner`, not a skeleton**, except the form-assignment
-  detail route (`fill-checkin.tsx`): that screen is a form, so it keeps a
-  content-shaped skeleton and the shared `ErrorState` with Retry (RM-217).
-  Other screens stay on the spinner. Changing the rest is a design decision, not a cleanup.
+- **Loading uses a centred `Spinner`.** Changing this pattern is a design decision.
 - **Type sizes are arbitrary values (`text-[13px]`)**, because this app has no `type-*`
   scale. coachapp's "never `text-*` for size" rule does not apply until one exists.
 - **Light mode only.** There is no dark block in `index.css`.

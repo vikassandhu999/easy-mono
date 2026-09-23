@@ -18,7 +18,6 @@ defmodule Easy.Chat.Conversation do
     field :last_message_at, :utc_datetime_usec
     field :last_message_preview, :string
     field :last_message_role, Ecto.Enum, values: [:coach, :client]
-    field :waiting_since, :utc_datetime_usec
     # ponytail: shared read cursor per side — any coach reading marks the whole
     # team's side read; upgrade path is a per-coach read table if it ever matters.
     field :coach_last_read_at, :utc_datetime_usec
@@ -53,9 +52,6 @@ defmodule Easy.Chat.Conversation do
   def for_client(query \\ __MODULE__, business_id, client_id),
     do: from(c in query, where: c.business_id == ^business_id and c.client_id == ^client_id)
 
-  @spec waiting(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def waiting(query \\ __MODULE__), do: from(c in query, where: not is_nil(c.waiting_since))
-
   @spec for_visible_clients(Ecto.Queryable.t(), Ctx.t()) :: Ecto.Query.t()
   def for_visible_clients(query \\ __MODULE__, ctx)
   def for_visible_clients(query, %Ctx{owner?: true}), do: query
@@ -89,9 +85,8 @@ defmodule Easy.Chat.Conversation do
     )
   end
 
-  @spec for_status(Ecto.Queryable.t(), :all | :waiting | :unread | nil) :: Ecto.Query.t()
+  @spec for_status(Ecto.Queryable.t(), :all | :unread | nil) :: Ecto.Query.t()
   def for_status(query, status) when status in [nil, :all], do: query
-  def for_status(query, :waiting), do: waiting(query)
 
   def for_status(query, :unread) do
     from(c in query,
@@ -109,18 +104,6 @@ defmodule Easy.Chat.Conversation do
   @spec recent(Ecto.Queryable.t()) :: Ecto.Query.t()
   def recent(query \\ __MODULE__),
     do: from(c in query, order_by: [desc_nulls_last: c.last_message_at, desc: c.inserted_at, desc: c.id])
-
-  # The Replies queue order: longest-waiting first.
-  @spec oldest(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def oldest(query \\ __MODULE__),
-    do: from(c in query, order_by: [asc: c.waiting_since, asc: c.id])
-
-  @spec after_waiting(Ecto.Queryable.t(), DateTime.t(), String.t()) :: Ecto.Query.t()
-  def after_waiting(query \\ __MODULE__, waiting_since, id) do
-    from(c in query,
-      where: c.waiting_since > ^waiting_since or (c.waiting_since == ^waiting_since and c.id > ^id)
-    )
-  end
 
   @spec include_client(Ecto.Queryable.t()) :: Ecto.Query.t()
   def include_client(query \\ __MODULE__), do: from(c in query, preload: [:client])

@@ -1,6 +1,6 @@
 import {useInfiniteQuery, useMutation, useQuery} from '@tanstack/react-query';
-import {ApiError, call, client} from './client';
-import {conversationKeys, workbenchKeys} from './keys';
+import {call, client} from './client';
+import {conversationKeys} from './keys';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
 import type {ChatMessageCoachCreate, ConversationInboxQuery} from './schema';
@@ -52,10 +52,7 @@ export function useMessages(id: string) {
   });
 }
 
-type Action =
-  | {kind: 'send'; body: ChatMessageCoachCreate}
-  | {kind: 'read'; through: string}
-  | {kind: 'handled'; expected: string};
+type Action = {kind: 'send'; body: ChatMessageCoachCreate} | {kind: 'read'; through: string};
 export function useConversationAction(id: string) {
   return useMutation({
     onMutate: () => getSession()?.id,
@@ -67,34 +64,20 @@ export function useConversationAction(id: string) {
         await call(
           client.POST('/v1/coach/conversations/{id}/read', {params: {path: {id}, query: {through: action.through}}}),
         );
-        return;
-      }
-      const result = await client.POST('/v1/coach/conversations/{id}/mark-handled', {
-        params: {path: {id}},
-        body: {expected_last_message_at: action.expected},
-      });
-      if (!result.response.ok) {
-        throw new ApiError(result.response.status, result.error);
       }
     },
     onSuccess: async (_result, _action, sessionId) => {
       if (!sessionId || getSession()?.id !== sessionId) {
         throw new Error('Your session changed. Please try again.');
       }
-      await Promise.all([
-        queryClient.invalidateQueries({queryKey: conversationKeys.all}),
-        queryClient.invalidateQueries({queryKey: workbenchKeys.all}),
-      ]);
+      await queryClient.invalidateQueries({queryKey: conversationKeys.all});
       if (getSession()?.id !== sessionId) {
         throw new Error('Your session changed. Please try again.');
       }
     },
     onError: async (_error, _action, sessionId) => {
       if (sessionId && getSession()?.id === sessionId) {
-        await Promise.all([
-          queryClient.invalidateQueries({queryKey: conversationKeys.all}),
-          queryClient.invalidateQueries({queryKey: workbenchKeys.all}),
-        ]);
+        await queryClient.invalidateQueries({queryKey: conversationKeys.all});
       }
     },
   });

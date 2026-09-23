@@ -15,6 +15,9 @@ defmodule Easy.Nutrition.Day do
   @type list_result() :: %{nutrition_days: [t()]}
 
   @type slot() :: %{
+          optional(:id) => String.t() | nil,
+          optional(:shared_at) => DateTime.t() | nil,
+          optional(:note_to_coach) => String.t() | nil,
           meal_slot: MealSlot.t(),
           meal_id: String.t() | nil,
           revision: non_neg_integer(),

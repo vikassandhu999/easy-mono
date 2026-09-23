@@ -20,23 +20,6 @@ const stop = async () => {
 };
 try {
   const fixture = await inviteClient({firstName: ''});
-  const assignment = (await api(`/v1/coach/clients/${fixture.clientId}/intake`, {token: fixture.coachToken})).data;
-  await api(`/v1/coach/form-templates/${assignment.form_template_id}`, {
-    method: 'PATCH',
-    token: fixture.coachToken,
-    body: {
-      name: 'Android check-in',
-      expected_revision: assignment.form_template.revision,
-      sections: [
-        {
-          questions: [
-            {id: 'goal', label: 'Your goal', type: 'text', required: true},
-            {id: 'photos', label: 'Progress views', type: 'photo'},
-          ],
-        },
-      ],
-    },
-  });
   await stop();
   await device.shell(
     `am start -W -n ${app}/.MainActivity -a android.intent.action.VIEW -d easy://app/invite/${encodeURIComponent(fixture.token)}`,
@@ -163,70 +146,6 @@ try {
     passed: true,
   });
 
-  await tap(page.getByRole('link', {name: 'Forms & check-ins', exact: true}));
-  await tap(page.getByRole('link', {name: /Android check-in/}));
-  await tap(page.getByLabel('Your goal', {exact: false}));
-  await device.input.type('A steady Android routine');
-  await expect(page.getByLabel('Your goal', {exact: false})).toHaveValue('A steady Android routine');
-  await expect(page.getByText('Draft saved on this device.', {exact: true})).toBeVisible();
-  await device.input.press('Back');
-  await expect(page.getByRole('heading', {name: 'Android check-in'})).toBeVisible();
-  await tap(page.getByRole('button', {name: 'Choose photo', exact: true}));
-  await device.wait({pkg: 'com.google.android.photopicker'}, {timeout: 15_000});
-  await device.screenshot({path: 'tests/auth/artifacts/android-photo-picker.png'});
-  await device.input.press('Back');
-  await expect(page.getByLabel('Your goal', {exact: false})).toHaveValue('A steady Android routine');
-  await device.shell('svc wifi disable');
-  await device.shell('svc data disable');
-  await expect(page.getByText("You're offline.", {exact: false})).toBeVisible();
-  await stop();
-  await device.shell(
-    `am start -W -n ${app}/.MainActivity -a android.intent.action.VIEW -d easy://app/forms/${assignment.id}`,
-  );
-  page = await pageForApp();
-  await expect(page.getByLabel('Your goal', {exact: false})).toHaveValue('A steady Android routine');
-  await expect(page.getByText('Your unsent answers were restored.')).toBeVisible();
-  await expect(page.getByRole('button', {name: 'Send response'})).toBeDisabled();
-  await expect(page.getByText('Showing the copy from', {exact: false})).toBeVisible();
-  await tap(page.getByLabel('Your goal', {exact: false}));
-  await page.getByLabel('Your goal', {exact: false}).press('End');
-  await device.input.type(' offline');
-  await expect(page.getByLabel('Your goal', {exact: false})).toHaveValue('A steady Android routine offline');
-  await expect(page.getByText('Draft saved on this device.', {exact: true})).toBeVisible();
-  await stop();
-  await device.shell(
-    `am start -W -n ${app}/.MainActivity -a android.intent.action.VIEW -d easy://app/forms/${assignment.id}`,
-  );
-  page = await pageForApp();
-  await expect(page.getByLabel('Your goal', {exact: false})).toHaveValue('A steady Android routine offline');
-  await expect(page.getByRole('button', {name: 'Send response'})).toBeDisabled();
-  await device.screenshot({path: 'tests/auth/artifacts/android-offline-form.png'});
-  await device.shell('svc wifi enable');
-  await device.shell('svc data enable');
-  await expect(page.getByText("You're offline.", {exact: false})).toHaveCount(0, {timeout: 30_000});
-  await expect(page.getByRole('button', {name: 'Send response'})).toBeEnabled();
-  await tap(page.getByLabel('Your goal', {exact: false}));
-  await expect(page.locator('html')).toHaveAttribute('data-keyboard', 'open');
-  const sendBounds = await page.getByRole('button', {name: 'Send response'}).boundingBox();
-  const visibleBottom = await page.evaluate(() => visualViewport.offsetTop + visualViewport.height);
-  expect(sendBounds.y + sendBounds.height).toBeLessThanOrEqual(visibleBottom + 2);
-  await device.screenshot({path: 'tests/auth/artifacts/android-form-keyboard.png'});
-  await tap(page.getByRole('button', {name: 'Send response'}));
-  await expect(page.getByText(/Response saved/)).toBeVisible();
-  await stop();
-  await device.shell(
-    `am start -W -n ${app}/.MainActivity -a android.intent.action.VIEW -d easy://app/forms/${assignment.id}`,
-  );
-  page = await pageForApp();
-  await expect(page.getByText('A steady Android routine offline', {exact: true})).toBeVisible();
-  await expect(page.getByRole('link', {name: 'Back to your forms'})).toBeVisible();
-  await device.screenshot({path: 'tests/auth/artifacts/android-saved-form.png'});
-  results.push({
-    scenario:
-      'native form draft, gallery cancellation, network disabled across two process restarts, offline editing, reconnection, deliberate save and saved response restart',
-    passed: true,
-  });
-  await tap(page.getByRole('link', {name: 'Back to your forms'}));
   await tap(page.getByRole('navigation', {name: 'Main navigation'}).getByRole('link', {name: 'Training', exact: true}));
   await expect(page.getByText('Your coach hasn’t scheduled a training plan for today.', {exact: true})).toBeVisible();
   await expect(page.getByText('Loading your active workout…', {exact: true})).toHaveCount(0);

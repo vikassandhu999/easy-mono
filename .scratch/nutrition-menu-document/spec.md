@@ -191,7 +191,7 @@ Do not recreate the five tables through JSON triggers or generic lock services.
 
 ## Elixir boundaries
 
-Use `$elixir-patterns`: plain values, pure functions, changesets, and a transaction.
+Use plain values, pure functions, changesets, and a transaction.
 The design needs no process, cache, background job, or additional context.
 
 * `Easy.Nutrition.Menu`, in `backend/lib/easy/nutrition/menu.ex`, owns embedded value

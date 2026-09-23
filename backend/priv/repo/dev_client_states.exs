@@ -1,6 +1,5 @@
-# Dev-only, idempotent seed: one client per client-detail lifecycle state so
-# the design-pro style-diff manifest (design-handoff/manifests/CD-OV.json) can
-# reach every state deterministically. Companion to dev_rich_client.exs
+# Dev-only, idempotent seed: one client per client-detail lifecycle state
+# for deterministic browser checks. Companion to dev_rich_client.exs
 # (which makes Rowan White data-rich for the "active" state).
 #
 #   cd backend && mix run priv/repo/dev_client_states.exs

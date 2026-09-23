@@ -26,7 +26,7 @@ The ordinary preexisting `easy_test` database has an older migration baseline. V
 - Fresh database migration and existing local database upgrade.
 - `just gen-api`: all four frontend contracts regenerated.
 - Builds for coachapp, coachapp-v2, clientapp, clientapp-v2 and the Easy marketing website.
-- Coach unit suites, changed-source Biome checks, `just check-rm` and frontend shape checks.
+- Coach unit suites, changed-source Biome checks, the former repository checks and frontend shape checks.
 - Current coach sign-up/sign-in, invalid-code recovery, business creation recovery, session isolation and cross-tab logout.
 - Current coach welcome tour at 375px/1280px: two retained previews, keyboard navigation, finish/skip/replay, reload and error recovery.
 - Direct invitation, retry/reload/resend/copy, client acceptance and account-switch recovery at 375px/1280px; mobile controls and menu layouts at 375px/390px/768px/1280px.

@@ -37,16 +37,9 @@ setup:
     cd frontend && pnpm install
     cd backend && mix deps.get
 
-# lint frontend + recurring-mistakes greps
+# shared frontend lint (the same read-only checks run in CI)
 lint:
-    cd frontend && pnpm lint
-    ./scripts/check-rm.sh
-    ./scripts/check-theme-selectors.sh
-    ./scripts/check-color-utilities.sh
-
-# mechanical checks from docs/agents/recurring-mistakes.md
-check-rm:
-    ./scripts/check-rm.sh
+    cd frontend && pnpm lint:ci
 
 # build all frontend apps
 build:

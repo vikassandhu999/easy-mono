@@ -42,7 +42,7 @@ These are product and data invariants, not the current code.
 2. Logged macros are frozen facts. Plan and library edits do not recompute history.
 3. At most one logged fulfilment per planned item on a log.
 4. Switching the meal option replaces the plan for that slot and drops planned fulfilments; extras stay.
-5. Identity is the meal-item id, never position (RM-018).
+5. Identity is the meal-item id, never position.
 6. Client writes the diary; coach reads it. Tenant-scoped, Ctx-first.
 7. Past days are read from the diary, not from the live weekday plan.
 
@@ -231,6 +231,6 @@ Required cases:
 ## Further Notes
 
 * CONTEXT.md has no meal-logging glossary. Terms used here: meal log (diary for client + date + slot), frozen planned item, fulfilment, extra, nutrition day (reconciled read). Added, swapped, and skipped are coach chips derived from status. If domain-modeling runs later, these should be added so specs stop inventing synonyms.
-* Recurring mistake RM-018 already required identity on meal-item id rather than position. The coach day view was left on the removed positional field. This spec completes that change for every reader of the diary.
+* Meal-item identity must use the item id rather than position. The coach day view was left on the removed positional field. This spec completes that change for every reader of the diary.
 * Client Today still needs live options in the day payload because an unlogged slot has no diary yet. That is checklist data, not a second plan-versus-actual join.
 * The four planning questions are closed in the Design brief: skipped only when a meal log exists; drop `source`; planned item id is not a nullifying foreign key; one nutrition-day read for both apps.

@@ -28,7 +28,7 @@ Today’s previous plan-link assertion now checks the directly displayed plan he
 
 Evidence: evidence/assigned-plan-{training,nutrition}-{375,768,1280}.png.
 Logs: /tmp/easy-clientapp-plan-entry-{training-final,nutrition-final,today-final,history}.log.
-Strict build/native sync, Biome (139 files), shape/check-rm and full backend precommit
+Strict build/native sync, Biome (139 files), shape checks and the former repository checks and full backend precommit
 pass (1,846 tests, zero failures). Android auth, encrypted session migration, offline
 forms/workouts, process restart and logout pass on the final build. The iPhone meal
 recording/restart/save scenario also passes. Native workout coverage uses freestyle;

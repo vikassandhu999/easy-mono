@@ -13,8 +13,8 @@ to `meal_ids` throughout the public contract and frontend. Adapt Library usage a
 concurrency, Diary freezing and assembly, fixtures, seeds, and documentation.
 Remove the replaced code in this ticket. Preserve saved nutrition and diary history.
 
-Use the Elixir patterns skill for Elixir implementation and the API-change skill
-for the coordinated contract change. Do not use CBM. Read the owning AGENTS.md
+Follow `backend/AGENTS.md` for Elixir implementation and
+`docs/types-phoenix/add-a-route.md` for the coordinated contract change. Do not use CBM. Read the owning AGENTS.md
 before editing either backend or frontend files.
 
 ## Acceptance checks
@@ -59,8 +59,7 @@ coach widths. Verify the populated migration separately from the clean E2E datab
 Review the final diff and search runtime code for the deleted table and module names.
 Inspect matches individually: public Menu value names and historical migration SQL
 are legitimate; a runtime fallback to the relational menu is not. Run
-`rtk git diff --check`. Update the relevant recurring-mistakes section only if this
-work establishes a recurring failure with a useful mechanical check.
+`rtk git diff --check`.
 
 ## Answer
 

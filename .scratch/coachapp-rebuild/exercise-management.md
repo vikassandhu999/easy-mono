@@ -16,7 +16,7 @@ Verify copying and independent edits, duplicate names, unsaved protection, inter
 
 Real API browser scenarios pass at 375px and 1280px on both the isolated 44000/22022 pair and normal 4000/2022 pair. They cover copy field validation, preserved details, independent edits, interrupted copy review without automatic retry, deletion cancellation, failed and committed-but-lost deletion, searched-library return, real planned-workout deletion rejection, pending dismissal and account replacement. The normal pair also verifies retained draft recovery after a failed detail refresh. Shared read-only presentation is injected at the browser boundary; the backend library test independently verifies copying an actual system exercise into the coach's tenant while preserving tracking and preventing source mutation.
 
-The exercise authoring regression passes at both widths, including references, cursor pages/search, interrupted saves and training-plan reuse. Backend `mix precommit` passes with 1,759 tests and zero failures; app build, scoped Biome and `just check-rm` pass. The existing Vite bundle-size warning remains.
+The exercise authoring regression passes at both widths, including references, cursor pages/search, interrupted saves and training-plan reuse. Backend `mix precommit` passes with 1,759 tests and zero failures; app build, scoped Biome and the former repository checks pass. The existing Vite bundle-size warning remains.
 
 Screenshots reviewed at phone and desktop widths. A browser check caught the mobile save bar covering the removal control; maintenance sits inside the form's bottom padding. Target-coach usability and physical-device checks remain part of the application audit.
 

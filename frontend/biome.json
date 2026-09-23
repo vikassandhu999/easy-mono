@@ -1,7 +1,13 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
-  "vcs": {"enabled": true, "clientKind": "git", "useIgnoreFile": true},
-  "files": {"ignoreUnknown": true},
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": true
+  },
   "formatter": {
     "enabled": true,
     "formatWithErrors": false,
@@ -187,11 +193,23 @@
     },
     "globals": ["navigator", "document", "window", "__APP_VERSION__"]
   },
-  "css": {"parser": {"tailwindDirectives": true}, "formatter": null, "linter": null, "assist": null},
-  "html": {"formatter": {"indentScriptAndStyle": false, "selfCloseVoidElements": "always"}},
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    },
+    "formatter": null,
+    "linter": null,
+    "assist": null
+  },
+  "html": {
+    "formatter": {
+      "indentScriptAndStyle": false,
+      "selfCloseVoidElements": "always"
+    }
+  },
   "overrides": [
     {
-      "includes": ["**/*.check.ts", "**/tests/**", "scripts/run-checks.mjs"],
+      "includes": ["**/*.check.ts", "**/tests/**", "scripts/**"],
       "linter": {
         "rules": {
           "suspicious": {
@@ -202,8 +220,27 @@
     },
     {
       "includes": ["**/src/api/generated.ts"],
-      "linter": {"rules": {"complexity": {"useLiteralKeys": "off"}}}
+      "linter": {
+        "rules": {
+          "complexity": {
+            "useLiteralKeys": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["openapi/*.json"],
+      "formatter": {
+        "enabled": false
+      }
     }
   ],
-  "assist": {"enabled": true, "actions": {"source": {"organizeImports": "on"}}}
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  }
 }

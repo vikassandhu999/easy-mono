@@ -21,7 +21,7 @@ malformed document values, storage round trips, requested intake order, and reus
 entry IDs across slots and clients.
 
 Validation: `mix precommit` passed with 1,350 tests; `just test-e2e` passed all 10
-real coach/client journeys and built both apps; `scripts/check-rm.sh` and
+real coach/client journeys and built both apps; the former repository checks and
 `git diff --check` passed. API contract review found no generated-type delta.
 Standards and spec reviews informed the final validation boundary and naming.
 

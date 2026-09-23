@@ -40,13 +40,13 @@ Webhook responses stay `send_resp` text. They are not typed JSON and they are no
 
 ## Costs of the rollout
 
-A controller file is OpenAPI or `typed`, not both. Dual-run still lasts until the last resource moves. Agents will copy the nearest file. Convert a whole module.
+A controller file is OpenAPI or `typed`, not both. Resource routes are typed; auth retains OpenAPI. Follow [the route guide](add-a-route.md) for the contract in use.
 
 `mix typed_routes.gen` merges typed routes with leftover OpenAPI operations into one `schema.ts`. Unconverted hooks keep compiling. Scalar does not see typed routes. Do not generate OpenAPI from `typed` to fill that gap.
 
 `schema.ts` drifts until someone generates. CI runs `mix typed_routes.gen --check`.
 
-These docs describe intent until the code exists. Grep them when the implementation lands or dies (RM-301).
+Keep these docs aligned with the implementation. Search their references when replacing a design.
 
 ## What not to add later
 

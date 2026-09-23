@@ -27,7 +27,7 @@ Do this:
 
 3. Convert EVERY listed controller in this resource. use EasyWeb.TypedRoute. Remove OpenApiSpex.ControllerSpecs, operation, CastAndValidate, tags. typed/2 per public action. ok(conn, %{data: ...}) or ok(conn) for 204. Read atom-key conn.body_params, string-key path/query. Delete the JSON view modules when nothing renders them. The file must not contain render, json, put_view, put_status, or send_resp (Health: rewrite to ok/2). Do not mix typed and operation in one file.
 
-4. Tests go through the router. Assert status and JSON values (RM-005). Drop OpenApiSpex.TestAssertions.assert_schema/3. Extra keys on a closed body or query are 422. Keep auth 403 tests.
+4. Tests go through the router. Assert status and JSON values. Drop OpenApiSpex.TestAssertions.assert_schema/3. Extra keys on a closed body or query are 422. Keep auth 403 tests.
 
 5. In the hook file, export the named type from @/api/schema (export type {Equipment} from '@/api/schema'). Keep client.GET/PATCH paths. Do not edit schema.ts. Do not run just gen-api or mix typed_routes.gen.
 

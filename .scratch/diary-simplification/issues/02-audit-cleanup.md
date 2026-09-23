@@ -27,7 +27,7 @@ identities, and empty menus. The assembler's source hiding and rounding rules ha
 explicit comments.
 
 `mix precommit`: 1,350 tests passed. `just test-e2e`: 10 browser journeys passed.
-Both app checks/builds, API generation, `scripts/check-rm.sh`, and whitespace checks
+Both app checks/builds, API generation, the former repository checks, and whitespace checks
 passed. Restarted the local API to load the typed date parser; authenticated coach
 and client reads agree on migrated Diary history.
 

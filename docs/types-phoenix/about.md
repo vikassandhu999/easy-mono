@@ -1,16 +1,16 @@
 # About typed HTTP contracts
 
-This design replaces OpenAPI as the FE and BE JSON contract with Elixir types, Phoenix routes, and a TypeScript file printed from those two. The protocol stays HTTP. Controllers stay controllers. The React apps keep hand-written hooks.
+Coach and client resource routes use Elixir types, Phoenix routes, and TypeScript generated from those two. Auth retains OpenAPI. See [the route guide](add-a-route.md) for the current change workflow. The protocol stays HTTP. Controllers stay controllers. The React apps keep hand-written hooks.
 
 The rule is one sentence: you write Elixir types for the JSON, and you point `typed` at those types. No operators that transform types. No inference from action names, path-segment names, or the success type into some other slot.
 
-## What you maintain today
+## Why the contract changed
 
-A public JSON endpoint is unfinished until the router, the `operation` macro, an OpenApiSpex schema, the JSON view or payload, and `just gen-api` agree. RM-002 exists because the schema and the view drift. That is four copies of one JSON shape, plus a generated fifth in `frontend/apps/coachapp/src/api/schema.ts`, `frontend/apps/clientapp/src/api/schema.ts`, and `frontend/apps/clientapp-v2/src/api/schema.ts`.
+The earlier OpenAPI contract required the router, `operation` macro, schema, JSON view, and generated TypeScript to agree. Schema and view drift motivated one JSON type shared by casting, formatting, and generation. The generated files remain `src/api/schema.ts` in coachapp, clientapp, and clientapp-v2.
 
 OpenAPI braids shape, constraints, examples, docs, runtime cast, and client codegen into one artifact. Generating OpenAPI in secret still means thinking in OpenAPI.
 
-Phoenix already owns method and path in `backend/lib/easy_web/router.ex`. Contexts already return `{:ok, value} | {:error, reason}`. `EasyWeb.FallbackController` already maps those reasons to status codes. JSON views already encode domain structs. The missing piece is one Elixir type for the wire, bound to the action. That type is what the caster, `format/1`, and the TypeScript emitter all read.
+Phoenix already owns method and path in `backend/lib/easy_web/router.ex`. Contexts already return `{:ok, value} | {:error, reason}`. `EasyWeb.FallbackController` already maps those reasons to status codes. JSON views already encode domain structs. Typed routes add one Elixir type for the wire, bound to the action. That type is what the caster, `format/1`, and the TypeScript emitter all read.
 
 ## Simple means unbraided
 
@@ -78,8 +78,8 @@ The controller drops `use OpenApiSpex.ControllerSpecs`, the `operation` blocks, 
 typed :show, ok: {200, data(Recipe.t())}
 typed :create, body: Recipe.create(), ok: {201, data(Recipe.t())}
 typed :update, body: Recipe.update(), ok: {200, data(Recipe.t())}
-typed :index, query: Recipe.list_query(), ok: {200, page(Recipe.t())}
-typed :delete, query: Revision.t(), ok: {204, nil}
+typed :index, query: Recipe.list_query(), ok: {200, RecipeIndex.t()}
+typed :delete, ok: {204, nil}
 
 def show(conn, %{"id" => id}) do
 	with {:ok, recipe} <- Library.get_recipe(conn.assigns.ctx, id) do
@@ -87,20 +87,9 @@ def show(conn, %{"id" => id}) do
 	end
 end
 
-def index(conn, _params) do
-	with {:ok, %{count: count, recipes: recipes}} <-
-		   Library.list_recipes(conn.assigns.ctx, conn.query_params) do
-		ok(conn, %{data: recipes, count: count})
-	end
-end
-
 def delete(conn, _params) do
 	with {:ok, _} <-
-		   Library.delete_recipe(
-			 conn.assigns.ctx,
-			 conn.path_params["id"],
-			 conn.query_params["expected_revision"]
-		   ) do
+		   Library.delete_recipe(conn.assigns.ctx, conn.path_params["id"]) do
 		ok(conn)
 	end
 end
@@ -117,18 +106,16 @@ typed :add_extra,
 	ok: {201, data(Day.t())}
 ```
 
-## What you delete when this lands
+## Contract ownership
 
-`backend/lib/easy_web/open_api/`, `EasyWeb.ApiSpec`, every `operation`, `CastAndValidate`, Swagger UI, `frontend/openapi/`, `openapi-typescript`, and the `*JSON` view modules whose only job is `data` plus envelope. `EasyWeb.RecipePayload` and `EasyWeb.FoodPayload` fold into `EasyWeb.Types.Nutrition.Recipe.format/1` and `Food.format/1`.
+For typed resources, the Elixir type and `format/1` replace the OpenAPI schema and separate JSON view. Change both in the same edit, then generate. A controller file is OpenAPI or `typed`, not both.
 
-RM-002 becomes: change the Elixir type and `format/1` in the same edit, then generate. The coverage test in `backend/test/easy_web/controllers/open_api_route_coverage_test.exs` checks `typed` instead of `open_api_operation/1`. A controller file is OpenAPI or `typed`, not both.
+Auth still depends on `backend/lib/easy_web/open_api/`, `EasyWeb.ApiSpec`, its `operation` declarations, casting, Swagger UI, and the OpenAPI generation step. Keep that tooling while auth uses it.
 
 ## What you do not build
 
 Type transformers (`patch/1`, `Omit`, map merge). Macro tags that are not Elixir types (`{:page, t}`, `{:data, t}`). Path-segment name tables. Query params inferred from the success type. Per-route error unions. Success-tuple interception that treats `{:ok, recipe}` as an implicit render. `Jason.Encoder` on schemas. Hook codegen. An `encoding` or `as` key on `typed`. OpenAPI generated from typed routes “for Scalar.” A catch-all `def format(x), do: Map.from_struct(x)`.
 
-## Migration
+## Generation
 
-Do not convert every controller in one change. Dual-run is per module: a file is OpenAPI or `typed`, not both. Convert one resource end to end, starting with recipes or foods. `mix typed_routes.gen` writes one `schema.ts` from both sources so unconverted hooks keep type-checking. Flip `just gen-api` off the OpenAPI dump when the last `operation` is gone.
-
-Until then this folder is intent. The live contract is still OpenApiSpex.
+`rtk just gen-api` refreshes the auth OpenAPI input and runs the typed-route generator. The generator writes each app’s `schema.ts` from typed routes plus auth operations, so both contracts remain available to hand-written hooks. `mix typed_routes.gen --check` detects drift.

@@ -12,7 +12,7 @@ The API already supports revisioned client-plan details and prescriptions. Initi
 
 ## Verification
 
-The browser scenario in tests/training/personalize.browser.mjs covers the real API at 375px and 1280px, template independence, client access, partial saves, conflicting revisions, lost responses, unsaved navigation and route ownership. Run test:client-training, the template regression suites, the app build, Biome and check-rm. The real API scenario and all three template worksheet suites passed at both widths on 2026-09-11. The app build, Biome and repository shape checks passed. Backend precommit passed 1,645 tests with zero failures; this slice changes no backend code or API contracts. Vite retains its bundle-size warning.
+The browser scenario in tests/training/personalize.browser.mjs covers the real API at 375px and 1280px, template independence, client access, partial saves, conflicting revisions, lost responses, unsaved navigation and route ownership. Run test:client-training, the template regression suites, the app build, and `rtk pnpm -C frontend lint:ci`. The real API scenario and all three template worksheet suites passed at both widths on 2026-09-11. The app build, Biome and repository shape checks passed. Backend precommit passed 1,645 tests with zero failures; this slice changes no backend code or API contracts. Vite retains its bundle-size warning.
 
 Browser-test recovery waits for the closing dialog to unmount before typing in the worksheet. Without that wait, programmatic typing could run while the background was still inert. Screenshots were inspected on mobile and desktop. A target-coach usability review and physical-device testing remain separate.
 

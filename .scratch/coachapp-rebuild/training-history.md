@@ -10,7 +10,7 @@ Backend evidence inspected: `backend/lib/easy/training_execution.ex`, `backend/l
 
 Acceptance: create and close real planned and freestyle sessions through the client API, inspect as coach, change the source prescription and verify history stays frozen, exercise active/discarded/empty/notes/unit states, date filters and malformed ranges, multiple cursor pages and retry, return navigation and tenant/trainer isolation at 375px and 1280px.
 
-Verified 2026-09-12: browser scenarios pass at 375px and 1280px, including 46 sessions across three cursor pages, search, date validation, frozen prescriptions after library/plan edits, recorded units, active/discarded states, recovery, return position and account isolation. Backend `mix precommit` passes with 1,660 tests; frontend build, Biome and `just check-rm` pass. Browser verification used isolated ports because port 4000 was occupied by another app.
+Verified 2026-09-12: browser scenarios pass at 375px and 1280px, including 46 sessions across three cursor pages, search, date validation, frozen prescriptions after library/plan edits, recorded units, active/discarded states, recovery, return position and account isolation. Backend `mix precommit` passes with 1,660 tests; frontend build, Biome and the former repository checks pass. Browser verification used isolated ports because port 4000 was occupied by another app.
 
 
 ## Current route audit — 2026-09-15

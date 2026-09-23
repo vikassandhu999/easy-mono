@@ -12,7 +12,7 @@ Client Overview offers Assign nutrition plan. Select a template, review its targ
 
 ## Verification plan
 
-Real API browser flows at 375px and 1280px: cursor paging/search/retry, creation, foods/recipes and portions, alternatives/day variation/schedule, server preview, save/reload, stale/partial/lost-response recovery, assignment dates and overlap, copied-plan independence and client access. Backend router tests cover added contracts, authorization and invalid cursors. Build, Biome, check-rm and backend precommit are finish gates.
+Real API browser flows at 375px and 1280px: cursor paging/search/retry, creation, foods/recipes and portions, alternatives/day variation/schedule, server preview, save/reload, stale/partial/lost-response recovery, assignment dates and overlap, copied-plan independence and client access. Backend router tests cover added contracts, authorization and invalid cursors. The app build, `rtk pnpm -C frontend lint:ci`, and backend precommit are finish gates.
 
 ## Implementation and checks
 

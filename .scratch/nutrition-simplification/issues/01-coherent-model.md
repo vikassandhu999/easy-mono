@@ -30,7 +30,7 @@ Validation:
 - Both frontend builds/checks pass.
 - `rtk proxy just test-e2e`: 10 passing real journeys, coach widths 375 and 1280,
   client width 375; fresh database migration and seed each run.
-- `rtk proxy just check-rm` and `rtk git diff --check`: clean.
+- the former repository checks and `rtk git diff --check`: clean.
 - Migration tested against a restored development database: all five menus and
   revisions, one historical snapshot, one day of targets, and 2,112 food image
   URLs preserved. Canonical constraint tests cover invalid JSONB values and tenant

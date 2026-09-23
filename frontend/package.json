@@ -7,7 +7,7 @@
     "test:e2e": "playwright test --config e2e/playwright.config.mjs",
     "dev": "pnpm --parallel --recursive dev",
     "build": "pnpm --recursive build",
-    "lint": "biome check --write .",
+    "lint": "pnpm lint:ci",
     "clean": "pnpm --recursive clean",
     "dev:clientapp-v2": "pnpm --filter @easy/clientapp-v2 dev",
     "dev:coachapp": "pnpm --filter @easy/coachapp dev",
@@ -15,11 +15,17 @@
     "build:clientapp-v2": "pnpm --filter @easy/clientapp-v2 build",
     "build:coachapp": "pnpm --filter @easy/coachapp build",
     "build:website": "pnpm --filter @easy/website build",
-    "format": "biome format --write ."
+    "format": "biome format --write .",
+    "lint:ci": "pnpm lint:biome && pnpm lint:design",
+    "lint:biome": "biome check .",
+    "lint:design": "oxlint apps packages",
+    "lint:fix": "biome check --write . && pnpm lint:design"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.15",
     "@playwright/test": "1.61.0",
+    "@shadcn/lint": "0.2.0",
+    "oxlint": "1.85.0",
     "typescript": "^5.5.3"
   },
   "packageManager": "pnpm@10.27.0",

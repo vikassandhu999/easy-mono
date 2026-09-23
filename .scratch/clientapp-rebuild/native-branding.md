@@ -25,4 +25,4 @@ rtk proxy xcodebuild test -project App.xcodeproj -scheme ClientUITests -destinat
 
 Run the second command from `frontend/apps/clientapp/ios/App`. Visual inspection is required in addition to the launch assertion. Original videos remain in `/tmp/easy-clientapp-branding-{android,ios-reboot}.mp4`; contact sheets and representative frames are retained in the repository.
 
-Full backend `mix precommit` passes 1,846 tests; Biome, check-rm and diff checks pass. No API contract, session or workflow persistence code changed. Store-signing, physical-device branding and human recognition checks remain external observations.
+Full backend `mix precommit` passes 1,846 tests; Biome, the former repository checks and diff checks pass. No API contract, session or workflow persistence code changed. Store-signing, physical-device branding and human recognition checks remain external observations.

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import {spawnSync} from 'node:child_process';
 // Run behavior suites (*.test.ts) and legacy checks (*.check.ts) with node --experimental-strip-types.
-// Zero matches is a failed run (RM-202): a silent empty suite is not a suite.
+// Zero matches is a failed run: a silent empty suite is not a suite.
 import {readdirSync, statSync} from 'node:fs';
 import {join} from 'node:path';
 

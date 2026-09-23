@@ -15,7 +15,7 @@ Implemented on 2026-09-14. Saved food/recipe editors link to a management page, 
 
 `tests/nutrition-library/management.browser.mjs` passes at 375px and 1280px: 44 food-to-recipe uses across three pages, server counts/search, next-page and refresh failures, links/return, independent copies and preserved portions/tags, concurrent references blocking deletion, lost copy/delete responses and session replacement during a write. Shared-food UI uses an intercepted projection; routed backend tests separately verify real system-food restrictions and copying. Screenshots were reviewed at both widths. Existing recipe authoring/reuse regression passes at both widths.
 
-The new `/usage` endpoints return only visible client-plan references. The legacy `/impact` read was corrected to apply the same client visibility; deletion checks still include every structural use in the business. Focused controller suite: 86 tests, zero failures. Full `mix precommit`: 1,769 tests, zero failures. Coachapp build, scoped Biome and `just check-rm` pass. The existing Vite bundle-size warning remains. Normal API 4000 and coachapp 2022 respond successfully.
+The new `/usage` endpoints return only visible client-plan references. The legacy `/impact` read was corrected to apply the same client visibility; deletion checks still include every structural use in the business. Focused controller suite: 86 tests, zero failures. Full `mix precommit`: 1,769 tests, zero failures. Coachapp build, scoped Biome and the former repository checks pass. The existing Vite bundle-size warning remains. Normal API 4000 and coachapp 2022 respond successfully.
 
 ## Copy recovery keyboard audit, 2026-09-15
 

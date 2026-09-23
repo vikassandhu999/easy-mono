@@ -169,7 +169,7 @@ Phoenix `:id` in the router is `{id}` in `schema.ts`, so `client.GET('/v1/coach/
 
 ## After the caster
 
-Same as today after CastAndValidate (RM-008):
+After typed-route casting:
 
 * `conn.body_params` is the body with atom keys
 * `conn.path_params` and `conn.query_params` keep string keys

@@ -1,3 +1,4 @@
+import type {ClientTrainingCoverageResponse} from '../src/api/training-requests.ts';
 import {
   clientTrainingCoverageRequest,
   clientTrainingPlanFromCoverage,
@@ -5,7 +6,6 @@ import {
   clientTrainingSessionDiscardRequest,
   clientTrainingSessionHistoryRequest,
 } from '../src/api/training-requests.ts';
-import type {ClientTrainingCoverageResponse} from '../src/api/training-requests.ts';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {

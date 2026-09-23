@@ -12,10 +12,10 @@ const buttonStyles = cva(
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground hover:bg-primary/90 pressed:bg-primary/80',
-        outline: 'border-border bg-surface text-foreground hover:bg-muted pressed:bg-muted',
-        secondary: 'bg-muted hover:bg-border/60 pressed:bg-border/80',
-        ghost: 'hover:bg-muted pressed:bg-muted',
+        default: 'bg-primary text-primary-foreground hover:bg-primary/90 data-pressed:bg-primary/80',
+        outline: 'border-border bg-surface text-foreground hover:bg-muted data-pressed:bg-muted',
+        secondary: 'bg-muted hover:bg-border/60 data-pressed:bg-border/80',
+        ghost: 'hover:bg-muted data-pressed:bg-muted',
         destructive: 'bg-destructive/10 text-destructive hover:bg-destructive/15',
         link: 'text-primary underline underline-offset-4 hover:bg-muted',
       },

@@ -39,7 +39,7 @@ The audit covered:
 * the three public contexts and their supporting Nutrition schemas;
 * their production callers, controllers, OpenAPI schemas, JSON views, and sweeper;
 * Nutrition context, persistence, controller, and concurrency tests;
-* the glossary, ownership ADR, rewrite specifications, recurring-mistakes ledger, and Git history.
+* the glossary, ownership ADR, rewrite specifications, and Git history.
 
 The core production scope is 21 files and 5,294 lines. The three public context files account for 3,504 lines and 54 public specifications. Their tests contain 8,705 lines when the Nutrition controller tests are included.
 

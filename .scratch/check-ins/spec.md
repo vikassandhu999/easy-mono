@@ -64,8 +64,8 @@ There is no Check-in Form (Q13b). What the client says at check-in time is the s
 ### Who gets check-ins
 
 * Q1. Every client has check-ins by default. The business default is a weekly period and a tracker list with one tracker, the note to coach at each check-in.
-* Q5. Check-ins run for active clients in the coaching stage. The sequence starts on the date the client enters coaching. Deactivation ends it, and reactivation starts a new one; the inactive stretch is not reviewed.
-* Q30. When the feature ships, every active coaching client's first period starts on launch day and ends on their next check-in day. A first period shorter than four days extends to the following check-in day. The same minimum applies to a client who enters coaching later. Workouts and meals from before launch are not pulled into any check-in; they stay in the existing history screens.
+* Q5. Check-ins run during a coaching term (`.scratch/coaching-terms/spec.md`). The sequence starts on the term's start date. Periods are contiguous within one term, and time between terms is not reviewed.
+* Q30. A first period ends on the client's next check-in day; one shorter than four days extends to the following check-in day. The launch-day rule was dropped because there are no existing clients.
 
 ### Periods
 

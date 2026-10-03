@@ -7,7 +7,7 @@ defmodule Easy.ClientAccountTest do
 
   test "profile operations reject missing and cross-business client identities without writing" do
     client = insert(:client)
-    ctx = %Ctx{business_id: client.business_id, user_id: client.user_id, client_id: client.id}
+    ctx = context(client)
 
     for denied <- [
           %{ctx | client_id: nil},
@@ -17,10 +17,10 @@ defmodule Easy.ClientAccountTest do
       assert {:error, :not_found} = ClientAccount.get_client_account(denied)
       assert {:error, :not_found} = ClientAccount.get_client_calendar(denied)
       assert {:error, :not_found} = ClientAccount.get_client_account_profile(denied)
-      assert {:error, :not_found} = ClientAccount.update_client_account_profile(denied, %{first_name: "Unexpected"})
+      assert {:error, :not_found} = ClientAccount.update_client_account_profile(denied, %{full_name: "Unexpected"})
     end
 
-    assert Repo.get!(Client, client.id).first_name == client.first_name
+    assert Repo.get!(Client, client.id).full_name == client.full_name
   end
 
   test "client calendar follows the stored timezone on either side of UTC midnight" do
@@ -31,58 +31,87 @@ defmodule Easy.ClientAccountTest do
           {"America/Los_Angeles", ~U[2026-03-08 10:00:00Z], ~D[2026-03-08]}
         ] do
       client = insert(:client, timezone: timezone)
-      ctx = %Ctx{business_id: client.business_id, client_id: client.id, user_id: client.user_id}
-      assert {:ok, %{timezone: ^timezone, local_date: ^expected}} = ClientAccount.get_client_calendar(ctx, now)
+      assert {:ok, calendar} = ClientAccount.get_client_calendar(context(client), now)
+      assert calendar == %{timezone: timezone, local_date: expected}
     end
   end
 
-  test "self-service changes ignore identities and coach-managed fields" do
-    client = insert(:client, status: :active, notes: "Coach note")
-    ctx = %Ctx{business_id: client.business_id, user_id: client.user_id, client_id: client.id}
+  test "client calendar falls back to the business timezone" do
+    business = insert(:business, timezone: "Pacific/Kiritimati")
+    client = insert(:client, business: business, timezone: nil)
 
-    assert {:ok, %{client: updated}} =
-             ClientAccount.update_client_account_profile(ctx, %{
-               first_name: "Updated",
+    assert {:ok, %{timezone: "Pacific/Kiritimati", local_date: ~D[2026-09-20]}} =
+             ClientAccount.get_client_calendar(context(client), ~U[2026-09-19 12:00:00Z])
+  end
+
+  test "self-service changes names, phone and units while preserving trusted and coach-managed fields" do
+    client = insert(:client, notes: "Coach note", timezone: "Asia/Kolkata")
+
+    assert {:ok, %{client: updated, unit_system: :imperial}} =
+             ClientAccount.update_client_account_profile(context(client), %{
+               full_name: "Updated Client",
+               preferred_name: "Updated",
+               phone: "555-1234",
+               unit_system: "imperial",
                business_id: Ecto.UUID.generate(),
                user_id: Ecto.UUID.generate(),
-               assigned_coach_id: Ecto.UUID.generate(),
-               status: :inactive,
+               coach_id: Ecto.UUID.generate(),
+               timezone: "Europe/London",
+               email: "unexpected@example.test",
                notes: "Unexpected"
              })
 
-    assert updated.first_name == "Updated"
+    assert updated.full_name == "Updated Client"
+    assert updated.preferred_name == "Updated"
+    assert updated.phone == "555-1234"
+    assert Repo.get!(Client, client.id).unit_system == :imperial
 
-    for field <- [:business_id, :user_id, :assigned_coach_id, :status, :notes] do
+    for field <- [:business_id, :user_id, :coach_id, :timezone, :email, :notes] do
       assert Map.get(updated, field) == Map.get(client, field)
     end
   end
 
-  test "active membership resolution requires the user and business to match an active client" do
-    client = insert(:client, status: :active)
-    inactive = insert(:client, business: client.business, status: :inactive, inactive_reason: :manual)
-    ctx = Ctx.new(client.business_id, client.user_id)
-    assert {:ok, %{id: id}} = ClientAccount.get_active_client(ctx)
-    assert id == client.id
+  test "accepted membership permits active, joined and ended clients but stays tenant scoped" do
+    business = insert(:business)
+    today = Date.utc_today()
+    ended_term = build(:coaching_term, starts_on: Date.add(today, -30), ends_on: Date.add(today, -1))
 
-    for denied <- [
-          %{ctx | user_id: Ecto.UUID.generate()},
-          %{ctx | business_id: Ecto.UUID.generate()},
-          %{ctx | user_id: inactive.user_id}
+    for client <- [
+          insert(:client, business: business),
+          insert(:client, business: business, terms: []),
+          insert(:client, business: business, terms: [ended_term], timezone: "Etc/UTC")
         ] do
-      assert {:error, :not_found} = ClientAccount.get_active_client(denied)
+      ctx = Ctx.new(business.id, client.user_id)
+      assert {:ok, %{id: id}} = ClientAccount.get_accepted_client(ctx)
+      assert id == client.id
+      assert {:error, :not_found} = ClientAccount.get_accepted_client(%{ctx | business_id: Ecto.UUID.generate()})
+      assert {:error, :not_found} = ClientAccount.get_accepted_client(%{ctx | user_id: Ecto.UUID.generate()})
+    end
+  end
+
+  test "joined and ended profiles remain readable" do
+    today = Date.utc_today()
+    ended_term = build(:coaching_term, starts_on: Date.add(today, -30), ends_on: Date.add(today, -1))
+
+    for client <- [insert(:client, terms: []), insert(:client, terms: [ended_term], timezone: "Etc/UTC")] do
+      ctx = context(client)
+      assert {:ok, %{client: profile}} = ClientAccount.get_client_account_profile(ctx)
+      assert profile.full_name == client.full_name
+      assert Repo.get!(Client, client.id).full_name == client.full_name
     end
   end
 
   test "invitation and coach edits enforce the same stored-string limits" do
     client = build(:client)
-    today = Date.utc_today()
     sent_at = DateTime.utc_now(:second)
 
-    for field <- [:email, :first_name, :last_name, :phone, :notes],
-        {length, expected} <- [{255, []}, {256, ["should be at most 255 character(s)"]}] do
-      attrs = %{email: "client@example.test"} |> Map.put(field, String.duplicate("x", length))
-      invited = Client.invite_changeset(Ecto.UUID.generate(), Ecto.UUID.generate(), sent_at, attrs)
-      updated = Client.update_changeset(client, today, attrs)
+    for {field, limit} <- [email: 255, full_name: 255, preferred_name: 255, phone: 255, notes: 2000],
+        length <- [limit, limit + 1] do
+      value = if field == :email, do: String.duplicate("x", length - 10) <> "@test.test", else: String.duplicate("x", length)
+      attrs = Map.put(%{email: "client@example.test", full_name: "Client"}, field, value)
+      invited = Client.insert_changeset(Ecto.UUID.generate(), Ecto.UUID.generate(), sent_at, attrs)
+      updated = Client.update_changeset(client, attrs)
+      expected = if length > limit, do: ["should be at most #{limit} character(s)"], else: []
 
       assert Map.get(errors_on(invited), field, []) == expected
       assert Map.get(errors_on(updated), field, []) == expected
@@ -91,13 +120,14 @@ defmodule Easy.ClientAccountTest do
 
   test "oversized self-service profile fields return validation errors without changing the client" do
     client = insert(:client)
-    ctx = %Ctx{business_id: client.business_id, user_id: client.user_id, client_id: client.id}
-    too_long = String.duplicate("e\u0301", 128)
+    too_long = String.duplicate("x", 256)
 
-    for field <- [:first_name, :last_name, :phone] do
-      assert {:error, changeset} = ClientAccount.update_client_account_profile(ctx, %{field => too_long})
+    for field <- [:full_name, :preferred_name, :phone] do
+      assert {:error, changeset} = ClientAccount.update_client_account_profile(context(client), %{field => too_long})
       assert errors_on(changeset)[field] == ["should be at most 255 character(s)"]
       assert Map.get(Repo.get!(Client, client.id), field) == Map.get(client, field)
     end
   end
+
+  defp context(client), do: %Ctx{business_id: client.business_id, user_id: client.user_id, client_id: client.id}
 end

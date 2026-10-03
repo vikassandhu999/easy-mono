@@ -3,7 +3,7 @@ import {queryClient, snapshotAge} from './query-client';
 import {getSession, subscribeSession} from './session';
 import {readStored, removeStored, writeStored} from './storage';
 
-const version = 2;
+const version = 3;
 const listeners = new Set<() => void>();
 let issue = '';
 export const offlineIssue = () => issue;

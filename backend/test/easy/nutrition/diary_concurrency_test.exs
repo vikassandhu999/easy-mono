@@ -4,6 +4,7 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
   import Ecto.Query
   import Easy.Factory
   alias Easy.Clients.Client
+  alias Easy.CoachingTerms.CoachingTerm
   alias Easy.Ctx
   alias Easy.Identity.User
 
@@ -17,10 +18,10 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
     Sandbox.checkout(Repo, sandbox: false)
     business = insert(:business)
     coach = insert(:coach, business: business)
-    client = insert(:client, business: business, creator: coach)
+    client = insert(:client, business: business, coach: coach)
     food = insert(:food, business: business, creator: coach)
     ctx = %Ctx{business_id: business.id, user_id: client.user_id, client_id: client.id}
-    user_ids = Enum.uniq([business.owner_id, coach.user_id, client.user_id])
+    user_ids = Enum.uniq([business.owner_user_id, coach.user_id, client.user_id])
 
     on_exit(fn ->
       Sandbox.checkout(Repo, sandbox: false)
@@ -89,6 +90,8 @@ defmodule Easy.Nutrition.DiaryConcurrencyTest do
   end
 
   defp cleanup(business_id, user_ids) do
+    Repo.delete_all(CoachingTerm.for_business(business_id))
+
     for schema <- [
           DiarySlot,
           Easy.Nutrition.Plan,

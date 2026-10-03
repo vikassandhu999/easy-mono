@@ -13,7 +13,7 @@ defmodule Easy.Application do
           {Task.Supervisor, name: Easy.MailerSupervisor, max_children: 20},
           id: Easy.MailerSupervisor
         )
-      ] ++ sweeper_children() ++ [EasyWeb.Endpoint]
+      ] ++ [EasyWeb.Endpoint]
 
     opts = [strategy: :one_for_one, name: Easy.Supervisor]
     Supervisor.start_link(children, opts)
@@ -24,14 +24,5 @@ defmodule Easy.Application do
   def config_change(changed, _new, removed) do
     EasyWeb.Endpoint.config_change(changed, removed)
     :ok
-  end
-
-  defp sweeper_children do
-    []
-    |> maybe_add_sweeper(:start_client_subscription_sweeper, Easy.ClientSubscriptionSweeper)
-  end
-
-  defp maybe_add_sweeper(children, config_key, module) do
-    if Application.get_env(:easy, config_key, true), do: children ++ [module], else: children
   end
 end

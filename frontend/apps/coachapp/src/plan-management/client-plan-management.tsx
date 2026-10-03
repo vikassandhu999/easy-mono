@@ -118,7 +118,7 @@ function ClientPlanDetails({
   const dirty = form.formState.isDirty;
   const pending = form.formState.isSubmitting || manage.isPending || reloading;
   const archived = plan.lifecycle === 'archived';
-  const name = `${plan.client?.first_name ?? ''} ${plan.client?.last_name ?? ''}`.trim() || 'Client';
+  const name = plan.client?.preferred_name || plan.client?.full_name || 'Client';
   useEffect(() => {
     if (pending || dialog) {
       return;

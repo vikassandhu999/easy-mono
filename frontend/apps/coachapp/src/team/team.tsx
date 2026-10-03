@@ -28,10 +28,10 @@ export function Team() {
 function TeamList() {
   const [params, setParams] = useSearchParams();
   const location = useLocation();
-  const selected = params.get('status');
-  const status = selected === 'active' || selected === 'invited' || selected === 'inactive' ? selected : undefined;
+  const selected = params.get('state');
+  const lifecycle = selected === 'active' || selected === 'invited' || selected === 'removed' ? selected : undefined;
   const search = params.get('search') ?? '';
-  const query = useTeam({search, ...(status ? {status} : {})});
+  const query = useTeam({q: search, ...(lifecycle ? {state: lifecycle} : {})});
   const state: unknown = location.state;
   const notice =
     state && typeof state === 'object' && 'notice' in state && typeof state.notice === 'string' ? state.notice : '';
@@ -62,15 +62,15 @@ function TeamList() {
           </Label>
           <SelectField
             id="team-status"
-            value={status ?? 'all'}
+            value={lifecycle ?? 'all'}
             onChange={(value) => {
               setParams(
                 (current) => {
                   const next = new URLSearchParams(current);
                   if (value === 'all') {
-                    next.delete('status');
+                    next.delete('state');
                   } else {
-                    next.set('status', value);
+                    next.set('state', value);
                   }
                   return next;
                 },
@@ -81,7 +81,7 @@ function TeamList() {
             <SelectItem id="all">Everyone</SelectItem>
             <SelectItem id="active">Active</SelectItem>
             <SelectItem id="invited">Invited</SelectItem>
-            <SelectItem id="inactive">Inactive</SelectItem>
+            <SelectItem id="removed">Removed</SelectItem>
           </SelectField>
         </div>
       </div>
@@ -109,9 +109,7 @@ function TeamList() {
               </p>
               <p className="break-all text-sm text-muted-foreground">{coach.email}</p>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <StatusBadge tone={coach.status === 'active' ? 'positive' : 'neutral'}>
-                  {coachStatus(coach)}
-                </StatusBadge>
+                <StatusBadge tone={coach.state === 'active' ? 'positive' : 'neutral'}>{coachStatus(coach)}</StatusBadge>
                 <span className="text-sm text-muted-foreground">
                   {coach.assigned_client_count} assigned {coach.assigned_client_count === 1 ? 'client' : 'clients'}
                 </span>

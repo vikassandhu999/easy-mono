@@ -1,10 +1,10 @@
 defmodule Easy.Nutrition.PlanCopy do
   alias Easy.ClientAccess
-  alias Easy.Clients
   alias Easy.CopyName
   alias Easy.Ctx
   alias Easy.Nutrition.Plan
   alias Easy.Orgs.Business
+  alias Easy.PlanOverlap
   alias Easy.Repo
   alias Easy.Revision
 
@@ -64,12 +64,10 @@ defmodule Easy.Nutrition.PlanCopy do
   end
 
   defp copy_template_to_client(ctx, client_id, template, attrs) do
-    with {:ok, copy} <-
-           Plan.assign_changeset(ctx.business_id, ctx.user_id, client_id, template, attrs)
-           |> Repo.insert(),
-         {:ok, _count} <- Clients.advance_stage_to_coaching(ctx, client_id) do
-      {:ok, copy}
-    end
+    ctx.business_id
+    |> Plan.assign_changeset(ctx.user_id, client_id, template, attrs)
+    |> then(&PlanOverlap.validate(ctx, &1))
+    |> Repo.insert()
   end
 
   # The business row serializes "(Copy)" name generation across concurrent

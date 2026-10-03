@@ -16,12 +16,21 @@ defmodule Easy.CoachInvitationsConcurrencyTest do
     Sandbox.checkout(Repo, sandbox: false)
     business = insert(:business)
     owner = insert(:coach, business: business, user: business.owner)
-    invitation = insert(:coach, business: business, user: nil, status: :invited)
+
+    invitation =
+      insert(:coach,
+        business: business,
+        user: nil,
+        invite_token: Ecto.UUID.generate(),
+        invited_at: DateTime.utc_now(:second)
+      )
+
     user = insert(:user)
 
     on_exit(fn ->
       Sandbox.checkout(Repo, sandbox: false)
       coach_user_ids = Repo.all(from c in Coach, where: c.business_id == ^business.id, select: c.user_id)
+      Repo.delete_all(from t in Easy.CoachingTerms.CoachingTerm, join: c in Client, on: c.id == t.client_id, where: c.business_id == ^business.id)
       Repo.delete_all(from c in Client, where: c.business_id == ^business.id)
       Repo.delete_all(from c in Coach, where: c.id == ^invitation.id)
       Repo.delete_all(from c in Coach, where: c.business_id == ^business.id)
@@ -46,7 +55,7 @@ defmodule Easy.CoachInvitationsConcurrencyTest do
     assert match?({:ok, %Coach{}}, revoke_result) or match?({:error, :not_found}, revoke_result)
 
     if match?({:ok, %Coach{}}, accept_result) do
-      assert %Coach{status: :active} = Repo.get(Coach, ctx.invitation.id)
+      assert %Coach{removed_on: nil} = Repo.get(Coach, ctx.invitation.id)
     else
       assert revoke_result == {:ok, elem(revoke_result, 1)}
       assert Repo.get(Coach, ctx.invitation.id) == nil
@@ -60,25 +69,88 @@ defmodule Easy.CoachInvitationsConcurrencyTest do
     accept = Task.async(fn -> checked_task(parent, :accept, fn -> CoachInvitations.accept_invite(ctx.invitation, ctx.user.id) end) end)
     resend = Task.async(fn -> checked_task(parent, :resend, fn -> CoachInvitations.resend_invite(owner_ctx, ctx.invitation.id) end) end)
     release_workers(2)
-    _ = Task.await(accept, 5_000)
-    _ = Task.await(resend, 5_000)
+    accepted = Task.await(accept, 5_000)
+    resent = Task.await(resend, 5_000)
 
     coach = Repo.get!(Coach, ctx.invitation.id)
-    assert coach.status == :active
-    assert coach.invitation_token == nil
+
+    case accepted do
+      {:ok, _} ->
+        assert Coach.state(coach) == :active
+        assert coach.invite_token == nil
+        assert resent == {:error, :not_found}
+
+      {:error, :race_lost} ->
+        assert {:ok, renewed} = resent
+        assert Coach.state(coach) == :invited
+        assert coach.invite_token == renewed.invite_token
+        refute coach.invite_token == ctx.invitation.invite_token
+    end
+  end
+
+  test "two invitations cannot activate the same user concurrently", ctx do
+    second =
+      insert(:coach,
+        business: ctx.business,
+        user: nil,
+        invite_token: Ecto.UUID.generate(),
+        invited_at: DateTime.utc_now(:second)
+      )
+
+    parent = self()
+
+    tasks =
+      Enum.map([ctx.invitation, second], fn invitation ->
+        Task.async(fn -> checked_task(parent, :accept, fn -> CoachInvitations.accept_invite(invitation, ctx.user.id) end) end)
+      end)
+
+    release_workers(2)
+    results = Enum.map(tasks, &Task.await(&1, 5_000))
+    assert Enum.count(results, &match?({:ok, %Coach{}}, &1)) == 1
+    assert Enum.count(results, &(&1 == {:error, :already_a_coach})) == 1
+    assert Repo.aggregate(Coach.for_user(ctx.user.id) |> Coach.active(), :count) == 1
+  end
+
+  test "accept racing revoke of a returning coach preserves the historical membership", ctx do
+    owner_ctx = Easy.Ctx.new(ctx.business.id, ctx.owner.user_id, ctx.owner.id, true)
+    {:ok, accepted} = CoachInvitations.accept_invite(ctx.invitation, ctx.user.id)
+    {:ok, removed} = Easy.Coaches.remove_coach(owner_ctx, accepted.id)
+    {:ok, renewed} = CoachInvitations.invite_trainer(owner_ctx, %{full_name: removed.full_name, email: removed.email})
+    parent = self()
+
+    accept = Task.async(fn -> checked_task(parent, :accept, fn -> CoachInvitations.accept_invite(renewed, ctx.user.id) end) end)
+    revoke = Task.async(fn -> checked_task(parent, :revoke, fn -> CoachInvitations.revoke_invite(owner_ctx, renewed.id) end) end)
+    release_workers(2)
+    accepted_result = Task.await(accept, 5_000)
+    revoked_result = Task.await(revoke, 5_000)
+    coach = Repo.get!(Coach, renewed.id)
+    assert coach.user_id == ctx.user.id
+    assert coach.invite_token == nil
+
+    case accepted_result do
+      {:ok, _} ->
+        assert Coach.state(coach) == :active
+        assert coach.removed_on == nil
+        assert revoked_result == {:error, :not_found}
+
+      {:error, :race_lost} ->
+        assert {:ok, _} = revoked_result
+        assert Coach.state(coach) == :removed
+        assert coach.removed_on == removed.removed_on
+    end
   end
 
   for first <- [:reassign, :deactivate] do
     @first first
     test "#{first} acquires the target lock first without leaving clients with an inactive coach", ctx do
       target = insert(:coach, business: ctx.business)
-      client = insert(:client, business: ctx.business, assigned_coach: ctx.owner)
+      client = insert(:client, business: ctx.business, coach: ctx.owner)
       owner_ctx = Easy.Ctx.new(ctx.business.id, ctx.owner.user_id, ctx.owner.id, true)
       parent = self()
 
       operations = %{
-        reassign: fn -> Clients.reassign_client(owner_ctx, client.id, target.id) end,
-        deactivate: fn -> Easy.Coaches.deactivate_trainer(owner_ctx, target.id) end
+        reassign: fn -> Clients.update_client(owner_ctx, client.id, %{coach_id: target.id}) end,
+        deactivate: fn -> Easy.Coaches.remove_coach(owner_ctx, target.id) end
       }
 
       second = if @first == :reassign, do: :deactivate, else: :reassign
@@ -102,8 +174,8 @@ defmodule Easy.CoachInvitationsConcurrencyTest do
       assert {:ok, {:ok, _}} = Task.await(holder, 5_000)
       result = Task.await(waiter, 5_000)
       if @first == :reassign, do: assert(match?({:ok, _}, result)), else: assert(result == {:error, :coach_not_active})
-      assert Repo.get!(Coach, target.id).status == :inactive
-      assert Repo.get!(Client, client.id).assigned_coach_id == ctx.owner.id
+      assert Repo.get!(Coach, target.id).removed_on == Date.utc_today()
+      assert Repo.get!(Client, client.id).coach_id == ctx.owner.id
     end
   end
 

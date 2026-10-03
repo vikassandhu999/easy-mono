@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 1604f55f253205773017c1e505b554e59216b8224dc7e53827c5b6db4a7c525c */
+/* typed-routes:hash 9d1f913078c1a808a107adb9300398e06ad760eeb09794100da33c547d8a5f2b */
 export type Attachment = {
   id: string;
   content_type:
@@ -28,7 +28,6 @@ export type Billing = {
   seat_limit: number;
   used_seats: number;
   available_seats: number;
-  awaiting_seat_count: number;
   monthly_seat_price_inr: number | null;
   monthly_total_inr: number | null;
   billing_enabled: boolean;
@@ -66,22 +65,22 @@ export type Business = {
   id: string;
   name: string;
   handle: string;
-  about: string | null;
-  default_weight_unit: 'kg' | 'lbs';
   timezone: string;
-  whatsapp_number: string | null;
+  seats: {limit: number; used: number};
   inserted_at: string;
   updated_at: string;
 };
-export type BusinessCreate = {name: string; handle: string; about?: string | null; default_weight_unit?: 'kg' | 'lbs'};
-export type BusinessTimezoneOptions = {timezones: Array<string>};
-export type BusinessUpdate = {
-  name?: string;
-  about?: string | null;
+export type BusinessAvailability = {available: boolean};
+export type BusinessAvailabilityQuery = {handle: string};
+export type BusinessCreate = {
+  name: string;
+  handle: string;
+  full_name: string;
+  preferred_name?: string;
   timezone?: string;
-  whatsapp_number?: string | null;
-  default_weight_unit?: 'kg' | 'lbs';
 };
+export type BusinessTimezoneOptions = {timezones: Array<string>};
+export type BusinessUpdate = {name?: string; handle?: string; timezone?: string};
 export type ChatMessage = {
   id: string;
   conversation_id: string;
@@ -120,28 +119,25 @@ export type ChatRecordSnapshot = {
 };
 export type Client = {
   id: string;
-  local_date: string;
+  full_name: string;
+  preferred_name: string | null;
   email: string | null;
-  first_name: string | null;
-  last_name: string | null;
   phone: string | null;
   notes: string | null;
-  status: 'active' | 'pending' | 'inactive';
-  stage: 'onboarding' | 'coaching';
-  inactive_reason: 'manual' | 'subscription_expired' | 'awaiting_seat' | null;
-  subscription_started_on: string | null;
-  subscription_ends_on: string | null;
-  joined_at: string | null;
-  required_services: Array<'training' | 'nutrition'>;
-  expiring_soon: boolean;
+  timezone: string | null;
+  unit_system: 'metric' | 'imperial';
+  local_date: string;
+  state: 'active' | 'ending_soon' | 'joined' | 'invited' | 'ended';
+  current_term: CoachingTerm | null;
+  terms: Array<CoachingTerm>;
+  coach_id: string;
+  coach_name: string;
+  invite_url: string | null;
+  invited_at: string | null;
+  invitation_expires_at: string | null;
   last_active_at: string | null;
   training_plan_name: string | null;
   nutrition_plan_name: string | null;
-  assigned_coach_id: string | null;
-  assigned_coach_name: string | null;
-  invite_url: string | null;
-  invitation_sent_at: string | null;
-  invitation_expires_at: string | null;
   inserted_at: string;
   updated_at: string;
 };
@@ -149,56 +145,53 @@ export type ClientIndex = {
   data: Array<Client>;
   count: number;
   next_cursor: string | null;
-  summary: {active: number; pending: number; inactive: number};
+  summary: {active: number; ending_soon: number; joined: number; invited: number; ended: number};
 };
 export type ClientInvite = {
-  email?: string | null;
-  first_name?: string | null;
-  last_name?: string | null;
+  full_name: string;
+  email: string;
+  preferred_name?: string | null;
   phone?: string | null;
   notes?: string | null;
-  required_services?: Array<'training' | 'nutrition'>;
+  coach_id?: string;
 };
 export type ClientListQuery = {
   cursor?: string;
   offset?: number;
   limit?: number;
-  search?: string;
-  status?: 'active' | 'pending' | 'inactive';
-  stage?: 'onboarding' | 'coaching';
+  q?: string;
+  state?: 'active' | 'ending_soon' | 'joined' | 'invited' | 'ended';
+  coach_id?: string;
   sort?: 'newest' | 'last_active';
   include_plans?: boolean;
-  assigned_coach_id?: string;
 };
-export type ClientReassign = {coach_id: string};
 export type ClientUpdate = {
-  email?: string | null;
-  first_name?: string | null;
-  last_name?: string | null;
+  full_name?: string;
+  preferred_name?: string | null;
+  email?: string;
   phone?: string | null;
   notes?: string | null;
-  status?: 'active' | 'inactive';
-  stage?: 'onboarding' | 'coaching' | null;
-  subscription_started_on?: string | null;
-  subscription_ends_on?: string | null;
-  required_services?: Array<'training' | 'nutrition'>;
+  coach_id?: string;
+  timezone?: string | null;
+  unit_system?: 'metric' | 'imperial';
 };
 export type CoachProfile = {
   id: string;
-  first_name: string | null;
-  last_name: string | null;
+  full_name: string | null;
+  preferred_name: string | null;
   email: string;
   phone: string | null;
   is_owner: boolean;
-  business: {id: string; name: string; slug: string; whatsapp_number: string | null};
+  business: {id: string; name: string; handle: string};
 };
 export type CoachProfileUpdate = {
-  first_name?: string | null;
-  last_name?: string | null;
+  full_name?: string | null;
+  preferred_name?: string | null;
   phone?: string | null;
   business_name?: string | null;
-  whatsapp_number?: string | null;
 };
+export type CoachingTerm = {id: string; starts_on: string; ends_on: string | null};
+export type CoachingTermUpdate = {ends_on: string | null};
 export type Conversation = {
   id: string;
   client_id: string;
@@ -531,7 +524,7 @@ export type NutritionPlan = {
   name: string;
   description: string | null;
   revision: number;
-  lifecycle: 'active' | 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived';
+  lifecycle: 'active' | 'incomplete' | 'waiting' | 'upcoming' | 'current' | 'ended' | 'archived';
   assigned_client_count: number;
   target_calories: number | null;
   target_protein_g: number | null;
@@ -540,6 +533,7 @@ export type NutritionPlan = {
   target_fiber_g: number | null;
   start_date: string | null;
   end_date: string | null;
+  stopped_on: string | null;
   client_id: string | null;
   client: NutritionPlanClient | null;
   creator_id: string | null;
@@ -549,7 +543,7 @@ export type NutritionPlan = {
   updated_at: string;
 };
 export type NutritionPlanAssign = {expected_revision?: number; start_date?: string | null; end_date?: string | null};
-export type NutritionPlanClient = {id: string; first_name: string | null; last_name: string | null};
+export type NutritionPlanClient = {id: string; full_name: string; preferred_name: string | null};
 export type NutritionPlanClientScopedListQuery = {cursor?: string; limit?: number; search?: string; archived?: boolean};
 export type NutritionPlanCreate = {
   name: string;
@@ -731,23 +725,31 @@ export type SessionSnapshotPlan = {id: string; name: string; revision: number};
 export type SessionSnapshotWorkout = {id: string; name: string; exercises: Array<SessionSnapshotExercise>};
 export type TeamMember = {
   id: string;
-  first_name: string | null;
-  last_name: string | null;
+  full_name: string | null;
+  preferred_name: string | null;
   email: string | null;
-  status: 'invited' | 'active' | 'inactive';
+  state: 'invited' | 'active' | 'removed';
   is_owner: boolean;
   assigned_client_count: number;
   invitation_expires_at: string | null;
   invitation_expired: boolean;
-  invitation_sent_at: string | null;
+  phone: string | null;
+  removed_on: string | null;
+  invite_url: string | null;
+  invited_at: string | null;
 };
 export type TeamMemberIndex = {data: Array<TeamMember>; count: number; next_cursor: string | null};
-export type TeamMemberInvite = {email: string; first_name?: string | null; last_name?: string | null};
+export type TeamMemberInvite = {
+  email: string;
+  full_name: string;
+  preferred_name?: string | null;
+  phone?: string | null;
+};
 export type TeamMemberListQuery = {
   cursor?: string;
   limit?: number;
-  search?: string;
-  status?: 'active' | 'invited' | 'inactive';
+  q?: string;
+  state?: 'active' | 'invited' | 'removed';
 };
 export type TrainingPlan = {
   id: string;
@@ -757,9 +759,10 @@ export type TrainingPlan = {
   revision: number;
   archived_at: string | null;
   status: 'active' | 'archived';
-  lifecycle: 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived' | null;
+  lifecycle: 'incomplete' | 'waiting' | 'upcoming' | 'current' | 'ended' | 'archived' | null;
   start_date: string | null;
   end_date: string | null;
+  stopped_on: string | null;
   client_id: string | null;
   client: TrainingPlanClient | null;
   creator_id: string;
@@ -771,7 +774,7 @@ export type TrainingPlan = {
   updated_at: string;
 };
 export type TrainingPlanAssign = {expected_revision?: number; start_date?: string | null; end_date?: string | null};
-export type TrainingPlanClient = {id: string; first_name: string | null; last_name: string | null};
+export type TrainingPlanClient = {id: string; full_name: string; preferred_name: string | null};
 export type TrainingPlanClientScopedListQuery = {
   search?: string;
   cursor?: string;
@@ -930,7 +933,7 @@ export type UploadDownloadUrls = {attachment_ids: Array<string>};
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 43c0db4da1b86c812b70022b5162da68a361cc44a687af31ec47abf4b5317e78 */
+  /* typed-routes:hash 24b13ad6bec675b6519c8a5c292754298ff07854fb6a0664e2ccd15802b31e6d */
   '/api/health': {
     get: {
       parameters: {
@@ -955,6 +958,19 @@ export interface paths {
       requestBody: {content: {'application/json': BusinessCreate}};
       responses: {
         201: {content: {'application/json': {data: Business}}};
+      };
+    };
+  };
+  '/v1/businesses/handle-availability': {
+    get: {
+      parameters: {
+        query: BusinessAvailabilityQuery;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': BusinessAvailability}};
       };
     };
   };
@@ -1075,8 +1091,6 @@ export interface paths {
         200: {content: {'application/json': ClientIndex}};
       };
     };
-  };
-  '/v1/coach/clients/invite': {
     post: {
       parameters: {
         query?: never;
@@ -1259,7 +1273,7 @@ export interface paths {
       };
     };
   };
-  '/v1/coach/clients/{id}/reassign': {
+  '/v1/coach/clients/{id}/invite': {
     post: {
       parameters: {
         query?: never;
@@ -1267,13 +1281,12 @@ export interface paths {
         path: {id: string};
         cookie?: never;
       };
-      requestBody: {content: {'application/json': ClientReassign}};
       responses: {
         200: {content: {'application/json': {data: Client}}};
       };
     };
   };
-  '/v1/coach/clients/{id}/resend-invite': {
+  '/v1/coach/clients/{id}/terms': {
     post: {
       parameters: {
         query?: never;
@@ -1282,7 +1295,82 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Client}}};
+        201: {content: {'application/json': {data: CoachingTerm}}};
+      };
+    };
+  };
+  '/v1/coach/coaches': {
+    get: {
+      parameters: {
+        query?: TeamMemberListQuery;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': TeamMemberIndex}};
+      };
+    };
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': TeamMemberInvite}};
+      responses: {
+        200: {content: {'application/json': {data: TeamMember}}};
+      };
+    };
+  };
+  '/v1/coach/coaches/{id}': {
+    delete: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: TeamMember}}};
+      };
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: TeamMember}}};
+      };
+    };
+  };
+  '/v1/coach/coaches/{id}/invite': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: TeamMember}}};
+      };
+    };
+  };
+  '/v1/coach/coaches/{id}/remove': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: TeamMember}}};
       };
     };
   };
@@ -1756,93 +1844,17 @@ export interface paths {
       };
     };
   };
-  '/v1/coach/team': {
-    get: {
-      parameters: {
-        query?: TeamMemberListQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': TeamMemberIndex}};
-      };
-    };
-  };
-  '/v1/coach/team/invite': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': TeamMemberInvite}};
-      responses: {
-        200: {content: {'application/json': {data: TeamMember}}};
-      };
-    };
-  };
-  '/v1/coach/team/{id}': {
-    delete: {
+  '/v1/coach/terms/{id}': {
+    patch: {
       parameters: {
         query?: never;
         header?: {Authorization?: string};
         path: {id: string};
         cookie?: never;
       };
+      requestBody: {content: {'application/json': CoachingTermUpdate}};
       responses: {
-        200: {content: {'application/json': {data: TeamMember}}};
-      };
-    };
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: TeamMember}}};
-      };
-    };
-  };
-  '/v1/coach/team/{id}/deactivate': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: TeamMember}}};
-      };
-    };
-  };
-  '/v1/coach/team/{id}/reactivate': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: TeamMember}}};
-      };
-    };
-  };
-  '/v1/coach/team/{id}/resend-invite': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: TeamMember}}};
+        200: {content: {'application/json': {data: CoachingTerm}}};
       };
     };
   };
@@ -2084,26 +2096,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/v1/auth/accept-invite/verify': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Verify invitation OTP
-     * @description Verifies an invitation OTP, links or creates the user, and returns auth tokens.
-     */
-    post: operations['verifyInvitation'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   '/v1/auth/invitations/{token}': {
     parameters: {
       query?: never;
@@ -2118,6 +2110,26 @@ export interface paths {
     get: operations['showInvitation'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/auth/invites/{token}/accept': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Verify invitation OTP
+     * @description Verifies an invitation OTP, links or creates the user, and returns auth tokens.
+     */
+    post: operations['verifyInvitation'];
     delete?: never;
     options?: never;
     head?: never;
@@ -2284,14 +2296,12 @@ export interface components {
      * AcceptInviteVerifyRequest
      * @example {
      *       "email": "client@example.com",
-     *       "invitation_token": "invite-token",
      *       "otp": "123456"
      *     }
      */
     AcceptInviteVerifyRequest: {
       /** Format: email */
       email: string;
-      invitation_token: string;
       otp: string;
     };
     /** AuthTokenResponse */
@@ -2299,6 +2309,7 @@ export interface components {
       access_token: string;
       /** @example 300 */
       expires_in: number;
+      full_name?: string;
       refresh_token: string;
       scope: string;
       /** @example Bearer */
@@ -2319,7 +2330,7 @@ export interface components {
     InvitationPreviewResponse: {
       data: {
         business_name?: string | null;
-        coach_first_name?: string | null;
+        coach_name?: string | null;
         /** Format: date-time */
         expires_at?: string | null;
         /** Format: email */
@@ -2349,15 +2360,13 @@ export interface components {
      * SignupRequest
      * @example {
      *       "email": "coach@example.com",
-     *       "first_name": "Alex",
-     *       "last_name": "Coach"
+     *       "full_name": "Alex"
      *     }
      */
     SignupRequest: {
       /** Format: email */
       email: string;
-      first_name?: string;
-      last_name?: string;
+      full_name?: string;
     };
     /** SignupResponse */
     SignupResponse: {
@@ -2430,7 +2439,7 @@ export interface components {
         business_name: string;
         /** Format: email */
         email?: string | null;
-        first_name?: string | null;
+        full_name?: string | null;
       };
     };
     /**
@@ -2510,11 +2519,37 @@ export interface operations {
       };
     };
   };
+  showInvitation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Invitation token */
+        token: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Invitation preview */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InvitationPreviewResponse'];
+        };
+      };
+    };
+  };
   verifyInvitation: {
     parameters: {
       query?: never;
       header?: never;
-      path?: never;
+      path: {
+        /** @description Invitation token */
+        token: string;
+      };
       cookie?: never;
     };
     /** @description Accept invite verification request */
@@ -2576,29 +2611,6 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  showInvitation: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Invitation token */
-        token: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Invitation preview */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['InvitationPreviewResponse'];
         };
       };
     };

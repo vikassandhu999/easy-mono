@@ -9,6 +9,7 @@ import {routes} from '../routes';
 import {Bubble, BubbleContent} from '../ui/bubble';
 import {Button} from '../ui/button';
 import {CachedRead} from '../ui/cached-read';
+import {useCoaching} from '../ui/coaching';
 import {useOnline} from '../ui/connection-status';
 import {useInfiniteScroll} from '../ui/infinite-scroll';
 import {Message, MessageContent, MessageFooter, MessageHeader} from '../ui/message';
@@ -25,6 +26,7 @@ const subscribeFocus = (notify: () => void) => focusManager.subscribe(notify);
 const focused = () => focusManager.isFocused();
 
 export function History() {
+  const {canWrite} = useCoaching();
   const query = useConversationHistory();
   const read = useReadConversation();
   const viewport = useRef<HTMLDivElement>(null);
@@ -61,6 +63,7 @@ export function History() {
   // biome-ignore lint/correctness/useExhaustiveDependencies: A fresh history read retries a failed acknowledgement of the same watermark.
   useEffect(() => {
     if (
+      !canWrite ||
       !atEnd ||
       !foreground ||
       !online ||
@@ -75,7 +78,7 @@ export function History() {
     markRead(through).catch(() => {
       acknowledged.current = null;
     });
-  }, [atEnd, foreground, online, through, query.isFetching, query.isError, query.dataUpdatedAt, markRead]);
+  }, [canWrite, atEnd, foreground, online, through, query.isFetching, query.isError, query.dataUpdatedAt, markRead]);
 
   return (
     <div className="min-h-0 flex flex-1 flex-col">
@@ -157,8 +160,12 @@ export function History() {
                     className="size-7"
                   />
                 </div>
-                <h2 className="text-xl font-semibold">Your coach is a message away</h2>
-                <p className="mt-2 text-muted-foreground">Ask a question about your plan or share how today went.</p>
+                <h2 className="text-xl font-semibold">
+                  {canWrite ? 'Your coach is a message away' : 'No messages yet'}
+                </h2>
+                {canWrite && (
+                  <p className="mt-2 text-muted-foreground">Ask a question about your plan or share how today went.</p>
+                )}
               </MessageScrollerItem>
             )}
             {items.map((message) => (
@@ -244,7 +251,7 @@ export function History() {
           Older messages could not load. Your loaded conversation is still here.
         </p>
       )}
-      {read.isError && (
+      {canWrite && read.isError && (
         <div className="px-5 text-sm flex items-center justify-between">
           <p>Read status could not update.</p>
           <Button

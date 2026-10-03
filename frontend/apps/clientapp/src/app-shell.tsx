@@ -2,7 +2,7 @@ import {Dumbbell, Flower2, House, MessageCircle, Sprout, UserRound, Utensils} fr
 import {type ReactNode, useSyncExternalStore} from 'react';
 import {generatePath, Link, Navigate, NavLink, Outlet, useLocation} from 'react-router-dom';
 import {useProfile} from './api/auth';
-import {clearSession, getSession, parseSession, sessionSnapshot, subscribeSession} from './api/session';
+import {clearSession, parseSession, sessionSnapshot, subscribeSession} from './api/session';
 import {useTrainingCoverage} from './api/training';
 import {authPath} from './auth/return-to';
 import {TodayMessages} from './messages/messages';
@@ -13,6 +13,7 @@ import {ActiveWorkout} from './training/training';
 import {ActionCard} from './ui/action-card';
 import {Button} from './ui/button';
 import {CachedRead} from './ui/cached-read';
+import {useCoaching} from './ui/coaching';
 import {Page} from './ui/page';
 import {ReadState} from './ui/read-state';
 
@@ -89,7 +90,22 @@ export function AppShell() {
 
 function VerifiedAccount({children}: {children: ReactNode}) {
   const profile = useProfile();
-  if (getSession()?.accountId) {
+  if (profile.data?.data.state === 'joined' || profile.data?.data.state === 'invited') {
+    return (
+      <Page
+        title="Coaching starts soon"
+        description="You’re all set. Your coach will start your coaching soon."
+      >
+        <Button
+          variant="ghost"
+          onPress={clearSession}
+        >
+          Sign out
+        </Button>
+      </Page>
+    );
+  }
+  if (profile.data) {
     return children;
   }
   return (
@@ -118,6 +134,7 @@ function VerifiedAccount({children}: {children: ReactNode}) {
 
 export function Home() {
   const profile = useProfile();
+  const {canWrite} = useCoaching();
   const coverage = useTrainingCoverage();
   const guidance = coverage.data?.data;
   return (
@@ -125,7 +142,7 @@ export function Home() {
       title="Today"
       description={
         profile.data
-          ? `${profile.data.data.first_name || 'Welcome'} · ${profile.data.data.local_date ? dayLabel(profile.data.data.local_date) : (profile.data.data.coach?.business_name ?? 'Your coaching')}`
+          ? `${profile.data.data.preferred_name || profile.data.data.full_name} · ${dayLabel(profile.data.data.local_date)}`
           : 'Your training, nutrition and messages.'
       }
     >
@@ -149,21 +166,25 @@ export function Home() {
               refresh={() => coverage.refetch()}
             />
             <ActionCard
-              title={guidance?.workout?.name ?? 'Move at your pace'}
+              title={canWrite ? (guidance?.workout?.name ?? 'Move at your pace') : 'Workout history'}
               eyebrow="Your training"
               tone="training"
               icon={<Dumbbell />}
               description={
-                guidance?.workout
-                  ? guidance.plan.name
-                  : guidance
-                    ? 'A rest day. Recharge or choose a workout.'
-                    : 'Your coach hasn’t scheduled a plan for today. You can still record your own workout.'
+                !canWrite
+                  ? 'Revisit your saved workouts and progress.'
+                  : guidance?.workout
+                    ? guidance.plan.name
+                    : guidance
+                      ? 'A rest day. Recharge or choose a workout.'
+                      : 'Your coach hasn’t scheduled a plan for today. You can still record your own workout.'
               }
               to={
-                guidance?.workout
-                  ? generatePath(routes.workout, {id: guidance.plan.id, workoutId: guidance.workout.id})
-                  : routes.training
+                !canWrite
+                  ? `${routes.training}?view=history`
+                  : guidance?.workout
+                    ? generatePath(routes.workout, {id: guidance.plan.id, workoutId: guidance.workout.id})
+                    : routes.training
               }
             />
           </>

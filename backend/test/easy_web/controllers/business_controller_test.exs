@@ -1,185 +1,90 @@
 defmodule EasyWeb.BusinessControllerTest do
-  use Easy.ConnCase
+  use Easy.ConnCase, async: true
+  alias Easy.Billing.BusinessBilling
+  alias Easy.Identity.{AuthTokens, SessionFactory, Token}
+  alias Easy.Orgs.Coach
 
-  alias Easy.Identity.Token
+  setup %{conn: conn} do
+    business = insert(:business, billing: build(:business_billing, business: nil, free_seats: 3))
+    coach = insert(:coach, business: business, user: business.owner)
+    %{conn: authenticate_coach(conn, coach), business: business}
+  end
 
-  setup do
-    owner_user = insert(:user)
-    business = insert(:business, owner: owner_user) |> Easy.Repo.reload!()
-    owner_coach = insert(:coach, user: owner_user, business: business)
-    trainer = insert(:coach, business: business)
+  test "business responses include handle and current term seat counts", %{conn: conn, business: business} do
+    insert(:client, business: business)
+    insert(:client, business: business, user: nil)
+    assert %{"data" => data} = get(conn, "/v1/businesses/me") |> json_response(200)
+    assert data["seats"] == %{"limit" => 3, "used" => 1}
+    assert %{"data" => updated} = patch(conn, "/v1/businesses/me", %{handle: "new-studio", name: "Studio", timezone: "Europe/London"}) |> json_response(200)
+    assert updated["handle"] == "new-studio"
+    assert updated["timezone"] == "Europe/London"
+  end
+
+  test "availability checks validate syntax and ignore the owner's own handle", %{conn: conn, business: business} do
+    assert %{"available" => true} = get(conn, "/v1/businesses/handle-availability", %{handle: business.handle}) |> json_response(200)
+
+    for handle <- ["admin", "UPPER", "a--b", insert(:business).handle] do
+      assert %{"available" => false} = get(conn, "/v1/businesses/handle-availability", %{handle: handle}) |> json_response(200)
+    end
+  end
+
+  test "a signed-in guest can check handles before creating a business", %{business: business} do
     user = insert(:user)
-
-    owner_conn =
-      build_conn()
-      |> authenticate_coach(owner_coach)
-      |> put_req_header("content-type", "application/json")
-
-    trainer_conn =
-      build_conn()
-      |> authenticate_coach(trainer)
-      |> put_req_header("content-type", "application/json")
-
-    user_conn =
-      build_conn()
-      |> authenticate_user(user)
-      |> put_req_header("content-type", "application/json")
-
-    %{business: business, owner_conn: owner_conn, trainer_conn: trainer_conn, user_conn: user_conn}
+    {:ok, session} = SessionFactory.create_session(user, %{role: :guest})
+    token = Token.generate_access_token(user, session)
+    conn = build_conn() |> put_req_header("authorization", "Bearer #{token}")
+    assert %{"available" => true} = get(conn, "/v1/businesses/handle-availability", %{handle: "new-guest-studio"}) |> json_response(200)
+    assert %{"available" => false} = get(conn, "/v1/businesses/handle-availability", %{handle: business.handle}) |> json_response(200)
   end
 
-  describe "POST /v1/businesses" do
-    test "creates and renders a business", %{user_conn: conn} do
-      conn =
-        post(conn, "/v1/businesses", %{
-          "about" => nil,
-          "default_weight_unit" => "lbs",
-          "handle" => "strong-coaching",
-          "name" => "Strong Coaching"
-        })
+  test "trainers can see seats but only owner can edit business", %{business: business} do
+    trainer = insert(:coach, business: business)
+    conn = build_conn() |> authenticate_coach(trainer)
+    assert %{"data" => %{"seats" => %{"limit" => 3}}} = get(conn, "/v1/businesses/me") |> json_response(200)
+    assert patch(conn, "/v1/businesses/me", %{name: "No"}) |> json_response(403)
+    assert patch(conn, "/v1/businesses/me", %{business_id: insert(:business).id}) |> json_response(422)
+  end
 
-      assert %{"data" => data} = json_response(conn, 201)
-      assert data["id"]
-      assert data["name"] == "Strong Coaching"
-      assert data["handle"] == "strong-coaching"
-      assert data["about"] == nil
-      assert data["default_weight_unit"] == "lbs"
-      assert data["timezone"] == "Asia/Kolkata"
-      assert data["whatsapp_number"] == nil
-      assert data["inserted_at"]
-      assert data["updated_at"]
-    end
+  test "onboarding accepts an unnamed account and creates the submitted coach profile with ten seats" do
+    user = insert(:user, full_name: "")
+    conn = guest_conn(user)
 
-    test "rejects unexpected body fields", %{user_conn: conn} do
-      conn =
-        post(conn, "/v1/businesses", %{
-          "handle" => "strong-coaching",
-          "name" => "Strong Coaching",
-          "unexpected" => true
-        })
+    assert %{"data" => business} =
+             post(conn, "/v1/businesses", %{name: "Studio", handle: "http-owner-setup", full_name: "Jordan Coach", preferred_name: "Jo"}) |> json_response(201)
 
-      assert json_response(conn, 422)
+    assert business["seats"] == %{"limit" => 10, "used" => 0}
+    coach = Easy.Repo.get_by!(Coach, business_id: business["id"], user_id: user.id)
+    assert coach.full_name == "Jordan Coach"
+    assert coach.preferred_name == "Jo"
+    assert Easy.Repo.get_by!(BusinessBilling, business_id: business["id"]).free_seats == 10
+  end
+
+  test "onboarding rejects missing, blank and overlong coach names without creating a business" do
+    user = insert(:user, full_name: "Existing Name")
+
+    invalid_profiles = [
+      %{},
+      %{full_name: ""},
+      %{full_name: String.duplicate("x", 256)},
+      %{full_name: "Coach", preferred_name: String.duplicate("x", 256)}
+    ]
+
+    for profile <- invalid_profiles do
+      params = Map.merge(%{name: "Studio", handle: "http-invalid-name"}, profile)
+      assert guest_conn(user) |> post("/v1/businesses", params) |> json_response(422)
+      refute Easy.Repo.get_by(Easy.Orgs.Business, owner_user_id: user.id)
     end
   end
 
-  describe "GET /v1/businesses/me" do
-    test "renders the current business", %{business: business, owner_conn: conn} do
-      conn = get(conn, "/v1/businesses/me")
-
-      assert json_response(conn, 200) == %{
-               "data" => %{
-                 "about" => business.about,
-                 "default_weight_unit" => Atom.to_string(business.default_weight_unit),
-                 "handle" => business.handle,
-                 "id" => business.id,
-                 "inserted_at" => DateTime.to_iso8601(business.inserted_at),
-                 "name" => business.name,
-                 "timezone" => business.timezone,
-                 "updated_at" => DateTime.to_iso8601(business.updated_at),
-                 "whatsapp_number" => business.whatsapp_number
-               }
-             }
-    end
+  test "authenticated responses include the existing user's full name for setup" do
+    user = insert(:user, full_name: "Existing Name")
+    {:ok, session} = SessionFactory.create_session(user, %{role: :guest})
+    assert AuthTokens.build(user, session).full_name == "Existing Name"
   end
 
-  describe "GET /v1/coach/me" do
-    test "exposes owner and business identity", %{business: business, owner_conn: conn} do
-      assert %{"data" => data} = conn |> get("/v1/coach/me") |> json_response(200)
-      assert data["is_owner"] == true
-      assert data["business"]["id"] == business.id
-      assert data["business"]["name"] == business.name
-    end
-  end
-
-  describe "PATCH /v1/businesses/me" do
-    test "updates editable fields", %{business: business, owner_conn: conn} do
-      conn =
-        patch(conn, "/v1/businesses/me", %{
-          "about" => "Strength and nutrition coaching",
-          "default_weight_unit" => "lbs",
-          "name" => "Strong Coaching",
-          "timezone" => "Europe/London",
-          "whatsapp_number" => "+44 20 7946 0958"
-        })
-
-      assert %{"data" => data} = json_response(conn, 200)
-      assert data["id"] == business.id
-      assert data["name"] == "Strong Coaching"
-      assert data["handle"] == business.handle
-      assert data["about"] == "Strength and nutrition coaching"
-      assert data["default_weight_unit"] == "lbs"
-      assert data["timezone"] == "Europe/London"
-      assert data["whatsapp_number"] == "+44 20 7946 0958"
-      assert data["inserted_at"] == DateTime.to_iso8601(business.inserted_at)
-      assert data["updated_at"]
-    end
-
-    test "rejects unexpected body fields", %{owner_conn: conn} do
-      conn = patch(conn, "/v1/businesses/me", %{"unexpected" => true})
-
-      assert json_response(conn, 422)
-    end
-
-    test "rejects handle changes at the request boundary", %{business: business, owner_conn: conn} do
-      conn = patch(conn, "/v1/businesses/me", %{"handle" => "changed-handle"})
-
-      assert json_response(conn, 422)
-      assert Easy.Repo.get!(Easy.Orgs.Business, business.id).handle == business.handle
-    end
-
-    test "rejects a body business target", %{business: business, owner_conn: conn} do
-      foreign_business = insert(:business)
-
-      conn =
-        patch(conn, "/v1/businesses/me", %{
-          "business_id" => foreign_business.id,
-          "name" => "Attempted foreign update"
-        })
-
-      assert json_response(conn, 422)
-      assert Easy.Repo.get!(Easy.Orgs.Business, business.id).name == business.name
-      assert Easy.Repo.get!(Easy.Orgs.Business, foreign_business.id).name == foreign_business.name
-    end
-
-    test "rejects an invalid timezone without changing the business", %{business: business, owner_conn: conn} do
-      conn = patch(conn, "/v1/businesses/me", %{"timezone" => "Not/AZone"})
-
-      assert json_response(conn, 422)
-      assert Easy.Repo.get!(Easy.Orgs.Business, business.id).timezone == business.timezone
-    end
-
-    test "rejects trainer writes without changing the business", %{business: business, trainer_conn: conn} do
-      conn = patch(conn, "/v1/businesses/me", %{"name" => "Trainer changed this"})
-
-      assert json_response(conn, 403)
-      assert Easy.Repo.get!(Easy.Orgs.Business, business.id).name == business.name
-    end
-  end
-
-  describe "GET /v1/businesses/timezones" do
-    test "lists valid timezones", %{owner_conn: conn} do
-      assert %{"data" => %{"timezones" => timezones}} = json_response(get(conn, "/v1/businesses/timezones"), 200)
-      assert "Asia/Kolkata" in timezones
-    end
-  end
-
-  defp authenticate_user(conn, user) do
-    session = insert(:user_session, user: user, role: :guest)
-
-    token =
-      Joken.generate_and_sign!(
-        Token.token_config(),
-        %{
-          business_id: nil,
-          coach_id: nil,
-          is_owner: false,
-          role: "guest",
-          session_id: session.id,
-          user_id: user.id
-        },
-        Token.signer()
-      )
-
-    put_req_header(conn, "authorization", "Bearer #{token}")
+  defp guest_conn(user) do
+    {:ok, session} = SessionFactory.create_session(user, %{role: :guest})
+    token = Token.generate_access_token(user, session)
+    build_conn() |> put_req_header("authorization", "Bearer #{token}")
   end
 end

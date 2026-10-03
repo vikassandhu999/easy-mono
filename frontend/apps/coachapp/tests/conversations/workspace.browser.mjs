@@ -12,12 +12,12 @@ async function send(method, path, data, token) {
 }
 async function setup(unique) {
   const email = `conversation-coach-${unique}@example.test`;
-  await send('post', '/v1/auth/signup', {email, first_name: 'Taylor'});
+  await send('post', '/v1/auth/signup', {email, full_name: 'Taylor'});
   const guest = await send('post', '/v1/auth/verify', {email, otp: '123456'});
   await send(
     'post',
     '/v1/businesses',
-    {name: 'Everyday Coaching', handle: `conversation-${unique}`},
+    {full_name: 'Taylor', name: 'Everyday Coaching', handle: `conversation-${unique}`},
     guest.access_token,
   );
   const tokens = await send('post', '/v1/auth/token', {
@@ -27,16 +27,11 @@ async function setup(unique) {
   });
   const clientEmail = `conversation-client-${unique}@example.test`;
   const person = (
-    await send(
-      'post',
-      '/v1/coach/clients/invite',
-      {first_name: 'Maya', last_name: 'Morgan', email: clientEmail},
-      tokens.access_token,
-    )
+    await send('post', '/v1/coach/clients', {full_name: 'Maya Morgan', email: clientEmail}, tokens.access_token)
   ).data;
   const invitation_token = new URL(person.invite_url).pathname.split('/').at(-1);
   await send('post', '/v1/auth/accept-invite', {email: clientEmail, invitation_token});
-  const clientTokens = await send('post', '/v1/auth/accept-invite/verify', {
+  const clientTokens = await send('post', `/v1/auth/invites/${invitation_token}/accept`, {
     email: clientEmail,
     invitation_token,
     otp: '123456',
@@ -47,16 +42,11 @@ async function setup(unique) {
   await send('post', '/v1/client/conversation/messages', {body: 'Can we adjust Thursday?'}, clientTokens.access_token);
   const otherEmail = `conversation-other-${unique}@example.test`;
   const other = (
-    await send(
-      'post',
-      '/v1/coach/clients/invite',
-      {first_name: 'Jordan', last_name: 'River', email: otherEmail},
-      tokens.access_token,
-    )
+    await send('post', '/v1/coach/clients', {full_name: 'Jordan River', email: otherEmail}, tokens.access_token)
   ).data;
   const otherInvite = new URL(other.invite_url).pathname.split('/').at(-1);
   await send('post', '/v1/auth/accept-invite', {email: otherEmail, invitation_token: otherInvite});
-  const otherTokens = await send('post', '/v1/auth/accept-invite/verify', {
+  const otherTokens = await send('post', `/v1/auth/invites/${otherInvite}/accept`, {
     email: otherEmail,
     invitation_token: otherInvite,
     otp: '123456',

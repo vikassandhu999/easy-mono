@@ -12,12 +12,6 @@ defmodule EasyWeb.Coaches.ClientController do
   typed(:update, path: %{id: Ecto.UUID.t()}, body: ClientType.update(), ok: {200, data(ClientType.t())})
   typed(:delete, path: %{id: Ecto.UUID.t()}, ok: {204, nil})
 
-  typed(:reassign,
-    path: %{id: Ecto.UUID.t()},
-    body: ClientType.reassign(),
-    ok: {200, data(ClientType.t())}
-  )
-
   typed(:index, query: ClientType.list_query(), ok: {200, ClientIndex.t()})
 
   @spec invite(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -63,28 +57,17 @@ defmodule EasyWeb.Coaches.ClientController do
     end
   end
 
-  @spec reassign(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def reassign(conn, _params) do
-    client_id = conn.path_params["id"]
-    %{coach_id: coach_id} = conn.body_params
-
-    with {:ok, client} <- Clients.reassign_client(conn.assigns.ctx, client_id, coach_id) do
-      ok(conn, %{data: client})
-    end
-  end
-
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
     params = conn.query_params
 
     opts = [
       cursor: Map.get(params, "cursor"),
-      search: Map.get(params, "search", ""),
+      q: Map.get(params, "q", ""),
       offset: Map.get(params, "offset", 0),
       limit: Map.get(params, "limit", 20),
-      status: Map.get(params, "status"),
-      stage: Map.get(params, "stage"),
-      assigned_coach_id: Map.get(params, "assigned_coach_id"),
+      state: Map.get(params, "state"),
+      coach_id: Map.get(params, "coach_id"),
       sort: Map.get(params, "sort", :newest),
       include_plans: Map.get(params, "include_plans", false)
     ]

@@ -3,7 +3,7 @@ defmodule EasyWeb.Coaches.ClientNutritionPlanControllerTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, creator: coach, business: coach.business)
+    client = insert(:client, coach: coach, business: coach.business)
     conn = build_conn() |> authenticate_coach(coach)
 
     %{conn: conn, coach: coach, client: client, business: coach.business}
@@ -52,7 +52,7 @@ defmodule EasyWeb.Coaches.ClientNutritionPlanControllerTest do
 
       insert(:plan, creator: ctx.coach.user, business: ctx.business, name: "Nutrition 100% template")
 
-      other_client = insert(:client, creator: ctx.coach, business: ctx.business)
+      other_client = insert(:client, coach: ctx.coach, business: ctx.business)
 
       insert(:plan,
         creator: ctx.coach.user,
@@ -156,7 +156,7 @@ defmodule EasyWeb.Coaches.ClientNutritionPlanControllerTest do
       other_trainer = insert(:coach, business: ctx.business)
       other_trainer_conn = build_conn() |> authenticate_coach(other_trainer)
       other_coach = insert(:coach)
-      other_client = insert(:client, creator: other_coach, business: other_coach.business)
+      other_client = insert(:client, coach: other_coach, business: other_coach.business)
 
       assert other_trainer_conn
              |> get("/v1/coach/clients/#{ctx.client.id}/nutrition-plans")
@@ -173,7 +173,7 @@ defmodule EasyWeb.Coaches.ClientNutritionPlanControllerTest do
 
       client =
         insert(:client,
-          creator: ctx.coach,
+          coach: ctx.coach,
           business: ctx.business,
           timezone: timezone
         )

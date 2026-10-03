@@ -8,7 +8,7 @@ defmodule Easy.Training.ExecutionPerformedSetTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+    client = insert(:client, business: coach.business, coach: coach)
     ctx = %Ctx{business_id: coach.business_id, user_id: client.user_id, client_id: client.id}
     exercise = insert(:exercise, business: coach.business, name: "Back Squat")
 
@@ -258,8 +258,7 @@ defmodule Easy.Training.ExecutionPerformedSetTest do
       other_client =
         insert(:client,
           business: ctx.coach.business,
-          creator: ctx.coach,
-          assigned_coach: ctx.coach
+          coach: ctx.coach
         )
 
       other_ctx = %Ctx{

@@ -2,7 +2,6 @@ defmodule Easy.Billing.SchemasTest do
   use Easy.DataCase, async: true
 
   alias Easy.Billing.{BusinessBilling, Event, WebhookReceipt}
-  alias Easy.Clients.Client
   alias Easy.Repo
 
   import Easy.Factory
@@ -10,7 +9,7 @@ defmodule Easy.Billing.SchemasTest do
   test "business_billing defaults to 10 free seats, 0 paid, status free" do
     business = insert(:business)
 
-    billing = Repo.insert!(%BusinessBilling{business_id: business.id})
+    billing = business.billing
 
     assert billing.free_seats == 10
     assert billing.paid_seats == 0
@@ -19,7 +18,6 @@ defmodule Easy.Billing.SchemasTest do
 
   test "one billing row per business" do
     business = insert(:business)
-    Repo.insert!(%BusinessBilling{business_id: business.id})
 
     assert_raise Ecto.ConstraintError, fn ->
       Repo.insert!(%BusinessBilling{business_id: business.id})
@@ -46,18 +44,5 @@ defmodule Easy.Billing.SchemasTest do
       })
 
     assert event.kind == :seats_added
-  end
-
-  test "client inactive_reason enum includes awaiting_seat" do
-    assert :awaiting_seat in Ecto.Enum.values(Client, :inactive_reason)
-  end
-
-  test "awaiting_seat client is inactive and can be reactivated through update changeset" do
-    client = insert(:client, status: :inactive, inactive_reason: :awaiting_seat)
-    changeset = Client.update_changeset(client, Date.utc_today(), %{status: :active})
-
-    assert changeset.valid?
-    assert Ecto.Changeset.get_change(changeset, :status) == :active
-    assert Ecto.Changeset.get_change(changeset, :inactive_reason) == nil
   end
 end

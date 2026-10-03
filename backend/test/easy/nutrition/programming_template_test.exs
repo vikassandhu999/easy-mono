@@ -47,7 +47,7 @@ defmodule Easy.Nutrition.ProgrammingTemplateTest do
       other = insert(:coach)
       insert(:plan, business: other.business, creator: other.user, name: "Other High Protein")
 
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
 
       insert(:plan,
         business: coach.business,
@@ -118,7 +118,7 @@ defmodule Easy.Nutrition.ProgrammingTemplateTest do
 
       assert {:error, :not_found} = Programming.duplicate_template(ctx, archived.id)
 
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
 
       client_plan =
         insert(:plan,
@@ -142,9 +142,9 @@ defmodule Easy.Nutrition.ProgrammingTemplateTest do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
       assert {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})
-      one = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
-      two = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
-      gone = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      one = insert(:client, business: coach.business, coach: coach)
+      two = insert(:client, business: coach.business, coach: coach)
+      gone = insert(:client, business: coach.business, coach: coach)
 
       for client <- [one, two] do
         insert(:plan,

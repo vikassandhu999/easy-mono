@@ -18,13 +18,12 @@ defmodule Easy.Identity.AccessSessionTest do
     assert {:ok, _} = Token.authenticate_access_token(token)
     assert {:ok, _} = EasyWeb.UserSocket.connect(%{"token" => token}, %Phoenix.Socket{}, %{})
     Phoenix.PubSub.subscribe(Easy.PubSub, "user_socket:#{user.id}")
-    assert {:ok, _} = Easy.Coaches.deactivate_trainer(ctx, coach.id)
+    assert {:ok, _} = Easy.Coaches.remove_coach(ctx, coach.id)
     assert_receive %Phoenix.Socket.Broadcast{event: "disconnect"}
     assert {:error, :invalid_token} = Token.authenticate_access_token(token)
     assert :error = EasyWeb.UserSocket.connect(%{"token" => token}, %Phoenix.Socket{}, %{})
     conn = Plug.Test.conn(:get, "/v1/coach/me") |> Plug.Conn.put_req_header("authorization", "Bearer #{token}")
     assert %{status: 403, halted: true} = Authenticate.call(conn, [])
-    assert {:ok, _} = Easy.Coaches.reactivate_trainer(ctx, coach.id)
     assert {:error, :invalid_token} = Token.authenticate_access_token(token)
   end
 

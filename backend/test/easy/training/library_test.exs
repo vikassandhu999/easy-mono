@@ -55,7 +55,7 @@ defmodule Easy.Training.LibraryTest do
     assert copy.business_id == ctx.business_id
     assert copy.creator_id == coach.id
 
-    client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+    client = insert(:client, business: coach.business, coach: coach)
     client_ctx = %Easy.Ctx{business_id: ctx.business_id, client_id: client.id, user_id: client.user_id}
 
     assert {:error, :not_found} = Library.create_exercise(client_ctx, %{name: "Forbidden"})

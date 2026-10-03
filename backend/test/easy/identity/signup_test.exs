@@ -8,7 +8,7 @@ defmodule Easy.Identity.SignupTest do
       test "accepts #{key_type} keys and owns the confirmation timestamp" do
         email = "signup-#{System.unique_integer([:positive])}@example.com"
         now = DateTime.utc_now(:second)
-        attrs = %{email: email, first_name: "Alex", confirmation_sent_at: ~U[2000-01-01 00:00:00Z]}
+        attrs = %{email: email, full_name: "Alex", confirmation_sent_at: ~U[2000-01-01 00:00:00Z]}
 
         attrs =
           case unquote(key_type) do
@@ -18,7 +18,7 @@ defmodule Easy.Identity.SignupTest do
 
         assert {:ok, user} = Signup.signup(attrs)
         assert user.email == email
-        assert user.first_name == "Alex"
+        assert user.full_name == "Alex"
         assert DateTime.compare(user.confirmation_sent_at, now) in [:eq, :gt]
         assert user.email_confirmed_at == nil
       end

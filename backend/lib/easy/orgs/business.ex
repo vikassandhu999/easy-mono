@@ -1,60 +1,48 @@
 defmodule Easy.Orgs.Business do
   use Ecto.Schema
-  alias Easy.Identity.User
-  alias Easy.LocalCalendar
-
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 2]
-
-  @type t() :: %__MODULE__{}
-
+  import Ecto.Query
+  alias Easy.LocalCalendar
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
+  @type t :: %__MODULE__{}
+  @reserved ~w(admin api app www auth login signup support help billing settings assets static coach client coaches clients)
   schema "businesses" do
     field :name, :string
     field :handle, :string
-    field :about, :string
-    field :whatsapp_number, :string
-    field :default_weight_unit, Ecto.Enum, values: [:kg, :lbs], default: :kg
     field :timezone, :string, default: LocalCalendar.default_timezone()
-
-    belongs_to :owner, User
-
+    field :seats_used, :integer, virtual: true, default: 0
+    has_one :billing, Easy.Billing.BusinessBilling
+    belongs_to :owner, Easy.Identity.User, foreign_key: :owner_user_id
     timestamps(type: :utc_datetime)
   end
 
   @spec owned_by(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
-  def owned_by(query \\ __MODULE__, business_id, owner_id) do
-    from(business in query, where: business.id == ^business_id and business.owner_id == ^owner_id)
-  end
-
+  def owned_by(query \\ __MODULE__, business_id, user_id), do: from(b in query, where: b.id == ^business_id and b.owner_user_id == ^user_id)
   @spec insert_changeset(String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(owner_id, attrs) do
+  def insert_changeset(user_id, attrs) do
     %__MODULE__{}
-    |> cast(attrs, [:name, :handle, :about, :default_weight_unit])
+    |> cast(attrs, [:name, :handle, :timezone])
+    |> put_change(:owner_user_id, user_id)
     |> validate_profile()
-    |> put_change(:owner_id, owner_id)
-    |> validate_required([:handle, :owner_id])
-    |> validate_length(:handle, max: 255, count: :codepoints)
-    |> unique_constraint(:handle)
-    |> LocalCalendar.stamp_timezone()
-    |> foreign_key_constraint(:owner_id)
+    |> foreign_key_constraint(:owner_user_id)
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(business, attrs) do
-    business
-    |> cast(attrs, [:name, :about, :whatsapp_number, :default_weight_unit, :timezone])
-    |> validate_profile()
-    |> validate_length(:whatsapp_number, max: 255, count: :codepoints)
-    |> LocalCalendar.validate_timezone()
-  end
+  def update_changeset(business, attrs), do: business |> cast(attrs, [:name, :handle, :timezone]) |> validate_profile()
+  @spec valid_handle?(String.t()) :: boolean()
+  def valid_handle?(handle) when is_binary(handle), do: String.length(handle) in 3..40 and Regex.match?(~r/^[a-z0-9]+(-[a-z0-9]+)*$/, handle) and handle not in @reserved
+  def valid_handle?(_), do: false
 
   defp validate_profile(changeset) do
     changeset
-    |> validate_required([:name, :default_weight_unit])
+    |> validate_required([:name, :handle, :timezone])
     |> validate_length(:name, max: 255, count: :codepoints)
-    |> validate_length(:about, max: 255, count: :codepoints)
-    |> check_constraint(:default_weight_unit, name: :businesses_default_weight_unit_check)
+    |> validate_change(:handle, fn :handle, handle ->
+      if valid_handle?(handle), do: [], else: [handle: "use 3–40 lowercase letters, digits and single hyphens; reserved handles are unavailable"]
+    end)
+    |> LocalCalendar.validate_timezone()
+    |> unique_constraint(:handle, name: :businesses_handle_index)
+    |> check_constraint(:handle, name: :businesses_handle_check)
   end
 end

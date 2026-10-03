@@ -36,7 +36,7 @@ export function InviteCoach() {
 function InvitationForm() {
   const list = useListLocation(routes.team);
   const navigate = useNavigate();
-  const form = useForm<TeamMemberInvite>({defaultValues: {first_name: '', last_name: '', email: ''}});
+  const form = useForm<TeamMemberInvite>({defaultValues: {full_name: '', preferred_name: '', email: '', phone: ''}});
   const mutation = useInviteCoach();
   const completed = useRef(false);
   const mounted = useRef(true);
@@ -59,10 +59,10 @@ function InvitationForm() {
     const errors = form.formState.errors;
     if (errors.email) {
       form.setFocus('email');
-    } else if (errors.first_name) {
-      form.setFocus('first_name');
-    } else if (errors.last_name) {
-      form.setFocus('last_name');
+    } else if (errors.full_name) {
+      form.setFocus('full_name');
+    } else if (errors.preferred_name) {
+      form.setFocus('preferred_name');
     } else if (errors.root) {
       errorRef.current?.focus();
     }
@@ -87,8 +87,9 @@ function InvitationForm() {
     try {
       const result = await mutation.mutateAsync({
         email: values.email.trim(),
-        first_name: values.first_name?.trim() || null,
-        last_name: values.last_name?.trim() || null,
+        full_name: values.full_name?.trim() || '',
+        preferred_name: values.preferred_name?.trim() || null,
+        phone: values.phone?.trim() || null,
       });
       if (!mounted.current) {
         return;
@@ -111,7 +112,7 @@ function InvitationForm() {
         error,
         'Could not send the invitation. Your details are still here. Please try again.',
         form.setError,
-        ['email', 'first_name', 'last_name'],
+        ['email', 'full_name', 'preferred_name', 'phone'],
       );
     }
   });
@@ -135,15 +136,18 @@ function InvitationForm() {
           <div className="grid items-start gap-5 sm:grid-cols-2">
             <FormField
               control={form.control}
-              name="first_name"
-              label="First name"
+              name="full_name"
+              label="Full name"
+              isRequired
+              rules={{validate: (value) => Boolean(value?.trim()) || 'Enter full name.'}}
               maxLength={255}
               isDisabled={locked}
             />
             <FormField
               control={form.control}
-              name="last_name"
-              label="Last name"
+              name="preferred_name"
+              label="Preferred name"
+              description="What should we call you?"
               maxLength={255}
               isDisabled={locked}
             />
@@ -152,6 +156,13 @@ function InvitationForm() {
             Coaches work with the clients assigned to them. You can assign clients after they accept.
           </p>
         </Surface>
+        <FormField
+          control={form.control}
+          name="phone"
+          label="Phone"
+          type="tel"
+          isDisabled={locked}
+        />
         <div
           ref={errorRef}
           tabIndex={-1}
@@ -261,7 +272,7 @@ function SavedCoaches({
   onOpen: (id: string) => void;
   onRetry: () => void;
 }) {
-  const query = useTeam({search: email});
+  const query = useTeam({q: email});
   return (
     <Dialog
       isOpen

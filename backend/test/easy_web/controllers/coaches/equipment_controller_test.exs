@@ -10,7 +10,7 @@ defmodule EasyWeb.Coaches.EquipmentControllerTest do
     business =
       insert(:business,
         name: "Equipment Endpoint Business #{unique}",
-        handle: "equipment-endpoint-#{unique}",
+        handle: "library-#{System.unique_integer([:positive])}",
         owner: business_owner
       )
 

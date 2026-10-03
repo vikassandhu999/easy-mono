@@ -13,12 +13,10 @@ defmodule EasyWeb.Auth.TrainerInvitationTest do
       Map.merge(
         %{
           user: nil,
-          status: :invited,
           email: "trainer-#{System.unique_integer([:positive])}@test.com",
-          first_name: "Tara",
-          last_name: "Trainer",
-          invitation_token: "trainer-tok-#{System.unique_integer([:positive])}",
-          invitation_sent_at: DateTime.utc_now(:second)
+          full_name: "Tara Trainer",
+          invite_token: "trainer-tok-#{System.unique_integer([:positive])}",
+          invited_at: DateTime.utc_now(:second)
         },
         attrs
       )
@@ -30,12 +28,12 @@ defmodule EasyWeb.Auth.TrainerInvitationTest do
       coach = invited_coach()
       business = coach.business
 
-      conn = build_conn() |> get("/v1/auth/trainer-invitations/#{coach.invitation_token}")
+      conn = build_conn() |> get("/v1/auth/trainer-invitations/#{coach.invite_token}")
       assert %{"data" => data} = json_response(conn, 200)
 
       assert data["business_name"] == business.name
       assert data["email"] == coach.email
-      assert data["first_name"] == coach.first_name
+      assert data["full_name"] == coach.full_name
     end
 
     test "returns 404 for an unknown token" do
@@ -43,17 +41,19 @@ defmodule EasyWeb.Auth.TrainerInvitationTest do
       assert json_response(conn, 404)
     end
 
-    test "returns 410 for an already-accepted invitation" do
-      insert(:coach, status: :active, invitation_token: "used-trainer-token")
+    test "an accepted invitation's cleared token no longer resolves" do
+      coach = invited_coach(%{invite_token: "used-trainer-token"})
+      assert {:ok, accepted} = Easy.CoachInvitations.accept_invite(coach, insert(:user).id)
+      assert accepted.invite_token == nil
 
       conn = build_conn() |> get("/v1/auth/trainer-invitations/used-trainer-token")
-      assert json_response(conn, 410)
+      assert json_response(conn, 404)
     end
 
     test "returns 410 for an expired invitation" do
-      coach = invited_coach(%{invitation_sent_at: DateTime.add(DateTime.utc_now(:second), -31, :day)})
+      coach = invited_coach(%{invited_at: DateTime.add(DateTime.utc_now(:second), -31, :day)})
 
-      conn = build_conn() |> get("/v1/auth/trainer-invitations/#{coach.invitation_token}")
+      conn = build_conn() |> get("/v1/auth/trainer-invitations/#{coach.invite_token}")
       assert json_response(conn, 410)
     end
   end
@@ -66,7 +66,7 @@ defmodule EasyWeb.Auth.TrainerInvitationTest do
         build_conn()
         |> put_req_header("content-type", "application/json")
         |> post("/v1/auth/trainer-accept-invite", %{
-          "invitation_token" => coach.invitation_token,
+          "invitation_token" => coach.invite_token,
           "email" => coach.email
         })
 
@@ -76,7 +76,7 @@ defmodule EasyWeb.Auth.TrainerInvitationTest do
         build_conn()
         |> put_req_header("content-type", "application/json")
         |> post("/v1/auth/trainer-accept-invite/verify", %{
-          "invitation_token" => coach.invitation_token,
+          "invitation_token" => coach.invite_token,
           "email" => coach.email,
           "otp" => "123456"
         })
@@ -85,7 +85,8 @@ defmodule EasyWeb.Auth.TrainerInvitationTest do
                json_response(verify_conn, 200)
 
       updated = Easy.Repo.get!(Easy.Orgs.Coach, coach.id)
-      assert updated.status == :active
+      assert updated.user_id
+      assert is_nil(updated.invite_token)
       assert updated.user_id
     end
   end

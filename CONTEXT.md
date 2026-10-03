@@ -1,17 +1,19 @@
 # Easy coaching
 
-Easy supports coaches who manage clients, training and nutrition plans, workout and meal history, conversations, and coaching engagements.
+Easy supports coaches who manage clients, training and nutrition plans, workout and meal history, conversations, and coaching terms.
 
 ## Language
 
 **Client**:
 A person invited to a coaching business. Direct invitation and acceptance establish access. A coach manages the client's profile, plans, history, and conversation.
 
-**Required service**:
-Training or Nutrition selected directly by the coach for a client. A requirement has no separate start date or requested/confirmed state.
+**Coaching term**:
+An inclusive span of local dates during which a business coaches a client. A client may have many terms; terms never overlap. A missing end date means open-ended coaching. The client's timezone applies, falling back to the business timezone.
+
+Lifecycle states are derived: no linked account means invited; a term covering today means active (ending soon within 14 days); a linked account with no current or earlier term means joined, not started; an earlier term with no current term means ended. Only active clients use seats. Ending coaching today keeps access through today, then preserves read-only history. Coaches are active when their account is linked and they have no removal date.
 
 **Coverage**:
-The inclusive local-date range for which a client-owned plan supplies a required service. Coverage begins on its start date and is open-ended when it has no end date.
+The inclusive local-date range for which a client-owned plan supplies training or nutrition. A plan is in force only when its own dates and a Coaching term cover the date, and no term ended between its creation date and that date. A plan prepared before acceptance can begin with coaching; a returning client needs a new plan.
 
 **Note to coach**:
 Client commentary sent as a chat message with an optional reference to a workout or meal record. Draft saving is separate from completing a workout or sharing a meal.

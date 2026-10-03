@@ -7,7 +7,7 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+    client = insert(:client, business: coach.business, coach: coach)
     exercise = insert(:exercise, business: coach.business, name: "Back Squat")
     ctx = %Ctx{business_id: coach.business_id, user_id: client.user_id, client_id: client.id}
     {:ok, session} = Execution.start_client_session(ctx, nil, %{})
@@ -189,7 +189,7 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
       assert ctx.conn |> post_json(path, %{attrs | exercise_name: ""}) |> json_response(422)
       first = ctx.conn |> post_json(path, attrs) |> json_response(201)
 
-      other = insert(:client, business: ctx.coach.business, creator: ctx.coach)
+      other = insert(:client, business: ctx.coach.business, coach: ctx.coach)
       foreign = insert(:client)
 
       for client <- [other, foreign] do

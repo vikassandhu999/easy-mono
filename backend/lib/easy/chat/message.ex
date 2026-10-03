@@ -241,7 +241,14 @@ defmodule Easy.Chat.Message do
       on: message.sender_type == :client and client.id == message.sender_id and client.business_id == message.business_id,
       select_merge: %{
         sender_name:
-          fragment("COALESCE(NULLIF(trim(concat_ws(' ', ?, ?, ?, ?)), ''), ?::text)", coach.first_name, coach.last_name, client.first_name, client.last_name, message.sender_type)
+          fragment(
+            "COALESCE(?, ?, ?, ?, ?::text)",
+            coach.preferred_name,
+            coach.full_name,
+            client.preferred_name,
+            client.full_name,
+            message.sender_type
+          )
       }
     )
   end

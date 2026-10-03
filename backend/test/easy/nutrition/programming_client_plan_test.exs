@@ -6,10 +6,10 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
   alias Easy.Repo
 
   describe "assign_template_to_client/4" do
-    test "copies the complete Menu into an independent Client Plan and advances onboarding" do
+    test "copies the complete Menu into an independent Client Plan" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach, stage: :onboarding)
+      client = insert(:client, business: coach.business, coach: coach)
       food = insert(:food, business: coach.business, creator: coach, calories_per_100g: 200.0)
       {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut Block", "target_calories" => 1800.0})
       {:ok, source} = Programming.replace_menu(ctx, template.id, 1, breakfast_menu(template, food))
@@ -30,13 +30,12 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
       assert assigned.start_date == ~D[2026-09-01]
       assert assigned.end_date == ~D[2026-09-30]
       assert assigned.menu == source.menu
-      assert Repo.get!(Easy.Clients.Client, client.id).stage == :coaching
     end
 
     test "rejects invalid sources, invisible clients, and accepts the latest source" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach, stage: :onboarding)
+      client = insert(:client, business: coach.business, coach: coach)
       {:ok, template} = Programming.create_template(ctx, %{"name" => "Source"})
       {:ok, archived} = Programming.archive_plan(ctx, template.id)
 
@@ -51,7 +50,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
 
       other = insert(:coach)
       hidden_template = insert(:plan, business: other.business, creator: other.user)
-      hidden_client = insert(:client, business: other.business, creator: other, assigned_coach: other)
+      hidden_client = insert(:client, business: other.business, coach: other)
       {:ok, fresh} = Programming.create_template(ctx, %{"name" => "Fresh"})
 
       for {target, source, _revision} <- [
@@ -63,15 +62,13 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
         assert {:error, :not_found} = Programming.assign_template_to_client(ctx, target, source, %{})
       end
 
-      assert Repo.get!(Easy.Clients.Client, client.id).stage == :onboarding
       assert {:ok, _assigned} = Programming.assign_template_to_client(ctx, client.id, fresh.id, %{})
-      assert Repo.get!(Easy.Clients.Client, client.id).stage == :coaching
     end
 
     test "rolls onboarding back when Client Plan constraints reject Assignment" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach, stage: :onboarding)
+      client = insert(:client, business: coach.business, coach: coach)
       {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})
 
       insert(:plan,
@@ -83,7 +80,6 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
 
       assert {:error, changeset} = Programming.assign_template_to_client(ctx, client.id, template.id, %{})
       assert %{client_id: [_]} = errors_on(changeset)
-      assert Repo.get!(Easy.Clients.Client, client.id).stage == :onboarding
 
       assert Repo.aggregate(Plan.for_client(Plan, coach.business_id, client.id), :count, :id) == 1
     end
@@ -93,7 +89,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
     test "later Template and Client Plan edits leave each other unchanged, including after source deletion" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       food = insert(:food, business: coach.business, creator: coach)
       {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut Block"})
       {:ok, source} = Programming.replace_menu(ctx, template.id, 1, breakfast_menu(template, food))
@@ -131,7 +127,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
       insert(:coach, user: owner_user, business: business)
       former = insert(:coach, business: business)
       current = insert(:coach, business: business)
-      client = insert(:client, business: business, creator: former, assigned_coach: former)
+      client = insert(:client, business: business, coach: former)
 
       client_plan =
         insert(:plan,
@@ -146,7 +142,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
                Programming.update_plan(owner_ctx(business), client_plan.id, 1, %{"name" => "Owner edit"})
 
       client
-      |> Ecto.Changeset.change(%{assigned_coach_id: current.id})
+      |> Ecto.Changeset.change(%{coach_id: current.id})
       |> Repo.update!()
 
       former_ctx = trainer_ctx(former)
@@ -175,7 +171,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
     test "archives, restores, and replaces a Client Plan Menu at the expected revision" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       food = insert(:food, business: coach.business, creator: coach)
       {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})
       {:ok, source} = Programming.replace_menu(ctx, template.id, 1, breakfast_menu(template, food))
@@ -210,10 +206,10 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
   describe "Client-self reads" do
     test "lists active plans by default and inspects any Client Plan owned by the authenticated client" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
-      other_client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
+      other_client = insert(:client, business: coach.business, coach: coach)
       other = insert(:coach)
-      other_business_client = insert(:client, business: other.business, creator: other, assigned_coach: other)
+      other_business_client = insert(:client, business: other.business, coach: other)
 
       visible = insert_client_plan(coach, client, name: "Visible")
       archived = insert_client_plan(coach, client, name: "Archived", archived_at: ~U[2026-08-15 12:00:00Z])
@@ -238,7 +234,7 @@ defmodule Easy.Nutrition.ProgrammingClientPlanTest do
 
     test "client-self reads require the trusted client id from Ctx" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       plan = insert_client_plan(coach, client)
       missing_client_ctx = %Easy.Ctx{business_id: coach.business_id, user_id: client.user_id}
 

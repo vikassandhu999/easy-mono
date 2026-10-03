@@ -197,7 +197,7 @@ defmodule Easy.ChatTest do
 
     setup do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       %{coach: coach, client: client}
     end
 
@@ -251,7 +251,7 @@ defmodule Easy.ChatTest do
     end
 
     test "batches unread counts for a deterministic conversation page", %{coach: coach, client: client} do
-      other_client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      other_client = insert(:client, business: coach.business, coach: coach)
 
       [first, second] =
         Enum.map([client, other_client], fn page_client ->
@@ -317,7 +317,7 @@ defmodule Easy.ChatTest do
 
     test "404s for a client in another business", %{coach: coach} do
       other_coach = insert(:coach)
-      other = insert(:client, business: other_coach.business, creator: other_coach)
+      other = insert(:client, business: other_coach.business, coach: other_coach)
       assert {:error, :not_found} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), other.id)
     end
 
@@ -496,10 +496,10 @@ defmodule Easy.ChatTest do
 
     test "rejects unknown and cross-tenant attachments without partial writes", %{coach: coach, client: client} do
       {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
-      other_client = insert(:client, business: coach.business, creator: coach)
+      other_client = insert(:client, business: coach.business, coach: coach)
       cross_client = insert(:attachment, business: coach.business, client: other_client)
       other_coach = insert(:coach)
-      foreign_client = insert(:client, business: other_coach.business, creator: other_coach)
+      foreign_client = insert(:client, business: other_coach.business, coach: other_coach)
       cross_tenant = insert(:attachment, business: other_coach.business, client: foreign_client)
 
       for id <- [Ecto.UUID.generate(), cross_client.id, cross_tenant.id] do
@@ -518,12 +518,12 @@ defmodule Easy.ChatTest do
       client: client
     } do
       {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
-      other_client = insert(:client, business: coach.business, creator: coach)
+      other_client = insert(:client, business: coach.business, coach: coach)
       entry = insert(:workout_session, state: :completed, business: coach.business, client: other_client)
       embed = %{type: "training_session", id: entry.id}
 
       other_coach = insert(:coach)
-      foreign_client = insert(:client, business: other_coach.business, creator: other_coach)
+      foreign_client = insert(:client, business: other_coach.business, coach: other_coach)
       cross_tenant = insert(:workout_session, state: :completed, business: other_coach.business, client: foreign_client)
 
       for id <- [entry.id, cross_tenant.id, Ecto.UUID.generate()] do
@@ -641,7 +641,7 @@ defmodule Easy.ChatTest do
       assert {:ok, %{count: 0, conversations: []}} = Chat.list_conversations(trainer_ctx(trainer))
       assert {:error, :not_found} = Chat.get_conversation(trainer_ctx(trainer), hidden.id)
 
-      assigned = insert(:client, business: coach.business, creator: coach, assigned_coach: trainer)
+      assigned = insert(:client, business: coach.business, coach: trainer)
       {:ok, conv} = Chat.get_or_create_conversation_for_client(owner_coach_ctx(coach), assigned.id)
 
       assert {:ok, %{count: 1, conversations: [visible]}} = Chat.list_conversations(trainer_ctx(trainer))
@@ -724,6 +724,7 @@ defmodule Easy.ChatTest do
 end
 
 defmodule Easy.ChatConcurrencyTest do
+  alias Easy.CoachingTerms.CoachingTerm
   use ExUnit.Case, async: false
 
   import Ecto.Query
@@ -745,8 +746,8 @@ defmodule Easy.ChatConcurrencyTest do
 
     business = insert(:business)
     coach = insert(:coach, business: business, user: business.owner)
-    client = insert(:client, business: business, creator: coach, assigned_coach: coach)
-    coach_ctx = Ctx.new(business.id, business.owner_id, coach.id, true)
+    client = insert(:client, business: business, coach: coach)
+    coach_ctx = Ctx.new(business.id, business.owner_user_id, coach.id, true)
     client_ctx = %Ctx{business_id: business.id, user_id: client.user_id, client_id: client.id}
 
     assert {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx, client.id)
@@ -883,11 +884,12 @@ defmodule Easy.ChatConcurrencyTest do
   end
 
   defp cleanup(business, coach, client) do
+    Repo.delete_all(CoachingTerm.for_business(business.id))
     Repo.delete_all(from message in Message, where: message.business_id == ^business.id)
     Repo.delete_all(from conversation in Conversation, where: conversation.business_id == ^business.id)
     Repo.delete_all(from c in Client, where: c.id == ^client.id)
     Repo.delete_all(from c in Coach, where: c.id == ^coach.id)
     Repo.delete_all(from b in Business, where: b.id == ^business.id)
-    Repo.delete_all(from u in User, where: u.id in ^[business.owner_id, client.user_id])
+    Repo.delete_all(from u in User, where: u.id in ^[business.owner_user_id, client.user_id])
   end
 end

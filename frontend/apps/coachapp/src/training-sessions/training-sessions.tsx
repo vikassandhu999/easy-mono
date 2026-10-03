@@ -40,9 +40,7 @@ function History({clientId}: {clientId: string}) {
     search: params.get('search')?.trim() || '',
   });
   const client = person.data?.data;
-  const name = client
-    ? `${client.first_name ?? ''} ${client.last_name ?? ''}`.trim() || client.email || 'Client'
-    : 'Client';
+  const name = client ? client.preferred_name || client.full_name || client.email || 'Client' : 'Client';
   return (
     <Page>
       <PageHeader

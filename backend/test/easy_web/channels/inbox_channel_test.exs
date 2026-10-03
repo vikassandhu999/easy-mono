@@ -6,7 +6,7 @@ defmodule EasyWeb.InboxChannelTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, business: coach.business, creator: coach, user: insert(:user))
+    client = insert(:client, business: coach.business, coach: coach, user: insert(:user))
     %{coach: coach, client: client}
   end
 

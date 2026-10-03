@@ -3,36 +3,20 @@ defmodule Easy.Billing.BusinessBillingTest do
 
   alias Easy.Billing
   alias Easy.Billing.BusinessBilling
-  alias Easy.Clients.Client
   alias Easy.Ctx
 
-  test "seat capacity preserves overage and accepts already-counted invitations at the limit" do
-    billing = %BusinessBilling{free_seats: 2, paid_seats: 3}
-
-    assert BusinessBilling.available_seats(billing, 4) == 1
-    assert BusinessBilling.available_seats(billing, 5) == 0
-    assert BusinessBilling.available_seats(billing, 6) == -1
-    assert BusinessBilling.invitation_status(billing, 4) == {:active, nil}
-    assert BusinessBilling.invitation_status(billing, 5) == {:active, nil}
-    assert BusinessBilling.invitation_status(billing, 6) == {:inactive, :awaiting_seat}
+  test "seat capacity is the sum of free and paid seats" do
+    assert BusinessBilling.seat_limit(%BusinessBilling{free_seats: 2, paid_seats: 3}) == 5
   end
 
-  test "billing workflows propagate default record failures without running reserved writes" do
+  test "billing workflows reject a missing business" do
     ctx = %Ctx{business_id: Ecto.UUID.generate(), user_id: Ecto.UUID.generate()}
-
-    for result <- [
-          Billing.get_billing(ctx),
-          Billing.grant_free_seats(ctx, 3),
-          Billing.seat_status_for_invitation(%Client{business_id: ctx.business_id}),
-          Billing.reserve_seat(ctx, fn -> flunk("reserved write must not run") end)
-        ] do
-      assert {:error, changeset} = result
-      assert errors_on(changeset).business_id == ["does not exist"]
-    end
+    assert {:error, :not_found} = Billing.get_billing(ctx)
+    assert {:error, :not_found} = Billing.grant_free_seats(ctx, 3)
   end
 
   test "creation owns business identity and keeps uneditable seat defaults" do
-    business = insert(:business)
+    business = insert(:business, billing: nil)
 
     assert {:ok, billing} =
              business.id

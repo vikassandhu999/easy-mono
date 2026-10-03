@@ -14,9 +14,14 @@ async function send(method, path, data, token) {
 }
 async function account(unique) {
   const email = `nutrition-${unique}@example.test`;
-  await send('post', '/v1/auth/signup', {email, first_name: 'Taylor'});
+  await send('post', '/v1/auth/signup', {email, full_name: 'Taylor'});
   const guest = await send('post', '/v1/auth/verify', {email, otp: '123456'});
-  await send('post', '/v1/businesses', {name: 'Everyday Coaching', handle: `nutrition-${unique}`}, guest.access_token);
+  await send(
+    'post',
+    '/v1/businesses',
+    {full_name: 'Taylor', name: 'Everyday Coaching', handle: `nutrition-${unique}`},
+    guest.access_token,
+  );
   return send('post', '/v1/auth/token', {
     grant_type: 'refresh_token',
     refresh_token: guest.refresh_token,
@@ -204,12 +209,14 @@ try {
     await expect(page.getByText('Saved version loaded.', {exact: true})).toBeFocused();
     await expect(page.getByLabel('Protein · g', {exact: true})).toHaveValue('100');
     const email = `nutrition-client-${Date.now()}@example.test`;
-    const person = (
-      await send('post', '/v1/coach/clients/invite', {first_name: 'Alex', last_name: 'Morgan', email}, token)
-    ).data;
+    const person = (await send('post', '/v1/coach/clients', {full_name: 'Alex Morgan', email}, token)).data;
     const invitation_token = new URL(person.invite_url).pathname.split('/').at(-1);
     await send('post', '/v1/auth/accept-invite', {email, invitation_token});
-    const clientTokens = await send('post', '/v1/auth/accept-invite/verify', {email, invitation_token, otp: '123456'});
+    const clientTokens = await send('post', `/v1/auth/invites/${invitation_token}/accept`, {
+      email,
+      invitation_token,
+      otp: '123456',
+    });
     await page.goto(`/clients/${person.id}`);
     await page.getByRole('link', {name: 'Assign nutrition plan', exact: true}).click();
     await page.getByLabel('Search nutrition plans').fill('Balanced everyday');

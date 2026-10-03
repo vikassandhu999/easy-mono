@@ -104,7 +104,13 @@ export function useAttachmentUrls(ids: string[], enabled = true) {
   return useQuery({
     queryKey: attachmentKeys.urls(ids),
     queryFn: ({signal}) =>
-      call(client.POST('/v1/client/attachments/download-urls', {body: {attachment_ids: ids}, signal})),
+      call(
+        client.GET('/v1/client/attachments/download-urls', {
+          params: {query: {attachment_ids: ids}},
+          querySerializer: () => new URLSearchParams(ids.map((id) => ['attachment_ids[]', id])).toString(),
+          signal,
+        }),
+      ),
     enabled: enabled && ids.length > 0,
     staleTime: 60_000,
     gcTime: 300_000,

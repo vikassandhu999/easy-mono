@@ -16,11 +16,6 @@ defmodule Easy.Repo.Migrations.RemoveWeightProgress do
            )
 
     drop table(:weight_entries)
-
-    alter table(:clients) do
-      remove :goal_weight_value
-      remove :goal_weight_unit
-    end
   end
 
   def down do

@@ -113,7 +113,7 @@ export function AppShell() {
               <DropdownMenuGroup>
                 <DropdownMenuLabel>
                   <span className="block break-words text-sm font-semibold text-foreground">
-                    {`${account.first_name ?? ''} ${account.last_name ?? ''}`.trim() || 'Your account'}
+                    {account.preferred_name || account.full_name || 'Your account'}
                   </span>
                   <span className="mt-1 block break-all text-sm font-normal">{account.email}</span>
                 </DropdownMenuLabel>

@@ -474,8 +474,8 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
       trainer = insert(:coach, business: business)
       other_trainer = insert(:coach, business: business)
       recipe = insert(:recipe, creator: trainer, business: business)
-      visible_client = insert(:client, business: business, creator: trainer, assigned_coach: trainer)
-      hidden_client = insert(:client, business: business, creator: other_trainer, assigned_coach: other_trainer)
+      visible_client = insert(:client, business: business, coach: trainer)
+      hidden_client = insert(:client, business: business, coach: other_trainer)
 
       visible_plan = insert(:plan, business: business, creator: trainer.user, client: visible_client, name: "Visible plan")
       hidden_plan = insert(:plan, business: business, creator: other_trainer.user, client: hidden_client, name: "Hidden plan")

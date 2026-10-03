@@ -9,6 +9,12 @@ defmodule EasyWeb.BusinessController do
   typed(:timezones, ok: {200, data(Business.timezone_options())})
   typed(:update, body: Business.update(), ok: {200, data(Business.t())})
 
+  typed(:handle_availability, query: Business.availability_query(), ok: {200, Business.availability()})
+  @spec handle_availability(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def handle_availability(conn, _params) do
+    with {:ok, result} <- Orgs.handle_availability(conn.assigns.ctx, conn.query_params["handle"]), do: ok(conn, result)
+  end
+
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
     with {:ok, business} <- Orgs.create_business(conn.assigns.ctx, conn.body_params) do

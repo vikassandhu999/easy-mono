@@ -1,129 +1,70 @@
-# Dev-only, idempotent seed: one client per client-detail lifecycle state
-# for deterministic browser checks. Companion to dev_rich_client.exs
-# (which makes Rowan White data-rich for the "active" state).
-#
-#   cd backend && mix run priv/repo/dev_client_states.exs
-#
-
-import Ecto.Query
-alias Easy.Repo
+# Local prototype fixtures for the coaching-terms browser journeys.
+# Run with: rtk mix run priv/repo/dev_client_states.exs
+alias Easy.{Repo, Ctx}
 alias Easy.Clients.Client
-alias Easy.Chat.{Conversation, Message}
+alias Easy.Billing.BusinessBilling
+alias Easy.CoachingTerms.CoachingTerm
+alias Easy.Identity.User
+alias Easy.Orgs.{Business, Coach}
 
-rich_id = "f9e0ba52-2974-45b9-bf29-ffc3e081f7bd"
-rich = Repo.get!(Client, rich_id)
+unless Mix.env() == :dev, do: raise("Development fixtures only")
+now = DateTime.utc_now(:second)
 today = Date.utc_today()
+run = System.system_time(:millisecond)
 
-ensure = fn email, attrs ->
-  case Repo.get_by(Client, email: email, business_id: rich.business_id) do
-    nil ->
-      c =
-        Repo.insert!(
-          struct!(
-            Client,
-            Map.merge(
-              %{
-                email: email,
-                business_id: rich.business_id,
-                creator_id: rich.creator_id,
-                assigned_coach_id: rich.assigned_coach_id,
-                stage: :coaching
-              },
-              attrs
-            )
-          )
-        )
+fixtures =
+  for width <- [375, 1280], into: %{} do
+    email = "coaching-owner-#{width}-#{run}@example.test"
+    owner = Repo.insert!(%User{email: email, full_name: "Coaching Owner", email_confirmed_at: now})
+    business = Repo.insert!(%Business{name: "Coaching Terms #{width}", handle: "coaching-#{width}-#{run}", timezone: "Etc/UTC", owner_user_id: owner.id})
+    Repo.insert!(%BusinessBilling{business_id: business.id, free_seats: 3})
+    coach = Repo.insert!(%Coach{business_id: business.id, user_id: owner.id, email: email, full_name: owner.full_name})
+    ctx = Ctx.new(business.id, owner.id, coach.id, true)
 
-      IO.puts("created #{c.first_name} #{c.last_name} (#{c.status}) #{c.id}")
-      c
+    clients =
+      for state <- [:active, :ending_soon, :joined, :ended], into: %{} do
+        name = state |> to_string() |> String.replace("_", " ") |> String.capitalize()
+        email = "coaching-#{state}-#{width}-#{run}@example.test"
+        user = Repo.insert!(%User{email: email, full_name: "#{name} Client", email_confirmed_at: now})
 
-    c ->
-      c = Repo.update!(Ecto.Changeset.change(c, attrs))
-      IO.puts("exists  #{c.first_name} #{c.last_name} (#{c.status}) #{c.id}")
-      c
-  end
-end
+        client =
+          Repo.insert!(%Client{business_id: business.id, coach_id: coach.id, user_id: user.id, email: email, full_name: user.full_name, preferred_name: name, unit_system: :metric})
 
-fresh =
-  ensure.("freya.newman@state.dev", %{
-    first_name: "Freya",
-    last_name: "Newman",
-    phone: "+44 7700 900321",
-    status: :active
-  })
+        if state != :joined do
+          ends_on =
+            case state do
+              :ending_soon -> Date.add(today, 7)
+              :ended -> Date.add(today, -1)
+              _ -> nil
+            end
 
-inactive_manual =
-  ensure.("marco.vale@state.dev", %{
-    first_name: "Marco",
-    last_name: "Vale",
-    phone: "+44 7700 900322",
-    status: :inactive,
-    inactive_reason: :manual
-  })
+          Repo.insert!(%CoachingTerm{client_id: client.id, starts_on: Date.add(today, -30), ends_on: ends_on})
+        end
 
-inactive_seat =
-  ensure.("sana.kade@state.dev", %{
-    first_name: "Sana",
-    last_name: "Kade",
-    phone: "+44 7700 900323",
-    status: :inactive,
-    inactive_reason: :awaiting_seat
-  })
+        {:ok, conversation} = Easy.Chat.get_or_create_conversation_for_client(ctx, client.id)
+        {:ok, _} = Easy.Chat.send_message(ctx, conversation.id, %{body: "Your coaching history stays here."})
 
-expiring =
-  ensure.("nora.field@state.dev", %{
-    first_name: "Nora",
-    last_name: "Field",
-    phone: "+44 7700 900324",
-    status: :active,
-    subscription_started_on: Date.add(today, -60),
-    subscription_ends_on: Date.add(today, 5)
-  })
+        if state == :ended do
+          Repo.insert!(%Easy.Training.TrainingSession{
+            business_id: business.id,
+            client_id: client.id,
+            kind: :freestyle,
+            state: :completed,
+            date: Date.add(today, -2),
+            started_at: DateTime.add(now, -172_800),
+            closed_at: DateTime.add(now, -172_000),
+            notes: "Coaching term history"
+          })
+        end
 
-# Keep the fresh client free of training and nutrition plans on every run.
-{dropped_t, _} = Repo.delete_all(from p in Easy.Training.TrainingPlan, where: p.client_id == ^fresh.id)
-{dropped_n, _} = Repo.delete_all(from p in Easy.Nutrition.Plan, where: p.client_id == ^fresh.id)
+        {state, %{id: client.id, full_name: client.full_name, preferred_name: client.preferred_name, email: email}}
+      end
 
-if dropped_t + dropped_n > 0 do
-  IO.puts("removed #{dropped_t} training + #{dropped_n} nutrition plan(s) from the fresh fixture")
-end
-
-# Ensure Rowan's conversation has 2 unread client messages (header Message
-# badge). Re-marking coach_last_read_at nil keeps it unread across runs.
-conv =
-  Repo.get_by(Conversation, client_id: rich_id) ||
-    Repo.insert!(%Conversation{business_id: rich.business_id, client_id: rich_id})
-
-msg_count = Repo.aggregate(from(m in Message, where: m.conversation_id == ^conv.id and m.sender_type == :client), :count)
-
-if msg_count < 2 do
-  for body <- ["Left knee felt fine on today's squats!", "Should I keep the same protein target this week?"] do
-    now = DateTime.utc_now()
-
-    Repo.insert!(%Message{
-      conversation_id: conv.id,
-      business_id: rich.business_id,
-      body: body,
-      sender_type: :client,
-      sender_id: rich_id,
-      inserted_at: now
-    })
-
-    Repo.update!(Ecto.Changeset.change(conv, last_message_at: now, last_message_preview: body))
+    teammate_user = Repo.insert!(%User{email: "teammate-#{width}-#{run}@example.test", full_name: "Team Coach", email_confirmed_at: now})
+    teammate = Repo.insert!(%Coach{business_id: business.id, user_id: teammate_user.id, email: teammate_user.email, full_name: "Team Coach"})
+    {:ok, _} = Easy.ClientInvitations.invite(ctx, %{full_name: "Teammate Invite", email: "teammate-client-#{width}-#{run}@example.test", coach_id: teammate.id})
+    {to_string(width), %{coach_email: owner.email, business_id: business.id, clients: clients, teammate: %{id: teammate.id, email: teammate.email, full_name: teammate.full_name}}}
   end
 
-  IO.puts("seeded 2 client messages")
-end
-
-Repo.update!(Ecto.Changeset.change(conv, coach_last_read_at: nil))
-IO.puts("conversation marked unread for coach")
-
-IO.puts("""
-
-manifest routes:
-  active:            /clients/#{rich_id}
-  fresh:             /clients/#{fresh.id}
-  expiring:          /clients/#{expiring.id}
-  inactive-manual:   /clients/#{inactive_manual.id}
-  inactive-seat:     /clients/#{inactive_seat.id}
-""")
+File.write!("../.scratch/coaching-terms/browser-fixtures.json", Jason.encode!(fixtures, pretty: true))
+IO.puts("Coaching fixtures saved to .scratch/coaching-terms/browser-fixtures.json")

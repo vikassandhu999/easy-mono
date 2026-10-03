@@ -1,4 +1,5 @@
 defmodule Easy.Identity.SessionFactory do
+  require Ecto.Query
   alias Easy.Clients.Client
   alias Easy.Coaches
   alias Easy.Identity.User
@@ -61,7 +62,10 @@ defmodule Easy.Identity.SessionFactory do
   end
 
   defp validate_role(:client, user) do
-    case Client |> Client.for_user(user.id) |> Client.active() |> Repo.one() do
+    memberships = Client.for_user(user.id)
+    active = memberships |> Client.active() |> Ecto.Query.limit(1) |> Repo.one()
+
+    case active || latest_client(memberships) do
       %Client{business_id: business_id} ->
         {:ok, %{role: :client, business_id: business_id}}
 
@@ -71,6 +75,13 @@ defmodule Easy.Identity.SessionFactory do
   end
 
   defp validate_role(_role, _user), do: {:ok, %{role: :guest, business_id: nil}}
+
+  defp latest_client(query) do
+    query
+    |> Ecto.Query.order_by([c], desc_nulls_last: c.joined_at, desc: c.inserted_at, desc: c.id)
+    |> Ecto.Query.limit(1)
+    |> Repo.one()
+  end
 
   defp session_metadata(opts), do: %{ip: opts[:ip] || "", user_agent: opts[:user_agent] || ""}
 end

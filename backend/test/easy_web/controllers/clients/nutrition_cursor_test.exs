@@ -3,7 +3,7 @@ defmodule EasyWeb.Clients.NutritionCursorTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, creator: coach, business: coach.business)
+    client = insert(:client, coach: coach, business: coach.business)
     %{conn: build_conn() |> authenticate_client(client), coach: coach, client: client}
   end
 
@@ -16,7 +16,7 @@ defmodule EasyWeb.Clients.NutritionCursorTest do
       visible = for n <- 1..3, do: resource(kind, ctx, name: "Cursor meal #{n}", inserted_at: stamp)
       resource(kind, ctx, name: "Unrelated name")
       foreign_coach = insert(:coach)
-      foreign_client = insert(:client, creator: foreign_coach, business: foreign_coach.business)
+      foreign_client = insert(:client, coach: foreign_coach, business: foreign_coach.business)
       resource(kind, %{coach: foreign_coach, client: foreign_client}, name: "Cursor meal private")
 
       visible = add_scope_fixture(kind, ctx, visible, stamp)
@@ -75,7 +75,7 @@ defmodule EasyWeb.Clients.NutritionCursorTest do
   end
 
   defp add_scope_fixture(:plan, ctx, visible, _stamp) do
-    other = insert(:client, creator: ctx.coach, business: ctx.coach.business)
+    other = insert(:client, coach: ctx.coach, business: ctx.coach.business)
     resource(:plan, %{ctx | client: other}, name: "Cursor meal other client")
     insert(:plan, creator: ctx.coach, business: ctx.coach.business, name: "Cursor meal template")
     visible

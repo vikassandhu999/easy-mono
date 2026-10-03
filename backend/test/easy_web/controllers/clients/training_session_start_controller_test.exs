@@ -5,7 +5,7 @@ defmodule EasyWeb.Clients.TrainingSessionStartControllerTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+    client = insert(:client, business: coach.business, coach: coach)
     conn = build_conn() |> authenticate_client(client)
 
     %{conn: conn, coach: coach, client: client}
@@ -96,7 +96,7 @@ defmodule EasyWeb.Clients.TrainingSessionStartControllerTest do
     end
 
     test "does not expose another client's active Training Session", ctx do
-      other_client = insert(:client, business: ctx.coach.business, creator: ctx.coach, assigned_coach: ctx.coach)
+      other_client = insert(:client, business: ctx.coach.business, coach: ctx.coach)
       insert(:workout_session, client: other_client, business: ctx.coach.business)
 
       conn = get(ctx.conn, "/v1/client/training-sessions/active")

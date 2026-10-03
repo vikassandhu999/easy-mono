@@ -48,6 +48,7 @@ export function parseSession(raw: string | null): Session | null {
         scope: tokens.scope,
         expires_in: tokens.expires_in,
         token_type: tokens.token_type,
+        ...('full_name' in tokens && typeof tokens.full_name === 'string' ? {full_name: tokens.full_name} : {}),
       },
     };
   } catch {

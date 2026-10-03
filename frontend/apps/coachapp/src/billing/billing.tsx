@@ -101,7 +101,9 @@ function BillingDetails({billing, stale}: {billing: Billing; stale: boolean}) {
       <Surface className="space-y-6">
         <div className="space-y-2">
           <h2 className="section-title">Client seats</h2>
-          <p className="text-sm text-muted-foreground">Active clients and pending invitations each use one seat.</p>
+          <p className="text-sm text-muted-foreground">
+            Only clients with a current coaching term use a seat. Invitations are free.
+          </p>
         </div>
         <div className="grid grid-cols-2 gap-6">
           <div>
@@ -123,16 +125,11 @@ function BillingDetails({billing, stale}: {billing: Billing; stale: boolean}) {
           <p role="status">
             Your current capacity is full.{' '}
             {billing.can_add_seats
-              ? 'Add seats or deactivate clients you no longer coach before sending more invitations.'
-              : 'Review your client roster with the business owner before sending more invitations.'}
+              ? 'Add seats or end coaching for clients you no longer coach before starting another term.'
+              : 'Ask the business owner for more seats before starting another term.'}
           </p>
         )}
-        {billing.awaiting_seat_count > 0 && (
-          <p role="status">
-            {billing.awaiting_seat_count} clients are waiting for a seat. They will be activated as capacity becomes
-            available.
-          </p>
-        )}
+
         <Link
           className="text-link"
           to={routes.home}

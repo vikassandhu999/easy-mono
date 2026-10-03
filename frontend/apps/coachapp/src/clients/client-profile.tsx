@@ -1,12 +1,12 @@
-import {useCallback, useRef, useState} from 'react';
+import {useCallback, useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {generatePath, Link, useBeforeUnload, useBlocker, useLocation, useParams} from 'react-router-dom';
 import {useProfile} from '../api/auth';
+import {useTimezones} from '../api/business';
 import {errorMessage} from '../api/client';
 import {type Client, type ClientUpdate, useClient, useUpdateClient} from '../api/clients';
 import {routes} from '../routes';
 import {Button, buttonVariants} from '../ui/button';
-import {Checkbox} from '../ui/checkbox';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FormError} from '../ui/form-error';
 import {setFormError} from '../ui/form-errors';
@@ -16,34 +16,19 @@ import {useListLocation} from '../ui/list-location';
 import {FormActions, Page, PageHeader, StatusBadge, Surface} from '../ui/page';
 import {SelectItem} from '../ui/select';
 import {SelectField} from '../ui/select-field';
-import {ClientAccess} from './client-access';
+import {clientStateLabels} from './coaching';
 
-type Values = Pick<
-  Client,
-  | 'first_name'
-  | 'last_name'
-  | 'phone'
-  | 'email'
-  | 'notes'
-  | 'required_services'
-  | 'stage'
-  | 'subscription_started_on'
-  | 'subscription_ends_on'
->;
-const textFields: Array<
-  'first_name' | 'last_name' | 'phone' | 'email' | 'notes' | 'subscription_started_on' | 'subscription_ends_on'
-> = ['first_name', 'last_name', 'phone', 'email', 'notes', 'subscription_started_on', 'subscription_ends_on'];
+type Values = Pick<Client, 'full_name' | 'preferred_name' | 'phone' | 'email' | 'notes' | 'timezone' | 'unit_system'>;
+const textFields = ['full_name', 'preferred_name', 'phone', 'email', 'notes', 'timezone'] as const;
 function defaults(person: Client): Values {
   return {
-    first_name: person.first_name ?? '',
-    last_name: person.last_name ?? '',
+    full_name: person.full_name,
+    preferred_name: person.preferred_name ?? '',
     phone: person.phone ?? '',
     email: person.email ?? '',
     notes: person.notes ?? '',
-    required_services: person.required_services,
-    stage: person.stage,
-    subscription_started_on: person.subscription_started_on ?? '',
-    subscription_ends_on: person.subscription_ends_on ?? '',
+    timezone: person.timezone ?? '',
+    unit_system: person.unit_system,
   };
 }
 
@@ -58,10 +43,10 @@ export function ClientProfile() {
         <PageHeader
           title={
             query.data
-              ? `${query.data.data.first_name ?? ''} ${query.data.data.last_name ?? ''}`.trim() || 'Client details'
+              ? query.data.data.preferred_name || query.data.data.full_name || 'Client details'
               : 'Client details'
           }
-          description="Contact details, coaching and access."
+          description="Contact details and coaching preferences."
           back={{to: overview, state: list.state, label: 'Back to client'}}
         />
         {!query.data ? (
@@ -100,6 +85,7 @@ export function ClientProfile() {
 
 function Profile({person}: {person: Client}) {
   const account = useProfile();
+  const timezones = useTimezones();
   const location = useLocation();
   const state: unknown = location.state;
   const coachAssigned = Boolean(
@@ -108,11 +94,10 @@ function Profile({person}: {person: Client}) {
   const form = useForm<Values>({defaultValues: defaults(person)});
   const update = useUpdateClient(person.id);
   const [notice, setNotice] = useState('');
-  const saved = useRef(false);
   const list = useListLocation(routes.home);
   const pending = form.formState.isSubmitting;
   const dirty = form.formState.isDirty;
-  const blocker = useBlocker(() => !saved.current && (dirty || pending));
+  const blocker = useBlocker(dirty || pending);
   useBeforeUnload(
     useCallback(
       (event) => {
@@ -130,18 +115,16 @@ function Profile({person}: {person: Client}) {
   const submit = form.handleSubmit(async (values) => {
     const patch: ClientUpdate = {};
     for (const field of textFields) {
-      if (
-        form.formState.dirtyFields[field] &&
-        (person.status === 'pending' || (field !== 'first_name' && field !== 'last_name'))
-      ) {
-        patch[field] = values[field]?.trim() || null;
+      if (form.formState.dirtyFields[field]) {
+        if (field === 'full_name' || field === 'email') {
+          patch[field] = values[field]?.trim() || '';
+        } else {
+          patch[field] = values[field]?.trim() || null;
+        }
       }
     }
-    if (form.formState.dirtyFields.required_services) {
-      patch.required_services = values.required_services;
-    }
-    if (person.status === 'active' && form.formState.dirtyFields.stage) {
-      patch.stage = values.stage;
+    if (form.formState.dirtyFields.unit_system) {
+      patch.unit_system = values.unit_system;
     }
     form.clearErrors();
     setNotice('');
@@ -152,20 +135,13 @@ function Profile({person}: {person: Client}) {
     } catch (error) {
       setFormError(error, 'Could not save client details. Your changes are still here.', form.setError, [
         ...textFields,
-        'required_services',
-        'stage',
+        'unit_system',
       ]);
     }
   });
   return (
     <>
-      <StatusBadge>
-        {person.status === 'pending'
-          ? 'Invitation pending'
-          : person.status === 'active'
-            ? 'Active client'
-            : 'Inactive client'}
-      </StatusBadge>
+      <StatusBadge>{clientStateLabels[person.state]}</StatusBadge>
       <form
         noValidate
         onSubmit={submit}
@@ -174,28 +150,27 @@ function Profile({person}: {person: Client}) {
       >
         <Surface className="space-y-5">
           <h2 className="section-title">Contact details</h2>
-          {person.status === 'pending' ? (
-            <div className="grid items-start gap-5 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="first_name"
-                label="First name"
-                maxLength={255}
-                isDisabled={pending}
-              />
-              <FormField
-                control={form.control}
-                name="last_name"
-                label="Last name"
-                maxLength={255}
-                isDisabled={pending}
-              />
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Your client manages their account name. You can update their coaching contact details here.
-            </p>
-          )}
+          <div className="grid items-start gap-5 sm:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="full_name"
+              label="Full name"
+              autoComplete="name"
+              maxLength={255}
+              isRequired
+              isDisabled={pending}
+              rules={{validate: (value) => Boolean(value?.trim()) || 'Enter full name.'}}
+            />
+            <FormField
+              control={form.control}
+              name="preferred_name"
+              label="Preferred name"
+              autoComplete="nickname"
+              maxLength={255}
+              isDisabled={pending}
+              description="What should we call you?"
+            />
+          </div>
           <div className="grid items-start gap-5 sm:grid-cols-2">
             <FormField
               control={form.control}
@@ -205,7 +180,7 @@ function Profile({person}: {person: Client}) {
               maxLength={255}
               isDisabled={pending}
               description={
-                person.status === 'pending'
+                person.state === 'invited'
                   ? 'Used when you resend their invitation.'
                   : 'This does not change their sign-in email.'
               }
@@ -230,88 +205,81 @@ function Profile({person}: {person: Client}) {
           />
         </Surface>
         <Surface className="space-y-5">
-          <h2 className="section-title">Coaching engagement</h2>
+          <h2 className="section-title">Coaching preferences</h2>
           <Controller
             control={form.control}
-            name="required_services"
-            rules={{
-              validate: (value) =>
-                value.length > 0 || !form.formState.dirtyFields.required_services || 'Choose at least one service.',
-            }}
+            name="timezone"
             render={({field, fieldState}) => (
-              <fieldset className="space-y-2">
-                <legend className="text-sm font-medium">Services</legend>
-                <p className="text-sm text-muted-foreground">Which plans does this client need?</p>
-                <div className="flex flex-wrap gap-6">
-                  {(['training', 'nutrition'] satisfies Client['required_services']).map((service) => (
-                    <Checkbox
-                      key={service}
-                      isSelected={field.value.includes(service)}
-                      isDisabled={pending}
-                      onChange={(selected) =>
-                        field.onChange(
-                          selected ? [...field.value, service] : field.value.filter((item) => item !== service),
-                        )
-                      }
+              <div className="grid gap-2">
+                <Label
+                  id="client-timezone-label"
+                  htmlFor="client-timezone"
+                >
+                  Time zone
+                </Label>
+                <SelectField
+                  id="client-timezone"
+                  value={field.value || 'business'}
+                  onChange={(value) => field.onChange(value === 'business' ? '' : value)}
+                  triggerRef={field.ref}
+                  onBlur={field.onBlur}
+                  isDisabled={pending}
+                  isInvalid={Boolean(fieldState.error)}
+                >
+                  <SelectItem id="business">Use business time zone</SelectItem>
+                  {(timezones.data?.data.timezones ?? (person.timezone ? [person.timezone] : [])).map((zone) => (
+                    <SelectItem
+                      key={zone}
+                      id={zone}
                     >
-                      {service === 'training' ? 'Training' : 'Nutrition'}
-                    </Checkbox>
+                      {zone.replaceAll('_', ' ')}
+                    </SelectItem>
                   ))}
-                </div>
-                {fieldState.error && <FormError message={fieldState.error.message} />}
-              </fieldset>
-            )}
-          />
-          <div className="grid items-start gap-5 sm:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="subscription_started_on"
-              label="Engagement starts"
-              type="date"
-              isDisabled={pending}
-            />
-            <FormField
-              control={form.control}
-              name="subscription_ends_on"
-              label="Engagement ends"
-              type="date"
-              isDisabled={pending}
-              description="Leave empty for an open-ended engagement."
-            />
-          </div>
-          <p className="text-sm text-muted-foreground">
-            An end date controls when access expires. It does not change dates on assigned plans.
-          </p>
-          {person.status === 'active' && (
-            <Controller
-              control={form.control}
-              name="stage"
-              render={({field, fieldState}) => (
-                <div className="grid gap-2">
-                  <Label
-                    id="client-stage-label"
-                    htmlFor="client-stage"
-                  >
-                    Coaching stage
-                  </Label>
-                  <SelectField
-                    id="client-stage"
-                    value={field.value}
-                    isDisabled={pending}
-                    onChange={(value) => {
-                      if (value === 'onboarding' || value === 'coaching') {
-                        field.onChange(value);
-                      }
+                </SelectField>
+                <p className="text-sm text-muted-foreground">
+                  Coaching dates use this time zone. Leave it unset to follow the business time zone.
+                </p>
+                <FormError message={fieldState.error?.message} />
+                {timezones.isError && (
+                  <Button
+                    variant="outline"
+                    onPress={() => {
+                      timezones.refetch();
                     }}
                   >
-                    <SelectItem id="onboarding">Onboarding</SelectItem>
-                    <SelectItem id="coaching">Coaching</SelectItem>
-                  </SelectField>
-                  <FormError message={fieldState.error?.message} />
-                </div>
-              )}
-            />
-          )}
+                    Retry time zones
+                  </Button>
+                )}
+              </div>
+            )}
+          />
+          <Controller
+            control={form.control}
+            name="unit_system"
+            render={({field, fieldState}) => (
+              <div className="grid gap-2">
+                <Label
+                  id="client-units-label"
+                  htmlFor="client-units"
+                >
+                  Unit system
+                </Label>
+                <SelectField
+                  id="client-units"
+                  value={field.value}
+                  onChange={field.onChange}
+                  triggerRef={field.ref}
+                  onBlur={field.onBlur}
+                  isDisabled={pending}
+                  isInvalid={Boolean(fieldState.error)}
+                >
+                  <SelectItem id="metric">Metric (kg)</SelectItem>
+                  <SelectItem id="imperial">Imperial (lb)</SelectItem>
+                </SelectField>
+                <FormError message={fieldState.error?.message} />
+              </div>
+            )}
+          />
         </Surface>
         <FormError message={form.formState.errors.root?.message} />
         {notice && <p role="status">{notice}</p>}
@@ -337,7 +305,7 @@ function Profile({person}: {person: Client}) {
       </form>
       <Surface className="space-y-4">
         <h2 className="section-title">Assigned coach</h2>
-        <p>{person.assigned_coach_name || 'Coach'}</p>
+        <p>{person.coach_name || 'Coach'}</p>
         {coachAssigned && (
           <p
             role="status"
@@ -356,14 +324,6 @@ function Profile({person}: {person: Client}) {
           </Link>
         )}
       </Surface>
-      <ClientAccess
-        person={person}
-        isDisabled={dirty || pending}
-        onSaved={reset}
-        onRevoked={() => {
-          saved.current = true;
-        }}
-      />
       <Link
         to={generatePath(routes.client, {id: person.id})}
         state={list.state}

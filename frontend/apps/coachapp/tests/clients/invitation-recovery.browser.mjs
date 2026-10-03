@@ -16,9 +16,13 @@ try {
     const unique = `${Date.now()}-${width}`;
     const email = `test-recovery-client-${unique}@example.test`;
     const coachEmail = `test-recovery-coach-${unique}@example.test`;
-    await post('/v1/auth/signup', {email: coachEmail, first_name: 'Test', last_name: 'Coach'});
+    await post('/v1/auth/signup', {email: coachEmail, full_name: 'Test Coach'});
     const guest = await post('/v1/auth/verify', {email: coachEmail, otp: '123456'});
-    await post('/v1/businesses', {name: 'Test invitation recovery', handle: `recovery-${unique}`}, guest.access_token);
+    await post(
+      '/v1/businesses',
+      {full_name: 'Test Coach', name: 'Test invitation recovery', handle: `recovery-${unique}`},
+      guest.access_token,
+    );
     const tokens = await post('/v1/auth/token', {
       grant_type: 'refresh_token',
       refresh_token: guest.refresh_token,
@@ -36,11 +40,11 @@ try {
         const {saveSession} = await import('/src/api/session.ts');
         saveSession(tokens);
       }, tokens);
-      const roster = `/?search=${encodeURIComponent(email)}&status=pending`;
+      const roster = `/?search=${encodeURIComponent(email)}&state=invited`;
       await page.goto(roster);
       await expect(page.getByText('No matching clients', {exact: true})).toBeVisible();
       await page.getByRole('link', {name: 'Invite client', exact: true}).click();
-      await page.getByLabel('First name', {exact: true}).fill('Test Recovery');
+      await page.getByLabel('Full name', {exact: true}).fill('Test Recovery');
       await page.getByLabel('Email', {exact: true}).fill(email);
       await page.getByRole('link', {name: 'Cancel', exact: true}).click();
       const leave = page.getByRole('dialog', {name: 'Leave this invitation?'});
@@ -63,8 +67,8 @@ try {
       await leave.getByRole('button', {name: 'Discard invitation', exact: true}).click();
       await expect(page).toHaveURL(`${baseURL}${roster}`);
       await page.getByRole('link', {name: 'Invite client', exact: true}).click();
-      await expect(page.getByLabel('First name', {exact: true})).toHaveValue('');
-      await page.getByLabel('First name', {exact: true}).fill('Test Recovery');
+      await expect(page.getByLabel('Full name', {exact: true})).toHaveValue('');
+      await page.getByLabel('Full name', {exact: true}).fill('Test Recovery');
       await page.getByLabel('Email', {exact: true}).fill(email);
 
       let sends = 0;
@@ -79,7 +83,7 @@ try {
           await route.continue();
         }
       });
-      await page.route('**/v1/coach/clients/invite', async (route) => {
+      await page.route('**/v1/coach/clients', async (route) => {
         sends += 1;
         if (sends === 1) {
           await release.promise;

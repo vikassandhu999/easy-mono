@@ -185,16 +185,15 @@ defmodule Easy.Nutrition.DiaryLoggingTest do
     assert {:error, :future_date} = save_extra(ctx, Date.add(today, 1), extra_attrs(food))
   end
 
-  test "only the active client can save their diary" do
-    %{coach: coach, client: client, today: today} = covering_setup()
+  test "saving a diary requires a client identity" do
+    %{coach: coach, client: client, food: food, today: today} = covering_setup()
     request = %{slots: [%{meal_slot: :breakfast, meal_id: nil, expected_revision: 0, entries: []}]}
 
     assert {:error, :not_found} =
              Diary.save_client_nutrition_day(trainer_ctx(coach), today, request)
 
-    Repo.update!(Ecto.Changeset.change(client, status: :inactive))
-
-    assert {:error, :client_inactive} =
-             Diary.save_client_nutrition_day(client_ctx(client), today, request)
+    assert {:ok, day} = save_extra(client_ctx(client), today, extra_attrs(food))
+    assert day.date == today
+    assert day.summary.has_intake
   end
 end

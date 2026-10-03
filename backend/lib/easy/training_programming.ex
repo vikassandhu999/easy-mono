@@ -1,6 +1,7 @@
 defmodule Easy.Training.Programming do
   alias Easy.ClientAccess
   alias Easy.Ctx
+  alias Easy.PlanOverlap
   alias Easy.Repo
   alias Easy.Revision
   alias Easy.Training.{PlanCopy, PlanReader, PrescriptionWriter, TrainingPlan}
@@ -38,6 +39,7 @@ defmodule Easy.Training.Programming do
     mutate_plan(ctx, plan_id, expected_revision, fn plan ->
       plan
       |> TrainingPlan.update_changeset(attrs)
+      |> then(&PlanOverlap.validate(ctx, &1))
       |> Repo.update()
     end)
   end
@@ -59,7 +61,7 @@ defmodule Easy.Training.Programming do
   @spec restore_plan(Ctx.t(), String.t(), pos_integer()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def restore_plan(%Ctx{} = ctx, plan_id, expected_revision) do
-    mutate_plan(ctx, plan_id, expected_revision, &restore/1)
+    mutate_plan(ctx, plan_id, expected_revision, &restore(ctx, &1))
   end
 
   @spec delete_plan(Ctx.t(), String.t(), pos_integer()) ::
@@ -79,6 +81,7 @@ defmodule Easy.Training.Programming do
     plan =
       TrainingPlan
       |> TrainingPlan.for_business(ctx.business_id)
+      |> TrainingPlan.include_client(ctx.business_id)
       |> lock("FOR UPDATE")
       |> Repo.get(plan_id)
 
@@ -101,11 +104,12 @@ defmodule Easy.Training.Programming do
     |> Repo.update()
   end
 
-  defp restore(%TrainingPlan{archived_at: nil} = plan), do: {:ok, plan}
+  defp restore(_ctx, %TrainingPlan{archived_at: nil} = plan), do: {:ok, plan}
 
-  defp restore(plan) do
+  defp restore(ctx, plan) do
     plan
     |> TrainingPlan.lifecycle_changeset(nil)
+    |> then(&PlanOverlap.validate(ctx, &1))
     |> Repo.update()
   end
 

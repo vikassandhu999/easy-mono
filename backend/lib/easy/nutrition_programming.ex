@@ -1,6 +1,7 @@
 defmodule Easy.Nutrition.Programming do
   alias Easy.ClientAccess
   alias Easy.Ctx
+  alias Easy.PlanOverlap
 
   alias Easy.Nutrition.{ItemResolver, Menu, Plan, PlanCopy, PlanReader}
 
@@ -24,7 +25,7 @@ defmodule Easy.Nutrition.Programming do
   @spec update_plan(Ctx.t(), String.t(), pos_integer(), map()) ::
           {:ok, Plan.t()} | {:error, PlanReader.read_error() | Ecto.Changeset.t()}
   def update_plan(%Ctx{} = ctx, plan_id, expected_revision, attrs) do
-    mutate_plan(ctx, plan_id, expected_revision, &update_active(&1, attrs))
+    mutate_plan(ctx, plan_id, expected_revision, &update_active(ctx, &1, attrs))
   end
 
   @spec archive_plan(Ctx.t(), String.t(), pos_integer() | :any) ::
@@ -36,7 +37,7 @@ defmodule Easy.Nutrition.Programming do
   @spec restore_plan(Ctx.t(), String.t(), pos_integer() | :any) ::
           {:ok, Plan.t()} | {:error, PlanReader.read_error() | Ecto.Changeset.t()}
   def restore_plan(%Ctx{} = ctx, plan_id, expected_revision \\ :any) do
-    mutate_plan(ctx, plan_id, expected_revision, &restore/1)
+    mutate_plan(ctx, plan_id, expected_revision, &restore(ctx, &1))
   end
 
   @spec delete_plan(Ctx.t(), String.t(), pos_integer() | :any) ::
@@ -97,14 +98,15 @@ defmodule Easy.Nutrition.Programming do
     end
   end
 
-  defp update_active(%Plan{archived_at: archived_at} = plan, _attrs)
+  defp update_active(_ctx, %Plan{archived_at: archived_at} = plan, _attrs)
        when not is_nil(archived_at) do
     {:error, archived_changeset(plan)}
   end
 
-  defp update_active(plan, attrs) do
+  defp update_active(ctx, plan, attrs) do
     plan
     |> Plan.update_changeset(attrs)
+    |> then(&PlanOverlap.validate(ctx, &1))
     |> Repo.update()
   end
 
@@ -117,11 +119,12 @@ defmodule Easy.Nutrition.Programming do
     |> Repo.update()
   end
 
-  defp restore(%Plan{archived_at: nil} = plan), do: {:ok, plan}
+  defp restore(_ctx, %Plan{archived_at: nil} = plan), do: {:ok, plan}
 
-  defp restore(plan) do
+  defp restore(ctx, plan) do
     plan
     |> Plan.lifecycle_changeset(nil)
+    |> then(&PlanOverlap.validate(ctx, &1))
     |> Repo.update()
   end
 
@@ -140,6 +143,7 @@ defmodule Easy.Nutrition.Programming do
     plan =
       Plan
       |> Plan.for_business(ctx.business_id)
+      |> Plan.include_client(ctx.business_id)
       |> lock("FOR UPDATE")
       |> Repo.get(plan_id)
 

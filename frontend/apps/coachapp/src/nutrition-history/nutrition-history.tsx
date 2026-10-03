@@ -28,9 +28,7 @@ function History({clientId}: {clientId: string}) {
   const query = useNutritionDay(clientId, date);
   const client = useClient(clientId);
   const person = client.data?.data;
-  const name = person
-    ? `${person.first_name ?? ''} ${person.last_name ?? ''}`.trim() || person.email || 'Client'
-    : 'Client';
+  const name = person ? person.preferred_name || person.full_name || person.email || 'Client' : 'Client';
   const day = query.data?.data[0];
   const selectedDate = day?.date ?? date ?? '';
   const openDate = (value?: string) => setParams(value ? {date: value} : {});

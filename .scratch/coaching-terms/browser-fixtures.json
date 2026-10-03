@@ -1,0 +1,82 @@
+{
+  "1280": {
+    "business_id": "5e7dc2a3-f982-43c3-a5cc-484d00794f9a",
+    "clients": {
+      "active": {
+        "email": "coaching-active-1280-1791025296228@example.test",
+        "full_name": "Active Client",
+        "id": "d87c59ab-ac2a-4e8d-81b0-29ac649b0fff",
+        "preferred_name": "Active"
+      },
+      "ended": {
+        "email": "coaching-ended-1280-1791025296228@example.test",
+        "full_name": "Ended Client",
+        "id": "8cb46355-0c20-456c-b2e9-0ce685c72d28",
+        "preferred_name": "Ended"
+      },
+      "ending_soon": {
+        "email": "coaching-ending_soon-1280-1791025296228@example.test",
+        "full_name": "Ending soon Client",
+        "id": "bf45229b-81da-49c0-9360-93a384c8123d",
+        "preferred_name": "Ending soon"
+      },
+      "joined": {
+        "email": "coaching-joined-1280-1791025296228@example.test",
+        "full_name": "Joined Client",
+        "id": "fd821d2a-0425-4e0d-90d3-d69171b30435",
+        "preferred_name": "Joined"
+      }
+    },
+    "coach_email": "coaching-owner-1280-1791025296228@example.test",
+    "teammate": {
+      "email": "teammate-1280-1791025296228@example.test",
+      "full_name": "Team Coach",
+      "id": "756f9446-87be-4698-b491-61e922c59021"
+    }
+  },
+  "375": {
+    "business_id": "29eea1d2-c4ad-4ccd-9c04-bb14ae14ca54",
+    "clients": {
+      "active": {
+        "email": "coaching-active-375-1791025296228@example.test",
+        "full_name": "Active Client",
+        "id": "4d9d66d8-e279-4cd0-b143-160c7081e28f",
+        "preferred_name": "Active"
+      },
+      "ended": {
+        "email": "coaching-ended-375-1791025296228@example.test",
+        "full_name": "Ended Client",
+        "id": "98b05f04-ce4f-4849-acdb-6781d5f4c3a4",
+        "preferred_name": "Ended"
+      },
+      "ending_soon": {
+        "email": "coaching-ending_soon-375-1791025296228@example.test",
+        "full_name": "Ending soon Client",
+        "id": "cad1275b-9c1c-4872-bc4e-715057f812b3",
+        "preferred_name": "Ending soon"
+      },
+      "joined": {
+        "email": "coaching-joined-375-1791025296228@example.test",
+        "full_name": "Joined Client",
+        "id": "e3bd72ee-e475-4d0f-a1ff-e784714227ca",
+        "preferred_name": "Joined"
+      }
+    },
+    "coach_email": "coaching-owner-375-1791025296228@example.test",
+    "teammate": {
+      "email": "teammate-375-1791025296228@example.test",
+      "full_name": "Team Coach",
+      "id": "adf17bb2-da9d-41e0-8a1c-642b2d3f1ba7"
+    }
+  },
+  "free_accept": {
+    "client": {
+      "id": "7ede30a0-c564-483e-95f3-8874f8bf97e5",
+      "token": "SIQ_-LScKuiHcwReoAPpkunkJMI-0eD7DIjmP4QGlkc",
+      "email": "free-seat-1791025297033@example.test",
+      "full_name": "Free Seat Client"
+    },
+    "business_id": "27aa9b86-0415-4f86-8037-46e141fa1f68",
+    "coach_email": "coaching-accept-owner-1791025297033@example.test"
+  }
+}

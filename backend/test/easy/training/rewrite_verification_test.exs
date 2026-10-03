@@ -5,7 +5,7 @@ defmodule Easy.Training.RewriteVerificationTest do
 
   test "Programming and Execution carry one Training design from Template to correctable history with frozen prescription" do
     coach = insert(:coach)
-    client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach, stage: :onboarding)
+    client = insert(:client, business: coach.business, coach: coach)
     squat = insert(:exercise, business: coach.business, name: "Back Squat")
     coach_ctx = trainer_ctx(coach)
     client_ctx = %Easy.Ctx{business_id: client.business_id, user_id: client.user_id, client_id: client.id}

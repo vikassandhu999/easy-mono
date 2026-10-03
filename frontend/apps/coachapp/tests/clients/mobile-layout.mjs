@@ -3,7 +3,7 @@ import {expect} from '@playwright/test';
 export async function checkMobileFoundation(page) {
   for (const width of [375, 390, 768, 1280]) {
     await page.setViewportSize({width, height: 812});
-    await page.getByLabel('First name', {exact: true}).fill('Kept while navigating');
+    await page.getByLabel('Full name', {exact: true}).fill('Kept while navigating');
     await page.getByLabel('Email', {exact: true}).fill('layout@example.test');
     const input = page.getByLabel('Email', {exact: true});
     expect(await input.evaluate((element) => getComputedStyle(element).fontSize)).toBe('16px');
@@ -27,7 +27,7 @@ export async function checkMobileFoundation(page) {
     expect((await signOut.boundingBox()).height).toBeGreaterThanOrEqual(44);
     await page.keyboard.press('Escape');
     await expect(account).toBeFocused();
-    await expect(page.getByLabel('First name', {exact: true})).toHaveValue('Kept while navigating');
+    await expect(page.getByLabel('Full name', {exact: true})).toHaveValue('Kept while navigating');
     await expect(input).toHaveValue('layout@example.test');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     expect(await page.locator('main').evaluate((element) => getComputedStyle(element).paddingLeft)).toBe(
@@ -48,7 +48,7 @@ export async function checkMobileFoundation(page) {
     await page.screenshot({path: `tests/clients/artifacts/mobile-invite-${width}.png`, fullPage: true});
     console.log(`Mobile foundation: ${width}px layout, controls, menu, focus and scroll passed.`);
   }
-  await page.getByLabel('First name', {exact: true}).fill('');
+  await page.getByLabel('Full name', {exact: true}).fill('');
   await page.getByLabel('Email', {exact: true}).fill('');
   await page.setViewportSize({width: 375, height: 900});
 }

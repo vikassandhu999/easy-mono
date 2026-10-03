@@ -62,7 +62,7 @@ defmodule Easy.Chat.Conversation do
       on:
         client.id == conversation.client_id and
           client.business_id == conversation.business_id and
-          client.assigned_coach_id == ^coach_id
+          client.coach_id == ^coach_id
     )
   end
 
@@ -79,7 +79,7 @@ defmodule Easy.Chat.Conversation do
     from(c in query,
       join: client in assoc(c, :client),
       where:
-        ilike(fragment("concat_ws(' ', ?, ?)", client.first_name, client.last_name), ^pattern) or
+        ilike(client.full_name, ^pattern) or ilike(client.preferred_name, ^pattern) or
           ilike(client.email, ^pattern) or
           ilike(client.phone, ^pattern)
     )

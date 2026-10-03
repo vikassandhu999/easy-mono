@@ -8,7 +8,7 @@ defmodule Easy.Nutrition.ProgrammingTemplateLifecycleTest do
     test "repeated lifecycle actions preserve templates and client plans" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
 
       for kind <- [:template, :client_plan] do
         plan =
@@ -91,7 +91,7 @@ defmodule Easy.Nutrition.ProgrammingTemplateLifecycleTest do
     test "deletes a Template without deleting its independent Client Plan" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       assert {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})
 
       client_plan =
@@ -116,7 +116,7 @@ defmodule Easy.Nutrition.ProgrammingTemplateLifecycleTest do
       other = insert(:coach)
       hidden = insert(:plan, business: other.business, creator: other.user)
       same_business = insert(:plan, business: coach.business, creator: coach.user)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
 
       client_ctx = %Easy.Ctx{
         business_id: client.business_id,

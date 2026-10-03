@@ -5,7 +5,7 @@ defmodule EasyWeb.Coaches.NutritionCoverageControllerTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+    client = insert(:client, business: coach.business, coach: coach)
 
     conn =
       build_conn()

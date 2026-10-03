@@ -3,8 +3,8 @@ defmodule EasyWeb.Types.NutritionPlanClient do
 
   @type t :: %{
           required(:id) => Ecto.UUID.t(),
-          required(:first_name) => String.t() | nil,
-          required(:last_name) => String.t() | nil
+          required(:full_name) => String.t(),
+          required(:preferred_name) => String.t() | nil
         }
 end
 
@@ -116,7 +116,7 @@ defmodule EasyWeb.Types.NutritionPlan do
           required(:name) => String.t(),
           required(:description) => String.t() | nil,
           required(:revision) => pos_integer(),
-          required(:lifecycle) => :active | :incomplete | :upcoming | :current | :ended | :archived,
+          required(:lifecycle) => :active | :incomplete | :waiting | :upcoming | :current | :ended | :archived,
           required(:assigned_client_count) => non_neg_integer(),
           required(:target_calories) => float() | nil,
           required(:target_protein_g) => float() | nil,
@@ -125,6 +125,7 @@ defmodule EasyWeb.Types.NutritionPlan do
           required(:target_fiber_g) => float() | nil,
           required(:start_date) => Date.t() | nil,
           required(:end_date) => Date.t() | nil,
+          required(:stopped_on) => Date.t() | nil,
           required(:client_id) => Ecto.UUID.t() | nil,
           required(:client) => EasyWeb.Types.NutritionPlanClient.t() | nil,
           required(:creator_id) => Ecto.UUID.t() | nil,
@@ -212,6 +213,7 @@ defmodule EasyWeb.Types.NutritionPlan do
       target_fiber_g: plan.target_fiber_g,
       start_date: plan.start_date,
       end_date: plan.end_date,
+      stopped_on: Easy.PlanCoverage.stopped_on(plan, plan_today(plan)),
       client_id: plan.client_id,
       client: format_client(plan),
       creator_id: plan.creator_id,
@@ -222,10 +224,13 @@ defmodule EasyWeb.Types.NutritionPlan do
     }
   end
 
+  defp plan_today(%{client: %Client{} = client}), do: Client.local_date(client, DateTime.utc_now())
+  defp plan_today(_plan), do: Date.utc_today()
+
   defp format_client(%Plan{kind: :template}), do: nil
 
   defp format_client(%Plan{kind: :client_plan, client: %Client{} = client}) do
-    %{id: client.id, first_name: client.first_name, last_name: client.last_name}
+    %{id: client.id, full_name: client.full_name, preferred_name: client.preferred_name}
   end
 end
 

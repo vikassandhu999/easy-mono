@@ -15,6 +15,7 @@ import {routes} from '../routes';
 import {BottomSheet} from '../ui/bottom-sheet';
 import {Button, buttonVariants} from '../ui/button';
 import {CachedRead} from '../ui/cached-read';
+import {useCoaching} from '../ui/coaching';
 import {useOnline} from '../ui/connection-status';
 import {FormError} from '../ui/form-error';
 import {InfiniteList} from '../ui/infinite-list';
@@ -25,8 +26,9 @@ import {SelectField} from '../ui/select-field';
 import {dayLabel, sessionName, targetText} from './recording';
 
 export function Training() {
+  const {canWrite} = useCoaching();
   const [params, setParams] = useSearchParams();
-  const history = params.get('view') === 'history';
+  const history = !canWrite || params.get('view') === 'history';
   const [filtersOpen, setFiltersOpen] = useState(false);
   const search = params.get('search') ?? '';
   const state = params.get('state');
@@ -39,37 +41,39 @@ export function Training() {
   return (
     <Page
       title="Training"
-      description="Your workout, ready when you are."
+      description={canWrite ? 'Your workout, ready when you are.' : 'The work you’ve put in.'}
       compact
     >
       <ActiveWorkout />
-      <nav
-        aria-label="Training views"
-        className="training-segments my-5"
-      >
-        <Link
-          to={routes.training}
-          aria-current={!history ? 'page' : undefined}
-          className="min-h-12 flex items-center justify-center gap-2"
+      {canWrite && (
+        <nav
+          aria-label="Training views"
+          className="training-segments my-5"
         >
-          <Dumbbell
-            className="size-4"
-            aria-hidden="true"
-          />
-          Your plan
-        </Link>
-        <Link
-          to={`${routes.training}?view=history`}
-          aria-current={history ? 'page' : undefined}
-          className="min-h-12 flex items-center justify-center gap-2"
-        >
-          <HistoryIcon
-            className="size-4"
-            aria-hidden="true"
-          />
-          Workout history
-        </Link>
-      </nav>
+          <Link
+            to={routes.training}
+            aria-current={!history ? 'page' : undefined}
+            className="min-h-12 flex items-center justify-center gap-2"
+          >
+            <Dumbbell
+              className="size-4"
+              aria-hidden="true"
+            />
+            Your plan
+          </Link>
+          <Link
+            to={`${routes.training}?view=history`}
+            aria-current={history ? 'page' : undefined}
+            className="min-h-12 flex items-center justify-center gap-2"
+          >
+            <HistoryIcon
+              className="size-4"
+              aria-hidden="true"
+            />
+            Workout history
+          </Link>
+        </nav>
+      )}
       {history && (
         <div className="flex items-center justify-between gap-3 mb-3">
           <p className="text-sm text-muted-foreground">The work you’ve put in.</p>
@@ -171,7 +175,7 @@ export function Training() {
       ) : (
         <CurrentPlan />
       )}
-      {!history && (
+      {canWrite && !history && (
         <div className="mt-6 space-y-3">
           <p className="text-sm text-muted-foreground">Training outside your plan?</p>
           <StartWorkout workoutId={null} />
@@ -183,6 +187,10 @@ export function Training() {
 
 export function ActiveWorkout() {
   const query = useActiveTraining();
+  const {canWrite} = useCoaching();
+  if (!canWrite) {
+    return null;
+  }
   if (!query.data) {
     return (
       <ReadState
@@ -389,6 +397,7 @@ function History({filters, returnTo}: {filters: SessionFilters; returnTo: string
 }
 
 export function TrainingPlan() {
+  const {canWrite} = useCoaching();
   const {id = '', workoutId} = useParams();
   const query = useTrainingPlan(id);
   const plan = query.data?.data;
@@ -416,6 +425,9 @@ export function TrainingPlan() {
             refreshing={query.isFetching}
             refresh={() => query.refetch()}
           />
+          {plan.stopped_on && (
+            <p className="mb-4 text-muted-foreground">Stopped when coaching ended on {dayLabel(plan.stopped_on)}.</p>
+          )}
           {workoutId ? (
             workout ? (
               <>
@@ -452,7 +464,7 @@ export function TrainingPlan() {
                     </li>
                   ))}
                 </ol>
-                {plan.lifecycle === 'current' ? (
+                {canWrite && plan.lifecycle === 'current' ? (
                   <StartWorkout workoutId={workout.id} />
                 ) : (
                   <p className="text-muted-foreground">
@@ -484,6 +496,10 @@ function StartWorkout({workoutId}: {workoutId: string | null}) {
   const navigate = useNavigate();
   const online = useOnline();
   const [error, setError] = useState('');
+  const {canWrite} = useCoaching();
+  if (!canWrite) {
+    return null;
+  }
   return (
     <div className={workoutId ? 'mobile-save-bar space-y-3' : 'space-y-3'}>
       {!online && (

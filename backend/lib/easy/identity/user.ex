@@ -8,8 +8,7 @@ defmodule Easy.Identity.User do
   @foreign_key_type :binary_id
 
   schema "users" do
-    field :first_name, :string, default: ""
-    field :last_name, :string, default: ""
+    field :full_name, :string, default: ""
 
     field :email, :string
     field :email_confirmed_at, :utc_datetime
@@ -25,8 +24,7 @@ defmodule Easy.Identity.User do
     %__MODULE__{}
     |> cast(attrs, [
       :email,
-      :first_name,
-      :last_name
+      :full_name
     ])
     |> put_change(:confirmation_sent_at, confirmation_sent_at)
     |> validate_required([:email])
@@ -34,8 +32,7 @@ defmodule Easy.Identity.User do
       :email,
       ~r/^[\w.!#$%&'*+=?^`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/
     )
-    |> validate_length(:first_name, max: 255)
-    |> validate_length(:last_name, max: 255)
+    |> validate_length(:full_name, max: 255, count: :codepoints)
     |> unique_constraint(:email)
   end
 

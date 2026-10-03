@@ -26,11 +26,13 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
     now = DateTime.utc_now()
 
     Repo.snapshot(fn ->
-      client = Repo.preload(client, :business)
+      client = Repo.preload(client, [:business, :terms])
+      today = CorrectionPolicy.local_today(client, now)
+      writable? = not is_nil(Client.current_term(client, today))
 
-      with {:ok, dates} <- resolve_dates(opts, CorrectionPolicy.local_today(client, now)),
-           {:ok, days} <- Result.traverse(dates, &assemble(ctx, client, &1, actor, now)) do
-        {:ok, %{nutrition_days: days}}
+      with {:ok, dates} <- resolve_dates(opts, today),
+           {:ok, days} <- Result.traverse(dates, &assemble_day(ctx, client, &1, actor, now)) do
+        {:ok, %{nutrition_days: Enum.map(days, &restrict_writes(&1, writable?))}}
       end
     end)
   end
@@ -39,7 +41,14 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
           {:ok, Day.t()} | {:error, PlanReader.read_error()}
   def assemble(%Ctx{} = ctx, %Client{} = client, %Date{} = date, actor, %DateTime{} = now)
       when actor in [:client, :coach] do
-    Repo.snapshot(fn -> assemble_day(ctx, client, date, actor, now) end)
+    Repo.snapshot(fn ->
+      client = Repo.preload(client, [:business, :terms])
+      writable? = not is_nil(Client.current_term(client, Client.local_date(client, now)))
+
+      with {:ok, day} <- assemble_day(ctx, client, date, actor, now) do
+        {:ok, restrict_writes(day, writable?)}
+      end
+    end)
   end
 
   defp assemble_day(ctx, client, date, actor, now) do
@@ -59,6 +68,12 @@ defmodule Easy.Nutrition.Diary.DayAssembler do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  defp restrict_writes(day, true), do: day
+
+  defp restrict_writes(day, false) do
+    %{day | write_eligible: false, slots: Enum.map(day.slots, &%{&1 | write_eligible: false})}
   end
 
   defp resolve_dates(opts, today) do

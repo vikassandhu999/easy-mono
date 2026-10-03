@@ -6,7 +6,7 @@ import type {CoachProfileUpdate, components, paths} from './schema';
 import {getSession, saveSession, sessionSnapshot} from './session';
 
 export type {CoachProfile as Profile} from './schema';
-export type ProfileUpdate = Pick<CoachProfileUpdate, 'first_name' | 'last_name' | 'phone'>;
+export type ProfileUpdate = Pick<CoachProfileUpdate, 'full_name' | 'preferred_name' | 'phone'>;
 
 export type SignupRequest = components['schemas']['SignupRequest'];
 export type VerifyRequest = Extract<components['schemas']['VerifyRequest'], {email: string}>;

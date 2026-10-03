@@ -35,12 +35,12 @@ try {
       const profile = async () => (await api('/v1/client/me', {token})).data;
       await expect(page.getByRole('link', {name: /Weight goal|Weight & progress/})).toHaveCount(0);
       await page.getByRole('link', {name: 'Personal details', exact: true}).click();
-      const firstName = page.getByLabel('First name');
-      await firstName.fill('Sam');
+      const fullName = page.getByLabel('Full name');
+      await fullName.fill('Sam');
       await page.getByLabel('Phone', {exact: true}).fill('+15555550123');
       await expect(page.getByText('Draft saved on this device.', {exact: true})).toBeVisible();
       await page.reload();
-      await expect(firstName).toHaveValue('Sam');
+      await expect(fullName).toHaveValue('Sam');
       await expect(page.getByLabel('Phone', {exact: true})).toHaveValue('+15555550123');
       await context.setOffline(true);
       await expect(page.getByRole('button', {name: 'Save details'})).toBeDisabled();
@@ -52,7 +52,7 @@ try {
           return route.continue();
         }
         writes++;
-        expect(route.request().postDataJSON()).toEqual({first_name: 'Sam', last_name: 'Client', phone: '+15555550123'});
+        expect(route.request().postDataJSON()).toEqual({full_name: 'Sam', preferred_name: '', phone: '+15555550123'});
         if (writes === 1) {
           return route.fulfill({status: 503, json: {error_message: 'Temporarily unavailable'}});
         }
@@ -60,19 +60,19 @@ try {
       });
       await page.getByRole('button', {name: 'Save details'}).click();
       await expect(page.locator('form').getByRole('alert')).toBeVisible();
-      await expect(firstName).toHaveValue('Sam');
+      await expect(fullName).toHaveValue('Sam');
       await page.getByRole('button', {name: 'Save details'}).click();
       await expect(page.getByText('Your details are saved.')).toBeVisible();
-      expect((await profile()).first_name).toBe('Sam');
+      expect((await profile()).full_name).toBe('Sam');
       expect((await profile()).phone).toBe('+15555550123');
       expect(writes).toBe(2);
       await page.unroute('**/v1/client/me');
       await page.reload();
-      await expect(firstName).toHaveValue('Sam');
+      await expect(fullName).toHaveValue('Sam');
       await page.getByRole('link', {name: 'Back', exact: true}).click();
       await expect(page.getByRole('heading', {name: 'Your account'})).toBeVisible();
       await expect(page.getByText('Sam', {exact: true})).toBeVisible();
-      await expect(page.getByText('Workout weight unit', {exact: false})).toBeVisible();
+      await expect(page.getByText('Unit system', {exact: false})).toBeVisible();
       await page.getByRole('link', {name: 'Today', exact: true}).click();
       await expect(page.getByRole('navigation', {name: 'Main navigation'}).getByRole('link')).toHaveCount(4);
       await expect(page.getByRole('link', {name: /Weight goal|Weight & progress/})).toHaveCount(0);

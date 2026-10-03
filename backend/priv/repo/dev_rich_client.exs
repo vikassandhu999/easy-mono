@@ -26,7 +26,7 @@ alias Easy.Nutrition.{Diary, DiaryEntry, DiarySlot, Food, Plan, Programming}
 client_id = "f9e0ba52-2974-45b9-bf29-ffc3e081f7bd"
 client = Repo.get!(Client, client_id)
 bid = client.business_id
-coach_id = client.assigned_coach_id || client.creator_id
+coach_id = client.coach_id
 coach = Repo.get_by(Easy.Orgs.Coach, id: coach_id)
 coach_user_id = (coach && coach.user_id) || raise("client requires an assigned coach user")
 today = Date.utc_today()
@@ -39,7 +39,7 @@ end
 
 day_atom = %{1 => :monday, 2 => :tuesday, 3 => :wednesday, 4 => :thursday, 5 => :friday, 6 => :saturday, 7 => :sunday}
 
-IO.puts("== seed for #{client.first_name} #{client.last_name} (biz #{bid}) ==")
+IO.puts("== seed for #{client.full_name} (biz #{bid}) ==")
 
 # ------------------------------------------------------------------
 # 1 + 2. Training plan, workouts, schedule, sessions

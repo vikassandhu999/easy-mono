@@ -8,7 +8,7 @@ defmodule Easy.Nutrition.ProgrammingReadErrorsTest do
 
   test "hidden client plans are rejected before resolving invalid stored portions" do
     coach = insert(:coach)
-    client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+    client = insert(:client, business: coach.business, coach: coach)
     other_trainer = insert(:coach, business: coach.business)
     food = insert(:food, business: coach.business, creator: coach, serving_sizes: [])
     ctx = trainer_ctx(coach)
@@ -26,7 +26,7 @@ defmodule Easy.Nutrition.ProgrammingReadErrorsTest do
   test "missing menu sources propagate through template, client-plan, and coverage reads" do
     coach = insert(:coach)
     ctx = trainer_ctx(coach)
-    client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+    client = insert(:client, business: coach.business, coach: coach)
     today = Date.utc_today()
     {:ok, template} = Programming.create_template(ctx, %{name: "Stored template"})
 

@@ -67,7 +67,7 @@ function VerifyCode({initial, returnTo}: {initial: Challenge; returnTo: string})
     try {
       const body = {email: challenge.email, otp};
       if (challenge.kind === 'invite') {
-        await verify.mutateAsync({kind: 'invite', body: {...body, invitation_token: challenge.token}});
+        await verify.mutateAsync({kind: 'invite', token: challenge.token, body});
       } else {
         await verify.mutateAsync({kind: challenge.kind, body});
       }

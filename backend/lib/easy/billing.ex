@@ -2,7 +2,6 @@ defmodule Easy.Billing do
   import Ecto.Query
 
   alias Easy.Billing.{BusinessBilling, CheckoutIntent, Event, Webhook}
-  alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Orgs.Business
   alias Easy.Razorpay
@@ -18,7 +17,6 @@ defmodule Easy.Billing do
           required(:seat_limit) => non_neg_integer(),
           required(:used_seats) => non_neg_integer(),
           required(:available_seats) => integer(),
-          required(:awaiting_seat_count) => non_neg_integer(),
           required(:monthly_seat_price_inr) => integer() | nil,
           required(:monthly_total_inr) => integer() | nil,
           required(:billing_enabled) => boolean(),
@@ -42,7 +40,11 @@ defmodule Easy.Billing do
   @spec grant_free_seats(Ctx.t(), non_neg_integer()) ::
           {:ok, BusinessBilling.t()} | {:error, record_error()}
   def grant_free_seats(%Ctx{} = ctx, free_seats) do
-    with {:ok, billing} <- billing_for(ctx.business_id) do
+    Repo.transact(fn -> update_free_seats(ctx.business_id, free_seats) end)
+  end
+
+  defp update_free_seats(business_id, free_seats) do
+    with {:ok, billing} <- lock_business_billing(business_id) do
       billing |> BusinessBilling.update_changeset(%{free_seats: free_seats}) |> Repo.update()
     end
   end
@@ -56,7 +58,8 @@ defmodule Easy.Billing do
 
   defp seat_summary(%Ctx{business_id: business_id} = ctx) do
     with {:ok, billing} <- billing_for(business_id) do
-      used = used_seats(business_id)
+      {:ok, used} = Easy.CoachingTerms.used_seats(ctx)
+      limit = BusinessBilling.seat_limit(billing)
       owner = owner?(ctx)
       unresolved = unresolved_checkout?(business_id)
       controls = billing_controls(billing, owner, unresolved)
@@ -66,10 +69,9 @@ defmodule Easy.Billing do
          status: billing.status,
          free_seats: billing.free_seats,
          paid_seats: billing.paid_seats,
-         seat_limit: BusinessBilling.seat_limit(billing),
+         seat_limit: limit,
          used_seats: used,
-         available_seats: BusinessBilling.available_seats(billing, used),
-         awaiting_seat_count: count_awaiting_seat(business_id),
+         available_seats: limit - used,
          monthly_seat_price_inr: controls.monthly_seat_price_inr,
          monthly_total_inr: controls.monthly_total_inr,
          billing_enabled: controls.billing_enabled,
@@ -84,40 +86,11 @@ defmodule Easy.Billing do
     end
   end
 
-  # Runs a seat-consuming write atomically with the capacity check. Locks the
-  # business billing row so two concurrent invites/reactivations can't both pass
-  # the check and exceed the limit: whichever commits first, the second re-reads
-  # the now-higher usage under the same lock and is rejected. No Razorpay call
-  # runs here, so no lock is ever held over HTTP.
-  @spec reserve_seat(Ctx.t(), (-> {:ok, value} | {:error, reason})) ::
-          {:ok, value} | {:error, :seat_limit_reached | record_error() | reason}
-        when value: var, reason: var
-  def reserve_seat(%Ctx{business_id: business_id}, write) when is_function(write, 0) do
-    Repo.transact(fn -> reserve_within_lock(business_id, write) end)
-  end
-
-  defp reserve_within_lock(business_id, write) do
-    with {:ok, billing} <- lock_business_billing(business_id) do
-      if within_seat_limit?(business_id, billing), do: write.(), else: {:error, :seat_limit_reached}
-    end
-  end
-
-  defp within_seat_limit?(business_id, billing) do
-    BusinessBilling.available_seats(billing, used_seats(business_id)) > 0
-  end
-
-  # Upsert-lock: INSERT ... ON CONFLICT DO UPDATE both guarantees the row exists
-  # and takes a row lock held for the rest of the transaction, so a concurrent
-  # reserve_seat for the same business serializes here — even on a business whose
-  # billing row did not exist yet.
   defp lock_business_billing(business_id) do
-    business_id
-    |> BusinessBilling.insert_changeset()
-    |> Repo.insert(
-      on_conflict: [set: [business_id: business_id]],
-      conflict_target: :business_id,
-      returning: true
-    )
+    case Repo.one(from b in BusinessBilling, where: b.business_id == ^business_id, lock: "FOR UPDATE") do
+      nil -> {:error, :not_found}
+      billing -> {:ok, billing}
+    end
   end
 
   defp ensure_owner(%Ctx{} = ctx) do
@@ -183,41 +156,6 @@ defmodule Easy.Billing do
   end
 
   defp pending_checkout(_business_id, _owner, _enabled), do: nil
-
-  # pending -> active does not change used_seats (pending already counts),
-  # so "no capacity at accept" means usage already exceeds the limit
-  # (seats were reduced since the invite).
-  @spec seat_status_for_invitation(Client.t()) ::
-          {:ok, {:active | :inactive, nil | :awaiting_seat}} | {:error, record_error()}
-  def seat_status_for_invitation(%Client{business_id: business_id}) do
-    with {:ok, billing} <- billing_for(business_id) do
-      {:ok, BusinessBilling.invitation_status(billing, used_seats(business_id))}
-    end
-  end
-
-  defp activate_with_capacity(%BusinessBilling{business_id: business_id} = billing) do
-    available = BusinessBilling.available_seats(billing, used_seats(business_id))
-
-    if available > 0 do
-      awaiting = Client |> Client.for_business(business_id) |> Client.awaiting_seat()
-
-      ids =
-        awaiting
-        |> Client.oldest()
-        |> limit(^available)
-        |> select([client], client.id)
-        |> Repo.all()
-
-      {count, _} =
-        awaiting
-        |> where([client], client.id in ^ids)
-        |> Repo.update_all(set: [status: :active, inactive_reason: nil, updated_at: DateTime.utc_now(:second)])
-
-      {:ok, count}
-    else
-      {:ok, 0}
-    end
-  end
 
   defp record_event(business_id, kind, attrs) do
     occurred_at = attrs[:occurred_at] || DateTime.utc_now(:second)
@@ -707,40 +645,10 @@ defmodule Easy.Billing do
   defp apply_cancellation_result(_billing), do: {:error, :checkout_in_progress}
 
   defp billing_for(business_id) do
-    case fetch_billing(business_id) do
-      {:error, :not_found} -> create_default_billing(business_id)
-      result -> result
-    end
-  end
-
-  defp fetch_billing(business_id) do
     case Repo.get_by(BusinessBilling, business_id: business_id) do
       nil -> {:error, :not_found}
       billing -> {:ok, billing}
     end
-  end
-
-  defp create_default_billing(business_id) do
-    with {:ok, _billing} <-
-           business_id
-           |> BusinessBilling.insert_changeset()
-           |> Repo.insert(on_conflict: :nothing, conflict_target: [:business_id]) do
-      fetch_billing(business_id)
-    end
-  end
-
-  defp used_seats(business_id) do
-    Client
-    |> Client.for_business(business_id)
-    |> Client.occupying_seat()
-    |> Repo.aggregate(:count, :id)
-  end
-
-  defp count_awaiting_seat(business_id) do
-    Client
-    |> Client.for_business(business_id)
-    |> Client.awaiting_seat()
-    |> Repo.aggregate(:count, :id)
   end
 
   defp owner?(%Ctx{business_id: business_id, user_id: user_id}) do
@@ -838,10 +746,8 @@ defmodule Easy.Billing do
   defp apply_quantity_transition(_billing, _quantity), do: :ok
 
   defp apply_seat_change(billing, changeset) do
-    with {:ok, updated} <- Repo.update(changeset),
-         :ok <- record_seat_change(billing, updated.paid_seats),
-         {:ok, _count} <- activate_with_capacity(updated) do
-      :ok
+    with {:ok, updated} <- Repo.update(changeset) do
+      record_seat_change(billing, updated.paid_seats)
     end
   end
 
@@ -857,7 +763,7 @@ defmodule Easy.Billing do
   defp apply_cancelled_transition(%BusinessBilling{status: :cancelled}), do: :ok
 
   defp apply_cancelled_transition(billing) do
-    with {:ok, _billing} <-
+    with {:ok, _updated} <-
            billing
            |> BusinessBilling.update_changeset(%{status: :cancelled, paid_seats: 0, cancellation_state: nil})
            |> Repo.update() do

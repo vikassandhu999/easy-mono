@@ -11,7 +11,7 @@ defmodule Easy.Training.ExecutionHistoryTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+    client = insert(:client, business: coach.business, coach: coach)
     ctx = %Ctx{business_id: coach.business_id, user_id: client.user_id, client_id: client.id}
     coach_ctx = %Ctx{business_id: coach.business_id, user_id: coach.user_id, coach_id: coach.id}
 
@@ -22,7 +22,7 @@ defmodule Easy.Training.ExecutionHistoryTest do
     assert {:ok, session} = Execution.start_client_session(ctx.ctx, nil, %{})
     before = Repo.get!(TrainingSession, session.id)
     client_before = Repo.get!(Client, ctx.client.id)
-    other_client = insert(:client, business: ctx.coach.business, creator: ctx.coach, assigned_coach: ctx.coach)
+    other_client = insert(:client, business: ctx.coach.business, coach: ctx.coach)
     foreign = insert(:client)
 
     other_ctx = %{ctx.ctx | client_id: other_client.id, user_id: other_client.user_id}
@@ -233,7 +233,7 @@ defmodule Easy.Training.ExecutionHistoryTest do
 
     test "trainers cannot read another trainer's client history", ctx do
       other_trainer = insert(:coach, business: ctx.coach.business)
-      other_client = insert(:client, business: ctx.coach.business, creator: other_trainer, assigned_coach: other_trainer)
+      other_client = insert(:client, business: ctx.coach.business, coach: other_trainer)
       session = insert(:workout_session, business: ctx.coach.business, client: other_client, state: :completed)
 
       assert {:error, :not_found} = Execution.list_sessions_for_client(ctx.coach_ctx, other_client.id)

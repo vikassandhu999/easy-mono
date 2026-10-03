@@ -67,7 +67,7 @@ function ChoosePlan({person}: {person: Client}) {
   const plans = useTrainingTemplates({search, archived: false});
   const location = useLocation();
   const {state} = useListLocation(routes.home);
-  const name = `${person.first_name ?? ''} ${person.last_name ?? ''}`.trim() || person.email || 'this client';
+  const name = person.preferred_name || person.full_name || person.email || 'this client';
   return (
     <Page>
       <PageHeader
@@ -158,7 +158,7 @@ function Preview({person, templateId}: {person: Client; templateId: string}) {
   }, [stale, query.isError, query.isFetching]);
   const uncertain = assignment.isError && (!(assignment.error instanceof ApiError) || assignment.error.status >= 500);
   const available = plan?.kind === 'template' && plan.status === 'active';
-  const name = `${person.first_name ?? ''} ${person.last_name ?? ''}`.trim() || person.email || 'this client';
+  const name = person.preferred_name || person.full_name || person.email || 'this client';
   const submit = form.handleSubmit(async (values) => {
     if (!plan || !available || stale) {
       return;
@@ -230,12 +230,12 @@ function Preview({person, templateId}: {person: Client; templateId: string}) {
               </p>
             </div>
             {!available && <FormError message="This training template is no longer available. Choose another plan." />}
-            {person.status === 'inactive' && (
+            {(person.state === 'ended' || person.state === 'joined') && (
               <p className="text-sm text-muted-foreground">
-                This client is inactive. Assigning a plan does not reactivate their access.
+                Coaching is not active. A prepared plan comes into force when a new coaching term starts.
               </p>
             )}
-            {!person.joined_at && (
+            {person.state === 'invited' && (
               <p className="text-sm text-muted-foreground">
                 They can access the plan after accepting their invitation.
               </p>

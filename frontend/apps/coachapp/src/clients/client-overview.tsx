@@ -9,9 +9,10 @@ import {Button, buttonVariants} from '../ui/button';
 import {FormError} from '../ui/form-error';
 import {useListLocation} from '../ui/list-location';
 import {Page, PageHeader, Surface} from '../ui/page';
-import {ClientInvitation} from './client-invitation';
+import {ClientCoaching} from './client-coaching';
 import {ClientNutritionPlans} from './client-nutrition-plans';
 import {ClientTrainingPlans} from './client-training-plans';
+import {coachingSummary} from './coaching';
 
 export function ClientOverview() {
   const {id = ''} = useParams();
@@ -74,11 +75,9 @@ function Overview({id}: {id: string}) {
   return (
     <Page className="client-page">
       <PageHeader
-        title={
-          `${person.first_name ?? ''} ${person.last_name ?? ''}`.trim() || person.email || person.phone || 'Client'
-        }
+        title={person.preferred_name || person.full_name || person.email || person.phone || 'Client'}
         eyebrow="Client overview"
-        description={person.email || person.phone}
+        description={coachingSummary(person)}
         back={{to: listLocation, label: 'Back to clients'}}
         actions={
           <>
@@ -147,7 +146,7 @@ function Overview({id}: {id: string}) {
           {notice.assigned} assigned.
         </p>
       )}
-      <ClientInvitation person={person} />
+      <ClientCoaching person={person} />
       <ClientTrainingPlans
         person={person}
         query={trainingPlans}

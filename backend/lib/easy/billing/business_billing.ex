@@ -12,8 +12,6 @@ defmodule Easy.Billing.BusinessBilling do
   @statuses [:free, :active, :past_due, :cancel_at_period_end, :cancelled]
 
   schema "business_billing" do
-    # ponytail: 10 free seats while billing is disabled for first users; drop back
-    # to 2 when Razorpay goes live and paid seats become the growth path.
     field :free_seats, :integer, default: 10
     field :paid_seats, :integer, default: 0
     field :status, Ecto.Enum, values: @statuses, default: :free
@@ -46,14 +44,6 @@ defmodule Easy.Billing.BusinessBilling do
       {:ok, %{seats_to_add: count}} -> {:ok, count}
       {:error, changeset} -> {:error, changeset}
     end
-  end
-
-  @spec available_seats(t(), non_neg_integer()) :: integer()
-  def available_seats(%__MODULE__{} = billing, used), do: seat_limit(billing) - used
-
-  @spec invitation_status(t(), non_neg_integer()) :: {:active, nil} | {:inactive, :awaiting_seat}
-  def invitation_status(%__MODULE__{} = billing, used) do
-    if available_seats(billing, used) < 0, do: {:inactive, :awaiting_seat}, else: {:active, nil}
   end
 
   @spec insert_changeset(String.t(), map()) :: Ecto.Changeset.t()

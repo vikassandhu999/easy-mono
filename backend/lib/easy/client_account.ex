@@ -5,22 +5,25 @@ defmodule Easy.ClientAccount do
   alias Easy.Orgs
   alias Easy.Repo
 
+  require Ecto.Query
+
   @type account_profile :: %{
           client: Client.t(),
           coach: Orgs.Coach.t() | nil,
-          default_weight_unit: :kg | :lbs,
+          unit_system: :metric | :imperial,
           timezone: String.t(),
           local_date: Date.t()
         }
 
   @type calendar :: %{timezone: String.t(), local_date: Date.t()}
 
-  @spec get_active_client(Ctx.t()) :: {:ok, Client.t()} | {:error, :not_found}
-  def get_active_client(%Ctx{} = ctx) do
+  @spec get_accepted_client(Ctx.t()) :: {:ok, Client.t()} | {:error, :not_found}
+  def get_accepted_client(%Ctx{} = ctx) do
     Client
     |> Client.for_business(ctx.business_id)
     |> Client.for_user(ctx.user_id)
-    |> Client.active()
+    |> Ecto.Query.where([client], not is_nil(client.user_id))
+    |> Ecto.Query.preload([:business, :terms])
     |> Repo.one()
     |> ok_or_not_found()
   end
@@ -30,6 +33,7 @@ defmodule Easy.ClientAccount do
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
       Client
       |> Client.for_business(ctx.business_id)
+      |> Ecto.Query.preload([:business, :terms])
       |> Repo.get(client_id)
       |> ok_or_not_found()
     end
@@ -74,29 +78,11 @@ defmodule Easy.ClientAccount do
     end
   end
 
-  @spec update_client_required_services(Ctx.t(), Client.t(), [Client.service()] | nil) ::
-          {:ok, Client.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_client_required_services(
-        %Ctx{business_id: business_id, client_id: client_id},
-        %Client{business_id: business_id, id: client_id} = client,
-        services
-      )
-      when is_binary(client_id) do
-    case services do
-      nil -> {:ok, client}
-      services -> client |> Client.update_changeset(Date.utc_today(), %{required_services: services}) |> Repo.update()
-    end
-  end
-
-  def update_client_required_services(%Ctx{}, %Client{}, _services), do: {:error, :not_found}
-
   defp load_profile(ctx, client) do
-    with {:ok, business} <- Orgs.get_business(ctx) do
-      coach = get_assigned_coach(ctx, client.assigned_coach_id)
+    coach = get_assigned_coach(ctx, client.coach_id)
 
-      profile = %{client: client, coach: coach, default_weight_unit: business.default_weight_unit}
-      {:ok, Map.merge(profile, client_calendar(client, DateTime.utc_now()))}
-    end
+    profile = %{client: client, coach: coach, unit_system: client.unit_system}
+    {:ok, Map.merge(profile, client_calendar(client, DateTime.utc_now()))}
   end
 
   defp client_calendar(client, now) do

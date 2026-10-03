@@ -4,7 +4,6 @@ defmodule EasyWeb.WebhookControllerTest do
   import Ecto.Query
 
   alias Easy.Billing.BusinessBilling
-  alias Easy.Clients.Client
   alias Easy.Repo
 
   import Easy.Factory
@@ -36,8 +35,8 @@ defmodule EasyWeb.WebhookControllerTest do
   end
 
   setup do
-    business = insert(:business)
-    billing = insert(:business_billing, business: business, razorpay_subscription_id: "sub_wh", status: :free)
+    business = insert(:business, billing: build(:business_billing, business: nil, free_seats: 2))
+    billing = business.billing |> Ecto.Changeset.change(razorpay_subscription_id: "sub_wh", status: :free) |> Easy.Repo.update!()
     %{business: business, billing: billing}
   end
 
@@ -55,6 +54,7 @@ defmodule EasyWeb.WebhookControllerTest do
     assert billing.paid_seats == 3
     assert billing.status == :active
     assert billing.current_period_end
+    assert BusinessBilling.seat_limit(billing_for(business.id)) == 5
 
     kinds = business.id |> events_for() |> Enum.map(& &1.kind)
     assert :payment_succeeded in kinds
@@ -71,15 +71,16 @@ defmodule EasyWeb.WebhookControllerTest do
     assert business.id |> events_for() |> Enum.count(&(&1.kind == :payment_succeeded)) == 1
   end
 
-  test "payment success activates awaiting_seat clients", %{conn: conn, business: business} do
-    insert(:client, business: business, status: :active)
-    insert(:client, business: business, status: :active)
-    waiting = insert(:client, business: business, status: :inactive, inactive_reason: :awaiting_seat)
+  test "payment success adds capacity without starting joined clients", %{conn: conn, business: business} do
+    insert_list(2, :client, business: business)
+    joined = insert(:client, business: business, terms: [])
 
-    post_webhook(conn, charged_payload("sub_wh", 2, 99_800))
+    assert post_webhook(conn, charged_payload("sub_wh", 2, 99_800)).status == 200
+    assert BusinessBilling.seat_limit(billing_for(business.id)) == 4
+    assert Easy.CoachingTerms.used_seats(%Easy.Ctx{business_id: business.id, user_id: business.owner_user_id}) == {:ok, 2}
 
-    assert Repo.get!(Client, waiting.id).status == :active
-    assert Repo.get!(Client, waiting.id).inactive_reason == nil
+    assert %{"data" => %{"state" => "joined", "current_term" => nil, "terms" => []}} =
+             build_conn() |> authenticate_client(joined) |> get("/v1/client/me") |> json_response(200)
   end
 
   test "payment failure sets past_due", %{conn: conn, business: business} do
@@ -97,8 +98,8 @@ defmodule EasyWeb.WebhookControllerTest do
     assert business.id |> events_for() |> Enum.any?(&(&1.kind == :payment_failed))
   end
 
-  test "cancellation clears paid seats but existing clients keep access", %{conn: conn, business: business} do
-    active = insert(:client, business: business, status: :active)
+  test "cancellation below usage clears paid seats but existing clients keep access", %{conn: conn, business: business} do
+    active_clients = insert_list(3, :client, business: business)
     post_webhook(conn, charged_payload("sub_wh", 3, 149_700))
 
     conn2 =
@@ -111,7 +112,13 @@ defmodule EasyWeb.WebhookControllerTest do
     billing = billing_for(business.id)
     assert billing.status == :cancelled
     assert billing.paid_seats == 0
-    assert Repo.get!(Client, active.id).status == :active
+    assert BusinessBilling.seat_limit(billing_for(business.id)) == 2
+    assert Easy.CoachingTerms.used_seats(%Easy.Ctx{business_id: business.id, user_id: business.owner_user_id}) == {:ok, 3}
+
+    for client <- active_clients do
+      assert %{"data" => %{"state" => "active", "current_term" => %{"ends_on" => nil}}} =
+               build_conn() |> authenticate_client(client) |> get("/v1/client/me") |> json_response(200)
+    end
   end
 
   test "events for an unknown subscription are acked and ignored", %{conn: conn} do

@@ -214,16 +214,6 @@ defmodule Easy.Repo.Migrations.CreateNutrition do
              """
            )
 
-    create constraint(:nutrition_plans, :nutrition_plans_no_overlapping_coverage,
-             exclude: """
-             gist (
-               business_id WITH =,
-               client_id WITH =,
-               daterange(start_date, COALESCE(end_date, 'infinity'::date), '[]') WITH &&
-             ) WHERE (kind = 'client_plan' AND archived_at IS NULL AND start_date IS NOT NULL)
-             """
-           )
-
     create constraint(:nutrition_plans, :nutrition_plans_period_check,
              check: "start_date IS NULL OR end_date IS NULL OR start_date <= end_date"
            )

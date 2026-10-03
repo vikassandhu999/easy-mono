@@ -22,9 +22,9 @@ try {
       await page.getByRole('button', {name: 'Verify and continue'}).click();
       await page.getByRole('link', {name: 'Your account', exact: true}).click();
       await page.getByRole('link', {name: 'Personal details', exact: true}).click();
-      await page.getByLabel('First name').fill('Keep my unfinished details');
+      await page.getByLabel('Full name').fill('Keep my unfinished details');
       await page.reload();
-      await expect(page.getByLabel('First name')).toHaveValue('Keep my unfinished details');
+      await expect(page.getByLabel('Full name')).toHaveValue('Keep my unfinished details');
       const saved = await page.evaluate(() => ({...localStorage}));
       await context.addInitScript(() => {
         const read = Storage.prototype.getItem;
@@ -57,7 +57,7 @@ try {
         delete sessionStorage.startupReadFailure;
       });
       await retry.click();
-      await expect(page.getByLabel('First name')).toHaveValue('Keep my unfinished details');
+      await expect(page.getByLabel('Full name')).toHaveValue('Keep my unfinished details');
       await expect(page.getByText('Your unsaved details were restored.')).toBeVisible();
       expect(errors).toEqual([]);
       results.push({width, repeatedFailure: true, retryRestoresAccountAndDraft: true});

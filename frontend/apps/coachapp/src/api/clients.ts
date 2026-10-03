@@ -1,16 +1,16 @@
 import {useInfiniteQuery, useMutation, useQuery} from '@tanstack/react-query';
 import {ApiError, call, client} from './client';
-import {billingKeys, clientKeys} from './keys';
+import {billingKeys, businessKeys, clientKeys} from './keys';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
-import type {Client, ClientInvite, ClientUpdate, paths} from './schema';
+import type {Client, ClientInvite, ClientUpdate, CoachingTermUpdate, paths} from './schema';
 import {getSession} from './session';
 
 export type {Client, ClientInvite, ClientUpdate} from './schema';
 
 export type ClientFilters = Pick<
   NonNullable<paths['/v1/coach/clients']['get']['parameters']['query']>,
-  'search' | 'status' | 'stage' | 'assigned_coach_id'
+  'q' | 'state' | 'coach_id'
 >;
 
 export function useClients(filters: ClientFilters) {
@@ -38,6 +38,7 @@ async function updateClient(result: {data: Client}, _input: unknown, sessionId: 
   await Promise.all([
     queryClient.invalidateQueries({queryKey: clientKeys.lists()}),
     queryClient.invalidateQueries({queryKey: billingKeys.all}),
+    queryClient.invalidateQueries({queryKey: businessKeys.all}),
   ]);
   if (getSession()?.id !== sessionId) {
     throw new Error('Your session changed. Please try again.');
@@ -47,13 +48,14 @@ async function updateClient(result: {data: Client}, _input: unknown, sessionId: 
 export function useInviteClient() {
   return useMutation({
     onMutate: () => getSession()?.id,
-    mutationFn: (body: ClientInvite) => call(client.POST('/v1/coach/clients/invite', {body})),
+    mutationFn: (body: ClientInvite) => call(client.POST('/v1/coach/clients', {body})),
     onSuccess: updateClient,
     onError: async (_error, _input, sessionId) => {
       if (sessionId && getSession()?.id === sessionId) {
         await Promise.all([
           queryClient.invalidateQueries({queryKey: clientKeys.lists()}),
           queryClient.invalidateQueries({queryKey: billingKeys.all}),
+          queryClient.invalidateQueries({queryKey: businessKeys.all}),
         ]);
       }
     },
@@ -63,7 +65,7 @@ export function useInviteClient() {
 export function useResendClientInvitation() {
   return useMutation({
     onMutate: () => getSession()?.id,
-    mutationFn: (id: string) => call(client.POST('/v1/coach/clients/{id}/resend-invite', {params: {path: {id}}})),
+    mutationFn: (id: string) => call(client.POST('/v1/coach/clients/{id}/invite', {params: {path: {id}}})),
     onSuccess: updateClient,
     onError: async (_error, id, sessionId) => {
       if (sessionId && getSession()?.id === sessionId) {
@@ -116,12 +118,53 @@ export function useReassignClient(id: string) {
   return useMutation({
     onMutate: () => getSession()?.id,
     mutationFn: (coachId: string) =>
-      call(client.POST('/v1/coach/clients/{id}/reassign', {params: {path: {id}}, body: {coach_id: coachId}})),
+      call(client.PATCH('/v1/coach/clients/{id}', {params: {path: {id}}, body: {coach_id: coachId}})),
     onSuccess: async (result, input, sessionId) => {
       await updateClient(result, input, sessionId);
       await queryClient.invalidateQueries();
       if (getSession()?.id !== sessionId) {
         throw new Error('Your session changed.');
+      }
+    },
+  });
+}
+
+export function useStartCoaching(clientId: string) {
+  return useMutation({
+    onMutate: () => getSession()?.id,
+    mutationFn: () => call(client.POST('/v1/coach/clients/{id}/terms', {params: {path: {id: clientId}}})),
+    onSuccess: async (_result, _input, sessionId) => {
+      if (!sessionId || getSession()?.id !== sessionId) {
+        throw new Error('Your session changed. Please try again.');
+      }
+      await queryClient.invalidateQueries();
+      if (getSession()?.id !== sessionId) {
+        throw new Error('Your session changed. Please try again.');
+      }
+    },
+    onError: async (_error, _input, sessionId) => {
+      if (sessionId && getSession()?.id === sessionId) {
+        await Promise.all([
+          queryClient.invalidateQueries({queryKey: businessKeys.all}),
+          queryClient.invalidateQueries({queryKey: clientKeys.detail(clientId)}),
+        ]);
+      }
+    },
+  });
+}
+
+export function useUpdateCoachingTerm() {
+  return useMutation({
+    onMutate: () => getSession()?.id,
+    mutationFn: ({id, ends_on}: CoachingTermUpdate & {id: string}) =>
+      call(client.PATCH('/v1/coach/terms/{id}', {params: {path: {id}}, body: {ends_on}})),
+    onSuccess: async (_result, _input, sessionId) => {
+      if (!sessionId || getSession()?.id !== sessionId) {
+        throw new Error('Your session changed. Please try again.');
+      }
+      await queryClient.invalidateQueries();
+      if (getSession()?.id !== sessionId) {
+        throw new Error('Your session changed. Please try again.');
       }
     },
   });

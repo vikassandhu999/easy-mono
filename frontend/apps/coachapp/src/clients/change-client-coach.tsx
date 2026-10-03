@@ -25,15 +25,13 @@ function ChooseCoach() {
   const {id = ''} = useParams();
   const person = useClient(id);
   const [params] = useSearchParams();
-  const team = useTeam({status: 'active', search: params.get('search') ?? ''});
+  const team = useTeam({state: 'active', q: params.get('search') ?? ''});
   const mutation = useReassignClient(id);
   const [selected, setSelected] = useState<TeamMember | null>(null);
   const [error, setError] = useState('');
   const list = useListLocation(routes.home);
   const navigate = useNavigate();
-  const clientName = person.data
-    ? `${person.data.data.first_name ?? ''} ${person.data.data.last_name ?? ''}`.trim() || 'Client'
-    : 'Client';
+  const clientName = person.data ? person.data.data.preferred_name || person.data.data.full_name || 'Client' : 'Client';
   const profilePath = generatePath(routes.clientProfile, {id});
   async function assign() {
     if (!selected) {
@@ -63,8 +61,8 @@ function ChooseCoach() {
           <>
             <p className="text-sm text-muted-foreground">
               Assigned to{' '}
-              <span className="font-medium text-foreground">{person.data.data.assigned_coach_name || 'a coach'}</span>.
-              Only active team members can receive clients.
+              <span className="font-medium text-foreground">{person.data.data.coach_name || 'a coach'}</span>. Only
+              active team members can receive clients.
             </p>
             {!selected && <FormError message={error || undefined} />}
             <ListSearch
@@ -96,9 +94,9 @@ function ChooseCoach() {
                   </div>
                   <Button
                     variant="outline"
-                    isDisabled={coach.id === person.data.data.assigned_coach_id}
+                    isDisabled={coach.id === person.data.data.coach_id}
                     aria-label={
-                      coach.id === person.data.data.assigned_coach_id
+                      coach.id === person.data.data.coach_id
                         ? `Current coach: ${coachName(coach)}`
                         : `Choose ${coachName(coach)}`
                     }
@@ -107,7 +105,7 @@ function ChooseCoach() {
                       setSelected(coach);
                     }}
                   >
-                    {coach.id === person.data.data.assigned_coach_id ? 'Current coach' : 'Choose'}
+                    {coach.id === person.data.data.coach_id ? 'Current coach' : 'Choose'}
                   </Button>
                 </div>
               )}

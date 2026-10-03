@@ -1,8 +1,6 @@
 defmodule Easy.Clients do
   import Ecto.Query
 
-  alias Easy.Billing
-  alias Easy.ClientAccess
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Nutrition.PlanReader
@@ -17,22 +15,10 @@ defmodule Easy.Clients do
         Client
         |> Client.for_business(ctx.business_id)
         |> Client.assigned_to(coach_id)
-        |> Repo.update_all(set: [assigned_coach_id: ctx.coach_id])
+        |> Repo.update_all(set: [coach_id: ctx.coach_id])
 
       {:ok, count}
     end
-  end
-
-  @spec advance_stage_to_coaching(Ctx.t(), String.t()) :: {:ok, non_neg_integer()}
-  def advance_stage_to_coaching(%Ctx{} = ctx, client_id) do
-    {count, _} =
-      Client
-      |> Client.for_business(ctx.business_id)
-      |> Client.for_stage(:onboarding)
-      |> where([client], client.id == ^client_id)
-      |> Repo.update_all(set: [stage: :coaching, updated_at: DateTime.utc_now(:second)])
-
-    {:ok, count}
   end
 
   @spec get_client_with_preloads(Ctx.t(), String.t()) ::
@@ -48,46 +34,36 @@ defmodule Easy.Clients do
         {:error, :not_found}
 
       client ->
-        {:ok, put_expiring_flag(client)}
-    end
-  end
-
-  @spec reassign_client(Ctx.t(), String.t(), String.t()) ::
-          {:ok, Client.t()} | {:error, :not_owner | :not_found | :coach_not_active | Ecto.Changeset.t()}
-  def reassign_client(%Ctx{} = ctx, client_id, coach_id) do
-    with :ok <- ensure_owner(ctx) do
-      Repo.transact(fn -> reassign_to_locked_coach(ctx, client_id, coach_id) end)
+        {:ok, Client.derive(client, DateTime.utc_now())}
     end
   end
 
   @spec list_clients(Ctx.t(), keyword()) ::
-          {:ok, %{clients: [Client.t()], count: non_neg_integer(), summary: Client.status_counts()}}
+          {:ok, %{clients: [Client.t()], count: non_neg_integer(), summary: Client.state_counts()}}
   def list_clients(%Ctx{} = ctx, opts \\ []) do
-    search = Keyword.get(opts, :search, "")
-    status = Keyword.get(opts, :status)
-    stage = Keyword.get(opts, :stage)
+    search = Keyword.get(opts, :q, "")
+    state = Keyword.get(opts, :state)
     sort = Keyword.get(opts, :sort, :newest)
     include_plans? = Keyword.get(opts, :include_plans, false)
 
-    visible = Client |> Client.for_business(ctx.business_id) |> Client.visible_to(ctx) |> Client.for_assigned_coach(Keyword.get(opts, :assigned_coach_id))
+    visible = Client |> Client.for_business(ctx.business_id) |> Client.visible_to(ctx) |> Client.for_assigned_coach(Keyword.get(opts, :coach_id))
 
     base =
       visible
       |> Client.search(search)
-      |> Client.for_status(status)
-      |> Client.for_stage(stage)
+      |> Client.for_state(state)
 
     {:ok,
      %{
        count: Repo.aggregate(base, :count, :id),
-       summary: visible |> Client.select_status_counts() |> Repo.one(),
+       summary: state_counts(visible),
        clients:
          base
          |> sort_clients(sort)
          |> Easy.Utils.paginate(opts)
          |> Client.include_preloads(ctx.business_id)
          |> Repo.all()
-         |> Enum.map(&put_expiring_flag/1)
+         |> Enum.map(&Client.derive(&1, DateTime.utc_now()))
          |> put_plan_names_for_clients(ctx, include_plans?)
      }}
   end
@@ -117,8 +93,8 @@ defmodule Easy.Clients do
   end
 
   defp list_cursor_page(ctx, cursor, opts) do
-    visible = Client |> Client.for_business(ctx.business_id) |> Client.visible_to(ctx) |> Client.for_assigned_coach(Keyword.get(opts, :assigned_coach_id))
-    base = visible |> Client.search(Keyword.get(opts, :search, "")) |> Client.for_status(Keyword.get(opts, :status)) |> Client.for_stage(Keyword.get(opts, :stage))
+    visible = Client |> Client.for_business(ctx.business_id) |> Client.visible_to(ctx) |> Client.for_assigned_coach(Keyword.get(opts, :coach_id))
+    base = visible |> Client.search(Keyword.get(opts, :q, "")) |> Client.for_state(Keyword.get(opts, :state))
     limit = Easy.CursorPage.limit(opts)
 
     with {:ok, query} <- Easy.CursorPage.query(base, cursor, limit) do
@@ -128,11 +104,11 @@ defmodule Easy.Clients do
         query
         |> Client.include_preloads(ctx.business_id)
         |> Repo.all()
-        |> Enum.map(&put_expiring_flag/1)
+        |> Enum.map(&Client.derive(&1, DateTime.utc_now()))
         |> put_plan_names_for_clients(ctx, Keyword.get(opts, :include_plans, false))
 
       page = Easy.CursorPage.finish(rows, limit, count)
-      {:ok, Map.put(page, :summary, visible |> Client.select_status_counts() |> Repo.one())}
+      {:ok, Map.put(page, :summary, state_counts(visible))}
     end
   end
 
@@ -148,13 +124,30 @@ defmodule Easy.Clients do
     end
   end
 
-  # Reactivation (inactive -> active) consumes a seat, so it reserves one atomically;
-  # every other update is a plain write.
   defp write_client_update(ctx, client, attrs) do
-    changeset = Client.update_changeset(client, Date.utc_today(), attrs)
-    update = fn -> Repo.update(changeset) end
-    if Client.reactivation?(changeset), do: Billing.reserve_seat(ctx, update), else: update.()
+    changeset = Client.update_changeset(client, attrs)
+    coach_id = changeset.params["coach_id"]
+
+    if coach_id && coach_id != client.coach_id do
+      reassign_and_update(ctx, coach_id, changeset)
+    else
+      Repo.update(changeset)
+    end
   end
+
+  defp reassign_and_update(ctx, coach_id, changeset) do
+    with :ok <- ensure_owner(ctx) do
+      Repo.transact(fn -> update_with_locked_coach(ctx, coach_id, changeset) end)
+    end
+  end
+
+  defp update_with_locked_coach(ctx, coach_id, changeset) do
+    with {:ok, coach} <- get_active_coach_for_update(ctx, coach_id) do
+      changeset |> Ecto.Changeset.put_change(:coach_id, coach.id) |> Repo.update()
+    end
+  end
+
+  defp state_counts(query), do: query |> Client.select_state_counts() |> Repo.one()
 
   # Opt-in (`include_plans: true`): the clients list wants each row's in-force plan
   # names for its chips. Two extra queries per PAGE, not per row, and skipped
@@ -180,27 +173,17 @@ defmodule Easy.Clients do
     end)
   end
 
-  defp put_expiring_flag(%Client{} = client), do: Client.put_expiring_flag(client, Date.utc_today())
-
   defp preload_client(%Client{} = client) do
     client =
       client
-      |> Repo.preload([:user, :business, :creator, assigned_coach: Coach.for_business(client.business_id)], force: true)
-      |> put_expiring_flag()
+      |> Repo.preload([:business, :terms, coach: Coach.for_business(client.business_id)], force: true)
+      |> Client.derive(DateTime.utc_now())
 
     {:ok, client}
   end
 
   defp ensure_owner(%Ctx{owner?: true}), do: :ok
   defp ensure_owner(%Ctx{}), do: {:error, :not_owner}
-
-  defp reassign_to_locked_coach(ctx, client_id, coach_id) do
-    with {:ok, coach} <- get_active_coach_for_update(ctx, coach_id),
-         {:ok, client} <- ClientAccess.authorize_client(ctx, client_id),
-         {:ok, updated_client} <- client |> Client.reassign_changeset(coach.id) |> Repo.update() do
-      preload_client(updated_client)
-    end
-  end
 
   defp get_active_coach_for_update(%Ctx{} = ctx, coach_id) do
     Coach

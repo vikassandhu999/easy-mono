@@ -3,11 +3,14 @@ import {generatePath, Link, useLocation, useNavigate, useParams, useSearchParams
 import {errorMessage} from '../api/client';
 import {useClients} from '../api/clients';
 import {type TeamAction, type TeamMember, useTeamAction, useTeamMember} from '../api/team';
+import {clientStateLabels} from '../clients/coaching';
 import {routes} from '../routes';
-import {Button} from '../ui/button';
+import {Button, buttonVariants} from '../ui/button';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FormError} from '../ui/form-error';
 import {InfiniteList} from '../ui/infinite-list';
+import {Input} from '../ui/input';
+import {Label} from '../ui/label';
 import {useListLocation} from '../ui/list-location';
 import {ListSearch} from '../ui/list-search';
 import {OwnerOnly} from '../ui/owner-only';
@@ -50,7 +53,7 @@ function MemberPage() {
               </div>
             )}
             <MemberAccess member={query.data.data} />
-            {query.data.data.status !== 'invited' && <AssignedClients member={query.data.data} />}
+            {query.data.data.state !== 'invited' && <AssignedClients member={query.data.data} />}
           </>
         ) : (
           <Surface>
@@ -96,17 +99,11 @@ const accessCopy = {
     description: 'This invitation link will stop working. You can invite this coach again later.',
     success: 'Invitation revoked.',
   },
-  deactivate: {
-    title: 'Deactivate this coach?',
-    action: 'Deactivate coach',
+  remove: {
+    title: 'Remove this coach?',
+    action: 'Remove coach',
     description: 'They will be signed out and lose access. All their assigned clients will move to you, the owner.',
-    success: 'Coach deactivated. Their clients are assigned to you.',
-  },
-  reactivate: {
-    title: 'Reactivate this coach?',
-    action: 'Reactivate coach',
-    description: 'They can sign in again. Clients stay with their current coach until you reassign them.',
-    success: 'Coach reactivated. You can assign clients to them.',
+    success: 'Coach removed. Their clients are assigned to you.',
   },
 };
 function MemberAccess({member}: {member: TeamMember}) {
@@ -119,9 +116,7 @@ function MemberAccess({member}: {member: TeamMember}) {
   const state: unknown = location.state;
   const invited = state && typeof state === 'object' && 'invited' in state && state.invited === true;
   const allowed = (kind: TeamAction['kind']) =>
-    kind === 'resend' || kind === 'revoke'
-      ? member.status === 'invited'
-      : !member.is_owner && (kind === 'deactivate' ? member.status === 'active' : member.status === 'inactive');
+    kind === 'resend' || kind === 'revoke' ? member.state === 'invited' : !member.is_owner && member.state === 'active';
   const open = (kind: TeamAction['kind']) => {
     mutation.reset();
     setNotice('');
@@ -146,30 +141,30 @@ function MemberAccess({member}: {member: TeamMember}) {
   }
   return (
     <>
-      {invited && member.status === 'invited' && !notice && (
+      {invited && member.state === 'invited' && !notice && (
         <p role="status">Invitation sent. They can join using the link in their email.</p>
       )}
       {notice && <p role="status">{notice}</p>}
       <Surface className="space-y-5">
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="section-title">Team access</h2>
-          <StatusBadge tone={member.status === 'active' ? 'positive' : 'neutral'}>
+          <StatusBadge tone={member.state === 'active' ? 'positive' : 'neutral'}>
             {member.is_owner ? 'Owner' : coachStatus(member)}
           </StatusBadge>
         </div>
         {member.is_owner ? (
           <p className="text-sm text-muted-foreground">You own this business and can access all clients.</p>
-        ) : member.status === 'invited' ? (
+        ) : member.state === 'invited' ? (
           <>
             <p className="text-sm text-muted-foreground">
               {member.invitation_expired
                 ? 'This invitation has expired. Resend it so they can join.'
                 : 'Waiting for this coach to accept their invitation.'}
             </p>
-            {member.invitation_sent_at && (
+            {member.invited_at && (
               <p className="text-sm">
                 Sent{' '}
-                {new Date(member.invitation_sent_at).toLocaleDateString(undefined, {
+                {new Date(member.invited_at).toLocaleDateString(undefined, {
                   day: 'numeric',
                   month: 'short',
                   year: 'numeric',
@@ -186,6 +181,33 @@ function MemberAccess({member}: {member: TeamMember}) {
                 })}
               </p>
             )}
+            {member.invite_url && (
+              <div className="space-y-3">
+                <div className="grid gap-2">
+                  <Label htmlFor="coach-invite-link">Invitation link</Label>
+                  <Input
+                    id="coach-invite-link"
+                    readOnly
+                    value={member.invite_url}
+                    onFocus={(event) => event.currentTarget.select()}
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  isDisabled={member.invitation_expired}
+                  onPress={async () => {
+                    try {
+                      await navigator.clipboard.writeText(member.invite_url ?? '');
+                      setNotice('Invitation link copied.');
+                    } catch {
+                      setNotice('Could not copy the link. Select and copy it from the field above.');
+                    }
+                  }}
+                >
+                  Copy link
+                </Button>
+              </div>
+            )}
             <div className="flex flex-wrap gap-3">
               <Button
                 variant="outline"
@@ -201,19 +223,29 @@ function MemberAccess({member}: {member: TeamMember}) {
               </Button>
             </div>
           </>
+        ) : member.state === 'active' ? (
+          <>
+            <p className="text-sm text-muted-foreground">This coach can work with their assigned clients.</p>
+            <Button
+              variant="outline"
+              onPress={() => open('remove')}
+            >
+              Remove coach
+            </Button>
+          </>
         ) : (
           <>
             <p className="text-sm text-muted-foreground">
-              {member.status === 'active'
-                ? 'This coach can work with their assigned clients.'
-                : 'This coach cannot sign in. Reactivating them restores access; clients stay with their current coach.'}
+              This coach was removed{member.removed_on ? ` on ${member.removed_on}` : ''} and can no longer access this
+              business.
             </p>
-            <Button
-              variant="outline"
-              onPress={() => open(member.status === 'active' ? 'deactivate' : 'reactivate')}
+            <Link
+              to={routes.inviteCoach}
+              state={list.state}
+              className={buttonVariants({variant: 'outline'})}
             >
-              {member.status === 'active' ? 'Deactivate coach' : 'Reactivate coach'}
-            </Button>
+              Invite again
+            </Link>
           </>
         )}
       </Surface>
@@ -279,7 +311,7 @@ function MemberAccess({member}: {member: TeamMember}) {
 function AssignedClients({member}: {member: TeamMember}) {
   const [params] = useSearchParams();
   const location = useLocation();
-  const query = useClients({assigned_coach_id: member.id, search: params.get('search') ?? ''});
+  const query = useClients({coach_id: member.id, q: params.get('search') ?? ''});
   return (
     <section
       className="space-y-4"
@@ -311,12 +343,10 @@ function AssignedClients({member}: {member: TeamMember}) {
             state={{returnTo: location.pathname + location.search, returnLabel: `Back to ${coachName(member)}`}}
           >
             <p className="break-words font-semibold">
-              {`${client.first_name ?? ''} ${client.last_name ?? ''}`.trim() || client.email || 'Client'}
+              {client.preferred_name || client.full_name || client.email || 'Client'}
             </p>
             <p className="break-all text-sm text-muted-foreground">{client.email || client.phone}</p>
-            <StatusBadge>
-              {client.status === 'active' ? 'Active' : client.status === 'pending' ? 'Invited' : 'Inactive'}
-            </StatusBadge>
+            <StatusBadge>{clientStateLabels[client.state]}</StatusBadge>
           </Link>
         )}
       </InfiniteList>

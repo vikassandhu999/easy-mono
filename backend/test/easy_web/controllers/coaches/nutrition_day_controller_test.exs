@@ -8,7 +8,7 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, creator: coach, business: coach.business, assigned_coach: coach)
+    client = insert(:client, business: coach.business, coach: coach)
 
     conn =
       build_conn()
@@ -68,8 +68,7 @@ defmodule EasyWeb.Coaches.NutritionDayControllerTest do
 
       other_client =
         insert(:client,
-          creator: other_coach,
-          assigned_coach: other_coach,
+          coach: other_coach,
           business: ctx.business
         )
 

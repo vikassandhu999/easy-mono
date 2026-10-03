@@ -108,6 +108,7 @@ export const businessKeys = {
   all: ['business'] as const,
   detail: () => [...businessKeys.all, 'detail'] as const,
   timezones: () => [...businessKeys.all, 'timezones'] as const,
+  handle: (handle: string) => [...businessKeys.all, 'handle', handle] as const,
 };
 
 export const teamKeys = {

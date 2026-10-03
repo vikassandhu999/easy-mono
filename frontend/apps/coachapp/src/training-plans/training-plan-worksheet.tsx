@@ -157,7 +157,7 @@ export function TrainingPlanWorksheet({
       {clientPlan && plan && (
         <div className="space-y-1">
           <p className="font-semibold">
-            Training for {`${plan.client?.first_name ?? ''} ${plan.client?.last_name ?? ''}`.trim() || 'this client'}
+            Training for {plan.client?.preferred_name || plan.client?.full_name || 'this client'}
           </p>
           <p className="text-sm text-muted-foreground">
             Changes apply to this client only. Your reusable template stays unchanged.

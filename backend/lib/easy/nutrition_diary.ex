@@ -24,7 +24,7 @@ defmodule Easy.Nutrition.Diary do
 
   @type save_error ::
           PlanReader.read_error()
-          | :client_inactive
+          | :coaching_required
           | :future_date
           | :cannot_switch_past_slot
           | Ecto.Changeset.t()
@@ -53,7 +53,7 @@ defmodule Easy.Nutrition.Diary do
           {:ok, Day.t()} | {:error, save_error()}
   def save_client_nutrition_day(%Ctx{} = ctx, %Date{} = date, %{slots: slots})
       when is_list(slots) do
-    with {:ok, client} <- load_active_client(ctx),
+    with {:ok, client} <- ClientAccount.get_client_account(ctx),
          :ok <- Input.validate_slots(slots) do
       Repo.snapshot(fn -> save_day(ctx, client, date, slots) end)
       |> then(&Easy.ChatRecordNotes.notify_result(ctx, &1))
@@ -165,13 +165,6 @@ defmodule Easy.Nutrition.Diary do
 
     with :ok <- CorrectionPolicy.validate_switch(slot.local_date, today) do
       if Enum.any?(slot.document.options, &(&1.id == meal_id)), do: :ok, else: {:error, :not_found}
-    end
-  end
-
-  defp load_active_client(ctx) do
-    with {:ok, client} <- ClientAccount.get_client_account(ctx) do
-      client = Repo.preload(client, :business)
-      if client.status == :active, do: {:ok, client}, else: {:error, :client_inactive}
     end
   end
 

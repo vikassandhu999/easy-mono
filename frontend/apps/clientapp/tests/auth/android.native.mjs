@@ -19,7 +19,7 @@ const stop = async () => {
   await expect.poll(() => device.webViews().some((view) => view.pkg() === app), {timeout: 15_000}).toBe(false);
 };
 try {
-  const fixture = await inviteClient({firstName: ''});
+  const fixture = await inviteClient({fullName: 'Client'});
   await stop();
   await device.shell(
     `am start -W -n ${app}/.MainActivity -a android.intent.action.VIEW -d easy://app/invite/${encodeURIComponent(fixture.token)}`,
@@ -120,22 +120,23 @@ try {
   });
   await tap(page.getByRole('link', {name: 'Your account', exact: true}));
   await tap(page.getByRole('link', {name: 'Personal details', exact: true}));
-  await tap(page.getByLabel('First name'));
+  await page.getByLabel('Full name').fill('');
+  await tap(page.getByLabel('Full name'));
   await device.input.type('Android saved client');
-  await expect(page.getByLabel('First name')).toHaveValue('Android saved client');
+  await expect(page.getByLabel('Full name')).toHaveValue('Android saved client');
   await expect(page.getByText('Draft saved on this device.', {exact: true})).toBeVisible();
   await stop();
   await launch();
   page = await pageForApp();
   await tap(page.getByRole('link', {name: 'Your account', exact: true}));
   await tap(page.getByRole('link', {name: 'Personal details', exact: true}));
-  await expect(page.getByLabel('First name')).toHaveValue('Android saved client');
+  await expect(page.getByLabel('Full name')).toHaveValue('Android saved client');
   await expect(page.getByText('Your unsaved details were restored.')).toBeVisible();
   await tap(page.getByRole('button', {name: 'Save details'}));
   await expect(page.getByText('Your details are saved.')).toBeVisible();
   await device.input.press('Home');
   await launch();
-  await expect(page.getByLabel('First name')).toHaveValue('Android saved client');
+  await expect(page.getByLabel('Full name')).toHaveValue('Android saved client');
   await device.input.press('Back');
   await expect(page.getByRole('heading', {name: 'Your account', exact: true})).toBeVisible();
   await device.input.press('Back');
@@ -233,7 +234,7 @@ try {
   await expect(page.getByRole('heading', {name: 'Training', exact: true})).toBeVisible();
   await tap(page.getByRole('link', {name: 'Your account', exact: true}));
   await tap(page.getByRole('link', {name: 'Personal details', exact: true}));
-  await expect(page.getByLabel('First name')).toHaveValue('Android saved client');
+  await expect(page.getByLabel('Full name')).toHaveValue('Android saved client');
   await tap(page.getByRole('link', {name: 'Back', exact: true}));
   await tap(page.getByRole('button', {name: 'Sign out', exact: true}));
   await expect(page.getByRole('heading', {name: 'Welcome back'})).toBeVisible();

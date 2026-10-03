@@ -10,14 +10,12 @@ defmodule EasyWeb.OpenApi.Schemas.SignupRequest do
       additionalProperties: false,
       properties: %{
         email: %Schema{type: :string, format: :email},
-        first_name: %Schema{type: :string, maxLength: 255},
-        last_name: %Schema{type: :string, maxLength: 255}
+        full_name: %Schema{type: :string, maxLength: 255}
       },
       required: [:email],
       example: %{
         "email" => "coach@example.com",
-        "first_name" => "Alex",
-        "last_name" => "Coach"
+        "full_name" => "Alex"
       }
     },
     struct?: false
@@ -61,7 +59,7 @@ defmodule EasyWeb.OpenApi.Schemas.InvitationPreviewResponse do
         properties: %{
           state: %Schema{type: :string, enum: ["pending", "used", "expired", "invalid"]},
           business_name: %Schema{type: :string, nullable: true},
-          coach_first_name: %Schema{type: :string, nullable: true},
+          coach_name: %Schema{type: :string, nullable: true},
           prefill_email: %Schema{type: :string, format: :email, nullable: true},
           expires_at: %Schema{type: :string, format: :"date-time", nullable: true}
         },
@@ -86,7 +84,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainerInvitationPreviewResponse do
         properties: %{
           business_name: %Schema{type: :string},
           email: %Schema{type: :string, format: :email, nullable: true},
-          first_name: %Schema{type: :string, nullable: true}
+          full_name: %Schema{type: :string, nullable: true}
         },
         required: [:business_name]
       },
@@ -130,13 +128,11 @@ defmodule EasyWeb.OpenApi.Schemas.AcceptInviteVerifyRequest do
       type: :object,
       additionalProperties: false,
       properties: %{
-        invitation_token: %Schema{type: :string},
         email: %Schema{type: :string, format: :email},
         otp: %Schema{type: :string}
       },
-      required: [:invitation_token, :email, :otp],
+      required: [:email, :otp],
       example: %{
-        "invitation_token" => "invite-token",
         "email" => "client@example.com",
         "otp" => "123456"
       }
@@ -329,6 +325,7 @@ defmodule EasyWeb.OpenApi.Schemas.AuthTokenResponse do
       token_type: %Schema{type: :string, example: "Bearer"},
       expires_in: %Schema{type: :integer, example: 300},
       refresh_token: %Schema{type: :string},
+      full_name: %Schema{type: :string},
       scope: %Schema{type: :string}
     },
     required: [:access_token, :token_type, :expires_in, :refresh_token, :scope]

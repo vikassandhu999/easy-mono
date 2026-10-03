@@ -9,7 +9,7 @@ defmodule Easy.Training.ProgrammingTemplateLifecycleTest do
     test "repeated lifecycle actions preserve templates and client plans at the current revision" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
 
       for kind <- [:template, :client_plan] do
         plan =
@@ -130,7 +130,7 @@ defmodule Easy.Training.ProgrammingTemplateLifecycleTest do
 
     test "deletes a Template without deleting its independent Client Plan" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       template = insert(:training_plan, business: coach.business, creator: coach.user)
 
       client_plan =
@@ -155,7 +155,7 @@ defmodule Easy.Training.ProgrammingTemplateLifecycleTest do
       other_coach = insert(:coach)
       hidden = insert(:training_plan, business: other_coach.business, creator: other_coach.user)
       same_business_template = insert(:training_plan, business: coach.business, creator: coach.user)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
 
       client_ctx = %Easy.Ctx{
         business_id: client.business_id,
@@ -189,7 +189,7 @@ defmodule Easy.Training.ProgrammingTemplateLifecycleTest do
 
     test "keeps an assigned Client Plan reachable through the shared lifecycle route" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
 
       client_plan =
         insert(:training_plan,
@@ -222,7 +222,7 @@ defmodule Easy.Training.ProgrammingTemplateLifecycleTest do
 
     test "returns a changeset when restoring a Client Plan would overlap Coverage" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
 
       archived_plan =
         insert(:training_plan,
@@ -256,7 +256,7 @@ defmodule Easy.Training.ProgrammingTemplateLifecycleTest do
     test "conceals a Client Plan before comparing its revision" do
       owner = insert(:coach)
       colleague = insert(:coach, business: owner.business)
-      client = insert(:client, business: owner.business, creator: owner, assigned_coach: owner)
+      client = insert(:client, business: owner.business, coach: owner)
 
       client_plan =
         insert(:training_plan,

@@ -3,7 +3,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, creator: coach, business: coach.business)
+    client = insert(:client, coach: coach, business: coach.business)
     conn = build_conn() |> authenticate_client(client)
 
     %{conn: conn, coach: coach, client: client, business: coach.business}
@@ -22,7 +22,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       insert(:plan, creator: ctx.coach, business: ctx.business)
 
       # Assigned to another client — should not appear
-      other_client = insert(:client, creator: ctx.coach, business: ctx.business)
+      other_client = insert(:client, coach: ctx.coach, business: ctx.business)
 
       insert(:plan,
         creator: ctx.coach,
@@ -104,7 +104,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
     end
 
     test "returns 404 for other client's plan", ctx do
-      other_client = insert(:client, creator: ctx.coach, business: ctx.business)
+      other_client = insert(:client, coach: ctx.coach, business: ctx.business)
 
       plan =
         insert(:plan,

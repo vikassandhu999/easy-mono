@@ -1,4 +1,4 @@
-import {Check, Copy, Mail} from 'lucide-react';
+import {Copy, Mail} from 'lucide-react';
 import {useState} from 'react';
 import {Label, TextField} from 'react-aria-components';
 import {errorMessage} from '../api/client';
@@ -6,13 +6,12 @@ import {type Client, useResendClientInvitation} from '../api/clients';
 import {Button} from '../ui/button';
 import {FormError} from '../ui/form-error';
 import {Input} from '../ui/input';
-import {Surface} from '../ui/page';
 
 export function ClientInvitation({person}: {person: Client}) {
   const {id} = person;
   const resend = useResendClientInvitation();
   const [notice, setNotice] = useState<{kind: 'success' | 'error'; message: string} | null>(null);
-  const pending = person.status === 'pending' && !person.joined_at;
+  const pending = person.state === 'invited';
   const expired =
     person.invitation_expires_at !== null && new Date(person.invitation_expires_at).getTime() <= Date.now();
   const resendInvitation = async () => {
@@ -37,54 +36,18 @@ export function ClientInvitation({person}: {person: Client}) {
   };
 
   return (
-    <Surface className="space-y-5">
+    <div className="space-y-5">
       <div>
-        <div className="mb-4 flex size-11 items-center justify-center rounded-xl bg-muted">
-          {person.joined_at ? (
-            <Check
-              size={20}
-              aria-hidden="true"
-            />
-          ) : (
-            <Mail
-              size={20}
-              aria-hidden="true"
-            />
-          )}
-        </div>
-        <h2 className="section-title">
-          {person.status === 'inactive'
-            ? 'Client inactive'
-            : person.joined_at
-              ? 'Invitation accepted'
-              : pending
-                ? expired
-                  ? 'Invitation expired'
-                  : 'Waiting for acceptance'
-                : 'Client inactive'}
-        </h2>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          {person.status === 'inactive'
-            ? person.inactive_reason === 'awaiting_seat'
-              ? 'This client is waiting for an available coaching seat.'
-              : person.inactive_reason === 'subscription_expired'
-                ? 'Their coaching subscription has ended.'
-                : 'This client is currently inactive.'
-            : person.joined_at
-              ? 'Your client has joined your coaching business.'
-              : pending
-                ? expired
-                  ? 'Send a fresh invitation so your client can join.'
-                  : 'Your client can accept through their email invitation or the link below.'
-                : 'This client has no pending invitation.'}
+        <p className="font-medium">{expired ? 'Invitation expired' : 'Waiting for acceptance'}</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {expired
+            ? 'Send a fresh invitation so your client can join.'
+            : 'Your client can accept through their email invitation or the link below. Invitations do not use a seat.'}
         </p>
-        {pending && person.invitation_sent_at && (
+        {person.invited_at && (
           <p className="mt-3 text-xs text-muted-foreground">
             Last invited{' '}
-            {new Date(person.invitation_sent_at).toLocaleString(undefined, {
-              dateStyle: 'medium',
-              timeStyle: 'short',
-            })}
+            {new Date(person.invited_at).toLocaleString(undefined, {dateStyle: 'medium', timeStyle: 'short'})}
           </p>
         )}
       </div>
@@ -134,6 +97,6 @@ export function ClientInvitation({person}: {person: Client}) {
           )}
         </div>
       )}
-    </Surface>
+    </div>
   );
 }

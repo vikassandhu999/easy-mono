@@ -28,7 +28,7 @@ defmodule Easy.BillingDisabledTest do
 
     business = insert(:business)
 
-    assert {:error, :billing_disabled} = Billing.checkout(Ctx.new(business.id, business.owner_id), 1)
+    assert {:error, :billing_disabled} = Billing.checkout(Ctx.new(business.id, business.owner_user_id), 1)
   end
 
   test "billing needs non-empty Razorpay credentials, a plan, and a price" do
@@ -36,7 +36,7 @@ defmodule Easy.BillingDisabledTest do
     on_exit(fn -> Application.put_env(:easy, Easy.Razorpay, razorpay_config) end)
 
     business = insert(:business)
-    ctx = Ctx.new(business.id, business.owner_id)
+    ctx = Ctx.new(business.id, business.owner_user_id)
 
     unavailable_configs = [
       key_id: nil,

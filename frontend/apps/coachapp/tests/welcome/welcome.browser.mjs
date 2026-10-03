@@ -18,7 +18,7 @@ try {
     const unique = `${Date.now()}-${width}`;
     const email = `welcome-flow-${unique}@example.test`;
     await page.goto('/signup');
-    await page.getByLabel('First name').fill('Taylor');
+    await page.getByLabel('Full name').fill('Taylor');
     await page.getByLabel('Email', {exact: true}).fill(email);
     await page.getByRole('button', {name: 'Create account', exact: true}).click();
     await page.getByLabel('Verification code').fill('123456');

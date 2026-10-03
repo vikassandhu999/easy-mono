@@ -1,130 +1,96 @@
 defmodule EasyWeb.Types.Client do
   use EasyWeb.Type
-
   alias Easy.AppLinks
   alias Easy.Clients.Client, as: ClientSchema
-  alias Easy.Identity.User
   alias Easy.Orgs.Coach
+  alias EasyWeb.Types.CoachingTerm
 
   @type t :: %{
           required(:id) => String.t(),
-          required(:local_date) => Date.t(),
+          required(:full_name) => String.t(),
+          required(:preferred_name) => String.t() | nil,
           required(:email) => String.t() | nil,
-          required(:first_name) => String.t() | nil,
-          required(:last_name) => String.t() | nil,
           required(:phone) => String.t() | nil,
           required(:notes) => String.t() | nil,
-          required(:status) => :active | :pending | :inactive,
-          required(:stage) => :onboarding | :coaching,
-          required(:inactive_reason) => :manual | :subscription_expired | :awaiting_seat | nil,
-          required(:subscription_started_on) => Date.t() | nil,
-          required(:subscription_ends_on) => Date.t() | nil,
-          required(:joined_at) => DateTime.t() | nil,
-          required(:required_services) => [:training | :nutrition],
-          required(:expiring_soon) => boolean(),
+          required(:timezone) => String.t() | nil,
+          required(:unit_system) => :metric | :imperial,
+          required(:local_date) => Date.t(),
+          required(:state) => :active | :ending_soon | :joined | :invited | :ended,
+          required(:current_term) => CoachingTerm.t() | nil,
+          required(:terms) => [CoachingTerm.t()],
+          required(:coach_id) => String.t(),
+          required(:coach_name) => String.t(),
+          required(:invite_url) => String.t() | nil,
+          required(:invited_at) => DateTime.t() | nil,
+          required(:invitation_expires_at) => DateTime.t() | nil,
           required(:last_active_at) => DateTime.t() | nil,
           required(:training_plan_name) => String.t() | nil,
           required(:nutrition_plan_name) => String.t() | nil,
-          required(:assigned_coach_id) => String.t() | nil,
-          required(:assigned_coach_name) => String.t() | nil,
-          required(:invite_url) => String.t() | nil,
-          required(:invitation_sent_at) => DateTime.t() | nil,
-          required(:invitation_expires_at) => DateTime.t() | nil,
           required(:inserted_at) => DateTime.t(),
           required(:updated_at) => DateTime.t()
         }
-
   @type invite :: %{
-          optional(:email) => String.t() | nil,
-          optional(:first_name) => String.t() | nil,
-          optional(:last_name) => String.t() | nil,
+          required(:full_name) => String.t(),
+          required(:email) => String.t(),
+          optional(:preferred_name) => String.t() | nil,
           optional(:phone) => String.t() | nil,
           optional(:notes) => String.t() | nil,
-          optional(:required_services) => [:training | :nutrition]
+          optional(:coach_id) => Ecto.UUID.t()
         }
-
   @type update :: %{
-          optional(:email) => String.t() | nil,
-          optional(:first_name) => String.t() | nil,
-          optional(:last_name) => String.t() | nil,
+          optional(:full_name) => String.t(),
+          optional(:preferred_name) => String.t() | nil,
+          optional(:email) => String.t(),
           optional(:phone) => String.t() | nil,
           optional(:notes) => String.t() | nil,
-          optional(:status) => :active | :inactive,
-          optional(:stage) => :onboarding | :coaching | nil,
-          optional(:subscription_started_on) => Date.t() | nil,
-          optional(:subscription_ends_on) => Date.t() | nil,
-          optional(:required_services) => [:training | :nutrition]
+          optional(:coach_id) => Ecto.UUID.t(),
+          optional(:timezone) => String.t() | nil,
+          optional(:unit_system) => :metric | :imperial
         }
-
-  @type reassign :: %{required(:coach_id) => Ecto.UUID.t()}
-
   @type list_query :: %{
           optional(:cursor) => String.t(),
           optional(:offset) => integer(),
           optional(:limit) => integer(),
-          optional(:search) => String.t(),
-          optional(:status) => :active | :pending | :inactive,
-          optional(:stage) => :onboarding | :coaching,
+          optional(:q) => String.t(),
+          optional(:state) => :active | :ending_soon | :joined | :invited | :ended,
+          optional(:coach_id) => Ecto.UUID.t(),
           optional(:sort) => :newest | :last_active,
-          optional(:include_plans) => boolean(),
-          optional(:assigned_coach_id) => Ecto.UUID.t()
+          optional(:include_plans) => boolean()
         }
-
   @spec format(ClientSchema.t()) :: t()
-  def format(%ClientSchema{} = client) do
+  def format(client) do
+    client = ClientSchema.derive(client, DateTime.utc_now())
+
     %{
       id: client.id,
-      local_date: ClientSchema.local_date(client, DateTime.utc_now()),
+      full_name: client.full_name,
+      preferred_name: client.preferred_name,
       email: client.email,
-      first_name: display_first_name(client),
-      last_name: display_last_name(client),
       phone: client.phone,
       notes: client.notes,
-      status: client.status,
-      stage: client.stage,
-      inactive_reason: client.inactive_reason,
-      subscription_started_on: client.subscription_started_on,
-      subscription_ends_on: client.subscription_ends_on,
-      joined_at: client.joined_at,
-      required_services: client.required_services,
-      expiring_soon: client.expiring_soon,
+      timezone: client.timezone,
+      unit_system: client.unit_system,
+      local_date: ClientSchema.local_date(client, DateTime.utc_now()),
+      state: client.state,
+      current_term: if(client.current_term, do: CoachingTerm.take(client.current_term)),
+      terms: Enum.map(client.terms, &CoachingTerm.take/1),
+      coach_id: client.coach_id,
+      coach_name: Coach.full_name(client.coach),
+      invite_url: invitation_url(client),
+      invited_at: if(is_nil(client.user_id), do: client.invited_at),
+      invitation_expires_at: ClientSchema.invitation_expires_at(client),
       last_active_at: client.last_active_at,
       training_plan_name: client.training_plan_name,
       nutrition_plan_name: client.nutrition_plan_name,
-      assigned_coach_id: client.assigned_coach_id,
-      assigned_coach_name: assigned_coach_name(client),
-      invite_url: invite_url(client),
-      invitation_sent_at: pending_only(client, client.invitation_sent_at),
-      invitation_expires_at: pending_only(client, ClientSchema.invitation_expires_at(client)),
       inserted_at: client.inserted_at,
       updated_at: client.updated_at
     }
   end
 
-  defp assigned_coach_name(%ClientSchema{assigned_coach: %Coach{} = coach}), do: Coach.full_name(coach)
-  defp assigned_coach_name(_client), do: nil
-
-  defp display_first_name(%ClientSchema{user: %User{first_name: name}, first_name: fallback})
-       when name in [nil, ""],
-       do: fallback
-
-  defp display_first_name(%ClientSchema{user: %User{first_name: name}}), do: name
-  defp display_first_name(%ClientSchema{first_name: name}), do: name
-
-  defp display_last_name(%ClientSchema{user: %User{last_name: name}, last_name: fallback})
-       when name in [nil, ""],
-       do: fallback
-
-  defp display_last_name(%ClientSchema{user: %User{last_name: name}}), do: name
-  defp display_last_name(%ClientSchema{last_name: name}), do: name
-
-  defp pending_only(%ClientSchema{status: :pending}, value), do: value
-  defp pending_only(%ClientSchema{}, _value), do: nil
-
-  defp invite_url(%ClientSchema{status: :pending, invitation_token: token}) when is_binary(token),
+  defp invitation_url(%{user_id: nil, invite_token: token}) when not is_nil(token),
     do: AppLinks.client_invitation(token)
 
-  defp invite_url(%ClientSchema{}), do: nil
+  defp invitation_url(_client), do: nil
 end
 
 defmodule EasyWeb.Types.ClientIndex do
@@ -136,8 +102,10 @@ defmodule EasyWeb.Types.ClientIndex do
           required(:next_cursor) => String.t() | nil,
           required(:summary) => %{
             required(:active) => non_neg_integer(),
-            required(:pending) => non_neg_integer(),
-            required(:inactive) => non_neg_integer()
+            required(:ending_soon) => non_neg_integer(),
+            required(:joined) => non_neg_integer(),
+            required(:invited) => non_neg_integer(),
+            required(:ended) => non_neg_integer()
           }
         }
 end

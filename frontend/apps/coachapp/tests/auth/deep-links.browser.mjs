@@ -22,9 +22,14 @@ try {
   for (const width of [375, 1280]) {
     const unique = `${Date.now()}-${width}`;
     const email = `test-deep-links-${unique}@example.test`;
-    await send('post', '/v1/auth/signup', {email, first_name: 'Test Coach'});
+    await send('post', '/v1/auth/signup', {email, full_name: 'Test Coach'});
     const guest = await send('post', '/v1/auth/verify', {email, otp: '123456'});
-    await send('post', '/v1/businesses', {name: 'Test Navigation', handle: `links-${unique}`}, guest.access_token);
+    await send(
+      'post',
+      '/v1/businesses',
+      {full_name: 'Test Coach', name: 'Test Navigation', handle: `links-${unique}`},
+      guest.access_token,
+    );
     const coach = await send('post', '/v1/auth/token', {
       grant_type: 'refresh_token',
       refresh_token: guest.refresh_token,

@@ -16,9 +16,13 @@ try {
   for (const width of [375, 1280]) {
     const unique = `${Date.now()}-${width}`;
     const email = `lists-${unique}@example.test`;
-    await post('/v1/auth/signup', {email, first_name: 'Taylor'});
+    await post('/v1/auth/signup', {email, full_name: 'Taylor'});
     const guest = await post('/v1/auth/verify', {email, otp: '123456'});
-    await post('/v1/businesses', {name: 'List testing', handle: `lists-${unique}`}, guest.access_token);
+    await post(
+      '/v1/businesses',
+      {full_name: 'Taylor', name: 'List testing', handle: `lists-${unique}`},
+      guest.access_token,
+    );
     const tokens = await post('/v1/auth/token', {
       grant_type: 'refresh_token',
       refresh_token: guest.refresh_token,
@@ -26,8 +30,8 @@ try {
     });
     for (let index = 0; index < 4; index++) {
       await post(
-        '/v1/coach/clients/invite',
-        {first_name: `Person ${String(index).padStart(2, '0')}`, email: `client-${unique}-${index}@example.test`},
+        '/v1/coach/clients',
+        {full_name: `Person ${String(index).padStart(2, '0')}`, email: `client-${unique}-${index}@example.test`},
         tokens.access_token,
       );
     }

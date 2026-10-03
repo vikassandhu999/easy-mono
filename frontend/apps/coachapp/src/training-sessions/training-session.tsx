@@ -76,9 +76,7 @@ function SessionRecord({clientId, id}: {clientId: string; id: string}) {
     );
   }
   const person = client.data?.data;
-  const name = person
-    ? `${person.first_name ?? ''} ${person.last_name ?? ''}`.trim() || person.email || 'Client'
-    : 'View client';
+  const name = person ? person.preferred_name || person.full_name || person.email || 'Client' : 'View client';
   const snapshot = session.prescription_snapshot;
   return (
     <Page>

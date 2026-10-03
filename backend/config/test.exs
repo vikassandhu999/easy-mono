@@ -24,8 +24,6 @@ config :easy, EasyWeb.Endpoint,
 # In test we don't send emails
 config :easy, Easy.Mailer, adapter: Swoosh.Adapters.Test
 
-config :easy, start_client_subscription_sweeper: false
-
 # Real browser tests use ordinary connections in a disposable, fixed database.
 # This override exists only in MIX_ENV=test; dev and production cannot enable it.
 if System.get_env("EASY_E2E") == "true" do

@@ -7,7 +7,7 @@ import type {ClientProfileUpdate, components} from './schema';
 import {getSession, identifySession, saveSession, sessionSnapshot} from './session';
 
 export type {ClientProfile as Profile} from './schema';
-export type ProfileUpdate = Pick<ClientProfileUpdate, 'first_name' | 'last_name' | 'phone'>;
+export type ProfileUpdate = Pick<ClientProfileUpdate, 'full_name' | 'preferred_name' | 'phone'>;
 export type VerifyRequest = Extract<components['schemas']['VerifyRequest'], {email: string}>;
 type Invite = components['schemas']['AcceptInviteRequest'];
 type VerifyInvite = components['schemas']['AcceptInviteVerifyRequest'];
@@ -36,9 +36,14 @@ export function useAcceptInvitation() {
 export function useVerify() {
   return useMutation({
     onMutate: () => sessionSnapshot(),
-    mutationFn: (input: {kind: 'login'; body: VerifyRequest} | {kind: 'invite'; body: VerifyInvite}) =>
+    mutationFn: (input: {kind: 'login'; body: VerifyRequest} | {kind: 'invite'; token: string; body: VerifyInvite}) =>
       input.kind === 'invite'
-        ? call(publicClient.POST('/v1/auth/accept-invite/verify', {body: input.body}))
+        ? call(
+            publicClient.POST('/v1/auth/invites/{token}/accept', {
+              params: {path: {token: input.token}},
+              body: input.body,
+            }),
+          )
         : call(publicClient.POST('/v1/auth/token', {body: {...input.body, grant_type: 'otp', role: 'client'}})),
     onSuccess: async (tokens, _input, snapshot) => {
       if (snapshot !== sessionSnapshot()) {
@@ -62,6 +67,7 @@ export function useResend() {
 export function useProfile() {
   return useQuery({
     queryKey: authKeys.profile(),
+    refetchInterval: 60_000,
     queryFn: async ({signal}) => {
       const session = getSession();
       if (!session) {

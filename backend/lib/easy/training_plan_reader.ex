@@ -143,6 +143,7 @@ defmodule Easy.Training.PlanReader do
          %TrainingPlan{} = plan <-
            ctx
            |> covering_plan_query(client_id, date)
+           |> TrainingPlan.include_client(ctx.business_id)
            |> Repo.one(),
          %TrainingWorkout{} = workout <- Enum.find(plan.workouts, &(&1.id == workout_id)) do
       {:ok, %{plan: with_lifecycle(plan), workout: workout}}
@@ -191,6 +192,7 @@ defmodule Easy.Training.PlanReader do
       |> TrainingPlan.active_in_window(Enum.min(dates, Date), Enum.max(dates, Date))
       |> where([plan], plan.client_id in ^client_ids)
       |> TrainingPlan.newest()
+      |> TrainingPlan.include_client(ctx.business_id)
       |> Repo.all()
       |> Enum.filter(fn plan ->
         TrainingPlan.lifecycle(plan, Map.fetch!(local_dates, plan.client_id)) == :current

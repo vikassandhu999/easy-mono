@@ -3,7 +3,7 @@ defmodule EasyWeb.Clients.RecipeControllerTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, creator: coach, business: coach.business)
+    client = insert(:client, coach: coach, business: coach.business)
     conn = build_conn() |> authenticate_client(client)
 
     %{conn: conn, coach: coach, client: client, business: coach.business}

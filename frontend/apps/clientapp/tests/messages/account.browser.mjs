@@ -4,8 +4,8 @@ import {api, inviteClient} from '../auth/fixtures.mjs';
 const browser = await chromium.launch();
 try {
   const clients = [];
-  for (const firstName of ['Original', 'Other']) {
-    const fixture = await inviteClient({firstName});
+  for (const fullName of ['Original', 'Other']) {
+    const fixture = await inviteClient({fullName});
     const context = await browser.newContext({baseURL: 'http://localhost:1315', viewport: {width: 375, height: 812}});
     const page = await context.newPage();
     await page.goto(`/invite/${fixture.token}`);

@@ -10,7 +10,7 @@ defmodule EasyWeb.Coaches.MuscleControllerTest do
     business =
       insert(:business,
         name: "Muscle Endpoint Business #{unique}",
-        handle: "muscle-endpoint-#{unique}",
+        handle: "library-#{System.unique_integer([:positive])}",
         owner: business_owner
       )
 

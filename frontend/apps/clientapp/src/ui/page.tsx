@@ -1,6 +1,7 @@
 import {ArrowLeft} from 'lucide-react';
 import {type ReactNode, useEffect, useRef} from 'react';
 import {Link, useLocation} from 'react-router-dom';
+import {CoachingEnded} from './coaching';
 
 export function Page({
   title,
@@ -23,6 +24,7 @@ export function Page({
   }, [pathname]);
   return (
     <main className="page">
+      <CoachingEnded />
       <header className={compact ? 'page-heading page-heading-compact' : 'page-heading'}>
         {back && (
           <Link

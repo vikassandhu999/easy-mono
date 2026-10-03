@@ -5,7 +5,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+    client = insert(:client, business: coach.business, coach: coach)
     conn = build_conn() |> authenticate_client(client)
 
     %{conn: conn, coach: coach, client: client}
@@ -17,7 +17,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
       incomplete = insert_client_plan(ctx, name: "Incomplete")
       current = insert_client_plan(ctx, name: "Current", start_date: today, end_date: today)
       archived = insert_client_plan(ctx, name: "Archived", archived_at: DateTime.utc_now(:second))
-      other_client = insert(:client, business: ctx.coach.business, creator: ctx.coach, assigned_coach: ctx.coach)
+      other_client = insert(:client, business: ctx.coach.business, coach: ctx.coach)
 
       insert(:training_plan,
         business: ctx.coach.business,
@@ -127,7 +127,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
 
     test "conceals archived, other-client, other-business, and Template plans", ctx do
       archived = insert_client_plan(ctx, archived_at: DateTime.utc_now(:second))
-      other_client = insert(:client, business: ctx.coach.business, creator: ctx.coach, assigned_coach: ctx.coach)
+      other_client = insert(:client, business: ctx.coach.business, coach: ctx.coach)
 
       other_client_plan =
         insert(:training_plan,
@@ -140,7 +140,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
       other_coach = insert(:coach)
 
       other_business_client =
-        insert(:client, business: other_coach.business, creator: other_coach, assigned_coach: other_coach)
+        insert(:client, business: other_coach.business, coach: other_coach)
 
       other_business_plan =
         insert(:training_plan,

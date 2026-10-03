@@ -8,7 +8,7 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, business: coach.business, creator: coach)
+    client = insert(:client, business: coach.business, coach: coach)
     conn = build_conn() |> authenticate_coach(coach) |> put_req_header("content-type", "application/json")
     %{conn: conn, coach: coach, client: client}
   end
@@ -24,7 +24,7 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
 
     test "404s for a client in another business", %{conn: conn} do
       other_coach = insert(:coach)
-      other = insert(:client, business: other_coach.business, creator: other_coach)
+      other = insert(:client, business: other_coach.business, coach: other_coach)
       conn = get(conn, "/v1/coach/clients/#{other.id}/conversation")
       assert json_response(conn, 404)
     end
@@ -98,7 +98,7 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
 
       list_conn =
         build_conn()
-        |> authenticate_coach(client.creator)
+        |> authenticate_coach(client.coach)
         |> get("/v1/coach/conversations/#{conversation_id}/messages")
 
       assert %{
@@ -188,8 +188,8 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
     end
 
     test "searches by the displayed client name", %{conn: conn, coach: coach} do
-      match = insert(:client, business: coach.business, creator: coach, first_name: "Gina", last_name: "Lanetti")
-      other = insert(:client, business: coach.business, creator: coach, first_name: "Rowan", last_name: "White")
+      match = insert(:client, business: coach.business, coach: coach, full_name: "Gina Lanetti")
+      other = insert(:client, business: coach.business, coach: coach, full_name: "Rowan White")
       match_conversation = insert(:conversation, business: coach.business, client: match)
       insert(:conversation, business: coach.business, client: other)
 
@@ -284,9 +284,9 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
 
     test "filters unread conversations with filtered counts", %{conn: conn, coach: coach, client: client} do
       first_unread = insert(:conversation, business: coach.business, client: client)
-      unread_client = insert(:client, business: coach.business, creator: coach)
+      unread_client = insert(:client, business: coach.business, coach: coach)
       unread = insert(:conversation, business: coach.business, client: unread_client)
-      normal_client = insert(:client, business: coach.business, creator: coach)
+      normal_client = insert(:client, business: coach.business, coach: coach)
       normal = insert(:conversation, business: coach.business, client: normal_client)
       timestamp = ~U[2026-09-12 10:00:00.123456Z]
 
@@ -307,8 +307,8 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
     end
 
     test "treats search wildcards as literal characters", %{conn: conn, coach: coach} do
-      match = insert(:client, business: coach.business, creator: coach, first_name: "Percent%", last_name: "Person")
-      other = insert(:client, business: coach.business, creator: coach, first_name: "Regular", last_name: "Person")
+      match = insert(:client, business: coach.business, coach: coach, full_name: "Percent% Person")
+      other = insert(:client, business: coach.business, coach: coach, full_name: "Regular Person")
       conversation = insert(:conversation, business: coach.business, client: match)
       insert(:conversation, business: coach.business, client: other)
 
@@ -322,7 +322,7 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
       conversation = insert(:conversation, business: coach.business, client: client)
       trainer = insert(:coach, business: coach.business)
       other_coach = insert(:coach)
-      other_client = insert(:client, business: other_coach.business, creator: other_coach)
+      other_client = insert(:client, business: other_coach.business, coach: other_coach)
       other_conversation = insert(:conversation, business: other_coach.business, client: other_client)
       trainer_conn = build_conn() |> authenticate_coach(trainer)
       owner_conn = build_conn() |> authenticate_coach(coach)
@@ -365,7 +365,7 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
 
       assert %{"latest_message_at" => ^latest} = json_response(second, 200)
 
-      empty_client = insert(:client, business: coach.business, creator: coach)
+      empty_client = insert(:client, business: coach.business, coach: coach)
       empty = insert(:conversation, business: coach.business, client: empty_client)
 
       assert %{"count" => 0, "data" => [], "latest_message_at" => nil, "next_cursor" => nil} =

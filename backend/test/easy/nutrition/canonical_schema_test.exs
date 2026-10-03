@@ -6,7 +6,7 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
   describe("canonical Nutrition Programming constraints") do
     test "the database rejects client-plan fields on a template" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
 
       assert_raise Postgrex.Error, fn ->
         Repo.insert_all("nutrition_plans", [
@@ -37,7 +37,7 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
 
     test "an active client has at most one incomplete Client Plan" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
 
       insert(:plan,
         business: coach.business,
@@ -60,57 +60,6 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
       end
     end
 
-    test "unarchived Client Plan Coverage cannot overlap, including an open-ended range" do
-      coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
-
-      insert(:plan,
-        business: coach.business,
-        creator: coach.user,
-        client: client,
-        kind: :client_plan,
-        start_date: ~D[2026-08-01],
-        end_date: ~D[2026-08-31]
-      )
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("nutrition_plans", [
-          plan_row(coach,
-            kind: "client_plan",
-            client_id: dump_uuid(client.id),
-            start_date: ~D[2026-08-15],
-            end_date: nil
-          )
-        ])
-      end
-    end
-
-    test "adjacent non-overlapping Coverage is accepted" do
-      coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
-
-      insert(:plan,
-        business: coach.business,
-        creator: coach.user,
-        client: client,
-        kind: :client_plan,
-        start_date: ~D[2026-08-01],
-        end_date: ~D[2026-08-31]
-      )
-
-      {1, _} =
-        Repo.insert_all("nutrition_plans", [
-          plan_row(coach,
-            kind: "client_plan",
-            client_id: dump_uuid(client.id),
-            start_date: ~D[2026-09-01],
-            end_date: nil
-          )
-        ])
-    end
-  end
-
-  describe("Library structural foreign keys") do
     test "Recipe Ingredients restrict Food deletion" do
       coach = insert(:coach)
       food = insert(:food, business: coach.business, creator: coach)
@@ -128,7 +77,7 @@ defmodule Easy.Nutrition.CanonicalSchemaTest do
 
     test "Diary entries retain source identity after Food deletion" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
 
       food =
         insert(:food,

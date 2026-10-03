@@ -66,7 +66,7 @@ defmodule Easy.Training.ExerciseDeleteTest do
   defp scenario do
     business = insert(:business, owner: build(:user, email: unique_email()))
     coach = insert(:coach, business: business, user: build(:user, email: unique_email()))
-    client = insert(:client, business: business, creator: coach, assigned_coach: coach)
+    client = insert(:client, business: business, coach: coach)
     plan = insert(:training_plan, business: business, creator: coach.user)
     workout = insert(:workout, plan: plan, business: business)
 

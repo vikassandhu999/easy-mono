@@ -15,18 +15,18 @@ defmodule Easy.Billing.CheckoutIntentTest do
     Sandbox.checkout(Repo, sandbox: false)
     unique_id = Ecto.UUID.generate()
     owner = insert(:user, email: "checkout-intent-#{unique_id}@example.test")
-    business = insert(:business, owner: owner, handle: "checkout-intent-#{unique_id}")
+    business = insert(:business, owner: owner, handle: "ci-#{unique_id}")
 
     on_exit(fn ->
       Sandbox.checkout(Repo, sandbox: false)
-      cleanup(business.id, business.owner_id)
+      cleanup(business.id, business.owner_user_id)
     end)
 
-    %{business: business, ctx: Ctx.new(business.id, business.owner_id)}
+    %{business: business, ctx: Ctx.new(business.id, business.owner_user_id)}
   end
 
   test "two confirmed requests retain independent replay records", %{business: business, ctx: ctx} do
-    insert(:business_billing, business: business, paid_seats: 3, status: :active, razorpay_subscription_id: "sub_intent")
+    business.billing |> Ecto.Changeset.change(paid_seats: 3, status: :active, razorpay_subscription_id: "sub_intent") |> Easy.Repo.update!()
     parent = self()
 
     Req.Test.stub(Easy.Razorpay, fn conn ->
@@ -95,7 +95,7 @@ defmodule Easy.Billing.CheckoutIntentTest do
   end
 
   test "authenticated provider state never grants paid seats", %{business: business, ctx: ctx} do
-    insert(:business_billing, business: business, paid_seats: 0, status: :free, razorpay_subscription_id: "sub_auth")
+    business.billing |> Ecto.Changeset.change(paid_seats: 0, status: :free, razorpay_subscription_id: "sub_auth") |> Easy.Repo.update!()
 
     Req.Test.stub(Easy.Razorpay, fn conn ->
       Req.Test.json(conn, %{"id" => "sub_auth", "quantity" => 3, "status" => "authenticated"})
@@ -105,7 +105,7 @@ defmodule Easy.Billing.CheckoutIntentTest do
   end
 
   test "an ambiguous active update is recovered by GET without another PATCH", %{business: business, ctx: ctx} do
-    insert(:business_billing, business: business, paid_seats: 3, status: :active, razorpay_subscription_id: "sub_recover")
+    business.billing |> Ecto.Changeset.change(paid_seats: 3, status: :active, razorpay_subscription_id: "sub_recover") |> Easy.Repo.update!()
     parent = self()
     request_id = Ecto.UUID.generate()
 
@@ -126,7 +126,7 @@ defmodule Easy.Billing.CheckoutIntentTest do
   end
 
   test "an in-flight update cannot be released by sync", %{business: business, ctx: ctx} do
-    insert(:business_billing, business: business, paid_seats: 3, status: :active, razorpay_subscription_id: "sub_held_update")
+    business.billing |> Ecto.Changeset.change(paid_seats: 3, status: :active, razorpay_subscription_id: "sub_held_update") |> Easy.Repo.update!()
     parent = self()
     request_id = Ecto.UUID.generate()
 
@@ -156,7 +156,7 @@ defmodule Easy.Billing.CheckoutIntentTest do
   end
 
   test "a delayed sync cannot overwrite a newer completed purchase", %{business: business, ctx: ctx} do
-    insert(:business_billing, business: business, paid_seats: 3, status: :active, razorpay_subscription_id: "sub_stale_sync")
+    business.billing |> Ecto.Changeset.change(paid_seats: 3, status: :active, razorpay_subscription_id: "sub_stale_sync") |> Easy.Repo.update!()
     parent = self()
 
     Req.Test.stub(Easy.Razorpay, fn conn ->
@@ -205,7 +205,7 @@ defmodule Easy.Billing.CheckoutIntentTest do
   end
 
   test "cancellation blocks overlapping cancellations and purchases", %{business: business, ctx: ctx} do
-    insert(:business_billing, business: business, paid_seats: 3, status: :active, razorpay_subscription_id: "sub_cancel_held")
+    business.billing |> Ecto.Changeset.change(paid_seats: 3, status: :active, razorpay_subscription_id: "sub_cancel_held") |> Easy.Repo.update!()
     parent = self()
 
     Req.Test.stub(Easy.Razorpay, fn conn ->
@@ -231,7 +231,7 @@ defmodule Easy.Billing.CheckoutIntentTest do
   end
 
   test "an uncertain cancellation survives reads and can retry only cancellation", %{business: business, ctx: ctx} do
-    insert(:business_billing, business: business, paid_seats: 3, status: :active, razorpay_subscription_id: "sub_cancel_retry")
+    business.billing |> Ecto.Changeset.change(paid_seats: 3, status: :active, razorpay_subscription_id: "sub_cancel_retry") |> Easy.Repo.update!()
     Req.Test.stub(Easy.Razorpay, fn conn -> Req.Test.transport_error(conn, :econnrefused) end)
     assert {:error, :razorpay_error} = Billing.cancel(ctx)
 
@@ -246,7 +246,7 @@ defmodule Easy.Billing.CheckoutIntentTest do
   end
 
   test "a delayed quantity response cannot restore a cancelled subscription", %{business: business, ctx: ctx} do
-    insert(:business_billing, business: business, paid_seats: 3, status: :active, razorpay_subscription_id: "sub_cancelled_update")
+    business.billing |> Ecto.Changeset.change(paid_seats: 3, status: :active, razorpay_subscription_id: "sub_cancelled_update") |> Easy.Repo.update!()
     parent = self()
 
     Req.Test.stub(Easy.Razorpay, fn conn ->
@@ -271,7 +271,7 @@ defmodule Easy.Billing.CheckoutIntentTest do
   end
 
   test "late charge and update notifications do not restore terminal seats", %{business: business, ctx: ctx} do
-    insert(:business_billing, business: business, paid_seats: 0, status: :cancelled, razorpay_subscription_id: "sub_terminal")
+    business.billing |> Ecto.Changeset.change(paid_seats: 0, status: :cancelled, razorpay_subscription_id: "sub_terminal") |> Easy.Repo.update!()
     assert :ok = subscription_webhook("subscription.charged", "sub_terminal", 3)
     assert :ok = subscription_webhook("subscription.updated", "sub_terminal", 3)
 
@@ -283,7 +283,7 @@ defmodule Easy.Billing.CheckoutIntentTest do
   end
 
   test "an interrupted update recovers provider success without a second PATCH", %{business: business, ctx: ctx} do
-    insert(:business_billing, business: business, paid_seats: 3, status: :active, razorpay_subscription_id: "sub_restart")
+    business.billing |> Ecto.Changeset.change(paid_seats: 3, status: :active, razorpay_subscription_id: "sub_restart") |> Easy.Repo.update!()
     parent = self()
     request_id = Ecto.UUID.generate()
 
@@ -317,7 +317,7 @@ defmodule Easy.Billing.CheckoutIntentTest do
   end
 
   test "an unapplied interrupted update retries the original absolute target", %{business: business, ctx: ctx} do
-    insert(:business_billing, business: business, paid_seats: 3, status: :active, razorpay_subscription_id: "sub_unapplied")
+    business.billing |> Ecto.Changeset.change(paid_seats: 3, status: :active, razorpay_subscription_id: "sub_unapplied") |> Easy.Repo.update!()
     request_id = Ecto.UUID.generate()
     Req.Test.stub(Easy.Razorpay, fn conn -> Req.Test.transport_error(conn, :econnrefused) end)
     assert {:error, :razorpay_error} = Billing.checkout(ctx, 1, request_id)
@@ -336,7 +336,7 @@ defmodule Easy.Billing.CheckoutIntentTest do
   end
 
   test "an interrupted cancellation becomes retryable after its request expires", %{business: business, ctx: ctx} do
-    insert(:business_billing, business: business, paid_seats: 3, status: :active, razorpay_subscription_id: "sub_cancel_restart")
+    business.billing |> Ecto.Changeset.change(paid_seats: 3, status: :active, razorpay_subscription_id: "sub_cancel_restart") |> Easy.Repo.update!()
     parent = self()
 
     Req.Test.stub(Easy.Razorpay, fn _conn ->
@@ -424,13 +424,13 @@ defmodule Easy.Billing.CheckoutIntentTest do
 
   defp intent(business_id, request_id), do: Repo.get_by!(CheckoutIntent, business_id: business_id, request_id: request_id)
 
-  defp cleanup(business_id, owner_id) do
+  defp cleanup(business_id, owner_user_id) do
     Repo.delete_all(from intent in CheckoutIntent, where: intent.business_id == ^business_id)
     Repo.delete_all(from event in Event, where: event.business_id == ^business_id)
     Repo.delete_all(from client in Client, where: client.business_id == ^business_id)
     Repo.delete_all(from billing in BusinessBilling, where: billing.business_id == ^business_id)
     Repo.delete_all(from coach in Coach, where: coach.business_id == ^business_id)
     Repo.delete_all(from business in Business, where: business.id == ^business_id)
-    Repo.delete_all(from user in User, where: user.id == ^owner_id)
+    Repo.delete_all(from user in User, where: user.id == ^owner_user_id)
   end
 end

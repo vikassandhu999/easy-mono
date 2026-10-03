@@ -13,25 +13,25 @@ export async function api(path, {method = 'GET', body, token} = {}) {
   return data;
 }
 
-export async function inviteClient({firstName = 'Alex', businessName = 'Everyday Coaching'} = {}) {
+export async function inviteClient({fullName = 'Alex Client', businessName = 'Everyday Coaching'} = {}) {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const coachEmail = `coach-${suffix}@example.test`;
   const email = `client-${suffix}@example.test`;
-  await api('/v1/auth/signup', {method: 'POST', body: {email: coachEmail, first_name: 'Test', last_name: 'Coach'}});
+  await api('/v1/auth/signup', {method: 'POST', body: {email: coachEmail, full_name: 'Test Coach'}});
   const guest = await api('/v1/auth/verify', {method: 'POST', body: {email: coachEmail, otp: '123456'}});
   await api('/v1/businesses', {
     method: 'POST',
     token: guest.access_token,
-    body: {name: businessName, handle: `mobile-${suffix}`},
+    body: {full_name: 'Test Coach', name: businessName, handle: `mobile-${suffix}`},
   });
   const coach = await api('/v1/auth/token', {
     method: 'POST',
     body: {grant_type: 'refresh_token', refresh_token: guest.refresh_token, role: 'coach'},
   });
-  const invitation = await api('/v1/coach/clients/invite', {
+  const invitation = await api('/v1/coach/clients', {
     method: 'POST',
     token: coach.access_token,
-    body: {email, first_name: firstName, last_name: 'Client'},
+    body: {email, full_name: fullName},
   });
   const token = new URL(invitation.data.invite_url).pathname.split('/invite/')[1];
   if (!token) {

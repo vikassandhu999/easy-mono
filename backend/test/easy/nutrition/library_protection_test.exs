@@ -165,7 +165,7 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
     test "lists Recipe Ingredients and Menu references across plan states without leaking tenants" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       food = insert(:food, business: coach.business, creator: coach, name: "Yogurt")
       recipe = insert(:recipe, business: coach.business, creator: coach, name: "Lassi")
 
@@ -234,7 +234,7 @@ defmodule Easy.Nutrition.LibraryProtectionTest do
     test "lists direct Menu references for Templates and Client Plans, including archived" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       recipe = insert(:recipe, business: coach.business, creator: coach, name: "Dal")
 
       template = put_recipe_on_menu(coach, recipe, name: "Cut Template")

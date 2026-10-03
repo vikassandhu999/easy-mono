@@ -28,8 +28,7 @@ defmodule Easy.Factory do
   def user_factory do
     %User{
       email: sequence(:email, &unique_test_email("user", &1)),
-      first_name: "Test",
-      last_name: "User"
+      full_name: "Test User"
     }
   end
 
@@ -38,14 +37,15 @@ defmodule Easy.Factory do
       name: sequence(:business_name, &"Business #{&1}"),
       handle: sequence(:handle, &"biz-#{&1}-#{System.unique_integer([:positive])}"),
       timezone: Easy.LocalCalendar.default_timezone(),
-      owner: build(:user)
+      owner: build(:user),
+      billing: %BusinessBilling{}
     }
   end
 
   def business_billing_factory do
     %BusinessBilling{
-      business: build(:business),
-      free_seats: 2,
+      business: build(:business, billing: nil),
+      free_seats: 10,
       paid_seats: 0,
       status: :free
     }
@@ -53,10 +53,8 @@ defmodule Easy.Factory do
 
   def coach_factory do
     %Coach{
-      first_name: "Test",
-      last_name: "Coach",
+      full_name: "Test Coach",
       email: sequence(:coach_email, &unique_test_email("coach", &1)),
-      status: :active,
       user: build(:user),
       business: build(:business)
     }
@@ -71,50 +69,32 @@ defmodule Easy.Factory do
     }
   end
 
-  # Arity-1 so an overridden `creator:` also becomes the `assigned_coach:` default —
-  # ExMachina only merges attrs over the arity-0 return value, which would leave
-  # assigned_coach pointing at this factory's own throwaway coach instead of the
-  # caller's override.
   def client_factory(attrs) do
-    # `business` and `creator` are persisted (not merely built) because each is
-    # referenced from two belongs_to paths below (client.business/client.creator.business,
-    # and client.creator/client.assigned_coach). An unsaved struct shared across two
-    # paths gets cascade-inserted twice by Ecto, tripping the businesses/users/coaches
-    # unique constraints.
-    business =
-      attrs[:business] ||
-        insert(:business,
-          owner: build(:user, email: sequence(:business_owner_email, &unique_test_email("business-owner", &1)))
-        )
-
-    creator =
-      attrs[:creator] ||
-        insert(:coach,
-          business: business,
-          user: build(:user, email: sequence(:coach_user_email, &unique_test_email("coach-user", &1)))
-        )
+    business = attrs[:business] || insert(:business)
+    coach = attrs[:coach] || insert(:coach, business: business)
+    user = if Map.has_key?(attrs, :user), do: attrs[:user], else: build(:user)
 
     %Client{
       email: sequence(:client_email, &"client-#{&1}@test.com"),
-      first_name: "Test",
-      last_name: "Client",
+      full_name: "Test Client",
       phone: "123-456-7890",
       notes: "Test client",
-      status: :active,
-      timezone: Easy.LocalCalendar.default_timezone(),
-      user: build(:user, email: sequence(:client_user_email, &unique_test_email("client-user", &1))),
+      user: user,
       business: business,
-      creator: creator,
-      assigned_coach: creator
+      coach: coach,
+      terms: if(user, do: [build(:coaching_term, starts_on: Date.add(Date.utc_today(), -365))], else: [])
     }
     |> merge_attributes(attrs)
+  end
+
+  def coaching_term_factory do
+    %Easy.CoachingTerms.CoachingTerm{starts_on: Date.utc_today()}
   end
 
   def client_attrs_factory do
     %{
       "email" => sequence(:client_invite_email, &"invite-#{&1}@test.com"),
-      "first_name" => "Invited",
-      "last_name" => "Client",
+      "full_name" => "Invited Client",
       "phone" => "123-555-7890",
       "notes" => "Invited via test"
     }
@@ -390,7 +370,7 @@ defmodule Easy.Factory do
     attrs = Map.new(attrs)
     business = attrs[:business] || build(:business)
     creator = attrs[:creator] || build(:coach, business: business)
-    client = attrs[:client] || build(:client, business: business, creator: creator)
+    client = attrs[:client] || build(:client, business: business, coach: creator)
     state = attrs[:state] || :active
     started_at = attrs[:started_at] || DateTime.utc_now(:second)
     closed_at = attrs[:closed_at] || if(state in [:completed, :discarded], do: started_at)

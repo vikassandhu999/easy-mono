@@ -14,6 +14,7 @@ defmodule Easy.Identity.AuthTokens do
           token_type: String.t(),
           expires_in: pos_integer(),
           refresh_token: String.t(),
+          full_name: String.t(),
           scope: String.t()
         }
 
@@ -73,6 +74,7 @@ defmodule Easy.Identity.AuthTokens do
       token_type: "Bearer",
       expires_in: 300,
       refresh_token: session.refresh_token,
+      full_name: user.full_name,
       scope: session.role |> Atom.to_string()
     }
   end

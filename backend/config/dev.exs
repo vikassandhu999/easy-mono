@@ -65,8 +65,8 @@ config :easy, EasyWeb.CookieHelper, secure: false
 
 # Frontend URLs for development
 config :easy,
-  frontend_url: "http://localhost:2020",
-  client_frontend_url: "http://localhost:1314"
+  frontend_url: "http://localhost:2022",
+  client_frontend_url: "http://localhost:1315"
 
 # Fixed OTP in dev — every login code is 123456, no email-reading needed.
 config :easy, fixed_otp: "123456"

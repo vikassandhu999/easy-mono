@@ -5,7 +5,7 @@ defmodule EasyWeb.Clients.UploadController do
   alias EasyWeb.Types.Upload
 
   typed(:create, body: Upload.create(), ok: {201, data(Upload.t())})
-  typed(:download_urls, body: Upload.download_urls(), ok: {200, data([Upload.download()])})
+  typed(:download_urls, query: Upload.download_urls(), ok: {200, data([Upload.download()])})
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
@@ -19,7 +19,7 @@ defmodule EasyWeb.Clients.UploadController do
   @spec download_urls(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def download_urls(conn, _params) do
     with {:ok, downloads} <-
-           Attachments.get_client_downloads(conn.assigns.ctx, conn.body_params.attachment_ids) do
+           Attachments.get_client_downloads(conn.assigns.ctx, conn.query_params["attachment_ids"]) do
       ok(conn, %{data: downloads})
     end
   end

@@ -24,7 +24,7 @@ defmodule Easy.Training.CanonicalSchemaTest do
           weekday: :monday
         )
 
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       session = insert(:workout_session, business: coach.business, client: client)
       performed = insert(:performed_set, business: coach.business, session: session)
 
@@ -36,7 +36,7 @@ defmodule Easy.Training.CanonicalSchemaTest do
 
     test "the database rejects client-plan fields on a template" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
 
       assert_raise Postgrex.Error, fn ->
         Repo.insert_all("training_plans", [
@@ -157,7 +157,7 @@ defmodule Easy.Training.CanonicalSchemaTest do
 
     test "an active client has at most one incomplete plan" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
 
       insert(:training_plan,
         business: coach.business,
@@ -180,34 +180,9 @@ defmodule Easy.Training.CanonicalSchemaTest do
       end
     end
 
-    test "active client plan coverage cannot overlap" do
-      coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
-
-      insert(:training_plan,
-        business: coach.business,
-        creator: coach.user,
-        client: client,
-        kind: :client_plan,
-        start_date: ~D[2026-08-01],
-        end_date: ~D[2026-08-31]
-      )
-
-      assert_raise Postgrex.Error, fn ->
-        Repo.insert_all("training_plans", [
-          plan_row(coach,
-            kind: "client_plan",
-            client_id: dump_uuid(client.id),
-            start_date: ~D[2026-08-15],
-            end_date: nil
-          )
-        ])
-      end
-    end
-
     test "a source template must belong to the same business" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       other_coach = insert(:coach)
 
       source =
@@ -231,7 +206,7 @@ defmodule Easy.Training.CanonicalSchemaTest do
 
     test "a planned session requires its versioned Prescription snapshot" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
 
       assert_raise Postgrex.Error, fn ->
         Repo.insert_all("training_sessions", [
@@ -250,7 +225,7 @@ defmodule Easy.Training.CanonicalSchemaTest do
 
     test "a planned session snapshot version is positive" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
 
       assert_raise Postgrex.Error, fn ->
         Repo.insert_all("training_sessions", [
@@ -267,7 +242,7 @@ defmodule Easy.Training.CanonicalSchemaTest do
 
     test "a client has at most one active session" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       insert(:workout_session, business: coach.business, client: client)
 
       assert_raise Postgrex.Error, fn ->
@@ -277,7 +252,7 @@ defmodule Easy.Training.CanonicalSchemaTest do
 
     test "terminal sessions require a close time" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
 
       assert_raise Postgrex.Error, fn ->
         Repo.insert_all("training_sessions", [
@@ -288,7 +263,7 @@ defmodule Easy.Training.CanonicalSchemaTest do
 
     test "a session cannot close before it starts" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
 
       assert_raise Postgrex.Error, fn ->
         Repo.insert_all("training_sessions", [
@@ -303,7 +278,7 @@ defmodule Easy.Training.CanonicalSchemaTest do
 
     test "performed history requires a frozen nonblank exercise name" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       session = insert(:workout_session, business: coach.business, client: client)
 
       assert_raise Postgrex.Error, fn ->

@@ -6,15 +6,13 @@ defmodule EasyWeb.Params.Signup do
   embedded_schema do
     field :email, :string
     field :phone, :string
-    field :first_name, :string
-    field :last_name, :string
+    field :full_name, :string
   end
 
   @type t() :: %__MODULE__{
           email: String.t() | nil,
           phone: String.t() | nil,
-          first_name: String.t() | nil,
-          last_name: String.t() | nil
+          full_name: String.t() | nil
         }
 
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
@@ -23,16 +21,14 @@ defmodule EasyWeb.Params.Signup do
     |> cast(attrs, [
       :email,
       :phone,
-      :first_name,
-      :last_name
+      :full_name
     ])
     |> validate_email_or_phone()
     |> validate_format(
       :email,
       ~r/^[\w.!#$%&'*+=?^`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/
     )
-    |> validate_length(:first_name, max: 255)
-    |> validate_length(:last_name, max: 255)
+    |> validate_length(:full_name, max: 255)
   end
 
   defp validate_email_or_phone(changeset) do

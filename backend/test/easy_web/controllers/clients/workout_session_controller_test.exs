@@ -5,7 +5,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, creator: coach, business: coach.business)
+    client = insert(:client, coach: coach, business: coach.business)
     conn = build_conn() |> authenticate_client(client)
 
     ctx = %Ctx{user_id: client.user_id, business_id: coach.business_id, client_id: client.id}
@@ -167,7 +167,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
     test "lists only this client's sessions (no date filter)", ctx do
       insert(:workout_session, client: ctx.client, business: ctx.business)
 
-      other_client = insert(:client, creator: ctx.coach, business: ctx.business)
+      other_client = insert(:client, coach: ctx.coach, business: ctx.business)
       insert(:workout_session, client: other_client, business: ctx.business)
 
       conn = get(ctx.conn, "/v1/client/training-sessions")
@@ -266,7 +266,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
     end
 
     test "returns 404 for another client's session", ctx do
-      other_client = insert(:client, creator: ctx.coach, business: ctx.business)
+      other_client = insert(:client, coach: ctx.coach, business: ctx.business)
       other_session = insert(:workout_session, client: other_client, business: ctx.business)
 
       conn = get(ctx.conn, "/v1/client/training-sessions/#{other_session.id}")
@@ -387,7 +387,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
     end
 
     test "returns 404 for another client's session", ctx do
-      other_client = insert(:client, creator: ctx.coach, business: ctx.business)
+      other_client = insert(:client, coach: ctx.coach, business: ctx.business)
       other_session = insert(:workout_session, client: other_client, business: ctx.business)
 
       conn =

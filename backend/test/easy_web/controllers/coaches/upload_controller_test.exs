@@ -6,8 +6,8 @@ defmodule EasyWeb.Coaches.UploadControllerTest do
     business = insert(:business, owner: owner_user)
     owner = insert(:coach, business: business, user: owner_user)
     trainer = insert(:coach, business: business)
-    owner_client = insert(:client, business: business, creator: owner, assigned_coach: owner)
-    trainer_client = insert(:client, business: business, creator: owner, assigned_coach: trainer)
+    owner_client = insert(:client, business: business, coach: owner)
+    trainer_client = insert(:client, business: business, coach: trainer)
 
     %{
       owner_conn:

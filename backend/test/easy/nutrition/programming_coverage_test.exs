@@ -3,7 +3,7 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
   use Easy.DataCase, async: true
 
   alias Easy.LocalCalendar
-  alias Easy.Nutrition.{Menu, Plan, PlanReader, Programming}
+  alias Easy.Nutrition.{Menu, PlanReader, Programming}
   alias Easy.QueryPlan
 
   test "batch coverage accepts empty client collections" do
@@ -15,7 +15,7 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
   describe "Client Plan Coverage and lifecycle" do
     test "coverage summary orders upcoming plans and handles an empty current window" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       ctx = trainer_ctx(coach)
       today = local_today(client)
 
@@ -39,13 +39,9 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
       assert Enum.map(upcoming, & &1.id) == [sooner.id, later.id]
     end
 
-    test "exports the canonical Client Plan lifecycle vocabulary" do
-      assert Plan.lifecycles() == [:active, :incomplete, :upcoming, :current, :ended, :archived]
-    end
-
     test "derives lifecycle from dates, archive state, and the client's local date" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       ctx = trainer_ctx(coach)
       today = local_today(client)
 
@@ -76,7 +72,7 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
     test "rejects a second unarchived incomplete Client Plan" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})
       insert_client_plan(coach, client)
 
@@ -87,7 +83,7 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
     test "accepts several non-overlapping future Client Plans and rejects overlapping Coverage" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       {:ok, first_template} = Programming.create_template(ctx, %{"name" => "Block A"})
       {:ok, second_template} = Programming.create_template(ctx, %{"name" => "Block B"})
       {:ok, third_template} = Programming.create_template(ctx, %{"name" => "Block C"})
@@ -124,7 +120,7 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
     test "restore is rejected when it would overlap unarchived Coverage" do
       coach = insert(:coach)
       ctx = trainer_ctx(coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       {:ok, first_template} = Programming.create_template(ctx, %{"name" => "Now"})
       {:ok, second_template} = Programming.create_template(ctx, %{"name" => "Later"})
 
@@ -150,7 +146,7 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
   describe "resolve_client_coverage/2" do
     test "resolves inclusive Coverage and the selected Day Pattern with its Slots" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       food = insert(:food, business: coach.business, creator: coach)
       ctx = trainer_ctx(coach)
       {:ok, template} = Programming.create_template(ctx, %{"name" => "Cut"})
@@ -172,7 +168,7 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
 
     test "treats start and end dates as inclusive and an absent end date as open-ended" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       plan = insert_client_plan(coach, client, start_date: ~D[2026-08-15], end_date: ~D[2026-08-17])
       ctx = client_ctx(client)
 
@@ -190,10 +186,10 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
 
     test "returns successful absence for incomplete, archived, ended, upcoming, and other clients' plans" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
-      other_client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
+      other_client = insert(:client, business: coach.business, coach: coach)
       other = insert(:coach)
-      other_business_client = insert(:client, business: other.business, creator: other, assigned_coach: other)
+      other_business_client = insert(:client, business: other.business, coach: other)
 
       insert_client_plan(coach, client)
       insert_client_plan(coach, client, start_date: ~D[2026-09-01], end_date: ~D[2026-09-30])
@@ -207,7 +203,7 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
 
     test "client-self Coverage requires the trusted client id from Ctx" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       insert_client_plan(coach, client, start_date: ~D[2026-08-15])
       missing_client_ctx = %Easy.Ctx{business_id: coach.business_id, user_id: client.user_id}
 
@@ -218,8 +214,8 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
   describe "resolve_coverage_for_client/3" do
     test "lets a coach resolve Coverage for a visible client and conceals others" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
-      hidden = insert(:client, business: insert(:coach).business, creator: insert(:coach))
+      client = insert(:client, business: coach.business, coach: coach)
+      hidden = insert(:client)
       plan = insert_client_plan(coach, client, start_date: ~D[2026-08-15], end_date: ~D[2026-08-15])
       ctx = trainer_ctx(coach)
 
@@ -235,11 +231,11 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
       coach = insert(:coach)
       first_date = Date.add(Date.utc_today(), -30)
       second_date = Date.add(first_date, 1)
-      first = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
-      second = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
-      uncovered = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      first = insert(:client, business: coach.business, coach: coach)
+      second = insert(:client, business: coach.business, coach: coach)
+      uncovered = insert(:client, business: coach.business, coach: coach)
       outsider = insert(:coach)
-      foreign = insert(:client, business: outsider.business, creator: outsider, assigned_coach: outsider)
+      foreign = insert(:client, business: outsider.business, coach: outsider)
 
       first_plan = insert_client_plan(coach, first, start_date: first_date, end_date: first_date)
       second_plan = insert_client_plan(coach, second, start_date: second_date, end_date: second_date)
@@ -260,12 +256,12 @@ defmodule Easy.Nutrition.ProgrammingCoverageTest do
 
       covered =
         for n <- 1..3 do
-          client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+          client = insert(:client, business: coach.business, coach: coach)
           plan = insert_client_plan(coach, client, name: "Covered #{n}", start_date: today)
           {client.id, plan.id}
         end
 
-      uncovered = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      uncovered = insert(:client, business: coach.business, coach: coach)
       insert_client_plan(coach, uncovered)
       ids = Enum.map(covered, &elem(&1, 0)) ++ [uncovered.id]
 

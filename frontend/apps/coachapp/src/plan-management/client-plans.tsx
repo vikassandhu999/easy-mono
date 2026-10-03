@@ -1,3 +1,4 @@
+import {formatDateShort} from '@easy/utils';
 import {generatePath, Link, useLocation, useParams, useSearchParams} from 'react-router-dom';
 import {useClientPlanPage} from '../api/client-plans';
 import {useClient} from '../api/clients';
@@ -21,9 +22,7 @@ export function ClientPlans({resource}: {resource: PlanResource}) {
     ...(archived !== null ? {archived} : {}),
   });
   const client = useClient(clientId);
-  const name = client.data
-    ? `${client.data.data.first_name ?? ''} ${client.data.data.last_name ?? ''}`.trim()
-    : 'Client';
+  const name = client.data ? client.data.data.preferred_name || client.data.data.full_name : 'Client';
   const manage = resource === 'training' ? routes.manageClientTrainingPlan : routes.manageClientNutritionPlan;
   const assign = resource === 'training' ? routes.assignTrainingPlan : routes.assignNutritionPlan;
   const notice: unknown = location.state;
@@ -79,16 +78,23 @@ export function ClientPlans({resource}: {resource: PlanResource}) {
             <StatusBadge tone={plan.lifecycle === 'current' ? 'positive' : 'neutral'}>
               {plan.lifecycle === 'incomplete' || !plan.lifecycle
                 ? 'Dates not set'
-                : plan.lifecycle === 'current'
-                  ? 'Current'
-                  : plan.lifecycle === 'upcoming'
-                    ? 'Upcoming'
-                    : plan.lifecycle === 'ended'
-                      ? 'Ended'
-                      : plan.lifecycle === 'archived'
-                        ? 'Archived'
-                        : 'Active'}
+                : plan.lifecycle === 'waiting'
+                  ? 'Waiting for coaching'
+                  : plan.lifecycle === 'current'
+                    ? 'Current'
+                    : plan.lifecycle === 'upcoming'
+                      ? 'Upcoming'
+                      : plan.lifecycle === 'ended'
+                        ? 'Ended'
+                        : plan.lifecycle === 'archived'
+                          ? 'Archived'
+                          : 'Active'}
             </StatusBadge>
+            {plan.stopped_on && (
+              <p className="text-sm text-muted-foreground">
+                Stopped when coaching ended on {formatDateShort(plan.stopped_on)}
+              </p>
+            )}
             <p className="text-sm text-muted-foreground">
               {plan.start_date ?? 'Start date not set'} → {plan.end_date ?? 'No end date'}
             </p>

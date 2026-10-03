@@ -7,6 +7,7 @@ import {getSession} from '../api/session';
 import {routes} from '../routes';
 import {Button} from '../ui/button';
 import {CachedRead} from '../ui/cached-read';
+import {useCoaching} from '../ui/coaching';
 import {useOnline} from '../ui/connection-status';
 import {DraftStatus, useDraftWriter} from '../ui/draft-status';
 import {FormError} from '../ui/form-error';
@@ -15,6 +16,7 @@ import {Page} from '../ui/page';
 import {SubmitButton} from '../ui/submit-button';
 
 export function AccountDetails() {
+  const {canWrite} = useCoaching();
   const query = useProfile();
   const online = useOnline();
   if (!query.data) {
@@ -40,6 +42,38 @@ export function AccountDetails() {
             {online ? 'Loading your details…' : 'Your details are not available offline. Reconnect to open them.'}
           </p>
         )}
+      </Page>
+    );
+  }
+  if (!canWrite) {
+    const profile = query.data.data;
+    return (
+      <Page
+        title="Personal details"
+        description={profile.email ?? undefined}
+        back={routes.account}
+        compact
+      >
+        <CachedRead
+          updatedAt={query.dataUpdatedAt}
+          failed={query.isError}
+          refreshing={query.isFetching}
+          refresh={() => query.refetch()}
+        />
+        <dl className="space-y-5">
+          <div>
+            <dt className="text-sm text-muted-foreground">Full name</dt>
+            <dd>{profile.full_name}</dd>
+          </div>
+          <div>
+            <dt className="text-sm text-muted-foreground">What should we call you?</dt>
+            <dd>{profile.preferred_name || 'Not set'}</dd>
+          </div>
+          <div>
+            <dt className="text-sm text-muted-foreground">Phone</dt>
+            <dd>{profile.phone || 'Not set'}</dd>
+          </div>
+        </dl>
       </Page>
     );
   }
@@ -69,8 +103,8 @@ function ProfileForm({profile, children}: {profile: Profile; children: ReactNode
   const {saveDraft, state: draftState} = useDraftWriter(owner, 'profile');
   const form = useForm<ProfileUpdate>({
     defaultValues: {
-      first_name: profile.first_name ?? '',
-      last_name: profile.last_name ?? '',
+      full_name: profile.full_name ?? '',
+      preferred_name: profile.preferred_name ?? '',
       phone: profile.phone ?? '',
     },
   });
@@ -87,14 +121,14 @@ function ProfileForm({profile, children}: {profile: Profile; children: ReactNode
         if (
           draft &&
           typeof draft === 'object' &&
-          'first_name' in draft &&
-          typeof draft.first_name === 'string' &&
-          'last_name' in draft &&
-          typeof draft.last_name === 'string' &&
+          'full_name' in draft &&
+          typeof draft.full_name === 'string' &&
+          'preferred_name' in draft &&
+          typeof draft.preferred_name === 'string' &&
           'phone' in draft &&
           typeof draft.phone === 'string'
         ) {
-          form.reset({first_name: draft.first_name, last_name: draft.last_name, phone: draft.phone});
+          form.reset({full_name: draft.full_name, preferred_name: draft.preferred_name, phone: draft.phone});
           setHasDraft(true);
           setNotice('Your unsaved details were restored.');
         }
@@ -117,14 +151,14 @@ function ProfileForm({profile, children}: {profile: Profile; children: ReactNode
       return;
     }
     const values = {
-      first_name: profile.first_name ?? '',
-      last_name: profile.last_name ?? '',
+      full_name: profile.full_name ?? '',
+      preferred_name: profile.preferred_name ?? '',
       phone: profile.phone ?? '',
     };
     if (JSON.stringify(form.getValues()) !== JSON.stringify(values)) {
       form.reset(values);
     }
-  }, [draftReady, hasDraft, isDirty, isSubmitting, profile.first_name, profile.last_name, profile.phone, form]);
+  }, [draftReady, hasDraft, isDirty, isSubmitting, profile.full_name, profile.preferred_name, profile.phone, form]);
 
   useEffect(() => {
     if (!draftReady || !owner) {
@@ -145,8 +179,8 @@ function ProfileForm({profile, children}: {profile: Profile; children: ReactNode
     try {
       const result = await mutation.mutateAsync(values);
       form.reset({
-        first_name: result.data.first_name ?? '',
-        last_name: result.data.last_name ?? '',
+        full_name: result.data.full_name ?? '',
+        preferred_name: result.data.preferred_name ?? '',
         phone: result.data.phone ?? '',
       });
       if (owner) {
@@ -189,15 +223,16 @@ function ProfileForm({profile, children}: {profile: Profile; children: ReactNode
       >
         <FormField
           control={form.control}
-          name="first_name"
-          label="First name"
-          autoComplete="given-name"
+          name="full_name"
+          label="Full name"
+          autoComplete="name"
+          isRequired
         />
         <FormField
           control={form.control}
-          name="last_name"
-          label="Last name"
-          autoComplete="family-name"
+          name="preferred_name"
+          label="What should we call you?"
+          autoComplete="nickname"
         />
         <FormField
           control={form.control}

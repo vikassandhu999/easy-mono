@@ -16,12 +16,12 @@ try {
     const unique = Date.now() + '-' + width;
     const ownerEmail = 'test-team-owner-' + unique + '@example.test';
     const email = 'test-team-invitation-' + unique + '@example.test';
-    await send('post', '/v1/auth/signup', {email: ownerEmail, first_name: 'Test'});
+    await send('post', '/v1/auth/signup', {email: ownerEmail, full_name: 'Test'});
     const guest = await send('post', '/v1/auth/verify', {email: ownerEmail, otp: '123456'});
     await send(
       'post',
       '/v1/businesses',
-      {name: 'Test Team Recovery', handle: 'team-recovery-' + unique},
+      {full_name: 'Test', name: 'Test Team Recovery', handle: 'team-recovery-' + unique},
       guest.access_token,
     );
     const tokens = await send('post', '/v1/auth/token', {
@@ -41,7 +41,7 @@ try {
         const {saveSession} = await import('/src/api/session.ts');
         saveSession(tokens);
       }, tokens);
-      const listURL = '/team?search=' + encodeURIComponent(email) + '&status=invited';
+      const listURL = '/team?search=' + encodeURIComponent(email) + '&state=invited';
       await page.goto(listURL);
       await expect(page.getByText('No matching team members', {exact: true})).toBeVisible();
       await page.getByRole('link', {name: 'Invite coach', exact: true}).click();
@@ -52,10 +52,10 @@ try {
       await expect(page.getByLabel('Email', {exact: true})).toBeEnabled();
       await expect(page.getByRole('button', {name: 'Check Team', exact: true})).toHaveCount(0);
       await page.getByLabel('Email', {exact: true}).fill(email);
-      await page.getByLabel('First name', {exact: true}).fill('Test Recovery Coach');
+      await page.getByLabel('Full name', {exact: true}).fill('Test Recovery Coach');
       let writes = 0;
       let original;
-      await page.route('**/v1/coach/team/invite', async (route) => {
+      await page.route('**/v1/coach/coaches', async (route) => {
         writes += 1;
         const response = await route.fetch();
         expect(response.status()).toBe(200);
@@ -78,7 +78,7 @@ try {
       await expect(page.getByRole('alert').locator('..')).toBeFocused();
       await page.keyboard.press('Tab');
       await expect(page.getByRole('button', {name: 'Check Team', exact: true})).toBeFocused();
-      await page.route('**/v1/coach/team?*', async (route) => {
+      await page.route('**/v1/coach/coaches?*', async (route) => {
         expect(new URL(route.request().url()).searchParams.get('search')).toBe(email);
         await route.fulfill({status: 503, json: {error_code: 'unavailable'}});
       });
@@ -86,7 +86,7 @@ try {
       const lookup = page.getByRole('dialog', {name: 'Check Team', exact: true});
       await expect(lookup.getByRole('alert')).toBeVisible();
       await expect(lookup.getByRole('button', {name: 'Return and retry', exact: true})).toHaveCount(0);
-      await page.unroute('**/v1/coach/team?*');
+      await page.unroute('**/v1/coach/coaches?*');
       await lookup.getByRole('button', {name: 'Try again', exact: true}).click();
       await expect(lookup.getByText('1 matching coach', {exact: true})).toBeVisible();
       await expect(lookup.getByText(email, {exact: true})).toBeVisible();
@@ -107,19 +107,19 @@ try {
       await expect(page.getByRole('heading', {name: 'Test Recovery Coach', exact: true})).toBeVisible();
       await page.reload();
       await expect(page.getByText('Waiting for this coach to accept their invitation.', {exact: true})).toBeVisible();
-      const saved = await send('get', '/v1/coach/team/' + original.id, undefined, tokens.access_token);
-      expect(saved.data.invitation_sent_at).toBe(original.invitation_sent_at);
+      const saved = await send('get', '/v1/coach/coaches/' + original.id, undefined, tokens.access_token);
+      expect(saved.data.invited_at).toBe(original.invited_at);
       expect(writes).toBe(1);
       await page.getByRole('link', {name: 'Back to team', exact: true}).click();
       await expect(page).toHaveURL(baseURL + listURL);
       await expect(page.getByRole('link', {name: /Test Recovery Coach/})).toBeVisible();
 
-      await page.unroute('**/v1/coach/team/invite');
+      await page.unroute('**/v1/coach/coaches');
       await page.getByRole('link', {name: 'Invite coach', exact: true}).click();
       const secondEmail = 'test-team-retry-' + unique + '@example.test';
       await page.getByLabel('Email', {exact: true}).fill(secondEmail);
-      await page.getByLabel('First name', {exact: true}).fill('Test Retry Coach');
-      await page.route('**/v1/coach/team/invite', (route) =>
+      await page.getByLabel('Full name', {exact: true}).fill('Test Retry Coach');
+      await page.route('**/v1/coach/coaches', (route) =>
         route.fulfill({status: 503, json: {error_code: 'unavailable'}}),
       );
       await page.getByRole('button', {name: 'Send invitation', exact: true}).click();
@@ -129,9 +129,9 @@ try {
       await lookup.getByRole('button', {name: 'Return and retry', exact: true}).click();
       await expect(page.getByLabel('Email', {exact: true})).toBeFocused();
       await expect(page.getByLabel('Email', {exact: true})).toHaveValue(secondEmail);
-      await page.unroute('**/v1/coach/team/invite');
+      await page.unroute('**/v1/coach/coaches');
       const response = page.waitForResponse(
-        (value) => value.url().endsWith('/v1/coach/team/invite') && value.status() === 200,
+        (value) => value.url().endsWith('/v1/coach/coaches') && value.status() === 200,
       );
       await page.getByRole('button', {name: 'Send invitation', exact: true}).click();
       created.push((await (await response).json()).data.id);
@@ -143,7 +143,7 @@ try {
       release.resolve();
       await context.close();
       for (const id of created) {
-        await send('delete', '/v1/coach/team/' + id, undefined, tokens.access_token);
+        await send('delete', '/v1/coach/coaches/' + id, undefined, tokens.access_token);
       }
     }
   }

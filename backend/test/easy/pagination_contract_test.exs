@@ -5,7 +5,7 @@ defmodule Easy.PaginationContractTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+    client = insert(:client, business: coach.business, coach: coach)
     %{coach: coach, client: client, ctx: trainer_ctx(coach)}
   end
 
@@ -64,9 +64,9 @@ defmodule Easy.PaginationContractTest do
         end
 
       expected_ids = plans |> Enum.map(& &1.id) |> Enum.sort(:desc)
-      other_client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      other_client = insert(:client, business: coach.business, coach: coach)
       outsider = insert(:coach)
-      foreign = insert(:client, business: outsider.business, creator: outsider, assigned_coach: outsider)
+      foreign = insert(:client, business: outsider.business, coach: outsider, coach: outsider)
 
       for {owner, target} <- [{coach, other_client}, {outsider, foreign}] do
         insert(unquote(factory), business: owner.business, creator: owner.user, client: target, kind: :client_plan)
@@ -92,7 +92,7 @@ defmodule Easy.PaginationContractTest do
   end
 
   test "conversation lists allow pages larger than the default", %{coach: coach, ctx: ctx} do
-    for client <- insert_list(25, :client, business: coach.business, creator: coach, assigned_coach: coach) do
+    for client <- insert_list(25, :client, business: coach.business, coach: coach) do
       assert {:ok, _conversation} = Chat.get_or_create_conversation_for_client(ctx, client.id)
     end
 

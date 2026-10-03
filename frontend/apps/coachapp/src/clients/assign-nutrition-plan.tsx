@@ -25,9 +25,7 @@ export function AssignNutritionPlan() {
   const {state} = useListLocation(routes.home);
   const client = useClient(id);
   const back = generatePath(routes.client, {id});
-  const name = client.data
-    ? `${client.data.data.first_name ?? ''} ${client.data.data.last_name ?? ''}`.trim() || 'Client'
-    : 'Client';
+  const name = client.data ? client.data.data.preferred_name || client.data.data.full_name || 'Client' : 'Client';
   return (
     <Page>
       <PageHeader

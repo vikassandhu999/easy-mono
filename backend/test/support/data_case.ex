@@ -44,14 +44,14 @@ defmodule Easy.DataCase do
     coach_id =
       Coach
       |> Coach.for_business(business.id)
-      |> Coach.for_user(business.owner_id)
+      |> Coach.for_user(business.owner_user_id)
       |> Repo.one()
       |> case do
         nil -> nil
         coach -> coach.id
       end
 
-    Ctx.new(business.id, business.owner_id, coach_id, true)
+    Ctx.new(business.id, business.owner_user_id, coach_id, true)
   end
 
   @spec trainer_ctx(Easy.Orgs.Coach.t()) :: Easy.Ctx.t()

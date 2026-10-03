@@ -6,6 +6,7 @@ import {useConversationUpdates} from '../api/conversation-updates';
 import {routes} from '../routes';
 import {ActionCard} from '../ui/action-card';
 import {CachedRead} from '../ui/cached-read';
+import {CoachingEnded, useCoaching} from '../ui/coaching';
 import {useOnline} from '../ui/connection-status';
 import {MessageScrollerProvider} from '../ui/message-scroller';
 import {ReadState} from '../ui/read-state';
@@ -13,6 +14,7 @@ import {Composer} from './composer';
 import {History} from './history';
 
 export function TodayMessages() {
+  const {canWrite} = useCoaching();
   const query = useConversation();
   useConversationUpdates(query.data?.data.id);
   return (
@@ -26,15 +28,17 @@ export function TodayMessages() {
             refresh={() => query.refetch()}
           />
           <ActionCard
-            title="Message your coach"
+            title={canWrite ? 'Message your coach' : 'Conversation history'}
             eyebrow="You’ve got support"
             tone="coach"
             to={routes.messages}
             icon={<MessageCircle />}
             description={
-              query.data.data.unread_count > 0
-                ? `${query.data.data.unread_count} unread ${query.data.data.unread_count === 1 ? 'message' : 'messages'} from your coach.`
-                : 'Questions, wins, or a tough day. Share it here.'
+              !canWrite
+                ? 'Read your conversation and shared notes.'
+                : query.data.data.unread_count > 0
+                  ? `${query.data.data.unread_count} unread ${query.data.data.unread_count === 1 ? 'message' : 'messages'} from your coach.`
+                  : 'Questions, wins, or a tough day. Share it here.'
             }
           />
         </>
@@ -52,6 +56,7 @@ export function TodayMessages() {
 }
 
 export function Messages() {
+  const {canWrite} = useCoaching();
   const query = useConversation();
   const status = useConversationUpdates(query.data?.data.id);
   const online = useOnline();
@@ -117,23 +122,30 @@ export function Messages() {
             role="status"
             className="text-xs text-muted-foreground"
           >
-            {!online
-              ? 'Offline · Reconnect for new messages'
-              : status === 'live'
-                ? 'Your coach · Conversation connected'
-                : 'Connecting to live updates…'}
+            {!canWrite
+              ? 'Conversation history'
+              : !online
+                ? 'Offline · Reconnect for new messages'
+                : status === 'live'
+                  ? 'Your coach · Conversation connected'
+                  : 'Connecting to live updates…'}
           </p>
         </div>
       </header>
-      <p className="px-5 pb-2 text-xs text-muted-foreground">
-        Your coach replies asynchronously. Messages and shared notes may not be read immediately.
-      </p>
+      <div className="px-5">
+        <CoachingEnded />
+      </div>
+      {canWrite && (
+        <p className="px-5 pb-2 text-xs text-muted-foreground">
+          Your coach replies asynchronously. Messages and shared notes may not be read immediately.
+        </p>
+      )}
       <MessageScrollerProvider
         defaultScrollPosition="end"
         autoScroll
       >
         <History />
-        <Composer />
+        {canWrite && <Composer />}
       </MessageScrollerProvider>
     </main>
   );

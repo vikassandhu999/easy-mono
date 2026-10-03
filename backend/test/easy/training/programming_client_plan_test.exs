@@ -7,11 +7,11 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
 
   test "batch plan names respect each client's date and the tenant boundary" do
     coach = insert(:coach)
-    first = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
-    second = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
-    uncovered = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+    first = insert(:client, business: coach.business, coach: coach)
+    second = insert(:client, business: coach.business, coach: coach)
+    uncovered = insert(:client, business: coach.business, coach: coach)
     outsider = insert(:coach)
-    foreign = insert(:client, business: outsider.business, creator: outsider, assigned_coach: outsider)
+    foreign = insert(:client, business: outsider.business, coach: outsider)
     first_date = ~D[2026-01-01]
     second_date = Date.add(first_date, 1)
 
@@ -28,9 +28,9 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
   end
 
   describe "assign_template_to_client/4" do
-    test "creates an independent Client Plan and advances onboarding atomically" do
+    test "creates an independent Client Plan" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach, stage: :onboarding)
+      client = insert(:client, business: coach.business, coach: coach)
       template = insert(:training_plan, business: coach.business, creator: coach.user, name: "Strength Base")
       squat = insert(:exercise, business: coach.business, name: "Back Squat")
       press = insert(:exercise, business: coach.business, name: "Press")
@@ -97,8 +97,6 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
                {:friday, copied_upper.id}
              ]
 
-      assert Repo.get!(Easy.Clients.Client, client.id).stage == :coaching
-
       assert {:ok, changed} =
                Programming.update_plan(trainer_ctx(coach), assigned.id, 1, %{"name" => "Individualized"})
 
@@ -108,7 +106,7 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
 
     test "rejects invalid sources and invisible clients without advancing onboarding" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach, stage: :onboarding)
+      client = insert(:client, business: coach.business, coach: coach)
       archived = insert(:training_plan, business: coach.business, creator: coach.user, archived_at: ~U[2026-08-15 12:00:00Z])
 
       client_plan =
@@ -122,7 +120,7 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
 
       other_coach = insert(:coach)
       hidden_template = insert(:training_plan, business: other_coach.business, creator: other_coach.user)
-      hidden_client = insert(:client, business: other_coach.business, creator: other_coach, assigned_coach: other_coach)
+      hidden_client = insert(:client, business: other_coach.business, coach: other_coach)
       ctx = trainer_ctx(coach)
 
       for {target, source} <- [
@@ -133,13 +131,11 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
           ] do
         assert {:error, :not_found} = Programming.assign_template_to_client(ctx, target, source, %{})
       end
-
-      assert Repo.get!(Easy.Clients.Client, client.id).stage == :onboarding
     end
 
     test "rolls onboarding back when Client Plan constraints reject Assignment" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach, stage: :onboarding)
+      client = insert(:client, business: coach.business, coach: coach)
       template = insert(:training_plan, business: coach.business, creator: coach.user)
 
       insert(:training_plan,
@@ -153,19 +149,15 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
                Programming.assign_template_to_client(trainer_ctx(coach), client.id, template.id, %{})
 
       assert %{client_id: [_]} = errors_on(changeset)
-      assert Repo.get!(Easy.Clients.Client, client.id).stage == :onboarding
+
       assert Repo.aggregate(TrainingPlan.for_client(TrainingPlan, coach.business_id, client.id), :count, :id) == 1
     end
   end
 
   describe "Client Plan reads and lifecycle" do
-    test "exports the canonical Client Plan lifecycle vocabulary" do
-      assert TrainingPlan.lifecycles() == [:incomplete, :upcoming, :current, :ended, :archived]
-    end
-
     test "lists visible Client Plans and derives lifecycle from Coverage dates" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       ctx = trainer_ctx(coach)
 
       incomplete = insert_client_plan(coach, client)
@@ -197,7 +189,7 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
     test "conceals another coach's Client Plans" do
       owner = insert(:coach)
       colleague = insert(:coach, business: owner.business)
-      client = insert(:client, business: owner.business, creator: owner, assigned_coach: owner)
+      client = insert(:client, business: owner.business, coach: owner)
       insert_client_plan(owner, client)
 
       assert {:error, :not_found} =
@@ -207,12 +199,12 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
     test "client-self lists only its unarchived Client Plans and can inspect their Prescription" do
       today = ~D[2026-08-15]
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
-      other_client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
+      other_client = insert(:client, business: coach.business, coach: coach)
       other_coach = insert(:coach)
 
       other_business_client =
-        insert(:client, business: other_coach.business, creator: other_coach, assigned_coach: other_coach)
+        insert(:client, business: other_coach.business, coach: other_coach)
 
       incomplete = insert_client_plan(coach, client, name: "Incomplete")
       ended = insert_client_plan(coach, client, name: "Ended", start_date: ~D[2026-06-01], end_date: ~D[2026-06-30])
@@ -268,7 +260,7 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
 
     test "client-self reads require the trusted client id from Ctx" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       plan = insert_client_plan(coach, client)
       missing_client_ctx = %Easy.Ctx{business_id: coach.business_id, user_id: client.user_id}
 
@@ -281,7 +273,7 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
   describe "resolve_client_coverage/2" do
     test "resolves inclusive bounded Coverage and its scheduled workout guidance" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       plan = insert_client_plan(coach, client, start_date: ~D[2026-08-15], end_date: ~D[2026-08-15])
       workout = insert(:workout, business: coach.business, plan: plan, position: 0)
       insert(:workout_schedule, business: coach.business, plan: plan, workout: workout, weekday: :saturday)
@@ -295,7 +287,7 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
 
     test "resolves open-ended Coverage on and after its start date and returns nil on a rest day" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       plan = insert_client_plan(coach, client, start_date: ~D[2026-08-15], end_date: nil)
       insert(:workout, business: coach.business, plan: plan, position: 0)
 
@@ -307,12 +299,12 @@ defmodule Easy.Training.ProgrammingClientPlanTest do
 
     test "returns a successful nil result when no eligible Client Plan supplies Coverage" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
-      other_client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
+      other_client = insert(:client, business: coach.business, coach: coach)
       other_coach = insert(:coach)
 
       other_business_client =
-        insert(:client, business: other_coach.business, creator: other_coach, assigned_coach: other_coach)
+        insert(:client, business: other_coach.business, coach: other_coach)
 
       insert_client_plan(coach, client)
       insert_client_plan(coach, client, start_date: ~D[2026-09-01], end_date: ~D[2026-09-30])

@@ -1,263 +1,115 @@
 defmodule Easy.CoachInvitationsTest do
-  use Easy.DataCase, async: true
-
-  alias Easy.CoachInvitations
-  alias Easy.Identity.User
+  use Easy.SchemaCase, async: true
+  alias Easy.{Coaches, CoachInvitations, Repo}
+  alias Easy.Identity.SessionFactory
   alias Easy.Orgs.Coach
-  alias Easy.Repo
 
-  defp owner_ctx_with_coach(business) do
-    unless Repo.get_by(Coach, business_id: business.id, user_id: business.owner_id) do
-      insert(:coach, business: business, user: business.owner)
-    end
-
-    owner_ctx(business)
+  setup do
+    business = insert(:business)
+    owner = insert(:coach, business: business, user: business.owner)
+    %{ctx: %{owner_ctx(business) | coach_id: owner.id}}
   end
 
-  defp invited_coach(business, attrs \\ %{}) do
-    insert(
-      :coach,
-      Map.merge(
-        %{
-          business: business,
-          user: nil,
-          status: :invited,
-          email: "invited-#{System.unique_integer([:positive])}@test.com",
-          invitation_token: "tok-#{System.unique_integer([:positive])}",
-          invitation_sent_at: DateTime.utc_now(:second)
-        },
-        attrs
-      )
-    )
+  test "invite resend accept lifecycle keeps canonical facts and blocks reuse", %{ctx: ctx} do
+    assert {:ok, invite} = CoachInvitations.invite_trainer(ctx, %{full_name: "New Coach", preferred_name: "New", email: "NEW@example.test"})
+    assert Coach.state(invite) == :invited
+    assert {:ok, preview} = CoachInvitations.invitation_preview(invite.invite_token)
+    assert preview.full_name == "New Coach"
+    assert {:ok, resent} = CoachInvitations.resend_invite(ctx, invite.id)
+    assert resent.invite_token != invite.invite_token
+    assert {:error, :invalid} = CoachInvitations.resolve_invitation_token(invite.invite_token)
+    user = insert(:user)
+    assert {:ok, accepted} = CoachInvitations.accept_invite(resent, user.id)
+    assert Coach.state(accepted) == :active
+    assert accepted.invite_token == nil
+    assert {:error, :not_found} = CoachInvitations.revoke_invite(ctx, invite.id)
+    assert {:error, :not_found} = CoachInvitations.resend_invite(ctx, invite.id)
+    assert {:ok, _} = Coaches.get_active_coach_by_user_id(user.id)
   end
 
-  describe "invite_trainer/2" do
-    test "creation, lookup, and owner checks use the same normalized email" do
-      business = insert(:business)
-      ctx = owner_ctx_with_coach(business)
-
-      assert {:ok, first} = CoachInvitations.invite_trainer(ctx, %{"email" => "  Mixed.Case@Test.com  "})
-      assert first.email == "mixed.case@test.com"
-      assert {:ok, second} = CoachInvitations.invite_trainer(ctx, %{email: " MIXED.CASE@test.com "})
-      assert second.id == first.id
-      refute second.invitation_token == first.invitation_token
-
-      assert {:error, :already_on_team} =
-               CoachInvitations.invite_trainer(ctx, %{email: "  " <> String.upcase(business.owner.email) <> "  "})
-    end
-
-    test "string-keyed invitations enforce self-invite and reuse the existing invitation" do
-      business = insert(:business)
-      ctx = owner_ctx_with_coach(business)
-      assert {:error, :already_on_team} = CoachInvitations.invite_trainer(ctx, %{"email" => business.owner.email})
-
-      attrs = %{"email" => "string-invite@test.com", "first_name" => "Trainer"}
-      assert {:ok, first} = CoachInvitations.invite_trainer(ctx, attrs)
-      assert {:ok, second} = CoachInvitations.invite_trainer(ctx, attrs)
-      assert first.id == second.id
-      refute first.invitation_token == second.invitation_token
-    end
-
-    test "invites a new trainer with a downcased email" do
-      business = insert(:business)
-      ctx = owner_ctx_with_coach(business)
-
-      assert {:ok, coach} =
-               CoachInvitations.invite_trainer(ctx, %{
-                 email: "New.Trainer@Test.com",
-                 first_name: "New",
-                 last_name: "Trainer"
-               })
-
-      assert coach.status == :invited
-      assert coach.email == "new.trainer@test.com"
-      assert coach.invitation_token
-    end
-
-    test "re-inviting the same email is idempotent: same row, rotated token" do
-      business = insert(:business)
-      ctx = owner_ctx_with_coach(business)
-
-      attrs = %{email: "dup@test.com", first_name: "D", last_name: "P"}
-
-      assert {:ok, first} = CoachInvitations.invite_trainer(ctx, attrs)
-      assert {:ok, second} = CoachInvitations.invite_trainer(ctx, attrs)
-
-      assert first.id == second.id
-      assert first.invitation_token != second.invitation_token
-    end
-
-    test "an active teammate's email returns :already_on_team" do
-      business = insert(:business)
-      ctx = owner_ctx_with_coach(business)
-      insert(:coach, business: business, status: :active, email: "active@test.com")
-
-      assert {:error, :already_on_team} =
-               CoachInvitations.invite_trainer(ctx, %{email: "active@test.com", first_name: "A", last_name: "B"})
-    end
-
-    test "an inactive teammate's email returns :already_on_team" do
-      business = insert(:business)
-      ctx = owner_ctx_with_coach(business)
-      insert(:coach, business: business, status: :inactive, email: "inactive@test.com")
-
-      assert {:error, :already_on_team} =
-               CoachInvitations.invite_trainer(ctx, %{email: "inactive@test.com", first_name: "A", last_name: "B"})
-    end
-
-    test "inviting the owner's own email returns :already_on_team" do
-      business = insert(:business)
-      ctx = owner_ctx_with_coach(business)
-      owner_user = Repo.get!(User, business.owner_id)
-
-      assert {:error, :already_on_team} =
-               CoachInvitations.invite_trainer(ctx, %{email: owner_user.email, first_name: "A", last_name: "B"})
-    end
-
-    test "non-owner cannot invite" do
-      business = insert(:business)
-      trainer = insert(:coach, business: business)
-
-      assert {:error, :not_owner} =
-               CoachInvitations.invite_trainer(trainer_ctx(trainer), %{
-                 email: "x@test.com",
-                 first_name: "X",
-                 last_name: "Y"
-               })
-    end
+  test "expired invitations can be resent and only owners of their tenant may revoke", %{ctx: ctx} do
+    {:ok, invite} = CoachInvitations.invite_trainer(ctx, %{full_name: "Expired", email: "expired@example.test"})
+    invite |> Ecto.Changeset.change(invited_at: DateTime.add(DateTime.utc_now(:second), -31, :day)) |> Repo.update!()
+    assert {:error, :expired} = CoachInvitations.resolve_invitation_token(invite.invite_token)
+    assert {:error, :not_owner} = CoachInvitations.resend_invite(%{ctx | owner?: false}, invite.id)
+    assert {:error, :not_found} = CoachInvitations.revoke_invite(%{ctx | business_id: Ecto.UUID.generate()}, invite.id)
+    assert {:ok, renewed} = CoachInvitations.resend_invite(ctx, invite.id)
+    assert {:ok, _} = CoachInvitations.resolve_invitation_token(renewed.invite_token)
+    assert {:ok, _} = CoachInvitations.revoke_invite(ctx, invite.id)
+    assert Repo.get(Coach, invite.id) == nil
   end
 
-  describe "resend_invite/2" do
-    test "resend and revoke reject foreign tenants and non-owners without changing the invitation" do
-      business = insert(:business)
-      trainer = insert(:coach, business: business)
-      invited = invited_coach(business)
-      foreign_owner = owner_ctx_with_coach(insert(:business))
+  test "a removed coach is reinvited on the same row and becomes active after acceptance", %{ctx: ctx} do
+    user = insert(:user)
+    {:ok, invite} = CoachInvitations.invite_trainer(ctx, %{full_name: "Returning Coach", email: user.email})
+    {:ok, coach} = CoachInvitations.accept_invite(invite, user.id)
+    {:ok, removed} = Coaches.remove_coach(ctx, coach.id)
 
-      for {ctx, reason} <- [{trainer_ctx(trainer), :not_owner}, {foreign_owner, :not_found}] do
-        assert {:error, ^reason} = CoachInvitations.resend_invite(ctx, invited.id)
-        assert {:error, ^reason} = CoachInvitations.revoke_invite(ctx, invited.id)
-        unchanged = Repo.get!(Coach, invited.id)
-        assert unchanged.invitation_token == invited.invitation_token
-        assert unchanged.status == :invited
-      end
-    end
+    assert {:ok, renewed} = CoachInvitations.invite_trainer(ctx, %{full_name: "Returning Coach", email: user.email})
+    assert renewed.id == coach.id
+    assert renewed.removed_on == removed.removed_on
+    assert renewed.user_id == user.id
+    assert renewed.invite_token != invite.invite_token
+    assert Coach.state(renewed) == :invited
+    assert {:ok, _} = CoachInvitations.resolve_invitation_token(renewed.invite_token)
+    assert {:error, :not_found} = Coaches.get_active_coach_by_user_id(user.id)
+    assert {:ok, %{coaches: [listed]}} = Coaches.list_team(ctx, state: :invited)
+    assert listed.id == coach.id
+    assert {:ok, %{coaches: []}} = Coaches.list_team(ctx, state: :removed)
 
-    test "rotates the token for an invited row" do
-      business = insert(:business)
-      ctx = owner_ctx_with_coach(business)
-      invited = invited_coach(business)
-
-      assert {:ok, updated} = CoachInvitations.resend_invite(ctx, invited.id)
-      assert updated.id == invited.id
-      assert updated.invitation_token != invited.invitation_token
-    end
-
-    test "returns :not_found for a non-invited row" do
-      business = insert(:business)
-      ctx = owner_ctx_with_coach(business)
-      active = insert(:coach, business: business, status: :active)
-
-      assert {:error, :not_found} = CoachInvitations.resend_invite(ctx, active.id)
-    end
-
-    test "non-owner cannot resend" do
-      business = insert(:business)
-      trainer = insert(:coach, business: business)
-      invited = invited_coach(business)
-
-      assert {:error, :not_owner} = CoachInvitations.resend_invite(trainer_ctx(trainer), invited.id)
-    end
+    assert {:ok, accepted} = CoachInvitations.accept_invite(renewed, user.id)
+    assert accepted.id == coach.id
+    assert accepted.user_id == user.id
+    assert accepted.invite_token == nil
+    assert accepted.removed_on == nil
+    assert Coach.state(accepted) == :active
   end
 
-  describe "revoke_invite/2" do
-    test "deletes an invited row" do
-      business = insert(:business)
-      ctx = owner_ctx_with_coach(business)
-      invited = invited_coach(business)
+  test "revoking a returning coach invitation preserves the removed membership", %{ctx: ctx} do
+    user = insert(:user)
+    {:ok, invite} = CoachInvitations.invite_trainer(ctx, %{full_name: "Returning Coach", email: user.email})
+    {:ok, coach} = CoachInvitations.accept_invite(invite, user.id)
+    {:ok, removed} = Coaches.remove_coach(ctx, coach.id)
+    {:ok, renewed} = CoachInvitations.invite_trainer(ctx, %{full_name: "Returning Coach", email: user.email})
 
-      assert {:ok, _} = CoachInvitations.revoke_invite(ctx, invited.id)
-      refute Repo.get(Coach, invited.id)
-    end
-
-    test "does not delete an active row" do
-      business = insert(:business)
-      ctx = owner_ctx_with_coach(business)
-      active = insert(:coach, business: business, status: :active)
-
-      assert {:error, :not_found} = CoachInvitations.revoke_invite(ctx, active.id)
-      assert Repo.get(Coach, active.id)
-    end
+    assert {:ok, revoked} = CoachInvitations.revoke_invite(ctx, renewed.id)
+    assert revoked.user_id == user.id
+    assert revoked.removed_on == removed.removed_on
+    assert revoked.invite_token == nil
+    assert Coach.state(Repo.get!(Coach, coach.id)) == :removed
+    assert {:error, :race_lost} = CoachInvitations.accept_invite(renewed, user.id)
   end
 
-  describe "resolve_invitation_token/1" do
-    test "a valid token resolves" do
-      business = insert(:business)
-      coach = invited_coach(business, %{invitation_token: "tok-valid"})
+  test "a removed coach can join another business and sessions use the current team", %{ctx: ctx} do
+    user = insert(:user)
+    {:ok, invite} = CoachInvitations.invite_trainer(ctx, %{full_name: "Moving Coach", email: user.email})
+    {:ok, coach} = CoachInvitations.accept_invite(invite, user.id)
+    {:ok, _} = Coaches.remove_coach(ctx, coach.id)
+    other = insert(:business)
+    {:ok, other_invite} = CoachInvitations.invite_trainer(owner_ctx(other), %{full_name: "Moving Coach", email: user.email})
 
-      assert {:ok, resolved} = CoachInvitations.resolve_invitation_token("tok-valid")
-      assert resolved.id == coach.id
-
-      assert {:ok, preview} = CoachInvitations.invitation_preview("tok-valid")
-      assert preview == %{business_name: business.name, email: coach.email, first_name: coach.first_name}
-    end
-
-    test "an already-accepted (active) token returns :used" do
-      business = insert(:business)
-      insert(:coach, business: business, status: :active, invitation_token: "tok-used")
-
-      assert {:error, :used} = CoachInvitations.resolve_invitation_token("tok-used")
-      assert {:error, :used} = CoachInvitations.invitation_preview("tok-used")
-    end
-
-    test "an expired token returns :expired" do
-      business = insert(:business)
-
-      invited_coach(business, %{
-        invitation_token: "tok-expired",
-        invitation_sent_at: DateTime.add(DateTime.utc_now(:second), -31, :day)
-      })
-
-      assert {:error, :expired} = CoachInvitations.resolve_invitation_token("tok-expired")
-      assert {:error, :expired} = CoachInvitations.invitation_preview("tok-expired")
-    end
-
-    test "an unknown token returns :invalid" do
-      assert {:error, :invalid} = CoachInvitations.resolve_invitation_token("does-not-exist")
-      assert {:error, :invalid} = CoachInvitations.invitation_preview("does-not-exist")
-    end
+    assert {:ok, joined} = CoachInvitations.accept_invite(other_invite, user.id)
+    assert joined.business_id == other.id
+    assert {:ok, session} = SessionFactory.create_session(user, %{role: :coach})
+    assert session.business_id == other.id
+    assert session.coach_id == joined.id
+    assert Coach.state(Repo.get!(Coach, coach.id)) == :removed
+    {:ok, renewed} = CoachInvitations.invite_trainer(ctx, %{full_name: "Moving Coach", email: user.email})
+    assert {:error, :already_a_coach} = CoachInvitations.accept_invite(renewed, user.id)
   end
 
-  describe "accept_invite/2" do
-    test "links the user and activates the row" do
-      business = insert(:business)
-      invited = invited_coach(business)
-      user = insert(:user)
+  test "a removed coach can create their own business", %{ctx: ctx} do
+    user = insert(:user, full_name: "")
+    {:ok, invite} = CoachInvitations.invite_trainer(ctx, %{full_name: "Independent Coach", email: user.email})
+    {:ok, coach} = CoachInvitations.accept_invite(invite, user.id)
+    {:ok, _} = Coaches.remove_coach(ctx, coach.id)
 
-      assert {:ok, updated} = CoachInvitations.accept_invite(invited, user.id)
-      assert updated.status == :active
-      assert updated.user_id == user.id
-      assert updated.invitation_token == nil
-    end
+    assert {:ok, business} =
+             Easy.Orgs.create_business(%Easy.Ctx{business_id: nil, user_id: user.id}, %{name: "Independent", handle: "independent-coach", full_name: "Independent Coach"})
 
-    test "a second accept loses the race" do
-      business = insert(:business)
-      invited = invited_coach(business)
-      user = insert(:user)
-      other_user = insert(:user)
-
-      assert {:ok, _} = CoachInvitations.accept_invite(invited, user.id)
-      assert {:error, :race_lost} = CoachInvitations.accept_invite(invited, other_user.id)
-    end
-
-    test "a user who already coaches elsewhere gets :already_a_coach" do
-      business = insert(:business)
-      invited = invited_coach(business)
-
-      other_business = insert(:business)
-      existing_coach = insert(:coach, business: other_business, status: :active)
-
-      assert {:error, :already_a_coach} = CoachInvitations.accept_invite(invited, existing_coach.user_id)
-    end
+    assert business.owner_user_id == user.id
+    assert {:ok, current} = Coaches.get_active_coach_by_user_id(user.id)
+    assert current.business_id == business.id
+    assert Coach.state(Repo.get!(Coach, coach.id)) == :removed
   end
 end

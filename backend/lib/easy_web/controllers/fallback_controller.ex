@@ -42,10 +42,10 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Error.unauthorized()})
   end
 
-  def call(conn, {:error, :client_inactive}) do
+  def call(conn, {:error, :coaching_required}) do
     call(
       conn,
-      {:error, Error.new(:client_inactive, "Your coaching subscription is not active.", %{}, :forbidden)}
+      {:error, Error.new(:coaching_required, "A current coaching term is required.", %{}, :forbidden)}
     )
   end
 
@@ -74,10 +74,10 @@ defmodule EasyWeb.FallbackController do
     )
   end
 
-  def call(conn, {:error, :cannot_deactivate_owner}) do
+  def call(conn, {:error, :cannot_remove_owner}) do
     call(
       conn,
-      {:error, Error.unprocessable(%{fields: %{coach: ["the owner cannot be deactivated"]}})}
+      {:error, Error.unprocessable(%{fields: %{coach: ["the owner cannot be removed"]}})}
     )
   end
 
@@ -96,6 +96,8 @@ defmodule EasyWeb.FallbackController do
   def call(conn, {:error, :invitation_invalid}), do: call(conn, {:error, invitation_invalid_error()})
   def call(conn, {:error, :invitation_used}), do: call(conn, {:error, invitation_used_error()})
   def call(conn, {:error, :invitation_expired}), do: call(conn, {:error, invitation_expired_error()})
+
+  def call(conn, {:error, :already_active_elsewhere}), do: call(conn, {:error, :already_active_client})
 
   def call(conn, {:error, :already_active_client}) do
     call(
@@ -357,19 +359,10 @@ defmodule EasyWeb.FallbackController do
     )
   end
 
-  def call(conn, {:error, :seat_limit_reached}) do
-    {:ok, seat_summary} = Easy.Billing.get_billing(conn.assigns.ctx)
-    seat_summary = Map.delete(seat_summary, :recent_events)
+  def call(conn, {:error, :seat_limit_reached}), do: call(conn, {:error, Error.new(:seat_limit_reached, "No seats available", %{}, :conflict)})
 
-    conn
-    |> put_status(:conflict)
-    |> json(%{
-      error_code: "seat_limit_reached",
-      error_message: "No seats available",
-      error_detail: %{},
-      seat_summary: seat_summary
-    })
-    |> halt()
+  def call(conn, {:error, reason}) when reason in [:term_ended, :term_already_active, :invitation_not_accepted, :client_has_records] do
+    call(conn, {:error, Error.new(reason, "This coaching term cannot be changed in its current state.", %{}, :conflict)})
   end
 
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do

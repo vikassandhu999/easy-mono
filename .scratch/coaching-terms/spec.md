@@ -63,14 +63,14 @@ Seats: invited, joined-not-started and ended clients use none. Active and ending
 * E3. After a term ends, the client keeps read-only access to their history: workouts, meals, chat, and later tracker entries and check-ins. They cannot record anything or send messages. A banner shows when coaching ended. A new term makes the same account active again.
 * E4. A term has one optional end date that the coach can set, move or clear. A future date is a planned end, such as a 12-week program. "End coaching" sets it to today. A term ends when its date passes; "ended" is derived, so nothing is flipped and no job runs. When the end date is within 14 days, the coach sees "Ends in N days".
 * E5. Starting a term needs a free seat; nothing else does. Invitations are free and never hold a seat. When a client accepts and a seat is free, the term starts automatically. When none is free, the account is still linked but no term starts; the coach sees that the client joined and can start coaching once a seat is free, and the client sees that coaching will start soon. A returning client is started the same way. A seat downgrade below usage never ends a term; it only blocks new starts. "Joined but not started" is derived, so the old awaiting-seat state is gone.
-* E6. A plan never outlives the coaching it was made for. A plan is in force on a date only when its own coverage includes the date, a term covers the date, and no term has ended between the plan's start and that date. Plan rows are not edited when coaching ends; the effective end is derived. A plan prepared before acceptance comes into force when coaching starts. A returning client starts with no plan in force.
+* E6. A plan never outlives the coaching it was made for. A plan is in force on a date only when its own coverage includes the date, a term covers the date, and no term has ended between the plan's creation and that date. Creation, not the start date, decides which coaching a plan was made for: a plan made before acceptance, or between terms for a returning client, comes into force when coaching starts; a plan made during a term stops for good once that term ends, even if it was scheduled to start later. Plan rows are not edited when coaching ends; the effective end is derived. Tightened on 2026-10-03 after review found that a start-date rule revived plans scheduled past a term's end.
 * E9. There is no data migration. The old lifecycle fields, code and data are discarded.
 
 ### Data model
 
 * M1. Five tables hold the lifecycle facts:
     * User: `id`, `email` (unique), `full_name`, `created_at`.
-    * Business: `id`, `owner_user_id`, `name`, `handle` (unique), `timezone`, `seats`, `created_at`.
+    * Business: `id`, `owner_user_id`, `name`, `handle` (unique), `timezone`, `created_at`. The seat limit lives in billing (free plus paid seats), its only source.
     * Coach: `id`, `business_id`, `user_id` (empty until accepted), `full_name`, `preferred_name`, `email`, `phone`, `invite_token` (empty once accepted), `invited_at`, `removed_on` (empty while on the team).
     * Client: `id`, `business_id`, `user_id` (empty until accepted), `coach_id`, `full_name`, `preferred_name`, `email`, `phone`, `notes`, `timezone` (empty uses the business timezone), `unit_system` (metric or imperial, default metric), `invite_token` (empty once accepted), `invited_at`.
     * Coaching term: `id`, `client_id`, `starts_on`, `ends_on` (empty is open-ended). The database rejects an `ends_on` before `starts_on` and rejects overlapping terms for one client.
@@ -84,9 +84,9 @@ Seats: invited, joined-not-started and ended clients use none. Active and ending
     * Ended: a `user_id`, no term covering today, and an earlier term.
     * Seats used: clients active today.
     * Invitation expired: `invited_at` is more than 30 days ago.
-    * Coach active: `user_id` is set and `removed_on` is empty.
+    * Coach invited: an open `invite_token`. Coach active: `user_id` set, no open token, `removed_on` empty. Coach removed: `removed_on` set and no open token.
     * Plan in force: E6.
-* M5. Coaches get the same treatment as clients: no stored status, and an invitation is a token on the record. For this redesign, billing is one `Business.seats` number. The billing provider tables (subscription state, checkout, webhooks) are untouched and only feed that number.
+* M5. Coaches get the same treatment as clients: no stored status, and an invitation is a token on the record. The seat limit has one source, billing's free plus paid seats (10 free by default); it is not copied onto the business. The billing provider tables are otherwise untouched.
 * M6. Deleted: client `status`, `inactive_reason`, `stage`, `required_services`, `subscription_started_on`, `subscription_ends_on`, `creator_id`, first and last names, the status transition rules, the plan-copy stage advance, the awaiting-seat billing flow, and the expiry sweeper; coach `status`, `invited_by_id` and first and last names; user first and last names; business `about`, `whatsapp_number` and `default_weight_unit`; the "Required service" term in `CONTEXT.md`.
 * M7. The client's `unit_system` replaces the business `default_weight_unit` now, because workout loads read it. It is the same setting as check-ins Q26.
 
@@ -106,7 +106,7 @@ Seats: invited, joined-not-started and ended clients use none. Active and ending
     * While a term covers today, including its last day, coaching continues by moving or clearing `ends_on`, and "Start coaching" is unavailable.
     * "End coaching" keeps the client active until midnight in their timezone.
     * Seat checks happen only at acceptance and at start, inside one database lock so concurrent starts cannot overbook.
-    * Coach invitations mirror client invitations (`POST /coaches`, resend, revoke). Removing a coach sets `removed_on` after their clients are reassigned.
+    * Coach invitations mirror client invitations (`POST /coaches`, resend, revoke). Removing a coach sets `removed_on` after their clients are reassigned. Re-inviting a removed coach opens a new token on the same record; accepting clears `removed_on`. A removed coach can join or create another business.
 
 ### App behaviour
 

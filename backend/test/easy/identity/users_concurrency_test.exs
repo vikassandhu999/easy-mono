@@ -24,7 +24,7 @@ defmodule Easy.Identity.UsersConcurrencyTest do
 
     assert {:ok, {winner, contender}} =
              Repo.transaction(fn ->
-               {:ok, winner} = Users.create(%{email: email, first_name: "Original"})
+               {:ok, winner} = Users.create(%{email: email, full_name: "Original"})
                {:ok, winner} = Users.confirm_user_email(winner)
 
                contender =
@@ -32,7 +32,7 @@ defmodule Easy.Identity.UsersConcurrencyTest do
                    Sandbox.checkout(Repo, sandbox: false)
                    %{rows: [[pid]]} = Repo.query!("SELECT pg_backend_pid()")
                    send(parent, {:contender, pid})
-                   Users.create_if_absent(%{email: email, first_name: "Invitation"})
+                   Users.create_if_absent(%{email: email, full_name: "Invitation"})
                  end)
 
                assert_receive {:contender, pid}, 1_000
@@ -47,9 +47,9 @@ defmodule Easy.Identity.UsersConcurrencyTest do
 
   test "creates a missing user and preserves validation errors", %{email: email} do
     assert {:error, %Ecto.Changeset{valid?: false}} = Users.create_if_absent(%{email: "invalid"})
-    assert {:ok, user} = Users.create_if_absent(%{email: email, first_name: "Invitation"})
+    assert {:ok, user} = Users.create_if_absent(%{email: email, full_name: "Invitation"})
     assert user.email == email
-    assert user.first_name == "Invitation"
+    assert user.full_name == "Invitation"
     assert user.email_confirmed_at == nil
     assert Repo.get!(User, user.id) == user
   end

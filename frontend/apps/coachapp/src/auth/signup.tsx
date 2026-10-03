@@ -14,7 +14,7 @@ export function Signup() {
   const returnTo = getReturnTo(useLocation().search);
   const mutation = useSignup();
   const form = useForm<SignupRequest>({
-    defaultValues: {email: getChallenge()?.email ?? '', first_name: '', last_name: ''},
+    defaultValues: {email: getChallenge()?.email ?? '', full_name: ''},
   });
   const submit = form.handleSubmit(async (data) => {
     try {
@@ -22,11 +22,7 @@ export function Signup() {
       saveChallenge({kind: 'signup', email: data.email, sentAt: Date.now()});
       navigate(authPath(routes.verify, returnTo));
     } catch (error) {
-      setFormError(error, 'We could not create your account. Please try again.', form.setError, [
-        'email',
-        'first_name',
-        'last_name',
-      ]);
+      setFormError(error, 'We could not create your account. Please try again.', form.setError, ['email', 'full_name']);
     }
   });
   return (
@@ -41,15 +37,11 @@ export function Signup() {
       >
         <FormField
           control={form.control}
-          name="first_name"
-          label="First name"
-          autoComplete="given-name"
-        />
-        <FormField
-          control={form.control}
-          name="last_name"
-          label="Last name"
-          autoComplete="family-name"
+          name="full_name"
+          label="Full name"
+          autoComplete="name"
+          isRequired
+          rules={{validate: (value) => Boolean(value?.trim()) || 'Enter your full name.'}}
         />
         <FormField
           control={form.control}

@@ -3,8 +3,8 @@ defmodule EasyWeb.Types.TrainingPlanClient do
 
   @type t :: %{
           required(:id) => String.t(),
-          required(:first_name) => String.t() | nil,
-          required(:last_name) => String.t() | nil
+          required(:full_name) => String.t(),
+          required(:preferred_name) => String.t() | nil
         }
 end
 
@@ -216,9 +216,10 @@ defmodule EasyWeb.Types.TrainingPlan do
           required(:revision) => pos_integer(),
           required(:archived_at) => DateTime.t() | nil,
           required(:status) => :active | :archived,
-          required(:lifecycle) => :incomplete | :upcoming | :current | :ended | :archived | nil,
+          required(:lifecycle) => :incomplete | :waiting | :upcoming | :current | :ended | :archived | nil,
           required(:start_date) => Date.t() | nil,
           required(:end_date) => Date.t() | nil,
+          required(:stopped_on) => Date.t() | nil,
           required(:client_id) => String.t() | nil,
           required(:client) => EasyWeb.Types.TrainingPlanClient.t() | nil,
           required(:creator_id) => String.t(),
@@ -292,6 +293,7 @@ defmodule EasyWeb.Types.TrainingPlan do
         lifecycle: lifecycle,
         start_date: start_date,
         end_date: end_date,
+        stopped_on: stopped_on,
         client_id: client_id,
         client: client,
         creator_id: creator_id,
@@ -312,6 +314,7 @@ defmodule EasyWeb.Types.TrainingPlan do
       lifecycle: lifecycle,
       start_date: start_date,
       end_date: end_date,
+      stopped_on: stopped_on,
       client_id: client_id,
       client: client,
       creator_id: creator_id,
@@ -337,6 +340,7 @@ defmodule EasyWeb.Types.TrainingPlan do
       lifecycle: plan.lifecycle,
       start_date: plan.start_date,
       end_date: plan.end_date,
+      stopped_on: Easy.PlanCoverage.stopped_on(plan, plan_today(plan)),
       client_id: plan.client_id,
       client: format_client(plan),
       creator_id: plan.creator_id,
@@ -410,10 +414,13 @@ defmodule EasyWeb.Types.TrainingPlan do
     }
   end
 
+  defp plan_today(%{client: %Client{} = client}), do: Client.local_date(client, DateTime.utc_now())
+  defp plan_today(_plan), do: Date.utc_today()
+
   defp format_client(%TrainingPlanSchema{kind: :template}), do: nil
 
   defp format_client(%TrainingPlanSchema{kind: :client_plan, client: %Client{} = client}) do
-    %{id: client.id, first_name: client.first_name, last_name: client.last_name}
+    %{id: client.id, full_name: client.full_name, preferred_name: client.preferred_name}
   end
 
   defp format_schedule(schedule) when is_list(schedule) do

@@ -90,7 +90,7 @@ export function NutritionPlanWorksheet({
   const {to: libraryLocation, state} = useListLocation(routes.nutritionPlans);
   const clientPlan = context.kind === 'client';
   const to = context.kind === 'client' ? generatePath(routes.client, {id: context.clientId}) : libraryLocation;
-  const clientName = `${plan?.client?.first_name ?? ''} ${plan?.client?.last_name ?? ''}`.trim() || 'this client';
+  const clientName = plan?.client?.preferred_name || plan?.client?.full_name || 'this client';
   const navigate = useNavigate();
   const dirty = form.formState.isDirty || menuDirty;
   const pending = form.formState.isSubmitting || preview.isPending || reloading;

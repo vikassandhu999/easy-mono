@@ -24,7 +24,8 @@ defmodule EasyWeb.Router do
     plug OpenApiSpex.Plug.PutApiSpec, module: EasyWeb.ApiSpec
     plug EasyWeb.Plugs.Authenticate
     plug EasyWeb.Plugs.EnsureRole, role: :client
-    plug EasyWeb.Plugs.EnsureActiveClient
+    plug EasyWeb.Plugs.LoadClient
+    plug EasyWeb.Plugs.RequireCoaching
   end
 
   scope "/api", EasyWeb do
@@ -53,7 +54,7 @@ defmodule EasyWeb.Router do
     post "/signup", AuthController, :signup
     get "/invitations/:token", AuthController, :show_invitation
     post "/accept-invite", AuthController, :accept_invite
-    post "/accept-invite/verify", AuthController, :accept_invite_verify
+    post "/invites/:token/accept", AuthController, :accept_invite_verify
     post "/otp", AuthController, :otp
     post "/verify", AuthController, :verify
     post "/token", AuthController, :token
@@ -73,6 +74,7 @@ defmodule EasyWeb.Router do
   scope "/v1/businesses", EasyWeb do
     pipe_through :require_user
     post "/", BusinessController, :create
+    get "/handle-availability", BusinessController, :handle_availability
 
     pipe_through :require_coach
     get "/me", BusinessController, :show
@@ -91,24 +93,24 @@ defmodule EasyWeb.Router do
     post "/billing/cancel", BillingController, :cancel
     post "/billing/sync", BillingController, :sync
 
-    post "/clients/invite", ClientController, :invite
-    post "/clients/:id/resend-invite", ClientController, :resend_invite
+    post "/clients", ClientController, :invite
+    post "/clients/:id/invite", ClientController, :resend_invite
     get "/clients/:id", ClientController, :show
     patch "/clients/:id", ClientController, :update
     delete "/clients/:id", ClientController, :delete
     get "/clients", ClientController, :index
-    post "/clients/:id/reassign", ClientController, :reassign
+    post "/clients/:id/terms", CoachingTermController, :create
+    patch "/terms/:id", CoachingTermController, :update
     post "/clients/:client_id/uploads", UploadController, :create
     post "/attachments/download-urls", UploadController, :download_urls
     post "/library-media/uploads", LibraryMediaController, :create
 
-    get "/team", TeamController, :index
-    get "/team/:id", TeamController, :show
-    post "/team/invite", TeamController, :invite
-    post "/team/:id/resend-invite", TeamController, :resend_invite
-    delete "/team/:id", TeamController, :revoke_invite
-    post "/team/:id/deactivate", TeamController, :deactivate
-    post "/team/:id/reactivate", TeamController, :reactivate
+    get "/coaches", TeamController, :index
+    get "/coaches/:id", TeamController, :show
+    post "/coaches", TeamController, :invite
+    post "/coaches/:id/invite", TeamController, :resend_invite
+    delete "/coaches/:id", TeamController, :revoke_invite
+    post "/coaches/:id/remove", TeamController, :remove
 
     # Client-scoped plan lists
     get "/clients/:client_id/training-plans", ClientTrainingPlanController, :index
@@ -191,7 +193,7 @@ defmodule EasyWeb.Router do
     patch "/me", ProfileController, :update
 
     post "/uploads", UploadController, :create
-    post "/attachments/download-urls", UploadController, :download_urls
+    get "/attachments/download-urls", UploadController, :download_urls
 
     # Training plans (read-only)
     get "/training-plans", TrainingPlanController, :index

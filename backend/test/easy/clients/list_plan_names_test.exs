@@ -10,7 +10,7 @@ defmodule Easy.Clients.ListPlanNamesTest do
     setup do
       business = insert(:business)
       coach = insert(:coach, business: business)
-      client = insert(:client, business: business, creator: coach, user: insert(:user))
+      client = insert(:client, business: business, user: insert(:user))
 
       %{
         business: business,
@@ -105,7 +105,7 @@ defmodule Easy.Clients.ListPlanNamesTest do
     } do
       other_business = insert(:business)
       other_coach = insert(:coach, business: other_business)
-      other_client = insert(:client, business: other_business, creator: other_coach)
+      other_client = insert(:client, business: other_business)
 
       insert(:training_plan,
         business: other_business,

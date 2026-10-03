@@ -3,7 +3,7 @@ defmodule EasyWeb.Clients.ConversationControllerTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, business: coach.business, creator: coach, user: insert(:user))
+    client = insert(:client, business: coach.business, coach: coach, user: insert(:user))
     conn = build_conn() |> authenticate_client(client) |> put_req_header("content-type", "application/json")
     %{conn: conn, coach: coach, client: client}
   end
@@ -21,7 +21,7 @@ defmodule EasyWeb.Clients.ConversationControllerTest do
              "last_message_role" => nil
            } = data
 
-    assert client_name == String.trim("#{client.first_name} #{client.last_name}")
+    assert client_name == String.trim("#{client.full_name} #{client.preferred_name}")
 
     assert Map.keys(data) |> Enum.sort() ==
              ~w(client_id client_name id inserted_at last_message_at last_message_preview last_message_role unread_count updated_at)

@@ -32,9 +32,9 @@ try {
       await expect(page.getByRole('heading', {name: 'Today', exact: true})).toBeVisible();
       await page.getByRole('link', {name: 'Your account', exact: true}).click();
       await page.getByRole('link', {name: 'Personal details', exact: true}).click();
-      await page.getByLabel('First name').fill('Alexandria with a long name');
+      await page.getByLabel('Full name').fill('Alexandria with a long name');
       await page.reload();
-      await expect(page.getByLabel('First name')).toHaveValue('Alexandria with a long name');
+      await expect(page.getByLabel('Full name')).toHaveValue('Alexandria with a long name');
       await expect(page.getByText('Your unsaved details were restored.')).toBeVisible();
       await page.route('**/v1/client/me', (route) =>
         route.request().method() === 'PATCH'
@@ -43,18 +43,18 @@ try {
       );
       await page.getByRole('button', {name: 'Save details'}).click();
       await expect(page.getByRole('alert')).toBeFocused();
-      await expect(page.getByLabel('First name')).toHaveValue('Alexandria with a long name');
+      await expect(page.getByLabel('Full name')).toHaveValue('Alexandria with a long name');
       await page.unroute('**/v1/client/me');
       await page.getByRole('button', {name: 'Save details'}).click();
       await expect(page.getByText('Your details are saved.')).toBeVisible();
       await page.reload();
-      await expect(page.getByLabel('First name')).toHaveValue('Alexandria with a long name');
+      await expect(page.getByLabel('Full name')).toHaveValue('Alexandria with a long name');
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       expect(await page.locator('main').evaluate((node) => node.getBoundingClientRect().width)).toBeLessThanOrEqual(
         480,
       );
       expect(
-        await page.getByLabel('First name').evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize)),
+        await page.getByLabel('Full name').evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize)),
       ).toBeGreaterThanOrEqual(16);
       await page.screenshot({path: `tests/auth/artifacts/account-${width}.png`, fullPage: true});
       await page.getByRole('link', {name: 'Back', exact: true}).click();
@@ -68,7 +68,7 @@ try {
       await page.getByRole('button', {name: 'Continue with email'}).click();
       await page.getByLabel('Verification code').fill('123456');
       await page.getByRole('button', {name: 'Verify and continue'}).click();
-      await expect(page.getByLabel('First name')).toHaveValue('Alexandria with a long name');
+      await expect(page.getByLabel('Full name')).toHaveValue('Alexandria with a long name');
       // Reject refresh temporarily: keep the session so a deliberate retry recovers.
       await page.evaluate(() => {
         const key = 'clientapp.auth.v1';
@@ -86,9 +86,9 @@ try {
       await page.unroute('**/v1/auth/token');
       await page.getByRole('button', {name: 'Check for updates'}).click();
       await expect(page.getByRole('alert')).toHaveCount(0);
-      await expect(page.getByLabel('First name')).toHaveValue('Alexandria with a long name');
+      await expect(page.getByLabel('Full name')).toHaveValue('Alexandria with a long name');
       // A rejected session must preserve drafts for this client through reauthentication.
-      await page.getByLabel('First name').fill('Recovered after expired login');
+      await page.getByLabel('Full name').fill('Recovered after expired login');
       await page.evaluate(() => {
         const key = 'clientapp.auth.v1';
         const session = JSON.parse(localStorage.getItem(key));
@@ -108,8 +108,8 @@ try {
       await page.getByRole('button', {name: 'Verify and continue'}).click();
       await page.getByRole('link', {name: 'Your account', exact: true}).click();
       await page.getByRole('link', {name: 'Personal details', exact: true}).click();
-      await expect(page.getByLabel('First name')).toHaveValue('Alex');
-      await page.getByLabel('First name').fill('A different private draft');
+      await expect(page.getByLabel('Full name')).toHaveValue('Alex Client');
+      await page.getByLabel('Full name').fill('A different private draft');
       await page.getByRole('link', {name: 'Back', exact: true}).click();
       await page.getByRole('button', {name: 'Sign out', exact: true}).click();
       await expect(page.getByRole('heading', {name: 'Welcome back'})).toBeVisible();
@@ -118,7 +118,7 @@ try {
       await page.getByLabel('Verification code').fill('123456');
       await page.getByRole('button', {name: 'Verify and continue'}).click();
       await page.getByRole('link', {name: 'Personal details', exact: true}).click();
-      await expect(page.getByLabel('First name')).toHaveValue('Recovered after expired login');
+      await expect(page.getByLabel('Full name')).toHaveValue('Recovered after expired login');
       await expect(page.getByText('Your unsaved details were restored.')).toBeVisible();
       let releaseSave;
       let savedOnServer;
@@ -138,7 +138,7 @@ try {
         await released;
         await route.fulfill({response});
       });
-      await page.getByLabel('First name').fill('A delayed private change');
+      await page.getByLabel('Full name').fill('A delayed private change');
       await page.getByRole('button', {name: 'Save details'}).click();
       await serverSaved;
       await page.getByRole('link', {name: 'Back', exact: true}).click();

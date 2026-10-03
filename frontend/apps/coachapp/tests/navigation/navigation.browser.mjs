@@ -108,11 +108,10 @@ try {
     ]) {
       const name = `Test ${role} client`;
       const email = `navigation-client-${role}-${suffix}@example.test`;
-      const client = (await send('post', '/v1/coach/clients/invite', {first_name: name, email}, tokens.access_token))
-        .data;
+      const client = (await send('post', '/v1/coach/clients', {full_name: name, email}, tokens.access_token)).data;
       const clientInvite = {email, invitation_token: new URL(client.invite_url).pathname.split('/').at(-1)};
       await send('post', '/v1/auth/accept-invite', clientInvite);
-      await send('post', '/v1/auth/accept-invite/verify', {...clientInvite, otp: '123456'});
+      await send('post', `/v1/auth/invites/${clientInvite.invitation_token}/accept`, {...clientInvite, otp: '123456'});
       const context = await browser.newContext({baseURL: appURL, viewport: {width, height: 900}});
       context.setDefaultTimeout(15000);
       const page = await context.newPage();
@@ -154,7 +153,9 @@ try {
           await page.keyboard.press('Escape');
           await page.goto('/team');
           await expect(page.getByText('Owner access required', {exact: true})).toBeVisible();
-          const denied = await api.get('/v1/coach/team', {headers: {authorization: `Bearer ${tokens.access_token}`}});
+          const denied = await api.get('/v1/coach/coaches', {
+            headers: {authorization: `Bearer ${tokens.access_token}`},
+          });
           expect(denied.status()).toBe(403);
         }
 

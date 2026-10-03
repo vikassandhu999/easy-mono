@@ -37,7 +37,7 @@ defmodule Easy.ConnCase do
   @spec authenticate_coach(Conn.t(), Coach.t()) :: Conn.t()
   def authenticate_coach(conn, coach) do
     business = Repo.get!(Business, coach.business_id)
-    is_owner = business.owner_id == coach.user_id
+    is_owner = business.owner_user_id == coach.user_id
 
     session =
       Easy.Factory.insert(:user_session,
@@ -46,7 +46,7 @@ defmodule Easy.ConnCase do
         business_id: coach.business_id,
         coach_id: coach.id,
         role: :coach,
-        is_owner: business.owner_id == coach.user_id
+        is_owner: business.owner_user_id == coach.user_id
       )
 
     token =

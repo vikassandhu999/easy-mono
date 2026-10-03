@@ -7,7 +7,7 @@ defmodule Easy.Nutrition.JourneyTest do
 
   test "a coach builds a menu, assigns it, and the client records intake" do
     coach = insert(:coach)
-    client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+    client = insert(:client, business: coach.business, coach: coach)
 
     food =
       insert(:food,

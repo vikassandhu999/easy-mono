@@ -1,46 +1,54 @@
 defmodule EasyWeb.Types.TeamMember do
   use EasyWeb.Type
 
+  alias Easy.AppLinks
   alias Easy.Orgs.Coach
 
   @type t :: %{
           required(:id) => String.t(),
-          required(:first_name) => String.t() | nil,
-          required(:last_name) => String.t() | nil,
+          required(:full_name) => String.t() | nil,
+          required(:preferred_name) => String.t() | nil,
           required(:email) => String.t() | nil,
-          required(:status) => :invited | :active | :inactive,
+          required(:state) => :invited | :active | :removed,
           required(:is_owner) => boolean(),
           required(:assigned_client_count) => non_neg_integer(),
           required(:invitation_expires_at) => DateTime.t() | nil,
           required(:invitation_expired) => boolean(),
-          required(:invitation_sent_at) => DateTime.t() | nil
+          required(:phone) => String.t() | nil,
+          required(:removed_on) => Date.t() | nil,
+          required(:invite_url) => String.t() | nil,
+          required(:invited_at) => DateTime.t() | nil
         }
 
   @type invite :: %{
           required(:email) => String.t(),
-          optional(:first_name) => String.t() | nil,
-          optional(:last_name) => String.t() | nil
+          required(:full_name) => String.t(),
+          optional(:preferred_name) => String.t() | nil,
+          optional(:phone) => String.t() | nil
         }
 
   @type list_query :: %{
           optional(:cursor) => String.t(),
           optional(:limit) => integer(),
-          optional(:search) => String.t(),
-          optional(:status) => :active | :invited | :inactive
+          optional(:q) => String.t(),
+          optional(:state) => :active | :invited | :removed
         }
   @spec format(%{required(:coach) => Coach.t(), required(:is_owner) => boolean()}) :: t()
   def format(%{coach: %Coach{} = coach, is_owner: is_owner}) do
     %{
       id: coach.id,
-      first_name: coach.first_name,
-      last_name: coach.last_name,
+      full_name: coach.full_name,
+      preferred_name: coach.preferred_name,
       email: email(coach),
-      status: coach.status,
+      state: Coach.state(coach),
       is_owner: is_owner,
       assigned_client_count: coach.assigned_client_count,
       invitation_expires_at: Coach.invitation_expires_at(coach),
-      invitation_expired: coach.status == :invited and Coach.invitation_expired?(coach, DateTime.utc_now()),
-      invitation_sent_at: coach.invitation_sent_at
+      invitation_expired: Coach.state(coach) == :invited and Coach.invitation_expired?(coach, DateTime.utc_now()),
+      invited_at: coach.invited_at,
+      phone: coach.phone,
+      removed_on: coach.removed_on,
+      invite_url: if(coach.invite_token, do: AppLinks.coach_invitation(coach.invite_token))
     }
   end
 

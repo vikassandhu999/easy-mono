@@ -1,63 +1,55 @@
 defmodule EasyWeb.Types.ClientProfile do
   use EasyWeb.Type
-
   alias Easy.Clients.Client
-  alias Easy.Orgs.{Business, Coach}
+  alias EasyWeb.Types.CoachingTerm
 
   @type t :: %{
           required(:id) => String.t(),
-          required(:first_name) => String.t() | nil,
-          required(:last_name) => String.t() | nil,
+          required(:full_name) => String.t(),
+          required(:preferred_name) => String.t() | nil,
           required(:email) => String.t() | nil,
           required(:phone) => String.t() | nil,
-          required(:default_weight_unit) => :kg | :lbs,
+          required(:unit_system) => :metric | :imperial,
           required(:timezone) => String.t(),
           required(:local_date) => Date.t(),
-          required(:subscription_started_on) => Date.t() | nil,
-          required(:subscription_ends_on) => Date.t() | nil,
-          required(:status) => String.t(),
+          required(:state) => :active | :ending_soon | :joined | :invited | :ended,
+          required(:current_term) => CoachingTerm.t() | nil,
+          required(:terms) => [CoachingTerm.t()],
           required(:coach) =>
             %{
-              required(:first_name) => String.t() | nil,
-              required(:last_name) => String.t() | nil,
+              required(:full_name) => String.t(),
+              required(:preferred_name) => String.t() | nil,
               required(:phone) => String.t() | nil,
               required(:business_name) => String.t()
             }
             | nil
         }
-
   @type update :: %{
-          optional(:first_name) => String.t() | nil,
-          optional(:last_name) => String.t() | nil,
-          optional(:phone) => String.t() | nil
+          optional(:full_name) => String.t(),
+          optional(:preferred_name) => String.t() | nil,
+          optional(:phone) => String.t() | nil,
+          optional(:unit_system) => :metric | :imperial
         }
-
   @spec format(Easy.ClientAccount.account_profile()) :: t()
-  def format(%{client: %Client{} = client, coach: coach, default_weight_unit: default_weight_unit} = profile) do
+  def format(profile) do
+    client = Client.derive(profile.client, DateTime.utc_now())
+
     %{
       id: client.id,
-      first_name: client.first_name,
-      last_name: client.last_name,
+      full_name: client.full_name,
+      preferred_name: client.preferred_name,
       email: client.email,
       phone: client.phone,
-      default_weight_unit: default_weight_unit,
+      unit_system: client.unit_system,
       timezone: profile.timezone,
       local_date: profile.local_date,
-      subscription_started_on: client.subscription_started_on,
-      subscription_ends_on: client.subscription_ends_on,
-      status: Atom.to_string(client.status),
-      coach: coach(coach)
+      state: client.state,
+      current_term: if(client.current_term, do: CoachingTerm.take(client.current_term)),
+      terms: Enum.map(client.terms, &CoachingTerm.take/1),
+      coach: coach(profile.coach)
     }
   end
 
   defp coach(nil), do: nil
-
-  defp coach(%Coach{business: %Business{} = business} = coach) do
-    %{
-      first_name: coach.first_name,
-      last_name: coach.last_name,
-      phone: coach.phone,
-      business_name: business.name
-    }
-  end
+  defp coach(coach), do: %{full_name: coach.full_name, preferred_name: coach.preferred_name, phone: coach.phone, business_name: coach.business.name}
 end

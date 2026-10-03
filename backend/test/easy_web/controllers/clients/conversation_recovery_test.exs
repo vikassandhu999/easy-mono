@@ -7,7 +7,7 @@ defmodule EasyWeb.Clients.ConversationRecoveryTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, business: coach.business, creator: coach)
+    client = insert(:client, business: coach.business, coach: coach)
     ctx = %Ctx{business_id: client.business_id, user_id: client.user_id, client_id: client.id}
     {:ok, conversation} = Chat.get_client_conversation(ctx)
 
@@ -24,7 +24,7 @@ defmodule EasyWeb.Clients.ConversationRecoveryTest do
     stamp = DateTime.utc_now(:microsecond)
     messages = for _ <- 1..4, do: message(ctx.conversation, inserted_at: stamp)
     ids = messages |> Enum.map(& &1.id) |> Enum.sort(:desc)
-    other = insert(:client, business: ctx.coach.business, creator: ctx.coach)
+    other = insert(:client, business: ctx.coach.business, coach: ctx.coach)
     other_conversation = insert(:conversation, business: other.business, client: other)
     message(other_conversation)
     message(insert(:conversation))
@@ -100,7 +100,7 @@ defmodule EasyWeb.Clients.ConversationRecoveryTest do
       assert ctx.conn |> post("/v1/client/conversation/messages", %{attrs | "attachment_ids" => ids}) |> json_response(409)
     end
 
-    other = insert(:client, business: ctx.coach.business, creator: ctx.coach)
+    other = insert(:client, business: ctx.coach.business, coach: ctx.coach)
     same_business = insert(:attachment, business: other.business, client: other)
     foreign = insert(:attachment)
 
@@ -121,7 +121,7 @@ defmodule EasyWeb.Clients.ConversationRecoveryTest do
 
     attrs = %{"request_id" => request_id, "body" => "Hello"}
     first = send_message(ctx.conn, attrs)
-    same_business = insert(:client, business: ctx.coach.business, creator: ctx.coach)
+    same_business = insert(:client, business: ctx.coach.business, coach: ctx.coach)
     foreign = insert(:client)
 
     for client <- [same_business, foreign] do
@@ -154,7 +154,7 @@ defmodule EasyWeb.Clients.ConversationRecoveryTest do
   end
 
   test "read markers remain inside the current account", ctx do
-    other = insert(:client, business: ctx.coach.business, creator: ctx.coach)
+    other = insert(:client, business: ctx.coach.business, coach: ctx.coach)
     conversation = insert(:conversation, business: other.business, client: other)
     message(conversation)
     read(ctx.conn, DateTime.to_iso8601(DateTime.utc_now()))

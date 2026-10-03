@@ -8,7 +8,7 @@ defmodule Easy.Repo.Migrations.CreateBilling do
       add :business_id, references(:businesses, type: :binary_id, on_delete: :delete_all),
         null: false
 
-      add :free_seats, :integer, null: false, default: 2
+      add :free_seats, :integer, null: false, default: 10
       add :paid_seats, :integer, null: false, default: 0
       add :status, :string, null: false, default: "free"
       add :razorpay_subscription_id, :string

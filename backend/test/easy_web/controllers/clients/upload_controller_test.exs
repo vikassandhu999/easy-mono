@@ -3,7 +3,7 @@ defmodule EasyWeb.Clients.UploadControllerTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, creator: coach, business: coach.business, user: insert(:user), status: :active)
+    client = insert(:client, coach: coach, business: coach.business, user: insert(:user))
     conn = build_conn() |> authenticate_client(client) |> put_req_header("content-type", "application/json")
     %{client: client, conn: conn}
   end
@@ -53,15 +53,16 @@ defmodule EasyWeb.Clients.UploadControllerTest do
     assert json_response(conn, 403)
   end
 
-  test "POST /v1/client/attachments/download-urls returns URLs in request order", %{
+  test "GET attachment downloads remain readable after coaching ends, in request order", %{
     conn: conn,
     client: client
   } do
+    client.terms |> hd() |> Ecto.Changeset.change(ends_on: Date.add(Date.utc_today(), -1)) |> Easy.Repo.update!()
     first = insert(:attachment, business: client.business, client: client)
     second = insert(:attachment, business: client.business, client: client)
 
     conn =
-      post(conn, "/v1/client/attachments/download-urls", %{
+      get(conn, "/v1/client/attachments/download-urls", %{
         "attachment_ids" => [second.id, first.id]
       })
 

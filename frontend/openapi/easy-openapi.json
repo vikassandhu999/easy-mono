@@ -34,17 +34,11 @@
         "additionalProperties": false,
         "example": {
           "email": "client@example.com",
-          "invitation_token": "invite-token",
           "otp": "123456"
         },
         "properties": {
           "email": {
             "format": "email",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "invitation_token": {
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -56,7 +50,6 @@
           }
         },
         "required": [
-          "invitation_token",
           "email",
           "otp"
         ],
@@ -76,6 +69,11 @@
           "expires_in": {
             "example": 300,
             "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "full_name": {
+            "type": "string",
             "x-struct": null,
             "x-validate": null
           },
@@ -146,7 +144,7 @@
                 "x-struct": null,
                 "x-validate": null
               },
-              "coach_first_name": {
+              "coach_name": {
                 "nullable": true,
                 "type": "string",
                 "x-struct": null,
@@ -247,8 +245,7 @@
         "additionalProperties": false,
         "example": {
           "email": "coach@example.com",
-          "first_name": "Alex",
-          "last_name": "Coach"
+          "full_name": "Alex"
         },
         "properties": {
           "email": {
@@ -257,13 +254,7 @@
             "x-struct": null,
             "x-validate": null
           },
-          "first_name": {
-            "maxLength": 255,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "last_name": {
+          "full_name": {
             "maxLength": 255,
             "type": "string",
             "x-struct": null,
@@ -500,7 +491,7 @@
                 "x-struct": null,
                 "x-validate": null
               },
-              "first_name": {
+              "full_name": {
                 "nullable": true,
                 "type": "string",
                 "x-struct": null,
@@ -653,12 +644,60 @@
         ]
       }
     },
-    "/v1/auth/accept-invite/verify": {
+    "/v1/auth/invitations/{token}": {
+      "get": {
+        "callbacks": {},
+        "description": "Returns invitation state and prefill details for an invitation token.",
+        "operationId": "showInvitation",
+        "parameters": [
+          {
+            "description": "Invitation token",
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationPreviewResponse"
+                }
+              }
+            },
+            "description": "Invitation preview"
+          }
+        },
+        "summary": "Preview invitation",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/invites/{token}/accept": {
       "post": {
         "callbacks": {},
         "description": "Verifies an invitation OTP, links or creates the user, and returns auth tokens.",
         "operationId": "verifyInvitation",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Invitation token",
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -733,42 +772,6 @@
           }
         },
         "summary": "Verify invitation OTP",
-        "tags": [
-          "auth"
-        ]
-      }
-    },
-    "/v1/auth/invitations/{token}": {
-      "get": {
-        "callbacks": {},
-        "description": "Returns invitation state and prefill details for an invitation token.",
-        "operationId": "showInvitation",
-        "parameters": [
-          {
-            "description": "Invitation token",
-            "in": "path",
-            "name": "token",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InvitationPreviewResponse"
-                }
-              }
-            },
-            "description": "Invitation preview"
-          }
-        },
-        "summary": "Preview invitation",
         "tags": [
           "auth"
         ]

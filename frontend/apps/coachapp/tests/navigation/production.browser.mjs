@@ -39,8 +39,7 @@ try {
       await page.goto('/training-exercises/new');
       await expect(page).toHaveURL(/\/login\?returnTo=/);
       await page.getByRole('link', {name: 'Create an account', exact: true}).click();
-      await page.getByLabel('First name', {exact: true}).fill('Test');
-      await page.getByLabel('Last name', {exact: true}).fill('Production');
+      await page.getByLabel('Full name', {exact: true}).fill('Test Production');
       await page.getByLabel('Email', {exact: true}).fill(email);
       await page.getByRole('button', {name: 'Create account', exact: true}).click();
       await page.getByLabel('Verification code', {exact: true}).fill('000000');

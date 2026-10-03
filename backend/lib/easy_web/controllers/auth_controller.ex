@@ -81,6 +81,7 @@ defmodule EasyWeb.AuthController do
     summary: "Verify invitation OTP",
     description: "Verifies an invitation OTP, links or creates the user, and returns auth tokens.",
     operation_id: "verifyInvitation",
+    parameters: [Operation.parameter(:token, :path, :string, "Invitation token")],
     request_body: {"Accept invite verification request", "application/json", AcceptInviteVerifyRequest, required: true},
     responses: [
       ok: {"Auth token", "application/json", AuthTokenResponse},
@@ -194,7 +195,7 @@ defmodule EasyWeb.AuthController do
 
   @spec accept_invite_verify(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def accept_invite_verify(conn, _params) do
-    params = stringify_keys(conn.body_params)
+    params = conn.body_params |> stringify_keys() |> Map.put("invitation_token", conn.path_params["token"])
 
     with {:ok, auth_token} <-
            Identity.verify_accept_invite(params, session_options(conn)) do

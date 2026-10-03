@@ -10,7 +10,7 @@ defmodule EasyWeb.Clients.ExerciseControllerTest do
     business =
       insert(:business,
         name: "Client Exercise Business #{unique}",
-        handle: "client-exercise-#{unique}",
+        handle: "client-exercise-#{System.unique_integer([:positive])}",
         owner: business_owner
       )
 
@@ -26,7 +26,7 @@ defmodule EasyWeb.Clients.ExerciseControllerTest do
       insert(:client,
         email: "client-exercise-client-#{unique}@test.com",
         user: client_user,
-        creator: coach,
+        coach: coach,
         business: business
       )
 

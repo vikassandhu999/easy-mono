@@ -80,7 +80,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       conn = authenticate_coach(conn, coach)
       insert(:plan, creator: coach, business: coach.business)
 
-      client = insert(:client, creator: coach, business: coach.business)
+      client = insert(:client, coach: coach, business: coach.business)
       insert(:plan, creator: coach, business: coach.business, client_id: client.id)
 
       other = insert(:coach)
@@ -346,7 +346,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
 
     test "preserves Client Plan detail and Coverage updates", %{conn: conn} do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       start_date = Date.add(Date.utc_today(), 7)
       end_date = Date.add(start_date, 30)
 
@@ -390,7 +390,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
 
     test "reports incomplete, overlap, stale-revision, and archived Coverage errors", %{conn: conn} do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
 
       first =
         insert(:plan,
@@ -522,7 +522,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
 
     test "returns not found for archived, Client Plan, and cross-tenant sources", %{conn: conn} do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       other = insert(:coach)
       conn = authenticate_coach(conn, coach)
 
@@ -558,7 +558,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
   describe "Nutrition Template Assignment" do
     test "rejects a stale template revision and accepts the current revision", %{conn: conn} do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       template = insert(:plan, business: coach.business, creator: coach.user)
       conn = authenticate_coach(conn, coach)
 
@@ -588,9 +588,9 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       assert source_id == template.id
     end
 
-    test "assigns a complete independent Client Plan and advances onboarding", %{conn: conn} do
+    test "assigns a complete independent Client Plan", %{conn: conn} do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach, stage: :onboarding)
+      client = insert(:client, business: coach.business, coach: coach)
       conn = authenticate_coach(conn, coach)
 
       created =
@@ -630,7 +630,6 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       assert source_id == created["id"]
       assert copied_pattern_id == pattern_id
       assert copied_schedule["monday"] == copied_pattern_id
-      assert Repo.get!(Easy.Clients.Client, client.id).stage == :coaching
 
       assert %{"data" => [listed], "count" => 1} =
                conn
@@ -643,9 +642,9 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
 
     test "conceals invalid Assignment inputs", %{conn: conn} do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       other = insert(:coach)
-      hidden_client = insert(:client, business: other.business, creator: other, assigned_coach: other)
+      hidden_client = insert(:client, business: other.business, coach: other)
       conn = authenticate_coach(conn, coach)
 
       created =

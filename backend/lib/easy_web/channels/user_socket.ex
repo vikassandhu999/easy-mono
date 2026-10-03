@@ -30,7 +30,7 @@ defmodule EasyWeb.UserSocket do
   defp assign_actor(socket, :coach, ctx), do: {:ok, assign(socket, ctx: ctx, role: :coach)}
 
   defp assign_actor(socket, :client, ctx) do
-    case ClientAccount.get_active_client(ctx) do
+    case ClientAccount.get_accepted_client(ctx) do
       {:ok, client} -> {:ok, assign(socket, ctx: %{ctx | client_id: client.id}, role: :client)}
       {:error, :not_found} -> :error
     end

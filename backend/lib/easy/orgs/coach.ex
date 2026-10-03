@@ -14,15 +14,14 @@ defmodule Easy.Orgs.Coach do
   @foreign_key_type :binary_id
 
   schema "coaches" do
-    field :first_name, :string
-    field :last_name, :string
+    field :full_name, :string
+    field :preferred_name, :string
     field :phone, :string
     field :assigned_client_count, :integer, virtual: true, default: 0
     field :email, :string
-    field :status, Ecto.Enum, values: [:invited, :active, :inactive], default: :active
-    field :invitation_token, :string
-    field :invitation_sent_at, :utc_datetime
-    field :invited_by_id, :binary_id
+    field :removed_on, :date
+    field :invite_token, :string
+    field :invited_at, :utc_datetime
 
     belongs_to :user, Easy.Identity.User
     belongs_to :business, Business
@@ -35,7 +34,7 @@ defmodule Easy.Orgs.Coach do
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, user_id, attrs) do
     %__MODULE__{}
-    |> cast(attrs, [:first_name, :last_name])
+    |> cast(attrs, [:full_name, :preferred_name])
     |> put_change(:business_id, business_id)
     |> put_change(:user_id, user_id)
     |> validate_required([:business_id, :user_id])
@@ -49,19 +48,17 @@ defmodule Easy.Orgs.Coach do
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(coach, attrs) do
     coach
-    |> cast(attrs, [:first_name, :last_name, :phone])
+    |> cast(attrs, [:full_name, :preferred_name, :phone])
     |> validate_profile()
   end
 
-  @spec status_changeset(t(), :active | :inactive) :: Ecto.Changeset.t()
-  def status_changeset(coach, status) when status in [:active, :inactive] do
-    change(coach, status: status)
-  end
+  @spec remove_changeset(t(), Date.t()) :: Ecto.Changeset.t()
+  def remove_changeset(coach, today), do: change(coach, removed_on: today)
 
-  @spec invite_changeset(String.t(), String.t(), DateTime.t(), map()) :: Ecto.Changeset.t()
-  def invite_changeset(business_id, invited_by_id, sent_at, attrs) do
+  @spec invite_changeset(String.t(), DateTime.t(), map()) :: Ecto.Changeset.t()
+  def invite_changeset(business_id, sent_at, attrs) do
     %__MODULE__{}
-    |> cast(attrs, [:email, :first_name, :last_name])
+    |> cast(attrs, [:email, :full_name, :preferred_name, :phone])
     |> validate_profile()
     |> update_change(:email, &normalize_email/1)
     |> validate_required([:email])
@@ -71,22 +68,19 @@ defmodule Easy.Orgs.Coach do
       ~r/^[\w.!#$%&'*+=?^`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/
     )
     |> put_change(:business_id, business_id)
-    |> put_change(:invited_by_id, invited_by_id)
-    |> put_change(:status, :invited)
-    |> put_change(:invitation_token, generate_token())
-    |> put_change(:invitation_sent_at, sent_at)
+    |> put_change(:invite_token, generate_token())
+    |> put_change(:invited_at, sent_at)
     |> unique_constraint(:email, name: :coaches_business_id_lower_email_index)
     |> unique_constraint(:user_id)
     |> foreign_key_constraint(:business_id)
-    |> foreign_key_constraint(:invited_by_id)
   end
 
   @spec resend_invite_changeset(t(), DateTime.t()) :: Ecto.Changeset.t()
   def resend_invite_changeset(coach, sent_at) do
     coach
     |> change()
-    |> put_change(:invitation_token, generate_token())
-    |> put_change(:invitation_sent_at, sent_at)
+    |> put_change(:invite_token, generate_token())
+    |> put_change(:invited_at, sent_at)
   end
 
   @spec normalize_email(String.t() | nil) :: String.t() | nil
@@ -101,8 +95,9 @@ defmodule Easy.Orgs.Coach do
 
   defp validate_profile(changeset) do
     changeset
-    |> validate_length(:first_name, max: 255, count: :codepoints)
-    |> validate_length(:last_name, max: 255, count: :codepoints)
+    |> validate_required([:full_name])
+    |> validate_length(:full_name, max: 255, count: :codepoints)
+    |> validate_length(:preferred_name, max: 255, count: :codepoints)
     |> validate_length(:phone, max: 255, count: :codepoints)
   end
 
@@ -117,9 +112,15 @@ defmodule Easy.Orgs.Coach do
     from(c in query, where: c.business_id == ^business_id)
   end
 
-  @spec for_status(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
-  def for_status(query, nil), do: query
-  def for_status(query, status), do: from(coach in query, where: coach.status == ^status)
+  @spec for_state(Ecto.Queryable.t(), atom() | String.t() | nil) :: Ecto.Query.t()
+  def for_state(query, nil), do: query
+  def for_state(query, state) when state in [:invited, "invited"], do: invited(query)
+  def for_state(query, state) when state in [:active, "active"], do: active(query)
+  def for_state(query, state) when state in [:removed, "removed"], do: from(c in query, where: not is_nil(c.removed_on) and is_nil(c.invite_token))
+  @spec state(t()) :: :invited | :active | :removed
+  def state(%__MODULE__{invite_token: token}) when not is_nil(token), do: :invited
+  def state(%__MODULE__{removed_on: removed}) when not is_nil(removed), do: :removed
+  def state(_), do: :active
 
   @spec search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
   def search(query, search) when search in [nil, ""], do: query
@@ -129,7 +130,7 @@ defmodule Easy.Orgs.Coach do
 
     from(coach in query,
       left_join: user in assoc(coach, :user),
-      where: ilike(fragment("concat_ws(' ', ?, ?, coalesce(?, ?))", coach.first_name, coach.last_name, user.email, coach.email), ^pattern)
+      where: ilike(fragment("concat_ws(' ', ?, ?, coalesce(?, ?))", coach.full_name, coach.preferred_name, user.email, coach.email), ^pattern)
     )
   end
 
@@ -140,9 +141,9 @@ defmodule Easy.Orgs.Coach do
     counts =
       from(client in Easy.Clients.Client,
         where: client.business_id == ^business_id,
-        where: client.assigned_coach_id in subquery(coach_ids),
-        group_by: client.assigned_coach_id,
-        select: %{coach_id: client.assigned_coach_id, count: count(client.id)}
+        where: client.coach_id in subquery(coach_ids),
+        group_by: client.coach_id,
+        select: %{coach_id: client.coach_id, count: count(client.id)}
       )
 
     from(coach in query, left_join: count in subquery(counts), on: count.coach_id == coach.id, select_merge: %{assigned_client_count: coalesce(count.count, 0)}, preload: [:user])
@@ -153,14 +154,11 @@ defmodule Easy.Orgs.Coach do
 
   @spec active(Ecto.Queryable.t()) :: Ecto.Query.t()
   def active(query \\ __MODULE__) do
-    from(c in query, where: c.status == :active)
+    from(c in query, where: not is_nil(c.user_id) and is_nil(c.removed_on) and is_nil(c.invite_token))
   end
 
-  @spec inactive(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def inactive(query \\ __MODULE__), do: from(c in query, where: c.status == :inactive)
-
   @spec invited(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def invited(query \\ __MODULE__), do: from(c in query, where: c.status == :invited)
+  def invited(query \\ __MODULE__), do: from(c in query, where: not is_nil(c.invite_token))
 
   @spec for_user(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_user(query \\ __MODULE__, user_id) do
@@ -169,7 +167,7 @@ defmodule Easy.Orgs.Coach do
 
   @spec for_invitation_token(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_invitation_token(query \\ __MODULE__, token) do
-    from(c in query, where: c.invitation_token == ^token)
+    from(c in query, where: c.invite_token == ^token)
   end
 
   @spec for_email(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
@@ -196,23 +194,18 @@ defmodule Easy.Orgs.Coach do
   end
 
   @spec invitation_expired?(t(), DateTime.t()) :: boolean()
-  def invitation_expired?(%__MODULE__{invitation_sent_at: nil}, _now), do: false
+  def invitation_expired?(%__MODULE__{invited_at: nil}, _now), do: false
 
-  def invitation_expired?(%__MODULE__{invitation_sent_at: sent_at}, now) do
+  def invitation_expired?(%__MODULE__{invited_at: sent_at}, now) do
     DateTime.compare(now, expires_at(sent_at)) == :gt
   end
 
   @spec invitation_expires_at(t()) :: DateTime.t() | nil
-  def invitation_expires_at(%__MODULE__{status: :invited, invitation_sent_at: sent_at}) when not is_nil(sent_at), do: expires_at(sent_at)
+  def invitation_expires_at(%__MODULE__{invite_token: token, invited_at: sent_at}) when not is_nil(token) and not is_nil(sent_at), do: expires_at(sent_at)
   def invitation_expires_at(%__MODULE__{}), do: nil
 
   defp expires_at(sent_at), do: DateTime.add(sent_at, @invitation_validity_days, :day)
 
   @spec full_name(t()) :: String.t()
-  def full_name(%__MODULE__{first_name: first, last_name: last}) do
-    [first, last]
-    |> Enum.reject(&is_nil/1)
-    |> Enum.join(" ")
-    |> String.trim()
-  end
+  def full_name(coach), do: coach.preferred_name || coach.full_name
 end

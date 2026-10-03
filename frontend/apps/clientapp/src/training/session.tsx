@@ -14,6 +14,7 @@ import {safeReturnTo} from '../auth/return-to';
 import {routes} from '../routes';
 import {Button} from '../ui/button';
 import {CachedRead} from '../ui/cached-read';
+import {useCoaching} from '../ui/coaching';
 import {Confirm} from '../ui/confirm';
 import {useOnline} from '../ui/connection-status';
 import {DraftStatus} from '../ui/draft-status';
@@ -44,6 +45,7 @@ export function TrainingSession() {
   const returnTo = params.has('returnTo') ? safeReturnTo(params.get('returnTo')) : `${routes.training}?view=history`;
   const query = useTrainingSession(id);
   const profile = useProfile();
+  const {canWrite} = useCoaching();
   const online = useOnline();
   const session = query.data?.data;
   return (
@@ -75,17 +77,21 @@ export function TrainingSession() {
             refreshing={query.isFetching}
             refresh={() => query.refetch()}
           />
-          {session.state === 'active' && !online && (
+          {canWrite && session.state === 'active' && !online && (
             <p className="text-sm text-muted-foreground">Entries stay on this device. Connect to save your workout.</p>
           )}
-          <SessionContent
-            key={session.id}
-            session={session}
-            returnTo={returnTo}
-            unit={profile.data.data.default_weight_unit}
-            localDate={profile.data.data.local_date}
-            canSave={online && query.isFetchedAfterMount && !query.isFetching && !query.isError}
-          />
+          {canWrite ? (
+            <SessionContent
+              key={session.id}
+              session={session}
+              returnTo={returnTo}
+              unit={profile.data.data.unit_system === 'imperial' ? 'lbs' : 'kg'}
+              localDate={profile.data.data.local_date}
+              canSave={online && query.isFetchedAfterMount && !query.isFetching && !query.isError}
+            />
+          ) : (
+            <SavedWorkout session={session} />
+          )}
         </>
       )}
     </Page>
@@ -587,33 +593,7 @@ function SessionContent({
             />
             {session.state === 'completed' ? 'Your workout is saved.' : 'This workout was discarded.'}
           </p>
-          {session.performed_sets.length === 0 ? (
-            <p className="text-muted-foreground">No sets were recorded.</p>
-          ) : (
-            <ol
-              aria-label="Saved sets"
-              className="divide-y divide-border"
-            >
-              {session.performed_sets.map((set) => (
-                <li
-                  key={set.id}
-                  className="py-4 space-y-1"
-                >
-                  <h2 className="font-semibold">{set.exercise_name}</h2>
-                  <p>{measurementText(set)}</p>
-                  {set.rpe && <p className="text-sm">Effort {set.rpe}/10</p>}
-                  {set.notes && <p className="whitespace-pre-wrap text-muted-foreground">{set.notes}</p>}
-                </li>
-              ))}
-            </ol>
-          )}
-          {session.notes && (
-            <section>
-              <h2 className="font-semibold">Note to coach</h2>
-              <p className="whitespace-pre-wrap">{session.notes}</p>
-            </section>
-          )}
-          {session.soreness_rating && <p>Soreness: {session.soreness_rating}/5</p>}
+          <SavedWorkout session={session} />
           {(unsent.length > 0 || unsentNotes) && (
             <section className="border-t border-border pt-5 space-y-3">
               <h2 className="text-xl font-semibold">Unsent entries on this device</h2>
@@ -716,6 +696,40 @@ function SessionContent({
           <FormError message={error} />
         </Confirm>
       )}
+    </div>
+  );
+}
+
+function SavedWorkout({session}: {session: Session}) {
+  return (
+    <div className="space-y-5">
+      {session.performed_sets.length === 0 ? (
+        <p className="text-muted-foreground">No sets were recorded.</p>
+      ) : (
+        <ol
+          aria-label="Saved sets"
+          className="divide-y divide-border"
+        >
+          {session.performed_sets.map((set) => (
+            <li
+              key={set.id}
+              className="py-4 space-y-1"
+            >
+              <h2 className="font-semibold">{set.exercise_name}</h2>
+              <p>{measurementText(set)}</p>
+              {set.rpe && <p className="text-sm">Effort {set.rpe}/10</p>}
+              {set.notes && <p className="whitespace-pre-wrap text-muted-foreground">{set.notes}</p>}
+            </li>
+          ))}
+        </ol>
+      )}
+      {session.notes && (
+        <section>
+          <h2 className="font-semibold">Note to coach</h2>
+          <p className="whitespace-pre-wrap">{session.notes}</p>
+        </section>
+      )}
+      {session.soreness_rating && <p>Soreness: {session.soreness_rating}/5</p>}
     </div>
   );
 }

@@ -3,7 +3,7 @@ defmodule EasyWeb.Coaches.ClientTrainingPlanControllerTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, creator: coach, business: coach.business)
+    client = insert(:client, coach: coach, business: coach.business)
     conn = build_conn() |> authenticate_coach(coach)
 
     %{conn: conn, coach: coach, client: client, business: coach.business}
@@ -23,7 +23,7 @@ defmodule EasyWeb.Coaches.ClientTrainingPlanControllerTest do
       )
 
       insert(:training_plan, creator: ctx.coach.user, business: ctx.business)
-      other_client = insert(:client, creator: ctx.coach, business: ctx.business)
+      other_client = insert(:client, coach: ctx.coach, business: ctx.business)
 
       insert(:training_plan,
         creator: ctx.coach.user,
@@ -214,7 +214,7 @@ defmodule EasyWeb.Coaches.ClientTrainingPlanControllerTest do
       other_trainer = insert(:coach, business: ctx.business)
       other_trainer_conn = build_conn() |> authenticate_coach(other_trainer)
       other_business_coach = insert(:coach)
-      other_business_client = insert(:client, creator: other_business_coach, business: other_business_coach.business)
+      other_business_client = insert(:client, coach: other_business_coach, business: other_business_coach.business)
 
       assert other_trainer_conn
              |> get("/v1/coach/clients/#{ctx.client.id}/training-plans", %{"cursor" => "start"})
@@ -260,7 +260,7 @@ defmodule EasyWeb.Coaches.ClientTrainingPlanControllerTest do
       {timezone, local_today} = opposite_day_timezone(now)
       business = insert(:business, timezone: timezone)
       coach = insert(:coach, business: business)
-      client = insert(:client, creator: coach, business: business, timezone: "")
+      client = insert(:client, coach: coach, business: business, timezone: "")
 
       plan =
         insert(:training_plan,
@@ -290,7 +290,7 @@ defmodule EasyWeb.Coaches.ClientTrainingPlanControllerTest do
 
     test "returns 404 for inaccessible clients", ctx do
       other_coach = insert(:coach)
-      other_client = insert(:client, creator: other_coach, business: other_coach.business)
+      other_client = insert(:client, coach: other_coach, business: other_coach.business)
 
       assert ctx.conn
              |> get("/v1/coach/clients/#{other_client.id}/training-plans")

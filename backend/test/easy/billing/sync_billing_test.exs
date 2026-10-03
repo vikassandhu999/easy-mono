@@ -8,7 +8,7 @@ defmodule Easy.Billing.SyncBillingTest do
   import Easy.Factory
   import Ecto.Query
 
-  defp ctx_for(business), do: Ctx.new(business.id, business.owner_id)
+  defp ctx_for(business), do: Ctx.new(business.id, business.owner_user_id)
 
   defp billing_for(business_id), do: Repo.get_by!(BusinessBilling, business_id: business_id)
 
@@ -27,14 +27,15 @@ defmodule Easy.Billing.SyncBillingTest do
   test "active status activates seats, records seats_added, no payment_succeeded" do
     business = insert(:business)
 
-    insert(:business_billing,
-      business: business,
+    business.billing
+    |> Ecto.Changeset.change(
       status: :free,
       paid_seats: 0,
       razorpay_subscription_id: "sub_sync"
     )
+    |> Easy.Repo.update!()
 
-    waiting = insert(:client, business: business, status: :inactive, inactive_reason: :awaiting_seat)
+    waiting = insert(:client, business: business, terms: [])
 
     stub_get("sub_sync", %{
       "id" => "sub_sync",
@@ -56,19 +57,19 @@ defmodule Easy.Billing.SyncBillingTest do
     assert :seats_added in kinds
     refute :payment_succeeded in kinds
 
-    assert Repo.get!(Client, waiting.id).status == :active
-    assert Repo.get!(Client, waiting.id).inactive_reason == nil
+    assert Repo.preload(Repo.get!(Client, waiting.id), :terms).terms == []
   end
 
   test "cancel_at_period_end is preserved when active/authenticated status arrives" do
     business = insert(:business)
 
-    insert(:business_billing,
-      business: business,
+    business.billing
+    |> Ecto.Changeset.change(
       status: :cancel_at_period_end,
       paid_seats: 2,
       razorpay_subscription_id: "sub_sync"
     )
+    |> Easy.Repo.update!()
 
     stub_get("sub_sync", %{
       "id" => "sub_sync",
@@ -83,7 +84,7 @@ defmodule Easy.Billing.SyncBillingTest do
 
   test "scheduled quantity or plan changes are not a scheduled cancellation" do
     business = insert(:business)
-    insert(:business_billing, business: business, status: :active, paid_seats: 2, razorpay_subscription_id: "sub_scheduled")
+    business.billing |> Ecto.Changeset.change(status: :active, paid_seats: 2, razorpay_subscription_id: "sub_scheduled") |> Easy.Repo.update!()
     stub_get("sub_scheduled", %{"id" => "sub_scheduled", "quantity" => 2, "status" => "active", "has_scheduled_changes" => true})
     assert {:ok, %{status: :active, paid_seats: 2}} = Billing.sync_billing(ctx_for(business))
   end
@@ -91,12 +92,13 @@ defmodule Easy.Billing.SyncBillingTest do
   test "created status is a no-op" do
     business = insert(:business)
 
-    insert(:business_billing,
-      business: business,
+    business.billing
+    |> Ecto.Changeset.change(
       status: :free,
       paid_seats: 0,
       razorpay_subscription_id: "sub_sync"
     )
+    |> Easy.Repo.update!()
 
     stub_get("sub_sync", %{"id" => "sub_sync", "status" => "created"})
 
@@ -109,12 +111,13 @@ defmodule Easy.Billing.SyncBillingTest do
   test "halted status on active billing sets past_due and records payment_failed" do
     business = insert(:business)
 
-    insert(:business_billing,
-      business: business,
+    business.billing
+    |> Ecto.Changeset.change(
       status: :active,
       paid_seats: 2,
       razorpay_subscription_id: "sub_sync"
     )
+    |> Easy.Repo.update!()
 
     stub_get("sub_sync", %{"id" => "sub_sync", "status" => "halted"})
 
@@ -131,7 +134,7 @@ defmodule Easy.Billing.SyncBillingTest do
     business = insert(:business)
     other = insert(:user)
 
-    insert(:business_billing, business: business, razorpay_subscription_id: "sub_sync")
+    business.billing |> Ecto.Changeset.change(razorpay_subscription_id: "sub_sync") |> Easy.Repo.update!()
 
     assert {:error, :not_owner} = Billing.sync_billing(Ctx.new(business.id, other.id))
   end
@@ -144,7 +147,7 @@ defmodule Easy.Billing.SyncBillingTest do
 
   test "razorpay 500 surfaces as :razorpay_error" do
     business = insert(:business)
-    insert(:business_billing, business: business, razorpay_subscription_id: "sub_sync")
+    business.billing |> Ecto.Changeset.change(razorpay_subscription_id: "sub_sync") |> Easy.Repo.update!()
 
     Req.Test.stub(Easy.Razorpay, fn conn -> Plug.Conn.send_resp(conn, 500, "boom") end)
 
@@ -153,7 +156,7 @@ defmodule Easy.Billing.SyncBillingTest do
 
   test "invalid provider quantities return a provider error without updating billing" do
     business = insert(:business)
-    insert(:business_billing, business: business, razorpay_subscription_id: "sub_sync")
+    business.billing |> Ecto.Changeset.change(razorpay_subscription_id: "sub_sync") |> Easy.Repo.update!()
 
     stub_get("sub_sync", %{
       "id" => "sub_sync",
@@ -167,7 +170,7 @@ defmodule Easy.Billing.SyncBillingTest do
 
   test "malformed and mismatched subscription responses leave billing and events unchanged" do
     business = insert(:business)
-    insert(:business_billing, business: business, razorpay_subscription_id: "sub_sync", paid_seats: 0)
+    business.billing |> Ecto.Changeset.change(razorpay_subscription_id: "sub_sync", paid_seats: 0) |> Easy.Repo.update!()
 
     valid = %{"id" => "sub_sync", "status" => "active", "quantity" => 3}
 
@@ -191,7 +194,6 @@ defmodule Easy.Billing.SyncBillingTest do
   test "checkout rejects an invalid subscription before saving checkout identifiers" do
     for response <- [%{}, %{"id" => 42}, %{"id" => "sub_new", "plan_id" => []}] do
       business = insert(:business)
-      insert(:business_billing, business: business)
       Req.Test.stub(Easy.Razorpay, fn conn -> Req.Test.json(conn, response) end)
       assert {:error, :razorpay_error} = Billing.checkout(ctx_for(business), 3)
       assert is_nil(billing_for(business.id).razorpay_subscription_id)
@@ -202,12 +204,13 @@ defmodule Easy.Billing.SyncBillingTest do
   test "sync then the real webhook for the same quantity is idempotent" do
     business = insert(:business)
 
-    insert(:business_billing,
-      business: business,
+    business.billing
+    |> Ecto.Changeset.change(
       status: :free,
       paid_seats: 0,
       razorpay_subscription_id: "sub_sync"
     )
+    |> Easy.Repo.update!()
 
     stub_get("sub_sync", %{
       "id" => "sub_sync",

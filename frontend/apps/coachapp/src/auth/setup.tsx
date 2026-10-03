@@ -1,9 +1,11 @@
+import {useEffect} from 'react';
 import {flushSync} from 'react-dom';
-import {useForm} from 'react-hook-form';
+import {Controller, useForm} from 'react-hook-form';
 import {Navigate, useLocation, useNavigate} from 'react-router-dom';
 import {type BusinessInput, useCreateBusiness, useSetup} from '../api/auth';
-import {clearSession} from '../api/session';
+import {clearSession, getSession} from '../api/session';
 import {routes} from '../routes';
+import {BusinessHandle, suggestBusinessHandle, validateBusinessHandle} from '../ui/business-handle';
 import {Button} from '../ui/button';
 import {setFormError} from '../ui/form-errors';
 import {FormField} from '../ui/form-field';
@@ -16,13 +18,27 @@ export function Setup() {
   const mutation = useCreateBusiness();
   const navigate = useNavigate();
   const returnTo = getReturnTo(useLocation().search);
-  const form = useForm<BusinessInput>({defaultValues: {name: '', handle: ''}});
+  const form = useForm<BusinessInput>({
+    defaultValues: {name: '', handle: '', full_name: getSession()?.tokens.full_name ?? '', preferred_name: ''},
+  });
+  const name = form.watch('name');
+  const handleEdited = form.formState.dirtyFields.handle;
+  useEffect(() => {
+    if (!handleEdited) {
+      form.setValue('handle', suggestBusinessHandle(name));
+    }
+  }, [name, handleEdited, form.setValue]);
   const submit = form.handleSubmit(async (data) => {
     try {
       await mutation.mutateAsync(data);
       navigate(authPath(routes.welcome, returnTo), {replace: true});
     } catch (error) {
-      setFormError(error, 'We could not finish setup. Please try again.', form.setError, ['name', 'handle']);
+      setFormError(error, 'We could not finish setup. Please try again.', form.setError, [
+        'name',
+        'handle',
+        'full_name',
+        'preferred_name',
+      ]);
     }
   });
   if (setup.data === true) {
@@ -36,7 +52,7 @@ export function Setup() {
   return (
     <AuthLayout
       title="Your coaching business"
-      description="Give your business a name and a unique address."
+      description="Add your coaching details, then give your business a name and a unique address."
     >
       {setup.isPending ? (
         <p
@@ -65,17 +81,39 @@ export function Setup() {
         >
           <FormField
             control={form.control}
+            name="full_name"
+            label="Full name"
+            autoComplete="name"
+            isRequired
+            rules={{validate: (value) => Boolean(value?.trim()) || 'Enter your full name.'}}
+          />
+          <FormField
+            control={form.control}
+            name="preferred_name"
+            label="Preferred name"
+            description="What should we call you?"
+            autoComplete="nickname"
+          />
+          <FormField
+            control={form.control}
             name="name"
             label="Business name"
             autoComplete="organization"
             isRequired
           />
-          <FormField
+          <Controller
             control={form.control}
             name="handle"
-            label="Business handle"
-            description="Your unique address. Use lowercase letters, numbers, hyphens, or underscores."
-            isRequired
+            rules={{validate: validateBusinessHandle}}
+            render={({field, fieldState}) => (
+              <BusinessHandle
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                isDisabled={form.formState.isSubmitting}
+                error={fieldState.error?.message}
+              />
+            )}
           />
           <FormError message={form.formState.errors.root?.message} />
           <SubmitButton pending={form.formState.isSubmitting}>Create business</SubmitButton>

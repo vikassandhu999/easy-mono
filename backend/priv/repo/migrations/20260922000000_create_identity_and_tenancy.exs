@@ -7,8 +7,7 @@ defmodule Easy.Repo.Migrations.CreateIdentityAndTenancy do
     create table(:users, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :email, :string, null: false
-      add :first_name, :string, null: false, default: ""
-      add :last_name, :string, null: false, default: ""
+      add :full_name, :string, null: false, default: ""
       add :email_confirmed_at, :utc_datetime, default: nil
       add :phone, :string, default: nil
       add :phone_confirmed_at, :utc_datetime, default: nil
@@ -56,104 +55,74 @@ defmodule Easy.Repo.Migrations.CreateIdentityAndTenancy do
 
     create table(:businesses, primary_key: false) do
       add :id, :binary_id, primary_key: true
-      add :name, :string
-      add :about, :string, default: ""
-      add :handle, :string
-      add :whatsapp_number, :string
-      add :owner_id, references(:users, type: :binary_id)
-      add :dashboard_setup_hidden_at, :utc_datetime
-      add :dashboard_setup_hidden_reason, :string
-      add :default_weight_unit, :string, null: false, default: "kg"
+      add :name, :string, null: false
+      add :handle, :string, null: false
+      add :owner_user_id, references(:users, type: :binary_id), null: false
       add :timezone, :string, null: false, default: "Asia/Kolkata"
-
       timestamps(type: :utc_datetime)
     end
 
-    create unique_index(:businesses, [:handle])
-    create index(:businesses, [:owner_id])
+    create unique_index(:businesses, ["lower(handle)"], name: :businesses_handle_index)
+    create index(:businesses, [:owner_user_id])
 
-    create constraint(:businesses, :businesses_dashboard_setup_hidden_reason_check,
+    create constraint(:businesses, :businesses_handle_check,
              check:
-               "dashboard_setup_hidden_reason IS NULL OR dashboard_setup_hidden_reason IN ('dismissed', 'completed')"
-           )
-
-    create constraint(:businesses, :businesses_dashboard_setup_hidden_state_consistent,
-             check:
-               "(dashboard_setup_hidden_at IS NULL) = (dashboard_setup_hidden_reason IS NULL)"
-           )
-
-    create constraint(:businesses, :businesses_default_weight_unit_check,
-             check: "default_weight_unit in ('kg','lbs')"
+               "char_length(handle) BETWEEN 3 AND 40 AND handle ~ '^[a-z0-9]+(-[a-z0-9]+)*$' AND handle NOT IN ('admin', 'api', 'app', 'www', 'auth', 'login', 'signup', 'support', 'help', 'billing', 'settings', 'assets', 'static', 'coach', 'client', 'coaches', 'clients')"
            )
 
     create table(:coaches, primary_key: false) do
       add :id, :binary_id, primary_key: true
-      add :business_id, references(:businesses, type: :binary_id)
-      add :first_name, :string
-      add :last_name, :string
+      add :business_id, references(:businesses, type: :binary_id), null: false
+      add :full_name, :string, null: false
+      add :preferred_name, :string
       add :phone, :string
       add :user_id, references(:users, type: :binary_id)
       add :email, :string
-      add :status, :string, null: false, default: "active"
-      add :invitation_token, :string
-      add :invitation_sent_at, :utc_datetime
-      add :invited_by_id, references(:coaches, type: :binary_id, on_delete: :nilify_all)
-
+      add :invite_token, :string
+      add :invited_at, :utc_datetime
+      add :removed_on, :date
       timestamps(type: :utc_datetime)
     end
 
-    create index(:coaches, [:business_id])
     create index(:coaches, [:business_id, :inserted_at, :id])
+    create unique_index(:coaches, [:id, :business_id])
 
     create unique_index(:coaches, [:business_id, "lower(email)"],
              name: :coaches_business_id_lower_email_index,
              where: "email IS NOT NULL"
            )
 
-    create unique_index(:coaches, [:invitation_token], where: "invitation_token IS NOT NULL")
+    create unique_index(:coaches, [:invite_token], where: "invite_token IS NOT NULL")
     create unique_index(:coaches, [:user_id, :business_id])
-    create unique_index(:coaches, [:user_id], where: "user_id IS NOT NULL")
+    create unique_index(:coaches, [:user_id], where: "user_id IS NOT NULL AND removed_on IS NULL")
 
     create table(:clients, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :business_id, references(:businesses, type: :binary_id), null: false
       add :email, :string
-      add :first_name, :string, default: ""
-      add :last_name, :string, default: ""
+      add :full_name, :string, null: false
+      add :preferred_name, :string
       add :phone, :string
-      add :notes, :string
-      add :status, :string, null: false
-      add :invitation_token, :string
-      add :invitation_sent_at, :utc_datetime
-      add :goal_weight_value, :decimal, precision: 5, scale: 2
-      add :goal_weight_unit, :string
+      add :notes, :text
+      add :invite_token, :string
+      add :invited_at, :utc_datetime
       add :user_id, references(:users, type: :binary_id)
-      add :creator_id, references(:coaches, type: :binary_id)
-      add :assigned_coach_id, references(:coaches, type: :binary_id, on_delete: :nilify_all)
-      add :stage, :string, null: false, default: "onboarding"
-      add :inactive_reason, :string
-      add :subscription_started_on, :date
-      add :subscription_ends_on, :date
+
+      add :coach_id, references(:coaches, type: :binary_id, with: [business_id: :business_id]),
+        null: false
+
       add :last_active_at, :utc_datetime
       add :joined_at, :utc_datetime_usec
-      add :required_services, {:array, :string}, null: false, default: []
-      add :timezone, :string, null: false, default: "Asia/Kolkata"
-
+      add :timezone, :string
+      add :unit_system, :string, null: false, default: "metric"
       timestamps(type: :utc_datetime)
     end
 
-    create index(:clients, [:business_id, :subscription_ends_on, :id],
-             name: :clients_active_subscription_ends_on_index,
-             where: "status = 'active' AND subscription_ends_on IS NOT NULL"
-           )
-
-    create index(:clients, [:business_id, :assigned_coach_id])
+    create index(:clients, [:business_id, :coach_id])
     create unique_index(:clients, [:business_id, :email], where: "email IS NOT NULL")
-    create index(:clients, [:business_id])
     create index(:clients, [:business_id, :inserted_at, :id])
-    create index(:clients, [:business_id, :status])
     create unique_index(:clients, [:id, :business_id])
-    create unique_index(:clients, [:invitation_token], where: "invitation_token IS NOT NULL")
+    create unique_index(:clients, [:invite_token], where: "invite_token IS NOT NULL")
 
     create index(
              :clients,
@@ -163,13 +132,27 @@ defmodule Easy.Repo.Migrations.CreateIdentityAndTenancy do
 
     create unique_index(:clients, [:user_id, :business_id])
 
-    create constraint(:clients, :clients_required_services_check,
-             check: """
-             required_services = ARRAY[]::varchar[] OR
-             required_services = ARRAY['training']::varchar[] OR
-             required_services = ARRAY['nutrition']::varchar[] OR
-             required_services = ARRAY['training', 'nutrition']::varchar[]
-             """
+    create constraint(:clients, :clients_unit_system_check,
+             check: "unit_system IN ('metric', 'imperial')"
            )
+
+    create table(:coaching_terms, primary_key: false) do
+      add :id, :binary_id, primary_key: true
+      add :client_id, references(:clients, type: :binary_id), null: false
+      add :starts_on, :date, null: false
+      add :ends_on, :date
+      timestamps(type: :utc_datetime)
+    end
+
+    create index(:coaching_terms, [:client_id, :starts_on])
+
+    create constraint(:coaching_terms, :coaching_terms_dates_check,
+             check: "ends_on IS NULL OR ends_on >= starts_on"
+           )
+
+    execute(
+      "ALTER TABLE coaching_terms ADD CONSTRAINT coaching_terms_no_overlap EXCLUDE USING gist (client_id WITH =, daterange(starts_on, ends_on, '[]') WITH &&)",
+      "ALTER TABLE coaching_terms DROP CONSTRAINT coaching_terms_no_overlap"
+    )
   end
 end

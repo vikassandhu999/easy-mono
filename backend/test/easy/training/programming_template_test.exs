@@ -207,7 +207,7 @@ defmodule Easy.Training.ProgrammingTemplateTest do
 
     test "returns not found for archived, Client Plan, and cross-tenant sources" do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       other_coach = insert(:coach)
 
       archived =

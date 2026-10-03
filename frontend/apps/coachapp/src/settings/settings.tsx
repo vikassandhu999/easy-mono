@@ -5,6 +5,7 @@ import {type Profile, type ProfileUpdate, useProfile, useUpdateProfile} from '..
 import {type Business, type BusinessUpdate, useBusiness, useTimezones, useUpdateBusiness} from '../api/business';
 import {errorMessage} from '../api/client';
 import {routes} from '../routes';
+import {BusinessHandle, validateBusinessHandle} from '../ui/business-handle';
 import {Button} from '../ui/button';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FormError} from '../ui/form-error';
@@ -205,9 +206,9 @@ export function ProfileSettings() {
   );
 }
 
-const profileFields: Array<keyof ProfileUpdate> = ['first_name', 'last_name', 'phone'];
+const profileFields: Array<keyof ProfileUpdate> = ['full_name', 'preferred_name', 'phone'];
 function profileValues(profile: Profile) {
-  return {first_name: profile.first_name ?? '', last_name: profile.last_name ?? '', phone: profile.phone ?? ''};
+  return {full_name: profile.full_name ?? '', preferred_name: profile.preferred_name ?? '', phone: profile.phone ?? ''};
 }
 
 function ProfileForm({profile}: {profile: Profile}) {
@@ -219,7 +220,11 @@ function ProfileForm({profile}: {profile: Profile}) {
     const body: ProfileUpdate = {};
     for (const field of profileFields) {
       if (form.formState.dirtyFields[field]) {
-        body[field] = values[field].trim() || null;
+        if (field === 'full_name') {
+          body.full_name = values.full_name.trim();
+        } else {
+          body[field] = values[field].trim() || null;
+        }
       }
     }
     form.clearErrors();
@@ -243,17 +248,20 @@ function ProfileForm({profile}: {profile: Profile}) {
         <div className="grid items-start gap-5 sm:grid-cols-2">
           <FormField
             control={form.control}
-            name="first_name"
-            label="First name"
-            autoComplete="given-name"
+            name="full_name"
+            label="Full name"
+            isRequired
+            rules={{validate: (value) => Boolean(value.trim()) || 'Enter your full name.'}}
+            autoComplete="name"
             maxLength={255}
             isDisabled={pending}
           />
           <FormField
             control={form.control}
-            name="last_name"
-            label="Last name"
-            autoComplete="family-name"
+            name="preferred_name"
+            label="Preferred name"
+            description="What should we call you?"
+            autoComplete="nickname"
             maxLength={255}
             isDisabled={pending}
           />
@@ -337,9 +345,7 @@ function BusinessDetails({business}: {business: Business}) {
         {[
           ['Business name', business.name],
           ['Business handle', business.handle],
-          ['About', business.about || 'Not added'],
-          ['WhatsApp number', business.whatsapp_number || 'Not added'],
-          ['Default workout load unit', business.default_weight_unit === 'kg' ? 'Kilograms (kg)' : 'Pounds (lb)'],
+          ['Seats', `${business.seats.used} of ${business.seats.limit} used`],
           ['Default time zone', business.timezone],
         ].map(([label, value]) => (
           <div
@@ -355,21 +361,9 @@ function BusinessDetails({business}: {business: Business}) {
   );
 }
 
-const businessFields: Array<keyof BusinessUpdate> = [
-  'name',
-  'about',
-  'whatsapp_number',
-  'default_weight_unit',
-  'timezone',
-];
+const businessFields: Array<keyof BusinessUpdate> = ['name', 'handle', 'timezone'];
 function businessValues(business: Business) {
-  return {
-    name: business.name,
-    about: business.about ?? '',
-    whatsapp_number: business.whatsapp_number ?? '',
-    default_weight_unit: business.default_weight_unit,
-    timezone: business.timezone,
-  };
+  return {name: business.name, handle: business.handle, timezone: business.timezone};
 }
 
 function BusinessForm({business}: {business: Business}) {
@@ -384,14 +378,8 @@ function BusinessForm({business}: {business: Business}) {
     if (dirty.name) {
       body.name = values.name.trim();
     }
-    if (dirty.about) {
-      body.about = values.about.trim() || null;
-    }
-    if (dirty.whatsapp_number) {
-      body.whatsapp_number = values.whatsapp_number.trim() || null;
-    }
-    if (dirty.default_weight_unit) {
-      body.default_weight_unit = values.default_weight_unit;
+    if (dirty.handle) {
+      body.handle = values.handle;
     }
     if (dirty.timezone) {
       body.timezone = values.timezone;
@@ -429,70 +417,27 @@ function BusinessForm({business}: {business: Business}) {
           isDisabled={pending}
           rules={{validate: (value) => Boolean(value.trim()) || 'Enter your business name.'}}
         />
-        <div className="space-y-1">
-          <p className="text-sm font-medium">Business handle</p>
-          <p className="break-all text-sm text-muted-foreground">{business.handle}</p>
-        </div>
-        <FormField
-          control={form.control}
-          name="about"
-          label="About your business"
-          multiline
-          maxLength={255}
-          isDisabled={pending}
-          description="A short introduction, up to 255 characters."
-        />
-        <FormField
-          control={form.control}
-          name="whatsapp_number"
-          label="WhatsApp number"
-          type="tel"
-          maxLength={255}
-          isDisabled={pending}
-          description="Your business contact number, including country code."
-        />
-      </Surface>
-      <Surface className="space-y-5">
-        <h2 className="section-title">Coaching defaults</h2>
         <Controller
           control={form.control}
-          name="default_weight_unit"
+          name="handle"
+          rules={{validate: validateBusinessHandle}}
           render={({field, fieldState}) => (
-            <div className="grid gap-2">
-              <Label
-                id="weight-unit-label"
-                htmlFor="weight-unit"
-              >
-                Default workout load unit
-              </Label>
-              <SelectField
-                id="weight-unit"
-                value={field.value}
-                triggerRef={field.ref}
-                onBlur={field.onBlur}
-                isDisabled={pending}
-                isInvalid={Boolean(fieldState.error)}
-                aria-describedby="weight-unit-description"
-                onChange={(value) => {
-                  if (value === 'kg' || value === 'lbs') {
-                    field.onChange(value);
-                    setNotice('');
-                  }
-                }}
-              >
-                <SelectItem id="kg">Kilograms (kg)</SelectItem>
-                <SelectItem id="lbs">Pounds (lb)</SelectItem>
-              </SelectField>
-              <p
-                id="weight-unit-description"
-                className="text-sm text-muted-foreground"
-              >
-                Used when your client records workout loads. Existing sets keep their units.
-              </p>
-              <FormError message={fieldState.error?.message} />
-            </div>
+            <BusinessHandle
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              isDisabled={pending}
+              currentHandle={business.handle}
+              error={fieldState.error?.message}
+            />
           )}
         />
+        <p className="text-sm">
+          {business.seats.used} of {business.seats.limit} seats used
+        </p>
+      </Surface>
+      <Surface className="space-y-5">
+        <h2 className="section-title">Coaching time zone</h2>
         <Controller
           control={form.control}
           name="timezone"
@@ -530,7 +475,7 @@ function BusinessForm({business}: {business: Business}) {
                 id="timezone-description"
                 className="text-sm text-muted-foreground"
               >
-                Applies to clients you invite after saving. Existing clients keep their own time zones.
+                Applies to clients without their own time zone, including existing clients.
               </p>
               {timezones.isPending && (
                 <p

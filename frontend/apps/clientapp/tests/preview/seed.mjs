@@ -3,7 +3,7 @@ import {chromium, expect} from '@playwright/test';
 import {api, inviteClient} from '../auth/fixtures.mjs';
 
 // Retained deliberately for manual testing; this creates a separate coaching business.
-const fixture = await inviteClient({firstName: 'Sam'});
+const fixture = await inviteClient({fullName: 'Sam'});
 const coach = {token: fixture.coachToken};
 const browser = await chromium.launch();
 try {

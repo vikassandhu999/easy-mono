@@ -1,215 +1,128 @@
 defmodule Easy.ClientInvitations do
-  import Ecto.Changeset, only: [get_field: 2]
-
-  alias Easy.{Billing, ClientAccess, Coaches, Ctx, Repo}
+  import Ecto.Query
+  alias Easy.{Clients, Coaches, Ctx, Repo}
   alias Easy.Clients.Client
-  alias Easy.Identity.User
   alias Easy.Orgs.Coach
 
-  @type error() ::
-          :not_found | :self_invite | :client_email_taken | :seat_limit_reached | :conflict | Ecto.Changeset.t()
-
-  @type preview ::
-          %{state: String.t()}
-          | %{
-              state: String.t(),
-              business_name: String.t(),
-              coach_first_name: String.t(),
-              prefill_email: String.t() | nil,
-              expires_at: DateTime.t() | nil
-            }
-
-  @spec invite(Ctx.t(), map()) :: {:ok, Client.t()} | {:error, error()}
-  def invite(%Ctx{} = ctx, attrs) do
+  @spec invite(Ctx.t(), map()) :: {:ok, Client.t()} | {:error, atom() | Ecto.Changeset.t()}
+  def invite(ctx, attrs) do
     with {:ok, client} <- create(ctx, attrs) do
       :ok = deliver(client)
       {:ok, client}
     end
   end
 
-  @spec create(Ctx.t(), map()) :: {:ok, Client.t()} | {:error, error()}
-  def create(%Ctx{} = ctx, attrs) do
-    with {:ok, coach} <- Coaches.get_coach(ctx),
-         changeset = Client.invite_changeset(coach.business_id, coach.id, DateTime.utc_now(:second), attrs),
-         changeset = Easy.LocalCalendar.stamp_timezone(changeset, coach.business.timezone),
-         email = get_field(changeset, :email),
-         :ok <- validate_not_self_invite(coach, email),
-         :ok <- validate_email_has_no_active_client(email),
-         {:ok, client} <- reserve_and_create(ctx, changeset) do
-      coaches = Coach.for_business(ctx.business_id)
-      {:ok, Repo.preload(client, [:user, :business, :creator, assigned_coach: coaches], force: true)}
+  @spec create(Ctx.t(), map()) :: {:ok, Client.t()} | {:error, atom() | Ecto.Changeset.t()}
+  def create(ctx, attrs) do
+    with {:ok, actor} <- Coaches.get_coach(ctx),
+         changeset = Client.insert_changeset(ctx.business_id, actor.id, DateTime.utc_now(:second), attrs),
+         :ok <- not_self_invite(actor, Ecto.Changeset.get_field(changeset, :email)),
+         :ok <- available_email(Ecto.Changeset.get_field(changeset, :email)) do
+      Repo.transact(fn -> create_with_coach(ctx, changeset) end)
     end
   end
 
+  defp create_with_coach(ctx, changeset) do
+    coach_id = changeset.params["coach_id"] || ctx.coach_id
+
+    if coach_id != ctx.coach_id and not ctx.owner? do
+      {:error, :not_owner}
+    else
+      with %Coach{} = coach <- Coach.for_business(ctx.business_id) |> Coach.active() |> lock("FOR UPDATE") |> Repo.get(coach_id),
+           {:ok, client} <- changeset |> Ecto.Changeset.put_change(:coach_id, coach.id) |> Repo.insert() do
+        Clients.get_client_with_preloads(ctx, client.id)
+      else
+        nil -> {:error, :coach_not_active}
+        error -> error
+      end
+    end
+  end
+
+  defp not_self_invite(%Coach{user: %{email: email}}, email), do: {:error, :self_invite}
+  defp not_self_invite(_, _), do: :ok
+
   @spec deliver(Client.t()) :: :ok
-  def deliver(%Client{email: email}) when email in [nil, ""], do: :ok
-
-  def deliver(%Client{creator: coach, business: business} = client) do
-    coach_name = Coach.full_name(coach)
-
+  def deliver(%Client{coach: coach, business: business} = client) do
     client.email
-    |> Easy.Emails.client_invitation_email(
-      client.invitation_token,
-      if(coach_name == "", do: "Coach", else: coach_name),
-      business.name
-    )
+    |> Easy.Emails.client_invitation_email(client.invite_token, Coach.full_name(coach), business.name)
     |> Easy.MailerDelivery.deliver_async(metadata: %{client_id: client.id})
   end
 
-  @spec revoke_invitation(Ctx.t(), String.t()) ::
-          {:ok, Client.t()} | {:error, :not_found | :invitation_not_pending | Ecto.Changeset.t()}
-  def revoke_invitation(%Ctx{} = ctx, client_id) do
-    with {:ok, client} <- ClientAccess.authorize_client(ctx, client_id) do
-      delete_pending_invitation(client)
+  @spec revoke_invitation(Ctx.t(), String.t()) :: {:ok, Client.t()} | {:error, atom() | Ecto.Changeset.t()}
+  def revoke_invitation(ctx, client_id) do
+    mutate_invitation(ctx, client_id, &delete_without_records/1)
+  end
+
+  @spec resend_invitation(Ctx.t(), String.t()) :: {:ok, Client.t()} | {:error, atom() | Ecto.Changeset.t()}
+  def resend_invitation(ctx, client_id) do
+    with {:ok, client} <- mutate_invitation(ctx, client_id, fn client -> client |> Client.resend_invite_changeset(DateTime.utc_now(:second)) |> Repo.update() end) do
+      :ok = deliver(client)
+      {:ok, client}
     end
   end
 
-  @spec resend_invitation(Ctx.t(), String.t()) ::
-          {:ok, Client.t()}
-          | {:error, :not_found | :invitation_email_missing | :invitation_not_pending | Ecto.Changeset.t()}
-  def resend_invitation(%Ctx{} = ctx, client_id) do
-    with {:ok, client} <- ClientAccess.authorize_client(ctx, client_id),
-         {:ok, coach} <- Coaches.get_coach(ctx),
-         {:ok, updated_client} <- resend_client_invitation(client, coach) do
-      coaches = Coach.for_business(ctx.business_id)
-      {:ok, Repo.preload(updated_client, [:user, :business, :creator, assigned_coach: coaches], force: true)}
-    end
-  end
-
-  # Token-based exceptions — no authenticated tenant ctx; documented pre-auth path.
-
-  @spec invitation_preview(String.t()) :: {:ok, preview()}
-  def invitation_preview(token) do
-    body =
-      case resolve_invitation_token(token) do
-        {:ok, client} ->
-          client = Repo.preload(client, [:business, :creator])
-
-          %{
-            state: "pending",
-            business_name: client.business.name,
-            coach_first_name: coach_display_name(client.creator),
-            prefill_email: client.email,
-            expires_at: Client.invitation_expires_at(client)
-          }
-
-        {:error, state} ->
-          %{state: Atom.to_string(state)}
+  defp mutate_invitation(ctx, client_id, fun) do
+    Repo.transact(fn ->
+      with %Client{} <- Client.for_business(ctx.business_id) |> lock("FOR UPDATE") |> Repo.get(client_id),
+           {:ok, client} <- Clients.get_client_with_preloads(ctx, client_id),
+           :ok <- ensure_invited(client) do
+        fun.(client)
+      else
+        nil -> {:error, :not_found}
+        error -> error
       end
-
-    {:ok, body}
+    end)
   end
 
-  @spec resolve_invitation_token(String.t()) ::
-          {:ok, Client.t()} | {:error, :used | :expired | :invalid}
+  defp ensure_invited(%Client{user_id: nil}), do: :ok
+  defp ensure_invited(_), do: {:error, :invitation_not_pending}
+
+  defp available_email(nil), do: :ok
+  defp available_email(email), do: if(Repo.exists?(Client.active_for_email(email)), do: {:error, :client_email_taken}, else: :ok)
+
+  defp delete_without_records(client) do
+    records = [
+      from(s in Easy.Training.TrainingSession, where: s.business_id == ^client.business_id and s.client_id == ^client.id),
+      from(d in Easy.Nutrition.DiaryDay, where: d.business_id == ^client.business_id and d.client_id == ^client.id),
+      from(s in Easy.Nutrition.DiarySlot, where: s.business_id == ^client.business_id and s.client_id == ^client.id),
+      from(m in Easy.Chat.Message, join: c in Easy.Chat.Conversation, on: c.id == m.conversation_id, where: c.business_id == ^client.business_id and c.client_id == ^client.id)
+    ]
+
+    if Enum.any?(records, &Repo.exists?/1), do: {:error, :client_has_records}, else: client |> Client.delete_invitation_changeset() |> Repo.delete()
+  end
+
+  @spec invitation_preview(String.t()) :: {:ok, map()}
+  def invitation_preview(token) do
+    case resolve_invitation_token(token) do
+      {:ok, client} ->
+        client = Repo.preload(client, [:business, :coach])
+
+        {:ok,
+         %{
+           state: "pending",
+           business_name: client.business.name,
+           coach_name: Coach.full_name(client.coach),
+           prefill_email: client.email,
+           expires_at: Client.invitation_expires_at(client)
+         }}
+
+      {:error, state} ->
+        {:ok, %{state: Atom.to_string(state)}}
+    end
+  end
+
+  @spec resolve_invitation_token(String.t()) :: {:ok, Client.t()} | {:error, :invalid | :expired | :used}
   def resolve_invitation_token(token) when is_binary(token) and token != "" do
-    case token |> Client.for_invitation_token() |> Repo.one() do
+    case Client.for_invitation_token(token) |> Repo.one() do
       nil -> {:error, :invalid}
-      %Client{status: :pending} = client -> check_expiry(client)
-      %Client{} -> {:error, :used}
+      %Client{user_id: nil} = client -> valid_invitation(client)
+      _ -> {:error, :used}
     end
   end
 
   def resolve_invitation_token(_), do: {:error, :invalid}
 
-  @spec accept_invite(Client.t(), String.t(), String.t()) ::
-          {:ok, Client.t()} | {:error, :race_lost | :already_active_elsewhere | Billing.record_error()}
-  def accept_invite(%Client{} = client, user_id, accepted_email) do
-    if user_has_active_client_elsewhere?(user_id, client.business_id) do
-      {:error, :already_active_elsewhere}
-    else
-      do_atomic_accept(client, user_id, accepted_email)
-    end
+  defp valid_invitation(client) do
+    if Client.invitation_expired?(client, DateTime.utc_now()), do: {:error, :expired}, else: {:ok, client}
   end
-
-  defp reserve_and_create(ctx, changeset) do
-    Billing.reserve_seat(ctx, fn -> Repo.insert(changeset) end)
-  end
-
-  defp validate_not_self_invite(%Coach{user: %User{email: coach_email}}, email)
-       when is_binary(coach_email) and is_binary(email) and email != "" and coach_email == email,
-       do: {:error, :self_invite}
-
-  defp validate_not_self_invite(_coach, _email), do: :ok
-
-  defp validate_email_has_no_active_client(email) when is_binary(email) and email != "" do
-    if Repo.exists?(Client.active_for_email(email)), do: {:error, :client_email_taken}, else: :ok
-  end
-
-  defp validate_email_has_no_active_client(_email), do: :ok
-
-  defp delete_pending_invitation(%Client{status: :pending} = client) do
-    client
-    |> Client.delete_invitation_changeset()
-    |> Repo.delete()
-  end
-
-  defp delete_pending_invitation(%Client{}) do
-    {:error, :invitation_not_pending}
-  end
-
-  defp resend_client_invitation(%Client{status: :pending, email: email} = client, coach)
-       when is_binary(email) and email != "" do
-    case client |> Client.resend_invite_changeset(DateTime.utc_now(:second)) |> Repo.update() do
-      {:ok, updated} ->
-        deliver(%{updated | creator: coach, business: coach.business})
-        {:ok, updated}
-
-      {:error, changeset} ->
-        {:error, changeset}
-    end
-  end
-
-  defp resend_client_invitation(%Client{status: :pending, email: nil}, _coach) do
-    {:error, :invitation_email_missing}
-  end
-
-  defp resend_client_invitation(%Client{status: :pending, email: ""}, _coach) do
-    {:error, :invitation_email_missing}
-  end
-
-  defp resend_client_invitation(%Client{}, _coach) do
-    {:error, :invitation_not_pending}
-  end
-
-  defp check_expiry(%Client{} = client) do
-    if Client.invitation_expired?(client, DateTime.utc_now()) do
-      {:error, :expired}
-    else
-      {:ok, client}
-    end
-  end
-
-  defp user_has_active_client_elsewhere?(user_id, business_id) do
-    Client.active_elsewhere(user_id, business_id)
-    |> Repo.exists?()
-  end
-
-  defp do_atomic_accept(client, user_id, accepted_email) do
-    joined_at = DateTime.utc_now(:microsecond)
-    now = DateTime.truncate(joined_at, :second)
-
-    with {:ok, {target_status, target_reason}} <- Billing.seat_status_for_invitation(client) do
-      query = Client.pending_invitation(client.business_id, client.id)
-
-      case Repo.update_all(query,
-             set: [
-               user_id: user_id,
-               status: target_status,
-               inactive_reason: target_reason,
-               email: accepted_email,
-               joined_at: joined_at,
-               updated_at: now
-             ]
-           ) do
-        {1, [updated]} -> {:ok, updated}
-        {0, _} -> {:error, :race_lost}
-      end
-    end
-  end
-
-  defp coach_display_name(nil), do: "Coach"
-  defp coach_display_name(%{first_name: nil}), do: "Coach"
-  defp coach_display_name(%{first_name: ""}), do: "Coach"
-  defp coach_display_name(%{first_name: name}), do: name
 end

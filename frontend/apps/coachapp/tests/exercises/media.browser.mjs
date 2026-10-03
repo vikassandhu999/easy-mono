@@ -12,9 +12,14 @@ async function send(method, path, data, token) {
 }
 async function account(unique) {
   const email = `exercise-media-${unique}@example.test`;
-  await send('post', '/v1/auth/signup', {email, first_name: 'Taylor'});
+  await send('post', '/v1/auth/signup', {email, full_name: 'Taylor'});
   const guest = await send('post', '/v1/auth/verify', {email, otp: '123456'});
-  await send('post', '/v1/businesses', {name: 'Everyday Coaching', handle: `emedia-${unique}`}, guest.access_token);
+  await send(
+    'post',
+    '/v1/businesses',
+    {full_name: 'Taylor', name: 'Everyday Coaching', handle: `emedia-${unique}`},
+    guest.access_token,
+  );
   return send('post', '/v1/auth/token', {
     grant_type: 'refresh_token',
     refresh_token: guest.refresh_token,
@@ -201,12 +206,7 @@ try {
     await page.screenshot({path: `tests/exercises/artifacts/media-plan-${width}.png`});
     await reader.getByRole('button', {name: 'Back to plan', exact: true}).click();
     const person = (
-      await send(
-        'post',
-        '/v1/coach/clients/invite',
-        {first_name: 'Alex', phone: `+1555${String(Date.now()).slice(-7)}`},
-        token,
-      )
+      await send('post', '/v1/coach/clients', {full_name: 'Alex', phone: `+1555${String(Date.now()).slice(-7)}`}, token)
     ).data;
     await page.goto(`/clients/${person.id}/training-plans/assign/${planId}`);
     await page.getByRole('button', {name: 'View Paused goblet demonstration details', exact: true}).click();

@@ -1,7 +1,7 @@
 import {writeFile} from 'node:fs/promises';
 import {api, inviteClient} from './fixtures.mjs';
 
-const fixture = await inviteClient({firstName: ''});
+const fixture = await inviteClient({fullName: 'Client'});
 // Each native scenario accepts its own single-use invitation.
 const mealClient = await inviteClient();
 fixture.mealToken = mealClient.token;

@@ -19,8 +19,7 @@ try {
   const email = `coach-auth-${Date.now()}@example.test`;
   const handle = `auth-${Date.now()}`;
   await page.getByRole('link', {name: 'Create an account'}).click();
-  await page.getByLabel('First name').fill('Alex');
-  await page.getByLabel('Last name').fill('Coach');
+  await page.getByLabel('Full name').fill('Alex Coach');
   await page.getByLabel('Email', {exact: true}).fill(email);
   await page.getByRole('button', {name: 'Create account', exact: true}).click();
   await expect(page.getByRole('heading', {name: 'Check your email'})).toBeVisible();
@@ -204,6 +203,7 @@ try {
 
   const unfinishedEmail = `unfinished-${Date.now()}@example.test`;
   await page.goto('/signup');
+  await page.getByLabel('Full name', {exact: true}).fill('Unfinished Owner');
   await page.getByLabel('Email', {exact: true}).fill(unfinishedEmail);
   await page.getByRole('button', {name: 'Create account', exact: true}).click();
   await expect(page.getByRole('heading', {name: 'Check your email'})).toBeVisible();

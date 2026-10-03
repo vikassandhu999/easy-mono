@@ -34,7 +34,7 @@ defmodule Easy.ChannelCase do
         business_id: coach.business_id,
         coach_id: coach.id,
         role: :coach,
-        is_owner: business.owner_id == coach.user_id
+        is_owner: business.owner_user_id == coach.user_id
       )
 
     Joken.generate_and_sign!(
@@ -45,7 +45,7 @@ defmodule Easy.ChannelCase do
         role: "coach",
         business_id: coach.business_id,
         coach_id: coach.id,
-        is_owner: business.owner_id == coach.user_id
+        is_owner: business.owner_user_id == coach.user_id
       },
       Token.signer()
     )

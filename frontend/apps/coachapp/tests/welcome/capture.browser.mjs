@@ -18,10 +18,14 @@ async function send(method, path, data, accessToken = token) {
 try {
   const unique = Date.now();
   const email = `welcome-preview-${unique}@example.test`;
-  await send('post', '/v1/auth/signup', {email, first_name: 'Taylor', last_name: 'Reed'});
+  await send('post', '/v1/auth/signup', {email, full_name: 'Taylor Reed'});
   const guest = await send('post', '/v1/auth/verify', {email, otp: '123456'});
   token = guest.access_token;
-  await send('post', '/v1/businesses', {name: 'Everyday Coaching', handle: `welcome-preview-${unique}`});
+  await send('post', '/v1/businesses', {
+    full_name: 'Taylor Reed',
+    name: 'Everyday Coaching',
+    handle: `welcome-preview-${unique}`,
+  });
   const tokens = await send('post', '/v1/auth/token', {
     grant_type: 'refresh_token',
     refresh_token: guest.refresh_token,
@@ -29,28 +33,23 @@ try {
   });
   token = tokens.access_token;
   const clients = [];
-  for (const [first_name, last_name] of [
+  for (const [givenName, familyName] of [
     ['Alex', 'Morgan'],
     ['Priya', 'Shah'],
     ['Sam', 'Rivera'],
   ]) {
     const person = (
-      await send('post', '/v1/coach/clients/invite', {
-        first_name,
-        last_name,
-        email: `${first_name}-${unique}@example.test`,
+      await send('post', '/v1/coach/clients', {
+        full_name: `${givenName} ${familyName}`,
+        email: `${givenName}-${unique}@example.test`,
       })
     ).data;
     const invitation_token = new URL(person.invite_url).pathname.split('/').at(-1);
     await send('post', '/v1/auth/accept-invite', {email: person.email, invitation_token});
-    const session = await send('post', '/v1/auth/accept-invite/verify', {
+    const session = await send('post', `/v1/auth/invites/${invitation_token}/accept`, {
       email: person.email,
       invitation_token,
       otp: '123456',
-    });
-    await send('patch', `/v1/coach/clients/${person.id}`, {
-      stage: 'coaching',
-      required_services: ['training', 'nutrition'],
     });
     clients.push({person, token: session.access_token});
   }

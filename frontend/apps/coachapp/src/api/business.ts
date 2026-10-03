@@ -44,3 +44,12 @@ export function useUpdateBusiness() {
     },
   });
 }
+
+export function useHandleAvailability(handle: string, enabled: boolean) {
+  return useQuery({
+    queryKey: businessKeys.handle(handle),
+    queryFn: ({signal}) => call(client.GET('/v1/businesses/handle-availability', {params: {query: {handle}}, signal})),
+    enabled,
+    staleTime: 0,
+  });
+}

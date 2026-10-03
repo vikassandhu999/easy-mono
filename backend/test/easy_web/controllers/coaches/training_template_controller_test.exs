@@ -323,7 +323,7 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
 
     test "preserves the shared Client Plan detail, Coverage, and end-plan flow", %{conn: conn} do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
 
       client_plan =
         insert(:training_plan,
@@ -368,7 +368,7 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
 
     test "returns validation instead of raising when Client Plan restore conflicts with Coverage", %{conn: conn} do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
 
       archived_plan =
         insert(:training_plan,
@@ -492,7 +492,7 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
 
     test "returns not found for archived, Client Plan, and cross-tenant sources", %{conn: conn} do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       other = insert(:coach)
       conn = authenticate_coach(conn, coach)
 
@@ -526,9 +526,9 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
   end
 
   describe "Training Template Assignment" do
-    test "assigns a complete independent Client Plan and advances onboarding", %{conn: conn} do
+    test "assigns a complete independent Client Plan", %{conn: conn} do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach, stage: :onboarding)
+      client = insert(:client, business: coach.business, coach: coach)
       template = insert(:training_plan, business: coach.business, creator: coach.user, name: "HTTP Assignment")
       workout = insert(:workout, business: coach.business, plan: template, name: "Lower", position: 10)
       exercise = insert(:exercise, business: coach.business, name: "Back Squat")
@@ -589,15 +589,14 @@ defmodule EasyWeb.Coaches.TrainingTemplateControllerTest do
       assert copied_workout_id != workout.id
       assert copied_prescribed_id != prescribed.id
       assert scheduled_workout_id == copied_workout_id
-      assert Repo.get!(Easy.Clients.Client, client.id).stage == :coaching
     end
 
     test "conceals archived and inaccessible Assignment inputs", %{conn: conn} do
       coach = insert(:coach)
-      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      client = insert(:client, business: coach.business, coach: coach)
       archived = insert(:training_plan, business: coach.business, creator: coach.user, archived_at: ~U[2026-08-15 12:00:00Z])
       other = insert(:coach)
-      hidden_client = insert(:client, business: other.business, creator: other, assigned_coach: other)
+      hidden_client = insert(:client, business: other.business, coach: other)
       conn = authenticate_coach(conn, coach)
 
       for target <- [client.id, hidden_client.id] do

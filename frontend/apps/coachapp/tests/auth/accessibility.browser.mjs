@@ -45,10 +45,8 @@ try {
       await page.goto('/signup');
       await expect(page.getByRole('heading', {name: 'Create your account', exact: true})).toBeVisible();
       await check(`signup-${width}: main focus`, () => expect(page.getByRole('main')).toBeFocused());
-      await tabTo(page, page.getByRole('textbox', {name: 'First name', exact: true}));
+      await tabTo(page, page.getByRole('textbox', {name: 'Full name', exact: true}));
       await page.keyboard.type('Test Keyboard');
-      await page.keyboard.press('Tab');
-      await expect(page.getByRole('textbox', {name: 'Last name', exact: true})).toBeFocused();
       await page.keyboard.press('Tab');
       await expect(page.getByRole('textbox', {name: 'Email', exact: true})).toBeFocused();
       await page.keyboard.press('Tab');

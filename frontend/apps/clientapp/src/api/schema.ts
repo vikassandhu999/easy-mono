@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 0b79ffe05155a19c9710cfe120e66c83f08119b427ab7fe0542a4f9ab3fd5f84 */
+/* typed-routes:hash 0cd223433e04a00f35e751ff9edcf027f975cfa7bbeb43fe6206aca6e02cc641 */
 export type Attachment = {
   id: string;
   content_type:
@@ -59,19 +59,25 @@ export type ChatRecordSnapshot = {
 };
 export type ClientProfile = {
   id: string;
-  first_name: string | null;
-  last_name: string | null;
+  full_name: string;
+  preferred_name: string | null;
   email: string | null;
   phone: string | null;
-  default_weight_unit: 'kg' | 'lbs';
+  unit_system: 'metric' | 'imperial';
   timezone: string;
   local_date: string;
-  subscription_started_on: string | null;
-  subscription_ends_on: string | null;
-  status: string;
-  coach: {first_name: string | null; last_name: string | null; phone: string | null; business_name: string} | null;
+  state: 'active' | 'ending_soon' | 'joined' | 'invited' | 'ended';
+  current_term: CoachingTerm | null;
+  terms: Array<CoachingTerm>;
+  coach: {full_name: string; preferred_name: string | null; phone: string | null; business_name: string} | null;
 };
-export type ClientProfileUpdate = {first_name?: string | null; last_name?: string | null; phone?: string | null};
+export type ClientProfileUpdate = {
+  full_name?: string;
+  preferred_name?: string | null;
+  phone?: string | null;
+  unit_system?: 'metric' | 'imperial';
+};
+export type CoachingTerm = {id: string; starts_on: string; ends_on: string | null};
 export type Conversation = {
   id: string;
   client_id: string;
@@ -316,7 +322,7 @@ export type NutritionPlan = {
   name: string;
   description: string | null;
   revision: number;
-  lifecycle: 'active' | 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived';
+  lifecycle: 'active' | 'incomplete' | 'waiting' | 'upcoming' | 'current' | 'ended' | 'archived';
   assigned_client_count: number;
   target_calories: number | null;
   target_protein_g: number | null;
@@ -325,6 +331,7 @@ export type NutritionPlan = {
   target_fiber_g: number | null;
   start_date: string | null;
   end_date: string | null;
+  stopped_on: string | null;
   client_id: string | null;
   client: NutritionPlanClient | null;
   creator_id: string | null;
@@ -333,7 +340,7 @@ export type NutritionPlan = {
   inserted_at: string;
   updated_at: string;
 };
-export type NutritionPlanClient = {id: string; first_name: string | null; last_name: string | null};
+export type NutritionPlanClient = {id: string; full_name: string; preferred_name: string | null};
 export type NutritionPlanClientListQuery = {
   cursor?: string;
   search?: string;
@@ -504,9 +511,10 @@ export type TrainingPlan = {
   revision: number;
   archived_at: string | null;
   status: 'active' | 'archived';
-  lifecycle: 'incomplete' | 'upcoming' | 'current' | 'ended' | 'archived' | null;
+  lifecycle: 'incomplete' | 'waiting' | 'upcoming' | 'current' | 'ended' | 'archived' | null;
   start_date: string | null;
   end_date: string | null;
+  stopped_on: string | null;
   client_id: string | null;
   client: TrainingPlanClient | null;
   creator_id: string;
@@ -517,7 +525,7 @@ export type TrainingPlan = {
   inserted_at: string;
   updated_at: string;
 };
-export type TrainingPlanClient = {id: string; first_name: string | null; last_name: string | null};
+export type TrainingPlanClient = {id: string; full_name: string; preferred_name: string | null};
 export type TrainingPlanClientListQuery = {cursor?: string; offset?: number; limit?: number; search?: string};
 export type TrainingPlanCoverage = {
   date: string;
@@ -626,7 +634,7 @@ export type UploadDownloadUrls = {attachment_ids: Array<string>};
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash aa2f65f7cebd4a918e2da7b565739510670324575eeada28f16c315ff4b5eca1 */
+  /* typed-routes:hash 14b4f9ed76bf4fabdaae90e829cc7755a117b6b2e3fd02f5739cb582ce405c69 */
   '/api/health': {
     get: {
       parameters: {
@@ -641,14 +649,13 @@ export interface paths {
     };
   };
   '/v1/client/attachments/download-urls': {
-    post: {
+    get: {
       parameters: {
-        query?: never;
+        query: UploadDownloadUrls;
         header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
-      requestBody: {content: {'application/json': UploadDownloadUrls}};
       responses: {
         200: {content: {'application/json': {data: Array<UploadDownload>}}};
       };
@@ -1077,26 +1084,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/v1/auth/accept-invite/verify': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Verify invitation OTP
-     * @description Verifies an invitation OTP, links or creates the user, and returns auth tokens.
-     */
-    post: operations['verifyInvitation'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   '/v1/auth/invitations/{token}': {
     parameters: {
       query?: never;
@@ -1111,6 +1098,26 @@ export interface paths {
     get: operations['showInvitation'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/auth/invites/{token}/accept': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Verify invitation OTP
+     * @description Verifies an invitation OTP, links or creates the user, and returns auth tokens.
+     */
+    post: operations['verifyInvitation'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1277,14 +1284,12 @@ export interface components {
      * AcceptInviteVerifyRequest
      * @example {
      *       "email": "client@example.com",
-     *       "invitation_token": "invite-token",
      *       "otp": "123456"
      *     }
      */
     AcceptInviteVerifyRequest: {
       /** Format: email */
       email: string;
-      invitation_token: string;
       otp: string;
     };
     /** AuthTokenResponse */
@@ -1292,6 +1297,7 @@ export interface components {
       access_token: string;
       /** @example 300 */
       expires_in: number;
+      full_name?: string;
       refresh_token: string;
       scope: string;
       /** @example Bearer */
@@ -1312,7 +1318,7 @@ export interface components {
     InvitationPreviewResponse: {
       data: {
         business_name?: string | null;
-        coach_first_name?: string | null;
+        coach_name?: string | null;
         /** Format: date-time */
         expires_at?: string | null;
         /** Format: email */
@@ -1342,15 +1348,13 @@ export interface components {
      * SignupRequest
      * @example {
      *       "email": "coach@example.com",
-     *       "first_name": "Alex",
-     *       "last_name": "Coach"
+     *       "full_name": "Alex"
      *     }
      */
     SignupRequest: {
       /** Format: email */
       email: string;
-      first_name?: string;
-      last_name?: string;
+      full_name?: string;
     };
     /** SignupResponse */
     SignupResponse: {
@@ -1423,7 +1427,7 @@ export interface components {
         business_name: string;
         /** Format: email */
         email?: string | null;
-        first_name?: string | null;
+        full_name?: string | null;
       };
     };
     /**
@@ -1503,11 +1507,37 @@ export interface operations {
       };
     };
   };
+  showInvitation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Invitation token */
+        token: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Invitation preview */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InvitationPreviewResponse'];
+        };
+      };
+    };
+  };
   verifyInvitation: {
     parameters: {
       query?: never;
       header?: never;
-      path?: never;
+      path: {
+        /** @description Invitation token */
+        token: string;
+      };
       cookie?: never;
     };
     /** @description Accept invite verification request */
@@ -1569,29 +1599,6 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  showInvitation: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Invitation token */
-        token: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Invitation preview */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['InvitationPreviewResponse'];
         };
       };
     };

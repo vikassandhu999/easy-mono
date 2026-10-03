@@ -119,8 +119,7 @@ defmodule Easy.Nutrition.DiaryReadsTest do
       client =
         insert(:client,
           business: business,
-          creator: coach,
-          assigned_coach: coach,
+          coach: coach,
           timezone: "UTC"
         )
 
@@ -583,8 +582,8 @@ defmodule Easy.Nutrition.DiaryReadsTest do
     end
   end
 
-  describe("inactive client access") do
-    test "an inactive client cannot write, while an authorized coach can still read history" do
+  describe("ended coaching history") do
+    test "clients and coaches read history with recording disabled after coaching ends" do
       %{client: client, coach: coach, food: food} = covering_setup()
       today = local_today(client)
 
@@ -595,23 +594,19 @@ defmodule Easy.Nutrition.DiaryReadsTest do
                  extra_attrs(food)
                )
 
-      client
-      |> Ecto.Changeset.change(status: :inactive, inactive_reason: :manual)
+      hd(client.terms)
+      |> Ecto.Changeset.change(ends_on: Date.add(today, -1))
       |> Repo.update!()
 
-      inactive = Repo.get!(Easy.Clients.Client, client.id)
-
-      assert {:error, :client_inactive} =
-               DiaryFixtures.save_extra(
-                 client_ctx(inactive),
-                 today,
-                 extra_attrs(food)
-               )
+      assert {:ok, client_day} = get_client_nutrition_day(client_ctx(client), today)
+      refute client_day.write_eligible
+      assert client_day.summary.has_intake
 
       assert {:ok, coach_day} =
                get_nutrition_day_for_client(trainer_ctx(coach), client.id, today)
 
       assert coach_day.summary.has_intake
+      refute coach_day.write_eligible
 
       assert hd(coach_day.slots).rows
              |> Enum.find(& &1.entry_id)

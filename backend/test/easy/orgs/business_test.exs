@@ -1,70 +1,33 @@
 defmodule Easy.Orgs.BusinessTest do
   use Easy.SchemaCase, async: true
-
   alias Easy.Orgs
   alias Easy.Orgs.Business
 
-  test "creation requires a trusted existing owner and ignores owner attributes" do
-    owner = insert(:user)
-    attrs = %{name: "Owned", handle: "owned", owner_id: Ecto.UUID.generate()}
+  test "handle syntax, reserved words and case are validated" do
+    user = insert(:user)
 
-    assert {:ok, business} = owner.id |> Business.insert_changeset(attrs) |> Repo.insert()
-    assert business.owner_id == owner.id
-
-    changeset = Business.insert_changeset(nil, attrs)
-    assert errors_on(changeset).owner_id == ["can't be blank"]
-
-    assert {:error, changeset} =
-             Ecto.UUID.generate()
-             |> Business.insert_changeset(%{attrs | handle: "missing-owner"})
-             |> Repo.insert()
-
-    assert errors_on(changeset).owner_id == ["does not exist"]
-  end
-
-  test "updates preserve required name and weight unit" do
-    business = insert(:business) |> Repo.reload!()
-
-    for attrs <- [%{name: nil}, %{"name" => "   "}, %{default_weight_unit: nil}] do
-      assert {:error, changeset} = Orgs.update_business(owner_ctx(business), attrs)
-      refute changeset.valid?
-      assert Repo.get!(Business, business.id) == business
+    for handle <- ["ab", "-abc", "abc-", "a--b", "ABC", "a_b", "admin", String.duplicate("a", 41)] do
+      assert {:error, changeset} = user.id |> Business.insert_changeset(%{name: "Studio", handle: handle}) |> Repo.insert()
+      assert changeset.errors[:handle]
     end
+
+    assert {:ok, business} = user.id |> Business.insert_changeset(%{name: "Studio", handle: "studio-123", owner_user_id: Ecto.UUID.generate(), seats: 100}) |> Repo.insert()
+    assert business.owner_user_id == user.id
+    refute Map.has_key?(business, :seats)
+    assert {:error, duplicate} = user.id |> Business.insert_changeset(%{name: "Other", handle: "studio-123"}) |> Repo.insert()
+    assert errors_on(duplicate).handle == ["has already been taken"]
   end
 
-  test "creation rejects a blank default weight unit" do
-    changeset =
-      Business.insert_changeset(Ecto.UUID.generate(), %{name: "Coaching", handle: "coaching", default_weight_unit: nil})
-
-    assert errors_on(changeset).default_weight_unit == ["can't be blank"]
-  end
-
-  test "creation validates every stored profile string against its column limit" do
-    user_id = Ecto.UUID.generate()
-    attrs = %{name: "Coaching", handle: "coaching"}
-
-    for field <- [:name, :handle, :about] do
-      assert Business.insert_changeset(user_id, Map.put(attrs, field, String.duplicate("a", 255))).valid?
-      refute Business.insert_changeset(user_id, Map.put(attrs, field, String.duplicate("a", 256))).valid?
-    end
-  end
-
-  test "update limits count Unicode codepoints as PostgreSQL does" do
-    business = build(:business)
-    too_long = String.duplicate("e\u0301", 128)
-    assert String.length(too_long) == 128
-
-    for field <- [:name, :about, :whatsapp_number] do
-      assert Business.update_changeset(business, %{field => String.duplicate("a", 255)}).valid?
-      refute Business.update_changeset(business, %{field => too_long}).valid?
-    end
-  end
-
-  test "partial updates preserve required fields and may clear optional text" do
-    business = insert(:business, about: "About")
-    assert {:ok, updated} = Orgs.update_business(owner_ctx(business), %{about: nil})
-    assert updated.about == nil
-    assert updated.name == business.name
-    assert updated.default_weight_unit == business.default_weight_unit
+  test "owner can retain own handle and edit only their business" do
+    business = insert(:business)
+    ctx = owner_ctx(business)
+    assert {:ok, %{available: true}} = Orgs.handle_availability(ctx, business.handle)
+    assert {:ok, %{available: false}} = Orgs.handle_availability(owner_ctx(insert(:business)), business.handle)
+    assert {:ok, %{available: false}} = Orgs.handle_availability(ctx, "admin")
+    assert {:ok, updated} = Orgs.update_business(ctx, %{handle: "new-studio", timezone: "Europe/London"})
+    assert updated.handle == "new-studio"
+    assert updated.timezone == "Europe/London"
+    assert {:error, :not_owner} = Orgs.update_business(%{ctx | owner?: false}, %{name: "Forbidden"})
+    assert {:error, _} = Orgs.update_business(ctx, %{timezone: "Invalid/Zone"})
   end
 end

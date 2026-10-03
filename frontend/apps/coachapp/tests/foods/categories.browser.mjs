@@ -14,12 +14,12 @@ try {
   for (const width of [375, 1280]) {
     const unique = `${Date.now()}-${width}`;
     const email = `food-categories-${unique}@example.test`;
-    await send('post', '/v1/auth/signup', {email, first_name: 'Test Categories'});
+    await send('post', '/v1/auth/signup', {email, full_name: 'Test Categories'});
     const guest = await send('post', '/v1/auth/verify', {email, otp: '123456'});
     await send(
       'post',
       '/v1/businesses',
-      {name: 'Test Food Categories', handle: `food-categories-${unique}`},
+      {full_name: 'Test Categories', name: 'Test Food Categories', handle: `food-categories-${unique}`},
       guest.access_token,
     );
     const tokens = await send('post', '/v1/auth/token', {

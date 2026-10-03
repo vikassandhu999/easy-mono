@@ -48,7 +48,7 @@ defmodule Easy.Nutrition.LibraryDeleteTest do
   defp scenario do
     business = insert(:business, owner: build(:user, email: unique_email()))
     coach = insert(:coach, business: business, user: build(:user, email: unique_email()))
-    client = insert(:client, business: business, creator: coach, assigned_coach: coach)
+    client = insert(:client, business: business, coach: coach)
 
     %{
       ctx: Ctx.new(business.id, coach.user_id, coach.id, true),

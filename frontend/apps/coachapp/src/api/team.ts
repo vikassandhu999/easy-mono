@@ -7,14 +7,14 @@ import type {paths, TeamMember, TeamMemberInvite} from './schema';
 import {getSession} from './session';
 
 export type {TeamMember, TeamMemberInvite} from './schema';
-export type TeamFilters = Pick<NonNullable<paths['/v1/coach/team']['get']['parameters']['query']>, 'search' | 'status'>;
-export type TeamAction = {kind: 'resend' | 'revoke' | 'deactivate' | 'reactivate'; id: string};
+export type TeamFilters = Pick<NonNullable<paths['/v1/coach/coaches']['get']['parameters']['query']>, 'q' | 'state'>;
+export type TeamAction = {kind: 'resend' | 'revoke' | 'remove'; id: string};
 
 export function useTeam(filters: TeamFilters) {
   return useInfiniteQuery({
     queryKey: teamKeys.infinite(filters),
     queryFn: ({pageParam, signal}) =>
-      call(client.GET('/v1/coach/team', {params: {query: {...filters, cursor: pageParam, limit: 20}}, signal})),
+      call(client.GET('/v1/coach/coaches', {params: {query: {...filters, cursor: pageParam, limit: 20}}, signal})),
     ...cursorPagination,
     staleTime: 0,
   });
@@ -22,7 +22,7 @@ export function useTeam(filters: TeamFilters) {
 export function useTeamMember(id: string) {
   return useQuery({
     queryKey: teamKeys.detail(id),
-    queryFn: ({signal}) => call(client.GET('/v1/coach/team/{id}', {params: {path: {id}}, signal})),
+    queryFn: ({signal}) => call(client.GET('/v1/coach/coaches/{id}', {params: {path: {id}}, signal})),
     staleTime: 0,
   });
 }
@@ -42,7 +42,7 @@ async function refreshTeam(result: {data: TeamMember} | null, sessionId: string 
 export function useInviteCoach() {
   return useMutation({
     onMutate: () => getSession()?.id,
-    mutationFn: (body: TeamMemberInvite) => call(client.POST('/v1/coach/team/invite', {body})),
+    mutationFn: (body: TeamMemberInvite) => call(client.POST('/v1/coach/coaches', {body})),
     onSuccess: (result, _input, sessionId) => refreshTeam(result, sessionId),
     onError: async (_error, _body, sessionId) => {
       if (sessionId && sessionId === getSession()?.id) {
@@ -55,13 +55,11 @@ async function changeAccess(action: TeamAction) {
   const params = {path: {id: action.id}};
   switch (action.kind) {
     case 'resend':
-      return call(client.POST('/v1/coach/team/{id}/resend-invite', {params}));
+      return call(client.POST('/v1/coach/coaches/{id}/invite', {params}));
     case 'revoke':
-      return call(client.DELETE('/v1/coach/team/{id}', {params}));
-    case 'deactivate':
-      return call(client.POST('/v1/coach/team/{id}/deactivate', {params}));
-    case 'reactivate':
-      return call(client.POST('/v1/coach/team/{id}/reactivate', {params}));
+      return call(client.DELETE('/v1/coach/coaches/{id}', {params}));
+    case 'remove':
+      return call(client.POST('/v1/coach/coaches/{id}/remove', {params}));
   }
 }
 async function applyAction(action: TeamAction) {
@@ -74,12 +72,9 @@ async function applyAction(action: TeamAction) {
       throw error;
     }
     try {
-      const result = await call(client.GET('/v1/coach/team/{id}', {params: {path: {id: action.id}}}));
+      const result = await call(client.GET('/v1/coach/coaches/{id}', {params: {path: {id: action.id}}}));
       assertSession(sessionId);
-      if (
-        (action.kind === 'deactivate' && result.data.status === 'inactive') ||
-        (action.kind === 'reactivate' && result.data.status === 'active')
-      ) {
+      if (action.kind === 'remove' && result.data.state === 'removed') {
         return result;
       }
     } catch (lookupError) {

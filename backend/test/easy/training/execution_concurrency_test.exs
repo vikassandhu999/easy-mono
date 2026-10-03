@@ -5,6 +5,7 @@ defmodule Easy.Training.ExecutionConcurrencyTest do
   import Ecto.Query
 
   alias Easy.Clients.Client
+  alias Easy.CoachingTerms.CoachingTerm
   alias Easy.Ctx
   alias Easy.Identity.User
   alias Easy.Orgs.{Business, Coach}
@@ -76,7 +77,7 @@ defmodule Easy.Training.ExecutionConcurrencyTest do
 
     coach =
       business.id
-      |> Coach.insert_changeset(coach_user.id, %{first_name: "Execution", last_name: "Coach"})
+      |> Coach.insert_changeset(coach_user.id, %{full_name: "Execution Coach"})
       |> put_change(:email, coach_user.email)
       |> Repo.insert!()
 
@@ -85,26 +86,26 @@ defmodule Easy.Training.ExecutionConcurrencyTest do
     client =
       change(%Client{}, %{
         business_id: business.id,
-        creator_id: coach.id,
-        assigned_coach_id: coach.id,
+        coach_id: coach.id,
         user_id: client_user.id,
         email: client_user.email,
-        first_name: "Execution",
-        last_name: "Client",
-        status: :active
+        full_name: "Execution Client"
       })
       |> Repo.insert!()
+
+    Repo.insert!(%CoachingTerm{client_id: client.id, starts_on: Date.utc_today()})
 
     %{business: business, client: client, coach: coach, user_ids: [owner.id, coach_user.id, client_user.id]}
   end
 
   defp insert_user!(email) do
-    %{email: email, first_name: "Execution", last_name: "User"}
+    %{email: email, full_name: "Execution User"}
     |> User.insert_changeset()
     |> Repo.insert!()
   end
 
   defp cleanup(business, user_ids) do
+    Repo.delete_all(CoachingTerm.for_business(business.id))
     Repo.delete_all(from session in TrainingSession, where: session.business_id == ^business.id)
     Repo.delete_all(from client in Client, where: client.business_id == ^business.id)
     Repo.delete_all(from coach in Coach, where: coach.business_id == ^business.id)

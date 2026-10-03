@@ -4,7 +4,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
   setup do
     coach = insert(:coach)
     conn = build_conn() |> authenticate_coach(coach)
-    client = insert(:client, creator: coach, business: coach.business)
+    client = insert(:client, coach: coach, business: coach.business)
 
     %{conn: conn, coach: coach, business: coach.business, client: client}
   end
@@ -172,7 +172,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
 
     test "does not list another trainer's client", %{conn: conn, business: business} do
       other_coach = insert(:coach, business: business)
-      other_client = insert(:client, creator: other_coach, assigned_coach: other_coach, business: business)
+      other_client = insert(:client, coach: other_coach, coach: other_coach, business: business)
       insert(:workout_session, client: other_client, business: business)
 
       assert conn
@@ -190,7 +190,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
       client: client
     } do
       other = insert(:coach)
-      other_client = insert(:client, creator: other, business: other.business)
+      other_client = insert(:client, coach: other, business: other.business)
       insert(:workout_session, client: other_client, business: other.business)
 
       conn = get(conn, "/v1/coach/clients/#{client.id}/training-sessions")
@@ -250,7 +250,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
       business: business,
       client: client
     } do
-      other_client = insert(:client, creator: coach, business: business)
+      other_client = insert(:client, coach: coach, business: business)
       session = insert(:workout_session, client: other_client, business: business)
 
       conn = get(conn, "/v1/coach/clients/#{client.id}/training-sessions/#{session.id}")
@@ -259,7 +259,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
 
     test "returns 404 for session in another business", %{conn: conn, client: client} do
       other = insert(:coach)
-      other_client = insert(:client, creator: other, business: other.business)
+      other_client = insert(:client, coach: other, business: other.business)
       session = insert(:workout_session, client: other_client, business: other.business)
 
       conn = get(conn, "/v1/coach/clients/#{client.id}/training-sessions/#{session.id}")

@@ -36,7 +36,7 @@ defmodule EasyWeb.Types.Conversation do
     %{
       id: conversation.id,
       client_id: conversation.client_id,
-      client_name: String.trim("#{client.first_name} #{client.last_name}"),
+      client_name: client.preferred_name || client.full_name,
       last_message_at: conversation.last_message_at,
       last_message_preview: conversation.last_message_preview,
       last_message_role: conversation.last_message_role,

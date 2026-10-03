@@ -6,6 +6,7 @@ defmodule Easy.Nutrition.LibraryConcurrencyTest do
   import Easy.Factory
 
   alias Easy.Clients.Client
+  alias Easy.CoachingTerms.CoachingTerm
   alias Easy.Ctx
   alias Easy.Identity.User
   alias Easy.Nutrition.{Diary, DiaryDay, DiarySlot, Food, Library, Menu, NutrientTotals}
@@ -20,14 +21,15 @@ defmodule Easy.Nutrition.LibraryConcurrencyTest do
     business = insert(:business)
     coach = insert(:coach, business: business)
     ctx = %Ctx{business_id: business.id, user_id: coach.user_id, coach_id: coach.id}
-    client = insert(:client, business: business, creator: coach, timezone: "Etc/UTC")
-    user_ids = Enum.uniq([business.owner_id, coach.user_id, client.user_id])
+    client = insert(:client, business: business, coach: coach, timezone: "Etc/UTC")
+    user_ids = Enum.uniq([business.owner_user_id, coach.user_id, client.user_id])
 
     on_exit(fn ->
       Sandbox.checkout(Repo, sandbox: false)
       Repo.delete_all(from(plan in Plan, where: plan.business_id == ^business.id))
       Repo.delete_all(from(recipe in Recipe, where: recipe.business_id == ^business.id))
       Repo.delete_all(from(food in Food, where: food.business_id == ^business.id))
+      Repo.delete_all(CoachingTerm.for_business(business.id))
       Repo.delete_all(from(client in Client, where: client.business_id == ^business.id))
       Repo.delete_all(from(coach in Coach, where: coach.business_id == ^business.id))
       Repo.delete_all(from(business in Business, where: business.id == ^business.id))

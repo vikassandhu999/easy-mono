@@ -12,13 +12,13 @@ defmodule Easy.Training.TrainingPlan do
   @type t() :: %__MODULE__{}
   @type kind :: :template | :client_plan
   @type status :: :active | :archived
-  @type lifecycle :: :incomplete | :upcoming | :current | :ended | :archived
+  @type lifecycle :: :incomplete | :waiting | :upcoming | :current | :ended | :archived
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
   @kinds [:template, :client_plan]
-  @lifecycles [:incomplete, :upcoming, :current, :ended, :archived]
+  @lifecycles [:incomplete, :waiting, :upcoming, :current, :ended, :archived]
   @template_fields [:name, :description]
   @client_plan_fields [:client_id, :source_template_id, :start_date, :end_date]
 
@@ -57,13 +57,7 @@ defmodule Easy.Training.TrainingPlan do
   def lifecycle(%__MODULE__{archived_at: archived_at}, _date) when not is_nil(archived_at), do: :archived
   def lifecycle(%__MODULE__{start_date: nil}, _date), do: :incomplete
 
-  def lifecycle(%__MODULE__{start_date: start_date, end_date: end_date}, date) do
-    cond do
-      Date.after?(start_date, date) -> :upcoming
-      end_date && Date.before?(end_date, date) -> :ended
-      true -> :current
-    end
-  end
+  def lifecycle(%__MODULE__{} = plan, date), do: Easy.PlanCoverage.lifecycle(plan, date)
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, creator_id, attrs) do
@@ -164,10 +158,6 @@ defmodule Easy.Training.TrainingPlan do
     |> check_constraint(:revision, name: :training_plans_revision_check)
     |> check_constraint(:start_date, name: :training_plans_period_check)
     |> unique_constraint(:client_id, name: :training_plans_one_incomplete_client_plan_index)
-    |> exclusion_constraint(:start_date,
-      name: :training_plans_no_overlapping_coverage,
-      message: "overlaps an existing training plan; choose dates outside its period"
-    )
   end
 
   @spec validate_date_range(Ecto.Changeset.t()) :: Ecto.Changeset.t()
@@ -248,6 +238,7 @@ defmodule Easy.Training.TrainingPlan do
   def covering(query \\ __MODULE__, client_id, date) do
     query
     |> active_in_window(date, date)
+    |> Easy.PlanCoverage.in_force(date)
     |> where([plan], plan.client_id == ^client_id)
   end
 
@@ -259,6 +250,7 @@ defmodule Easy.Training.TrainingPlan do
     query
     |> for_business(business_id)
     |> active_in_window(date, date)
+    |> Easy.PlanCoverage.in_force(date)
     |> where([plan], plan.client_id in ^client_ids)
   end
 
@@ -286,7 +278,7 @@ defmodule Easy.Training.TrainingPlan do
 
   @spec include_client(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def include_client(query \\ __MODULE__, business_id) do
-    client_query = Client.for_business(Client, business_id) |> preload(:business)
+    client_query = Client.for_business(Client, business_id) |> preload([:business, :terms])
     from(plan in query, preload: [client: ^client_query])
   end
 end

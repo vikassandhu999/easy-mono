@@ -8,7 +8,7 @@ defmodule Easy.Training.ExecutionTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+    client = insert(:client, business: coach.business, coach: coach)
     ctx = %Ctx{business_id: coach.business_id, user_id: client.user_id, client_id: client.id}
 
     %{coach: coach, client: client, ctx: ctx}
@@ -41,7 +41,7 @@ defmodule Easy.Training.ExecutionTest do
 
     test "conceals workouts outside eligible Coverage", ctx do
       current = insert_client_plan(ctx, start_date: Client.local_date(ctx.client, DateTime.utc_now()))
-      other_client = insert(:client, business: ctx.coach.business, creator: ctx.coach, assigned_coach: ctx.coach)
+      other_client = insert(:client, business: ctx.coach.business, coach: ctx.coach)
 
       other_plan =
         insert(:training_plan,
@@ -177,7 +177,7 @@ defmodule Easy.Training.ExecutionTest do
     test "returns nil when inactive and scopes the read to the trusted client", ctx do
       assert {:ok, nil} = Execution.get_client_active_session(ctx.ctx)
 
-      other_client = insert(:client, business: ctx.coach.business, creator: ctx.coach, assigned_coach: ctx.coach)
+      other_client = insert(:client, business: ctx.coach.business, coach: ctx.coach)
       %Ctx{} = client_ctx = ctx.ctx
       other_ctx = %{client_ctx | user_id: other_client.user_id, client_id: other_client.id}
       assert {:ok, other_session} = Execution.start_client_session(other_ctx, nil, %{})

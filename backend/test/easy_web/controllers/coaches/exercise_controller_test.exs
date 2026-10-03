@@ -11,9 +11,9 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
     business =
       insert(:business,
         owner: nil,
-        owner_id: owner.id,
+        owner_user_id: owner.id,
         name: "Business #{Ecto.UUID.generate()}",
-        handle: "business-#{Ecto.UUID.generate()}"
+        handle: "library-#{System.unique_integer([:positive])}"
       )
 
     coach = insert(:coach, user: nil, user_id: coach_user.id, business: nil, business_id: business.id)
@@ -144,9 +144,9 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       other_business =
         insert(:business,
           owner: nil,
-          owner_id: other_owner.id,
+          owner_user_id: other_owner.id,
           name: "Other Business #{Ecto.UUID.generate()}",
-          handle: "other-business-#{Ecto.UUID.generate()}"
+          handle: "library-#{System.unique_integer([:positive])}"
         )
 
       other_exercise =
@@ -465,9 +465,9 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       other_business =
         insert(:business,
           owner: nil,
-          owner_id: other_owner.id,
+          owner_user_id: other_owner.id,
           name: "Other Business #{Ecto.UUID.generate()}",
-          handle: "other-business-#{Ecto.UUID.generate()}"
+          handle: "library-#{System.unique_integer([:positive])}"
         )
 
       exercise =
@@ -555,9 +555,9 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       other_business =
         insert(:business,
           owner: nil,
-          owner_id: other_owner.id,
+          owner_user_id: other_owner.id,
           name: "Other Business #{Ecto.UUID.generate()}",
-          handle: "other-business-#{Ecto.UUID.generate()}"
+          handle: "library-#{System.unique_integer([:positive])}"
         )
 
       exercise =
@@ -611,9 +611,9 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       other_business =
         insert(:business,
           owner: nil,
-          owner_id: other_owner.id,
+          owner_user_id: other_owner.id,
           name: "Other Business #{Ecto.UUID.generate()}",
-          handle: "other-business-#{Ecto.UUID.generate()}"
+          handle: "library-#{System.unique_integer([:positive])}"
         )
 
       exercise =
@@ -688,9 +688,9 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       other_business =
         insert(:business,
           owner: nil,
-          owner_id: other_owner.id,
+          owner_user_id: other_owner.id,
           name: "Other Business #{Ecto.UUID.generate()}",
-          handle: "other-business-#{Ecto.UUID.generate()}"
+          handle: "library-#{System.unique_integer([:positive])}"
         )
 
       source =

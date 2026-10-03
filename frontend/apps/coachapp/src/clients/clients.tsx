@@ -1,5 +1,6 @@
 import {ChevronRight, Plus, UserRound, UsersRound} from 'lucide-react';
 import {generatePath, Link, useLocation, useSearchParams} from 'react-router-dom';
+import {useBusiness} from '../api/business';
 import {useClients} from '../api/clients';
 import {routes} from '../routes';
 import {buttonVariants} from '../ui/button';
@@ -9,17 +10,24 @@ import {ListSearch} from '../ui/list-search';
 import {Page, PageHeader, StatusBadge, Surface} from '../ui/page';
 import {SelectItem} from '../ui/select';
 import {SelectField} from '../ui/select-field';
+import {clientStateLabels, endingSoonLabel} from './coaching';
 
 export function Clients() {
   const [params, setParams] = useSearchParams();
   const location = useLocation();
   const search = params.get('search')?.trim() ?? '';
-  const statusValue = params.get('status');
-  const status =
-    statusValue === 'active' || statusValue === 'pending' || statusValue === 'inactive' ? statusValue : undefined;
-  const stageValue = params.get('stage');
-  const stage = stageValue === 'onboarding' || stageValue === 'coaching' ? stageValue : undefined;
-  const clients = useClients({search, ...(status ? {status} : {}), ...(stage ? {stage} : {})});
+  const selected = params.get('state');
+  const state =
+    selected === 'active' ||
+    selected === 'ending_soon' ||
+    selected === 'joined' ||
+    selected === 'invited' ||
+    selected === 'ended'
+      ? selected
+      : undefined;
+  const clients = useClients({q: search, ...(state ? {state} : {})});
+  const business = useBusiness();
+  const counts = clients.data?.pages[0]?.summary;
   function changeFilter(name: string, value: string) {
     setParams(
       (previous) => {
@@ -38,7 +46,11 @@ export function Clients() {
     <Page className="client-page">
       <PageHeader
         title="Clients"
-        description="Your clients and their invitations."
+        description={
+          business.data
+            ? `${business.data.data.seats.used} of ${business.data.data.seats.limit} seats used · Invitations are free`
+            : 'Your clients and their invitations.'
+        }
         actions={
           <Link
             className={buttonVariants()}
@@ -50,41 +62,30 @@ export function Clients() {
           </Link>
         }
       />
-      <div className="grid items-end gap-4 sm:grid-cols-[minmax(0,1fr)_10rem_10rem]">
+      <div className="grid items-end gap-4 sm:grid-cols-[minmax(0,1fr)_14rem]">
         <ListSearch label="Search clients" />
         <div className="grid gap-2">
           <Label
-            id="client-status-label"
-            htmlFor="client-status"
+            id="client-state-label"
+            htmlFor="client-state"
           >
-            Status
+            Coaching
           </Label>
           <SelectField
-            id="client-status"
-            value={status ?? 'all'}
-            onChange={(value) => changeFilter('status', value)}
+            id="client-state"
+            value={state ?? 'all'}
+            onChange={(value) => changeFilter('state', value)}
           >
             <SelectItem id="all">All clients</SelectItem>
-            <SelectItem id="active">Active</SelectItem>
-            <SelectItem id="pending">Invited</SelectItem>
-            <SelectItem id="inactive">Inactive</SelectItem>
-          </SelectField>
-        </div>
-        <div className="grid gap-2">
-          <Label
-            id="roster-stage-label"
-            htmlFor="roster-stage"
-          >
-            Stage
-          </Label>
-          <SelectField
-            id="roster-stage"
-            value={stage ?? 'all'}
-            onChange={(value) => changeFilter('stage', value)}
-          >
-            <SelectItem id="all">All stages</SelectItem>
-            <SelectItem id="onboarding">Onboarding</SelectItem>
-            <SelectItem id="coaching">Coaching</SelectItem>
+            {Object.entries(clientStateLabels).map(([value, label]) => (
+              <SelectItem
+                key={value}
+                id={value}
+              >
+                {value === 'joined' ? 'Joined' : label}
+                {counts ? ` (${counts[value as keyof typeof clientStateLabels]})` : ''}
+              </SelectItem>
+            ))}
           </SelectField>
         </div>
       </div>
@@ -101,10 +102,10 @@ export function Clients() {
               />
             </div>
             <h2 className="text-xl font-semibold">
-              {search || status || stage ? 'No matching clients' : 'Invite your first client'}
+              {search || state ? 'No matching clients' : 'Invite your first client'}
             </h2>
             <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-              {search || status || stage
+              {search || state
                 ? 'Try a different search or filter.'
                 : "They'll receive an invitation to join your coaching account."}
             </p>
@@ -126,15 +127,14 @@ export function Clients() {
             <div className="client-row-meta">
               <div className="min-w-0 max-w-full">
                 <p className="break-words text-lg font-semibold">
-                  {`${client.first_name ?? ''} ${client.last_name ?? ''}`.trim() ||
-                    client.email ||
-                    client.phone ||
-                    'Client'}
+                  {client.preferred_name || client.full_name || client.email || client.phone || 'Client'}
                 </p>
                 <p className="mt-1 truncate text-sm text-muted-foreground">{client.email || client.phone}</p>
+                <p className="mt-1 text-sm text-muted-foreground">Coach: {client.coach_name}</p>
+                {endingSoonLabel(client) && <p className="mt-1 text-sm">{endingSoonLabel(client)}</p>}
               </div>
-              <StatusBadge tone={client.status === 'active' ? 'positive' : 'neutral'}>
-                {client.status === 'active' ? 'Active' : client.status === 'pending' ? 'Invited' : 'Inactive'}
+              <StatusBadge tone={client.state === 'active' || client.state === 'ending_soon' ? 'positive' : 'neutral'}>
+                {clientStateLabels[client.state]}
               </StatusBadge>
             </div>
             <ChevronRight

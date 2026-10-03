@@ -1,3 +1,4 @@
+import {formatDateShort} from '@easy/utils';
 import {generatePath, Link} from 'react-router-dom';
 import {errorMessage} from '../api/client';
 import type {Client} from '../api/clients';
@@ -103,8 +104,14 @@ function Plan({plan, clientId}: {plan: NutritionPlan; clientId: string}) {
         <summary className="cursor-pointer space-y-2">
           <span className="editor-item-title block">{plan.name}</span>
           <span className="block text-sm capitalize text-muted-foreground">
-            {plan.lifecycle} · {plan.start_date} → {plan.end_date || 'No end date'}
+            {plan.lifecycle === 'waiting' ? 'Waiting for coaching' : plan.lifecycle} · {plan.start_date} →{' '}
+            {plan.end_date || 'No end date'}
           </span>
+          {plan.stopped_on && (
+            <p className="text-sm text-muted-foreground">
+              Stopped when coaching ended on {formatDateShort(plan.stopped_on)}
+            </p>
+          )}
           <span className="block text-xs text-muted-foreground">View meals and targets</span>
         </summary>
         <div className="space-y-4 pt-6">

@@ -20,9 +20,14 @@ async function assignDay(page, day, name) {
 }
 async function account(unique) {
   const email = `builder-${unique}@example.test`;
-  await send('post', '/v1/auth/signup', {email, first_name: 'Taylor'});
+  await send('post', '/v1/auth/signup', {email, full_name: 'Taylor'});
   const guest = await send('post', '/v1/auth/verify', {email, otp: '123456'});
-  await send('post', '/v1/businesses', {name: 'Everyday Coaching', handle: `builder-${unique}`}, guest.access_token);
+  await send(
+    'post',
+    '/v1/businesses',
+    {full_name: 'Taylor', name: 'Everyday Coaching', handle: `builder-${unique}`},
+    guest.access_token,
+  );
   return send('post', '/v1/auth/token', {
     grant_type: 'refresh_token',
     refresh_token: guest.refresh_token,
@@ -267,8 +272,8 @@ try {
     const person = (
       await send(
         'post',
-        '/v1/coach/clients/invite',
-        {email: `builder-client-${unique}@example.test`, first_name: 'Alex'},
+        '/v1/coach/clients',
+        {email: `builder-client-${unique}@example.test`, full_name: 'Alex'},
         token,
       )
     ).data;

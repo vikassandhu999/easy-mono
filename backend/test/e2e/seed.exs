@@ -13,25 +13,21 @@ fixtures =
     key = "#{scenario}-#{width}"
     owner = insert(:user, email: "coach-#{key}@example.test", email_confirmed_at: DateTime.utc_now(:second))
     business = insert(:business, owner: owner, timezone: "Etc/UTC")
-    insert(:business_billing, business: business)
     coach = insert(:coach, business: business, user: owner, email: owner.email)
 
     user =
       insert(:user,
         email: "client-#{key}@example.test",
-        last_name: "Client",
+        preferred_name: "Client",
         email_confirmed_at: DateTime.utc_now(:second)
       )
 
     client =
       insert(:client,
         business: business,
-        creator: coach,
-        assigned_coach: coach,
+        coach: coach,
         user: user,
         email: user.email,
-        joined_at: DateTime.utc_now(),
-        stage: :coaching,
         timezone: "Etc/UTC"
       )
 

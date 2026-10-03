@@ -24,9 +24,13 @@ try {
     const unique = `${Date.now()}-${width}`;
     const coachEmail = `invite-coach-${unique}@example.test`;
     const clientEmail = `invite-client-${unique}@example.test`;
-    await post('/v1/auth/signup', {email: coachEmail, first_name: 'Taylor', last_name: 'Coach'});
+    await post('/v1/auth/signup', {email: coachEmail, full_name: 'Taylor Coach'});
     const guest = await post('/v1/auth/verify', {email: coachEmail, otp: '123456'});
-    await post('/v1/businesses', {name: 'Everyday Coaching', handle: `invite-${unique}`}, guest.access_token);
+    await post(
+      '/v1/businesses',
+      {full_name: 'Taylor Coach', name: 'Everyday Coaching', handle: `invite-${unique}`},
+      guest.access_token,
+    );
     const tokens = await post('/v1/auth/token', {
       grant_type: 'refresh_token',
       refresh_token: guest.refresh_token,
@@ -51,13 +55,12 @@ try {
       await checkMobileFoundation(page);
     }
     await page.getByRole('button', {name: 'Send invitation', exact: true}).click();
-    await expect(page.getByText('Enter first name.', {exact: true})).toBeVisible();
+    await expect(page.getByText('Enter full name.', {exact: true})).toBeVisible();
     await expect(page.getByText('Enter email.', {exact: true})).toBeVisible();
-    await page.getByLabel('First name', {exact: true}).fill('Alex');
-    await page.getByLabel('Last name', {exact: true}).fill('Morgan');
+    await page.getByLabel('Full name', {exact: true}).fill('Alex Morgan');
     await page.getByLabel('Email', {exact: true}).fill(clientEmail);
 
-    await page.route('**/v1/coach/clients/invite', (route) =>
+    await page.route('**/v1/coach/clients', (route) =>
       route.fulfill({status: 503, json: {error_code: 'unavailable', error_message: 'Unavailable'}}),
     );
     await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
@@ -65,7 +68,7 @@ try {
     await expect(page.getByRole('alert')).toContainText('could not be confirmed');
     await expect(page.getByRole('alert')).toBeInViewport({ratio: 1});
     await expect(page.getByLabel('Email', {exact: true})).toHaveValue(clientEmail);
-    await page.unroute('**/v1/coach/clients/invite');
+    await page.unroute('**/v1/coach/clients');
     await page.getByRole('button', {name: 'Check saved clients', exact: true}).click();
     await expect(page.getByText('No matching clients found.', {exact: true})).toBeVisible();
     await page.getByRole('button', {name: 'Return and retry', exact: true}).click();
@@ -78,15 +81,15 @@ try {
     await page.reload();
     await expect(page.getByLabel('Invitation link', {exact: true})).toHaveValue(originalLink);
 
-    await page.route('**/resend-invite', (route) =>
+    await page.route('**/invite', (route) =>
       route.fulfill({status: 503, json: {error_code: 'unavailable', error_message: 'Unavailable'}}),
     );
     await page.getByRole('button', {name: 'Resend invitation', exact: true}).click();
     await expect(page.getByRole('alert')).toContainText('Please try again');
     await expect(page.getByLabel('Invitation link', {exact: true})).toHaveValue(originalLink);
-    await page.unroute('**/resend-invite');
+    await page.unroute('**/invite');
     const resentResponse = page.waitForResponse(
-      (response) => response.url().endsWith('/resend-invite') && response.status() === 200,
+      (response) => response.url().endsWith('/invite') && response.status() === 200,
     );
     await page.getByRole('button', {name: 'Resend invitation', exact: true}).click();
     const resent = await (await resentResponse).json();
@@ -119,24 +122,24 @@ try {
     await expect(clientPage.getByRole('heading', {name: 'Check your email', exact: true})).toBeVisible();
     await clientPage.getByLabel('Login code', {exact: true}).fill('123456');
     const clientLogin = clientPage.waitForResponse(
-      (response) => response.url().endsWith('/v1/auth/accept-invite/verify') && response.status() === 200,
+      (response) => /\/v1\/auth\/invites\/[^/]+\/accept$/.test(response.url()) && response.status() === 200,
     );
     await clientPage.getByRole('button', {name: 'Verify', exact: true}).click();
     expect((await clientLogin).ok()).toBe(true);
     await expect(clientPage).toHaveURL(`${clientURL}/`);
     await page.getByRole('button', {name: 'Refresh status', exact: true}).click();
-    await expect(page.getByText('Invitation accepted', {exact: true})).toBeVisible();
+    await expect(page.getByRole('heading', {name: 'Coaching', exact: true})).toBeVisible();
     await expect(page.getByRole('link', {name: 'Messages', exact: true}).last()).toBeVisible();
     await expect(page.getByRole('button', {name: 'Resend invitation', exact: true})).toHaveCount(0);
     await expect(page.getByLabel('Invitation link', {exact: true})).toHaveCount(0);
     await clientContext.close();
     if (width === 375) {
       await page.goto('/clients/invite');
-      await page.getByLabel('First name', {exact: true}).fill('Delayed client');
+      await page.getByLabel('Full name', {exact: true}).fill('Delayed client');
       await page.getByLabel('Email', {exact: true}).fill(`delayed-${unique}@example.test`);
       const release = Promise.withResolvers();
       let heldClientId;
-      await page.route('**/v1/coach/clients/invite', async (route) => {
+      await page.route('**/v1/coach/clients', async (route) => {
         const response = await route.fetch();
         expect(response.status()).toBe(201);
         heldClientId = (await response.json()).data.id;
@@ -148,9 +151,13 @@ try {
       await signOut(page);
       await expect(page.getByRole('heading', {name: 'Welcome back', exact: true})).toBeVisible();
       const otherEmail = `other-coach-${unique}@example.test`;
-      await post('/v1/auth/signup', {email: otherEmail});
+      await post('/v1/auth/signup', {email: otherEmail, full_name: 'Other Coach'});
       const otherGuest = await post('/v1/auth/verify', {email: otherEmail, otp: '123456'});
-      await post('/v1/businesses', {name: 'Another business', handle: `other-${unique}`}, otherGuest.access_token);
+      await post(
+        '/v1/businesses',
+        {full_name: 'Other Coach', name: 'Another business', handle: `other-${unique}`},
+        otherGuest.access_token,
+      );
       const otherTokens = await post('/v1/auth/token', {
         grant_type: 'refresh_token',
         refresh_token: otherGuest.refresh_token,
@@ -173,7 +180,7 @@ try {
           return queryClient.getQueryData(['clients', 'detail', id]);
         }, heldClientId),
       ).toBeUndefined();
-      await page.unroute('**/v1/coach/clients/invite');
+      await page.unroute('**/v1/coach/clients');
       console.log('A delayed invitation cannot repopulate another account or navigate it to the previous client.');
     }
     await context.close();

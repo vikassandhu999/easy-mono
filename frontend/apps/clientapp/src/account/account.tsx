@@ -6,10 +6,12 @@ import {clearSession} from '../api/session';
 import {routes} from '../routes';
 import {Button} from '../ui/button';
 import {CachedRead} from '../ui/cached-read';
+import {useCoaching} from '../ui/coaching';
 import {Page} from '../ui/page';
 import {ReadState} from '../ui/read-state';
 
 export function Account() {
+  const {canWrite} = useCoaching();
   const query = useProfile();
   const profile = query.data?.data;
   return (
@@ -40,7 +42,9 @@ export function Account() {
               />
             </div>
             <div className="min-w-0">
-              <p className="text-2xl font-extrabold tracking-tight break-words">{profile.first_name || 'Welcome'}</p>
+              <p className="text-2xl font-extrabold tracking-tight break-words">
+                {profile.preferred_name || profile.full_name}
+              </p>
               <p className="text-sm mt-1">A little space for you.</p>
             </div>
           </div>
@@ -63,14 +67,12 @@ export function Account() {
               />
               <p className="text-sm">Your coaching</p>
               <h2 className="text-xl font-bold">{profile.coach.business_name}</h2>
-              {(profile.coach.first_name || profile.coach.last_name) && (
-                <p>{[profile.coach.first_name, profile.coach.last_name].filter(Boolean).join(' ')}</p>
-              )}
+              <p>{profile.coach.preferred_name || profile.coach.full_name}</p>
               <Link
                 to={routes.messages}
                 className="flex min-h-11 items-center justify-between font-semibold"
               >
-                Message your coach
+                {canWrite ? 'Message your coach' : 'Read your conversation'}
                 <ChevronRight
                   className="size-4"
                   aria-hidden="true"
@@ -80,7 +82,7 @@ export function Account() {
           )}
           <div className="text-sm text-muted-foreground space-y-1 px-1">
             <p>Coaching timezone · {profile.timezone}</p>
-            <p>Workout weight unit · {profile.default_weight_unit === 'lbs' ? 'Pounds (lb)' : 'Kilograms (kg)'}</p>
+            <p>Unit system · {profile.unit_system === 'imperial' ? 'Imperial' : 'Metric'}</p>
           </div>
           <Button
             variant="ghost"

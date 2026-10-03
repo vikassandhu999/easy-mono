@@ -8,7 +8,7 @@ defmodule EasyWeb.Clients.TrainingCalendarControllerTest do
     now = DateTime.utc_now()
     timezone = if now.hour < 12, do: "Etc/GMT+12", else: "Pacific/Kiritimati"
     coach = insert(:coach)
-    client = insert(:client, business: coach.business, creator: coach, timezone: timezone)
+    client = insert(:client, business: coach.business, coach: coach, timezone: timezone)
     date = Client.local_date(client, now)
     refute date == DateTime.to_date(now)
     %{conn: authenticate_client(build_conn(), client), client: client, coach: coach, date: date}

@@ -18,6 +18,7 @@ import {routes} from '../routes';
 import {dayLabel} from '../training/recording';
 import {Button} from '../ui/button';
 import {CachedRead} from '../ui/cached-read';
+import {useCoaching} from '../ui/coaching';
 import {Confirm} from '../ui/confirm';
 import {useOnline} from '../ui/connection-status';
 import {DraftStatus} from '../ui/draft-status';
@@ -44,11 +45,13 @@ import {
 import {useMealDraft} from './use-meal-draft';
 
 export function NutritionMeal() {
+  const {canWrite} = useCoaching();
   const {date = '', slot = ''} = useParams();
   const [params] = useSearchParams();
   const back = params.has('returnTo') ? safeReturnTo(params.get('returnTo')) : `${routes.nutrition}?date=${date}`;
   const query = useNutritionDay(date);
   const day = query.data?.data;
+  const saved = day?.slots.find((item) => item.meal_slot === slot);
   return (
     <Page
       title={isMealSlot(slot) ? slotLabel(slot) : 'Meal'}
@@ -80,12 +83,21 @@ export function NutritionMeal() {
             refreshing={query.isFetching}
             refresh={() => query.refetch()}
           />
-          <MealEditor
-            key={`${getSession()?.id}.${date}.${slot}`}
-            day={day}
-            slot={slot}
-            fresh={query.isFetchedAfterMount && !query.isError && !query.isFetching}
-          />
+          {canWrite ? (
+            <MealEditor
+              key={`${getSession()?.id}.${date}.${slot}`}
+              day={day}
+              slot={slot}
+              fresh={query.isFetchedAfterMount && !query.isError && !query.isFetching}
+            />
+          ) : saved ? (
+            <>
+              <ReferenceNotice revision={saved.revision} />
+              <SavedMeal slot={saved} />
+            </>
+          ) : (
+            <p>No intake recorded.</p>
+          )}
         </>
       )}
     </Page>

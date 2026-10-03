@@ -10,6 +10,7 @@ import {ActionCard} from '../ui/action-card';
 import {BottomSheet} from '../ui/bottom-sheet';
 import {Button} from '../ui/button';
 import {CachedRead} from '../ui/cached-read';
+import {useCoaching} from '../ui/coaching';
 import {Page} from '../ui/page';
 import {ReadState} from '../ui/read-state';
 import {mealSlots, portionText, slotLabel} from './meal-draft';
@@ -42,6 +43,7 @@ export function Nutrients({
 }
 
 export function TodayNutrition() {
+  const {canWrite} = useCoaching();
   const query = useNutritionDay();
   return (
     <section className="mb-4 space-y-3">
@@ -54,17 +56,19 @@ export function TodayNutrition() {
             refresh={() => query.refetch()}
           />
           <ActionCard
-            title="Today’s meals"
+            title={canWrite ? 'Today’s meals' : 'Meal history'}
             eyebrow="Fuel your day"
             to={routes.nutrition}
             tone="nutrition"
             icon={<Utensils />}
             description={
-              query.data.data.summary.has_intake
-                ? 'Your meals are saved. Ready for the next one?'
-                : query.data.data.plan_id
-                  ? 'Your plan is ready. Let’s dig in.'
-                  : 'Make a little space to record what you eat.'
+              !canWrite
+                ? 'Revisit your saved meals and notes.'
+                : query.data.data.summary.has_intake
+                  ? 'Your meals are saved. Ready for the next one?'
+                  : query.data.data.plan_id
+                    ? 'Your plan is ready. Let’s dig in.'
+                    : 'Make a little space to record what you eat.'
             }
           />
         </>
@@ -219,6 +223,7 @@ export function Nutrition() {
 }
 
 function DayOverview({day}: {day: Day}) {
+  const {canWrite} = useCoaching();
   const [adding, setAdding] = useState(false);
   const remaining = mealSlots.filter((slot) => !day.slots.some((item) => item.meal_slot === slot));
   return (
@@ -236,8 +241,10 @@ function DayOverview({day}: {day: Day}) {
               className="size-7 text-primary -rotate-12"
               aria-hidden="true"
             />
-            <h2 className="text-2xl font-bold">Ready when you are</h2>
-            <p className="text-sm text-muted-foreground">Open a meal below to record what you ate.</p>
+            <h2 className="text-2xl font-bold">{canWrite ? 'Ready when you are' : 'No meals recorded'}</h2>
+            <p className="text-sm text-muted-foreground">
+              {canWrite ? 'Open a meal below to record what you ate.' : 'Choose a day to revisit your meal history.'}
+            </p>
           </div>
         )}
         <details className="space-y-3">
@@ -257,7 +264,9 @@ function DayOverview({day}: {day: Day}) {
           <p className="text-sm text-muted-foreground">{day.applied_timezone.replaceAll('_', ' ')}</p>
         </details>
       </section>
-      {!day.write_eligible && <p className="mb-5 text-sm text-muted-foreground">This day is read-only.</p>}
+      {(!canWrite || !day.write_eligible) && (
+        <p className="mb-5 text-sm text-muted-foreground">This day is read-only.</p>
+      )}
       {day.slots.length === 0 && (
         <p className="mb-6 text-muted-foreground">No meals are planned or recorded for this day.</p>
       )}
@@ -292,7 +301,7 @@ function DayOverview({day}: {day: Day}) {
           </li>
         ))}
       </ul>
-      {day.write_eligible && remaining.length > 0 && (
+      {canWrite && day.write_eligible && remaining.length > 0 && (
         <div className="mt-6 space-y-3">
           <Button
             variant="outline"
@@ -338,6 +347,7 @@ function DayOverview({day}: {day: Day}) {
 }
 
 export function CurrentNutritionPlan() {
+  const {canWrite} = useCoaching();
   const query = useNutritionDay();
   const planId = query.data?.data.plan_id;
   if (planId) {
@@ -371,7 +381,9 @@ export function CurrentNutritionPlan() {
             refresh={() => query.refetch()}
           />
           <p className="text-muted-foreground">
-            Your coach hasn’t scheduled a nutrition plan for today. You can still record your meals.
+            {canWrite
+              ? 'Your coach hasn’t scheduled a nutrition plan for today. You can still record your meals.'
+              : 'There is no nutrition plan for today. Your meal history is still available.'}
           </p>
         </>
       )}
@@ -412,6 +424,9 @@ export function NutritionPlan() {
               ? `From ${dayLabel(plan.start_date)}${plan.end_date ? ` to ${dayLabel(plan.end_date)}` : ''}`
               : 'Your coach has not set dates yet.'}
           </p>
+          {plan.stopped_on && (
+            <p className="mb-4 text-muted-foreground">Stopped when coaching ended on {dayLabel(plan.stopped_on)}.</p>
+          )}
           <section className="mb-6 rounded-[2rem] bg-[var(--nutrition)] p-5 space-y-2">
             <h2 className="text-xl font-semibold">Daily targets</h2>
             <p>

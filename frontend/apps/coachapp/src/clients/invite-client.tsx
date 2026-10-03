@@ -2,10 +2,12 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {flushSync} from 'react-dom';
 import {useForm} from 'react-hook-form';
 import {generatePath, Link, useBeforeUnload, useBlocker, useNavigate} from 'react-router-dom';
+import {useProfile} from '../api/auth';
 import {ApiError} from '../api/client';
 import {type ClientInvite, useClients, useInviteClient} from '../api/clients';
 import {routes} from '../routes';
 import {Button, buttonVariants} from '../ui/button';
+import {CoachSelect} from '../ui/coach-select';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FormError} from '../ui/form-error';
 import {setFormError} from '../ui/form-errors';
@@ -18,8 +20,9 @@ export function InviteClient() {
   const navigate = useNavigate();
   const listLocation = useListLocation(routes.home);
   const invitation = useInviteClient();
-  const form = useForm<Pick<ClientInvite, 'first_name' | 'last_name' | 'email'>>({
-    defaultValues: {first_name: '', last_name: '', email: ''},
+  const account = useProfile();
+  const form = useForm<ClientInvite>({
+    defaultValues: {full_name: '', preferred_name: '', email: '', phone: '', notes: ''},
   });
   const pending = form.formState.isSubmitting;
   const dirty = form.formState.isDirty;
@@ -67,9 +70,12 @@ export function InviteClient() {
     }
     try {
       const result = await invitation.mutateAsync({
-        first_name: values.first_name?.trim() || null,
-        last_name: values.last_name?.trim() || null,
-        email: values.email?.trim() || null,
+        full_name: values.full_name?.trim() || '',
+        preferred_name: values.preferred_name?.trim() || null,
+        email: values.email?.trim() || '',
+        phone: values.phone?.trim() || null,
+        notes: values.notes?.trim() || null,
+        ...(values.coach_id ? {coach_id: values.coach_id} : {}),
       });
       if (mounted.current) {
         openClient(result.data.id);
@@ -86,9 +92,12 @@ export function InviteClient() {
         });
       } else {
         setFormError(error, "We couldn't send the invitation. Please try again.", form.setError, [
-          'first_name',
-          'last_name',
+          'full_name',
+          'preferred_name',
           'email',
+          'phone',
+          'notes',
+          'coach_id',
         ]);
       }
     }
@@ -98,7 +107,7 @@ export function InviteClient() {
     <Page>
       <PageHeader
         title="Invite client"
-        description="Invite them to join your coaching account."
+        description="Invitations are free. A seat is used when coaching starts."
         back={{to: listLocation.to, label: 'Back to clients'}}
       />
       <form
@@ -109,22 +118,23 @@ export function InviteClient() {
         <Surface className="space-y-5">
           <div>
             <h2 className="section-title">Client details</h2>
-            <p className="mt-1 text-sm text-muted-foreground">First name and email are required.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Full name and email are required.</p>
           </div>
           <FormField
             control={form.control}
-            name="first_name"
-            label="First name"
-            autoComplete="given-name"
+            name="full_name"
+            label="Full name"
+            autoComplete="name"
             isRequired
             isDisabled={pending || Boolean(uncertainEmail)}
-            rules={{validate: (value) => Boolean(value?.trim()) || 'Enter first name.'}}
+            rules={{validate: (value) => Boolean(value?.trim()) || 'Enter full name.'}}
           />
           <FormField
             control={form.control}
-            name="last_name"
-            label="Last name"
-            autoComplete="family-name"
+            name="preferred_name"
+            label="Preferred name"
+            description="What should we call you?"
+            autoComplete="nickname"
             isDisabled={pending || Boolean(uncertainEmail)}
           />
           <FormField
@@ -137,6 +147,27 @@ export function InviteClient() {
             isDisabled={pending || Boolean(uncertainEmail)}
             description="Their invitation will be sent here."
           />
+          <FormField
+            control={form.control}
+            name="phone"
+            label="Phone"
+            type="tel"
+            isDisabled={pending || Boolean(uncertainEmail)}
+          />
+          <FormField
+            control={form.control}
+            name="notes"
+            label="Coaching notes"
+            multiline
+            maxLength={255}
+            isDisabled={pending || Boolean(uncertainEmail)}
+          />
+          {account.data?.data.is_owner && (
+            <CoachSelect
+              isDisabled={pending || Boolean(uncertainEmail)}
+              onChange={(coach) => form.setValue('coach_id', coach.id, {shouldDirty: true})}
+            />
+          )}
           <div
             ref={errorRef}
             tabIndex={-1}
@@ -152,19 +183,6 @@ export function InviteClient() {
               </Button>
             )}
           </div>
-          {invitation.error instanceof ApiError && invitation.error.code === 'seat_limit_reached' && (
-            <p className="text-sm">
-              <Link
-                className="text-link"
-                to={routes.billing}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Open billing in a new tab
-              </Link>{' '}
-              to check capacity. Your invitation stays here.
-            </p>
-          )}
         </Surface>
         <div className="md:col-span-2">
           <FormActions>
@@ -258,7 +276,7 @@ function SavedClients({
   onOpen: (id: string) => void;
   onRetry: () => void;
 }) {
-  const query = useClients({search: email});
+  const query = useClients({q: email});
   return (
     <Dialog
       isOpen
@@ -282,9 +300,7 @@ function SavedClients({
           {(client) => (
             <div className="space-y-3 p-4">
               <div className="break-words">
-                <p className="font-semibold">
-                  {`${client.first_name ?? ''} ${client.last_name ?? ''}`.trim() || 'Client'}
-                </p>
+                <p className="font-semibold">{client.preferred_name || client.full_name || 'Client'}</p>
                 <p className="text-sm text-muted-foreground">{client.email}</p>
               </div>
               <Button

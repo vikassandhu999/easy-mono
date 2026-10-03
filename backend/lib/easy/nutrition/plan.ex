@@ -11,13 +11,13 @@ defmodule Easy.Nutrition.Plan do
 
   @type t() :: %__MODULE__{}
   @type kind :: :template | :client_plan
-  @type lifecycle :: :active | :incomplete | :upcoming | :current | :ended | :archived
+  @type lifecycle :: :active | :incomplete | :waiting | :upcoming | :current | :ended | :archived
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
   @kinds [:template, :client_plan]
-  @lifecycles [:active, :incomplete, :upcoming, :current, :ended, :archived]
+  @lifecycles [:active, :incomplete, :waiting, :upcoming, :current, :ended, :archived]
   @template_fields [
     :name,
     :description,
@@ -80,13 +80,7 @@ defmodule Easy.Nutrition.Plan do
 
   def lifecycle(%__MODULE__{start_date: nil}, _date), do: :incomplete
 
-  def lifecycle(%__MODULE__{start_date: start_date, end_date: end_date}, date) do
-    cond do
-      Date.after?(start_date, date) -> :upcoming
-      end_date && Date.before?(end_date, date) -> :ended
-      true -> :current
-    end
-  end
+  def lifecycle(%__MODULE__{} = plan, date), do: Easy.PlanCoverage.lifecycle(plan, date)
 
   @spec insert_changeset(String.t(), String.t(), map(), Menu.t()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, creator_id, attrs, menu \\ Menu.empty()) do
@@ -198,10 +192,6 @@ defmodule Easy.Nutrition.Plan do
       name: :nutrition_plans_one_incomplete_client_plan_index,
       message: "already has an incomplete Client Plan"
     )
-    |> exclusion_constraint(:start_date,
-      name: :nutrition_plans_no_overlapping_coverage,
-      message: "overlaps another Client Plan's Coverage"
-    )
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
@@ -232,7 +222,7 @@ defmodule Easy.Nutrition.Plan do
     do: from(plan in query, where: ilike(plan.name, ^Easy.Search.like_pattern(term)))
 
   @spec covering(Ecto.Queryable.t(), Date.t()) :: Ecto.Query.t()
-  def covering(query \\ __MODULE__, date), do: active_in_window(query, date, date)
+  def covering(query \\ __MODULE__, date), do: query |> active_in_window(date, date) |> Easy.PlanCoverage.in_force(date)
 
   @spec active_in_window(Ecto.Queryable.t(), Date.t(), Date.t()) :: Ecto.Query.t()
   def active_in_window(query \\ __MODULE__, from_date, to_date) do
@@ -289,7 +279,7 @@ defmodule Easy.Nutrition.Plan do
 
   @spec include_client(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def include_client(query \\ __MODULE__, business_id) do
-    client_query = Client.for_business(Client, business_id) |> preload(:business)
+    client_query = Client.for_business(Client, business_id) |> preload([:business, :terms])
     from(plan in query, preload: [client: ^client_query])
   end
 end

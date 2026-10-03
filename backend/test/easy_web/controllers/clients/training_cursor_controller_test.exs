@@ -5,7 +5,7 @@ defmodule EasyWeb.Clients.TrainingCursorControllerTest do
 
   setup do
     coach = insert(:coach)
-    client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+    client = insert(:client, business: coach.business, coach: coach)
     %{coach: coach, client: client, conn: authenticate_client(build_conn(), client)}
   end
 
@@ -14,10 +14,10 @@ defmodule EasyWeb.Clients.TrainingCursorControllerTest do
     plans = for _ <- 1..5, do: plan(ctx, name: "Strength", inserted_at: timestamp)
     plan(ctx, name: "Mobility")
     plan(ctx, name: "Strength archived", archived_at: DateTime.utc_now(:second))
-    other_client = insert(:client, business: ctx.coach.business, creator: ctx.coach)
+    other_client = insert(:client, business: ctx.coach.business, coach: ctx.coach)
     plan(%{ctx | client: other_client}, name: "Strength private")
     foreign_coach = insert(:coach)
-    foreign_client = insert(:client, business: foreign_coach.business, creator: foreign_coach)
+    foreign_client = insert(:client, business: foreign_coach.business, coach: foreign_coach)
     plan(%{ctx | client: foreign_client, coach: foreign_coach}, name: "Strength foreign")
 
     query = %{cursor: "start", limit: 2, search: "Strength"}
@@ -49,10 +49,10 @@ defmodule EasyWeb.Clients.TrainingCursorControllerTest do
 
     session(ctx, date: Date.add(today, -1))
     session(ctx, state: :discarded)
-    other_client = insert(:client, business: ctx.coach.business, creator: ctx.coach)
+    other_client = insert(:client, business: ctx.coach.business, coach: ctx.coach)
     session(%{ctx | client: other_client}, date: today)
     foreign_coach = insert(:coach)
-    foreign_client = insert(:client, business: foreign_coach.business, creator: foreign_coach)
+    foreign_client = insert(:client, business: foreign_coach.business, coach: foreign_coach)
     session(%{ctx | client: foreign_client, coach: foreign_coach}, date: today)
 
     query = %{cursor: "start", limit: 2, state: "completed", search: "Freestyle", from: today, to: today}

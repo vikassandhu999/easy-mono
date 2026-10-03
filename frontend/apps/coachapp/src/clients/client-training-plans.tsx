@@ -1,3 +1,4 @@
+import {formatDateShort} from '@easy/utils';
 import {generatePath, Link} from 'react-router-dom';
 import type {Client} from '../api/clients';
 import {useClientTrainingPlans} from '../api/training-plans';
@@ -10,6 +11,7 @@ import {TrainingPlanPreview} from '../ui/training-plan-preview';
 
 const lifecycleLabels = {
   incomplete: 'Dates not set',
+  waiting: 'Waiting for coaching',
   upcoming: 'Upcoming',
   current: 'Current',
   ended: 'Ended',
@@ -82,6 +84,11 @@ export function ClientTrainingPlans({
                   'Start date not set'
                 )}
               </span>
+              {plan.stopped_on && (
+                <p className="text-sm text-muted-foreground">
+                  Stopped when coaching ended on {formatDateShort(plan.stopped_on)}
+                </p>
+              )}
               {plan.lifecycle && (
                 <StatusBadge tone={plan.lifecycle === 'current' ? 'positive' : 'neutral'}>
                   {lifecycleLabels[plan.lifecycle]}

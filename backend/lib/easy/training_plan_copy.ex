@@ -1,8 +1,8 @@
 defmodule Easy.Training.PlanCopy do
   alias Easy.ClientAccess
-  alias Easy.Clients
   alias Easy.Ctx
   alias Easy.Orgs.Business
+  alias Easy.PlanOverlap
   alias Easy.Repo
   alias Easy.Result
   alias Easy.Revision
@@ -67,9 +67,9 @@ defmodule Easy.Training.PlanCopy do
              template,
              attrs
            )
+           |> then(&PlanOverlap.validate(ctx, &1))
            |> Repo.insert(),
-         :ok <- copy_prescription(ctx, template, copy),
-         {:ok, _count} <- Clients.advance_stage_to_coaching(ctx, client_id) do
+         :ok <- copy_prescription(ctx, template, copy) do
       {:ok, copy}
     end
   end

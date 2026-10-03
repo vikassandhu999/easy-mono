@@ -1,6 +1,8 @@
 defmodule Easy.Identity.Invitations do
   alias Easy.ClientInvitations
+  alias Easy.CoachingTerms
   alias Easy.CoachInvitations
+  alias Easy.Ctx
   alias Easy.Identity.AuthTokens
   alias Easy.Identity.Mailer, as: Mailer
   alias Easy.Identity.OneTimeToken
@@ -95,7 +97,11 @@ defmodule Easy.Identity.Invitations do
   defp resolve_invitee(:client, token), do: ClientInvitations.resolve_invitation_token(token)
   defp resolve_invitee(:coach, token), do: CoachInvitations.resolve_invitation_token(token)
 
-  defp accept_membership(:client, client, user_id, email), do: ClientInvitations.accept_invite(client, user_id, email)
+  defp accept_membership(:client, client, user_id, email) do
+    ctx = %Ctx{business_id: client.business_id, user_id: user_id}
+    CoachingTerms.accept_invite(ctx, client, email)
+  end
+
   defp accept_membership(:coach, coach, user_id, _email), do: CoachInvitations.accept_invite(coach, user_id)
 
   defp invitation_error(:invalid), do: :invitation_invalid
@@ -122,8 +128,7 @@ defmodule Easy.Identity.Invitations do
       {:error, :user_not_found} ->
         user_attrs = %{
           "email" => email,
-          "first_name" => invitee.first_name || "",
-          "last_name" => invitee.last_name || ""
+          "full_name" => invitee.full_name || ""
         }
 
         with {:ok, user} <- Users.create_if_absent(DateTime.utc_now(:second), user_attrs) do

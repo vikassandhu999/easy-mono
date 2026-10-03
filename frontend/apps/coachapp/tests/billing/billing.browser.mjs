@@ -73,17 +73,11 @@ try {
     const invitation = await context.newPage();
     await invitation.goto('/');
     await invitation.getByRole('link', {name: 'Invite client', exact: true}).click();
-    await invitation.getByLabel('First name', {exact: true}).fill('Casey');
-    await invitation.getByLabel('Last name', {exact: true}).fill('Draft');
+    await invitation.getByLabel('Full name', {exact: true}).fill('Casey Draft');
     await invitation.getByLabel('Email', {exact: true}).fill(`capacity-${Date.now()}@example.test`);
     await invitation.getByRole('button', {name: 'Send invitation', exact: true}).click();
-    await expect(invitation.getByRole('link', {name: 'Open billing in a new tab', exact: true})).toBeVisible();
-    const billingTabPromise = context.waitForEvent('page');
-    await invitation.getByRole('link', {name: 'Open billing in a new tab', exact: true}).click();
-    const billingTab = await billingTabPromise;
-    await expect(billingTab.getByRole('heading', {name: 'Billing', exact: true})).toBeVisible();
-    await expect(invitation.getByLabel('First name', {exact: true})).toHaveValue('Casey');
-    await billingTab.close();
+    await expect(invitation.getByRole('heading', {name: 'Casey Draft', exact: true})).toBeVisible();
+    await expect(invitation.getByText('Waiting for acceptance', {exact: true})).toBeVisible();
     await invitation.close();
 
     readFailure = true;

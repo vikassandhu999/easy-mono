@@ -40,8 +40,7 @@ defmodule Easy.Nutrition.DiaryFixtures do
     client =
       insert(:client,
         business: coach.business,
-        creator: coach,
-        assigned_coach: coach,
+        coach: coach,
         timezone: Keyword.get(opts, :timezone)
       )
 

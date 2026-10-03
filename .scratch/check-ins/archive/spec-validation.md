@@ -1,12 +1,221 @@
 # Check-ins: proposed spec and validation
 
-Status: needs revision after behavioral validation, 2026-10-03. The proposal below is not ready to implement. See [validation of this proposal](#validation-of-this-proposal) for the unresolved contradictions and recommended corrections. The source [spec.md](spec.md) remains unchanged. Proposed replacement rules have not been accepted merely by appearing in this document.
+Status: needs revision after behavioral validation, 2026-10-03. The proposal below is not ready to implement. Start with the [current decision recall and consistency check](#current-decision-recall-and-consistency-check), then read the earlier [validation of this proposal](#validation-of-this-proposal) for its history. This validation work does not edit [spec.md](spec.md); other workspace work has since changed its coaching-lifecycle references. Proposed replacement rules have not been accepted merely by appearing in this document.
 
 Latest conceptual proposal: [Continuous client record](#continuous-client-record-a-simpler-direction), applying the independence of concerns described in Rich Hickey's *Simple Made Easy*. This direction is under discussion; the earlier draft and visual report have not yet been rewritten to adopt it.
 
+Working vocabulary: [Domain language](#domain-language). This is the current naming proposal for the foundation the user asked to freeze. It introduces no additional attention triggers or deadline rules.
+
+Proposed first proof: [Smallest working review loop](#smallest-working-review-loop). This tests the coach's routine before expanding the feature.
+
 Visual report: [interactive lifecycle prototype](lifecycle-report.prototype.html) and [full lifecycle overview](lifecycle-overview.png). The report distinguishes agreed rules, proposed behavior, and unresolved choices. Guided scenarios illustrate the current draft's reminder and request-expiry problems; they do not silently adopt the audit's recommendations. Scenario logic was checked locally; the browser's local-file policy prevented an in-app HTML preview.
 
+## Smallest working review loop
+
+Proposed on 2026-10-03 in response to the request for the smallest build that can test this approach. This defines an experiment's scope, not implementation authorization or a replacement for the full requirements.
+
+**Question:** Can a coach work from a persistent client roster, inspect existing client activity, and record a useful Review without managing check-in periods?
+
+**Flow:** Client roster -> client activity -> Record a Review -> updated roster. The next review repeats the same flow.
+
+### Two views, one new kind of record
+
+| Part | Minimum behavior |
+| --- | --- |
+| Client roster | Show every accessible client in the active coaching terms used for the trial, including clients with no activity. Show the scheduled review day, last actual review or Never reviewed, and latest saved Coach assessment. Allow ordering by oldest review, with never-reviewed clients visible. |
+| Client review view | Reuse the existing Training Session and nutrition history, with links to the records and their dates. Let the coach choose a Coach assessment, add an optional Private review note, and record the Review. Keep existing chat accessible for feedback. |
+| Review | Preserve the client, author, actual review time, Coach assessment, and optional Private review note. Reloading must retain it. Subsequent activity and corrections do not erase or change the historical review time. |
+
+Use the existing Coaching Term and access boundaries. Use the baseline weekly Sunday schedule for this first trial; multiweek configuration and schedule editing are not needed to answer the question. Show the weekday and last actual review as facts. Do not add a rolling review-gap alert or claim that every row must be cleared.
+
+The Review is the only new kind of persisted domain record required by this proof. The Coaching record is assembled from the existing histories and these Reviews. Existing chat is sufficient for sending feedback during the trial; the dedicated Review reply and its editable Record reference remain part of the wider spec, not a prerequisite for this experiment.
+
+### Walk through the behavior
+
+Use three clients in active terms: one newly started with no records, one recording regularly, and one with no recent records.
+
+1. Open the roster. The new and quiet clients must be discoverable without producing new activity or waiting for a period to end.
+2. Review the regular client on Friday. Reload and confirm that Friday's actual Review is present. On Sunday, the fixed schedule and Friday review coexist without another generated obligation. On Monday, the client remains in the roster.
+3. Review the quiet client after a missed Sunday. Save the actual review date; the next Sunday schedule stays fixed. No reviews are fabricated for missed weeks.
+4. Add activity or correct an older source record after a Review. The coach can open the current record and see the changed information while the historical Review remains dated as before. This basic check does not validate automatic discovery or acknowledgement of every correction.
+
+### Success and limits
+
+The coach can identify who they want to review, inspect the available history, record an assessment, give feedback through chat when useful, and resume later without asking which check-in period owns the work. If scheduled-day context and review dates are insufficient for the coach to find clients reliably, that is a finding against this proposal, not a reason to silently add priority rules.
+
+This slice validates the daily review loop and independent review timing. It does not validate request receipt and expiry, change-feed acknowledgement and concurrency, resumed-term baselines, dated-expectation comparisons, or nutrition formulas. Those remain explicit follow-on checks. Trackers, uploads, Focus, native reminders, and the dedicated Review reply stay in the full scope; they are not necessary to test this first question.
+
+Do not treat a static dashboard as proof. The trial needs a saved Review, a reload, and a return to the roster. No product code or prototype was built as part of this scope recommendation.
+
+## Domain language
+
+Proposed on 2026-10-03 after the user asked to stop changing direction and define the language first. Existing vocabulary comes from [CONTEXT.md](../../CONTEXT.md). New canonical names below are proposed for this design; they have not been promoted to the shared glossary. Workflow choices still open in the decision ledger remain open.
+
+The central sentence is: **During a Coaching term, a Coach reviews the Client's Coaching record, records a Review, and gives guidance.** The client's recorded activity continues before and after a Review.
+
+### People and coaching
+
+| Term | Meaning |
+| --- | --- |
+| Client | The person receiving coaching from a Business. Their identity and history continue across Coaching terms. |
+| Coach | A person authorized to coach clients in a Business. |
+| Business | The coaching organization within which clients, coaches, and access belong. |
+| Coaching term | An inclusive span of client-local dates during which the Business coaches the Client. This is the existing lifecycle concept. |
+| Coaching state | The client's derived relationship state, such as invited, active, or ended. It describes access and coaching eligibility, not how the client is progressing. |
+| Coaching record | The combined history of a client's guidance, recorded activity, tracker values, and coach reviews. It is the overall view of that history; it does not replace the distinct records that contribute to it. |
+
+### Recording and guidance
+
+| Term | Meaning |
+| --- | --- |
+| Tracker | A definition of something the client can record, such as weight, sleep, a photo, a reflection, or a document. Its kind determines the form of its value. |
+| Tracker entry | One dated recorded value of a Tracker, attributed to the client or an authorized coach. A document Tracker entry may contain the ordered PDFs and images belonging to one report. |
+| Tracker list | The Trackers selected for one client, with their recording timings. It belongs to the client independently of their plans. |
+| Tracker timing | When a Tracker prompts recording, such as daily, weekly, on the review day, or after an eligible workout or meal. It does not establish whether the client followed their plan. |
+| Dated expectation | The training or nutrition guidance expected for a client on a particular local date. It is distinct from what the client recorded and does not imply a settled adherence formula. |
+| Focus | The one-line coaching priority the coach sets for the client. |
+| Tracker request | A specific coach ask for information recorded through a Tracker, such as a blood report. It is distinct from a recurring recording prompt. |
+| Target date | The date by which the coach asks to receive the requested information. The term alone does not imply expiry, cancellation, or automatic follow-up. |
+| Reflection | The proposed name of a text Tracker through which the client records how things are going. It is distinct from the existing Note to coach chat action. |
+
+An uploaded report is a document Tracker entry, not a separate kind of review. An individual file is an attachment, not another report. Front, side, and back photos remain separate Trackers.
+
+Retain the established source-record vocabulary without renaming it: **Client Plan** for training, **Client Nutrition Plan**, **Training Session**, **Diary Slot**, and **Diary Entry**. Plans describe guidance; Training Sessions and diary intake describe recorded activity. **Coverage** keeps its existing meaning of a plan's date range subject to Coaching term eligibility. **Assignment** remains the act of creating a client plan from a template; use Tracker list when talking about selected trackers.
+
+### Coach review
+
+| Term | Meaning |
+| --- | --- |
+| Review | The record of an actual coach assessment of the client at a particular time. It carries the coach's identity, assessment, and any private note or reply. |
+| Coach assessment | The coach's private judgment: On track, Needs attention, or At risk. It is separate from Coaching state and is not calculated from dashboard signals. |
+| Private review note | Coach-only commentary attached to a Review. |
+| Review reply | Optional feedback to the client attached to a Review and delivered as the same referenced chat message. |
+| Review schedule | The fixed weekday and cadence that remind the coach to look at the client. An actual Review does not move this schedule. |
+
+Use **Review** as the canonical domain name. **Check-ins** can remain the feature or navigation name; it does not name a second record with a separate lifecycle. Retire Review checkpoint and Check-in period from the new model. A scheduled day is not a Review that already exists and is waiting to be completed.
+
+The existing **Note to coach** remains client commentary sent through chat. The existing **Record reference** remains the source link in a chat message. A Review reply would extend that source-link capability; naming it does not claim current backend support.
+
+### Views and factual labels
+
+These names describe ways to inspect information, not additional coaching obligations.
+
+| Term | Meaning |
+| --- | --- |
+| Client roster | The coach's list of accessible clients and their relevant coaching facts. |
+| Progress summary | A view of recorded activity and available expectations over chosen dates. Its detailed calculations remain a separate decision. |
+| Reporting range | The local dates selected for a Progress summary. It does not own records or determine whether a Review is complete. |
+| Activity updates | Information about records being added, corrected, or removed, shown by when the change happened. The label does not claim that every update requires another Review. |
+| Review age | The elapsed time since an actual Review. This is information, not an approved automatic alert threshold. |
+| Waiting on client | A request still needs information from the client. This does not by itself mean the coach has unfinished work. |
+| Not recorded | No structured record is available. Keep the existing meaning: this is not evidence of a skipped activity, zero intake, or non-adherence. |
+
+Use explicit time language: a **record date** describes the activity or value's local date; **recorded at** and **changed at** describe when information was saved or corrected; **reviewed at** describes the coach's actual review. A change to an old record date can therefore be a recent Activity update.
+
+### Language boundaries
+
+* Use Coaching state for the relationship and Coach assessment for the coach's judgment. Avoid an unqualified Status spanning both.
+* Reserve Needs attention for the manual Coach assessment when used as a formal value. Dashboard facts retain their own names, such as Scheduled today, Unread message, or Waiting on client.
+* Use Progress summary for the calculated screen and document Tracker entry for an uploaded report. Avoid Report as a name for both.
+* Do not use Reviewed to mean message read, attachment opened, request received, or every obligation finished. Those facts are distinct; an Inspected or Acknowledged state is not introduced by this glossary.
+* Retire period-owned asks, next-period guidance, review debt, and a global Done state from the continuous-record language. No extra review-gap trigger follows from Review age.
+
+Natural action phrases are **Start coaching**, **End coaching**, **Record a Tracker entry**, **Record a Review**, **Set the Focus**, and **Request a Tracker**. These are vocabulary examples, not a new command/API specification.
+
+Example: Asha is in a Coaching term. Her Tracker list includes Weight and Reflection. The coach reads her Training Sessions, diary intake, and Tracker entries, then records a Friday Review with an On track Coach assessment and a Review reply. The coach also makes a blood-report Tracker request. The Sunday Review schedule remains Sunday. The request can still be Waiting on client even though Friday's Review exists.
+
+## Current decision recall and consistency check
+
+Recorded on 2026-10-03. Scope: this check-ins discussion and its complete saved decision history, the original spec, and the Coaching Terms work that now supplies the lifecycle boundary. This is a design audit with targeted source checks, not a running-product verification.
+
+### Current state
+
+The user endorsed the continuous client record direction. A coach review records an actual assessment; calendar dates and report ranges do not own the client's records. This endorsement does not approve the six attention predicates, request rules, or evidence-acknowledgement rules proposed afterward. The earlier draft and lifecycle visual still illustrate behavior that this direction would replace.
+
+The broad concept remains coherent. The latest attention proposal is incomplete: it mixes calendar context, elapsed review time, unread information, and waiting on the client under one attention label. These can coexist as independent facts, but they cannot all mean an outstanding coach action or share a completion rule.
+
+### Decision ledger
+
+"Confirmed" below means explicitly chosen in this discussion. "Baseline" means recorded as settled in the original spec, with compatible intent retained; it does not mean the revised implementation is specified or shipped.
+
+| Decision | Current standing | What remains binding or unresolved |
+| --- | --- | --- |
+| V1: plan edits | Confirmed A | Current edits apply immediately to eligible subsequent activity. Captured workout prescriptions and diary guidance stay frozen. A review does not control effective dates. |
+| Future scheduled plan edits | Confirmed future capability | Requested separately from the first release. Detailed scheduling rules remain open. |
+| V2: weekday transition | Historically confirmed A; mechanism obsolete in the endorsed direction | Extending a transition period made sense only with periods. Preserve history and predictable future reminders. Do not implement transition periods for the continuous model. Multiweek schedule-change anchoring still needs a rule. |
+| V3: first attention | Confirmed early | Do not wait a full 2- or 4-week interval. New coaching clients must be visible immediately. |
+| V4: four-day minimum | Confirmed removal here; conflicting shared spec | First selected weekday on or after coaching starts, including the same day. The newer Coaching Terms spec says the minimum stays. That conflict is not an approved reversal of V4 in this discussion. |
+| V5: expectations | Confirmed C for training and meals | Preserve dated expectations independently of full plan versions. Later edits cannot rewrite past expectations. Capture timing, same-day changes, matching, and unavailable history remain open. |
+| V6: nutrition comparison | Explicitly deferred | Recommended versus recorded calories and meals recorded versus prescribed are a tentative direction. No counting or averaging formula was approved. |
+| V7: reports | Confirmed PDFs and images | Preserve originals; coach interprets them manually in the first release. |
+| V8: report grouping | Confirmed A | One report is one Tracker entry with ordered PDF/image attachments. Another report is another entry. Front, side, and back photo trackers stay separate. |
+| Jev AI parsing | Confirmed future capability | Parsed values should accompany original attachments. Integration, correction, and comparison details remain open. |
+| V9: upload limits | Explicitly deferred | Neither 10 files nor 15 MiB was approved. Deferral does not mean unlimited uploads. |
+| V10: destination of late asks | Paused; period-destination question dissolves in the new direction | Independent guidance dates are the proposed replacement. Focus persistence and request lifecycle details still need agreement. |
+| V11 and continuous client record | Direction endorsed | The user first approved exploration, then said they liked the continuous-record direction. This is not blanket approval of all draft clauses. |
+| V12: schedule | Confirmed A | Keep the selected calendar weekday and cadence after early or late actual reviews. A Wednesday review does not move a Sunday schedule. |
+| V13: early-review credit | Withdrawn | Neither proposed option was accepted. Do not silently reintroduce credit or scheduled review instances. |
+| Latest six attention signals | Proposed only | Never reviewed, review-gap threshold, scheduled today, unread chat, received information, and past-target requests were not separately approved. Existing unread-chat behavior is a baseline; the combined dashboard policy is new. |
+
+### Original decisions still relevant
+
+| Original decisions | Retained baseline or required reconciliation |
+| --- | --- |
+| Q1, Q3, Q18 | Default weekly Sunday attention, client weekday overrides, and 1/2/4-week cadence remain the baseline. Period generation is being replaced. |
+| Q2, Q13b, Q16, Q17, Q29 | No form or form-submission model. Built-in/custom Trackers, typed Tracker entries, and one client assignment list outside plans remain. Rating limits, naming, and multiplicity are not settled by this concept. |
+| Q19, Q21, Q22 | Ordinary prompts do not score or make entries late. One-off library entries need not join the assigned list. Assignment changes apply immediately; historical event coverage still needs dated assignment and eligibility rules. |
+| Q20 and access | Authorized coaches may record tracker values with attribution. This does not authorize coach-recorded workouts or meals. Business/client access boundaries and private fields remain. |
+| Q6, Q9, Q25, Q31, Q32 | Optional reply, one reply/chat-message identity, private note, and private manual On track / Needs attention / At risk assessment remain the baseline. Prior assessment prefill does not fabricate an assessment before the first saved review. Reply editing and review evidence still need implementation rules. |
+| Q7, Q8, Q12 | Urgent matters go to chat. Clients see their history without private coach fields. Corrections after review must remain discoverable. A review-history presentation replaces the old archive of period summaries. |
+| Q23 | Business defaults and explicit application to existing clients remain intended. Permissions and recurrence anchoring must fit the current owner/coach boundary. |
+| Q24 | Client Today prompts and native local reminders remain intended; web prompts stay in-app. Delivery does not prove recording or review. |
+| Q26 | Per-client metric/imperial units remain agreed. Current Coaching Terms work now contains `Client.unit_system`; the earlier claim that this field is absent is stale. Custom-unit conversion remains excluded. |
+| Q27, Q28 | Archive rather than delete used custom trackers; preserve history and separate photo poses. Archive/request interaction and the replacement for a previous-period comparison range remain open. |
+| Q4, Q11, Q15, Q33, Q34, Q35 | Open/due/reviewed periods, grouped closing, next-period asks, and grace-day closure cannot carry into the continuous model unchanged. No Send action still fits. Exact continuous-correction and request-receipt rules remain proposed replacements. |
+| Q5, Q30 | Coaching Terms now supplies dated eligibility. No-real-clients means the launch migration scenario is no longer needed. First-attention timing conflicts across the two specs and needs reconciliation. |
+| Q10, Q14 | V1 supersedes next-period plan application. V5 preserves expectation history; V6 keeps nutrition formulas deferred. No automated adherence or risk scores were approved. |
+| Delivery and future scope | Delivery order was provisional and must be rewritten without period generation. Specific-event trackers, list copying, chosen-date photo comparisons, and server push remain future scope. Generic follow-up automation remains excluded. |
+
+### Five consistency findings
+
+1. **The review-gap alert adds another clock.** Friday review plus a Sunday calendar gives a Sunday reminder and, at seven dates, a Friday gap alert. This does not mathematically move the Sunday schedule, so it is not a direct violation of V12. It is an additional rolling attention policy that the user has not approved. If all reasons mean "review now," it recreates pressure for repeat reviews. Recommendation: retain the actual review date and sortable age; defer the automatic gap threshold, or explicitly accept it as a separate advisory policy. Keeping age as context means no promise that every missed Sunday remains an outstanding obligation.
+
+2. **A late request is not necessarily unfinished coach work.** A report is late; the coach contacts the client; the client needs another week. The request is still pending, but the coach has handled what they can. Calling the client unconditionally in need of coach action repeats PV1's uncleared-reminder problem. Recommendation: display "Waiting on client, target date passed." Keep it visible without claiming another follow-up is owed. An explicit follow-up task would require its own scope and is not inferred here.
+
+3. **"Inspected" is an undefined new fact.** The received-report signal cannot be calculated solely from receipt and review timestamps. Opening a preview, seeing an aggregate, and completing a review are different actions. A report corrected during inspection must remain new, and one coach's older open screen must not erase a newer acknowledgement. Recommendation: choose a precise seen/reviewed boundary and whose boundary it is before using an uninspected label. Until then, "Received Monday" is a factual display, not proof of outstanding review. PV4 remains open; the simpler concept did not solve it.
+
+4. **Lifetime review history is the wrong baseline on return.** A client returns for a new term after a review months ago. The literal Never reviewed predicate is false, while a lifetime review-age calculation counts time outside coaching. Recommendation: retain the full client history, but derive current routine attention from the current Coaching Term. A possible label is "Not reviewed this term." Focus and pending requests need an explicit carry-forward or closure rule; neither should silently revive. This is a proposed correction, not an approved term-reset rule.
+
+5. **The saved documents no longer form one consistent contract.** V4 removes the four-day minimum; current `spec.md` and Coaching Terms retain it. The earlier proposal still clears overdue reminders only through later reviews and expires requests, while the newer direction removes those behaviors. PV2 still refers to the absent Engagement file and removed status/stage fields. The units gap is also stale. Recommendation: use this ledger to consolidate a replacement after the remaining choices are made. Do not treat old draft prose, the lifecycle visual, or the phrase "all design questions are closed" as current approval.
+
+### Scenario check
+
+| Scenario | Result of this audit |
+| --- | --- |
+| New term Friday, four-week Sunday cadence | Immediate visibility and upcoming Sunday attention fit V3-V4. The shared four-day rule conflicts and must not be silently applied. |
+| Review Friday; inspect roster Sunday and Monday | Sunday can show both the schedule and actual Friday review. Monday's calendar label expires. The client and review age remain visible. This works only as advisory context, not a queue of obligations. |
+| Miss Sunday; review Wednesday | Next fixed reminder stays Sunday. One actual Wednesday review is recorded. No prior-week review is invented. |
+| No client activity for several weeks | Full roster and review-age ordering keep the client accessible. An explicit alert threshold is a policy choice; absence of records is not zero intake or proof of non-adherence. |
+| Coach follows up on a late blood report | Still waiting on the client. Completing a coach review cannot truthfully mark the report received, and the lateness alone cannot prove more coach action is needed. |
+| Report arrives, then changes while the coach is viewing it | Receipt is known. Whether the current revision was seen is not settled. Must not clear the later change with a save-time shortcut. |
+| An old meal changes while last week's report is open | Changed-information discovery must include the older date even though the selected summary range does not. This remains an implementation requirement. |
+| Old received evidence is deleted after a new request is issued | Surface removed evidence; do not automatically reopen the old request and create two pending requests. Successor handling remains a request rule. |
+| Coaching ends and later restarts | Readable history survives. Current eligibility follows term dates. A new-term review baseline and the fate of pending guidance remain open. |
+| Plan edited at midday; only breakfast recorded | Dated expectations preserve context, but no single full-day calorie/adherence conclusion follows. V5 matching and V6 calculation remain open. |
+
+### Shared record and verification limits
+
+The live branch is `codex/coaching-terms`. Commit `f5e79878` contains the saved check-ins proposal, visual artifacts, and Coaching Terms spec. Current staged source includes the Coaching Term schema and services and the per-client unit field. This audit inspected `backend/lib/easy/coaching_terms/coaching_term.ex`, `backend/lib/easy/coaching_terms.ex`, `backend/lib/easy/clients/client.ex`, and `backend/lib/easy/client_access.ex`; it did not run their tests or establish that the branch is merged. Other ongoing changes were left intact.
+
+Current sources: [Coaching Terms](../coaching-terms/spec.md), especially E1-E4, M7, and Effect on the check-ins spec; [Client schema and derived state](../../backend/lib/easy/clients/client.ex); [term date coverage](../../backend/lib/easy/coaching_terms/coaching_term.ex). The old Engagement path no longer exists. Earlier backend findings remain historical unless rechecked here.
+
+Recall used this conversation, V1-V13, the Q1-Q35 source record, and local git history. No chat-export identifier was available to cite, and no unrelated transcripts were mined. The referenced `why` skill and external issue/chat/error tools were unavailable, so no external incident or PR-state claim is made. Code graph tools were unavailable; checks used the known source paths directly. The available `unslop` skill was used for the brief.
+
+Next decision: whether review age is context only or also a second automatic attention trigger. Recommendation: keep it visible and sortable while the calendar remains the sole routine schedule. This recommendation is not approval to rewrite the rest of the spec around it.
+
 ## Purpose
+
+The sections from Purpose through Acceptance examples preserve the earlier proposed spec. They are not the consolidated continuous-record contract. Use the current decision ledger above to distinguish accepted requirements from proposals and conflicts.
 
 A coach needs one place to see every client, why each client may need attention, what changed since the coach last reviewed them, and what guidance the client has received. A client should know what to record and what the coach has asked them to do. The coach should be able to complete a review without waiting for a form or managing a series of check-in periods.
 
@@ -128,6 +337,8 @@ Recommended correction: make the fixed calendar day and elapsed time since the l
 
 ### PV2. Coaching eligibility conflicts with the Engagement direction
 
+Historical finding: the later recall above found Coaching Terms in the working tree and the old Engagement path absent. The code-state claims and source line locations in this earlier paragraph must not be reused as current evidence.
+
 The proposal depends on active status, coaching stage, pause, and a durable coaching-start date. Current code has the first two but no paused state or separate history of coaching starts and inactive stretches. The [Engagement spec](/Users/vikassandhu/Desktop/10x/easy-mono/.scratch/client-engagement/spec.md:5) proposes replacing those lifecycle fields, starting coaching through an Engagement, and retaining read-only client history after it ends. That document is still needs-triage; it is a competing design dependency, not implemented behavior.
 
 Recommended correction: give one model ownership of coaching eligibility and dated coaching intervals. Check-ins should consume that boundary. If Engagement is adopted, first attention, end-of-coaching behavior, client write access, inactive exclusions, and resumption all follow it. If check-ins ship first, define the interim start-date baseline and transition rather than assuming the current client row contains that history. Define or remove pause. Explicitly handle active onboarding clients, ended coaching, and the fate of current focus and requests on return. Evidence: [client lifecycle fields](/Users/vikassandhu/Desktop/10x/easy-mono/backend/lib/easy/clients/client.ex:18), [stage changes](/Users/vikassandhu/Desktop/10x/easy-mono/backend/lib/easy/clients.ex:26), [reactivation](/Users/vikassandhu/Desktop/10x/easy-mono/backend/lib/easy/clients/client.ex:259).
@@ -179,7 +390,7 @@ Recommended revision order: settle the meaning of calendar attention (PV1); agre
 
 ## Continuous client record: a simpler direction
 
-Proposed on 2026-10-03 in response to the request for a concept that untangles the remaining decisions. Not yet accepted. This is a proposed correction to the draft, not a claim that its current behavior already follows these rules.
+Proposed on 2026-10-03 in response to the request for a concept that untangles the remaining decisions. The user endorsed this direction; the specific replacement rules remain proposals unless separately accepted. This is a proposed correction to the draft, not a claim that its current behavior already follows these rules.
 
 **The client has an ongoing coaching record. A check-in is the coach reviewing that record.**
 
@@ -205,6 +416,31 @@ This is one coherent client experience, not one database object containing all t
 Open the full authorized coaching roster. See who has never been reviewed, scheduled attention dates, elapsed time since actual reviews, new information, and outstanding requests. Open a client, inspect the relevant history, record an assessment, and give guidance when needed. The client keeps recording before and after that review.
 
 The roster must support scanning by review age as well as new information; quiet clients cannot depend on producing updates to be noticed. Request labels distinguish waiting on the client from received information ready for the coach. A new coaching client is visible immediately.
+
+### How attention would be calculated
+
+Proposed clarification, 2026-10-03. The user asked how the dashboard calculates what needs attention. The following predicates and defaults have not yet been accepted.
+
+Compute a set of named reasons for each eligible client from current facts. Keep the coach's private assessment separate. No aggregate health score or overall Done state follows from these signals. An absent signal is not proof that the client is doing well.
+
+| Signal | Proposed rule | What changes or removes it |
+| --- | --- | --- |
+| Never reviewed | No actual coach review exists for the client | First actual review |
+| Review gap | Time since the last actual review reaches a chosen review-gap threshold | Another actual review; do not generate one obligation per missed interval |
+| Scheduled today | Today is an occurrence of the client's fixed attention schedule | The date changes; this is a routine reminder, not an owed review |
+| Unread message | The existing chat read boundary leaves a client message unread | Reading the message; reading does not claim a reply was sent |
+| Requested information received | A request has received an entry whose current information has not yet been acknowledged in the coach's view | Acknowledging that information under the change-feed rule; no separate formal review is inherently required |
+| Request past target date | The target date has passed and the request is still pending | Receipt, cancellation, explicit replacement, or explicit target-date change; completing a review alone does not resolve the request |
+
+Proposed default for the review-gap threshold: the configured cadence, expressed as 7, 14, or 28 client-local dates. This is an additional advisory policy, not an already agreed requirement. The fixed weekday stays anchored when a review happens early or late. It answers when the coach intended to look; review age answers how long it has actually been. For a newly resumed coaching relationship, the eligibility/start boundary must establish the appropriate baseline; do not count inactive time as neglect. That remains part of PV2.
+
+Ordinary new workouts, meals, and tracker entries show update counts. They do not, by themselves, create an urgent-action label after every log. Corrections to previously reviewed information receive an explicit Changed since review cue. Requested reports can be distinguished from routine logging because the coach explicitly asked for them. The latest manual assessment remains visible and can guide filtering; these predicates never calculate or overwrite it.
+
+Every client appears once in the roster, with whichever reasons apply. The routine view brings scheduled clients and clients with long review gaps forward, with last-review dates visible. Follow-up filters expose unread messages, received requests, and requests past their target date. There is no proposed weighted priority score. No-records and plan-ending signals can be added as independent rules later; the draft's 14-day and seven-day defaults are not accepted by this clarification.
+
+Example with a weekly Sunday schedule: the coach reviews Friday. Sunday shows Scheduled today and Last reviewed two days ago, without a Review gap signal. Monday's scheduled-day label disappears; the client stays in the roster. If no further review happens, the seven-date gap signal appears the following Friday and remains until another actual review. A blood report arriving Monday adds a received-information signal immediately. No weekly instance is opened, closed, credited, or carried forward.
+
+Signal removal is specific to its cause. Reading chat does not clear a request. Receiving a report does not count as a coach review. Reviewing the client does not erase a pending request. Changes arriving during inspection must remain discoverable. Precisely how the coach acknowledges presented changes, across pages and concurrent updates, remains PV4 implementation/design work; using the save time of a review as a blanket acknowledgement would be incorrect.
 
 ### Consequences for the difficult cases
 

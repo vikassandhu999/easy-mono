@@ -1,4 +1,3 @@
-import {writeFile} from 'node:fs/promises';
 import {chromium, expect} from '@playwright/test';
 import {api, inviteClient} from '../auth/fixtures.mjs';
 
@@ -131,7 +130,6 @@ try {
     created: today,
     clientId: fixture.clientId,
   };
-  await writeFile('../../../.scratch/clientapp-rebuild/preview.json', JSON.stringify(preview, null, 2));
   console.log(JSON.stringify(preview));
 } finally {
   await browser.close();

@@ -1,6 +1,0 @@
-[
-  {
-    "scenario": "Native food choice, numeric keyboard/back, offline process restart, explicit reconnect save, background/resume and saved meal cold link",
-    "passed": true
-  }
-]

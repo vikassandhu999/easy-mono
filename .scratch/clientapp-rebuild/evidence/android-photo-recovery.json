@@ -1,6 +1,0 @@
-[
-  {
-    "scenario": "native picker cancellation and process death, recovered photo and draft, deliberate upload and saved image after restart",
-    "passed": true
-  }
-]

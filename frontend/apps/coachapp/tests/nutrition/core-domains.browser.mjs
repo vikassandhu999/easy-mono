@@ -3,7 +3,7 @@ import {fileURLToPath} from 'node:url';
 import {chromium, expect, request} from '@playwright/test';
 
 const repo = fileURLToPath(new URL('../../../../../', import.meta.url));
-const screens = `${repo}/.scratch/core-domains/build/s2-screens`;
+const screens = `${repo}/frontend/apps/coachapp/tests/nutrition/artifacts`;
 await mkdir(screens, {recursive: true});
 const api = await request.newContext({baseURL: 'http://localhost:4000'});
 const browser = await chromium.launch();

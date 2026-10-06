@@ -3,7 +3,7 @@ import {chromium, expect, request} from '@playwright/test';
 
 const api = await request.newContext({baseURL: 'http://localhost:4000'});
 const browser = await chromium.launch();
-const screens = '../../../.scratch/core-domains/build/s2-screens';
+const screens = 'tests/recipes/artifacts';
 await mkdir(screens, {recursive: true});
 async function send(method, path, data, token) {
   const response = await api[method](path, {data, headers: token ? {authorization: `Bearer ${token}`} : {}});

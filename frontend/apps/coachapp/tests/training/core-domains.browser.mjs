@@ -4,7 +4,7 @@ import {fileURLToPath} from 'node:url';
 import {chromium, expect, request} from '@playwright/test';
 
 const repo = fileURLToPath(new URL('../../../../../', import.meta.url));
-const screens = `${repo}/.scratch/core-domains/build/s1-screens`;
+const screens = `${repo}/frontend/apps/coachapp/tests/training/artifacts`;
 const api = await request.newContext({baseURL: 'http://localhost:4000'});
 const browser = await chromium.launch();
 const errors = [];

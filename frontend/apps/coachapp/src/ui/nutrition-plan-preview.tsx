@@ -1,91 +1,72 @@
 import {useState} from 'react';
-import type {FoodNutrients, NutritionMenu, NutritionPlan} from '../api/nutrition-plans';
+import type {NutrientMap, NutritionContent, NutritionPlan, NutritionTargets as Targets} from '../api/nutrition-plans';
+import {nutrientFields, portionLabel, targetLabel} from '../api/nutrition-values';
 import {Button} from './button';
 
-export function NutritionTargets({
-  plan,
-}: {
-  plan: Pick<
-    NutritionPlan,
-    'target_calories' | 'target_protein_g' | 'target_carbs_g' | 'target_fat_g' | 'target_fiber_g'
-  >;
-}) {
-  const targets = [
-    ['Calories', plan.target_calories, 'kcal'],
-    ['Protein', plan.target_protein_g, 'g'],
-    ['Carbs', plan.target_carbs_g, 'g'],
-    ['Fat', plan.target_fat_g, 'g'],
-    ['Fiber', plan.target_fiber_g, 'g'],
-  ] as const;
+export function NutritionTargets({targets}: {targets: Targets}) {
   return (
     <dl className="flex flex-wrap gap-x-6 gap-y-3">
-      {targets.map(([label, value, unit]) => (
-        <div key={label}>
-          <dt className="text-xs text-muted-foreground">{label}</dt>
-          <dd className="mt-1 font-semibold">{value === null ? 'Not set' : `${value} ${unit}`}</dd>
+      {nutrientFields.map(([code, name, unit]) => (
+        <div key={code}>
+          <dt className="text-xs text-muted-foreground">{name}</dt>
+          <dd className="mt-1 font-semibold">{targetLabel(targets[code], unit)}</dd>
         </div>
       ))}
     </dl>
   );
 }
-export function MealNutrients({nutrients}: {nutrients: FoodNutrients | undefined}) {
-  if (!nutrients) {
-    return null;
-  }
+export function MealNutrients({nutrients}: {nutrients: NutrientMap | undefined}) {
   return (
     <p className="text-xs text-muted-foreground">
-      {nutrients.calories ?? '—'} kcal · P {nutrients.protein ?? '—'} g · C {nutrients.carbohydrates ?? '—'} g · F{' '}
-      {nutrients.fat ?? '—'} g{!nutrients.complete && ' · Nutrition incomplete'}
+      {nutrients?.energy_kcal ?? 'Unknown'} kcal · Protein {nutrients?.protein_g ?? 'Unknown'} g · Carbs{' '}
+      {nutrients?.carbs_g ?? 'Unknown'} g · Fat {nutrients?.fat_g ?? 'Unknown'} g
     </p>
   );
 }
-export function NutritionMenuPreview({menu}: {menu: NutritionMenu}) {
-  const [active, setActive] = useState(menu.day_patterns[0]?.id);
-  const pattern = menu.day_patterns.find((day) => day.id === active) ?? menu.day_patterns[0];
-  const meals = new Map(menu.meals.map((meal) => [meal.id, meal]));
+export function NutritionContentPreview({content}: {content: NutritionContent}) {
+  const [active, setActive] = useState(content.day_patterns[0]?.id);
+  const pattern = content.day_patterns.find((value) => value.id === active) ?? content.day_patterns[0];
   return (
     <div className="min-w-0 space-y-5 [overflow-wrap:anywhere]">
       <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-        {(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const).map((day) => (
-          <div
-            key={day}
-            className="min-w-0"
-          >
-            <dt className="capitalize text-xs text-muted-foreground">{day}</dt>
-            <dd>{menu.day_patterns.find((value) => value.id === menu.schedule[day])?.name ?? 'Menu unavailable'}</dd>
+        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, index) => (
+          <div key={day}>
+            <dt className="text-xs text-muted-foreground">{day}</dt>
+            <dd>
+              {content.day_patterns.find(
+                (value) => value.id === content.schedule.entries.find((entry) => entry.day === index)?.ref,
+              )?.name ?? 'Not set'}
+            </dd>
           </div>
         ))}
       </dl>
       <div
         className="flex flex-wrap gap-2"
         role="group"
-        aria-label="Preview day menus"
+        aria-label="Preview day patterns"
       >
-        {menu.day_patterns.map((day) => (
+        {content.day_patterns.map((value) => (
           <Button
-            key={day.id}
-            className="max-w-full"
-            variant={day.id === pattern?.id ? 'secondary' : 'ghost'}
-            aria-pressed={day.id === pattern?.id}
-            onPress={() => setActive(day.id)}
+            key={value.id}
+            variant={value.id === pattern?.id ? 'secondary' : 'ghost'}
+            onPress={() => setActive(value.id)}
           >
-            <span className="truncate">{day.name}</span>
+            {value.name}
           </Button>
         ))}
       </div>
+      <NutritionTargets targets={pattern?.targets ?? content.targets} />
       {pattern?.slots.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          Follow the daily targets and plan guidance. No meals are prescribed.
-        </p>
+        <p className="text-sm text-muted-foreground">No meals prescribed. Follow the targets and plan guidance.</p>
       )}
       {pattern?.slots.map((slot) => (
         <section
-          key={slot.meal_slot}
-          className="space-y-4"
+          key={slot.id}
+          className="space-y-3"
         >
-          <h3 className="text-lg font-semibold capitalize">{slot.meal_slot.replaceAll('_', ' ')}</h3>
+          <h3 className="editor-item-title">{slot.name}</h3>
           {slot.meal_ids.map((id, index) => {
-            const meal = meals.get(id);
+            const meal = content.meals.find((value) => value.id === id);
             if (!meal) {
               return null;
             }
@@ -96,19 +77,17 @@ export function NutritionMenuPreview({menu}: {menu: NutritionMenu}) {
               >
                 {index > 0 && <p className="text-xs text-muted-foreground">Or choose</p>}
                 <h4 className="font-medium">{meal.name}</h4>
-                <MealNutrients nutrients={meal.nutrients} />
                 <ul className="space-y-2 text-sm">
-                  {meal.meal_items.map((item) => (
+                  {meal.items.map((item) => (
                     <li
                       key={item.id}
-                      className="flex justify-between gap-4"
+                      className="space-y-1"
                     >
-                      <span className="min-w-0 break-words">{item.name || 'Meal item'}</span>
-                      <span className="shrink-0 text-muted-foreground">
-                        {item.portion.kind === 'gram'
-                          ? `${item.portion.grams} g`
-                          : `${item.portion.amount} ${item.portion.label || item.portion.unit}`}
-                      </span>
+                      <div className="flex justify-between gap-4">
+                        <span>{item.name || 'Food'}</span>
+                        <span className="shrink-0 text-muted-foreground">{portionLabel(item.portion)}</span>
+                      </div>
+                      {item.nutrients && <MealNutrients nutrients={item.nutrients} />}
                     </li>
                   ))}
                 </ul>
@@ -125,8 +104,7 @@ export function NutritionPlanPreview({plan}: {plan: NutritionPlan}) {
   return (
     <div className="space-y-6">
       {plan.description && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{plan.description}</p>}
-      <NutritionTargets plan={plan} />
-      <NutritionMenuPreview menu={plan.menu} />
+      <NutritionContentPreview content={plan.content} />
     </div>
   );
 }

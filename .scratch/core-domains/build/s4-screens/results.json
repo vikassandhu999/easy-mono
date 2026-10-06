@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "clientId": "184203bf-9e7d-4fc1-a9a7-9e863b4ed152",
+  "today": "2026-10-06",
+  "earlier": "2026-10-05",
+  "reviewId": "8b3c360f-5891-4406-9323-29aed3e4dbca",
+  "reviewedThroughSeq": 4,
+  "correctionGroups": 2,
+  "liveReplyEditDelete": true,
+  "widths": {
+    "coach": [
+      1280,
+      375
+    ],
+    "client": [
+      375
+    ]
+  },
+  "errors": []
+}

@@ -1,33 +1,74 @@
-import {ChevronRight, Plus, UserRound, UsersRound} from 'lucide-react';
+import {Plus} from 'lucide-react';
 import {generatePath, Link, useLocation, useSearchParams} from 'react-router-dom';
 import {useBusiness} from '../api/business';
-import {useClients} from '../api/clients';
+import {type ReviewRosterFilters, useReviewRoster} from '../api/reviews';
+import {assessmentLabels, dueLabel} from '../reviews/review';
 import {routes} from '../routes';
 import {buttonVariants} from '../ui/button';
 import {InfiniteList} from '../ui/infinite-list';
-import {Label} from '../ui/label';
 import {ListSearch} from '../ui/list-search';
 import {Page, PageHeader, StatusBadge, Surface} from '../ui/page';
 import {SelectItem} from '../ui/select';
 import {SelectField} from '../ui/select-field';
-import {clientStateLabels, endingSoonLabel} from './coaching';
+import {clientStateLabels} from './coaching';
 
+const filterOptions = {
+  due: [
+    ['due', 'Due'],
+    ['overdue', 'Overdue'],
+    ['not_due', 'Not due'],
+    ['inactive', 'No current term'],
+  ],
+  last_reviewed: [
+    ['never', 'Never this term'],
+    ['reviewed', 'Reviewed this term'],
+  ],
+  assessment: Object.entries(assessmentLabels),
+  unread: [
+    ['true', 'Unread chat'],
+    ['false', 'No unread chat'],
+  ],
+  waiting: [
+    ['true', 'Waiting on client'],
+    ['false', 'No open requests'],
+  ],
+  state: Object.entries(clientStateLabels),
+  sort: [
+    ['due', 'Due'],
+    ['name', 'Client name'],
+    ['last_reviewed', 'Last reviewed'],
+    ['assessment', 'Assessment'],
+    ['unread_chat', 'Unread chat'],
+    ['waiting_since', 'Waiting since'],
+  ],
+  direction: [
+    ['asc', 'Ascending'],
+    ['desc', 'Descending'],
+  ],
+};
+const labels = {
+  due: 'Review due',
+  last_reviewed: 'Last reviewed',
+  assessment: 'Assessment',
+  unread: 'Chat',
+  waiting: 'Requests',
+  state: 'Coaching',
+  sort: 'Sort by',
+  direction: 'Order',
+};
 export function Clients() {
   const [params, setParams] = useSearchParams();
   const location = useLocation();
   const search = params.get('search')?.trim() ?? '';
-  const selected = params.get('state');
-  const state =
-    selected === 'active' ||
-    selected === 'ending_soon' ||
-    selected === 'joined' ||
-    selected === 'invited' ||
-    selected === 'ended'
-      ? selected
-      : undefined;
-  const clients = useClients({q: search, ...(state ? {state} : {})});
+  const filters: ReviewRosterFilters = {q: search};
+  for (const key of Object.keys(filterOptions) as (keyof typeof filterOptions)[]) {
+    const value = params.get(key);
+    if (filterOptions[key].some(([option]) => option === value)) {
+      Object.assign(filters, {[key]: key === 'unread' || key === 'waiting' ? value === 'true' : value});
+    }
+  }
+  const clients = useReviewRoster(filters);
   const business = useBusiness();
-  const counts = clients.data?.pages[0]?.summary;
   function changeFilter(name: string, value: string) {
     setParams(
       (previous) => {
@@ -48,8 +89,8 @@ export function Clients() {
         title="Clients"
         description={
           business.data
-            ? `${business.data.data.seats.used} of ${business.data.data.seats.limit} seats used · Invitations are free`
-            : 'Your clients and their invitations.'
+            ? `${business.data.data.seats.used} of ${business.data.data.seats.limit} seats used · Your daily review roster`
+            : 'Your daily review roster.'
         }
         actions={
           <Link
@@ -62,87 +103,112 @@ export function Clients() {
           </Link>
         }
       />
-      <div className="grid items-end gap-4 sm:grid-cols-[minmax(0,1fr)_14rem]">
-        <ListSearch label="Search clients" />
-        <div className="grid gap-2">
-          <Label
-            id="client-state-label"
-            htmlFor="client-state"
-          >
-            Coaching
-          </Label>
-          <SelectField
-            id="client-state"
-            value={state ?? 'all'}
-            onChange={(value) => changeFilter('state', value)}
-          >
-            <SelectItem id="all">All clients</SelectItem>
-            {Object.entries(clientStateLabels).map(([value, label]) => (
-              <SelectItem
-                key={value}
-                id={value}
+      <ListSearch label="Search clients" />
+      <details
+        className="rounded-xl border border-border p-4"
+        open={Boolean(location.search)}
+      >
+        <summary className="cursor-pointer font-medium">Sort and filter clients</summary>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {(Object.keys(filterOptions) as (keyof typeof filterOptions)[]).map((key) => (
+            <div
+              key={key}
+              className="space-y-2"
+            >
+              <p className="text-sm font-medium">{labels[key]}</p>
+              <SelectField
+                aria-label={labels[key]}
+                value={params.get(key) ?? (key === 'sort' ? 'due' : key === 'direction' ? 'asc' : 'all')}
+                onChange={(value) => changeFilter(key, value)}
               >
-                {value === 'joined' ? 'Joined' : label}
-                {counts ? ` (${counts[value as keyof typeof clientStateLabels]})` : ''}
-              </SelectItem>
-            ))}
-          </SelectField>
+                {key !== 'sort' && key !== 'direction' && <SelectItem id="all">All</SelectItem>}
+                {filterOptions[key].map(([value, label]) => (
+                  <SelectItem
+                    key={value}
+                    id={value ?? ''}
+                  >
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectField>
+            </div>
+          ))}
         </div>
-      </div>
+      </details>
       <InfiniteList
         query={clients}
         label="clients"
         singular="client"
         empty={
-          <Surface className="py-12 text-center sm:py-16">
-            <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-2xl bg-muted">
-              <UsersRound
-                size={24}
-                aria-hidden="true"
-              />
-            </div>
-            <h2 className="text-xl font-semibold">
-              {search || state ? 'No matching clients' : 'Invite your first client'}
-            </h2>
-            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-              {search || state
-                ? 'Try a different search or filter.'
-                : "They'll receive an invitation to join your coaching account."}
-            </p>
+          <Surface>
+            <h2 className="section-title">No matching clients</h2>
+            <p>Change the filters or invite a client.</p>
           </Surface>
         }
       >
-        {(client) => (
-          <Link
-            to={generatePath(routes.client, {id: client.id})}
-            state={{listSearch: location.search}}
-            className="client-row"
-          >
-            <span className="client-avatar">
-              <UserRound
-                size={20}
-                aria-hidden="true"
-              />
-            </span>
-            <div className="client-row-meta">
-              <div className="min-w-0 max-w-full">
-                <p className="break-words text-lg font-semibold">
-                  {client.preferred_name || client.full_name || client.email || client.phone || 'Client'}
-                </p>
-                <p className="mt-1 truncate text-sm text-muted-foreground">{client.email || client.phone}</p>
-                <p className="mt-1 text-sm text-muted-foreground">Coach: {client.coach_name}</p>
-                {endingSoonLabel(client) && <p className="mt-1 text-sm">{endingSoonLabel(client)}</p>}
+        {(person) => (
+          <article className="space-y-4 p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <Link
+                  className="text-link break-words text-lg font-semibold"
+                  to={generatePath(routes.client, {id: person.client_id})}
+                  state={{listSearch: location.search}}
+                >
+                  {person.preferred_name || person.full_name || 'Client'}
+                </Link>
+                <p className="text-sm text-muted-foreground">{person.email || person.phone}</p>
+                <p className="text-sm text-muted-foreground">Coach: {person.coach_name}</p>
               </div>
-              <StatusBadge tone={client.state === 'active' || client.state === 'ending_soon' ? 'positive' : 'neutral'}>
-                {clientStateLabels[client.state]}
-              </StatusBadge>
+              <StatusBadge tone={person.due ? 'neutral' : 'positive'}>{dueLabel(person)}</StatusBadge>
             </div>
-            <ChevronRight
-              size={18}
-              aria-hidden="true"
-              className="text-muted-foreground"
-            />
-          </Link>
+            <dl className="grid gap-4 text-sm sm:grid-cols-4">
+              <div>
+                <dt className="text-muted-foreground">Last reviewed</dt>
+                <dd>
+                  {person.last_reviewed_at ? new Date(person.last_reviewed_at).toLocaleDateString() : 'Never this term'}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Assessment</dt>
+                <dd>{person.assessment ? assessmentLabels[person.assessment] : 'No assessment'}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Chat</dt>
+                <dd>
+                  <Link
+                    className="text-link"
+                    to={generatePath(routes.clientConversation, {clientId: person.client_id})}
+                  >
+                    {person.unread_chat} unread
+                  </Link>
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Requests</dt>
+                <dd>
+                  {person.waiting_since
+                    ? `Waiting on client since ${new Date(person.waiting_since).toLocaleDateString()}`
+                    : 'No open requests'}
+                </dd>
+              </div>
+            </dl>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                className={buttonVariants({variant: 'outline'})}
+                to={generatePath(routes.newReview, {clientId: person.client_id})}
+                state={{listSearch: location.search}}
+              >
+                Review
+              </Link>
+              <Link
+                className={buttonVariants({variant: 'ghost'})}
+                to={generatePath(routes.reviews, {clientId: person.client_id})}
+              >
+                Review history
+              </Link>
+            </div>
+          </article>
         )}
       </InfiniteList>
     </Page>

@@ -9,6 +9,7 @@ export function safeReturnTo(value: string | null) {
     const url = new URL(value, 'https://clientapp.invalid');
     return [
       routes.home,
+      routes.trackers,
       routes.account,
       routes.accountDetails,
       routes.messages,
@@ -16,7 +17,8 @@ export function safeReturnTo(value: string | null) {
       routes.nutrition,
       routes.nutritionPlans,
     ].some((route) => route === url.pathname) ||
-      /^\/nutrition\/(plans\/[^/]+|days\/\d{4}-\d{2}-\d{2}\/[a-z_]+)$/.test(url.pathname) ||
+      /^\/nutrition\/(plans\/[^/]+|days\/\d{4}-\d{2}-\d{2}\/[a-zA-Z0-9_-]+)$/.test(url.pathname) ||
+      /^\/trackers\/[^/]+$/.test(url.pathname) ||
       /^\/training\/(sessions\/[^/]+|plans\/[^/]+(?:\/workouts\/[^/]+)?)$/.test(url.pathname)
       ? `${url.pathname}${url.search}${url.hash}`
       : routes.home;

@@ -3,8 +3,8 @@ import {flushSync} from 'react-dom';
 import {ApiError, errorMessage} from '../api/client';
 import {
   type LibraryKind,
+  useArchiveLibraryItem,
   useCopyLibraryItem,
-  useDeleteLibraryItem,
   useLibraryCopyCandidates,
 } from '../api/nutrition-library';
 import {Button} from '../ui/button';
@@ -31,14 +31,14 @@ export function LibraryAction({
   onDeleted: () => void;
 }) {
   const copy = useCopyLibraryItem(resource);
-  const remove = useDeleteLibraryItem(resource);
+  const remove = useArchiveLibraryItem(resource);
   const [pending, setPending] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const [error, setError] = useState('');
   const mounted = useRef(true);
   const errorRef = useRef<HTMLDivElement>(null);
   const submitRef = useRef<HTMLButtonElement>(null);
-  const inUse = remove.error instanceof ApiError && remove.error.code === 'in_use';
+
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -51,7 +51,7 @@ export function LibraryAction({
     }
   }, [error, pending]);
   async function submit() {
-    if (pending || uncertain || inUse) {
+    if (pending || uncertain) {
       return;
     }
     setPending(true);
@@ -102,14 +102,14 @@ export function LibraryAction({
       }}
     >
       <DialogHeader>
-        <DialogTitle>{action === 'copy' ? `Copy ${resource}` : `Delete ${resource}?`}</DialogTitle>
+        <DialogTitle>{action === 'copy' ? `Copy ${resource}` : `Archive ${resource}?`}</DialogTitle>
       </DialogHeader>
       <div className="dialog-body space-y-5">
         <p className="break-words font-semibold">{item.name}</p>
         <p className="text-sm text-muted-foreground">
           {action === 'copy'
             ? 'Start with its saved details, then rename and customize an independent copy. Recipes and plans using the original stay the same.'
-            : `This permanently removes the ${resource} from your library. Previously logged nutrition is kept.`}
+            : `This archives the ${resource} in the library. Published prescriptions and recorded nutrition are kept.`}
         </p>
         <div
           ref={errorRef}
@@ -137,17 +137,16 @@ export function LibraryAction({
             isDisabled={pending}
             onPress={onClose}
           >
-            {inUse ? 'Review usage' : 'Cancel'}
+            Cancel
           </Button>
           {!uncertain && (
             <Button
               ref={submitRef}
               variant={action === 'copy' ? 'default' : 'destructive'}
               isPending={pending}
-              isDisabled={inUse}
               onPress={submit}
             >
-              {action === 'copy' ? 'Create copy' : `Delete ${resource}`}
+              {action === 'copy' ? 'Create copy' : `Archive ${resource}`}
             </Button>
           )}
         </div>

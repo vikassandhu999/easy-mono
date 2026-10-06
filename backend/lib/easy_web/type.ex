@@ -31,11 +31,19 @@ defmodule EasyWeb.Type do
 
   @spec take_record(map(), module()) :: map()
   def take_record(value, module) do
-    {:record, fields} = Type.from_beam!(module, :t)
+    case Type.from_beam!(module, :t) do
+      {:record, fields} -> Enum.reduce(fields, %{}, &take_field(&1, &2, value))
+      {:dict, inner} -> Map.new(value, fn {key, item} -> {to_string(key), Dump.pick(item, inner)} end)
+      {:union, _} -> value
+    end
+  end
 
-    Map.new(fields, fn {name, _req, ir} ->
-      {name, Dump.pick(field(value, name), ir)}
-    end)
+  defp take_field({name, requirement, ir}, result, value) do
+    if requirement == :required or Map.has_key?(value, name) or Map.has_key?(value, to_string(name)) do
+      Map.put(result, name, Dump.pick(field(value, name), ir))
+    else
+      result
+    end
   end
 
   @spec field(map(), atom()) :: term()
@@ -44,7 +52,7 @@ defmodule EasyWeb.Type do
   end
 
   def field(value, name) when is_struct(value) or is_map(value) do
-    case Map.get(value, name) do
+    case Map.get(value, name, Map.get(value, to_string(name))) do
       %Ecto.Association.NotLoaded{} ->
         raise ArgumentError, "#{inspect(name)} is %Ecto.Association.NotLoaded{}"
 

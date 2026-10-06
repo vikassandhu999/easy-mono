@@ -26,6 +26,7 @@ defmodule Easy.Attachments.Attachment do
     field :content_type, :string
     field :byte_size, :integer
     field :duration_ms, :integer
+    field :captured_on, :date
 
     belongs_to :business, Business
     belongs_to :client, Client
@@ -37,7 +38,7 @@ defmodule Easy.Attachments.Attachment do
           Ecto.Changeset.t()
   def insert_changeset(business_id, uploaded_by_type, uploaded_by_id, client_id, id, attrs) do
     %__MODULE__{id: id}
-    |> cast(attrs, [:content_type, :byte_size, :duration_ms])
+    |> cast(attrs, [:content_type, :byte_size, :duration_ms, :captured_on])
     |> put_change(:business_id, business_id)
     |> put_change(:client_id, client_id)
     |> put_change(:uploaded_by_type, uploaded_by_type)
@@ -108,7 +109,7 @@ defmodule Easy.Attachments.Attachment do
   def for_ids(query, ids), do: from(attachment in query, where: attachment.id in ^ids)
 
   @spec content_types() :: [String.t()]
-  def content_types, do: @image_content_types ++ @video_content_types ++ @audio_content_types
+  def content_types, do: @image_content_types ++ @video_content_types ++ @audio_content_types ++ ["application/pdf"]
 
   @spec image_content_types() :: [String.t()]
   def image_content_types, do: @image_content_types
@@ -116,6 +117,7 @@ defmodule Easy.Attachments.Attachment do
   defp max_byte_size(type) when type in @image_content_types, do: 15 * 1024 * 1024
   defp max_byte_size(type) when type in @video_content_types, do: 50 * 1024 * 1024
   defp max_byte_size(type) when type in @audio_content_types, do: 10 * 1024 * 1024
+  defp max_byte_size("application/pdf"), do: 15 * 1024 * 1024
   defp max_byte_size(_type), do: nil
 
   defp validate_byte_size(changeset) do

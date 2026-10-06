@@ -3,10 +3,10 @@ defmodule Easy.Clients do
 
   alias Easy.Clients.Client
   alias Easy.Ctx
-  alias Easy.Nutrition.PlanReader
   alias Easy.Orgs.Coach
+  alias Easy.Plans.Reader, as: PlanReader
+  alias Easy.Plans.Reader, as: TrainingPlanReader
   alias Easy.Repo
-  alias Easy.Training.PlanReader, as: TrainingPlanReader
 
   @spec reassign_clients_to_owner(Ctx.t(), String.t()) :: {:ok, non_neg_integer()} | {:error, :not_owner}
   def reassign_clients_to_owner(%Ctx{} = ctx, coach_id) do
@@ -160,9 +160,8 @@ defmodule Easy.Clients do
 
     local_dates = Map.new(clients, &{&1.id, Client.local_date(&1, now)})
 
-    {:ok, training} = TrainingPlanReader.current_plan_names_for_clients(ctx, local_dates)
-    {:ok, nutrition_plans} = PlanReader.covering_plans_for_clients(ctx, local_dates)
-    nutrition = Map.new(nutrition_plans, fn {client_id, plan} -> {client_id, plan.name} end)
+    {:ok, training} = TrainingPlanReader.current_plan_names_for_clients(ctx, :training, local_dates)
+    {:ok, nutrition} = PlanReader.current_plan_names_for_clients(ctx, :nutrition, local_dates)
 
     Enum.map(clients, fn client ->
       %{

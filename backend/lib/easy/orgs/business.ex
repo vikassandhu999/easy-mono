@@ -8,6 +8,8 @@ defmodule Easy.Orgs.Business do
   @type t :: %__MODULE__{}
   @reserved ~w(admin api app www auth login signup support help billing settings assets static coach client coaches clients)
   schema "businesses" do
+    field :default_review_frequency_days, :integer, default: 7
+    field :default_tracker_template_id, :binary_id
     field :name, :string
     field :handle, :string
     field :timezone, :string, default: LocalCalendar.default_timezone()

@@ -24,7 +24,7 @@ Every attempt to give check-ins periods (open, due, reviewed, grace day, rollove
 | **Focus** | One line: the client's current priority, set by the coach. |
 | **Tracker request** | A coach asking the client for one Tracker, for example a blood report. |
 
-Only Reviews, Trackers, Tracker entries and Tracker requests are new tables. Focus and Review frequency are fields on the client. Workouts, meals, chat and plans are reused as they are.
+The tables for this feature, and for the training and nutrition records it reads, are defined in `.scratch/core-domains/overview.md`. Focus and Review frequency are fields on the client.
 
 ## How reviews are scheduled
 
@@ -65,18 +65,19 @@ There is no stored queue, task or follow-up object. Every column is derived. (Q3
 
 Assessment, note and reply stay editable after saving. The review time does not change.
 
-**"Seen" rule.** When the review screen loads, it records the moment it read the data, and the Review saves that moment. "New since last review" means changed after that moment. Anything that changes while the coach is reading still appears next time.
+**"Seen" rule.** When the review screen loads, it reads the client's change number (`last_change_seq`) together with the data, and the Review saves it as `reviewed_through_seq`. "New since last review" means changes with a greater number, including corrections and removals. Anything that changes while the coach is reading still appears next time.
 
 ## Trackers
 
 * Any Tracker entry can be recorded on any day. Nothing is ever late or locked. (Q19)
 * Timing is one of:
   * **After each workout / after each meal**: asked inside the workout-finish screen or the diary slot.
-  * **Daily** or **weekly**: a reminder only. Weekly reminders fire on the business's reminder weekday, Sunday by default, which a coach can change per client.
-  * **On request**: only when the coach asks.
+  * **Daily** or **weekly**: a reminder only. A weekly reminder has its own weekday, Sunday by default from the template, which a coach can change per client.
+
+  A Tracker that the coach asks for one time is a Tracker request, not a timing (see Focus and requests).
 * A reminder shows under "To record" on the client's Today screen when due, and disappears once recorded or when the day ends. (Q19)
 * The review says what exists ("Weight: 5 entries, average 82.1 kg") and "Not recorded" only when there are none. Event trackers show coverage ("Energy after 3 of 4 workouts"). (Q19)
-* Coaches can record entries for a client, labelled "Recorded by coach". Workouts and meals stay client-only. (Q20)
+* Coaches can record Tracker entries for a client, labelled "Recorded by coach". Workouts and meals stay client-only: the tables can store a coach as the author, but only the client may record them. (Q20)
 * Clients can record any library Tracker through "Add something else". It is not added to their list. (Q21)
 * List changes apply immediately. A removed Tracker stops prompting, and its entries stay. (Q22)
 * Built-in Trackers are stored in metric and shown in the client's `unit_system`. Custom units are free text with no conversion. (Q26)
@@ -107,7 +108,7 @@ Assessment, note and reply stay editable after saving. The review time does not 
 
 ## Defaults and access
 
-* Business settings hold the default Review frequency, the reminder weekday and the default Tracker list. A change always applies to new clients. On saving, the coach chooses whether to apply it to all existing clients too. (Q23)
+* Business settings hold the default Review frequency and the default Tracker template (each item has its timing and weekday). A change always applies to new clients. On saving, the coach chooses whether to apply it to all existing clients too. (Q23)
 * Access follows the existing rules. The owner sees every client. Other coaches see the clients they coach. (S-03)
 
 ## Decided later, when the build reaches it
@@ -120,7 +121,6 @@ These do not block the first steps.
 
 ## Future
 
-* Scheduled plan changes on a future date. (V1 follow-up)
 * AI parsing of PDF and image reports into structured values, keeping the originals. (Jev AI)
 * Event Trackers for one specific workout or meal.
 * Copying a Tracker list from another client.

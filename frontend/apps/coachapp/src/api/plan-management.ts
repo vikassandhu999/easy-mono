@@ -1,6 +1,14 @@
 import {useMutation, useQuery} from '@tanstack/react-query';
 import {ApiError, call, client} from './client';
-import {clientKeys, exerciseKeys, foodKeys, nutritionKeys, recipeKeys, trainingPlanKeys} from './keys';
+import {
+  clientKeys,
+  exerciseKeys,
+  foodKeys,
+  nutritionDayKeys,
+  nutritionKeys,
+  recipeKeys,
+  trainingPlanKeys,
+} from './keys';
 import {queryClient} from './query-client';
 import type {paths, TrainingPlan} from './schema';
 import {getSession} from './session';
@@ -43,9 +51,9 @@ function writePlan(resource: PlanResource, action: PlanAction, plan: PlanVersion
     case 'duplicate':
       return call(client.POST('/v1/coach/nutrition-plans/{id}/duplicate', {params: {path}}));
     case 'archive':
-      return call(client.POST('/v1/coach/nutrition-plans/{id}/archive', {params: {path, query: revision}}));
+      return call(client.POST('/v1/coach/nutrition-plans/{id}/archive', {params: {path}, body: revision}));
     case 'restore':
-      return call(client.POST('/v1/coach/nutrition-plans/{id}/restore', {params: {path, query: revision}}));
+      return call(client.POST('/v1/coach/nutrition-plans/{id}/restore', {params: {path}, body: revision}));
     case 'delete':
       return call(client.DELETE('/v1/coach/nutrition-plans/{id}', {params: {path, query: revision}}));
   }
@@ -81,8 +89,7 @@ export function useManagePlan(resource: PlanResource) {
         try {
           const latest = await readPlan(resource, plan.id);
           checkSession(sessionId);
-          const archived =
-            'status' in latest.data ? latest.data.status === 'archived' : latest.data.lifecycle === 'archived';
+          const archived = latest.data.status === 'archived';
           if ((action === 'archive' && archived) || (action === 'restore' && !archived)) {
             return plan.id;
           }
@@ -117,6 +124,7 @@ function invalidate(resource: PlanResource) {
     ...(resource === 'nutrition'
       ? [
           queryClient.invalidateQueries({queryKey: foodKeys.lists()}),
+          queryClient.invalidateQueries({queryKey: nutritionDayKeys.all}),
           queryClient.invalidateQueries({queryKey: recipeKeys.lists()}),
         ]
       : [queryClient.invalidateQueries({queryKey: exerciseKeys.lists()})]),

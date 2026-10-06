@@ -1,49 +1,29 @@
-import type {PerformedSet, Session, SessionPlannedSet} from '../api/training-sessions';
-
+import type {PerformedSet, Session} from '../api/training-sessions';
 export const sessionStateLabels = {
   active: 'In progress',
   completed: 'Completed',
   discarded: 'Discarded',
 } satisfies Record<Session['state'], string>;
-export const setTypeLabels = {working: 'Working', warmup: 'Warm-up', dropset: 'Drop set'} satisfies Record<
-  PerformedSet['set_type'],
+export const setTypeLabels = {working: 'Working', warmup: 'Warm-up', drop: 'Drop set'} satisfies Record<
+  PerformedSet['kind'],
   string
 >;
-
 export function sessionTitle(session: Session) {
-  return (
-    session.prescription_snapshot?.workout.name ||
-    (session.kind === 'freestyle' ? 'Freestyle session' : 'Planned session')
-  );
+  return session.prescription?.name ?? 'Freestyle workout';
 }
-
-type SetValues = Pick<
-  PerformedSet | SessionPlannedSet,
-  'reps' | 'load_value' | 'load_unit' | 'duration_seconds' | 'distance_value' | 'distance_unit' | 'rpe'
->;
-
-export function setValues(set: SetValues) {
-  const values: string[] = [];
-  if (set.reps !== null && set.reps !== '') {
-    values.push(`${set.reps} reps`);
-  }
-  if (set.load_unit === 'bodyweight') {
-    values.push('Bodyweight');
-  } else if (set.load_value !== null) {
-    values.push(
-      `${set.load_value} ${set.load_unit && set.load_unit !== 'none' ? set.load_unit : '(load unit not recorded)'}`,
-    );
-  }
-  if (set.duration_seconds !== null) {
-    values.push(`${set.duration_seconds} sec`);
-  }
-  if (set.distance_value !== null) {
-    values.push(
-      `${set.distance_value} ${set.distance_unit && set.distance_unit !== 'none' ? set.distance_unit : '(distance unit not recorded)'}`,
-    );
-  }
-  if (set.rpe !== null) {
-    values.push(`RPE ${set.rpe}`);
-  }
-  return values.join(' · ');
+export function setValues(set: PerformedSet) {
+  return [
+    set.reps !== null ? `${set.reps} reps` : '',
+    set.load_kg !== null
+      ? `${Math.round((Number(set.load_kg) / (set.entered_load_unit === 'lb' ? 0.45359237 : 1)) * 100) / 100} ${set.entered_load_unit ?? 'kg'}`
+      : '',
+    set.duration_s !== null ? `${set.duration_s} sec` : '',
+    set.distance_m !== null
+      ? `${Math.round((Number(set.distance_m) / (set.entered_distance_unit === 'km' ? 1000 : set.entered_distance_unit === 'mi' ? 1609.344 : 1)) * 100) / 100} ${set.entered_distance_unit ?? 'm'}`
+      : '',
+    set.rpe !== null ? `RPE ${set.rpe}` : '',
+    set.rir !== null ? `RIR ${set.rir}` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
 }

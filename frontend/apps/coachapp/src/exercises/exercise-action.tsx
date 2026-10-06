@@ -1,7 +1,7 @@
 import {useEffect, useRef, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {ApiError, errorMessage} from '../api/client';
-import {type Exercise, useCopyExercise, useDeleteExercise, useExercises} from '../api/exercises';
+import {type Exercise, useArchiveExercise, useCopyExercise, useExercises} from '../api/exercises';
 import {Button} from '../ui/button';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FormError} from '../ui/form-error';
@@ -25,13 +25,12 @@ export function ExerciseAction({
   onDeleted: () => void;
 }) {
   const copy = useCopyExercise();
-  const remove = useDeleteExercise();
+  const remove = useArchiveExercise();
   const form = useForm({defaultValues: {name: `${exercise.name.slice(0, 248)} (copy)`}});
   const [uncertain, setUncertain] = useState(false);
   const mounted = useRef(true);
   const errorRef = useRef<HTMLDivElement>(null);
   const pending = form.formState.isSubmitting;
-  const inUse = remove.error instanceof ApiError && remove.error.code === 'in_use';
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -58,7 +57,7 @@ export function ExerciseAction({
       }}
     >
       <DialogHeader>
-        <DialogTitle>{action === 'copy' ? 'Copy exercise' : 'Delete exercise?'}</DialogTitle>
+        <DialogTitle>{action === 'copy' ? 'Copy exercise' : 'Archive exercise?'}</DialogTitle>
       </DialogHeader>
       <form
         noValidate
@@ -118,8 +117,8 @@ export function ExerciseAction({
           </>
         ) : (
           <p className="text-sm text-muted-foreground">
-            This permanently removes the exercise from your library. Exercises used in planned workouts cannot be
-            deleted. Logged workout history is kept.
+            This hides the exercise from library lists. Published prescriptions and recorded workouts keep their
+            history.
           </p>
         )}
         <div
@@ -128,16 +127,7 @@ export function ExerciseAction({
         >
           <FormError message={form.formState.errors.root?.message} />
           {remove.isError && (
-            <FormError
-              message={
-                inUse
-                  ? 'A training plan still uses this exercise. Remove or replace it in those workouts before deleting it.'
-                  : errorMessage(
-                      remove.error,
-                      'Deletion could not be confirmed. Try again to check and remove this exercise.',
-                    )
-              }
-            />
+            <FormError message={errorMessage(remove.error, 'Archiving could not be confirmed. Try again.')} />
           )}
         </div>
         {uncertain && (
@@ -164,9 +154,8 @@ export function ExerciseAction({
               type="submit"
               variant={action === 'delete' ? 'destructive' : 'default'}
               isPending={pending}
-              isDisabled={inUse}
             >
-              {action === 'copy' ? 'Create copy' : 'Delete exercise'}
+              {action === 'copy' ? 'Create copy' : 'Archive exercise'}
             </Button>
           )}
         </div>

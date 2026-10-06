@@ -82,6 +82,12 @@ function Overview({id}: {id: string}) {
         actions={
           <>
             <Link
+              to={generatePath(routes.newReview, {clientId: id})}
+              className={buttonVariants()}
+            >
+              Review client
+            </Link>
+            <Link
               to={generatePath(routes.clientConversation, {clientId: id})}
               className={buttonVariants()}
             >
@@ -147,6 +153,24 @@ function Overview({id}: {id: string}) {
         </p>
       )}
       <ClientCoaching person={person} />
+      <Surface className="space-y-4">
+        <h2 className="section-title">Trackers</h2>
+        <p className="text-sm text-muted-foreground">
+          Manage reminders, request a report, or record and read client entries.
+        </p>
+        <Link
+          className={buttonVariants({variant: 'outline'})}
+          to={generatePath(routes.clientTrackers, {clientId: id})}
+        >
+          Client Trackers
+        </Link>
+        <Link
+          className={buttonVariants({variant: 'ghost'})}
+          to={generatePath(routes.trackerHistory, {clientId: id})}
+        >
+          Tracker history
+        </Link>
+      </Surface>
       <ClientTrainingPlans
         person={person}
         query={trainingPlans}

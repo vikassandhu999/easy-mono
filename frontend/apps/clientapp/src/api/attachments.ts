@@ -29,6 +29,11 @@ export function validateAttachment(blob: Blob) {
     case 'image/webp':
     case 'image/heic':
       return validatePhoto(blob);
+    case 'application/pdf':
+      if (blob.size > 0 && blob.size <= 15 * 1024 * 1024) {
+        return blob.type;
+      }
+      throw new Error('Choose a PDF no larger than 15 MiB.');
     case 'video/mp4':
     case 'video/webm':
     case 'video/quicktime':
@@ -81,7 +86,17 @@ async function uploadStoredPhoto(photo: StoredPhoto, sessionId: string) {
   const ticket =
     stored.upload && Date.parse(stored.upload.upload_url_expires_at) > Date.now() + 15_000
       ? stored.upload
-      : (await call(client.POST('/v1/client/uploads', {body: {content_type, byte_size: stored.blob.size}}))).data;
+      : (
+          await call(
+            client.POST('/v1/client/uploads', {
+              body: {
+                content_type,
+                byte_size: stored.blob.size,
+                ...(stored.capturedOn ? {captured_on: stored.capturedOn} : {}),
+              },
+            }),
+          )
+        ).data;
   const uploading = {...stored, upload: ticket};
   await updatePhoto(uploading, isCurrent);
   let result: Response;

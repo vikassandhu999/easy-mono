@@ -21,10 +21,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
-    workout_id = conn.body_params[:training_workout_id]
-    attrs = Map.delete(conn.body_params, :training_workout_id)
-
-    with {:ok, session} <- Execution.start_client_session(conn.assigns.ctx, workout_id, attrs) do
+    with {:ok, session} <- Execution.start_client_session(conn.assigns.ctx, conn.body_params) do
       ok(conn, %{data: session})
     end
   end

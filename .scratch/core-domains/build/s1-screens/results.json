@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "templateId": "030a4368-02a6-44e4-b826-f85f72d8760b",
+  "planId": "f7db7c22-a864-4085-99c8-9a533d5f8297",
+  "clientId": "64f09295-4058-40fb-9b78-95338471939e",
+  "sessionId": "ce0ed9ed-61b9-4d01-9d76-a0450d5516f9",
+  "earlierSessionId": "23d248bb-7c99-4e91-9f7a-4f0aac08c839",
+  "today": "2026-10-06",
+  "earlier": "2026-10-05",
+  "documentWrites": 1,
+  "offlineDraft": true,
+  "blankUnits": true,
+  "extraWorkout": true,
+  "errors": []
+}

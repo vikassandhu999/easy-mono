@@ -14,12 +14,24 @@ import {FormField} from '../ui/form-field';
 import {Label} from '../ui/label';
 import {useListLocation} from '../ui/list-location';
 import {FormActions, Page, PageHeader, StatusBadge, Surface} from '../ui/page';
+import {ReviewFrequency} from '../ui/review-frequency';
 import {SelectItem} from '../ui/select';
 import {SelectField} from '../ui/select-field';
 import {clientStateLabels} from './coaching';
 
-type Values = Pick<Client, 'full_name' | 'preferred_name' | 'phone' | 'email' | 'notes' | 'timezone' | 'unit_system'>;
-const textFields = ['full_name', 'preferred_name', 'phone', 'email', 'notes', 'timezone'] as const;
+type Values = Pick<
+  Client,
+  | 'full_name'
+  | 'preferred_name'
+  | 'phone'
+  | 'email'
+  | 'notes'
+  | 'timezone'
+  | 'unit_system'
+  | 'focus'
+  | 'review_frequency_days'
+>;
+const textFields = ['full_name', 'preferred_name', 'phone', 'email', 'notes', 'timezone', 'focus'] as const;
 function defaults(person: Client): Values {
   return {
     full_name: person.full_name,
@@ -29,6 +41,8 @@ function defaults(person: Client): Values {
     notes: person.notes ?? '',
     timezone: person.timezone ?? '',
     unit_system: person.unit_system,
+    focus: person.focus ?? '',
+    review_frequency_days: person.review_frequency_days,
   };
 }
 
@@ -126,6 +140,9 @@ function Profile({person}: {person: Client}) {
     if (form.formState.dirtyFields.unit_system) {
       patch.unit_system = values.unit_system;
     }
+    if (form.formState.dirtyFields.review_frequency_days) {
+      patch.review_frequency_days = values.review_frequency_days;
+    }
     form.clearErrors();
     setNotice('');
     try {
@@ -159,7 +176,7 @@ function Profile({person}: {person: Client}) {
               maxLength={255}
               isRequired
               isDisabled={pending}
-              rules={{validate: (value) => Boolean(value?.trim()) || 'Enter full name.'}}
+              rules={{validate: (value) => (typeof value === 'string' && Boolean(value.trim())) || 'Enter full name.'}}
             />
             <FormField
               control={form.control}
@@ -206,6 +223,25 @@ function Profile({person}: {person: Client}) {
         </Surface>
         <Surface className="space-y-5">
           <h2 className="section-title">Coaching preferences</h2>
+          <FormField
+            control={form.control}
+            name="focus"
+            label="Focus"
+            maxLength={255}
+            isDisabled={pending}
+            description="One line pinned on the client Today screen."
+          />
+          <Controller
+            control={form.control}
+            name="review_frequency_days"
+            render={({field}) => (
+              <ReviewFrequency
+                value={field.value}
+                onChange={field.onChange}
+                isDisabled={pending}
+              />
+            )}
+          />
           <Controller
             control={form.control}
             name="timezone"

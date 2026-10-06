@@ -89,7 +89,7 @@ export function useCopyLibraryItem(resource: LibraryKind) {
   });
 }
 
-export function useDeleteLibraryItem(resource: LibraryKind) {
+export function useArchiveLibraryItem(resource: LibraryKind) {
   return useMutation({
     onMutate: () => getSession()?.id,
     mutationFn: async (id: string) => {
@@ -110,7 +110,7 @@ export function useDeleteLibraryItem(resource: LibraryKind) {
             ? await client.GET('/v1/coach/nutrition-foods/{id}', {params: {path: {id}}})
             : await client.GET('/v1/coach/nutrition-recipes/{id}', {params: {path: {id}}});
         requireSession(sessionId);
-        if (result.response.status !== 404) {
+        if (result.response.status !== 404 && !result.data?.data.archived_at) {
           throw error;
         }
       }

@@ -6,6 +6,7 @@ defmodule Easy.CoachingTerms do
   alias Easy.CoachingTerms.CoachingTerm
   alias Easy.Ctx
   alias Easy.Repo
+  alias Easy.Trackers.Defaults
 
   @spec start_term_for_client(Ctx.t(), String.t()) :: {:ok, CoachingTerm.t()} | {:error, atom() | Ecto.Changeset.t()}
   def start_term_for_client(%Ctx{} = ctx, client_id) do
@@ -86,5 +87,12 @@ defmodule Easy.CoachingTerms do
   defp can_start(%Client{user_id: nil}), do: {:error, :invitation_not_accepted}
   defp can_start(%Client{current_term: term}) when not is_nil(term), do: {:error, :term_already_active}
   defp can_start(_client), do: :ok
-  defp insert_term(client), do: client.id |> CoachingTerm.insert_changeset(Client.local_date(client, DateTime.utc_now())) |> Repo.insert()
+
+  defp insert_term(client) do
+    ctx = %Ctx{business_id: client.business_id, client_id: client.id, user_id: client.user_id}
+
+    with {:ok, term} <- client.id |> CoachingTerm.insert_changeset(Client.local_date(client, DateTime.utc_now())) |> Repo.insert(),
+         {:ok, _} <- Defaults.copy_first_term(ctx, client, term),
+         do: {:ok, term}
+  end
 end

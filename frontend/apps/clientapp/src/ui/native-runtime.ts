@@ -22,7 +22,7 @@ export function deepLinkPath(value: string): string | null {
         '/nutrition',
         '/nutrition/plans',
       ].includes(url.pathname) &&
-      !/^\/nutrition\/(plans\/[^/]+|days\/\d{4}-\d{2}-\d{2}\/[a-z_]+)$/.test(url.pathname) &&
+      !/^\/nutrition\/(plans\/[^/]+|days\/\d{4}-\d{2}-\d{2}\/[a-zA-Z0-9_-]+)$/.test(url.pathname) &&
       !/^\/invite\/[^/]+$/.test(url.pathname) &&
       !/^\/training\/(sessions\/[^/]+|plans\/[^/]+(?:\/workouts\/[^/]+)?)$/.test(url.pathname)
     ) {

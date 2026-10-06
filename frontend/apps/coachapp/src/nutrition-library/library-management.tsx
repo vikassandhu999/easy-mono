@@ -150,20 +150,20 @@ function Management({resource, id}: {resource: LibraryKind; id: string}) {
         </InfiniteList>
         {current && (
           <Surface className="space-y-3">
-            <h2 className="section-title">Remove from library</h2>
+            <h2 className="section-title">Archive library item</h2>
             <p className="text-sm text-muted-foreground">
               {reason === 'shared_food'
                 ? 'Shared foods belong to the common library. Make a copy to create your own version.'
                 : reason === 'in_use'
-                  ? 'This item is still in use. Remove or replace it in recipes and plans first. Another coach or the business owner may need to update uses you cannot access.'
-                  : `Permanently delete this ${resource}. Previously logged nutrition is kept.`}
+                  ? 'This item is in use. Archiving keeps its published prescriptions and records.'
+                  : `Archive this ${resource} to hide it from library searches. Published prescriptions and records are kept.`}
             </p>
             <Button
               variant="outline"
-              isDisabled={unavailable || reason !== null}
+              isDisabled={unavailable || reason === 'shared_food'}
               onPress={() => setAction('delete')}
             >
-              Delete {resource}
+              Archive {resource}
             </Button>
           </Surface>
         )}

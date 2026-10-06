@@ -4,7 +4,7 @@ defmodule Easy.ChatRecordReferences do
   alias Easy.ClientAccess
   alias Easy.ClientAccount
   alias Easy.Ctx
-  alias Easy.Nutrition.DiarySlot
+  alias Easy.Nutrition.DiaryMeal
   alias Easy.Repo
   alias Easy.Training.TrainingSession
 
@@ -32,9 +32,14 @@ defmodule Easy.ChatRecordReferences do
       where: s.business_id == ^business_id and s.client_id == ^client_id and s.id == ^id and s.state == :completed,
       select: %{
         id: s.id,
-        title: fragment("COALESCE(?->'workout'->>'name', 'Workout')", s.prescription_snapshot),
-        occurred_on: s.date,
-        recorded_at: s.closed_at,
+        title:
+          fragment(
+            "COALESCE((SELECT w->>'name' FROM plan_revisions r, jsonb_array_elements(r.content->'workouts') w WHERE r.id=? AND w->>'id'=?::text), 'Workout')",
+            s.plan_revision_id,
+            s.workout_id
+          ),
+        occurred_on: s.local_date,
+        recorded_at: s.ended_at,
         revision: s.revision
       }
     )
@@ -42,15 +47,14 @@ defmodule Easy.ChatRecordReferences do
   end
 
   defp load_record(business_id, client_id, "meal", id) do
-    from(s in DiarySlot,
+    from(s in DiaryMeal,
       where: s.business_id == ^business_id and s.client_id == ^client_id and s.id == ^id and not is_nil(s.shared_at),
       select: %{
         id: s.id,
-        title: fragment("initcap(replace(?::text, '_', ' '))", s.meal_slot),
+        title: s.name,
         occurred_on: s.local_date,
         recorded_at: s.shared_at,
-        revision: s.revision,
-        meal_slot: type(s.meal_slot, :string)
+        revision: s.revision
       }
     )
     |> Repo.one()

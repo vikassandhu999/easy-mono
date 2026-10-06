@@ -7,14 +7,13 @@ defmodule Easy.Repo.Seeds.Training do
   import Ecto.Query
 
   @exercise_fields [
-    :source,
-    :tracking_type,
+    :measures,
+    :bodyweight,
     :name,
-    :description,
     :instructions,
     :mechanics,
     :force,
-    :images,
+    :media_id,
     :import_id
   ]
   @tracking_types [
@@ -170,13 +169,12 @@ defmodule Easy.Repo.Seeds.Training do
       id: Ecto.UUID.generate(),
       import_id: data["id"],
       name: data["title"] || data["name"],
-      description: data["manual_tag"] || data["category"],
       instructions: parse_instructions(data["instructions"]),
-      tracking_type: parse_tracking_type(data["exercise_type"]),
+      measures: elem(measures(data), 0),
+      bodyweight: elem(measures(data), 1),
       mechanics: parse_enum(data["mechanics"] || data["mechanic"], [:compound, :isolation, :isometric]),
       force: parse_enum(data["force"], [:push, :pull, :static]),
-      images: exercise_images(data),
-      source: :system,
+      media_id: seed_image(List.first(exercise_images(data)),now),
       business_id: nil,
       inserted_at: now,
       updated_at: now
@@ -301,6 +299,34 @@ defmodule Easy.Repo.Seeds.Training do
     if atom in valid, do: atom, else: nil
   rescue
     ArgumentError -> nil
+  end
+
+  defp seed_image(url,now) when is_binary(url) and url != "" do
+    existing=Repo.one(from(m in Easy.LibraryMedia.Media, where: is_nil(m.business_id) and m.external_url == ^url,limit: 1))
+    if existing do
+      existing.id
+    else
+      id=Ecto.UUID.generate()
+      Repo.insert_all(Easy.LibraryMedia.Media,[%{id: id,uploaded_by_type: :system,external_url: url,inserted_at: now,updated_at: now}])
+      id
+    end
+  end
+  defp seed_image(_url,_now),do: nil
+
+  defp measures(data) do
+    type=parse_tracking_type(data["exercise_type"])
+    name=data["title"] || data["name"] || ""
+    cond do
+      String.contains?(name,"(Weighted)") -> {[:reps,:load],true}
+      type in [:bodyweight_reps] -> {[:reps],true}
+      type in [:weighted_bodyweight,:assisted_bodyweight] -> {[:reps,:load],true}
+      type == :reps_only -> {[:reps],false}
+      type == :duration -> {[:duration],false}
+      type == :weight_duration -> {[:load,:duration],false}
+      type == :distance_duration -> {[:distance,:duration],false}
+      type == :weight_distance -> {[:load,:distance],false}
+      true -> {[:reps,:load],false}
+    end
   end
 
   defp parse_tracking_type("bodyweight_assisted_reps"), do: :assisted_bodyweight

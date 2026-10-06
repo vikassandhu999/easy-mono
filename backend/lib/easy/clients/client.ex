@@ -12,25 +12,28 @@ defmodule Easy.Clients.Client do
   @type state_counts :: %{required(state()) => non_neg_integer()}
 
   schema "clients" do
-    field :email, :string
-    field :full_name, :string
-    field :preferred_name, :string
-    field :phone, :string
-    field :notes, :string
-    field :timezone, :string
-    field :unit_system, Ecto.Enum, values: [:metric, :imperial], default: :metric
-    field :last_active_at, :utc_datetime
-    field :joined_at, :utc_datetime_usec
-    field :invite_token, :string
-    field :invited_at, :utc_datetime
-    field :state, Ecto.Enum, values: [:invited, :active, :ending_soon, :joined, :ended], virtual: true
-    field :current_term, :map, virtual: true
-    field :training_plan_name, :string, virtual: true
-    field :nutrition_plan_name, :string, virtual: true
-    belongs_to :user, Easy.Identity.User
-    belongs_to :business, Orgs.Business
-    belongs_to :coach, Orgs.Coach
-    has_many :terms, CoachingTerm, preload_order: [desc: :starts_on, desc: :id]
+    field(:email, :string)
+    field(:full_name, :string)
+    field(:preferred_name, :string)
+    field(:phone, :string)
+    field(:notes, :string)
+    field(:timezone, :string)
+    field(:unit_system, Ecto.Enum, values: [:metric, :imperial], default: :metric)
+    field(:focus, :string)
+    field(:review_frequency_days, :integer, default: 7)
+    field(:last_change_seq, :integer, default: 0)
+    field(:last_active_at, :utc_datetime)
+    field(:joined_at, :utc_datetime_usec)
+    field(:invite_token, :string)
+    field(:invited_at, :utc_datetime)
+    field(:state, Ecto.Enum, values: [:invited, :active, :ending_soon, :joined, :ended], virtual: true)
+    field(:current_term, :map, virtual: true)
+    field(:training_plan_name, :string, virtual: true)
+    field(:nutrition_plan_name, :string, virtual: true)
+    belongs_to(:user, Easy.Identity.User)
+    belongs_to(:business, Orgs.Business)
+    belongs_to(:coach, Orgs.Coach)
+    has_many(:terms, CoachingTerm, preload_order: [desc: :starts_on, desc: :id])
     timestamps(type: :utc_datetime)
   end
 
@@ -49,17 +52,39 @@ defmodule Easy.Clients.Client do
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(client, attrs), do: client |> cast(attrs, @profile_fields) |> validate_profile() |> validate_constraints()
+  def update_changeset(client, attrs),
+    do:
+      client
+      |> cast(attrs, @profile_fields ++ [:focus, :review_frequency_days])
+      |> validate_review_settings()
+      |> validate_profile()
+      |> validate_constraints()
 
   @spec self_update_changeset(t(), map()) :: Ecto.Changeset.t()
-  def self_update_changeset(client, attrs), do: client |> cast(attrs, [:full_name, :preferred_name, :phone, :unit_system]) |> validate_profile()
+  def self_update_changeset(client, attrs),
+    do: client |> cast(attrs, [:full_name, :preferred_name, :phone, :unit_system]) |> validate_profile()
 
   @spec resend_invite_changeset(t(), DateTime.t()) :: Ecto.Changeset.t()
   def resend_invite_changeset(client, now), do: change(client, invite_token: token(), invited_at: now)
 
   @spec delete_invitation_changeset(t()) :: Ecto.Changeset.t()
   def delete_invitation_changeset(client) do
-    client |> change() |> foreign_key_constraint(:base, name: :workout_sessions_client_id_fkey, message: "client has activity records and cannot be revoked")
+    client
+    |> change()
+    |> foreign_key_constraint(:base,
+      name: :workout_sessions_client_id_fkey,
+      message: "client has activity records and cannot be revoked"
+    )
+  end
+
+  defp validate_review_settings(changeset) do
+    changeset
+    |> validate_required([:review_frequency_days])
+    |> validate_inclusion(:review_frequency_days, [1, 3, 7, 14, 28])
+    |> validate_length(:focus, max: 255)
+    |> validate_format(:focus, ~r/^[^\r\n]*$/)
+    |> check_constraint(:focus, name: :clients_focus_check)
+    |> check_constraint(:review_frequency_days, name: :clients_review_frequency_check)
   end
 
   defp validate_profile(changeset) do
@@ -72,7 +97,9 @@ defmodule Easy.Clients.Client do
     |> validate_length(:notes, max: 2000)
     |> update_change(:email, &Orgs.Coach.normalize_email/1)
     |> validate_format(:email, ~r/^[^\s@]+@[^\s@]+$/)
-    |> validate_change(:timezone, fn :timezone, zone -> if Tzdata.zone_exists?(zone), do: [], else: [timezone: "choose a valid time zone"] end)
+    |> validate_change(:timezone, fn :timezone, zone ->
+      if Tzdata.zone_exists?(zone), do: [], else: [timezone: "choose a valid time zone"]
+    end)
   end
 
   defp validate_constraints(changeset) do
@@ -117,10 +144,13 @@ defmodule Easy.Clients.Client do
   end
 
   @spec invitation_expires_at(t()) :: DateTime.t() | nil
-  def invitation_expires_at(%__MODULE__{user_id: nil, invited_at: at}) when not is_nil(at), do: DateTime.add(at, 30, :day)
+  def invitation_expires_at(%__MODULE__{user_id: nil, invited_at: at}) when not is_nil(at),
+    do: DateTime.add(at, 30, :day)
+
   def invitation_expires_at(_), do: nil
   @spec invitation_expired?(t(), DateTime.t()) :: boolean()
-  def invitation_expired?(client, now), do: not is_nil(invitation_expires_at(client)) and DateTime.compare(now, invitation_expires_at(client)) == :gt
+  def invitation_expired?(client, now),
+    do: not is_nil(invitation_expires_at(client)) and DateTime.compare(now, invitation_expires_at(client)) == :gt
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, id), do: from(c in query, where: c.business_id == ^id)
@@ -247,7 +277,8 @@ defmodule Easy.Clients.Client do
   end
 
   @spec active_elsewhere(String.t(), String.t()) :: Ecto.Query.t()
-  def active_elsewhere(user_id, business_id), do: from(c in active(), where: c.user_id == ^user_id and c.business_id != ^business_id)
+  def active_elsewhere(user_id, business_id),
+    do: from(c in active(), where: c.user_id == ^user_id and c.business_id != ^business_id)
 
   @spec active_for_email(String.t()) :: Ecto.Query.t()
   def active_for_email(email), do: from(c in active(), join: u in assoc(c, :user), where: u.email == ^email)
@@ -269,7 +300,9 @@ defmodule Easy.Clients.Client do
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__), do: from(c in query, order_by: [desc: c.inserted_at, desc: c.id])
   @spec by_last_active(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def by_last_active(query \\ __MODULE__), do: from(c in query, order_by: [desc_nulls_last: c.last_active_at, desc: c.inserted_at, desc: c.id])
+  def by_last_active(query \\ __MODULE__),
+    do: from(c in query, order_by: [desc_nulls_last: c.last_active_at, desc: c.inserted_at, desc: c.id])
+
   @spec include_preloads(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def include_preloads(query \\ __MODULE__, business_id) do
     coaches = Orgs.Coach.for_business(business_id)

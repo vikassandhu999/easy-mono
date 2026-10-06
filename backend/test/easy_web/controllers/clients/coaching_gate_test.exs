@@ -6,13 +6,19 @@ defmodule EasyWeb.Clients.CoachingGateTest do
   test "every mutating client route rejects ended coaching before validation" do
     client =
       insert(:client,
-        terms: [build(:coaching_term, starts_on: Date.add(Date.utc_today(), -30), ends_on: Date.add(Date.utc_today(), -1))]
+        terms: [
+          build(:coaching_term, starts_on: Date.add(Date.utc_today(), -30), ends_on: Date.add(Date.utc_today(), -1))
+        ]
       )
 
     for route <- EasyWeb.Router.__routes__(),
         String.starts_with?(route.path, "/v1/client/"),
         route.verb != :get do
-      path = route.path |> String.replace(":date", Date.to_iso8601(Date.utc_today())) |> String.replace(~r/:[a-z_]+/, Ecto.UUID.generate())
+      path =
+        route.path
+        |> String.replace(":date", Date.to_iso8601(Date.utc_today()))
+        |> String.replace(~r/:[a-z_]+/, Ecto.UUID.generate())
+
       conn = build_conn() |> authenticate_client(client)
       response = Phoenix.ConnTest.dispatch(conn, @endpoint, route.verb, path, %{})
       assert %{"error_code" => "coaching_required"} = json_response(response, 403), "#{route.verb} #{route.path}"
@@ -29,7 +35,7 @@ defmodule EasyWeb.Clients.CoachingGateTest do
     insert(:coaching_term, client: client, starts_on: today, ends_on: today)
 
     response = build_conn() |> authenticate_client(client) |> post("/v1/client/training-sessions", %{})
-    assert %{"data" => %{"date" => date, "state" => "active"}} = json_response(response, 201)
+    assert %{"data" => %{"local_date" => date, "state" => "active"}} = json_response(response, 201)
     assert date == Date.to_iso8601(today)
   end
 end

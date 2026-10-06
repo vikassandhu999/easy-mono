@@ -199,6 +199,7 @@ defmodule EasyWeb.TypedRoute.Type do
   defp normalize_map_key({:required, _, [name]}) when is_atom(name), do: {:field, name, :required}
   defp normalize_map_key({:required, _, [key]}), do: normalize_map_key(key)
   defp normalize_map_key({:optional, _, [name]}) when is_atom(name), do: {:field, name, :optional}
+  defp normalize_map_key({:optional, _, [key]}), do: normalize_map_key(key)
   defp normalize_map_key(name) when is_atom(name), do: {:field, name, :required}
 
   defp normalize_map_key({{:., _, [String, :t]}, _, []}), do: {:dict, :string}

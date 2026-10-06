@@ -1,109 +1,134 @@
-import type {
-  DayEntryInput,
-  DaySlotInput,
-  NutritionDayOption,
-  NutritionDaySlot,
-  NutritionPortion,
-} from '../api/nutrition';
+import type {DiaryMeal, EntryInput, MealInput, NutritionMeal, NutritionPortion, NutritionSlot} from '../api/nutrition';
 
-export const mealSlots = [
-  'early_morning',
-  'breakfast',
-  'mid_morning',
-  'lunch',
-  'afternoon',
-  'evening',
-  'dinner',
-  'pre_sleep',
-  'pre_workout',
-  'during_workout',
-  'post_workout',
-] as const satisfies readonly DaySlotInput['meal_slot'][];
-export type MealSlot = DaySlotInput['meal_slot'];
-export function isMealSlot(value: unknown): value is MealSlot {
-  return typeof value === 'string' && mealSlots.some((slot) => slot === value);
+export function portionText(portion: NutritionPortion | null) {
+  return !portion ? 'Quick add' : portion.type === 'grams' ? `${portion.grams} g` : `${portion.amount} serving(s)`;
 }
-export function slotLabel(slot: MealSlot) {
-  return slot.replaceAll('_', ' ').replace(/^./, (letter) => letter.toUpperCase());
+export function portionAmount(portion: NutritionPortion | null) {
+  return !portion ? '' : String(portion.type === 'grams' ? portion.grams : portion.amount);
 }
-export function portionText(portion: NutritionPortion) {
-  return portion.kind === 'gram' ? `${portion.grams} g` : `${portion.amount} ${portion.label || portion.unit}`;
-}
-export function portionAmount(portion: NutritionPortion) {
-  return String(portion.kind === 'gram' ? portion.grams : portion.amount);
-}
-
-export type MealEntry = {name: string; input: DayEntryInput; amount: string; included: boolean};
+export type MealEntry = {name: string; input: EntryInput; amount: string; included: boolean};
 export type MealDraft = {
-  version: 1;
+  version: 2;
   date: string;
-  slot: MealSlot;
+  slot: string;
+  id: string;
+  requestId: string;
+  name: string;
+  planRevisionId: string | null;
+  slotId: string | null;
   revision: number;
   mealId: string | null;
   noteToCoach: string;
   entries: MealEntry[];
-  attempt: DaySlotInput | null;
+  attempt: MealInput | null;
 };
 
-export function initialMealDraft(date: string, slot: MealSlot, saved?: NutritionDaySlot): MealDraft {
-  return {
-    version: 1,
+export function initialMealDraft(
+  date: string,
+  slot: string,
+  saved?: DiaryMeal | null,
+  planned?: NutritionSlot,
+): MealDraft {
+  const draft: MealDraft = {
+    version: 2,
     date,
     slot,
+    id: saved?.id ?? crypto.randomUUID(),
+    requestId: crypto.randomUUID(),
+    name: saved?.name ?? planned?.name ?? 'Meal',
+    planRevisionId: saved?.plan_revision_id ?? planned?.plan_revision_id ?? null,
+    slotId: saved?.slot_id ?? planned?.id ?? null,
     revision: saved?.revision ?? 0,
-    mealId: saved?.meal_id ?? null,
+    mealId: saved?.chosen_meal_id ?? null,
     noteToCoach: saved?.note_to_coach ?? '',
     attempt: null,
     entries:
-      saved?.rows.map((row) => ({
-        name: row.name,
-        amount: portionAmount(row.portion),
-        included: row.entry_id !== null,
+      saved?.entries.map((entry) => ({
+        name: entry.name,
+        amount: portionAmount(entry.portion),
+        included: true,
         input: {
-          id: row.entry_id ?? crypto.randomUUID(),
-          planned_item_ref: row.planned_item_ref,
-          food_id: row.food_id,
-          recipe_id: row.recipe_id,
-          portion: row.portion,
-          notes: row.notes,
+          id: entry.id,
+          request_id: crypto.randomUUID(),
+          planned_item_id: entry.planned_item_id,
+          source: entry.source,
+          portion: entry.portion,
+          name: entry.name,
+          nutrients: entry.nutrients,
+          notes: entry.notes,
         },
       })) ?? [],
   };
+  return !saved && planned?.options[0] ? chooseAlternative(draft, planned.options[0]) : draft;
 }
 
-export function chooseAlternative(draft: MealDraft, option: NutritionDayOption): MealDraft {
+export function chooseAlternative(draft: MealDraft, option: NutritionMeal): MealDraft {
   return {
     ...draft,
-    mealId: option.meal_id,
+    mealId: option.id,
     entries: [
       ...option.items.map((item) => ({
-        name: item.name ?? 'Unavailable item',
+        name: item.name ?? 'Planned food',
         amount: portionAmount(item.portion),
         included: false,
         input: {
           id: crypto.randomUUID(),
-          planned_item_ref: item.planned_item_ref,
-          food_id: item.food_id,
-          recipe_id: item.recipe_id,
+          request_id: crypto.randomUUID(),
+          planned_item_id: item.id,
+          source: item.source,
           portion: item.portion,
+          name: item.name ?? 'Planned food',
           notes: null,
         },
       })),
-      ...draft.entries.filter((entry) => entry.input.planned_item_ref === null),
+      ...draft.entries.filter((entry) => entry.input.planned_item_id === null),
     ],
   };
 }
 
-export function mealInput(draft: MealDraft): DaySlotInput {
+export function reviewMealDraft(draft: MealDraft, saved: DiaryMeal): MealDraft {
+  const samePrescription = draft.planRevisionId === saved.plan_revision_id && draft.mealId === saved.chosen_meal_id;
   return {
-    meal_slot: draft.slot,
+    ...draft,
+    id: saved.id,
+    name: saved.name,
+    revision: saved.revision,
+    planRevisionId: saved.plan_revision_id,
+    slotId: saved.slot_id,
+    mealId: saved.chosen_meal_id,
+    requestId: crypto.randomUUID(),
+    attempt: null,
+    entries: draft.entries.map((entry) => ({
+      ...entry,
+      input: {
+        ...entry.input,
+        request_id: crypto.randomUUID(),
+        planned_item_id: samePrescription ? entry.input.planned_item_id : null,
+      },
+    })),
+  };
+}
+
+export function mealInput(draft: MealDraft): MealInput {
+  if (!draft.name.trim()) {
+    throw new Error('Enter a meal name.');
+  }
+  return {
+    id: draft.id,
+    request_id: draft.requestId,
+    expected_revision: draft.revision,
+    plan_revision_id: draft.planRevisionId,
+    slot_id: draft.slotId,
+    name: draft.name.trim(),
+    chosen_meal_id: draft.mealId,
     share: true,
     note_to_coach: draft.noteToCoach.trim() || null,
-    meal_id: draft.mealId,
-    expected_revision: draft.revision,
     entries: draft.entries
       .filter((entry) => entry.included)
       .map((entry) => {
+        if (!entry.input.portion) {
+          return entry.input;
+        }
         const amount = Number(entry.amount);
         if (!entry.amount.trim() || !Number.isFinite(amount) || amount <= 0) {
           throw new Error(`Enter a portion greater than zero for ${entry.name}.`);
@@ -111,177 +136,110 @@ export function mealInput(draft: MealDraft): DaySlotInput {
         return {
           ...entry.input,
           portion:
-            entry.input.portion.kind === 'gram' ? {kind: 'gram', grams: amount} : {...entry.input.portion, amount},
+            entry.input.portion.type === 'grams'
+              ? {type: 'grams' as const, grams: amount}
+              : {...entry.input.portion, amount},
         };
       }),
   };
 }
 
-const nullableString = (value: unknown): value is string | null => value === null || typeof value === 'string';
-function parsePortion(value: unknown): NutritionPortion | null {
-  if (!value || typeof value !== 'object' || !('kind' in value)) {
-    return null;
-  }
+const object = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+const nullableString = (value: unknown) => value === null || typeof value === 'string';
+function validEntry(value: unknown): value is EntryInput {
   if (
-    value.kind === 'gram' &&
-    'grams' in value &&
-    typeof value.grams === 'number' &&
-    Number.isFinite(value.grams) &&
-    value.grams > 0
-  ) {
-    return {kind: 'gram', grams: value.grams};
-  }
-  if (
-    value.kind === 'serving' &&
-    'amount' in value &&
-    typeof value.amount === 'number' &&
-    Number.isFinite(value.amount) &&
-    value.amount > 0 &&
-    'unit' in value &&
-    typeof value.unit === 'string' &&
-    'label' in value &&
-    nullableString(value.label)
-  ) {
-    return {kind: 'serving', amount: value.amount, unit: value.unit, label: value.label};
-  }
-  return null;
-}
-function parseEntry(value: unknown): DayEntryInput | null {
-  if (
-    !value ||
-    typeof value !== 'object' ||
-    !('id' in value) ||
+    !object(value) ||
     typeof value.id !== 'string' ||
-    !('planned_item_ref' in value) ||
-    !nullableString(value.planned_item_ref) ||
-    !('food_id' in value) ||
-    !nullableString(value.food_id) ||
-    !('recipe_id' in value) ||
-    !nullableString(value.recipe_id) ||
-    (value.food_id !== null && value.recipe_id !== null) ||
-    !('notes' in value) ||
-    !nullableString(value.notes) ||
-    !('portion' in value)
+    typeof value.request_id !== 'string' ||
+    !nullableString(value.planned_item_id) ||
+    !nullableString(value.notes)
   ) {
-    return null;
+    return false;
   }
-  const portion = parsePortion(value.portion);
-  return portion
-    ? {
-        id: value.id,
-        planned_item_ref: value.planned_item_ref,
-        food_id: value.food_id,
-        recipe_id: value.recipe_id,
-        portion,
-        notes: value.notes,
-      }
-    : null;
-}
-function parseAttempt(value: unknown): DaySlotInput | null {
+  if (value.source === null) {
+    return (
+      value.portion === null &&
+      object(value.nutrients) &&
+      Object.values(value.nutrients).every((n) => typeof n === 'number' && Number.isFinite(n) && n >= 0)
+    );
+  }
   if (
-    !value ||
-    typeof value !== 'object' ||
-    !('meal_slot' in value) ||
-    !isMealSlot(value.meal_slot) ||
-    !('meal_id' in value) ||
-    !nullableString(value.meal_id) ||
-    !('expected_revision' in value) ||
-    typeof value.expected_revision !== 'number' ||
-    !Number.isInteger(value.expected_revision) ||
-    value.expected_revision < 0 ||
-    !('entries' in value) ||
-    !Array.isArray(value.entries)
+    !object(value.source) ||
+    !['food', 'recipe'].includes(String(value.source.type)) ||
+    typeof value.source.id !== 'string' ||
+    !object(value.portion)
   ) {
-    return null;
+    return false;
   }
-  const entries: DayEntryInput[] = [];
-  for (const raw of value.entries) {
-    const entry = parseEntry(raw);
-    if (!entry) {
-      return null;
-    }
-    entries.push(entry);
-  }
-  if ('note_to_coach' in value && !nullableString(value.note_to_coach)) {
-    return null;
-  }
-  return {
-    meal_slot: value.meal_slot,
-    share: true,
-    note_to_coach: 'note_to_coach' in value && typeof value.note_to_coach === 'string' ? value.note_to_coach : null,
-    meal_id: value.meal_id,
-    expected_revision: value.expected_revision,
-    entries,
-  };
+  const portion = value.portion;
+  return portion.type === 'grams'
+    ? typeof portion.grams === 'number' && Number.isFinite(portion.grams) && portion.grams > 0
+    : portion.type === 'serving' &&
+        typeof portion.serving_id === 'string' &&
+        typeof portion.amount === 'number' &&
+        Number.isFinite(portion.amount) &&
+        portion.amount > 0;
 }
-export function parseMealDraft(value: unknown, date: string, slot: MealSlot): MealDraft | null {
+export function parseMealDraft(value: unknown, date: string, slot: string): MealDraft | null {
   if (
-    !value ||
-    typeof value !== 'object' ||
-    !('version' in value) ||
-    value.version !== 1 ||
-    !('date' in value) ||
+    !object(value) ||
+    value.version !== 2 ||
     value.date !== date ||
-    !('slot' in value) ||
     value.slot !== slot ||
-    !('revision' in value) ||
+    typeof value.id !== 'string' ||
+    typeof value.requestId !== 'string' ||
+    typeof value.name !== 'string' ||
+    !nullableString(value.planRevisionId) ||
+    !nullableString(value.slotId) ||
+    !nullableString(value.mealId) ||
+    typeof value.noteToCoach !== 'string' ||
     typeof value.revision !== 'number' ||
     !Number.isInteger(value.revision) ||
     value.revision < 0 ||
-    !('mealId' in value) ||
-    !nullableString(value.mealId) ||
-    !('entries' in value) ||
     !Array.isArray(value.entries) ||
     !('attempt' in value)
   ) {
     return null;
   }
   const entries: MealEntry[] = [];
-  for (const raw of value.entries) {
+  for (const entry of value.entries) {
     if (
-      !raw ||
-      typeof raw !== 'object' ||
-      !('input' in raw) ||
-      !('amount' in raw) ||
-      typeof raw.amount !== 'string' ||
-      !('name' in raw) ||
-      typeof raw.name !== 'string' ||
-      !('included' in raw) ||
-      typeof raw.included !== 'boolean'
+      !object(entry) ||
+      typeof entry.name !== 'string' ||
+      typeof entry.amount !== 'string' ||
+      typeof entry.included !== 'boolean' ||
+      !validEntry(entry.input)
     ) {
       return null;
     }
-    const input = parseEntry(raw.input);
-    if (!input) {
-      return null;
-    }
-    entries.push({name: raw.name, amount: raw.amount, included: raw.included, input});
-  }
-  const attempt = value.attempt === null ? null : parseAttempt(value.attempt);
-  if (
-    value.attempt !== null &&
-    (!attempt || attempt.meal_slot !== slot || attempt.expected_revision !== value.revision)
-  ) {
-    return null;
+    entries.push({name: entry.name, amount: entry.amount, included: entry.included, input: entry.input});
   }
   if (new Set(entries.map((entry) => entry.input.id)).size !== entries.length) {
     return null;
   }
   const draft: MealDraft = {
-    version: 1,
+    version: 2,
     date,
     slot,
+    id: value.id,
+    requestId: value.requestId,
+    name: value.name,
+    planRevisionId: value.planRevisionId as string | null,
+    slotId: value.slotId as string | null,
+    mealId: value.mealId as string | null,
     revision: value.revision,
-    mealId: value.mealId,
-    noteToCoach: 'noteToCoach' in value && typeof value.noteToCoach === 'string' ? value.noteToCoach : '',
+    noteToCoach: value.noteToCoach,
     entries,
-    attempt,
+    attempt: null,
   };
-  if (attempt) {
+  if (value.attempt !== null) {
     try {
-      if (JSON.stringify(mealInput(draft)) !== JSON.stringify(attempt)) {
+      const expected = mealInput(draft);
+      if (JSON.stringify(expected) !== JSON.stringify(value.attempt)) {
         return null;
       }
+      draft.attempt = expected;
     } catch {
       return null;
     }

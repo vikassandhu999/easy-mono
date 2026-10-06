@@ -36,7 +36,7 @@ export function Exercises() {
           role="status"
           className="break-words text-sm"
         >
-          {deleted} deleted.
+          {deleted} archived.
         </p>
       )}
       <InfiniteList
@@ -66,10 +66,10 @@ export function Exercises() {
             {exercise.equipment.length > 0 && (
               <p className="text-sm text-muted-foreground">{exercise.equipment.map((item) => item.name).join(' · ')}</p>
             )}
-            {exercise.description && (
-              <p className="line-clamp-2 text-sm text-muted-foreground">{exercise.description}</p>
+            {exercise.instructions && (
+              <p className="line-clamp-2 text-sm text-muted-foreground">{exercise.instructions}</p>
             )}
-            {exercise.source === 'system' && <p className="text-xs text-muted-foreground">Shared exercise</p>}
+            {exercise.built_in && <p className="text-xs text-muted-foreground">Shared exercise</p>}
           </Link>
         )}
       </InfiniteList>

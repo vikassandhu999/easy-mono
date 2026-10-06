@@ -94,7 +94,7 @@ function Editor({initial}: {initial: Exercise | undefined}) {
   const {to, state} = useListLocation(routes.exercises);
   const dirty = form.formState.isDirty;
   const pending = form.formState.isSubmitting || reloading || managing || uploading;
-  const readOnly = exercise?.source === 'system';
+  const readOnly = Boolean(exercise?.built_in);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -110,9 +110,7 @@ function Editor({initial}: {initial: Exercise | undefined}) {
       errorRef.current?.scrollIntoView({block: 'center'});
       return;
     }
-    const field = (['name', 'instructions', 'description', 'mechanics', 'force'] as const).find(
-      (name) => form.formState.errors[name],
-    );
+    const field = (['name', 'instructions', 'mechanics', 'force'] as const).find((name) => form.formState.errors[name]);
     if (field) {
       if (field !== 'name' && field !== 'instructions' && detailsRef.current) {
         detailsRef.current.open = true;
@@ -174,11 +172,11 @@ function Editor({initial}: {initial: Exercise | undefined}) {
         }
       />
       {exercise && dirty && (
-        <p className="text-sm text-muted-foreground">Save your changes before copying or deleting this exercise.</p>
+        <p className="text-sm text-muted-foreground">Save your changes before copying or archiving this exercise.</p>
       )}
       {exercise && query.isError && (
         <div className="space-y-3">
-          <FormError message="Could not refresh this exercise. Your edits are still here. Retry before copying or deleting it." />
+          <FormError message="Could not refresh this exercise. Your edits are still here. Retry before copying or archiving it." />
           <Button
             variant="outline"
             isPending={query.isFetching}
@@ -231,7 +229,7 @@ function Editor({initial}: {initial: Exercise | undefined}) {
                 error,
                 'The save could not be confirmed. Your edits are still here. Check the saved version before retrying.',
                 form.setError,
-                ['name', 'description', 'instructions', 'mechanics', 'force'],
+                ['name', 'instructions', 'mechanics', 'force'],
               );
             }
           }
@@ -259,15 +257,49 @@ function Editor({initial}: {initial: Exercise | undefined}) {
             multiline
             maxLength={10000}
           />
+          <fieldset
+            disabled={Boolean(exercise)}
+            className="space-y-3"
+          >
+            <legend className="text-sm font-medium">Measures (fixed after creation)</legend>
+            <div className="flex flex-wrap gap-4">
+              {(['reps', 'load', 'duration', 'distance'] as const).map((measure) => (
+                <label
+                  key={measure}
+                  className="flex items-center gap-2 text-sm capitalize"
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.watch('measures').includes(measure)}
+                    onChange={(event) =>
+                      form.setValue(
+                        'measures',
+                        event.target.checked
+                          ? [...form.getValues('measures'), measure]
+                          : form.getValues('measures').filter((item) => item !== measure),
+                        {shouldDirty: true},
+                      )
+                    }
+                  />
+                  {measure}
+                </label>
+              ))}
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                {...form.register('bodyweight')}
+              />
+              Bodyweight exercise (load is added weight or assistance)
+            </label>
+          </fieldset>
         </fieldset>
         <ExerciseMedia
           media={form.watch('media')}
-          images={form.watch('images')}
           disabled={pending || readOnly || uncertain}
           readOnly={readOnly}
           onBusy={setUploading}
           onChange={(value) => form.setValue('media', value, {shouldDirty: true})}
-          onImagesChange={(value) => form.setValue('images', value, {shouldDirty: true})}
         />
         <fieldset
           disabled={pending || readOnly || uncertain}
@@ -291,14 +323,6 @@ function Editor({initial}: {initial: Exercise | undefined}) {
                   onChange={(value) => form.setValue('muscles', value, {shouldDirty: true})}
                 />
               </div>
-              <FormField
-                control={form.control}
-                name="description"
-                label="Short description"
-                description="Help distinguish this exercise from similar movements."
-                multiline
-                maxLength={5000}
-              />
               <div className="grid gap-4 sm:grid-cols-2">
                 <Controller
                   control={form.control}
@@ -429,13 +453,16 @@ function Editor({initial}: {initial: Exercise | undefined}) {
           <details>
             <summary className="w-fit cursor-pointer py-2 text-sm text-muted-foreground">Remove from library</summary>
             <div className="mt-3 space-y-3">
-              <p className="text-sm text-muted-foreground">Only exercises unused by training plans can be deleted.</p>
+              <p className="text-sm text-muted-foreground">
+                Archive an exercise to hide it from the library. Published plans and recorded workouts keep their
+                history.
+              </p>
               <Button
                 variant="destructive"
                 isDisabled={dirty || pending || query.isError}
                 onPress={() => setAction('delete')}
               >
-                Delete exercise
+                Archive exercise
               </Button>
             </div>
           </details>
@@ -636,7 +663,7 @@ function CreationRecovery({
             <div className="space-y-2 p-4">
               <p className="break-words font-semibold">{exercise.name}</p>
               <p className="text-sm text-muted-foreground">
-                {exercise.description ?? 'Open to review the saved details.'}
+                {exercise.instructions ?? 'Open to review the saved details.'}
               </p>
               <Button
                 variant="outline"

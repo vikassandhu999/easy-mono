@@ -1,7 +1,7 @@
 NimbleCSV.define(FoodsCSVParser, separator: ",", escape: "\"")
 
 defmodule Easy.Repo.Seeds.Foods do
-  alias Easy.Nutrition.{Food, ServingSize}
+  alias Easy.Nutrition.Food
   alias Easy.Repo
   import Ecto.Query
 
@@ -71,12 +71,9 @@ defmodule Easy.Repo.Seeds.Foods do
     %{
       id: Ecto.UUID.generate(),
       name: food["food_name"] |> String.trim(),
-      calories_per_100g: round_macro(food["calorie"]),
-      protein_g_per_100g: round_macro(food["proteins"]),
-      carbs_g_per_100g: round_macro(food["carbs"]),
-      fat_g_per_100g: round_macro(food["fats"]),
-      fiber_g_per_100g: round_macro(food["fibre"]),
-      serving_sizes: build_serving_sizes(measures),
+      nutrients: source_nutrients(food),
+      servings: build_servings(measures),
+      default_serving_id: nil,
       source: @source,
       category: map_category(food["food_category"]),
       allergens: [],
@@ -97,31 +94,19 @@ defmodule Easy.Repo.Seeds.Foods do
   end
   defp seed_image(_url, _now), do: nil
 
-  defp build_serving_sizes(measures) do
-    measures
-    |> Enum.reject(fn m ->
-      m["measure_name"] == "grams" or round_macro(m["measure_weight"]) <= 0
-    end)
-    |> Enum.sort_by(& &1["measure_rank"])
-    |> Enum.map(fn m ->
-      %ServingSize{
-        label: m["measure_name"],
-        unit: m["measure_name"],
-        weight_g: round_macro(m["measure_weight"]),
-        amount: 1.0,
-        is_default: false
-      }
-    end)
-    |> mark_first_default()
+  defp build_servings(measures) do
+    measures |> Enum.filter(&(is_number(&1["measure_weight"]) and &1["measure_weight"] > 0 and &1["measure_name"] != "grams")) |> Enum.map(fn m -> %{"id" => Ecto.UUID.generate(), "label" => m["measure_name"], "grams" => round_macro(m["measure_weight"])} end)
   end
-
-  defp mark_first_default([]), do: []
-  defp mark_first_default([first | rest]), do: [%{first | is_default: true} | rest]
+  @spec source_nutrients(map()) :: map()
+  def source_nutrients(food) do
+    %{"energy_kcal" => "calorie", "protein_g" => "proteins", "carbs_g" => "carbs", "fat_g" => "fats", "fiber_g" => "fibre", "sugar_g" => "sugar"}
+    |> Enum.flat_map(fn {code, field} -> case round_macro(food[field]) do nil -> []; n -> [{code, n}] end end) |> Map.new()
+  end
 
   defp map_category("I"), do: "ingredient"
   defp map_category("PF"), do: "packaged"
 
-  defp round_macro(nil), do: 0.0
+  defp round_macro(nil), do: nil
   defp round_macro(val) when is_number(val), do: Float.round(val / 1, 2)
-  defp round_macro(_), do: 0.0
+  defp round_macro(_), do: nil
 end

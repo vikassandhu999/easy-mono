@@ -1,0 +1,2670 @@
+[
+  {
+    "name": "training",
+    "path": "/training-plans/f6f47612-722c-4224-bc6c-fc51ae8791bd",
+    "width": 375,
+    "metrics": [
+      {
+        "tag": "H1",
+        "text": "Training plan worksheet",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "Build a stronger foundation",
+        "size": "24px",
+        "weight": "700"
+      },
+      {
+        "tag": "H2",
+        "text": "Weekly schedule",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "H3",
+        "text": "Monday",
+        "size": "16px",
+        "weight": "600"
+      },
+      {
+        "tag": "H3",
+        "text": "Tuesday",
+        "size": "16px",
+        "weight": "600"
+      },
+      {
+        "tag": "H3",
+        "text": "Wednesday",
+        "size": "16px",
+        "weight": "600"
+      },
+      {
+        "tag": "H3",
+        "text": "Thursday",
+        "size": "16px",
+        "weight": "600"
+      },
+      {
+        "tag": "H3",
+        "text": "Friday",
+        "size": "16px",
+        "weight": "600"
+      },
+      {
+        "tag": "H3",
+        "text": "Saturday",
+        "size": "16px",
+        "weight": "600"
+      },
+      {
+        "tag": "H3",
+        "text": "Sunday",
+        "size": "16px",
+        "weight": "600"
+      },
+      {
+        "tag": "H2",
+        "text": "Full body A",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "Full body A",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "H3",
+        "text": "Goblet squat",
+        "size": "18px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "8",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "10",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "12",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "90",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "8",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "10",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "12",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "90",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "8",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "10",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "12",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "90",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "H3",
+        "text": "Dumbbell Romanian deadlift",
+        "size": "18px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "8",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "10",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "12",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "90",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "8",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "10",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "12",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "90",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "8",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "10",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "12",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "90",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "H3",
+        "text": "Seated cable row",
+        "size": "18px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "8",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "10",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "12",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "90",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "8",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "10",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "12",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "90",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "8",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "10",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "12",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "90",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "H2",
+        "text": "Full body B",
+        "size": "20px",
+        "weight": "600"
+      }
+    ]
+  },
+  {
+    "name": "nutrition",
+    "path": "/nutrition-plans/0b0ee1cc-86e3-4174-b82b-42dc0380ee3e",
+    "width": 375,
+    "metrics": [
+      {
+        "tag": "H1",
+        "text": "Edit nutrition plan",
+        "size": "28px",
+        "weight": "650"
+      },
+      {
+        "tag": "INPUT",
+        "text": "Everyday balanced meals",
+        "size": "24px",
+        "weight": "600"
+      },
+      {
+        "tag": "H2",
+        "text": "Plan targets",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "2200",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "2200",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "140",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "H2",
+        "text": "Meals",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "Oats and fruit",
+        "size": "18px",
+        "weight": "600"
+      },
+      {
+        "tag": "H2",
+        "text": "Day patterns",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "Pattern 2",
+        "size": "18px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "H2",
+        "text": "Weekly schedule",
+        "size": "20px",
+        "weight": "600"
+      }
+    ]
+  },
+  {
+    "name": "recipe",
+    "path": "/nutrition-recipes/f7908b82-68bb-4898-94ab-93fdeafb407c",
+    "width": 375,
+    "metrics": [
+      {
+        "tag": "H1",
+        "text": "Edit recipe",
+        "size": "28px",
+        "weight": "650"
+      },
+      {
+        "tag": "INPUT",
+        "text": "Overnight breakfast oats",
+        "size": "24px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "2",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "H2",
+        "text": "Ingredients",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "H3",
+        "text": "Rolled oats",
+        "size": "18px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "100",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "H2",
+        "text": "Nutrition · per 100 g",
+        "size": "20px",
+        "weight": "600"
+      }
+    ]
+  },
+  {
+    "name": "food",
+    "path": "/nutrition-foods/4f10d151-c05a-4993-babc-57fbd11d82b9",
+    "width": 375,
+    "metrics": [
+      {
+        "tag": "H1",
+        "text": "Edit food",
+        "size": "28px",
+        "weight": "650"
+      },
+      {
+        "tag": "INPUT",
+        "text": "Rolled oats",
+        "size": "24px",
+        "weight": "600"
+      },
+      {
+        "tag": "H2",
+        "text": "Nutrition per 100 g",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "380",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "13",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "67",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "7",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "10",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "H2",
+        "text": "Serving sizes",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "H2",
+        "text": "Photo or video",
+        "size": "20px",
+        "weight": "700"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      }
+    ]
+  },
+  {
+    "name": "exercise",
+    "path": "/training-exercises/982e918f-29bc-41be-9aff-082fe108865c",
+    "width": 375,
+    "metrics": [
+      {
+        "tag": "H1",
+        "text": "Edit exercise",
+        "size": "28px",
+        "weight": "650"
+      },
+      {
+        "tag": "INPUT",
+        "text": "Goblet squat",
+        "size": "24px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "H2",
+        "text": "Demonstration",
+        "size": "14px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "H3",
+        "text": "equipment",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "H3",
+        "text": "muscles",
+        "size": "16px",
+        "weight": "500"
+      }
+    ]
+  },
+  {
+    "name": "clients",
+    "path": "/",
+    "width": 375,
+    "metrics": [
+      {
+        "tag": "H1",
+        "text": "Clients",
+        "size": "28px",
+        "weight": "650"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      }
+    ]
+  },
+  {
+    "name": "client",
+    "path": "/clients/f07ac717-3bc7-4224-9129-bfcdd3d543bd",
+    "width": 375,
+    "metrics": [
+      {
+        "tag": "H1",
+        "text": "Alex Morgan",
+        "size": "28px",
+        "weight": "650"
+      },
+      {
+        "tag": "H2",
+        "text": "Coaching",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "H3",
+        "text": "Term history",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "H2",
+        "text": "Training plans",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "H2",
+        "text": "This week’s training",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "H2",
+        "text": "Nutrition plans",
+        "size": "20px",
+        "weight": "600"
+      }
+    ]
+  },
+  {
+    "name": "client-details",
+    "path": "/clients/f07ac717-3bc7-4224-9129-bfcdd3d543bd/profile",
+    "width": 375,
+    "metrics": [
+      {
+        "tag": "H1",
+        "text": "Alex Morgan",
+        "size": "28px",
+        "weight": "650"
+      },
+      {
+        "tag": "H2",
+        "text": "Contact details",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "Alex Morgan",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "client-1791229539110@example.test",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "H2",
+        "text": "Coaching preferences",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "H2",
+        "text": "Assigned coach",
+        "size": "20px",
+        "weight": "600"
+      }
+    ]
+  },
+  {
+    "name": "training",
+    "path": "/training-plans/f6f47612-722c-4224-bc6c-fc51ae8791bd",
+    "width": 1280,
+    "metrics": [
+      {
+        "tag": "H1",
+        "text": "Training plan worksheet",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "Build a stronger foundation",
+        "size": "30px",
+        "weight": "700"
+      },
+      {
+        "tag": "H2",
+        "text": "Weekly schedule",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "H3",
+        "text": "Monday",
+        "size": "16px",
+        "weight": "600"
+      },
+      {
+        "tag": "H3",
+        "text": "Tuesday",
+        "size": "16px",
+        "weight": "600"
+      },
+      {
+        "tag": "H3",
+        "text": "Wednesday",
+        "size": "16px",
+        "weight": "600"
+      },
+      {
+        "tag": "H3",
+        "text": "Thursday",
+        "size": "16px",
+        "weight": "600"
+      },
+      {
+        "tag": "H3",
+        "text": "Friday",
+        "size": "16px",
+        "weight": "600"
+      },
+      {
+        "tag": "H3",
+        "text": "Saturday",
+        "size": "16px",
+        "weight": "600"
+      },
+      {
+        "tag": "H3",
+        "text": "Sunday",
+        "size": "16px",
+        "weight": "600"
+      },
+      {
+        "tag": "H2",
+        "text": "Full body A",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "Full body A",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "H3",
+        "text": "Goblet squat",
+        "size": "18px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "8",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "10",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "12",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "90",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "8",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "10",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "12",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "90",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "8",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "10",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "12",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "90",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "H3",
+        "text": "Dumbbell Romanian deadlift",
+        "size": "18px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "8",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "10",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "12",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "90",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "8",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "10",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "12",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "90",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "8",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "10",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "12",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "90",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "H3",
+        "text": "Seated cable row",
+        "size": "18px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "8",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "10",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "12",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "90",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "8",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "10",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "12",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "90",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "8",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "10",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "12",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "90",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "H2",
+        "text": "Full body B",
+        "size": "20px",
+        "weight": "600"
+      }
+    ]
+  },
+  {
+    "name": "nutrition",
+    "path": "/nutrition-plans/0b0ee1cc-86e3-4174-b82b-42dc0380ee3e",
+    "width": 1280,
+    "metrics": [
+      {
+        "tag": "H1",
+        "text": "Edit nutrition plan",
+        "size": "32px",
+        "weight": "650"
+      },
+      {
+        "tag": "INPUT",
+        "text": "Everyday balanced meals",
+        "size": "24px",
+        "weight": "600"
+      },
+      {
+        "tag": "H2",
+        "text": "Plan targets",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "2200",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "2200",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "140",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "H2",
+        "text": "Meals",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "Oats and fruit",
+        "size": "18px",
+        "weight": "600"
+      },
+      {
+        "tag": "H2",
+        "text": "Day patterns",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "Pattern 2",
+        "size": "18px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "H2",
+        "text": "Weekly schedule",
+        "size": "20px",
+        "weight": "600"
+      }
+    ]
+  },
+  {
+    "name": "recipe",
+    "path": "/nutrition-recipes/f7908b82-68bb-4898-94ab-93fdeafb407c",
+    "width": 1280,
+    "metrics": [
+      {
+        "tag": "H1",
+        "text": "Edit recipe",
+        "size": "32px",
+        "weight": "650"
+      },
+      {
+        "tag": "INPUT",
+        "text": "Overnight breakfast oats",
+        "size": "24px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "2",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "H2",
+        "text": "Ingredients",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "H3",
+        "text": "Rolled oats",
+        "size": "18px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "100",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "H2",
+        "text": "Nutrition · per 100 g",
+        "size": "20px",
+        "weight": "600"
+      }
+    ]
+  },
+  {
+    "name": "food",
+    "path": "/nutrition-foods/4f10d151-c05a-4993-babc-57fbd11d82b9",
+    "width": 1280,
+    "metrics": [
+      {
+        "tag": "H1",
+        "text": "Edit food",
+        "size": "32px",
+        "weight": "650"
+      },
+      {
+        "tag": "INPUT",
+        "text": "Rolled oats",
+        "size": "24px",
+        "weight": "600"
+      },
+      {
+        "tag": "H2",
+        "text": "Nutrition per 100 g",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "380",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "13",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "67",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "7",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "10",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "H2",
+        "text": "Serving sizes",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "H2",
+        "text": "Photo or video",
+        "size": "20px",
+        "weight": "700"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      }
+    ]
+  },
+  {
+    "name": "exercise",
+    "path": "/training-exercises/982e918f-29bc-41be-9aff-082fe108865c",
+    "width": 1280,
+    "metrics": [
+      {
+        "tag": "H1",
+        "text": "Edit exercise",
+        "size": "32px",
+        "weight": "650"
+      },
+      {
+        "tag": "INPUT",
+        "text": "Goblet squat",
+        "size": "24px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "on",
+        "size": "14px",
+        "weight": "400"
+      },
+      {
+        "tag": "H2",
+        "text": "Demonstration",
+        "size": "14px",
+        "weight": "500"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "H3",
+        "text": "equipment",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "H3",
+        "text": "muscles",
+        "size": "16px",
+        "weight": "500"
+      }
+    ]
+  },
+  {
+    "name": "clients",
+    "path": "/",
+    "width": 1280,
+    "metrics": [
+      {
+        "tag": "H1",
+        "text": "Clients",
+        "size": "32px",
+        "weight": "650"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      }
+    ]
+  },
+  {
+    "name": "client",
+    "path": "/clients/f07ac717-3bc7-4224-9129-bfcdd3d543bd",
+    "width": 1280,
+    "metrics": [
+      {
+        "tag": "H1",
+        "text": "Alex Morgan",
+        "size": "32px",
+        "weight": "650"
+      },
+      {
+        "tag": "H2",
+        "text": "Coaching",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "H3",
+        "text": "Term history",
+        "size": "16px",
+        "weight": "500"
+      },
+      {
+        "tag": "H2",
+        "text": "Training plans",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "H2",
+        "text": "This week’s training",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "H2",
+        "text": "Nutrition plans",
+        "size": "20px",
+        "weight": "600"
+      }
+    ]
+  },
+  {
+    "name": "client-details",
+    "path": "/clients/f07ac717-3bc7-4224-9129-bfcdd3d543bd/profile",
+    "width": 1280,
+    "metrics": [
+      {
+        "tag": "H1",
+        "text": "Alex Morgan",
+        "size": "32px",
+        "weight": "650"
+      },
+      {
+        "tag": "H2",
+        "text": "Contact details",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "INPUT",
+        "text": "Alex Morgan",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "client-1791229539110@example.test",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "size": "16px",
+        "weight": "400"
+      },
+      {
+        "tag": "H2",
+        "text": "Coaching preferences",
+        "size": "20px",
+        "weight": "600"
+      },
+      {
+        "tag": "H2",
+        "text": "Assigned coach",
+        "size": "20px",
+        "weight": "600"
+      }
+    ]
+  }
+]

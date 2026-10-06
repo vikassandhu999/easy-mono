@@ -1,0 +1,62 @@
+- link "Skip to content":
+  - /url: "#main-content"
+- banner:
+  - link "Easy clients":
+    - /url: /clients
+    - text: easy Coach
+  - paragraph: Slice Three Trackers
+  - button "Your account"
+- navigation "Coaching":
+  - link "Clients":
+    - /url: /clients
+  - link "Messages":
+    - /url: /messages
+  - link "Training":
+    - /url: /training-plans
+  - link "Nutrition":
+    - /url: /nutrition-plans
+  - link "Trackers":
+    - /url: /trackers
+- main:
+  - link "Back to client Trackers":
+    - /url: /clients/183b3812-4634-43f2-88aa-cfdee90be391/trackers
+  - heading "Blood report history" [level=1]
+  - text: Recorded values and trends. History stays available when coaching ends.
+  - link "Record for client":
+    - /url: /clients/183b3812-4634-43f2-88aa-cfdee90be391/tracker-entries/new?tracker_id=a0000000-0000-4000-8000-000000000014
+  - button "Choose Tracker"
+  - button "Show all entries"
+  - text: From
+  - textbox "From": 2026-09-07
+  - text: To
+  - textbox "To": 2026-10-06
+  - heading "Metrics" [level=2]
+  - paragraph: "Blood report: 1 entries"
+  - heading "Entries" [level=2]
+  - status: 1 Tracker entry
+  - button "Refresh Tracker entries": Refresh
+  - status: Loaded results ready.
+  - list "Tracker entries":
+    - listitem:
+      - article:
+        - heading "Blood report" [level=3]:
+          - link "Blood report":
+            - /url: /clients/183b3812-4634-43f2-88aa-cfdee90be391/tracker-history?tracker_id=a0000000-0000-4000-8000-000000000014
+        - time: 2026-10-06
+        - paragraph: Report
+        - paragraph: Recorded by client
+        - list:
+          - listitem:
+            - paragraph: File 1 · Captured 2026-10-06
+            - link "View file 1":
+              - /url: http://localhost:9000/easy-dev-private/businesses/4c92cfc6-706c-45b7-a2fc-0b0b9efeedeb/clients/183b3812-4634-43f2-88aa-cfdee90be391/attachments/accd4e44-75c5-4bbd-9570-11ac9eacc7ef.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20261006%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20261006T022743Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host&X-Amz-Signature=55c75934fc13e1cb8951273afdecd19cf4fee2f56b669ae2df8937982ceb096a
+            - link "Download file 1":
+              - /url: http://localhost:9000/easy-dev-private/businesses/4c92cfc6-706c-45b7-a2fc-0b0b9efeedeb/clients/183b3812-4634-43f2-88aa-cfdee90be391/attachments/accd4e44-75c5-4bbd-9570-11ac9eacc7ef.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20261006%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20261006T022743Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host&X-Amz-Signature=55c75934fc13e1cb8951273afdecd19cf4fee2f56b669ae2df8937982ceb096a
+          - listitem:
+            - paragraph: File 2 · Captured 2026-10-06
+            - img "Blood report, 2026-10-06, file 2"
+            - link "View file 2":
+              - /url: http://localhost:9000/easy-dev-private/businesses/4c92cfc6-706c-45b7-a2fc-0b0b9efeedeb/clients/183b3812-4634-43f2-88aa-cfdee90be391/attachments/276e530b-1904-41ac-815c-2b412cb834d1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20261006%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20261006T022743Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host&X-Amz-Signature=4d8711cf1ed2278e4f76feef7f97061bb446d43c28bc86ae04740a55d235b516
+            - link "Download file 2":
+              - /url: http://localhost:9000/easy-dev-private/businesses/4c92cfc6-706c-45b7-a2fc-0b0b9efeedeb/clients/183b3812-4634-43f2-88aa-cfdee90be391/attachments/276e530b-1904-41ac-815c-2b412cb834d1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20261006%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20261006T022743Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host&X-Amz-Signature=4d8711cf1ed2278e4f76feef7f97061bb446d43c28bc86ae04740a55d235b516
+  - button "All Tracker entries loaded" [disabled]

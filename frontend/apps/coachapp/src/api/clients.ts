@@ -25,6 +25,7 @@ export function useClients(filters: ClientFilters) {
 export function useClient(id: string) {
   return useQuery({
     queryKey: clientKeys.detail(id),
+    enabled: Boolean(id),
     queryFn: ({signal}) => call(client.GET('/v1/coach/clients/{id}', {params: {path: {id}}, signal})),
     staleTime: 0,
   });

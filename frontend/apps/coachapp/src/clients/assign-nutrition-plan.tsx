@@ -95,9 +95,7 @@ function Choose({clientId}: {clientId: string}) {
             className="block space-y-1 px-5 py-4 [overflow-wrap:anywhere] hover:bg-muted/50 focus-visible:-outline-offset-4"
           >
             <p className="font-semibold">{plan.name}</p>
-            <p className="text-sm text-muted-foreground">
-              {plan.target_calories === null ? 'No calorie target' : `${plan.target_calories} kcal target`}
-            </p>
+            <p className="text-sm text-muted-foreground">{plan.meal_count} meals</p>
             {plan.description && <p className="line-clamp-2 text-sm text-muted-foreground">{plan.description}</p>}
           </Link>
         )}
@@ -172,7 +170,7 @@ function Preview({clientId, templateId, name}: {clientId: string; templateId: st
       </Surface>
     );
   }
-  const available = plan.kind === 'template' && plan.lifecycle === 'active';
+  const available = plan.kind === 'template' && plan.status === 'active';
   return (
     <>
       <Link

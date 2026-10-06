@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 0cd223433e04a00f35e751ff9edcf027f975cfa7bbeb43fe6206aca6e02cc641 */
+/* typed-routes:hash 03bf20e26cbdbd238838b38afe4f9a7a6d2c4139d565989e7a089d05d1ae8a0a */
 export type Attachment = {
   id: string;
   content_type:
@@ -28,6 +28,7 @@ export type ChatMessage = {
   sender_id: string;
   sender_name: string | null;
   request_id: string | null;
+  edited_at: string | null;
   body: string | null;
   attachments: Array<Attachment>;
   embed: ChatMessageEmbed | null;
@@ -39,7 +40,7 @@ export type ChatMessageClientCreate = {
   attachment_ids?: Array<string>;
   embed?: ChatMessageEmbedRequest | null;
 };
-export type ChatMessageEmbed = {type: 'training_session' | 'meal'; id: string; snapshot: ChatRecordSnapshot};
+export type ChatMessageEmbed = {type: 'training_session' | 'meal' | 'review'; id: string; snapshot: ChatRecordSnapshot};
 export type ChatMessageEmbedRequest = {type: 'training_session' | 'meal'; id: string; revision?: number};
 export type ChatMessageHistory = {
   data: Array<ChatMessage>;
@@ -59,6 +60,7 @@ export type ChatRecordSnapshot = {
 };
 export type ClientProfile = {
   id: string;
+  focus: string | null;
   full_name: string;
   preferred_name: string | null;
   email: string | null;
@@ -90,60 +92,72 @@ export type Conversation = {
   updated_at: string;
 };
 export type ConversationMarkReadQuery = {through?: string};
-export type Day = {
-  date: string;
-  plan_id: string | null;
-  write_eligible: boolean;
-  applied_timezone: string;
-  targets: NutritionDayTargets;
-  summary: NutritionDaySummary;
-  slots: Array<NutritionDaySlot>;
-};
-export type DayEntryInput = {
+export type DiaryEntry = {
   id: string;
-  planned_item_ref: string | null;
-  food_id: string | null;
-  recipe_id: string | null;
-  portion: NutritionPortion;
+  planned_item_id: string | null;
+  source: NutritionSource | null;
+  portion: NutritionPortion | null;
+  name: string;
+  grams: number | null;
+  nutrients: NutrientMap;
   notes: string | null;
+  request_id: string;
 };
-export type DayListQuery = {date?: string; from?: string; to?: string};
-export type DaySave = {slots: Array<DaySlotInput>};
-export type DaySlotInput = {
-  share?: boolean;
+export type DiaryEntryInput = {
+  id: string;
+  planned_item_id: string | null;
+  source: NutritionSource | null;
+  portion: NutritionPortion | null;
+  name?: string;
+  nutrients?: NutrientMap;
+  notes?: string | null;
+  request_id: string;
+};
+export type DiaryMeal = {
+  id: string;
+  local_date: string;
+  timezone: string;
+  plan_revision_id: string | null;
+  slot_id: string | null;
+  name: string;
+  chosen_meal_id: string | null;
+  note_to_coach: string | null;
+  shared_at: string | null;
+  revision: number;
+  request_id: string;
+  entries: Array<DiaryEntry>;
+};
+export type DiaryMealInput = {
+  id: string;
+  plan_revision_id: string | null;
+  slot_id: string | null;
+  name: string;
+  chosen_meal_id: string | null;
   note_to_coach?: string | null;
-  meal_slot:
-    | 'early_morning'
-    | 'breakfast'
-    | 'mid_morning'
-    | 'lunch'
-    | 'afternoon'
-    | 'evening'
-    | 'dinner'
-    | 'pre_sleep'
-    | 'pre_workout'
-    | 'during_workout'
-    | 'post_workout';
+  request_id: string;
+  entries: Array<DiaryEntryInput>;
   expected_revision: number;
-  meal_id: string | null;
-  entries: Array<DayEntryInput>;
+  share?: boolean;
 };
 export type Exercise = {
   id: string;
-  source: string | null;
-  tracking_type: string | null;
+  built_in: boolean;
+  measures: Array<'reps' | 'load' | 'duration' | 'distance'>;
+  bodyweight: boolean;
+  media_id: string | null;
+  archived_at: string | null;
   name: string;
-  description: string | null;
   instructions: string | null;
   mechanics: 'compound' | 'isolation' | 'isometric' | null;
   force: 'push' | 'pull' | 'static' | null;
-  images: Array<string>;
   media: ExerciseMedia | null;
   muscles: Array<ExerciseRelation>;
   equipment: Array<ExerciseRelation>;
   inserted_at: string;
   updated_at: string;
 };
+export type ExerciseBest = {reps: number; best_kg: string};
+export type ExerciseHistory = {bests: Array<ExerciseBest>; sets: Array<PerformedSet>};
 export type ExerciseListQuery = {
   offset?: number;
   limit?: number;
@@ -154,32 +168,27 @@ export type ExerciseListQuery = {
 export type ExerciseMedia = {
   id: string;
   kind: 'image' | 'video';
-  content_type: string;
-  byte_size: number;
+  content_type: string | null;
+  byte_size: number | null;
   url: string | null;
 };
 export type ExerciseRelation = {id: string; name: string; description: string | null};
 export type Food = {
   id: string;
   name: string;
-  brand: string | null;
-  source: 'system' | 'custom';
-  category: string | null;
-  default_portion: NutritionPortion;
-  portion_options: Array<NutritionPortion>;
-  revision: number;
-  nutrients: FoodNutrients;
-  calories_per_100g: number | null;
-  protein_g_per_100g: number | null;
-  carbs_g_per_100g: number | null;
-  fat_g_per_100g: number | null;
-  fiber_g_per_100g: number | null;
-  sugar_g_per_100g: number | null;
   allergens: Array<string>;
   dietary_tags: Array<string>;
+  tags: Array<string>;
+  brand: string | null;
+  category: string | null;
+  nutrients: NutrientMap;
+  servings: Array<FoodServing>;
+  default_serving_id: string | null;
   notes: string | null;
+  source: 'system' | 'custom';
   media: FoodMedia | null;
-  serving_sizes: Array<FoodServingSize>;
+  revision: number;
+  archived_at: string | null;
   creator_id: string | null;
   inserted_at: string;
   updated_at: string;
@@ -193,267 +202,218 @@ export type FoodMedia = {
   byte_size: number | null;
   url: string | null;
 };
-export type FoodNutrients = {
-  calories: number | null;
-  protein: number | null;
-  carbohydrates: number | null;
-  fat: number | null;
-  fiber: number | null;
-  complete: boolean;
-};
-export type FoodServingSize = {label: string; amount: number; unit: string; weight_g: number; is_default: boolean};
+export type FoodServing = {id: string; label: string; grams: number};
 export type Health = {status: string; service: string; timestamp: string; version: string};
-export type NutritionDayOption = {
-  meal_id: string | null;
-  meal_name: string | null;
-  position: number;
-  items: Array<NutritionDayOptionItem>;
-};
-export type NutritionDayOptionItem = {
-  planned_item_ref: string;
-  kind: 'food' | 'recipe';
-  name: string | null;
-  food_id: string | null;
-  recipe_id: string | null;
-  position: number;
-  portion: NutritionPortion;
-  nutrients: FoodNutrients;
-};
-export type NutritionDayPattern = {id: string; name: string; slots: Array<NutritionDayPatternSlot>};
-export type NutritionDayPatternSlot = {
-  meal_slot:
-    | 'early_morning'
-    | 'breakfast'
-    | 'mid_morning'
-    | 'lunch'
-    | 'afternoon'
-    | 'evening'
-    | 'dinner'
-    | 'pre_sleep'
-    | 'pre_workout'
-    | 'during_workout'
-    | 'post_workout';
-  meal_ids: Array<string>;
-};
-export type NutritionDayRow = {
-  id: string;
-  entry_id: string | null;
-  planned_item_ref: string | null;
-  status: 'as_planned' | 'swapped' | 'pending' | 'skipped' | 'added' | 'recorded';
-  kind: 'food' | 'recipe';
-  name: string;
-  food_id: string | null;
-  recipe_id: string | null;
-  portion: NutritionPortion;
-  nutrients: FoodNutrients;
-  notes: string | null;
-};
-export type NutritionDaySlot = {
-  id: string | null;
-  shared_at: string | null;
-  note_to_coach: string | null;
-  meal_slot:
-    | 'early_morning'
-    | 'breakfast'
-    | 'mid_morning'
-    | 'lunch'
-    | 'afternoon'
-    | 'evening'
-    | 'dinner'
-    | 'pre_sleep'
-    | 'pre_workout'
-    | 'during_workout'
-    | 'post_workout';
-  meal_id: string | null;
-  revision: number;
-  applied_timezone: string | null;
-  write_eligible: boolean;
-  planned_calories: number | null;
-  logged_calories: number | null;
-  options: Array<NutritionDayOption>;
-  rows: Array<NutritionDayRow>;
-};
-export type NutritionDaySummary = {
-  logged: FoodNutrients;
-  planned: FoodNutrients;
-  counts: NutritionDaySummaryCounts;
-  has_intake: boolean;
-  adherence: 'none' | 'under' | 'on' | 'over' | null;
-};
-export type NutritionDaySummaryCounts = {
-  as_planned: number;
-  swapped: number;
-  added: number;
-  recorded: number;
-  pending: number;
-  skipped: number;
-};
-export type NutritionDayTargets = {
-  calories: number | null;
-  protein_g: number | null;
-  carbs_g: number | null;
-  fat_g: number | null;
-  fiber_g: number | null;
-};
-export type NutritionMeal = {
-  id: string;
-  name: string;
-  notes?: string | null;
-  nutrients?: FoodNutrients;
-  meal_items: Array<NutritionMealItem>;
-};
-export type NutritionMealItem = {
-  id: string;
-  kind: 'food' | 'recipe';
-  name?: string | null;
-  food_id?: string | null;
-  recipe_id?: string | null;
-  portion: NutritionPortion;
-  nutrients?: FoodNutrients;
-};
-export type NutritionMenu = {
+export type NutrientMap = {[key: string]: number};
+export type NutrientTarget = {min?: number; max?: number};
+export type NutrientTotal = {value: number | null; known_entries: number; total_entries: number};
+export type NutrientTotals = {[key: string]: NutrientTotal};
+export type NutritionContent = {
+  targets: NutritionTargets;
   meals: Array<NutritionMeal>;
   day_patterns: Array<NutritionDayPattern>;
-  schedule: NutritionWeekSchedule;
+  schedule: TrainingSchedule;
 };
+export type NutritionDay = {
+  date: string;
+  timezone: string;
+  write_eligible: boolean;
+  plan_id: string | null;
+  plan_revision_id: string | null;
+  plan_revision_number: number | null;
+  targets: NutritionTargets;
+  target_changed: boolean;
+  totals: NutrientTotals;
+  counts: {expected: number; recorded: number};
+  slots: Array<NutritionSlot>;
+  extra_meals: Array<DiaryMeal>;
+};
+export type NutritionDayListQuery = {date?: string; from?: string; to?: string};
+export type NutritionDayPattern = {
+  id: string;
+  name: string;
+  targets?: NutritionTargets;
+  slots: Array<NutritionPatternSlot>;
+};
+export type NutritionDaySave = {meals: Array<DiaryMealInput>};
+export type NutritionMeal = {id: string; name: string; notes?: string | null; items: Array<NutritionMealItem>};
+export type NutritionMealItem = {
+  id: string;
+  source: NutritionSource;
+  portion: NutritionPortion;
+  name?: string;
+  grams?: number;
+  nutrients?: NutrientMap;
+};
+export type NutritionPatternSlot = {id: string; name: string; meal_ids: Array<string>};
 export type NutritionPlan = {
   id: string;
   kind: 'template' | 'client_plan';
   name: string;
   description: string | null;
   revision: number;
-  lifecycle: 'active' | 'incomplete' | 'waiting' | 'upcoming' | 'current' | 'ended' | 'archived';
-  assigned_client_count: number;
-  target_calories: number | null;
-  target_protein_g: number | null;
-  target_carbs_g: number | null;
-  target_fat_g: number | null;
-  target_fiber_g: number | null;
+  archived_at: string | null;
+  status: 'active' | 'archived';
+  lifecycle: 'incomplete' | 'waiting' | 'upcoming' | 'current' | 'ended' | 'archived' | null;
+  meal_count: number;
+  client: NutritionPlanClient | null;
   start_date: string | null;
   end_date: string | null;
-  stopped_on: string | null;
+  created_local_date: string | null;
   client_id: string | null;
-  client: NutritionPlanClient | null;
-  creator_id: string | null;
   source_template_id: string | null;
-  menu: NutritionMenu;
+  content: NutritionContent;
+  current_revision: NutritionPlanRevision | null;
+  scheduled_revisions: Array<NutritionPlanRevision>;
+  stopped_on: string | null;
   inserted_at: string;
   updated_at: string;
 };
 export type NutritionPlanClient = {id: string; full_name: string; preferred_name: string | null};
 export type NutritionPlanClientListQuery = {
   cursor?: string;
-  search?: string;
   offset?: number;
   limit?: number;
+  search?: string;
   archived?: boolean;
 };
 export type NutritionPlanIndex = {data: Array<NutritionPlan>; count: number; next_cursor: string | null};
-export type NutritionPortion =
-  | {kind: 'gram'; grams: number}
-  | {kind: 'serving'; amount: number; unit: string; label: string | null};
-export type NutritionWeekSchedule = {
-  monday: string;
-  tuesday: string;
-  wednesday: string;
-  thursday: string;
-  friday: string;
-  saturday: string;
-  sunday: string;
+export type NutritionPlanRevision = {
+  id: string;
+  number: number;
+  effective_on: string | null;
+  content: NutritionContent;
 };
+export type NutritionPortion = {type: 'grams'; grams: number} | {type: 'serving'; serving_id: string; amount: number};
+export type NutritionSlot = {
+  id: string;
+  name: string;
+  plan_revision_id: string;
+  options: Array<NutritionMeal>;
+  meal: DiaryMeal | null;
+  status: 'recorded' | 'not_recorded';
+};
+export type NutritionSource = {type: 'food' | 'recipe'; id: string};
+export type NutritionTargets = {[key: string]: NutrientTarget};
 export type PerformedSet = {
   id: string;
-  exercise_name: string;
-  snapshot_exercise_ref: string | null;
-  set_type: 'working' | 'warmup' | 'dropset';
+  session_id: string;
   position: number;
-  reps: string | null;
-  load_value: string | null;
-  load_unit: string | null;
-  rpe: string | null;
-  duration_seconds: number | null;
-  distance_value: string | null;
-  distance_unit: string | null;
-  notes: string | null;
+  request_id: string | null;
+  item_id: string | null;
+  set_id: string | null;
   exercise_id: string | null;
-  training_session_id: string;
-  exercise: TrainingPlanExercise | null;
+  exercise_name: string | null;
+  kind: 'warmup' | 'working' | 'drop';
+  outcome: 'done' | 'failed' | 'skipped';
+  reps: number | null;
+  load_kg: string | null;
+  entered_load_unit: 'kg' | 'lb' | null;
+  duration_s: number | null;
+  distance_m: string | null;
+  entered_distance_unit: 'm' | 'km' | 'mi' | null;
+  rpe: string | null;
+  rir: number | null;
+  notes: string | null;
+  deleted_at: string | null;
+  local_date?: string | null;
   inserted_at: string;
   updated_at: string;
 };
 export type PerformedSetCreate = {
-  expected_revision?: number;
-  request_id?: string;
-  exercise_name?: string | null;
+  item_id?: string | null;
+  set_id?: string | null;
   exercise_id?: string | null;
-  snapshot_exercise_ref?: string | null;
-  set_type?: 'working' | 'warmup' | 'dropset' | null;
-  reps?: string | null;
-  load_value?: number | null;
-  load_unit?: 'kg' | 'lbs' | 'bodyweight' | 'none' | null;
-  rpe?: number | null;
-  duration_seconds?: number | null;
-  distance_value?: number | null;
-  distance_unit?: 'meters' | 'km' | 'miles' | 'none' | null;
+  exercise_name?: string | null;
+  kind?: 'warmup' | 'working' | 'drop';
+  outcome?: 'done' | 'failed' | 'skipped';
+  reps?: number | null;
+  duration_s?: number | null;
+  rir?: number | null;
   notes?: string | null;
+  load_value?: number | null;
+  load_unit?: 'kg' | 'lb' | null;
+  distance_value?: number | null;
+  distance_unit?: 'm' | 'km' | 'mi' | null;
+  rpe?: number | null;
+  expected_revision?: number;
+  request_id: string;
 };
 export type PerformedSetDeleteQuery = {expected_revision?: number};
 export type PerformedSetUpdate = {
-  exercise_name?: string;
-  expected_revision?: number;
-  set_type?: 'working' | 'warmup' | 'dropset' | null;
-  reps?: string | null;
-  load_value?: number | null;
-  load_unit?: 'kg' | 'lbs' | 'bodyweight' | 'none' | null;
-  rpe?: number | null;
-  duration_seconds?: number | null;
-  distance_value?: number | null;
-  distance_unit?: 'meters' | 'km' | 'miles' | 'none' | null;
+  item_id?: string | null;
+  set_id?: string | null;
+  exercise_id?: string | null;
+  exercise_name?: string | null;
+  kind?: 'warmup' | 'working' | 'drop';
+  outcome?: 'done' | 'failed' | 'skipped';
+  reps?: number | null;
+  duration_s?: number | null;
+  rir?: number | null;
   notes?: string | null;
+  load_value?: number | null;
+  load_unit?: 'kg' | 'lb' | null;
+  distance_value?: number | null;
+  distance_unit?: 'm' | 'km' | 'mi' | null;
+  rpe?: number | null;
+  expected_revision?: number;
 };
 export type Recipe = {
   id: string;
   name: string;
+  allergens: Array<string>;
+  dietary_tags: Array<string>;
+  tags: Array<string>;
   description: string | null;
   instructions: string | null;
   servings_count: number;
   cooked_weight_g: number | null;
-  default_portion: NutritionPortion;
-  portion_options: Array<NutritionPortion>;
+  ingredients: Array<RecipeIngredient>;
+  nutrients: NutrientMap;
+  grams: number;
   revision: number;
-  allergens: Array<string>;
-  dietary_tags: Array<string>;
-  nutrients: FoodNutrients;
-  recipe_ingredients: Array<RecipeIngredient>;
+  archived_at: string | null;
   creator_id: string | null;
   inserted_at: string;
   updated_at: string;
 };
 export type RecipeIndex = {data: Array<Recipe>; count: number; next_cursor: string | null};
-export type RecipeIngredient = {food_id: string; food: Food | null; portion: NutritionPortion; position: number};
-export type RecipeListQuery = {cursor?: string; offset?: number; limit?: number; search?: string};
+export type RecipeIngredient = {food_id: string; portion: NutritionPortion};
+export type RecipeListQuery = {
+  cursor?: string;
+  offset?: number;
+  limit?: number;
+  search?: string;
+  categories?: Array<string>;
+};
+export type ReviewReplyQuery = {cursor?: string; limit?: number; review_id?: string};
+export type Revision = {expected_revision: number};
 export type Session = {
   id: string;
   revision: number;
-  kind: 'planned' | 'freestyle';
-  date: string;
+  local_date: string;
+  timezone: string;
   started_at: string;
-  closed_at: string | null;
+  ended_at: string | null;
   state: 'active' | 'completed' | 'discarded';
-  soreness_rating: number | null;
   notes: string | null;
-  snapshot_version: number | null;
-  prescription_snapshot: SessionPrescriptionSnapshot | null;
-  source_plan_id: string | null;
-  source_workout_id: string | null;
+  request_id: string | null;
+  plan_revision_id: string | null;
+  workout_id: string | null;
+  schedule_entry_id: string | null;
+  occurrence_date: string | null;
+  prescription: TrainingWorkout | null;
   performed_sets: Array<PerformedSet>;
   inserted_at: string;
   updated_at: string;
 };
 export type SessionCreate = {
-  training_workout_id?: string | null;
-  soreness_rating?: number | null;
   notes?: string | null;
+  request_id?: string | null;
+  plan_revision_id?: string | null;
+  workout_id?: string | null;
+  schedule_entry_id?: string | null;
+  occurrence_date?: string | null;
 };
 export type SessionIndex = {data: Array<Session>; count: number; next_cursor: string | null};
 export type SessionListQuery = {
@@ -465,44 +425,152 @@ export type SessionListQuery = {
   search?: string;
   state?: 'active' | 'completed' | 'discarded';
 };
-export type SessionPlannedSet = {
-  set_type: 'working' | 'warmup' | 'dropset' | null;
-  reps: string | null;
-  load_value: string | null;
-  load_unit: 'kg' | 'lbs' | 'bodyweight' | 'none' | null;
-  duration_seconds: number | null;
-  distance_value: string | null;
-  distance_unit: 'meters' | 'km' | 'miles' | 'none' | null;
-  rpe: number | null;
-  rest_seconds: number | null;
-  notes: string | null;
+export type SessionUpdate = {expected_revision?: number; local_date?: string; notes?: string | null};
+export type Tracker = {
+  id: string;
+  name: string;
+  kind: 'number' | 'rating' | 'yes_no' | 'text' | 'photo' | 'document';
+  base_unit: string | null;
+  scale_max: number | null;
+  archived_at: string | null;
+  built_in: boolean;
+  entry_count: number;
+  units: Array<TrackerUnit>;
 };
-export type SessionPrescriptionSnapshot = {version: number; plan: SessionSnapshotPlan; workout: SessionSnapshotWorkout};
-export type SessionSnapshotExercise = {
-  ref: string;
+export type TrackerAssignment = {
+  id: string;
+  tracker: Tracker;
+  timing: 'daily' | 'weekly' | 'after_workout' | 'after_meal';
+  weekday: number | null;
+  starts_on: string;
+  ends_on: string | null;
+};
+export type TrackerAttachment = {
+  id: string;
+  content_type: string;
+  byte_size: number;
+  captured_on: string | null;
   position: number;
+};
+export type TrackerCoverage = {recorded: number; total: number};
+export type TrackerEntry = {
+  id: string;
+  tracker: Tracker;
+  local_date: string;
+  timezone: string;
+  recorded_by_type: 'client' | 'coach';
+  recorded_by_id: string;
+  revision: number;
+  request_id: string;
+  number_value: number | null;
+  entered_unit: string | null;
+  rating_value: number | null;
+  yes_no_value: boolean | null;
+  text_value: string | null;
+  about_session_id: string | null;
+  about_meal_id: string | null;
+  attachments: Array<TrackerAttachment>;
+  inserted_at: string;
+  updated_at: string;
+};
+export type TrackerEntryCreate = {
+  tracker_id: string;
+  request_id: string;
+  local_date: string;
+  number_value?: number | null;
+  entered_unit?: string | null;
+  rating_value?: number | null;
+  yes_no_value?: boolean | null;
+  text_value?: string | null;
+  about_session_id?: string | null;
+  about_meal_id?: string | null;
+  attachment_ids?: Array<string>;
+};
+export type TrackerEntryIndex = {data: Array<TrackerEntry>; count: number; next_cursor: string | null};
+export type TrackerEntryListQuery = {
+  cursor?: string;
+  offset?: number;
+  limit?: number;
+  tracker_id?: string;
+  from?: string;
+  to?: string;
+};
+export type TrackerEntryUpdate = {
+  expected_revision: number;
+  request_id: string;
+  local_date: string;
+  number_value?: number | null;
+  entered_unit?: string | null;
+  rating_value?: number | null;
+  yes_no_value?: boolean | null;
+  text_value?: string | null;
+  about_session_id?: string | null;
+  about_meal_id?: string | null;
+  attachment_ids?: Array<string>;
+};
+export type TrackerIndex = {data: Array<Tracker>; count: number; next_cursor: string | null};
+export type TrackerListQuery = {
+  cursor?: string;
+  offset?: number;
+  limit?: number;
+  search?: string;
+  kind?: 'number' | 'rating' | 'yes_no' | 'text' | 'photo' | 'document';
+  archived?: boolean;
+};
+export type TrackerMetrics = {
+  tracker: Tracker;
+  count: number;
+  latest: TrackerEntry | null;
+  previous: TrackerEntry | null;
+  first: TrackerEntry | null;
+  change: number | null;
+  min: number | null;
+  max: number | null;
+  average: number | null;
+  series: Array<TrackerSeriesPoint>;
+  workout_coverage: TrackerCoverage;
+  meal_coverage: TrackerCoverage;
+};
+export type TrackerMetricsQuery = {from?: string; to?: string; previous_date?: string};
+export type TrackerRequest = {
+  id: string;
+  tracker: Tracker;
+  requested_by: string;
+  requested_at: string;
+  cancelled_at: string | null;
+};
+export type TrackerSeriesPoint = {date: string; value: number; entry_id: string};
+export type TrackerToday = {date: string; due: Array<TrackerAssignment>; requests: Array<TrackerRequest>};
+export type TrackerTodayPromptQuery = {about_session_id?: string; about_meal_id?: string};
+export type TrackerUnit = {unit: string; to_base_factor: number};
+export type TrainingBlock = {
+  id: string;
+  format: 'straight' | 'superset' | 'circuit';
+  rounds?: number | null;
+  rest_s?: number | null;
+  notes?: string | null;
+  items: Array<TrainingItem>;
+};
+export type TrainingContent = {workouts: Array<TrainingWorkout>; schedule: TrainingSchedule};
+export type TrainingDistance = {m: number; entered_unit: 'm' | 'km' | 'mi'};
+export type TrainingItem = {
+  id: string;
   exercise_id: string;
-  exercise_name: string;
-  tracking_type:
-    | 'weight_reps'
-    | 'bodyweight_reps'
-    | 'weighted_bodyweight'
-    | 'assisted_bodyweight'
-    | 'reps_only'
-    | 'duration'
-    | 'weight_duration'
-    | 'distance_duration'
-    | 'weight_distance';
-  sets: Array<SessionPlannedSet>;
+  exercise_name?: string | null;
+  notes?: string | null;
+  sets: Array<TrainingPrescribedSet>;
 };
-export type SessionSnapshotPlan = {id: string; name: string; revision: number};
-export type SessionSnapshotWorkout = {id: string; name: string; exercises: Array<SessionSnapshotExercise>};
-export type SessionUpdate = {
-  expected_revision?: number;
-  date?: string;
-  soreness_rating?: number | null;
-  notes?: string;
+export type TrainingLoad = {kg: number; entered_unit: 'kg' | 'lb'};
+export type TrainingOccurrence = {
+  plan_id: string;
+  plan_revision_id: string;
+  schedule_entry_id: string;
+  occurrence_date: string;
+  workout_id: string;
+  workout_name: string;
+  session_id: string | null;
 };
+export type TrainingOccurrences = {data: Array<TrainingOccurrence>; extra_sessions: Array<Session>};
 export type TrainingPlan = {
   id: string;
   kind: 'template' | 'client_plan';
@@ -512,88 +580,55 @@ export type TrainingPlan = {
   archived_at: string | null;
   status: 'active' | 'archived';
   lifecycle: 'incomplete' | 'waiting' | 'upcoming' | 'current' | 'ended' | 'archived' | null;
+  workout_count: number;
+  client: TrainingPlanClient | null;
   start_date: string | null;
   end_date: string | null;
-  stopped_on: string | null;
+  created_local_date: string | null;
   client_id: string | null;
-  client: TrainingPlanClient | null;
-  creator_id: string;
   source_template_id: string | null;
-  workout_count: number;
-  workouts: Array<TrainingPlanWorkout>;
-  schedule: TrainingSchedule;
+  content: TrainingContent;
+  current_revision: TrainingPlanRevision | null;
+  scheduled_revisions: Array<TrainingPlanRevision>;
+  stopped_on: string | null;
   inserted_at: string;
   updated_at: string;
 };
 export type TrainingPlanClient = {id: string; full_name: string; preferred_name: string | null};
-export type TrainingPlanClientListQuery = {cursor?: string; offset?: number; limit?: number; search?: string};
-export type TrainingPlanCoverage = {
-  date: string;
-  weekday: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
-  plan: TrainingPlan;
-  workout: TrainingPlanWorkout | null;
+export type TrainingPlanClientListQuery = {
+  cursor?: string;
+  offset?: number;
+  limit?: number;
+  search?: string;
+  archived?: boolean;
 };
+export type TrainingPlanCoverage = {date: string; plan: TrainingPlan; workouts: Array<TrainingWorkout>};
 export type TrainingPlanCoverageQuery = {date?: string};
-export type TrainingPlanExercise = {
-  id: string;
-  name: string;
-  mechanics: 'compound' | 'isolation' | 'isometric' | null;
-  force: 'push' | 'pull' | 'static' | null;
-  tracking_type:
-    | 'weight_reps'
-    | 'bodyweight_reps'
-    | 'weighted_bodyweight'
-    | 'assisted_bodyweight'
-    | 'reps_only'
-    | 'duration'
-    | 'weight_duration'
-    | 'distance_duration'
-    | 'weight_distance'
-    | null;
-  images: Array<string>;
-};
 export type TrainingPlanIndex = {data: Array<TrainingPlan>; count: number; next_cursor: string | null};
-export type TrainingPlanPlannedSet = {
-  set_type: 'working' | 'warmup' | 'dropset' | null;
-  reps: string | null;
-  load_value: string | null;
-  load_unit: 'kg' | 'lbs' | 'bodyweight' | 'none' | null;
-  duration_seconds: number | null;
-  distance_value: string | null;
-  distance_unit: 'meters' | 'km' | 'miles' | 'none' | null;
-  rpe: string | null;
-  rest_seconds: number | null;
-  notes: string | null;
-};
-export type TrainingPlanWorkout = {
+export type TrainingPlanRangeQuery = {from: string; to: string};
+export type TrainingPlanRevision = {id: string; number: number; effective_on: string | null; content: TrainingContent};
+export type TrainingPrescribedSet = {
   id: string;
-  name: string;
-  position: number;
-  weekdays: Array<string>;
-  training_plan_id: string;
-  workout_elements: Array<TrainingPlanWorkoutExercise>;
-  inserted_at: string;
-  updated_at: string;
+  kind: 'warmup' | 'working' | 'drop';
+  reps?: TrainingReps | null;
+  load?: TrainingLoad | null;
+  rpe?: number | null;
+  rir?: number | null;
+  tempo?: string | null;
+  duration_s?: number | null;
+  distance?: TrainingDistance | null;
+  rest_s?: number | null;
+  notes?: string | null;
 };
-export type TrainingPlanWorkoutExercise = {
-  id: string;
-  position: number;
-  exercise_id: string;
-  workout_id: string;
-  exercise: TrainingPlanExercise;
-  planned_sets: Array<TrainingPlanPlannedSet>;
-  inserted_at: string;
-  updated_at: string;
+export type TrainingReps = {
+  type: 'exact' | 'range' | 'amrap';
+  value?: number | null;
+  min?: number | null;
+  max?: number | null;
 };
-export type TrainingSchedule = {
-  monday: string | null;
-  tuesday: string | null;
-  wednesday: string | null;
-  thursday: string | null;
-  friday: string | null;
-  saturday: string | null;
-  sunday: string | null;
-};
+export type TrainingSchedule = {cycle_weeks: number; entries: Array<TrainingScheduleEntry>};
+export type TrainingScheduleEntry = {id: string; day: number; ref: string};
+export type TrainingWorkout = {id: string; name: string; notes?: string | null; blocks: Array<TrainingBlock>};
 export type Upload = {
   id: string;
   content_type:
@@ -606,9 +641,11 @@ export type Upload = {
     | 'video/quicktime'
     | 'audio/webm'
     | 'audio/mp4'
-    | 'audio/mpeg';
+    | 'audio/mpeg'
+    | 'application/pdf';
   byte_size: number;
   duration_ms: number | null;
+  captured_on: string | null;
   upload_url: string;
   upload_url_expires_at: string;
   upload_headers: {[key: string]: string};
@@ -624,9 +661,11 @@ export type UploadCreate = {
     | 'video/quicktime'
     | 'audio/webm'
     | 'audio/mp4'
-    | 'audio/mpeg';
+    | 'audio/mpeg'
+    | 'application/pdf';
   byte_size: number;
   duration_ms?: number | null;
+  captured_on?: string | null;
 };
 export type UploadDownload = {id: string; download_url: string; download_url_expires_at: string};
 export type UploadDownloadUrls = {attachment_ids: Array<string>};
@@ -634,7 +673,7 @@ export type UploadDownloadUrls = {attachment_ids: Array<string>};
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 14b4f9ed76bf4fabdaae90e829cc7755a117b6b2e3fd02f5739cb582ce405c69 */
+  /* typed-routes:hash ecff0a264b27e1b99b8233119c7dcf521174beed027c700c57c9b3e0a2b7a997 */
   '/api/health': {
     get: {
       parameters: {
@@ -753,13 +792,13 @@ export interface paths {
   '/v1/client/nutrition-days': {
     get: {
       parameters: {
-        query?: DayListQuery;
+        query?: NutritionDayListQuery;
         header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<Day>}}};
+        200: {content: {'application/json': {data: Array<NutritionDay>}}};
       };
     };
   };
@@ -771,9 +810,9 @@ export interface paths {
         path: {date: string};
         cookie?: never;
       };
-      requestBody: {content: {'application/json': DaySave}};
+      requestBody: {content: {'application/json': NutritionDaySave}};
       responses: {
-        200: {content: {'application/json': {data: Day}}};
+        200: {content: {'application/json': {data: NutritionDay}}};
       };
     };
   };
@@ -855,6 +894,160 @@ export interface paths {
       };
     };
   };
+  '/v1/client/review-replies': {
+    get: {
+      parameters: {
+        query?: ReviewReplyQuery;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': ChatMessageHistory}};
+      };
+    };
+  };
+  '/v1/client/tracker-assignments': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<TrackerAssignment>}}};
+      };
+    };
+  };
+  '/v1/client/tracker-entries': {
+    get: {
+      parameters: {
+        query?: TrackerEntryListQuery;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': TrackerEntryIndex}};
+      };
+    };
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': TrackerEntryCreate}};
+      responses: {
+        201: {content: {'application/json': {data: TrackerEntry}}};
+      };
+    };
+  };
+  '/v1/client/tracker-entries/{id}': {
+    delete: {
+      parameters: {
+        query: Revision;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        204: {content?: never};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': TrackerEntryUpdate}};
+      responses: {
+        200: {content: {'application/json': {data: TrackerEntry}}};
+      };
+    };
+  };
+  '/v1/client/tracker-prompts': {
+    get: {
+      parameters: {
+        query?: TrackerTodayPromptQuery;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<TrackerAssignment>}}};
+      };
+    };
+  };
+  '/v1/client/tracker-requests': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Array<TrackerRequest>}}};
+      };
+    };
+  };
+  '/v1/client/tracker-today': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: TrackerToday}}};
+      };
+    };
+  };
+  '/v1/client/trackers': {
+    get: {
+      parameters: {
+        query?: TrackerListQuery;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': TrackerIndex}};
+      };
+    };
+  };
+  '/v1/client/trackers/{id}': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Tracker}}};
+      };
+    };
+  };
+  '/v1/client/trackers/{id}/metrics': {
+    get: {
+      parameters: {
+        query?: TrackerMetricsQuery;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: TrackerMetrics}}};
+      };
+    };
+  };
   '/v1/client/training-exercises': {
     get: {
       parameters: {
@@ -865,6 +1058,19 @@ export interface paths {
       };
       responses: {
         200: {content: {'application/json': {data: Array<Exercise>; count: number}}};
+      };
+    };
+  };
+  '/v1/client/training-exercises/{exercise_id}/history': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {exercise_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: ExerciseHistory}}};
       };
     };
   };
@@ -929,6 +1135,19 @@ export interface paths {
       };
       responses: {
         200: {content: {'application/json': {data: TrainingPlanCoverage | null}}};
+      };
+    };
+  };
+  '/v1/client/training-plans/occurrences': {
+    get: {
+      parameters: {
+        query: TrainingPlanRangeQuery;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': TrainingOccurrences}};
       };
     };
   };

@@ -2,6 +2,7 @@ import {useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {useFood} from '../api/foods';
 import type {NutritionMealItem, NutritionPortion} from '../api/nutrition-plans';
+import {portionOptions} from '../api/nutrition-values';
 import {useRecipe} from '../api/recipes';
 import {Button} from '../ui/button';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
@@ -19,9 +20,9 @@ export function PortionEditor({
   onApply: (portion: NutritionPortion) => void;
   onClose: () => void;
 }) {
-  const food = useFood(item.kind === 'food' ? (item.food_id ?? '') : '');
-  const recipe = useRecipe(item.kind === 'recipe' ? (item.recipe_id ?? '') : '');
-  const query = item.kind === 'food' ? food : recipe;
+  const food = useFood(item.source.type === 'food' ? item.source.id : '');
+  const recipe = useRecipe(item.source.type === 'recipe' ? item.source.id : '');
+  const query = item.source.type === 'food' ? food : recipe;
   return (
     <Dialog
       isOpen
@@ -52,7 +53,7 @@ export function PortionEditor({
         {query.data ? (
           <PortionForm
             item={item}
-            options={query.data.data.portion_options}
+            options={portionOptions(query.data.data)}
             onApply={onApply}
             onClose={onClose}
           />
@@ -78,7 +79,7 @@ export function PortionEditor({
 }
 
 function portionKey(portion: NutritionPortion) {
-  return portion.kind === 'gram' ? 'gram' : JSON.stringify([portion.unit, portion.label]);
+  return portion.type === 'grams' ? 'grams' : portion.serving_id;
 }
 
 function PortionForm({
@@ -88,14 +89,14 @@ function PortionForm({
   onClose,
 }: {
   item: NutritionMealItem;
-  options: NutritionPortion[];
+  options: ReturnType<typeof portionOptions>;
   onApply: (portion: NutritionPortion) => void;
   onClose: () => void;
 }) {
   const [selected, setSelected] = useState(portionKey(item.portion));
-  const portion = options.find((option) => portionKey(option) === selected);
+  const portion = options.find((option) => portionKey(option.portion) === selected)?.portion;
   const form = useForm({
-    defaultValues: {amount: String(item.portion.kind === 'gram' ? item.portion.grams : item.portion.amount)},
+    defaultValues: {amount: String(item.portion.type === 'grams' ? item.portion.grams : item.portion.amount)},
   });
   return (
     <form
@@ -106,7 +107,7 @@ function PortionForm({
         form.handleSubmit(({amount}) => {
           if (portion) {
             onApply(
-              portion.kind === 'gram' ? {...portion, grams: Number(amount)} : {...portion, amount: Number(amount)},
+              portion.type === 'grams' ? {...portion, grams: Number(amount)} : {...portion, amount: Number(amount)},
             );
           }
         })(event);
@@ -124,10 +125,10 @@ function PortionForm({
           id="meal-portion-unit"
           value={portion ? selected : ''}
           onChange={(key) => {
-            const next = options.find((option) => portionKey(option) === key);
+            const next = options.find((option) => portionKey(option.portion) === key)?.portion;
             if (next) {
               setSelected(key);
-              form.setValue('amount', String(next.kind === 'gram' ? next.grams : next.amount), {
+              form.setValue('amount', String(next.type === 'grams' ? next.grams : next.amount), {
                 shouldDirty: true,
                 shouldValidate: true,
               });
@@ -136,10 +137,10 @@ function PortionForm({
         >
           {options.map((option) => (
             <SelectItem
-              key={portionKey(option)}
-              id={portionKey(option)}
+              key={portionKey(option.portion)}
+              id={portionKey(option.portion)}
             >
-              {option.kind === 'gram' ? 'Grams' : option.label || option.unit}
+              {option.label}
             </SelectItem>
           ))}
         </SelectField>
@@ -155,7 +156,7 @@ function PortionForm({
       <FormField
         control={form.control}
         name="amount"
-        label={portion?.kind === 'gram' ? 'Grams' : 'Quantity'}
+        label={portion?.type === 'grams' ? 'Grams' : 'Quantity'}
         inputMode="decimal"
         isRequired
         rules={{

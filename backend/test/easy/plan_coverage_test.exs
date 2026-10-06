@@ -1,9 +1,10 @@
 defmodule Easy.PlanCoverageTest do
   use Easy.DataCase, async: true
 
+  alias Easy.Clients.Client
   alias Easy.PlanCoverage
 
-  for factory <- [:training_plan, :plan] do
+  for factory <- [:training_plan, :nutrition_plan] do
     @factory factory
 
     test "#{factory}: a prepared plan waits and covers acceptance through the inclusive term end" do
@@ -64,7 +65,16 @@ defmodule Easy.PlanCoverageTest do
       for {timezone, expected} <- [{nil, :ended}, {"Pacific/Kiritimati", :current}] do
         terms = [build(:coaching_term, starts_on: Date.add(today, -30), ends_on: ending), build(:coaching_term, starts_on: today)]
         client = insert(:client, business: business, timezone: timezone, terms: terms)
-        plan = insert(@factory, business: business, client: client, start_date: today, inserted_at: inserted_at)
+
+        plan =
+          insert(@factory,
+            business: business,
+            client: client,
+            start_date: today,
+            inserted_at: inserted_at,
+            created_local_date: Client.local_date(%{client | business: business}, inserted_at)
+          )
+
         plan = Repo.preload(plan, client: [:business, :terms])
 
         assert_coverage(plan, today, expected)
@@ -82,7 +92,8 @@ defmodule Easy.PlanCoverageTest do
       client: client,
       start_date: start_date,
       end_date: opts[:end_date],
-      inserted_at: inserted_at
+      inserted_at: inserted_at,
+      created_local_date: Keyword.fetch!(opts, :inserted_on)
     ]
 
     factory

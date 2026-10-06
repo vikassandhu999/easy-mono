@@ -34,11 +34,10 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
 
       payload = %{
         "name" => "Cable Curl #{Ecto.UUID.generate()}",
-        "description" => "Curl with control.",
         "instructions" => "Keep elbows fixed and pull through the full range.",
         "mechanics" => "isolation",
         "force" => "pull",
-        "images" => ["https://cdn.example.com/exercises/cable-curl.png"],
+        "measures" => ["reps", "load"],
         "muscle_ids" => [traps.id, biceps.id],
         "equipment_ids" => [cable.id, barbell.id]
       }
@@ -52,13 +51,13 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       assert data["id"]
       refute Map.has_key?(data, "business_id")
       assert data["name"] == payload["name"]
-      assert data["description"] == payload["description"]
       assert data["instructions"] == payload["instructions"]
-      assert data["source"] == "custom"
-      assert data["tracking_type"] == "weight_reps"
+      assert data["built_in"] == false
+      assert data["measures"] == ["reps", "load"]
+      assert data["bodyweight"] == false
       assert data["mechanics"] == payload["mechanics"]
       assert data["force"] == payload["force"]
-      assert data["images"] == payload["images"]
+      refute Map.has_key?(data, "images")
 
       assert data["muscles"]
              |> Enum.map(& &1["id"])
@@ -75,11 +74,10 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
 
       assert exercise.business_id == business.id
       assert exercise.name == payload["name"]
-      assert exercise.description == payload["description"]
       assert exercise.instructions == payload["instructions"]
       assert exercise.mechanics == :isolation
       assert exercise.force == :pull
-      assert exercise.images == payload["images"]
+      assert exercise.measures == [:reps, :load]
 
       assert exercise.muscles
              |> Enum.map(& &1.id)
@@ -94,7 +92,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       conn =
         conn
         |> put_req_header("content-type", "application/json")
-        |> post("/v1/coach/training-exercises", %{"description" => "missing name"})
+        |> post("/v1/coach/training-exercises", %{"measures" => ["reps"]})
 
       assert %{"error_detail" => %{"fields" => %{"name" => ["is required"]}}} =
                json_response(conn, 422)
@@ -390,15 +388,15 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
   end
 
   describe "GET /v1/coach/training-exercises/:id" do
-    test "renders the public media subset and normalizes nil images", %{conn: conn, business: business} do
+    test "renders the public media subset and includes measures", %{conn: conn, business: business} do
       media = insert(:library_media, business: business)
-      exercise = insert(:exercise, business: business, images: nil, media: media)
+      exercise = insert(:exercise, business: business, media: media)
 
       conn = get(conn, "/v1/coach/training-exercises/#{exercise.id}")
 
       assert %{
                "data" => %{
-                 "images" => [],
+                 "measures" => ["reps", "load"],
                  "media" => %{
                    "id" => media_id,
                    "kind" => "image",
@@ -589,7 +587,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
 
       conn = delete(conn, "/v1/coach/training-exercises/#{exercise.id}")
       assert response(conn, 204)
-      assert Repo.get(TrainingExercise, exercise.id) == nil
+      assert Repo.get(TrainingExercise, exercise.id).archived_at != nil
     end
 
     test "returns 404 when deleting a system exercise", %{conn: conn} do

@@ -78,18 +78,15 @@ export function NutritionPlans() {
       >
         {(plan) => (
           <Link
-            to={generatePath(plan.lifecycle === 'archived' ? routes.manageNutritionPlan : routes.editNutritionPlan, {
+            to={generatePath(plan.status === 'archived' ? routes.manageNutritionPlan : routes.editNutritionPlan, {
               id: plan.id,
             })}
             state={{listSearch: search}}
             className="block space-y-1 px-5 py-4 hover:bg-muted/50 focus-visible:-outline-offset-4"
           >
             <p className="break-words font-semibold">{plan.name}</p>
-            {plan.lifecycle === 'archived' && <StatusBadge>Archived</StatusBadge>}
-            <p className="text-sm text-muted-foreground">
-              {plan.target_calories === null ? 'No calorie target' : `${plan.target_calories} kcal target`} ·{' '}
-              {plan.assigned_client_count} {plan.assigned_client_count === 1 ? 'client' : 'clients'}
-            </p>
+            {plan.status === 'archived' && <StatusBadge>Archived</StatusBadge>}
+            <p className="text-sm text-muted-foreground">{plan.meal_count} meals</p>
             {plan.description && <p className="line-clamp-2 text-sm text-muted-foreground">{plan.description}</p>}
           </Link>
         )}

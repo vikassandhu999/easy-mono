@@ -152,7 +152,7 @@ function History({clientId}: {clientId: string}) {
                 to={generatePath(routes.trainingSession, {clientId, id: session.id})}
                 state={{listSearch: location.search}}
                 className="block p-5 hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
-                aria-label={`Read ${sessionTitle(session)} on ${session.date}`}
+                aria-label={`Read ${sessionTitle(session)} on ${session.local_date}`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <h2 className="break-words text-lg font-semibold">{sessionTitle(session)}</h2>
@@ -167,16 +167,11 @@ function History({clientId}: {clientId: string}) {
                   </StatusBadge>
                   <time
                     className="text-sm text-muted-foreground"
-                    dateTime={session.date}
+                    dateTime={session.local_date}
                   >
-                    {session.date}
+                    {session.local_date}
                   </time>
                 </div>
-                {session.kind === 'planned' && session.prescription_snapshot && (
-                  <p className="mt-2 wrap-anywhere text-sm text-muted-foreground">
-                    {session.prescription_snapshot.plan.name}
-                  </p>
-                )}
               </Link>
             )}
           </InfiniteList>

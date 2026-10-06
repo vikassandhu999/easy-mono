@@ -198,7 +198,8 @@ export function History() {
                           className="size-5 shrink-0"
                         />
                         <span>
-                          View record: {message.embed.snapshot.title}
+                          {message.embed.type === 'review' ? 'View Review: ' : 'View record: '}
+                          {message.embed.snapshot.title}
                           {message.embed.snapshot.revision ? ` · revision ${message.embed.snapshot.revision}` : ''}
                         </span>
                         <ChevronRight
@@ -224,6 +225,7 @@ export function History() {
                         })}
                       </time>
                       {message.sender_type === 'client' && ' · Sent'}
+                      {message.edited_at && ' · edited'}
                     </MessageFooter>
                   </MessageContent>
                 </Message>
@@ -280,6 +282,8 @@ function referencePath(embed: NonNullable<ChatMessage['embed']>) {
   }
   let path: string;
   switch (embed.type) {
+    case 'review':
+      return `${routes.checkIns}?${new URLSearchParams({review: embed.id})}`;
     case 'training_session':
       path = generatePath(routes.trainingSession, {id: embed.id});
       break;

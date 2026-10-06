@@ -1,12 +1,12 @@
 import {useInfiniteQuery, useMutation, useQuery} from '@tanstack/react-query';
-import {call, client} from './client';
+import {call, callEmpty, client} from './client';
 import {clientKeys, trainingPlanKeys} from './keys';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
 import type {paths} from './schema';
 import {getSession} from './session';
 
-export type {TrainingPlan, TrainingPlanPlannedSet} from './schema';
+export type {TrainingPlan} from './schema';
 export type TrainingPlanFilters = Pick<
   NonNullable<paths['/v1/coach/training-plans']['get']['parameters']['query']>,
   'search' | 'archived'
@@ -86,13 +86,12 @@ export function useAssignTrainingPlan(clientId: string, templateId: string) {
 export type TrainingPlanDetails = NonNullable<
   paths['/v1/coach/training-plans']['post']['requestBody']
 >['content']['application/json'];
-export type TrainingPrescription = NonNullable<
-  paths['/v1/coach/training-plans/{id}/prescription']['put']['requestBody']
+export type TrainingPlanUpdate = NonNullable<
+  paths['/v1/coach/training-plans/{id}']['patch']['requestBody']
 >['content']['application/json'];
 type TrainingPlanWrite =
   | {kind: 'create'; body: TrainingPlanDetails}
-  | {kind: 'details'; id: string; body: TrainingPlanDetails & {expected_revision: number}}
-  | {kind: 'prescription'; id: string; body: TrainingPrescription};
+  | {kind: 'details'; id: string; body: TrainingPlanUpdate};
 
 export function useSaveTrainingPlan(clientId?: string) {
   return useMutation({
@@ -104,13 +103,6 @@ export function useSaveTrainingPlan(clientId?: string) {
         case 'details':
           return call(
             client.PATCH('/v1/coach/training-plans/{id}', {params: {path: {id: input.id}}, body: input.body}),
-          );
-        case 'prescription':
-          return call(
-            client.PUT('/v1/coach/training-plans/{id}/prescription', {
-              params: {path: {id: input.id}},
-              body: input.body,
-            }),
           );
       }
     },
@@ -147,6 +139,23 @@ export function useSaveTrainingPlan(clientId?: string) {
             : []),
         ]);
       }
+    },
+  });
+}
+
+export function useWithdrawTrainingRevision(id: string) {
+  return useMutation({
+    mutationFn: (input: {revisionId: string; expectedRevision: number}) =>
+      callEmpty(
+        client.DELETE('/v1/coach/training-plans/{id}/revisions/{revision_id}', {
+          params: {path: {id, revision_id: input.revisionId}, query: {expected_revision: input.expectedRevision}},
+        }),
+      ),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({queryKey: trainingPlanKeys.detail(id)}),
+        queryClient.invalidateQueries({queryKey: trainingPlanKeys.lists()}),
+      ]);
     },
   });
 }

@@ -1,53 +1,80 @@
 import {addDays} from '@easy/utils';
-import {CalendarDays, Check, ChevronLeft, ChevronRight, Plus, Utensils} from 'lucide-react';
-import {useState} from 'react';
+import {Check, ChevronLeft, ChevronRight, Utensils} from 'lucide-react';
 import {generatePath, Link, Navigate, useParams, useSearchParams} from 'react-router-dom';
-import {type Day, type FoodNutrients, useNutritionDay, useNutritionPlan} from '../api/nutrition';
+import {type NutrientMap, type NutritionDay, useNutritionDay, useNutritionPlan} from '../api/nutrition';
 import {safeReturnTo} from '../auth/return-to';
 import {routes} from '../routes';
 import {dayLabel} from '../training/recording';
 import {ActionCard} from '../ui/action-card';
-import {BottomSheet} from '../ui/bottom-sheet';
 import {Button} from '../ui/button';
 import {CachedRead} from '../ui/cached-read';
 import {useCoaching} from '../ui/coaching';
 import {Page} from '../ui/page';
 import {ReadState} from '../ui/read-state';
-import {mealSlots, portionText, slotLabel} from './meal-draft';
+import {portionText} from './meal-draft';
 
-const weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
+const nutrientLabels = [
+  ['energy_kcal', 'Energy', 'kcal'],
+  ['protein_g', 'Protein', 'g'],
+  ['carbs_g', 'Carbs', 'g'],
+  ['fat_g', 'Fat', 'g'],
+  ['fiber_g', 'Fiber', 'g'],
+  ['sugar_g', 'Sugar', 'g'],
+] as const;
+const number = (value: number) => Math.round(value * 10) / 10;
 
-export function Nutrients({
-  value,
-  label,
-  prominent = false,
-}: {
-  value: FoodNutrients;
-  label: string;
-  prominent?: boolean;
-}) {
+export function Nutrients({value, label}: {value: NutrientMap; label: string}) {
   return (
-    <div className="space-y-1">
-      <p className={prominent ? 'space-y-1' : 'font-medium'}>
-        <span className={prominent ? 'block text-sm font-semibold' : undefined}>{label}: </span>
-        <span className={prominent ? 'block text-3xl font-extrabold tracking-tight' : undefined}>
-          {value.calories === null ? 'Calories unavailable' : `${value.calories} kcal`}
-        </span>
-      </p>
+    <div className="space-y-2">
+      <p className="font-semibold">{label}</p>
       <p className="text-sm text-muted-foreground">
-        Protein {value.protein ?? '—'} g · Carbs {value.carbohydrates ?? '—'} g · Fat {value.fat ?? '—'} g
+        {nutrientLabels
+          .map(
+            ([code, name, unit]) =>
+              `${name}: ${value[code] === undefined ? 'Unknown' : `${number(value[code])} ${unit}`}`,
+          )
+          .join(' · ')}
       </p>
-      {!value.complete && <p className="text-sm text-muted-foreground">Some nutrient information is unavailable.</p>}
     </div>
   );
 }
-
+function Targets({targets}: {targets: NutritionDay['targets']}) {
+  return (
+    <dl className="space-y-1">
+      {nutrientLabels.map(([code, name, unit]) => {
+        const target = targets[code];
+        if (!target) {
+          return null;
+        }
+        return (
+          <div
+            key={code}
+            className="flex justify-between gap-3 text-sm"
+          >
+            <dt>{name}</dt>
+            <dd>
+              {target.min === target.max
+                ? `${target.min}`
+                : target.min == null
+                  ? `At most ${target.max}`
+                  : target.max == null
+                    ? `At least ${target.min}`
+                    : `${target.min}–${target.max}`}{' '}
+              {unit}
+            </dd>
+          </div>
+        );
+      })}
+    </dl>
+  );
+}
 export function TodayNutrition() {
   const {canWrite} = useCoaching();
   const query = useNutritionDay();
+  const day = query.data?.data;
   return (
     <section className="mb-4 space-y-3">
-      {query.data ? (
+      {day ? (
         <>
           <CachedRead
             updatedAt={query.dataUpdatedAt}
@@ -57,20 +84,23 @@ export function TodayNutrition() {
           />
           <ActionCard
             title={canWrite ? 'Today’s meals' : 'Meal history'}
-            eyebrow="Fuel your day"
+            eyebrow="Nutrition"
             to={routes.nutrition}
             tone="nutrition"
             icon={<Utensils />}
             description={
-              !canWrite
-                ? 'Revisit your saved meals and notes.'
-                : query.data.data.summary.has_intake
-                  ? 'Your meals are saved. Ready for the next one?'
-                  : query.data.data.plan_id
-                    ? 'Your plan is ready. Let’s dig in.'
-                    : 'Make a little space to record what you eat.'
+              canWrite
+                ? `${day.counts.recorded} recorded · ${day.counts.expected} planned meals`
+                : 'Read your saved meals and notes.'
             }
           />
+          {day.slots.length > 0 && (
+            <p className="text-sm text-muted-foreground">
+              {day.slots
+                .map((slot) => `${slot.name}: ${slot.status === 'recorded' ? 'Recorded' : 'Not recorded'}`)
+                .join(' · ')}
+            </p>
+          )}
         </>
       ) : (
         <ReadState
@@ -84,108 +114,49 @@ export function TodayNutrition() {
     </section>
   );
 }
-
 export function Nutrition() {
   const [params, setParams] = useSearchParams();
-  const date = params.get('date') || undefined;
-  const query = useNutritionDay(date);
+  const query = useNutritionDay(params.get('date') || undefined);
   const day = query.data?.data;
-  const [dateOpen, setDateOpen] = useState(false);
   return (
     <Page
       title="Nutrition"
-      description="A little fuel for your day."
+      description="Your meals and daily targets."
       compact
     >
-      <div className="mb-5 flex items-center justify-between gap-3">
-        {day?.plan_id && (
-          <Link
-            className="inline-flex min-h-11 items-center gap-2 rounded-2xl bg-surface px-4 font-semibold"
-            to={`${generatePath(routes.nutritionPlan, {id: day.plan_id})}?${new URLSearchParams({returnTo: `${routes.nutrition}${params.size ? `?${params}` : ''}`})}`}
+      {day && (
+        <div className="mb-5 flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Previous day"
+            onPress={() => setParams({date: addDays(day.date, -1).toString()})}
           >
-            <Utensils
-              className="size-4 text-primary"
-              aria-hidden="true"
+            <ChevronLeft />
+          </Button>
+          <label className="min-w-0 flex-1 text-sm">
+            Nutrition day
+            <input
+              aria-label="Nutrition day"
+              type="date"
+              className="block h-12 w-full rounded-xl border border-border px-2 text-base"
+              value={day.date}
+              onChange={(event) => {
+                if (event.target.value) {
+                  setParams({date: event.target.value});
+                }
+              }}
             />
-            View plan
-          </Link>
-        )}
-        {date && (
-          <Link
-            className="inline-flex min-h-11 items-center px-3 font-semibold text-primary"
-            to={routes.nutrition}
+          </label>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Next day"
+            onPress={() => setParams({date: addDays(day.date, 1).toString()})}
           >
-            Back to today
-          </Link>
-        )}
-      </div>
-      <div className="mb-5 flex items-center justify-between gap-2 rounded-3xl bg-surface p-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Previous day"
-          isDisabled={!day}
-          onPress={() => day && setParams({date: addDays(day.date, -1).toString()})}
-        >
-          <ChevronLeft aria-hidden="true" />
-        </Button>
-        <Button
-          variant="ghost"
-          aria-label="Choose day"
-          className="flex-1 px-2"
-          onPress={() => setDateOpen(true)}
-        >
-          <CalendarDays
-            className="size-4"
-            aria-hidden="true"
-          />
-          {day ? dayLabel(day.date) : 'Choose day'}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Next day"
-          isDisabled={!day}
-          onPress={() => day && setParams({date: addDays(day.date, 1).toString()})}
-        >
-          <ChevronRight aria-hidden="true" />
-        </Button>
-      </div>
-      {dateOpen && (
-        <BottomSheet
-          title="Choose a day"
-          onClose={() => setDateOpen(false)}
-        >
-          <form
-            className="space-y-5"
-            onSubmit={(event) => {
-              event.preventDefault();
-              const selected = new FormData(event.currentTarget).get('date');
-              if (typeof selected === 'string' && selected) {
-                setParams({date: selected});
-              }
-              setDateOpen(false);
-            }}
-          >
-            <label className="grid gap-2 font-medium">
-              Day
-              <input
-                aria-label="Nutrition day"
-                name="date"
-                type="date"
-                required
-                className="h-12 w-full min-w-0 rounded-xl border border-border px-3 text-base"
-                defaultValue={date ?? day?.date ?? ''}
-              />
-            </label>
-            <Button
-              type="submit"
-              className="w-full"
-            >
-              Show day
-            </Button>
-          </form>
-        </BottomSheet>
+            <ChevronRight />
+          </Button>
+        </div>
       )}
       {!day ? (
         <ReadState
@@ -203,16 +174,12 @@ export function Nutrition() {
             refreshing={query.isFetching}
             refresh={() => query.refetch()}
           />
-          {params.get('saved') && (
+          {params.has('saved') && (
             <p
               role="status"
-              className="mb-5 flex items-center gap-2 font-semibold text-primary"
+              className="mb-4 font-semibold text-primary"
             >
-              <Check
-                className="size-5"
-                aria-hidden="true"
-              />
-              Meal shared.
+              Meal saved.
             </p>
           )}
           <DayOverview day={day} />
@@ -221,139 +188,113 @@ export function Nutrition() {
     </Page>
   );
 }
-
-function DayOverview({day}: {day: Day}) {
+function DayOverview({day}: {day: NutritionDay}) {
   const {canWrite} = useCoaching();
-  const [adding, setAdding] = useState(false);
-  const remaining = mealSlots.filter((slot) => !day.slots.some((item) => item.meal_slot === slot));
   return (
     <>
-      <section className="space-y-4 mb-6 rounded-[2rem] bg-[var(--nutrition)] p-5">
-        {day.summary.has_intake ? (
-          <Nutrients
-            value={day.summary.logged}
-            label="Recorded"
-            prominent
-          />
-        ) : (
-          <div className="space-y-2">
-            <Utensils
-              className="size-7 text-primary -rotate-12"
-              aria-hidden="true"
-            />
-            <h2 className="text-2xl font-bold">{canWrite ? 'Ready when you are' : 'No meals recorded'}</h2>
-            <p className="text-sm text-muted-foreground">
-              {canWrite ? 'Open a meal below to record what you ate.' : 'Choose a day to revisit your meal history.'}
-            </p>
-          </div>
-        )}
-        <details className="space-y-3">
-          <summary className="min-h-11 cursor-pointer py-3 font-semibold">Your daily guidance</summary>
-          {day.slots.some((slot) => slot.options.length > 0) && (
-            <Nutrients
-              value={day.summary.planned}
-              label="Planned"
-            />
+      <section className="mb-6 space-y-4 rounded-3xl bg-[var(--nutrition)] p-5">
+        <h2 className="text-xl font-bold">
+          {day.counts.recorded} recorded · {day.counts.expected} planned
+        </h2>
+        <dl className="space-y-2">
+          {nutrientLabels.map(([code, name, unit]) => {
+            const total = day.totals[code];
+            return (
+              <div
+                key={code}
+                className="flex justify-between gap-3 text-sm"
+              >
+                <dt>{name}</dt>
+                <dd className="text-right">
+                  {total?.value == null ? 'Unknown' : `${number(total.value)} ${unit}`}
+                  <span className="block text-xs text-muted-foreground">
+                    {total?.known_entries ?? 0} of {total?.total_entries ?? 0} entries known
+                  </span>
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
+        <details>
+          <summary className="min-h-11 cursor-pointer py-3 font-semibold">Daily targets</summary>
+          <Targets targets={day.targets} />
+          {day.plan_revision_number !== null && (
+            <p className="mt-2 text-xs text-muted-foreground">Target revision {day.plan_revision_number}</p>
           )}
-          {Object.values(day.targets).some((value) => value !== null) && (
-            <p className="text-sm text-muted-foreground">
-              Daily target: {day.targets.calories ?? '—'} kcal · Protein {day.targets.protein_g ?? '—'} g · Carbs{' '}
-              {day.targets.carbs_g ?? '—'} g · Fat {day.targets.fat_g ?? '—'} g
+          {day.target_changed && (
+            <p
+              role="status"
+              className="mt-3 text-sm"
+            >
+              The target changed today. These targets apply at the end of the day.
             </p>
           )}
-          <p className="text-sm text-muted-foreground">{day.applied_timezone.replaceAll('_', ' ')}</p>
+          <p className="mt-2 text-xs text-muted-foreground">{day.timezone.replaceAll('_', ' ')}</p>
         </details>
+        {day.plan_id && (
+          <Link
+            className="inline-flex min-h-11 items-center font-semibold text-primary"
+            to={generatePath(routes.nutritionPlan, {id: day.plan_id})}
+          >
+            View plan
+          </Link>
+        )}
       </section>
-      {(!canWrite || !day.write_eligible) && (
-        <p className="mb-5 text-sm text-muted-foreground">This day is read-only.</p>
-      )}
-      {day.slots.length === 0 && (
-        <p className="mb-6 text-muted-foreground">No meals are planned or recorded for this day.</p>
-      )}
+      {(!canWrite || !day.write_eligible) && <p className="mb-4 text-muted-foreground">This day is read-only.</p>}
       <ul className="divide-y divide-border">
         {day.slots.map((slot) => (
-          <li key={slot.meal_slot}>
+          <li key={slot.id}>
             <Link
               className="flex items-center gap-3 py-5"
-              to={generatePath(routes.nutritionMeal, {date: day.date, slot: slot.meal_slot})}
+              to={generatePath(routes.nutritionMeal, {date: day.date, slot: slot.id})}
             >
-              <span
-                className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--nutrition)] text-primary"
-                aria-hidden="true"
-              >
-                {slot.revision > 0 ? <Check className="size-5" /> : <Utensils className="size-5" />}
-              </span>
-              <span className="min-w-0 flex-1 space-y-1">
-                <span className="block text-xl font-bold">{slotLabel(slot.meal_slot)}</span>
-                <span className="block">
-                  {slot.options.find((option) => option.meal_id === slot.meal_id)?.meal_name ?? 'Your meal'}
-                </span>
+              {slot.meal ? (
+                <Check className="size-5 shrink-0 text-primary" />
+              ) : (
+                <Utensils className="size-5 shrink-0" />
+              )}
+              <span className="min-w-0 flex-1">
+                <span className="block text-xl font-bold">{slot.name}</span>
                 <span className="block text-sm text-muted-foreground">
-                  {slot.shared_at ? 'Shared' : slot.revision > 0 ? 'Saved draft' : 'Not recorded'}
-                  {slot.logged_calories !== null ? ` · ${slot.logged_calories} kcal recorded` : ''}
+                  {slot.status === 'recorded' ? 'Recorded' : 'Not recorded'}
                 </span>
               </span>
-              <ChevronRight
-                className="size-5 shrink-0"
-                aria-hidden="true"
-              />
+              <ChevronRight className="size-5 shrink-0" />
+            </Link>
+          </li>
+        ))}
+        {day.extra_meals.map((meal) => (
+          <li key={meal.id}>
+            <Link
+              className="block py-5"
+              to={generatePath(routes.nutritionMeal, {date: day.date, slot: meal.id})}
+            >
+              <span className="block text-xl font-bold">{meal.name}</span>
+              <span className="text-sm text-muted-foreground">Recorded · Extra meal</span>
             </Link>
           </li>
         ))}
       </ul>
-      {canWrite && day.write_eligible && remaining.length > 0 && (
-        <div className="mt-6 space-y-3">
-          <Button
-            variant="outline"
-            className="w-full"
-            onPress={() => setAdding(!adding)}
-          >
-            <Plus
-              className="size-5"
-              aria-hidden="true"
-            />
-            Record another meal
-          </Button>
-          {adding && (
-            <BottomSheet
-              title="Choose a meal time"
-              onClose={() => setAdding(false)}
-            >
-              <ul
-                aria-label="Meal times"
-                className="divide-y divide-border"
-              >
-                {remaining.map((slot) => (
-                  <li key={slot}>
-                    <Link
-                      className="flex min-h-14 items-center justify-between py-3 font-semibold"
-                      to={generatePath(routes.nutritionMeal, {date: day.date, slot})}
-                    >
-                      {slotLabel(slot)}
-                      <ChevronRight
-                        className="size-5"
-                        aria-hidden="true"
-                      />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </BottomSheet>
-          )}
-        </div>
+      {day.slots.length + day.extra_meals.length === 0 && (
+        <p className="mb-5 text-muted-foreground">No meals planned or recorded.</p>
+      )}
+      {canWrite && day.write_eligible && (
+        <Link
+          className="mt-4 flex min-h-12 items-center justify-center rounded-xl border border-border font-semibold"
+          to={generatePath(routes.nutritionMeal, {date: day.date, slot: 'new'})}
+        >
+          Record another meal
+        </Link>
       )}
     </>
   );
 }
-
 export function CurrentNutritionPlan() {
-  const {canWrite} = useCoaching();
   const query = useNutritionDay();
-  const planId = query.data?.data.plan_id;
-  if (planId) {
+  if (query.data?.data.plan_id) {
     return (
       <Navigate
-        to={generatePath(routes.nutritionPlan, {id: planId})}
+        to={generatePath(routes.nutritionPlan, {id: query.data.data.plan_id})}
         replace
       />
     );
@@ -373,24 +314,11 @@ export function CurrentNutritionPlan() {
           }}
         />
       ) : (
-        <>
-          <CachedRead
-            updatedAt={query.dataUpdatedAt}
-            failed={query.isError}
-            refreshing={query.isFetching}
-            refresh={() => query.refetch()}
-          />
-          <p className="text-muted-foreground">
-            {canWrite
-              ? 'Your coach hasn’t scheduled a nutrition plan for today. You can still record your meals.'
-              : 'There is no nutrition plan for today. Your meal history is still available.'}
-          </p>
-        </>
+        <p>No nutrition plan applies today. Your meal history is still available.</p>
       )}
     </Page>
   );
 }
-
 export function NutritionPlan() {
   const {id = ''} = useParams();
   const [params] = useSearchParams();
@@ -420,84 +348,72 @@ export function NutritionPlan() {
             refresh={() => query.refetch()}
           />
           <p className="mb-4 text-muted-foreground">
-            {plan.start_date
-              ? `From ${dayLabel(plan.start_date)}${plan.end_date ? ` to ${dayLabel(plan.end_date)}` : ''}`
-              : 'Your coach has not set dates yet.'}
+            {plan.start_date ? `From ${dayLabel(plan.start_date)}` : 'No start date'}
           </p>
-          {plan.stopped_on && (
-            <p className="mb-4 text-muted-foreground">Stopped when coaching ended on {dayLabel(plan.stopped_on)}.</p>
-          )}
-          <section className="mb-6 rounded-[2rem] bg-[var(--nutrition)] p-5 space-y-2">
+          <section className="mb-6 space-y-3 rounded-3xl bg-[var(--nutrition)] p-5">
             <h2 className="text-xl font-semibold">Daily targets</h2>
-            <p>
-              {plan.target_calories ?? '—'} kcal · Protein {plan.target_protein_g ?? '—'} g
-            </p>
-            <p className="text-muted-foreground">
-              Carbs {plan.target_carbs_g ?? '—'} g · Fat {plan.target_fat_g ?? '—'} g · Fiber{' '}
-              {plan.target_fiber_g ?? '—'} g
-            </p>
+            <Targets targets={plan.content.targets} />
           </section>
-          <h2 className="text-xl font-semibold mb-3">Weekly guidance</h2>
-          <dl className="mb-6 divide-y divide-border rounded-3xl bg-surface px-5">
-            {weekdays.map((weekday) => (
-              <div
-                key={weekday}
-                className="flex justify-between gap-4 py-3"
-              >
-                <dt className="capitalize">{weekday}</dt>
-                <dd className="text-right text-muted-foreground">
-                  {plan.menu.day_patterns.find((pattern) => pattern.id === plan.menu.schedule[weekday])?.name ??
-                    'No guidance'}
-                </dd>
-              </div>
-            ))}
+          <h2 className="mb-3 text-xl font-semibold">Weekly guidance</h2>
+          <dl className="mb-6 divide-y divide-border">
+            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, index) => {
+              const entry = plan.content.schedule.entries.find((entry) => entry.day === index + 1);
+              return (
+                <div
+                  key={day}
+                  className="flex justify-between gap-3 py-3"
+                >
+                  <dt>{day}</dt>
+                  <dd>
+                    {plan.content.day_patterns.find((pattern) => pattern.id === entry?.ref)?.name ?? 'No guidance'}
+                  </dd>
+                </div>
+              );
+            })}
           </dl>
-          {plan.menu.day_patterns.map((pattern) => (
+          {plan.content.day_patterns.map((pattern) => (
             <section
-              className="mb-6 space-y-3"
               key={pattern.id}
+              className="mb-6 space-y-3"
             >
               <h2 className="text-xl font-semibold">{pattern.name}</h2>
+              {pattern.targets && <Targets targets={pattern.targets} />}
               {pattern.slots.map((slot) => (
                 <div
+                  key={slot.id}
                   className="rounded-2xl bg-surface p-4"
-                  key={slot.meal_slot}
                 >
-                  <h3 className="font-medium">{slotLabel(slot.meal_slot)}</h3>
-                  <p className="text-muted-foreground">
-                    {slot.meal_ids
-                      .map((mealId) => plan.menu.meals.find((meal) => meal.id === mealId)?.name ?? 'Unavailable meal')
-                      .join(' or ')}
+                  <h3 className="font-semibold">{slot.name}</h3>
+                  <p>
+                    {slot.meal_ids.map((id) => plan.content.meals.find((meal) => meal.id === id)?.name).join(' or ')}
                   </p>
                 </div>
               ))}
             </section>
           ))}
           <h2 className="text-xl font-semibold">Meals</h2>
-          {plan.menu.meals.length === 0 && <p className="py-4 text-muted-foreground">No meals have been added yet.</p>}
-          {plan.menu.meals.map((meal) => (
+          {plan.content.meals.map((meal) => (
             <details
               key={meal.id}
-              className="rounded-3xl bg-surface px-5 py-3 mt-3"
+              className="mt-3 rounded-3xl bg-surface px-5 py-3"
             >
-              <summary className="min-h-12 py-3 cursor-pointer font-bold text-lg">{meal.name}</summary>
-              <div className="py-3 space-y-3">
-                {meal.notes && <p className="whitespace-pre-wrap">{meal.notes}</p>}
-                <ul className="space-y-3">
-                  {meal.meal_items.map((item) => (
-                    <li key={item.id}>
-                      <p>{item.name ?? 'Unavailable item'}</p>
-                      <p className="text-sm text-muted-foreground">{portionText(item.portion)}</p>
-                    </li>
-                  ))}
-                </ul>
-                {meal.nutrients && (
-                  <Nutrients
-                    label="Planned meal"
-                    value={meal.nutrients}
-                  />
-                )}
-              </div>
+              <summary className="min-h-12 cursor-pointer py-3 text-lg font-bold">{meal.name}</summary>
+              {meal.notes && <p className="whitespace-pre-wrap">{meal.notes}</p>}
+              <ul className="space-y-3 py-3">
+                {meal.items.map((item) => (
+                  <li key={item.id}>
+                    <p>
+                      {item.name} · {portionText(item.portion)}
+                    </p>
+                    {item.nutrients && (
+                      <Nutrients
+                        label="Planned portion"
+                        value={item.nutrients}
+                      />
+                    )}
+                  </li>
+                ))}
+              </ul>
             </details>
           ))}
         </>

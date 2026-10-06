@@ -16,10 +16,11 @@ defmodule Easy.Chat.Message do
   @type t :: %__MODULE__{}
 
   schema "chat_messages" do
+    field :edited_at, :utc_datetime_usec
     field :body, :string
     field :request_id, :binary_id
     field :request_fingerprint, :string
-    field :embed_type, Ecto.Enum, values: [:training_session, :meal]
+    field :embed_type, Ecto.Enum, values: [:training_session, :meal, :review]
     field :embed_id, :binary_id
     field :embed_snapshot, :map
     field :sender_type, Ecto.Enum, values: [:coach, :client]

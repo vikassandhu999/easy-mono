@@ -1,23 +1,18 @@
 import {onlineManager, useInfiniteQuery, useMutation, useQuery} from '@tanstack/react-query';
 import {ApiError, call, client} from './client';
 import {conversationKeys, nutritionKeys} from './keys';
+import {assertMealNameAvailable, findSavedMeal} from './nutrition-meals';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
-import type {Day, DaySlotInput, NutritionDaySlot, NutritionPortion} from './schema';
+import type {DiaryMeal, Food, NutritionDay, paths} from './schema';
 import {getSession} from './session';
 
-export type {
-  Day,
-  DayEntryInput,
-  DaySlotInput,
-  Food,
-  FoodNutrients,
-  NutritionDayOption,
-  NutritionDaySlot,
-  NutritionPlan,
-  NutritionPortion,
-  Recipe,
-} from './schema';
+export type {DiaryMeal, Food, NutritionDay, NutritionMeal, NutritionPlan, NutritionPortion, Recipe} from './schema';
+export type MealInput =
+  paths['/v1/client/nutrition-days/{date}']['patch']['requestBody']['content']['application/json']['meals'][number];
+export type EntryInput = MealInput['entries'][number];
+export type NutritionSlot = NutritionDay['slots'][number];
+export type NutrientMap = Food['nutrients'];
 
 export function useNutritionDay(date?: string) {
   return useQuery({
@@ -69,47 +64,13 @@ export function useRecipes(search: string) {
   });
 }
 
-export function samePortion(left: NutritionPortion, right: NutritionPortion) {
-  return left.kind === 'gram'
-    ? right.kind === 'gram' && left.grams === right.grams
-    : right.kind === 'serving' &&
-        left.amount === right.amount &&
-        left.unit === right.unit &&
-        left.label === right.label;
-}
-
-// Only the immediately following revision can acknowledge this exact operation.
-// A later revision or hidden source identity requires a deliberate comparison.
-export function mealSaveMatches(input: DaySlotInput, slot: NutritionDaySlot | undefined) {
-  if (!slot || slot.revision !== input.expected_revision + 1 || slot.meal_id !== input.meal_id) {
-    return false;
-  }
-  if (
-    (input.share && !slot.shared_at) ||
-    (input.note_to_coach !== undefined && slot.note_to_coach !== input.note_to_coach)
-  ) {
-    return false;
-  }
-  const rows = slot.rows.filter((row) => row.entry_id !== null);
-  return (
-    rows.length === input.entries.length &&
-    input.entries.every((entry) =>
-      rows.some(
-        (row) =>
-          row.entry_id === entry.id &&
-          row.planned_item_ref === entry.planned_item_ref &&
-          row.food_id === entry.food_id &&
-          row.recipe_id === entry.recipe_id &&
-          samePortion(row.portion, entry.portion) &&
-          row.notes === entry.notes,
-      ),
-    )
-  );
+export function mealSaveMatches(input: MealInput, meal: DiaryMeal | undefined | null) {
+  return meal?.id === input.id && meal.request_id === input.request_id;
 }
 
 export class MealConflict extends Error {
-  readonly day: Day;
-  constructor(day: Day) {
+  readonly day: NutritionDay;
+  constructor(day: NutritionDay) {
     super('This meal changed since you opened it. Compare the saved meal with your draft.');
     this.day = day;
   }
@@ -123,35 +84,39 @@ function requireOwner(owner: string | undefined) {
 
 export function useSaveMeal(date: string) {
   return useMutation({
+    networkMode: 'always',
+    retry: false,
     onMutate: () => getSession()?.id,
-    mutationFn: async (input: DaySlotInput) => {
+    mutationFn: async (input: MealInput) => {
       const owner = getSession()?.id;
       if (!onlineManager.isOnline()) {
         throw new Error('Reconnect before saving. Your meal draft is kept on this device.');
       }
       const current = await readDay(date);
       requireOwner(owner);
-      const slot = current.data.slots.find((item) => item.meal_slot === input.meal_slot);
+      assertMealNameAvailable(current.data, input);
+      const slot = findSavedMeal(current.data, input);
       if (mealSaveMatches(input, slot)) {
         return current;
       }
-      if ((slot?.revision ?? 0) !== input.expected_revision) {
+      if ((slot && slot.id !== input.id) || (slot?.revision ?? 0) !== input.expected_revision) {
         throw new MealConflict(current.data);
       }
       try {
         return await call(
-          client.PATCH('/v1/client/nutrition-days/{date}', {params: {path: {date}}, body: {slots: [input]}}),
+          client.PATCH('/v1/client/nutrition-days/{date}', {params: {path: {date}}, body: {meals: [input]}}),
         );
       } catch (error) {
         requireOwner(owner);
         if (!(error instanceof ApiError) || error.status >= 500 || error.status === 409) {
           const saved = await readDay(date);
           requireOwner(owner);
-          const savedSlot = saved.data.slots.find((item) => item.meal_slot === input.meal_slot);
+          assertMealNameAvailable(saved.data, input);
+          const savedSlot = findSavedMeal(saved.data, input);
           if (mealSaveMatches(input, savedSlot)) {
             return saved;
           }
-          if ((savedSlot?.revision ?? 0) !== input.expected_revision) {
+          if ((savedSlot && savedSlot.id !== input.id) || (savedSlot?.revision ?? 0) !== input.expected_revision) {
             throw new MealConflict(saved.data);
           }
         }

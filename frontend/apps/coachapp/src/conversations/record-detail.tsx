@@ -1,8 +1,10 @@
 import {generatePath, Link} from 'react-router-dom';
 import {errorMessage} from '../api/client';
 import {useNutritionDay} from '../api/nutrition-days';
+import {portionLabel} from '../api/nutrition-values';
 import {useTrainingSession} from '../api/training-sessions';
 import {routes} from '../routes';
+import {setValues} from '../training-sessions/session';
 import {Button} from '../ui/button';
 import {FormError} from '../ui/form-error';
 import type {RecordReference} from './draft';
@@ -59,9 +61,9 @@ function WorkoutRecord({clientId, record, onDiscuss}: Props) {
         current={session.revision}
         referenced={record.revision}
       />
-      <p className="text-sm">Workout on {session.date}</p>
+      <p className="text-sm">Workout on {session.local_date}</p>
       <p className="text-xs text-muted-foreground">
-        Recorded {new Date(session.closed_at ?? session.inserted_at).toLocaleString()}
+        Recorded {new Date(session.ended_at ?? session.inserted_at).toLocaleString()}
       </p>
       <Button
         variant="outline"
@@ -69,7 +71,6 @@ function WorkoutRecord({clientId, record, onDiscuss}: Props) {
       >
         Discuss
       </Button>
-      {session.soreness_rating !== null && <p className="text-sm">Soreness: {session.soreness_rating}</p>}
       {session.notes && <p className="whitespace-pre-wrap text-sm">{session.notes}</p>}
       <ul className="space-y-3">
         {session.performed_sets.map((set) => (
@@ -79,15 +80,7 @@ function WorkoutRecord({clientId, record, onDiscuss}: Props) {
           >
             <p className="font-medium">{set.exercise_name}</p>
             <p className="text-muted-foreground">
-              {[
-                set.reps !== null && `${set.reps} reps`,
-                set.rpe !== null && `RPE ${set.rpe}`,
-                set.load_value && `${set.load_value} ${set.load_unit ?? ''}`,
-                set.duration_seconds && `${set.duration_seconds} sec`,
-                set.distance_value && `${set.distance_value} ${set.distance_unit ?? ''}`,
-              ]
-                .filter(Boolean)
-                .join(' · ') || 'Set recorded'}
+              {set.outcome} · {setValues(set)}
             </p>
             {set.notes && <p className="mt-1 whitespace-pre-wrap">{set.notes}</p>}
           </li>
@@ -108,7 +101,12 @@ function MealRecord({clientId, record, onDiscuss}: Props) {
   if (!query.data) {
     return <RecordLoading query={query} />;
   }
-  const meal = query.data.data[0]?.slots.find((slot) => slot.id === record.id);
+  const day = query.data.data[0];
+  const meal = day
+    ? [...day.slots.flatMap((slot) => (slot.meal ? [slot.meal] : [])), ...day.extra_meals].find(
+        (value) => value.id === record.id,
+      )
+    : undefined;
   return (
     <div className="space-y-4">
       <p className="text-sm">Recorded meal · {record.occurredOn}</p>
@@ -124,25 +122,19 @@ function MealRecord({clientId, record, onDiscuss}: Props) {
           >
             Discuss
           </Button>
-          {!meal.rows.some((food) => food.entry_id !== null) && (
+          {meal.entries.length === 0 && (
             <p className="text-sm text-muted-foreground">No foods recorded in this meal.</p>
           )}
           <ul className="space-y-3">
-            {meal.rows
-              .filter((food) => food.entry_id !== null)
-              .map((food) => (
-                <li
-                  key={food.id}
-                  className="text-sm"
-                >
-                  <p className="font-medium">{food.name}</p>
-                  <p className="text-muted-foreground">
-                    {food.portion.kind === 'gram'
-                      ? `${food.portion.grams} g`
-                      : `${food.portion.amount} ${food.portion.unit}`}
-                  </p>
-                </li>
-              ))}
+            {meal.entries.map((food) => (
+              <li
+                key={food.id}
+                className="text-sm"
+              >
+                <p className="font-medium">{food.name}</p>
+                <p className="text-muted-foreground">{food.portion ? portionLabel(food.portion) : 'Quick add'}</p>
+              </li>
+            ))}
           </ul>
         </>
       ) : (

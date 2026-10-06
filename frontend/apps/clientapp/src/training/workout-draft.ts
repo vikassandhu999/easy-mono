@@ -2,31 +2,68 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {readDraft, writeDraft} from '../api/drafts';
 import {getSession} from '../api/session';
 import type {Session} from '../api/training';
-import {emptySet, initialWorkoutDraft, parseWorkoutDraft, type SetEntry, type WorkoutDraft} from './recording';
+import {
+  emptySet,
+  initialWorkoutDraft,
+  parseWorkoutDraft,
+  type SetEntry,
+  setValues,
+  type WorkoutDraft,
+  workoutItems,
+} from './recording';
 
-export function newEntry(key: string, session: Session, unit: 'kg' | 'lbs'): SetEntry {
-  const exercise = session.prescription_snapshot?.workout.exercises.find((item) => item.ref === key);
+export function newEntry(key: string, session: Session, unit: 'kg' | 'lb'): SetEntry {
+  const exercise = workoutItems(session).find(
+    (item) => item.sets.some((set) => set.id === key) || `extra:${item.id}` === key,
+  );
+  const target = exercise?.sets.find((set) => set.id === key);
+  const saved = target && session.performed_sets.find((set) => set.set_id === target.id && !set.deleted_at);
+  if (saved) {
+    return {
+      key,
+      exerciseId: saved.exercise_id,
+      itemId: exercise?.id,
+      setId: target.id,
+      values: setValues(saved, exercise, unit),
+      operation: {kind: 'edit', id: saved.id},
+      attempted: false,
+      dirty: false,
+      expectedRevision: session.revision,
+    };
+  }
   return {
     key,
     exerciseId: exercise?.exercise_id ?? null,
-    values: emptySet(exercise, unit),
+    itemId: exercise?.id,
+    setId: target?.id,
+    values: emptySet(exercise, unit, target),
     operation: {kind: 'create', requestId: crypto.randomUUID()},
     attempted: false,
   };
 }
 
 export function entryHasInput(entry: SetEntry) {
+  if (entry.operation.kind === 'edit' && entry.dirty === false && !entry.attempted) {
+    return false;
+  }
   const values = entry.values;
   return (
     entry.attempted ||
-    entry.operation.kind === 'edit' ||
-    [values.reps, values.load_value, values.duration_seconds, values.distance_value, values.rpe, values.notes].some(
-      (value) => value.trim() !== '',
-    )
+    (entry.operation.kind === 'edit' && entry.dirty !== false) ||
+    values.outcome !== 'done' ||
+    [
+      values.reps,
+      values.load_value,
+      values.duration_s,
+      values.distance_value,
+      values.rpe,
+      values.rir,
+      values.notes,
+    ].some((value) => value.trim() !== '')
   );
 }
 
-export function useWorkoutDraft(session: Session, unit: 'kg' | 'lbs') {
+export function useWorkoutDraft(session: Session, unit: 'kg' | 'lb') {
   const [owner] = useState(() => getSession()?.id);
   const resource = `training.${session.id}`;
   const current = useRef<WorkoutDraft | null>(null);
@@ -48,7 +85,7 @@ export function useWorkoutDraft(session: Session, unit: 'kg' | 'lbs') {
         }
         const saved = parseWorkoutDraft(raw) ?? initialWorkoutDraft(session);
         saved.revision ??= session.revision;
-        saved.date ??= session.date;
+        saved.date ??= session.local_date;
         if (!saved.entries.some((entry) => entry.key === saved.selected)) {
           saved.entries.push(newEntry(saved.selected, session, unit));
         }

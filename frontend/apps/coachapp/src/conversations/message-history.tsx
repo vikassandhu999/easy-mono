@@ -1,8 +1,10 @@
 import {formatIsoDate} from '@easy/utils';
 import {useEffect, useRef, useState} from 'react';
+import {generatePath, Link} from 'react-router-dom';
 import {useAttachmentDownloads} from '../api/attachments';
 import {errorMessage} from '../api/client';
 import {type ChatMessage, useMessages} from '../api/conversations';
+import {routes} from '../routes';
 import {
   Attachment,
   AttachmentContent,
@@ -26,6 +28,7 @@ import type {RecordReference} from './draft';
 export function MessageHistory({
   query,
   clientName,
+  clientId,
   onOpenRecord,
   onShownMessage,
 }: {
@@ -176,29 +179,38 @@ export function MessageHistory({
                               <BubbleContent className="whitespace-pre-wrap">{message.body}</BubbleContent>
                             </Bubble>
                           )}
-                          {message.embed && (
-                            <Button
-                              variant="outline"
-                              className="h-auto max-w-full justify-start py-3 text-left whitespace-normal"
-                              onPress={() => {
-                                if (message.embed) {
-                                  onOpenRecord({
-                                    type: message.embed.type,
-                                    id: message.embed.id,
-                                    title: message.embed.snapshot.title,
-                                    revision: message.embed.snapshot.revision ?? 1,
-                                    occurredOn: message.embed.snapshot.occurred_on ?? null,
-                                  });
-                                }
-                              }}
+                          {message.embed?.type === 'review' ? (
+                            <Link
+                              className="text-link text-sm"
+                              to={`${generatePath(routes.reviews, {clientId})}#${message.embed.id}`}
                             >
-                              <span>
-                                <span className="block break-words">{message.embed.snapshot.title}</span>
-                                <span className="mt-1 block text-xs font-normal text-muted-foreground">
-                                  Shared revision {message.embed.snapshot.revision ?? 1} · Open latest record
+                              Open Review
+                            </Link>
+                          ) : (
+                            message.embed && (
+                              <Button
+                                variant="outline"
+                                className="h-auto max-w-full justify-start py-3 text-left whitespace-normal"
+                                onPress={() => {
+                                  if (message.embed && message.embed.type !== 'review') {
+                                    onOpenRecord({
+                                      type: message.embed.type,
+                                      id: message.embed.id,
+                                      title: message.embed.snapshot.title,
+                                      revision: message.embed.snapshot.revision ?? 1,
+                                      occurredOn: message.embed.snapshot.occurred_on ?? null,
+                                    });
+                                  }
+                                }}
+                              >
+                                <span>
+                                  <span className="block break-words">{message.embed.snapshot.title}</span>
+                                  <span className="mt-1 block text-xs font-normal text-muted-foreground">
+                                    Shared revision {message.embed.snapshot.revision ?? 1} · Open latest record
+                                  </span>
                                 </span>
-                              </span>
-                            </Button>
+                              </Button>
+                            )
                           )}
                           {message.attachments.map((attachment) => (
                             <MessageAttachment
@@ -208,6 +220,7 @@ export function MessageHistory({
                           ))}
                           <MessageFooter>
                             <time dateTime={message.inserted_at}>{formatIsoDate(message.inserted_at)}</time>
+                            {message.edited_at && <span> · edited</span>}
                           </MessageFooter>
                         </MessageContent>
                       </Message>

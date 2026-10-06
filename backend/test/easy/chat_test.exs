@@ -364,17 +364,17 @@ defmodule Easy.ChatTest do
 
       assert message.embed_snapshot == %{
                "title" => "Workout",
-               "recorded_at" => DateTime.to_iso8601(entry.closed_at),
-               "occurred_on" => Date.to_iso8601(entry.date),
+               "recorded_at" => DateTime.to_iso8601(entry.ended_at),
+               "occurred_on" => Date.to_iso8601(entry.local_date),
                "revision" => 1
              }
 
       entry
-      |> Ecto.Changeset.change(date: Date.add(entry.date, 1), revision: 2)
+      |> Ecto.Changeset.change(local_date: Date.add(entry.local_date, 1), revision: 2)
       |> Easy.Repo.update!()
 
       reloaded = Easy.Repo.get!(Message, message.id)
-      assert reloaded.embed_snapshot["occurred_on"] == Date.to_iso8601(entry.date)
+      assert reloaded.embed_snapshot["occurred_on"] == Date.to_iso8601(entry.local_date)
       assert reloaded.embed_snapshot["revision"] == 1
     end
 

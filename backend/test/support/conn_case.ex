@@ -68,7 +68,13 @@ defmodule Easy.ConnCase do
 
   @spec authenticate_client(Conn.t(), Client.t()) :: Conn.t()
   def authenticate_client(conn, client) do
-    session = Easy.Factory.insert(:user_session, user_id: client.user_id, user: nil, business_id: client.business_id, role: :client)
+    session =
+      Easy.Factory.insert(:user_session,
+        user_id: client.user_id,
+        user: nil,
+        business_id: client.business_id,
+        role: :client
+      )
 
     token =
       Joken.generate_and_sign!(
@@ -87,13 +93,7 @@ defmodule Easy.ConnCase do
 
   @spec training_tables_ready?() :: boolean()
   def training_tables_ready? do
-    required_tables = [
-      "training_plans",
-      "workouts",
-      "workout_elements",
-      "exercises",
-      "workout_sessions"
-    ]
+    required_tables = ~w(templates plans plan_revisions exercises training_sessions performed_sets record_changes)
 
     case SQL.query(
            Repo,

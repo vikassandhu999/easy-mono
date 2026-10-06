@@ -7,6 +7,7 @@ defmodule Easy.Orgs do
   alias Easy.Orgs.Business
   alias Easy.Orgs.Coach
   alias Easy.Repo
+  alias Easy.Trackers.Defaults
 
   # pre-auth onboarding: no ctx yet — runs during signup before a tenant ctx is established
   @spec create_business(Ctx.t(), map()) ::
@@ -20,7 +21,8 @@ defmodule Easy.Orgs do
   defp create_business_transaction(user, attrs) do
     with {:ok, business} <- user.id |> Business.insert_changeset(attrs) |> Repo.insert(),
          {:ok, billing} <- business.id |> BusinessBilling.insert_changeset() |> Repo.insert(),
-         {:ok, _coach} <- business.id |> Coach.insert_changeset(user.id, attrs) |> Repo.insert() do
+         {:ok, coach} <- business.id |> Coach.insert_changeset(user.id, attrs) |> Repo.insert(),
+         {:ok, business} <- Defaults.create_default(%Ctx{business_id: business.id, user_id: user.id, coach_id: coach.id, owner?: true}) do
       {:ok, %{business | owner: user, billing: billing}}
     end
   end

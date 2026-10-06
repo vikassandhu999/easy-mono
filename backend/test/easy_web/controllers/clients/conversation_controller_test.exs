@@ -34,7 +34,7 @@ defmodule EasyWeb.Clients.ConversationControllerTest do
              json_response(post_conn, 201)
 
     assert Map.keys(message) |> Enum.sort() ==
-             ~w(attachments body conversation_id embed id inserted_at request_id sender_id sender_name sender_type)
+             ~w(attachments body conversation_id edited_at embed id inserted_at request_id sender_id sender_name sender_type)
 
     list_conn = build_conn() |> authenticate_client(client) |> get("/v1/client/conversation/messages")
     assert %{"data" => [%{"body" => "hi coach"}], "has_more" => false} = json_response(list_conn, 200)
@@ -117,7 +117,7 @@ defmodule EasyWeb.Clients.ConversationControllerTest do
     assert attachment_id == attachment.id
     assert entry_id == entry.id
     assert title == "Workout"
-    assert recorded_at == DateTime.to_iso8601(entry.closed_at)
+    assert recorded_at == DateTime.to_iso8601(entry.ended_at)
   end
 
   test "requires authentication" do

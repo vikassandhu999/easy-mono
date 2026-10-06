@@ -11,6 +11,9 @@ import {Signup} from './auth/signup';
 import {Verify} from './auth/verify';
 import {Welcome} from './auth/welcome';
 import {BillingPage} from './billing/billing';
+import {ClientTrackers} from './client-trackers/client-trackers';
+import {RecordTracker} from './client-trackers/record-tracker';
+import {TrackerHistory} from './client-trackers/tracker-history';
 import {AssignNutritionPlan} from './clients/assign-nutrition-plan';
 import {AssignTrainingPlan} from './clients/assign-training-plan';
 import {ChangeClientCoach} from './clients/change-client-coach';
@@ -33,11 +36,17 @@ import {ClientPlans} from './plan-management/client-plans';
 import {PlanManagement} from './plan-management/plan-management';
 import {RecipeEditor} from './recipes/recipe-editor';
 import {Recipes} from './recipes/recipes';
+import {ReviewHistory} from './reviews/review-history';
+import {ReviewScreen} from './reviews/review-screen';
 import {routes} from './routes';
 import {BusinessSettings, ProfileSettings} from './settings/settings';
 import {InviteCoach} from './team/invite-coach';
 import {Team} from './team/team';
 import {TeamMemberPage} from './team/team-member';
+import {TrackerTemplateEditor} from './tracker-templates/tracker-template-editor';
+import {TrackerTemplates} from './tracker-templates/tracker-templates';
+import {TrackerEditor} from './trackers/tracker-editor';
+import {Trackers} from './trackers/trackers';
 import {TrainingPlanEditor} from './training-plans/training-plan-editor';
 import {TrainingPlans} from './training-plans/training-plans';
 import {TrainingSession} from './training-sessions/training-session';
@@ -112,6 +121,9 @@ function Root() {
           location.pathname === routes.nutritionPlans ||
           location.pathname === routes.foods ||
           location.pathname === routes.recipes ||
+          location.pathname === routes.trackers ||
+          location.pathname === routes.trackerTemplates ||
+          matchPath(routes.trackerHistory, location.pathname) ||
           matchPath(routes.manageTrainingPlan, location.pathname) ||
           matchPath(routes.manageNutritionPlan, location.pathname) ||
           matchPath(routes.clientTrainingPlans, location.pathname) ||
@@ -161,6 +173,17 @@ export const router = createBrowserRouter([
                 ),
               },
               {path: routes.home, element: <Clients />},
+              {path: routes.newReview, element: <ReviewScreen />},
+              {path: routes.reviews, element: <ReviewHistory />},
+              {path: routes.trackers, element: <Trackers />},
+              {path: routes.createTracker, element: <TrackerEditor />},
+              {path: routes.tracker, element: <TrackerEditor />},
+              {path: routes.trackerTemplates, element: <TrackerTemplates />},
+              {path: routes.createTrackerTemplate, element: <TrackerTemplateEditor />},
+              {path: routes.trackerTemplate, element: <TrackerTemplateEditor />},
+              {path: routes.clientTrackers, element: <ClientTrackers />},
+              {path: routes.recordTracker, element: <RecordTracker />},
+              {path: routes.trackerHistory, element: <TrackerHistory />},
               {path: routes.team, element: <Team />},
               {path: routes.billing, element: <BillingPage />},
               {path: routes.inviteCoach, element: <InviteCoach />},

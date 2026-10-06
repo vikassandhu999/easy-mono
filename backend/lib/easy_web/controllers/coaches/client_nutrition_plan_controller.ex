@@ -1,7 +1,7 @@
 defmodule EasyWeb.Coaches.ClientNutritionPlanController do
   use EasyWeb, :typed_controller
 
-  alias Easy.Nutrition.PlanReader
+  alias Easy.Plans.Reader, as: PlanReader
   alias EasyWeb.Types.{NutritionPlan, NutritionPlanIndex}
 
   typed(:index, query: NutritionPlan.client_scoped_list_query(), ok: {200, NutritionPlanIndex.t()})
@@ -14,6 +14,7 @@ defmodule EasyWeb.Coaches.ClientNutritionPlanController do
            PlanReader.list_plan_page_for_client(
              conn.assigns.ctx,
              conn.path_params["client_id"],
+             :nutrition,
              cursor: Map.get(params, "cursor", "start"),
              search: Map.get(params, "search", ""),
              archived: Map.get(params, "archived"),

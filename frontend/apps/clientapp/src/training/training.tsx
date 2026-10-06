@@ -1,14 +1,17 @@
 import {Check, ChevronRight, Dumbbell, History as HistoryIcon, Play, SlidersHorizontal} from 'lucide-react';
 import {useState} from 'react';
 import {generatePath, Link, useNavigate, useParams, useSearchParams} from 'react-router-dom';
+import {useProfile} from '../api/auth';
 import {errorMessage} from '../api/client';
 import {
   type SessionFilters,
+  type StartTraining,
   type TrainingPlan as TrainingPlanValue,
   useActiveTraining,
   useStartTraining,
   useTrainingCoverage,
   useTrainingHistory,
+  useTrainingOccurrences,
   useTrainingPlan,
 } from '../api/training';
 import {routes} from '../routes';
@@ -178,7 +181,7 @@ export function Training() {
       {canWrite && !history && (
         <div className="mt-6 space-y-3">
           <p className="text-sm text-muted-foreground">Training outside your plan?</p>
-          <StartWorkout workoutId={null} />
+          <StartWorkout input={{}} />
         </div>
       )}
     </Page>
@@ -213,7 +216,7 @@ export function ActiveWorkout() {
       />
       {session && (
         <section className="active-workout space-y-3 mb-5">
-          <p className="text-sm text-muted-foreground">Workout in progress · {dayLabel(session.date)}</p>
+          <p className="text-sm text-muted-foreground">Workout in progress · {dayLabel(session.local_date)}</p>
           <h2 className="text-xl font-semibold">{sessionName(session)}</h2>
           <Link
             className={buttonVariants()}
@@ -233,86 +236,108 @@ export function ActiveWorkout() {
 
 function CurrentPlan() {
   const query = useTrainingCoverage();
-  if (!query.data) {
-    return (
-      <ReadState
-        label="your training plan"
-        failed={query.isError}
-        retry={() => {
-          query.refetch();
-        }}
-      />
-    );
-  }
-  const guidance = query.data.data;
+  const profile = useProfile();
+  const [params, setParams] = useSearchParams();
+  const today = profile.data?.data.local_date ?? '';
+  const date = params.get('date') ?? today;
+  const occurrences = useTrainingOccurrences(date, date);
+  const plan = query.data?.data?.plan;
   return (
-    <>
-      <CachedRead
-        updatedAt={query.dataUpdatedAt}
-        failed={query.isError}
-        refreshing={query.isFetching}
-        refresh={() => query.refetch()}
-      />
-      {guidance ? (
-        <AssignedWorkouts
-          id={guidance.plan.id}
-          todayWorkoutId={guidance.workout?.id ?? null}
+    <div className="space-y-5">
+      <label className="grid gap-2 font-medium">
+        Scheduled date
+        <input
+          type="date"
+          className="min-w-0 h-12 rounded-xl border border-border bg-surface px-3"
+          value={date}
+          max={today}
+          onChange={(event) => {
+            const next = new URLSearchParams(params);
+            next.set('date', event.target.value);
+            setParams(next);
+          }}
+        />
+      </label>
+      <p className="text-sm text-muted-foreground">
+        Choose an earlier date to record a workout scheduled for that day.
+      </p>
+      {!occurrences.data ? (
+        <ReadState
+          label="scheduled workouts"
+          failed={occurrences.isError}
+          retry={() => occurrences.refetch()}
         />
       ) : (
-        <p className="py-5 text-muted-foreground">Your coach hasn’t scheduled a training plan for today.</p>
+        <>
+          <CachedRead
+            updatedAt={occurrences.dataUpdatedAt}
+            failed={occurrences.isError}
+            refreshing={occurrences.isFetching}
+            refresh={() => occurrences.refetch()}
+          />
+          {occurrences.data.data.length === 0 && <p>No workouts scheduled for this date.</p>}
+          {occurrences.data.data.map((occurrence) => (
+            <section
+              key={`${occurrence.plan_id}:${occurrence.schedule_entry_id}:${occurrence.occurrence_date}`}
+              className="rounded-3xl bg-[var(--training)] p-5 space-y-3"
+            >
+              <h2 className="text-xl font-bold">{occurrence.workout_name}</h2>
+              <p>
+                {dayLabel(occurrence.occurrence_date)} · {occurrence.session_id ? 'Done' : 'Not recorded'}
+              </p>
+              {occurrence.session_id ? (
+                <Link
+                  className={buttonVariants({variant: 'outline'})}
+                  to={generatePath(routes.trainingSession, {id: occurrence.session_id})}
+                >
+                  View saved workout
+                </Link>
+              ) : (
+                <StartWorkout
+                  input={{
+                    plan_revision_id: occurrence.plan_revision_id,
+                    workout_id: occurrence.workout_id,
+                    schedule_entry_id: occurrence.schedule_entry_id,
+                    occurrence_date: occurrence.occurrence_date,
+                  }}
+                />
+              )}
+            </section>
+          ))}
+        </>
       )}
-    </>
+      {!query.data ? (
+        <ReadState
+          label="your plan"
+          failed={query.isError}
+          retry={() => query.refetch()}
+        />
+      ) : plan ? (
+        <section className="space-y-3">
+          <h2 className="text-2xl font-bold">{plan.name}</h2>
+          {plan.description && <p>{plan.description}</p>}
+          <p className="text-sm text-muted-foreground">
+            Other workouts from your current plan. Starting here records extra work.
+          </p>
+          <PlanWorkouts plan={plan} />
+        </section>
+      ) : (
+        <p>Your coach has not scheduled a plan for today.</p>
+      )}
+    </div>
   );
 }
 
-function AssignedWorkouts({id, todayWorkoutId}: {id: string; todayWorkoutId: string | null}) {
-  const query = useTrainingPlan(id);
-  const plan = query.data?.data;
-  if (!plan) {
-    return (
-      <ReadState
-        label="your workouts"
-        failed={query.isError}
-        retry={() => {
-          query.refetch();
-        }}
-      />
-    );
-  }
-  return (
-    <section className="space-y-3">
-      <CachedRead
-        updatedAt={query.dataUpdatedAt}
-        failed={query.isError}
-        refreshing={query.isFetching}
-        refresh={() => query.refetch()}
-      />
-      <div className="rounded-3xl bg-[var(--training)] p-5 space-y-2">
-        <p className="text-sm font-semibold">Your training plan</p>
-        <h2 className="text-2xl font-bold">{plan.name}</h2>
-        {plan.description && <p className="text-muted-foreground">{plan.description}</p>}
-        {!todayWorkoutId && (
-          <p className="text-muted-foreground">Today is a rest day. Your workouts are here when you need them.</p>
-        )}
-      </div>
-      <PlanWorkouts
-        plan={plan}
-        todayWorkoutId={todayWorkoutId}
-      />
-    </section>
-  );
-}
-
-function PlanWorkouts({plan, todayWorkoutId}: {plan: TrainingPlanValue; todayWorkoutId?: string | null}) {
-  return plan.workouts.length === 0 ? (
-    <p>No workouts have been added to this plan yet.</p>
+function PlanWorkouts({plan}: {plan: TrainingPlanValue}) {
+  return plan.content.workouts.length === 0 ? (
+    <p>No workouts have been added yet.</p>
   ) : (
     <ul className="divide-y divide-border">
-      {plan.workouts.map((item) => (
-        <li key={item.id}>
+      {plan.content.workouts.map((workout) => (
+        <li key={workout.id}>
           <Link
             className="training-list-row"
-            to={generatePath(routes.workout, {id: plan.id, workoutId: item.id})}
+            to={generatePath(routes.workout, {id: plan.id, workoutId: workout.id})}
           >
             <span
               className="training-row-icon"
@@ -320,16 +345,7 @@ function PlanWorkouts({plan, todayWorkoutId}: {plan: TrainingPlanValue; todayWor
             >
               <Dumbbell />
             </span>
-            <span className="min-w-0 flex-1 space-y-1">
-              <span className="block text-xl font-bold">{item.name}</span>
-              <span className="block capitalize text-muted-foreground">
-                {item.id === todayWorkoutId
-                  ? 'Today’s workout'
-                  : item.weekdays.length === 7
-                    ? 'Every day'
-                    : item.weekdays.map((day) => day.slice(0, 3)).join(' · ') || 'Choose any day'}
-              </span>
-            </span>
+            <span className="min-w-0 flex-1 text-xl font-bold">{workout.name}</span>
             <ChevronRight
               className="size-4 shrink-0"
               aria-hidden="true"
@@ -377,7 +393,7 @@ function History({filters, returnTo}: {filters: SessionFilters; returnTo: string
             <span className="min-w-0 flex-1 space-y-1">
               <span className="block text-lg font-bold">{sessionName(session)}</span>
               <span className="block text-sm text-muted-foreground">
-                {dayLabel(session.date)} ·{' '}
+                {dayLabel(session.local_date)} ·{' '}
                 {session.state === 'completed'
                   ? 'Completed'
                   : session.state === 'discarded'
@@ -401,7 +417,7 @@ export function TrainingPlan() {
   const {id = '', workoutId} = useParams();
   const query = useTrainingPlan(id);
   const plan = query.data?.data;
-  const workout = plan?.workouts.find((item) => item.id === workoutId);
+  const workout = plan?.content.workouts.find((item) => item.id === workoutId);
   return (
     <Page
       title={workout?.name ?? plan?.name ?? 'Training plan'}
@@ -432,40 +448,40 @@ export function TrainingPlan() {
             workout ? (
               <>
                 <ol className="space-y-4 mb-8">
-                  {workout.workout_elements.map((item, exerciseIndex) => (
+                  {workout.blocks.map((block) => (
                     <li
+                      key={block.id}
                       className="rounded-3xl bg-surface p-5 space-y-3"
-                      key={item.id}
                     >
-                      <div className="flex gap-3 items-start">
-                        <span
-                          className="training-row-icon shrink-0"
-                          aria-hidden="true"
+                      <h2 className="text-sm font-bold capitalize">
+                        {block.format}
+                        {block.rounds ? ` · ${block.rounds} rounds` : ''}
+                      </h2>
+                      {block.notes && <p>{block.notes}</p>}
+                      {block.items.map((item) => (
+                        <div
+                          key={item.id}
+                          className="space-y-2"
                         >
-                          {exerciseIndex + 1}
-                        </span>
-                        <h2 className="text-xl font-bold">{item.exercise.name}</h2>
-                      </div>
-                      {item.planned_sets.length === 0 ? (
-                        <p className="text-muted-foreground">No set targets prescribed.</p>
-                      ) : (
-                        <ol className="space-y-2">
-                          {item.planned_sets.map((set, index) => (
-                            <li
-                              key={index}
-                              className="rounded-2xl bg-[var(--training)] p-3"
-                            >
-                              <span className="font-medium">Set {index + 1}</span> · {targetText(set)}
-                              {set.notes && <p className="text-sm mt-1">{set.notes}</p>}
-                            </li>
-                          ))}
-                        </ol>
-                      )}
+                          <h3 className="text-xl font-bold">{item.exercise_name}</h3>
+                          <ol className="space-y-2">
+                            {item.sets.map((set, index) => (
+                              <li
+                                key={set.id}
+                                className="rounded-2xl bg-[var(--training)] p-3"
+                              >
+                                Set {index + 1} · {targetText(set)}
+                                {set.notes && <p className="text-sm">{set.notes}</p>}
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+                      ))}
                     </li>
                   ))}
                 </ol>
-                {canWrite && plan.lifecycle === 'current' ? (
-                  <StartWorkout workoutId={workout.id} />
+                {canWrite && plan.current_revision !== null && !plan.archived_at && !plan.stopped_on ? (
+                  <StartWorkout input={{plan_revision_id: plan.current_revision.id, workout_id: workout.id}} />
                 ) : (
                   <p className="text-muted-foreground">
                     This plan is not current. You can review its targets or return to your current training.
@@ -491,7 +507,7 @@ export function TrainingPlan() {
   );
 }
 
-function StartWorkout({workoutId}: {workoutId: string | null}) {
+function StartWorkout({input}: {input: StartTraining}) {
   const mutation = useStartTraining();
   const navigate = useNavigate();
   const online = useOnline();
@@ -501,7 +517,7 @@ function StartWorkout({workoutId}: {workoutId: string | null}) {
     return null;
   }
   return (
-    <div className={workoutId ? 'mobile-save-bar space-y-3' : 'space-y-3'}>
+    <div className={'space-y-3'}>
       {!online && (
         <p
           role="status"
@@ -513,13 +529,13 @@ function StartWorkout({workoutId}: {workoutId: string | null}) {
       <FormError message={error} />
       <Button
         className="w-full"
-        variant={workoutId ? 'default' : 'outline'}
+        variant={input.workout_id ? 'default' : 'outline'}
         isDisabled={!online}
         isPending={mutation.isPending}
         onPress={async () => {
           setError('');
           try {
-            const result = await mutation.mutateAsync(workoutId);
+            const result = await mutation.mutateAsync(input);
             if (result.data) {
               await navigate(generatePath(routes.trainingSession, {id: result.data.id}));
             }
@@ -533,7 +549,7 @@ function StartWorkout({workoutId}: {workoutId: string | null}) {
           }
         }}
       >
-        {workoutId ? 'Start workout' : 'Start freestyle workout'}
+        {input.workout_id ? 'Start workout' : 'Start freestyle workout'}
       </Button>
     </div>
   );

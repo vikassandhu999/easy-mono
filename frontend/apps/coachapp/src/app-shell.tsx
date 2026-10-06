@@ -211,6 +211,16 @@ export function AppShell() {
         >
           Nutrition
         </NavLink>
+        <NavLink
+          to={routes.trackers}
+          className={({isActive}) =>
+            isActive || pathname.startsWith(routes.trackerTemplates)
+              ? 'app-navigation-link active'
+              : 'app-navigation-link'
+          }
+        >
+          Trackers
+        </NavLink>
       </nav>
       <main
         id="main-content"

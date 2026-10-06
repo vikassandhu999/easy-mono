@@ -6,6 +6,7 @@ defmodule EasyWeb.TypedRouteTest do
   alias EasyWeb.TypedRoute.{Cast, Check, Dump, Emit, Generator, SchemaMerge, Type}
   alias EasyWeb.TypedRouteAdapter, as: RouteAdapter
   alias EasyWeb.TypedRouteTestController, as: Controller
+  alias EasyWeb.Types.Nutrition.NutritionTargets
   alias EasyWeb.Types.{TypedComputed, TypedDictionary, TypedItem, TypedStructComputed}
   alias Phoenix.Router.Route
 
@@ -96,6 +97,12 @@ defmodule EasyWeb.TypedRouteTest do
 
   test "loads dictionary types from BEAM metadata" do
     assert TypedDictionary.__wire_type__(:t) == {:dict, :string}
+  end
+
+  test "take preserves dictionary keys without inventing missing values" do
+    assert TypedDictionary.take(%{"energy_kcal" => "200"}) == %{"energy_kcal" => "200"}
+    assert TypedItem.take(%{"id" => "food-1", "name" => "Oats"}) == %{id: "food-1", name: "Oats"}
+    assert NutritionTargets.take(%{"protein_g" => %{"min" => 100}}) == %{"protein_g" => %{min: 100}}
   end
 
   test "dump uses format/1 for map-backed computed types" do

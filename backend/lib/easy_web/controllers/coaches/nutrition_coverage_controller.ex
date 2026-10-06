@@ -1,7 +1,7 @@
 defmodule EasyWeb.Coaches.NutritionCoverageController do
   use EasyWeb, :typed_controller
 
-  alias Easy.Nutrition.PlanReader
+  alias Easy.Nutrition.Coverage, as: PlanReader
   alias EasyWeb.Types.NutritionCoverage
 
   typed(:show, ok: {200, data(NutritionCoverage.t())})

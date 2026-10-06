@@ -6,7 +6,7 @@ import {Button} from '../ui/button';
 import {InfiniteList} from '../ui/infinite-list';
 import {SelectItem} from '../ui/select';
 import {SelectField} from '../ui/select-field';
-import {portionText} from './meal-draft';
+import {libraryPortions, portionNutrients} from './library-portions';
 import {Nutrients} from './nutrition';
 
 type PickItem = (kind: 'food' | 'recipe', item: Food | Recipe, portion: NutritionPortion) => void;
@@ -107,14 +107,19 @@ function Recipes({search, onPick}: {search: string; onPick: PickItem}) {
   );
 }
 function LibraryItem({item, kind, onPick}: {item: Food | Recipe; kind: 'food' | 'recipe'; onPick: PickItem}) {
-  const [selected, setSelected] = useState('default');
-  const portion = item.portion_options[Number(selected)] ?? item.default_portion;
+  const [selected, setSelected] = useState('0');
+  const options = libraryPortions(item);
+  const option = options[Number(selected)] ?? options[0];
+  if (!option) {
+    return null;
+  }
+  const portion = option.portion;
   return (
     <div className="py-5 space-y-3">
       <div className="flex items-center gap-3">
         <div className="min-w-0 flex-1">
           <h3 className="text-lg font-bold">{item.name}</h3>
-          <p className="text-sm text-muted-foreground">{portionText(portion)}</p>
+          <p className="text-sm text-muted-foreground">{option.label}</p>
         </div>
         <Button
           variant="secondary"
@@ -136,21 +141,20 @@ function LibraryItem({item, kind, onPick}: {item: Food | Recipe; kind: 'food' | 
             value={selected}
             onChange={(value) => setSelected(String(value))}
           >
-            <SelectItem id="default">{portionText(item.default_portion)}</SelectItem>
-            {item.portion_options.map((option, index) => (
+            {options.map((option, index) => (
               <SelectItem
                 key={index}
                 id={String(index)}
               >
-                {portionText(option)}
+                {option.label}
               </SelectItem>
             ))}
           </SelectField>
           <Nutrients
-            label={`For ${portionText(item.default_portion)}`}
-            value={item.nutrients}
+            label={`For ${option.label}`}
+            value={portionNutrients(item.nutrients, option.grams)}
           />
-          {item.allergens.length > 0 && <p>Allergens: {item.allergens.join(', ')}</p>}
+          {'allergens' in item && item.allergens.length > 0 && <p>Allergens: {item.allergens.join(', ')}</p>}
           {'notes' in item && item.notes && <p className="whitespace-pre-wrap">{item.notes}</p>}
           {'instructions' in item && item.instructions && <p className="whitespace-pre-wrap">{item.instructions}</p>}
           {'description' in item && item.description && <p>{item.description}</p>}

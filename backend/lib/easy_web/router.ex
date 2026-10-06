@@ -85,6 +85,42 @@ defmodule EasyWeb.Router do
   scope "/v1/coach", EasyWeb.Coaches do
     pipe_through :require_coach
 
+    get "/trackers", TrackerController, :index
+    get "/trackers/:id", TrackerController, :show
+    post "/trackers", TrackerController, :create
+    patch "/trackers/:id", TrackerController, :update
+    delete "/trackers/:id", TrackerController, :delete
+    post "/trackers/:id/archive", TrackerController, :archive
+    post "/trackers/:id/restore", TrackerController, :restore
+    get "/tracker-templates", TrackerTemplateController, :index
+    post "/tracker-templates", TrackerTemplateController, :create
+    get "/tracker-templates/:id", TrackerTemplateController, :show
+    patch "/tracker-templates/:id", TrackerTemplateController, :update
+    get "/review-roster", ReviewController, :roster
+    get "/review-settings", ReviewController, :settings
+    patch "/review-settings", ReviewController, :update_settings
+    get "/clients/:client_id/review-screen", ReviewController, :screen
+    get "/clients/:client_id/reviews", ReviewController, :index
+    post "/clients/:client_id/reviews", ReviewController, :create
+    patch "/clients/:client_id/reviews/:id", ReviewController, :update
+    get "/tracker-settings", TrackerTemplateController, :settings
+    patch "/tracker-settings", TrackerTemplateController, :update_settings
+    get "/clients/:client_id/tracker-assignments", TrackerClientController, :assignments
+    get "/clients/:client_id/tracker-entries", TrackerClientController, :entries
+    post "/clients/:client_id/tracker-entries", TrackerClientController, :create_entry
+    patch "/clients/:client_id/tracker-entries/:id", TrackerClientController, :update_entry
+    delete "/clients/:client_id/tracker-entries/:id", TrackerClientController, :remove_entry
+    get "/clients/:client_id/tracker-today", TrackerClientController, :today
+    get "/clients/:client_id/tracker-prompts", TrackerClientController, :prompts
+    get "/clients/:client_id/tracker-requests", TrackerClientController, :requests
+    get "/clients/:client_id/trackers/:id/metrics", TrackerClientController, :metrics
+    post "/clients/:client_id/tracker-assignments", TrackerClientController, :add_assignment
+    patch "/clients/:client_id/tracker-assignments/:id", TrackerClientController, :change_assignment
+    delete "/clients/:client_id/tracker-assignments/:id", TrackerClientController, :end_assignment
+    post "/clients/:client_id/tracker-requests", TrackerClientController, :request
+    delete "/clients/:client_id/tracker-requests/:id", TrackerClientController, :cancel_request
+    post "/clients/:client_id/tracker-templates/:id/apply", TrackerTemplateController, :apply
+
     get "/me", ProfileController, :show
     patch "/me", ProfileController, :update
 
@@ -113,6 +149,8 @@ defmodule EasyWeb.Router do
     post "/coaches/:id/remove", TeamController, :remove
 
     # Client-scoped plan lists
+    get "/clients/:client_id/training-occurrences", ClientTrainingPlanController, :occurrences
+    get "/clients/:client_id/exercises/:exercise_id/history", ClientTrainingPlanController, :exercise_history
     get "/clients/:client_id/training-plans", ClientTrainingPlanController, :index
     get "/clients/:client_id/nutrition-plans", ClientNutritionPlanController, :index
     get "/clients/:client_id/nutrition-coverage", NutritionCoverageController, :show
@@ -138,15 +176,14 @@ defmodule EasyWeb.Router do
 
     get "/nutrition-plans", NutritionPlanController, :index
     post "/nutrition-plans", NutritionPlanController, :create
-    post "/nutrition-plans/preview-menu", NutritionPlanController, :preview_menu
     get "/nutrition-plans/:id", NutritionPlanController, :show
     patch "/nutrition-plans/:id", NutritionPlanController, :update
+    delete "/nutrition-plans/:id/revisions/:revision_id", NutritionPlanController, :withdraw
     delete "/nutrition-plans/:id", NutritionPlanController, :delete
     post "/nutrition-plans/:id/archive", NutritionPlanController, :archive
     post "/nutrition-plans/:id/restore", NutritionPlanController, :restore
     post "/nutrition-plans/:id/duplicate", NutritionPlanController, :duplicate
     post "/clients/:client_id/nutrition-plans/:id/assign", NutritionPlanController, :assign
-    put "/nutrition-plans/:id/menu", NutritionPlanController, :replace_menu
 
     get "/training-exercises", ExerciseController, :index
     post "/training-exercises", ExerciseController, :create
@@ -162,7 +199,7 @@ defmodule EasyWeb.Router do
     post "/training-plans", TrainingPlanController, :create
     get "/training-plans/:id", TrainingPlanController, :show
     patch "/training-plans/:id", TrainingPlanController, :update
-    put "/training-plans/:id/prescription", TrainingPlanController, :replace_prescription
+    delete "/training-plans/:id/revisions/:revision_id", TrainingPlanController, :withdraw
     delete "/training-plans/:id", TrainingPlanController, :delete
     post "/training-plans/:id/archive", TrainingPlanController, :archive
     post "/training-plans/:id/restore", TrainingPlanController, :restore
@@ -173,6 +210,7 @@ defmodule EasyWeb.Router do
     get "/clients/:client_id/training-sessions", WorkoutSessionController, :index
     get "/clients/:client_id/training-sessions/:id", WorkoutSessionController, :show
 
+    get "/clients/:client_id/nutrition-food-metrics", NutritionDayController, :metrics
     get "/clients/:client_id/nutrition-days", NutritionDayController, :index
 
     # Chat
@@ -189,6 +227,19 @@ defmodule EasyWeb.Router do
   scope "/v1/client", EasyWeb.Clients do
     pipe_through :require_client
 
+    get "/review-replies", ReviewReplyController, :index
+    get "/trackers", TrackerController, :index
+    get "/trackers/:id", TrackerController, :show
+    get "/tracker-assignments", TrackerClientController, :assignments
+    get "/tracker-entries", TrackerClientController, :entries
+    post "/tracker-entries", TrackerClientController, :create_entry
+    patch "/tracker-entries/:id", TrackerClientController, :update_entry
+    delete "/tracker-entries/:id", TrackerClientController, :remove_entry
+    get "/tracker-today", TrackerClientController, :today
+    get "/tracker-prompts", TrackerClientController, :prompts
+    get "/tracker-requests", TrackerClientController, :requests
+    get "/trackers/:id/metrics", TrackerClientController, :metrics
+
     get "/me", ProfileController, :show
     patch "/me", ProfileController, :update
 
@@ -197,8 +248,11 @@ defmodule EasyWeb.Router do
 
     # Training plans (read-only)
     get "/training-plans", TrainingPlanController, :index
+    get "/training-plans/occurrences", TrainingPlanController, :occurrences
     get "/training-plans/coverage", TrainingPlanController, :coverage
     get "/training-plans/:id", TrainingPlanController, :show
+
+    get "/training-exercises/:exercise_id/history", TrainingPlanController, :exercise_history
 
     # Exercises (read-only)
     get "/training-exercises", ExerciseController, :index

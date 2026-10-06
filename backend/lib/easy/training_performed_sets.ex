@@ -1,157 +1,158 @@
 defmodule Easy.Training.PerformedSets do
-  alias Easy.Ctx
-  alias Easy.Repo
-
-  alias Easy.Training.{
-    PrescriptionSnapshot,
-    TrainingExercise,
-    TrainingPerformedSet,
-    TrainingSession,
-    TrainingSetRequest
-  }
-
   import Ecto.Query
+  import Ecto.Changeset
+  alias Easy.{Ctx, RecordJournal, Repo, Revision, Units}
+  alias Easy.Training.Execution
+  alias Easy.Training.Library
+  alias Easy.Training.TrainingPerformedSet
+  alias Easy.Training.TrainingSession
 
-  @spec create_client_performed_set(Ctx.t(), String.t(), map()) ::
-          {:ok, TrainingPerformedSet.t()} | {:error, :not_found | :conflict | Ecto.Changeset.t()}
+  @spec create_client_performed_set(Ctx.t(), String.t(), map()) :: {:ok, TrainingPerformedSet.t()} | {:error, term()}
   def create_client_performed_set(%Ctx{} = ctx, session_id, attrs) do
-    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
-      Repo.transact(fn -> create_performed_set(ctx.business_id, client_id, session_id, attrs) end)
+    RecordJournal.write(ctx, &create_locked(ctx, &1, session_id, attrs)) |> present_result(ctx)
+  end
+
+  defp create_locked(ctx, client, session_id, attrs) do
+    with {:ok, session} <- Execution.get_client_session(ctx, session_id),
+         {:ok, attrs} <- Units.normalize(attrs),
+         {:ok, attrs} <- validate_reference(ctx, session, attrs) do
+      request = attrs["request_id"]
+
+      row =
+        if request,
+          do:
+            Repo.one(
+              from(s in TrainingPerformedSet,
+                where: s.session_id == ^session_id and s.request_id == ^request and s.business_id == ^ctx.business_id
+              )
+            )
+
+      create_or_retry(ctx, client, session, row, attrs)
     end
   end
 
-  @spec update_client_performed_set(Ctx.t(), String.t(), map()) ::
-          {:ok, TrainingPerformedSet.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_client_performed_set(%Ctx{} = ctx, set_id, attrs) do
-    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
-      mutate_client_performed_set(ctx.business_id, client_id, set_id, attrs, fn set ->
-        set
-        |> TrainingPerformedSet.update_changeset(attrs)
-        |> Repo.update()
-      end)
-    end
+  defp create_or_retry(_ctx, _client, _session, %TrainingPerformedSet{} = row, attrs) do
+    cs = TrainingPerformedSet.update_changeset(row, attrs)
+    if cs.valid? and map_size(cs.changes) == 0, do: {:ok, row, []}, else: {:error, :conflict}
   end
 
-  @spec delete_client_performed_set(Ctx.t(), String.t(), map()) ::
-          {:ok, TrainingPerformedSet.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def delete_client_performed_set(%Ctx{} = ctx, set_id, attrs \\ %{}) do
-    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
-      mutate_client_performed_set(ctx.business_id, client_id, set_id, attrs, &Repo.delete/1)
-    end
-  end
+  defp create_or_retry(ctx, _client, session, nil, attrs) do
+    with :ok <- editable(session),
+         :ok <- Revision.check(session, attrs["expected_revision"] || :any) do
+      position =
+        (Repo.aggregate(from(s in TrainingPerformedSet, where: s.session_id == ^session.id), :max, :position) || -1) + 1
 
-  defp create_performed_set(business_id, client_id, session_id, attrs) do
-    with {:ok, session} <- lock_client_session(business_id, client_id, session_id),
-         {:ok, identity} <- TrainingSetRequest.identity(attrs) do
-      case find_request(session, identity) do
-        nil -> create_new_set(session, attrs, identity)
-        request -> replay_set(session, request, identity)
+      with {:ok, row} <-
+             TrainingPerformedSet.insert_changeset(ctx.business_id, session.id, position, attrs) |> Repo.insert(),
+           {:ok, updated} <- touch_session(session) do
+        {:ok, row,
+         [
+           RecordJournal.change(session.id, "set", nil, row),
+           RecordJournal.change(session.id, "session", session, updated)
+         ]}
       end
     end
   end
 
-  defp lock_client_session(business_id, client_id, session_id) do
-    TrainingSession
-    |> TrainingSession.for_client(business_id, client_id)
-    |> lock("FOR UPDATE")
-    |> Repo.get(session_id)
-    |> ok_or_not_found()
+  @spec update_client_performed_set(Ctx.t(), String.t(), map()) :: {:ok, TrainingPerformedSet.t()} | {:error, term()}
+  def update_client_performed_set(%Ctx{} = ctx, id, attrs) do
+    mutate(
+      ctx,
+      id,
+      attrs,
+      fn row, normalized -> row |> TrainingPerformedSet.update_changeset(normalized) |> Repo.update() end,
+      "changed"
+    )
+    |> present_result(ctx)
   end
 
-  defp find_request(_session, nil), do: nil
-
-  defp find_request(session, identity) do
-    TrainingSetRequest
-    |> TrainingSetRequest.for_session(session.business_id, session.id)
-    |> Repo.get_by(request_id: identity.id)
+  @spec delete_client_performed_set(Ctx.t(), String.t(), map()) :: {:ok, TrainingPerformedSet.t()} | {:error, term()}
+  def delete_client_performed_set(%Ctx{} = ctx, id, attrs) do
+    mutate(
+      ctx,
+      id,
+      attrs,
+      fn row, _ -> row |> change(deleted_at: DateTime.utc_now(:second)) |> Repo.update() end,
+      "removed"
+    )
   end
 
-  defp replay_set(session, %{fingerprint: fingerprint, performed_set_id: id}, %{fingerprint: fingerprint})
-       when is_binary(id) do
-    TrainingPerformedSet
-    |> TrainingPerformedSet.for_business(session.business_id)
-    |> TrainingPerformedSet.for_session(session.id)
-    |> TrainingPerformedSet.include_exercise(session.business_id)
-    |> Repo.get(id)
-    |> ok_or_not_found()
+  defp mutate(ctx, id, attrs, operation, action) do
+    RecordJournal.write(ctx, &mutate_locked(ctx, &1, id, attrs, operation, action))
   end
 
-  defp replay_set(_session, _request, _identity), do: {:error, :conflict}
+  defp mutate_locked(ctx, client, id, attrs, operation, action) do
+    row =
+      Repo.one(
+        from(s in TrainingPerformedSet,
+          join: session in TrainingSession,
+          on: session.id == s.session_id,
+          where: s.id == ^id and s.business_id == ^ctx.business_id and session.client_id == ^client.id
+        )
+      )
 
-  defp create_new_set(%TrainingSession{state: state} = session, attrs, identity) when state in [:active, :completed] do
-    with :ok <- TrainingSession.check_revision(session, attrs),
-         {:ok, exercise_id} <- TrainingPerformedSet.exercise_reference(attrs),
-         {:ok, exercise} <- fetch_visible_exercise(session.business_id, exercise_id),
-         {:ok, set} <- insert_performed_set(session, attrs, exercise),
-         :ok <- record_request(set, identity),
-         {:ok, _session} <- session |> TrainingSession.touch_changeset() |> Repo.update() do
-      {:ok, set}
+    with true <- not is_nil(row) || {:error, :not_found},
+         {:ok, session} <- Execution.get_client_session(ctx, row.session_id),
+         :ok <- editable(session),
+         :ok <- Revision.check(session, field(attrs, :expected_revision) || :any),
+         true <- is_nil(row.deleted_at) || {:error, :conflict},
+         {:ok, normalized} <- Units.normalize(attrs),
+         {:ok, normalized} <- validate_reference(ctx, session, Map.merge(reference_attrs(row), normalized)),
+         {:ok, updated} <- operation.(row, normalized),
+         {:ok, touched} <- touch_session(session) do
+      change = RecordJournal.change(session.id, "set", row, if(action == "removed", do: nil, else: updated))
+      {:ok, updated, [change, RecordJournal.change(session.id, "session", session, touched)]}
     end
   end
 
-  defp create_new_set(_session, _attrs, _identity), do: {:error, :not_found}
+  defp present_result({:ok, set}, ctx) do
+    with {:ok, session} <- Execution.get_client_session(ctx, set.session_id),
+         do: {:ok, Execution.set_name(set, session.prescription)}
+  end
 
-  defp record_request(_set, nil), do: :ok
+  defp present_result(error, _ctx), do: error
 
-  defp record_request(set, identity) do
-    case set |> TrainingSetRequest.insert_changeset(identity) |> Repo.insert() do
-      {:ok, _request} -> :ok
-      error -> error
+  defp reference_attrs(row),
+    do: Map.new([:item_id, :set_id, :exercise_id, :exercise_name], fn k -> {to_string(k), Map.get(row, k)} end)
+
+  defp validate_reference(ctx, session, attrs) do
+    with :ok <- prescription_reference(session, attrs),
+         :ok <- exercise_reference(ctx, attrs) do
+      {:ok, if(attrs["exercise_id"], do: Map.put(attrs, "exercise_name", nil), else: attrs)}
     end
   end
 
-  defp fetch_visible_exercise(_business_id, nil), do: {:ok, nil}
-
-  defp fetch_visible_exercise(business_id, exercise_id) do
-    TrainingExercise
-    |> TrainingExercise.for_business_or_system(business_id)
-    |> Repo.get(exercise_id)
-    |> ok_or_not_found()
+  defp prescription_reference(%{prescription: nil}, attrs) do
+    if attrs["item_id"] || attrs["set_id"], do: {:error, :invalid_prescription}, else: :ok
   end
 
-  defp fetch_client_performed_set(business_id, client_id, set_id) do
-    session_ids = TrainingSession |> TrainingSession.for_client(business_id, client_id) |> select([session], session.id)
+  defp prescription_reference(session, attrs) do
+    item_id = attrs["item_id"]
+    set_id = attrs["set_id"]
+    items = for b <- session.prescription["blocks"], i <- b["items"], do: i
+    item = Enum.find(items, &(&1["id"] == item_id))
 
-    TrainingPerformedSet
-    |> TrainingPerformedSet.for_business(business_id)
-    |> where([set], set.training_session_id in subquery(session_ids))
-    |> TrainingPerformedSet.include_exercise(business_id)
-    |> Repo.get(set_id)
-    |> ok_or_not_found()
-  end
-
-  defp mutate_client_performed_set(business_id, client_id, set_id, attrs, mutation) do
-    Repo.transact(fn ->
-      with {:ok, initial} <- fetch_client_performed_set(business_id, client_id, set_id),
-           {:ok, session} <- lock_client_session(business_id, client_id, initial.training_session_id),
-           :ok <- TrainingSession.check_revision(session, attrs),
-           {:ok, set} <- fetch_client_performed_set(business_id, client_id, set_id),
-           {:ok, result} <- mutation.(set),
-           {:ok, _session} <- session |> TrainingSession.touch_changeset() |> Repo.update() do
-        {:ok, result}
-      end
-    end)
-  end
-
-  defp insert_performed_set(session, attrs, exercise) do
-    position =
-      TrainingPerformedSet
-      |> TrainingPerformedSet.for_business(session.business_id)
-      |> TrainingPerformedSet.for_session(session.id)
-      |> select([set], max(set.position))
-      |> Repo.one()
-      |> then(&((&1 || -1) + 1))
-
-    session.business_id
-    |> TrainingPerformedSet.insert_changeset(session.id, position, exercise, attrs)
-    |> PrescriptionSnapshot.validate_exercise_reference(session.prescription_snapshot)
-    |> Repo.insert()
-    |> case do
-      {:ok, set} -> {:ok, %{set | exercise: exercise}}
-      error -> error
+    cond do
+      is_nil(item_id) and is_nil(set_id) -> :ok
+      is_nil(item) -> {:error, :invalid_prescription}
+      item["exercise_id"] != attrs["exercise_id"] -> {:error, :invalid_prescription}
+      set_id && not Enum.any?(item["sets"], &(&1["id"] == set_id)) -> {:error, :invalid_prescription}
+      true -> :ok
     end
   end
 
-  defp ok_or_not_found(nil), do: {:error, :not_found}
-  defp ok_or_not_found(record), do: {:ok, record}
+  defp exercise_reference(ctx, %{"exercise_id" => id}) when not is_nil(id) do
+    with {:ok, _} <- Library.get_exercise(ctx, id), do: :ok
+  end
+
+  defp exercise_reference(_ctx, attrs) do
+    if is_binary(attrs["exercise_name"]) and String.trim(attrs["exercise_name"]) != "",
+      do: :ok,
+      else: {:error, :invalid_exercise}
+  end
+
+  defp touch_session(session), do: session |> change(revision: session.revision + 1) |> Repo.update()
+  defp editable(%{state: :discarded}), do: {:error, :conflict}
+  defp editable(_), do: :ok
+  defp field(attrs, key), do: attrs |> Map.new(fn {k, v} -> {to_string(k), v} end) |> Map.get(to_string(key))
 end

@@ -18,12 +18,12 @@ import {FoodMedia} from './food-media';
 import {FoodServings} from './food-servings';
 
 const nutrients = [
-  ['calories_per_100g', 'Calories · kcal'],
-  ['protein_g_per_100g', 'Protein · g'],
-  ['carbs_g_per_100g', 'Carbs · g'],
-  ['fat_g_per_100g', 'Fat · g'],
-  ['fiber_g_per_100g', 'Fiber · g'],
-  ['sugar_g_per_100g', 'Sugar · g'],
+  ['nutrients.energy_kcal', 'Calories · kcal'],
+  ['nutrients.protein_g', 'Protein · g'],
+  ['nutrients.carbs_g', 'Carbs · g'],
+  ['nutrients.fat_g', 'Fat · g'],
+  ['nutrients.fiber_g', 'Fiber · g'],
+  ['nutrients.sugar_g', 'Sugar · g'],
 ] as const;
 export function FoodEditor() {
   const {id} = useParams();
@@ -148,7 +148,7 @@ function Editor({initial}: {initial: Food | undefined}) {
           initial
             ? readOnly
               ? 'This shared food is read-only.'
-              : 'Changes update this library food wherever it is used in plans and recipes.'
+              : 'Changes update this library food and recipe calculations. Published plans keep their values until the coach publishes again.'
             : 'Enter the values from a reliable food label or source.'
         }
         back={{to, label: 'Back to foods', state}}
@@ -203,7 +203,7 @@ function Editor({initial}: {initial: Food | undefined}) {
                 : unknownCreate
                   ? 'Creation could not be confirmed. Check saved foods before trying again; your draft is still here.'
                   : error instanceof ApiError && error.code === 'in_use'
-                    ? 'A recipe or plan uses a serving you removed or renamed. Keep that serving, or update its uses from Manage food before changing it.'
+                    ? 'A recipe or draft uses a serving you removed. Keep that serving or update those uses. You can change a serving name without changing its identity.'
                     : errorMessage(
                         error,
                         'The save could not be confirmed. Your edits are still here. Check the saved version before retrying.',
@@ -512,7 +512,9 @@ function CreationRecovery({
               <p className="break-words font-semibold">{food.name}</p>
               {food.brand && <p className="text-sm">{food.brand}</p>}
               <p className="text-sm text-muted-foreground">
-                {food.calories_per_100g === null ? 'Calories unknown' : `${food.calories_per_100g} kcal per 100 g`}
+                {food.nutrients.energy_kcal == null
+                  ? 'Calories unknown'
+                  : `${food.nutrients.energy_kcal} kcal per 100 g`}
               </p>
               <Button
                 variant="outline"

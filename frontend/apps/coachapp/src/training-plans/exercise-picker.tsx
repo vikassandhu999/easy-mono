@@ -85,13 +85,12 @@ export function ExercisePicker({
             <div className="flex items-center gap-3 p-4">
               <div className="min-w-0 flex-1">
                 <p className="break-words font-medium">{exercise.name}</p>
-                {exercise.description && (
-                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{exercise.description}</p>
+                {exercise.instructions && (
+                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{exercise.instructions}</p>
                 )}
-                {(exercise.instructions ||
-                  exercise.equipment.length > 0 ||
-                  exercise.media ||
-                  exercise.images.length > 0) && <PickerDetails exercise={exercise} />}
+                {(exercise.instructions || exercise.equipment.length > 0 || exercise.media) && (
+                  <PickerDetails exercise={exercise} />
+                )}
               </div>
               <Button
                 variant="outline"

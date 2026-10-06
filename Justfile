@@ -14,11 +14,7 @@ coach:
 
 # frontend: client app dev server
 client:
-    cd frontend && pnpm dev:clientapp-v2
-
-# rebuilt browser/native client
-client-next:
-    cd frontend && pnpm --filter @easy/clientapp dev
+    cd frontend && pnpm dev:clientapp
 
 # frontend: website dev server
 site:

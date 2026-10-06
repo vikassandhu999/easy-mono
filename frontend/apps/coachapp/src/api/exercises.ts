@@ -87,7 +87,7 @@ export function useCopyExercise() {
   });
 }
 
-export function useDeleteExercise() {
+export function useArchiveExercise() {
   return useMutation({
     onMutate: () => getSession()?.id,
     mutationFn: async (id: string) => {

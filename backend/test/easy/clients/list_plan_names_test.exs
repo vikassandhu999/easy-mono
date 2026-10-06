@@ -22,7 +22,7 @@ defmodule Easy.Clients.ListPlanNamesTest do
 
     test "is off by default", %{business: business, coach: coach, client: client, window: window} do
       insert(:training_plan, [business: business, creator: coach, client: client] ++ window)
-      insert(:plan, business: business, creator: coach, client: client, status: :active, start_date: Date.utc_today())
+      insert(:nutrition_plan, business: business, creator: coach, client: client, start_date: Date.utc_today())
 
       assert {:ok, %{clients: [listed]}} = Clients.list_clients(owner_ctx(business))
       assert listed.training_plan_name == nil
@@ -35,12 +35,11 @@ defmodule Easy.Clients.ListPlanNamesTest do
         [business: business, creator: coach, client: client, name: "Strength base"] ++ window
       )
 
-      insert(:plan,
+      insert(:nutrition_plan,
         business: business,
         creator: coach,
         client: client,
         name: "Fat loss",
-        status: :active,
         start_date: Date.utc_today()
       )
 
@@ -54,12 +53,11 @@ defmodule Easy.Clients.ListPlanNamesTest do
       coach: coach,
       client: client
     } do
-      insert(:plan,
+      insert(:nutrition_plan,
         business: business,
         creator: coach,
         client: client,
         name: "Fat loss",
-        status: :active,
         start_date: Date.utc_today()
       )
 
@@ -68,7 +66,12 @@ defmodule Easy.Clients.ListPlanNamesTest do
       assert listed.nutrition_plan_name == "Fat loss"
     end
 
-    test "ignores archived plans and templates", %{business: business, coach: coach, client: client, window: window} do
+    test "archived training keeps current coverage; templates do not cover", %{
+      business: business,
+      coach: coach,
+      client: client,
+      window: window
+    } do
       insert(
         :training_plan,
         [business: business, creator: coach, client: client, name: "Old block", archived_at: DateTime.utc_now(:second)] ++
@@ -76,10 +79,10 @@ defmodule Easy.Clients.ListPlanNamesTest do
       )
 
       # A template — no client_id — must never leak onto a client's row.
-      insert(:plan, business: business, creator: coach, name: "Template", status: :active)
+      insert(:nutrition_plan, business: business, creator: coach, name: "Template")
 
       assert {:ok, %{clients: [listed]}} = Clients.list_clients(owner_ctx(business), include_plans: true)
-      assert listed.training_plan_name == nil
+      assert listed.training_plan_name == "Old block"
       assert listed.nutrition_plan_name == nil
     end
 

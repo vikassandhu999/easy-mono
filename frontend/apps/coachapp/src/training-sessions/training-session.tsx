@@ -7,6 +7,7 @@ import {Button} from '../ui/button';
 import {FormError} from '../ui/form-error';
 import {useListLocation} from '../ui/list-location';
 import {Page, PageHeader, StatusBadge, Surface} from '../ui/page';
+import {setSummary} from '../ui/training-prescription';
 import {sessionStateLabels, sessionTitle, setTypeLabels, setValues} from './session';
 
 export function TrainingSession() {
@@ -77,7 +78,7 @@ function SessionRecord({clientId, id}: {clientId: string; id: string}) {
   }
   const person = client.data?.data;
   const name = person ? person.preferred_name || person.full_name || person.email || 'Client' : 'View client';
-  const snapshot = session.prescription_snapshot;
+  const prescription = session.prescription;
   return (
     <Page>
       <PageHeader
@@ -108,19 +109,19 @@ function SessionRecord({clientId, id}: {clientId: string; id: string}) {
           <StatusBadge tone={session.state === 'completed' ? 'positive' : 'neutral'}>
             {sessionStateLabels[session.state]}
           </StatusBadge>
-          <time dateTime={session.date}>{session.date}</time>
+          <time dateTime={session.local_date}>{session.local_date}</time>
         </div>
         <p className="text-sm text-muted-foreground">
           Started{' '}
           <time dateTime={session.started_at}>
             {new Date(session.started_at).toLocaleString(undefined, {dateStyle: 'medium', timeStyle: 'short'})}
           </time>
-          {session.closed_at && (
+          {session.ended_at && (
             <>
               {' '}
               · {session.state === 'discarded' ? 'Discarded' : 'Finished'}{' '}
-              <time dateTime={session.closed_at}>
-                {new Date(session.closed_at).toLocaleString(undefined, {dateStyle: 'medium', timeStyle: 'short'})}
+              <time dateTime={session.ended_at}>
+                {new Date(session.ended_at).toLocaleString(undefined, {dateStyle: 'medium', timeStyle: 'short'})}
               </time>
             </>
           )}
@@ -135,17 +136,13 @@ function SessionRecord({clientId, id}: {clientId: string; id: string}) {
         )}
         {query.isError && <FormError message="Could not refresh this session. Showing the previously loaded record." />}
       </div>
-      {(session.soreness_rating !== null || session.notes) && (
+      {session.notes && (
         <Surface className="space-y-3">
           <h2 className="section-title">From your client</h2>
-          {session.soreness_rating !== null && (
-            <p className="text-sm">
-              Soreness: <span className="font-semibold">{session.soreness_rating} / 5</span>
-            </p>
-          )}
-          {session.notes && <p className="whitespace-pre-wrap break-words leading-relaxed">{session.notes}</p>}
+          <p className="whitespace-pre-wrap">{session.notes}</p>
         </Surface>
       )}
+      {session.occurrence_date && <p>Completes the workout scheduled for {session.occurrence_date}.</p>}
       <section
         aria-label="Recorded work"
         className="space-y-4"
@@ -171,10 +168,12 @@ function SessionRecord({clientId, id}: {clientId: string; id: string}) {
                   <div className="min-w-0">
                     <h3 className="break-words font-semibold">{set.exercise_name}</h3>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Set {index + 1} · {setTypeLabels[set.set_type]}
+                      Set {index + 1} · {setTypeLabels[set.kind]}
                     </p>
                   </div>
-                  <p className="break-words text-sm leading-relaxed">{setValues(set) || 'No measurements recorded'}</p>
+                  <p className="break-words text-sm leading-relaxed">
+                    {set.outcome} · {setValues(set) || 'No measurements recorded'}
+                  </p>
                   {set.notes && (
                     <p className="col-span-2 whitespace-pre-wrap break-words text-sm text-muted-foreground">
                       {set.notes}
@@ -186,54 +185,63 @@ function SessionRecord({clientId, id}: {clientId: string; id: string}) {
           </ol>
         )}
       </section>
-      {snapshot ? (
-        <details className="group border-t border-border pt-5">
-          <summary className="min-h-12 cursor-pointer font-semibold">View original prescription</summary>
-          <div className="mt-4 space-y-6">
-            <p className="wrap-anywhere text-sm text-muted-foreground">
-              {snapshot.plan.name} · Targets saved when this session began.
-            </p>
-            {snapshot.workout.exercises.length === 0 && (
-              <p className="text-sm text-muted-foreground">No exercises were saved in this prescription.</p>
-            )}
-            {snapshot.workout.exercises.map((exercise) => (
-              <section
-                key={exercise.ref}
-                className="space-y-3"
-                aria-label={`Original targets for ${exercise.exercise_name}`}
-              >
-                <h3 className="break-words text-lg font-semibold">{exercise.exercise_name}</h3>
-                {exercise.sets.length === 0 && <p className="text-sm text-muted-foreground">No sets prescribed.</p>}
-                <ol className="space-y-3">
-                  {exercise.sets.map((set, index) => (
-                    <li
-                      key={`${exercise.ref}:${index}`}
-                      className="grid grid-cols-[4rem_minmax(0,1fr)] gap-x-3 gap-y-1 text-sm"
-                    >
-                      <span className="text-muted-foreground">Set {index + 1}</span>
-                      <p>{setValues(set) || 'Targets not specified'}</p>
-                      <p className="col-start-2 text-xs text-muted-foreground">
-                        {set.set_type ? setTypeLabels[set.set_type] : 'Set type not specified'}
-                        {set.rest_seconds !== null && ` · Rest ${set.rest_seconds} sec`}
-                      </p>
-                      {set.notes && (
-                        <p className="col-start-2 whitespace-pre-wrap break-words text-sm text-muted-foreground">
-                          {set.notes}
-                        </p>
-                      )}
-                    </li>
-                  ))}
-                </ol>
-              </section>
+      {prescription ? (
+        <section className="space-y-5 border-t border-border pt-5">
+          <h2 className="section-title">Prescribed and performed</h2>
+          {prescription.blocks.map((block) => (
+            <div
+              key={block.id}
+              className="space-y-4"
+            >
+              <p className="capitalize text-sm font-semibold">{block.format}</p>
+              {block.items.map((item) => (
+                <section
+                  key={item.id}
+                  className="space-y-3"
+                >
+                  <h3 className="editor-item-title">{item.exercise_name}</h3>
+                  <ol className="divide-y divide-border">
+                    {item.sets.map((target, index) => {
+                      const actual = session.performed_sets.filter(
+                        (set) => set.set_id === target.id && !set.deleted_at,
+                      );
+                      return (
+                        <li
+                          key={target.id}
+                          className="grid gap-2 py-3 sm:grid-cols-2"
+                        >
+                          <p>
+                            Set {index + 1} · Prescribed: {setSummary(target)}
+                          </p>
+                          <div>
+                            {actual.length ? (
+                              actual.map((set) => (
+                                <p key={set.id}>
+                                  <span className="capitalize">{set.outcome}</span> · {setValues(set)}
+                                </p>
+                              ))
+                            ) : (
+                              <p className="text-muted-foreground">Not recorded</p>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </section>
+              ))}
+            </div>
+          ))}
+          {session.performed_sets
+            .filter((set) => !set.set_id && !set.deleted_at)
+            .map((set) => (
+              <p key={set.id}>
+                Extra · {set.exercise_name} · {set.outcome} · {setValues(set)}
+              </p>
             ))}
-          </div>
-        </details>
+        </section>
       ) : (
-        <p className="text-sm text-muted-foreground">
-          {session.kind === 'freestyle'
-            ? 'Freestyle sessions have no prescribed targets.'
-            : 'The original prescription is unavailable.'}
-        </p>
+        <p className="text-sm text-muted-foreground">Freestyle workouts have no prescribed targets.</p>
       )}
       <Link
         to={to}

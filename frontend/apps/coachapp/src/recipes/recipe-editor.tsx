@@ -3,6 +3,7 @@ import {flushSync} from 'react-dom';
 import {useForm} from 'react-hook-form';
 import {generatePath, useBeforeUnload, useBlocker, useNavigate, useParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
+import {nutrientFields} from '../api/nutrition-values';
 import {type Recipe, useRecipe, useRecipes, useSaveRecipe} from '../api/recipes';
 import {routes} from '../routes';
 import {Button} from '../ui/button';
@@ -146,7 +147,7 @@ function Editor({initial}: {initial: Recipe | undefined}) {
         title={initial ? 'Edit recipe' : 'Create recipe'}
         description={
           initial
-            ? 'Changes update this library recipe wherever it is used in meal plans.'
+            ? 'Changes update this library recipe. Published plans keep their copied values until the coach publishes again.'
             : 'Bring ingredients together into a recipe you can reuse.'
         }
         back={{to, label: 'Back to recipes', state}}
@@ -289,26 +290,23 @@ function Editor({initial}: {initial: Recipe | undefined}) {
           className="space-y-3"
           aria-label="Recipe nutrition"
         >
-          <h2 className="editor-section-title">Nutrition · whole recipe</h2>
+          <h2 className="editor-section-title">Nutrition · per 100 g</h2>
           {dirty || !recipe ? (
             <p className="text-sm text-muted-foreground">Save the recipe to see nutrition for these ingredients.</p>
           ) : (
             <>
               <dl className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-                {(['calories', 'protein', 'carbohydrates', 'fat', 'fiber'] as const).map((name) => (
+                {nutrientFields.map(([name, label, unit]) => (
                   <div key={name}>
-                    <dt className="text-xs capitalize text-muted-foreground">{name}</dt>
+                    <dt className="text-xs capitalize text-muted-foreground">{label}</dt>
                     <dd className="mt-1 font-semibold">
-                      {recipe.nutrients[name] === null
+                      {recipe.nutrients[name] == null
                         ? 'Unknown'
-                        : `${recipe.nutrients[name]} ${name === 'calories' ? 'kcal' : 'g'}`}
+                        : `${Math.round(recipe.nutrients[name] * 10) / 10} ${unit}`}
                     </dd>
                   </div>
                 ))}
               </dl>
-              {!recipe.nutrients.complete && (
-                <p className="text-sm text-muted-foreground">Some ingredients have missing nutrition values.</p>
-              )}
             </>
           )}
         </section>

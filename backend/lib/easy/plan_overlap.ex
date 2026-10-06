@@ -1,68 +1,64 @@
 defmodule Easy.PlanOverlap do
-  alias Easy.Clients.Client
-  alias Easy.Ctx
-  alias Easy.PlanCoverage
-  alias Easy.Repo
-
   import Ecto.Changeset
   import Ecto.Query
+  alias Easy.Clients.Client
+  alias Easy.{Ctx, Repo}
 
   @spec validate(Ctx.t(), Ecto.Changeset.t()) :: Ecto.Changeset.t()
-  def validate(%Ctx{} = ctx, %{valid?: true} = changeset) do
-    case apply_changes(changeset) do
-      %{kind: :client_plan, start_date: %Date{}, archived_at: nil} = plan -> validate_scheduled(ctx, changeset, plan)
-      _plan -> changeset
+  def validate(%Ctx{} = ctx, %{valid?: true} = cs) do
+    case apply_changes(cs) do
+      %{client_id: id} when not is_nil(id) -> validate_client_plan(ctx, cs)
+      _ -> cs
     end
   end
 
-  def validate(%Ctx{}, changeset), do: changeset
+  def validate(%Ctx{}, cs), do: cs
 
-  defp validate_scheduled(ctx, changeset, plan) do
-    now = DateTime.utc_now(:second)
-    changeset = if plan.inserted_at, do: changeset, else: put_change(changeset, :inserted_at, now)
-    client = lock_client(ctx, plan.client_id, now)
-    candidate = %{apply_changes(changeset) | client: client}
+  defp validate_client_plan(ctx, cs) do
+    plan = apply_changes(cs)
 
-    others =
-      Repo.all(
-        from(p in plan.__struct__,
-          where: p.business_id == ^ctx.business_id and p.client_id == ^plan.client_id,
-          where: p.kind == :client_plan and is_nil(p.archived_at) and not is_nil(p.start_date)
-        )
+    client =
+      Repo.one(from(c in Client, where: c.id == ^plan.client_id and c.business_id == ^ctx.business_id, lock: "FOR UPDATE"))
+      |> Repo.preload(:business)
+
+    cs =
+      if plan.created_local_date,
+        do: cs,
+        else: put_change(cs, :created_local_date, Client.local_date(client, DateTime.utc_now()))
+
+    candidate = apply_changes(cs)
+
+    if candidate.start_date && active_candidate?(candidate) && overlaps?(ctx, candidate),
+      do: add_error(cs, :start_date, "overlaps another Client Plan's Coverage"),
+      else: cs
+  end
+
+  defp active_candidate?(_), do: true
+
+  defp overlaps?(ctx, plan) do
+    table = plan.__struct__.__schema__(:source)
+    id = if plan.id, do: Ecto.UUID.dump!(plan.id)
+
+    result =
+      Repo.query!(
+        """
+        SELECT EXISTS(SELECT 1 FROM #{table} other WHERE other.client_id=$1 AND other.business_id=$2 AND ($3::uuid IS NULL OR other.id<>$3)
+        AND (other.archived_at IS NULL OR $7)
+        #{if table == "plans", do: "AND other.domain = $8", else: ""}
+        AND plan_coverage_range(other.client_id,other.start_date,other.end_date,other.created_local_date)
+        && plan_coverage_range($1,$4,$5,$6))
+        """,
+        [
+          Ecto.UUID.dump!(plan.client_id),
+          Ecto.UUID.dump!(ctx.business_id),
+          id,
+          plan.start_date,
+          plan.end_date,
+          plan.created_local_date,
+          table == "plans"
+        ] ++ if(table == "plans", do: [to_string(plan.domain)], else: [])
       )
 
-    if Enum.any?(others, &(&1.id != plan.id and overlaps?(candidate, %{&1 | client: client}))) do
-      add_error(changeset, :start_date, overlap_message(plan))
-    else
-      changeset
-    end
+    result.rows == [[true]]
   end
-
-  defp lock_client(ctx, client_id, now) do
-    client =
-      Client
-      |> Client.for_business(ctx.business_id)
-      |> lock("FOR UPDATE")
-      |> Repo.get(client_id)
-      |> Repo.preload([:business, :terms])
-
-    today = Client.local_date(client, now)
-    %{client | terms: Enum.filter(client.terms, &(&1.ends_on && Date.before?(&1.ends_on, today)))}
-  end
-
-  defp overlaps?(left, right) do
-    left_end = PlanCoverage.effective_end(left)
-    right_end = PlanCoverage.effective_end(right)
-
-    not before?(left_end, left.start_date) and not before?(right_end, right.start_date) and
-      not before?(left_end, right.start_date) and not before?(right_end, left.start_date)
-  end
-
-  defp before?(nil, _date), do: false
-  defp before?(ending, date), do: Date.before?(ending, date)
-
-  defp overlap_message(%Easy.Training.TrainingPlan{}),
-    do: "overlaps an existing training plan; choose dates outside its period"
-
-  defp overlap_message(%Easy.Nutrition.Plan{}), do: "overlaps another Client Plan's Coverage"
 end

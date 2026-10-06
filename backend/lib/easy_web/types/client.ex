@@ -7,6 +7,8 @@ defmodule EasyWeb.Types.Client do
 
   @type t :: %{
           required(:id) => String.t(),
+          required(:review_frequency_days) => pos_integer(),
+          required(:focus) => String.t() | nil,
           required(:full_name) => String.t(),
           required(:preferred_name) => String.t() | nil,
           required(:email) => String.t() | nil,
@@ -38,6 +40,8 @@ defmodule EasyWeb.Types.Client do
           optional(:coach_id) => Ecto.UUID.t()
         }
   @type update :: %{
+          optional(:focus) => String.t() | nil,
+          optional(:review_frequency_days) => pos_integer(),
           optional(:full_name) => String.t(),
           optional(:preferred_name) => String.t() | nil,
           optional(:email) => String.t(),
@@ -64,6 +68,8 @@ defmodule EasyWeb.Types.Client do
     %{
       id: client.id,
       full_name: client.full_name,
+      focus: client.focus,
+      review_frequency_days: client.review_frequency_days,
       preferred_name: client.preferred_name,
       email: client.email,
       phone: client.phone,

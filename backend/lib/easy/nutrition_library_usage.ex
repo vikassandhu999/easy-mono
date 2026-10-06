@@ -1,106 +1,108 @@
 defmodule Easy.Nutrition.LibraryUsage do
-  alias Easy.Clients.Client
-  alias Easy.{Ctx, CursorPage, Repo, Search}
-  alias Easy.Nutrition.{Food, Plan, PlanReader, Recipe}
-
+  alias Easy.Ctx
+  alias Easy.CursorPage
+  alias Easy.Nutrition.Library
+  alias Easy.Nutrition.Recipe
+  alias Easy.Plans.Plan
+  alias Easy.Plans.Revision
+  alias Easy.Plans.Template
+  alias Easy.Repo
   import Ecto.Query
 
-  @spec page(Ctx.t(), :food | :recipe, String.t(), keyword()) ::
-          {:ok, map()} | {:error, :not_found | :invalid_cursor | :conflict}
-  def page(%Ctx{} = ctx, kind, id, opts) do
-    with :ok <- Ctx.ensure_coach(ctx) do
-      Repo.snapshot(fn -> load_page(ctx, kind, id, opts) end)
+  @spec page(Ctx.t(), atom(), String.t(), keyword()) :: {:ok, map()} | {:error, term()}
+  def page(ctx, kind, id, opts) do
+    with {:ok, item} <- item(ctx, kind, id),
+         query <- references(ctx, kind, id),
+         filtered <- filter(query, opts),
+         {:ok, paged} <- CursorPage.query(filtered, opts[:cursor] || "start", CursorPage.limit(opts)) do
+      counts = Repo.all(from(r in query, group_by: r.kind, select: {r.kind, count(r.id)})) |> Map.new()
+      result = CursorPage.finish(Repo.all(paged), CursorPage.limit(opts), Repo.aggregate(filtered, :count))
+
+      {:ok,
+       Map.merge(result, %{
+         item: %{id: id, name: item.name, read_only: Map.get(item, :source) == :system},
+         counts: %{
+           recipes: Map.get(counts, "recipe", 0),
+           templates: Map.get(counts, "template", 0),
+           client_plans: Map.get(counts, "client_plan", 0)
+         },
+         delete_blocked_reason: if(Map.get(item, :source) == :system, do: :shared_food, else: nil)
+       })}
     end
   end
 
-  defp load_page(ctx, kind, id, opts) do
-    with {:ok, item} <- item(ctx, kind, id) do
-      queries = usage_queries(ctx, kind, id)
-      category = category(Keyword.get(opts, :kind))
-      query = queries |> Map.fetch!(category) |> search(Keyword.get(opts, :search))
-      limit = CursorPage.limit(opts)
+  @spec impact(Ctx.t(), atom(), String.t()) :: {:ok, map()} | {:error, term()}
+  def impact(ctx, kind, id) do
+    with {:ok, _} <- item(ctx, kind, id) do
+      rows = Repo.all(references(ctx, kind, id))
 
-      with {:ok, page_query} <- CursorPage.query(query, Keyword.get(opts, :cursor) || "start", limit) do
-        page = CursorPage.finish(Repo.all(page_query), limit, Repo.aggregate(query, :count, :id))
-        counts = count_queries(queries)
+      {:ok,
+       %{
+         recipes: select_refs(rows, "recipe", [:id, :name]),
+         templates: select_refs(rows, "template", [:id, :name, :client_id]),
+         client_plans: select_refs(rows, "client_plan", [:id, :name, :client_id])
+       }}
+    end
+  end
 
-        {:ok,
-         Map.merge(page, %{
-           item: item,
-           counts: counts,
-           delete_blocked_reason: delete_blocked_reason(ctx, kind, id, item, counts)
-         })}
+  defp select_refs(rows, kind, fields), do: rows |> Enum.filter(&(&1.kind == kind)) |> Enum.map(&Map.take(&1, fields))
+  defp item(ctx, :food, id), do: Library.get_food(ctx, id)
+  defp item(ctx, :recipe, id), do: Library.get_recipe(ctx, id)
+
+  defp filter(query, opts) do
+    kind =
+      case opts[:kind] do
+        value when value in [:recipes, "recipes"] -> "recipe"
+        value when value in [:templates, "templates"] -> "template"
+        value when value in [:client_plans, "client_plans"] -> "client_plan"
+        _ -> nil
       end
-    end
+
+    query = if kind, do: where(query, [r], r.kind == ^kind), else: query
+
+    if opts[:search] in [nil, ""],
+      do: query,
+      else: where(query, [r], ilike(r.name, ^Easy.Search.like_pattern(opts[:search])))
   end
 
-  defp count_queries(queries) do
-    Map.new(queries, fn {key, query} -> {key, Repo.aggregate(query, :count, :id)} end)
-  end
+  defp references(ctx, kind, id) do
+    needle = %{"meals" => [%{"items" => [%{"source" => %{"type" => to_string(kind), "id" => id}}]}]}
 
-  defp item(ctx, :food, id) do
-    Food.for_business_or_system(ctx.business_id)
-    |> select([food], %{id: food.id, name: food.name, read_only: food.source == :system})
-    |> Repo.get(id)
-    |> found()
-  end
+    templates =
+      from(t in Template,
+        where: t.business_id == ^ctx.business_id and t.domain == :nutrition and fragment("? @> ?::jsonb", t.content, ^needle),
+        select: %{
+          id: t.id,
+          name: t.name,
+          inserted_at: t.inserted_at,
+          kind: "template",
+          client_id: type(fragment("NULL"), :binary_id)
+        }
+      )
 
-  defp item(ctx, :recipe, id) do
-    Recipe.for_business(ctx.business_id)
-    |> select([recipe], %{id: recipe.id, name: recipe.name, read_only: false})
-    |> Repo.get(id)
-    |> found()
-  end
+    plans =
+      from(p in Plan,
+        join: r in Revision,
+        on: r.plan_id == p.id,
+        where: p.business_id == ^ctx.business_id and p.domain == :nutrition and fragment("? @> ?::jsonb", r.content, ^needle),
+        distinct: true,
+        select: %{id: p.id, name: p.name, inserted_at: p.inserted_at, kind: "client_plan", client_id: p.client_id}
+      )
 
-  defp found(nil), do: {:error, :not_found}
-  defp found(item), do: {:ok, item}
+    recipes =
+      from(r in Recipe,
+        where:
+          r.business_id == ^ctx.business_id and ^(kind == :food) and
+            fragment("to_jsonb(?) @> ?::jsonb", r.ingredients, ^[%{"food_id" => id}]),
+        select: %{
+          id: r.id,
+          name: r.name,
+          inserted_at: r.inserted_at,
+          kind: "recipe",
+          client_id: type(fragment("NULL"), :binary_id)
+        }
+      )
 
-  defp usage_queries(ctx, kind, id) do
-    plans = Plan.for_business(ctx.business_id) |> Plan.for_menu_item(kind, id)
-    clients = Client.for_business(ctx.business_id) |> Client.visible_to(ctx) |> select([client], client.id)
-
-    %{
-      recipes: recipe_query(ctx.business_id, kind, id),
-      templates: plans |> Plan.templates() |> plan_projection(),
-      client_plans:
-        plans
-        |> Plan.for_kind(:client_plan)
-        |> where([plan], plan.client_id in subquery(clients))
-        |> plan_projection()
-    }
-  end
-
-  defp recipe_query(business_id, :food, id) do
-    Recipe.using_food(business_id, id)
-    |> select([recipe], %{id: recipe.id, name: recipe.name, client_id: nil, kind: "recipe", inserted_at: recipe.inserted_at})
-  end
-
-  defp recipe_query(business_id, :recipe, _id) do
-    Recipe.for_business(business_id)
-    |> where(false)
-    |> select([recipe], %{id: recipe.id, name: recipe.name, client_id: nil, kind: "recipe", inserted_at: recipe.inserted_at})
-  end
-
-  defp plan_projection(query) do
-    select(query, [plan], %{
-      id: plan.id,
-      name: plan.name,
-      client_id: plan.client_id,
-      kind: plan.kind,
-      inserted_at: plan.inserted_at
-    })
-  end
-
-  defp search(query, value) when value in [nil, ""], do: query
-  defp search(query, value), do: where(query, [item], ilike(item.name, ^Search.like_pattern(String.trim(value))))
-
-  defp category(value) when value in ["recipes", :recipes], do: :recipes
-  defp category(value) when value in ["client_plans", :client_plans], do: :client_plans
-  defp category(_value), do: :templates
-
-  defp delete_blocked_reason(_ctx, _kind, _id, %{read_only: true}, _counts), do: :shared_food
-
-  defp delete_blocked_reason(ctx, kind, id, _item, counts) do
-    if counts.recipes > 0 or PlanReader.library_item_used?(ctx, kind, id), do: :in_use, else: nil
+    from(r in subquery(templates |> union_all(^plans) |> union_all(^recipes)))
   end
 end

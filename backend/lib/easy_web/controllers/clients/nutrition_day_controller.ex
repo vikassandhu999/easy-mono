@@ -2,7 +2,7 @@ defmodule EasyWeb.Clients.NutritionDayController do
   use EasyWeb, :typed_controller
 
   alias Easy.Nutrition.Diary
-  alias EasyWeb.Types.Nutrition.Day
+  alias EasyWeb.Types.Nutrition.NutritionDay, as: Day
   typed(:index, query: Day.list_query(), ok: {200, data([Day.t()])})
   typed(:save, path: %{date: Date.t()}, body: Day.save(), ok: {200, data(Day.t())})
 

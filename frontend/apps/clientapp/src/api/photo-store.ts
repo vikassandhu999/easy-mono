@@ -8,6 +8,7 @@ export type StoredPhoto = {
   blob: Blob;
   name: string;
   attachmentId?: string;
+  capturedOn?: string;
   upload?: PhotoUpload;
 };
 function isUpload(value: unknown): value is PhotoUpload {

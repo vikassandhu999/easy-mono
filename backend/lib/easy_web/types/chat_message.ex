@@ -35,7 +35,7 @@ defmodule EasyWeb.Types.ChatMessageEmbed do
   use EasyWeb.Type
 
   @type t :: %{
-          required(:type) => :training_session | :meal,
+          required(:type) => :training_session | :meal | :review,
           required(:id) => String.t(),
           required(:snapshot) => EasyWeb.Types.ChatRecordSnapshot.t()
         }
@@ -64,6 +64,7 @@ defmodule EasyWeb.Types.ChatMessage do
           required(:sender_id) => String.t(),
           required(:sender_name) => String.t() | nil,
           required(:request_id) => String.t() | nil,
+          required(:edited_at) => DateTime.t() | nil,
           required(:body) => String.t() | nil,
           required(:attachments) => [EasyWeb.Types.Attachment.t()],
           required(:embed) => EasyWeb.Types.ChatMessageEmbed.t() | nil,
@@ -113,6 +114,7 @@ defmodule EasyWeb.Types.ChatMessage do
       sender_name: message.sender_name,
       request_id: message.request_id,
       body: message.body,
+      edited_at: message.edited_at,
       attachments: Enum.map(message.attachments, &Attachment.take/1),
       embed: embed,
       inserted_at: message.inserted_at

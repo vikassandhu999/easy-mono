@@ -35,7 +35,7 @@ export function Recipes() {
           role="status"
           className="text-sm"
         >
-          {deleted} deleted.
+          {deleted} archived.
         </p>
       )}
       <ListSearch label="Search recipes" />

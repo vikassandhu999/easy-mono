@@ -6,7 +6,7 @@ import {Dialog, DialogHeader, DialogTitle} from './dialog';
 import {FormError} from './form-error';
 import {MediaPreview} from './media-preview';
 
-export function ExerciseDemonstration({exercise}: {exercise: Pick<Exercise, 'media' | 'images' | 'name'>}) {
+export function ExerciseDemonstration({exercise}: {exercise: Pick<Exercise, 'media' | 'name'>}) {
   return (
     <div className="space-y-3">
       {exercise.media && (
@@ -17,14 +17,6 @@ export function ExerciseDemonstration({exercise}: {exercise: Pick<Exercise, 'med
           label={`${exercise.name} demonstration`}
         />
       )}
-      {exercise.images.map((url, index) => (
-        <MediaPreview
-          key={`${url}-${index}`}
-          url={url}
-          kind="image"
-          label={`${exercise.name} reference photo ${index + 1}`}
-        />
-      ))}
     </div>
   );
 }
@@ -89,9 +81,6 @@ function ExerciseReader({id, name, onClose}: {id: string; name: string; onClose:
             <p className="whitespace-pre-wrap break-words text-sm">
               {exercise.instructions || 'No coaching instructions added.'}
             </p>
-            {exercise.description && (
-              <p className="whitespace-pre-wrap break-words text-sm text-muted-foreground">{exercise.description}</p>
-            )}
             {exercise.equipment.length > 0 && (
               <p className="text-sm text-muted-foreground">{exercise.equipment.map((item) => item.name).join(' · ')}</p>
             )}

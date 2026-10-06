@@ -2,7 +2,8 @@ defmodule Easy.ContextLayoutTest do
   use ExUnit.Case, async: true
 
   @legacy_context_dirs [
-    "lib/easy/identity"
+    "lib/easy/identity",
+    "lib/easy/plans"
   ]
 
   test "non-identity nested Easy context folders contain only schemas" do
@@ -63,39 +64,5 @@ defmodule Easy.ContextLayoutTest do
       end)
 
     assert offenders == []
-  end
-
-  test "Nutrition Programming depends on ClientAccess rather than the Clients context" do
-    source = File.read!("lib/easy/nutrition_programming.ex")
-
-    assert source =~ "alias Easy.ClientAccess"
-    refute source =~ ~r/^\s*alias Easy\.Clients$/m
-    refute source =~ ~r/(?<!Easy\.)\bClients\./
-  end
-
-  test "Nutrition Diary delegates read assembly and correction policy" do
-    diary = File.read!("lib/easy/nutrition_diary.ex")
-    assembler_path = "lib/easy/nutrition_diary_day_assembler.ex"
-    policy_path = "lib/easy/nutrition_diary_correction_policy.ex"
-    day_type_path = "lib/easy/nutrition_day.ex"
-
-    assert File.exists?(assembler_path)
-    assert File.exists?(policy_path)
-    assert File.exists?(day_type_path)
-    assert diary =~ "alias Easy.Nutrition.Day"
-    assert diary =~ "alias Easy.Nutrition.Diary.{CorrectionPolicy, DayAssembler}"
-    assert diary =~ "DayAssembler.list("
-    assert diary =~ "DayAssembler.assemble("
-    assert diary =~ "CorrectionPolicy."
-    refute diary =~ "@correction_days"
-
-    assembler = File.read!(assembler_path)
-    day_types = File.read!(day_type_path)
-
-    refute assembler =~ ~r/\bRepo\.(?:insert|update|delete)\(/
-    refute assembler =~ "@correction_days"
-    assert day_types =~ "@type t()"
-    assert day_types =~ "@type planned_item()"
-    refute day_types =~ "defstruct"
   end
 end

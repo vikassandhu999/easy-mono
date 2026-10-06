@@ -1,6 +1,6 @@
 import {useInfiniteQuery, useMutation, useQuery} from '@tanstack/react-query';
 import {call, client} from './client';
-import {conversationKeys} from './keys';
+import {conversationKeys, reviewKeys} from './keys';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
 import type {ChatMessageCoachCreate, ConversationInboxQuery} from './schema';
@@ -70,14 +70,20 @@ export function useConversationAction(id: string) {
       if (!sessionId || getSession()?.id !== sessionId) {
         throw new Error('Your session changed. Please try again.');
       }
-      await queryClient.invalidateQueries({queryKey: conversationKeys.all});
+      await Promise.all([
+        queryClient.invalidateQueries({queryKey: conversationKeys.all}),
+        queryClient.invalidateQueries({queryKey: reviewKeys.lists()}),
+      ]);
       if (getSession()?.id !== sessionId) {
         throw new Error('Your session changed. Please try again.');
       }
     },
     onError: async (_error, _action, sessionId) => {
       if (sessionId && getSession()?.id === sessionId) {
-        await queryClient.invalidateQueries({queryKey: conversationKeys.all});
+        await Promise.all([
+          queryClient.invalidateQueries({queryKey: conversationKeys.all}),
+          queryClient.invalidateQueries({queryKey: reviewKeys.lists()}),
+        ]);
       }
     },
   });

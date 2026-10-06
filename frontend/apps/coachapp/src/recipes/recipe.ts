@@ -1,9 +1,9 @@
 import type {Food} from '../api/foods';
+import type {NutritionPortion} from '../api/nutrition-plans';
 import type {Recipe, RecipeCreate} from '../api/recipes';
-import type {NutritionPortion} from '../api/schema';
 
 export function ingredientDraft(food: Food | null, foodId: string, portion: NutritionPortion) {
-  return {food, food_id: foodId, portion, amount: String(portion.kind === 'gram' ? portion.grams : portion.amount)};
+  return {food, food_id: foodId, portion, amount: String(portion.type === 'grams' ? portion.grams : portion.amount)};
 }
 export function fields(recipe?: Recipe) {
   return {
@@ -14,7 +14,7 @@ export function fields(recipe?: Recipe) {
     instructions: recipe?.instructions ?? '',
     allergens: recipe?.allergens ?? [],
     dietary_tags: recipe?.dietary_tags ?? [],
-    ingredients: recipe?.recipe_ingredients.map((item) => ingredientDraft(item.food, item.food_id, item.portion)) ?? [],
+    ingredients: recipe?.ingredients.map((item) => ingredientDraft(null, item.food_id, item.portion)) ?? [],
   };
 }
 export type RecipeFields = ReturnType<typeof fields>;
@@ -27,9 +27,9 @@ export function body(values: RecipeFields): RecipeCreate {
     instructions: values.instructions.trim() || null,
     allergens: values.allergens,
     dietary_tags: values.dietary_tags,
-    recipe_ingredients: values.ingredients.map(({food_id, portion, amount}) => ({
+    ingredients: values.ingredients.map(({food_id, portion, amount}) => ({
       food_id,
-      portion: portion.kind === 'gram' ? {kind: 'gram', grams: Number(amount)} : {...portion, amount: Number(amount)},
+      portion: portion.type === 'grams' ? {type: 'grams', grams: Number(amount)} : {...portion, amount: Number(amount)},
     })),
   };
 }

@@ -1,21 +1,23 @@
 import {ArrowLeftRight, Plus, Trash2, Utensils} from 'lucide-react';
 import {useEffect, useRef, useState} from 'react';
-import {useForm} from 'react-hook-form';
 import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
 import {
-  type Day,
-  type DaySlotInput,
+  type DiaryMeal,
   MealConflict,
-  type NutritionDayOption,
-  type NutritionDaySlot,
+  type MealInput,
+  type NutritionDay,
+  type NutritionMeal as PlannedMeal,
   useNutritionDay,
   useSaveMeal,
 } from '../api/nutrition';
+import {findSavedMeal, MealNameConflict} from '../api/nutrition-meals';
 import {getSession} from '../api/session';
+import {readTrackerPrompts} from '../api/trackers';
 import {safeReturnTo} from '../auth/return-to';
 import {routes} from '../routes';
 import {dayLabel} from '../training/recording';
+import {BottomSheet} from '../ui/bottom-sheet';
 import {Button} from '../ui/button';
 import {CachedRead} from '../ui/cached-read';
 import {useCoaching} from '../ui/coaching';
@@ -23,24 +25,22 @@ import {Confirm} from '../ui/confirm';
 import {useOnline} from '../ui/connection-status';
 import {DraftStatus} from '../ui/draft-status';
 import {FormError} from '../ui/form-error';
-import {FormField} from '../ui/form-field';
 import {Page} from '../ui/page';
 import {ReadState} from '../ui/read-state';
 import {ReferenceNotice} from '../ui/reference-notice';
 import {SelectItem} from '../ui/select';
 import {SelectField} from '../ui/select-field';
 import {Textarea} from '../ui/textarea';
+import {TrackerPrompts} from '../ui/tracker-prompts';
 import {FoodPicker} from './library';
 import {
   chooseAlternative,
   initialMealDraft,
-  isMealSlot,
   type MealEntry,
-  type MealSlot,
   mealInput,
   portionAmount,
   portionText,
-  slotLabel,
+  reviewMealDraft,
 } from './meal-draft';
 import {useMealDraft} from './use-meal-draft';
 
@@ -51,17 +51,16 @@ export function NutritionMeal() {
   const back = params.has('returnTo') ? safeReturnTo(params.get('returnTo')) : `${routes.nutrition}?date=${date}`;
   const query = useNutritionDay(date);
   const day = query.data?.data;
-  const saved = day?.slots.find((item) => item.meal_slot === slot);
+  const planned = day?.slots.find((item) => item.id === slot);
+  const saved = planned?.meal ?? day?.extra_meals.find((item) => item.id === slot || item.slot_id === slot);
   return (
     <Page
-      title={isMealSlot(slot) ? slotLabel(slot) : 'Meal'}
+      title={planned?.name ?? saved?.name ?? 'Meal'}
       description={date ? dayLabel(date) : undefined}
       back={back}
       compact
     >
-      {!isMealSlot(slot) ? (
-        <p role="alert">This meal time is not available.</p>
-      ) : !day ? (
+      {!day ? (
         <ReadState
           label="your meal"
           failed={query.isError}
@@ -69,8 +68,7 @@ export function NutritionMeal() {
             query.refetch();
           }}
         />
-      ) : params.has('referenceId') &&
-        params.get('referenceId') !== day.slots.find((item) => item.meal_slot === slot)?.id ? (
+      ) : params.has('referenceId') && params.get('referenceId') !== saved?.id ? (
         <p role="status">
           The meal linked in this message is no longer available. The message and its saved preview are still available
           in your conversation.
@@ -83,6 +81,12 @@ export function NutritionMeal() {
             refreshing={query.isFetching}
             refresh={() => query.refetch()}
           />
+          {saved && (
+            <TrackerPrompts
+              event={{about_meal_id: saved.id}}
+              date={date}
+            />
+          )}
           {canWrite ? (
             <MealEditor
               key={`${getSession()?.id}.${date}.${slot}`}
@@ -104,7 +108,7 @@ export function NutritionMeal() {
   );
 }
 
-function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolean}) {
+function MealEditor({day, slot, fresh}: {day: NutritionDay; slot: string; fresh: boolean}) {
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -112,19 +116,22 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
       mounted.current = false;
     };
   }, []);
-  const saved = day.slots.find((item) => item.meal_slot === slot);
-  const controller = useMealDraft(initialMealDraft(day.date, slot, saved));
+  const planned = day.slots.find((item) => item.id === slot);
+  const routeMeal = planned?.meal ?? day.extra_meals.find((item) => item.id === slot || item.slot_id === slot);
+  const controller = useMealDraft(initialMealDraft(day.date, slot, routeMeal, planned));
   const {draft, update} = controller;
+  const saved = draft ? findSavedMeal(day, {id: draft.id, slot_id: draft.slotId, name: draft.name.trim()}) : routeMeal;
   const save = useSaveMeal(day.date);
   const navigate = useNavigate();
   const online = useOnline();
   const [error, setError] = useState('');
   const [picker, setPicker] = useState<string | null>(null);
-  const [alternative, setAlternative] = useState<NutritionDayOption | null>(null);
+  const [quickAdd, setQuickAdd] = useState(false);
+  const [alternative, setAlternative] = useState<PlannedMeal | null>(null);
   const [discard, setDiscard] = useState(false);
   const [rebase, setRebase] = useState(false);
   const [saving, setSaving] = useState(false);
-  const eligible = saved?.write_eligible ?? day.write_eligible;
+  const eligible = day.write_eligible;
   if (controller.loadError) {
     return (
       <div className="space-y-4">
@@ -144,7 +151,7 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
             pending={controller.state === 'saving'}
             onClose={() => setDiscard(false)}
             onConfirm={async () => {
-              if (await update(() => initialMealDraft(day.date, slot, saved), true)) {
+              if (await update(() => initialMealDraft(day.date, slot, saved, planned), true)) {
                 setDiscard(false);
               }
             }}
@@ -158,16 +165,16 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
   if (!draft) {
     return <p role="status">Opening your meal draft…</p>;
   }
-  const conflict = draft.revision !== (saved?.revision ?? 0);
+  const conflict = (saved && saved.id !== draft.id) || draft.revision !== (saved?.revision ?? 0);
   const locked = saving || Boolean(draft.attempt) || !eligible || conflict;
   const canSave = online && fresh && !saving;
-  const selected = saved?.options.find((option) => option.meal_id === draft.mealId);
+  const selected = planned?.options.find((option) => option.id === draft.mealId);
   async function submit() {
     if (!draft) {
       return;
     }
     setError('');
-    let input: DaySlotInput;
+    let input: MealInput;
     try {
       input = draft.attempt ?? mealInput(draft);
     } catch (validation) {
@@ -181,10 +188,21 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
         return;
       }
       const result = await save.mutateAsync(input);
-      const resultSlot = result.data.slots.find((item) => item.meal_slot === slot);
-      if (await update(() => initialMealDraft(day.date, slot, resultSlot), true)) {
+      const resultSlot =
+        result.data.slots.find((item) => item.id === slot)?.meal ??
+        result.data.extra_meals.find((item) => item.id === draft.id);
+      if (
+        await update(() => initialMealDraft(day.date, slot, slot === 'new' ? undefined : resultSlot, planned), true)
+      ) {
         if (mounted.current) {
-          await navigate(`${routes.nutrition}?date=${day.date}&saved=${slot}`);
+          const prompts = resultSlot
+            ? await readTrackerPrompts({about_meal_id: resultSlot.id}).catch(() => null)
+            : null;
+          if ((!prompts || prompts.data.length > 0) && resultSlot) {
+            await navigate(`/nutrition/days/${day.date}/${resultSlot.slot_id ?? resultSlot.id}`);
+          } else {
+            await navigate(`${routes.nutrition}?date=${day.date}&saved=${slot}`);
+          }
         }
       } else {
         setError(
@@ -192,11 +210,14 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
         );
       }
     } catch (caught) {
-      if (caught instanceof ApiError && caught.status >= 400 && caught.status < 500 && caught.status !== 409) {
+      if (
+        caught instanceof MealNameConflict ||
+        (caught instanceof ApiError && caught.status >= 400 && caught.status < 500 && caught.status !== 409)
+      ) {
         await update((current) => ({...current, attempt: null}), true);
       }
       setError(
-        caught instanceof MealConflict
+        caught instanceof MealConflict || caught instanceof MealNameConflict
           ? caught.message
           : errorMessage(
               caught,
@@ -220,9 +241,10 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
               included: true,
               input: {
                 id: existing?.input.id ?? crypto.randomUUID(),
-                planned_item_ref: existing?.input.planned_item_ref ?? null,
-                food_id: kind === 'food' ? item.id : null,
-                recipe_id: kind === 'recipe' ? item.id : null,
+                request_id: crypto.randomUUID(),
+                planned_item_id: existing?.input.planned_item_id ?? null,
+                source: {type: kind, id: item.id},
+                name: item.name,
                 portion,
                 notes: existing?.input.notes ?? null,
               },
@@ -288,16 +310,38 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
         </p>
       )}
       <DraftStatus state={controller.state} />
-      {selected?.meal_name && (!saved || saved.options.length < 2) && (
+      <div className="space-y-2">
+        <label className="grid gap-2 font-semibold">
+          Meal name
+          <input
+            aria-label="Meal name"
+            aria-describedby="meal-name-help"
+            className="h-12 rounded-xl border border-border px-3"
+            value={draft.name}
+            disabled={saving || Boolean(draft.attempt) || !eligible}
+            onChange={(event) => {
+              const name = event.target.value;
+              update((current) => ({...current, name}));
+            }}
+          />
+        </label>
+        <p
+          id="meal-name-help"
+          className="text-sm text-muted-foreground"
+        >
+          This name identifies your recorded meal. It does not change the plan slot.
+        </p>
+      </div>
+      {selected?.name && (!planned || planned.options.length < 2) && (
         <div className="flex items-start gap-3 rounded-3xl bg-[var(--nutrition)] p-5">
           <Utensils
             className="size-6 shrink-0 text-primary mt-1"
             aria-hidden="true"
           />
-          <h2 className="text-xl font-bold">{selected.meal_name}</h2>
+          <h2 className="text-xl font-bold">{selected.name}</h2>
         </div>
       )}
-      {saved && saved.options.length > 1 && (
+      {planned && planned.options.length > 1 && (
         <div className="rounded-3xl bg-[var(--nutrition)] p-5 space-y-3">
           <h2 className="flex items-center gap-2 font-bold">
             <Utensils
@@ -311,18 +355,18 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
             value={draft.mealId ?? ''}
             isDisabled={locked}
             onChange={(value) => {
-              const option = saved.options.find((item) => item.meal_id === value);
-              if (option && option.meal_id !== draft.mealId) {
+              const option = planned.options.find((item) => item.id === value);
+              if (option && option.id !== draft.mealId) {
                 setAlternative(option);
               }
             }}
           >
-            {saved.options.map((option) => (
+            {planned.options.map((option) => (
               <SelectItem
-                key={option.meal_id ?? ''}
-                id={option.meal_id ?? ''}
+                key={option.id ?? ''}
+                id={option.id ?? ''}
               >
-                {option.meal_name ?? 'Meal'}
+                {option.name ?? 'Meal'}
               </SelectItem>
             ))}
           </SelectField>
@@ -384,7 +428,7 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
             </div>
             {entry.included ? (
               <EntryFields
-                key={`${entry.input.id}.${entry.input.food_id}.${entry.input.recipe_id}.${draft.revision}`}
+                key={`${entry.input.id}.${entry.input.source?.id}.${draft.revision}`}
                 entry={entry}
                 locked={locked}
                 onChange={(amount) => {
@@ -397,6 +441,27 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
             ) : (
               <p className="text-sm text-muted-foreground">Not recorded · {portionText(entry.input.portion)}</p>
             )}
+            <label
+              htmlFor={`notes-${entry.input.id}`}
+              className="grid gap-2 text-sm"
+            >
+              Entry notes
+              <Textarea
+                id={`notes-${entry.input.id}`}
+                aria-label={`Notes for ${entry.name}`}
+                value={entry.input.notes ?? ''}
+                disabled={locked}
+                onChange={(event) => {
+                  const notes = event.target.value;
+                  update((current) => ({
+                    ...current,
+                    entries: current.entries.map((row) =>
+                      row.input.id === entry.input.id ? {...row, input: {...row.input, notes}} : row,
+                    ),
+                  }));
+                }}
+              />
+            </label>
             <Button
               variant="ghost"
               aria-label={`Replace ${entry.name}`}
@@ -425,6 +490,23 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
         />
         Add food or recipe
       </Button>
+      <Button
+        variant="outline"
+        className="w-full"
+        isDisabled={locked}
+        onPress={() => setQuickAdd(true)}
+      >
+        Quick add
+      </Button>
+      {quickAdd && !locked && (
+        <QuickAdd
+          onClose={() => setQuickAdd(false)}
+          onAdd={(entry) => {
+            update((current) => ({...current, entries: [...current.entries, entry]}));
+            setQuickAdd(false);
+          }}
+        />
+      )}
       <section className="rounded-3xl bg-surface p-5 space-y-3">
         <label
           htmlFor="meal-note-to-coach"
@@ -442,10 +524,7 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
             update((current) => ({...current, noteToCoach}));
           }}
         />
-        <p className="text-sm text-muted-foreground">
-          Sharing this meal sends your note in Messages. Your coach may reply later. Food details stay in your nutrition
-          history.
-        </p>
+        <p className="text-sm text-muted-foreground">Your coach can read this note with the saved meal.</p>
       </section>
       <FormError message={error} />
       {!online && (
@@ -465,7 +544,7 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
             isDisabled={!canSave || (conflict && !draft.attempt)}
             onPress={submit}
           >
-            {draft.attempt ? 'Check meal share' : saved?.shared_at ? 'Share meal corrections' : 'Share meal'}
+            {draft.attempt ? 'Check meal save' : saved?.shared_at ? 'Save meal corrections' : 'Save meal'}
           </Button>
         </div>
       )}
@@ -501,7 +580,7 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
           pending={false}
           onClose={() => setDiscard(false)}
           onConfirm={async () => {
-            if (await update(() => initialMealDraft(day.date, slot, saved), true)) {
+            if (await update(() => initialMealDraft(day.date, slot, saved, planned), true)) {
               setDiscard(false);
               setError('');
             }
@@ -517,7 +596,15 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
           pending={false}
           onClose={() => setRebase(false)}
           onConfirm={async () => {
-            if (await update((current) => ({...current, revision: saved?.revision ?? 0, attempt: null}), true)) {
+            if (
+              await update(
+                (current) =>
+                  saved
+                    ? reviewMealDraft(current, saved)
+                    : {...current, revision: 0, requestId: crypto.randomUUID(), attempt: null},
+                true,
+              )
+            ) {
               setRebase(false);
               setError('');
             }
@@ -525,7 +612,7 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
         >
           <p>
             Your draft will replace the saved intake when you next save. Review every item first; changes from the other
-            save are not merged.
+            save are not merged. If the saved prescription differs, your draft foods become extra entries.
           </p>
         </Confirm>
       )}
@@ -533,29 +620,21 @@ function MealEditor({day, slot, fresh}: {day: Day; slot: MealSlot; fresh: boolea
   );
 }
 
-function SavedMeal({slot}: {slot: NutritionDaySlot}) {
-  const rows = slot.rows.filter((row) => row.entry_id !== null);
+function SavedMeal({slot}: {slot: DiaryMeal}) {
   return (
-    <div className="py-3 space-y-3">
-      <p className="font-medium">
-        Saved intake{slot.logged_calories === null ? '' : ` · ${slot.logged_calories} kcal`}
-      </p>
-      {slot.note_to_coach && (
-        <p className="whitespace-pre-wrap">
-          <span className="font-medium">Note to coach: </span>
-          {slot.note_to_coach}
-        </p>
-      )}
-      {rows.length === 0 ? (
-        <p className="text-muted-foreground">No intake recorded.</p>
+    <div className="space-y-3 py-3">
+      <p className="font-semibold">Saved intake</p>
+      {slot.note_to_coach && <p className="whitespace-pre-wrap">Note to coach: {slot.note_to_coach}</p>}
+      {slot.entries.length === 0 ? (
+        <p>No intake recorded.</p>
       ) : (
-        <ul className="space-y-2">
-          {rows.map((row) => (
-            <li key={row.id}>
+        <ul className="space-y-3">
+          {slot.entries.map((entry) => (
+            <li key={entry.id}>
               <p>
-                {row.name} · {portionText(row.portion)}
+                {entry.name} · {portionText(entry.portion)}
               </p>
-              {row.notes && <p className="text-sm text-muted-foreground whitespace-pre-wrap">{row.notes}</p>}
+              {entry.notes && <p className="text-sm text-muted-foreground">{entry.notes}</p>}
             </li>
           ))}
         </ul>
@@ -573,35 +652,106 @@ function EntryFields({
   locked: boolean;
   onChange: (amount: string) => void;
 }) {
-  const form = useForm({defaultValues: {amount: entry.amount}});
-  useEffect(() => {
-    const values = form.getValues();
-    if (values.amount !== entry.amount) {
-      form.reset({amount: entry.amount});
-    }
-  }, [form, entry.amount]);
-  useEffect(() => {
-    const subscription = form.watch((values) => {
-      if (!locked) {
-        onChange(values.amount ?? '');
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [form, locked, onChange]);
+  return entry.input.portion ? (
+    <label className="flex items-center justify-between gap-3 text-sm font-medium">
+      Portion ({entry.input.portion.type === 'grams' ? 'g' : 'servings'})
+      <input
+        aria-label={`Portion for ${entry.name}`}
+        className="h-12 w-28 rounded-xl border border-border px-3 text-base"
+        inputMode="decimal"
+        disabled={locked}
+        value={entry.amount}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
+  ) : (
+    <p className="text-sm text-muted-foreground">Quick add · {entry.input.nutrients?.energy_kcal ?? 'Unknown'} kcal</p>
+  );
+}
+
+function QuickAdd({onClose, onAdd}: {onClose: () => void; onAdd: (entry: MealEntry) => void}) {
+  const [error, setError] = useState('');
   return (
-    <div className="space-y-2">
-      <div className="[&>div]:grid-cols-[1fr_7rem] [&_label]:self-center [&_input]:h-14 [&_input]:text-xl [&_input]:font-bold [&_input]:text-center">
-        <FormField
-          control={form.control}
-          name="amount"
-          label={`Portion (${entry.input.portion.kind === 'gram' ? 'g' : entry.input.portion.label || entry.input.portion.unit})`}
-          inputMode="decimal"
-          isDisabled={locked}
-        />
-      </div>
-      {entry.input.notes && (
-        <p className="text-sm whitespace-pre-wrap text-muted-foreground">Recorded detail: {entry.input.notes}</p>
-      )}
-    </div>
+    <BottomSheet
+      title="Quick add"
+      onClose={onClose}
+    >
+      <form
+        className="space-y-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const data = new FormData(event.currentTarget);
+          const nutrients: NonNullable<MealEntry['input']['nutrients']> = {};
+          for (const code of ['energy_kcal', 'protein_g', 'carbs_g', 'fat_g', 'fiber_g', 'sugar_g']) {
+            const value = String(data.get(code) ?? '').trim();
+            if (value) {
+              const amount = Number(value);
+              if (!Number.isFinite(amount) || amount < 0) {
+                setError('Enter zero or a positive number.');
+                return;
+              }
+              nutrients[code] = amount;
+            }
+          }
+          const name = String(data.get('name') ?? '').trim() || 'Quick add';
+          onAdd({
+            name,
+            amount: '',
+            included: true,
+            input: {
+              id: crypto.randomUUID(),
+              request_id: crypto.randomUUID(),
+              planned_item_id: null,
+              source: null,
+              portion: null,
+              name,
+              nutrients,
+              notes: null,
+            },
+          });
+        }}
+      >
+        <label className="grid gap-2">
+          Name
+          <input
+            name="name"
+            aria-label="Quick add name"
+            className="h-12 rounded-xl border border-border px-3"
+            defaultValue="Quick add"
+          />
+        </label>
+        {[
+          ['energy_kcal', 'Calories (kcal)'],
+          ['protein_g', 'Protein (g)'],
+          ['carbs_g', 'Carbs (g)'],
+          ['fat_g', 'Fat (g)'],
+          ['fiber_g', 'Fiber (g)'],
+          ['sugar_g', 'Sugar (g)'],
+        ].map(([code, label]) => (
+          <label
+            key={code}
+            className="grid gap-2"
+          >
+            {label}
+            <input
+              name={code}
+              aria-label={label}
+              inputMode="decimal"
+              required={code === 'energy_kcal'}
+              className="h-12 rounded-xl border border-border px-3"
+              placeholder={code === 'energy_kcal' ? 'Required' : 'Unknown'}
+            />
+          </label>
+        ))}
+        <p className="text-sm text-muted-foreground">Leave a value empty if it is unknown. Zero means a known zero.</p>
+        <FormError message={error} />
+        <Button
+          type="submit"
+          className="w-full"
+        >
+          Add quick entry
+        </Button>
+      </form>
+    </BottomSheet>
   );
 }

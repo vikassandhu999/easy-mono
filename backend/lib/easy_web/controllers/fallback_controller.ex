@@ -38,6 +38,28 @@ defmodule EasyWeb.FallbackController do
     )
   end
 
+  def call(conn, {:error, :forbidden}),
+    do: call(conn, {:error, Error.new(:forbidden, "This action is not allowed.", %{}, :forbidden)})
+
+  def call(conn, {:error, :coaching_ended}), do: call(conn, {:error, :coaching_required})
+
+  def call(conn, {:error, :plan_overlap}),
+    do: call(conn, {:error, Error.unprocessable(%{fields: %{start_date: ["overlaps another Client Plan's Coverage"]}})})
+
+  def call(conn, {:error, reason})
+      when reason in [
+             :invalid_tracker,
+             :invalid_tracker_value,
+             :invalid_attachments,
+             :invalid_prescription,
+             :invalid_occurrence,
+             :invalid_unit,
+             :invalid_exercise,
+             :past_effective_date
+           ] do
+    call(conn, {:error, Error.new(reason, "The data provided was invalid.", %{}, :unprocessable_entity)})
+  end
+
   def call(conn, {:error, :unauthorized}) do
     call(conn, {:error, Error.unauthorized()})
   end
@@ -285,7 +307,13 @@ defmodule EasyWeb.FallbackController do
   def call(conn, {:error, :future_date}) do
     call(
       conn,
-      {:error, Error.new(:future_date, "The data provided was invalid.", %{fields: %{date: ["cannot be in the future"]}}, :unprocessable_entity)}
+      {:error,
+       Error.new(
+         :future_date,
+         "The data provided was invalid.",
+         %{fields: %{date: ["cannot be in the future"]}},
+         :unprocessable_entity
+       )}
     )
   end
 
@@ -317,6 +345,10 @@ defmodule EasyWeb.FallbackController do
       conn,
       {:error, Error.unprocessable(%{fields: %{date: ["option switching is limited to the current local date"]}})}
     )
+  end
+
+  def call(conn, {:error, :invalid_quick_add}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{nutrients: ["quick add requires a name and energy_kcal"]}})})
   end
 
   def call(conn, {:error, :invalid_portion}) do
@@ -359,10 +391,15 @@ defmodule EasyWeb.FallbackController do
     )
   end
 
-  def call(conn, {:error, :seat_limit_reached}), do: call(conn, {:error, Error.new(:seat_limit_reached, "No seats available", %{}, :conflict)})
+  def call(conn, {:error, :seat_limit_reached}),
+    do: call(conn, {:error, Error.new(:seat_limit_reached, "No seats available", %{}, :conflict)})
 
-  def call(conn, {:error, reason}) when reason in [:term_ended, :term_already_active, :invitation_not_accepted, :client_has_records] do
-    call(conn, {:error, Error.new(reason, "This coaching term cannot be changed in its current state.", %{}, :conflict)})
+  def call(conn, {:error, reason})
+      when reason in [:term_ended, :term_already_active, :invitation_not_accepted, :client_has_records] do
+    call(
+      conn,
+      {:error, Error.new(reason, "This coaching term cannot be changed in its current state.", %{}, :conflict)}
+    )
   end
 
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do

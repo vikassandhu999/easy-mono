@@ -1,19 +1,21 @@
-import {Dumbbell, Flower2, House, MessageCircle, Sprout, UserRound, Utensils} from 'lucide-react';
+import {ClipboardCheck, Dumbbell, Flower2, House, MessageCircle, Sprout, UserRound, Utensils} from 'lucide-react';
 import {type ReactNode, useSyncExternalStore} from 'react';
 import {generatePath, Link, Navigate, NavLink, Outlet, useLocation} from 'react-router-dom';
 import {useProfile} from './api/auth';
 import {clearSession, parseSession, sessionSnapshot, subscribeSession} from './api/session';
-import {useTrainingCoverage} from './api/training';
+import {useTrainingOccurrences} from './api/training';
 import {authPath} from './auth/return-to';
 import {TodayMessages} from './messages/messages';
 import {TodayNutrition} from './nutrition/nutrition';
 import {routes} from './routes';
+import {TodayTrackers} from './trackers/trackers';
 import {dayLabel} from './training/recording';
 import {ActiveWorkout} from './training/training';
 import {ActionCard} from './ui/action-card';
 import {Button} from './ui/button';
 import {CachedRead} from './ui/cached-read';
 import {useCoaching} from './ui/coaching';
+import {Focus} from './ui/focus';
 import {Page} from './ui/page';
 import {ReadState} from './ui/read-state';
 
@@ -135,8 +137,8 @@ function VerifiedAccount({children}: {children: ReactNode}) {
 export function Home() {
   const profile = useProfile();
   const {canWrite} = useCoaching();
-  const coverage = useTrainingCoverage();
-  const guidance = coverage.data?.data;
+  const today = profile.data?.data.local_date ?? '';
+  const coverage = useTrainingOccurrences(today, today);
   return (
     <Page
       title="Today"
@@ -155,6 +157,7 @@ export function Home() {
           }}
         />
       )}
+      <Focus />
       <ActiveWorkout />
       <section className="mb-4 space-y-3">
         {coverage.data ? (
@@ -165,28 +168,40 @@ export function Home() {
               refreshing={coverage.isFetching}
               refresh={() => coverage.refetch()}
             />
-            <ActionCard
-              title={canWrite ? (guidance?.workout?.name ?? 'Move at your pace') : 'Workout history'}
-              eyebrow="Your training"
-              tone="training"
-              icon={<Dumbbell />}
-              description={
-                !canWrite
-                  ? 'Revisit your saved workouts and progress.'
-                  : guidance?.workout
-                    ? guidance.plan.name
-                    : guidance
-                      ? 'A rest day. Recharge or choose a workout.'
-                      : 'Your coach hasn’t scheduled a plan for today. You can still record your own workout.'
-              }
-              to={
-                !canWrite
-                  ? `${routes.training}?view=history`
-                  : guidance?.workout
-                    ? generatePath(routes.workout, {id: guidance.plan.id, workoutId: guidance.workout.id})
-                    : routes.training
-              }
-            />
+            {canWrite &&
+              coverage.data.data.map((occurrence) => (
+                <ActionCard
+                  key={`${occurrence.schedule_entry_id}:${occurrence.occurrence_date}`}
+                  title={occurrence.workout_name}
+                  eyebrow="Your training"
+                  tone="training"
+                  icon={<Dumbbell />}
+                  description={
+                    occurrence.session_id
+                      ? 'Done · View your saved workout'
+                      : 'Today’s scheduled workout · Not recorded'
+                  }
+                  to={
+                    occurrence.session_id
+                      ? generatePath(routes.trainingSession, {id: occurrence.session_id})
+                      : `${routes.training}?date=${today}`
+                  }
+                />
+              ))}
+            {(!canWrite || coverage.data.data.length === 0) && (
+              <ActionCard
+                title={canWrite ? 'Move at your pace' : 'Workout history'}
+                eyebrow="Your training"
+                tone="training"
+                icon={<Dumbbell />}
+                description={
+                  canWrite
+                    ? 'No workouts scheduled today. Choose a plan workout or record your own.'
+                    : 'Revisit your saved workouts.'
+                }
+                to={canWrite ? routes.training : `${routes.training}?view=history`}
+              />
+            )}
           </>
         ) : (
           <ReadState
@@ -199,6 +214,16 @@ export function Home() {
         )}
       </section>
       <TodayNutrition />
+      <TodayTrackers />
+      <section className="mb-4">
+        <ActionCard
+          title="Check-ins"
+          description="Read your coach's Review replies and your current Focus."
+          tone="coach"
+          icon={<ClipboardCheck />}
+          to={routes.checkIns}
+        />
+      </section>
       <TodayMessages />
       <p className="daily-note">
         <Sprout

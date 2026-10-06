@@ -65,6 +65,8 @@ export function useConversationUpdates(conversationId: string | undefined) {
         next.onClose(failed);
         const channel = next.channel(`conversation:${conversationId}`, {});
         channel.on('message_new', refresh);
+        channel.on('message_updated', refresh);
+        channel.on('message_deleted', refresh);
         channel.on('conversation_updated', refresh);
         channel.onError(failed);
         channel

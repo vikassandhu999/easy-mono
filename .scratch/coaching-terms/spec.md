@@ -130,14 +130,13 @@ Seats: invited, joined-not-started and ended clients use none. Active and ending
 
 ### Deferred
 
-* D2. Deferred: labelling a term with what was sold and recording how it ended; the last check-in period when a term ends mid-period; reusing an old client plan for a returning client (the coach assigns a template again); a way for ex-clients to ask to return.
+* D2. Deferred: labelling a term with what was sold and recording how it ended; reusing an old client plan for a returning client (the coach assigns a template again); a way for ex-clients to ask to return.
 * E7. Pausing is deferred. The leading option was a dated gap inside a term that keeps the seat and plans, stops reminders and due check-ins, and offers to move the end date.
 * E8. Clients who never use the app (in-person only, coach records everything) are out of scope. If needed later, a coach-only client is one whose term the coach starts directly; that needs coach-recorded workouts and meals, not a model change.
 
 ## Effect on the check-ins spec
 
-* Check-ins Q5 now reads: check-ins run during a coaching term. Periods are contiguous within one term, and time between terms is not reviewed.
-* Check-ins Q30 drops the launch-day rule, because there are no existing clients. The four-day minimum for a first period stays.
+* Check-ins run during a coaching term. A client is due for review on the day a term starts, then every review-frequency days. Check-ins have no periods and no four-day minimum (see `.scratch/check-ins/spec.md`).
 * Check-ins Q26 (units) is delivered by M7.
 * This spec ships before check-ins.
 

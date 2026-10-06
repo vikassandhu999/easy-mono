@@ -29,17 +29,17 @@ defmodule Easy.Training.LibraryMediaTest do
     ctx = trainer_ctx(coach)
 
     {:ok, exercise} =
-      Library.create_exercise(ctx, %{name: "Squat", description: "keep me", media_id: media_a.id})
+      Library.create_exercise(ctx, %{name: "Squat", instructions: "keep me", media_id: media_a.id})
 
     {:ok, replaced} = Library.update_exercise(ctx, exercise.id, %{media_id: media_b.id})
     assert replaced.media_id == media_b.id
     assert replaced.media.id == media_b.id
-    assert replaced.description == "keep me"
+    assert replaced.instructions == "keep me"
 
     {:ok, removed} = Library.update_exercise(ctx, exercise.id, %{media_id: nil})
     assert removed.media_id == nil
     assert removed.media == nil
-    assert removed.description == "keep me"
+    assert removed.instructions == "keep me"
   end
 
   test "duplicate carries the media reference forward" do

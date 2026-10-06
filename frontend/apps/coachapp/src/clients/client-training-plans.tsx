@@ -8,6 +8,7 @@ import {InfiniteList} from '../ui/infinite-list';
 import {useListLocation} from '../ui/list-location';
 import {StatusBadge, Surface} from '../ui/page';
 import {TrainingPlanPreview} from '../ui/training-plan-preview';
+import {ClientTrainingWeek} from './client-training-week';
 
 const lifecycleLabels = {
   incomplete: 'Dates not set',
@@ -116,6 +117,7 @@ export function ClientTrainingPlans({
           </details>
         )}
       </InfiniteList>
+      <ClientTrainingWeek person={person} />
     </section>
   );
 }

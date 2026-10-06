@@ -1,6 +1,6 @@
 import {ChevronRight, NotebookPen} from 'lucide-react';
 import {useEffect, useState} from 'react';
-import {Controller, useForm} from 'react-hook-form';
+import {useForm} from 'react-hook-form';
 import {Link} from 'react-router-dom';
 import {errorMessage} from '../api/client';
 import {routes} from '../routes';
@@ -8,13 +8,10 @@ import {BottomSheet} from '../ui/bottom-sheet';
 import {Button} from '../ui/button';
 import {FormError} from '../ui/form-error';
 import {FormField} from '../ui/form-field';
-import {SelectItem} from '../ui/select';
-import {SelectField} from '../ui/select-field';
 
-type Notes = {notes: string; soreness: string; date: string};
+type Notes = {notes: string; date: string};
 export function WorkoutNotes({
   notes,
-  soreness,
   date,
   localDate,
   pending,
@@ -34,7 +31,7 @@ export function WorkoutNotes({
 }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState('');
-  const form = useForm<Notes>({defaultValues: {notes, soreness, date}});
+  const form = useForm<Notes>({defaultValues: {notes, date}});
   useEffect(() => {
     const subscription = form.watch(() => onChange(form.getValues()));
     return () => subscription.unsubscribe();
@@ -47,7 +44,7 @@ export function WorkoutNotes({
         className="w-full justify-between rounded-3xl bg-surface px-5 min-h-16"
         onPress={() => {
           setError('');
-          form.reset({notes, soreness, date});
+          form.reset({notes, date});
           setOpen(true);
         }}
       >
@@ -102,29 +99,6 @@ export function WorkoutNotes({
                 ? 'Saving a changed note sends it to your coach in Messages. Replies may take time.'
                 : 'This note is sent in Messages when you finish the workout. To ask before finishing, open Messages now. Replies may take time.'}
             </p>
-            <Controller
-              control={form.control}
-              name="soreness"
-              rules={{
-                validate: (value) =>
-                  value === '' || ['1', '2', '3', '4', '5'].includes(value) || 'Choose a soreness rating.',
-              }}
-              render={({field}) => (
-                <SelectField
-                  aria-label="Soreness"
-                  value={field.value}
-                  onChange={field.onChange}
-                  isDisabled={pending}
-                >
-                  <SelectItem id="">Not rated</SelectItem>
-                  <SelectItem id="1">1 · No soreness</SelectItem>
-                  <SelectItem id="2">2 · Mild</SelectItem>
-                  <SelectItem id="3">3 · Moderate</SelectItem>
-                  <SelectItem id="4">4 · High</SelectItem>
-                  <SelectItem id="5">5 · Very high</SelectItem>
-                </SelectField>
-              )}
-            />
             <Button
               type="submit"
               className="w-full"

@@ -57,7 +57,7 @@ defmodule EasyWeb.ConversationChannelTest do
 
     assert entry_id == entry.id
     assert title == "Workout"
-    assert recorded_at == DateTime.to_iso8601(entry.closed_at)
+    assert recorded_at == DateTime.to_iso8601(entry.ended_at)
   end
 
   test "visible coach can join", ctx do
@@ -83,7 +83,9 @@ defmodule EasyWeb.ConversationChannelTest do
         business: ctx.coach.business,
         coach: ctx.coach,
         user: insert(:user),
-        terms: [build(:coaching_term, starts_on: Date.add(Date.utc_today(), -30), ends_on: Date.add(Date.utc_today(), -1))]
+        terms: [
+          build(:coaching_term, starts_on: Date.add(Date.utc_today(), -30), ends_on: Date.add(Date.utc_today(), -1))
+        ]
       )
 
     assert {:ok, socket} = connect(EasyWeb.UserSocket, %{"token" => client_token(inactive)})

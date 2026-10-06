@@ -1,5 +1,6 @@
 defmodule Easy.MediaType do
   @extensions %{
+    "application/pdf" => "pdf",
     "image/jpeg" => "jpg",
     "image/png" => "png",
     "image/webp" => "webp",

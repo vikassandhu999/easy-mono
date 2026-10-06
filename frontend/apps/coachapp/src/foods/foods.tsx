@@ -41,7 +41,7 @@ export function Foods() {
           role="status"
           className="text-sm"
         >
-          {deleted} deleted.
+          {deleted} archived.
         </p>
       )}
       <div className="grid items-start gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,16rem)]">
@@ -72,7 +72,7 @@ export function Foods() {
             <p className="break-words font-semibold">{food.name}</p>
             {food.brand && <p className="break-words text-sm text-muted-foreground">{food.brand}</p>}
             <p className="text-sm text-muted-foreground">
-              {food.calories_per_100g === null ? 'Calories unknown' : `${food.calories_per_100g} kcal per 100 g`}
+              {food.nutrients.energy_kcal == null ? 'Calories unknown' : `${food.nutrients.energy_kcal} kcal per 100 g`}
               {food.source === 'system' ? ' · Shared food' : ''}
             </p>
           </Link>

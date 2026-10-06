@@ -1,13 +1,13 @@
 import {useEffect, useState} from 'react';
 import {type Food, useFoods} from '../api/foods';
 import type {NutritionMealItem} from '../api/nutrition-plans';
+import {defaultPortion, portionLabel} from '../api/nutrition-values';
 import {type Recipe, useRecipes} from '../api/recipes';
 import {Button} from '../ui/button';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FoodMediaPreview} from '../ui/food-media-preview';
 import {InfiniteList} from '../ui/infinite-list';
 import {Input} from '../ui/input';
-import {portionLabel} from './menu';
 
 export function FoodPicker({onAdd, onClose}: {onAdd: (items: NutritionMealItem[]) => void; onClose: () => void}) {
   const [kind, setKind] = useState<'food' | 'recipe'>('food');
@@ -26,7 +26,7 @@ export function FoodPicker({onAdd, onClose}: {onAdd: (items: NutritionMealItem[]
           <div className="min-w-0 flex-1">
             <p className="break-words font-medium">{item.name}</p>
             <p className="mt-1 break-words text-xs text-muted-foreground">
-              {portionLabel(item.default_portion)}
+              {portionLabel(defaultPortion(item))}
               {'brand' in item && item.brand ? ` · ${item.brand}` : ''}
             </p>
             {item.allergens.length > 0 && (
@@ -45,10 +45,9 @@ export function FoodPicker({onAdd, onClose}: {onAdd: (items: NutritionMealItem[]
                 } else {
                   next.set(key, {
                     id: crypto.randomUUID(),
-                    kind,
+                    source: {type: kind, id: item.id},
                     name: item.name,
-                    ...(kind === 'food' ? {food_id: item.id} : {recipe_id: item.id}),
-                    portion: item.default_portion,
+                    portion: defaultPortion(item),
                   });
                 }
                 return next;

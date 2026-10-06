@@ -39,7 +39,7 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
       assert data["terms"] == [data["current_term"]]
       refute Map.has_key?(data, "business_id")
 
-      assert Enum.sort(Map.keys(data)) == Enum.sort(~w(coach current_term email full_name id local_date phone preferred_name state terms timezone unit_system))
+      assert Enum.sort(Map.keys(data)) == Enum.sort(~w(coach current_term email focus full_name id local_date phone preferred_name state terms timezone unit_system))
 
       assert data["coach"] == %{
                "full_name" => "Rajat Jain",

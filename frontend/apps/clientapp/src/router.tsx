@@ -5,10 +5,12 @@ import {AppShell, Home} from './app-shell';
 import {Invitation} from './auth/invitation';
 import {Login} from './auth/login';
 import {Verify} from './auth/verify';
+import {CheckIns} from './check-ins/check-ins';
 import {Messages} from './messages/messages';
 import {NutritionMeal} from './nutrition/meal';
 import {CurrentNutritionPlan, Nutrition, NutritionPlan} from './nutrition/nutrition';
 import {routes} from './routes';
+import {TrackerHistory, Trackers} from './trackers/trackers';
 import {TrainingSession} from './training/session';
 import {Training, TrainingPlan} from './training/training';
 
@@ -20,6 +22,9 @@ export const router = createBrowserRouter([
     element: <AppShell />,
     children: [
       {path: routes.home, element: <Home />},
+      {path: routes.checkIns, element: <CheckIns />},
+      {path: routes.trackers, element: <Trackers />},
+      {path: routes.tracker, element: <TrackerHistory />},
       {path: routes.account, element: <Account />},
       {path: routes.accountDetails, element: <AccountDetails />},
       {path: routes.messages, element: <Messages />},

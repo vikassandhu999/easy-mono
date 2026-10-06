@@ -1,18 +1,14 @@
 defmodule EasyWeb.Coaches.TrainingPlanController do
   use EasyWeb, :typed_controller
 
-  alias Easy.Training.PlanReader
-  alias Easy.Training.Programming
+  alias Easy.Plans.Programming
+  alias Easy.Plans.Reader, as: PlanReader
   alias EasyWeb.Types.{Revision, TrainingPlan, TrainingPlanIndex}
 
   typed(:create, body: TrainingPlan.create(), ok: {201, data(TrainingPlan.t())})
+  typed(:withdraw, path: %{revision_id: String.t()}, query: Revision.t(), ok: {200, data(TrainingPlan.t())})
   typed(:show, ok: {200, data(TrainingPlan.t())})
   typed(:update, body: TrainingPlan.update(), ok: {200, data(TrainingPlan.t())})
-
-  typed(:replace_prescription,
-    body: TrainingPlan.replace_prescription(),
-    ok: {200, data(TrainingPlan.t())}
-  )
 
   typed(:delete, query: Revision.t(), ok: {204, nil})
   typed(:archive, body: Revision.t(), ok: {200, data(TrainingPlan.t())})
@@ -21,16 +17,30 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   typed(:duplicate, ok: {201, data(TrainingPlan.t())})
   typed(:assign, body: TrainingPlan.assign(), ok: {201, data(TrainingPlan.t())})
 
+  @spec withdraw(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def withdraw(conn, _params) do
+    with {:ok, plan} <-
+           Programming.withdraw_revision(
+             conn.assigns.ctx,
+             :training,
+             conn.path_params["id"],
+             conn.path_params["revision_id"],
+             conn.query_params["expected_revision"]
+           ) do
+      ok(conn, %{data: plan})
+    end
+  end
+
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
-    with {:ok, plan} <- Programming.create_template(conn.assigns.ctx, conn.body_params) do
+    with {:ok, plan} <- Programming.create_template(conn.assigns.ctx, :training, conn.body_params) do
       ok(conn, %{data: plan})
     end
   end
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, _params) do
-    with {:ok, plan} <- PlanReader.get_plan(conn.assigns.ctx, conn.path_params["id"]) do
+    with {:ok, plan} <- PlanReader.get_plan(conn.assigns.ctx, :training, conn.path_params["id"]) do
       ok(conn, %{data: plan})
     end
   end
@@ -40,22 +50,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     {expected_revision, attrs} = Map.pop!(conn.body_params, :expected_revision)
 
     with {:ok, plan} <-
-           Programming.update_plan(conn.assigns.ctx, conn.path_params["id"], expected_revision, attrs) do
-      ok(conn, %{data: plan})
-    end
-  end
-
-  @spec replace_prescription(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def replace_prescription(conn, _params) do
-    {expected_revision, attrs} = Map.pop!(conn.body_params, :expected_revision)
-
-    with {:ok, plan} <-
-           Programming.replace_prescription(
-             conn.assigns.ctx,
-             conn.path_params["id"],
-             expected_revision,
-             attrs
-           ) do
+           Programming.update_plan(conn.assigns.ctx, :training, conn.path_params["id"], expected_revision, attrs) do
       ok(conn, %{data: plan})
     end
   end
@@ -65,6 +60,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     with {:ok, _plan} <-
            Programming.delete_plan(
              conn.assigns.ctx,
+             :training,
              conn.path_params["id"],
              conn.query_params["expected_revision"]
            ) do
@@ -77,6 +73,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     with {:ok, plan} <-
            Programming.archive_plan(
              conn.assigns.ctx,
+             :training,
              conn.path_params["id"],
              conn.body_params[:expected_revision]
            ) do
@@ -89,6 +86,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     with {:ok, plan} <-
            Programming.restore_plan(
              conn.assigns.ctx,
+             :training,
              conn.path_params["id"],
              conn.body_params[:expected_revision]
            ) do
@@ -101,7 +99,9 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     params = conn.query_params
 
     with {:ok, page} <-
-           PlanReader.list_template_page(conn.assigns.ctx,
+           PlanReader.list_template_page(
+             conn.assigns.ctx,
+             :training,
              cursor: Map.get(params, "cursor"),
              search: Map.get(params, "search", ""),
              archived: Map.get(params, "archived"),
@@ -114,7 +114,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
 
   @spec duplicate(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def duplicate(conn, _params) do
-    with {:ok, plan} <- Programming.duplicate_template(conn.assigns.ctx, conn.path_params["id"]) do
+    with {:ok, plan} <- Programming.duplicate_template(conn.assigns.ctx, :training, conn.path_params["id"]) do
       ok(conn, %{data: plan})
     end
   end
@@ -125,6 +125,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
            Programming.assign_template_to_client(
              conn.assigns.ctx,
              conn.path_params["client_id"],
+             :training,
              conn.path_params["id"],
              conn.body_params
            ) do

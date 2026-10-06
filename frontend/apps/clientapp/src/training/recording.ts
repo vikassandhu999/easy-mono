@@ -1,151 +1,104 @@
-import type {
-  CreateSet,
-  PerformedSet,
-  Session,
-  SessionPlannedSet,
-  SessionSnapshotExercise,
-  TrainingPlanPlannedSet,
-} from '../api/training';
+import type {CreateSet, PerformedSet, Session, TrainingPlan} from '../api/training';
 
-export type Tracking = SessionSnapshotExercise['tracking_type'];
-export const trackingOptions: {id: Tracking; label: string}[] = [
-  {id: 'weight_reps', label: 'Weight and reps'},
-  {id: 'bodyweight_reps', label: 'Bodyweight reps'},
-  {id: 'weighted_bodyweight', label: 'Bodyweight with added weight'},
-  {id: 'assisted_bodyweight', label: 'Assisted bodyweight'},
-  {id: 'reps_only', label: 'Reps'},
-  {id: 'duration', label: 'Time'},
-  {id: 'weight_duration', label: 'Weight and time'},
-  {id: 'distance_duration', label: 'Distance and time'},
-  {id: 'weight_distance', label: 'Weight and distance'},
-];
+export type Workout = TrainingPlan['content']['workouts'][number];
+export type Item = Workout['blocks'][number]['items'][number];
+export type TargetSet = Item['sets'][number];
+export type LoadUnit = 'kg' | 'lb';
+export type DistanceUnit = 'm' | 'km' | 'mi';
 export type SetValues = {
   exercise_name: string;
-  tracking: Tracking;
   reps: string;
   load_value: string;
-  load_unit: 'kg' | 'lbs' | 'bodyweight' | 'none';
-  duration_seconds: string;
+  load_unit: LoadUnit;
+  duration_s: string;
   distance_value: string;
-  distance_unit: 'meters' | 'km' | 'miles' | 'none';
-  set_type: 'working' | 'warmup' | 'dropset';
+  distance_unit: DistanceUnit;
+  kind: 'working' | 'warmup' | 'drop';
+  outcome: 'done' | 'failed' | 'skipped';
   rpe: string;
+  rir: string;
   notes: string;
 };
 export type SetEntry = {
   key: string;
   exerciseId?: string | null;
+  itemId?: string | undefined;
+  setId?: string | undefined;
   values: SetValues;
   operation: {kind: 'create'; requestId: string} | {kind: 'edit'; id: string};
   attempted: boolean;
+  dirty?: boolean;
   expectedRevision?: number;
 };
 export type WorkoutDraft = {
-  version: 1;
+  version: 2;
   revision?: number;
   date?: string;
   selected: string;
   notes: string;
-  soreness: string;
   entries: SetEntry[];
 };
 
-export function measurementFields(tracking: Tracking) {
-  return {
-    reps: ['weight_reps', 'bodyweight_reps', 'weighted_bodyweight', 'assisted_bodyweight', 'reps_only'].includes(
-      tracking,
-    ),
-    load: ['weight_reps', 'weighted_bodyweight', 'assisted_bodyweight', 'weight_duration', 'weight_distance'].includes(
-      tracking,
-    ),
-    duration: ['duration', 'weight_duration', 'distance_duration'].includes(tracking),
-    distance: ['distance_duration', 'weight_distance'].includes(tracking),
-  };
+export function workoutItems(session: Session): Item[] {
+  return session.prescription?.blocks.flatMap((block) => block.items) ?? [];
 }
 
-export function emptySet(exercise: SessionSnapshotExercise | undefined, unit: 'kg' | 'lbs'): SetValues {
+export function emptySet(exercise: Item | undefined, unit: LoadUnit, target?: TargetSet): SetValues {
   return {
     exercise_name: exercise?.exercise_name ?? '',
-    tracking: exercise?.tracking_type ?? 'weight_reps',
     reps: '',
     load_value: '',
     load_unit: unit,
-    duration_seconds: '',
+    duration_s: '',
     distance_value: '',
-    distance_unit: 'km',
-    set_type: 'working',
+    distance_unit: unit === 'lb' ? 'mi' : 'km',
+    kind: target?.kind ?? 'working',
+    outcome: 'done',
     rpe: '',
+    rir: '',
     notes: '',
   };
 }
 
-export function setValues(
-  set: PerformedSet,
-  exercise: SessionSnapshotExercise | undefined,
-  unit: 'kg' | 'lbs',
-): SetValues {
+export function enteredLoad(kg: string | number, unit: LoadUnit) {
+  return Number(kg) / (unit === 'lb' ? 0.45359237 : 1);
+}
+export function enteredDistance(m: string | number, unit: DistanceUnit) {
+  return Number(m) / (unit === 'mi' ? 1609.344 : unit === 'km' ? 1000 : 1);
+}
+function displayNumber(value: number) {
+  return String(Math.round(value * 100) / 100);
+}
+export function setValues(set: PerformedSet, exercise: Item | undefined, unit: LoadUnit): SetValues {
   return {
     ...emptySet(exercise, unit),
-    tracking:
-      exercise?.tracking_type ??
-      (set.duration_seconds !== null
-        ? set.load_value !== null
-          ? 'weight_duration'
-          : set.distance_value !== null
-            ? 'distance_duration'
-            : 'duration'
-        : set.distance_value !== null
-          ? 'weight_distance'
-          : 'weight_reps'),
-    exercise_name: set.exercise_name,
-    reps: set.reps ?? '',
-    load_value: set.load_value ?? '',
-    load_unit: loadUnit(set.load_unit) ?? unit,
-    duration_seconds: set.duration_seconds === null ? '' : String(set.duration_seconds),
-    distance_value: set.distance_value ?? '',
-    distance_unit: distanceUnit(set.distance_unit) ?? 'km',
-    set_type: set.set_type,
-    rpe: set.rpe ?? '',
+    exercise_name: set.exercise_name ?? exercise?.exercise_name ?? '',
+    reps: set.reps === null ? '' : String(set.reps),
+    load_value: set.load_kg === null ? '' : String(enteredLoad(set.load_kg, set.entered_load_unit ?? unit)),
+    load_unit: set.entered_load_unit ?? unit,
+    duration_s: set.duration_s === null ? '' : String(set.duration_s),
+    distance_value:
+      set.distance_m === null ? '' : String(enteredDistance(set.distance_m, set.entered_distance_unit ?? 'm')),
+    distance_unit: set.entered_distance_unit ?? (unit === 'lb' ? 'mi' : 'km'),
+    kind: set.kind,
+    outcome: set.outcome,
+    rpe: set.rpe === null ? '' : String(set.rpe),
+    rir: set.rir === null ? '' : String(set.rir),
     notes: set.notes ?? '',
   };
 }
 
-function loadUnit(value: unknown) {
-  return value === 'kg' || value === 'lbs' || value === 'bodyweight' || value === 'none' ? value : null;
-}
-function distanceUnit(value: unknown) {
-  return value === 'meters' || value === 'km' || value === 'miles' || value === 'none' ? value : null;
-}
-function trackingType(value: unknown): value is Tracking {
-  return trackingOptions.some((option) => option.id === value);
-}
 function isValues(value: unknown): value is SetValues {
   if (!value || typeof value !== 'object') {
     return false;
   }
+  const strings = ['exercise_name', 'reps', 'load_value', 'duration_s', 'distance_value', 'rpe', 'rir', 'notes'];
   return (
-    'exercise_name' in value &&
-    typeof value.exercise_name === 'string' &&
-    'tracking' in value &&
-    trackingType(value.tracking) &&
-    'reps' in value &&
-    typeof value.reps === 'string' &&
-    'load_value' in value &&
-    typeof value.load_value === 'string' &&
-    'load_unit' in value &&
-    loadUnit(value.load_unit) !== null &&
-    'duration_seconds' in value &&
-    typeof value.duration_seconds === 'string' &&
-    'distance_value' in value &&
-    typeof value.distance_value === 'string' &&
-    'distance_unit' in value &&
-    distanceUnit(value.distance_unit) !== null &&
-    'set_type' in value &&
-    ['working', 'warmup', 'dropset'].some((type) => type === value.set_type) &&
-    'rpe' in value &&
-    typeof value.rpe === 'string' &&
-    'notes' in value &&
-    typeof value.notes === 'string'
+    strings.every((key) => typeof Reflect.get(value, key) === 'string') &&
+    ['kg', 'lb'].includes(Reflect.get(value, 'load_unit')) &&
+    ['m', 'km', 'mi'].includes(Reflect.get(value, 'distance_unit')) &&
+    ['working', 'warmup', 'drop'].includes(Reflect.get(value, 'kind')) &&
+    ['done', 'failed', 'skipped'].includes(Reflect.get(value, 'outcome'))
   );
 }
 function isEntry(value: unknown): value is SetEntry {
@@ -167,16 +120,24 @@ function isEntry(value: unknown): value is SetEntry {
   }
   if (
     'expectedRevision' in value &&
-    (!Number.isInteger(value.expectedRevision) ||
-      typeof value.expectedRevision !== 'number' ||
+    (typeof value.expectedRevision !== 'number' ||
+      !Number.isInteger(value.expectedRevision) ||
       value.expectedRevision < 1)
   ) {
     return false;
   }
-  const operation = value.operation;
-  if ('exerciseId' in value && value.exerciseId !== null && typeof value.exerciseId !== 'string') {
+  if (
+    ['exerciseId', 'itemId', 'setId'].some(
+      (key) =>
+        Reflect.has(value, key) && Reflect.get(value, key) != null && typeof Reflect.get(value, key) !== 'string',
+    )
+  ) {
     return false;
   }
+  if ('dirty' in value && typeof value.dirty !== 'boolean') {
+    return false;
+  }
+  const operation = value.operation;
   return (
     (operation.kind === 'create' &&
       'requestId' in operation &&
@@ -190,64 +151,57 @@ export function parseWorkoutDraft(value: unknown): WorkoutDraft | null {
     !value ||
     typeof value !== 'object' ||
     !('version' in value) ||
-    value.version !== 1 ||
+    value.version !== 2 ||
     !('selected' in value) ||
     typeof value.selected !== 'string' ||
     !('notes' in value) ||
     typeof value.notes !== 'string' ||
-    !('soreness' in value) ||
-    typeof value.soreness !== 'string' ||
     !('entries' in value) ||
     !Array.isArray(value.entries) ||
     !value.entries.every(isEntry) ||
-    ('date' in value && typeof value.date !== 'string')
+    ('date' in value && typeof value.date !== 'string') ||
+    ('revision' in value &&
+      (typeof value.revision !== 'number' || !Number.isInteger(value.revision) || value.revision < 1))
   ) {
     return null;
   }
   return {
-    version: 1,
-    ...('revision' in value &&
-    typeof value.revision === 'number' &&
-    Number.isInteger(value.revision) &&
-    value.revision > 0
-      ? {revision: value.revision}
-      : {}),
+    version: 2,
     selected: value.selected,
-    ...('date' in value && typeof value.date === 'string' ? {date: value.date} : {}),
     notes: value.notes,
-    soreness: value.soreness,
     entries: value.entries,
+    ...('date' in value && typeof value.date === 'string' ? {date: value.date} : {}),
+    ...('revision' in value && typeof value.revision === 'number' ? {revision: value.revision} : {}),
   };
 }
-
 export function initialWorkoutDraft(session: Session): WorkoutDraft {
   return {
-    version: 1,
+    version: 2,
     revision: session.revision,
-    date: session.date,
-    selected: session.prescription_snapshot?.workout.exercises[0]?.ref ?? 'freestyle',
+    date: session.local_date,
+    selected: workoutItems(session)[0]?.sets[0]?.id ?? 'freestyle',
     notes: session.notes ?? '',
-    soreness: session.soreness_rating === null ? '' : String(session.soreness_rating),
     entries: [],
   };
 }
-
 export function setMeasurements(values: SetValues) {
-  const fields = measurementFields(values.tracking);
   const number = (value: string) => (value.trim() === '' ? null : Number(value));
+  const load = number(values.load_value);
+  const distance = number(values.distance_value);
   return {
-    set_type: values.set_type,
-    reps: fields.reps ? values.reps.trim() || null : null,
-    load_value: fields.load ? number(values.load_value) : null,
-    load_unit: fields.load ? values.load_unit : null,
-    duration_seconds: fields.duration ? number(values.duration_seconds) : null,
-    distance_value: fields.distance ? number(values.distance_value) : null,
-    distance_unit: fields.distance ? values.distance_unit : null,
+    kind: values.kind,
+    outcome: values.outcome,
+    reps: number(values.reps),
+    load_value: load,
+    load_unit: load === null ? null : values.load_unit,
+    duration_s: number(values.duration_s),
+    distance_value: distance,
+    distance_unit: distance === null ? null : values.distance_unit,
     rpe: number(values.rpe),
+    rir: number(values.rir),
     notes: values.notes.trim() || null,
   };
 }
-
 export function creationBody(entry: SetEntry): CreateSet {
   if (entry.operation.kind !== 'create') {
     throw new Error('This entry edits a saved set.');
@@ -255,41 +209,59 @@ export function creationBody(entry: SetEntry): CreateSet {
   return {
     ...setMeasurements(entry.values),
     request_id: entry.operation.requestId,
-    exercise_name: entry.values.exercise_name.trim(),
-    ...(entry.exerciseId ? {exercise_id: entry.exerciseId} : {}),
-    ...(entry.key === 'freestyle' ? {} : {snapshot_exercise_ref: entry.key}),
+    ...(entry.exerciseId ? {exercise_id: entry.exerciseId} : {exercise_name: entry.values.exercise_name.trim()}),
+    ...(entry.itemId ? {item_id: entry.itemId} : {}),
+    ...(entry.setId ? {set_id: entry.setId} : {}),
   };
 }
-
 type Measurements = Pick<
   PerformedSet,
-  'reps' | 'load_value' | 'load_unit' | 'duration_seconds' | 'distance_value' | 'distance_unit'
+  'reps' | 'load_kg' | 'entered_load_unit' | 'duration_s' | 'distance_m' | 'entered_distance_unit'
 >;
 export function measurementText(set: Measurements) {
-  const parts = [
-    set.reps ? `${set.reps} reps` : '',
-    set.load_value !== null
-      ? `${set.load_value}${set.load_unit && set.load_unit !== 'none' ? ` ${set.load_unit}` : ''}`
-      : '',
-    set.duration_seconds !== null ? `${set.duration_seconds} sec` : '',
-    set.distance_value !== null
-      ? `${set.distance_value}${set.distance_unit && set.distance_unit !== 'none' ? ` ${set.distance_unit}` : ''}`
-      : '',
-  ];
-  return parts.filter(Boolean).join(' · ') || 'No measurements';
+  return (
+    [
+      set.reps !== null ? `${set.reps} reps` : '',
+      set.load_kg !== null
+        ? `${displayNumber(enteredLoad(set.load_kg, set.entered_load_unit ?? 'kg'))} ${set.entered_load_unit ?? 'kg'}`
+        : '',
+      set.duration_s !== null ? `${set.duration_s} sec` : '',
+      set.distance_m !== null
+        ? `${displayNumber(enteredDistance(set.distance_m, set.entered_distance_unit ?? 'm'))} ${set.entered_distance_unit ?? 'm'}`
+        : '',
+    ]
+      .filter(Boolean)
+      .join(' · ') || 'No measurements'
+  );
 }
-
-export function targetText(set: SessionPlannedSet | TrainingPlanPlannedSet) {
-  return [
-    measurementText(set),
-    set.rpe ? `Effort ${set.rpe}/10` : '',
-    set.rest_seconds ? `Rest ${set.rest_seconds} sec` : '',
-  ]
-    .filter(Boolean)
-    .join(' · ');
+export function targetText(set: TargetSet) {
+  const reps =
+    set.reps?.type === 'exact'
+      ? `${set.reps.value} reps`
+      : set.reps?.type === 'range'
+        ? `${set.reps.min}–${set.reps.max} reps`
+        : set.reps?.type === 'amrap'
+          ? 'AMRAP'
+          : '';
+  return (
+    [
+      reps,
+      set.load ? `${displayNumber(enteredLoad(set.load.kg, set.load.entered_unit))} ${set.load.entered_unit}` : '',
+      set.duration_s != null ? `${set.duration_s} sec` : '',
+      set.distance
+        ? `${displayNumber(enteredDistance(set.distance.m, set.distance.entered_unit))} ${set.distance.entered_unit}`
+        : '',
+      set.rpe != null ? `RPE ${set.rpe}` : '',
+      set.rir != null ? `RIR ${set.rir}` : '',
+      set.tempo ? `Tempo ${set.tempo}` : '',
+      set.rest_s != null ? `Rest ${set.rest_s} sec` : '',
+    ]
+      .filter(Boolean)
+      .join(' · ') || 'No set targets'
+  );
 }
 export function sessionName(session: Session) {
-  return session.prescription_snapshot?.workout.name ?? 'Freestyle workout';
+  return session.prescription?.name ?? 'Freestyle workout';
 }
 export function dayLabel(date: string) {
   return new Date(`${date}T12:00:00`).toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'});

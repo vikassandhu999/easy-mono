@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "templateId": "16832b70-74bd-4e79-8834-bc9badbd3864",
+  "planId": "f3156eec-562b-4bec-880c-e19f898114bb",
+  "revisionId": "841a8b83-1c51-4f8c-bd04-28c63a9d7bab",
+  "clientId": "a1a68694-99b2-47b0-b672-c257879e22f4",
+  "mealId": "144e788e-462a-400f-b7a5-9d3ccb04a770",
+  "today": "2026-10-06",
+  "documentWrites": 1,
+  "unknownFiber": true,
+  "copiedValues": true,
+  "offlineDraft": true,
+  "lostResponseRecovery": true,
+  "errors": []
+}

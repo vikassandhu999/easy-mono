@@ -5,7 +5,7 @@ import {FormField} from '../ui/form-field';
 import {SelectItem} from '../ui/select';
 import {SelectField} from '../ui/select-field';
 import {SubmitButton} from '../ui/submit-button';
-import {measurementFields, type SetEntry, type SetValues, trackingOptions} from './recording';
+import {type SetEntry, type SetValues} from './recording';
 
 const numeric = (integer = false, minimum = 0, maximum = Number.POSITIVE_INFINITY) => ({
   validate: (value: string) =>
@@ -37,10 +37,9 @@ export function SetEditor({
   onClear: () => void;
 }) {
   const form = useForm<SetValues>({defaultValues: entry.values});
-  const tracking = form.watch('tracking');
   const loadUnit = form.watch('load_unit');
   const distanceUnit = form.watch('distance_unit');
-  const fields = measurementFields(tracking);
+
   const locked = entry.attempted || pending;
   useEffect(() => {
     const subscription = form.watch(() => {
@@ -83,80 +82,76 @@ export function SetEditor({
             isDisabled={locked}
             maxLength={255}
           />
-          <Controller
-            control={form.control}
-            name="tracking"
-            render={({field}) => (
-              <SelectField
-                aria-label="What to record"
-                value={field.value}
-                onChange={field.onChange}
-                isDisabled={locked}
-              >
-                {trackingOptions.map((option) => (
-                  <SelectItem
-                    id={option.id}
-                    key={option.id}
-                  >
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectField>
-            )}
-          />
         </>
       )}
+      <Controller
+        control={form.control}
+        name="outcome"
+        render={({field}) => (
+          <SelectField
+            aria-label="Set outcome"
+            value={field.value}
+            onChange={field.onChange}
+            isDisabled={locked}
+          >
+            <SelectItem id="done">Done</SelectItem>
+            <SelectItem id="failed">Failed</SelectItem>
+            <SelectItem id="skipped">Skipped</SelectItem>
+          </SelectField>
+        )}
+      />
       <div className="grid grid-cols-2 gap-3 [&_input]:h-16 [&_input]:text-2xl [&_input]:font-bold [&_input]:text-center">
-        {fields.reps && (
+        {
           <FormField
             control={form.control}
             name="reps"
             label="Reps"
             inputMode="numeric"
+            rules={numeric(true)}
             isDisabled={locked}
           />
-        )}
-        {fields.load && (
+        }
+        {
           <>
             <FormField
               control={form.control}
               name="load_value"
-              label={`${tracking === 'assisted_bodyweight' ? 'Assistance' : tracking === 'weighted_bodyweight' ? 'Added weight' : 'Weight'}${loadUnit === 'none' ? '' : ` (${loadUnit === 'lbs' ? 'lb' : loadUnit})`}`}
+              label={`Load (${loadUnit})`}
               inputMode="decimal"
-              rules={numeric()}
+              rules={numeric(false, Number.NEGATIVE_INFINITY)}
               isDisabled={locked}
             />
           </>
-        )}
-        {fields.duration && (
+        }
+        {
           <FormField
             control={form.control}
-            name="duration_seconds"
+            name="duration_s"
             label="Time (seconds)"
             inputMode="numeric"
             rules={numeric(true)}
             isDisabled={locked}
           />
-        )}
-        {fields.distance && (
+        }
+        {
           <>
             <FormField
               control={form.control}
               name="distance_value"
-              label={`Distance${distanceUnit === 'none' ? '' : ` (${distanceUnit})`}`}
+              label={`Distance (${distanceUnit})`}
               inputMode="decimal"
               rules={numeric()}
               isDisabled={locked}
             />
           </>
-        )}
+        }
       </div>
       <details
         className="space-y-4"
         open={entry.attempted ? true : undefined}
       >
         <summary className="cursor-pointer min-h-12 py-3 font-semibold">Units & set type</summary>
-        {fields.load && (
+        {
           <Controller
             control={form.control}
             name="load_unit"
@@ -168,14 +163,12 @@ export function SetEditor({
                 isDisabled={locked}
               >
                 <SelectItem id="kg">kg</SelectItem>
-                <SelectItem id="lbs">lb</SelectItem>
-                <SelectItem id="bodyweight">Bodyweight</SelectItem>
-                <SelectItem id="none">No unit</SelectItem>
+                <SelectItem id="lb">lb</SelectItem>
               </SelectField>
             )}
           />
-        )}
-        {fields.distance && (
+        }
+        {
           <Controller
             control={form.control}
             name="distance_unit"
@@ -187,16 +180,15 @@ export function SetEditor({
                 isDisabled={locked}
               >
                 <SelectItem id="km">km</SelectItem>
-                <SelectItem id="meters">meters</SelectItem>
-                <SelectItem id="miles">miles</SelectItem>
-                <SelectItem id="none">No unit</SelectItem>
+                <SelectItem id="m">meters</SelectItem>
+                <SelectItem id="mi">miles</SelectItem>
               </SelectField>
             )}
           />
-        )}
+        }
         <Controller
           control={form.control}
-          name="set_type"
+          name="kind"
           render={({field}) => (
             <SelectField
               aria-label="Set type"
@@ -206,7 +198,7 @@ export function SetEditor({
             >
               <SelectItem id="working">Working set</SelectItem>
               <SelectItem id="warmup">Warm-up</SelectItem>
-              <SelectItem id="dropset">Drop set</SelectItem>
+              <SelectItem id="drop">Drop set</SelectItem>
             </SelectField>
           )}
         />
@@ -216,6 +208,21 @@ export function SetEditor({
           label="Effort (1–10)"
           inputMode="decimal"
           rules={numeric(false, 1, 10)}
+          isDisabled={locked}
+        />
+        <FormField
+          control={form.control}
+          name="rir"
+          label="Reps in reserve (0–10)"
+          inputMode="numeric"
+          rules={numeric(true, 0, 10)}
+          isDisabled={locked}
+        />
+        <FormField
+          control={form.control}
+          name="notes"
+          label="Set notes"
+          multiline
           isDisabled={locked}
         />
         {entry.values.notes && (

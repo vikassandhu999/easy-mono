@@ -15,6 +15,8 @@ import {Label} from '../ui/label';
 import {FormActions, Page, PageHeader, Surface} from '../ui/page';
 import {SelectItem} from '../ui/select';
 import {SelectField} from '../ui/select-field';
+import {ReviewDefault} from './review-default';
+import {TrackerDefault} from './tracker-default';
 
 function SettingsFrame({title, description, children}: {title: string; description: string; children: ReactNode}) {
   return (
@@ -320,6 +322,12 @@ export function BusinessSettings() {
             />
           ) : (
             <BusinessDetails business={query.data.data} />
+          )}
+          {profile.data?.data.is_owner && (
+            <>
+              <ReviewDefault />
+              <TrackerDefault />
+            </>
           )}
         </>
       ) : query.isPending ? (

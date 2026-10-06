@@ -1,18 +1,7 @@
 defmodule Easy.Training.SchemaBoundaryTest do
   use ExUnit.Case, async: true
 
-  @schema_paths [
-    "lib/easy/training/training_equipment.ex",
-    "lib/easy/training/training_exercise.ex",
-    "lib/easy/training/training_muscle.ex",
-    "lib/easy/training/prescribed_exercise.ex",
-    "lib/easy/training/training_performed_set.ex",
-    "lib/easy/training/planned_set.ex",
-    "lib/easy/training/training_plan.ex",
-    "lib/easy/training/training_workout.ex",
-    "lib/easy/training/training_session.ex",
-    "lib/easy/training/workout_schedule.ex"
-  ]
+  @schema_paths Path.wildcard("lib/easy/training/*.ex")
 
   @context_verbs [
     "assign_to_client",

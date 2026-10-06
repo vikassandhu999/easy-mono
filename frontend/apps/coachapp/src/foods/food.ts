@@ -1,49 +1,45 @@
 import type {Food, FoodCreate} from '../api/foods';
+import {nutrientFields} from '../api/nutrition-values.ts';
 
 export function fields(food?: Food) {
   return {
     name: food?.name ?? '',
     brand: food?.brand ?? '',
     category: food?.category ?? '',
-    calories_per_100g: String(food?.calories_per_100g ?? ''),
-    protein_g_per_100g: String(food?.protein_g_per_100g ?? ''),
-    carbs_g_per_100g: String(food?.carbs_g_per_100g ?? ''),
-    fat_g_per_100g: String(food?.fat_g_per_100g ?? ''),
-    fiber_g_per_100g: String(food?.fiber_g_per_100g ?? ''),
-    sugar_g_per_100g: String(food?.sugar_g_per_100g ?? ''),
+    nutrients: Object.fromEntries(nutrientFields.map(([code]) => [code, String(food?.nutrients[code] ?? '')])),
     allergens: food?.allergens ?? [],
     dietary_tags: food?.dietary_tags ?? [],
     notes: food?.notes ?? '',
     media: food?.media ?? null,
-    serving_sizes:
-      food?.serving_sizes.map((size) => ({...size, amount: String(size.amount), weight_g: String(size.weight_g)})) ??
-      [],
+    default_serving_id: food?.default_serving_id ?? '',
+    servings: food?.servings.map((serving) => ({...serving, grams: String(serving.grams)})) ?? [],
   };
 }
 export function body(values: ReturnType<typeof fields>, food?: Food): FoodCreate {
-  const number = (value: string) => (value.trim() ? Number(value) : null);
+  const nutrients = {...food?.nutrients};
+  for (const [code] of nutrientFields) {
+    const value = values.nutrients[code] ?? '';
+    if (value.trim()) {
+      nutrients[code] = Number(value);
+    } else {
+      delete nutrients[code];
+    }
+  }
   return {
     name: values.name.trim(),
-    ...((values.media?.id ?? null) !== (food?.media?.id ?? null) ? {media_id: values.media?.id ?? null} : {}),
     brand: values.brand.trim() || null,
     category: values.category.trim() || null,
-    calories_per_100g: number(values.calories_per_100g),
-    protein_g_per_100g: number(values.protein_g_per_100g),
-    carbs_g_per_100g: number(values.carbs_g_per_100g),
-    fat_g_per_100g: number(values.fat_g_per_100g),
-    fiber_g_per_100g: number(values.fiber_g_per_100g),
-    sugar_g_per_100g: number(values.sugar_g_per_100g),
+    nutrients,
     allergens: values.allergens,
     dietary_tags: values.dietary_tags,
     notes: values.notes.trim() || null,
-    serving_sizes: values.serving_sizes.map((size) => ({
-      ...size,
-      label: size.label.trim(),
-      unit: size.unit.trim(),
-      amount: Number(size.amount),
-      weight_g: Number(size.weight_g),
+    ...((values.media?.id ?? null) !== (food?.media?.id ?? null) ? {media_id: values.media?.id ?? null} : {}),
+    default_serving_id: values.default_serving_id || null,
+    servings: values.servings.map((serving) => ({
+      ...serving,
+      label: serving.label.trim(),
+      grams: Number(serving.grams),
     })),
   };
 }
-
 export type FoodFields = ReturnType<typeof fields>;

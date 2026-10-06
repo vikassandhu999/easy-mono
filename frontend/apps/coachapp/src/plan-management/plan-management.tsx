@@ -91,7 +91,7 @@ function ManageTemplate({resource, id}: {resource: PlanResource; id: string}) {
     ),
   );
   const plan = query.data?.data;
-  const archived = plan && ('status' in plan ? plan.status === 'archived' : plan.lifecycle === 'archived');
+  const archived = plan && plan.status === 'archived';
   const ready =
     plan?.kind === 'template' && query.isFetchedAfterMount && !query.isFetching && !query.isError && !pending;
   function confirm(action: PlanAction) {

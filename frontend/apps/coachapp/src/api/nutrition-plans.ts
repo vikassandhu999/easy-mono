@@ -1,6 +1,6 @@
 import {useInfiniteQuery, useMutation, useQuery} from '@tanstack/react-query';
 import {call, client} from './client';
-import {clientKeys, nutritionKeys} from './keys';
+import {clientKeys, nutritionDayKeys, nutritionKeys} from './keys';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
 import type {paths} from './schema';
@@ -8,27 +8,24 @@ import {getSession} from './session';
 
 export type {
   Food,
-  FoodNutrients,
+  NutrientMap,
+  NutritionContent,
   NutritionMeal,
   NutritionMealItem,
-  NutritionMenu,
   NutritionPlan,
   NutritionPortion,
+  NutritionTargets,
   Recipe,
 } from './schema';
 export type NutritionDetails = NonNullable<
   paths['/v1/coach/nutrition-plans']['post']['requestBody']
->['content']['application/json'];
-export type NutritionMenuBody = NonNullable<
-  paths['/v1/coach/nutrition-plans/{id}/menu']['put']['requestBody']
 >['content']['application/json'];
 type Assignment = NonNullable<
   paths['/v1/coach/clients/{client_id}/nutrition-plans/{id}/assign']['post']['requestBody']
 >['content']['application/json'];
 type Write =
   | {kind: 'create'; body: NutritionDetails}
-  | {kind: 'details'; id: string; body: NutritionDetails & {expected_revision: number}}
-  | {kind: 'menu'; id: string; body: NutritionMenuBody};
+  | {kind: 'details'; id: string; body: NutritionDetails & {expected_revision: number; effective_on?: string}};
 
 export type NutritionPlanFilters = Pick<
   NonNullable<paths['/v1/coach/nutrition-plans']['get']['parameters']['query']>,
@@ -68,12 +65,6 @@ export function useNutritionCoverage(clientId: string) {
       ),
   });
 }
-export function usePreviewNutritionMenu() {
-  return useMutation({
-    mutationFn: (body: Pick<NutritionMenuBody, 'menu'>) =>
-      call(client.POST('/v1/coach/nutrition-plans/preview-menu', {body})),
-  });
-}
 function checkSession(id: string | undefined) {
   if (!id || getSession()?.id !== id) {
     throw new Error('Your session changed. Please try again.');
@@ -89,10 +80,6 @@ export function useSaveNutritionPlan(clientId?: string) {
         case 'details':
           return call(
             client.PATCH('/v1/coach/nutrition-plans/{id}', {params: {path: {id: input.id}}, body: input.body}),
-          );
-        case 'menu':
-          return call(
-            client.PUT('/v1/coach/nutrition-plans/{id}/menu', {params: {path: {id: input.id}}, body: input.body}),
           );
       }
     },
@@ -121,6 +108,7 @@ export function useSaveNutritionPlan(clientId?: string) {
 function invalidateClientNutrition(clientId: string) {
   return Promise.all([
     queryClient.invalidateQueries({queryKey: nutritionKeys.coverage(clientId)}),
+    queryClient.invalidateQueries({queryKey: nutritionDayKeys.all}),
     queryClient.invalidateQueries({queryKey: clientKeys.detail(clientId)}),
     queryClient.invalidateQueries({queryKey: clientKeys.lists()}),
   ]);
@@ -147,6 +135,27 @@ export function useAssignNutritionPlan(clientId: string, templateId: string) {
       if (sessionId && getSession()?.id === sessionId) {
         await queryClient.invalidateQueries({queryKey: nutritionKeys.coverage(clientId)});
       }
+    },
+  });
+}
+
+export function useWithdrawNutritionRevision(id: string, clientId?: string) {
+  return useMutation({
+    onMutate: () => getSession()?.id,
+    mutationFn: ({revisionId, expectedRevision}: {revisionId: string; expectedRevision: number}) =>
+      call(
+        client.DELETE('/v1/coach/nutrition-plans/{id}/revisions/{revision_id}', {
+          params: {path: {id, revision_id: revisionId}, query: {expected_revision: expectedRevision}},
+        }),
+      ),
+    onSuccess: async (_result, _input, sessionId) => {
+      checkSession(sessionId);
+      await Promise.all([
+        queryClient.invalidateQueries({queryKey: nutritionKeys.detail(id)}),
+        queryClient.invalidateQueries({queryKey: nutritionKeys.lists()}),
+        ...(clientId ? [invalidateClientNutrition(clientId)] : []),
+      ]);
+      checkSession(sessionId);
     },
   });
 }

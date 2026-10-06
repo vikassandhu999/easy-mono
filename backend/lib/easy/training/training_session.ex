@@ -1,183 +1,65 @@
 defmodule Easy.Training.TrainingSession do
   use Ecto.Schema
-
-  alias Easy.Clients
-  alias Easy.Orgs
-  alias Easy.Training.TrainingPerformedSet
-
   import Ecto.Changeset
   import Ecto.Query
-
-  @type t() :: %__MODULE__{}
-  @type kind() :: :planned | :freestyle
-  @type state() :: :active | :completed | :discarded
-  @type start() :: %{
-          required(:kind) => kind(),
-          required(:date) => Date.t(),
-          required(:started_at) => DateTime.t(),
-          optional(:snapshot_version) => pos_integer() | nil,
-          optional(:prescription_snapshot) => map() | nil,
-          optional(:source_plan_id) => String.t() | nil,
-          optional(:source_workout_id) => String.t() | nil
-        }
-
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
-  @kinds [:planned, :freestyle]
-  @states [:active, :completed, :discarded]
-
+  @type t :: %__MODULE__{}
   schema "training_sessions" do
+    belongs_to :business, Easy.Orgs.Business
+    belongs_to :client, Easy.Clients.Client
+    belongs_to :plan_revision, Easy.Plans.Revision
+    field :workout_id, :binary_id
+    field :schedule_entry_id, :binary_id
+    field :occurrence_date, :date
+    field :local_date, :date
+    field :timezone, :string
+    field :recorded_by_type, Ecto.Enum, values: [:client, :coach], default: :client
+    field :recorded_by_id, :binary_id
+    field :request_id, :binary_id
     field :revision, :integer, default: 1
-    field :kind, Ecto.Enum, values: @kinds
-    field :state, Ecto.Enum, values: @states, default: :active
-    field :date, :date
+    field :state, Ecto.Enum, values: [:active, :completed, :discarded], default: :active
     field :started_at, :utc_datetime
-    field :closed_at, :utc_datetime
+    field :ended_at, :utc_datetime
     field :notes, :string
-    field :soreness_rating, :integer
-    field :snapshot_version, :integer
-    field :prescription_snapshot, :map
-    field :source_plan_id, :binary_id
-    field :source_workout_id, :binary_id
-
-    belongs_to :client, Clients.Client
-    belongs_to :business, Orgs.Business
-    has_many :performed_sets, TrainingPerformedSet, foreign_key: :training_session_id
-
+    field :prescription, :map, virtual: true
+    has_many :performed_sets, Easy.Training.TrainingPerformedSet, foreign_key: :session_id
     timestamps(type: :utc_datetime)
   end
 
-  @spec kinds() :: [kind()]
-  def kinds, do: @kinds
-
-  @spec states() :: [state()]
-  def states, do: @states
-
-  @spec update_changeset(t(), Date.t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(session, today, attrs) do
-    session
-    |> cast(attrs, [:date, :notes, :soreness_rating], force_changes: true)
-    |> validate_required([:date])
-    |> validate_change(:date, fn :date, date ->
-      if Date.compare(date, today) == :gt, do: [date: "cannot be in the future"], else: []
-    end)
-    |> active_metadata_validations()
-    |> put_change(:revision, session.revision + 1)
-  end
-
-  @spec update_changeset(t(), :completed | :discarded, DateTime.t(), Date.t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(session, state, closed_at, today, attrs) when state in [:completed, :discarded] do
-    session
-    |> update_changeset(today, attrs)
-    |> put_change(:state, state)
-    |> put_change(:closed_at, closed_at)
-    |> check_constraint(:state, name: :training_sessions_closing_check)
-    |> check_constraint(:started_at, name: :training_sessions_chronology_check)
-  end
-
-  @spec check_revision(t(), map()) :: :ok | {:error, :not_found | Ecto.Changeset.t()}
-  def check_revision(%__MODULE__{state: :discarded}, _attrs), do: {:error, :not_found}
-
-  def check_revision(session, attrs) do
-    changeset =
-      {%{}, %{expected_revision: :integer}}
-      |> cast(attrs, [:expected_revision])
-      |> validate_number(:expected_revision, greater_than: 0)
-
-    changeset = if session.state == :completed, do: validate_required(changeset, [:expected_revision]), else: changeset
-
-    with {:ok, input} <- apply_action(changeset, :update) do
-      Easy.Revision.check(session, Map.get(input, :expected_revision, :any))
-    end
-  end
-
-  @spec touch_changeset(t()) :: Ecto.Changeset.t()
-  def touch_changeset(session), do: change(session, revision: session.revision + 1)
-
-  @spec insert_changeset(String.t(), String.t(), start(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(business_id, client_id, start, attrs) when is_map(start) do
+  @spec insert_changeset(String.t(), String.t(), {:client | :coach, String.t()}, map()) :: Ecto.Changeset.t()
+  def insert_changeset(business_id, client_id, {actor_type, actor_id}, attrs) do
     %__MODULE__{}
-    |> cast(attrs, [:notes, :soreness_rating])
+    |> cast(attrs, [
+      :request_id,
+      :plan_revision_id,
+      :workout_id,
+      :schedule_entry_id,
+      :occurrence_date,
+      :local_date,
+      :timezone,
+      :started_at,
+      :notes
+    ])
     |> put_change(:business_id, business_id)
     |> put_change(:client_id, client_id)
-    |> put_change(:kind, Map.fetch!(start, :kind))
-    |> put_change(:state, :active)
-    |> put_change(:date, Map.fetch!(start, :date))
-    |> put_change(:started_at, Map.fetch!(start, :started_at))
-    |> put_change(:snapshot_version, Map.get(start, :snapshot_version))
-    |> put_change(:prescription_snapshot, Map.get(start, :prescription_snapshot))
-    |> put_change(:source_plan_id, Map.get(start, :source_plan_id))
-    |> put_change(:source_workout_id, Map.get(start, :source_workout_id))
-    |> validate_required([:kind, :state, :date, :started_at, :business_id, :client_id])
-    |> active_metadata_validations()
-    |> unique_constraint(:client_id, name: :training_sessions_one_active_client_index)
-    |> check_constraint(:kind, name: :training_sessions_kind_check)
-    |> check_constraint(:state, name: :training_sessions_state_check)
-    |> check_constraint(:state, name: :training_sessions_closing_check)
-    |> check_constraint(:prescription_snapshot, name: :training_sessions_snapshot_check)
-    |> check_constraint(:started_at, name: :training_sessions_chronology_check)
-    |> foreign_key_constraint(:client_id, name: :training_sessions_client_business_id_fkey)
+    |> put_change(:recorded_by_type, actor_type)
+    |> put_change(:recorded_by_id, actor_id)
+    |> validate_required([:local_date, :timezone, :started_at])
+    |> unique_constraint(:client_id, name: :training_sessions_one_active)
+    |> unique_constraint(:request_id, name: :training_sessions_client_id_request_id_key)
+    |> foreign_key_constraint(:plan_revision_id, name: :training_sessions_plan_revision_id_domain_fkey)
   end
 
-  defp active_metadata_validations(changeset) do
-    changeset
-    |> validate_length(:notes, max: 4000)
-    |> validate_number(:soreness_rating, greater_than_or_equal_to: 1, less_than_or_equal_to: 5)
-    |> check_constraint(:soreness_rating, name: :training_sessions_soreness_rating_check)
-  end
-
-  @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_business(query \\ __MODULE__, business_id),
-    do: from(session in query, where: session.business_id == ^business_id)
+  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
+  def update_changeset(row, attrs),
+    do:
+      row
+      |> cast(attrs, [:local_date, :notes])
+      |> put_change(:revision, row.revision + 1)
+      |> validate_required([:local_date])
 
   @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
   def for_client(query \\ __MODULE__, business_id, client_id),
-    do: from(session in query, where: session.business_id == ^business_id and session.client_id == ^client_id)
-
-  @spec for_state(Ecto.Queryable.t(), state() | String.t() | nil) :: Ecto.Query.t()
-  def for_state(query \\ __MODULE__, state)
-  def for_state(query, nil), do: query
-  def for_state(query, ""), do: query
-  def for_state(query, state), do: from(session in query, where: session.state == ^state)
-
-  @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def newest(query \\ __MODULE__),
-    do: from(session in query, order_by: [desc: session.started_at, desc: session.id])
-
-  @spec for_search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
-  def for_search(query, search) when search in [nil, ""], do: query
-
-  def for_search(query, search) do
-    pattern = search |> String.trim() |> Easy.Search.like_pattern()
-
-    from(session in query,
-      where: ilike(fragment("coalesce(?->'workout'->>'name', 'Freestyle session')", session.prescription_snapshot), ^pattern)
-    )
-  end
-
-  @spec include_sets(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def include_sets(query \\ __MODULE__, business_id) do
-    set_query =
-      TrainingPerformedSet
-      |> TrainingPerformedSet.for_business(business_id)
-      |> TrainingPerformedSet.by_position()
-      |> TrainingPerformedSet.include_exercise(business_id)
-
-    from(session in query, preload: [performed_sets: ^set_query])
-  end
-
-  @spec for_date_range(Ecto.Queryable.t(), Date.t() | nil, Date.t() | nil) :: Ecto.Query.t()
-  def for_date_range(query \\ __MODULE__, start_date, end_date) do
-    query |> for_date_from(start_date) |> for_date_to(end_date)
-  end
-
-  @spec for_date_from(Ecto.Queryable.t(), Date.t() | nil) :: Ecto.Query.t()
-  def for_date_from(query \\ __MODULE__, start_date)
-  def for_date_from(query, nil), do: query
-  def for_date_from(query, start_date), do: from(session in query, where: session.date >= ^start_date)
-
-  @spec for_date_to(Ecto.Queryable.t(), Date.t() | nil) :: Ecto.Query.t()
-  def for_date_to(query \\ __MODULE__, end_date)
-  def for_date_to(query, nil), do: query
-  def for_date_to(query, end_date), do: from(session in query, where: session.date <= ^end_date)
+    do: from(s in query, where: s.business_id == ^business_id and s.client_id == ^client_id)
 end

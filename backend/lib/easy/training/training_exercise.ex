@@ -15,44 +15,20 @@ defmodule Easy.Training.TrainingExercise do
           equipment_ids: [String.t()] | nil,
           media_id: String.t() | nil
         }
-  @type tracking_type() ::
-          :weight_reps
-          | :bodyweight_reps
-          | :weighted_bodyweight
-          | :assisted_bodyweight
-          | :reps_only
-          | :duration
-          | :weight_duration
-          | :distance_duration
-          | :weight_distance
-
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @sources [:system, :imported, :custom]
-  @tracking_types [
-    :weight_reps,
-    :bodyweight_reps,
-    :weighted_bodyweight,
-    :assisted_bodyweight,
-    :reps_only,
-    :duration,
-    :weight_duration,
-    :distance_duration,
-    :weight_distance
-  ]
   @mechanics [:compound, :isolation, :isometric]
   @forces [:push, :pull, :static]
 
-  schema "training_exercises" do
-    field :source, Ecto.Enum, values: @sources, default: :custom
-    field :tracking_type, Ecto.Enum, values: @tracking_types, default: :weight_reps
+  schema "exercises" do
+    field :measures, {:array, Ecto.Enum}, values: [:reps, :load, :duration, :distance], default: [:reps, :load]
+    field :bodyweight, :boolean, default: false
+    field :archived_at, :utc_datetime
     field :name, :string
-    field :description, :string
     field :instructions, :string
     field :mechanics, Ecto.Enum, values: @mechanics
     field :force, Ecto.Enum, values: @forces
-    field :images, {:array, :string}, default: []
     field :import_id, :string
 
     belongs_to :creator, Easy.Orgs.Coach, foreign_key: :creator_id
@@ -72,25 +48,13 @@ defmodule Easy.Training.TrainingExercise do
     timestamps(type: :utc_datetime)
   end
 
-  @spec delete_changeset(t()) :: Changeset.t()
-  def delete_changeset(exercise) do
-    exercise
-    |> change()
-    |> foreign_key_constraint(:id, name: :training_prescribed_exercises_exercise_id_fkey)
-  end
-
-  @spec tracking_types() :: [tracking_type()]
-  def tracking_types, do: @tracking_types
-
   @cast_fields [
-    :source,
-    :tracking_type,
+    :measures,
+    :bodyweight,
     :name,
-    :description,
     :instructions,
     :mechanics,
     :force,
-    :images,
     :media_id,
     :import_id
   ]
@@ -99,8 +63,7 @@ defmodule Easy.Training.TrainingExercise do
   def copy_changeset(business_id, coach_id, %__MODULE__{} = exercise, attrs) do
     copied =
       exercise
-      |> Map.take(@cast_fields -- [:source, :import_id, :name])
-      |> Map.update!(:images, &(&1 || []))
+      |> Map.take(@cast_fields -- [:import_id, :name])
 
     %__MODULE__{}
     |> change(copied)
@@ -141,13 +104,13 @@ defmodule Easy.Training.TrainingExercise do
     changeset
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, coach_id)
-    |> validate_required([:name])
+    |> validate_required([:name, :measures])
+    |> validate_length(:measures, min: 1)
     |> validate_text_lengths()
     |> unique_constraint([:name, :business_id], name: :training_exercises_name_business_id_index)
     |> foreign_key_constraint(:business_id)
     |> foreign_key_constraint(:creator_id)
     |> foreign_key_constraint(:media_id)
-    |> check_constraint(:media_id, name: :training_exercises_business_media_check)
     |> maybe_put_assoc(:muscles, muscles)
     |> maybe_put_assoc(:equipment, equipment)
   end
@@ -155,12 +118,12 @@ defmodule Easy.Training.TrainingExercise do
   @spec update_changeset(t(), map(), [TrainingMuscle.t()] | nil, [TrainingEquipment.t()] | nil) :: Ecto.Changeset.t()
   def update_changeset(exercise, attrs, muscles \\ nil, equipment \\ nil) do
     exercise
-    |> cast(attrs, @cast_fields)
-    |> validate_required([:name])
+    |> cast(attrs, @cast_fields -- [:measures, :bodyweight, :import_id])
+    |> validate_required([:name, :measures])
+    |> validate_length(:measures, min: 1)
     |> validate_text_lengths()
     |> unique_constraint([:name, :business_id], name: :training_exercises_name_business_id_index)
     |> foreign_key_constraint(:media_id)
-    |> check_constraint(:media_id, name: :training_exercises_business_media_check)
     |> maybe_put_assoc(:muscles, muscles)
     |> maybe_put_assoc(:equipment, equipment)
   end
@@ -171,7 +134,6 @@ defmodule Easy.Training.TrainingExercise do
   defp validate_text_lengths(changeset) do
     changeset
     |> validate_length(:name, max: 255)
-    |> validate_length(:description, max: 5000)
     |> validate_length(:instructions, max: 10_000)
   end
 

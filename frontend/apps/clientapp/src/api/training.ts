@@ -1,9 +1,17 @@
 import {onlineManager, useInfiniteQuery, useMutation, useQuery} from '@tanstack/react-query';
 import {ApiError, call, callEmpty, client} from './client';
+import {readDraft, writeDraft} from './drafts';
 import {conversationKeys, trainingKeys} from './keys';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
-import type {PerformedSetCreate, PerformedSetUpdate, Session, SessionListQuery, SessionUpdate} from './schema';
+import type {
+  PerformedSetCreate,
+  PerformedSetUpdate,
+  Session,
+  SessionCreate,
+  SessionListQuery,
+  SessionUpdate,
+} from './schema';
 import {getSession} from './session';
 
 export type {
@@ -11,13 +19,10 @@ export type {
   PerformedSetCreate,
   PerformedSetUpdate,
   Session,
-  SessionPlannedSet,
-  SessionSnapshotExercise,
   TrainingPlan,
-  TrainingPlanPlannedSet,
-  TrainingPlanWorkout,
 } from './schema';
 export type SessionFilters = Pick<SessionListQuery, 'search' | 'state' | 'from' | 'to'>;
+export type StartTraining = Omit<SessionCreate, 'request_id'>;
 export type CreateSet = PerformedSetCreate & {request_id: string};
 
 export function useTrainingCoverage() {
@@ -26,6 +31,16 @@ export function useTrainingCoverage() {
     queryFn: ({signal}) => call(client.GET('/v1/client/training-plans/coverage', {signal})),
     staleTime: 0,
     refetchOnMount: 'always',
+  });
+}
+
+export function useTrainingOccurrences(from: string, to: string) {
+  return useQuery({
+    queryKey: trainingKeys.occurrences(from, to),
+    queryFn: ({signal}) =>
+      call(client.GET('/v1/client/training-plans/occurrences', {params: {query: {from, to}}, signal})),
+    enabled: Boolean(from && to),
+    staleTime: 0,
   });
 }
 
@@ -96,7 +111,7 @@ async function trainingChanged(owner: string | undefined, session?: Session) {
 export function useStartTraining() {
   return useMutation({
     onMutate: () => getSession()?.id,
-    mutationFn: async (workoutId: string | null) => {
+    mutationFn: async (input: StartTraining) => {
       const owner = getSession()?.id;
       requireOnline();
       const active = await call(client.GET('/v1/client/training-sessions/active'));
@@ -104,12 +119,26 @@ export function useStartTraining() {
       if (active.data) {
         return active;
       }
+      if (!owner) {
+        throw new Error('Please sign in again.');
+      }
+      const resource = `training.start.${JSON.stringify(input)}`;
+      const saved = await readDraft(owner, resource);
+      const requestId = typeof saved === 'string' ? saved : crypto.randomUUID();
+      await writeDraft(owner, resource, requestId);
+      requireOwner(owner);
       try {
-        return await call(client.POST('/v1/client/training-sessions', {body: {training_workout_id: workoutId}}));
+        const result = await call(
+          client.POST('/v1/client/training-sessions', {body: {...input, request_id: requestId}}),
+        );
+        await writeDraft(owner, resource, null);
+        return result;
       } catch (error) {
         if (!(error instanceof ApiError) || error.status >= 500 || error.status === 409) {
           const recovered = await call(client.GET('/v1/client/training-sessions/active'));
           if (recovered.data) {
+            requireOwner(owner);
+            await writeDraft(owner, resource, null);
             return recovered;
           }
         }
@@ -117,6 +146,26 @@ export function useStartTraining() {
       }
     },
     onSuccess: (result, _input, owner) => trainingChanged(owner, result.data ?? undefined),
+  });
+}
+
+function setWriteMatches(saved: import('./schema').PerformedSet, input: Omit<PerformedSetUpdate, 'expected_revision'>) {
+  return Object.entries(input).every(([key, value]) => {
+    if (key === 'load_value') {
+      return value === null
+        ? saved.load_kg === null
+        : Math.abs(Number(saved.load_kg) - Number(value) * (input.load_unit === 'lb' ? 0.45359237 : 1)) <= 0.00051;
+    }
+    if (key === 'distance_value') {
+      return value === null
+        ? saved.distance_m === null
+        : Math.abs(
+            Number(saved.distance_m) -
+              Number(value) * (input.distance_unit === 'mi' ? 1609.344 : input.distance_unit === 'km' ? 1000 : 1),
+          ) <= 0.0051;
+    }
+    const field = key === 'load_unit' ? 'entered_load_unit' : key === 'distance_unit' ? 'entered_distance_unit' : key;
+    return field in saved && String(Reflect.get(saved, field)) === String(value);
   });
 }
 
@@ -155,12 +204,7 @@ export function useWriteTrainingSet(sessionId: string) {
             requireOwner(owner);
             const saved = current.data.performed_sets.find((set) => set.id === input.id);
             const {expected_revision: _revision, ...measurements} = input.body;
-            if (
-              saved &&
-              Object.entries(measurements).every(
-                ([key, value]) => key in saved && String(Reflect.get(saved, key)) === String(value),
-              )
-            ) {
+            if (saved && setWriteMatches(saved, measurements)) {
               return {data: saved};
             }
           }
@@ -215,7 +259,7 @@ type TrainingSave = {kind: 'save' | 'complete'; body: SessionUpdate};
 
 export function trainingSaveMatches(
   input: TrainingSave,
-  saved: Pick<Session, 'date' | 'notes' | 'soreness_rating' | 'revision' | 'state'>,
+  saved: Pick<Session, 'local_date' | 'notes' | 'revision' | 'state'>,
   previousState: Session['state'] | undefined,
 ) {
   const expectedState = input.kind === 'complete' ? 'completed' : previousState;
@@ -230,9 +274,8 @@ export function trainingSaveMatches(
   }
   const notes = input.body.notes?.trim() ? input.body.notes : null;
   return (
-    (input.body.date === undefined || saved.date === input.body.date) &&
-    (input.body.notes === undefined || saved.notes === notes) &&
-    (input.body.soreness_rating === undefined || saved.soreness_rating === input.body.soreness_rating)
+    (input.body.local_date === undefined || saved.local_date === input.body.local_date) &&
+    (input.body.notes === undefined || saved.notes === notes)
   );
 }
 

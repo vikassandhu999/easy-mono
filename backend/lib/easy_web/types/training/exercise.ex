@@ -14,8 +14,8 @@ defmodule EasyWeb.Types.Training.ExerciseMedia do
   @type t :: %{
           required(:id) => String.t(),
           required(:kind) => :image | :video,
-          required(:content_type) => String.t(),
-          required(:byte_size) => integer(),
+          required(:content_type) => String.t() | nil,
+          required(:byte_size) => integer() | nil,
           required(:url) => String.t() | nil
         }
 end
@@ -29,14 +29,15 @@ defmodule EasyWeb.Types.Training.Exercise do
 
   @type t :: %{
           required(:id) => String.t(),
-          required(:source) => String.t() | nil,
-          required(:tracking_type) => String.t() | nil,
+          required(:built_in) => boolean(),
+          required(:measures) => [:reps | :load | :duration | :distance],
+          required(:bodyweight) => boolean(),
+          required(:media_id) => String.t() | nil,
+          required(:archived_at) => DateTime.t() | nil,
           required(:name) => String.t(),
-          required(:description) => String.t() | nil,
           required(:instructions) => String.t() | nil,
           required(:mechanics) => :compound | :isolation | :isometric | nil,
           required(:force) => :push | :pull | :static | nil,
-          required(:images) => [String.t()],
           required(:media) => EasyWeb.Types.Training.ExerciseMedia.t() | nil,
           required(:muscles) => [EasyWeb.Types.Training.ExerciseRelation.t()],
           required(:equipment) => [EasyWeb.Types.Training.ExerciseRelation.t()],
@@ -45,12 +46,12 @@ defmodule EasyWeb.Types.Training.Exercise do
         }
 
   @type create :: %{
+          required(:measures) => [:reps | :load | :duration | :distance],
+          optional(:bodyweight) => boolean(),
           required(:name) => String.t(),
-          optional(:description) => String.t() | nil,
           optional(:instructions) => String.t() | nil,
           optional(:mechanics) => :compound | :isolation | :isometric | nil,
           optional(:force) => :push | :pull | :static | nil,
-          optional(:images) => [String.t()],
           optional(:media_id) => String.t() | nil,
           optional(:muscle_ids) => [String.t()],
           optional(:equipment_ids) => [String.t()]
@@ -58,11 +59,9 @@ defmodule EasyWeb.Types.Training.Exercise do
 
   @type update :: %{
           optional(:name) => String.t(),
-          optional(:description) => String.t() | nil,
           optional(:instructions) => String.t() | nil,
           optional(:mechanics) => :compound | :isolation | :isometric | nil,
           optional(:force) => :push | :pull | :static | nil,
-          optional(:images) => [String.t()],
           optional(:media_id) => String.t() | nil,
           optional(:muscle_ids) => [String.t()],
           optional(:equipment_ids) => [String.t()]
@@ -91,14 +90,15 @@ defmodule EasyWeb.Types.Training.Exercise do
   def format(%TrainingExercise{} = exercise) do
     %{
       id: exercise.id,
-      source: format_enum(exercise.source),
-      tracking_type: format_enum(exercise.tracking_type),
+      built_in: is_nil(exercise.business_id),
+      measures: exercise.measures,
+      bodyweight: exercise.bodyweight,
+      media_id: exercise.media_id,
+      archived_at: exercise.archived_at,
       name: exercise.name,
-      description: exercise.description,
       instructions: exercise.instructions,
       mechanics: exercise.mechanics,
       force: exercise.force,
-      images: exercise.images || [],
       media: format_media(exercise.media),
       muscles: Enum.map(exercise.muscles, &format_relation/1),
       equipment: Enum.map(exercise.equipment, &format_relation/1),
@@ -113,10 +113,6 @@ defmodule EasyWeb.Types.Training.Exercise do
   defp format_relation(%{id: id, name: name, description: description}) do
     %{id: id, name: name, description: description}
   end
-
-  defp format_enum(nil), do: nil
-  defp format_enum(value) when is_atom(value), do: Atom.to_string(value)
-  defp format_enum(value) when is_binary(value), do: value
 end
 
 defmodule EasyWeb.Types.Training.ExerciseIndex do

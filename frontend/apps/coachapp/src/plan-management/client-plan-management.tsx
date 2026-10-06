@@ -1,8 +1,9 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {useForm} from 'react-hook-form';
-import {generatePath, Link, useBeforeUnload, useBlocker, useNavigate, useParams} from 'react-router-dom';
+import {generatePath, Link, useBeforeUnload, useBlocker, useParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
 import type {ClientPlan} from '../api/client-plans';
+import {useClient} from '../api/clients';
 import {type PlanResource, useManagedPlan, useManagePlan, useUpdatePlanDates} from '../api/plan-management';
 import {routes} from '../routes';
 import {Button, buttonVariants} from '../ui/button';
@@ -76,14 +77,12 @@ function LoadClientPlan({resource, clientId, id}: {resource: PlanResource; clien
 function dates(plan: ClientPlan) {
   return {start_date: plan.start_date ?? '', end_date: plan.end_date ?? ''};
 }
-const labels = {archive: 'Archive plan', restore: 'Restore plan', delete: 'Delete plan', reload: 'Load saved dates'};
+const labels = {archive: 'Archive plan', restore: 'Restore plan', reload: 'Load saved dates'};
 const explanations = {
   archive:
     'This plan will stop providing workouts or nutrition guidance to this client. Their recorded activity stays available. You can restore the plan later.',
   restore:
     'Restore this plan for its saved dates. If those dates overlap another plan, update or archive that plan first. The reusable template stays unchanged.',
-  delete:
-    'Permanently delete this assigned plan. The client will no longer receive its workouts or nutrition guidance. Recorded activity and the reusable template remain. This cannot be undone.',
   reload: 'Replace your date edits with the latest saved version. This also refreshes the plan status.',
 };
 function ClientPlanDetails({
@@ -96,6 +95,9 @@ function ClientPlanDetails({
   clientId: string;
 }) {
   const [plan, setPlan] = useState(initial);
+  const person = useClient(clientId);
+  const today = person.data?.data.local_date;
+  const startLocked = Boolean(plan.start_date && today && plan.start_date <= today);
   const query = useManagedPlan(resource, plan.id);
   const save = useUpdatePlanDates(resource);
   const manage = useManagePlan(resource);
@@ -111,7 +113,6 @@ function ClientPlanDetails({
   const errorElement = useRef<HTMLParagraphElement>(null);
   const actionErrorElement = useRef<HTMLParagraphElement>(null);
   const leaving = useRef(false);
-  const navigate = useNavigate();
   const listRoute = resource === 'training' ? routes.clientTrainingPlans : routes.clientNutritionPlans;
   const editor = resource === 'training' ? routes.editClientTrainingPlan : routes.editClientNutritionPlan;
   const {to, state} = useListLocation(generatePath(listRoute, {clientId}));
@@ -212,11 +213,6 @@ function ClientPlanDetails({
     try {
       await manage.mutateAsync({action: dialog, plan});
       if (!mounted.current) {
-        return;
-      }
-      if (dialog === 'delete') {
-        leaving.current = true;
-        navigate(to, {replace: true, state: {...state, deleted: plan.name}});
         return;
       }
       await reload();
@@ -328,6 +324,8 @@ function ClientPlanDetails({
             control={form.control}
             name="start_date"
             label="Start date"
+            isDisabled={startLocked}
+            {...(startLocked ? {description: 'A started plan keeps its start date.'} : {})}
             type="date"
             isRequired
           />
@@ -385,8 +383,8 @@ function ClientPlanDetails({
         <h2 className="section-title">{archived ? 'Use this plan again' : 'Stop using this plan'}</h2>
         <p className="text-sm text-muted-foreground">
           {archived
-            ? explanations.restore
-            : 'Archive this plan to stop its guidance immediately. To finish it on a specific day, set an end date above.'}
+            ? 'Show this plan again with its saved dates. Its past stays unchanged.'
+            : 'Archive hides this plan and ends its guidance after today. Its past stays unchanged.'}
         </p>
         <Button
           variant="outline"
@@ -396,23 +394,7 @@ function ClientPlanDetails({
           {archived ? 'Restore plan' : 'Archive plan'}
         </Button>
       </section>
-      <section
-        className="space-y-3 pt-4"
-        aria-label="Delete plan"
-      >
-        <h2 className="font-medium">Delete permanently</h2>
-        <p className="text-sm text-muted-foreground">
-          Remove this assigned plan. Recorded activity and the reusable template remain available.
-        </p>
-        <Button
-          variant="ghost"
-          className="text-destructive"
-          isDisabled={pending || dirty || conflict}
-          onPress={() => confirm('delete')}
-        >
-          Delete plan
-        </Button>
-      </section>
+
       <Dialog
         isOpen={Boolean(dialog)}
         onOpenChange={(open) => {
@@ -432,7 +414,11 @@ function ClientPlanDetails({
                 <p className="mb-2 font-medium text-foreground">
                   {name} · {plan.name}
                 </p>
-                {explanations[dialog]}
+                {dialog === 'archive'
+                  ? 'Hide this plan and end its guidance after today. Its past dates and recorded workouts remain available.'
+                  : dialog === 'restore'
+                    ? 'Show this plan again. Its saved dates remain unchanged.'
+                    : explanations[dialog]}
               </DialogDescription>
             </DialogHeader>
             <FormError
@@ -449,7 +435,7 @@ function ClientPlanDetails({
                 {review ? 'Close and review' : 'Cancel'}
               </Button>
               <Button
-                variant={dialog === 'delete' ? 'destructive' : 'default'}
+                variant="default"
                 isPending={pending}
                 isDisabled={review}
                 onPress={perform}

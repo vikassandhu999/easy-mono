@@ -27,6 +27,16 @@ defmodule EasyWeb.ConversationChannel do
     {:noreply, socket}
   end
 
+  def handle_info({:chat_message_updated, message}, socket) do
+    push(socket, "message_updated", ChatMessage.format(message))
+    {:noreply, socket}
+  end
+
+  def handle_info({:chat_message_deleted, id}, socket) do
+    push(socket, "message_deleted", %{id: id})
+    {:noreply, socket}
+  end
+
   def handle_info({:conversation_updated, _id}, socket) do
     push(socket, "conversation_updated", %{})
     {:noreply, socket}

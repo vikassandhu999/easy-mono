@@ -58,6 +58,7 @@ defmodule Easy.Training.Library do
     base =
       TrainingExercise
       |> TrainingExercise.for_business_or_system(ctx.business_id)
+      |> where([e], is_nil(e.archived_at))
       |> TrainingExercise.for_search(search)
       |> TrainingExercise.for_muscle_ids(muscle_ids)
       |> TrainingExercise.for_equipment_ids(equipment_ids)
@@ -94,6 +95,7 @@ defmodule Easy.Training.Library do
     base =
       TrainingExercise
       |> TrainingExercise.for_business_or_system(ctx.business_id)
+      |> where([e], is_nil(e.archived_at))
       |> TrainingExercise.for_search(String.trim(Keyword.get(opts, :search, "") || ""))
       |> TrainingExercise.for_muscle_ids(Keyword.get(opts, :muscle_ids))
       |> TrainingExercise.for_equipment_ids(Keyword.get(opts, :equipment_ids))
@@ -172,10 +174,7 @@ defmodule Easy.Training.Library do
   end
 
   defp delete_unused_exercise(exercise) do
-    case exercise |> TrainingExercise.delete_changeset() |> Repo.delete() do
-      {:ok, deleted} -> {:ok, deleted}
-      {:error, %Ecto.Changeset{}} -> {:error, :in_use}
-    end
+    exercise |> Ecto.Changeset.change(archived_at: DateTime.utc_now(:second)) |> Repo.update()
   end
 
   @spec duplicate_exercise(Ctx.t(), String.t(), map()) ::

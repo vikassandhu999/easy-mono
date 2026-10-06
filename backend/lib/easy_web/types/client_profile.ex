@@ -5,6 +5,7 @@ defmodule EasyWeb.Types.ClientProfile do
 
   @type t :: %{
           required(:id) => String.t(),
+          required(:focus) => String.t() | nil,
           required(:full_name) => String.t(),
           required(:preferred_name) => String.t() | nil,
           required(:email) => String.t() | nil,
@@ -37,6 +38,7 @@ defmodule EasyWeb.Types.ClientProfile do
     %{
       id: client.id,
       full_name: client.full_name,
+      focus: client.focus,
       preferred_name: client.preferred_name,
       email: client.email,
       phone: client.phone,

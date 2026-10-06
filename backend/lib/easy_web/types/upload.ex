@@ -13,9 +13,11 @@ defmodule EasyWeb.Types.Upload do
             | :"video/quicktime"
             | :"audio/webm"
             | :"audio/mp4"
-            | :"audio/mpeg",
+            | :"audio/mpeg"
+            | :"application/pdf",
           required(:byte_size) => pos_integer(),
           required(:duration_ms) => pos_integer() | nil,
+          required(:captured_on) => Date.t() | nil,
           required(:upload_url) => String.t(),
           required(:upload_url_expires_at) => DateTime.t(),
           required(:upload_headers) => %{String.t() => String.t()}
@@ -32,9 +34,11 @@ defmodule EasyWeb.Types.Upload do
             | :"video/quicktime"
             | :"audio/webm"
             | :"audio/mp4"
-            | :"audio/mpeg",
+            | :"audio/mpeg"
+            | :"application/pdf",
           required(:byte_size) => pos_integer(),
-          optional(:duration_ms) => pos_integer() | nil
+          optional(:duration_ms) => pos_integer() | nil,
+          optional(:captured_on) => Date.t() | nil
         }
 
   @type download_urls :: %{required(:attachment_ids) => [String.t()]}
@@ -57,6 +61,7 @@ defmodule EasyWeb.Types.Upload do
       content_type: attachment.content_type,
       byte_size: attachment.byte_size,
       duration_ms: attachment.duration_ms,
+      captured_on: attachment.captured_on,
       upload_url: upload_url,
       upload_url_expires_at: upload_url_expires_at,
       upload_headers: upload_headers

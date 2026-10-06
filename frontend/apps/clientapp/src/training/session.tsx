@@ -22,8 +22,7 @@ import {FormError} from '../ui/form-error';
 import {Page} from '../ui/page';
 import {ReadState} from '../ui/read-state';
 import {ReferenceNotice} from '../ui/reference-notice';
-import {SelectItem} from '../ui/select';
-import {SelectField} from '../ui/select-field';
+import {TrackerPrompts} from '../ui/tracker-prompts';
 import {
   creationBody,
   dayLabel,
@@ -34,6 +33,7 @@ import {
   setMeasurements,
   setValues,
   targetText,
+  workoutItems,
 } from './recording';
 import {SetEditor} from './set-editor';
 import {entryHasInput, newEntry, useWorkoutDraft} from './workout-draft';
@@ -53,7 +53,7 @@ export function TrainingSession() {
       title={session ? sessionName(session) : 'Your workout'}
       description={
         session
-          ? `${dayLabel(session.date)} · ${session.state === 'active' ? 'In progress' : session.state === 'completed' ? 'Workout saved' : 'Discarded'}`
+          ? `${dayLabel(session.local_date)} · ${session.state === 'active' ? 'In progress' : session.state === 'completed' ? 'Workout saved' : 'Discarded'}`
           : undefined
       }
       back={returnTo}
@@ -85,7 +85,7 @@ export function TrainingSession() {
               key={session.id}
               session={session}
               returnTo={returnTo}
-              unit={profile.data.data.unit_system === 'imperial' ? 'lbs' : 'kg'}
+              unit={profile.data.data.unit_system === 'imperial' ? 'lb' : 'kg'}
               localDate={profile.data.data.local_date}
               canSave={online && query.isFetchedAfterMount && !query.isFetching && !query.isError}
             />
@@ -112,7 +112,7 @@ function SessionContent({
   returnTo,
 }: {
   session: Session;
-  unit: 'kg' | 'lbs';
+  unit: 'kg' | 'lb';
   localDate: string;
   canSave: boolean;
   returnTo: string;
@@ -128,15 +128,53 @@ function SessionContent({
   const pending = working || saveSet.isPending || saveWorkout.isPending;
   const entry = draft?.entries.find((item) => item.key === draft.selected);
   const selected = draft?.selected ?? '';
-  const exercise = session.prescription_snapshot?.workout.exercises.find((item) => item.ref === selected);
-  const savedSets = session.performed_sets.filter((set) =>
-    selected === 'freestyle' ? !set.snapshot_exercise_ref : set.snapshot_exercise_ref === selected,
+  const items = workoutItems(session);
+  const exercise = items.find(
+    (item) => item.sets.some((set) => set.id === selected) || `extra:${item.id}` === selected,
+  );
+  const target = exercise?.sets.find((set) => set.id === selected);
+  const savedSets = session.performed_sets.filter(
+    (set) =>
+      !set.deleted_at &&
+      (selected === 'freestyle'
+        ? !set.item_id
+        : target
+          ? set.set_id === selected
+          : set.item_id === exercise?.id && !set.set_id),
   );
   const previousSet = savedSets.findLast(
     (set) =>
       selected !== 'freestyle' ||
       (set.exercise_name === entry?.values.exercise_name.trim() && set.exercise_id === (entry.exerciseId ?? null)),
   );
+
+  const selectSet = (key: string) => {
+    const saved = session.performed_sets.find((set) => set.set_id === key && !set.deleted_at);
+    const item = items.find((item) => item.sets.some((set) => set.id === key));
+    update((current) => ({
+      ...current,
+      selected: key,
+      entries: current.entries.some((entry) => entry.key === key && entryHasInput(entry))
+        ? current.entries
+        : [
+            ...current.entries.filter((entry) => entry.key !== key),
+            saved
+              ? {
+                  key,
+                  itemId: saved.item_id ?? undefined,
+                  setId: saved.set_id ?? undefined,
+                  exerciseId: saved.exercise_id,
+                  values: setValues(saved, item, unit),
+                  operation: {kind: 'edit', id: saved.id},
+                  attempted: false,
+                  expectedRevision: session.revision,
+                }
+              : newEntry(key, session, unit),
+          ],
+    }));
+    setNotice('');
+    setError('');
+  };
 
   const changeEntry = useCallback(
     (values: SetValues) => {
@@ -147,7 +185,7 @@ function SessionContent({
         ...current,
         entries: current.entries.map((item) =>
           item.key === entry.key && entryIdentity(item) === entryIdentity(entry) && !item.attempted
-            ? {...item, values}
+            ? {...item, values, dirty: true}
             : item,
         ),
       }));
@@ -178,7 +216,7 @@ function SessionContent({
       if (!persisted) {
         throw new Error('draft');
       }
-      await saveSet.mutateAsync(
+      const savedResult = await saveSet.mutateAsync(
         frozen.operation.kind === 'create'
           ? {kind: 'create', body: {...creationBody(frozen), expected_revision: frozen.expectedRevision}}
           : {
@@ -197,16 +235,24 @@ function SessionContent({
           revision: frozen.expectedRevision + 1,
           entries: current.entries.map((item) => {
             if (item.key !== attempt.key || entryIdentity(item) !== entryIdentity(attempt)) {
-              return item;
+              return item.attempted ? item : {...item, expectedRevision: frozen.expectedRevision + 1};
             }
             const fresh = newEntry(item.key, session, unit);
+            if (item.setId && savedResult?.data) {
+              return {
+                ...fresh,
+                values: item.values,
+                dirty: false,
+                operation: {kind: 'edit', id: savedResult.data.id},
+                expectedRevision: frozen.expectedRevision + 1,
+              };
+            }
             return item.key === 'freestyle'
               ? {
                   ...fresh,
                   values: {
                     ...fresh.values,
                     exercise_name: item.values.exercise_name,
-                    tracking: item.values.tracking,
                     load_unit: item.values.load_unit,
                     distance_unit: item.values.distance_unit,
                   },
@@ -242,6 +288,8 @@ function SessionContent({
           ? {
               key: item.key,
               exerciseId: set.exercise_id,
+              itemId: set.item_id ?? undefined,
+              setId: set.set_id ?? undefined,
               values: setValues(set, exercise, unit),
               operation: {kind: 'edit', id: set.id},
               attempted: false,
@@ -283,9 +331,8 @@ function SessionContent({
               ...current,
               entries: [],
               notes: session.notes ?? '',
-              date: session.date,
+              date: session.local_date,
               revision: session.revision,
-              soreness: session.soreness_rating === null ? '' : String(session.soreness_rating),
             }),
             true,
           ))
@@ -304,9 +351,8 @@ function SessionContent({
                 kind: 'complete',
                 body: {
                   expected_revision: draft.revision ?? session.revision,
-                  date: draft.date ?? session.date,
+                  local_date: draft.date ?? session.local_date,
                   notes: draft.notes,
-                  soreness_rating: draft.soreness ? Number(draft.soreness) : null,
                 },
               },
         );
@@ -330,9 +376,7 @@ function SessionContent({
   }
   const unsent = draft.entries.filter(entryHasInput);
   const unsentNotes =
-    (draft.date ?? session.date) !== session.date ||
-    draft.notes !== (session.notes ?? '') ||
-    draft.soreness !== (session.soreness_rating === null ? '' : String(session.soreness_rating));
+    (draft.date ?? session.local_date) !== session.local_date || draft.notes !== (session.notes ?? '');
   return (
     <div className="space-y-6">
       <FormError message={error} />
@@ -343,6 +387,12 @@ function SessionContent({
         >
           {notice}
         </p>
+      )}
+      {session.state === 'completed' && (
+        <TrackerPrompts
+          event={{about_session_id: session.id}}
+          date={session.local_date}
+        />
       )}
       {session.state === 'completed' && (
         <div className="rounded-3xl bg-[var(--progress)] p-5 space-y-3">
@@ -359,7 +409,7 @@ function SessionContent({
           </Button>
         </div>
       )}
-      {correcting && draft.revision !== session.revision && (
+      {(correcting || session.state === 'active') && draft.revision !== session.revision && (
         <section className="rounded-3xl bg-surface p-5 space-y-3">
           <h2 className="font-semibold">Workout changed</h2>
           <p className="text-sm">
@@ -367,8 +417,7 @@ function SessionContent({
           </p>
           <p className="text-sm whitespace-pre-wrap">
             Saved note: {session.notes || 'No note'}
-            {session.soreness_rating ? ` · Soreness ${session.soreness_rating}/5` : ''}
-            {` · Workout date ${session.date}`}
+            {` · Workout date ${session.local_date}`}
           </p>
           <Button
             variant="outline"
@@ -394,44 +443,70 @@ function SessionContent({
       )}
       {session.state === 'active' || correcting ? (
         <>
-          {session.prescription_snapshot && (
-            <>
-              <p className="text-sm text-muted-foreground">
-                Targets saved when you started · {session.prescription_snapshot.plan.name}
-              </p>
-              <SelectField
-                aria-label="Exercise"
-                value={selected}
-                isDisabled={pending}
-                onChange={(key) => {
-                  if (
-                    key !== 'freestyle' &&
-                    !session.prescription_snapshot?.workout.exercises.some((item) => item.ref === key)
-                  ) {
-                    return;
-                  }
-                  update((current) => ({
-                    ...current,
-                    selected: key,
-                    entries: current.entries.some((item) => item.key === key)
-                      ? current.entries
-                      : [...current.entries, newEntry(key, session, unit)],
-                  }));
-                  setNotice('');
-                  setError('');
-                }}
+          {session.prescription && (
+            <section className="space-y-3">
+              <p className="text-sm text-muted-foreground">Your prescribed sets · {session.prescription.name}</p>
+              {session.occurrence_date && <p>Scheduled for {dayLabel(session.occurrence_date)}</p>}
+              <ol
+                className="space-y-3"
+                aria-label="Prescribed sets"
               >
-                {session.prescription_snapshot.workout.exercises.map((item, index) => (
-                  <SelectItem
-                    key={item.ref}
-                    id={item.ref}
+                {session.prescription.blocks.map((block) => (
+                  <li
+                    key={block.id}
+                    className="space-y-2"
                   >
-                    {index + 1}. {item.exercise_name}
-                  </SelectItem>
+                    <p className="text-sm font-semibold capitalize">
+                      {block.format}
+                      {block.rounds ? ` · ${block.rounds} rounds` : ''}
+                    </p>
+                    {block.items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="space-y-1"
+                      >
+                        <h2 className="font-semibold">{item.exercise_name}</h2>
+                        {item.sets.map((set, index) => {
+                          const recorded = session.performed_sets.find(
+                            (row) => row.set_id === set.id && !row.deleted_at,
+                          );
+                          return (
+                            <Button
+                              key={set.id}
+                              variant={selected === set.id ? 'secondary' : 'ghost'}
+                              className="w-full justify-between whitespace-normal text-left"
+                              isDisabled={pending}
+                              onPress={() => selectSet(set.id)}
+                            >
+                              <span>
+                                Set {index + 1} · {targetText(set)}
+                              </span>
+                              <span className="ml-3 shrink-0 whitespace-nowrap capitalize">
+                                {recorded?.outcome ?? 'Not recorded'}
+                              </span>
+                            </Button>
+                          );
+                        })}
+                        <Button
+                          variant="ghost"
+                          isDisabled={pending}
+                          onPress={() => selectSet(`extra:${item.id}`)}
+                        >
+                          Add extra set
+                        </Button>
+                      </div>
+                    ))}
+                  </li>
                 ))}
-                <SelectItem id="freestyle">Add another exercise</SelectItem>
-              </SelectField>
-            </>
+              </ol>
+              <Button
+                variant="outline"
+                isDisabled={pending}
+                onPress={() => selectSet('freestyle')}
+              >
+                Add another exercise
+              </Button>
+            </section>
           )}
           <section className="space-y-4">
             <div className="flex items-start gap-3">
@@ -441,34 +516,16 @@ function SessionContent({
               />
               <h2 className="text-2xl font-bold leading-tight">{exercise?.exercise_name ?? 'Your exercise'}</h2>
             </div>
-            {exercise && (
-              <div className="rounded-3xl bg-[var(--training)] p-5 space-y-3">
-                <h3 className="text-sm font-bold uppercase tracking-wide">Your targets</h3>
-                {exercise.sets.length === 0 ? (
-                  <p>No set targets prescribed.</p>
-                ) : (
-                  <ol className="space-y-2">
-                    {exercise.sets.map((set, index) => (
-                      <li key={index}>
-                        <p>
-                          Set {index + 1} · {targetText(set)}
-                        </p>
-                        {set.notes && <p className="text-sm text-muted-foreground">{set.notes}</p>}
-                      </li>
-                    ))}
-                  </ol>
-                )}
-              </div>
-            )}
+            {target && <p className="rounded-3xl bg-[var(--training)] p-5">Prescribed: {targetText(target)}</p>}
             {entry && (
               <SetEditor
                 key={entryIdentity(entry)}
                 entry={entry}
                 pending={pending}
-                canSave={canSave}
+                canSave={canSave && !(entry.operation.kind === 'edit' && entry.dirty === false)}
                 previous={
                   previousSet && !entryHasInput(entry)
-                    ? {...setValues(previousSet, exercise, unit), tracking: entry.values.tracking, rpe: '', notes: ''}
+                    ? {...setValues(previousSet, exercise, unit), rpe: '', notes: ''}
                     : undefined
                 }
                 onChange={changeEntry}
@@ -491,14 +548,10 @@ function SessionContent({
                     <div className="min-w-0 flex-1 space-y-1">
                       <p className="font-medium">
                         {selected === 'freestyle' ? `${set.exercise_name} · ` : ''}
-                        {measurementText(set)}
+                        {set.outcome} · {measurementText(set)}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {set.set_type === 'warmup'
-                          ? 'Warm-up'
-                          : set.set_type === 'dropset'
-                            ? 'Drop set'
-                            : 'Working set'}
+                        {set.kind === 'warmup' ? 'Warm-up' : set.kind === 'drop' ? 'Drop set' : 'Working set'}
                         {set.rpe ? ` · Effort ${set.rpe}/10` : ''}
                       </p>
                       {set.notes && <p className="text-sm whitespace-pre-wrap">{set.notes}</p>}
@@ -539,8 +592,7 @@ function SessionContent({
           <DraftStatus state={draftState} />
           <WorkoutNotes
             notes={draft.notes}
-            soreness={draft.soreness}
-            date={draft.date ?? session.date}
+            date={draft.date ?? session.local_date}
             localDate={localDate}
             pending={pending}
             canSave={canSave}
@@ -556,9 +608,8 @@ function SessionContent({
                 kind: 'save',
                 body: {
                   expected_revision: draft.revision ?? session.revision,
-                  date: values.date,
+                  local_date: values.date,
                   notes: values.notes,
-                  soreness_rating: values.soreness ? Number(values.soreness) : null,
                 },
               });
               await update((current) => ({...current, revision: savedWorkout.data.revision}), true);
@@ -608,11 +659,8 @@ function SessionContent({
                 >
                   <p className="font-medium">{item.values.exercise_name}</p>
                   <p>
-                    {measurementText({
-                      ...setMeasurements(item.values),
-                      load_value: item.values.load_value || null,
-                      distance_value: item.values.distance_value || null,
-                    })}
+                    {item.values.outcome} · {item.values.reps || '—'} reps · {item.values.load_value || '—'}{' '}
+                    {item.values.load_unit}
                   </p>
                   <p>{item.values.notes}</p>
                   {item.attempted && item.operation.kind === 'create' && (
@@ -631,8 +679,7 @@ function SessionContent({
               {unsentNotes && (
                 <p className="whitespace-pre-wrap">
                   {draft.notes}
-                  {draft.soreness ? ` · Soreness ${draft.soreness}/5` : ''}
-                  {` · Workout date ${draft.date ?? session.date}`}
+                  {` · Workout date ${draft.date ?? session.local_date}`}
                 </p>
               )}
               <Button
@@ -716,7 +763,9 @@ function SavedWorkout({session}: {session: Session}) {
               className="py-4 space-y-1"
             >
               <h2 className="font-semibold">{set.exercise_name}</h2>
-              <p>{measurementText(set)}</p>
+              <p>
+                {set.outcome} · {measurementText(set)}
+              </p>
               {set.rpe && <p className="text-sm">Effort {set.rpe}/10</p>}
               {set.notes && <p className="whitespace-pre-wrap text-muted-foreground">{set.notes}</p>}
             </li>
@@ -729,7 +778,6 @@ function SavedWorkout({session}: {session: Session}) {
           <p className="whitespace-pre-wrap">{session.notes}</p>
         </section>
       )}
-      {session.soreness_rating && <p>Soreness: {session.soreness_rating}/5</p>}
     </div>
   );
 }

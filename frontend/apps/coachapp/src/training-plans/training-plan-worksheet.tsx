@@ -4,7 +4,13 @@ import {flushSync} from 'react-dom';
 import {FormProvider, useForm} from 'react-hook-form';
 import {generatePath, Link, useBeforeUnload, useBlocker, useNavigate} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
-import {type TrainingPlan, useSaveTrainingPlan, useTrainingPlan} from '../api/training-plans';
+import {useClient} from '../api/clients';
+import {
+  type TrainingPlan,
+  useSaveTrainingPlan,
+  useTrainingPlan,
+  useWithdrawTrainingRevision,
+} from '../api/training-plans';
 import {routes} from '../routes';
 import {Button} from '../ui/button';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
@@ -14,6 +20,7 @@ import {Input} from '../ui/input';
 import {useListLocation} from '../ui/list-location';
 import {FormActions, Page} from '../ui/page';
 import {Textarea} from '../ui/textarea';
+import {TrainingPlanPreview} from '../ui/training-plan-preview';
 import {draftFromPlan, prescriptionBody} from './prescription';
 import {TemplateRecovery} from './template-recovery';
 import {WorkoutWorkspace} from './workout-workspace';
@@ -28,6 +35,9 @@ export function TrainingPlanWorksheet({
   context: TrainingEditorContext;
 }) {
   const [plan, setPlan] = useState(initial);
+  const [effectiveOn, setEffectiveOn] = useState('');
+  const person = useClient(context.kind === 'client' ? context.clientId : '');
+  const withdraw = useWithdrawTrainingRevision(plan?.id ?? '');
   const query = useTrainingPlan(plan?.id ?? '');
   const form = useForm({defaultValues: draftFromPlan(initial), shouldFocusError: false});
   const [readOnly, setReadOnly] = useState(false);
@@ -179,44 +189,40 @@ export function TrainingPlanWorksheet({
               }
               form.clearErrors();
               setNotice('');
-              let saved = plan;
+              const saved = plan;
               try {
-                const details = {name: draft.name.trim(), description: draft.description.trim() || null};
-                if (!saved) {
-                  const result = await save.mutateAsync({kind: 'create', body: details});
-                  if (!mounted.current) {
-                    return;
-                  }
-                  saved = result.data;
-                  setPlan(saved);
-                } else if (details.name !== saved.name || details.description !== (saved.description || null)) {
-                  const result = await save.mutateAsync({
-                    kind: 'details',
-                    id: saved.id,
-                    body: {...details, expected_revision: saved.revision},
-                  });
-                  if (!mounted.current) {
-                    return;
-                  }
-                  saved = result.data;
-                  setPlan(saved);
-                }
-                const result = await save.mutateAsync({
-                  kind: 'prescription',
-                  id: saved.id,
-                  body: prescriptionBody(draft, saved.revision),
-                });
+                const document = prescriptionBody(draft, saved?.revision ?? 1);
+                const result = await save.mutateAsync(
+                  saved
+                    ? {
+                        kind: 'details',
+                        id: saved.id,
+                        body: {...document, ...(clientPlan && effectiveOn ? {effective_on: effectiveOn} : {})},
+                      }
+                    : {
+                        kind: 'create',
+                        body: {
+                          name: document.name ?? draft.name,
+                          description: document.description ?? null,
+                          content: document.content,
+                        },
+                      },
+                );
                 if (!mounted.current) {
                   return;
                 }
                 setPlan(result.data);
                 form.reset(draftFromPlan(result.data));
                 setConflict(false);
-                setNotice(clientPlan ? 'Client training plan saved.' : 'Training plan saved.');
-                if (clientPlan) {
-                  leavingAfterSave.current = true;
-                  navigate(listLocation, {state: {...listState, trainingPlanSaved: result.data.name}});
-                } else if (!initial) {
+                setNotice(
+                  clientPlan
+                    ? effectiveOn
+                      ? `Revision scheduled for ${effectiveOn}.`
+                      : 'Revision published from today.'
+                    : 'Training plan saved.',
+                );
+                setEffectiveOn('');
+                if (!initial && !clientPlan) {
                   leavingAfterSave.current = true;
                   navigate(generatePath(routes.editTrainingPlan, {id: result.data.id}), {
                     replace: true,
@@ -233,11 +239,11 @@ export function TrainingPlanWorksheet({
                 form.setError('root', {
                   message: stale
                     ? 'This plan changed elsewhere. Your edits are still here. Load the saved version to review the latest changes before editing again.'
-                    : !saved
+                    : !saved && (!(error instanceof ApiError) || error.status >= 500)
                       ? "We couldn't confirm creation. Your draft is still here. Check your training plans before retrying; the template may have been created."
                       : error instanceof ApiError && error.status < 500
                         ? errorMessage(error, 'Check the prescription and try again.')
-                        : "We couldn't confirm the full save. Your draft is still here. The name and description may already be saved. Load the saved version to check, or retry to save this draft.",
+                        : "We couldn't confirm the full save. Your draft is still here. Load the saved version to check before retrying this draft.",
                 });
               }
             },
@@ -361,6 +367,56 @@ export function TrainingPlanWorksheet({
                 </p>
               )}
             </div>
+            {clientPlan && (
+              <section className="space-y-3">
+                <h2 className="editor-section-title">Publish this change</h2>
+                <label
+                  htmlFor="effective-on"
+                  className="grid max-w-sm gap-2 text-sm font-medium"
+                >
+                  Effective date
+                  <Input
+                    id="effective-on"
+                    type="date"
+                    value={effectiveOn}
+                    min={person.data?.data.local_date}
+                    onChange={(event) => setEffectiveOn(event.target.value)}
+                  />
+                </label>
+                <p className="text-sm text-muted-foreground">Leave the date empty to publish from today.</p>
+                {plan?.scheduled_revisions.map((revision) => (
+                  <div
+                    key={revision.id}
+                    className="rounded-xl bg-muted p-4 space-y-3"
+                  >
+                    <p>
+                      A revision is scheduled for {revision.effective_on}. An edit from today applies until{' '}
+                      {revision.effective_on}.
+                    </p>
+                    <Button
+                      variant="outline"
+                      isDisabled={dirty || withdraw.isPending}
+                      onPress={async () => {
+                        try {
+                          await withdraw.mutateAsync({revisionId: revision.id, expectedRevision: plan.revision});
+                          await loadLatest();
+                        } catch (error) {
+                          form.setError('root', {
+                            message: errorMessage(error, 'Could not withdraw the scheduled revision.'),
+                          });
+                        }
+                      }}
+                    >
+                      Withdraw scheduled revision
+                    </Button>
+                    <details>
+                      <summary className="cursor-pointer py-2 text-sm font-medium">View scheduled workouts</summary>
+                      <TrainingPlanPreview plan={{...plan, content: revision.content}} />
+                    </details>
+                  </div>
+                ))}
+              </section>
+            )}
             <WorkoutWorkspace
               readOnly={readOnly}
               activeIndex={activeIndex}
@@ -414,9 +470,9 @@ export function TrainingPlanWorksheet({
               <Button
                 type="submit"
                 isPending={pending}
-                isDisabled={conflict || unavailable || creationUncertain || !dirty}
+                isDisabled={conflict || unavailable || creationUncertain || (!dirty && !effectiveOn)}
               >
-                {clientPlan ? 'Save client plan' : 'Save plan'}
+                {clientPlan ? (effectiveOn ? 'Schedule revision' : 'Publish from today') : 'Save plan'}
               </Button>
             </FormActions>
           </div>

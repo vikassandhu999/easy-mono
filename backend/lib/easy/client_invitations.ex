@@ -23,6 +23,8 @@ defmodule Easy.ClientInvitations do
   end
 
   defp create_with_coach(ctx, changeset) do
+    business = Repo.one(from(b in Easy.Orgs.Business, where: b.id == ^ctx.business_id, lock: "FOR SHARE"))
+    changeset = Ecto.Changeset.put_change(changeset, :review_frequency_days, business.default_review_frequency_days)
     coach_id = changeset.params["coach_id"] || ctx.coach_id
 
     if coach_id != ctx.coach_id and not ctx.owner? do
@@ -83,8 +85,7 @@ defmodule Easy.ClientInvitations do
   defp delete_without_records(client) do
     records = [
       from(s in Easy.Training.TrainingSession, where: s.business_id == ^client.business_id and s.client_id == ^client.id),
-      from(d in Easy.Nutrition.DiaryDay, where: d.business_id == ^client.business_id and d.client_id == ^client.id),
-      from(s in Easy.Nutrition.DiarySlot, where: s.business_id == ^client.business_id and s.client_id == ^client.id),
+      from(s in Easy.Nutrition.DiaryMeal, where: s.business_id == ^client.business_id and s.client_id == ^client.id),
       from(m in Easy.Chat.Message, join: c in Easy.Chat.Conversation, on: c.id == m.conversation_id, where: c.business_id == ^client.business_id and c.client_id == ^client.id)
     ]
 

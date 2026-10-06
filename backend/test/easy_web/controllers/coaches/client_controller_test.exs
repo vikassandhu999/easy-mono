@@ -9,7 +9,10 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
   end
 
   test "invite, resend and revoke expose canonical invitation facts", %{conn: conn} do
-    response = post(conn, "/v1/coach/clients", %{full_name: "Client Full", preferred_name: "Client", email: "new@example.test"}) |> json_response(201)
+    response =
+      post(conn, "/v1/coach/clients", %{full_name: "Client Full", preferred_name: "Client", email: "new@example.test"})
+      |> json_response(201)
+
     client = response["data"]
     assert client["state"] == "invited"
     assert client["full_name"] == "Client Full"
@@ -26,24 +29,37 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
   test "terms start, end today and clear dates through resource routes", %{conn: conn, business: business, coach: coach} do
     client = insert(:client, business: business, coach: coach, terms: [])
     assert %{"data" => term} = post(conn, "/v1/coach/clients/#{client.id}/terms") |> json_response(201)
-    assert term["starts_on"] == Date.to_iso8601(Date.utc_today())
-    assert %{"data" => ending} = patch(conn, "/v1/coach/terms/#{term["id"]}", %{ends_on: term["starts_on"]}) |> json_response(200)
+    assert term["starts_on"] == Date.to_iso8601(Easy.LocalCalendar.to_local_date(DateTime.utc_now(), "Asia/Kolkata"))
+
+    assert %{"data" => ending} =
+             patch(conn, "/v1/coach/terms/#{term["id"]}", %{ends_on: term["starts_on"]}) |> json_response(200)
+
     assert ending["ends_on"] == term["starts_on"]
     assert %{"data" => profile} = get(conn, "/v1/coach/clients/#{client.id}") |> json_response(200)
     assert profile["state"] == "ending_soon"
     assert length(profile["terms"]) == 1
     assert post(conn, "/v1/coach/clients/#{client.id}/terms") |> json_response(409)
-    assert %{"data" => %{"ends_on" => nil}} = patch(conn, "/v1/coach/terms/#{term["id"]}", %{ends_on: nil}) |> json_response(200)
+
+    assert %{"data" => %{"ends_on" => nil}} =
+             patch(conn, "/v1/coach/terms/#{term["id"]}", %{ends_on: nil}) |> json_response(200)
   end
 
   test "profile and lists use client names, state, q and coach filters", %{conn: conn, business: business, coach: coach} do
     client = insert(:client, business: business, coach: coach, full_name: "Client Name", preferred_name: "Short")
-    assert %{"data" => data} = patch(conn, "/v1/coach/clients/#{client.id}", %{timezone: nil, unit_system: "imperial"}) |> json_response(200)
+
+    assert %{"data" => data} =
+             patch(conn, "/v1/coach/clients/#{client.id}", %{timezone: nil, unit_system: "imperial"})
+             |> json_response(200)
+
     assert data["full_name"] == "Client Name"
     assert data["unit_system"] == "imperial"
     assert data["timezone"] == nil
 
-    assert %{"count" => 1, "data" => [listed], "summary" => %{"active" => 1, "invited" => 0, "ended" => 0, "joined" => 0, "ending_soon" => 0}} =
+    assert %{
+             "count" => 1,
+             "data" => [listed],
+             "summary" => %{"active" => 1, "invited" => 0, "ended" => 0, "joined" => 0, "ending_soon" => 0}
+           } =
              get(conn, "/v1/coach/clients", %{state: "active", q: "Short", coach_id: coach.id}) |> json_response(200)
 
     assert listed["id"] == client.id
@@ -55,8 +71,20 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
     assert patch(conn, "/v1/coach/clients/#{client.id}", %{status: "inactive"}) |> json_response(422)
   end
 
-  test "expired client invitations renew and accepted accounts cannot be revoked", %{conn: conn, business: business, coach: coach} do
-    invited = insert(:client, business: business, coach: coach, user: nil, invited_at: DateTime.add(DateTime.utc_now(:second), -31, :day), invite_token: "expired-token")
+  test "expired client invitations renew and accepted accounts cannot be revoked", %{
+    conn: conn,
+    business: business,
+    coach: coach
+  } do
+    invited =
+      insert(:client,
+        business: business,
+        coach: coach,
+        user: nil,
+        invited_at: DateTime.add(DateTime.utc_now(:second), -31, :day),
+        invite_token: "expired-token"
+      )
+
     assert {:error, :expired} = ClientInvitations.resolve_invitation_token(invited.invite_token)
     assert post(conn, "/v1/coach/clients/#{invited.id}/invite") |> json_response(200)
     updated = Repo.get!(Easy.Clients.Client, invited.id)

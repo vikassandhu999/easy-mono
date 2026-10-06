@@ -1,29 +1,17 @@
 defmodule Easy.PlanCoverage do
   import Ecto.Query
-  alias Easy.Clients.Client
+  alias Easy.Repo
 
   @spec in_force(Ecto.Queryable.t(), Date.t()) :: Ecto.Query.t()
   def in_force(query, date) do
     from(plan in query,
-      where: plan.start_date <= ^date and (is_nil(plan.end_date) or plan.end_date >= ^date),
       where:
         fragment(
-          """
-          EXISTS (
-            SELECT 1 FROM clients c JOIN businesses b ON b.id = c.business_id
-            WHERE c.id = ? AND c.business_id = ?
-            AND EXISTS (SELECT 1 FROM coaching_terms t WHERE t.client_id = c.id
-              AND t.starts_on <= ? AND (t.ends_on IS NULL OR t.ends_on >= ?))
-            AND NOT EXISTS (SELECT 1 FROM coaching_terms t WHERE t.client_id = c.id
-              AND t.ends_on >= ((? AT TIME ZONE 'UTC') AT TIME ZONE COALESCE(NULLIF(c.timezone, ''), b.timezone))::date
-              AND t.ends_on < ?)
-          )
-          """,
+          "plan_period_covers(?, ?, ?, ?, ?)",
           plan.client_id,
-          plan.business_id,
-          type(^date, :date),
-          type(^date, :date),
-          plan.inserted_at,
+          plan.start_date,
+          plan.end_date,
+          plan.created_local_date,
           type(^date, :date)
         )
     )
@@ -34,7 +22,7 @@ defmodule Easy.PlanCoverage do
     cond do
       ended_before?(effective_end(plan), date) -> :ended
       Date.after?(plan.start_date, date) -> :upcoming
-      covered?(plan.client.terms, date) -> :current
+      covers?(plan, date) -> :current
       true -> :waiting
     end
   end
@@ -44,30 +32,32 @@ defmodule Easy.PlanCoverage do
   def stopped_on(%{start_date: nil}, _date), do: nil
 
   def stopped_on(plan, date) do
-    ended = term_end(plan)
-
-    if ended_before?(ended, date) and (is_nil(plan.end_date) or Date.before?(ended, plan.end_date)),
-      do: ended
+    stopped = coverage_end(plan, nil)
+    if ended_before?(stopped, date) and (is_nil(plan.end_date) or Date.before?(stopped, plan.end_date)), do: stopped
   end
 
   @spec effective_end(map()) :: Date.t() | nil
-  def effective_end(plan) do
-    [plan.end_date, term_end(plan)] |> Enum.reject(&is_nil/1) |> Enum.min(Date, fn -> nil end)
+  def effective_end(plan), do: coverage_end(plan, plan.end_date)
+
+  defp coverage_end(plan, ending) do
+    [[date]] =
+      Repo.query!("SELECT plan_coverage_end($1,$2,$3)", [
+        Ecto.UUID.dump!(plan.client_id),
+        plan.created_local_date,
+        ending
+      ]).rows
+
+    date
   end
 
-  defp term_end(%{inserted_at: inserted_at, client: %{terms: terms} = client}) when is_list(terms) do
-    created_on = Client.local_date(client, inserted_at)
-
-    terms
-    |> Enum.map(& &1.ends_on)
-    |> Enum.filter(&(not is_nil(&1) and not Date.before?(&1, created_on)))
-    |> Enum.min(Date, fn -> nil end)
-  end
-
-  defp covered?(terms, date) do
-    Enum.any?(terms, fn term ->
-      not Date.after?(term.starts_on, date) and not ended_before?(term.ends_on, date)
-    end)
+  defp covers?(plan, date) do
+    Repo.query!("SELECT plan_period_covers($1,$2,$3,$4,$5)", [
+      Ecto.UUID.dump!(plan.client_id),
+      plan.start_date,
+      plan.end_date,
+      plan.created_local_date,
+      date
+    ]).rows == [[true]]
   end
 
   defp ended_before?(nil, _date), do: false

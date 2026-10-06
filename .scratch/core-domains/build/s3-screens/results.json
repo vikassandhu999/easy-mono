@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "clientId": "a261e518-19f9-420b-ba04-3a858d3eab99",
+  "sessionId": "d91335b0-54d5-4497-8e5a-bcc1f9d18127",
+  "today": "2026-10-06",
+  "defaultReflection": true,
+  "imperialWeight": true,
+  "requestReplay": true,
+  "workoutCoverage": "1 of 1",
+  "orderedReportStorageVerified": true,
+  "requestClosed": true,
+  "coachActor": true,
+  "repeatedCorrections": true,
+  "mealCoverage": "1 of 1",
+  "photoComparison": true,
+  "customTrackerLifecycle": true,
+  "templateAndDefault": true,
+  "sameDayTimingChange": true,
+  "errors": []
+}

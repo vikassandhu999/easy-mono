@@ -1,160 +1,74 @@
 defmodule Easy.Training.TrainingPerformedSet do
   use Ecto.Schema
-
-  alias Easy.Orgs
-  alias Easy.SetVocab
-  alias Easy.Training.{TrainingExercise, TrainingSession}
-
   import Ecto.Changeset
-  import Ecto.Query
-
-  @type t() :: %__MODULE__{}
-
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
-
-  schema "training_performed_sets" do
+  @type t :: %__MODULE__{}
+  schema "performed_sets" do
+    belongs_to :business, Easy.Orgs.Business
+    belongs_to :session, Easy.Training.TrainingSession
     field :position, :integer
+    field :request_id, :binary_id
+    field :item_id, :binary_id
+    field :set_id, :binary_id
+    belongs_to :exercise, Easy.Training.TrainingExercise
     field :exercise_name, :string
-    field :snapshot_exercise_ref, :string
-    field :set_type, Ecto.Enum, values: SetVocab.set_types(), default: :working
-    field :reps, :string
-    field :load_value, :decimal
-    field :load_unit, Ecto.Enum, values: SetVocab.load_units()
-    field :duration_seconds, :integer
-    field :distance_value, :decimal
-    field :distance_unit, Ecto.Enum, values: SetVocab.distance_units()
+    field :kind, Ecto.Enum, values: [:warmup, :working, :drop], default: :working
+    field :outcome, Ecto.Enum, values: [:done, :failed, :skipped], default: :done
+    field :reps, :integer
+    field :load_kg, :decimal
+    field :entered_load_unit, Ecto.Enum, values: [:kg, :lb]
+    field :duration_s, :integer
+    field :distance_m, :decimal
+    field :entered_distance_unit, Ecto.Enum, values: [:m, :km, :mi]
     field :rpe, :decimal
+    field :rir, :integer
     field :notes, :string
-
-    belongs_to :session, TrainingSession, foreign_key: :training_session_id
-    belongs_to :exercise, TrainingExercise
-    belongs_to :business, Orgs.Business
-
+    field :deleted_at, :utc_datetime
+    field :local_date, :date, virtual: true
     timestamps(type: :utc_datetime)
   end
 
-  @create_fields [
+  @fields [
+    :item_id,
+    :set_id,
+    :exercise_id,
     :exercise_name,
-    :snapshot_exercise_ref,
-    :set_type,
+    :kind,
+    :outcome,
     :reps,
-    :load_value,
-    :load_unit,
-    :duration_seconds,
-    :distance_value,
-    :distance_unit,
+    :load_kg,
+    :entered_load_unit,
+    :duration_s,
+    :distance_m,
+    :entered_distance_unit,
     :rpe,
+    :rir,
     :notes
   ]
-
-  @measurement_fields [
-    :set_type,
-    :reps,
-    :load_value,
-    :load_unit,
-    :duration_seconds,
-    :distance_value,
-    :distance_unit,
-    :rpe,
-    :notes
-  ]
-
-  @spec exercise_reference(map()) :: {:ok, String.t() | nil} | {:error, Ecto.Changeset.t()}
-  def exercise_reference(attrs) do
-    {%{exercise_id: nil}, %{exercise_id: Ecto.UUID}}
-    |> cast(attrs, [:exercise_id])
-    |> apply_action(:validate)
-    |> case do
-      {:ok, set} -> {:ok, set.exercise_id}
-      error -> error
-    end
-  end
-
-  @spec creation_fingerprint(map()) :: {:ok, binary()} | {:error, Ecto.Changeset.t()}
-  def creation_fingerprint(attrs) do
-    fields = [:exercise_id | @create_fields]
-
-    with {:ok, set} <-
-           %__MODULE__{}
-           |> cast(attrs, fields)
-           |> update_change(:exercise_name, &Easy.Utils.trim/1)
-           |> apply_action(:validate) do
-      values = set |> Map.from_struct() |> Map.take(fields)
-      values = if set.exercise_id, do: Map.delete(values, :exercise_name), else: values
-
-      canonical =
-        Map.new(values, fn
-          {key, %Decimal{} = value} -> {key, Decimal.normalize(value)}
-          entry -> entry
-        end)
-
-      {:ok, :crypto.hash(:sha256, :erlang.term_to_binary(canonical, [:deterministic]))}
-    end
-  end
-
-  @spec insert_changeset(String.t(), String.t(), non_neg_integer(), TrainingExercise.t() | nil, map()) ::
-          Ecto.Changeset.t()
-  def insert_changeset(business_id, session_id, position, exercise, attrs) do
-    fields = if exercise, do: @create_fields -- [:exercise_name], else: @create_fields
-
+  @spec insert_changeset(String.t(), String.t(), non_neg_integer(), map()) :: Ecto.Changeset.t()
+  def insert_changeset(business_id, session_id, position, attrs) do
     %__MODULE__{}
-    |> cast(attrs, fields)
-    |> put_change(:training_session_id, session_id)
+    |> cast(attrs, [:request_id | @fields])
     |> put_change(:business_id, business_id)
+    |> put_change(:session_id, session_id)
     |> put_change(:position, position)
-    |> put_exercise(exercise)
-    |> validate_fields()
-  end
-
-  defp put_exercise(changeset, nil), do: changeset
-
-  defp put_exercise(changeset, %TrainingExercise{} = exercise) do
-    changeset
-    |> put_change(:exercise_id, exercise.id)
-    |> put_change(:exercise_name, exercise.name)
+    |> validate()
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(performed_set, attrs) do
-    fields = if is_nil(performed_set.exercise_id), do: [:exercise_name | @measurement_fields], else: @measurement_fields
+  def update_changeset(row, attrs), do: row |> cast(attrs, @fields) |> validate()
 
-    performed_set
-    |> cast(attrs, fields)
-    |> validate_fields()
-  end
-
-  defp validate_fields(changeset) do
-    changeset
-    |> update_change(:exercise_name, &Easy.Utils.trim/1)
-    |> validate_required([:position, :exercise_name, :set_type, :training_session_id, :business_id])
-    |> validate_length(:notes, max: 5000)
-    |> validate_number(:position, greater_than_or_equal_to: 0)
+  defp validate(cs) do
+    cs
+    |> validate_required([:position, :kind, :outcome])
+    |> validate_number(:reps, greater_than_or_equal_to: 0)
+    |> validate_number(:duration_s, greater_than_or_equal_to: 0)
+    |> validate_number(:distance_m, greater_than_or_equal_to: 0)
     |> validate_number(:rpe, greater_than_or_equal_to: 1, less_than_or_equal_to: 10)
-    |> check_constraint(:position, name: :training_performed_sets_position_check)
-    |> check_constraint(:exercise_name, name: :training_performed_sets_exercise_name_check)
-    |> unique_constraint(:position, name: :training_performed_sets_training_session_id_position_index)
-    |> foreign_key_constraint(:training_session_id,
-      name: :training_performed_sets_session_business_id_fkey
-    )
+    |> validate_number(:rir, greater_than_or_equal_to: 0, less_than_or_equal_to: 10)
+    |> check_constraint(:exercise_id, name: :performed_sets_check)
     |> foreign_key_constraint(:exercise_id)
-  end
-
-  @spec for_session(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_session(query \\ __MODULE__, session_id),
-    do: from(set in query, where: set.training_session_id == ^session_id)
-
-  @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_business(query \\ __MODULE__, business_id),
-    do: from(set in query, where: set.business_id == ^business_id)
-
-  @spec by_position(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def by_position(query \\ __MODULE__),
-    do: from(set in query, order_by: [asc: set.position, asc: set.id])
-
-  @spec include_exercise(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def include_exercise(query, business_id) do
-    exercise_query = TrainingExercise.for_business_or_system(TrainingExercise, business_id)
-    from(set in query, preload: [exercise: ^exercise_query])
+    |> unique_constraint(:request_id, name: :performed_sets_session_id_request_id_key)
   end
 end

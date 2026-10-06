@@ -124,7 +124,7 @@ defmodule EasyWeb.Clients.ExerciseControllerTest do
                %{"id" => equipment.id, "name" => equipment.name, "description" => equipment.description}
              ]
 
-      assert is_list(data["images"])
+      assert data["measures"] == ["reps", "load"]
     end
 
     test "shows system exercise", ctx do

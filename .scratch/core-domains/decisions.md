@@ -38,6 +38,12 @@ Status: frozen 5 October 2026. Change this file only with a new dated entry. The
 
 Progression across weeks (`cycle_weeks` > 1) · occurrence exceptions UI · library content and client preview · forms, appointments, groups · extra roles · linked templates · add-on programs · AI report parsing · wearable imports.
 
+## Dated entries
+
+| Date | # | Decision |
+|---|---|---|
+| 6 Oct 2026 | M19 | A fact with more than one value (sleep, cycle, goals, symptoms, fasts, health notes, workout feedback) gets its own model: its own record table, or columns on the record it describes (workout feedback on `training_sessions`). Every record table uses the shared spine (M9, M10). M15 applies to facts with one value. |
+
 ## Next
 
-Freeze. Build the first slice: Trackers (built-in trackers, assignments, client records a value, coach sees entries and the weight trend, all writes through the `record_changes` helper). Time box: 2 days.
+Build order: `.scratch/roadmap.md`.

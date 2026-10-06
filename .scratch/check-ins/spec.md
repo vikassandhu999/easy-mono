@@ -6,7 +6,7 @@ Status: agreed 2026-10-03. Replaces the period-based spec of 2026-09-24.
 
 That is the whole feature. A check-in is not a period, a form or a task. It is a coach looking at a client's ongoing record and saving what they thought. The client keeps recording before and after.
 
-The earlier history lives in `archive/`: the Q1–Q35 grilling (`spec-periods-2026-09-24.md`), the V1–V13 validation and the stress tests (`spec-validation.md`). Q and V numbers below point there. Decisions that apply only to periods are retired and not listed here.
+The earlier history (the Q1–Q35 grilling and the V1–V13 validation) was removed on 6 October 2026; read it with `git show 1e6177a1:.scratch/check-ins/archive/spec-periods-2026-09-24.md` and `…/spec-validation.md`. Q and V numbers below point there. Decisions that apply only to periods are retired and not listed here.
 
 ## Why this shape
 

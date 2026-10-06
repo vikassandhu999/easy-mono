@@ -65,7 +65,7 @@ Status: **Have** = built · **Build #n** = row n of the build order · **Later**
 | Feature in SparkyFitness | What it does | Our status | Where it fits |
 |---|---|---|---|
 | Food diary by meal | Log foods into breakfast, lunch, … | Have | Nutrition: diary meals |
-| Food database + online providers | Search foods, import from OpenFoodFacts, USDA | Have (55k seeded foods) | Nutrition library |
+| Food database + online providers | Search foods, import from OpenFoodFacts, USDA | Partly: 55k seeded foods, no online lookup | Nutrition library |
 | Custom foods with servings | Own foods, several serving sizes | Have | Nutrition library |
 | Saved meals (food groups) | Log a group of foods at once | Have as recipes and planned meals | Nutrition |
 | Quick add calories | Log calories with no food | Have | Nutrition diary |
@@ -92,8 +92,8 @@ Status: **Have** = built · **Build #n** = row n of the build order · **Later**
 | Body map filter, alternatives | Find by muscle, swap suggestions | Later | Training library |
 | Workout presets and plans | Weekly plan of workouts | Have | Training plan |
 | Workout logging with sets | Reps, load, RIR | Have | Training sessions |
-| Guided workout with rest timer | Step through sets | Have (session screen); rest timer not checked | Training sessions |
-| Cardio with distance and heart rate | Cardio entries | Have (exercise measures) | Training sessions |
+| Guided workout with rest timer | Step through sets | Have (session screen). No rest timer: Later | Training sessions |
+| Cardio with distance and heart rate | Cardio entries | Partly: duration and distance measures. No heart rate | Training sessions |
 | **Workout feedback** | Difficulty + pain + pain note after a workout | **Build #1** | Training sessions |
 | PR progression | Best sets over time | Have | Insights |
 | Training consistency, heatmap | Done vs planned over weeks | Have (expected vs done) | Insights |
@@ -105,7 +105,7 @@ Status: **Have** = built · **Build #n** = row n of the build order · **Later**
 
 | Feature in SparkyFitness | What it does | Our status | Where it fits |
 |---|---|---|---|
-| Body measurements | Weight, waist, hips, neck, body fat, muscle mass | Partly (weight, waist) | Trackers |
+| Body measurements | Weight, waist, hips, neck, body fat, muscle mass | Partly (body weight, waist, steps) | Trackers |
 | **Measurements on one screen** | Record many for one date | **Build #2** | Trackers: check-in screen |
 | Custom measurements | Own measurement types | Have (custom trackers) | Trackers |
 | Progress photos and compare | Front/side/back, side by side | Have | Trackers (photo) |
@@ -116,11 +116,11 @@ Status: **Have** = built · **Build #n** = row n of the build order · **Later**
 
 | Feature in SparkyFitness | What it does | Our status | Where it fits |
 |---|---|---|---|
-| Mood | Mood value + tags | Have as rating (energy); mood **Build #7** | Trackers |
-| Stress, hunger, energy | Daily ratings | Partly; more **Build #7** | Trackers |
+| Mood | Mood value + tags | **Build #7** (rating). Tags: Later | Trackers |
+| Energy, hunger, soreness, bloating, stress | Daily ratings | Have (energy, hunger, soreness, bloating); stress **Build #7** | Trackers |
 | Vitals | Blood pressure, glucose, temperature | **Build #7** (seeded number trackers) | Trackers |
 | Supplements taken | Daily yes/no | Have (yes_no trackers) | Trackers |
-| Sleep | Bed/wake, stages, sleep need | **Build #9** (bed, wake, quality) | Sleep |
+| Sleep | Bed/wake, stages, sleep need | Have "Sleep hours" tracker; full sleep **Build #9** (bed, wake, quality) | Sleep |
 | Symptoms | Severity, location, triggers, episodes, treatments | **Build #11** | Symptoms |
 | Medications, GLP-1 pens, titration | Schedules, doses, inventory | Client-reported only, in **Health notes #8**. No schedules | Health notes |
 | Doctor report, appointments | Share with a doctor | No | — |
@@ -163,7 +163,7 @@ One row = one Codex task (gpt-6-astra high, elixir-production skills for the bac
 | 4 | **Recent and favourite foods** | `favourite_foods` (client, food or recipe) | — | Re-logs a food in two taps | S | planned |
 | 5 | **Copy a meal** | None (new entries, normal journal write) | Copied entries show as normal records | Copies a meal from another day | S | planned |
 | 6 | **Goals** | `goals` table | Progress, pace, projected date, line on the chart | Sees the goal and progress | M | planned |
-| 7 | **More built-in trackers** | None. Seed: mood, stress, hunger, resting heart rate, blood pressure (2), glucose, steps | Trends | Records them | S | planned |
+| 7 | **More built-in trackers** | None. Seed: mood, stress, resting heart rate, blood pressure (systolic, diastolic), blood glucose, body temperature | Trends | Records them | S | planned |
 | 8 | **Health notes** | `health_notes` table | Notes at the top of the client page; new notes in "New since" | Adds and ends notes | M | planned |
 | 9 | **Sleep** | `sleep_entries` table | Average sleep, bed-time pattern | Records bed, wake, quality | M | planned |
 | 10 | **Cycle** | `period_starts` table | Day of cycle and phase; marks on the weight chart | Records "period started" | M | planned |
@@ -181,6 +181,7 @@ Rows 1–5 make logging quick and catch pain early. Rows 6–12 add the special 
 ## 5. Slices in detail
 
 ### 1. Workout feedback
+- **Idea from:** SparkyFitness `workout_feedback` (difficulty, pain, pain note).
 - **Why:** a coach must know at once when a client gets hurt or a workout is too hard or too easy.
 - **Model:** on `training_sessions`: `difficulty` (`too_easy`, `just_right`, `too_hard`, nullable), `pain` (boolean, nullable), `pain_note` (≤ 500 chars, only when `pain`). A check constraint keeps the note only with pain. Written with the session through the journal, so a change shows in "New since".
 - **Client:** the finish screen asks "How was it?" and "Any pain?"; "Yes" opens the note.
@@ -188,17 +189,20 @@ Rows 1–5 make logging quick and catch pain early. Rows 6–12 add the special 
 - **Done when:** a client finishes a workout with pain and a note, and the coach sees "Pain reported" on the roster and the note on the review screen.
 
 ### 2. Check-in screen
+- **Idea from:** SparkyFitness `check_in_measurements` (many measurements on one date).
 - **Why:** body measurements are taken together, once a week. One form for each is slow.
 - **Model:** no change. New built-in number trackers. Each value is its own tracker entry and keeps its own trend.
 - **Client:** "Measurements" screen shows the assigned body trackers for one date; one save writes all entries in one journal sequence.
 - **Done when:** a client records weight, waist and hips together, and the coach sees three trends.
 
 ### 3. Quick amounts
+- **Idea from:** SparkyFitness `user_water_containers`.
 - **Why:** water and steps are recorded many times a day. One tap beats a form.
 - **Model:** `tracker_assignments.quick_amounts` (array of up to 4 numbers in the base unit, number trackers only).
 - **Done when:** a client records 750 ml of water with one tap.
 
 ### 4. Recent and favourite foods
+- **Idea from:** SparkyFitness `food_favorites`.
 - **Model:** `favourite_foods` (client, food or recipe, exactly one). "Recent" is calculated from diary entries.
 - **Done when:** a client adds yesterday's breakfast food again in two taps.
 
@@ -221,18 +225,22 @@ Rows 1–5 make logging quick and catch pain early. Rows 6–12 add the special 
 - **Done when:** a client adds "knee pain, no deep squats"; the coach sees it at the top of the client page and in "New since".
 
 ### 9. Sleep
+- **Idea from:** SparkyFitness `sleep_entries`. Replaces the "Sleep hours" tracker for clients who use it.
 - **Model:** `sleep_entries`: client, `bed_at`, `woke_at`, `quality` (1–5, nullable), note. The date is the wake date. Duration is calculated.
 - **Done when:** a client records a night; the coach sees average duration and bed times for the week.
 
 ### 10. Cycle
+- **Idea from:** SparkyFitness `cycles`.
 - **Model:** `period_starts`: client, `started_on`. Cycle length, day of cycle and phase are calculated from the last starts.
 - **Done when:** a client records a start; the coach sees "Day 22, luteal" and phase marks on the weight chart.
 
 ### 11. Symptoms
+- **Idea from:** SparkyFitness `symptom_entries`, `user_custom_symptoms`. Existing "Bloating" rating tracker stays for simple use.
 - **Model:** `symptom_entries`: client, symptom (from a small library), severity 1–5, body locations, triggers, `started_at`, `ended_at` (nullable), note.
 - **Done when:** a client records bloating 3/5 after dinner; the coach sees symptom counts and common triggers.
 
 ### 12. Fasting
+- **Idea from:** SparkyFitness `fasting_logs`.
 - **Model:** `fasts`: client, `started_at`, `planned_end_at`, `ended_at` (nullable while running).
 - **Done when:** a client starts and ends a 16 h fast; the coach sees fasts done this week.
 
@@ -250,3 +258,29 @@ AI chat and food-photo estimates, fertility and pregnancy tools, GLP-1 pen inven
 - Tests for the slice's rules. Gates: `rtk mix precommit`, `gen-api`, both app builds, `rtk pnpm -C frontend lint:ci`, the existing browser flows, and one new browser flow (coach 1280 and 375, client 375).
 - No new research. A question gets the simplest option, written in the slice report.
 - Commit only when the user agrees.
+
+---
+
+## Appendix A. SparkyFitness structure
+
+SparkyFitness is a single-user app with about 100 tables. It makes one table for each kind of fact. Its generic pair `custom_categories` + `custom_measurements` is the same idea as our Trackers. It has no shared history spine, so each feature builds its own history and sharing.
+
+| Group | SparkyFitness tables | For us |
+|---|---|---|
+| Who the client is | `profiles`, `onboarding_data`, `user_allergen_preferences`, `family_access` | Client, intake forms, coaching terms, coach access |
+| Library | `foods`, `food_variants`, `meals`, `exercises`, `custom_categories`, `user_custom_symptoms`, `user_custom_moods`, `medications`, `user_water_containers` | Exercises, foods, recipes, trackers |
+| Intent | `workout_plan_templates`, `workout_presets`, `meal_plan_templates`, `user_goals`, `goal_presets`, `weekly_goal_plans`, `medication_schedules`, `medication_titration_steps` | Training plan, nutrition plan, tracker list; Goals #6 |
+| Records | `exercise_entries` + sets, `food_entries`, `water_intake_entries`, `check_in_measurements`, `check_in_photos`, `mood_entries`, `sleep_entries`, `vitals_entries`, `symptom_entries`, `medication_entries`, `injection_entries`, `fasting_logs`, `cycle_daily_entries`, `custom_measurements`, `workout_feedback` | Sessions, meals, tracker entries; own tables in #1, #9–#12 |
+| Device data | `daily_health_metrics`, `health_metric_samples`, `sleep_entry_stages`, GPS, laps, HR zones, `external_data_providers` | Imports #15 |
+| Life stage and medical | `cycles`, `cycle_test_entries`, `pregnancies`, kick and contraction logs, `health_appointments`, `medication_pens` | Cycle #10, Health notes #8; the rest: No |
+| Calculated insights | `day_classification_cache`, `sleep_need_calculations`, correlations, adaptive TDEE, PR charts, muscle recovery | Insights (calculated, never stored) |
+| Platform | auth, MFA, OIDC, backups, admin, AI chat, rate limits | Have or not needed |
+
+## Appendix B. What a coach needs
+
+1. **See the client whole:** goal, focus, intake, health notes, cycle phase today. → #6, #8, #10
+2. **Plan:** training, nutrition targets, what to track and when. → Have
+3. **Know what happened:** workouts, meals, body numbers, photos, sleep, mood, pain, symptoms. → Have, #1, #2, #7, #9, #11
+4. **Catch problems early:** pain, sleep down, weight stalled, missed workouts, no records. → #1, reviews (have)
+5. **Judge progress against a goal:** current vs target, pace, time left. → #6
+6. **Respond:** review, reply, change the plan, request a tracker. → Have

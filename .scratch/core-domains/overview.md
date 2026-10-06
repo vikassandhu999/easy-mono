@@ -2,7 +2,7 @@
 
 Status: final model, agreed 5 October 2026. Not implemented.
 
-Sources: `training-report.md`, `nutrition-report.md`, `shared-report.md` (the code today), `research-report.md` (coaching products and health standards), `validation-report.md` (review of the first proposal), `industry-apis-report.md` (Stripe, Google Calendar, Shopify, Datomic, Modern Treasury, HealthKit). Postgres detail for training: `training.md`. Diagram: `core-domain-map.html`.
+Research sources (the training, nutrition, shared, research, validation and industry-API reports, and the diagram) were removed on 6 October 2026; read them with `git show 1e6177a1:.scratch/core-domains/<file>`. Postgres detail for training: `training.md`. Build order: `.scratch/roadmap.md`.
 
 ## 1. The structure
 

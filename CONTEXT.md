@@ -115,6 +115,34 @@ A number keyed by a nutrient code and its registered unit. An absent key is unkn
 **Nutrition Day**:
 Expected and recorded meals, daily nutrient totals with known-entry counts, and the targets from the revision in force at the end of the date. If the target changed during the date, the view says so. Targets and adherence scores are not stored on diary records.
 
+### Nutrition concept under design
+
+The following terms belong to the nutrition redesign. The Nutrition Template, Client Nutrition Plan, Day Pattern, Slot, and Diary terms above describe the implemented model while the redesign is in progress.
+
+**NutritionPreset**:
+A nutrition instruction of type meal, food, or supplement. A meal contains complete alternatives. A food or supplement prescribes one item and amount.
+
+**MealOption**:
+One complete choice within a meal NutritionPreset.
+
+**MealItem**:
+A food or supplement and its prescribed amount within a MealOption.
+
+**NutritionSchedule**:
+The dates and optional time at which a NutritionPreset applies. Several schedules can use the same preset; shared content edits affect its future uses. Weekday groups are a planning view.
+
+**NutritionTargets**:
+One complete set of daily nutrient targets, independent of presets. Each nutrient target is exact, minimum, maximum, or range. One client-local date has one applicable target set; a date-specific replacement replaces the whole set.
+
+**NutritionLog**:
+One recorded consumption occasion of type meal, food, or supplement. A meal groups one or more FoodLogs. Food and supplement occasions each contain exactly one FoodLog of the corresponding kind.
+
+**FoodLog**:
+One consumed item and its amount within a NutritionLog, including a supplement where applicable.
+
+**Recipe**:
+The ingredients and preparation instructions for a prepared food. An ingredient is a food used in preparation.
+
 ### Trackers
 
 **Tracker**:

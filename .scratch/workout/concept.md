@@ -13,7 +13,7 @@ Status: in design, 9 October 2026. Replaces the training part of `.scratch/core-
 | W5 | A workout exercise has targets the same for all rounds, or one target for each round. |
 | W6 | Schedule: workout + client, one `date` or a `day_of_week` between `from_date` and `until_date`, optional `time`. An appointment is not a separate concept: a schedule row with a time is enough. |
 | W7 | WorkoutLog: what the client did. `workout_history_id` null = free workout. Sets record `round` and values. |
-| W8 | WorkoutHistory keeps each version of a workout that the client actually did. A coach edit does not enter the history until the client does the workout. When a log starts: same as the open row → use it; different → close it (`ended` = today) and open a new row with a copy. The log points to its history row. The check and the new row are one step, in the transaction that starts the log. Why: the history rebuilds the client's whole programme as they actually did it; a version they never did is not in it, and the schedule still shows missed days. |
+| W8 | Prescription history must rebuild what was prescribed on any client date, including dates without a WorkoutLog. Preserve the schedule that applied and the workout content version it used. Past prescribed versions remain available; future-only versions can change without retaining unused drafts. Each log points to the exact version it used. This supersedes the rule that history is created only when logging starts (nutrition discussion, 9 Oct 2026). Same-day boundaries and the version storage/write mechanism remain open. |
 | W9 | Copy on assign, never linked. This is the cornerstone: a library or program workout is copied to the owner that receives it, and the copy has no link back. |
 | W10 | One `workouts` table with three owners: library (`client_id` and `program_id` null), program (`program_id`), client (`client_id`). Never both. A workout has no time in it, so one shape serves all owners. |
 | W11 | Two schedule tables, one time system each. `schedules` (client) uses dates; `program_schedules` uses week numbers. Same shape: one occasion, or a weekday rule between two bounds. Assign translates week `w` to `start + 7 × (w − 1)` days. |
@@ -52,7 +52,7 @@ ExerciseGroup    { id, workout_id, name?, rounds }
 WorkoutExercise  { id, group_id, exercise_id, rest (target), targets: same_for_all | per_round, [ metrics (W28) ] }
 Schedule         { id, workout_id, client_id, date? | day_of_week + from_date + until_date?, time?, place? | meeting_url?, coach_id? }
 ProgramSchedule  { id, workout_id, program_id, week? | day_of_week + from_week + until_week }
-WorkoutHistory   { id, client_id, workout_id, started, ended?, workout: jsonb }
+WorkoutHistory   { id, client_id, workout_id, started, ended?, workout: jsonb } // provisional: revise storage and effective boundaries under W8
 WorkoutLog       { id, business_id, client_id, shared record fields (M9), state, date, time, at_utc, text, difficulty?, pain?, pain_note?, workout_history_id?, schedule_id?, scheduled_date?, recorded_by }
 ScheduleSkip     { id, schedule_id, date }
 ExerciseMax      { id, client_id, exercise_id, kg, date, entered_by }
@@ -119,7 +119,11 @@ Examples: treadmill → duration, distance, speed, incline · free throws → su
 
 ## Open questions
 
+History decisions below supersede any log-only history timing implied by the model sketch. W14 still preserves past schedule dates; today’s content-version boundary must be designed together with it.
+
 1. `bodyweight` (load adds to body weight) and `mechanics` / `force` on today's exercises: keep, change, or drop?
 2. Targets for non-numeric metrics: can a coach set a `grade` target ("climb V4") or a `result` target? W25 covers numeric metrics only.
 3. Must program schedule rows stay inside `Program.weeks`?
 4. Build plan: how we move from the S1 training model to this concept in complete slices.
+
+5. Prescription history: effective version boundaries, preservation without logs, same-day edits, and write protocol under revised W8.

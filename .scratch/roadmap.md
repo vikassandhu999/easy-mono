@@ -1,5 +1,7 @@
 # Roadmap
 
+> Training is redesigned in `.scratch/workout/concept.md` (9 Oct 2026). Training rows below follow it once its build plan exists.
+
 Status: 6 October 2026. This is the one planning doc. Build from the **Build order** table, one row at a time, top to bottom. When a row is done, set its status and the commit.
 
 Other docs that stay:

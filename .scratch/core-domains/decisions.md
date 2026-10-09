@@ -43,6 +43,7 @@ Progression across weeks (`cycle_weeks` > 1) · occurrence exceptions UI · libr
 | Date | # | Decision |
 |---|---|---|
 | 6 Oct 2026 | M19 | A fact with more than one value (sleep, cycle, goals, symptoms, fasts, health notes, workout feedback) gets its own model: its own record table, or columns on the record it describes (workout feedback on `training_sessions`). Every record table uses the shared spine (M9, M10). M15 applies to facts with one value. |
+| 9 Oct 2026 | M20 | Training follows the workout concept, `.scratch/workout/concept.md` (W1–W35). It replaces M2, M3, M6, M7, M8, M13, M16 and M17 for training (see its "Relation" table). Nutrition keeps them for now. |
 
 ## Next
 

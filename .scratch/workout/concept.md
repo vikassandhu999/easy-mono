@@ -13,7 +13,7 @@ Status: in design, 9 October 2026. Replaces the training part of `.scratch/core-
 | W5 | A workout exercise has targets the same for all rounds, or one target for each round. |
 | W6 | Schedule: workout + client, one `date` or a `day_of_week` between `from_date` and `until_date`, optional `time`. An appointment is not a separate concept: a schedule row with a time is enough. |
 | W7 | WorkoutLog: what the client did. `workout_history_id` null = free workout. Sets record `round` and values. |
-| W8 | WorkoutHistory keeps each version of a workout that the client actually did. A coach edit does not enter the history until the client does the workout. When a log starts: same as the open row → use it; different → close it (`ended` = today) and open a new row with a copy. The log points to its history row. |
+| W8 | WorkoutHistory keeps each version of a workout that the client actually did. A coach edit does not enter the history until the client does the workout. When a log starts: same as the open row → use it; different → close it (`ended` = today) and open a new row with a copy. The log points to its history row. The check and the new row are one step, in the transaction that starts the log. Why: the history rebuilds the client's whole programme as they actually did it; a version they never did is not in it, and the schedule still shows missed days. |
 | W9 | Copy on assign, never linked. This is the cornerstone: a library or program workout is copied to the owner that receives it, and the copy has no link back. |
 | W10 | One `workouts` table with three owners: library (`client_id` and `program_id` null), program (`program_id`), client (`client_id`). Never both. A workout has no time in it, so one shape serves all owners. |
 | W11 | Two schedule tables, one time system each. `schedules` (client) uses dates; `program_schedules` uses week numbers. Same shape: one occasion, or a weekday rule between two bounds. Assign translates week `w` to `start + 7 × (w − 1)` days. |
@@ -38,19 +38,22 @@ Status: in design, 9 October 2026. Replaces the training part of `.scratch/core-
 | W30 | Rest has one field with one meaning: `rest` on the workout exercise = the rest after doing this exercise. The rest after the last exercise of a group is the rest between rounds. It uses the target shape (exact or range) and W5 (same for all rounds or per round). Not logged; the client's rest timer uses it. Real rest, if ever needed, is calculated from set times. |
 | W31 | Everything on an exercise is editable (metric list, `kind`, `unilateral`, name). An exercise describes how to show and log it from now on; it never changes data that already exists. Removed metrics stay in old logs and reports. WorkoutHistory copies keep old names. Replaces M13. |
 | W32 | Deleting a workout: apply W14 to its schedule rows first. If any row remains, the workout is archived (`archived_at`); otherwise it is deleted. Done work never needs the original: logs point to WorkoutHistory copies, so `WorkoutHistory.workout_id` is a plain id, not a foreign key. Library and program workouts have no schedule facts, so they are deleted. One sentence for W14 and W32: keep every date that is a fact; remove everything else; a row or a workout with no facts is deleted. |
+| W33 | Progression across weeks needs no new concept: a program schedules a separate workout per week where targets change ("Lower A (week 1)" on a `week` row, "Lower A (week 2)" on the next). The builder offers "Duplicate for next week". Replaces the "Not now" for progression (M8). |
+| W34 | `WorkoutLog` and `ExerciseSet` are records on the shared spine: shared record fields, `Easy.RecordJournal` writes, `record_changes`, `clients.last_change_seq` (M9, M10). "New since the last review" and "pain reported" work for them unchanged. |
+| W35 | Every table carries `business_id` (tenant). A library workout is `business_id` set, `client_id` and `program_id` null. Built-in exercises keep `business_id` null. |
 
 ## Model
 
 ```
 Exercise         { id, business_id?, name, kind, goals[], places[], metrics[] (ordered), count_label?, grade_scale?, unilateral, equipment[], muscles[], media? }
 Program          { id, business_id, name, description, weeks }
-Workout          { id, client_id?, program_id?, name, description, type: prescribed | video | open, video?, archived_at? }
+Workout          { id, business_id, client_id?, program_id?, name, description, type: prescribed | video | open, video?, archived_at? }
 ExerciseGroup    { id, workout_id, name?, rounds }
 WorkoutExercise  { id, group_id, exercise_id, rest (target), targets: same_for_all | per_round, [ metrics (W28) ] }
 Schedule         { id, workout_id, client_id, date? | day_of_week + from_date + until_date?, time?, place? | meeting_url?, coach_id? }
 ProgramSchedule  { id, workout_id, program_id, week? | day_of_week + from_week + until_week }
 WorkoutHistory   { id, client_id, workout_id, started, ended?, workout: jsonb }
-WorkoutLog       { id, client_id, state, date, time, at_utc, text, difficulty?, pain?, pain_note?, workout_history_id?, schedule_id?, scheduled_date?, recorded_by }
+WorkoutLog       { id, business_id, client_id, shared record fields (M9), state, date, time, at_utc, text, difficulty?, pain?, pain_note?, workout_history_id?, schedule_id?, scheduled_date?, recorded_by }
 ScheduleSkip     { id, schedule_id, date }
 ExerciseMax      { id, client_id, exercise_id, kg, date, entered_by }
 ExerciseSet      { id, log_id, workout_exercise_id?, exercise_id, round, side?, metrics (W28) }
@@ -103,6 +106,20 @@ Default metrics by kind: movement → reps, weight · activity → distance, dur
 
 Examples: treadmill → duration, distance, speed, incline · free throws → successes / attempts · climbing → grade, attempts · hike → distance, duration, elevation gain, weight (pack).
 
+## Relation to the core-domains decisions
+
+| Old | Status |
+|---|---|
+| M2 templates vs plans, M3 plan revisions, M6 schedule entries, M16 one plan per domain | Replaced for training by W8–W11, W13. Nutrition keeps them until it gets its own concept. |
+| M7 session points to prescription and occurrence | Replaced by W8 (history row) and W13 (`schedule_id`, `scheduled_date`). |
+| M8 occurrence exceptions; progression "Not now" | Replaced by W15 (skips) and W33 (progression). |
+| M13 measures fixed at creation | Replaced by W31. |
+| M17 only the client records workouts | Replaced by W17. |
+| M9, M10 record spine; M14 base units; M18 counts, not scores | Kept (W34, W28). |
+
 ## Open questions
 
-1. (none open in the model; next: review the whole concept, then the build plan)
+1. `bodyweight` (load adds to body weight) and `mechanics` / `force` on today's exercises: keep, change, or drop?
+2. Targets for non-numeric metrics: can a coach set a `grade` target ("climb V4") or a `result` target? W25 covers numeric metrics only.
+3. Must program schedule rows stay inside `Program.weeks`?
+4. Build plan: how we move from the S1 training model to this concept in complete slices.

@@ -51,6 +51,7 @@ import {TrainingPlanEditor} from './training-plans/training-plan-editor';
 import {TrainingPlans} from './training-plans/training-plans';
 import {TrainingSession} from './training-sessions/training-session';
 import {TrainingSessions} from './training-sessions/training-sessions';
+import {WorkoutBuilderPrototype} from './workout-builder-prototype/workout-builder-prototype';
 
 function Gate({guest = false}: {guest?: boolean}) {
   const session = parseSession(useSyncExternalStore(subscribeSession, sessionSnapshot));
@@ -157,6 +158,8 @@ export const router = createBrowserRouter([
         ],
       },
       {path: routes.invitation, element: <Invitation />},
+      // PROTOTYPE — throwaway route, no login or API.
+      {path: routes.workoutBuilderPrototype, element: <WorkoutBuilderPrototype />},
       {
         element: <Gate />,
         children: [

@@ -125,7 +125,7 @@ Breadcrumbs, parent labels, and contextual references ("3 tasks in this project"
 
 ```
 "Archive this project?"
-This will also archive 47 tasks and remove it from all dashboards.
+This will also archive 47 tasks and remove it from all dashboards. 
 Team members will lose access immediately.
 [Cancel]  [Archive project]
 ```

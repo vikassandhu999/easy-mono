@@ -146,35 +146,29 @@ The ingredients and preparation instructions for a prepared food. An ingredient 
 ### Trackers
 
 **Tracker**:
-Something recorded about a client: a number, rating, yes/no answer, text, photo, or document. A Tracker is built-in or belongs to a coaching business. Its kind, unit, and rating scale are fixed at creation.
-_Avoid_: Measure, metric, form question
+A definition of one observation or response. Its value type can be number, rating, yes_no, text, photo, document, or a product-defined compound measurement such as blood pressure.
 
-**Tracker list**:
-The Trackers assigned to a client, each with a timing. A timing is daily, weekly on a selected weekday, after each workout, or after each meal. The list is separate from Training and Nutrition plans.
-_Avoid_: Tracker plan
+**TrackerSchedule**:
+A client's ask to record a Tracker. Timing is selected weekdays, after a workout, after a meal, or once. Weekday prompts have no backlog. A once request stays outstanding until fulfilled or cancelled.
+_Avoid_: Tracker assignment, TrackerRequest as a separate model
 
-**Tracker assignment**:
-One Tracker's timing for a client over a date range. A timing change ends the old assignment and starts a new one. Removing an assignment preserves its entries.
+**TrackerLog**:
+One dated observation of one Tracker, recorded by the client or an authorised coach. Measurement time is distinct from recording time. A log can exist without a schedule and can refer to a workout or nutrition record.
+_Avoid_: Tracker entry
 
 **Tracker template**:
-A reusable list of Trackers and their timings. Applying it copies the list to a client. Later template edits do not change that client's list. The business default is copied when the client's first Coaching term starts.
+A reusable list of Trackers and timings. Applying it copies schedules to a client; later template edits do not change those copies.
 
-**Tracker entry**:
-One dated value of one Tracker, recorded by the client or a coach. An entry can refer to a workout or meal. Coach entries are labelled "Recorded by coach". A document entry holds one report as ordered PDFs, images, or both.
-
-**Tracker request**:
-A coach's request for one Tracker. It stays open until an entry is recorded or the coach cancels it. Only requests from the current Coaching term are open.
-
-**To record**:
-Tracker reminders for today during a Coaching term. Daily and weekly reminders disappear after an entry for the date, or when the date ends. A reminder is never late.
+**Compound measurement**:
+One observation whose defined fields belong together, such as systolic and diastolic blood pressure. Independent measurements entered together remain separate logs.
 
 **Tracker coverage**:
-The number of distinct workouts or meals with a linked Tracker entry, out of the events that occurred while that Tracker was assigned. Repeated entries for one event count once.
+The distinct events with linked TrackerLogs compared with eligible events. Missing coverage does not establish non-adherence.
 
 ### Check-ins
 
 **Review**:
-A coach's saved assessment of a client's ongoing record during a Coaching term, with a private note and an optional reply in chat. The assessment, note, and reply can be edited; the review time and the records seen stay fixed.
+A coach's saved assessment of a client's ongoing record during a Coaching term, with a private note. Communication is an independent chat message that may refer to the Review. The assessment and note can be edited; the review time and the records seen stay fixed.
 _Avoid_: Check-in period, submission
 
 **Review frequency**:
@@ -191,4 +185,4 @@ The client's current priority in one line, set by the coach. It stays on the cli
 Records added, corrected, or removed after the coach read the record for their last Review, including corrections to older records. Changes made while the coach reads remain new for the next Review.
 
 **Review reply**:
-A chat message from a coach with a reference to a Review, without the assessment or private note. Editing the reply marks the message as edited; deleting the reply removes the message.
+An ordinary ChatMessage with a reference to a Review, without its private assessment or note. Chat owns the message and its edits. Sending a message does not mark the client reviewed; saving a Review does not require a message.

@@ -1,155 +1,137 @@
-# Check-ins
+# Reviews, chat, and Trackers
 
-Status: agreed 2026-10-03. Replaces the period-based spec of 2026-09-24.
+Status: Tracker and Chat concepts agreed, 10 October 2026. Reviews are deferred until the recording domains are built and tested with coaches. Review rules below are retained design notes, not the next implementation scope. This design supersedes conflicting Tracker and review-reply rules from the 3 October spec. It is not an implemented database contract. Training and nutrition follow their own concept documents.
 
-**During a coaching term, the client records what they do, and the coach regularly looks at it and writes a Review.**
+## Purpose
 
-That is the whole feature. A check-in is not a period, a form or a task. It is a coach looking at a client's ongoing record and saving what they thought. The client keeps recording before and after.
+During a coaching term, the client records facts, the client and coach discuss them, and the coach regularly reviews the ongoing record. Recording, communication, and assessment have independent lifecycles. There is no check-in period or client submission.
 
-The earlier history (the Q1–Q35 grilling and the V1–V13 validation) was removed on 6 October 2026; read it with `git show 1e6177a1:.scratch/check-ins/archive/spec-periods-2026-09-24.md` and `…/spec-validation.md`. Q and V numbers below point there. Decisions that apply only to periods are retired and not listed here.
+## Agreed decisions
 
-## Why this shape
+| # | Decision |
+|---|---|
+| R1 | Tracker defines what can be recorded. TrackerSchedule defines the ask and timing. TrackerLog records a dated observation. |
+| R2 | Reflection is a text Tracker answering a defined prompt. Chat is conversation. Both contain text but serve different purposes. |
+| R3 | Review owns the coach assessment and private note. ChatMessage owns communication. Sending a message does not mark a client reviewed; saving a Review does not require a message. |
+| R4 | A chat message can refer to a Review or record. A review reply is an ordinary linked ChatMessage, not text stored and edited in two models. |
+| R5 | TrackerSchedule replaces Tracker assignment. A TrackerLog can exist without a schedule. Ending a schedule preserves logs. |
+| R6 | Schedule timing is selected weekdays, after_workout, after_meal, or once. Weekday timing uses the agreed weekday-mask convention. Event timing does not become a calendar rule. |
+| R7 | A once request is a TrackerSchedule, not a separate TrackerRequest. It stays outstanding until fulfilled or cancelled. SubmitBefore and automatic expiry are omitted. |
+| R8 | Weekday reminders end with their day without a backlog. Event prompts appear in the event recording flow; a log can be added later against that event. Once requests stay outstanding. |
+| R9 | Tracker prompts have no overdue state. Once requests can show Waiting since a date. Reviews can be overdue because review frequency supplies a due date. Missing records can show missing coverage. |
+| R10 | A specific log fulfils a once request through an explicit link. Recording from that request can create the link automatically. Unrelated logs do not close it. |
+| R11 | TrackerLog replaces the term Tracker entry in the design. It records measurement time separately from entry time, author, value, optional note, and optional workout or nutrition context. |
+| R12 | Basic value types are number, rating, yes_no, text, photo, document. Named compound types support one observation with several related values, starting with blood_pressure. |
+| R13 | Compound types are defined by the product, with fields, units, validation, and report behaviour. Coaches do not build arbitrary compound schemas. Blood pressure keeps systolic and diastolic together. |
+| R14 | Independent values entered on one screen remain separate logs. Repeated weight measurements are separate logs. Several photos from one occasion or files belonging to one report are ordered attachments on one log. |
+| R15 | Activities with their own interval or lifecycle, such as sleep or fasting, keep dedicated models. Multiple fields alone do not make them Trackers. |
+| R16 | Use shared tracker_logs for observation metadata and separate typed value tables. Each saved log has exactly one value shape matching its Tracker. Attachment types use attachment relations. Detailed database enforcement remains open. |
+| R17 | Reports select a client, Tracker, and date range, then read typed values. Latest and maximum are derived per client and Tracker, not per value type. |
+| R18 | Maximum only exists where meaningful. Blood pressure has separate systolic and diastolic maxima, potentially from different logs. Text, photo, and document have no maximum. |
+| R19 | Do not store latest/max log pointers initially. Add derived summaries keyed by client and Tracker only if measurements justify them. Logs remain the source of truth; corrections, deletions, and backdated records must be handled. |
+| R20 | The client can record several observations on one screen. Coach views are timeline, Tracker history, and Review summary. UI grouping does not create a grouped Tracker. |
 
-Every attempt to give check-ins periods (open, due, reviewed, grace day, rollover, early-review credit, transition weeks) produced a new edge case. Removing periods removes those rules instead of patching them. Every state is derived from facts, the same as Coaching terms.
+## Model responsibilities
 
-## The concepts
+```text
+Tracker -> TrackerSchedule
+   └----> TrackerLog -> typed value or ordered attachments
+                └---- optional schedule fulfilment / event context
 
-| Concept | What it is |
-| --- | --- |
-| **Tracker** | Something a client records: number with unit, rating, photo, text or document. Built-in or custom. (Q13b, Q17, Q29) |
-| **Tracker entry** | One dated value of one Tracker, recorded by the client or a coach. (Q20, Q29) |
-| **Tracker list** | The Trackers assigned to one client, each with a timing. Lives on the client, not in plans. (Q16) |
-| **Review** | One saved coach assessment: when, who, assessment, private note, optional reply. |
-| **Review frequency** | Days between reviews for one client: 1, 3, 7, 14 or 28. |
-| **Focus** | One line: the client's current priority, set by the coach. |
-| **Tracker request** | A coach asking the client for one Tracker, for example a blood report. |
+WorkoutLogs + NutritionLogs + TrackerLogs -> Review
+ChatMessage -> optional record or Review reference
+```
 
-The tables for this feature, and for the training and nutrition records it reads, are defined in `.scratch/core-domains/overview.md`. Focus and Review frequency are fields on the client.
+The arrows describe relationships, not required execution steps. Review reads records; it does not own or close them.
 
-## How reviews are scheduled
+| Model | Proposed fields / shape |
+|---|---|
+| Tracker | id, business_id (null for built-ins), name, description, value_type, type-specific definition, archived_at |
+| TrackerSchedule | id, business_id, client_id, tracker_id, timing, timing-specific details, instructions, starts_on, ends_on, cancellation for once |
+| TrackerLog | id, business_id, client_id, tracker_id, measured_at, recorded_at, recorded_by, note, optional context and schedule reference |
+| Review | client, coach, reviewed_at, reviewed_through_seq, assessment, private_note |
+| ChatMessage | sender, conversation, content, optional record or Review reference; message edits belong to chat |
 
-* Each client has a **Review frequency** in days. The business default is 7. Twice a week is 3.
-* A client is **due** when they are in a coaching term today and either:
-  * they have no Review since the current term started, or
-  * today ≥ the date of their last Review + frequency.
-* Saving a Review makes the next due date "today + frequency". Reviewing on Friday with weekly frequency means due again next Friday.
-* Missed weeks never pile up. A client three weeks late is one overdue client, shown as "Overdue 14 days".
-* A new client is due the day their coaching term starts. A returning client is too, because their old Reviews come from an earlier term.
-* There is no check-in weekday, no first-period rule and no four-day minimum. This replaces V3, V4 and V12 and Q3, Q18 and Q30.
-* The coach can review any client at any time, whether due or not.
+These are domain shapes, not final DDL. Shared record/journal fields and access rules still apply. Fulfilment links and recurring occurrence identity need precise design.
 
-## The coach's day
+## Value types
 
-**Client roster.** Every coached client appears once and can be sorted and filtered by:
-* Due / overdue (and by how many days)
-* Last reviewed (date, or "Never this term")
-* Coach assessment
-* Unread chat
-* Waiting on client (open Tracker requests)
+| Type | Definition | Value / relation |
+|---|---|---|
+| number | Unit and optional valid bounds | Numeric value in base unit, plus entered unit |
+| rating | Scale and labels | Selected scale value |
+| yes_no | Defined question | Boolean |
+| text | Defined prompt | Written response |
+| photo | Photo measurement | Ordered image attachments |
+| document | One report | Ordered PDF/image attachments |
+| blood_pressure | Product-defined compound observation | Systolic and diastolic, both in mmHg |
 
-There is no stored queue, task or follow-up object. Every column is derived. (Q31: assessment on the list.)
+Names and descriptions can change without rewriting logs. Value meaning must be preserved. Changing a number into a rating requires a different Tracker. Exact definition-edit and snapshot rules remain open.
 
-**Review screen**, opened from the roster:
-1. **New since last review**: records added or changed after the last Review, in any order and whatever their dates. A late correction to an old meal therefore shows up. (Q12)
-2. **Summary**: from the last Review until today by default, or any chosen range. Every figure links to its records. (Q14)
-   * Training: sessions completed against dated expectations, plus freestyle sessions. (V5)
-   * Nutrition: days logged, and average intake against targets. (Q14)
-   * Trackers: values in the range, and the change from the previous range. Photos show latest against the previous one, with a switch to the first one. (Q28)
-3. **Last Review's private note** at the top. (Q9)
-4. **Plans** are one tap away. Edits apply immediately, as today. (V1)
-5. **Save a Review**:
-   * Assessment: On track, Needs attention or At risk. Coach-only and set by hand, never calculated. Pre-filled from the last one, and the first one starts at On track. (Q31, Q32)
-   * Private note: coach-only. (Q9)
-   * Reply: optional. It is sent as a chat message linked to the Review. Editing the reply edits that message, which is marked "edited". Deleting the reply deletes the message. (Q6, Q25)
-   * Focus, and new Tracker requests, can be set here or anywhere else on the client.
+## PostgreSQL direction and reports
 
-Assessment, note and reply stay editable after saving. The review time does not change.
+```text
+tracker_logs
+  id, business_id, client_id, tracker_id
+  measured_at, recorded_at, recorded_by, note, ...
 
-**"Seen" rule.** When the review screen loads, it reads the client's change number (`last_change_seq`) together with the data, and the Review saves it as `reviewed_through_seq`. "New since last review" means changes with a greater number, including corrections and removals. Anything that changes while the coach is reading still appears next time.
+tracker_number_values
+  log_id PRIMARY KEY, value, entered_unit, ...
 
-## Trackers
+tracker_rating_values
+  log_id PRIMARY KEY, value
 
-* Any Tracker entry can be recorded on any day. Nothing is ever late or locked. (Q19)
-* Timing is one of:
-  * **After each workout / after each meal**: asked inside the workout-finish screen or the diary slot.
-  * **Daily** or **weekly**: a reminder only. A weekly reminder has its own weekday, Sunday by default from the template, which a coach can change per client.
+tracker_blood_pressure_values
+  log_id PRIMARY KEY, systolic_mmhg, diastolic_mmhg
+```
 
-  A Tracker that the coach asks for one time is a Tracker request, not a timing (see Focus and requests).
-* A reminder shows under "To record" on the client's Today screen when due, and disappears once recorded or when the day ends. (Q19)
-* The review says what exists ("Weight: 5 entries, average 82.1 kg") and "Not recorded" only when there are none. Event trackers show coverage ("Energy after 3 of 4 workouts"). (Q19)
-* Coaches can record Tracker entries for a client, labelled "Recorded by coach". Workouts and meals stay client-only: the tables can store a coach as the author, but only the client may record them. (Q20)
-* Clients can record any library Tracker through "Add something else". It is not added to their list. (Q21)
-* List changes apply immediately. A removed Tracker stops prompting, and its entries stay. (Q22)
-* Built-in Trackers are stored in metric and shown in the client's `unit_system`. Custom units are free text with no conversion. (Q26)
-* Custom Trackers with entries can be archived and restored, not deleted. Built-ins cannot be archived. (Q27)
-* Front, side and back photos are three separate Trackers. (Q28)
-* **Reports**: a document entry holds one report as ordered PDFs and/or images. Another report is another entry. The coach reads it by hand. (V7, V8)
-* The default Tracker list holds one Tracker, **Reflection**: weekly, text. It replaces the old "note to coach at each check-in".
+Other basic types have typed storage or attachment relations. A foreign key from value rows to logs is required. A primary key on log_id prevents two rows in one value table; by itself it does not enforce exactly one matching value across all tables. The complete write and constraint design is a next-stage task.
 
-## Focus and requests
+| Initial index | Query |
+|---|---|
+| tracker_logs (business_id, client_id, tracker_id, measured_at, id) | Tracker history and range reports |
+| tracker_logs (business_id, client_id, measured_at, id) | Client Tracker timeline |
+| Each value table primary key (log_id) | Value joins and one row per log within that table |
 
-* **Focus** is one line on the client, shown pinned on their Today screen. It stays until the coach changes or clears it. (Q33)
-* A **Tracker request** is open from when it is made until the client records an entry of that Tracker or the coach cancels it. It never expires on its own. It shows on the client's Today screen as "Your coach asked for". (Q15, replaced)
-* Only requests made during the current term count as open. When a client returns, old requests do not come back.
-* The roster shows open requests as "Waiting on client since <date>". This is not coach work, so it is not counted as due.
+Index value columns only for demonstrated queries. Range reports filter observations first and calculate over the selected rows. Pagination and date-range filtering limit reads. No performance claim has been tested.
 
-## Client side
+Latest uses measurement time with a deterministic tie-breaker. Maximum reads the relevant typed value. The tie-breaker, null rules, and treatment of corrections/deletions remain to be specified.
 
-* Today shows Focus, open requests, and "To record" reminders. (Q33, Q19)
-* History shows the coach's replies, their own Tracker entries and trends, and the Focus. They never see the assessment or the private note. (Q8)
-* Anything urgent goes to chat. There is no urgency flag. (Q7)
-* There is no "send" action and no submitted state. (Q34, Q35)
-* Native apps schedule local notifications for reminders (`@capacitor/local-notifications`, not installed yet, must be checked on iOS and Android). The web app shows them in-app only. (Q24)
+## UI
 
-## Coaching terms
+One measurement screen can show weight, waist, blood pressure, and photos. Save creates separate logs for independent observations; blood pressure remains one compound log. Save atomicity and retry behaviour are detailed API decisions.
 
-* Reviews, reminders, requests and "due" exist only while a coaching term covers today. When coaching ends, the client stops showing as due. History stays readable.
-* Client writes need a term covering today, enforced by the existing write gate.
+The coach timeline shows dated observations, notes, and attachment previews. Tracker history shows a selected range and appropriate trends. Review summary shows selected values, changes, and coverage. Blood pressure displays both readings together and charts them separately. Text and files do not get numeric charts.
 
-## Defaults and access
+Paginate the timeline, load charts for a chosen range, and fetch attachment content when opened. Opening a request provides its context and automatically links the recorded response.
 
-* Business settings hold the default Review frequency and the default Tracker template (each item has its timing and weekday). A change always applies to new clients. On saving, the coach chooses whether to apply it to all existing clients too. (Q23)
-* Access follows the existing rules. The owner sees every client. Other coaches see the clients they coach. (S-03)
+## Review workflow and retained rules
 
-## Decided later, when the build reaches it
+The following rules from the earlier spec remain unless revised explicitly:
 
-These do not block the first steps.
+- Review frequency is 1, 3, 7, 14, or 28 days; business default is 7. A three-day interval is not literally two fixed reviews per calendar week.
+- A client is due at the current coaching term start if not reviewed in that term, then at last Review date plus frequency. Missed reviews do not accumulate. A coach can review at any time.
+- Assessment is On track, Needs attention, or At risk, selected by the coach. Assessment and private note are coach-only. They can be edited; review time stays fixed.
+- Review reads a consistent record-change boundary and saves reviewed_through_seq. Later changes, including corrections to older logs and changes during reading, remain new for the next Review.
+- The roster shows due/overdue, last reviewed, assessment, unread chat, and outstanding once asks. These are derived facts, not a separate work queue.
+- Focus is one client priority line, shown until changed or cleared. It stays independent of messages and Review.
+- Tracker logs can be recorded on any day by the client or an authorised coach. Coach-authored logs are labelled. Missing data is not proof that an activity was skipped.
+- Clients can record library Trackers that are not scheduled. Custom Trackers with logs can be archived and restored; built-ins cannot be archived.
+- The default Tracker template contains weekly Reflection. Template application copies schedules. Business defaults apply to new clients; applying them to other clients is an explicit coach action.
+- Reviews and prompts operate during coaching terms; history stays readable afterward. Client writes use the coaching-term gate. Previous-term once asks do not return with a new term.
+- Built-in numeric units convert through the client unit system. Custom free-text units have no implicit conversion. Front, side, and back photos remain separate built-in Trackers; a photo log can hold several images for its own Tracker.
+- Owner/assigned-coach access remains tenant-scoped. Document logs preserve the original ordered report files.
 
-* **Meal comparison** (V6): until it is decided, show recommended calories against recorded calories only.
-* **Upload limits** (V9): use the attachment service's current per-file limit until decided. Deferral does not mean unlimited.
-* **Dated expectation details** (V5): capture timing, same-day plan edits and matching off-schedule workouts. Settle these when building delivery step 4.
+The previous rule that only clients can record workouts is superseded by the workout concept. Nutrition author permissions remain a nutrition design decision. No new workout/nutrition permission rule is inferred here.
 
-## Future
+## Open detailed decisions
 
-* AI parsing of PDF and image reports into structured values, keeping the originals. (Jev AI)
-* Event Trackers for one specific workout or meal.
-* Copying a Tracker list from another client.
-* Photo comparison between two chosen dates.
-* Server push notifications.
+1. Typed-value constraints, definition history, corrections, deletion, units, validation, and reporting of unknown values.
+2. Recurring occurrence and event-link identity; matching logs to prompts; fulfilment correction/deletion; overlapping schedules and duplicate requests.
+3. One-off dates versus undated once requests, date bounds, cancellation fields, and term-scoping rules.
+4. Review editing/deletion, message reference visibility, and independent message deletion after a linked Review.
+5. Transaction boundaries, multi-log save/retries, journal writes, API and UX failure behaviour.
+6. Reports, comparison ranges, photo comparisons, upload limits, notifications, and realistic performance verification.
+7. Implementation slices. The earlier delivery order needs revision for this model; no build starts from this document alone.
 
-## Out of scope
-
-* Forms, branching questions, intake questionnaires.
-* Calculated adherence or risk scores.
-* Automated nudges and follow-ups beyond Tracker reminders.
-
-## Delivery order
-
-Each step ships and is useful on its own.
-
-1. **Review loop.** Review frequency, the roster with due, last reviewed and assessment, and a review screen built from existing workout and meal history. Save a Review with assessment and private note. Reply through the existing chat.
-2. **Trackers.** Library, Tracker list, recording by client and coach, after-workout and after-meal prompts, "To record" on Today, Reflection.
-3. **Review reply, Focus and requests.** The reply as a linked editable chat message, Focus on Today, Tracker requests and "Waiting on client".
-4. **Dated expectations and summaries.** Completed against expected, nutrition against targets, tracker changes, photo comparison, "New since last review".
-5. **Client history.**
-6. **Phone reminders** through local notifications, tested on real devices.
-
-## Glossary for CONTEXT.md
-
-* **Review**: a coach's saved assessment of a client at a moment: assessment, private note, optional reply. Avoid: check-in period, submission.
-* **Review frequency**: days between a client's Reviews. A client is due when today ≥ last Review + frequency.
-* **Assessment**: On track, Needs attention or At risk. Set by the coach, coach-only. Avoid: status.
-* **Tracker / Tracker entry / Tracker list**: as above. Avoid: measure, metric, form question.
-* **Focus**: the client's current one-line priority.
-* **Tracker request**: an open ask for one Tracker, closed by an entry or a cancel.
-* "Check-ins" stays as the name of the feature and its navigation.
+No forms, arbitrary compound field builders, calculated risk/adherence scores, or automatic request deadlines are introduced. AI report parsing, specific-event Tracker schedules, imports, and push notifications remain future work.

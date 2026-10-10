@@ -1,5 +1,7 @@
 # Core domains: Training, Nutrition, Trackers
 
+Tracker and Review schema sketches below describe the earlier implementation. The agreed redesign is `.scratch/check-ins/spec.md` (10 October 2026), which supersedes assignments, separate requests, entry storage, and Review-owned reply links below. Use that spec for design; do not implement conflicting sketches from this file.
+
 Status: final model, agreed 5 October 2026. Not implemented.
 
 Research sources (the training, nutrition, shared, research, validation and industry-API reports, and the diagram) were removed on 6 October 2026; read them with `git show 1e6177a1:.scratch/core-domains/<file>`. Postgres detail for training: `training.md`. Build order: `.scratch/roadmap.md`.

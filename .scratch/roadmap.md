@@ -1,3 +1,7 @@
+# Implementation scope, 10 October 2026
+
+Reviews and attention signals are deferred. First complete workout, nutrition, Tracker, and chat-reference domains from their agreed concept documents. The feature table below is retained planning history; its previous next markers do not override this scope. Detailed slice plans come before implementation.
+
 # Roadmap
 
 > Training is redesigned in `.scratch/workout/concept.md` (9 Oct 2026). Training rows below follow it once its build plan exists.
@@ -159,8 +163,8 @@ One row = one Codex task (gpt-6-astra high, elixir-production skills for the bac
 | # | Slice | Model change | Coach sees | Client does | Size | Status |
 |---|---|---|---|---|---|---|
 | 0 | Core domains + reviews + coaching terms | — | — | — | — | done `1e6177a1` |
-| 1 | **Workout feedback** | 3 columns on `training_sessions`: `difficulty`, `pain`, `pain_note` | "Pain reported" on the roster; pain at the top of the review | Answers 2 questions on the finish screen | S | next |
-| 2 | **Check-in screen** | None. Seed built-ins: neck, hips, chest, arm, thigh, body fat %, muscle mass | One trend per measurement | Records many measurements for one date in one save | S | planned |
+| 1 | **Workout feedback** | 3 columns on `training_sessions`: `difficulty`, `pain`, `pain_note` | "Pain reported" on the roster; pain at the top of the review | Answers 2 questions on the finish screen | S | done |
+| 2 | **Check-in screen** | None. Seed built-ins: neck, hips, chest, arm, thigh, body fat %, muscle mass | One trend per measurement | Records many measurements for one date in one save | S | next |
 | 3 | **Quick amounts** | `quick_amounts` (up to 4) on `tracker_assignments` | Sets amounts on the tracker list | One tap records water | S | planned |
 | 4 | **Recent and favourite foods** | `favourite_foods` (client, food or recipe) | — | Re-logs a food in two taps | S | planned |
 | 5 | **Copy a meal** | None (new entries, normal journal write) | Copied entries show as normal records | Copies a meal from another day | S | planned |
@@ -185,10 +189,30 @@ Rows 1–5 make logging quick and catch pain early. Rows 6–12 add the special 
 ### 1. Workout feedback
 - **Idea from:** SparkyFitness `workout_feedback` (difficulty, pain, pain note).
 - **Why:** a coach must know at once when a client gets hurt or a workout is too hard or too easy.
-- **Model:** on `training_sessions`: `difficulty` (`too_easy`, `just_right`, `too_hard`, nullable), `pain` (boolean, nullable), `pain_note` (≤ 500 chars, only when `pain`). A check constraint keeps the note only with pain. Written with the session through the journal, so a change shows in "New since".
-- **Client:** the finish screen asks "How was it?" and "Any pain?"; "Yes" opens the note.
-- **Coach:** roster marker "Pain reported" when a session with pain is newer than the last review; the review screen lists pain first; the session page shows the feedback.
-- **Done when:** a client finishes a workout with pain and a note, and the coach sees "Pain reported" on the roster and the note on the review screen.
+- **Model:** three columns on `training_sessions`, all nullable (null = not answered):
+  - `difficulty`: `too_easy`, `just_right`, `too_hard`.
+  - `pain`: boolean.
+  - `pain_note`: text, 1–500 chars, trimmed (blank becomes null). Check constraint: `pain_note IS NULL OR pain`.
+  - The fields are written with the session through the journal, so a change shows in "New since".
+- **API:**
+  - The `Session` type adds `difficulty`, `pain` and `pain_note`.
+  - `Session.update` (used by update and complete) accepts the same three fields.
+  - A note without `pain: true` gets 422.
+  - Repeating a complete compares these fields too.
+  - Roster row: `pain_reported` (boolean) and a `pain` filter.
+  - Review screen: `pain_reports` (session id, date, title, difficulty, note), newest first.
+- **Rule for "pain reported":** a completed session with `pain = true` that has a `record_changes` row after the "New since last review" cutoff. One query serves the roster (all listed clients in one query) and the review screen.
+- **Client:**
+  - The "Finish this workout?" dialog asks "How did it feel?" (Too easy / Just right / Too hard) and "Any pain or discomfort?" (No / Yes). Yes opens "What hurts, and when?" (500 chars). Both answers are optional.
+  - A completed workout shows the answers.
+  - "Correct this workout" can change the answers.
+- **Coach:**
+  - Roster: a "Pain reported" badge and a filter.
+  - Review screen: a "Pain reported" section before "New since last review".
+  - Session page: a "Client feedback" section.
+  - Training history: a "Pain" badge on rows that have pain.
+- **Not in this row:** sharing the pain note to chat. The note stays on the session.
+- **Done when:** a client finishes a workout with pain and a note. The coach sees "Pain reported" on the roster and the note first on the review screen. After the coach saves a review, the badge goes away.
 
 ### 2. Check-in screen
 - **Idea from:** SparkyFitness `check_in_measurements` (many measurements on one date).

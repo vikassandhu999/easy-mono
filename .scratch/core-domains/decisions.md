@@ -45,6 +45,10 @@ Progression across weeks (`cycle_weeks` > 1) · occurrence exceptions UI · libr
 | 6 Oct 2026 | M19 | A fact with more than one value (sleep, cycle, goals, symptoms, fasts, health notes, workout feedback) gets its own model: its own record table, or columns on the record it describes (workout feedback on `training_sessions`). Every record table uses the shared spine (M9, M10). M15 applies to facts with one value. |
 | 9 Oct 2026 | M20 | Training follows the workout concept, `.scratch/workout/concept.md` (W1–W35). It replaces M2, M3, M6, M7, M8, M13, M16 and M17 for training (see its "Relation" table). Nutrition keeps them for now. |
 
+| 10 Oct 2026 | M21 | Tracker and Review design follows `.scratch/check-ins/spec.md`. TrackerSchedule replaces assignments and separate requests; TrackerLog replaces entries, with shared observation metadata and typed values. Product-defined compound measurements refine M19. Review and ChatMessage have independent lifecycles. This supersedes conflicting M11, M12, M15 and review-reply rules; M9/M10 journal principles remain. Supplement intake follows the nutrition concept rather than being forced into a Tracker. |
+
+| 10 Oct 2026 | M22 | Defer Reviews and attention signals. Build the agreed workout, nutrition, Tracker, and chat-reference domains in complete slices first, then revisit Reviews from coach usage. Preserve record history; do not introduce Review dependencies into those domains. |
+
 ## Next
 
 Build order: `.scratch/roadmap.md`.

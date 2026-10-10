@@ -14,6 +14,7 @@ import {BillingPage} from './billing/billing';
 import {ClientTrackers} from './client-trackers/client-trackers';
 import {RecordTracker} from './client-trackers/record-tracker';
 import {TrackerHistory} from './client-trackers/tracker-history';
+import {ClientWeekPrototype} from './client-week-prototype/client-week-prototype';
 import {AssignNutritionPlan} from './clients/assign-nutrition-plan';
 import {AssignTrainingPlan} from './clients/assign-training-plan';
 import {ChangeClientCoach} from './clients/change-client-coach';
@@ -160,6 +161,7 @@ export const router = createBrowserRouter([
       {path: routes.invitation, element: <Invitation />},
       // PROTOTYPE — throwaway route, no login or API.
       {path: routes.workoutBuilderPrototype, element: <WorkoutBuilderPrototype />},
+      {path: routes.clientWeekPrototype, element: <ClientWeekPrototype />},
       {
         element: <Gate />,
         children: [

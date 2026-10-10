@@ -41,6 +41,7 @@ Status: in design, 9 October 2026. Replaces the training part of `.scratch/core-
 | W33 | Progression across weeks needs no new concept: a program schedules a separate workout per week where targets change ("Lower A (week 1)" on a `week` row, "Lower A (week 2)" on the next). The builder offers "Duplicate for next week". Replaces the "Not now" for progression (M8). |
 | W34 | `WorkoutLog` and `ExerciseSet` are records on the shared spine: shared record fields, `Easy.RecordJournal` writes, `record_changes`, `clients.last_change_seq` (M9, M10). "New since the last review" and "pain reported" work for them unchanged. |
 | W35 | Every table carries `business_id` (tenant). A library workout is `business_id` set, `client_id` and `program_id` null. Built-in exercises keep `business_id` null. |
+| W36 | Workout schedule rows use `weekdays_mask` (Mon=1 … Sun=64), the same convention as nutrition (N8) and trackers (R6). One row can cover several weekdays. Replaces the single `day_of_week` in W6 and W11. (10 Oct 2026.) |
 
 ## Model
 
@@ -105,6 +106,43 @@ Rules:
 Default metrics by kind: movement → reps, weight · activity → distance, duration · sport → duration, result, score · practice → duration.
 
 Examples: treadmill → duration, distance, speed, incline · free throws → successes / attempts · climbing → grade, attempts · hike → distance, duration, elevation gain, weight (pack).
+
+## Workout builder UX (decided 10 Oct 2026)
+
+Settled with a clickable prototype: route `/prototype/workout-builder` in the coach app (`frontend/apps/coachapp/src/workout-builder-prototype/`). The prototype compared cards, a sheet and an outline; cards won. It was then reviewed with the dembrandt UX skills (hierarchy, density, accessibility, information architecture).
+
+| # | Decision |
+|---|---|
+| U1 | Layout: one card per group, one chip per target (`Reps 5`, `Weight 75% 1RM`, `Rest 3:00`). Tapping a chip opens an inline target editor under the exercise; only one is open at a time. |
+| U2 | The target editor shows the target types the metric allows (W25, W26) and a one-line hint of what the client will see. On a phone the types form a two-column grid. |
+| U3 | "Same for all N rounds / Different per round" (W5) lives in the target editor, not on every exercise. Per-round targets show as a small round × metric table. |
+| U4 | The word "group" is never shown. A card's label comes from its exercise count: `A · Straight sets`, `B · Superset`, `C · Circuit`. Other text uses the card's name, or its letter. |
+| U5 | A summary line under the card name says what happens: `Rest 3:00 between rounds` or `B1 → B2, then rest 1:30–2:00`. |
+| U6 | "Add exercise" at the end of the workout adds a new single-exercise card (3 rounds). "Add exercise (superset)" inside a card adds to that group. There is no "Add group" and no empty group. |
+| U7 | Adding an exercise to a group moves the rest between rounds to the new last exercise and sets the rest after the previous one to none (W30). |
+| U8 | Untouched targets show `Any` on chips (client chooses); the editor names it "Client chooses". No rest shows `None`. |
+| U9 | Density: desktop shows one row per exercise (code, name, chips, remove); a phone stacks them. Exercise kind is not shown while building; `each side` is a tag because it changes targets. |
+| U10 | Remove (card or exercise) acts at once and shows "<name> removed." with Undo for 8 seconds. No confirm dialog. |
+| U11 | Reordering is a separate mode: move cards and exercises up or down with buttons, and give an exercise another letter to pair it into a superset or circuit. No drag-and-drop, no "⋯" menu. |
+| U12 | The exercise picker is a centered modal (a bottom sheet on a phone) with search; each result shows kind, `Each side` and its metrics. |
+| U13 | Autosave: every change saves. A sticky bar shows "Saving…" / "All changes saved", or "Not saved. Your changes stay on this device." with Retry. No Save button. |
+| U14 | Names have visible labels: "Workout name", "Instructions for the client (optional)", and the card label above each card name. |
+
+Open for the real build: video and open-session panels are placeholders; the exercise picker uses a small sample library.
+
+## Client training week UX (decided 10 Oct 2026)
+
+Settled with a clickable prototype: route `/prototype/client-week` in the coach app (`frontend/apps/coachapp/src/client-week-prototype/`). Reviewed with the dembrandt UX skills.
+
+| # | Decision |
+|---|---|
+| V1 | The coach designs one repeating week, Monday to Sunday, with no dates. Date-specific planning (a calendar, moving or skipping one day, one-off dates) is deferred. The model keeps one-off rows and skips (W13–W15) for that later. |
+| V2 | Each day lists its workouts; an empty day says "Rest day". "Add" sits under each day's workouts and opens a searchable picker: this client's workouts, then the library (a copy is made, W9). |
+| V3 | The same workout on several days is one item: one schedule row with a weekday mask (W36). Its dialog edits all its days ("Every week on"), the live-session details (time, place, coach who leads, W16), "Remove from <day>", "Edit workout" and Save. A live session with its own details is a separate item. |
+| V4 | A chip shows the workout name, the session line, and the other days it repeats ("Also Mon · Thu"). |
+| V5 | Every change applies from today: the old row ends yesterday and a new row starts today; a row that started today is edited in place (W14). The UI says "Changes apply from today. Earlier weeks stay as they were." |
+| V6 | Adding, removing and saving show a message with Undo for 8 seconds. A sticky bar shows the save state. An empty week says "Nothing planned yet. Add a workout to a day; it repeats every week." |
+| V7 | Desktop shows seven day columns; a phone shows a list of days. On a phone the dialog orders Save, Edit workout, then Remove from <day>. |
 
 ## Relation to the core-domains decisions
 

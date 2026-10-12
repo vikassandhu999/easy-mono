@@ -1,0 +1,124 @@
+[
+  {
+    "request_id": 393,
+    "path": "https://cronometer.com/api/v3/user/{user_id}/targets",
+    "body_length": 3135,
+    "response_schema": {
+      "type": "array",
+      "items": {
+        "id": "number",
+        "min": "number",
+        "max": "null",
+        "vis": "boolean",
+        "custom": "boolean"
+      }
+    },
+    "request_operations": []
+  },
+  {
+    "request_id": 486,
+    "path": "https://cronometer.com/api/v3/user/{user_id}/food-search/string?query=BANANA&maxResults=50&sources=All&categoryId=0&selectedTab=ALL&type=All",
+    "body_length": 10015,
+    "encoding": "response not decoded",
+    "class_tags": [],
+    "request_operations": []
+  },
+  {
+    "request_id": 489,
+    "path": "https://cronometer.com/cronometer/app",
+    "body_length": 23,
+    "encoding": "response not decoded",
+    "class_tags": [],
+    "body_availability": "<not available anymore>",
+    "request_operations": [
+      "getFood"
+    ]
+  },
+  {
+    "request_id": 491,
+    "path": "https://cronometer.com/cronometer/app",
+    "body_length": 23,
+    "encoding": "response not decoded",
+    "class_tags": [],
+    "body_availability": "<not available anymore>",
+    "request_operations": [
+      "getFood"
+    ]
+  },
+  {
+    "request_id": 492,
+    "path": "https://cronometer.com/cronometer/app",
+    "body_length": 23,
+    "encoding": "response not decoded",
+    "class_tags": [],
+    "body_availability": "<not available anymore>",
+    "request_operations": []
+  },
+  {
+    "request_id": 585,
+    "path": "https://cronometer.com/api/v3/user/{user_id}/pro/client/{client_id}/client-prefs",
+    "body_length": 23,
+    "encoding": "response not decoded",
+    "class_tags": [],
+    "body_availability": "<not available anymore>",
+    "request_operations": []
+  },
+  {
+    "request_id": 601,
+    "path": "https://cronometer.com/api/v3/user/{user_id}/pro/client/{client_id}/client-prefs",
+    "body_length": 23,
+    "encoding": "response not decoded",
+    "class_tags": [],
+    "body_availability": "<not available anymore>",
+    "request_operations": []
+  },
+  {
+    "request_id": 612,
+    "path": "https://cronometer.com/api/v3/user/{user_id}/pro/client/{client_id}/client-prefs",
+    "body_length": 23,
+    "encoding": "response not decoded",
+    "class_tags": [],
+    "body_availability": "<not available anymore>",
+    "request_operations": []
+  },
+  {
+    "request_id": 631,
+    "path": "https://cronometer.com/cronometer/app",
+    "body_length": 23,
+    "encoding": "response not decoded",
+    "class_tags": [],
+    "body_availability": "<not available anymore>",
+    "request_operations": [
+      "getTotalNutrients"
+    ]
+  },
+  {
+    "request_id": 634,
+    "path": "https://cronometer.com/cronometer/app",
+    "body_length": 23,
+    "encoding": "response not decoded",
+    "class_tags": [],
+    "body_availability": "<not available anymore>",
+    "request_operations": []
+  },
+  {
+    "request_id": 635,
+    "path": "https://cronometer.com/cronometer/app",
+    "body_length": 23,
+    "encoding": "response not decoded",
+    "class_tags": [],
+    "body_availability": "<not available anymore>",
+    "request_operations": [
+      "getTotalNutrients"
+    ]
+  },
+  {
+    "request_id": 646,
+    "path": "https://cronometer.com/cronometer/app",
+    "body_length": 23,
+    "encoding": "response not decoded",
+    "class_tags": [],
+    "body_availability": "<not available anymore>",
+    "request_operations": []
+  }
+]
